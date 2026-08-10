@@ -5,6 +5,7 @@ import { useLang } from "../../context/LanguageContext";
 import { MdAdd, MdSearch, MdClose, MdChevronLeft, MdChevronRight } from "react-icons/md";
 import Modal from "../../components/Modal";
 import { toast } from "react-toastify";
+import Select from "../../components/common/Select";
 
 function useDebounce(value, delay = 500) {
   const [d, setD] = useState(value);
@@ -421,16 +422,16 @@ export default function GuestEntry() {
 
           {/* ✅ Vehicle type — shown only when a vehicle number is entered */}
           {form.vehicle_number && (
-            <select className="input" value={form.vehicle_type}
+            <Select className="input" value={form.vehicle_type}
               onChange={e => setForm({ ...form, vehicle_type: e.target.value, selected_slot: "" })}>
               <option value="CAR">Car 🚗</option>
               <option value="BIKE">Bike 🏍️</option>
-            </select>
+            </Select>
           )}
 
           {/* Slot picker — only when vehicle is entered; filtered by vehicle_type */}
           {form.vehicle_number && (
-            <select className="input" value={selectedSlot}
+            <Select className="input" value={selectedSlot}
               onChange={e => setSelectedSlot(e.target.value)}>
               <option value="">{t("geSelectSlot")}</option>
               {availableSlots.map(slot => (
@@ -438,11 +439,11 @@ export default function GuestEntry() {
                   {slot.slot_number}{slot.vehicle_type ? ` (${slot.vehicle_type})` : ""}
                 </option>
               ))}
-            </select>
+            </Select>
           )}
 
           {/* Flat selector — same format as ManageBills */}
-          <select className="input" required value={form.flat_id}
+          <Select className="input" required value={form.flat_id}
             onChange={e => setForm({ ...form, flat_id: e.target.value })}>
             <option value="">{t("billChooseFlat")}</option>
             {flats.map(flat => (
@@ -450,7 +451,7 @@ export default function GuestEntry() {
                 {flat.flat_number} ({flat.Block?.name || flat.Floor?.Block?.name || "—"}) – {flat.User?.name || t("billNoResident")}
               </option>
             ))}
-          </select>
+          </Select>
 
           <button type="submit" className="btn-primary" style={{ width: "100%", justifyContent: "center" }}>
             {t("geSaveEntry")}

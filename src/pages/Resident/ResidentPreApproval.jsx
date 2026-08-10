@@ -7,6 +7,7 @@ import {
   MdCalendarToday, MdQrCode, MdWarning,
   MdCheckCircle, MdContentCopy, MdPerson,
 } from "react-icons/md";
+import Select from "../../components/common/Select";
 
 /* ── IST date helpers ── */
 const getTodayIST = () =>
@@ -305,7 +306,7 @@ export default function ResidentPreApproval() {
                 <label className="text-xs text-secondary mb-1.5 block">
                   {t("preapSelectFlat") || "Select Flat"} <span className="text-red-400">*</span>
                 </label>
-                <select
+                <Select
                   className="input h-11 w-full"
                   value={selectedFlatId}
                   onChange={(e) => setSelectedFlatId(e.target.value)}
@@ -316,7 +317,7 @@ export default function ResidentPreApproval() {
                       Flat {flat.Flat?.flat_number || flat.flat_number || flat.flatNumber || flat.number || "—"}
                     </option>
                   ))}
-                </select>
+                </Select>
               </div>
             )}
 
@@ -372,7 +373,7 @@ export default function ResidentPreApproval() {
                 <label className="text-xs text-secondary mb-1.5 block">
                   {t("preapPurpose")} <span className="text-red-400">*</span>
                 </label>
-                <select
+                <Select
                   className="input h-11 w-full"
                   required
                   value={form.purpose}
@@ -384,7 +385,7 @@ export default function ResidentPreApproval() {
                       {emoji} {purposeLabels[val]}
                     </option>
                   ))}
-                </select>
+                </Select>
               </div>
             </div>
 

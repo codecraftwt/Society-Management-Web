@@ -6,6 +6,7 @@ import {
   MdDirectionsCar, MdTwoWheeler,
   MdChevronLeft, MdChevronRight,
 } from "react-icons/md";
+import Select from "../../components/common/Select";
 
 /* ── Debounce hook — keeps input focused ── */
 function useDebounce(value, delay = 500) {
@@ -282,14 +283,14 @@ useEffect(() => {
               onChange={(e) => setForm({ ...form, vehicle_number: e.target.value })}
               required
             />
-            <select
+            <Select
               className="input h-12"
               value={form.vehicle_type}
               onChange={(e) => setForm({ ...form, vehicle_type: e.target.value })}
             >
               <option value="CAR">{t("parkCar")}</option>
               <option value="BIKE">{t("parkBike")}</option>
-            </select>
+            </Select>
             <input
               type="datetime-local"
               className="input h-12"

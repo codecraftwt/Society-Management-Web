@@ -8,6 +8,7 @@ import {
   MdCheckCircle, MdArrowForward,
   MdArrowBack, MdMeetingRoom,
 } from "react-icons/md";
+import Select from "../../components/common/Select";
 
 /* ─────────────────────────────────────────
    HELPERS
@@ -583,7 +584,7 @@ function AssignWizard({ onClose, onSuccess }) {
           
           <div style={{ marginTop: 12 }}>
             <p style={{ fontSize: 12, fontWeight: 600, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8 }}>Assign Parking Slot (Optional)</p>
-            <select
+            <Select
               value={parkingSlotId}
               onChange={(e) => setParkingSlotId(e.target.value)}
               className="input w-full h-11 text-sm bg-card"
@@ -595,7 +596,7 @@ function AssignWizard({ onClose, onSuccess }) {
                   {s.parking_floor ? `Floor ${s.parking_floor} - ` : ""}{s.slot_number} ({s.vehicle_type})
                 </option>
               ))}
-            </select>
+            </Select>
           </div>
         </div>
       )}

@@ -7,6 +7,7 @@ import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
 import { FiUser, FiPhone, FiLock, FiArrowRight, FiArrowLeft, FiCheck } from "react-icons/fi";
 import { HiOutlineOfficeBuilding } from "react-icons/hi";
 import { toast } from "react-toastify";
+import Select from "../components/common/Select";
 
 /* ─── Password rule checks ─── */
 const PW_RULES = [
@@ -656,7 +657,7 @@ function Register() {
                   <label className="reg-label">Society</label>
                   <div className="reg-input-wrap">
                     <HiOutlineOfficeBuilding className="reg-icon-left" />
-                    <select
+                    <Select
                       value={formData.society_id}
                       onChange={handleSocietyChange}
                       className="reg-input reg-select"
@@ -666,7 +667,7 @@ function Register() {
                       {societies.map((s) => (
                         <option key={s.id} value={s.id}>{s.name}</option>
                       ))}
-                    </select>
+                    </Select>
                   </div>
                 </div>
 
@@ -674,7 +675,7 @@ function Register() {
                 <div className="reg-field">
                   <label className="reg-label">Block / Tower</label>
                   <div className="reg-input-wrap">
-                    <select
+                    <Select
                       value={formData.block_id}
                       onChange={handleBlockChange}
                       className="reg-input reg-select reg-select-noleft"
@@ -685,7 +686,7 @@ function Register() {
                       {blocks.map((b) => (
                         <option key={b.id} value={b.id}>{b.name}</option>
                       ))}
-                    </select>
+                    </Select>
                   </div>
                 </div>
 
@@ -693,7 +694,7 @@ function Register() {
                 <div className="reg-field">
                   <label className="reg-label">Flat / Unit</label>
                   <div className="reg-input-wrap">
-                    <select
+                    <Select
                       name="flat_id"
                       value={formData.flat_id}
                       onChange={handleChange}
@@ -705,7 +706,7 @@ function Register() {
                       {flats.map((f) => (
                         <option key={f.id} value={f.id}>{f.flat_number}</option>
                       ))}
-                    </select>
+                    </Select>
                   </div>
                 </div>
 

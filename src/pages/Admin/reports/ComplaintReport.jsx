@@ -12,6 +12,7 @@ import {
   MdPerson, MdApartment, MdCalendarToday,
   MdArrowBack, MdChevronLeft, MdChevronRight,
 } from "react-icons/md";
+import Select from "../../../components/common/Select";
 
 function useIsMobile() {
   const [m, setM] = useState(() => typeof window !== "undefined" && window.innerWidth < 768);
@@ -66,12 +67,12 @@ function FilterSheet({ show, onClose, isMobile, status, setStatus, fromDate, set
     <div style={{ padding: "16px 18px", display: "flex", flexDirection: "column", gap: 14 }}>
       <div>
         <label style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--text-secondary)", display: "block", marginBottom: 6 }}>{labels.statusLabel}</label>
-        <select className="input" value={status} onChange={e => setStatus(e.target.value)} style={{ width: "100%", boxSizing: "border-box" }}>
+        <Select className="input" value={status} onChange={e => setStatus(e.target.value)} style={{ width: "100%", boxSizing: "border-box" }}>
           <option value="">{labels.allStatus}</option>
           <option value="OPEN">{labels.open}</option>
           <option value="IN_PROGRESS">{labels.inProgress}</option>
           <option value="RESOLVED">{labels.resolved}</option>
-        </select>
+        </Select>
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
         {[{ label: labels.fromDate, val: fromDate, set: setFromDate }, { label: labels.toDate, val: toDate, set: setToDate }].map(({ label, val, set }) => (

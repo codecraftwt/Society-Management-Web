@@ -10,6 +10,7 @@ import {
   MdDone, MdChevronLeft, MdChevronRight,
   MdSearch, MdClose, MdPersonSearch, MdAdd,
 } from "react-icons/md";
+import Select from "../../components/common/Select";
 
 function useIsMobile() {
   const [m, setM] = useState(() => typeof window !== "undefined" && window.innerWidth < 768);
@@ -184,7 +185,7 @@ function RequestCard({ r, slots, selectedSlot, setSelectedSlot, onAssign, onReje
                   </label>
                   <div style={{ position:"relative" }}>
                     <MdLocalParking size={15} style={{ position:"absolute", left:12, top:"50%", transform:"translateY(-50%)", color:"var(--text-secondary)", pointerEvents:"none" }} />
-                    <select
+                    <Select
                       className="input gp-slot-select"
                       value={selectedSlot[r.id] || ""}
                       onChange={e => setSelectedSlot({ ...selectedSlot, [r.id]: e.target.value })}
@@ -194,7 +195,7 @@ function RequestCard({ r, slots, selectedSlot, setSelectedSlot, onAssign, onReje
                       {availableSlots.map(slot => (
                         <option key={slot.id} value={slot.slot_number}>{slot.slot_number}</option>
                       ))}
-                    </select>
+                    </Select>
                   </div>
                 </div>
                 <div className="gp-btn-row">
@@ -360,7 +361,7 @@ function ResidentEntryPanel({ slots, onCreated, t }) {
             </label>
             <div style={{ position:"relative" }}>
               <MdLocalParking size={15} style={{ position:"absolute", left:12, top:"50%", transform:"translateY(-50%)", color:"var(--text-secondary)", pointerEvents:"none" }} />
-              <select
+              <Select
                 className="input gp-slot-select"
                 value={selectedSlot}
                 onChange={e => setSelectedSlot(e.target.value)}
@@ -370,7 +371,7 @@ function ResidentEntryPanel({ slots, onCreated, t }) {
                 {availableSlots.map(slot => (
                   <option key={slot.id} value={slot.slot_number}>{slot.slot_number}</option>
                 ))}
-              </select>
+              </Select>
             </div>
           </div>
 

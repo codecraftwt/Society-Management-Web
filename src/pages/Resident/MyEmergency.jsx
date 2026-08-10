@@ -11,6 +11,7 @@ import { toast } from "react-toastify";
 import API from "../../services/api";
 import { useLang } from "../../context/LanguageContext";
 import { AuthContext } from "../../context/AuthContext";
+import Select from "../../components/common/Select";
 
 /* ── Type meta ── */
 const TYPE_META = {
@@ -337,7 +338,7 @@ export default function MyEmergency() {
             <MdHome size={12} /> Select Unit{" "}
             <span style={{ color: "#ef4444" }}>*</span>
           </label>
-          <select
+          <Select
             className="input"
             style={{ height: 44, width: "100%", cursor: "pointer", fontSize: 13 }}
             value={selectedFlatId}
@@ -358,7 +359,7 @@ export default function MyEmergency() {
                 </option>
               );
             })}
-          </select>
+          </Select>
         </div>
       );
     }

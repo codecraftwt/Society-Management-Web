@@ -2,6 +2,7 @@
 
 import { createPortal } from "react-dom";
 import { MdFilterList, MdClose } from "react-icons/md";
+import Select from "./Select";
 
 export default function ReportFilterSheet({
   /* visibility */
@@ -40,7 +41,7 @@ export default function ReportFilterSheet({
         }}>
           {statusLabel}
         </label>
-        <select
+        <Select
           className="input"
           value={statusValue}
           onChange={e => onStatusChange(e.target.value)}
@@ -50,7 +51,7 @@ export default function ReportFilterSheet({
           {statusOptions.map(({ value, label }) => (
             <option key={value} value={value}>{label}</option>
           ))}
-        </select>
+        </Select>
       </div>
 
       {/* Date range */}

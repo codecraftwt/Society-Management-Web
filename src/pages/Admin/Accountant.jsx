@@ -8,6 +8,7 @@ import {
   MdCheck, MdClose, MdAccountBalance, MdPhone,
   MdFilterList, MdApartment, MdDelete
 } from "react-icons/md";
+import Select from "../../components/common/Select";
 
 function SectionLabel({ children }) {
   return (
@@ -281,7 +282,7 @@ export default function Accountant() {
           {isSuperAdmin && (
             <div style={{ display: "flex", alignItems: "center", gap: 8, background: "rgba(255,255,255,0.05)", padding: "4px 10px", borderRadius: 10, border: "1px solid var(--glass-border)" }}>
               <MdFilterList size={16} style={{ color: "var(--text-secondary)" }} />
-              <select
+              <Select
                 style={{ background: "transparent", border: "none", color: "var(--text-primary)", fontSize: 13, outline: "none", cursor: "pointer" }}
                 value={filterSocietyId}
                 onChange={(e) => {
@@ -294,7 +295,7 @@ export default function Accountant() {
                 {societiesList.map(s => (
                   <option key={s.id} value={s.id} style={{ background: "#1e1e2e" }}>{s.name}</option>
                 ))}
-              </select>
+              </Select>
             </div>
           )}
 
@@ -334,7 +335,7 @@ export default function Accountant() {
                     position: "absolute", left: 12, top: "50%",
                     transform: "translateY(-50%)", color: "var(--text-secondary)",
                   }} />
-                  <select
+                  <Select
                     className="input"
                     value={formData.society_id}
                     required
@@ -345,7 +346,7 @@ export default function Accountant() {
                     {societiesList.map(s => (
                       <option key={s.id} value={s.id}>{s.name}</option>
                     ))}
-                  </select>
+                  </Select>
                 </div>
               </div>
             )}

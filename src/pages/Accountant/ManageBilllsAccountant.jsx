@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import API from "../../services/api";
 import { useLang } from "../../context/LanguageContext";
+import Select from "../../components/common/Select";
 
 /* === HELPERS === */
 const getCurrentBillingMonth = () => {
@@ -128,7 +129,7 @@ export default function ManageBillsAccountant() {
               <label className="text-xs text-secondary mb-1 block">
                 {t("billTypeLabel")}
               </label>
-              <select
+              <Select
                 className="input h-12 w-full"
                 value={formData.bill_type}
                 onChange={(e) =>
@@ -137,7 +138,7 @@ export default function ManageBillsAccountant() {
               >
                 <option value="INDIVIDUAL">{t("billTypeIndividual")}</option>
                 <option value="ALL">{t("billTypeAll")}</option>
-              </select>
+              </Select>
             </div>
 
             {/* Flat Selector */}
@@ -146,7 +147,7 @@ export default function ManageBillsAccountant() {
                 <label className="text-xs text-secondary mb-1 block">
                   {t("billSelectFlat")}
                 </label>
-                <select
+                <Select
                   className="input h-12 w-full"
                   value={formData.flat_id}
                   onChange={(e) =>
@@ -161,7 +162,7 @@ export default function ManageBillsAccountant() {
                       {f.User?.name || t("billNoResident")}
                     </option>
                   ))}
-                </select>
+                </Select>
               </div>
             )}
 

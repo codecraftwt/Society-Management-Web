@@ -13,6 +13,7 @@ import {
   MdArrowForward, MdLocalParking, MdWarning,
 } from "react-icons/md";
 import { toast } from "react-toastify";
+import Select from "../../components/common/Select";
 
 /* ─────────────────────────────────────────
    HELPERS
@@ -1025,12 +1026,12 @@ function FlatAssignCard({
       {propType && (
         <div>
           <label style={fieldLabelStyle}>Select Block</label>
-          <select className="input w-full" value={blockId} onChange={(e) => handleBlock(e.target.value)}>
+          <Select className="input w-full" value={blockId} onChange={(e) => handleBlock(e.target.value)}>
             <option value="">— Choose a block —</option>
             {availableBlocks.map((b) => (
               <option key={b.id} value={b.id}>Block {b.name}</option>
             ))}
-          </select>
+          </Select>
         </div>
       )}
 
@@ -1038,12 +1039,12 @@ function FlatAssignCard({
       {isApartment && blockId && (
         <div>
           <label style={fieldLabelStyle}>Select Floor</label>
-          <select className="input w-full" value={floorId} onChange={(e) => handleFloor(e.target.value)}>
+          <Select className="input w-full" value={floorId} onChange={(e) => handleFloor(e.target.value)}>
             <option value="">— Choose a floor —</option>
             {availableFloors.map((f) => (
               <option key={f.id} value={f.id}>Floor {f.number}</option>
             ))}
-          </select>
+          </Select>
         </div>
       )}
 
@@ -1950,20 +1951,20 @@ function EditFlatSection({ allUnassignedFlats, availableSlots, currentFlats, cur
           {propType && (
             <div>
               <label style={fieldLabelStyle}>Select Block</label>
-              <select className="input w-full" value={blockId} onChange={(e) => handleBlock(e.target.value)}>
+              <Select className="input w-full" value={blockId} onChange={(e) => handleBlock(e.target.value)}>
                 <option value="">— Choose a block —</option>
                 {availableBlocks.map((b) => <option key={b.id} value={b.id}>Block {b.name}</option>)}
-              </select>
+              </Select>
             </div>
           )}
 
           {isApartment && blockId && (
             <div>
               <label style={fieldLabelStyle}>Select Floor</label>
-              <select className="input w-full" value={floorId} onChange={(e) => handleFloor(e.target.value)}>
+              <Select className="input w-full" value={floorId} onChange={(e) => handleFloor(e.target.value)}>
                 <option value="">— Choose a floor —</option>
                 {availableFloors.map((f) => <option key={f.id} value={f.id}>Floor {f.number}</option>)}
-              </select>
+              </Select>
             </div>
           )}
 
@@ -2491,7 +2492,7 @@ export default function Resident() {
             {/* Society (Super Admin Only) */}
             {isSuperAdmin && (
               <Field label="Society" required>
-                <select
+                <Select
                   className="input w-full"
                   value={formSocietyId}
                   onChange={(e) => setFormSocietyId(e.target.value)}
@@ -2502,7 +2503,7 @@ export default function Resident() {
                   {societiesList.map((s) => (
                     <option key={s.id} value={s.id}>{s.name}</option>
                   ))}
-                </select>
+                </Select>
                 {editingId && (
                   <p style={{ fontSize: 10, color: "var(--text-secondary)", marginTop: 4 }}>
                     Society cannot be changed after creation.
@@ -2655,30 +2656,30 @@ export default function Resident() {
         {/* Cascading Filter Bar */}
         <div style={{ display: "flex", gap: 10, padding: "16px 20px", borderBottom: "1px solid var(--divider)", flexWrap: "wrap", background: "rgba(0,0,0,0.02)" }}>
           {isSuperAdmin && (
-            <select className="input" style={{ flex: 1, minWidth: 140, padding: "8px 12px" }}
+            <Select className="input" style={{ flex: 1, minWidth: 140, padding: "8px 12px" }}
               value={filterSocietyId} onChange={(e) => setFilterSocietyId(e.target.value)}>
               <option value="">{t("allSocieties") || "All Societies"}</option>
               {societiesList.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-            </select>
+            </Select>
           )}
-          <select className="input" style={{ flex: 1, minWidth: 140, padding: "8px 12px" }}
+          <Select className="input" style={{ flex: 1, minWidth: 140, padding: "8px 12px" }}
             value={filterBlockId} onChange={(e) => { setFilterBlockId(e.target.value); setFilterFloorId(""); setFilterFlatId(""); }}
             disabled={!blocksList.length}>
             <option value="">{t("allBlocks") || "All Blocks"}</option>
             {blocksList.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
-          </select>
-          <select className="input" style={{ flex: 1, minWidth: 140, padding: "8px 12px" }}
+          </Select>
+          <Select className="input" style={{ flex: 1, minWidth: 140, padding: "8px 12px" }}
             value={filterFloorId} onChange={(e) => { setFilterFloorId(e.target.value); setFilterFlatId(""); }}
             disabled={!filterBlockId || !floorsList.length}>
             <option value="">{t("allFloors") || "All Floors"}</option>
             {floorsList.map(f => <option key={f.id} value={f.id}>Floor {f.number}</option>)}
-          </select>
-          <select className="input" style={{ flex: 1, minWidth: 140, padding: "8px 12px" }}
+          </Select>
+          <Select className="input" style={{ flex: 1, minWidth: 140, padding: "8px 12px" }}
             value={filterFlatId} onChange={(e) => setFilterFlatId(e.target.value)}
             disabled={!filterBlockId || !flatsList.length}>
             <option value="">{t("allUnits") || "All Units"}</option>
             {flatsList.map(f => <option key={f.id} value={f.id}>{f.flat_number}</option>)}
-          </select>
+          </Select>
           <button onClick={() => loadResidents(1, search)} className="btn-primary" style={{ padding: "8px 16px", borderRadius: 8 }}>
             {t("reportApply") || "Apply Filter"}
           </button>

@@ -11,6 +11,7 @@ import ThemeToggle from "../../components/common/ThemeToggle";
 import LanguageSelector from "../../components/common/LanguageSelector";
 import { LanguageProvider, useLang } from "../../context/LanguageContext";
 import API from "../../services/api"; // Added API import
+import Select from "../../components/common/Select";
 
 function SuperAdminLayoutInner() {
   const location = useLocation();
@@ -109,7 +110,7 @@ function SuperAdminLayoutInner() {
 
           <div className="flex items-center gap-3">
             {/* --- NEW: Global Society Filter Dropdown --- */}
-            <select
+            <Select
               value={selectedSocietyId}
               onChange={handleSocietyChange}
               style={{
@@ -131,7 +132,7 @@ function SuperAdminLayoutInner() {
                   {soc.name}
                 </option>
               ))}
-            </select>
+            </Select>
 
             <ThemeToggle />
             <LanguageSelector compact />

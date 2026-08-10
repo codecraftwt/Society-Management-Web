@@ -6,6 +6,7 @@ import { useLang } from "../../context/LanguageContext";
 import { MdAdd } from "react-icons/md";
 import Modal from "../../components/Modal";
 import { toast } from "react-toastify";
+import Select from "../../components/common/Select";
 
 /* For table display (same as GuestEntry list view) */
 function resolveFlatLabel(flat) {
@@ -230,7 +231,7 @@ export default function CabEntry() {
       >
         <form onSubmit={handleSubmit} className="space-y-3">
 
-          <select
+          <Select
             className="input"
             required
             value={form.aggregator}
@@ -241,7 +242,7 @@ export default function CabEntry() {
             <option>Ola</option>
             <option>BluSmart</option>
             <option>{t("cabOther")}</option>
-          </select>
+          </Select>
 
           <input
             placeholder={t("cabFieldDriver")}
@@ -268,7 +269,7 @@ export default function CabEntry() {
           />
 
           {/* ✅ SAME DROPDOWN FORMAT AS GuestEntry / ManageBills */}
-          <select
+          <Select
             className="input"
             required
             value={form.flat_id}
@@ -284,7 +285,7 @@ export default function CabEntry() {
                 ) – {flat.User?.name || t("billNoResident")}
               </option>
             ))}
-          </select>
+          </Select>
 
           <button type="submit" className="btn-primary w-full">
             {t("geSaveEntry")}

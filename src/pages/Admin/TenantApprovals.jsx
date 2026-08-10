@@ -8,6 +8,7 @@ import {
   MdPerson, MdHome, MdCalendarToday, MdDirectionsCar,
   MdGroup, MdRefresh, MdVisibility
 } from "react-icons/md";
+import Select from "../../components/common/Select";
 
 /* ─────────────────────────────────────────────
    HELPERS
@@ -740,7 +741,7 @@ function FilterSelect({ icon, value, onChange, options }) {
   return (
     <div className="relative flex items-center">
       <span className="absolute left-3 text-white/30 pointer-events-none">{icon}</span>
-      <select
+      <Select
         value={value}
         onChange={e => onChange(e.target.value)}
         style={{
@@ -756,7 +757,7 @@ function FilterSelect({ icon, value, onChange, options }) {
         {options.map(o => (
           <option key={o.value} value={o.value} style={{ background: "#1a1a2e" }}>{o.label}</option>
         ))}
-      </select>
+      </Select>
       <span className="absolute right-2 text-white/20 pointer-events-none text-[10px]">▾</span>
     </div>
   );

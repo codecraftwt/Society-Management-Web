@@ -8,6 +8,7 @@ import {
   MdSecurity, MdSchedule, MdCalendarToday,
   MdWbSunny, MdNightsStay, MdBrightness5, MdEdit,
 } from "react-icons/md";
+import Select from "../../components/common/Select";
 
 function useIsMobile() {
   const [m, setM] = useState(() => typeof window !== "undefined" && window.innerWidth < 768);
@@ -248,7 +249,7 @@ export default function Guard() {
               {isSuperAdmin && (
                 <div>
                   <SectionLabel>Society</SectionLabel>
-                  <select
+                  <Select
                     className="input"
                     value={formData.society_id}
                     onChange={e => setFormData({ ...formData, society_id: e.target.value })}
@@ -259,7 +260,7 @@ export default function Guard() {
                     {societiesList.map(s => (
                       <option key={s.id} value={s.id}>{s.name}</option>
                     ))}
-                  </select>
+                  </Select>
                 </div>
               )}
               <div>
@@ -372,11 +373,11 @@ export default function Guard() {
 
             {isSuperAdmin && (
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <select className="input" style={{ width: 160, height: 36, fontSize: 12 }}
+                <Select className="input" style={{ width: 160, height: 36, fontSize: 12 }}
                   value={filterSocietyId} onChange={(e) => setFilterSocietyId(e.target.value)}>
                   <option value="">— All Societies —</option>
                   {societiesList.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                </select>
+                </Select>
                 <span style={{ fontSize: 11, color: "var(--text-secondary)", fontStyle: "italic" }}>
                   Filter by society
                 </span>
@@ -608,7 +609,7 @@ export default function Guard() {
             <form onSubmit={handleShiftSubmit} style={{ display: "flex", flexDirection: "column", gap: 13 }}>
               <div>
                 <SectionLabel>{t("guardShiftType")}</SectionLabel>
-                <select
+                <Select
                   className="input"
                   required
                   value={shiftForm.shift_type}
@@ -619,7 +620,7 @@ export default function Guard() {
                   <option value="MORNING">🌅 {t("guardShiftMorning")}</option>
                   <option value="AFTERNOON">☀️ {t("guardShiftAfternoon")}</option>
                   <option value="NIGHT">🌙 {t("guardShiftNight")}</option>
-                </select>
+                </Select>
               </div>
               <div>
                 <SectionLabel>{t("guardStartDate")}</SectionLabel>

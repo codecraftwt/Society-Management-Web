@@ -5,6 +5,7 @@ import { useLang } from "../../context/LanguageContext";
 import { MdAdd } from "react-icons/md";
 import Modal from "../../components/Modal";
 import { toast } from "react-toastify";
+import Select from "../../components/common/Select";
 
 /* For table display (same style as GuestEntry list view) */
 function resolveFlatLabel(flat) {
@@ -233,7 +234,7 @@ export default function DeliveryEntry() {
           />
 
           {/* ✅ SAME DROPDOWN FORMAT AS GuestEntry / ManageBills */}
-          <select
+          <Select
             className="input"
             required
             value={form.flat_id}
@@ -249,7 +250,7 @@ export default function DeliveryEntry() {
                 ) – {flat.User?.name || t("billNoResident")}
               </option>
             ))}
-          </select>
+          </Select>
 
           <button type="submit" className="btn-primary w-full">
             {t("geSaveEntry")}

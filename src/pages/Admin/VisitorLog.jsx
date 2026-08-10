@@ -8,6 +8,7 @@ import {
 import API from "../../services/api";
 import { useLang } from "../../context/LanguageContext";
 import { AuthContext } from "../../context/AuthContext";
+import Select from "../../components/common/Select";
 
 /* ── Debounce ── */
 function useDebounce(value, delay = 500) {
@@ -296,30 +297,30 @@ export default function VisitorLog() {
             </div>
             
             {isSuperAdmin && (
-              <select className="input h-9 text-xs min-w-30 bg-white/5 border-white/10"
+              <Select className="input h-9 text-xs min-w-30 bg-white/5 border-white/10"
                 value={filterSocietyId} onChange={e => setFilterSocietyId(e.target.value)}>
                 <option value="">{t("allSocieties")}</option>
                 {societiesList.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-              </select>
+              </Select>
             )}
 
-            <select className="input h-9 text-xs min-w-25 bg-white/5 border-white/10"
+            <Select className="input h-9 text-xs min-w-25 bg-white/5 border-white/10"
               value={filterBlockId} onChange={e => setFilterBlockId(e.target.value)}>
               <option value="">{t("allBlocks")}</option>
               {blocks.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
-            </select>
+            </Select>
 
-            <select className="input h-9 text-xs min-w-25 bg-white/5 border-white/10"
+            <Select className="input h-9 text-xs min-w-25 bg-white/5 border-white/10"
               value={filterFloorId} onChange={e => setFilterFloorId(e.target.value)} disabled={!filterBlockId}>
               <option value="">{t("allFloors")}</option>
               {floors.map(f => <option key={f.id} value={f.id}>{f.floor_number}</option>)}
-            </select>
+            </Select>
 
-            <select className="input h-9 text-xs min-w-25 bg-white/5 border-white/10"
+            <Select className="input h-9 text-xs min-w-25 bg-white/5 border-white/10"
               value={filterFlatId} onChange={e => setFilterFlatId(e.target.value)} disabled={!filterFloorId}>
               <option value="">{t("allFlats")}</option>
               {flats.map(f => <option key={f.id} value={f.id}>{f.flat_number}</option>)}
-            </select>
+            </Select>
           </div>
         </div>
 

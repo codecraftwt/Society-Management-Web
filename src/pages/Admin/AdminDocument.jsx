@@ -14,6 +14,7 @@ import {
 } from "react-icons/md";
 import API from "../../services/api";
 import { BASE_URL } from "../../config/apiConfig";
+import Select from "../../components/common/Select";
 
 
 /* ── Constants ── */
@@ -348,10 +349,10 @@ const handleDelete = async () => {
               </div>
               <div className="ad-field">
                 <label className="ad-label">{t("adDocFieldCategory")} <span className="ad-req">*</span></label>
-                <select className="input" value={form.category}
+                <Select className="input" value={form.category}
                   onChange={e => setForm({ ...form, category: e.target.value })}>
                   {FORM_CATS.map(c => <option key={c} value={c}>{catLabel(c)}</option>)}
-                </select>
+                </Select>
               </div>
             </div>
 

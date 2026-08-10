@@ -12,6 +12,7 @@ import {
 } from "react-icons/md";
 import { BiSolidEdit } from "react-icons/bi";
 import { FaBuilding, FaUserShield } from "react-icons/fa";
+import Select from "../../components/common/Select";
 
 const DEFAULT_PASSWORD = "Admin@123";
 
@@ -183,12 +184,12 @@ export default function SuperAdminDashboard() {
             {/* ✅ NEW PROPERTY TYPE DROPDOWN */}
             <div className="sa-input-group">
               <label className="sa-label">Property Type</label>
-              <select className="input" value={propertyType} onChange={(e) => setPropertyType(e.target.value)}>
+              <Select className="input" value={propertyType} onChange={(e) => setPropertyType(e.target.value)}>
                 <option value="Apartments">Apartments / Flats</option>
                 <option value="Row Houses">Row Houses / Villas</option>
                 <option value="Mixed">Mixed (Flats & Villas)</option>
                 <option value="Commercial">Commercial Complex</option>
-              </select>
+              </Select>
             </div>
             <button onClick={addSociety} disabled={addLoading || !name || !address} className="sa-create-btn" style={{ height: "42px" }}>
               {addLoading ? <span className="sa-spinner" /> : <MdAdd size={18} />}

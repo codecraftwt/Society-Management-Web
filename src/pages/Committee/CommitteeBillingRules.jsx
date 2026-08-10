@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import API from "../../services/api";
 import { MdAccountBalance, MdAdd, MdEdit, MdDelete } from "react-icons/md";
+import Select from "../../components/common/Select";
 
 export default function CommitteeBillingRules() {
   const [rules, setRules] = useState([]);
@@ -64,9 +65,9 @@ export default function CommitteeBillingRules() {
             </div>
             <div className="comm-field">
               <label className="comm-label">Frequency</label>
-              <select className="comm-input" value={form.frequency} onChange={e => setForm(p => ({ ...p, frequency: e.target.value }))}>
+              <Select className="comm-input" value={form.frequency} onChange={e => setForm(p => ({ ...p, frequency: e.target.value }))}>
                 {["MONTHLY", "QUARTERLY", "YEARLY", "ONE_TIME"].map(f => <option key={f} value={f}>{f}</option>)}
-              </select>
+              </Select>
             </div>
             <div className="comm-field comm-field--full">
               <label className="comm-label">Description</label>

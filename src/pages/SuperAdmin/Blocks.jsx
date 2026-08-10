@@ -5,6 +5,7 @@ import { useLang } from "../../context/LanguageContext";
 import API from "../../services/api";
 import { MdDelete, MdLayers, MdHomeWork } from "react-icons/md";
 import { FaBuilding } from "react-icons/fa";
+import Select from "../../components/common/Select";
 
 export default function Blocks() {
   const { societyId } = useParams();
@@ -83,11 +84,11 @@ export default function Blocks() {
               onChange={e => setFlatsPerFloor(e.target.value)} className="input h-12" />
             
             {/* ✅ DROPDOWN MOVED HERE */}
-            <select className="input h-12" value={propertyType} onChange={e => setPropertyType(e.target.value)}>
+            <Select className="input h-12" value={propertyType} onChange={e => setPropertyType(e.target.value)}>
               <option value="Apartments">Apartments / Flats</option>
               <option value="Row Houses">Row Houses / Villas</option>
               <option value="Commercial">Commercial Complex</option>
-            </select>
+            </Select>
 
             <button type="submit" className="btn-primary h-12">{t("blkCreateBtn") || "Create"}</button>
           </form>

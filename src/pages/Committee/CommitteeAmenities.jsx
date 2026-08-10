@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import API from "../../services/api";
 import { MdBookOnline, MdAdd, MdDelete, MdClose } from "react-icons/md";
+import Select from "../../components/common/Select";
 
 // ── Reusable helper ──
 const toArray = (data) => {
@@ -82,16 +83,16 @@ export default function CommitteeAmenities() {
             </div>
             <div className="comm-field">
               <label className="comm-label">Type</label>
-              <select className="comm-input" value={form.type} onChange={e => setForm(p => ({ ...p, type: e.target.value }))}>
+              <Select className="comm-input" value={form.type} onChange={e => setForm(p => ({ ...p, type: e.target.value }))}>
                 {TYPES.map(t => <option key={t} value={t}>{t.replace("_", " ")}</option>)}
-              </select>
+              </Select>
             </div>
             <div className="comm-field">
               <label className="comm-label">Paid Amenity?</label>
-              <select className="comm-input" value={form.isPaid ? "yes" : "no"} onChange={e => setForm(p => ({ ...p, isPaid: e.target.value === "yes" }))}>
+              <Select className="comm-input" value={form.isPaid ? "yes" : "no"} onChange={e => setForm(p => ({ ...p, isPaid: e.target.value === "yes" }))}>
                 <option value="no">Free</option>
                 <option value="yes">Paid</option>
-              </select>
+              </Select>
             </div>
             {form.isPaid && (
               <div className="comm-field">

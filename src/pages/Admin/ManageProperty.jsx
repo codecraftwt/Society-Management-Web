@@ -8,6 +8,7 @@ import {
   MdChevronLeft, MdChevronRight, MdOutlineInbox,
   MdGridView, MdArrowForwardIos, MdLayers, MdHomeWork
 } from "react-icons/md";
+import Select from "../../components/common/Select";
 
 /* ── helpers ── */
 function Spinner({ size = 16 }) {
@@ -260,7 +261,7 @@ function BlocksTab({ isMobile, t }) {
 
             <div>
               <label style={{ fontSize: 11, fontWeight: 600, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.06em", display: "block", marginBottom: 5 }}>Type</label>
-              <select
+              <Select
                 className="input"
                 value={propertyType}
                 onChange={e => {
@@ -272,7 +273,7 @@ function BlocksTab({ isMobile, t }) {
                 <option value="APARTMENT">Apartments / Flats</option>
                 <option value="ROW_HOUSE">Row House / Villas</option>
                 <option value="COMMERCIAL">Commercial</option>
-              </select>
+              </Select>
             </div>
 
             {propertyType === "ROW_HOUSE" ? (
@@ -950,20 +951,20 @@ function AssignTab({ isMobile, t }) {
             <div style={{ display: isMobile ? "flex" : "grid", flexDirection: isMobile ? "column" : undefined, gridTemplateColumns: "1fr 1fr", gap: 10 }}>
               <div>
                 <label style={{ fontSize: 11, fontWeight: 600, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.06em", display: "block", marginBottom: 5 }}>Select Unit</label>
-                <select className="input" style={{ height: 40 }} value={flatId} onChange={e => setFlatId(e.target.value)} required>
+                <Select className="input" style={{ height: 40 }} value={flatId} onChange={e => setFlatId(e.target.value)} required>
                   <option value="">Choose Unit...</option>
                   {filteredDropdown.map(f => {
                     const blockName = f.Block?.name || (f.Floor ? f.Floor.Block?.name : "Unknown");
                     return <option key={f.id} value={f.id}>{f.flat_number} (Blk {blockName})</option>;
                   })}
-                </select>
+                </Select>
               </div>
               <div>
                 <label style={{ fontSize: 11, fontWeight: 600, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.06em", display: "block", marginBottom: 5 }}>{t("mpSelectResident") || "Select Resident"}</label>
-                <select className="input" style={{ height: 40 }} value={residentId} onChange={e => setResidentId(e.target.value)} required>
+                <Select className="input" style={{ height: 40 }} value={residentId} onChange={e => setResidentId(e.target.value)} required>
                   <option value="">{t("mpChooseResident") || "Choose Resident..."}</option>
                   {residents.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
-                </select>
+                </Select>
               </div>
             </div>
             <div style={{ display: "flex", gap: 8, paddingTop: 4 }}>

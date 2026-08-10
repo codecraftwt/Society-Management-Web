@@ -9,6 +9,7 @@ import {
   MdDirectionsCar,
 } from "react-icons/md";
 import { FaParking } from "react-icons/fa";
+import Select from "../../components/common/Select";
 
 function Spinner({ size = 16 }) {
   return (
@@ -615,12 +616,12 @@ export default function MyVehicles() {
                   <label style={{ fontSize:12, fontWeight:700, color:"var(--text-secondary)", textTransform:"uppercase", letterSpacing:"0.05em" }}>
                     {t("vehSelectType")}
                   </label>
-                  <select className="input w-full mt-1" required value={form.vehicle_type}
+                  <Select className="input w-full mt-1" required value={form.vehicle_type}
                     onChange={e => setForm({ ...form, vehicle_type: e.target.value, flat_id: myFlats.length === 1 ? String(myFlats[0].id) : "" })}>
                     <option value="">{t("vehSelectType")}</option>
                     <option value="CAR">{t("vehTypeCar")} 🚗</option>
                     <option value="BIKE">{t("vehTypeBike")} 🏍️</option>
-                  </select>
+                  </Select>
                 </div>
 
                 {/* Multi-flat selector */}

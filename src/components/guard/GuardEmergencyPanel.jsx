@@ -1,6 +1,7 @@
 import { useState } from "react";
 import API from "../../services/api";
 import { toast } from "react-toastify";
+import Select from "../common/Select";
 
 export default function GuardEmergencyPanel({ onSent }) {
   const [type, setType] = useState("FIRE");
@@ -45,7 +46,7 @@ export default function GuardEmergencyPanel({ onSent }) {
       </h2>
 
       {/* TYPE SELECT */}
-      <select
+      <Select
         className="input"
         value={type}
         onChange={(e) => setType(e.target.value)}
@@ -54,7 +55,7 @@ export default function GuardEmergencyPanel({ onSent }) {
         <option value="MEDICAL">Medical</option>
         <option value="SECURITY">Security</option>
         <option value="OTHER">Other</option>
-      </select>
+      </Select>
 
       {/* DESCRIPTION */}
       <textarea

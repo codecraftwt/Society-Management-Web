@@ -12,6 +12,7 @@ import {
   MdChat, MdSend, MdReportProblem, MdImage, MdOpenInNew,
   MdCheckCircle, MdSchedule, MdPending,
 } from "react-icons/md";
+import Select from "../../components/common/Select";
 
 function useDebounce(value, delay = 500) {
   const [debounced, setDebounced] = useState(value);
@@ -1434,7 +1435,7 @@ export default function ResidentComplaints() {
                     }}>
                       Select Unit <span style={{ color: "var(--stat-red-color)" }}>*</span>
                     </label>
-                    <select
+                    <Select
                       className="input"
                       style={{ height: "46px", width: "100%", cursor: "pointer" }}
                       value={selectedFlatId}
@@ -1460,7 +1461,7 @@ export default function ResidentComplaints() {
                           </option>
                         );
                       })}
-                    </select>
+                    </Select>
                   </div>
                 )}
 

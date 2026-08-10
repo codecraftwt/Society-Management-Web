@@ -8,6 +8,7 @@ import {
   MdCheckCircle, MdSchedule,
   MdChevronLeft, MdChevronRight,
 } from "react-icons/md";
+import Select from "../../components/common/Select";
 
 /* ── helpers ── */
 const getCurrentBillingMonth = () => {
@@ -295,11 +296,11 @@ export default function ManageBills() {
         <div style={{ marginBottom: 20, display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10, background: "var(--card-inner-bg)", padding: "4px 12px", borderRadius: 12, border: "1px solid var(--glass-border)" }}>
             <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase" }}>Society Filter</span>
-            <select className="input" style={{ width: 220, border: "none", background: "none", fontWeight: 700, color: "var(--accent)" }}
+            <Select className="input" style={{ width: 220, border: "none", background: "none", fontWeight: 700, color: "var(--accent)" }}
               value={filterSocietyId} onChange={(e) => setFilterSocietyId(e.target.value)}>
               <option value="">🌍 All Societies</option>
               {societiesList.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-            </select>
+            </Select>
           </div>
           {!filterSocietyId && (
             <span style={{ fontSize: 11, color: "var(--stat-purple-color)", fontWeight: 600, background: "var(--card-inner-bg)", padding: "6px 12px", borderRadius: 10 }}>
@@ -340,27 +341,27 @@ export default function ManageBills() {
             {isSuperAdmin && !filterSocietyId && (
               <div>
                 <Label>Target Society</Label>
-                <select className="input h-11 w-full" required
+                <Select className="input h-11 w-full" required
                   value={formSocietyId}
                   onChange={e => handleFormSocietyChange(e.target.value)}>
                   <option value="">Choose Society</option>
                   {societiesList.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                </select>
+                </Select>
               </div>
             )}
             <div>
               <Label>{t("billTypeLabel")}</Label>
-              <select className="input h-11 w-full"
+              <Select className="input h-11 w-full"
                 value={formData.bill_type}
                 onChange={e => setFormData({ ...formData, bill_type: e.target.value, flat_id: "" })}>
                 <option value="INDIVIDUAL">{t("billTypeIndividual")}</option>
                 <option value="ALL">{t("billTypeAll")}</option>
-              </select>
+              </Select>
             </div>
             {formData.bill_type === "INDIVIDUAL" && (
               <div className={isMobile ? "" : (isSuperAdmin && !filterSocietyId) ? "" : "lg:col-span-2"}>
                 <Label>{t("billSelectFlat")}</Label>
-                <select className="input h-11 w-full" required
+                <Select className="input h-11 w-full" required
                   value={formData.flat_id}
                   onChange={e => setFormData({ ...formData, flat_id: e.target.value })}>
                   <option value="">{t("billChooseFlat")}</option>
@@ -369,7 +370,7 @@ export default function ManageBills() {
                       {f.flat_number} ({f.Block?.name}) – {f.User?.name || t("billNoResident")}
                     </option>
                   ))}
-                </select>
+                </Select>
               </div>
             )}
             <div>

@@ -12,6 +12,7 @@ import {
   MdBusiness
 } from "react-icons/md";
 import { FaParking } from "react-icons/fa";
+import Select from "../../components/common/Select";
 
 /* ── Debounce hook ── */
 function useDebounce(value, delay = 500) {
@@ -345,7 +346,7 @@ function ResidentEntryPanel({ slots, onCreated, t, societyId }) {
                         <div className="relative">
                           <MdLocalParking size={14}
                             className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-secondary" />
-                          <select
+                          <Select
                             className="input h-10 w-full text-sm font-semibold"
                             style={{ paddingLeft: 32 }}
                             value={chosenSlot}
@@ -357,7 +358,7 @@ function ResidentEntryPanel({ slots, onCreated, t, societyId }) {
                                 {s.slot_number}{s.parking_floor ? ` · Level ${s.parking_floor}` : ""}
                               </option>
                             ))}
-                          </select>
+                          </Select>
                         </div>
                       </div>
 
@@ -594,7 +595,7 @@ function ResidentRequestsPanel({ allSlots, onSlotAssigned, societyId }) {
                       style={{ background: "var(--card-inner-bg,rgba(0,0,0,0.04))", border: "1px solid var(--glass-border)" }}>
                       <div>
                         <label className="text-xs font-bold uppercase mb-1.5 block text-secondary">Assign a Free {req.vehicle_type} Slot</label>
-                        <select className="input h-10 w-full text-sm font-semibold"
+                        <Select className="input h-10 w-full text-sm font-semibold"
                           value={selectedSlot[req.id] || ""}
                           onChange={e => setSelectedSlot(prev => ({ ...prev, [req.id]: e.target.value }))}
                           disabled={availSlots.length === 0}>
@@ -602,7 +603,7 @@ function ResidentRequestsPanel({ allSlots, onSlotAssigned, societyId }) {
                           {availSlots.map(s => (
                             <option key={s.id} value={s.slot_number}>{s.slot_number}</option>
                           ))}
-                        </select>
+                        </Select>
                       </div>
                       <div className="flex gap-2">
                         <button onClick={() => handleAssign(req.id)}
@@ -813,7 +814,7 @@ export default function SuperAdminParking() {
           {/* Sectional Society Filter */}
           <div className="relative min-w-48">
             <MdBusiness size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-secondary pointer-events-none" />
-            <select
+            <Select
               className="input h-10 w-full pl-9 pr-8 text-xs font-bold appearance-none bg-card"
               value={selectedSocietyId}
               onChange={handleSocietyChange}
@@ -822,7 +823,7 @@ export default function SuperAdminParking() {
               {societies.map(s => (
                 <option key={s.id} value={s.id}>{s.name}</option>
               ))}
-            </select>
+            </Select>
             <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-secondary">
               <svg width="10" height="6" viewBox="0 0 10 6" fill="none"><path d="M1 1L5 5L9 1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
             </div>
@@ -931,10 +932,10 @@ export default function SuperAdminParking() {
                   </div>
                   <div>
                     <label className="text-xs text-secondary mb-1.5 block">Type</label>
-                    <select className="input h-11 w-full" value={form.vehicle_type} onChange={e => setForm({ ...form, vehicle_type: e.target.value })}>
+                    <Select className="input h-11 w-full" value={form.vehicle_type} onChange={e => setForm({ ...form, vehicle_type: e.target.value })}>
                       <option value="CAR">Car</option>
                       <option value="BIKE">Bike</option>
-                    </select>
+                    </Select>
                   </div>
                 </div>
                 <div className="flex justify-end mt-4">

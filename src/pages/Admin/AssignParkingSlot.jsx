@@ -11,6 +11,7 @@ import {
   MdPendingActions, MdDone, MdRefresh,
 } from "react-icons/md";
 import { FaParking } from "react-icons/fa";
+import Select from "../../components/common/Select";
 
 /* ── Debounce hook ── */
 function useDebounce(value, delay = 500) {
@@ -353,7 +354,7 @@ function ResidentEntryPanel({ slots, onCreated, t }) {
                           <MdLocalParking size={14}
                             className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"
                             style={{ color: "var(--text-secondary)" }} />
-                          <select
+                          <Select
                             className="input h-10 w-full"
                             style={{ paddingLeft: 32, fontSize: 13, fontWeight: 600 }}
                             value={chosenSlot}
@@ -365,7 +366,7 @@ function ResidentEntryPanel({ slots, onCreated, t }) {
                                 {s.slot_number}{s.parking_floor ? ` · Level ${s.parking_floor}` : ""}
                               </option>
                             ))}
-                          </select>
+                          </Select>
                         </div>
                       </div>
 
@@ -659,7 +660,7 @@ function ResidentRequestsPanel({ allSlots, onSlotAssigned }) {
                         </label>
                         <div className="relative">
                           <MdLocalParking size={14} className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-secondary" />
-                          <select className="input h-10 w-full" style={{ paddingLeft: 32, fontSize: 13, fontWeight: 600 }}
+                          <Select className="input h-10 w-full" style={{ paddingLeft: 32, fontSize: 13, fontWeight: 600 }}
                             value={selectedSlot[req.id] || ""}
                             onChange={e => setSelectedSlot(prev => ({ ...prev, [req.id]: e.target.value }))}
                             disabled={availSlots.length === 0}>
@@ -669,7 +670,7 @@ function ResidentRequestsPanel({ allSlots, onSlotAssigned }) {
                                 {s.slot_number}{s.parking_floor ? ` · Level ${s.parking_floor}` : ""}
                               </option>
                             ))}
-                          </select>
+                          </Select>
                         </div>
                       </div>
 
@@ -988,10 +989,10 @@ export default function AssignParkingSlot() {
                   </div>
                   <div>
                     <label className="text-xs text-secondary mb-1.5 block">{t("parkVehicleType") || "Vehicle Type"}</label>
-                    <select className="input h-11 w-full" value={form.vehicle_type} onChange={e => setForm({ ...form, vehicle_type: e.target.value })}>
+                    <Select className="input h-11 w-full" value={form.vehicle_type} onChange={e => setForm({ ...form, vehicle_type: e.target.value })}>
                       <option value="CAR">{t("parkCar") || "Car"}</option>
                       <option value="BIKE">{t("parkBike") || "Bike"}</option>
-                    </select>
+                    </Select>
                   </div>
                 </div>
                 <div className="flex justify-end mt-4">

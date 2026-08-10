@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useLang } from "../../context/LanguageContext"; // ← NEW
 import API from "../../services/api";
+import Select from "../../components/common/Select";
 
 export default function CreateSocietyAdmin() {
   const { t }    = useLang(); // ← NEW
@@ -34,12 +35,12 @@ export default function CreateSocietyAdmin() {
           onChange={e => setForm({ ...form, email: e.target.value })} />
         <input placeholder={t("csaPassword")} type="password"
           onChange={e => setForm({ ...form, password: e.target.value })} />
-        <select onChange={e => setForm({ ...form, society_id: e.target.value })}>
+        <Select onChange={e => setForm({ ...form, society_id: e.target.value })}>
           <option>{t("csaSelectSociety")}</option>
           {societies.map(s => (
             <option key={s.id} value={s.id}>{s.name}</option>
           ))}
-        </select>
+        </Select>
         <button>{t("csaCreateBtn")}</button>
       </form>
       <button onClick={() => navigate(-1)}>{t("socBack")}</button>

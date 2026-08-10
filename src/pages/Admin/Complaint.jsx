@@ -12,6 +12,7 @@ import {
   MdChat, MdSend, MdDelete,
   MdChevronLeft, MdChevronRight,
 } from "react-icons/md";
+import Select from "../../components/common/Select";
 
 /* ── Pagination ── */
 function Pagination({ page, totalPages, onPageChange }) {
@@ -1067,32 +1068,32 @@ export default function Complaint() {
 
             <div style={{ display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center" }}>
               {isSuperAdmin && (
-                <select className="input" style={{ width: 160, height: 36, fontSize: 12 }}
+                <Select className="input" style={{ width: 160, height: 36, fontSize: 12 }}
                   value={filterSocietyId} onChange={(e) => setFilterSocietyId(e.target.value)}>
                   <option value="">— {t("allSocieties") || "All Societies"} —</option>
                   {societiesList.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                </select>
+                </Select>
               )}
               
-              <select className="input" style={{ width: 140, height: 36, fontSize: 12 }}
+              <Select className="input" style={{ width: 140, height: 36, fontSize: 12 }}
                 value={filterBlockId} onChange={(e) => setFilterBlockId(e.target.value)}>
                 <option value="">— {t("allBlocks") || "All Blocks"} —</option>
                 {blocksList.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
-              </select>
+              </Select>
 
-              <select className="input" style={{ width: 140, height: 36, fontSize: 12 }}
+              <Select className="input" style={{ width: 140, height: 36, fontSize: 12 }}
                 disabled={!filterBlockId}
                 value={filterFloorId} onChange={(e) => setFilterFloorId(e.target.value)}>
                 <option value="">— {t("allFloors") || "All Floors"} —</option>
                 {floorsList.map(f => <option key={f.id} value={f.id}>{f.floor_number}</option>)}
-              </select>
+              </Select>
 
-              <select className="input" style={{ width: 140, height: 36, fontSize: 12 }}
+              <Select className="input" style={{ width: 140, height: 36, fontSize: 12 }}
                 disabled={!filterBlockId}
                 value={filterFlatId} onChange={(e) => setFilterFlatId(e.target.value)}>
                 <option value="">— {t("allFlats") || "All Flats"} —</option>
                 {flatsList.map(f => <option key={f.id} value={f.id}>{f.flat_number}</option>)}
-              </select>
+              </Select>
             </div>
 
             {isSuperAdmin && !filterSocietyId && (

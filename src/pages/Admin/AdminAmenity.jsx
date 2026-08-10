@@ -9,6 +9,7 @@ import {
   MdGridView, MdCalendarMonth, MdWarning, MdBlock,
   MdPayment,
 } from "react-icons/md";
+import Select from "../../components/common/Select";
 
 function Spinner({ cls = "h-4 w-4" }) {
   return (
@@ -406,8 +407,8 @@ export default function AdminAmenity() {
               </div>
               <div style={{ display:"grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap:12 }}>
                 <div><Label>{t("amenFieldName")}</Label><input style={inputStyle} placeholder={t("amenFieldNamePlaceholder")} value={form.name} onChange={e=>setForm({...form,name:e.target.value})}/></div>
-                <div><Label>{t("amenFieldBookingType")}</Label><select style={inputStyle} value={form.booking_type} onChange={e=>setForm({...form,booking_type:e.target.value})}><option value="SLOT">{t("amenSlotBased")}</option><option value="FULL_DAY">{t("amenFullDay")}</option></select></div>
-                <div><Label>{t("amenFieldPricing")}</Label><select style={inputStyle} value={form.type} onChange={e=>setForm({...form,type:e.target.value})}><option value="FREE">{t("amenFreeAccess")}</option><option value="PAID">{t("amenPaid")}</option></select></div>
+                <div><Label>{t("amenFieldBookingType")}</Label><Select style={inputStyle} value={form.booking_type} onChange={e=>setForm({...form,booking_type:e.target.value})}><option value="SLOT">{t("amenSlotBased")}</option><option value="FULL_DAY">{t("amenFullDay")}</option></Select></div>
+                <div><Label>{t("amenFieldPricing")}</Label><Select style={inputStyle} value={form.type} onChange={e=>setForm({...form,type:e.target.value})}><option value="FREE">{t("amenFreeAccess")}</option><option value="PAID">{t("amenPaid")}</option></Select></div>
                 {form.type==="PAID" && <div><Label>{t("amenFieldRate")}</Label><input type="number" style={inputStyle} placeholder="0" value={form.rate_per_hour} onChange={e=>setForm({...form,rate_per_hour:e.target.value})}/></div>}
                 <div><Label>{t("amenFieldCapacity")}</Label><input type="number" style={inputStyle} placeholder="1" value={form.capacity} onChange={e=>setForm({...form,capacity:e.target.value})}/></div>
                 {form.booking_type==="SLOT" && <>

@@ -1,6 +1,7 @@
 import { useContext, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
+import Select from "./common/Select";
 
 
 
@@ -53,7 +54,7 @@ export default function RoleSwitcher() {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-      <select
+      <Select
         value={user.activeRole}
         onChange={handleSwitch}
         disabled={loading}
@@ -73,7 +74,7 @@ export default function RoleSwitcher() {
             {ROLE_LABELS[role] ?? role}
           </option>
         ))}
-      </select>
+      </Select>
 
       {error && (
         <span style={{ color: "var(--color-danger)", fontSize: 12 }}>

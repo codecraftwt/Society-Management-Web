@@ -19,6 +19,7 @@ import {
 } from "react-icons/md";
 
 import { BASE_URL } from "../../config/apiConfig";
+import Select from "../../components/common/Select";
 
 function useDebounce(value, delay = 500) {
   const [d, setD] = useState(value);
@@ -396,7 +397,7 @@ export default function Notice() {
                   textTransform: "uppercase", letterSpacing: "0.07em" }}>
                   Society <span style={{ color: "#f87171" }}>*</span>
                 </label>
-                <select
+                <Select
                   className="input" style={{ height: 40 }}
                   value={form.society_id} required
                   onChange={(e) => setForm({ ...form, society_id: e.target.value })}
@@ -405,7 +406,7 @@ export default function Notice() {
                   {societiesList.map(s => (
                     <option key={s.id} value={s.id}>{s.name}</option>
                   ))}
-                </select>
+                </Select>
               </div>
             )}
 
@@ -529,11 +530,11 @@ export default function Notice() {
 
           {isSuperAdmin && (
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <select className="input" style={{ width: 160, height: 36, fontSize: 12 }}
+              <Select className="input" style={{ width: 160, height: 36, fontSize: 12 }}
                 value={filterSocietyId} onChange={(e) => setFilterSocietyId(e.target.value)}>
                 <option value="">— All Societies —</option>
                 {societiesList.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-              </select>
+              </Select>
               <span style={{ fontSize: 11, color: "var(--text-secondary)", fontStyle: "italic" }}>
                 Filter by society
               </span>

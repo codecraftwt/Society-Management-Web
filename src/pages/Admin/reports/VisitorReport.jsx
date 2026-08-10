@@ -12,6 +12,7 @@ import {
   MdPerson, MdPhone, MdApartment, MdAccessTime,
   MdArrowBack, MdChevronLeft, MdChevronRight,
 } from "react-icons/md";
+import Select from "../../../components/common/Select";
 
 /* ─────────────────────────────────────────────
    Resolve flat label from visitor's Flat object
@@ -97,11 +98,11 @@ function FilterSheet({ show, onClose, isMobile, statusFilter, setStatusFilter, f
     <div style={{ padding: "16px 18px", display: "flex", flexDirection: "column", gap: 14 }}>
       <div>
         <label style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--text-secondary)", display: "block", marginBottom: 6 }}>{labels.statusLabel}</label>
-        <select className="input" value={statusFilter} onChange={e => setStatusFilter(e.target.value)} style={{ width: "100%", boxSizing: "border-box" }}>
+        <Select className="input" value={statusFilter} onChange={e => setStatusFilter(e.target.value)} style={{ width: "100%", boxSizing: "border-box" }}>
           <option value="">{labels.allStatus}</option>
           <option value="IN">{labels.inside}</option>
           <option value="OUT">{labels.exited}</option>
-        </select>
+        </Select>
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
         {[{ label: labels.fromDate, val: fromDate, set: setFromDate }, { label: labels.toDate, val: toDate, set: setToDate }].map(({ label, val, set }) => (

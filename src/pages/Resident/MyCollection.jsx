@@ -11,6 +11,7 @@ import {
 } from "react-icons/md";
 import Modal from "../../components/Modal";
 import { toast } from "react-toastify";
+import Select from "../../components/common/Select";
 
 /* ── Spinner ── */
 function Spinner() {
@@ -631,7 +632,7 @@ export default function MyCollection() {
               <label className="text-xs text-secondary block mb-1.5">
                 Select Unit <span style={{ color: "var(--stat-red-color)" }}>*</span>
               </label>
-              <select
+              <Select
                 className="input h-11 w-full"
                 style={{ cursor: "pointer" }}
                 value={selectedFlatId}
@@ -653,7 +654,7 @@ export default function MyCollection() {
                     </option>
                   );
                 })}
-              </select>
+              </Select>
             </div>
           )}
 
