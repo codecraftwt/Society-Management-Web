@@ -277,7 +277,8 @@ export default function VisitorLog() {
           <div className="relative flex-1">
             <MdSearch size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-secondary" />
             <input
-              className="input h-11 pl-10 pr-10 w-full bg-white/5"
+              className="input h-11 w-full bg-white/5"
+              style={{ paddingLeft: 40, paddingRight: 40 }}
               placeholder={t("vlSearch")}
               value={search}
               onChange={e => setSearch(e.target.value)}

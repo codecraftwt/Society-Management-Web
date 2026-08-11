@@ -92,9 +92,6 @@ function SuperAdminLayoutInner() {
             </Link>
           ))}
         </nav>
-        <button onClick={() => setShowLogoutConfirm(true)} className="btn-danger mt-6">
-          <MdLogout size={18} /> {t("logout") || "Logout"}
-        </button>
       </aside>
 
       {/* MAIN */}
@@ -102,10 +99,17 @@ function SuperAdminLayoutInner() {
         <header className="h-16 bg-navbar flex items-center justify-between px-4 md:px-6 z-30 shrink-0"
           style={{ borderBottom: "1px solid var(--glass-border)" }}>
 
-          <div>
-            <h1 className="font-semibold text-sm" style={{ color: "var(--text-primary)" }}>
-              {t("saDashboardTitle") || "Global Overview"}
-            </h1>
+          <div className="flex items-center gap-2 md:gap-3 min-w-0">
+            <button onClick={() => setMobileMenu(true)}
+              className="md:hidden flex items-center justify-center w-9 h-9 rounded-xl shrink-0"
+              style={{ background: "var(--card-inner-bg)", border: "1.5px solid var(--glass-border)", color: "var(--text-primary)" }}>
+              <MdMenu size={20} />
+            </button>
+            <div className="min-w-0">
+              <h1 className="font-semibold text-sm truncate" style={{ color: "var(--text-primary)" }}>
+                {t("saDashboardTitle") || "Global Overview"}
+              </h1>
+            </div>
           </div>
 
           <div className="flex items-center gap-3">
@@ -138,10 +142,13 @@ function SuperAdminLayoutInner() {
 
             <ThemeToggle />
             <LanguageSelector compact />
-            <button onClick={() => setMobileMenu(true)}
-              className="md:hidden flex items-center justify-center w-9 h-9 rounded-xl"
-              style={{ background: "var(--card-inner-bg)", border: "1.5px solid var(--glass-border)", color: "var(--text-primary)" }}>
-              <MdMenu size={20} />
+
+            {/* Logout */}
+            <button onClick={() => setShowLogoutConfirm(true)}
+              className="flex items-center justify-center w-9 h-9 rounded-xl"
+              style={{ background: "var(--card-inner-bg)", border: "1.5px solid var(--glass-border)", color: "var(--text-primary)" }}
+              title={t("logout") || "Logout"}>
+              <MdLogout size={19} />
             </button>
           </div>
         </header>
@@ -236,17 +243,6 @@ function SuperAdminLayoutInner() {
                 );
               })}
             </nav>
-
-            {/* drawer logout */}
-            <button
-              onClick={() => {
-                setShowLogoutConfirm(true);
-                setMobileMenu(false);
-              }}
-              className="btn-danger mt-6"
-            >
-              <MdLogout size={18} /> {t("logout") || "Logout"}
-            </button>
           </div>
         </div>
       )}

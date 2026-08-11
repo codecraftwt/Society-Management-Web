@@ -205,29 +205,18 @@ function CommitteeLayoutInner() {
 
   /* ── Shared sidebar nav (desktop + mobile drawer) ── */
   const SidebarContent = ({ onLinkClick }) => (
-    <>
-      <nav className="flex-1 space-y-0.5 overflow-y-auto scrollbar-hide">
-        {menu.map(({ label, path, icon: Icon }) => (
-          <Link
-            key={path}
-            to={path}
-            onClick={onLinkClick}
-            className={`sidebar-link ${location.pathname === path ? "active" : ""}`}
-          >
-            <Icon size={18} /> {label}
-          </Link>
-        ))}
-      </nav>
-      <button
-        onClick={() => {
-          setShowLogoutConfirm(true);
-          onLinkClick?.();
-        }}
-        className="btn-danger mt-6"
-      >
-        <MdLogout size={18} /> Logout
-      </button>
-    </>
+    <nav className="flex-1 space-y-0.5 overflow-y-auto scrollbar-hide">
+      {menu.map(({ label, path, icon: Icon }) => (
+        <Link
+          key={path}
+          to={path}
+          onClick={onLinkClick}
+          className={`sidebar-link ${location.pathname === path ? "active" : ""}`}
+        >
+          <Icon size={18} /> {label}
+        </Link>
+      ))}
+    </nav>
   );
 
   return (
@@ -259,14 +248,27 @@ function CommitteeLayoutInner() {
           style={{ borderBottom: "1px solid var(--glass-border)" }}
         >
           {/* Left */}
-          <div>
-            <h1
-              className="font-medium"
-              style={{ color: "var(--text-primary)" }}
+          <div className="flex items-center gap-2 md:gap-3 min-w-0">
+            <button
+              onClick={() => setMobileMenu(true)}
+              className="md:hidden flex items-center justify-center w-9 h-9 rounded-xl shrink-0"
+              style={{
+                background: "var(--card-inner-bg)",
+                border: "1.5px solid var(--glass-border)",
+                color: "var(--text-primary)",
+              }}
             >
-              Committee Member Dashboard
-            </h1>
-            <p className="text-xs text-secondary">Manage society operations</p>
+              <MdMenu size={20} />
+            </button>
+            <div className="min-w-0">
+              <h1
+                className="font-medium truncate"
+                style={{ color: "var(--text-primary)" }}
+              >
+                Committee Member Dashboard
+              </h1>
+              <p className="text-xs text-secondary truncate">Manage society operations</p>
+            </div>
           </div>
 
           {/* Right */}
@@ -361,17 +363,18 @@ function CommitteeLayoutInner() {
               </button>
             )}
 
-            {/* ── MOBILE HAMBURGER ── */}
+            {/* Logout */}
             <button
-              onClick={() => setMobileMenu(true)}
-              className="md:hidden flex items-center justify-center w-9 h-9 rounded-xl"
+              onClick={() => setShowLogoutConfirm(true)}
+              className="flex items-center justify-center w-9 h-9 rounded-xl"
               style={{
                 background: "var(--card-inner-bg)",
                 border: "1.5px solid var(--glass-border)",
                 color: "var(--text-primary)",
               }}
+              title="Logout"
             >
-              <MdMenu size={20} />
+              <MdLogout size={19} />
             </button>
           </div>
         </header>

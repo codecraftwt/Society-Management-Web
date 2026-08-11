@@ -104,13 +104,6 @@ function GuardLayoutInner() {
             </Link>
           ))}
         </nav>
-
-        <button
-          onClick={() => setShowLogoutConfirm(true)}
-          className="btn-danger mt-6"
-        >
-          <MdLogout size={18} /> {t("logout")}
-        </button>
       </aside>
 
       {/* ══════════════════════════════════════════
@@ -123,11 +116,24 @@ function GuardLayoutInner() {
           className="h-16 bg-navbar flex items-center justify-between px-4 md:px-6 z-30 shrink-0"
           style={{ borderBottom: "1px solid var(--glass-border)" }}
         >
-          <div>
-            <h1 className="font-medium" style={{ color: "var(--text-primary)" }}>
-              {t("guardDashboardTitle")}
-            </h1>
-            <p className="text-xs text-secondary">{t("guardDashboardSubtitle")}</p>
+          <div className="flex items-center gap-2 md:gap-3 min-w-0">
+            <button
+              onClick={() => setMobileMenu(true)}
+              className="md:hidden flex items-center justify-center w-9 h-9 rounded-xl shrink-0"
+              style={{
+                background: "var(--card-inner-bg)",
+                border: "1.5px solid var(--glass-border)",
+                color: "var(--text-primary)",
+              }}
+            >
+              <MdMenu size={20} />
+            </button>
+            <div className="min-w-0">
+              <h1 className="font-medium truncate" style={{ color: "var(--text-primary)" }}>
+                {t("guardDashboardTitle")}
+              </h1>
+              <p className="text-xs text-secondary truncate">{t("guardDashboardSubtitle")}</p>
+            </div>
           </div>
 
           <div className="flex items-center gap-3">
@@ -147,21 +153,22 @@ function GuardLayoutInner() {
                                  font-bold min-w-4.5 h-4.5 flex items-center justify-center
                                  rounded-full leading-none px-1">
                   {alerts.length}
-                </span>
+                 </span>
               </button>
             )}
 
-            {/* Hamburger — mobile only */}
+            {/* Logout */}
             <button
-              onClick={() => setMobileMenu(true)}
-              className="md:hidden flex items-center justify-center w-9 h-9 rounded-xl"
+              onClick={() => setShowLogoutConfirm(true)}
+              className="flex items-center justify-center w-9 h-9 rounded-xl"
               style={{
                 background: "var(--card-inner-bg)",
                 border: "1.5px solid var(--glass-border)",
                 color: "var(--text-primary)",
               }}
+              title={t("logout")}
             >
-              <MdMenu size={20} />
+              <MdLogout size={19} />
             </button>
           </div>
         </header>
@@ -219,17 +226,6 @@ function GuardLayoutInner() {
                 </Link>
               ))}
             </nav>
-
-            {/* drawer logout */}
-            <button
-              onClick={() => {
-                setShowLogoutConfirm(true);
-                setMobileMenu(false);
-              }}
-              className="btn-danger mt-6"
-            >
-              <MdLogout size={18} /> {t("logout")}
-            </button>
           </div>
         </div>
       )}

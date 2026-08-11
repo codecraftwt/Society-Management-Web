@@ -1024,7 +1024,8 @@ export default function AssignParkingSlot() {
                 {!initialLoad && <p className="text-xs text-secondary hidden sm:block whitespace-nowrap">{totalItems} {t("parkSlotCount") || "Slots"}</p>}
                 <div className="relative" style={{ width: 200 }}>
                   <MdSearch size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-secondary pointer-events-none" />
-                  <input className="input h-9 pl-8 pr-8 text-xs w-full"
+                  <input className="input h-9 text-xs w-full"
+                    style={{ paddingLeft: 32, paddingRight: 26 }}
                     placeholder={`${t("parkColSlot") || "Search Slot"}…`}
                     value={search} onChange={e => setSearch(e.target.value)} />
                   <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center">

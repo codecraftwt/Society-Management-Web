@@ -434,100 +434,195 @@ export default function Accountant() {
 
       {/* ── SUPER ADMIN LIST VIEW ── */}
       {isSuperAdmin && (!filterSocietyId || filterSocietyId === "ALL") && (
-        <div className="data-table-wrap animate-fadeIn">
-          <div style={{ overflowX: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
-              <thead>
-                <tr style={{ borderBottom: "1px solid var(--glass-border)", color: "var(--text-secondary)", textAlign: "left" }}>
-                  <th style={{ padding: "12px 16px" }}>#</th>
-                  <th style={{ padding: "12px 16px" }}>Accountant</th>
-                  <th style={{ padding: "12px 16px" }}>Society</th>
-                  <th style={{ padding: "12px 16px" }}>Contact</th>
-                  <th style={{ padding: "12px 16px" }}>Status</th>
-                  <th style={{ padding: "12px 16px" }}>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {accountants.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} style={{ padding: 40, textAlign: "center", color: "var(--text-secondary)" }}>
-                      No accountants found.
-                    </td>
+        <>
+          {/* Desktop table */}
+          <div className="hidden md:block data-table-wrap animate-fadeIn">
+            <div style={{ overflowX: "auto" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                <thead>
+                  <tr style={{ borderBottom: "1px solid var(--glass-border)", color: "var(--text-secondary)", textAlign: "left" }}>
+                    <th style={{ padding: "12px 16px" }}>#</th>
+                    <th style={{ padding: "12px 16px" }}>Accountant</th>
+                    <th style={{ padding: "12px 16px" }}>Society</th>
+                    <th style={{ padding: "12px 16px" }}>Contact</th>
+                    <th style={{ padding: "12px 16px" }}>Status</th>
+                    <th style={{ padding: "12px 16px" }}>Actions</th>
                   </tr>
-                ) : (
-                  accountants.map((acc, idx) => (
-                    <tr key={acc.id} style={{ borderBottom: "1px solid rgba(255,255,255,0.03)", transition: "background 0.2s" }} className="hover:bg-white/3">
-                      <td style={{ padding: "12px 16px", color: "var(--text-secondary)" }}>{idx + 1}</td>
-                      <td style={{ padding: "12px 16px" }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                          <div style={{
-                            width: 32, height: 32, borderRadius: "50%",
-                            background: "linear-gradient(135deg, #6B46C1, #6B46C1)",
-                            display: "flex", alignItems: "center", justifyContent: "center",
-                            fontSize: 12, fontWeight: 800, color: "#fff"
-                          }}>
-                            {acc.name?.[0]?.toUpperCase()}
-                          </div>
-                          <div>
-                            <p style={{ fontWeight: 600, color: "var(--text-primary)" }}>{acc.name}</p>
-                            <p style={{ fontSize: 11, color: "var(--text-secondary)" }}>{acc.email}</p>
-                          </div>
-                        </div>
-                      </td>
-                      <td style={{ padding: "12px 16px" }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 6, color: "var(--text-secondary)" }}>
-                          <MdApartment size={14} style={{ color: "#9F87D7" }} />
-                          {acc.societyName}
-                        </div>
-                      </td>
-                      <td style={{ padding: "12px 16px", color: "var(--text-secondary)" }}>
-                        {acc.phone ? `+91 ${acc.phone}` : "—"}
-                      </td>
-                      <td style={{ padding: "12px 16px" }}>
-                        <span style={{
-                          display: "inline-flex", alignItems: "center", gap: 4,
-                          fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 99,
-                          background: "rgba(34,197,94,0.12)", color: "#4ade80",
-                          border: "1px solid rgba(34,197,94,0.2)"
-                        }}>
-                          Active
-                        </span>
-                      </td>
-                      <td style={{ padding: "12px 16px" }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                          <button
-                            onClick={() => {
-                              setAccountant(acc);
-                              setEditMode(true);
-                              setFormData({
-                                name: acc.name,
-                                email: acc.email,
-                                password: "",
-                                phone: acc.phone || "",
-                                society_id: acc.society_id || "",
-                              });
-                            }}
-                            className="action-btn-inprogress"
-                            style={{ width: "auto", padding: "6px 12px", fontSize: 11, display: "flex", alignItems: "center", gap: 6 }}
-                          >
-                            <MdEdit size={14} /> {t("acctEdit")}
-                          </button>
-                          <button
-                            onClick={() => handleDeleteSpecific(acc)}
-                            className="action-btn-danger"
-                            style={{ width: "auto", padding: "6px 12px", fontSize: 11, display: "flex", alignItems: "center", gap: 6, background: "rgba(248,113,113,0.1)", color: "#f87171", border: "1px solid rgba(248,113,113,0.2)" }}
-                          >
-                            <MdDelete size={14} /> {t("delete") || "Delete"}
-                          </button>
-                        </div>
+                </thead>
+                <tbody>
+                  {accountants.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} style={{ padding: 40, textAlign: "center", color: "var(--text-secondary)" }}>
+                        No accountants found.
                       </td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+                  ) : (
+                    accountants.map((acc, idx) => (
+                      <tr key={acc.id} style={{ borderBottom: "1px solid rgba(255,255,255,0.03)", transition: "background 0.2s" }} className="hover:bg-white/3">
+                        <td style={{ padding: "12px 16px", color: "var(--text-secondary)" }}>{idx + 1}</td>
+                        <td style={{ padding: "12px 16px" }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                            <div style={{
+                              width: 32, height: 32, borderRadius: "50%",
+                              background: "linear-gradient(135deg, #6B46C1, #6B46C1)",
+                              display: "flex", alignItems: "center", justifyContent: "center",
+                              fontSize: 12, fontWeight: 800, color: "#fff"
+                            }}>
+                              {acc.name?.[0]?.toUpperCase()}
+                            </div>
+                            <div>
+                              <p style={{ fontWeight: 600, color: "var(--text-primary)" }}>{acc.name}</p>
+                              <p style={{ fontSize: 11, color: "var(--text-secondary)" }}>{acc.email}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td style={{ padding: "12px 16px" }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 6, color: "var(--text-secondary)" }}>
+                            <MdApartment size={14} style={{ color: "#9F87D7" }} />
+                            {acc.societyName}
+                          </div>
+                        </td>
+                        <td style={{ padding: "12px 16px", color: "var(--text-secondary)" }}>
+                          {acc.phone ? `+91 ${acc.phone}` : "—"}
+                        </td>
+                        <td style={{ padding: "12px 16px" }}>
+                          <span style={{
+                            display: "inline-flex", alignItems: "center", gap: 4,
+                            fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 99,
+                            background: "rgba(34,197,94,0.12)", color: "#4ade80",
+                            border: "1px solid rgba(34,197,94,0.2)"
+                          }}>
+                            Active
+                          </span>
+                        </td>
+                        <td style={{ padding: "12px 16px" }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                            <button
+                              onClick={() => {
+                                setAccountant(acc);
+                                setEditMode(true);
+                                setFormData({
+                                  name: acc.name,
+                                  email: acc.email,
+                                  password: "",
+                                  phone: acc.phone || "",
+                                  society_id: acc.society_id || "",
+                                });
+                              }}
+                              className="action-btn-inprogress"
+                              style={{ width: "auto", padding: "6px 12px", fontSize: 11, display: "flex", alignItems: "center", gap: 6 }}
+                            >
+                              <MdEdit size={14} /> {t("acctEdit")}
+                            </button>
+                            <button
+                              onClick={() => handleDeleteSpecific(acc)}
+                              className="action-btn-danger"
+                              style={{ width: "auto", padding: "6px 12px", fontSize: 11, display: "flex", alignItems: "center", gap: 6, background: "rgba(248,113,113,0.1)", color: "#f87171", border: "1px solid rgba(248,113,113,0.2)" }}
+                            >
+                              <MdDelete size={14} /> {t("delete") || "Delete"}
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
+
+          {/* Mobile cards */}
+          <div className="md:hidden space-y-3 animate-fadeIn">
+            {accountants.length === 0 ? (
+              <div className="data-table-wrap" style={{ padding: "40px 16px", textAlign: "center", color: "var(--text-secondary)", borderRadius: 16 }}>
+                No accountants found.
+              </div>
+            ) : (
+              accountants.map((acc) => (
+                <div key={acc.id} className="bg-card border border-white/10 rounded-2xl p-4 shadow-sm">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div style={{
+                        width: 44, height: 44, borderRadius: "50%", flexShrink: 0,
+                        background: "linear-gradient(135deg, #6B46C1, #6B46C1)",
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        fontSize: 16, fontWeight: 800, color: "#fff",
+                      }}>
+                        {acc.name?.[0]?.toUpperCase()}
+                      </div>
+                      <div className="min-w-0">
+                        <p style={{ fontWeight: 600, color: "var(--text-primary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          {acc.name}
+                        </p>
+                        <p style={{ fontSize: 12, color: "var(--text-secondary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          {acc.email}
+                        </p>
+                      </div>
+                    </div>
+                    <span style={{
+                      display: "inline-flex", alignItems: "center", gap: 4, flexShrink: 0,
+                      fontSize: 10, fontWeight: 700, padding: "3px 9px", borderRadius: 99,
+                      background: "rgba(34,197,94,0.12)", color: "#4ade80",
+                      border: "1px solid rgba(34,197,94,0.2)",
+                    }}>
+                      Active
+                    </span>
+                  </div>
+
+                  <div className="mt-3 grid grid-cols-2 gap-2">
+                    <div style={{
+                      display: "flex", alignItems: "center", gap: 7, padding: "9px 11px",
+                      borderRadius: 10, background: "var(--chip-bg, rgba(107,70,193,0.04))",
+                      border: "1px solid var(--glass-border)", minWidth: 0,
+                    }}>
+                      <MdApartment size={15} style={{ color: "#9F87D7", flexShrink: 0 }} />
+                      <span style={{ fontSize: 12, color: "var(--text-primary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {acc.societyName || "—"}
+                      </span>
+                    </div>
+                    <div style={{
+                      display: "flex", alignItems: "center", gap: 7, padding: "9px 11px",
+                      borderRadius: 10, background: "var(--chip-bg, rgba(107,70,193,0.04))",
+                      border: "1px solid var(--glass-border)", minWidth: 0,
+                    }}>
+                      <MdPhone size={15} style={{ color: "#9F87D7", flexShrink: 0 }} />
+                      <span style={{ fontSize: 12, color: "var(--text-primary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {acc.phone ? `+91 ${acc.phone}` : "—"}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="mt-3 flex gap-2">
+                    <button
+                      onClick={() => {
+                        setAccountant(acc);
+                        setEditMode(true);
+                        setFormData({
+                          name: acc.name,
+                          email: acc.email,
+                          password: "",
+                          phone: acc.phone || "",
+                          society_id: acc.society_id || "",
+                        });
+                      }}
+                      className="action-btn-inprogress flex-1 h-11"
+                      style={{ fontSize: 12, display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}
+                    >
+                      <MdEdit size={15} /> {t("acctEdit")}
+                    </button>
+                    <button
+                      onClick={() => handleDeleteSpecific(acc)}
+                      className="action-btn-danger flex-1 h-11"
+                      style={{ fontSize: 12, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, background: "rgba(248,113,113,0.1)", color: "#f87171", border: "1px solid rgba(248,113,113,0.2)" }}
+                    >
+                      <MdDelete size={15} /> {t("delete") || "Delete"}
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </>
       )}
 
       {/* ── VIEW / EDIT CARD (Admin or Filtered) ── */}
@@ -537,7 +632,7 @@ export default function Accountant() {
           {/* Card header */}
           <div style={{
             padding: "16px 20px", borderBottom: "1px solid var(--glass-border)",
-            display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10,
+            display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, flexWrap: "wrap",
           }}>
             <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
               <div style={{

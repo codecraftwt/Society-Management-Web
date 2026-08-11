@@ -963,7 +963,8 @@ export default function SuperAdminParking() {
               </div>
               <div className="relative" style={{ width: 220 }}>
                 <MdSearch size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-secondary pointer-events-none" />
-                <input className="input h-9 pl-9 pr-8 text-xs w-full"
+                <input className="input h-9 text-xs w-full"
+                  style={{ paddingLeft: 34, paddingRight: 26 }}
                   placeholder="Search slot number…"
                   value={search} onChange={e => setSearch(e.target.value)} />
                 <div className="absolute right-2 top-1/2 -translate-y-1/2">
