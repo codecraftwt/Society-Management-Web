@@ -22,7 +22,7 @@ const STYLES = `
     background: var(--card-bg, rgba(255,255,255,0.04));
     border: 1px solid rgba(255,255,255,0.09);
     border-radius: 20px;
-    padding: 2.5rem 2rem 2rem;
+    padding: 1.5rem 1.25rem 1.5rem;
     box-shadow: 0 8px 40px rgba(0,0,0,0.4);
     backdrop-filter: blur(20px);
     display: flex;
@@ -30,6 +30,9 @@ const STYLES = `
     align-items: center;
     gap: 1.1rem;
     text-align: center;
+  }
+  @media (min-width: 480px) {
+    .rp-card { padding: 2.5rem 2rem 2rem; }
   }
   html.light .rp-card {
     background: #ffffff;

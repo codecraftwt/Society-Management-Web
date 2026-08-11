@@ -26,24 +26,31 @@ export default function CreateSocietyAdmin() {
   };
 
   return (
-    <div>
-      <form onSubmit={handleSubmit}>
-        <h3>{t("csaTitle")}</h3>
-        <input placeholder={t("csaName")}
-          onChange={e => setForm({ ...form, name: e.target.value })} />
-        <input placeholder={t("csaEmail")}
-          onChange={e => setForm({ ...form, email: e.target.value })} />
-        <input placeholder={t("csaPassword")} type="password"
-          onChange={e => setForm({ ...form, password: e.target.value })} />
-        <Select onChange={e => setForm({ ...form, society_id: e.target.value })}>
-          <option>{t("csaSelectSociety")}</option>
-          {societies.map(s => (
-            <option key={s.id} value={s.id}>{s.name}</option>
-          ))}
-        </Select>
-        <button>{t("csaCreateBtn")}</button>
-      </form>
-      <button onClick={() => navigate(-1)}>{t("socBack")}</button>
+    <div className="min-h-screen bg-app">
+      <main className="p-4 sm:p-6 lg:p-8 flex justify-center">
+        <div className="bg-card rounded-lg shadow p-4 sm:p-6 w-full max-w-md">
+          <h2 className="text-base sm:text-lg font-semibold">{t("csaTitle")}</h2>
+          <form onSubmit={handleSubmit} className="mt-5 flex flex-col gap-4">
+            <input placeholder={t("csaName")} className="input h-12"
+              onChange={e => setForm({ ...form, name: e.target.value })} />
+            <input placeholder={t("csaEmail")} className="input h-12"
+              onChange={e => setForm({ ...form, email: e.target.value })} />
+            <input placeholder={t("csaPassword")} type="password" className="input h-12"
+              onChange={e => setForm({ ...form, password: e.target.value })} />
+            <Select className="input h-12" onChange={e => setForm({ ...form, society_id: e.target.value })}>
+              <option value="">{t("csaSelectSociety")}</option>
+              {societies.map(s => (
+                <option key={s.id} value={s.id}>{s.name}</option>
+              ))}
+            </Select>
+            <button type="submit" className="btn-primary h-12 justify-center">{t("csaCreateBtn")}</button>
+            <button type="button" onClick={() => navigate(-1)}
+              className="text-secondary text-sm py-1 hover:text-accent transition">
+              {t("socBack")}
+            </button>
+          </form>
+        </div>
+      </main>
     </div>
   );
 }

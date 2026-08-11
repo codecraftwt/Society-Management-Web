@@ -89,9 +89,11 @@ export default function Select({
     if (!el) return null;
     const r = el.getBoundingClientRect();
     const estH = Math.min(filtered.length * 36 + (showSearch ? 46 : 0) + 12, 320);
+    const menuW = Math.min(Math.max(r.width, 150), window.innerWidth - 16);
     let top = r.bottom + 6;
     if (top + estH > window.innerHeight - 8) top = Math.max(8, r.top - estH - 6);
-    return { top, left: r.left, width: Math.max(r.width, 150) };
+    const left = Math.max(8, Math.min(r.left, window.innerWidth - menuW - 8));
+    return { top, left, width: menuW };
   }, [filtered.length, showSearch]);
 
   useEffect(() => {

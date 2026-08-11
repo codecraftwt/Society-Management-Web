@@ -495,11 +495,11 @@ function Login() {
       )}
 
       {/* ── Login Card ── */}
-      <div className="w-full max-w-md bg-card rounded-2xl shadow-card p-8">
+      <div className="w-full max-w-md bg-card rounded-2xl shadow-card p-6 sm:p-8">
 
         {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-semibold text-text-primary">Welcome Back</h1>
+        <div className="text-center mb-6 sm:mb-8">
+          <h1 className="text-2xl sm:text-3xl font-semibold text-text-primary">Welcome Back</h1>
           <p className="text-text-secondary mt-2">Sign in to {APP_NAME}</p>
         </div>
 

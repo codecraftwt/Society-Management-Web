@@ -583,28 +583,9 @@ export default function TenantApprovals() {
           <p className="text-white/30 text-sm font-semibold">No pending approvals match your filters</p>
         </div>
       ) : (
-        <div className="rounded-2xl overflow-hidden" style={{ border: "1px solid rgba(255,255,255,0.06)" }}>
-          {/* Table header */}
-          <div
-            className="grid text-[10px] font-black text-white/30 uppercase tracking-widest px-4 py-3"
-            style={{
-              background: "rgba(255,255,255,0.03)",
-              borderBottom: "1px solid rgba(255,255,255,0.05)",
-              gridTemplateColumns: "2fr 1.2fr 1.2fr 1fr 1fr 1fr auto",
-              gap: "12px",
-            }}
-          >
-            <span>Tenant</span>
-            <span>Flat / Block</span>
-            <span>Floor</span>
-            <span>Move-In</span>
-            <span>Lease End</span>
-            <span>KYC</span>
-            <span>Actions</span>
-          </div>
-
-          {/* Rows */}
-          <div className="divide-y" style={{ divideColor: "rgba(255,255,255,0.04)" }}>
+        <>
+          {/* ── Mobile Cards ── */}
+          <div className="md:hidden flex flex-col gap-3">
             {filtered.map((r, i) => {
               const membership = r.FlatMemberships?.[0];
               const flat       = membership?.Flat;
@@ -617,83 +598,60 @@ export default function TenantApprovals() {
               return (
                 <div
                   key={r.id}
-                  className="grid items-center px-4 py-3 hover:bg-white/2 transition group cursor-pointer"
-                  style={{
-                    gridTemplateColumns: "2fr 1.2fr 1.2fr 1fr 1fr 1fr auto",
-                    gap: "12px",
-                    borderBottom: i < filtered.length - 1 ? "1px solid rgba(255,255,255,0.04)" : "none",
-                    background: i % 2 === 0 ? "rgba(255,255,255,0.01)" : "transparent",
-                  }}
+                  className="animate-fadeIn rounded-2xl overflow-hidden cursor-pointer"
+                  style={{ animationDelay: `${i * 30}ms`, border: "1px solid rgba(255,255,255,0.06)", background: "rgba(255,255,255,0.02)" }}
                   onClick={() => setDrawer(r)}
                 >
-                  {/* Tenant */}
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-8 h-8 rounded-lg bg-amber-500/15 text-amber-400 flex items-center justify-center font-black text-sm shrink-0">
+                  <div className="p-4 flex items-center gap-3 min-w-0">
+                    <div className="w-10 h-10 rounded-xl bg-amber-500/15 text-amber-400 flex items-center justify-center font-black text-base shrink-0">
                       {r.name?.charAt(0)}
                     </div>
-                    <div className="min-w-0">
+                    <div className="min-w-0 flex-1">
                       <p className="text-sm font-bold text-white truncate">{r.name}</p>
-                      <p className="text-[10px] text-white/35 truncate">{r.email}</p>
+                      <p className="text-[11px] text-white/35 truncate">{r.email}</p>
                     </div>
+                    <LeaseChip date={membership?.move_out_date} />
                   </div>
-
-                  {/* Flat / Block */}
-                  <div>
-                    <p className="text-sm font-semibold text-white/80">
-                      {flat?.flat_number ? `Flat ${flat.flat_number}` : "—"}
-                    </p>
-                    <p className="text-[10px] text-white/35">{blockName !== "—" ? `Block ${blockName}` : "—"}</p>
-                  </div>
-
-                  {/* Floor */}
-                  <p className="text-sm text-white/60 font-medium">
-                    {floorNum != null ? `Floor ${floorNum}` : "—"}
-                  </p>
-
-                  {/* Move-In */}
-                  <p className="text-xs text-white/50">{formatDate(membership?.move_in_date)}</p>
-
-                  {/* Lease End */}
-                  <div><LeaseChip date={membership?.move_out_date} /></div>
-
-                  {/* KYC Status */}
-                  <div className="flex items-center gap-1.5">
-                    <span
-                      title="Aadhar"
-                      className={`w-6 h-6 rounded-md flex items-center justify-center text-[10px] font-black ${hasAadhar ? "bg-emerald-500/15 text-emerald-400" : "bg-red-500/10 text-red-400/50"}`}
-                    >
-                      A
+                  <div className="px-4 pb-1 flex flex-wrap items-center gap-x-4 gap-y-1.5">
+                    <span className="text-xs text-white/60">
+                      <span className="font-semibold text-white/80">{flat?.flat_number ? `Flat ${flat.flat_number}` : "—"}</span>
+                      {blockName !== "—" && <span> · Block {blockName}</span>}
+                      {floorNum != null && <span> · Floor {floorNum}</span>}
                     </span>
-                    <span
-                      title="PAN"
-                      className={`w-6 h-6 rounded-md flex items-center justify-center text-[10px] font-black ${hasPan ? "bg-emerald-500/15 text-emerald-400" : "bg-red-500/10 text-red-400/50"}`}
-                    >
-                      P
+                    <span className="text-xs text-white/45">Move-in {formatDate(membership?.move_in_date)}</span>
+                    <span className="flex items-center gap-1.5">
+                      <span
+                        title="Aadhar"
+                        className={`w-6 h-6 rounded-md flex items-center justify-center text-[10px] font-black ${hasAadhar ? "bg-emerald-500/15 text-emerald-400" : "bg-red-500/10 text-red-400/50"}`}
+                      >
+                        A
+                      </span>
+                      <span
+                        title="PAN"
+                        className={`w-6 h-6 rounded-md flex items-center justify-center text-[10px] font-black ${hasPan ? "bg-emerald-500/15 text-emerald-400" : "bg-red-500/10 text-red-400/50"}`}
+                      >
+                        P
+                      </span>
                     </span>
                   </div>
-
-                  {/* Actions */}
-                  <div className="flex items-center gap-1.5" onClick={e => e.stopPropagation()}>
+                  <div className="p-4 pt-2.5 flex gap-2" onClick={e => e.stopPropagation()}>
                     <button
-                      title="View Details"
                       onClick={() => setDrawer(r)}
-                      className="w-8 h-8 rounded-lg bg-white/5 text-white/40 hover:text-white hover:bg-white/10 border border-white/5 flex items-center justify-center transition"
+                      className="flex-1 flex items-center justify-center gap-1.5 h-11 rounded-xl bg-white/5 text-white/60 hover:text-white hover:bg-white/10 border border-white/8 text-xs font-bold transition"
                     >
-                      <MdVisibility size={14} />
+                      <MdVisibility size={14} /> View
                     </button>
                     <button
-                      title="Reject"
                       onClick={() => setRejectModal({ open: true, userId: r.id })}
-                      className="w-8 h-8 rounded-lg bg-red-500/8 text-red-400/60 hover:text-red-400 hover:bg-red-500/15 border border-red-500/10 flex items-center justify-center transition"
+                      className="flex-1 flex items-center justify-center gap-1.5 h-11 rounded-xl bg-red-500/10 text-red-400 border border-red-500/20 text-xs font-bold hover:bg-red-500/20 transition"
                     >
-                      <MdClose size={14} />
+                      <MdClose size={14} /> Reject
                     </button>
                     <button
-                      title="Approve"
                       onClick={() => handleApprove(r.id)}
-                      className="w-8 h-8 rounded-lg bg-emerald-500/8 text-emerald-400/60 hover:text-emerald-400 hover:bg-emerald-500/15 border border-emerald-500/10 flex items-center justify-center transition"
+                      className="flex-1 flex items-center justify-center gap-1.5 h-11 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs font-bold hover:bg-emerald-500/20 transition"
                     >
-                      <MdCheck size={14} />
+                      <MdCheck size={14} /> Approve
                     </button>
                   </div>
                 </div>
@@ -701,16 +659,136 @@ export default function TenantApprovals() {
             })}
           </div>
 
-          {/* Footer */}
-          <div className="px-4 py-2.5 flex justify-between items-center"
-            style={{ background: "rgba(255,255,255,0.02)", borderTop: "1px solid rgba(255,255,255,0.05)" }}>
-            <p className="text-[11px] text-white/25 font-medium">
-              Showing <span className="text-white/50 font-bold">{filtered.length}</span> of{" "}
-              <span className="text-white/50 font-bold">{residents.length}</span> pending approvals
-            </p>
-            <p className="text-[11px] text-white/20">Click any row to view full details</p>
+          {/* ── Desktop Table ── */}
+          <div className="hidden md:block rounded-2xl overflow-hidden" style={{ border: "1px solid rgba(255,255,255,0.06)" }}>
+            {/* Table header */}
+            <div
+              className="grid text-[10px] font-black text-white/30 uppercase tracking-widest px-4 py-3"
+              style={{
+                background: "rgba(255,255,255,0.03)",
+                borderBottom: "1px solid rgba(255,255,255,0.05)",
+                gridTemplateColumns: "2fr 1.2fr 1.2fr 1fr 1fr 1fr auto",
+                gap: "12px",
+              }}
+            >
+              <span>Tenant</span>
+              <span>Flat / Block</span>
+              <span>Floor</span>
+              <span>Move-In</span>
+              <span>Lease End</span>
+              <span>KYC</span>
+              <span>Actions</span>
+            </div>
+
+            {/* Rows */}
+            <div className="divide-y" style={{ divideColor: "rgba(255,255,255,0.04)" }}>
+              {filtered.map((r, i) => {
+                const membership = r.FlatMemberships?.[0];
+                const flat       = membership?.Flat;
+                const docs       = r.UserDocument || r.UserDocuments;
+                const blockName  = flat?.Block?.name || flat?.Floor?.Block?.name || "—";
+                const floorNum   = flat?.Floor?.floor_number;
+                const hasAadhar  = !!docs?.aadhar_url;
+                const hasPan     = !!docs?.pan_url;
+
+                return (
+                  <div
+                    key={r.id}
+                    className="grid items-center px-4 py-3 hover:bg-white/2 transition group cursor-pointer"
+                    style={{
+                      gridTemplateColumns: "2fr 1.2fr 1.2fr 1fr 1fr 1fr auto",
+                      gap: "12px",
+                      borderBottom: i < filtered.length - 1 ? "1px solid rgba(255,255,255,0.04)" : "none",
+                      background: i % 2 === 0 ? "rgba(255,255,255,0.01)" : "transparent",
+                    }}
+                    onClick={() => setDrawer(r)}
+                  >
+                    {/* Tenant */}
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-8 h-8 rounded-lg bg-amber-500/15 text-amber-400 flex items-center justify-center font-black text-sm shrink-0">
+                        {r.name?.charAt(0)}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-bold text-white truncate">{r.name}</p>
+                        <p className="text-[10px] text-white/35 truncate">{r.email}</p>
+                      </div>
+                    </div>
+
+                    {/* Flat / Block */}
+                    <div>
+                      <p className="text-sm font-semibold text-white/80">
+                        {flat?.flat_number ? `Flat ${flat.flat_number}` : "—"}
+                      </p>
+                      <p className="text-[10px] text-white/35">{blockName !== "—" ? `Block ${blockName}` : "—"}</p>
+                    </div>
+
+                    {/* Floor */}
+                    <p className="text-sm text-white/60 font-medium">
+                      {floorNum != null ? `Floor ${floorNum}` : "—"}
+                    </p>
+
+                    {/* Move-In */}
+                    <p className="text-xs text-white/50">{formatDate(membership?.move_in_date)}</p>
+
+                    {/* Lease End */}
+                    <div><LeaseChip date={membership?.move_out_date} /></div>
+
+                    {/* KYC Status */}
+                    <div className="flex items-center gap-1.5">
+                      <span
+                        title="Aadhar"
+                        className={`w-6 h-6 rounded-md flex items-center justify-center text-[10px] font-black ${hasAadhar ? "bg-emerald-500/15 text-emerald-400" : "bg-red-500/10 text-red-400/50"}`}
+                      >
+                        A
+                      </span>
+                      <span
+                        title="PAN"
+                        className={`w-6 h-6 rounded-md flex items-center justify-center text-[10px] font-black ${hasPan ? "bg-emerald-500/15 text-emerald-400" : "bg-red-500/10 text-red-400/50"}`}
+                      >
+                        P
+                      </span>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex items-center gap-1.5" onClick={e => e.stopPropagation()}>
+                      <button
+                        title="View Details"
+                        onClick={() => setDrawer(r)}
+                        className="w-8 h-8 rounded-lg bg-white/5 text-white/40 hover:text-white hover:bg-white/10 border border-white/5 flex items-center justify-center transition"
+                      >
+                        <MdVisibility size={14} />
+                      </button>
+                      <button
+                        title="Reject"
+                        onClick={() => setRejectModal({ open: true, userId: r.id })}
+                        className="w-8 h-8 rounded-lg bg-red-500/8 text-red-400/60 hover:text-red-400 hover:bg-red-500/15 border border-red-500/10 flex items-center justify-center transition"
+                      >
+                        <MdClose size={14} />
+                      </button>
+                      <button
+                        title="Approve"
+                        onClick={() => handleApprove(r.id)}
+                        className="w-8 h-8 rounded-lg bg-emerald-500/8 text-emerald-400/60 hover:text-emerald-400 hover:bg-emerald-500/15 border border-emerald-500/10 flex items-center justify-center transition"
+                      >
+                        <MdCheck size={14} />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Footer */}
+            <div className="px-4 py-2.5 flex justify-between items-center"
+              style={{ background: "rgba(255,255,255,0.02)", borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+              <p className="text-[11px] text-white/25 font-medium">
+                Showing <span className="text-white/50 font-bold">{filtered.length}</span> of{" "}
+                <span className="text-white/50 font-bold">{residents.length}</span> pending approvals
+              </p>
+              <p className="text-[11px] text-white/20">Click any row to view full details</p>
+            </div>
           </div>
-        </div>
+        </>
       )}
 
       {/* ── Modals ── */}

@@ -99,50 +99,84 @@ export default function Blocks() {
           {blocks.length === 0 ? (
             <p className="text-secondary text-sm">{t("blkEmpty") || "No blocks found."}</p>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-muted text-secondary text-sm">
-                  <tr>
-                    <th className="p-3 text-left">{t("blkColBlock") || "Block Name"}</th>
-                    <th className="p-3 text-left">Type</th>
-                    <th className="p-3 text-left">Floors</th>
-                    <th className="p-3 text-right">{t("billActionCol") || "Actions"}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {blocks.map(b => (
-                    <tr key={b.id} className="border-t text-sm">
-                      <td className="p-3 font-medium flex items-center gap-2">
-                        {b.property_type === "Row Houses" ? <MdHomeWork size={16} className="text-emerald-500"/> : <FaBuilding size={14} className="text-blue-500" />}
-                        {(t("blkBlockLabel")||"Block")} {b.name}
-                      </td>
-                      <td className="p-3">
-                        <span style={{ 
-                          fontSize: "11px", fontWeight: "600", padding: "4px 8px", borderRadius: "6px",
-                          background: b.property_type === "Row Houses" ? "rgba(16, 185, 129, 0.1)" : "rgba(59, 130, 246, 0.1)",
-                          color: b.property_type === "Row Houses" ? "#10b981" : "#5B8DEF" 
-                        }}>
-                          {b.property_type || "Apartments"}
-                        </span>
-                      </td>
-                      <td className="p-3">{b.floorCount || "-"}</td>
-                      <td className="p-3">
-                        <div className="flex justify-end gap-3">
-                          <Link to={`/superadmin/block/${b.id}/floors`}
-                            className="icon-btn manage text-xl" title="Manage Floors">
-                            <MdLayers />
-                          </Link>
-                          <button onClick={() => handleDelete(b.id)}
-                            className="icon-btn delete text-xl" title={t("billDelete")}>
-                            <MdDelete />
-                          </button>
-                        </div>
-                      </td>
+            <>
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-muted text-secondary text-sm">
+                    <tr>
+                      <th className="p-3 text-left">{t("blkColBlock") || "Block Name"}</th>
+                      <th className="p-3 text-left">Type</th>
+                      <th className="p-3 text-left">Floors</th>
+                      <th className="p-3 text-right">{t("billActionCol") || "Actions"}</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {blocks.map(b => (
+                      <tr key={b.id} className="border-t text-sm">
+                        <td className="p-3 font-medium flex items-center gap-2">
+                          {b.property_type === "Row Houses" ? <MdHomeWork size={16} className="text-emerald-500"/> : <FaBuilding size={14} className="text-blue-500" />}
+                          {(t("blkBlockLabel")||"Block")} {b.name}
+                        </td>
+                        <td className="p-3">
+                          <span style={{ 
+                            fontSize: "11px", fontWeight: "600", padding: "4px 8px", borderRadius: "6px",
+                            background: b.property_type === "Row Houses" ? "rgba(16, 185, 129, 0.1)" : "rgba(59, 130, 246, 0.1)",
+                            color: b.property_type === "Row Houses" ? "#10b981" : "#5B8DEF" 
+                          }}>
+                            {b.property_type || "Apartments"}
+                          </span>
+                        </td>
+                        <td className="p-3">{b.floorCount || "-"}</td>
+                        <td className="p-3">
+                          <div className="flex justify-end gap-3">
+                            <Link to={`/superadmin/block/${b.id}/floors`}
+                              className="icon-btn manage text-xl" title="Manage Floors">
+                              <MdLayers />
+                            </Link>
+                            <button onClick={() => handleDelete(b.id)}
+                              className="icon-btn delete text-xl" title={t("billDelete")}>
+                              <MdDelete />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <div className="md:hidden space-y-3">
+                {blocks.map(b => (
+                  <div key={b.id} className="bg-card rounded-lg p-4">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2 min-w-0">
+                        {b.property_type === "Row Houses" ? <MdHomeWork size={18} className="text-emerald-500 flex-shrink-0"/> : <FaBuilding size={15} className="text-blue-500 flex-shrink-0" />}
+                        <span className="font-medium text-sm truncate">{(t("blkBlockLabel")||"Block")} {b.name}</span>
+                      </div>
+                      <span style={{
+                        fontSize: "11px", fontWeight: "600", padding: "4px 8px", borderRadius: "6px", whiteSpace: "nowrap",
+                        background: b.property_type === "Row Houses" ? "rgba(16, 185, 129, 0.1)" : "rgba(59, 130, 246, 0.1)",
+                        color: b.property_type === "Row Houses" ? "#10b981" : "#5B8DEF"
+                      }}>
+                        {b.property_type || "Apartments"}
+                      </span>
+                    </div>
+                    <div className="mt-4 flex items-center justify-between gap-3">
+                      <span className="text-secondary text-sm">{b.floorCount || "-"} floors</span>
+                      <div className="flex items-center gap-3">
+                        <Link to={`/superadmin/block/${b.id}/floors`}
+                          className="icon-btn manage text-xl" title="Manage Floors" aria-label="Manage Floors">
+                          <MdLayers />
+                        </Link>
+                        <button onClick={() => handleDelete(b.id)}
+                          className="icon-btn delete text-xl" title={t("billDelete")} aria-label={t("billDelete")}>
+                          <MdDelete />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
           )}
         </div>
       </main>

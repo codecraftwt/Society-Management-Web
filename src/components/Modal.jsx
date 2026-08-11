@@ -28,7 +28,7 @@ export default function Modal({
 
       {/* Modal Box */}
       <div
-        className={`relative w-full ${sizeClass[size]} bg-card rounded-xl p-6 animate-scaleIn`}
+        className={`relative w-full ${sizeClass[size]} bg-card rounded-xl p-6 animate-scaleIn max-h-[90vh] overflow-y-auto`}
       >
         {/* er */}
         <div className="flex justify-between items-center mb-4">

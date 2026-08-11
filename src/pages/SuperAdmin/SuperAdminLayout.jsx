@@ -65,7 +65,7 @@ function SuperAdminLayoutInner() {
     navigate("/login", { replace: true });
   };
 
-  const Brand = () => (
+  const brand = (
     <div className="superadmin-brand">
       <div className="superadmin-brand-icon">
         <FaBuilding size={20} />
@@ -83,7 +83,7 @@ function SuperAdminLayoutInner() {
     <div className="h-screen overflow-hidden bg-app flex" style={{ color: "var(--text-primary)" }}>
       {/* SIDEBAR */}
       <aside className="hidden md:flex fixed left-0 top-0 h-screen w-64 bg-sidebar p-6 flex-col z-40 superadmin-sidebar">
-        <div className="mb-8"><Brand /></div>
+        <div className="mb-8">{brand}</div>
         <nav className="flex-1 space-y-1 overflow-y-auto scrollbar-hide">
           {menu.map(({ label, path, icon: Icon }) => (
             <Link key={path} to={path}
@@ -109,30 +109,32 @@ function SuperAdminLayoutInner() {
           </div>
 
           <div className="flex items-center gap-3">
-            {/* --- NEW: Global Society Filter Dropdown --- */}
-            <Select
-              value={selectedSocietyId}
-              onChange={handleSocietyChange}
-              style={{
-                padding: "6px 12px",
-                borderRadius: "8px",
-                border: "1px solid var(--glass-border)",
-                background: "var(--card-inner-bg)",
-                color: "var(--text-primary)",
-                fontSize: "13px",
-                fontWeight: "600",
-                outline: "none",
-                cursor: "pointer",
-                maxWidth: "200px"
-              }}
-            >
-              <option value="ALL">{t("allSocietiesGlobal") || "All Societies (Global)"}</option>
-              {societies.map((soc) => (
-                <option key={soc.id} value={soc.id}>
-                  {soc.name}
-                </option>
-              ))}
-            </Select>
+            {/* --- Global Society Filter Dropdown (desktop) --- */}
+            <div className="hidden md:block">
+              <Select
+                value={selectedSocietyId}
+                onChange={handleSocietyChange}
+                style={{
+                  padding: "6px 12px",
+                  borderRadius: "8px",
+                  border: "1px solid var(--glass-border)",
+                  background: "var(--card-inner-bg)",
+                  color: "var(--text-primary)",
+                  fontSize: "13px",
+                  fontWeight: "600",
+                  outline: "none",
+                  cursor: "pointer",
+                  maxWidth: "200px"
+                }}
+              >
+                <option value="ALL">{t("allSocietiesGlobal") || "All Societies (Global)"}</option>
+                {societies.map((soc) => (
+                  <option key={soc.id} value={soc.id}>
+                    {soc.name}
+                  </option>
+                ))}
+              </Select>
+            </div>
 
             <ThemeToggle />
             <LanguageSelector compact />
@@ -148,6 +150,106 @@ function SuperAdminLayoutInner() {
           <Outlet />
         </main>
       </div>
+
+      {/* MOBILE DRAWER */}
+      {mobileMenu && (
+        <div
+          className="fixed inset-0 z-50 md:hidden"
+          style={{ background: "rgba(0,0,0,0.55)" }}
+          onClick={() => setMobileMenu(false)}
+        >
+          <div
+            className="bg-sidebar w-64 h-full p-6 flex flex-col animate-slide-in"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* drawer header */}
+            <div className="flex justify-between items-center mb-6">
+              {brand}
+              <button
+                onClick={() => setMobileMenu(false)}
+                className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+                style={{
+                  background: "var(--card-inner-bg)",
+                  border: "1px solid var(--glass-border)",
+                  color: "var(--text-primary)",
+                }}
+              >
+                <MdClose size={18} />
+              </button>
+            </div>
+
+            {/* Global Society Filter — mobile */}
+            <div className="mb-5">
+              <p
+                style={{
+                  fontSize: "10px",
+                  fontWeight: 700,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.07em",
+                  color: "var(--text-muted)",
+                  marginBottom: "8px",
+                }}
+              >
+                {t("allSocietiesGlobal") || "All Societies (Global)"}
+              </p>
+              <Select
+                value={selectedSocietyId}
+                onChange={(e) => {
+                  handleSocietyChange(e);
+                  setMobileMenu(false);
+                }}
+                style={{
+                  width: "100%",
+                  padding: "8px 10px",
+                  borderRadius: "8px",
+                  border: "1px solid var(--glass-border)",
+                  background: "var(--card-inner-bg)",
+                  color: "var(--text-primary)",
+                  fontSize: "13px",
+                  fontWeight: "600",
+                  outline: "none",
+                  cursor: "pointer",
+                }}
+              >
+                <option value="ALL">{t("allSocietiesGlobal") || "All Societies (Global)"}</option>
+                {societies.map((soc) => (
+                  <option key={soc.id} value={soc.id}>
+                    {soc.name}
+                  </option>
+                ))}
+              </Select>
+            </div>
+
+            {/* drawer nav */}
+            <nav className="flex-1 space-y-1 overflow-y-auto scrollbar-hide">
+              {menu.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    onClick={() => setMobileMenu(false)}
+                    className={`sidebar-link ${location.pathname === item.path ? "active" : ""}`}
+                  >
+                    <Icon size={18} /> {item.label}
+                  </Link>
+                );
+              })}
+            </nav>
+
+            {/* drawer logout */}
+            <button
+              onClick={() => {
+                setShowLogoutConfirm(true);
+                setMobileMenu(false);
+              }}
+              className="btn-danger mt-6"
+            >
+              <MdLogout size={18} /> {t("logout") || "Logout"}
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* LOGOUT MODAL */}
       {showLogoutConfirm && (
