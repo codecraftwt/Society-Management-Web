@@ -164,7 +164,7 @@ function OtpModal({ email, tempToken, onVerified, onCancel }) {
         }}
       >
         {/* Top gradient bar */}
-        <div style={{ height: 3, background: "linear-gradient(90deg,#3b82f6,#6366f1,#8b5cf6)" }} />
+        <div style={{ height: 3, background: "linear-gradient(90deg,#5B8DEF,#6B46C1,#6B46C1)" }} />
 
         <div style={{ padding: "clamp(1.25rem, 5vw, 2rem)" }}>
 
@@ -173,12 +173,12 @@ function OtpModal({ email, tempToken, onVerified, onCancel }) {
             {/* Shield icon */}
             <div style={{
               width: 60, height: 60, borderRadius: "50%", margin: "0 auto 0.9rem",
-              background: "linear-gradient(135deg,rgba(59,130,246,0.15),rgba(99,102,241,0.15))",
-              border: "1.5px solid rgba(59,130,246,0.25)",
+              background: "linear-gradient(135deg,rgba(91,141,239,0.15),rgba(107,70,193,0.15))",
+              border: "1.5px solid rgba(91,141,239,0.25)",
               display: "flex", alignItems: "center", justifyContent: "center",
-              boxShadow: "0 0 24px rgba(59,130,246,0.15)",
+              boxShadow: "0 0 24px rgba(91,141,239,0.15)",
             }}>
-              <HiShieldCheck style={{ fontSize: 28, color: "#3b82f6" }} />
+              <HiShieldCheck style={{ fontSize: 28, color: "#5B8DEF" }} />
             </div>
 
             <h2 className="text-text-primary" style={{
@@ -195,10 +195,10 @@ function OtpModal({ email, tempToken, onVerified, onCancel }) {
             <div style={{
               display: "inline-flex", alignItems: "center", gap: 6,
               padding: "4px 12px", borderRadius: 999,
-              background: "rgba(59,130,246,0.1)", border: "1px solid rgba(59,130,246,0.2)",
+              background: "rgba(91,141,239,0.1)", border: "1px solid rgba(91,141,239,0.2)",
             }}>
-              <HiMail style={{ fontSize: 12, color: "#3b82f6" }} />
-              <span style={{ fontSize: "0.77rem", fontWeight: 600, color: "#3b82f6" }}>{maskedEmail}</span>
+              <HiMail style={{ fontSize: 12, color: "#5B8DEF" }} />
+              <span style={{ fontSize: "0.77rem", fontWeight: 600, color: "#5B8DEF" }}>{maskedEmail}</span>
             </div>
           </div>
 
@@ -274,26 +274,26 @@ function OtpModal({ email, tempToken, onVerified, onCancel }) {
                   fontSize: "clamp(1.1rem,4vw,1.4rem)", fontWeight: 700,
                   borderRadius: 13,
                   border: digit
-                    ? "2px solid #3b82f6"
+                    ? "2px solid #5B8DEF"
                     : "1.5px solid var(--input-border, rgba(255,255,255,0.08))",
                   background: sessionExpired
                     ? "rgba(255,255,255,0.03)"
                     : digit
-                      ? "rgba(59,130,246,0.08)"
+                      ? "rgba(91,141,239,0.08)"
                       : "var(--input-bg, rgba(255,255,255,0.05))",
                   color: sessionExpired
                     ? "var(--text-muted, rgba(255,255,255,0.3))"
-                    : "var(--text-primary, #f8fafc)",
+                    : "var(--text-primary, #F9F8FA)",
                   outline: "none",
                   transition: "all 0.18s ease",
-                  boxShadow: digit ? "0 0 0 1px rgba(59,130,246,0.25)" : "none",
-                  caretColor: "#3b82f6",
+                  boxShadow: digit ? "0 0 0 1px rgba(91,141,239,0.25)" : "none",
+                  caretColor: "#5B8DEF",
                   cursor: sessionExpired ? "not-allowed" : "text",
                 }}
                 onFocus={(e) => {
                   if (sessionExpired) return;
-                  e.target.style.border = "2px solid #3b82f6";
-                  e.target.style.boxShadow = "0 0 0 3px rgba(59,130,246,0.12)";
+                  e.target.style.border = "2px solid #5B8DEF";
+                  e.target.style.boxShadow = "0 0 0 3px rgba(91,141,239,0.12)";
                 }}
                 onBlur={(e) => {
                   if (!digit) {
@@ -311,7 +311,7 @@ function OtpModal({ email, tempToken, onVerified, onCancel }) {
               <div key={i} style={{
                 width: i < filled ? 22 : 6, height: 4, borderRadius: 999,
                 background: i < filled
-                  ? "linear-gradient(90deg,#3b82f6,#6366f1)"
+                  ? "linear-gradient(90deg,#5B8DEF,#6B46C1)"
                   : "rgba(255,255,255,0.08)",
                 transition: "all 0.2s ease",
               }} />
@@ -363,7 +363,7 @@ function OtpModal({ email, tempToken, onVerified, onCancel }) {
                 cursor: resendCooldown > 0 || resendLoading ? "not-allowed" : "pointer",
                 color: resendCooldown > 0 || resendLoading
                   ? "var(--text-muted, rgba(255,255,255,0.35))"
-                  : "#3b82f6",
+                  : "#5B8DEF",
                 fontSize: "0.81rem", fontWeight: 600,
                 transition: "color 0.18s",
               }}
@@ -559,10 +559,10 @@ function Login() {
           <div style={{
             display: "flex", alignItems: "center", gap: 8,
             padding: "10px 14px", borderRadius: 12,
-            background: "rgba(59,130,246,0.07)",
-            border: "1px solid rgba(59,130,246,0.18)",
+            background: "rgba(91,141,239,0.07)",
+            border: "1px solid rgba(91,141,239,0.18)",
           }}>
-            <HiShieldCheck style={{ fontSize: 16, color: "#3b82f6", flexShrink: 0 }} />
+            <HiShieldCheck style={{ fontSize: 16, color: "#5B8DEF", flexShrink: 0 }} />
             <span className="text-text-secondary" style={{ fontSize: "0.75rem", lineHeight: 1.5 }}>
               A one-time password will be emailed to you for verification.
             </span>

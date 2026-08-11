@@ -718,12 +718,12 @@ export default function MySetting() {
                       style={
                         isActive
                           ? {
-                              background: "var(--accent-soft, #eff6ff)",
-                              color: "var(--accent, #3b82f6)",
+                              background: "var(--accent-soft, #F8FAFE)",
+                              color: "var(--accent, #5B8DEF)",
                             }
                           : {
-                              background: "var(--bg-hover, #f8fafc)",
-                              color: "var(--text-muted, #94a3b8)",
+                              background: "var(--bg-hover, #F9F8FA)",
+                              color: "var(--text-muted, #A39EB2)",
                             }
                       }
                     >
@@ -735,7 +735,7 @@ export default function MySetting() {
                       <p
                         className="ms-setting-label"
                         style={
-                          isActive ? { color: "var(--accent, #3b82f6)" } : {}
+                          isActive ? { color: "var(--accent, #5B8DEF)" } : {}
                         }
                       >
                         {l.nativeLabel}
@@ -751,8 +751,8 @@ export default function MySetting() {
                       height: "18px",
                       borderRadius: "50%",
                       border: isActive
-                        ? "5px solid var(--accent, #3b82f6)"
-                        : "2px solid var(--border, #e2e8f0)",
+                        ? "5px solid var(--accent, #5B8DEF)"
+                        : "2px solid var(--border, #DCDAE1)",
                       flexShrink: 0,
                       transition: "border 0.15s",
                     }}
@@ -766,7 +766,7 @@ export default function MySetting() {
           <p
             style={{
               fontSize: "11px",
-              color: "var(--text-muted, #94a3b8)",
+              color: "var(--text-muted, #A39EB2)",
               marginTop: "14px",
               display: "flex",
               alignItems: "center",

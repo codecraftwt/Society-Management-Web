@@ -114,7 +114,7 @@ export default function ReportFilterSheet({
           padding: "13px 18px", borderBottom: "1px solid var(--glass-border)",
           display: "flex", alignItems: "center", gap: 8,
         }}>
-          <MdFilterList size={15} style={{ color: "var(--accent,#6366f1)" }} />
+          <MdFilterList size={15} style={{ color: "var(--accent,#6B46C1)" }} />
           <span style={{ fontSize: 13, fontWeight: 700, color: "var(--text-primary)", flex: 1 }}>
             {title}
           </span>
@@ -122,7 +122,7 @@ export default function ReportFilterSheet({
             <button onClick={onClear} style={{
               display: "flex", alignItems: "center", gap: 4,
               fontSize: 11, fontWeight: 700,
-              color: "var(--accent,#6366f1)", background: "none", border: "none", cursor: "pointer",
+              color: "var(--accent,#6B46C1)", background: "none", border: "none", cursor: "pointer",
             }}>
               <MdClose size={13} /> {clearFilters}
             </button>
@@ -155,7 +155,7 @@ export default function ReportFilterSheet({
 
       <div className="rfs-sheet" style={{
         position: "relative", zIndex: 1,
-        background: "var(--modal-bg, var(--card-bg, #0f172a))",
+        background: "var(--modal-bg, var(--card-bg, #2E2A36))",
         borderTop: "1.5px solid var(--glass-border)",
         borderRadius: "20px 20px 0 0",
         boxShadow: "0 -8px 40px rgba(0,0,0,0.45)",
@@ -172,7 +172,7 @@ export default function ReportFilterSheet({
           display: "flex", alignItems: "center", gap: 8,
           borderBottom: "1px solid var(--glass-border)",
         }}>
-          <MdFilterList size={16} style={{ color: "var(--accent,#6366f1)" }} />
+          <MdFilterList size={16} style={{ color: "var(--accent,#6B46C1)" }} />
           <span style={{ fontSize: 14, fontWeight: 700, color: "var(--text-primary)", flex: 1 }}>
             {title}
           </span>
@@ -180,7 +180,7 @@ export default function ReportFilterSheet({
             <button onClick={() => { onClear(); onClose(); }} style={{
               display: "flex", alignItems: "center", gap: 4,
               fontSize: 11, fontWeight: 700,
-              color: "var(--accent,#6366f1)", background: "none", border: "none", cursor: "pointer",
+              color: "var(--accent,#6B46C1)", background: "none", border: "none", cursor: "pointer",
             }}>
               <MdClose size={13} /> {clearBtn}
             </button>

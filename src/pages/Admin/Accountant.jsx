@@ -26,15 +26,15 @@ function InfoRow({ icon, label, value }) {
     <div style={{
       display: "flex", alignItems: "center", gap: 12,
       padding: "12px 14px", borderRadius: 12,
-      background: "var(--chip-bg, rgba(99,102,241,0.04))",
+      background: "var(--chip-bg, rgba(107,70,193,0.04))",
       border: "1px solid var(--glass-border)",
     }}>
       <div style={{
         width: 34, height: 34, borderRadius: 10, flexShrink: 0,
-        background: "linear-gradient(135deg, rgba(99,102,241,0.15), rgba(139,92,246,0.15))",
-        border: "1px solid rgba(99,102,241,0.2)",
+        background: "linear-gradient(135deg, rgba(107,70,193,0.15), rgba(107,70,193,0.15))",
+        border: "1px solid rgba(107,70,193,0.2)",
         display: "flex", alignItems: "center", justifyContent: "center",
-        color: "#818cf8",
+        color: "#9F87D7",
       }}>
         {icon}
       </div>
@@ -74,11 +74,11 @@ function PhoneInput({ value, onChange, required = false, disabled = false }) {
         padding: "0 12px", height: 40,
         display: "flex", alignItems: "center", gap: 6,
         borderRight: "1px solid var(--glass-border)",
-        background: "rgba(99,102,241,0.08)",
+        background: "rgba(107,70,193,0.08)",
         flexShrink: 0,
       }}>
         <span style={{ fontSize: 13 }}>🇮🇳</span>
-        <span style={{ fontSize: 13, fontWeight: 700, color: "#818cf8" }}>+91</span>
+        <span style={{ fontSize: 13, fontWeight: 700, color: "#9F87D7" }}>+91</span>
       </div>
 
       <input
@@ -263,10 +263,10 @@ export default function Accountant() {
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12, marginBottom: 20 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
           <div className="er-icon er-icon--complaint" style={{
-            background: "linear-gradient(135deg, rgba(99,102,241,0.18), rgba(139,92,246,0.18))",
-            border: "1.5px solid rgba(99,102,241,0.3)",
+            background: "linear-gradient(135deg, rgba(107,70,193,0.18), rgba(107,70,193,0.18))",
+            border: "1.5px solid rgba(107,70,193,0.3)",
           }}>
-            <MdAccountBalance size={22} style={{ color: "#818cf8" }} />
+            <MdAccountBalance size={22} style={{ color: "#9F87D7" }} />
           </div>
           <div>
             <h2 className="page-title">{t("acctTitle")}</h2>
@@ -319,7 +319,7 @@ export default function Accountant() {
       {!accountant && showCreateForm && (
         <div className="bill-form-card animate-fadeIn" style={{ maxWidth: 440, width: "100%", boxSizing: "border-box" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20 }}>
-            <MdPerson size={18} style={{ color: "#818cf8" }} />
+            <MdPerson size={18} style={{ color: "#9F87D7" }} />
             <span style={{ fontSize: 14, fontWeight: 700, color: "var(--text-primary)" }}>
               {t("acctCreateTitle")}
             </span>
@@ -462,7 +462,7 @@ export default function Accountant() {
                         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                           <div style={{
                             width: 32, height: 32, borderRadius: "50%",
-                            background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                            background: "linear-gradient(135deg, #6B46C1, #6B46C1)",
                             display: "flex", alignItems: "center", justifyContent: "center",
                             fontSize: 12, fontWeight: 800, color: "#fff"
                           }}>
@@ -476,7 +476,7 @@ export default function Accountant() {
                       </td>
                       <td style={{ padding: "12px 16px" }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 6, color: "var(--text-secondary)" }}>
-                          <MdApartment size={14} style={{ color: "#818cf8" }} />
+                          <MdApartment size={14} style={{ color: "#9F87D7" }} />
                           {acc.societyName}
                         </div>
                       </td>
@@ -542,10 +542,10 @@ export default function Accountant() {
             <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
               <div style={{
                 width: 42, height: 42, borderRadius: "50%", flexShrink: 0,
-                background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                background: "linear-gradient(135deg, #6B46C1, #6B46C1)",
                 display: "flex", alignItems: "center", justifyContent: "center",
                 fontSize: 15, fontWeight: 800, color: "#fff",
-                boxShadow: "0 2px 10px rgba(99,102,241,0.35)",
+                boxShadow: "0 2px 10px rgba(107,70,193,0.35)",
               }}>
                 {accountant.name?.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase()}
               </div>
@@ -556,8 +556,8 @@ export default function Accountant() {
                 <span style={{
                   display: "inline-flex", alignItems: "center", gap: 4,
                   fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 99,
-                  background: "rgba(99,102,241,0.12)", color: "#818cf8",
-                  border: "1px solid rgba(99,102,241,0.25)", marginTop: 3,
+                  background: "rgba(107,70,193,0.12)", color: "#9F87D7",
+                  border: "1px solid rgba(107,70,193,0.25)", marginTop: 3,
                 }}>
                   <MdBadge size={11} /> {t("acctRole").toUpperCase()}
                 </span>

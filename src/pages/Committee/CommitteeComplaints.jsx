@@ -62,7 +62,7 @@ function StatusPill({ status, t }) {
 }
 
 const getDot = (s) => ({
-  RESOLVED: "#22c55e", IN_PROGRESS: "#a78bfa", PENDING: "#f59e0b", OPEN: "#f59e0b",
+  RESOLVED: "#22c55e", IN_PROGRESS: "#9F87D7", PENDING: "#f59e0b", OPEN: "#f59e0b",
 }[s] || "#f59e0b");
 
 // ── Action Buttons ────────────────────────────────────────────────────────────
@@ -791,9 +791,9 @@ export default function CommitteeComplaints() {
   });
 
   const TABS = [
-    { key: "ALL",         label: t ? t("compTabAll")         : "All",         shortLabel: t ? t("compTabAll")        : "All",        count: counts.ALL,         color: "#4f46e5" },
+    { key: "ALL",         label: t ? t("compTabAll")         : "All",         shortLabel: t ? t("compTabAll")        : "All",        count: counts.ALL,         color: "#5A3BA2" },
     { key: "PENDING",     label: t ? t("compStatusPending")  : "Pending",     shortLabel: t ? t("compStatusPending") : "Pending",    count: counts.PENDING,     color: "#d97706" },
-    { key: "IN_PROGRESS", label: t ? t("compTabInProgress")  : "In Progress", shortLabel: t ? t("adminCompActive")   : "Active",     count: counts.IN_PROGRESS, color: "#7c3aed" },
+    { key: "IN_PROGRESS", label: t ? t("compTabInProgress")  : "In Progress", shortLabel: t ? t("adminCompActive")   : "Active",     count: counts.IN_PROGRESS, color: "#5A3BA2" },
     { key: "RESOLVED",    label: t ? t("compStatusResolved") : "Resolved",    shortLabel: t ? t("adminCompDone")     : "Done",       count: counts.RESOLVED,    color: "#16a34a" },
   ];
 
@@ -808,9 +808,9 @@ export default function CommitteeComplaints() {
     flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 5,
     padding: "7px 8px", borderRadius: 8, border: "none", cursor: "pointer",
     fontSize: 12, fontWeight: 600, transition: "all 0.15s",
-    background: drawerTab === key ? "var(--accent,#6366f1)" : "transparent",
+    background: drawerTab === key ? "var(--accent,#6B46C1)" : "transparent",
     color: drawerTab === key ? "#fff" : "var(--text-secondary)",
-    boxShadow: drawerTab === key ? "0 2px 8px rgba(99,102,241,0.35)" : "none",
+    boxShadow: drawerTab === key ? "0 2px 8px rgba(107,70,193,0.35)" : "none",
   });
 
   return (

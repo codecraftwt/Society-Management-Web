@@ -71,15 +71,15 @@ function Pagination({ page, totalPages, onPageChange }) {
   );
 }
 
-const BARS = ["#6366f1", "#3b82f6", "#8b5cf6", "#ec4899", "#06b6d4", "#f59e0b"];
-const DOTS = ["#818cf8", "#60a5fa", "#a78bfa", "#f472b6", "#22d3ee", "#fbbf24"];
+const BARS = ["#6B46C1", "#5B8DEF", "#6B46C1", "#B17AB2", "#7AB2B2", "#f59e0b"];
+const DOTS = ["#9F87D7", "#94B5F5", "#9F87D7", "#CCA9CD", "#A9CDCD", "#fbbf24"];
 const BG = [
-  "rgba(99,102,241,0.10)", "rgba(59,130,246,0.10)", "rgba(139,92,246,0.10)",
-  "rgba(236,72,153,0.10)", "rgba(6,182,212,0.10)", "rgba(245,158,11,0.10)",
+  "rgba(107,70,193,0.10)", "rgba(91,141,239,0.10)", "rgba(107,70,193,0.10)",
+  "rgba(177,122,178,0.10)", "rgba(122,178,178,0.10)", "rgba(245,158,11,0.10)",
 ];
 const BDR = [
-  "rgba(99,102,241,0.22)", "rgba(59,130,246,0.22)", "rgba(139,92,246,0.22)",
-  "rgba(236,72,153,0.22)", "rgba(6,182,212,0.22)", "rgba(245,158,11,0.22)",
+  "rgba(107,70,193,0.22)", "rgba(91,141,239,0.22)", "rgba(107,70,193,0.22)",
+  "rgba(177,122,178,0.22)", "rgba(122,178,178,0.22)", "rgba(245,158,11,0.22)",
 ];
 
 const fmtDate = (d) =>
@@ -265,12 +265,12 @@ export default function CommitteeNotices() {
         <div className="flex items-center gap-3">
           <div style={{
             width: 44, height: 44, borderRadius: 13, flexShrink: 0,
-            background: "linear-gradient(135deg,rgba(99,102,241,0.18),rgba(59,130,246,0.12))",
-            border: "1.5px solid rgba(99,102,241,0.28)",
+            background: "linear-gradient(135deg,rgba(107,70,193,0.18),rgba(91,141,239,0.12))",
+            border: "1.5px solid rgba(107,70,193,0.28)",
             display: "flex", alignItems: "center", justifyContent: "center",
-            boxShadow: "0 4px 14px rgba(99,102,241,0.18)",
+            boxShadow: "0 4px 14px rgba(107,70,193,0.18)",
           }}>
-            <MdCampaign size={21} style={{ color: "#818cf8" }} />
+            <MdCampaign size={21} style={{ color: "#9F87D7" }} />
           </div>
           <div>
             <h2 style={{
@@ -306,10 +306,10 @@ export default function CommitteeNotices() {
           }}>
             <div style={{
               width: 30, height: 30, borderRadius: 8, flexShrink: 0,
-              background: "rgba(59,130,246,0.12)", border: "1px solid rgba(59,130,246,0.25)",
+              background: "rgba(91,141,239,0.12)", border: "1px solid rgba(91,141,239,0.25)",
               display: "flex", alignItems: "center", justifyContent: "center",
             }}>
-              <MdOutlineArticle size={15} style={{ color: "#60a5fa" }} />
+              <MdOutlineArticle size={15} style={{ color: "#94B5F5" }} />
             </div>
             <div>
               <p style={{ fontSize: 13, fontWeight: 700, margin: 0, color: "var(--text-primary)" }}>
@@ -421,7 +421,7 @@ export default function CommitteeNotices() {
           <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
             <div style={{
               width: 7, height: 7, borderRadius: "50%", flexShrink: 0,
-              background: totalAll > 0 ? "#22c55e" : "#475569",
+              background: totalAll > 0 ? "#22c55e" : "#605872",
               boxShadow: totalAll > 0 ? "0 0 6px rgba(34,197,94,0.7)" : "none",
             }} />
             <span style={{ fontSize: 12, color: "var(--text-secondary)", fontWeight: 500 }}>
@@ -471,10 +471,10 @@ export default function CommitteeNotices() {
           }}>
             <div style={{
               width: 50, height: 50, borderRadius: 13,
-              background: "rgba(99,102,241,0.08)", border: "1.5px solid rgba(99,102,241,0.15)",
+              background: "rgba(107,70,193,0.08)", border: "1.5px solid rgba(107,70,193,0.15)",
               display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 4,
             }}>
-              <MdCampaign size={24} style={{ color: "#6366f1", opacity: 0.45 }} />
+              <MdCampaign size={24} style={{ color: "#6B46C1", opacity: 0.45 }} />
             </div>
             <p style={{ fontSize: 14, fontWeight: 600, margin: 0 }}>{t("noticeEmpty")}</p>
             <p style={{ fontSize: 12, margin: 0, opacity: 0.5 }}>No notices published yet.</p>
@@ -489,7 +489,7 @@ export default function CommitteeNotices() {
             <p style={{ fontSize: 13, margin: 0 }}>No notices match <strong>"{search}"</strong></p>
             <button onClick={() => setSearch("")}
               style={{
-                fontSize: 12, color: "#60a5fa", background: "none", border: "none",
+                fontSize: 12, color: "#94B5F5", background: "none", border: "none",
                 cursor: "pointer", padding: 0, marginTop: 4,
               }}>
               Clear search
@@ -576,17 +576,17 @@ export default function CommitteeNotices() {
                               onClick={() => handleFileView(n.file_url)}
                               style={{
                                 display: "inline-flex", alignItems: "center", gap: 5,
-                                fontSize: 11, fontWeight: 600, color: "#60a5fa",
-                                background: "rgba(59,130,246,0.08)", border: "1px solid rgba(59,130,246,0.20)",
+                                fontSize: 11, fontWeight: 600, color: "#94B5F5",
+                                background: "rgba(91,141,239,0.08)", border: "1px solid rgba(91,141,239,0.20)",
                                 padding: "4px 10px", borderRadius: 999, cursor: "pointer", whiteSpace: "nowrap",
                               }}
                               onMouseEnter={(e) => {
-                                e.currentTarget.style.background = "rgba(59,130,246,0.16)";
-                                e.currentTarget.style.borderColor = "rgba(59,130,246,0.35)";
+                                e.currentTarget.style.background = "rgba(91,141,239,0.16)";
+                                e.currentTarget.style.borderColor = "rgba(91,141,239,0.35)";
                               }}
                               onMouseLeave={(e) => {
-                                e.currentTarget.style.background = "rgba(59,130,246,0.08)";
-                                e.currentTarget.style.borderColor = "rgba(59,130,246,0.20)";
+                                e.currentTarget.style.background = "rgba(91,141,239,0.08)";
+                                e.currentTarget.style.borderColor = "rgba(91,141,239,0.20)";
                               }}
                             >
                               <MdOutlineOpenInNew size={12} />
@@ -656,8 +656,8 @@ export default function CommitteeNotices() {
                               onClick={() => handleFileView(n.file_url)}
                               style={{
                                 display: "inline-flex", alignItems: "center", gap: 3,
-                                fontSize: 11, fontWeight: 600, color: "#60a5fa",
-                                background: "rgba(59,130,246,0.08)", border: "1px solid rgba(59,130,246,0.20)",
+                                fontSize: 11, fontWeight: 600, color: "#94B5F5",
+                                background: "rgba(91,141,239,0.08)", border: "1px solid rgba(91,141,239,0.20)",
                                 padding: "2px 8px", borderRadius: 999, cursor: "pointer",
                               }}
                             >

@@ -67,9 +67,9 @@ const RESIDENT_TYPE_STYLES = {
 };
 
 const BHK_STYLES = {
-  "1BHK": { bg: "rgba(99,102,241,0.10)",  color: "#818cf8", border: "rgba(99,102,241,0.22)" },
-  "2BHK": { bg: "rgba(59,130,246,0.10)",  color: "#60a5fa", border: "rgba(59,130,246,0.22)" },
-  "3BHK": { bg: "rgba(168,85,247,0.10)", color: "#c084fc", border: "rgba(168,85,247,0.22)" },
+  "1BHK": { bg: "rgba(107,70,193,0.10)",  color: "#9F87D7", border: "rgba(107,70,193,0.22)" },
+  "2BHK": { bg: "rgba(91,141,239,0.10)",  color: "#94B5F5", border: "rgba(91,141,239,0.22)" },
+  "3BHK": { bg: "rgba(107,70,193,0.10)", color: "#9F87D7", border: "rgba(107,70,193,0.22)" },
 };
 
 function ResidentTypeBadge({ type }) {
@@ -121,13 +121,13 @@ function StepIndicator({ step, total, labels }) {
               <div style={{
                 width: 32, height: 32, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center",
                 fontSize: 13, fontWeight: 700, transition: "all 0.3s",
-                background: done ? "#34d399" : active ? "#3b82f6" : "var(--card-inner-bg, rgba(255,255,255,0.06))",
-                border: `2px solid ${done ? "#34d399" : active ? "#3b82f6" : "rgba(255,255,255,0.1)"}`,
+                background: done ? "#34d399" : active ? "#5B8DEF" : "var(--card-inner-bg, rgba(255,255,255,0.06))",
+                border: `2px solid ${done ? "#34d399" : active ? "#5B8DEF" : "rgba(255,255,255,0.1)"}`,
                 color: done || active ? "#fff" : "var(--text-secondary)",
               }}>
                 {done ? <MdCheckCircle size={16} /> : num}
               </div>
-              <span style={{ fontSize: 10, fontWeight: 600, color: active ? "#3b82f6" : done ? "#34d399" : "var(--text-secondary)", whiteSpace: "nowrap" }}>
+              <span style={{ fontSize: 10, fontWeight: 600, color: active ? "#5B8DEF" : done ? "#34d399" : "var(--text-secondary)", whiteSpace: "nowrap" }}>
                 {label}
               </span>
             </div>
@@ -145,7 +145,7 @@ function StepIndicator({ step, total, labels }) {
   );
 }
 
-function SelectionCard({ icon, title, subtitle, selected, onClick, color = "#3b82f6", colorBg = "rgba(59,130,246,0.10)" }) {
+function SelectionCard({ icon, title, subtitle, selected, onClick, color = "#5B8DEF", colorBg = "rgba(91,141,239,0.10)" }) {
   return (
     <button
       type="button"
@@ -385,13 +385,13 @@ function AssignWizard({ onClose, onSuccess }) {
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           <p style={{ fontSize: 13, color: "var(--text-secondary)", marginBottom: 8 }}>What type of property are you assigning?</p>
           <SelectionCard
-            icon={<MdApartment size={20} style={{ color: "#60a5fa" }} />}
+            icon={<MdApartment size={20} style={{ color: "#94B5F5" }} />}
             title="Apartment / Flat"
             subtitle="Multi-floor building with individual units (e.g. A-101, A-202)"
             selected={propertyType === "APARTMENT"}
             onClick={() => { setPropertyType("APARTMENT"); setSelectedBlockId(""); setSelectedFloorId(""); setSelectedFlatId(""); setSelectedFlat(null); }}
-            color="#3b82f6"
-            colorBg="rgba(59,130,246,0.10)"
+            color="#5B8DEF"
+            colorBg="rgba(91,141,239,0.10)"
           />
           <SelectionCard
             icon={<MdHomeWork size={20} style={{ color: "#34d399" }} />}
@@ -415,13 +415,13 @@ function AssignWizard({ onClose, onSuccess }) {
             availableBlocks.map(block => (
               <SelectionCard
                 key={block.id}
-                icon={isApartment ? <MdApartment size={20} style={{ color: "#60a5fa" }} /> : <MdHomeWork size={20} style={{ color: "#34d399" }} />}
+                icon={isApartment ? <MdApartment size={20} style={{ color: "#94B5F5" }} /> : <MdHomeWork size={20} style={{ color: "#34d399" }} />}
                 title={`Block ${block.name}`}
                 subtitle={`${isApartment ? "Apartment block" : "Row house block"}`}
                 selected={String(selectedBlockId) === String(block.id)}
                 onClick={() => { setSelectedBlockId(block.id); setSelectedFloorId(""); setSelectedFlatId(""); setSelectedFlat(null); }}
-                color={isApartment ? "#3b82f6" : "#10b981"}
-                colorBg={isApartment ? "rgba(59,130,246,0.10)" : "rgba(16,185,129,0.10)"}
+                color={isApartment ? "#5B8DEF" : "#10b981"}
+                colorBg={isApartment ? "rgba(91,141,239,0.10)" : "rgba(16,185,129,0.10)"}
               />
             ))
           )}
@@ -432,7 +432,7 @@ function AssignWizard({ onClose, onSuccess }) {
       {step === 3 && isApartment && (
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           <p style={{ fontSize: 13, color: "var(--text-secondary)", marginBottom: 8 }}>
-            Which floor is the flat on? <span style={{ color: "#60a5fa", fontWeight: 600 }}>Block {selectedBlock?.name}</span>
+            Which floor is the flat on? <span style={{ color: "#94B5F5", fontWeight: 600 }}>Block {selectedBlock?.name}</span>
           </p>
           {availableFloors.length === 0 ? (
             <div style={{ textAlign: "center", padding: "30px 0", color: "var(--text-secondary)", fontSize: 13 }}>No available floors in this block.</div>
@@ -445,12 +445,12 @@ function AssignWizard({ onClose, onSuccess }) {
                   style={{
                     padding: "16px 10px", borderRadius: 12, cursor: "pointer",
                     textAlign: "center", transition: "all 0.18s", outline: "none",
-                    background: String(selectedFloorId) === String(floor.id) ? "rgba(59,130,246,0.12)" : "var(--card-inner-bg, rgba(255,255,255,0.04))",
-                    border: `2px solid ${String(selectedFloorId) === String(floor.id) ? "#3b82f6" : "rgba(255,255,255,0.08)"}`,
+                    background: String(selectedFloorId) === String(floor.id) ? "rgba(91,141,239,0.12)" : "var(--card-inner-bg, rgba(255,255,255,0.04))",
+                    border: `2px solid ${String(selectedFloorId) === String(floor.id) ? "#5B8DEF" : "rgba(255,255,255,0.08)"}`,
                   }}
                 >
-                  <MdLayers size={22} style={{ color: String(selectedFloorId) === String(floor.id) ? "#60a5fa" : "var(--text-secondary)", display: "block", margin: "0 auto 6px" }} />
-                  <div style={{ fontSize: 13, fontWeight: 700, color: String(selectedFloorId) === String(floor.id) ? "#60a5fa" : "var(--text-primary)" }}>Floor {floor.number}</div>
+                  <MdLayers size={22} style={{ color: String(selectedFloorId) === String(floor.id) ? "#94B5F5" : "var(--text-secondary)", display: "block", margin: "0 auto 6px" }} />
+                  <div style={{ fontSize: 13, fontWeight: 700, color: String(selectedFloorId) === String(floor.id) ? "#94B5F5" : "var(--text-primary)" }}>Floor {floor.number}</div>
                 </button>
               ))}
             </div>
@@ -477,15 +477,15 @@ function AssignWizard({ onClose, onSuccess }) {
                     style={{
                       padding: "14px 10px", borderRadius: 12, cursor: "pointer",
                       textAlign: "center", transition: "all 0.18s", outline: "none",
-                      background: isSelected ? (isApartment ? "rgba(59,130,246,0.12)" : "rgba(16,185,129,0.12)") : "var(--card-inner-bg, rgba(255,255,255,0.04))",
-                      border: `2px solid ${isSelected ? (isApartment ? "#3b82f6" : "#10b981") : "rgba(255,255,255,0.08)"}`,
+                      background: isSelected ? (isApartment ? "rgba(91,141,239,0.12)" : "rgba(16,185,129,0.12)") : "var(--card-inner-bg, rgba(255,255,255,0.04))",
+                      border: `2px solid ${isSelected ? (isApartment ? "#5B8DEF" : "#10b981") : "rgba(255,255,255,0.08)"}`,
                     }}
                   >
                     {isApartment
-                      ? <MdMeetingRoom size={20} style={{ color: isSelected ? "#60a5fa" : "var(--text-secondary)", display: "block", margin: "0 auto 6px" }} />
+                      ? <MdMeetingRoom size={20} style={{ color: isSelected ? "#94B5F5" : "var(--text-secondary)", display: "block", margin: "0 auto 6px" }} />
                       : <MdHomeWork size={20} style={{ color: isSelected ? "#34d399" : "var(--text-secondary)", display: "block", margin: "0 auto 6px" }} />
                     }
-                    <div style={{ fontSize: 13, fontWeight: 700, color: isSelected ? (isApartment ? "#60a5fa" : "#34d399") : "var(--text-primary)" }}>{flat.flat_number}</div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: isSelected ? (isApartment ? "#94B5F5" : "#34d399") : "var(--text-primary)" }}>{flat.flat_number}</div>
                   </button>
                 );
               })}
@@ -518,8 +518,8 @@ function AssignWizard({ onClose, onSuccess }) {
       {step === residentStep && (
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
 
-          <div style={{ background: "rgba(59,130,246,0.06)", border: "1px solid rgba(59,130,246,0.18)", borderRadius: 12, padding: "12px 16px", marginBottom: 4 }}>
-            <p style={{ fontSize: 11, fontWeight: 700, color: "#60a5fa", textTransform: "uppercase", letterSpacing: "0.05em", margin: "0 0 8px" }}>Selected Unit</p>
+          <div style={{ background: "rgba(91,141,239,0.06)", border: "1px solid rgba(91,141,239,0.18)", borderRadius: 12, padding: "12px 16px", marginBottom: 4 }}>
+            <p style={{ fontSize: 11, fontWeight: 700, color: "#94B5F5", textTransform: "uppercase", letterSpacing: "0.05em", margin: "0 0 8px" }}>Selected Unit</p>
             <SummaryRow label="Type" value={isApartment ? "Apartment" : "Row House"} icon={isApartment ? <MdApartment size={14} /> : <MdHomeWork size={14} />} />
             <SummaryRow label="Block" value={`Block ${selectedBlock?.name}`} icon={<MdBusiness size={14} />} />
             {isApartment && <SummaryRow label="Floor" value={`Floor ${selectedFloor?.number}`} icon={<MdLayers size={14} />} />}
@@ -559,23 +559,23 @@ function AssignWizard({ onClose, onSuccess }) {
                     style={{
                       display: "flex", alignItems: "center", gap: 10, padding: "10px 12px",
                       borderRadius: 10, cursor: "pointer", transition: "all 0.16s", outline: "none", textAlign: "left",
-                      background: isSelected ? "rgba(59,130,246,0.10)" : "var(--card-inner-bg, rgba(255,255,255,0.04))",
-                      border: `2px solid ${isSelected ? "#3b82f6" : "rgba(255,255,255,0.08)"}`,
+                      background: isSelected ? "rgba(91,141,239,0.10)" : "var(--card-inner-bg, rgba(255,255,255,0.04))",
+                      border: `2px solid ${isSelected ? "#5B8DEF" : "rgba(255,255,255,0.08)"}`,
                     }}
                   >
                     <div style={{
                       width: 36, height: 36, borderRadius: "50%", flexShrink: 0,
-                      background: isSelected ? "rgba(59,130,246,0.2)" : "rgba(99,102,241,0.12)",
+                      background: isSelected ? "rgba(91,141,239,0.2)" : "rgba(107,70,193,0.12)",
                       display: "flex", alignItems: "center", justifyContent: "center",
-                      fontSize: 14, fontWeight: 700, color: isSelected ? "#60a5fa" : "#818cf8",
+                      fontSize: 14, fontWeight: 700, color: isSelected ? "#94B5F5" : "#9F87D7",
                     }}>
                       {r.name?.charAt(0)?.toUpperCase()}
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: isSelected ? "#60a5fa" : "var(--text-primary)" }}>{r.name}</p>
+                      <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: isSelected ? "#94B5F5" : "var(--text-primary)" }}>{r.name}</p>
                       {r.phone && <p style={{ margin: 0, fontSize: 11, color: "var(--text-secondary)" }}>{r.phone}</p>}
                     </div>
-                    {isSelected && <MdCheckCircle size={18} style={{ color: "#3b82f6", flexShrink: 0 }} />}
+                    {isSelected && <MdCheckCircle size={18} style={{ color: "#5B8DEF", flexShrink: 0 }} />}
                   </button>
                 );
               })}
@@ -687,8 +687,8 @@ export default function AssignFlat() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-            style={{ background: "rgba(59,130,246,0.12)", border: "1px solid rgba(59,130,246,0.25)" }}>
-            <MdHome size={20} style={{ color: "#60a5fa" }} />
+            style={{ background: "rgba(91,141,239,0.12)", border: "1px solid rgba(91,141,239,0.25)" }}>
+            <MdHome size={20} style={{ color: "#94B5F5" }} />
           </div>
           <div>
             <h2 className="text-lg font-semibold">{t("afTitle") || "Assign Flat"}</h2>
@@ -746,7 +746,7 @@ export default function AssignFlat() {
           <div className="flex flex-col items-center gap-2 py-14 text-secondary">
             <MdSearch size={36} className="opacity-20" />
             <p className="text-sm">No flats match your filter.</p>
-            <button onClick={() => { setSearch(""); setFilterType("ALL"); }} style={{ fontSize: 12, color: "#60a5fa", background: "none", border: "none", cursor: "pointer" }}>
+            <button onClick={() => { setSearch(""); setFilterType("ALL"); }} style={{ fontSize: 12, color: "#94B5F5", background: "none", border: "none", cursor: "pointer" }}>
               Clear filters
             </button>
           </div>
@@ -777,11 +777,11 @@ export default function AssignFlat() {
                           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                             <div style={{
                               width: 32, height: 32, borderRadius: 8, flexShrink: 0,
-                              background: isRH ? "rgba(16,185,129,0.10)" : "rgba(59,130,246,0.10)",
-                              border: `1px solid ${isRH ? "rgba(16,185,129,0.22)" : "rgba(59,130,246,0.22)"}`,
+                              background: isRH ? "rgba(16,185,129,0.10)" : "rgba(91,141,239,0.10)",
+                              border: `1px solid ${isRH ? "rgba(16,185,129,0.22)" : "rgba(91,141,239,0.22)"}`,
                               display: "flex", alignItems: "center", justifyContent: "center",
                             }}>
-                              {isRH ? <MdHomeWork size={16} style={{ color: "#34d399" }} /> : <MdApartment size={16} style={{ color: "#60a5fa" }} />}
+                              {isRH ? <MdHomeWork size={16} style={{ color: "#34d399" }} /> : <MdApartment size={16} style={{ color: "#94B5F5" }} />}
                             </div>
                             <div>
                               <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
@@ -798,7 +798,7 @@ export default function AssignFlat() {
                         </td>
                         <td className="px-5 py-3">
                           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                            <div style={{ width: 30, height: 30, borderRadius: "50%", background: "rgba(99,102,241,0.12)", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, color: "#818cf8" }}>
+                            <div style={{ width: 30, height: 30, borderRadius: "50%", background: "rgba(107,70,193,0.12)", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, color: "#9F87D7" }}>
                               {flat.User?.name?.charAt(0)?.toUpperCase() || "?"}
                             </div>
                             <div>
@@ -837,8 +837,8 @@ export default function AssignFlat() {
                   <div key={flat.id} style={{ padding: "14px 16px" }}>
                     <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10 }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
-                        <div style={{ width: 40, height: 40, borderRadius: 10, flexShrink: 0, background: isRH ? "rgba(16,185,129,0.10)" : "rgba(59,130,246,0.10)", border: `1px solid ${isRH ? "rgba(16,185,129,0.22)" : "rgba(59,130,246,0.22)"}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                          {isRH ? <MdHomeWork size={18} style={{ color: "#34d399" }} /> : <MdApartment size={18} style={{ color: "#60a5fa" }} />}
+                        <div style={{ width: 40, height: 40, borderRadius: 10, flexShrink: 0, background: isRH ? "rgba(16,185,129,0.10)" : "rgba(91,141,239,0.10)", border: `1px solid ${isRH ? "rgba(16,185,129,0.22)" : "rgba(91,141,239,0.22)"}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                          {isRH ? <MdHomeWork size={18} style={{ color: "#34d399" }} /> : <MdApartment size={18} style={{ color: "#94B5F5" }} />}
                         </div>
                         <div style={{ minWidth: 0 }}>
                           <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
@@ -852,7 +852,7 @@ export default function AssignFlat() {
                             {block ? `Block ${block}` : ""}
                           </p>
                           <div style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 4 }}>
-                            <div style={{ width: 20, height: 20, borderRadius: "50%", background: "rgba(99,102,241,0.12)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 700, color: "#818cf8", flexShrink: 0 }}>
+                            <div style={{ width: 20, height: 20, borderRadius: "50%", background: "rgba(107,70,193,0.12)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 700, color: "#9F87D7", flexShrink: 0 }}>
                               {flat.User?.name?.charAt(0)?.toUpperCase() || "?"}
                             </div>
                             <span style={{ fontSize: 12, color: "var(--text-secondary)", fontWeight: 500 }}>{flat.User?.name || "—"}</span>

@@ -34,17 +34,17 @@ function amenityEmoji(name = "") {
 }
 
 const PALETTES = [
-  { iconBg:"rgba(139,92,246,0.15)",  iconBorder:"rgba(139,92,246,0.28)",  strip:"#a78bfa", stripEnd:"#6d28d9", glow:"rgba(139,92,246,0.20)" },
-  { iconBg:"rgba(59,130,246,0.15)",  iconBorder:"rgba(59,130,246,0.28)",  strip:"#60a5fa", stripEnd:"#1d4ed8", glow:"rgba(59,130,246,0.20)"  },
+  { iconBg:"rgba(107,70,193,0.15)",  iconBorder:"rgba(107,70,193,0.28)",  strip:"#9F87D7", stripEnd:"#493083", glow:"rgba(107,70,193,0.20)" },
+  { iconBg:"rgba(91,141,239,0.15)",  iconBorder:"rgba(91,141,239,0.28)",  strip:"#94B5F5", stripEnd:"#3E60A3", glow:"rgba(91,141,239,0.20)"  },
   { iconBg:"rgba(16,185,129,0.15)",  iconBorder:"rgba(16,185,129,0.28)",  strip:"#34d399", stripEnd:"#059669", glow:"rgba(16,185,129,0.20)"  },
   { iconBg:"rgba(245,158,11,0.15)",  iconBorder:"rgba(245,158,11,0.28)",  strip:"#fbbf24", stripEnd:"#d97706", glow:"rgba(245,158,11,0.20)"  },
   { iconBg:"rgba(244,63,94,0.15)",   iconBorder:"rgba(244,63,94,0.28)",   strip:"#fb7185", stripEnd:"#be123c", glow:"rgba(244,63,94,0.20)"   },
-  { iconBg:"rgba(14,165,233,0.15)",  iconBorder:"rgba(14,165,233,0.28)",  strip:"#38bdf8", stripEnd:"#0369a1", glow:"rgba(14,165,233,0.20)"  },
+  { iconBg:"rgba(91,141,239,0.15)",  iconBorder:"rgba(91,141,239,0.28)",  strip:"#94B5F5", stripEnd:"#3E60A3", glow:"rgba(91,141,239,0.20)"  },
 ];
 
 function StatusBadge({ status, t }) {
   const cfg = {
-    PAYMENT_PENDING: { label: "Awaiting Payment", bg:"rgba(139,92,246,0.12)", color:"#a78bfa", border:"rgba(139,92,246,0.3)" },
+    PAYMENT_PENDING: { label: "Awaiting Payment", bg:"rgba(107,70,193,0.12)", color:"#9F87D7", border:"rgba(107,70,193,0.3)" },
     PENDING:         { label: t("amenBookingPending"),   bg:"var(--stat-amber-bg)", color:"var(--stat-amber-color)", border:"var(--stat-amber-border)" },
     APPROVED:        { label: t("amenBookingApproved"),  bg:"var(--stat-green-bg)", color:"var(--stat-green-color)", border:"var(--stat-green-border)" },
     REJECTED:        { label: t("amenBookingRejected"),  bg:"var(--stat-red-bg)",   color:"var(--stat-red-color)",   border:"var(--stat-red-border)"   },
@@ -154,7 +154,7 @@ function DisableModal({ amenity, onClose, onConfirm, isMobile }) {
               <div style={{ fontSize:12, fontWeight:600, color:"var(--text-primary)" }}>Notify residents</div>
               <div style={{ fontSize:10, color:"var(--text-secondary)", marginTop:1 }}>Send a push notification about this closure</div>
             </div>
-            <div onClick={() => setNotifyResidents(p=>!p)} style={{ width:38, height:22, borderRadius:99, position:"relative", cursor:"pointer", background: notifyResidents ? "linear-gradient(90deg,#2563eb,#7c3aed)" : "var(--glass-border)", transition:"background 0.2s", flexShrink:0 }}>
+            <div onClick={() => setNotifyResidents(p=>!p)} style={{ width:38, height:22, borderRadius:99, position:"relative", cursor:"pointer", background: notifyResidents ? "linear-gradient(90deg,#4C76C9,#5A3BA2)" : "var(--glass-border)", transition:"background 0.2s", flexShrink:0 }}>
               <div style={{ position:"absolute", top:3, width:16, height:16, borderRadius:"50%", background:"#fff", boxShadow:"0 1px 4px rgba(0,0,0,0.25)", left: notifyResidents ? 19 : 3, transition:"left 0.2s" }}/>
             </div>
           </div>
@@ -313,12 +313,12 @@ export default function AdminAmenity() {
   ];
 
   const BFILTERS = [
-    { k:"ALL",             label:"All",              ac:"#4f46e5" },
-    { k:"PAYMENT_PENDING", label:"Awaiting Payment", ac:"#7c3aed" },
+    { k:"ALL",             label:"All",              ac:"#5A3BA2" },
+    { k:"PAYMENT_PENDING", label:"Awaiting Payment", ac:"#5A3BA2" },
     { k:"PENDING",         label:"Needs Approval",   ac:"#d97706" },
     { k:"APPROVED",        label:"Approved",         ac:"#16a34a" },
     { k:"REJECTED",        label:"Rejected",         ac:"#dc2626" },
-    { k:"CANCELLED",       label:"Cancelled",        ac:"#64748b" },
+    { k:"CANCELLED",       label:"Cancelled",        ac:"#726988" },
   ];
 
   const getCardStrip = (a, pal) => {
@@ -366,7 +366,7 @@ export default function AdminAmenity() {
         {TABS.map(({ key, label, Icon, count, alert }) => {
           const on = activeTab===key;
           return (
-            <button key={key} onClick={() => setActiveTab(key)} style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:7, padding: isMobile ? "10px 0" : "9px 18px", flex: isMobile ? 1 : "unset", borderRadius:12, fontSize:13, fontWeight: on ? 700 : 500, border:"none", cursor:"pointer", transition:"all 0.2s", background: on ? "linear-gradient(135deg,#2563eb 0%,#7c3aed 100%)" : "transparent", color: on ? "#fff" : "var(--text-secondary)", boxShadow: on ? "0 4px 16px rgba(37,99,235,0.30)" : "none" }}>
+            <button key={key} onClick={() => setActiveTab(key)} style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:7, padding: isMobile ? "10px 0" : "9px 18px", flex: isMobile ? 1 : "unset", borderRadius:12, fontSize:13, fontWeight: on ? 700 : 500, border:"none", cursor:"pointer", transition:"all 0.2s", background: on ? "linear-gradient(135deg,#4C76C9 0%,#5A3BA2 100%)" : "transparent", color: on ? "#fff" : "var(--text-secondary)", boxShadow: on ? "0 4px 16px rgba(76,118,201,0.30)" : "none" }}>
               <Icon size={15} style={{ opacity: on ? 1 : 0.55 }}/>
               {label}
               {alert > 0 ? (
@@ -384,7 +384,7 @@ export default function AdminAmenity() {
         <>
           <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap: isMobile ? 8 : 14 }}>
             {[
-              { label:t("amenStatTotal"),  val:aStats.total,  icon:"🏛️", bg:"var(--stat-purple-bg)", border:"var(--stat-purple-border)", color:"var(--stat-purple-color)", iconBg:"rgba(139,92,246,0.15)" },
+              { label:t("amenStatTotal"),  val:aStats.total,  icon:"🏛️", bg:"var(--stat-purple-bg)", border:"var(--stat-purple-border)", color:"var(--stat-purple-color)", iconBg:"rgba(107,70,193,0.15)" },
               { label:t("amenStatActive"), val:aStats.active, icon:"✅", bg:"var(--stat-green-bg)",  border:"var(--stat-green-border)",  color:"var(--stat-green-color)",  iconBg:"rgba(34,197,94,0.15)"   },
               { label:t("amenStatPaid"),   val:aStats.paid,   icon:"💳", bg:"var(--stat-amber-bg)",  border:"var(--stat-amber-border)",  color:"var(--stat-amber-color)",  iconBg:"rgba(245,158,11,0.15)"  },
             ].map((s,i) => (
@@ -399,7 +399,7 @@ export default function AdminAmenity() {
           {showForm && (
             <div className="animate-scaleIn" style={{ background:"var(--card-bg)", border:"1.5px solid var(--glass-border)", borderRadius:20, padding: isMobile ? "18px 16px" : "24px 28px" }}>
               <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:20 }}>
-                <div style={{ width:36, height:36, borderRadius:10, background:"rgba(99,102,241,0.12)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:17 }}>✨</div>
+                <div style={{ width:36, height:36, borderRadius:10, background:"rgba(107,70,193,0.12)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:17 }}>✨</div>
                 <div>
                   <div style={{ fontWeight:700, fontSize:14, color:"var(--text-primary)" }}>{t("amenFormTitle")}</div>
                   <div style={{ fontSize:12, color:"var(--text-secondary)", marginTop:2 }}>{t("amenFormSub")}</div>
@@ -416,7 +416,7 @@ export default function AdminAmenity() {
                   <div><Label>{t("amenFieldCloseTime")}</Label><input type="time" style={inputStyle} value={form.closing_time} onChange={e=>setForm({...form,closing_time:e.target.value})}/></div>
                 </>}
                 <div onClick={() => setForm({...form,requires_approval:!form.requires_approval})} style={{ display:"flex", alignItems:"center", gap:12, minHeight:48, padding:"0 14px", borderRadius:12, cursor:"pointer", background:"var(--card-inner-bg)", border:"1.5px solid var(--glass-border)" }}>
-                  <div style={{ width:38, height:22, borderRadius:99, position:"relative", flexShrink:0, background: form.requires_approval ? "linear-gradient(90deg,#2563eb,#7c3aed)" : "var(--card-inner-border,#cbd5e1)", transition:"background 0.2s" }}>
+                  <div style={{ width:38, height:22, borderRadius:99, position:"relative", flexShrink:0, background: form.requires_approval ? "linear-gradient(90deg,#4C76C9,#5A3BA2)" : "var(--card-inner-border,#C3BFCC)", transition:"background 0.2s" }}>
                     <div style={{ position:"absolute", top:3, width:16, height:16, borderRadius:"50%", background:"#fff", boxShadow:"0 1px 4px rgba(0,0,0,0.25)", left: form.requires_approval ? 19 : 3, transition:"left 0.2s" }}/>
                   </div>
                   <div>
@@ -522,7 +522,7 @@ export default function AdminAmenity() {
           <div style={{ display:"grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(5,1fr)", gap: isMobile ? 8 : 12 }}>
             {[
               { label:"Total",           val:bStats.total,          icon:"📋", bg:"var(--stat-purple-bg)", border:"var(--stat-purple-border)", color:"var(--stat-purple-color)" },
-              { label:"Awaiting Payment",val:bStats.paymentPending, icon:"💳", bg:"rgba(139,92,246,0.1)",  border:"rgba(139,92,246,0.25)",     color:"#a78bfa"                  },
+              { label:"Awaiting Payment",val:bStats.paymentPending, icon:"💳", bg:"rgba(107,70,193,0.1)",  border:"rgba(107,70,193,0.25)",     color:"#9F87D7"                  },
               { label:"Needs Approval",  val:bStats.pending,        icon:"⏳", bg:"var(--stat-amber-bg)",  border:"var(--stat-amber-border)",  color:"var(--stat-amber-color)"  },
               { label:"Approved",        val:bStats.approved,       icon:"✅", bg:"var(--stat-green-bg)",  border:"var(--stat-green-border)",  color:"var(--stat-green-color)"  },
               { label:"Rejected",        val:bStats.rejected,       icon:"❌", bg:"var(--stat-red-bg)",    border:"var(--stat-red-border)",    color:"var(--stat-red-color)"    },
@@ -577,7 +577,7 @@ export default function AdminAmenity() {
               const canAct   = b.status==="PENDING" && !isPast && needsApp;
               const isPaymentPending = b.status === "PAYMENT_PENDING";
               const dotColor = {
-                PAYMENT_PENDING: "#8b5cf6",
+                PAYMENT_PENDING: "#6B46C1",
                 APPROVED: "#22c55e", PENDING: "#f59e0b",
                 REJECTED: "#ef4444", CANCELLED: "var(--text-secondary)",
               }[b.status] || "var(--text-secondary)";
@@ -590,10 +590,10 @@ export default function AdminAmenity() {
                   alignItems: isMobile && canAct ? "flex-start" : "center",
                   justifyContent:"space-between", gap: isMobile ? 10 : 12,
                   transition:"background 0.15s", animationDelay:`${i*25}ms`,
-                  background: isPaymentPending ? "rgba(139,92,246,0.03)" : "transparent",
+                  background: isPaymentPending ? "rgba(107,70,193,0.03)" : "transparent",
                 }}
-                onMouseEnter={e => { e.currentTarget.style.background = isPaymentPending ? "rgba(139,92,246,0.06)" : "var(--row-hover)"; }}
-                onMouseLeave={e => { e.currentTarget.style.background = isPaymentPending ? "rgba(139,92,246,0.03)" : "transparent"; }}>
+                onMouseEnter={e => { e.currentTarget.style.background = isPaymentPending ? "rgba(107,70,193,0.06)" : "var(--row-hover)"; }}
+                onMouseLeave={e => { e.currentTarget.style.background = isPaymentPending ? "rgba(107,70,193,0.03)" : "transparent"; }}>
 
                   <div style={{ display:"flex", alignItems:"flex-start", gap:11, flex:1, minWidth:0 }}>
                     <div style={{ width:8, height:8, borderRadius:"50%", marginTop:6, flexShrink:0, background:dotColor, boxShadow:`0 0 0 3px ${dotColor}22` }}/>
@@ -606,7 +606,7 @@ export default function AdminAmenity() {
                         {b.date && <span style={{ display:"flex", alignItems:"center", gap:4, fontSize:11, color:"var(--text-secondary)" }}><MdEventAvailable size={12}/> {b.date}</span>}
                         {b.start_time && <span style={{ display:"flex", alignItems:"center", gap:4, fontSize:11, color:"var(--text-secondary)" }}><MdAccessTime size={12}/> {b.start_time}–{b.end_time}</span>}
                         {isPaymentPending && b.payment_expires_in_seconds !== undefined && (
-                          <span style={{ display:"flex", alignItems:"center", gap:3, fontSize:11, fontWeight:600, color: b.payment_expires_in_seconds < 120 ? "#ef4444" : "#a78bfa" }}>
+                          <span style={{ display:"flex", alignItems:"center", gap:3, fontSize:11, fontWeight:600, color: b.payment_expires_in_seconds < 120 ? "#ef4444" : "#9F87D7" }}>
                             <MdPayment size={12}/> ~{Math.ceil(b.payment_expires_in_seconds / 60)}m left
                           </span>
                         )}

@@ -130,10 +130,10 @@ export default function ManageProperty() {
                 fontSize: isMobile ? 12 : 13, fontWeight: on ? 700 : 500,
                 transition: "all 0.2s",
                 background: on
-                  ? "linear-gradient(135deg, #2563eb 0%, #7c3aed 100%)"
+                  ? "linear-gradient(135deg, #4C76C9 0%, #5A3BA2 100%)"
                   : "transparent",
                 color: on ? "#fff" : "var(--text-secondary)",
-                boxShadow: on ? "0 4px 16px rgba(37,99,235,0.35), inset 0 1px 0 rgba(255,255,255,0.15)" : "none",
+                boxShadow: on ? "0 4px 16px rgba(76,118,201,0.35), inset 0 1px 0 rgba(255,255,255,0.15)" : "none",
               }}>
               <Icon size={16} />
               {label}
@@ -246,7 +246,7 @@ function BlocksTab({ isMobile, t }) {
       {showForm && (
         <div className="bg-card animate-scaleIn" style={{ padding: "20px 22px", borderRadius: 18, maxWidth: 800 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
-            <div style={{ width: 32, height: 32, borderRadius: 9, background: "rgba(37,99,235,0.12)", border: "1px solid rgba(37,99,235,0.25)", display: "flex", alignItems: "center", justifyContent: "center", color: "#3b82f6" }}><MdAdd size={17} /></div>
+            <div style={{ width: 32, height: 32, borderRadius: 9, background: "rgba(76,118,201,0.12)", border: "1px solid rgba(76,118,201,0.25)", display: "flex", alignItems: "center", justifyContent: "center", color: "#5B8DEF" }}><MdAdd size={17} /></div>
             <div>
               <p style={{ margin: 0, fontWeight: 700, fontSize: 14, color: "var(--text-primary)" }}>{t("mpCreateNewBlock") || "Create New Property Phase"}</p>
               <p style={{ margin: 0, fontSize: 11, color: "var(--text-secondary)" }}>Units will be auto-generated based on configuration.</p>
@@ -331,23 +331,23 @@ function BlocksTab({ isMobile, t }) {
               const blockId = safeNum(b.id);
               return (
                 <div key={b.id} className="inner-card animate-fadeIn" style={{ borderRadius: 14, overflow: "hidden" }}>
-                  <div style={{ height: 3, background: isRowHouse ? "linear-gradient(90deg,#10b981,#34d399)" : "linear-gradient(90deg,#2563eb,#7c3aed)" }} />
+                  <div style={{ height: 3, background: isRowHouse ? "linear-gradient(90deg,#10b981,#34d399)" : "linear-gradient(90deg,#4C76C9,#5A3BA2)" }} />
                   <div style={{ padding: "12px 14px", display: "flex", flexDirection: "column", gap: 10 }}>
                     <div style={{ display: "flex", alignItems: "center", justifyItems: "space-between" }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 10, flex: 1 }}>
-                        <div style={{ width: 36, height: 36, borderRadius: 10, background: isRowHouse ? "rgba(16,185,129,0.12)" : "rgba(99,102,241,0.12)", border: isRowHouse ? "1px solid rgba(16,185,129,0.22)" : "1px solid rgba(99,102,241,0.22)", display: "flex", alignItems: "center", justifyContent: "center", color: isRowHouse ? "#10b981" : "#818cf8", flexShrink: 0 }}>
+                        <div style={{ width: 36, height: 36, borderRadius: 10, background: isRowHouse ? "rgba(16,185,129,0.12)" : "rgba(107,70,193,0.12)", border: isRowHouse ? "1px solid rgba(16,185,129,0.22)" : "1px solid rgba(107,70,193,0.22)", display: "flex", alignItems: "center", justifyContent: "center", color: isRowHouse ? "#10b981" : "#9F87D7", flexShrink: 0 }}>
                           {isRowHouse ? <MdHomeWork size={18} /> : <MdGridView size={18} />}
                         </div>
                         <div>
                           <p style={{ fontWeight: 700, fontSize: 14, color: "var(--text-primary)", margin: 0 }}>{b.name}</p>
-                          <span style={{ fontSize: "10px", fontWeight: "600", padding: "2px 6px", borderRadius: "4px", background: isRowHouse ? "rgba(16,185,129,0.1)" : "rgba(59,130,246,0.1)", color: isRowHouse ? "#10b981" : "#3b82f6", display: "inline-block", marginTop: 4 }}>
+                          <span style={{ fontSize: "10px", fontWeight: "600", padding: "2px 6px", borderRadius: "4px", background: isRowHouse ? "rgba(16,185,129,0.1)" : "rgba(91,141,239,0.1)", color: isRowHouse ? "#10b981" : "#5B8DEF", display: "inline-block", marginTop: 4 }}>
                             {b.property_type || "APARTMENT"}
                           </span>
                         </div>
                       </div>
                       <button
                         onClick={() => setSelectedBlock(selectedBlock?.id === b.id ? null : b)}
-                        style={{ display: "flex", alignItems: "center", gap: 4, padding: "5px 10px", borderRadius: 8, background: "rgba(59,130,246,0.10)", border: "1px solid rgba(59,130,246,0.22)", color: "#60a5fa", fontSize: 11, fontWeight: 600, cursor: "pointer" }}
+                        style={{ display: "flex", alignItems: "center", gap: 4, padding: "5px 10px", borderRadius: 8, background: "rgba(91,141,239,0.10)", border: "1px solid rgba(91,141,239,0.22)", color: "#94B5F5", fontSize: 11, fontWeight: 600, cursor: "pointer" }}
                       >
                         {isRowHouse ? "Houses" : "Floors"} <MdArrowForwardIos size={10} style={{ transform: selectedBlock?.id === b.id ? "rotate(90deg)" : "none", transition: "transform 0.2s" }} />
                       </button>
@@ -401,14 +401,14 @@ function BlocksTab({ isMobile, t }) {
                         <td style={{ color: "var(--text-secondary)", fontSize: 12 }}>{idx + 1}</td>
                         <td>
                           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                            <div style={{ width: 32, height: 32, borderRadius: 9, background: isRowHouse ? "rgba(16,185,129,0.12)" : "rgba(99,102,241,0.12)", border: isRowHouse ? "1px solid rgba(16,185,129,0.22)" : "1px solid rgba(99,102,241,0.22)", display: "flex", alignItems: "center", justifyContent: "center", color: isRowHouse ? "#10b981" : "#818cf8", flexShrink: 0 }}>
+                            <div style={{ width: 32, height: 32, borderRadius: 9, background: isRowHouse ? "rgba(16,185,129,0.12)" : "rgba(107,70,193,0.12)", border: isRowHouse ? "1px solid rgba(16,185,129,0.22)" : "1px solid rgba(107,70,193,0.22)", display: "flex", alignItems: "center", justifyContent: "center", color: isRowHouse ? "#10b981" : "#9F87D7", flexShrink: 0 }}>
                               {isRowHouse ? <MdHomeWork size={15} /> : <MdGridView size={15} />}
                             </div>
                             <span style={{ fontWeight: 600, fontSize: 14, color: "var(--text-primary)" }}>{b.name}</span>
                           </div>
                         </td>
                         <td>
-                          <span style={{ fontSize: "11px", fontWeight: "600", padding: "4px 8px", borderRadius: "6px", background: isRowHouse ? "rgba(16,185,129,0.1)" : "rgba(59,130,246,0.1)", color: isRowHouse ? "#10b981" : "#3b82f6" }}>
+                          <span style={{ fontSize: "11px", fontWeight: "600", padding: "4px 8px", borderRadius: "6px", background: isRowHouse ? "rgba(16,185,129,0.1)" : "rgba(91,141,239,0.1)", color: isRowHouse ? "#10b981" : "#5B8DEF" }}>
                             {b.property_type || "APARTMENT"}
                           </span>
                         </td>
@@ -416,7 +416,7 @@ function BlocksTab({ isMobile, t }) {
                           <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 8 }}>
                             <button
                               onClick={() => setSelectedBlock(selectedBlock?.id === b.id ? null : b)}
-                              style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "5px 12px", borderRadius: 8, fontSize: 12, fontWeight: 600, background: "rgba(59,130,246,0.10)", color: "var(--stat-blue-color,#93c5fd)", border: "1px solid rgba(59,130,246,0.22)", cursor: "pointer" }}
+                              style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "5px 12px", borderRadius: 8, fontSize: 12, fontWeight: 600, background: "rgba(91,141,239,0.10)", color: "var(--stat-blue-color,#B9CFF8)", border: "1px solid rgba(91,141,239,0.22)", cursor: "pointer" }}
                             >
                               {isRowHouse ? <MdHomeWork size={13} /> : <MdLayers size={13} />}
                               {selectedBlock?.id === b.id ? "Hide" : (isRowHouse ? "Houses" : "Floors")}
@@ -587,7 +587,7 @@ function InlineFlats({ floorId, blockId, isMobile, t }) {
       <div style={{ padding: "8px 14px", borderBottom: isRowHouseContext ? "1px solid var(--glass-border)" : "1px dashed var(--glass-border)", display: "flex", alignItems: "center", gap: 7 }}>
         {isRowHouseContext
           ? <MdHomeWork size={13} style={{ color: "#10b981" }} />
-          : <MdApartment size={13} style={{ color: "var(--stat-blue-color,#93c5fd)" }} />
+          : <MdApartment size={13} style={{ color: "var(--stat-blue-color,#B9CFF8)" }} />
         }
         <span style={{ fontSize: 12, fontWeight: 600, color: "var(--text-secondary)" }}>
           {flats.length} {isRowHouseContext ? "House" : "Unit"}{flats.length !== 1 ? "s" : ""}
@@ -604,7 +604,7 @@ function InlineFlats({ floorId, blockId, isMobile, t }) {
                   : <MdApartment size={13} style={{ color: occupied ? "var(--stat-green-color,#86efac)" : "var(--text-secondary)" }} />
                 }
                 <span style={{ fontSize: 12, fontWeight: 600, color: "var(--text-primary)" }}>{f.flat_number}</span>
-                <span style={{ fontSize: 9, fontWeight: 700, padding: "1px 5px", borderRadius: 999, background: occupied ? "rgba(34,197,94,0.12)" : "rgba(100,116,139,0.10)", color: occupied ? "var(--stat-green-color,#86efac)" : "var(--text-secondary)", border: `1px solid ${occupied ? "rgba(34,197,94,0.22)" : "rgba(100,116,139,0.15)"}` }}>
+                <span style={{ fontSize: 9, fontWeight: 700, padding: "1px 5px", borderRadius: 999, background: occupied ? "rgba(34,197,94,0.12)" : "rgba(114,105,136,0.10)", color: occupied ? "var(--stat-green-color,#86efac)" : "var(--text-secondary)", border: `1px solid ${occupied ? "rgba(34,197,94,0.22)" : "rgba(114,105,136,0.15)"}` }}>
                   {occupied ? t("mpOcc") || "Occ" : t("mpVac") || "Vac"}
                 </span>
               </div>
@@ -674,7 +674,7 @@ function FlatsTab({ isMobile, t }) {
   });
 
   const FILTER_TABS = [
-    { key: "ALL",      label: t("mpAll") || "All",           color: "#4f46e5" },
+    { key: "ALL",      label: t("mpAll") || "All",           color: "#5A3BA2" },
     { key: "OCCUPIED", label: t("mpOccupied") || "Occupied", color: "#16a34a" },
     { key: "VACANT",   label: t("mpVacant") || "Vacant",     color: "#d97706" },
   ];
@@ -937,7 +937,7 @@ function AssignTab({ isMobile, t }) {
       {showForm && (
         <div className="bg-card animate-scaleIn" style={{ padding: "20px 22px", borderRadius: 18, maxWidth: 520 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
-            <div style={{ width: 32, height: 32, borderRadius: 9, background: "rgba(37,99,235,0.12)", border: "1px solid rgba(37,99,235,0.25)", display: "flex", alignItems: "center", justifyContent: "center", color: "#3b82f6" }}><MdAdd size={17} /></div>
+            <div style={{ width: 32, height: 32, borderRadius: 9, background: "rgba(76,118,201,0.12)", border: "1px solid rgba(76,118,201,0.25)", display: "flex", alignItems: "center", justifyContent: "center", color: "#5B8DEF" }}><MdAdd size={17} /></div>
             <div>
               <p style={{ margin: 0, fontWeight: 700, fontSize: 14, color: "var(--text-primary)" }}>{t("mpAssignResident") || "Assign Resident"}</p>
               <p style={{ margin: 0, fontSize: 11, color: "var(--text-secondary)" }}>{t("mpOnlyUnassigned") || "Only unassigned units are shown"}</p>
@@ -1015,10 +1015,10 @@ function AssignTab({ isMobile, t }) {
               return (
                 <div key={flat.id} style={{ padding: "12px 14px", borderBottom: "1px solid var(--glass-border)", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
-                    <div style={{ width: 38, height: 38, borderRadius: 10, background: isRowHouse ? "rgba(16,185,129,0.1)" : "rgba(59,130,246,0.10)", border: isRowHouse ? "1px solid rgba(16,185,129,0.22)" : "1px solid rgba(59,130,246,0.22)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                    <div style={{ width: 38, height: 38, borderRadius: 10, background: isRowHouse ? "rgba(16,185,129,0.1)" : "rgba(91,141,239,0.10)", border: isRowHouse ? "1px solid rgba(16,185,129,0.22)" : "1px solid rgba(91,141,239,0.22)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                       {isRowHouse
                         ? <MdHomeWork size={18} style={{ color: "#10b981" }} />
-                        : <MdHome size={18} style={{ color: "#60a5fa" }} />
+                        : <MdHome size={18} style={{ color: "#94B5F5" }} />
                       }
                     </div>
                     <div style={{ minWidth: 0 }}>
@@ -1064,7 +1064,7 @@ function AssignTab({ isMobile, t }) {
                   <tr key={flat.id}>
                     <td style={{ color: "var(--text-secondary)", fontSize: 12 }}>{(page - 1) * LIMIT + idx + 1}</td>
                     <td>
-                      <span style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "4px 10px", borderRadius: 8, fontSize: 13, fontWeight: 600, background: isRowHouse ? "rgba(16,185,129,0.1)" : "rgba(59,130,246,0.10)", color: isRowHouse ? "#10b981" : "#60a5fa", border: isRowHouse ? "1px solid rgba(16,185,129,0.22)" : "1px solid rgba(59,130,246,0.22)" }}>
+                      <span style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "4px 10px", borderRadius: 8, fontSize: 13, fontWeight: 600, background: isRowHouse ? "rgba(16,185,129,0.1)" : "rgba(91,141,239,0.10)", color: isRowHouse ? "#10b981" : "#94B5F5", border: isRowHouse ? "1px solid rgba(16,185,129,0.22)" : "1px solid rgba(91,141,239,0.22)" }}>
                         {isRowHouse ? <MdHomeWork size={13} /> : <MdHome size={13} />} {flat.flat_number}
                       </span>
                       <p className="text-xs text-secondary mt-1 ml-1" style={{ opacity: 0.8, fontSize: 11 }}>
@@ -1073,7 +1073,7 @@ function AssignTab({ isMobile, t }) {
                     </td>
                     <td>
                       <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
-                        <div style={{ width: 28, height: 28, borderRadius: "50%", background: "rgba(99,102,241,0.12)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, color: "#818cf8", flexShrink: 0 }}>
+                        <div style={{ width: 28, height: 28, borderRadius: "50%", background: "rgba(107,70,193,0.12)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, color: "#9F87D7", flexShrink: 0 }}>
                           {flat.User?.name?.charAt(0)?.toUpperCase() || "?"}
                         </div>
                         <span style={{ fontSize: 13, color: "var(--text-primary)" }}>{flat.User?.name || "—"}</span>

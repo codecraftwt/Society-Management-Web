@@ -114,7 +114,7 @@ export default function SuperAdminDashboard() {
     { label: t("saStatAssigned"), value: totalAssigned,    icon: FaUserShield,   color: "#22c55e",        bg: "rgba(34,197,94,0.12)" },
     { label: t("saStatPending"),  value: totalUnassigned,  icon: MdWarning,      color: "#f59e0b",        bg: "rgba(245,158,11,0.12)" },
     { label: t("saStatCoverage"), value: societies.length ? `${Math.round((totalAssigned / societies.length) * 100)}%` : "0%",
-      icon: MdTrendingUp, color: "#a78bfa", bg: "rgba(167,139,250,0.12)" },
+      icon: MdTrendingUp, color: "#9F87D7", bg: "rgba(159,135,215,0.12)" },
   ];
 
   const filterBtns = [
@@ -256,7 +256,7 @@ export default function SuperAdminDashboard() {
                  <span style={{ 
                     fontSize: "10px", fontWeight: "600", padding: "4px 8px", borderRadius: "6px",
                     background: s.property_type === "Row Houses" ? "rgba(16, 185, 129, 0.1)" : "rgba(59, 130, 246, 0.1)",
-                    color: s.property_type === "Row Houses" ? "#10b981" : "#3b82f6",
+                    color: s.property_type === "Row Houses" ? "#10b981" : "#5B8DEF",
                     display: "inline-block", marginTop: "-4px"
                   }}>
                     {s.property_type || "Apartments"}

@@ -97,7 +97,7 @@ export default function AdminDashboard() {
     { name: t("dashTotalFlats") || "Total Flats",  value: totalFlats     },
   ];
 
-  const COLORS = ["#60a5fa", "#22c55e", "#facc15", "#a78bfa"];
+  const COLORS = ["#94B5F5", "#22c55e", "#facc15", "#9F87D7"];
 
   if (loading) {
     return (
@@ -154,7 +154,7 @@ export default function AdminDashboard() {
             title={t("dashResidents")}
             value={residents}
             description={t("dashResidentsDesc")}
-            color="#60a5fa"
+            color="#94B5F5"
           />
           <StatCard
             title={t("dashGuards")}
@@ -172,7 +172,7 @@ export default function AdminDashboard() {
             title={t("dashTotalFlats") || "Total Flats"}
             value={totalFlats}
             description={t("dashTotalFlatsDesc") || "Across all blocks & floors"}
-            color="#a78bfa"
+            color="#9F87D7"
           />
         </div>
 
@@ -203,7 +203,7 @@ export default function AdminDashboard() {
                 <XAxis dataKey="name" tick={{ fontSize: 11 }} />
                 <YAxis allowDecimals={false} />
                 <Tooltip />
-                <Bar dataKey="value" fill="#60a5fa" barSize={22} radius={[6, 6, 0, 0]} />
+                <Bar dataKey="value" fill="#94B5F5" barSize={22} radius={[6, 6, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>

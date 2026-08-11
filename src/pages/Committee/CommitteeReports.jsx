@@ -22,7 +22,7 @@ export default function CommitteeReports() {
         bg:     "bg-blue-500/15",
         border: "border-blue-500/25",
         icon:   "text-blue-400",
-        glow:   "rgba(59,130,246,0.15)",
+        glow:   "rgba(91,141,239,0.15)",
         stat:   "Entry & exit logs",
       },
     },

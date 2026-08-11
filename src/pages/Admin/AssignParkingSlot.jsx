@@ -82,7 +82,7 @@ function ReqBadge({ status }) {
     PENDING: { label: "Pending", color: "#fbbf24", bg: "rgba(251,191,36,0.12)", border: "rgba(251,191,36,0.28)" },
     APPROVED: { label: "Approved", color: "#4ade80", bg: "rgba(74,222,128,0.12)", border: "rgba(74,222,128,0.28)" },
     REJECTED: { label: "Rejected", color: "#f87171", bg: "rgba(248,113,113,0.12)", border: "rgba(248,113,113,0.28)" },
-  }[status] || { label: status, color: "#94a3b8", bg: "rgba(148,163,184,0.10)", border: "rgba(148,163,184,0.22)" };
+  }[status] || { label: status, color: "#A39EB2", bg: "rgba(163,158,178,0.10)", border: "rgba(163,158,178,0.22)" };
   return (
     <span style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "3px 10px", borderRadius: 999, fontSize: 11, fontWeight: 700, color: cfg.color, background: cfg.bg, border: `1px solid ${cfg.border}` }}>
       {cfg.label}
@@ -286,11 +286,11 @@ function ResidentEntryPanel({ slots, onCreated, t }) {
                   <div className="flex items-center gap-3">
                     <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
                       style={vehicle.vehicle_type === "CAR"
-                        ? { background: "rgba(59,130,246,0.12)", border: "1px solid rgba(59,130,246,0.22)" }
-                        : { background: "rgba(139,92,246,0.12)", border: "1px solid rgba(139,92,246,0.22)" }}>
+                        ? { background: "rgba(91,141,239,0.12)", border: "1px solid rgba(91,141,239,0.22)" }
+                        : { background: "rgba(107,70,193,0.12)", border: "1px solid rgba(107,70,193,0.22)" }}>
                       {vehicle.vehicle_type === "CAR"
-                        ? <MdDirectionsCar size={18} style={{ color: "#60a5fa" }} />
-                        : <MdTwoWheeler size={18} style={{ color: "#a78bfa" }} />}
+                        ? <MdDirectionsCar size={18} style={{ color: "#94B5F5" }} />
+                        : <MdTwoWheeler size={18} style={{ color: "#9F87D7" }} />}
                     </div>
                     <div>
                       <p className="font-bold text-sm"
@@ -306,7 +306,7 @@ function ResidentEntryPanel({ slots, onCreated, t }) {
                         {vehicle.resident_name}
                         {vehicle.flat_number && <> · Flat {vehicle.flat_number}</>}
                         <span className="ml-1.5 font-bold"
-                          style={{ color: vehicle.vehicle_type === "CAR" ? "#60a5fa" : "#a78bfa" }}>
+                          style={{ color: vehicle.vehicle_type === "CAR" ? "#94B5F5" : "#9F87D7" }}>
                           {vehicle.vehicle_type}
                         </span>
                       </p>
@@ -506,7 +506,7 @@ function ResidentRequestsPanel({ allSlots, onSlotAssigned }) {
     { key: "PENDING", label: "Pending", color: "#fbbf24" },
     { key: "APPROVED", label: "Approved", color: "#4ade80" },
     { key: "REJECTED", label: "Rejected", color: "#f87171" },
-    { key: "ALL", label: "All", color: "#94a3b8" },
+    { key: "ALL", label: "All", color: "#A39EB2" },
   ];
 
   return (
@@ -514,8 +514,8 @@ function ResidentRequestsPanel({ allSlots, onSlotAssigned }) {
 
       {/* Info banner */}
       <div className="flex items-start gap-3 p-4 rounded-xl"
-        style={{ background: "rgba(99,102,241,0.08)", border: "1.5px solid rgba(99,102,241,0.22)" }}>
-        <MdPendingActions style={{ color: "#818cf8", fontSize: 20, flexShrink: 0, marginTop: 1 }} />
+        style={{ background: "rgba(107,70,193,0.08)", border: "1.5px solid rgba(107,70,193,0.22)" }}>
+        <MdPendingActions style={{ color: "#9F87D7", fontSize: 20, flexShrink: 0, marginTop: 1 }} />
         <div>
           <p className="font-bold text-sm" style={{ color: "var(--text-primary)", margin: 0 }}>Extra Parking Slot Requests</p>
           <p className="text-xs mt-1" style={{ color: "var(--text-secondary)", margin: 0, lineHeight: 1.6 }}>
@@ -523,7 +523,7 @@ function ResidentRequestsPanel({ allSlots, onSlotAssigned }) {
             for their flat — either all slots were occupied, or no slot was assigned for that vehicle type.
             Assign a free available slot to approve. The slot will be permanently linked to the resident's flat and vehicle.
           </p>
-          <p className="text-xs mt-1.5" style={{ color: "#818cf8", margin: 0, fontWeight: 600 }}>
+          <p className="text-xs mt-1.5" style={{ color: "#9F87D7", margin: 0, fontWeight: 600 }}>
             ℹ️ Slots assigned at resident creation go directly to the flat and do NOT appear here.
           </p>
         </div>
@@ -596,11 +596,11 @@ function ResidentRequestsPanel({ allSlots, onSlotAssigned }) {
                   <div className="flex items-center gap-3">
                     <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
                       style={req.vehicle_type === "CAR"
-                        ? { background: "rgba(59,130,246,0.12)", border: "1px solid rgba(59,130,246,0.22)" }
-                        : { background: "rgba(139,92,246,0.12)", border: "1px solid rgba(139,92,246,0.22)" }}>
+                        ? { background: "rgba(91,141,239,0.12)", border: "1px solid rgba(91,141,239,0.22)" }
+                        : { background: "rgba(107,70,193,0.12)", border: "1px solid rgba(107,70,193,0.22)" }}>
                       {req.vehicle_type === "CAR"
-                        ? <MdDirectionsCar size={18} style={{ color: "#60a5fa" }} />
-                        : <MdTwoWheeler size={18} style={{ color: "#a78bfa" }} />}
+                        ? <MdDirectionsCar size={18} style={{ color: "#94B5F5" }} />
+                        : <MdTwoWheeler size={18} style={{ color: "#9F87D7" }} />}
                     </div>
                     <div>
                       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -615,7 +615,7 @@ function ResidentRequestsPanel({ allSlots, onSlotAssigned }) {
                         {req.guest_name}
                         {req.Flat?.flat_number && <> · Flat {req.Flat.flat_number}</>}
                         {req.resident?.name && <> · {req.resident.name}</>}
-                        <span className="ml-1.5 font-bold" style={{ color: req.vehicle_type === "CAR" ? "#60a5fa" : "#a78bfa" }}>
+                        <span className="ml-1.5 font-bold" style={{ color: req.vehicle_type === "CAR" ? "#94B5F5" : "#9F87D7" }}>
                           {req.vehicle_type}
                         </span>
                       </p>
@@ -635,7 +635,7 @@ function ResidentRequestsPanel({ allSlots, onSlotAssigned }) {
                     {isPending && (
                       <button onClick={() => setExpandedId(isExpanded ? null : req.id)}
                         className="w-8 h-8 flex items-center justify-center rounded-xl transition-all"
-                        style={{ background: isExpanded ? "rgba(99,102,241,0.15)" : "rgba(255,255,255,0.05)", border: "1px solid var(--glass-border)", color: isExpanded ? "#818cf8" : "var(--text-secondary)", fontWeight: 700, fontSize: 16, cursor: "pointer" }}>
+                        style={{ background: isExpanded ? "rgba(107,70,193,0.15)" : "rgba(255,255,255,0.05)", border: "1px solid var(--glass-border)", color: isExpanded ? "#9F87D7" : "var(--text-secondary)", fontWeight: 700, fontSize: 16, cursor: "pointer" }}>
                         {isExpanded ? "−" : "+"}
                       </button>
                     )}
@@ -880,8 +880,8 @@ export default function AssignParkingSlot() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-            style={{ background: "rgba(59,130,246,0.12)", border: "1px solid rgba(59,130,246,0.25)" }}>
-            <FaParking size={18} style={{ color: "#60a5fa" }} />
+            style={{ background: "rgba(91,141,239,0.12)", border: "1px solid rgba(91,141,239,0.25)" }}>
+            <FaParking size={18} style={{ color: "#94B5F5" }} />
           </div>
           <div>
             <h2 className="text-lg font-semibold">{t("parkTitle") || "Parking Slots"}</h2>
@@ -906,8 +906,8 @@ export default function AssignParkingSlot() {
               ? tab.key === "resident-entry"
                 ? { background: "linear-gradient(135deg,#92400e,#d97706)", color: "#fff", boxShadow: "0 3px 12px rgba(217,119,6,0.30)", border: "none" }
                 : tab.key === "resident-requests"
-                  ? { background: "linear-gradient(135deg,#4338ca,#6366f1)", color: "#fff", boxShadow: "0 3px 12px rgba(99,102,241,0.30)", border: "none" }
-                  : { background: "rgba(59,130,246,0.15)", color: "#60a5fa", border: "1px solid rgba(59,130,246,0.35)" }
+                  ? { background: "linear-gradient(135deg,#493083,#6B46C1)", color: "#fff", boxShadow: "0 3px 12px rgba(107,70,193,0.30)", border: "none" }
+                  : { background: "rgba(91,141,239,0.15)", color: "#94B5F5", border: "1px solid rgba(91,141,239,0.35)" }
               : { background: "transparent", color: "var(--text-secondary)", border: "1px solid transparent" }}>
             {tab.icon}
             {tab.label}
@@ -1014,7 +1014,7 @@ export default function AssignParkingSlot() {
                   <button key={tab.key} onClick={() => handleFilterChange(tab.key)}
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all"
                     style={vehicleFilter === tab.key
-                      ? { background: "rgba(59,130,246,0.15)", color: "#60a5fa", border: "1px solid rgba(59,130,246,0.35)" }
+                      ? { background: "rgba(91,141,239,0.15)", color: "#94B5F5", border: "1px solid rgba(91,141,239,0.35)" }
                       : { background: "var(--bg-soft,rgba(0,0,0,0.04))", color: "var(--text-secondary)", border: "1px solid var(--border-color)" }}>
                     {tab.icon} {tab.label} <span className="opacity-55">({tab.count})</span>
                   </button>
@@ -1071,10 +1071,10 @@ export default function AssignParkingSlot() {
                       style={{ background: "var(--card-inner-bg)", border: "1px solid var(--card-inner-border)", animationDelay: `${i * 15}ms` }}>
                       <div className="flex items-center gap-3">
                         <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
-                          style={slot.vehicle_type === "CAR" ? { background: "rgba(59,130,246,0.12)", border: "1px solid rgba(59,130,246,0.22)" } : { background: "rgba(139,92,246,0.12)", border: "1px solid rgba(139,92,246,0.22)" }}>
+                          style={slot.vehicle_type === "CAR" ? { background: "rgba(91,141,239,0.12)", border: "1px solid rgba(91,141,239,0.22)" } : { background: "rgba(107,70,193,0.12)", border: "1px solid rgba(107,70,193,0.22)" }}>
                           {slot.vehicle_type === "CAR"
-                            ? <MdDirectionsCar size={18} style={{ color: "#60a5fa" }} />
-                            : <MdTwoWheeler size={18} style={{ color: "#a78bfa" }} />}
+                            ? <MdDirectionsCar size={18} style={{ color: "#94B5F5" }} />
+                            : <MdTwoWheeler size={18} style={{ color: "#9F87D7" }} />}
                         </div>
                         <div>
                           <p className="font-semibold text-sm">{slot.slot_number}</p>
@@ -1125,10 +1125,10 @@ export default function AssignParkingSlot() {
                           <td className="px-5 py-3">
                             <div className="flex items-center gap-2.5">
                               <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
-                                style={slot.vehicle_type === "CAR" ? { background: "rgba(59,130,246,0.12)", border: "1px solid rgba(59,130,246,0.22)" } : { background: "rgba(139,92,246,0.12)", border: "1px solid rgba(139,92,246,0.22)" }}>
+                                style={slot.vehicle_type === "CAR" ? { background: "rgba(91,141,239,0.12)", border: "1px solid rgba(91,141,239,0.22)" } : { background: "rgba(107,70,193,0.12)", border: "1px solid rgba(107,70,193,0.22)" }}>
                                 {slot.vehicle_type === "CAR"
-                                  ? <MdDirectionsCar size={16} style={{ color: "#60a5fa" }} />
-                                  : <MdTwoWheeler size={16} style={{ color: "#a78bfa" }} />}
+                                  ? <MdDirectionsCar size={16} style={{ color: "#94B5F5" }} />
+                                  : <MdTwoWheeler size={16} style={{ color: "#9F87D7" }} />}
                               </div>
                               <span className="font-semibold">{slot.slot_number}</span>
                             </div>

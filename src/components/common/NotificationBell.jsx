@@ -210,7 +210,7 @@ export default function NotificationBell() {
                   style={{
                     flex: 1, height: 40, borderRadius: 9, border: "none",
                     background: rejectSubmitting
-                      ? "#6b7280"
+                      ? "#8C8795"
                       : "linear-gradient(135deg,#dc2626,#ef4444)",
                     color: "#fff",
                     cursor: rejectSubmitting ? "not-allowed" : "pointer",
@@ -329,7 +329,7 @@ export default function NotificationBell() {
                               padding: "6px 14px", borderRadius: 8,
                               fontSize: 13, fontWeight: 700,
                               background: actionState === "approving"
-                                ? "#6b7280"
+                                ? "#8C8795"
                                 : "linear-gradient(135deg,#16a34a,#22c55e)",
                               color: "#fff", border: "none",
                               cursor: actionState ? "not-allowed" : "pointer",
@@ -377,9 +377,9 @@ export default function NotificationBell() {
                             display: "inline-flex", alignItems: "center", gap: 5,
                             marginTop: 10, padding: "5px 14px", borderRadius: 8,
                             fontSize: 12, fontWeight: 600,
-                            background: "linear-gradient(135deg,rgba(99,102,241,0.20),rgba(59,130,246,0.20))",
-                            border: "1px solid rgba(99,102,241,0.35)",
-                            color: "#818cf8", cursor: "pointer",
+                            background: "linear-gradient(135deg,rgba(107,70,193,0.20),rgba(91,141,239,0.20))",
+                            border: "1px solid rgba(107,70,193,0.35)",
+                            color: "#9F87D7", cursor: "pointer",
                           }}
                         >
                           📋 View Notice

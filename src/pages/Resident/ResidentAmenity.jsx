@@ -115,7 +115,7 @@
   const STATUS_OPTIONS = ["ALL", "PAYMENT_PENDING", "PENDING", "APPROVED", "CANCELLED", "REJECTED"];
 
   const STATUS_STYLE = {
-    PAYMENT_PENDING: { dot: "#8b5cf6", pill: "bg-purple-500/15 text-purple-400" },
+    PAYMENT_PENDING: { dot: "#6B46C1", pill: "bg-purple-500/15 text-purple-400" },
     APPROVED:        { dot: "#22c55e", pill: "bg-green-500/15 text-green-400"   },
     PENDING:         { dot: "#f59e0b", pill: "bg-yellow-500/15 text-yellow-400" },
     CANCELLED:       { dot: "#ef4444", pill: "bg-red-500/15 text-red-400"       },
@@ -186,7 +186,7 @@
       description: razorpayOrder.description || "Amenity Booking",
       order_id:    razorpayOrder.id,
       prefill:     razorpayOrder.prefill || {},
-      theme:       { color: "#6366f1" },
+      theme:       { color: "#6B46C1" },
       modal: {
         ondismiss: () => {
           // User closed the checkout — slot stays PAYMENT_PENDING, cron will expire it
@@ -496,7 +496,7 @@
 
     const capture = async () => {
       const canvas = await html2canvas(passRef.current, {
-        scale: 3, backgroundColor: "#0f172a", useCORS: true, logging: false,
+        scale: 3, backgroundColor: "#2E2A36", useCORS: true, logging: false,
       });
       return canvas;
     };
@@ -545,12 +545,12 @@
       const { status } = selectedBooking;
       const passCardStyle = {
         width: "340px",
-        background: "linear-gradient(160deg, rgba(255,255,255,0.045) 0%, #0f172a 35%)",
+        background: "linear-gradient(160deg, rgba(255,255,255,0.045) 0%, #2E2A36 35%)",
         padding: "18px 22px 14px", borderRadius: "20px", color: "white",
         textAlign: "center", border: "1px solid rgba(255,255,255,0.09)", position: "relative", overflow: "hidden",
       };
-      const gridLabelStyle = { color: "#64748b" };
-      const gridValueStyle = { textAlign: "right", color: "#f8fafc", fontWeight: "500" };
+      const gridLabelStyle = { color: "#726988" };
+      const gridValueStyle = { textAlign: "right", color: "#F9F8FA", fontWeight: "500" };
       const tearLine = (
         <div style={{ borderTop: "1px dashed rgba(255,255,255,0.08)", margin: "0 -22px 14px", position: "relative" }}>
           <span style={{ position: "absolute", left: "-7px", top: "-7px", width: "13px", height: "13px", borderRadius: "50%", background: "#0a0f1e", display: "block" }} />
@@ -562,14 +562,14 @@
         return (
           <div className="ra-pass-wrapper">
             <div style={{ ...passCardStyle, borderTop: "2px solid #eab308" }}>
-              <div style={{ letterSpacing: "0.18em", fontSize: "10px", color: "#64748b", textTransform: "uppercase", marginBottom: "2px" }}>{t("amenPassResident")}</div>
+              <div style={{ letterSpacing: "0.18em", fontSize: "10px", color: "#726988", textTransform: "uppercase", marginBottom: "2px" }}>{t("amenPassResident")}</div>
               <h2 style={{ fontSize: "17px", fontWeight: "700", letterSpacing: "0.08em", margin: "0 0 6px" }}>{t("amenPassTitle")}</h2>
               <div style={{ width: "36px", height: "2px", background: "linear-gradient(90deg,#eab308,#f59e0b)", margin: "0 auto 14px" }} />
               <div style={{ width: "64px", height: "64px", borderRadius: "50%", background: "rgba(234,179,8,0.13)", border: "1px solid rgba(234,179,8,0.3)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 12px" }}>
                 <FaLock style={{ color: "#eab308", fontSize: "1.35rem" }} />
               </div>
-              <h3 style={{ fontSize: "15px", fontWeight: "700", color: "#f1f5f9", margin: "0 0 4px" }}>Awaiting Admin Approval</h3>
-              <p style={{ fontSize: "11px", color: "#64748b", lineHeight: "1.55", margin: "0 0 14px" }}>Your payment was received. The admin will approve your booking shortly.</p>
+              <h3 style={{ fontSize: "15px", fontWeight: "700", color: "#EDECF0", margin: "0 0 4px" }}>Awaiting Admin Approval</h3>
+              <p style={{ fontSize: "11px", color: "#726988", lineHeight: "1.55", margin: "0 0 14px" }}>Your payment was received. The admin will approve your booking shortly.</p>
               {tearLine}
               <div style={{ background: "rgba(255,255,255,0.05)", borderRadius: "10px", padding: "10px 12px", display: "grid", gridTemplateColumns: "1fr 1fr", rowGap: "7px", fontSize: "12px", textAlign: "left", marginBottom: "10px" }}>
                 <span style={gridLabelStyle}>Amenity</span><span style={gridValueStyle}>{selectedBooking.Amenity?.name}</span>
@@ -589,13 +589,13 @@
         return (
           <div className="ra-pass-wrapper">
             <div style={{ ...passCardStyle, borderTop: "2px solid #ef4444" }}>
-              <div style={{ letterSpacing: "0.18em", fontSize: "10px", color: "#64748b", textTransform: "uppercase", marginBottom: "2px" }}>{t("amenPassResident")}</div>
+              <div style={{ letterSpacing: "0.18em", fontSize: "10px", color: "#726988", textTransform: "uppercase", marginBottom: "2px" }}>{t("amenPassResident")}</div>
               <h2 style={{ fontSize: "17px", fontWeight: "700", letterSpacing: "0.08em", margin: "0 0 6px" }}>{t("amenPassTitle")}</h2>
               <div style={{ width: "36px", height: "2px", background: "linear-gradient(90deg,#ef4444,#f87171)", margin: "0 auto 14px" }} />
               <div style={{ width: "64px", height: "64px", borderRadius: "50%", background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.25)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 12px" }}>
                 <FaBan style={{ color: "#ef4444", fontSize: "1.35rem" }} />
               </div>
-              <h3 style={{ fontSize: "15px", fontWeight: "700", color: "#f1f5f9", margin: "0 0 4px" }}>Booking {status === "CANCELLED" ? "Cancelled" : "Rejected"}</h3>
+              <h3 style={{ fontSize: "15px", fontWeight: "700", color: "#EDECF0", margin: "0 0 4px" }}>Booking {status === "CANCELLED" ? "Cancelled" : "Rejected"}</h3>
               {tearLine}
               <div style={{ background: "rgba(255,255,255,0.05)", borderRadius: "10px", padding: "10px 12px", display: "grid", gridTemplateColumns: "1fr 1fr", rowGap: "7px", fontSize: "12px", textAlign: "left", marginBottom: "10px" }}>
                 <span style={gridLabelStyle}>Amenity</span><span style={gridValueStyle}>{selectedBooking.Amenity?.name}</span>
@@ -613,10 +613,10 @@
       // APPROVED — show QR pass
       return (
         <div className="ra-pass-wrapper">
-          <div ref={passRef} style={{ ...passCardStyle, borderTop: "2px solid #3b82f6" }}>
-            <div style={{ letterSpacing: "0.18em", fontSize: "10px", color: "#94a3b8", textTransform: "uppercase", marginBottom: "2px" }}>{t("amenPassResident")}</div>
+          <div ref={passRef} style={{ ...passCardStyle, borderTop: "2px solid #5B8DEF" }}>
+            <div style={{ letterSpacing: "0.18em", fontSize: "10px", color: "#A39EB2", textTransform: "uppercase", marginBottom: "2px" }}>{t("amenPassResident")}</div>
             <h2 style={{ fontSize: "17px", fontWeight: "700", letterSpacing: "0.08em", margin: "0" }}>{t("amenPassTitle")}</h2>
-            <div style={{ width: "36px", height: "2px", background: "linear-gradient(90deg,#3b82f6,#6366f1)", margin: "7px auto" }} />
+            <div style={{ width: "36px", height: "2px", background: "linear-gradient(90deg,#5B8DEF,#6B46C1)", margin: "7px auto" }} />
             <div style={{ display: "flex", justifyContent: "center", marginTop: "4px" }}>
               <div style={{ padding: "8px", background: "white", borderRadius: "10px", display: "inline-block" }}>
                 <QRCodeCanvas value={JSON.stringify({ bookingId: selectedBooking.id })} size={140} bgColor="#ffffff" />
@@ -630,7 +630,7 @@
               <span style={gridLabelStyle}>Amenity</span><span style={gridValueStyle}>{selectedBooking.Amenity?.name}</span>
               <span style={gridLabelStyle}>Amount</span><span style={gridValueStyle}>₹{selectedBooking.Amenity?.rate_per_hour || 0}</span>
             </div>
-            <div style={{ marginTop: "8px", fontSize: "9px", color: "#334155", letterSpacing: "0.1em" }}>{t("amenPassScanNote")}</div>
+            <div style={{ marginTop: "8px", fontSize: "9px", color: "#4E475C", letterSpacing: "0.1em" }}>{t("amenPassScanNote")}</div>
           </div>
           <div className="ra-pass-actions">
             <button className="ra-pass-btn ra-pass-btn--download" onClick={downloadPass}><FaDownload /><span>{t("amenPassDownload")}</span></button>
@@ -677,7 +677,7 @@
             {/* Separate badge for pending payment actions */}
             {counts.PAYMENT_PENDING > 0 && (
               <span style={{
-                marginLeft: 4, background: "#8b5cf6", color: "#fff",
+                marginLeft: 4, background: "#6B46C1", color: "#fff",
                 borderRadius: 999, fontSize: 10, fontWeight: 800,
                 padding: "1px 6px", lineHeight: "1.7",
               }}>
@@ -763,9 +763,9 @@
               <div style={{
                 display: "flex", alignItems: "flex-start", gap: 10,
                 padding: "12px 16px", borderRadius: 12, marginBottom: 12,
-                background: "rgba(139,92,246,0.08)", border: "1px solid rgba(139,92,246,0.25)",
+                background: "rgba(107,70,193,0.08)", border: "1px solid rgba(107,70,193,0.25)",
               }} className="animate-fadeIn">
-                <MdPayment size={18} style={{ color: "#8b5cf6", flexShrink: 0, marginTop: 1 }} />
+                <MdPayment size={18} style={{ color: "#6B46C1", flexShrink: 0, marginTop: 1 }} />
                 <div>
                   <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text-primary)" }}>
                     {counts.PAYMENT_PENDING} booking{counts.PAYMENT_PENDING > 1 ? "s" : ""} awaiting payment
@@ -799,7 +799,7 @@
                   <button type="button" onClick={() => setShowFilterPanel((p) => !p)}
                     className="flex items-center gap-1.5 h-9 px-3 rounded-xl text-xs font-semibold border shrink-0"
                     style={showFilterPanel || hasFilters
-                      ? { background: "rgba(59,130,246,0.15)", color: "#60a5fa", borderColor: "rgba(59,130,246,0.35)" }
+                      ? { background: "rgba(91,141,239,0.15)", color: "#94B5F5", borderColor: "rgba(91,141,239,0.35)" }
                       : { background: "var(--bg-soft,rgba(0,0,0,0.04))", color: "var(--text-secondary)", borderColor: "var(--border-color)", border: "1px solid var(--border-color)" }
                     }>
                     <MdFilterList size={15} />
@@ -824,9 +824,9 @@
                               className="flex items-center gap-1.5 h-7 px-3 rounded-full text-xs font-semibold border"
                               style={statusFilter === s
                                 ? s === "PAYMENT_PENDING"
-                                  ? { background: "rgba(139,92,246,0.15)", color: "#a78bfa", borderColor: "rgba(139,92,246,0.35)" }
+                                  ? { background: "rgba(107,70,193,0.15)", color: "#9F87D7", borderColor: "rgba(107,70,193,0.35)" }
                                   : s === "ALL"
-                                  ? { background: "rgba(59,130,246,0.15)", color: "#60a5fa", borderColor: "rgba(59,130,246,0.35)" }
+                                  ? { background: "rgba(91,141,239,0.15)", color: "#94B5F5", borderColor: "rgba(91,141,239,0.35)" }
                                   : s === "APPROVED"
                                   ? { background: "rgba(34,197,94,0.15)", color: "#4ade80", borderColor: "rgba(34,197,94,0.35)" }
                                   : s === "PENDING"
@@ -853,7 +853,7 @@
                               <button key={name} type="button" onClick={() => setAmenityFilter(name)}
                                 className="flex items-center gap-1 h-7 px-3 rounded-full text-xs font-semibold border"
                                 style={amenityFilter === name
-                                  ? { background: "rgba(59,130,246,0.15)", color: "#60a5fa", borderColor: "rgba(59,130,246,0.35)" }
+                                  ? { background: "rgba(91,141,239,0.15)", color: "#94B5F5", borderColor: "rgba(91,141,239,0.35)" }
                                   : { background: "var(--bg-soft,rgba(0,0,0,0.04))", color: "var(--text-secondary)", borderColor: "var(--border-color)" }
                                 }>
                                 {name !== "ALL" && <span style={{ fontSize: 12 }}>{amenityIcon(name)}</span>}
@@ -869,7 +869,7 @@
                           Clear all
                         </button>
                         <button type="button" onClick={() => setShowFilterPanel(false)}
-                          style={{ background: "none", border: "none", cursor: "pointer", fontSize: 12, color: "#60a5fa", fontWeight: 600 }}>
+                          style={{ background: "none", border: "none", cursor: "pointer", fontSize: 12, color: "#94B5F5", fontWeight: 600 }}>
                           Done
                         </button>
                       </div>
@@ -897,7 +897,7 @@
                 <span className="ra-empty-icon">🔍</span>
                 <p>No bookings match your filters</p>
                 <button type="button" onClick={clearAllFilters}
-                  style={{ color: "#60a5fa", background: "none", border: "none", cursor: "pointer", fontSize: 12, marginTop: 6 }}>
+                  style={{ color: "#94B5F5", background: "none", border: "none", cursor: "pointer", fontSize: 12, marginTop: 6 }}>
                   Clear filters
                 </button>
               </div>
@@ -905,7 +905,7 @@
 
             {!initialLoad && myBookings.map((b, idx) => {
               const isPaymentPending = b.status === "PAYMENT_PENDING";
-              const dotColor = STATUS_STYLE[b.status]?.dot || "#64748b";
+              const dotColor = STATUS_STYLE[b.status]?.dot || "#726988";
 
               return (
                 <div key={b.id}
@@ -915,8 +915,8 @@
                     animationDelay: `${idx * 50}ms`,
                     cursor: isPaymentPending ? "default" : "pointer",
                     ...(isPaymentPending ? {
-                      border: "1px solid rgba(139,92,246,0.3)",
-                      background: "rgba(139,92,246,0.04)",
+                      border: "1px solid rgba(107,70,193,0.3)",
+                      background: "rgba(107,70,193,0.04)",
                     } : {}),
                   }}>
                   <div className="ra-booking-left">
@@ -936,8 +936,8 @@
                       <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6 }}>
                         <span style={{
                           fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 999,
-                          background: "rgba(139,92,246,0.12)", color: "#a78bfa",
-                          border: "1px solid rgba(139,92,246,0.28)",
+                          background: "rgba(107,70,193,0.12)", color: "#9F87D7",
+                          border: "1px solid rgba(107,70,193,0.28)",
                         }}>
                           Awaiting Payment
                         </span>
@@ -949,8 +949,8 @@
                             style={{
                               display: "flex", alignItems: "center", gap: 5,
                               padding: "6px 12px", borderRadius: 10, fontSize: 12, fontWeight: 700,
-                              background: "rgba(139,92,246,0.12)", color: "#a78bfa",
-                              border: "1.5px solid rgba(139,92,246,0.35)",
+                              background: "rgba(107,70,193,0.12)", color: "#9F87D7",
+                              border: "1.5px solid rgba(107,70,193,0.35)",
                               cursor: repayingId === b.id ? "not-allowed" : "pointer",
                               opacity: repayingId === b.id ? 0.6 : 1,
                             }}>

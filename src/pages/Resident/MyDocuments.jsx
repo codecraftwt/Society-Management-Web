@@ -578,9 +578,9 @@ function DocCard({ doc, onView, onEdit, onDelete }) {
               style={{
                 display: "inline-flex", alignItems: "center", gap: "4px",
                 fontSize: "12px", fontWeight: 600, borderRadius: "9px",
-                padding: "6px 10px", border: "1px solid rgba(99,102,241,0.28)",
+                padding: "6px 10px", border: "1px solid rgba(107,70,193,0.28)",
                 cursor: "pointer", transition: "all 0.18s ease",
-                background: "rgba(99,102,241,0.12)", color: "#a5b4fc",
+                background: "rgba(107,70,193,0.12)", color: "#C0B0E5",
               }}
             >
               <span style={{ fontSize: "0.72rem" }}>✏️</span>
@@ -756,7 +756,7 @@ export default function MyDocuments() {
         }}>
           <div style={{
             width: "20px", height: "20px",
-            border: "2px solid rgba(59,130,246,0.20)", borderTopColor: "#3b82f6",
+            border: "2px solid rgba(91,141,239,0.20)", borderTopColor: "#5B8DEF",
             borderRadius: "50%", animation: "spin 0.65s linear infinite",
           }} />
           Loading documents…

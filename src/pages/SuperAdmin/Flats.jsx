@@ -96,7 +96,7 @@ export default function Flats() {
   };
 
   const TABS = [
-    { key: "ALL",      label: "All",      color: "#4f46e5" },
+    { key: "ALL",      label: "All",      color: "#5A3BA2" },
     { key: "OCCUPIED", label: "Occupied", color: "#16a34a" },
     { key: "VACANT",   label: "Vacant",   color: "#d97706" },
   ];

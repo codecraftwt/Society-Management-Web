@@ -58,9 +58,9 @@ function FlatChip({ label }) {
         borderRadius: 999,
         fontSize: 11,
         fontWeight: 600,
-        background: "var(--chip-bg, rgba(99,102,241,0.12))",
-        color: "var(--accent, #6366f1)",
-        border: "1px solid var(--accent-border, rgba(99,102,241,0.25))",
+        background: "var(--chip-bg, rgba(107,70,193,0.12))",
+        color: "var(--accent, #6B46C1)",
+        border: "1px solid var(--accent-border, rgba(107,70,193,0.25))",
         flexShrink: 0,
       }}
     >

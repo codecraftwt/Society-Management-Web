@@ -114,9 +114,9 @@ export default function CommitteeResidents() {
         <div className="flex items-center gap-3">
           <div
             className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-            style={{ background: "rgba(99,102,241,0.12)", border: "1px solid rgba(99,102,241,0.25)" }}
+            style={{ background: "rgba(107,70,193,0.12)", border: "1px solid rgba(107,70,193,0.25)" }}
           >
-            <MdPerson size={20} style={{ color: "#818cf8" }} />
+            <MdPerson size={20} style={{ color: "#9F87D7" }} />
           </div>
           <div>
             <h2 className="text-lg font-semibold">{t("residentTitle") || "Residents"}</h2>
@@ -183,7 +183,7 @@ export default function CommitteeResidents() {
             <button
               onClick={() => setSearch("")}
               className="text-xs mt-1"
-              style={{ color: "#60a5fa", background: "none", border: "none", cursor: "pointer" }}
+              style={{ color: "#94B5F5", background: "none", border: "none", cursor: "pointer" }}
             >
               {t("billClearFilters") || "Clear search"}
             </button>
@@ -219,7 +219,7 @@ export default function CommitteeResidents() {
                         <div className="flex items-center gap-3">
                           <div
                             className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
-                            style={{ background: "rgba(99,102,241,0.12)", color: "#818cf8" }}
+                            style={{ background: "rgba(107,70,193,0.12)", color: "#9F87D7" }}
                           >
                             {r.name?.charAt(0)?.toUpperCase()}
                           </div>
@@ -276,8 +276,8 @@ export default function CommitteeResidents() {
                       width: 36,
                       height: 36,
                       borderRadius: "50%",
-                      background: "rgba(99,102,241,0.12)",
-                      color: "#818cf8",
+                      background: "rgba(107,70,193,0.12)",
+                      color: "#9F87D7",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",

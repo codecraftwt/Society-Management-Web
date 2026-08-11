@@ -327,7 +327,7 @@ export default function Select({
                         : isHl
                           ? "rgba(255,255,255,0.08)"
                           : "transparent",
-                      color: isSel ? "#93c5fd" : "var(--text-secondary)",
+                      color: isSel ? "#B9CFF8" : "var(--text-secondary)",
                       whiteSpace: "nowrap",
                       overflow: "hidden",
                       textOverflow: "ellipsis",

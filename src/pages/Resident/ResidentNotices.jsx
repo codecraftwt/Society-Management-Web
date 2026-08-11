@@ -226,7 +226,7 @@ export default function ResidentNotices() {
         <div className="flex items-center gap-3">
           <div
             className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-            style={{ background: "rgba(59,130,246,0.12)", border: "1px solid rgba(59,130,246,0.25)" }}
+            style={{ background: "rgba(91,141,239,0.12)", border: "1px solid rgba(91,141,239,0.25)" }}
           >
             <MdCampaign size={21} className="text-accent" />
           </div>
@@ -313,7 +313,7 @@ export default function ResidentNotices() {
                   >
                     <div
                       className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5"
-                      style={{ background: "rgba(59,130,246,0.12)", border: "1px solid rgba(59,130,246,0.22)" }}
+                      style={{ background: "rgba(91,141,239,0.12)", border: "1px solid rgba(91,141,239,0.22)" }}
                     >
                       <MdCampaign size={16} className="text-accent" />
                     </div>
@@ -347,9 +347,9 @@ export default function ResidentNotices() {
                           onClick={(e) => { e.stopPropagation(); handleFileView(n.file_url); }}
                           className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all duration-200"
                           style={{
-                            background: "rgba(59,130,246,0.10)",
-                            border: "1px solid rgba(59,130,246,0.22)",
-                            color: "#60a5fa",
+                            background: "rgba(91,141,239,0.10)",
+                            border: "1px solid rgba(91,141,239,0.22)",
+                            color: "#94B5F5",
                           }}
                         >
                           <MdAttachFile size={13} /> {t("noticesViewAttachment")} <MdOpenInNew size={11} />
@@ -389,7 +389,7 @@ export default function ResidentNotices() {
                       <div className="flex items-center gap-2">
                         <div
                           className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
-                          style={{ background: "rgba(59,130,246,0.12)", border: "1px solid rgba(59,130,246,0.22)" }}
+                          style={{ background: "rgba(91,141,239,0.12)", border: "1px solid rgba(91,141,239,0.22)" }}
                         >
                           <MdCampaign size={13} className="text-accent" />
                         </div>
@@ -405,9 +405,9 @@ export default function ResidentNotices() {
                           onClick={() => handleFileView(n.file_url)}
                           className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs transition-all duration-200"
                           style={{
-                            background: "rgba(59,130,246,0.10)",
-                            border: "1px solid rgba(59,130,246,0.22)",
-                            color: "#60a5fa",
+                            background: "rgba(91,141,239,0.10)",
+                            border: "1px solid rgba(91,141,239,0.22)",
+                            color: "#94B5F5",
                           }}
                         >
                           <MdAttachFile size={12} /> {t("noticesView")}

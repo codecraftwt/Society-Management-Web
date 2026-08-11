@@ -18,7 +18,7 @@ export default function Reports() {
       description: t("adminRptVisitorsDesc"),
       icon:        MdPeople,
       path:        "/admin/reports/visitors",
-      color: { bg: "bg-blue-500/15",   border: "border-blue-500/25",   icon: "text-blue-400",   glow: "rgba(59,130,246,0.15)",  stat: t("adminRptVisitorsStat") },
+      color: { bg: "bg-blue-500/15",   border: "border-blue-500/25",   icon: "text-blue-400",   glow: "rgba(91,141,239,0.15)",  stat: t("adminRptVisitorsStat") },
     },
     {
       title:       t("adminRptComplaints"),

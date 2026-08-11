@@ -28,7 +28,7 @@ function useIsMobile() {
 /* ── Spinner ── */
 function Spinner() {
   return (
-    <svg style={{ color: "var(--accent,#6366f1)", margin: "0 auto", width: 20, height: 20 }} viewBox="0 0 24 24" fill="none">
+    <svg style={{ color: "var(--accent,#6B46C1)", margin: "0 auto", width: 20, height: 20 }} viewBox="0 0 24 24" fill="none">
       <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" style={{ opacity: 0.25 }} />
       <path fill="currentColor" style={{ opacity: 0.75 }} d="M4 12a8 8 0 018-8v8z" />
     </svg>
@@ -179,7 +179,7 @@ export default function ResidentVisitorReport() {
             <MdArrowBack size={17} />
           </button>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <div style={{ width: 44, height: 44, borderRadius: 13, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", background: "linear-gradient(135deg,rgba(96,165,250,0.15),rgba(59,130,246,0.10))", border: "1.5px solid rgba(96,165,250,0.25)", color: "#60a5fa" }}>
+            <div style={{ width: 44, height: 44, borderRadius: 13, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", background: "linear-gradient(135deg,rgba(148,181,245,0.15),rgba(91,141,239,0.10))", border: "1.5px solid rgba(148,181,245,0.25)", color: "#94B5F5" }}>
               <MdPeople size={21} />
             </div>
             <div>
@@ -197,9 +197,9 @@ export default function ResidentVisitorReport() {
             <MdPictureAsPdf size={14} /> {t("reportPDF")}
           </button>
           {isMobile && (
-            <button onClick={() => setShowFilters(true)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 13px", borderRadius: 10, fontSize: 12, fontWeight: 700, background: applied ? "rgba(99,102,241,0.15)" : "var(--card-inner-bg, rgba(255,255,255,0.06))", color: applied ? "#818cf8" : "var(--text-secondary)", border: applied ? "1px solid rgba(99,102,241,0.35)" : "1px solid var(--glass-border)", cursor: "pointer", position: "relative", whiteSpace: "nowrap" }}>
+            <button onClick={() => setShowFilters(true)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 13px", borderRadius: 10, fontSize: 12, fontWeight: 700, background: applied ? "rgba(107,70,193,0.15)" : "var(--card-inner-bg, rgba(255,255,255,0.06))", color: applied ? "#9F87D7" : "var(--text-secondary)", border: applied ? "1px solid rgba(107,70,193,0.35)" : "1px solid var(--glass-border)", cursor: "pointer", position: "relative", whiteSpace: "nowrap" }}>
               <MdFilterList size={14} /> {t("reportFilters")}
-              {applied && <span style={{ position: "absolute", top: -3, right: -3, width: 8, height: 8, borderRadius: "50%", background: "#6366f1", boxShadow: "0 0 6px rgba(99,102,241,0.6)" }} />}
+              {applied && <span style={{ position: "absolute", top: -3, right: -3, width: 8, height: 8, borderRadius: "50%", background: "#6B46C1", boxShadow: "0 0 6px rgba(107,70,193,0.6)" }} />}
             </button>
           )}
         </div>
@@ -235,7 +235,7 @@ export default function ResidentVisitorReport() {
         <div style={{ padding: "13px 16px", borderBottom: "1px solid var(--glass-border)", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
           <span style={{ fontSize: 13, fontWeight: 700, color: "var(--text-primary)" }}>{t("rvMyVisitors")}</span>
           {applied && (
-            <span style={{ fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 99, background: "rgba(99,102,241,0.1)", color: "#818cf8", border: "1px solid rgba(99,102,241,0.2)", whiteSpace: "nowrap" }}>
+            <span style={{ fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 99, background: "rgba(107,70,193,0.1)", color: "#9F87D7", border: "1px solid rgba(107,70,193,0.2)", whiteSpace: "nowrap" }}>
               {t("reportFiltered")}
             </span>
           )}
@@ -251,7 +251,7 @@ export default function ResidentVisitorReport() {
             <MdOutlineInbox size={48} style={{ opacity: 0.2 }} />
             <p style={{ fontSize: 13, margin: 0 }}>{t("rvNoVisitors")}</p>
             {applied && (
-              <button onClick={clearFilter} style={{ fontSize: 12, color: "var(--accent,#6366f1)", background: "none", border: "none", cursor: "pointer", fontWeight: 600 }}>
+              <button onClick={clearFilter} style={{ fontSize: 12, color: "var(--accent,#6B46C1)", background: "none", border: "none", cursor: "pointer", fontWeight: 600 }}>
                 {t("reportClearFilters")}
               </button>
             )}
@@ -276,8 +276,8 @@ export default function ResidentVisitorReport() {
                       </div>
                     )}
                     <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                      {v.mobile && <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: "var(--text-secondary)" }}><MdPhone size={12} style={{ color: "var(--accent,#6366f1)", flexShrink: 0 }} />{v.mobile}</span>}
-                      {v.vehicle_number && <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: "var(--text-secondary)" }}><MdDirectionsCar size={12} style={{ color: "var(--accent,#6366f1)", flexShrink: 0 }} />{v.vehicle_number}</span>}
+                      {v.mobile && <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: "var(--text-secondary)" }}><MdPhone size={12} style={{ color: "var(--accent,#6B46C1)", flexShrink: 0 }} />{v.mobile}</span>}
+                      {v.vehicle_number && <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: "var(--text-secondary)" }}><MdDirectionsCar size={12} style={{ color: "var(--accent,#6B46C1)", flexShrink: 0 }} />{v.vehicle_number}</span>}
                       <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: "var(--text-secondary)", opacity: 0.75 }}><MdAccessTime size={11} style={{ flexShrink: 0 }} />{formatDateShort(v.entry_time)}</span>
                     </div>
                   </div>

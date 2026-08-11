@@ -120,7 +120,7 @@ export default function Blocks() {
                         <span style={{ 
                           fontSize: "11px", fontWeight: "600", padding: "4px 8px", borderRadius: "6px",
                           background: b.property_type === "Row Houses" ? "rgba(16, 185, 129, 0.1)" : "rgba(59, 130, 246, 0.1)",
-                          color: b.property_type === "Row Houses" ? "#10b981" : "#3b82f6" 
+                          color: b.property_type === "Row Houses" ? "#10b981" : "#5B8DEF" 
                         }}>
                           {b.property_type || "Apartments"}
                         </span>

@@ -261,9 +261,9 @@ const ComplaintsTab = ({ complaints, t }) => {
                     fontWeight: 700,
                     padding: "2px 8px",
                     borderRadius: "999px",
-                    background: "rgba(99,102,241,0.10)",
-                    border: "1px solid rgba(99,102,241,0.22)",
-                    color: "var(--stat-purple-color, #c4b5fd)",
+                    background: "rgba(107,70,193,0.10)",
+                    border: "1px solid rgba(107,70,193,0.22)",
+                    color: "var(--stat-purple-color, #C0B0E5)",
                   }}>
                     👤 {complainerName}
                   </span>
@@ -517,9 +517,9 @@ const FlatHistory = () => {
             fontWeight: 600,
             padding: "4px 12px",
             borderRadius: "999px",
-            background: "rgba(59,130,246,.10)",
-            border: "1px solid rgba(59,130,246,.22)",
-            color: "var(--stat-blue-color, #93c5fd)",
+            background: "rgba(91,141,239,.10)",
+            border: "1px solid rgba(91,141,239,.22)",
+            color: "var(--stat-blue-color, #B9CFF8)",
             whiteSpace: "nowrap",
           }}>
             {flats.length} {t("fhFlats")}
@@ -567,7 +567,7 @@ const FlatHistory = () => {
                         borderRadius: "14px 14px 0 0",
                         background: occ
                           ? "linear-gradient(90deg,#22c55e,#4ade80,transparent)"
-                          : "linear-gradient(90deg,#64748b,#94a3b8,transparent)",
+                          : "linear-gradient(90deg,#726988,#A39EB2,transparent)",
                       }} />
 
                       <div className="fh-flat-card-left">
@@ -619,7 +619,7 @@ const FlatHistory = () => {
             <h2 className="fh-dash-title">{t("fhFlat")} {selectedFlat.flat_number}</h2>
             <p className="fh-dash-sub">
               {t("fhBlock")} {selectedFlat.block_id}&nbsp;·&nbsp;
-              <span style={{ color: occ ? "#22c55e" : "#94a3b8" }}>
+              <span style={{ color: occ ? "#22c55e" : "#A39EB2" }}>
                 {occ ? t("fhOccupied") : t("fhVacant")}
               </span>
             </p>

@@ -261,7 +261,7 @@ export default function ResidentProfile() {
             value={sosMessage}
             onChange={(e) => setSosMessage(e.target.value)}
             className="w-full resize-none text-sm rounded-xl px-4 py-3 outline-none transition-all duration-200"
-            style={{ background: "rgba(0,0,0,0.3)", border: "1px solid rgba(239,68,68,0.25)", color: "#f8fafc" }}
+            style={{ background: "rgba(0,0,0,0.3)", border: "1px solid rgba(239,68,68,0.25)", color: "#F9F8FA" }}
             onFocus={(e) => (e.target.style.borderColor = "rgba(239,68,68,0.55)")}
             onBlur={(e)  => (e.target.style.borderColor = "rgba(239,68,68,0.25)")}
           />

@@ -17,8 +17,8 @@ import Select from "../../components/common/Select";
 const TYPE_META = {
   FIRE:         { icon: MdLocalFireDepartment, color: "#ef4444", bg: "rgba(239,68,68,0.12)",    border: "rgba(239,68,68,0.25)"    },
   MEDICAL:      { icon: MdLocalHospital,       color: "#f59e0b", bg: "rgba(245,158,11,0.12)",   border: "rgba(245,158,11,0.25)"   },
-  SECURITY:     { icon: MdSecurity,            color: "#3b82f6", bg: "rgba(59,130,246,0.12)",   border: "rgba(59,130,246,0.25)"   },
-  OTHER:        { icon: MdHelp,                color: "#8b5cf6", bg: "rgba(139,92,246,0.12)",   border: "rgba(139,92,246,0.25)"   },
+  SECURITY:     { icon: MdSecurity,            color: "#5B8DEF", bg: "rgba(91,141,239,0.12)",   border: "rgba(91,141,239,0.25)"   },
+  OTHER:        { icon: MdHelp,                color: "#6B46C1", bg: "rgba(107,70,193,0.12)",   border: "rgba(107,70,193,0.25)"   },
   RESIDENT_SOS: { icon: MdWarning,             color: "#ef4444", bg: "rgba(239,68,68,0.12)",    border: "rgba(239,68,68,0.25)"    },
 };
 
@@ -282,10 +282,10 @@ export default function MyEmergency() {
     ...(activeTab === key ? {
       background: key === "ACTIVE"   ? "rgba(239,68,68,0.15)"
                 : key === "RESOLVED" ? "rgba(34,197,94,0.15)"
-                :                      "rgba(99,102,241,0.15)",
+                :                      "rgba(107,70,193,0.15)",
       borderColor: key === "ACTIVE"   ? "rgba(239,68,68,0.40)"
                  : key === "RESOLVED" ? "rgba(34,197,94,0.40)"
-                 :                      "rgba(99,102,241,0.40)",
+                 :                      "rgba(107,70,193,0.40)",
       color: key === "ACTIVE"   ? "var(--stat-red-color)"
            : key === "RESOLVED" ? "var(--stat-green-color)"
            :                      "var(--stat-purple-color)",
@@ -408,7 +408,7 @@ export default function MyEmergency() {
             <span style={{
               width: 7, height: 7, borderRadius: "50%", flexShrink: 0,
               background: activeTab === key
-                ? key === "ACTIVE" ? "#ef4444" : key === "RESOLVED" ? "#22c55e" : "#6366f1"
+                ? key === "ACTIVE" ? "#ef4444" : key === "RESOLVED" ? "#22c55e" : "#6B46C1"
                 : "var(--text-secondary)",
               opacity: activeTab === key ? 1 : 0.4,
             }} />

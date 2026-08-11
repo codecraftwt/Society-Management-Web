@@ -119,7 +119,7 @@ const formatDate = (d) =>
   d ? new Date(d).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : "—";
 
 const getDot = (s) => ({
-  RESOLVED: "#22c55e", IN_PROGRESS: "#a78bfa", PENDING: "#f59e0b", OPEN: "#f59e0b",
+  RESOLVED: "#22c55e", IN_PROGRESS: "#9F87D7", PENDING: "#f59e0b", OPEN: "#f59e0b",
 }[s] || "#f59e0b");
 
 // ─── ChatPanel ────────────────────────────────────────────────────────────────
@@ -577,9 +577,9 @@ function ComplaintDrawer({ complaint, onClose, currentUser, t, defaultTab = "det
     flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 5,
     padding: "7px 8px", borderRadius: 8, border: "none", cursor: "pointer",
     fontSize: 12, fontWeight: 600, transition: "all 0.15s",
-    background: drawerTab === key ? "var(--accent,#3b82f6)" : "transparent",
+    background: drawerTab === key ? "var(--accent,#5B8DEF)" : "transparent",
     color:      drawerTab === key ? "#fff" : "var(--text-secondary)",
-    boxShadow:  drawerTab === key ? "0 2px 8px rgba(59,130,246,0.35)" : "none",
+    boxShadow:  drawerTab === key ? "0 2px 8px rgba(91,141,239,0.35)" : "none",
   });
 
   return createPortal(

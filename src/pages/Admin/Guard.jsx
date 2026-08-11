@@ -23,8 +23,8 @@ function useIsMobile() {
 function ShiftBadge({ type, t }) {
   const SHIFT_CFG = {
     MORNING:   { label: t("guardShiftMorning"),   icon: <MdWbSunny size={11} />,     color: "#f59e0b", bg: "rgba(245,158,11,0.12)"  },
-    AFTERNOON: { label: t("guardShiftAfternoon"), icon: <MdBrightness5 size={11} />, color: "#6366f1", bg: "rgba(99,102,241,0.12)"  },
-    NIGHT:     { label: t("guardShiftNight"),     icon: <MdNightsStay size={11} />,  color: "#8b5cf6", bg: "rgba(139,92,246,0.12)"  },
+    AFTERNOON: { label: t("guardShiftAfternoon"), icon: <MdBrightness5 size={11} />, color: "#6B46C1", bg: "rgba(107,70,193,0.12)"  },
+    NIGHT:     { label: t("guardShiftNight"),     icon: <MdNightsStay size={11} />,  color: "#6B46C1", bg: "rgba(107,70,193,0.12)"  },
   };
   const cfg = SHIFT_CFG[type];
   if (!cfg) return null;
@@ -49,10 +49,10 @@ function Avatar({ name, size = 34 }) {
   return (
     <div style={{
       width: size, height: size, borderRadius: "50%", flexShrink: 0,
-      background: "linear-gradient(135deg, var(--accent-color,#6366f1), #8b5cf6)",
+      background: "linear-gradient(135deg, var(--accent-color,#6B46C1), #6B46C1)",
       display: "flex", alignItems: "center", justifyContent: "center",
       fontSize: size * 0.34, fontWeight: 800, color: "#fff",
-      boxShadow: "0 2px 6px rgba(99,102,241,0.3)",
+      boxShadow: "0 2px 6px rgba(107,70,193,0.3)",
     }}>
       {initials}
     </div>
@@ -209,10 +209,10 @@ export default function Guard() {
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <div className="er-icon er-icon--complaint" style={{
-              background: "linear-gradient(135deg,rgba(99,102,241,.18),rgba(139,92,246,.18))",
-              border: "1.5px solid rgba(99,102,241,.3)",
+              background: "linear-gradient(135deg,rgba(107,70,193,.18),rgba(107,70,193,.18))",
+              border: "1.5px solid rgba(107,70,193,.3)",
             }}>
-              <MdSecurity size={20} style={{ color: "#818cf8" }} />
+              <MdSecurity size={20} style={{ color: "#9F87D7" }} />
             </div>
             <div>
               <h2 className="page-title">{t("guardTitle")}</h2>
@@ -240,7 +240,7 @@ export default function Guard() {
         {showForm && (
           <div className="bill-form-card animate-fadeIn" style={{ boxSizing: "border-box", width: "100%" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
-              <MdPerson size={16} style={{ color: "var(--accent-color,#6366f1)", flexShrink: 0 }} />
+              <MdPerson size={16} style={{ color: "var(--accent-color,#6B46C1)", flexShrink: 0 }} />
               <span style={{ fontSize: 13, fontWeight: 700, color: "var(--text-primary)" }}>
                 {editingId ? "Update Security Guard" : t("guardFormTitle")}
               </span>
@@ -349,7 +349,7 @@ export default function Guard() {
               <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
                 <div style={{
                   width: 7, height: 7, borderRadius: "50%", flexShrink: 0,
-                  background: guards.length > 0 ? "#22c55e" : "#475569",
+                  background: guards.length > 0 ? "#22c55e" : "#605872",
                   boxShadow: guards.length > 0 ? "0 0 6px rgba(34,197,94,0.7)" : "none",
                 }} />
                 <span style={{ fontSize: 13, fontWeight: 700, color: "var(--text-primary)" }}>
@@ -363,8 +363,8 @@ export default function Guard() {
               {!isSuperAdmin && (
                 <span style={{
                   fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 99,
-                  background: "rgba(99,102,241,0.1)", color: "#818cf8",
-                  border: "1px solid rgba(99,102,241,0.2)", whiteSpace: "nowrap",
+                  background: "rgba(107,70,193,0.1)", color: "#9F87D7",
+                  border: "1px solid rgba(107,70,193,0.2)", whiteSpace: "nowrap",
                 }}>
                   {guards.length} / 5 {t("guardSlots")}
                 </span>
@@ -408,7 +408,7 @@ export default function Guard() {
                       borderRadius: 12, overflow: "hidden", boxSizing: "border-box",
                     }}
                   >
-                    <div style={{ height: 3, background: "linear-gradient(90deg,#6366f1,#8b5cf6)" }} />
+                    <div style={{ height: 3, background: "linear-gradient(90deg,#6B46C1,#6B46C1)" }} />
                     <div style={{ padding: "11px 12px", boxSizing: "border-box" }}>
 
                       <div style={{ display: "flex", alignItems: "center", gap: 9, marginBottom: shift ? 7 : 10, minWidth: 0 }}>

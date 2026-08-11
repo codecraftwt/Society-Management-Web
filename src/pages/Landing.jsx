@@ -58,7 +58,7 @@ const Landing = () => {
           </motion.p>
 
           <motion.button
-            whileHover={{ scale: 1.07, boxShadow: "0 20px 60px rgba(59,130,246,0.45)" }}
+            whileHover={{ scale: 1.07, boxShadow: "0 20px 60px rgba(91,141,239,0.45)" }}
             whileTap={{ scale: 0.95 }}
             onClick={() => navigate("/login")}
             className="btn-primary mx-auto"

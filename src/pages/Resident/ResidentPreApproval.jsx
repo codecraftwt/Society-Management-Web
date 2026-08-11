@@ -32,12 +32,12 @@ const PURPOSE_ICONS = {
 };
 
 const PURPOSE_COLORS = {
-  GUEST:       { bg: "rgba(59,130,246,0.12)",  border: "rgba(59,130,246,0.25)",  text: "#3b82f6" },
+  GUEST:       { bg: "rgba(91,141,239,0.12)",  border: "rgba(91,141,239,0.25)",  text: "#5B8DEF" },
   DELIVERY:    { bg: "rgba(245,158,11,0.12)",  border: "rgba(245,158,11,0.28)",  text: "#f59e0b" },
-  CAB:         { bg: "rgba(139,92,246,0.12)",  border: "rgba(139,92,246,0.28)",  text: "#8b5cf6" },
+  CAB:         { bg: "rgba(107,70,193,0.12)",  border: "rgba(107,70,193,0.28)",  text: "#6B46C1" },
   SERVICE:     { bg: "rgba(34,197,94,0.12)",   border: "rgba(34,197,94,0.28)",   text: "#22c55e" },
   MAINTENANCE: { bg: "rgba(239,68,68,0.10)",   border: "rgba(239,68,68,0.25)",   text: "#ef4444" },
-  OTHER:       { bg: "rgba(100,116,139,0.12)", border: "rgba(100,116,139,0.25)", text: "#64748b" },
+  OTHER:       { bg: "rgba(114,105,136,0.12)", border: "rgba(114,105,136,0.25)", text: "#726988" },
 };
 
 function Spinner() {

@@ -51,7 +51,7 @@ function useIsMobile() {
 function Spinner({ small = false }) {
   const s = small ? 14 : 20;
   return (
-    <svg style={{ color: "var(--accent,#6366f1)", margin: "0 auto", width: s, height: s }} viewBox="0 0 24 24" fill="none">
+    <svg style={{ color: "var(--accent,#6B46C1)", margin: "0 auto", width: s, height: s }} viewBox="0 0 24 24" fill="none">
       <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" style={{ opacity: 0.25 }} />
       <path fill="currentColor" style={{ opacity: 0.75 }} d="M4 12a8 8 0 018-8v8z" />
     </svg>
@@ -80,7 +80,7 @@ function Pagination({ page, totalPages, onPageChange }) {
 function EntryExitBadge({ exit, inLabel, outLabel }) {
   const cfg = {
     IN: { label: inLabel, Icon: MdLogin, color: "#4ade80", bg: "rgba(74,222,128,0.12)", border: "rgba(74,222,128,0.25)" },
-    OUT: { label: outLabel, Icon: MdLogout, color: "#94a3b8", bg: "rgba(148,163,184,0.10)", border: "rgba(148,163,184,0.20)" },
+    OUT: { label: outLabel, Icon: MdLogout, color: "#A39EB2", bg: "rgba(163,158,178,0.10)", border: "rgba(163,158,178,0.20)" },
   };
   const c = exit ? cfg.OUT : cfg.IN;
   return (
@@ -123,9 +123,9 @@ function FilterSheet({ show, onClose, isMobile, statusFilter, setStatusFilter, f
   if (!isMobile) return (
     <div className="data-table-wrap animate-fadeIn">
       <div style={{ padding: "13px 18px", borderBottom: "1px solid var(--glass-border)", display: "flex", alignItems: "center", gap: 8 }}>
-        <MdFilterList size={15} style={{ color: "var(--accent,#6366f1)" }} />
+        <MdFilterList size={15} style={{ color: "var(--accent,#6B46C1)" }} />
         <span style={{ fontSize: 13, fontWeight: 700, color: "var(--text-primary)", flex: 1 }}>{labels.filtersTitle}</span>
-        {applied && <button onClick={onClear} style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, fontWeight: 700, color: "var(--accent,#6366f1)", background: "none", border: "none", cursor: "pointer" }}><MdClose size={13} /> {labels.clearFilters}</button>}
+        {applied && <button onClick={onClear} style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, fontWeight: 700, color: "var(--accent,#6B46C1)", background: "none", border: "none", cursor: "pointer" }}><MdClose size={13} /> {labels.clearFilters}</button>}
       </div>
       {formBody}
     </div>
@@ -135,12 +135,12 @@ function FilterSheet({ show, onClose, isMobile, statusFilter, setStatusFilter, f
   return createPortal(
     <div style={{ position: "fixed", inset: 0, zIndex: 9999, display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
       <div onClick={onClose} style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.55)", backdropFilter: "blur(4px)" }} />
-      <div style={{ position: "relative", zIndex: 1, background: "var(--modal-bg,var(--card-bg,#0f172a))", borderTop: "1.5px solid var(--glass-border)", borderRadius: "20px 20px 0 0", boxShadow: "0 -8px 40px rgba(0,0,0,0.45)", maxHeight: "88vh", overflowY: "auto" }}>
+      <div style={{ position: "relative", zIndex: 1, background: "var(--modal-bg,var(--card-bg,#2E2A36))", borderTop: "1.5px solid var(--glass-border)", borderRadius: "20px 20px 0 0", boxShadow: "0 -8px 40px rgba(0,0,0,0.45)", maxHeight: "88vh", overflowY: "auto" }}>
         <div style={{ display: "flex", justifyContent: "center", padding: "10px 0 6px" }}><div style={{ width: 36, height: 4, borderRadius: 99, background: "var(--glass-border)" }} /></div>
         <div style={{ padding: "8px 18px 14px", display: "flex", alignItems: "center", gap: 8, borderBottom: "1px solid var(--glass-border)" }}>
-          <MdFilterList size={16} style={{ color: "var(--accent,#6366f1)" }} />
+          <MdFilterList size={16} style={{ color: "var(--accent,#6B46C1)" }} />
           <span style={{ fontSize: 14, fontWeight: 700, color: "var(--text-primary)", flex: 1 }}>{labels.filtersTitle}</span>
-          {applied && <button onClick={() => { onClear(); onClose(); }} style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, fontWeight: 700, color: "var(--accent,#6366f1)", background: "none", border: "none", cursor: "pointer" }}><MdClose size={13} /> {labels.clear}</button>}
+          {applied && <button onClick={() => { onClear(); onClose(); }} style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, fontWeight: 700, color: "var(--accent,#6B46C1)", background: "none", border: "none", cursor: "pointer" }}><MdClose size={13} /> {labels.clear}</button>}
           <button onClick={onClose} style={{ width: 28, height: 28, borderRadius: 8, background: "var(--card-inner-bg,rgba(255,255,255,0.06))", border: "1px solid var(--glass-border)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "var(--text-secondary)" }}><MdClose size={15} /></button>
         </div>
         {formBody}
@@ -267,13 +267,13 @@ export default function VisitorReport() {
           <button onClick={() => navigate(-1)} style={{ width: 36, height: 36, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", background: "var(--card-inner-bg,rgba(255,255,255,0.06))", border: "1px solid var(--glass-border)", cursor: "pointer", color: "var(--text-secondary)", flexShrink: 0 }}>
             <MdArrowBack size={18} />
           </button>
-          <div style={{ width: 46, height: 46, borderRadius: 14, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", background: "linear-gradient(135deg,rgba(96,165,250,0.15),rgba(59,130,246,0.10))", border: "1.5px solid rgba(96,165,250,0.25)", color: "#60a5fa" }}><MdGroups size={22} /></div>
+          <div style={{ width: 46, height: 46, borderRadius: 14, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", background: "linear-gradient(135deg,rgba(148,181,245,0.15),rgba(91,141,239,0.10))", border: "1.5px solid rgba(148,181,245,0.25)", color: "#94B5F5" }}><MdGroups size={22} /></div>
           <div><h2 className="page-title">{t("rptVisTitle")}</h2><p className="page-subtitle">{loading ? "—" : `${counts.total} ${t("rptVisSubtitle")}`}</p></div>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
           <button onClick={handleExcelExport} style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 13px", borderRadius: 10, fontSize: 12, fontWeight: 700, background: "rgba(74,222,128,0.1)", color: "#4ade80", border: "1px solid rgba(74,222,128,0.25)", cursor: "pointer", whiteSpace: "nowrap" }}><MdTableChart size={14} /> {t("rptExcel")}</button>
           <button onClick={handlePDFExport} style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 13px", borderRadius: 10, fontSize: 12, fontWeight: 700, background: "rgba(248,113,113,0.1)", color: "#f87171", border: "1px solid rgba(248,113,113,0.25)", cursor: "pointer", whiteSpace: "nowrap" }}><MdPictureAsPdf size={14} /> {t("rptPDF")}</button>
-          {isMobile && <button onClick={() => setShowFilters(true)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 13px", borderRadius: 10, fontSize: 12, fontWeight: 700, background: applied ? "rgba(99,102,241,0.15)" : "var(--card-inner-bg,rgba(255,255,255,0.06))", color: applied ? "#818cf8" : "var(--text-secondary)", border: applied ? "1px solid rgba(99,102,241,0.35)" : "1px solid var(--glass-border)", cursor: "pointer", position: "relative", whiteSpace: "nowrap" }}><MdFilterList size={14} /> {t("rptFilters")}{applied && <span style={{ position: "absolute", top: -3, right: -3, width: 8, height: 8, borderRadius: "50%", background: "#6366f1", boxShadow: "0 0 6px rgba(99,102,241,0.6)" }} />}</button>}
+          {isMobile && <button onClick={() => setShowFilters(true)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 13px", borderRadius: 10, fontSize: 12, fontWeight: 700, background: applied ? "rgba(107,70,193,0.15)" : "var(--card-inner-bg,rgba(255,255,255,0.06))", color: applied ? "#9F87D7" : "var(--text-secondary)", border: applied ? "1px solid rgba(107,70,193,0.35)" : "1px solid var(--glass-border)", cursor: "pointer", position: "relative", whiteSpace: "nowrap" }}><MdFilterList size={14} /> {t("rptFilters")}{applied && <span style={{ position: "absolute", top: -3, right: -3, width: 8, height: 8, borderRadius: "50%", background: "#6B46C1", boxShadow: "0 0 6px rgba(107,70,193,0.6)" }} />}</button>}
         </div>
       </div>
 
@@ -306,20 +306,20 @@ export default function VisitorReport() {
             {!loading && <span style={{ fontSize: 12, fontWeight: 400, color: "var(--text-secondary)", marginLeft: 8 }}>— {totalItems} records{applied ? " (filtered)" : ""}</span>}
           </span>
           {fetching && <Spinner small />}
-          {applied && !fetching && <span style={{ fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 99, background: "rgba(99,102,241,0.1)", color: "#818cf8", border: "1px solid rgba(99,102,241,0.2)", whiteSpace: "nowrap" }}>{t("rptFiltered")}</span>}
+          {applied && !fetching && <span style={{ fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 99, background: "rgba(107,70,193,0.1)", color: "#9F87D7", border: "1px solid rgba(107,70,193,0.2)", whiteSpace: "nowrap" }}>{t("rptFiltered")}</span>}
         </div>
 
         {loading ? (
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10, padding: "60px 20px", color: "var(--text-secondary)" }}><Spinner /><p style={{ fontSize: 13, margin: 0 }}>{t("rptVisLoading")}</p></div>
         ) : visitors.length === 0 ? (
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10, padding: "60px 20px", color: "var(--text-secondary)" }}><MdOutlineInbox size={48} style={{ opacity: 0.2 }} /><p style={{ fontSize: 13, margin: 0 }}>{t("rptNoData")}</p>{applied && <button onClick={clearFilter} style={{ fontSize: 12, color: "var(--accent,#6366f1)", background: "none", border: "none", cursor: "pointer", fontWeight: 600 }}>{t("rptClearFilters")}</button>}</div>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10, padding: "60px 20px", color: "var(--text-secondary)" }}><MdOutlineInbox size={48} style={{ opacity: 0.2 }} /><p style={{ fontSize: 13, margin: 0 }}>{t("rptNoData")}</p>{applied && <button onClick={clearFilter} style={{ fontSize: 12, color: "var(--accent,#6B46C1)", background: "none", border: "none", cursor: "pointer", fontWeight: 600 }}>{t("rptClearFilters")}</button>}</div>
 
         ) : isMobile ? (
           /* ── MOBILE CARDS ── */
           <div style={{ padding: "10px 12px", display: "flex", flexDirection: "column", gap: 10 }}>
             {visitors.map((v, i) => {
               const isInside = !v.exit_time;
-              const ac = isInside ? "#4ade80" : "#94a3b8";
+              const ac = isInside ? "#4ade80" : "#A39EB2";
               return (
                 <div key={v.id} className="animate-fadeIn" style={{ animationDelay: `${i * 25}ms`, background: "var(--chip-bg,rgba(255,255,255,0.04))", border: "1px solid var(--glass-border)", borderRadius: 12, overflow: "hidden" }}>
                   <div style={{ height: 3, background: ac }} />
@@ -336,12 +336,12 @@ export default function VisitorReport() {
                     <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                       {v.mobile && (
                         <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: "var(--text-secondary)" }}>
-                          <MdPhone size={12} style={{ color: "var(--accent,#6366f1)", flexShrink: 0 }} />{v.mobile}
+                          <MdPhone size={12} style={{ color: "var(--accent,#6B46C1)", flexShrink: 0 }} />{v.mobile}
                         </span>
                       )}
                       {/* ✅ Fixed: use resolveFlatLabel */}
                       <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: "var(--text-secondary)" }}>
-                        <MdApartment size={12} style={{ color: "var(--accent,#6366f1)", flexShrink: 0 }} />
+                        <MdApartment size={12} style={{ color: "var(--accent,#6B46C1)", flexShrink: 0 }} />
                         {resolveFlatLabel(v.Flat)}
                       </span>
                       <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: "var(--text-secondary)", opacity: 0.75 }}>

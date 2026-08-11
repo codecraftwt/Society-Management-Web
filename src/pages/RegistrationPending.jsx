@@ -33,7 +33,7 @@ const STYLES = `
   }
   html.light .rp-card {
     background: #ffffff;
-    border-color: #e5e7eb;
+    border-color: #E2E1E4;
     box-shadow: 0 4px 32px rgba(0,0,0,0.10);
   }
 
@@ -46,11 +46,11 @@ const STYLES = `
   .rp-title {
     font-size: 1.4rem;
     font-weight: 600;
-    color: var(--text-primary, #f1f5f9);
+    color: var(--text-primary, #EDECF0);
     letter-spacing: -0.02em;
     margin: 0;
   }
-  html.light .rp-title { color: #111827; }
+  html.light .rp-title { color: #38363C; }
 
   .rp-badge {
     display: inline-block;
@@ -65,11 +65,11 @@ const STYLES = `
   .rp-message {
     font-size: 0.88rem;
     line-height: 1.7;
-    color: var(--text-secondary, #94a3b8);
+    color: var(--text-secondary, #A39EB2);
     margin: 0;
     max-width: 340px;
   }
-  html.light .rp-message { color: #6b7280; }
+  html.light .rp-message { color: #8C8795; }
 
   .rp-reason-box {
     width: 100%;
@@ -108,9 +108,9 @@ const STYLES = `
     align-items: center;
     justify-content: center;
     gap: 8px;
-    background: linear-gradient(135deg, #6366f1 0%, #3b82f6 100%);
+    background: linear-gradient(135deg, #6B46C1 0%, #5B8DEF 100%);
     color: #fff;
-    box-shadow: 0 4px 18px rgba(99,102,241,0.38);
+    box-shadow: 0 4px 18px rgba(107,70,193,0.38);
     transition: opacity 0.2s, transform 0.15s;
     text-decoration: none;
   }
@@ -121,17 +121,17 @@ const STYLES = `
     border: none;
     cursor: pointer;
     font-size: 0.83rem;
-    color: var(--text-secondary, #94a3b8);
+    color: var(--text-secondary, #A39EB2);
     text-decoration: underline;
     padding: 0;
     transition: color 0.2s;
   }
-  .rp-btn-ghost:hover { color: var(--text-primary, #f1f5f9); }
-  html.light .rp-btn-ghost:hover { color: #111827; }
+  .rp-btn-ghost:hover { color: var(--text-primary, #EDECF0); }
+  html.light .rp-btn-ghost:hover { color: #38363C; }
 
   .rp-poll-dot {
     width: 7px; height: 7px; border-radius: 50%;
-    background: #6366f1;
+    background: #6B46C1;
     animation: rpPulse 1.4s ease-in-out infinite;
   }
   .rp-poll-dot:nth-child(2) { animation-delay: 0.2s; }
@@ -146,7 +146,7 @@ const STYLES = `
   }
   .rp-poll-text {
     font-size: 0.78rem;
-    color: var(--text-secondary, #94a3b8);
+    color: var(--text-secondary, #A39EB2);
     margin-left: 4px;
   }
 `;
@@ -387,7 +387,7 @@ function RegistrationPending() {
                 onClick={() => navigate("/login")}
                 style={
                   status === "REJECTED"
-                    ? { background: "linear-gradient(135deg,#64748b,#475569)", boxShadow: "none" }
+                    ? { background: "linear-gradient(135deg,#726988,#605872)", boxShadow: "none" }
                     : {}
                 }
               >

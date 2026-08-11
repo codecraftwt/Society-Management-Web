@@ -88,9 +88,9 @@ const RESIDENT_TYPE_STYLES = {
   TENANT: { bg: "rgba(245,158,11,0.12)", color: "#fbbf24", border: "rgba(245,158,11,0.25)", label: "Tenant" },
 };
 const BHK_STYLES = {
-  "1BHK": { bg: "rgba(99,102,241,0.10)", color: "#818cf8", border: "rgba(99,102,241,0.22)" },
-  "2BHK": { bg: "rgba(59,130,246,0.10)", color: "#60a5fa", border: "rgba(59,130,246,0.22)" },
-  "3BHK": { bg: "rgba(168,85,247,0.10)", color: "#c084fc", border: "rgba(168,85,247,0.22)" },
+  "1BHK": { bg: "rgba(107,70,193,0.10)", color: "#9F87D7", border: "rgba(107,70,193,0.22)" },
+  "2BHK": { bg: "rgba(91,141,239,0.10)", color: "#94B5F5", border: "rgba(91,141,239,0.22)" },
+  "3BHK": { bg: "rgba(107,70,193,0.10)", color: "#9F87D7", border: "rgba(107,70,193,0.22)" },
 };
 
 function ResidentTypeBadge({ type }) {
@@ -171,10 +171,10 @@ function DocumentUploadField({ label, icon: Icon, accept, file, onChange, requir
         onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
         onDragLeave={() => setDragging(false)}
         onDrop={(e) => { e.preventDefault(); setDragging(false); const dropped = e.dataTransfer.files?.[0]; if (dropped) onChange(dropped); }}
-        style={{ borderRadius: 12, border: `2px dashed ${file ? "rgba(34,197,94,0.5)" : dragging ? "rgba(99,102,241,0.6)" : "rgba(255,255,255,0.12)"}`, background: file ? "rgba(34,197,94,0.06)" : dragging ? "rgba(99,102,241,0.06)" : "var(--card-inner-bg,rgba(255,255,255,0.04))", padding: "14px 16px", cursor: "pointer", transition: "all 0.2s", display: "flex", alignItems: "center", gap: 12, minHeight: 64 }}
+        style={{ borderRadius: 12, border: `2px dashed ${file ? "rgba(34,197,94,0.5)" : dragging ? "rgba(107,70,193,0.6)" : "rgba(255,255,255,0.12)"}`, background: file ? "rgba(34,197,94,0.06)" : dragging ? "rgba(107,70,193,0.06)" : "var(--card-inner-bg,rgba(255,255,255,0.04))", padding: "14px 16px", cursor: "pointer", transition: "all 0.2s", display: "flex", alignItems: "center", gap: 12, minHeight: 64 }}
       >
-        <div style={{ width: 40, height: 40, borderRadius: 10, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", background: file ? "rgba(34,197,94,0.12)" : "rgba(99,102,241,0.10)", border: `1px solid ${file ? "rgba(34,197,94,0.25)" : "rgba(99,102,241,0.20)"}` }}>
-          {file ? <MdCheck size={20} style={{ color: "#4ade80" }} /> : <Icon size={20} style={{ color: "#818cf8" }} />}
+        <div style={{ width: 40, height: 40, borderRadius: 10, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", background: file ? "rgba(34,197,94,0.12)" : "rgba(107,70,193,0.10)", border: `1px solid ${file ? "rgba(34,197,94,0.25)" : "rgba(107,70,193,0.20)"}` }}>
+          {file ? <MdCheck size={20} style={{ color: "#4ade80" }} /> : <Icon size={20} style={{ color: "#9F87D7" }} />}
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           {file ? (
@@ -214,10 +214,10 @@ function StepIndicator({ step, total, labels }) {
         return (
           <div key={i} style={{ display: "flex", alignItems: "center", flex: i < total - 1 ? 1 : "none" }}>
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
-              <div style={{ width: 28, height: 28, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 800, transition: "all 0.3s", background: done ? "#34d399" : active ? "linear-gradient(135deg,#6366f1,#8b5cf6)" : "rgba(255,255,255,0.07)", border: `2px solid ${done ? "#34d399" : active ? "#6366f1" : "rgba(255,255,255,0.12)"}`, color: done || active ? "#fff" : "var(--text-secondary)", boxShadow: active ? "0 4px 12px rgba(99,102,241,0.35)" : "none" }}>
+              <div style={{ width: 28, height: 28, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 800, transition: "all 0.3s", background: done ? "#34d399" : active ? "linear-gradient(135deg,#6B46C1,#6B46C1)" : "rgba(255,255,255,0.07)", border: `2px solid ${done ? "#34d399" : active ? "#6B46C1" : "rgba(255,255,255,0.12)"}`, color: done || active ? "#fff" : "var(--text-secondary)", boxShadow: active ? "0 4px 12px rgba(107,70,193,0.35)" : "none" }}>
                 {done ? <MdCheckCircle size={14} /> : num}
               </div>
-              <span style={{ fontSize: 9, fontWeight: 700, color: active ? "#818cf8" : done ? "#34d399" : "var(--text-secondary)", whiteSpace: "nowrap", textTransform: "uppercase", letterSpacing: "0.05em" }}>{label}</span>
+              <span style={{ fontSize: 9, fontWeight: 700, color: active ? "#9F87D7" : done ? "#34d399" : "var(--text-secondary)", whiteSpace: "nowrap", textTransform: "uppercase", letterSpacing: "0.05em" }}>{label}</span>
             </div>
             {i < total - 1 && (
               <div style={{ flex: 1, height: 2, margin: "0 6px", marginBottom: 16, background: done ? "#34d399" : "rgba(255,255,255,0.08)", transition: "all 0.3s", borderRadius: 999 }} />
@@ -229,7 +229,7 @@ function StepIndicator({ step, total, labels }) {
   );
 }
 
-function SelectionCard({ icon, title, subtitle, selected, onClick, color = "#6366f1", colorBg = "rgba(99,102,241,0.10)" }) {
+function SelectionCard({ icon, title, subtitle, selected, onClick, color = "#6B46C1", colorBg = "rgba(107,70,193,0.10)" }) {
   return (
     <button type="button" onClick={onClick} style={{ width: "100%", padding: "14px 16px", borderRadius: 14, cursor: "pointer", textAlign: "left", transition: "all 0.18s", display: "flex", alignItems: "center", gap: 14, outline: "none", background: selected ? colorBg : "rgba(255,255,255,0.03)", border: `2px solid ${selected ? color : "rgba(255,255,255,0.08)"}`, boxShadow: selected ? `0 0 0 1px ${color}22` : "none" }}>
       <div style={{ width: 40, height: 40, borderRadius: 12, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", background: selected ? colorBg : "rgba(255,255,255,0.05)", border: `1px solid ${selected ? color : "rgba(255,255,255,0.08)"}` }}>
@@ -396,16 +396,16 @@ function AssignFlatModal({ residentId, residentName, societyId, onClose, onSucce
     <div onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
       style={{ position: "fixed", inset: 0, zIndex: 1100, background: "rgba(0,0,0,0.65)", backdropFilter: "blur(8px)", display: "flex", alignItems: "center", justifyContent: "center", padding: "16px" }}>
       <div onClick={(e) => e.stopPropagation()}
-        style={{ width: "100%", maxWidth: 520, background: "var(--card-bg,rgba(15,23,42,0.98))", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 20, maxHeight: "90vh", overflowY: "auto", backdropFilter: "blur(20px)", boxShadow: "0 24px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(99,102,241,0.08)", animation: "modalPop 0.25s cubic-bezier(0.34,1.56,0.64,1)" }}>
+        style={{ width: "100%", maxWidth: 520, background: "var(--card-bg,rgba(15,23,42,0.98))", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 20, maxHeight: "90vh", overflowY: "auto", backdropFilter: "blur(20px)", boxShadow: "0 24px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(107,70,193,0.08)", animation: "modalPop 0.25s cubic-bezier(0.34,1.56,0.64,1)" }}>
         {/* Header */}
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", padding: "20px 22px 0" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <div style={{ width: 36, height: 36, borderRadius: 11, background: "linear-gradient(135deg,#6366f1,#8b5cf6)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 12px rgba(99,102,241,0.3)" }}>
+            <div style={{ width: 36, height: 36, borderRadius: 11, background: "linear-gradient(135deg,#6B46C1,#6B46C1)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 12px rgba(107,70,193,0.3)" }}>
               <MdHome size={18} color="#fff" />
             </div>
             <div>
               <p style={{ margin: 0, fontSize: 17, fontWeight: 800, color: "var(--text-primary)", letterSpacing: "-0.02em" }}>Assign New Flat</p>
-              <p style={{ margin: 0, fontSize: 12, color: "#818cf8", fontWeight: 600 }}>→ {residentName}</p>
+              <p style={{ margin: 0, fontSize: 12, color: "#9F87D7", fontWeight: 600 }}>→ {residentName}</p>
             </div>
           </div>
           <button onClick={onClose} style={{ width: 34, height: 34, borderRadius: 10, border: "1px solid rgba(255,255,255,0.12)", background: "rgba(255,255,255,0.06)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-secondary)" }}>
@@ -434,7 +434,7 @@ function AssignFlatModal({ residentId, residentName, societyId, onClose, onSucce
               {step === 1 && (
                 <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                   <p style={{ fontSize: 12, color: "var(--text-secondary)", margin: "0 0 2px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>Property Type</p>
-                  <SelectionCard icon={<MdApartment size={18} style={{ color: "#818cf8" }} />} title="Apartment / Flat" subtitle="Multi-floor building" selected={propertyType === "APARTMENT"} onClick={() => { setPropertyType("APARTMENT"); setSelectedBlockId(""); setSelectedFloorId(""); setSelectedFlatId(""); setSelectedFlat(null); }} color="#6366f1" colorBg="rgba(99,102,241,0.10)" />
+                  <SelectionCard icon={<MdApartment size={18} style={{ color: "#9F87D7" }} />} title="Apartment / Flat" subtitle="Multi-floor building" selected={propertyType === "APARTMENT"} onClick={() => { setPropertyType("APARTMENT"); setSelectedBlockId(""); setSelectedFloorId(""); setSelectedFlatId(""); setSelectedFlat(null); }} color="#6B46C1" colorBg="rgba(107,70,193,0.10)" />
                   <SelectionCard icon={<MdHomeWork size={18} style={{ color: "#34d399" }} />} title="Row House / Villa" subtitle="Ground-level independent house" selected={propertyType === "ROW_HOUSE"} onClick={() => { setPropertyType("ROW_HOUSE"); setSelectedBlockId(""); setSelectedFloorId(""); setSelectedFlatId(""); setSelectedFlat(null); }} color="#10b981" colorBg="rgba(16,185,129,0.10)" />
                 </div>
               )}
@@ -451,10 +451,10 @@ function AssignFlatModal({ residentId, residentName, societyId, onClose, onSucce
                         const active = String(selectedBlockId) === String(block.id);
                         return (
                           <button key={block.id} type="button" onClick={() => { setSelectedBlockId(block.id); setSelectedFloorId(""); setSelectedFlatId(""); setSelectedFlat(null); }}
-                            style={{ padding: "14px 10px", borderRadius: 14, cursor: "pointer", textAlign: "center", transition: "all 0.18s", outline: "none", background: active ? "rgba(99,102,241,0.12)" : "rgba(255,255,255,0.04)", border: `2px solid ${active ? "#6366f1" : "rgba(255,255,255,0.08)"}` }}>
-                            {isApartment ? <MdApartment size={22} style={{ color: active ? "#818cf8" : "var(--text-secondary)", display: "block", margin: "0 auto 6px" }} /> : <MdHomeWork size={22} style={{ color: active ? "#34d399" : "var(--text-secondary)", display: "block", margin: "0 auto 6px" }} />}
-                            <div style={{ fontSize: 13, fontWeight: 700, color: active ? (isApartment ? "#818cf8" : "#34d399") : "var(--text-primary)" }}>Block {block.name}</div>
-                            {active && <MdCheckCircle size={12} style={{ color: isApartment ? "#818cf8" : "#34d399", marginTop: 4 }} />}
+                            style={{ padding: "14px 10px", borderRadius: 14, cursor: "pointer", textAlign: "center", transition: "all 0.18s", outline: "none", background: active ? "rgba(107,70,193,0.12)" : "rgba(255,255,255,0.04)", border: `2px solid ${active ? "#6B46C1" : "rgba(255,255,255,0.08)"}` }}>
+                            {isApartment ? <MdApartment size={22} style={{ color: active ? "#9F87D7" : "var(--text-secondary)", display: "block", margin: "0 auto 6px" }} /> : <MdHomeWork size={22} style={{ color: active ? "#34d399" : "var(--text-secondary)", display: "block", margin: "0 auto 6px" }} />}
+                            <div style={{ fontSize: 13, fontWeight: 700, color: active ? (isApartment ? "#9F87D7" : "#34d399") : "var(--text-primary)" }}>Block {block.name}</div>
+                            {active && <MdCheckCircle size={12} style={{ color: isApartment ? "#9F87D7" : "#34d399", marginTop: 4 }} />}
                           </button>
                         );
                       })}
@@ -466,7 +466,7 @@ function AssignFlatModal({ residentId, residentName, societyId, onClose, onSucce
               {/* STEP 3: Floor */}
               {step === 3 && isApartment && (
                 <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                  <p style={{ fontSize: 12, color: "var(--text-secondary)", margin: "0 0 2px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>Floor — <span style={{ color: "#818cf8" }}>Block {selectedBlock?.name}</span></p>
+                  <p style={{ fontSize: 12, color: "var(--text-secondary)", margin: "0 0 2px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>Floor — <span style={{ color: "#9F87D7" }}>Block {selectedBlock?.name}</span></p>
                   {availableFloors.length === 0 ? (
                     <div style={{ padding: "20px", textAlign: "center", color: "var(--text-secondary)", fontSize: 13, borderRadius: 12, background: "rgba(255,255,255,0.03)", border: "1px dashed rgba(255,255,255,0.08)" }}>No floors with vacant flats.</div>
                   ) : (
@@ -475,9 +475,9 @@ function AssignFlatModal({ residentId, residentName, societyId, onClose, onSucce
                         const active = String(selectedFloorId) === String(floor.id);
                         return (
                           <button key={floor.id} type="button" onClick={() => { setSelectedFloorId(floor.id); setSelectedFlatId(""); setSelectedFlat(null); }}
-                            style={{ padding: "14px 8px", borderRadius: 14, cursor: "pointer", textAlign: "center", transition: "all 0.18s", outline: "none", background: active ? "rgba(99,102,241,0.12)" : "rgba(255,255,255,0.04)", border: `2px solid ${active ? "#6366f1" : "rgba(255,255,255,0.08)"}` }}>
-                            <MdLayers size={20} style={{ color: active ? "#818cf8" : "var(--text-secondary)", display: "block", margin: "0 auto 6px" }} />
-                            <div style={{ fontSize: 13, fontWeight: 700, color: active ? "#818cf8" : "var(--text-primary)" }}>Floor {floor.number}</div>
+                            style={{ padding: "14px 8px", borderRadius: 14, cursor: "pointer", textAlign: "center", transition: "all 0.18s", outline: "none", background: active ? "rgba(107,70,193,0.12)" : "rgba(255,255,255,0.04)", border: `2px solid ${active ? "#6B46C1" : "rgba(255,255,255,0.08)"}` }}>
+                            <MdLayers size={20} style={{ color: active ? "#9F87D7" : "var(--text-secondary)", display: "block", margin: "0 auto 6px" }} />
+                            <div style={{ fontSize: 13, fontWeight: 700, color: active ? "#9F87D7" : "var(--text-primary)" }}>Floor {floor.number}</div>
                           </button>
                         );
                       })}
@@ -497,9 +497,9 @@ function AssignFlatModal({ residentId, residentName, societyId, onClose, onSucce
                       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(86px,1fr))", gap: 8, maxHeight: 180, overflowY: "auto", paddingRight: 2 }}>
                         {availableFlats.map((flat) => {
                           const isSel = String(selectedFlatId) === String(flat.id);
-                          const color = isApartment ? "#818cf8" : "#34d399";
-                          const bg = isApartment ? "rgba(99,102,241,0.12)" : "rgba(16,185,129,0.12)";
-                          const borderC = isApartment ? "#6366f1" : "#10b981";
+                          const color = isApartment ? "#9F87D7" : "#34d399";
+                          const bg = isApartment ? "rgba(107,70,193,0.12)" : "rgba(16,185,129,0.12)";
+                          const borderC = isApartment ? "#6B46C1" : "#10b981";
                           return (
                             <button key={flat.id} type="button" onClick={() => handleFlatSelect(flat.id)}
                               style={{ padding: "12px 6px", borderRadius: 12, cursor: "pointer", textAlign: "center", transition: "all 0.16s", outline: "none", background: isSel ? bg : "rgba(255,255,255,0.04)", border: `2px solid ${isSel ? borderC : "rgba(255,255,255,0.08)"}` }}>
@@ -546,9 +546,9 @@ function AssignFlatModal({ residentId, residentName, societyId, onClose, onSucce
                           const badgeLabel = selIdx === 0 ? "DEFAULT" : selIdx > 0 ? "EXTRA" : null;
                           return (
                             <button key={s.id} type="button" onClick={() => toggleSlot(s.id)}
-                              style={{ padding: "10px 6px", borderRadius: 10, cursor: "pointer", textAlign: "center", transition: "all 0.16s", outline: "none", background: isSel ? "rgba(168,85,247,0.12)" : "rgba(255,255,255,0.04)", border: `2px solid ${isSel ? "#a855f7" : "rgba(255,255,255,0.08)"}` }}>
-                              <MdLocalParking size={16} style={{ color: isSel ? "#d8b4fe" : "var(--text-secondary)", display: "block", margin: "0 auto 3px" }} />
-                              <div style={{ fontSize: 11, fontWeight: 700, color: isSel ? "#d8b4fe" : "var(--text-primary)" }}>{s.slot_number}</div>
+                              style={{ padding: "10px 6px", borderRadius: 10, cursor: "pointer", textAlign: "center", transition: "all 0.16s", outline: "none", background: isSel ? "rgba(107,70,193,0.12)" : "rgba(255,255,255,0.04)", border: `2px solid ${isSel ? "#6B46C1" : "rgba(255,255,255,0.08)"}` }}>
+                              <MdLocalParking size={16} style={{ color: isSel ? "#C0B0E5" : "var(--text-secondary)", display: "block", margin: "0 auto 3px" }} />
+                              <div style={{ fontSize: 11, fontWeight: 700, color: isSel ? "#C0B0E5" : "var(--text-primary)" }}>{s.slot_number}</div>
                               {s.vehicle_type && <div style={{ fontSize: 9, color: "var(--text-secondary)", marginTop: 1 }}>{s.vehicle_type}</div>}
                               {badgeLabel && (
                                 <div style={{ fontSize: 9, fontWeight: 800, color: badgeLabel === "DEFAULT" ? "#4ade80" : "#fbbf24", marginTop: 2 }}>
@@ -565,9 +565,9 @@ function AssignFlatModal({ residentId, residentName, societyId, onClose, onSucce
                             const slotObj = availableSlots.find(s => String(s.id) === sid);
                             if (!slotObj) return null;
                             return (
-                              <div key={sid} style={{ display: "flex", alignItems: "center", gap: 8, padding: "7px 12px", borderRadius: 8, background: "rgba(168,85,247,0.07)", border: "1px solid rgba(168,85,247,0.18)" }}>
-                                <MdLocalParking size={13} style={{ color: "#d8b4fe", flexShrink: 0 }} />
-                                <span style={{ fontSize: 12, fontWeight: 600, color: "#d8b4fe", flex: 1 }}>
+                              <div key={sid} style={{ display: "flex", alignItems: "center", gap: 8, padding: "7px 12px", borderRadius: 8, background: "rgba(107,70,193,0.07)", border: "1px solid rgba(107,70,193,0.18)" }}>
+                                <MdLocalParking size={13} style={{ color: "#C0B0E5", flexShrink: 0 }} />
+                                <span style={{ fontSize: 12, fontWeight: 600, color: "#C0B0E5", flex: 1 }}>
                                   {slotObj.slot_number}{slotObj.vehicle_type ? ` · ${slotObj.vehicle_type}` : ""}
                                 </span>
                                 <span style={{ fontSize: 10, fontWeight: 800, padding: "2px 7px", borderRadius: 999, background: idx === 0 ? "rgba(74,222,128,0.12)" : "rgba(251,191,36,0.12)", color: idx === 0 ? "#4ade80" : "#fbbf24", border: `1px solid ${idx === 0 ? "rgba(74,222,128,0.25)" : "rgba(251,191,36,0.25)"}` }}>
@@ -585,10 +585,10 @@ function AssignFlatModal({ residentId, residentName, societyId, onClose, onSucce
                   )}
 
                   {selectedFlat && (
-                    <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 16px", borderRadius: 12, background: isApartment ? "rgba(99,102,241,0.08)" : "rgba(16,185,129,0.08)", border: `1px solid ${isApartment ? "rgba(99,102,241,0.20)" : "rgba(16,185,129,0.20)"}` }}>
-                      {isApartment ? <MdApartment size={20} style={{ color: "#818cf8", flexShrink: 0 }} /> : <MdHomeWork size={20} style={{ color: "#34d399", flexShrink: 0 }} />}
+                    <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 16px", borderRadius: 12, background: isApartment ? "rgba(107,70,193,0.08)" : "rgba(16,185,129,0.08)", border: `1px solid ${isApartment ? "rgba(107,70,193,0.20)" : "rgba(16,185,129,0.20)"}` }}>
+                      {isApartment ? <MdApartment size={20} style={{ color: "#9F87D7", flexShrink: 0 }} /> : <MdHomeWork size={20} style={{ color: "#34d399", flexShrink: 0 }} />}
                       <div>
-                        <p style={{ fontWeight: 800, fontSize: 14, color: isApartment ? "#818cf8" : "#34d399", margin: 0, letterSpacing: "-0.01em" }}>
+                        <p style={{ fontWeight: 800, fontSize: 14, color: isApartment ? "#9F87D7" : "#34d399", margin: 0, letterSpacing: "-0.01em" }}>
                           {isApartment ? "Flat" : "House"} {selectedFlat.flat_number}{isApartment && ` · ${flatType}`}
                         </p>
                         <p style={{ fontSize: 12, color: "var(--text-secondary)", margin: "3px 0 0" }}>
@@ -612,12 +612,12 @@ function AssignFlatModal({ residentId, residentName, societyId, onClose, onSucce
                 <div style={{ flex: 1 }} />
                 {step < flatStep ? (
                   <button type="button" onClick={() => { setFormError(""); setStep((s) => s + 1); }} disabled={!canGoNext()}
-                    style={{ display: "flex", alignItems: "center", gap: 6, padding: "11px 24px", borderRadius: 12, fontSize: 13, fontWeight: 700, background: canGoNext() ? "linear-gradient(135deg,#6366f1,#8b5cf6)" : "rgba(255,255,255,0.06)", border: "none", color: canGoNext() ? "#fff" : "var(--text-secondary)", cursor: canGoNext() ? "pointer" : "not-allowed", boxShadow: canGoNext() ? "0 4px 14px rgba(99,102,241,0.35)" : "none", transition: "all 0.2s" }}>
+                    style={{ display: "flex", alignItems: "center", gap: 6, padding: "11px 24px", borderRadius: 12, fontSize: 13, fontWeight: 700, background: canGoNext() ? "linear-gradient(135deg,#6B46C1,#6B46C1)" : "rgba(255,255,255,0.06)", border: "none", color: canGoNext() ? "#fff" : "var(--text-secondary)", cursor: canGoNext() ? "pointer" : "not-allowed", boxShadow: canGoNext() ? "0 4px 14px rgba(107,70,193,0.35)" : "none", transition: "all 0.2s" }}>
                     Next <MdArrowForward size={15} />
                   </button>
                 ) : (
                   <button type="button" onClick={handleSubmit} disabled={submitting || !selectedFlatId}
-                    style={{ display: "flex", alignItems: "center", gap: 8, padding: "12px 28px", borderRadius: 12, fontSize: 13, fontWeight: 800, background: submitting || !selectedFlatId ? "rgba(255,255,255,0.06)" : "linear-gradient(135deg,#6366f1,#8b5cf6)", border: "none", color: submitting || !selectedFlatId ? "var(--text-secondary)" : "#fff", cursor: submitting || !selectedFlatId ? "not-allowed" : "pointer", boxShadow: submitting || !selectedFlatId ? "none" : "0 4px 16px rgba(99,102,241,0.4)", transition: "all 0.2s" }}>
+                    style={{ display: "flex", alignItems: "center", gap: 8, padding: "12px 28px", borderRadius: 12, fontSize: 13, fontWeight: 800, background: submitting || !selectedFlatId ? "rgba(255,255,255,0.06)" : "linear-gradient(135deg,#6B46C1,#6B46C1)", border: "none", color: submitting || !selectedFlatId ? "var(--text-secondary)" : "#fff", cursor: submitting || !selectedFlatId ? "not-allowed" : "pointer", boxShadow: submitting || !selectedFlatId ? "none" : "0 4px 16px rgba(107,70,193,0.4)", transition: "all 0.2s" }}>
                     {submitting ? <><Spinner small /> Assigning…</> : <><MdCheckCircle size={16} /> Confirm Assignment</>}
                   </button>
                 )}
@@ -689,12 +689,12 @@ function ParkingSlotPicker({ flatNumber, isApartment, selectedSlotIds, available
         marginTop: 8,
         padding: "10px 12px",
         borderRadius: 10,
-        background: isApartment ? "rgba(99,102,241,0.05)" : "rgba(16,185,129,0.05)",
-        border: `1px solid ${isApartment ? "rgba(99,102,241,0.18)" : "rgba(16,185,129,0.18)"}`,
+        background: isApartment ? "rgba(107,70,193,0.05)" : "rgba(16,185,129,0.05)",
+        border: `1px solid ${isApartment ? "rgba(107,70,193,0.18)" : "rgba(16,185,129,0.18)"}`,
       }}
     >
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
-        <span style={{ fontSize: 11, fontWeight: 700, color: isApartment ? "#818cf8" : "#34d399" }}>
+        <span style={{ fontSize: 11, fontWeight: 700, color: isApartment ? "#9F87D7" : "#34d399" }}>
           Flat {flatNumber} — Parking
         </span>
         <span style={{ fontSize: 10, color: "var(--text-secondary)" }}>
@@ -735,15 +735,15 @@ function ParkingSlotPicker({ flatNumber, isApartment, selectedSlotIds, available
                   textAlign: "center",
                   transition: "all 0.15s",
                   outline: "none",
-                  background: isSel ? "rgba(168,85,247,0.14)" : "rgba(255,255,255,0.04)",
-                  border: `2px solid ${isSel ? "#a855f7" : "rgba(255,255,255,0.08)"}`,
+                  background: isSel ? "rgba(107,70,193,0.14)" : "rgba(255,255,255,0.04)",
+                  border: `2px solid ${isSel ? "#6B46C1" : "rgba(255,255,255,0.08)"}`,
                 }}
               >
                 <MdLocalParking
                   size={13}
-                  style={{ color: isSel ? "#d8b4fe" : "var(--text-secondary)", display: "block", margin: "0 auto 2px" }}
+                  style={{ color: isSel ? "#C0B0E5" : "var(--text-secondary)", display: "block", margin: "0 auto 2px" }}
                 />
-                <div style={{ fontSize: 10, fontWeight: 700, color: isSel ? "#d8b4fe" : "var(--text-primary)" }}>
+                <div style={{ fontSize: 10, fontWeight: 700, color: isSel ? "#C0B0E5" : "var(--text-primary)" }}>
                   {slot.slot_number}
                 </div>
                 {slot.vehicle_type && (
@@ -940,14 +940,14 @@ function FlatAssignCard({
               width: 22,
               height: 22,
               borderRadius: "50%",
-              background: flat_id ? "rgba(34,197,94,0.15)" : "rgba(99,102,241,0.12)",
-              border: `1.5px solid ${flat_id ? "rgba(34,197,94,0.35)" : "rgba(99,102,241,0.25)"}`,
+              background: flat_id ? "rgba(34,197,94,0.15)" : "rgba(107,70,193,0.12)",
+              border: `1.5px solid ${flat_id ? "rgba(34,197,94,0.35)" : "rgba(107,70,193,0.25)"}`,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               fontSize: 10,
               fontWeight: 700,
-              color: flat_id ? "#4ade80" : "#818cf8",
+              color: flat_id ? "#4ade80" : "#9F87D7",
             }}
           >
             {flat_id ? <MdCheckCircle size={12} /> : index + 1}
@@ -988,7 +988,7 @@ function FlatAssignCard({
       {/* Property type */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
         {[
-          { value: "APARTMENT", label: "Apartment", icon: MdApartment, color: "#6366f1", bg: "rgba(99,102,241,0.10)" },
+          { value: "APARTMENT", label: "Apartment", icon: MdApartment, color: "#6B46C1", bg: "rgba(107,70,193,0.10)" },
           { value: "ROW_HOUSE", label: "Row House", icon: MdHomeWork, color: "#10b981", bg: "rgba(16,185,129,0.10)" },
         ].map((opt) => {
           const active = propType === opt.value;
@@ -1068,9 +1068,9 @@ function FlatAssignCard({
             >
               {availableFlats.map((f) => {
                 const isSel = String(flat_id) === String(f.id);
-                const color = isApartment ? "#818cf8" : "#34d399";
-                const bg = isApartment ? "rgba(99,102,241,0.12)" : "rgba(16,185,129,0.12)";
-                const borderC = isApartment ? "#6366f1" : "#10b981";
+                const color = isApartment ? "#9F87D7" : "#34d399";
+                const bg = isApartment ? "rgba(107,70,193,0.12)" : "rgba(16,185,129,0.12)";
+                const borderC = isApartment ? "#6B46C1" : "#10b981";
                 return (
                   <button
                     key={f.id}
@@ -1188,14 +1188,14 @@ function FlatAssignCard({
                       outline: "none",
                       fontWeight: 700,
                       fontSize: 11,
-                      background: isSel ? "rgba(168,85,247,0.12)" : "rgba(255,255,255,0.04)",
-                      border: `2px solid ${isSel ? "#a855f7" : "rgba(255,255,255,0.08)"}`,
-                      color: isSel ? "#d8b4fe" : "var(--text-primary)",
+                      background: isSel ? "rgba(107,70,193,0.12)" : "rgba(255,255,255,0.04)",
+                      border: `2px solid ${isSel ? "#6B46C1" : "rgba(255,255,255,0.08)"}`,
+                      color: isSel ? "#C0B0E5" : "var(--text-primary)",
                     }}
                   >
                     <MdLayers
                       size={14}
-                      style={{ margin: "0 auto 3px", display: "block", color: isSel ? "#d8b4fe" : "var(--text-secondary)" }}
+                      style={{ margin: "0 auto 3px", display: "block", color: isSel ? "#C0B0E5" : "var(--text-secondary)" }}
                     />
                     <div>{slot.slot_number}</div>
                     {slot.vehicle_type && (
@@ -1238,12 +1238,12 @@ function FlatAssignCard({
                       gap: 8,
                       padding: "7px 12px",
                       borderRadius: 9,
-                      background: "rgba(168,85,247,0.07)",
-                      border: "1px solid rgba(168,85,247,0.18)",
+                      background: "rgba(107,70,193,0.07)",
+                      border: "1px solid rgba(107,70,193,0.18)",
                     }}
                   >
-                    <MdLayers size={13} style={{ color: "#d8b4fe", flexShrink: 0 }} />
-                    <span style={{ fontSize: 12, fontWeight: 600, color: "#d8b4fe", flex: 1 }}>
+                    <MdLayers size={13} style={{ color: "#C0B0E5", flexShrink: 0 }} />
+                    <span style={{ fontSize: 12, fontWeight: 600, color: "#C0B0E5", flex: 1 }}>
                       Slot {slotObj.slot_number}
                       {slotObj.vehicle_type ? ` · ${slotObj.vehicle_type}` : ""}
                     </span>
@@ -1412,7 +1412,7 @@ function MultiFlatAssignSection({ allUnassignedFlats, availableSlots, assignment
         <p style={fieldLabelStyle}>Property Type</p>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
           {[
-            { value: "APARTMENT", label: "Apartment", sub: "Multi-floor building", icon: MdApartment, color: "#6366f1", bg: "rgba(99,102,241,0.10)" },
+            { value: "APARTMENT", label: "Apartment", sub: "Multi-floor building", icon: MdApartment, color: "#6B46C1", bg: "rgba(107,70,193,0.10)" },
             { value: "ROW_HOUSE", label: "Row House", sub: "Ground-level villa/house", icon: MdHomeWork, color: "#10b981", bg: "rgba(16,185,129,0.10)" },
           ].map((opt) => {
             const active = propType === opt.value;
@@ -1489,22 +1489,22 @@ function MultiFlatAssignSection({ allUnassignedFlats, availableSlots, assignment
                       transition: "all 0.16s",
                       outline: "none",
                       background: active
-                        ? isApartment ? "rgba(99,102,241,0.12)" : "rgba(16,185,129,0.12)"
+                        ? isApartment ? "rgba(107,70,193,0.12)" : "rgba(16,185,129,0.12)"
                         : "rgba(255,255,255,0.04)",
                       border: `2px solid ${active
-                          ? isApartment ? "#6366f1" : "#10b981"
+                          ? isApartment ? "#6B46C1" : "#10b981"
                           : "rgba(255,255,255,0.08)"
                         }`,
                     }}
                   >
                     {isApartment
-                      ? <MdApartment size={20} style={{ color: active ? "#818cf8" : "var(--text-secondary)", display: "block", margin: "0 auto 5px" }} />
+                      ? <MdApartment size={20} style={{ color: active ? "#9F87D7" : "var(--text-secondary)", display: "block", margin: "0 auto 5px" }} />
                       : <MdHomeWork size={20} style={{ color: active ? "#34d399" : "var(--text-secondary)", display: "block", margin: "0 auto 5px" }} />
                     }
-                    <div style={{ fontSize: 12, fontWeight: 700, color: active ? (isApartment ? "#818cf8" : "#34d399") : "var(--text-primary)" }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: active ? (isApartment ? "#9F87D7" : "#34d399") : "var(--text-primary)" }}>
                       Block {block.name}
                     </div>
-                    {active && <MdCheckCircle size={11} style={{ color: isApartment ? "#818cf8" : "#34d399", marginTop: 3 }} />}
+                    {active && <MdCheckCircle size={11} style={{ color: isApartment ? "#9F87D7" : "#34d399", marginTop: 3 }} />}
                   </button>
                 );
               })}
@@ -1535,12 +1535,12 @@ function MultiFlatAssignSection({ allUnassignedFlats, availableSlots, assignment
                       textAlign: "center",
                       transition: "all 0.16s",
                       outline: "none",
-                      background: active ? "rgba(99,102,241,0.12)" : "rgba(255,255,255,0.04)",
-                      border: `2px solid ${active ? "#6366f1" : "rgba(255,255,255,0.08)"}`,
+                      background: active ? "rgba(107,70,193,0.12)" : "rgba(255,255,255,0.04)",
+                      border: `2px solid ${active ? "#6B46C1" : "rgba(255,255,255,0.08)"}`,
                     }}
                   >
-                    <MdLayers size={18} style={{ color: active ? "#818cf8" : "var(--text-secondary)", display: "block", margin: "0 auto 4px" }} />
-                    <div style={{ fontSize: 12, fontWeight: 700, color: active ? "#818cf8" : "var(--text-primary)" }}>
+                    <MdLayers size={18} style={{ color: active ? "#9F87D7" : "var(--text-secondary)", display: "block", margin: "0 auto 4px" }} />
+                    <div style={{ fontSize: 12, fontWeight: 700, color: active ? "#9F87D7" : "var(--text-primary)" }}>
                       Floor {floor.number}
                     </div>
                   </button>
@@ -1591,9 +1591,9 @@ function MultiFlatAssignSection({ allUnassignedFlats, availableSlots, assignment
             >
               {availableFlats.map((flat) => {
                 const isSel = selectedFlatIds.includes(String(flat.id));
-                const color = isApartment ? "#818cf8" : "#34d399";
-                const bg = isApartment ? "rgba(99,102,241,0.14)" : "rgba(16,185,129,0.14)";
-                const borderC = isApartment ? "#6366f1" : "#10b981";
+                const color = isApartment ? "#9F87D7" : "#34d399";
+                const bg = isApartment ? "rgba(107,70,193,0.14)" : "rgba(16,185,129,0.14)";
+                const borderC = isApartment ? "#6B46C1" : "#10b981";
                 return (
                   <button
                     key={flat.id}
@@ -1655,9 +1655,9 @@ function MultiFlatAssignSection({ allUnassignedFlats, availableSlots, assignment
 
           {assignments.filter((a) => a.flat_id).map((assignment, cardIdx) => {
             const flat = allUnassignedFlats.find((f) => String(f.id) === String(assignment.flat_id));
-            const color = isApartment ? "#818cf8" : "#34d399";
-            const borderC = isApartment ? "rgba(99,102,241,0.22)" : "rgba(16,185,129,0.22)";
-            const bgCard = isApartment ? "rgba(99,102,241,0.06)" : "rgba(16,185,129,0.06)";
+            const color = isApartment ? "#9F87D7" : "#34d399";
+            const borderC = isApartment ? "rgba(107,70,193,0.22)" : "rgba(16,185,129,0.22)";
+            const bgCard = isApartment ? "rgba(107,70,193,0.06)" : "rgba(16,185,129,0.06)";
 
             return (
               <div
@@ -1680,7 +1680,7 @@ function MultiFlatAssignSection({ allUnassignedFlats, availableSlots, assignment
                         width: 28,
                         height: 28,
                         borderRadius: 8,
-                        background: isApartment ? "rgba(99,102,241,0.15)" : "rgba(16,185,129,0.15)",
+                        background: isApartment ? "rgba(107,70,193,0.15)" : "rgba(16,185,129,0.15)",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
@@ -1876,17 +1876,17 @@ function EditFlatSection({ allUnassignedFlats, availableSlots, currentFlats, cur
               const isSel = String(selectedExistingFlatId) === String(flat.id);
               return (
                 <button key={flat.id} type="button" onClick={() => set({ selectedExistingFlatId: String(flat.id), propType: "", blockId: "", floorId: "", flat_id: "", flat_type: "2BHK", parking_slot_id: "", revokeParking: false })}
-                  style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 14px", borderRadius: 10, cursor: "pointer", textAlign: "left", background: isSel ? "rgba(99,102,241,0.10)" : "rgba(255,255,255,0.03)", border: `2px solid ${isSel ? "#6366f1" : "rgba(255,255,255,0.08)"}`, transition: "all 0.15s" }}>
+                  style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 14px", borderRadius: 10, cursor: "pointer", textAlign: "left", background: isSel ? "rgba(107,70,193,0.10)" : "rgba(255,255,255,0.03)", border: `2px solid ${isSel ? "#6B46C1" : "rgba(255,255,255,0.08)"}`, transition: "all 0.15s" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                    <div style={{ width: 30, height: 30, borderRadius: 9, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", background: isSel ? "rgba(99,102,241,0.15)" : "rgba(255,255,255,0.05)" }}>
-                      <MdHome size={15} style={{ color: isSel ? "#818cf8" : "var(--text-secondary)" }} />
+                    <div style={{ width: 30, height: 30, borderRadius: 9, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", background: isSel ? "rgba(107,70,193,0.15)" : "rgba(255,255,255,0.05)" }}>
+                      <MdHome size={15} style={{ color: isSel ? "#9F87D7" : "var(--text-secondary)" }} />
                     </div>
                     <div>
-                      <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: isSel ? "#818cf8" : "var(--text-primary)" }}>Flat {flat.flat_number}</p>
+                      <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: isSel ? "#9F87D7" : "var(--text-primary)" }}>Flat {flat.flat_number}</p>
                       {flat.flat_type && <p style={{ margin: "2px 0 0", fontSize: 11, color: "var(--text-secondary)" }}>{flat.flat_type}</p>}
                     </div>
                   </div>
-                  {isSel && <MdCheckCircle size={16} style={{ color: "#818cf8", flexShrink: 0 }} />}
+                  {isSel && <MdCheckCircle size={16} style={{ color: "#9F87D7", flexShrink: 0 }} />}
                 </button>
               );
             })}
@@ -1898,8 +1898,8 @@ function EditFlatSection({ allUnassignedFlats, availableSlots, currentFlats, cur
       {(!isMultiFlat || selectedExistingFlatId) && (
         <>
           {!isMultiFlat && currentFlats && currentFlats.length > 0 && (
-            <div style={{ padding: "10px 14px", borderRadius: 10, background: "rgba(99,102,241,0.07)", border: "1px solid rgba(99,102,241,0.18)", fontSize: 12, color: "var(--text-secondary)" }}>
-              <span style={{ fontWeight: 700, color: "#818cf8" }}>Currently assigned: </span>
+            <div style={{ padding: "10px 14px", borderRadius: 10, background: "rgba(107,70,193,0.07)", border: "1px solid rgba(107,70,193,0.18)", fontSize: 12, color: "var(--text-secondary)" }}>
+              <span style={{ fontWeight: 700, color: "#9F87D7" }}>Currently assigned: </span>
               {currentFlats.map((f) => f.flat_number).join(", ")}
               <span style={{ fontSize: 11, display: "block", marginTop: 3, opacity: 0.7 }}>Selecting a new flat below will replace this flat.</span>
             </div>
@@ -1931,7 +1931,7 @@ function EditFlatSection({ allUnassignedFlats, availableSlots, currentFlats, cur
             <label style={fieldLabelStyle}>Replace with new flat? (optional)</label>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
               {[
-                { value: "APARTMENT", label: "Apartment", icon: MdApartment, color: "#6366f1", bg: "rgba(99,102,241,0.10)" },
+                { value: "APARTMENT", label: "Apartment", icon: MdApartment, color: "#6B46C1", bg: "rgba(107,70,193,0.10)" },
                 { value: "ROW_HOUSE", label: "Row House", icon: MdHomeWork, color: "#10b981", bg: "rgba(16,185,129,0.10)" },
               ].map((opt) => {
                 const active = propType === opt.value;
@@ -1977,9 +1977,9 @@ function EditFlatSection({ allUnassignedFlats, availableSlots, currentFlats, cur
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(80px,1fr))", gap: 6, maxHeight: 160, overflowY: "auto" }}>
                   {availableFlats.map((f) => {
                     const isSel = String(flat_id) === String(f.id);
-                    const color = isApartment ? "#818cf8" : "#34d399";
-                    const bg = isApartment ? "rgba(99,102,241,0.12)" : "rgba(16,185,129,0.12)";
-                    const borderC = isApartment ? "#6366f1" : "#10b981";
+                    const color = isApartment ? "#9F87D7" : "#34d399";
+                    const bg = isApartment ? "rgba(107,70,193,0.12)" : "rgba(16,185,129,0.12)";
+                    const borderC = isApartment ? "#6B46C1" : "#10b981";
                     return (
                       <button key={f.id} type="button" onClick={() => handleFlat(f.id)}
                         style={{ padding: "10px 6px", borderRadius: 9, cursor: "pointer", textAlign: "center", transition: "all 0.16s", outline: "none", background: isSel ? bg : "rgba(255,255,255,0.04)", border: `2px solid ${isSel ? borderC : "rgba(255,255,255,0.08)"}` }}>
@@ -2013,9 +2013,9 @@ function EditFlatSection({ allUnassignedFlats, availableSlots, currentFlats, cur
           )}
 
           {flat_id && selectedFlatObj && (
-            <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", borderRadius: 10, background: isApartment ? "rgba(99,102,241,0.08)" : "rgba(16,185,129,0.08)", border: `1px solid ${isApartment ? "rgba(99,102,241,0.20)" : "rgba(16,185,129,0.20)"}` }}>
-              {isApartment ? <MdApartment size={17} style={{ color: "#818cf8", flexShrink: 0 }} /> : <MdHomeWork size={17} style={{ color: "#34d399", flexShrink: 0 }} />}
-              <span style={{ fontWeight: 700, fontSize: 13, color: isApartment ? "#818cf8" : "#34d399" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", borderRadius: 10, background: isApartment ? "rgba(107,70,193,0.08)" : "rgba(16,185,129,0.08)", border: `1px solid ${isApartment ? "rgba(107,70,193,0.20)" : "rgba(16,185,129,0.20)"}` }}>
+              {isApartment ? <MdApartment size={17} style={{ color: "#9F87D7", flexShrink: 0 }} /> : <MdHomeWork size={17} style={{ color: "#34d399", flexShrink: 0 }} />}
+              <span style={{ fontWeight: 700, fontSize: 13, color: isApartment ? "#9F87D7" : "#34d399" }}>
                 {isApartment ? "Flat" : "House"} {selectedFlatObj.flat_number}
                 {selectedBlock && ` · Block ${selectedBlock.name}`}
                 {isApartment && selectedFloor && ` · Floor ${selectedFloor.number}`}
@@ -2038,20 +2038,20 @@ function EditFlatSection({ allUnassignedFlats, availableSlots, currentFlats, cur
                     const isSel = String(parking_slot_id) === String(slot.id);
                     return (
                       <button key={slot.id} type="button" onClick={() => set({ parking_slot_id: isSel ? "" : slot.id, revokeParking: false })}
-                        style={{ padding: "10px 6px", borderRadius: 9, cursor: "pointer", textAlign: "center", transition: "all 0.16s", outline: "none", fontWeight: 700, fontSize: 11, background: isSel ? "rgba(168,85,247,0.12)" : "rgba(255,255,255,0.04)", border: `2px solid ${isSel ? "#a855f7" : "rgba(255,255,255,0.08)"}`, color: isSel ? "#d8b4fe" : "var(--text-primary)" }}>
-                        <MdLocalParking size={14} style={{ margin: "0 auto 3px", display: "block", color: isSel ? "#d8b4fe" : "var(--text-secondary)" }} />
+                        style={{ padding: "10px 6px", borderRadius: 9, cursor: "pointer", textAlign: "center", transition: "all 0.16s", outline: "none", fontWeight: 700, fontSize: 11, background: isSel ? "rgba(107,70,193,0.12)" : "rgba(255,255,255,0.04)", border: `2px solid ${isSel ? "#6B46C1" : "rgba(255,255,255,0.08)"}`, color: isSel ? "#C0B0E5" : "var(--text-primary)" }}>
+                        <MdLocalParking size={14} style={{ margin: "0 auto 3px", display: "block", color: isSel ? "#C0B0E5" : "var(--text-secondary)" }} />
                         <div>{slot.slot_number}</div>
                         {slot.vehicle_type && <div style={{ fontSize: 9, color: "var(--text-secondary)", marginTop: 1 }}>{slot.vehicle_type}</div>}
-                        {isSel && <MdCheckCircle size={11} style={{ color: "#d8b4fe", marginTop: 2 }} />}
+                        {isSel && <MdCheckCircle size={11} style={{ color: "#C0B0E5", marginTop: 2 }} />}
                       </button>
                     );
                   })}
                 </div>
               )}
               {parking_slot_id && selectedSlotObj && (
-                <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8, padding: "8px 12px", borderRadius: 9, background: "rgba(168,85,247,0.07)", border: "1px solid rgba(168,85,247,0.18)" }}>
-                  <MdLocalParking size={15} style={{ color: "#d8b4fe", flexShrink: 0 }} />
-                  <span style={{ fontSize: 12, fontWeight: 600, color: "#d8b4fe", flex: 1 }}>Slot {selectedSlotObj.slot_number}{selectedSlotObj.vehicle_type ? ` · ${selectedSlotObj.vehicle_type}` : ""}</span>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8, padding: "8px 12px", borderRadius: 9, background: "rgba(107,70,193,0.07)", border: "1px solid rgba(107,70,193,0.18)" }}>
+                  <MdLocalParking size={15} style={{ color: "#C0B0E5", flexShrink: 0 }} />
+                  <span style={{ fontSize: 12, fontWeight: 600, color: "#C0B0E5", flex: 1 }}>Slot {selectedSlotObj.slot_number}{selectedSlotObj.vehicle_type ? ` · ${selectedSlotObj.vehicle_type}` : ""}</span>
                   <button type="button" onClick={() => set({ parking_slot_id: "" })} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-secondary)", display: "flex" }}>
                     <MdClose size={13} />
                   </button>
@@ -2410,13 +2410,13 @@ export default function Resident() {
   };
 
   const AVATAR_COLORS = [
-    "linear-gradient(135deg,#6366f1,#8b5cf6)",
-    "linear-gradient(135deg,#0891b2,#06b6d4)",
-    "linear-gradient(135deg,#f97316,#fb923c)",
+    "linear-gradient(135deg,#6B46C1,#6B46C1)",
+    "linear-gradient(135deg,#669696,#7AB2B2)",
+    "linear-gradient(135deg,#F0845D,#F5AF96)",
     "linear-gradient(135deg,#f43f5e,#fb7185)",
     "linear-gradient(135deg,#10b981,#34d399)",
-    "linear-gradient(135deg,#8b5cf6,#a78bfa)",
-    "linear-gradient(135deg,#0284c7,#38bdf8)",
+    "linear-gradient(135deg,#6B46C1,#9F87D7)",
+    "linear-gradient(135deg,#4C76C9,#94B5F5)",
   ];
   const avatarColor = (idx) => AVATAR_COLORS[idx % AVATAR_COLORS.length];
 
@@ -2438,7 +2438,7 @@ export default function Resident() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <div style={{ width: 44, height: 44, borderRadius: 14, flexShrink: 0, background: "linear-gradient(135deg,#6366f1,#8b5cf6)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 8px 20px rgba(99,102,241,0.3)" }}>
+          <div style={{ width: 44, height: 44, borderRadius: 14, flexShrink: 0, background: "linear-gradient(135deg,#6B46C1,#6B46C1)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 8px 20px rgba(107,70,193,0.3)" }}>
             <MdPerson size={22} color="#fff" />
           </div>
           <div>
@@ -2457,7 +2457,7 @@ export default function Resident() {
             if (showForm) resetForm();
           }}
           className="btn-primary flex items-center gap-2 w-full sm:w-auto justify-center shrink-0"
-          style={{ borderRadius: 12, fontWeight: 700, boxShadow: "0 4px 14px rgba(99,102,241,0.3)" }}>
+          style={{ borderRadius: 12, fontWeight: 700, boxShadow: "0 4px 14px rgba(107,70,193,0.3)" }}>
           <MdPersonAdd size={18} />
           {t("residentAddBtn")}
         </button>
@@ -2717,7 +2717,7 @@ export default function Resident() {
           <div className="flex flex-col items-center gap-2 py-16 text-secondary">
             <MdSearch size={32} className="opacity-20" />
             <p className="text-sm">No residents match your search.</p>
-            <button onClick={() => setSearch("")} style={{ fontSize: 12, color: "#818cf8", background: "none", border: "none", cursor: "pointer", marginTop: 4 }}>Clear search</button>
+            <button onClick={() => setSearch("")} style={{ fontSize: 12, color: "#9F87D7", background: "none", border: "none", cursor: "pointer", marginTop: 4 }}>Clear search</button>
           </div>
         )}
 
@@ -2783,9 +2783,9 @@ export default function Resident() {
                             );
                           }) : <span style={{ fontSize: 12, color: "var(--text-secondary)", opacity: 0.45 }}>{t("colNoUnit") || "No unit assigned"}</span>}
                           <button type="button" onClick={() => setAssignModal({ id: r.id, name: r.name, society_id: r.society_id })}
-                            style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 11, fontWeight: 700, padding: "5px 10px", borderRadius: 8, background: "rgba(99,102,241,0.08)", border: "1px dashed rgba(99,102,241,0.35)", color: "#818cf8", cursor: "pointer", marginTop: 4, alignSelf: "flex-start", transition: "all 0.15s" }}
-                            onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(99,102,241,0.14)"; e.currentTarget.style.borderColor = "#6366f1"; }}
-                            onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(99,102,241,0.08)"; e.currentTarget.style.borderColor = "rgba(99,102,241,0.35)"; }}>
+                            style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 11, fontWeight: 700, padding: "5px 10px", borderRadius: 8, background: "rgba(107,70,193,0.08)", border: "1px dashed rgba(107,70,193,0.35)", color: "#9F87D7", cursor: "pointer", marginTop: 4, alignSelf: "flex-start", transition: "all 0.15s" }}
+                            onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(107,70,193,0.14)"; e.currentTarget.style.borderColor = "#6B46C1"; }}
+                            onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(107,70,193,0.08)"; e.currentTarget.style.borderColor = "rgba(107,70,193,0.35)"; }}>
                             <MdAdd size={13} /> {t("colAssignFlat") || "Assign Flat"}
                           </button>
                         </div>
@@ -2814,9 +2814,9 @@ export default function Resident() {
                             )
                           )}
                           <button onClick={() => handleEdit(r)}
-                            style={{ background: "rgba(59,130,246,0.10)", color: "#60a5fa", padding: "6px 12px", borderRadius: 8, border: "1px solid rgba(59,130,246,0.20)", cursor: "pointer", display: "flex", alignItems: "center", gap: 4, fontSize: 12, fontWeight: 700, transition: "all 0.15s" }}
-                            onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(59,130,246,0.18)")}
-                            onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(59,130,246,0.10)")}>
+                            style={{ background: "rgba(91,141,239,0.10)", color: "#94B5F5", padding: "6px 12px", borderRadius: 8, border: "1px solid rgba(91,141,239,0.20)", cursor: "pointer", display: "flex", alignItems: "center", gap: 4, fontSize: 12, fontWeight: 700, transition: "all 0.15s" }}
+                            onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(91,141,239,0.18)")}
+                            onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(91,141,239,0.10)")}>
                             <MdEdit size={13} /> {t("colEdit") || "Edit"}
                           </button>
                           {confirmId === r.id ? (
@@ -2864,12 +2864,12 @@ export default function Resident() {
                       </div>
                       {r.emergency_contact?.name && <p style={{ fontSize: 11, color: "var(--text-secondary)", margin: "5px 0 0", display: "flex", alignItems: "center", gap: 4 }}><MdContactPhone size={11} style={{ color: "#f87171" }} />{r.emergency_contact.name} · {r.emergency_contact.phone}</p>}
                       <button type="button" onClick={() => setAssignModal({ id: r.id, name: r.name, society_id: r.society_id })}
-                        style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 11, fontWeight: 700, padding: "5px 10px", borderRadius: 8, background: "rgba(99,102,241,0.08)", border: "1px dashed rgba(99,102,241,0.35)", color: "#818cf8", cursor: "pointer", marginTop: 8 }}>
+                        style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 11, fontWeight: 700, padding: "5px 10px", borderRadius: 8, background: "rgba(107,70,193,0.08)", border: "1px dashed rgba(107,70,193,0.35)", color: "#9F87D7", cursor: "pointer", marginTop: 8 }}>
                         <MdAdd size={13} /> {t("colAssignFlat") || "Assign Flat"}
                       </button>
                     </div>
                     <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6, flexShrink: 0 }}>
-                      <button onClick={() => handleEdit(r)} style={{ background: "rgba(59,130,246,0.10)", color: "#60a5fa", padding: "6px 10px", borderRadius: 8, border: "1px solid rgba(59,130,246,0.20)", cursor: "pointer", display: "flex", alignItems: "center", gap: 4, fontSize: 11, fontWeight: 700 }}>
+                      <button onClick={() => handleEdit(r)} style={{ background: "rgba(91,141,239,0.10)", color: "#94B5F5", padding: "6px 10px", borderRadius: 8, border: "1px solid rgba(91,141,239,0.20)", cursor: "pointer", display: "flex", alignItems: "center", gap: 4, fontSize: 11, fontWeight: 700 }}>
                         <MdEdit size={13} /> {t("colEdit") || "Edit"}
                       </button>
                       {r.flats && r.flats.length > 0 && !r.roles?.includes("SOCIETY_ADMIN") && (

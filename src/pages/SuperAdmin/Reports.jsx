@@ -17,7 +17,7 @@ export default function SuperAdminReports() {
       description: t("adminRptVisitorsDesc") || "Detailed log of all visitor entries and exits.",
       icon:        MdPeople,
       path:        "/superadmin/reports/visitors",
-      color: { bg: "bg-blue-500/15",   border: "border-blue-500/25",   icon: "text-blue-400",   glow: "rgba(59,130,246,0.15)",  stat: t("adminRptVisitorsStat") || "Total Logs" },
+      color: { bg: "bg-blue-500/15",   border: "border-blue-500/25",   icon: "text-blue-400",   glow: "rgba(91,141,239,0.15)",  stat: t("adminRptVisitorsStat") || "Total Logs" },
     },
     {
       title:       t("adminRptComplaints") || "Complaint Report",
