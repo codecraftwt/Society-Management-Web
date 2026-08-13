@@ -89,7 +89,7 @@ export default function CommitteeBillingRules() {
       ) : (
         <div className="comm-list">
           {rules.map(r => (
-            <div key={r._id} className="comm-rule-card">
+            <div key={r.id} className="comm-rule-card">
               <div className="comm-rule-left">
                 <div className="comm-rule-icon"><MdAccountBalance size={18} /></div>
                 <div>
@@ -102,7 +102,7 @@ export default function CommitteeBillingRules() {
               </div>
               <div className="comm-rule-right">
                 <span className="comm-rule-amount">₹{Number(r.amount).toLocaleString()}</span>
-                <button className="comm-icon-btn comm-icon-btn--delete" onClick={() => handleDelete(r._id)}>
+                <button className="comm-icon-btn comm-icon-btn--delete" onClick={() => handleDelete(r.id)}>
                   <MdDelete size={16} />
                 </button>
               </div>

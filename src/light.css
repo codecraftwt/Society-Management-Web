@@ -6611,8 +6611,9 @@ html.light .comm-rule-amount { color: #b25c3a; }
 html.light .comm-icon-btn--delete { background: rgba(220,38,38,0.07); border-color: rgba(220,38,38,0.20); color: #b91c1c; }
 html.light .comm-icon-btn--delete:hover { background: rgba(220,38,38,0.14); border-color: rgba(220,38,38,0.35); }
  
-html.light .comm-amenity-card { background: linear-gradient(145deg,#FFFFFF,#ffffff); border-color: #e4e9f5; }
+html.light .comm-amenity-card { background: linear-gradient(145deg,#FFFFFF,#ffffff); border-color: #e4e9f5; padding-right: 54px; }
 html.light .comm-amenity-card:hover { border-color: #fbd9c6; }
+html.light .comm-amenity-badges { display: flex; align-items: center; justify-content: flex-end; gap: 6px; min-width: 0; flex: 1; }
 html.light .comm-amenity-name { color: #24212C; }
 html.light .comm-amenity-type { color: #5F5C5F; }
 html.light .comm-amenity-price { color: #b25c3a; }
