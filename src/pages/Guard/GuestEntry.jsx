@@ -105,14 +105,26 @@ export default function GuestEntry() {
   /* ── Load flats + slots once ── */
   const loadStaticData = async () => {
     try {
-      const [flatRes, slotRes] = await Promise.all([
+      const [flatRes, slotRes] = await Promise.allSettled([
         API.get("/flats/assigned?limit=1000"),
         API.get("/parking-slots/available"),
       ]);
-      const flatData = flatRes.data;
-      setFlats(Array.isArray(flatData) ? flatData : flatData?.data || []);
-      const slotData = slotRes.data;
-      setSlots(Array.isArray(slotData) ? slotData : slotData?.data || []);
+
+      if (flatRes.status === "fulfilled") {
+        const flatData = flatRes.value.data;
+        setFlats(Array.isArray(flatData) ? flatData : flatData?.data || []);
+      } else {
+        console.error("Failed to load flats for guest entry:", flatRes.reason);
+        setFlats([]);
+      }
+
+      if (slotRes.status === "fulfilled") {
+        const slotData = slotRes.value.data;
+        setSlots(Array.isArray(slotData) ? slotData : slotData?.data || []);
+      } else {
+        console.error("Failed to load parking slots for guest entry:", slotRes.reason);
+        setSlots([]);
+      }
     } catch (err) {
       console.error(err);
     }
