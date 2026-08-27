@@ -1,6 +1,6 @@
 
 import { useEffect, useState, useCallback, useRef, useContext, useMemo } from "react";
-
+import { createPortal } from "react-dom";
 import API from "../../services/api";
 import { AuthContext } from "../../context/AuthContext";
 import { useLang } from "../../context/LanguageContext";
@@ -2123,6 +2123,7 @@ export default function Resident() {
   const [loadingSlots, setLoadingSlots] = useState(false);
 
   const [confirmId, setConfirmId] = useState(null);
+  const [flatDetailModal, setFlatDetailModal] = useState(null);
 
   const { user } = useContext(AuthContext);
   const isSuperAdmin = user?.activeRole === "SUPER_ADMIN";
@@ -2425,14 +2426,96 @@ export default function Resident() {
 
   return (
     <div className="space-y-5 animate-fadeIn">
-      {assignModal && (
+      {assignModal && createPortal(
         <AssignFlatModal
           residentId={assignModal.id}
           residentName={assignModal.name}
           societyId={assignModal.society_id}
           onClose={() => setAssignModal(null)}
           onSuccess={() => { setAssignModal(null); loadResidents(page, debouncedSearch); }}
-        />
+        />,
+        document.body
+      )}
+
+      {flatDetailModal && createPortal(
+        <div style={{ position: "fixed", inset: 0, zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)" }}
+          onClick={() => setFlatDetailModal(null)}>
+          <div style={{ background: "var(--card-bg, #1e1e2e)", borderRadius: 16, padding: "28px 32px", minWidth: 340, maxWidth: 420, boxShadow: "0 20px 60px rgba(0,0,0,0.4)", border: "1px solid var(--divider)" }}
+            onClick={(e) => e.stopPropagation()}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <div style={{ width: 40, height: 40, borderRadius: 12, background: "rgba(34,197,94,0.12)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <MdHome size={20} color="#4ade80" />
+                </div>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: "var(--text-primary)" }}>{flatDetailModal.flat.flat_number}</h3>
+                  <p style={{ margin: 0, fontSize: 12, color: "var(--text-secondary)" }}>{t("colUnitDetails") || "Unit Details"}</p>
+                </div>
+              </div>
+              <button onClick={() => setFlatDetailModal(null)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-secondary)", padding: 4 }}>
+                <MdClose size={18} />
+              </button>
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              {flatDetailModal.flat.floor_number != null && (
+                <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13 }}>
+                  <span style={{ color: "var(--text-secondary)", minWidth: 80 }}>{t("floorLabel") || "Floor"}</span>
+                  <span style={{ fontWeight: 600, color: "var(--text-primary)" }}>{flatDetailModal.flat.floor_number}</span>
+                </div>
+              )}
+              {flatDetailModal.flat.block_name && (
+                <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13 }}>
+                  <span style={{ color: "var(--text-secondary)", minWidth: 80 }}>{t("blockLabel") || "Block"}</span>
+                  <span style={{ fontWeight: 600, color: "var(--text-primary)" }}>{flatDetailModal.flat.block_name}</span>
+                </div>
+              )}
+              {flatDetailModal.flat.flat_type && (
+                <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13 }}>
+                  <span style={{ color: "var(--text-secondary)", minWidth: 80 }}>{t("colType") || "Type"}</span>
+                  <span style={{ fontWeight: 600, color: "var(--text-primary)" }}>{flatDetailModal.flat.flat_type}</span>
+                </div>
+              )}
+
+              <div style={{ borderTop: "1px solid var(--divider)", margin: "4px 0" }} />
+
+              {flatDetailModal.flat.owner && (
+                <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13 }}>
+                  <MdPerson size={14} color="#94a3b8" />
+                  <div>
+                    <span style={{ color: "var(--text-secondary)", fontSize: 11 }}>{t("colOwner") || "Owner"}</span>
+                    <p style={{ margin: 0, fontWeight: 600, color: "var(--text-primary)" }}>{flatDetailModal.flat.owner.name}</p>
+                  </div>
+                </div>
+              )}
+
+              {flatDetailModal.flat.tenant && (
+                <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13 }}>
+                  <MdPerson size={14} color="#fbbf24" />
+                  <div style={{ flex: 1 }}>
+                    <span style={{ color: "var(--text-secondary)", fontSize: 11 }}>{t("colTenant") || "Tenant"}</span>
+                    <p style={{ margin: 0, fontWeight: 600, color: "var(--text-primary)" }}>{flatDetailModal.flat.tenant.name}</p>
+                  </div>
+                  <span style={{
+                    fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 999,
+                    background: flatDetailModal.flat.tenant.approval_status === "APPROVED" ? "rgba(34,197,94,0.12)" : flatDetailModal.flat.tenant.approval_status === "PENDING" ? "rgba(96,165,250,0.12)" : "rgba(248,113,113,0.12)",
+                    color: flatDetailModal.flat.tenant.approval_status === "APPROVED" ? "#4ade80" : flatDetailModal.flat.tenant.approval_status === "PENDING" ? "#60a5fa" : "#f87171",
+                  }}>
+                    {flatDetailModal.flat.tenant.approval_status}
+                  </span>
+                </div>
+              )}
+
+              {!flatDetailModal.flat.tenant && flatDetailModal.resident.resident_type !== "TENANT" && (
+                <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, opacity: 0.5 }}>
+                  <MdPerson size={14} />
+                  <span style={{ color: "var(--text-secondary)" }}>{t("colNoTenant") || "No tenant assigned"}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>,
+        document.body
       )}
 
       {/* Header */}
@@ -2765,20 +2848,18 @@ export default function Resident() {
                       </td>
                       <td style={{ padding: "14px 16px" }}><ResidentTypeBadge type={r.resident_type} /></td>
                       <td style={{ padding: "14px 16px", minWidth: 200 }}>
-                        <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+                        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                           {r.flats && r.flats.length > 0 ? r.flats.map((flat, fIdx) => {
                             const isRH = flatIsRowHouse(flat);
-                            const block = flatBlockName(flat);
-                            const floor = flatFloorNumber(flat);
                             return (
-                              <div key={flat.id || fIdx} style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                                <div style={{ display: "flex", alignItems: "center", gap: 5, flexWrap: "wrap" }}>
-                                  <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 12, fontWeight: 700, padding: "3px 9px", borderRadius: 999, background: "rgba(34,197,94,0.10)", color: "#4ade80", border: "1px solid rgba(34,197,94,0.22)" }}>
-                                    {isRH ? <MdHomeWork size={11} /> : <MdHome size={11} />} {flat.flat_number}
-                                  </span>
-                                  {!isRH && <BhkBadge type={flat.flat_type} />}
-                                </div>
-                                {(floor != null || block) && <p style={{ fontSize: 11, color: "var(--text-secondary)", margin: 0 }}>{floor != null ? `${t("floorLabel") || "Floor"} ${floor}` : ""}{floor != null && block ? " · " : ""}{block ? `${t("blockLabel") || "Block"} ${block}` : ""}</p>}
+                              <div
+                                key={flat.id || fIdx}
+                                onClick={() => setFlatDetailModal({ flat, resident: r })}
+                                style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 12, fontWeight: 700, padding: "3px 9px", borderRadius: 999, background: "rgba(34,197,94,0.10)", color: "#4ade80", border: "1px solid rgba(34,197,94,0.22)", cursor: "pointer", transition: "all 0.15s" }}
+                                onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(34,197,94,0.18)"; }}
+                                onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(34,197,94,0.10)"; }}
+                              >
+                                {isRH ? <MdHomeWork size={11} /> : <MdHome size={11} />} {flat.flat_number}
                               </div>
                             );
                           }) : <span style={{ fontSize: 12, color: "var(--text-secondary)", opacity: 0.45 }}>{t("colNoUnit") || "No unit assigned"}</span>}

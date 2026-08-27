@@ -10,6 +10,7 @@ import {
 } from "react-icons/md";
 import Select from "../../components/common/Select";
 
+
 function useIsMobile() {
   const [m, setM] = useState(() => typeof window !== "undefined" && window.innerWidth < 768);
   useEffect(() => {
@@ -90,9 +91,11 @@ export default function Guard() {
   const [showShiftForm, setShowShiftForm] = useState(false);
   const [selectedGuard, setSelectedGuard] = useState(null);
   const [guardShifts,   setGuardShifts]   = useState({});
-  const [shiftForm,     setShiftForm]     = useState({ shift_type: "", start_date: "", end_date: "" });
-  const [formData,      setFormData]      = useState({ name: "", email: "", password: "", society_id: "" });
-  const [editingId,     setEditingId]     = useState(null);
+  const [shiftForm,       setShiftForm]       = useState({ shift_type: "", start_date: "", end_date: "" });
+  const [editingShiftId,  setEditingShiftId]  = useState(null);
+  const [shiftError,      setShiftError]      = useState("");
+  const [formData,        setFormData]        = useState({ name: "", email: "", password: "", society_id: "" });
+  const [editingId,       setEditingId]       = useState(null);
 
   // --- SUPER ADMIN FILTER ---
   const [societiesList, setSocietiesList] = useState([]);
@@ -128,7 +131,11 @@ export default function Guard() {
         try {
           const headers = isSuperAdmin ? { "x-society-id": g.society_id } : {};
           const r = await API.get(`/guard-shift/${g.id}`, { headers });
-          if (r.data) map[g.id] = r.data;
+          if (Array.isArray(r.data) && r.data.length > 0) {
+            map[g.id] = r.data;
+          } else if (r.data && !Array.isArray(r.data)) {
+            map[g.id] = [r.data];
+          }
         } catch {}
       }
       setGuardShifts(map);
@@ -174,29 +181,57 @@ export default function Guard() {
     loadGuards();
   };
 
-  const openShiftModal = (guard) => {
+  const openShiftModal = (guard, existingShift) => {
     setSelectedGuard(guard);
-    const s = guardShifts[guard.id];
-    setShiftForm(
-      s
-        ? { shift_type: s.shift_type || "", start_date: s.start_date || "", end_date: s.end_date || "" }
-        : { shift_type: "", start_date: "", end_date: "" }
-    );
+    setShiftError("");
+    if (existingShift) {
+      setEditingShiftId(existingShift.id);
+      setShiftForm({
+        shift_type: existingShift.shift_type || "",
+        start_date: existingShift.start_date || "",
+        end_date:   existingShift.end_date   || "",
+      });
+    } else {
+      setEditingShiftId(null);
+      setShiftForm({ shift_type: "", start_date: "", end_date: "" });
+    }
     setShowShiftForm(true);
   };
 
-  /* Always POST — backend upserts (one row per guard) */
   const handleShiftSubmit = async (e) => {
     e.preventDefault();
+    setShiftError("");
     try {
       const headers = isSuperAdmin ? { "x-society-id": selectedGuard?.society_id } : {};
-      await API.post("/guard-shift", {
-        guard_id: selectedGuard.id,
-        ...shiftForm,
-      }, { headers });
+      if (editingShiftId) {
+        await API.put(`/guard-shift/${editingShiftId}`, shiftForm, { headers });
+      } else {
+        await API.post("/guard-shift", {
+          guard_id: selectedGuard.id,
+          ...shiftForm,
+        }, { headers });
+      }
       setShowShiftForm(false);
       loadGuards();
-    } catch (e) { console.error(e); }
+    } catch (err) {
+      const status = err?.response?.status;
+      const msg = err?.response?.data?.message;
+      if (status === 409 && msg) {
+        setShiftError(msg);
+      } else {
+        console.error(err);
+      }
+    }
+  };
+
+  const handleDeleteShift = async (shiftId) => {
+    if (!window.confirm("Delete this shift?")) return;
+    try {
+      const headers = isSuperAdmin ? { "x-society-id": selectedGuard?.society_id } : {};
+      await API.delete(`/guard-shift/${shiftId}`, { headers });
+      loadGuards();
+      setShowShiftForm(false);
+    } catch (err) { console.error(err); }
   };
 
   return (
@@ -396,7 +431,7 @@ export default function Guard() {
             /* ── MOBILE CARDS ── */
             <div style={{ padding: "10px 12px", display: "flex", flexDirection: "column", gap: 10 }}>
               {guards.map((g, i) => {
-                const shift = guardShifts[g.id];
+                const shifts = guardShifts[g.id] || [];
                 return (
                   <div
                     key={g.id}
@@ -411,7 +446,7 @@ export default function Guard() {
                     <div style={{ height: 3, background: "linear-gradient(90deg,#6B46C1,#6B46C1)" }} />
                     <div style={{ padding: "11px 12px", boxSizing: "border-box" }}>
 
-                      <div style={{ display: "flex", alignItems: "center", gap: 9, marginBottom: shift ? 7 : 10, minWidth: 0 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 9, marginBottom: shifts.length > 0 ? 7 : 10, minWidth: 0 }}>
                         <Avatar name={g.name} size={34} />
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <p style={{ fontSize: 13, fontWeight: 700, color: "var(--text-primary)", lineHeight: 1.3, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
@@ -421,16 +456,22 @@ export default function Guard() {
                             {g.email}
                           </p>
                         </div>
-                        {shift
-                          ? <ShiftBadge type={shift.shift_type} t={t} />
-                          : <span style={{ fontSize: 10, color: "var(--text-secondary)", opacity: 0.5, whiteSpace: "nowrap", flexShrink: 0 }}>{t("guardNoShift")}</span>
-                        }
+                        <div style={{ display: "flex", gap: 4, flexShrink: 0, flexWrap: "wrap", justifyContent: "flex-end" }}>
+                          {shifts.length > 0
+                            ? shifts.map(s => <ShiftBadge key={s.id} type={s.shift_type} t={t} />)
+                            : <span style={{ fontSize: 10, color: "var(--text-secondary)", opacity: 0.5, whiteSpace: "nowrap" }}>{t("guardNoShift")}</span>
+                          }
+                        </div>
                       </div>
 
-                      {shift && (
-                        <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: "var(--text-secondary)", marginBottom: 10 }}>
-                          <MdCalendarToday size={11} style={{ opacity: 0.6, flexShrink: 0 }} />
-                          <span style={{ whiteSpace: "nowrap" }}>{shift.start_date} → {shift.end_date}</span>
+                      {shifts.length > 0 && (
+                        <div style={{ display: "flex", flexDirection: "column", gap: 3, fontSize: 11, color: "var(--text-secondary)", marginBottom: 10 }}>
+                          {shifts.map(s => (
+                            <div key={s.id} style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                              <MdCalendarToday size={11} style={{ opacity: 0.6, flexShrink: 0 }} />
+                              <span style={{ whiteSpace: "nowrap" }}>{s.shift_type}: {s.start_date} → {s.end_date}</span>
+                            </div>
+                          ))}
                         </div>
                       )}
 
@@ -443,12 +484,12 @@ export default function Guard() {
                             <MdEdit size={13} /> Edit
                           </button>
                           <button
-                            onClick={() => openShiftModal(g)}
+                            onClick={() => openShiftModal(g, null)}
                             className="btn-primary"
                             style={{ flex: 1, minWidth: 0, padding: "8px 10px", fontSize: 12, display: "flex", alignItems: "center", justifyContent: "center", gap: 5, whiteSpace: "nowrap" }}
                           >
-                            {shift
-                              ? <><MdEdit size={13} /> Shift</>
+                            {shifts.length > 0
+                              ? <><MdSchedule size={13} /> Shift</>
                               : <><MdSchedule size={13} /> {t("guardSchedule")}</>
                             }
                           </button>
@@ -481,7 +522,7 @@ export default function Guard() {
                 </thead>
                 <tbody>
                   {guards.map((g, i) => {
-                    const shift = guardShifts[g.id];
+                    const shifts = guardShifts[g.id] || [];
                     return (
                       <tr key={g.id} className="animate-fadeIn" style={{ animationDelay: `${i * 40}ms` }}>
                         <td>
@@ -497,16 +538,22 @@ export default function Guard() {
                           </div>
                         </td>
                         <td>
-                          {shift
-                            ? <ShiftBadge type={shift.shift_type} t={t} />
-                            : <span style={{ fontSize: 12, color: "var(--text-secondary)", opacity: 0.5 }}>—</span>
-                          }
+                          <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+                            {shifts.length > 0
+                              ? shifts.map(s => <ShiftBadge key={s.id} type={s.shift_type} t={t} />)
+                              : <span style={{ fontSize: 12, color: "var(--text-secondary)", opacity: 0.5 }}>—</span>
+                            }
+                          </div>
                         </td>
                         <td>
-                          {shift ? (
-                            <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 12, color: "var(--text-secondary)" }}>
-                              <MdCalendarToday size={11} style={{ opacity: 0.6 }} />
-                              {shift.start_date} → {shift.end_date}
+                          {shifts.length > 0 ? (
+                            <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                              {shifts.map(s => (
+                                <div key={s.id} style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 12, color: "var(--text-secondary)" }}>
+                                  <MdCalendarToday size={11} style={{ opacity: 0.6 }} />
+                                  {s.shift_type}: {s.start_date} → {s.end_date}
+                                </div>
+                              ))}
                             </div>
                           ) : (
                             <span style={{ fontSize: 11, color: "var(--text-secondary)", fontStyle: "italic", opacity: 0.5 }}>
@@ -525,12 +572,12 @@ export default function Guard() {
                               <MdEdit size={14} />
                             </button>
                             <button
-                              onClick={() => openShiftModal(g)}
+                              onClick={() => openShiftModal(g, null)}
                               className="btn-primary"
                               style={{ width: "auto", padding: "7px 14px", fontSize: 12, display: "flex", alignItems: "center", gap: 6 }}
                             >
-                              {shift
-                                ? <><MdEdit size={13} /> {t("guardEditShift")}</>
+                              {shifts.length > 0
+                                ? <><MdSchedule size={13} /> {t("guardEditShift")}</>
                                 : <><MdSchedule size={13} /> {t("guardSchedule")}</>
                               }
                             </button>
@@ -565,10 +612,16 @@ export default function Guard() {
             onClick={() => setShowShiftForm(false)}
             style={{
               position: "fixed", inset: 0, zIndex: 50,
-              background: "rgba(0,0,0,0.55)",
-              backdropFilter: "blur(4px)", WebkitBackdropFilter: "blur(4px)",
+              background: "rgba(0,0,0,0.6)",
+              backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)",
+              animation: "fadeIn 0.2s ease",
             }}
           />
+          <style>{`
+            @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+            @keyframes slideUp { from { opacity: 0; transform: translate(-50%, -48%) scale(0.96); } to { opacity: 1; transform: translate(-50%, -50%) scale(1); } }
+            @keyframes shiftPop { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+          `}</style>
           <div
             onClick={e => e.stopPropagation()}
             className="bill-form-card"
@@ -576,19 +629,29 @@ export default function Guard() {
               position: "fixed", top: "50%", left: "50%",
               transform: "translate(-50%, -50%)",
               zIndex: 51,
-              width: "min(420px, 92vw)",
+              width: "min(460px, 92vw)",
+              maxHeight: "88vh", overflowY: "auto",
               boxSizing: "border-box",
-              animation: "modalPop 0.18s cubic-bezier(0.34,1.56,0.64,1) forwards",
+              padding: "24px 26px",
+              animation: "slideUp 0.25s cubic-bezier(0.34,1.56,0.64,1) forwards",
             }}
           >
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 18 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0, flex: 1 }}>
-                <Avatar name={selectedGuard?.name} size={36} />
+            {/* ── HEADER ── */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0, flex: 1 }}>
+                <div style={{
+                  width: 42, height: 42, borderRadius: 14, flexShrink: 0,
+                  background: "linear-gradient(135deg, rgba(107,70,193,0.15), rgba(107,70,193,0.08))",
+                  border: "1.5px solid rgba(107,70,193,0.25)",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                }}>
+                  <MdSchedule size={20} style={{ color: "#9F87D7" }} />
+                </div>
                 <div style={{ minWidth: 0 }}>
-                  <p style={{ fontSize: 13, fontWeight: 700, color: "var(--text-primary)" }}>
+                  <p style={{ fontSize: 15, fontWeight: 800, color: "var(--text-primary)", margin: 0, letterSpacing: "-0.01em" }}>
                     {t("guardManageShift")}
                   </p>
-                  <p style={{ fontSize: 11, color: "var(--text-secondary)", marginTop: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  <p style={{ fontSize: 12, color: "var(--text-secondary)", marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                     {selectedGuard?.name}
                   </p>
                 </div>
@@ -599,14 +662,147 @@ export default function Guard() {
                 style={{
                   flexShrink: 0, marginLeft: 10,
                   background: "var(--chip-bg)", border: "1px solid var(--glass-border)",
-                  borderRadius: 8, width: 30, height: 30, cursor: "pointer",
+                  borderRadius: 10, width: 32, height: 32, cursor: "pointer",
                   display: "flex", alignItems: "center", justifyContent: "center",
-                  color: "var(--text-secondary)", fontSize: 14,
+                  color: "var(--text-secondary)", fontSize: 15, transition: "all 0.2s",
                 }}
+                onMouseEnter={e => { e.target.style.background = "rgba(239,68,68,0.1)"; e.target.style.color = "#ef4444"; e.target.style.borderColor = "rgba(239,68,68,0.3)"; }}
+                onMouseLeave={e => { e.target.style.background = "var(--chip-bg)"; e.target.style.color = "var(--text-secondary)"; e.target.style.borderColor = "var(--glass-border)"; }}
               >✕</button>
             </div>
 
-            <form onSubmit={handleShiftSubmit} style={{ display: "flex", flexDirection: "column", gap: 13 }}>
+            {/* ── EXISTING SHIFTS LIST ── */}
+            {guardShifts[selectedGuard?.id]?.length > 0 && !editingShiftId && (
+              <div style={{ marginBottom: 16 }}>
+                <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--text-secondary)", marginBottom: 10, display: "flex", alignItems: "center", gap: 6 }}>
+                  <div style={{ width: 3, height: 3, borderRadius: "50%", background: "#9F87D7" }} />
+                  Assigned Shifts ({guardShifts[selectedGuard.id].length})
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  {guardShifts[selectedGuard.id].map((s, idx) => {
+                    const now = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
+                    const isActive = s.start_date <= now && s.end_date >= now;
+                    return (
+                      <div key={s.id} style={{
+                        display: "flex", alignItems: "center", justifyContent: "space-between",
+                        padding: "12px 14px", borderRadius: 14,
+                        background: isActive
+                          ? "linear-gradient(135deg, rgba(34,197,94,0.06), rgba(34,197,94,0.02))"
+                          : "var(--chip-bg)",
+                        border: isActive ? "1.5px solid rgba(34,197,94,0.2)" : "1px solid var(--glass-border)",
+                        animation: `shiftPop 0.2s ease ${idx * 50}ms both`,
+                        transition: "all 0.2s",
+                      }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0, flex: 1 }}>
+                          <ShiftBadge type={s.shift_type} t={t} />
+                          <div style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
+                            <span style={{ fontSize: 12, fontWeight: 600, color: "var(--text-primary)", whiteSpace: "nowrap" }}>
+                              {s.start_date} → {s.end_date}
+                            </span>
+                            {isActive && (
+                              <span style={{ fontSize: 10, color: "#22c55e", fontWeight: 700, marginTop: 1 }}>● Active now</span>
+                            )}
+                          </div>
+                        </div>
+                        <div style={{ display: "flex", gap: 6, flexShrink: 0, marginLeft: 8 }}>
+                          <button
+                            type="button"
+                            onClick={() => openShiftModal(selectedGuard, s)}
+                            style={{
+                              background: "rgba(107,70,193,0.08)", border: "1px solid rgba(107,70,193,0.2)",
+                              borderRadius: 8, width: 32, height: 32, cursor: "pointer",
+                              display: "flex", alignItems: "center", justifyContent: "center",
+                              color: "#9F87D7", transition: "all 0.2s",
+                            }}
+                            onMouseEnter={e => { e.currentTarget.style.background = "rgba(107,70,193,0.18)"; }}
+                            onMouseLeave={e => { e.currentTarget.style.background = "rgba(107,70,193,0.08)"; }}
+                            title="Edit shift"
+                          ><MdEdit size={14} /></button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteShift(s.id)}
+                            style={{
+                              background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.15)",
+                              borderRadius: 8, width: 32, height: 32, cursor: "pointer",
+                              display: "flex", alignItems: "center", justifyContent: "center",
+                              color: "#ef4444", transition: "all 0.2s",
+                            }}
+                            onMouseEnter={e => { e.currentTarget.style.background = "rgba(239,68,68,0.15)"; }}
+                            onMouseLeave={e => { e.currentTarget.style.background = "rgba(239,68,68,0.06)"; }}
+                            title="Delete shift"
+                          ><MdDelete size={14} /></button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* ── ADD NEW SHIFT BUTTON ── */}
+            {!editingShiftId && (
+              <button
+                type="button"
+                onClick={() => {
+                  setEditingShiftId(null);
+                  setShiftForm({ shift_type: "", start_date: "", end_date: "" });
+                  setShiftError("");
+                }}
+                style={{
+                  width: "100%", marginBottom: 18, padding: "11px 16px",
+                  borderRadius: 14, cursor: "pointer",
+                  display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                  fontSize: 13, fontWeight: 700,
+                  color: "#9F87D7",
+                  background: "linear-gradient(135deg, rgba(107,70,193,0.08), rgba(107,70,193,0.04))",
+                  border: "2px dashed rgba(107,70,193,0.3)",
+                  transition: "all 0.25s",
+                }}
+                onMouseEnter={e => { e.currentTarget.style.background = "linear-gradient(135deg, rgba(107,70,193,0.16), rgba(107,70,193,0.08))"; e.currentTarget.style.borderColor = "rgba(107,70,193,0.5)"; e.currentTarget.style.transform = "translateY(-1px)"; }}
+                onMouseLeave={e => { e.currentTarget.style.background = "linear-gradient(135deg, rgba(107,70,193,0.08), rgba(107,70,193,0.04))"; e.currentTarget.style.borderColor = "rgba(107,70,193,0.3)"; e.currentTarget.style.transform = "translateY(0)"; }}
+              >
+                <div style={{
+                  width: 24, height: 24, borderRadius: 8,
+                  background: "linear-gradient(135deg, #6B46C1, #9F87D7)",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  boxShadow: "0 4px 12px rgba(107,70,193,0.3)",
+                }}>
+                  <MdAdd size={16} style={{ color: "#fff" }} />
+                </div>
+                Add New Shift
+              </button>
+            )}
+
+            {/* ── DIVIDER ── */}
+            {!editingShiftId && <div style={{ height: 1, background: "var(--glass-border)", marginBottom: 16 }} />}
+
+            {/* ── SHIFT FORM ── */}
+            <form onSubmit={handleShiftSubmit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+              {editingShiftId && (
+                <div style={{
+                  display: "flex", alignItems: "center", gap: 8,
+                  padding: "8px 12px", borderRadius: 10,
+                  background: "linear-gradient(135deg, rgba(107,70,193,0.08), rgba(107,70,193,0.04))",
+                  border: "1px solid rgba(107,70,193,0.15)",
+                }}>
+                  <MdEdit size={13} style={{ color: "#9F87D7" }} />
+                  <span style={{ fontSize: 12, fontWeight: 700, color: "#9F87D7" }}>Editing Shift</span>
+                </div>
+              )}
+
+              {shiftError && (
+                <div style={{
+                  padding: "10px 14px", borderRadius: 12,
+                  background: "linear-gradient(135deg, rgba(239,68,68,0.1), rgba(239,68,68,0.04))",
+                  border: "1.5px solid rgba(239,68,68,0.25)",
+                  fontSize: 12, fontWeight: 500, color: "#ef4444",
+                  display: "flex", alignItems: "flex-start", gap: 8, lineHeight: 1.5,
+                }}>
+                  <span style={{ fontSize: 16, lineHeight: 1, flexShrink: 0, marginTop: 1 }}>⚠</span>
+                  {shiftError}
+                </div>
+              )}
+
               <div>
                 <SectionLabel>{t("guardShiftType")}</SectionLabel>
                 <Select
@@ -622,33 +818,49 @@ export default function Guard() {
                   <option value="NIGHT">🌙 {t("guardShiftNight")}</option>
                 </Select>
               </div>
-              <div>
-                <SectionLabel>{t("guardStartDate")}</SectionLabel>
-                <input
-                  type="date"
-                  className="input"
-                  required
-                  value={shiftForm.start_date}
-                  style={{ width: "100%", boxSizing: "border-box" }}
-                  onChange={e => setShiftForm({ ...shiftForm, start_date: e.target.value })}
-                />
+
+              <div style={{ display: "flex", gap: 12 }}>
+                <div style={{ flex: 1 }}>
+                  <SectionLabel>{t("guardStartDate")}</SectionLabel>
+                  <input
+                    type="date"
+                    className="input"
+                    required
+                    value={shiftForm.start_date}
+                    style={{ width: "100%", boxSizing: "border-box" }}
+                    onChange={e => setShiftForm({ ...shiftForm, start_date: e.target.value })}
+                  />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <SectionLabel>{t("guardEndDate")}</SectionLabel>
+                  <input
+                    type="date"
+                    className="input"
+                    required
+                    value={shiftForm.end_date}
+                    style={{ width: "100%", boxSizing: "border-box" }}
+                    onChange={e => setShiftForm({ ...shiftForm, end_date: e.target.value })}
+                  />
+                </div>
               </div>
-              <div>
-                <SectionLabel>{t("guardEndDate")}</SectionLabel>
-                <input
-                  type="date"
-                  className="input"
-                  required
-                  value={shiftForm.end_date}
-                  style={{ width: "100%", boxSizing: "border-box" }}
-                  onChange={e => setShiftForm({ ...shiftForm, end_date: e.target.value })}
-                />
-              </div>
-              <div style={{ display: "flex", gap: 10, paddingTop: 2 }}>
-                <button type="submit" className="btn-primary" style={{ flex: 1, whiteSpace: "nowrap" }}>
-                  {t("guardSaveSchedule")}
+
+              <div style={{ display: "flex", gap: 10, paddingTop: 4 }}>
+                <button type="submit" className="btn-primary" style={{ flex: editingShiftId ? 1 : 1, whiteSpace: "nowrap", justifyContent: "center" }}>
+                  {editingShiftId ? "Update Shift" : t("guardSaveSchedule")}
                 </button>
-                <button type="button" onClick={() => setShowShiftForm(false)} className="btn-muted" style={{ flex: 1, whiteSpace: "nowrap" }}>
+                {editingShiftId && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditingShiftId(null);
+                      setShiftForm({ shift_type: "", start_date: "", end_date: "" });
+                      setShiftError("");
+                    }}
+                    className="btn-muted"
+                    style={{ flex: 1, whiteSpace: "nowrap", justifyContent: "center" }}
+                  >Cancel</button>
+                )}
+                <button type="button" onClick={() => setShowShiftForm(false)} className="btn-muted" style={{ flex: editingShiftId ? 0.6 : 1, whiteSpace: "nowrap", justifyContent: "center", padding: "0.55rem 0.8rem" }}>
                   {t("cancel")}
                 </button>
               </div>

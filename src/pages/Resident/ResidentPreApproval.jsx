@@ -6,7 +6,10 @@ import {
   MdPersonAdd, MdPhone, MdDirectionsCar,
   MdCalendarToday, MdQrCode, MdWarning,
   MdCheckCircle, MdContentCopy, MdPerson,
+  MdVisibility,
 } from "react-icons/md";
+import { QRCodeCanvas } from "qrcode.react";
+import Modal from "../../components/Modal";
 import Select from "../../components/common/Select";
 
 /* ── IST date helpers ── */
@@ -66,6 +69,7 @@ export default function ResidentPreApproval() {
   const [selectedFlatId, setSelectedFlatId] = useState("");
   const [istTime,      setIstTime]      = useState("");
   const [istDate,      setIstDate]      = useState("");
+  const [viewPass,     setViewPass]     = useState(null);
 
   const eligibleFlats = myFlats.filter(item => {
     const flatObj = item.Flat || item;
@@ -204,6 +208,39 @@ export default function ResidentPreApproval() {
   }
 };
 
+  const handleCopy = async () => {
+    if (!gatePass) return;
+    try {
+      await navigator.clipboard.writeText(gatePass);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      const ta = document.createElement("textarea");
+      ta.value = gatePass;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      document.body.removeChild(ta);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  const handleCopyPass = async (otp, id) => {
+    try {
+      await navigator.clipboard.writeText(otp);
+    } catch {
+      const ta = document.createElement("textarea");
+      ta.value = otp;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      document.body.removeChild(ta);
+    }
+    setCopiedId(id);
+    setTimeout(() => setCopiedId(null), 2000);
+  };
+
   return (
     <div className="space-y-5 animate-fadeIn">
 
@@ -268,8 +305,8 @@ export default function ResidentPreApproval() {
               <p className="text-3xl font-bold tracking-[0.25em] text-green-300">{gatePass}</p>
             </div>
             <div className="flex flex-col items-center gap-1">
-              <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center">
-                <MdQrCode size={32} className="text-gray-800" />
+              <div className="bg-white rounded-xl p-1.5 flex items-center justify-center">
+                <QRCodeCanvas value={gatePass} size={48} />
               </div>
               <p className="text-[10px] text-secondary">QR</p>
             </div>
@@ -277,7 +314,7 @@ export default function ResidentPreApproval() {
 
           <div className="flex items-center gap-2 mt-4">
             <button
-              // onClick={handleCopy}
+              onClick={handleCopy}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all duration-200 ${
                 copied
                   ? "bg-green-500/20 text-green-400 border-green-500/30"
@@ -478,10 +515,15 @@ export default function ResidentPreApproval() {
                       </span>
                     </div>
 
-                    {/* OTP code */}
-                    <p className="text-2xl font-bold tracking-[0.2em] text-green-300 tabular-nums">
-                      {pass.otp}
-                    </p>
+                    {/* OTP code + QR */}
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="text-2xl font-bold tracking-[0.2em] text-green-300 tabular-nums">
+                        {pass.otp}
+                      </p>
+                      <div className="bg-white rounded-lg p-1 flex-shrink-0">
+                        <QRCodeCanvas value={pass.otp} size={40} />
+                      </div>
+                    </div>
 
                     {/* meta chips */}
                     <div className="flex flex-wrap gap-1.5">
@@ -495,18 +537,26 @@ export default function ResidentPreApproval() {
                       </span>
                     </div>
 
-                    {/* copy button */}
-                    <button
-                      // onClick={() => handleCopyPass(pass.otp, pass.id)}
-                      className={`flex items-center justify-center gap-1.5 w-full py-1.5 rounded-lg text-xs font-medium border transition-all duration-200 ${
-                        isCopied
-                          ? "bg-green-500/20 text-green-400 border-green-500/30"
-                          : "bg-white/8 text-secondary border-white/10 hover:bg-white/12 hover:text-white"
-                      }`}
-                    >
-                      {isCopied ? <MdCheckCircle size={13} /> : <MdContentCopy size={13} />}
-                      {isCopied ? "Copied!" : "Copy Code"}
-                    </button>
+                    {/* action buttons */}
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => setViewPass(pass)}
+                        className="flex items-center justify-center gap-1.5 flex-1 py-1.5 rounded-lg text-xs font-medium border transition-all duration-200 bg-blue-500/10 text-blue-400 border-blue-500/25 hover:bg-blue-500/20"
+                      >
+                        <MdVisibility size={13} /> View Pass
+                      </button>
+                      <button
+                        onClick={() => handleCopyPass(pass.otp, pass.id)}
+                        className={`flex items-center justify-center gap-1.5 flex-1 py-1.5 rounded-lg text-xs font-medium border transition-all duration-200 ${
+                          isCopied
+                            ? "bg-green-500/20 text-green-400 border-green-500/30"
+                            : "bg-white/8 text-secondary border-white/10 hover:bg-white/12 hover:text-white"
+                        }`}
+                      >
+                        {isCopied ? <MdCheckCircle size={13} /> : <MdContentCopy size={13} />}
+                        {isCopied ? "Copied!" : "Copy Code"}
+                      </button>
+                    </div>
 
                   </div>
                 </div>
@@ -515,6 +565,65 @@ export default function ResidentPreApproval() {
           </div>
         </div>
       )}
+
+      {/* ── VIEW PASS MODAL ── */}
+      <Modal
+        isOpen={!!viewPass}
+        onClose={() => setViewPass(null)}
+        title="Gate Pass"
+        size="sm"
+      >
+        {viewPass && (() => {
+          const pc = PURPOSE_COLORS[viewPass.purpose] || PURPOSE_COLORS.OTHER;
+          return (
+            <div className="flex flex-col items-center gap-4">
+              {/* visitor info */}
+              <div className="text-center">
+                <p className="text-lg font-semibold text-white">{viewPass.visitor_name}</p>
+                <span
+                  className="text-xs px-2 py-0.5 rounded-md mt-1 inline-block"
+                  style={{ background: pc.bg, border: `1px solid ${pc.border}`, color: pc.text }}
+                >
+                  {PURPOSE_ICONS[viewPass.purpose] || "🔖"} {purposeLabels[viewPass.purpose] || viewPass.purpose}
+                </span>
+              </div>
+
+              {/* large QR */}
+              <div className="bg-white rounded-2xl p-4 flex items-center justify-center">
+                <QRCodeCanvas value={viewPass.otp} size={160} />
+              </div>
+
+              {/* pass code */}
+              <p className="text-3xl font-bold tracking-[0.25em] text-green-300">{viewPass.otp}</p>
+
+              {/* meta */}
+              <div className="flex flex-wrap justify-center gap-2">
+                {viewPass.vehicle_number && (
+                  <span className="flex items-center gap-1 text-xs text-secondary px-2.5 py-1 rounded-lg bg-white/5 border border-white/10">
+                    <MdDirectionsCar size={12} /> {viewPass.vehicle_number}
+                  </span>
+                )}
+                <span className="flex items-center gap-1 text-xs text-secondary px-2.5 py-1 rounded-lg bg-white/5 border border-white/10">
+                  <MdCalendarToday size={11} /> Valid till {formatDateIST(viewPass.valid_date)}
+                </span>
+              </div>
+
+              {/* copy button */}
+              <button
+                onClick={() => handleCopyPass(viewPass.otp, viewPass.id)}
+                className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold border transition-all duration-200 w-full justify-center ${
+                  copiedId === viewPass.id
+                    ? "bg-green-500/20 text-green-400 border-green-500/30"
+                    : "bg-white/8 text-secondary border-white/10 hover:bg-white/12 hover:text-white"
+                }`}
+              >
+                {copiedId === viewPass.id ? <MdCheckCircle size={14} /> : <MdContentCopy size={14} />}
+                {copiedId === viewPass.id ? "Copied!" : "Copy Code"}
+              </button>
+            </div>
+          );
+        })()}
+      </Modal>
 
     </div>
   );

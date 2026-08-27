@@ -115,7 +115,7 @@ import ManageBillsAccountant from "./pages/Accountant/ManageBilllsAccountant";
 import PaymentsAccountant from "./pages/Accountant/PaymentsAccountant";
 import AccountDashboard from "./pages/Accountant/AccountantDashboard";
 import Floors from "./pages/SuperAdmin/Floors.jsx";
-import TenantApprovals from "./pages/Admin/TenantApprovals.jsx";
+import TenantManagement from "./pages/Admin/TenantManagement.jsx";
 
 
 function App() {
@@ -199,7 +199,7 @@ function App() {
             <Route path="amenities" element={<AdminAmenity />} />
             <Route path="society_documents" element={<AdminDocument />} />
             <Route path="flat-history" element={<FlatHistory />} />
-            <Route path="tenant-approvals" element={<TenantApprovals />} />
+            <Route path="tenant-management" element={<TenantManagement />} />
           </Route>
         </Route>
 

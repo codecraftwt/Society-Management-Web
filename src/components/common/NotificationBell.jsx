@@ -2,6 +2,7 @@ import { useEffect, useState, useContext } from "react";
 import { MdNotifications, MdClose } from "react-icons/md";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 import API from "../../services/api";
 import { AuthContext } from "../../context/AuthContext";
 import socket from "../../services/socket";
@@ -33,13 +34,23 @@ export default function NotificationBell() {
     loadNotifications();
 
     if (user?.id) {
-      socket.emit("join_user_room", user.id);
+      socket.emit("join", {
+        userId: user.id,
+        role: user.activeRole ?? user.role,
+        societyId: user.society_id,
+      });
     }
 
     const onNew = (notification) => {
-      // ✅ Ignore notifications triggered by the current user themselves
-      if (notification.user_id === user?.id) return;
-      setNotifications((prev) => [notification, ...prev]);
+      setNotifications((prev) => {
+        if (prev.some((n) => n.id === notification.id)) return prev;
+        return [notification, ...prev];
+      });
+      toast.info(`${notification.title}\n${notification.message}`, {
+        position: "top-right",
+        autoClose: 6000,
+        theme: "colored",
+      });
     };
 
     socket.on("new_notification", onNew);

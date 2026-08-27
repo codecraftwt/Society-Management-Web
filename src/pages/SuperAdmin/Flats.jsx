@@ -7,6 +7,7 @@ import {
   MdApartment, MdArrowBack, MdDelete, MdCheckCircle,
   MdSearch, MdClose, MdPerson, MdLock,
   MdOutlineInbox,
+  MdAdd,
 } from "react-icons/md";
 
 function Spinner({ small = false }) {
@@ -30,35 +31,60 @@ function useIsMobile() {
 }
 
 export default function Flats() {
-  const { blockId } = useParams();
+  const { blockId, floorId } = useParams();
   const navigate    = useNavigate();
   const isMobile    = useIsMobile();
 
   const [flats,         setFlats]         = useState([]);
+  // New state for Add Flat modal
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [newFlatData, setNewFlatData] = useState({ flat_number: "", block_id: "" });
+  const [adding, setAdding] = useState(false);
+  const [addError, setAddError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
   const [loading,       setLoading]       = useState(true);
   const [error,         setError]         = useState("");
   const [deletingId,    setDeletingId]    = useState(null);
   const [confirmId,     setConfirmId]     = useState(null);
   const [search,        setSearch]        = useState("");
   const [filterStatus,  setFilterStatus]  = useState("ALL");
-  const { floorId } = useParams();
+  const [resolvedBlockId, setResolvedBlockId] = useState(blockId || null);
 
-  useEffect(() => { loadFlats(); }, []);
+  // Load flats and resolve blockId when on floor view
+  useEffect(() => {
+    const init = async () => {
+      if (floorId) {
+        try {
+          const floorRes = await API.get(`/floors/detail/${floorId}`);
+          setResolvedBlockId(floorRes.data?.block_id || null);
+        } catch {}
+      }
+      loadFlats();
+    };
+    init();
+  }, [floorId]);
 
-  // const loadFlats = async () => {
-  //   setLoading(true);
-  //   setError("");
-  //   try {
-  //     const res = await API.get(`/flats/${blockId}`);
-  //     setFlats(res.data || []);
-  //   } catch {
   const loadFlats = async () => {
-  setLoading(true);
-  setError("");
-  try {
-    const res = await API.get(`/flats/floor/${floorId}`); // <-- UPDATED
-    setFlats(res.data || []);
-  } catch {
+    setLoading(true);
+    setError("");
+    try {
+      let res;
+      if (floorId) {
+        // Load flats for a specific floor
+        res = await API.get(`/flats/floor/${floorId}`);
+      } else if (blockId) {
+        // Fallback: load flats for a block
+        res = await API.get(`/flats/${blockId}`);
+      } else {
+        // No identifier, return empty list
+        res = { data: [] };
+      }
+      setFlats(res.data || []);
+      // If we are on a floor view and block ID is not known, infer it from the first flat
+      if (floorId && !resolvedBlockId && res.data && res.data.length > 0) {
+        setResolvedBlockId(res.data[0].block_id || null);
+      }
+    } catch {
       setError("Failed to load flats. Please try again.");
     } finally {
       setLoading(false);
@@ -110,6 +136,88 @@ export default function Flats() {
         .fl-scalein { animation: fl-scaleIn 0.25s ease both; }
       `}</style>
 
+      {/* Add Flat Modal */}
+      {showAddModal && (
+        <div style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          width: "100vw",
+          height: "100vh",
+          background: "rgba(0,0,0,0.5)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          zIndex: 1000,
+        }}>
+          <div style={{
+            background: "var(--card-bg)",
+            padding: 20,
+            borderRadius: 12,
+            width: isMobile ? "90%" : 400,
+            boxShadow: "var(--shadow-md)",
+          }}>
+            <h3 style={{ marginTop: 0, marginBottom: 12, color: "var(--text-primary)" }}>Add New Flat</h3>
+            {addError && (
+              <div style={{ color: "var(--stat-red-color)", marginBottom: 8 }}>{addError}</div>
+            )}
+            <div style={{ marginBottom: 12 }}>
+              <input
+                placeholder="Flat Number"
+                value={newFlatData.flat_number}
+                onChange={e => setNewFlatData({ ...newFlatData, flat_number: e.target.value })}
+                style={{ width: "100%", padding: 8, borderRadius: 6, border: "1px solid var(--glass-border)" }}
+              />
+            </div>
+
+
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
+              <button
+                  onClick={() => { setShowAddModal(false); setNewFlatData({ flat_number: "", block_id: "" }); setAddError(""); setSuccessMessage(""); }}
+                  style={{ background: "none", border: "none", color: "var(--text-secondary)", cursor: "pointer" }}
+                >Cancel</button>
+              <button
+                onClick={async () => {
+                  if (!newFlatData.flat_number) {
+                    setAddError("Flat number is required");
+                    return;
+                  }
+                  // Determine block id from route or fetched floor data
+                  const effectiveBlockId = resolvedBlockId;
+                  if (!effectiveBlockId) {
+                    setAddError("Block ID could not be determined");
+                    return;
+                  }
+                  setAdding(true);
+                  setAddError("");
+                  try {
+                    await API.post(`/flats`, {
+                      ...newFlatData,
+                      block_id: effectiveBlockId,
+                      ...(floorId && { floor_id: floorId }),
+                      resident_id: null,
+                      occupancy_status: "VACANT",
+                    });
+                    await loadFlats();
+                    setSuccessMessage(`Flat ${newFlatData.flat_number} created successfully`);
+                    setShowAddModal(false);
+                    setNewFlatData({ flat_number: "", block_id: "" });
+                  } catch (err) {
+                    setAddError(err?.response?.data?.message || "Failed to add flat");
+                  } finally {
+                    setAdding(false);
+                  }
+                }}
+                disabled={adding}
+                style={{
+                  background: "var(--accent)", color: "#fff", border: "none", padding: "6px 12px", borderRadius: 6, cursor: adding ? "not-allowed" : "pointer",
+                }}
+              >{adding ? <Spinner small /> : "Add"}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="page-root animate-fadeIn" style={{ maxWidth: 1000, margin: "0 auto" }}>
 
         {/* ── HEADER ── */}
@@ -137,6 +245,21 @@ export default function Flats() {
           >
             <MdArrowBack size={16} /> Back
           </button>
+          {/* Add Flat Button */}
+          <button
+            onClick={() => setShowAddModal(true)}
+            style={{
+              display: "flex", alignItems: "center", gap: 7,
+              padding: "8px 16px", borderRadius: 999,
+              background: "var(--accent)",
+              border: "1.5px solid var(--glass-border)",
+              color: "#fff", fontSize: 13,
+              fontWeight: 600, cursor: "pointer",
+              transition: "all 0.18s",
+            }}
+          >
+            <MdAdd size={16} /> Add Flat
+          </button>
         </div>
 
         {/* ── ERROR BANNER ── */}
@@ -149,6 +272,19 @@ export default function Flats() {
           }}>
             <span>{error}</span>
             <button onClick={() => setError("")} style={{ background: "none", border: "none", cursor: "pointer", color: "inherit", opacity: 0.7, display: "flex", alignItems: "center" }}>
+              <MdClose size={16} />
+            </button>
+          </div>
+        )}
+        {successMessage && (
+          <div className="fl-fadein" style={{
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+            background: "var(--stat-green-bg)", border: "1px solid var(--stat-green-border)",
+            borderRadius: 12, padding: "12px 16px",
+            fontSize: 13, color: "var(--stat-green-color)",
+          }}>
+            <span>{successMessage}</span>
+            <button onClick={() => setSuccessMessage("")} style={{ background: "none", border: "none", cursor: "pointer", color: "inherit", opacity: 0.7, display: "flex", alignItems: "center" }}>
               <MdClose size={16} />
             </button>
           </div>

@@ -70,7 +70,7 @@ function AdminLayoutInner() {
     { label: t("adminMenuReports"),     path: `${base}/reports`,          icon: MdReportProblem},
     { label: t("adminMenuDocument"),    path: `${base}/society_documents`,icon: MdVerified     },
     { label: "Flat History",            path: `${base}/flat-history`,     icon: MdVerified     },
-    { label: "Tenant Approvals",         path: `${base}/tenant-approvals`, icon: MdVerified     },
+    { label: "Tenant Management",        path: `${base}/tenant-management`, icon: FaUsers     },
   ];
 
   /* Close role-switcher on outside click */

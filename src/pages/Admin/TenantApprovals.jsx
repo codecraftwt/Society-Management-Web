@@ -27,7 +27,7 @@ function daysUntil(dateStr) {
 }
 
 function LeaseChip({ date }) {
-  if (!date) return <span className="text-xs text-white/30 italic">No end date</span>;
+  if (!date) return <span style={{ color: "var(--text-secondary)", fontStyle: "italic", fontSize: 12 }}>No end date</span>;
   const days = daysUntil(date);
   let color = "text-emerald-400 bg-emerald-400/10 border-emerald-400/20";
   if (days <= 0)  color = "text-red-400 bg-red-400/10 border-red-400/20";
@@ -54,14 +54,14 @@ function DocViewerModal({ doc, onClose }) {
       <div
         className="rounded-2xl w-full max-w-5xl flex flex-col shadow-2xl"
         style={{
-          background: "var(--card-bg,#1a1a2e)",
-          border: "1px solid rgba(255,255,255,0.08)",
+          background: "var(--card-bg)",
+          border: "1px solid var(--glass-border)",
           maxHeight: "92vh",
         }}
         onClick={e => e.stopPropagation()}
       >
-        <div className="flex justify-between items-center px-5 py-4 border-b border-white/5">
-          <h3 className="font-bold text-white text-base">{doc.title}</h3>
+        <div className="flex justify-between items-center px-5 py-4" style={{ borderBottom: "1px solid var(--divider)" }}>
+          <h3 className="font-bold text-base" style={{ color: "var(--text-primary)" }}>{doc.title}</h3>
           <div className="flex gap-2">
             <button
               onClick={() => window.open(doc.url, "_blank")}
@@ -71,13 +71,14 @@ function DocViewerModal({ doc, onClose }) {
             </button>
             <button
               onClick={onClose}
-              className="text-white/40 hover:text-red-400 transition bg-white/5 p-2 rounded-lg border border-white/5"
+              className="hover:text-red-400 transition bg-white/5 p-2 rounded-lg"
+              style={{ color: "var(--text-secondary)", border: "1px solid var(--glass-border)" }}
             >
               <MdClose size={20} />
             </button>
           </div>
         </div>
-        <div className="flex-1 overflow-hidden rounded-b-2xl bg-black/30" style={{ minHeight: "70vh" }}>
+        <div className="flex-1 overflow-hidden rounded-b-2xl" style={{ background: "var(--card-inner-bg)", minHeight: "70vh" }}>
           {doc.type === "image" ? (
             <div className="w-full h-full flex items-center justify-center p-6">
               <img src={doc.url} alt={doc.title} className="max-w-full max-h-full object-contain rounded-xl shadow-2xl" />
@@ -106,9 +107,9 @@ function RejectModal({ open, onClose, onSubmit, loading }) {
   if (!open) return null;
 
   const inputStyle = {
-    background: "var(--bg-default,#0f0f1a)",
-    border: "1px solid rgba(255,255,255,0.08)",
-    color: "#fff", padding: "10px 12px",
+    background: "var(--card-inner-bg)",
+    border: "1px solid var(--glass-border)",
+    color: "var(--text-primary)", padding: "10px 12px",
     borderRadius: "10px", outline: "none",
     width: "100%", fontSize: "13px",
     resize: "vertical", minHeight: "100px",
@@ -122,18 +123,18 @@ function RejectModal({ open, onClose, onSubmit, loading }) {
     >
       <div
         className="rounded-2xl w-full max-w-md shadow-2xl"
-        style={{ background: "var(--card-bg,#1a1a2e)", border: "1px solid rgba(239,68,68,0.2)" }}
+        style={{ background: "var(--card-bg)", border: "1px solid rgba(239,68,68,0.2)" }}
         onClick={e => e.stopPropagation()}
       >
-        <div className="flex items-center gap-3 p-5 border-b border-white/5">
-          <div className="w-10 h-10 rounded-xl bg-red-500/15 text-red-400 flex items-center justify-center">
+        <div className="flex items-center gap-3 px-5 py-4" style={{ borderBottom: "1px solid var(--divider)" }}>
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: "rgba(251,191,36,0.15)", color: "#fbbf24" }}>
             <MdWarning size={20} />
           </div>
           <div className="flex-1">
-            <h3 className="font-bold text-white">Reject Tenant Application</h3>
-            <p className="text-[11px] text-white/40 mt-0.5">Provide a clear reason — tenant will be notified</p>
+            <h3 className="font-bold" style={{ color: "var(--text-primary)" }}>Reject Tenant Application</h3>
+            <p className="mt-0.5" style={{ fontSize: 11, color: "var(--text-secondary)" }}>Provide a clear reason — tenant will be notified</p>
           </div>
-          <button disabled={loading} onClick={onClose} className="text-white/30 hover:text-white transition disabled:opacity-40">
+          <button disabled={loading} onClick={onClose} style={{ color: "var(--text-secondary)", cursor: "pointer", background: "none", border: "none", padding: 4 }}>
             <MdClose size={20} />
           </button>
         </div>
@@ -143,7 +144,7 @@ function RejectModal({ open, onClose, onSubmit, loading }) {
             <span>The tenant will receive an email with the reason you provide below.</span>
           </div>
           <div>
-            <label className="text-[10px] font-bold text-white/40 uppercase tracking-widest block mb-2">
+            <label className="font-bold uppercase tracking-widest block mb-2" style={{ fontSize: 10, color: "var(--text-secondary)" }}>
               Reason for Rejection *
             </label>
             <textarea
@@ -156,11 +157,12 @@ function RejectModal({ open, onClose, onSubmit, loading }) {
             />
           </div>
         </div>
-        <div className="p-5 border-t border-white/5 flex gap-3">
+        <div className="p-5 flex gap-3" style={{ borderTop: "1px solid var(--divider)" }}>
           <button
             disabled={loading}
             onClick={onClose}
-            className="flex-1 py-3 rounded-xl bg-white/5 border border-white/8 text-white font-bold text-sm hover:bg-white/10 transition disabled:opacity-40"
+            className="flex-1 py-3 rounded-xl font-bold text-sm transition disabled:opacity-40"
+            style={{ background: "var(--card-inner-bg)", border: "1px solid var(--glass-border)", color: "var(--text-primary)" }}
           >
             Cancel
           </button>
@@ -204,23 +206,23 @@ function DetailDrawer({ resident, onClose, onApprove, onReject, onViewDoc }) {
       <div
         className="h-full w-full max-w-md overflow-y-auto flex flex-col"
         style={{
-          background: "var(--card-bg,#1a1a2e)",
-          borderLeft: "1px solid rgba(255,255,255,0.07)",
+          background: "var(--card-bg)",
+          borderLeft: "1px solid var(--glass-border)",
           animation: "slideInRight 0.22s ease",
         }}
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="sticky top-0 z-10 flex items-center gap-3 px-5 py-4 border-b border-white/5"
-          style={{ background: "var(--card-bg,#1a1a2e)" }}>
+        <div className="sticky top-0 z-10 flex items-center gap-3 px-5 py-4"
+          style={{ background: "var(--card-bg)", borderBottom: "1px solid var(--divider)" }}>
           <div className="w-10 h-10 rounded-xl bg-amber-500/15 text-amber-400 flex items-center justify-center font-black text-lg">
             {resident.name?.charAt(0)}
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="font-bold text-white truncate">{resident.name}</h3>
-            <p className="text-[11px] text-white/40 truncate">{resident.email}</p>
+            <h3 className="font-bold truncate" style={{ color: "var(--text-primary)" }}>{resident.name}</h3>
+            <p className="truncate" style={{ fontSize: 11, color: "var(--text-secondary)" }}>{resident.email}</p>
           </div>
-          <button onClick={onClose} className="text-white/30 hover:text-white transition bg-white/5 p-2 rounded-lg">
+          <button onClick={onClose} className="hover:text-red-400 transition bg-white/5 p-2 rounded-lg" style={{ color: "var(--text-secondary)" }}>
             <MdClose size={18} />
           </button>
         </div>
@@ -295,8 +297,8 @@ function DetailDrawer({ resident, onClose, onApprove, onReject, onViewDoc }) {
         </div>
 
         {/* Action buttons */}
-        <div className="sticky bottom-0 p-4 border-t border-white/5 grid grid-cols-2 gap-3"
-          style={{ background: "var(--card-bg,#1a1a2e)" }}>
+        <div className="sticky bottom-0 p-4 grid grid-cols-2 gap-3"
+          style={{ background: "var(--card-bg)", borderTop: "1px solid var(--divider)" }}>
           <button
             onClick={() => onReject(resident.id)}
             className="flex items-center justify-center gap-2 py-3 rounded-xl bg-red-500/10 text-red-400 border border-red-500/20 font-bold text-sm hover:bg-red-500/20 transition"
@@ -326,10 +328,10 @@ function DetailDrawer({ resident, onClose, onApprove, onReject, onViewDoc }) {
 function Section({ title, icon, children }) {
   return (
     <div>
-      <div className="flex items-center gap-1.5 text-[10px] font-black text-white/30 uppercase tracking-widest mb-2">
+      <div className="flex items-center gap-1.5 font-black uppercase tracking-widest mb-2" style={{ fontSize: 10, color: "var(--text-secondary)" }}>
         {icon}{title}
       </div>
-      <div className="bg-white/3 border border-white/5 rounded-xl overflow-hidden divide-y divide-white/5">
+      <div className="rounded-xl overflow-hidden" style={{ background: "var(--card-inner-bg)", border: "1px solid var(--glass-border)" }}>
         {children}
       </div>
     </div>
@@ -338,15 +340,15 @@ function Section({ title, icon, children }) {
 
 function Row({ label, value, chip, icon, children }) {
   return (
-    <div className="flex items-center justify-between px-3 py-2.5">
-      <span className="text-[11px] text-white/40 font-medium">{label}</span>
+    <div className="flex items-center justify-between px-3 py-2.5" style={{ borderBottom: "1px solid var(--divider)" }}>
+      <span className="font-medium" style={{ fontSize: 11, color: "var(--text-secondary)" }}>{label}</span>
       {children ? children : (
         chip ? (
-          <span className="text-[10px] font-black px-2 py-0.5 rounded bg-white/8 text-white/70 uppercase">
+          <span className="text-[10px] font-black px-2 py-0.5 rounded" style={{ background: "var(--card-inner-bg)", color: "var(--text-primary)" }}>
             {icon}{value}
           </span>
         ) : (
-          <span className="text-xs font-semibold text-white/80 flex items-center gap-1">{icon}{value}</span>
+          <span className="text-xs font-semibold flex items-center gap-1" style={{ color: "var(--text-primary)" }}>{icon}{value}</span>
         )
       )}
     </div>
@@ -490,7 +492,7 @@ export default function TenantApprovals() {
     <div className="flex items-center justify-center p-24">
       <div className="flex flex-col items-center gap-3">
         <div className="w-10 h-10 rounded-full border-2 border-amber-500/30 border-t-amber-400 animate-spin" />
-        <p className="text-xs text-white/30 font-medium tracking-widest uppercase">Loading approvals…</p>
+        <p className="text-xs font-medium tracking-widest uppercase" style={{ color: "var(--text-secondary)" }}>Loading approvals…</p>
       </div>
     </div>
   );
@@ -501,12 +503,13 @@ export default function TenantApprovals() {
       {/* ── Page Header ── */}
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h2 className="text-2xl font-black text-white tracking-tight">Tenant Approvals</h2>
-          <p className="text-sm text-white/40 mt-1">Review KYC documents and verify new tenant registrations</p>
+          <h2 className="text-2xl font-black tracking-tight" style={{ color: "var(--text-primary)" }}>Tenant Approvals</h2>
+          <p className="text-sm mt-1" style={{ color: "var(--text-secondary)" }}>Review KYC documents and verify new tenant registrations</p>
         </div>
         <button
           onClick={load}
-          className="flex items-center gap-2 text-xs font-bold text-white/50 hover:text-white bg-white/5 hover:bg-white/10 border border-white/8 px-3 py-2 rounded-xl transition"
+          className="flex items-center gap-2 text-xs font-bold px-3 py-2 rounded-xl transition"
+          style={{ color: "var(--text-secondary)", background: "var(--card-inner-bg)", border: "1px solid var(--glass-border)" }}
         >
           <MdRefresh size={15} /> Refresh
         </button>
@@ -531,15 +534,15 @@ export default function TenantApprovals() {
       <div className="flex flex-wrap gap-3 items-center">
         {/* Search */}
         <div className="relative flex-1 min-w-48">
-          <MdSearch size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" />
+          <MdSearch size={16} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: "var(--text-secondary)" }} />
           <input
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Search name, email, flat…"
             style={{
-              background: "rgba(255,255,255,0.04)",
-              border: "1px solid rgba(255,255,255,0.07)",
-              color: "#fff", padding: "9px 12px 9px 34px",
+              background: "var(--card-inner-bg)",
+              border: "1px solid var(--glass-border)",
+              color: "var(--text-primary)", padding: "9px 12px 9px 34px",
               borderRadius: "12px", outline: "none",
               width: "100%", fontSize: "13px",
             }}
@@ -578,9 +581,9 @@ export default function TenantApprovals() {
       {/* ── Table ── */}
       {filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 gap-4"
-          style={{ background: "rgba(255,255,255,0.02)", borderRadius: "20px", border: "1px solid rgba(255,255,255,0.05)" }}>
+          style={{ background: "var(--card-inner-bg)", borderRadius: "20px", border: "1px solid var(--glass-border)" }}>
           <MdCheck size={40} className="text-emerald-400/40" />
-          <p className="text-white/30 text-sm font-semibold">No pending approvals match your filters</p>
+          <p className="text-sm font-semibold" style={{ color: "var(--text-secondary)" }}>No pending approvals match your filters</p>
         </div>
       ) : (
         <>
@@ -599,7 +602,7 @@ export default function TenantApprovals() {
                 <div
                   key={r.id}
                   className="animate-fadeIn rounded-2xl overflow-hidden cursor-pointer"
-                  style={{ animationDelay: `${i * 30}ms`, border: "1px solid rgba(255,255,255,0.06)", background: "rgba(255,255,255,0.02)" }}
+                  style={{ animationDelay: `${i * 30}ms`, border: "1px solid var(--glass-border)", background: "var(--card-bg)" }}
                   onClick={() => setDrawer(r)}
                 >
                   <div className="p-4 flex items-center gap-3 min-w-0">
@@ -607,18 +610,18 @@ export default function TenantApprovals() {
                       {r.name?.charAt(0)}
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm font-bold text-white truncate">{r.name}</p>
-                      <p className="text-[11px] text-white/35 truncate">{r.email}</p>
+                      <p className="text-sm font-bold truncate" style={{ color: "var(--text-primary)" }}>{r.name}</p>
+                      <p className="truncate" style={{ fontSize: 11, color: "var(--text-secondary)" }}>{r.email}</p>
                     </div>
                     <LeaseChip date={membership?.move_out_date} />
                   </div>
                   <div className="px-4 pb-1 flex flex-wrap items-center gap-x-4 gap-y-1.5">
-                    <span className="text-xs text-white/60">
-                      <span className="font-semibold text-white/80">{flat?.flat_number ? `Flat ${flat.flat_number}` : "—"}</span>
+                    <span className="text-xs" style={{ color: "var(--text-secondary)" }}>
+                      <span className="font-semibold" style={{ color: "var(--text-primary)" }}>{flat?.flat_number ? `Flat ${flat.flat_number}` : "—"}</span>
                       {blockName !== "—" && <span> · Block {blockName}</span>}
                       {floorNum != null && <span> · Floor {floorNum}</span>}
                     </span>
-                    <span className="text-xs text-white/45">Move-in {formatDate(membership?.move_in_date)}</span>
+                    <span className="text-xs" style={{ color: "var(--text-secondary)" }}>Move-in {formatDate(membership?.move_in_date)}</span>
                     <span className="flex items-center gap-1.5">
                       <span
                         title="Aadhar"
@@ -637,7 +640,8 @@ export default function TenantApprovals() {
                   <div className="p-4 pt-2.5 flex gap-2" onClick={e => e.stopPropagation()}>
                     <button
                       onClick={() => setDrawer(r)}
-                      className="flex-1 flex items-center justify-center gap-1.5 h-11 rounded-xl bg-white/5 text-white/60 hover:text-white hover:bg-white/10 border border-white/8 text-xs font-bold transition"
+                      className="flex-1 flex items-center justify-center gap-1.5 h-11 rounded-xl hover:bg-white/10 text-xs font-bold transition"
+                      style={{ background: "var(--card-inner-bg)", color: "var(--text-secondary)", border: "1px solid var(--glass-border)" }}
                     >
                       <MdVisibility size={14} /> View
                     </button>
@@ -660,13 +664,15 @@ export default function TenantApprovals() {
           </div>
 
           {/* ── Desktop Table ── */}
-          <div className="hidden md:block rounded-2xl overflow-hidden" style={{ border: "1px solid rgba(255,255,255,0.06)" }}>
+          <div className="hidden md:block rounded-2xl overflow-hidden" style={{ border: "1px solid var(--glass-border)" }}>
             {/* Table header */}
             <div
-              className="grid text-[10px] font-black text-white/30 uppercase tracking-widest px-4 py-3"
+              className="grid font-black uppercase tracking-widest px-4 py-3"
               style={{
-                background: "rgba(255,255,255,0.03)",
-                borderBottom: "1px solid rgba(255,255,255,0.05)",
+                fontSize: 10,
+                color: "var(--text-secondary)",
+                background: "var(--card-inner-bg)",
+                borderBottom: "1px solid var(--divider)",
                 gridTemplateColumns: "2fr 1.2fr 1.2fr 1fr 1fr 1fr auto",
                 gap: "12px",
               }}
@@ -681,7 +687,7 @@ export default function TenantApprovals() {
             </div>
 
             {/* Rows */}
-            <div className="divide-y" style={{ divideColor: "rgba(255,255,255,0.04)" }}>
+            <div className="divide-y" style={{ borderColor: "var(--divider)" }}>
               {filtered.map((r, i) => {
                 const membership = r.FlatMemberships?.[0];
                 const flat       = membership?.Flat;
@@ -698,8 +704,8 @@ export default function TenantApprovals() {
                     style={{
                       gridTemplateColumns: "2fr 1.2fr 1.2fr 1fr 1fr 1fr auto",
                       gap: "12px",
-                      borderBottom: i < filtered.length - 1 ? "1px solid rgba(255,255,255,0.04)" : "none",
-                      background: i % 2 === 0 ? "rgba(255,255,255,0.01)" : "transparent",
+                      borderBottom: i < filtered.length - 1 ? "1px solid var(--divider)" : "none",
+                      background: i % 2 === 0 ? "var(--card-inner-bg)" : "transparent",
                     }}
                     onClick={() => setDrawer(r)}
                   >
@@ -709,26 +715,26 @@ export default function TenantApprovals() {
                         {r.name?.charAt(0)}
                       </div>
                       <div className="min-w-0">
-                        <p className="text-sm font-bold text-white truncate">{r.name}</p>
-                        <p className="text-[10px] text-white/35 truncate">{r.email}</p>
+                        <p className="text-sm font-bold truncate" style={{ color: "var(--text-primary)" }}>{r.name}</p>
+                        <p className="truncate" style={{ fontSize: 10, color: "var(--text-secondary)" }}>{r.email}</p>
                       </div>
                     </div>
 
                     {/* Flat / Block */}
                     <div>
-                      <p className="text-sm font-semibold text-white/80">
+                      <p className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
                         {flat?.flat_number ? `Flat ${flat.flat_number}` : "—"}
                       </p>
-                      <p className="text-[10px] text-white/35">{blockName !== "—" ? `Block ${blockName}` : "—"}</p>
+                      <p style={{ fontSize: 10, color: "var(--text-secondary)" }}>{blockName !== "—" ? `Block ${blockName}` : "—"}</p>
                     </div>
 
                     {/* Floor */}
-                    <p className="text-sm text-white/60 font-medium">
+                    <p className="text-sm font-medium" style={{ color: "var(--text-secondary)" }}>
                       {floorNum != null ? `Floor ${floorNum}` : "—"}
                     </p>
 
                     {/* Move-In */}
-                    <p className="text-xs text-white/50">{formatDate(membership?.move_in_date)}</p>
+                    <p className="text-xs" style={{ color: "var(--text-secondary)" }}>{formatDate(membership?.move_in_date)}</p>
 
                     {/* Lease End */}
                     <div><LeaseChip date={membership?.move_out_date} /></div>
@@ -754,7 +760,8 @@ export default function TenantApprovals() {
                       <button
                         title="View Details"
                         onClick={() => setDrawer(r)}
-                        className="w-8 h-8 rounded-lg bg-white/5 text-white/40 hover:text-white hover:bg-white/10 border border-white/5 flex items-center justify-center transition"
+                        className="w-8 h-8 rounded-lg hover:bg-white/10 flex items-center justify-center transition"
+                        style={{ background: "var(--card-inner-bg)", color: "var(--text-secondary)", border: "1px solid var(--glass-border)" }}
                       >
                         <MdVisibility size={14} />
                       </button>
@@ -780,12 +787,12 @@ export default function TenantApprovals() {
 
             {/* Footer */}
             <div className="px-4 py-2.5 flex justify-between items-center"
-              style={{ background: "rgba(255,255,255,0.02)", borderTop: "1px solid rgba(255,255,255,0.05)" }}>
-              <p className="text-[11px] text-white/25 font-medium">
-                Showing <span className="text-white/50 font-bold">{filtered.length}</span> of{" "}
-                <span className="text-white/50 font-bold">{residents.length}</span> pending approvals
+              style={{ background: "var(--card-inner-bg)", borderTop: "1px solid var(--divider)" }}>
+              <p className="text-[11px] font-medium" style={{ color: "var(--text-secondary)" }}>
+                Showing <span className="font-bold" style={{ color: "var(--text-primary)" }}>{filtered.length}</span> of{" "}
+                <span className="font-bold" style={{ color: "var(--text-primary)" }}>{residents.length}</span> pending approvals
               </p>
-              <p className="text-[11px] text-white/20">Click any row to view full details</p>
+              <p className="text-[11px]" style={{ color: "var(--text-secondary)" }}>Click any row to view full details</p>
             </div>
           </div>
         </>
@@ -818,14 +825,14 @@ export default function TenantApprovals() {
 function FilterSelect({ icon, value, onChange, options }) {
   return (
     <div className="relative flex items-center">
-      <span className="absolute left-3 text-white/30 pointer-events-none">{icon}</span>
+      <span className="absolute left-3 pointer-events-none" style={{ color: "var(--text-secondary)" }}>{icon}</span>
       <Select
         value={value}
         onChange={e => onChange(e.target.value)}
         style={{
-          background: "rgba(255,255,255,0.04)",
-          border: "1px solid rgba(255,255,255,0.07)",
-          color: value === "ALL" ? "rgba(255,255,255,0.4)" : "#fff",
+          background: "var(--card-inner-bg)",
+          border: "1px solid var(--glass-border)",
+          color: value === "ALL" ? "var(--text-secondary)" : "var(--text-primary)",
           padding: "9px 32px 9px 28px",
           borderRadius: "12px", outline: "none",
           fontSize: "12px", fontWeight: "700",
@@ -833,10 +840,10 @@ function FilterSelect({ icon, value, onChange, options }) {
         }}
       >
         {options.map(o => (
-          <option key={o.value} value={o.value} style={{ background: "#1a1a2e" }}>{o.label}</option>
+          <option key={o.value} value={o.value} style={{ background: "var(--card-bg)", color: "var(--text-primary)" }}>{o.label}</option>
         ))}
       </Select>
-      <span className="absolute right-2 text-white/20 pointer-events-none text-[10px]">▾</span>
+      <span className="absolute right-2 pointer-events-none" style={{ fontSize: 10, color: "var(--text-secondary)" }}>▾</span>
     </div>
   );
 }
