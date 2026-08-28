@@ -32,22 +32,22 @@ function useIsMobile() {
 
 export default function Flats() {
   const { blockId, floorId } = useParams();
-  const navigate    = useNavigate();
-  const isMobile    = useIsMobile();
+  const navigate = useNavigate();
+  const isMobile = useIsMobile();
 
-  const [flats,         setFlats]         = useState([]);
+  const [flats, setFlats] = useState([]);
   // New state for Add Flat modal
   const [showAddModal, setShowAddModal] = useState(false);
   const [newFlatData, setNewFlatData] = useState({ flat_number: "", block_id: "" });
   const [adding, setAdding] = useState(false);
   const [addError, setAddError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
-  const [loading,       setLoading]       = useState(true);
-  const [error,         setError]         = useState("");
-  const [deletingId,    setDeletingId]    = useState(null);
-  const [confirmId,     setConfirmId]     = useState(null);
-  const [search,        setSearch]        = useState("");
-  const [filterStatus,  setFilterStatus]  = useState("ALL");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [deletingId, setDeletingId] = useState(null);
+  const [confirmId, setConfirmId] = useState(null);
+  const [search, setSearch] = useState("");
+  const [filterStatus, setFilterStatus] = useState("ALL");
   const [resolvedBlockId, setResolvedBlockId] = useState(blockId || null);
 
   // Load flats and resolve blockId when on floor view
@@ -57,7 +57,7 @@ export default function Flats() {
         try {
           const floorRes = await API.get(`/floors/detail/${floorId}`);
           setResolvedBlockId(floorRes.data?.block_id || null);
-        } catch {}
+        } catch { }
       }
       loadFlats();
     };
@@ -106,25 +106,25 @@ export default function Flats() {
   };
 
   const filtered = flats.filter(f => {
-    const q  = search.toLowerCase();
+    const q = search.toLowerCase();
     const ms = f.flat_number?.toLowerCase().includes(q);
     const mf =
-      filterStatus === "ALL"      ? true :
-      filterStatus === "OCCUPIED" ? !!f.resident_id :
-                                    !f.resident_id;
+      filterStatus === "ALL" ? true :
+        filterStatus === "OCCUPIED" ? !!f.resident_id :
+          !f.resident_id;
     return ms && mf;
   });
 
   const counts = {
-    ALL:      flats.length,
+    ALL: flats.length,
     OCCUPIED: flats.filter(f => !!f.resident_id).length,
-    VACANT:   flats.filter(f => !f.resident_id).length,
+    VACANT: flats.filter(f => !f.resident_id).length,
   };
 
   const TABS = [
-    { key: "ALL",      label: "All",      color: "#5A3BA2" },
+    { key: "ALL", label: "All", color: "#5A3BA2" },
     { key: "OCCUPIED", label: "Occupied", color: "#16a34a" },
-    { key: "VACANT",   label: "Vacant",   color: "#d97706" },
+    { key: "VACANT", label: "Vacant", color: "#d97706" },
   ];
 
   return (
@@ -173,9 +173,9 @@ export default function Flats() {
 
             <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
               <button
-                  onClick={() => { setShowAddModal(false); setNewFlatData({ flat_number: "", block_id: "" }); setAddError(""); setSuccessMessage(""); }}
-                  style={{ background: "none", border: "none", color: "var(--text-secondary)", cursor: "pointer" }}
-                >Cancel</button>
+                onClick={() => { setShowAddModal(false); setNewFlatData({ flat_number: "", block_id: "" }); setAddError(""); setSuccessMessage(""); }}
+                style={{ background: "none", border: "none", color: "var(--text-secondary)", cursor: "pointer" }}
+              >Cancel</button>
               <button
                 onClick={async () => {
                   if (!newFlatData.flat_number) {
@@ -294,9 +294,9 @@ export default function Flats() {
         {!loading && (
           <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr 1fr" : "repeat(3, 1fr)", gap: isMobile ? 10 : 14 }}>
             {[
-              { label: "Total Units",    val: counts.ALL,      cls: "complaint-stat-total"      },
-              { label: "Occupied",       val: counts.OCCUPIED, cls: "complaint-stat-resolved"   },
-              { label: "Vacant",         val: counts.VACANT,   cls: "complaint-stat-pending"    },
+              { label: "Total Units", val: counts.ALL, cls: "complaint-stat-total" },
+              { label: "Occupied", val: counts.OCCUPIED, cls: "complaint-stat-resolved" },
+              { label: "Vacant", val: counts.VACANT, cls: "complaint-stat-pending" },
             ].map(s => (
               <div key={s.label} className={`complaint-stat-card ${s.cls}`}>
                 <span className="complaint-stat-val">{s.val}</span>

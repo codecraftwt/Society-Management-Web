@@ -11,19 +11,8 @@
   import {
     MdSearch, MdClose, MdFilterList,
     MdChevronLeft, MdChevronRight, MdWarning, MdBlock,
-    MdPayment, MdRefresh, MdTimer,
+    MdPayment, MdRefresh, MdTimer, MdContentCopy, MdCheck, MdDateRange,
   } from "react-icons/md";
-
-  /* ─── Razorpay script loader ─── */
-  const loadRazorpayScript = () =>
-    new Promise((resolve) => {
-      if (window.Razorpay) { resolve(true); return; }
-      const script = document.createElement("script");
-      script.src     = "https://checkout.razorpay.com/v1/checkout.js";
-      script.onload  = () => resolve(true);
-      script.onerror = () => resolve(false);
-      document.body.appendChild(script);
-    });
 
   /* ─── Debounce ─── */
   function useDebounce(value, delay = 500) {
@@ -168,46 +157,6 @@
   };
 
   /* ══════════════════════════════════════════════════════════
-    Razorpay checkout handler
-    Called both from initial booking AND from repay.
-  ══════════════════════════════════════════════════════════ */
-  async function openRazorpayCheckout({ razorpayOrder, onSuccess, onDismiss }) {
-    const loaded = await loadRazorpayScript();
-    if (!loaded) {
-      alert("Payment gateway could not be loaded. Please check your internet connection.");
-      return;
-    }
-
-    const options = {
-      key:         razorpayOrder.key,
-      amount:      razorpayOrder.amount,
-      currency:    razorpayOrder.currency || "INR",
-      name:        "Society Amenity Booking",
-      description: razorpayOrder.description || "Amenity Booking",
-      order_id:    razorpayOrder.id,
-      prefill:     razorpayOrder.prefill || {},
-      theme:       { color: "#6B46C1" },
-      modal: {
-        ondismiss: () => {
-          // User closed the checkout — slot stays PAYMENT_PENDING, cron will expire it
-          if (onDismiss) onDismiss();
-        },
-      },
-      handler: async (response) => {
-        // Payment captured by Razorpay — now verify on our server
-        if (onSuccess) onSuccess(response);
-      },
-    };
-
-    const rzp = new window.Razorpay(options);
-    rzp.on("payment.failed", (response) => {
-      console.error("[Razorpay] payment.failed", response.error);
-      if (onDismiss) onDismiss({ failed: true, error: response.error });
-    });
-    rzp.open();
-  }
-
-  /* ══════════════════════════════════════════════════════════
     MAIN COMPONENT
   ══════════════════════════════════════════════════════════ */
   export default function ResidentAmenity() {
@@ -220,8 +169,14 @@
     const [selectedAmenity, setSelectedAmenity] = useState(null);
     const [selectedDate,    setSelectedDate]    = useState(null);
     const [slots,           setSlots]           = useState([]);
+    const [selectedSlots,   setSelectedSlots]   = useState([]);
+    const [rangeStart,      setRangeStart]      = useState(null);
+    const [rangeEnd,        setRangeEnd]        = useState(null);
+    const [rangeDates,      setRangeDates]      = useState([]);
+    const [bookingStep,     setBookingStep]     = useState("date");
     const [bookedDates,     setBookedDates]     = useState([]);
     const [showDateModal,   setShowDateModal]   = useState(false);
+    const [showSlotsModal,  setShowSlotsModal]  = useState(false);
     const [slotsLoading,    setSlotsLoading]    = useState(false);
     const [bookingLoading,  setBookingLoading]  = useState(false);
     const [bookingError,    setBookingError]    = useState("");
@@ -229,6 +184,12 @@
     /* ── Payment status UI ── */
     const [paymentStatus, setPaymentStatus] = useState(null);
     // null | "processing" | "success" | "failed" | "dismissed"
+
+    /* ── Demo UPI payment modal ── */
+    const [showPaymentModal, setShowPaymentModal] = useState(false);
+    const [paymentData,      setPaymentData]      = useState(null);
+    const [confirming,        setConfirming]        = useState(false);
+    const [copied,            setCopied]            = useState(false);
 
     /* ── Bookings tab ── */
     const [myBookings,    setMyBookings]    = useState([]);
@@ -249,6 +210,8 @@
 
     /* ── Pagination ── */
     const [page,       setPage]       = useState(1);
+  // New state for grouped bookings display
+  const [groupedBookings, setGroupedBookings] = useState([]);
     const [totalPages, setTotalPages] = useState(1);
     const [totalItems, setTotalItems] = useState(0);
 
@@ -267,9 +230,11 @@
       String(date.getMonth() + 1).padStart(2, "0") + "-" +
       String(date.getDate()).padStart(2, "0");
 
-    const formatBookingDate = (date, start_time) => {
+    const formatBookingDate = (date, start_time, end_time) => {
       if (!start_time || start_time === "00:00:00") return date;
-      return `${date} · ${start_time.slice(0, 5)}`;
+      const start = start_time.slice(0, 5);
+      const end = end_time && end_time !== "23:59:59" ? ` – ${end_time.slice(0, 5)}` : "";
+      return `${date} · ${start}${end}`;
     };
 
     const hasFilters        = statusFilter !== "ALL" || amenityFilter !== "ALL";
@@ -295,10 +260,14 @@
           ...(aFilter && aFilter !== "ALL" ? { amenityName: aFilter       } : {}),
         });
         const res = await API.get(`/amenities/my-bookings?${params}`);
-        setMyBookings(res.data.data || []);
-        setCounts(res.data.counts  || {});
-        setTotalPages(res.data.pagination.totalPages);
-        setTotalItems(res.data.pagination.totalItems);
+      const bookings = res.data.data || [];
+      setMyBookings(bookings);
+      setCounts(res.data.counts  || {});
+      setTotalPages(res.data.pagination.totalPages);
+      // Grouping (multi-day full-day + multi-slot time range) is done on the
+      // API so the backend response is already one record per booking.
+      setGroupedBookings(bookings);
+      setTotalItems(res.data.pagination.totalItems);
         setAmenityNames(res.data.amenityNames || []);
         setPage(pageNum);
       } catch (err) {
@@ -349,6 +318,8 @@
       setSelectedAmenity(a);
       setSelectedDate(null);
       setSlots([]);
+      setSelectedSlots([]);
+      resetRange();
       setBookingError("");
       setPaymentStatus(null);
       setShowDateModal(true);
@@ -367,13 +338,140 @@
       return slotTime > now;
     };
 
+    /* ── Date selection helper (inclusive) ──
+       - a single tapped date → 1-day booking
+       - a start + end date  → full inclusive range */
+    const calcRangeDates = (s, e) => {
+      if (!s) return [];
+      const start = new Date(s); start.setHours(0, 0, 0, 0);
+      if (!e) return [start];
+      const end = new Date(e); end.setHours(0, 0, 0, 0);
+      if (end < start) return [];
+      const dates = [];
+      const cur = new Date(start);
+      while (cur <= end) {
+        dates.push(new Date(cur));
+        cur.setDate(cur.getDate() + 1);
+      }
+      return dates;
+    };
+
+    const rangeUnavailable = rangeDates.some((d) =>
+      bookedDates.some((bd) => bd.getTime() === d.getTime())
+    );
+
+    const resetRange = () => {
+      setRangeStart(null);
+      setRangeEnd(null);
+      setRangeDates([]);
+      setBookingStep("date");
+    };
+
+    const clearRange = () => {
+      setRangeStart(null);
+      setRangeEnd(null);
+      setRangeDates([]);
+      setBookingStep("date");
+    };
+
+    /* ── Endpoint range selection (FULL_DAY) ──
+       - first tap           → a single date (start = end)
+       - tap before start    → start moves left (range extends)
+       - tap after end       → end moves right (range extends)
+       - tap inside the range → range collapses, tapped day becomes the new end
+       This lets users both extend (27..31) and shrink (back to 27..29). */
+    const handleRangeDay = (d) => {
+      if (!d) return;
+      const day = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+      setBookingError("");
+      setPaymentStatus(null);
+
+      let start = rangeStart ? new Date(rangeStart) : null;
+      let end = rangeEnd ? new Date(rangeEnd) : null;
+      if (!start || !end) {
+        start = day;
+        end = day;
+      } else if (day < start) {
+        start = day;
+      } else if (day > end) {
+        end = day;
+      } else {
+        end = day;
+      }
+
+      const list = calcRangeDates(start, end);
+      if (list.length > 7) {
+        setBookingError(t("amenRangeMax", "You can book a maximum of 7 days"));
+        return;
+      }
+      if (list.some((x) => bookedDates.some((bd) => bd.getTime() === x.getTime()))) {
+        setBookingError(t("amenRangeUnavailable", "One or more dates are already booked"));
+        return;
+      }
+      setRangeStart(list[0]);
+      setRangeEnd(list[list.length - 1]);
+      setRangeDates(list);
+    };
+
+    const rangeDayClassName = (date) => {
+      if (!rangeStart || !rangeEnd) return "";
+      const t = date.getTime();
+      const s = rangeStart.getTime();
+      const e = rangeEnd.getTime();
+      if (t < s || t > e) return "";
+      if (t === s || t === e) return "ra-day-endpoint";
+      return "ra-day-mid";
+    };
+
+    /* ── Toggle slot in/out of multi-selection ── */
+    const toggleSlot = (slot) => {
+      setSelectedSlots((prev) => {
+        const exists = prev.some((sel) => sel.start_time === slot.start_time);
+        return exists
+          ? prev.filter((sel) => sel.start_time !== slot.start_time)
+          : [...prev, slot];
+      });
+    };
+
+    /* ── Total span of the selected slots (start of first → end of last) ── */
+    const slotSpan = (() => {
+      if (selectedSlots.length === 0) return null;
+      const toMin = (x) => { const [h, mm] = x.split(":"); return parseInt(h, 10) * 60 + parseInt(mm, 10); };
+      const starts = selectedSlots.map((s) => s.start_time).slice().sort();
+      const ends = selectedSlots.map((s) => s.end_time || s.start_time).slice().sort();
+      const s = starts[0];
+      const e = ends[ends.length - 1];
+      const mins = toMin(e) - toMin(s);
+      const fmt = (t) => {
+        const p = t.split(":");
+        let h = parseInt(p[0], 10);
+        const m = p[1] || "00";
+        const ap = h >= 12 ? "PM" : "AM";
+        h = h % 12; if (h === 0) h = 12;
+        return `${h}:${m} ${ap}`;
+      };
+      const label = mins % 60 === 0
+        ? `${mins / 60} hr${mins / 60 === 1 ? "" : "s"}`
+        : `${Math.floor(mins / 60)}h ${mins % 60}m`;
+      return { start: fmt(s), end: fmt(e), label };
+    })();
+
     /* ══════════════════════════════════════════════════
-      BOOK SLOT
+      BOOK SLOT(s) — multi-slot / multi-day
       FREE  → direct book, close modal
-      PAID  → book → get Razorpay order → open checkout
+      PAID  → book → show UPI payment modal (group total)
     ══════════════════════════════════════════════════ */
-    const bookSlot = async (startTime) => {
+    const bookSlot = async () => {
       if (bookingLoading) return;
+      const bookings = selectedAmenity.booking_type === "FULL_DAY"
+        ? rangeDates.map((d) => ({ date: formatDateLocal(d) }))
+        : selectedSlots.map((s) => ({ date: formatDateLocal(selectedDate), startTime: s.start_time }));
+
+      if (bookings.length === 0) {
+        setBookingError(t("amenSelectAtLeastOne", "Select at least one slot or date."));
+        return;
+      }
+
       setBookingLoading(true);
       setBookingError("");
       setPaymentStatus(null);
@@ -381,55 +479,24 @@
       try {
         const res = await API.post("/amenities/book", {
           amenityId: selectedAmenity.id,
-          date:      formatDateLocal(selectedDate),
-          startTime: startTime || null,
+          bookings,
         });
 
         if (!res.data.requiresPayment) {
-          // FREE booking — done
+          setShowSlotsModal(false);
           setShowDateModal(false);
+          setSelectedSlots([]);
+          resetRange();
           await loadMyBookings(1, statusFilter, debouncedSearch, amenityFilter);
           setTab("BOOKINGS");
           return;
         }
 
-        /* PAID — open Razorpay */
-        const { razorpayOrder, data: booking } = res.data;
-        setBookingLoading(false);
-        setPaymentStatus("processing");
-
-        await openRazorpayCheckout({
-          razorpayOrder,
-          onDismiss: ({ failed } = {}) => {
-            setPaymentStatus(failed ? "failed" : "dismissed");
-            // Reload bookings so the PAYMENT_PENDING row appears with repay button
-            loadMyBookings(1, statusFilter, debouncedSearch, amenityFilter);
-            // Reload slots — the slot is still "held" so it shows unavailable
-            if (selectedDate) loadAvailability(selectedAmenity.id, selectedDate);
-          },
-          onSuccess: async (response) => {
-            setPaymentStatus("processing");
-            try {
-              await API.post("/amenities/verify-payment", {
-                booking_id:           booking.id,
-                razorpay_order_id:    response.razorpay_order_id,
-                razorpay_payment_id:  response.razorpay_payment_id,
-                razorpay_signature:   response.razorpay_signature,
-              });
-              setPaymentStatus("success");
-              await loadMyBookings(1, statusFilter, debouncedSearch, amenityFilter);
-              setTimeout(() => {
-                setShowDateModal(false);
-                setPaymentStatus(null);
-                setTab("BOOKINGS");
-              }, 1800);
-            } catch (verifyErr) {
-              console.error("[verifyPayment]", verifyErr);
-              setPaymentStatus("failed");
-              await loadMyBookings(1, statusFilter, debouncedSearch, amenityFilter);
-            }
-          },
-        });
+        /* PAID — open demo UPI modal */
+        setPaymentData(res.data.upiPayment);
+        setShowSlotsModal(false);
+        setShowDateModal(false);
+        setShowPaymentModal(true);
       } catch (err) {
         const msg = err.response?.data?.message || "Failed to create booking. Please try again.";
         setBookingError(msg);
@@ -447,36 +514,13 @@
       setRepayingId(booking.id);
       try {
         const res = await API.post(`/amenities/${booking.id}/repay`);
-        const { razorpayOrder } = res.data;
-
-        await openRazorpayCheckout({
-          razorpayOrder,
-          onDismiss: () => {
-            setRepayingId(null);
-            loadMyBookings(page, statusFilter, debouncedSearch, amenityFilter);
-          },
-          onSuccess: async (response) => {
-            try {
-              await API.post("/amenities/verify-payment", {
-                booking_id:          booking.id,
-                razorpay_order_id:   response.razorpay_order_id,
-                razorpay_payment_id: response.razorpay_payment_id,
-                razorpay_signature:  response.razorpay_signature,
-              });
-              await loadMyBookings(1, statusFilter, debouncedSearch, amenityFilter);
-            } catch (e) {
-              console.error("[repay verify]", e);
-              alert("Payment captured but verification failed. Please contact support with booking #" + booking.id);
-            } finally {
-              setRepayingId(null);
-            }
-          },
-        });
+        setPaymentData(res.data.upiPayment);
+        setShowPaymentModal(true);
       } catch (err) {
         const msg = err.response?.data?.message || "Could not initiate repayment.";
         alert(msg);
+      } finally {
         setRepayingId(null);
-        await loadMyBookings(page, statusFilter, debouncedSearch, amenityFilter);
       }
     };
 
@@ -484,6 +528,26 @@
     const cancelBooking = async (id) => {
       await API.put(`/amenities/${id}/cancel`);
       loadMyBookings(page, statusFilter, debouncedSearch, amenityFilter);
+    };
+
+    /* ─── Demo UPI: Confirm payment ─── */
+    const confirmPayment = async () => {
+      if (!paymentData?.booking_id || confirming) return;
+      setConfirming(true);
+      try {
+        const body = paymentData.all_booking_ids?.length
+          ? { booking_ids: paymentData.all_booking_ids }
+          : { booking_id: paymentData.booking_id };
+        await API.post("/amenities/verify-payment", body);
+        setShowPaymentModal(false);
+        setPaymentData(null);
+        await loadMyBookings(1, statusFilter, debouncedSearch, amenityFilter);
+        setTab("BOOKINGS");
+      } catch (err) {
+        alert(err.response?.data?.message || "Confirmation failed. Please try again.");
+      } finally {
+        setConfirming(false);
+      }
     };
 
     /* ─── Pass modal ─── */
@@ -839,7 +903,6 @@
                                   style={{ background: STATUS_STYLE[s]?.dot || "#888" }} />
                               )}
                               {statusDisplayLabel(s)}
-                              <span className="opacity-50 text-[10px]">({counts[s] ?? 0})</span>
                             </button>
                           ))}
                         </div>
@@ -903,10 +966,11 @@
               </div>
             )}
 
-            {!initialLoad && myBookings.map((b, idx) => {
+            {/* Render grouped bookings for full‑day amenities to avoid duplicate rows */}
+            {!initialLoad && groupedBookings.map((b, idx) => {
               const isPaymentPending = b.status === "PAYMENT_PENDING";
               const dotColor = STATUS_STYLE[b.status]?.dot || "#726988";
-
+              // For grouped full‑day bookings we may lack start_time; formatBookingDate will handle it
               return (
                 <div key={b.id}
                   onClick={() => !isPaymentPending && openPass(b)}
@@ -923,7 +987,7 @@
                     <span className="ra-booking-dot" style={{ background: dotColor }} />
                     <div>
                       <p className="ra-booking-name">{b.Amenity?.name}</p>
-                      <p className="ra-booking-date">{formatBookingDate(b.date, b.start_time)}</p>
+                      <p className="ra-booking-date">{formatBookingDate(b.date, b.start_time, b.end_time)}</p>
                       {isPaymentPending && (
                         <PaymentCountdown expiresAt={b.payment_expires_at} />
                       )}
@@ -956,7 +1020,9 @@
                             }}>
                             {repayingId === b.id
                               ? <Spinner small />
-                              : <><MdRefresh size={13} /> Pay Now</>
+                              : <>
+                                  <MdRefresh size={13} /> Pay Now
+                                </>
                             }
                           </button>
                           <button
@@ -1009,7 +1075,7 @@
             DATE / SLOT MODAL
         ══════════════════════════════ */}
         {showDateModal && selectedAmenity && (
-          <Modal isOpen={showDateModal} onClose={() => { setShowDateModal(false); setPaymentStatus(null); setBookingError(""); }}
+          <Modal isOpen={showDateModal} size="lg" onClose={() => { setShowDateModal(false); setPaymentStatus(null); setBookingError(""); }}
             title={`${t("amenReserve")} · ${selectedAmenity.name}`}>
             <div className="ra-modal-inner">
 
@@ -1074,51 +1140,140 @@
 
               {!paymentStatus && (
                 <>
-                  <p className="ra-modal-label">{t("amenSelectDate")}</p>
-                  <DatePicker
-                    selected={selectedDate}
-                    onChange={(d) => setSelectedDate(d)}
-                    minDate={new Date()}
-                    excludeDates={selectedAmenity.booking_type === "FULL_DAY" ? bookedDates : []}
-                    placeholderText={t("amenPickDate")}
-                    className="input w-full"
-                  />
-                  {selectedDate && (
-                    <div className="ra-slots-section">
-                      <p className="ra-modal-label">
-                        {selectedAmenity.booking_type === "FULL_DAY" ? t("amenFullDayBooking") : t("amenAvailableSlots")}
-                      </p>
-                      {slotsLoading ? (
-                        <div className="ra-loading">
-                          <span className="ra-spinner" /><span>{t("amenCheckingAvailability")}</span>
+                  <p className="ra-modal-subtitle">{t("amenSelectBookingDates", "Select your booking dates")}</p>
+
+                  {selectedAmenity.booking_type === "FULL_DAY" ? (
+                    bookingStep === "date" ? (
+                      /* STEP 1 — pick dates on a compact single-column calendar */
+                      <>
+                        <div className="ra-booking-grid ra-booking-grid--single">
+                          <div className="ra-calendar-section">
+                            <p className="ra-modal-label">{t("amenSelectDatesHint", "Pick 1–7 days · tap more dates to extend the period")}</p>
+                            <div className="ra-inline-calendar">
+                              <DatePicker
+                                selected={rangeEnd ? undefined : rangeStart || undefined}
+                                onChange={handleRangeDay}
+                                minDate={new Date()}
+                                excludeDates={bookedDates}
+                                dayClassName={rangeDayClassName}
+                                inline
+                              />
+                            </div>
+
+                            {rangeDates.length > 0 && (
+                              <div className="ra-step-dates">
+                                {rangeDates.map((d, i) => (
+                                  <span key={i} className="ra-step-date-chip">
+                                    {d.toLocaleDateString("en-US", { day: "numeric", month: "short" })}
+                                  </span>
+                                ))}
+                                <button type="button" className="ra-step-clear" onClick={clearRange}>
+                                  <MdClose size={13} /> {t("amenClear", "Clear")}
+                                </button>
+                              </div>
+                            )}
+                          </div>
                         </div>
-                      ) : (
-                        <div className="ra-slots-grid">
-                          {slots.filter(filterFutureSlots).map((s, i) => (
-                            <button key={i} disabled={!s.available || bookingLoading}
-                              onClick={() => bookSlot(s.start_time || null)}
-                              className={`ra-slot ${s.available && !bookingLoading ? "ra-slot--available" : "ra-slot--taken"}`}>
-                              {bookingLoading ? (
-                                <Spinner small />
-                              ) : selectedAmenity.booking_type === "FULL_DAY" ? (
-                                t("amenBookFullDay")
-                              ) : (
-                                <>
-                                  <span className="ra-slot-time">{s.start_time}</span>
-                                  <span className="ra-slot-sep">–</span>
-                                  <span className="ra-slot-time">{s.end_time}</span>
-                                </>
-                              )}
-                              {!s.available && <span className="ra-slot-taken-label">{t("amenSlotBooked")}</span>}
-                              {s.available && selectedAmenity.type === "PAID" && (
-                                <span style={{ fontSize: 10, display: "block", marginTop: 2, opacity: 0.7 }}>
-                                  ₹{selectedAmenity.rate_per_hour}
-                                </span>
-                              )}
-                            </button>
-                          ))}
+
+                        <div className="ra-step-actions">
+                          <button type="button" className="ra-next-btn" disabled={rangeDates.length === 0} onClick={() => setBookingStep("calc")}>
+                            {t("amenNext", "Next")} ›
+                          </button>
                         </div>
-                      )}
+                      </>
+                    ) : (
+                      /* STEP 2 — review dates and book (calculation) */
+                      <>
+                        <button type="button" className="ra-back-btn" onClick={() => setBookingStep("date")}>
+                          ‹ {t("amenBack", "Back")}
+                        </button>
+
+                        <div className="ra-summary-section">
+                          <div className="ra-summary-card">
+                            <div className="ra-summary-head">
+                              <div className="ra-summary-title">{t("amenSelectedDates")}</div>
+                              <div className="ra-summary-days">
+                                <strong>{rangeDates.length}</strong> {rangeDates.length === 1 ? t("amenDay", "day") : t("amenDays", "days")}
+                              </div>
+                            </div>
+
+                            <div className="ra-summary-dates-list">
+                              {rangeDates.map((d, i) => {
+                                const booked = bookedDates.some((bd) => bd.getTime() === d.getTime());
+                                return (
+                                  <div key={i} className={`ra-summary-date-row ${booked ? "ra-summary-date-row--taken" : "ra-summary-date-row--ok"}`}>
+                                    <span>{d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric" })}</span>
+                                    {booked ? (
+                                      <span className="ra-summary-date-status">{t("amenSlotBooked")}</span>
+                                    ) : (
+                                      <span className="ra-summary-check">✓</span>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
+
+                            <div className="ra-summary-divider" />
+
+                            {selectedAmenity.type === "PAID" ? (
+                              <>
+                                <div className="ra-summary-line">
+                                  <span>{t("amenRate", "Rate")}</span>
+                                  <strong>₹{selectedAmenity.rate_per_hour}/{t("amenPerDay")}</strong>
+                                </div>
+                                <div className="ra-summary-line">
+                                  <span>{t("amenDaysLabel", "Days")}</span>
+                                  <strong>{rangeDates.length}</strong>
+                                </div>
+                                <div className="ra-summary-divider" />
+                                <div className="ra-summary-total">
+                                  <span className="ra-summary-total-label">{t("amenTotal", "Total")}</span>
+                                  <span className="ra-summary-total-amt">₹{Number(selectedAmenity.rate_per_hour || 0) * rangeDates.length}</span>
+                                </div>
+                              </>
+                            ) : (
+                              <div className="ra-summary-total">
+                                <span className="ra-summary-total-label">{t("amenTotal", "Total")}</span>
+                                <span className="ra-summary-total-amt ra-summary-total-amt--free">{t("amenFree")}</span>
+                              </div>
+                            )}
+
+                            {rangeUnavailable ? (
+                              <div className="ra-range-error">⚠ {t("amenRangeUnavailable", "One or more dates are already booked")}</div>
+                            ) : (
+                              <button type="button" className="ra-range-book" disabled={bookingLoading} onClick={bookSlot}>
+                                {bookingLoading ? <Spinner small /> : (
+                                  selectedAmenity.type === "PAID"
+                                    ? `${t("amenBook", "Book")} ${rangeDates.length} ${rangeDates.length === 1 ? t("amenDay", "day") : t("amenDays", "days")} · ₹${Number(selectedAmenity.rate_per_hour || 0) * rangeDates.length}`
+                                    : `${t("amenBook", "Book")} ${rangeDates.length} ${rangeDates.length === 1 ? t("amenDay", "day") : t("amenDays", "days")}`
+                                )}
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      </>
+                    )
+                  ) : (
+                    /* SLOT type — single calendar, then choose time slots */
+                    <div className="ra-booking-grid ra-booking-grid--single">
+                      <div className="ra-calendar-section">
+                        <p className="ra-modal-label">{t("amenSelectDate")}</p>
+                        <div className="ra-inline-calendar">
+                          <DatePicker
+                            selected={selectedDate}
+                            onChange={(d) => {
+                              setSelectedDate(d);
+                              setSelectedSlots([]);
+                              setShowDateModal(false);
+                              setShowSlotsModal(true);
+                              setBookingError("");
+                              setPaymentStatus(null);
+                            }}
+                            minDate={new Date()}
+                            inline
+                          />
+                        </div>
+                      </div>
                     </div>
                   )}
                 </>
@@ -1127,10 +1282,233 @@
           </Modal>
         )}
 
+        {/* ══════════════════════════════
+            SLOTS MODAL
+        ══════════════════════════════ */}
+        {showSlotsModal && selectedAmenity && (
+          <Modal isOpen={showSlotsModal}
+            onClose={() => { setShowSlotsModal(false); setPaymentStatus(null); setBookingError(""); setSlots([]); setSelectedSlots([]); resetRange(); }}
+            title={selectedAmenity.booking_type === "FULL_DAY"
+              ? `${selectedAmenity.name} · ${rangeDates.length} ${rangeDates.length === 1 ? t("amenDay", "day") : t("amenDays", "days")}`
+              : `${selectedAmenity.name} · ${new Date(selectedDate).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}`}>
+            <div className="ra-modal-inner">
+
+              {paymentStatus === "processing" && (
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12, padding: "24px 0" }} className="animate-fadeIn">
+                  <Spinner />
+                  <p style={{ fontSize: 13, color: "var(--text-secondary)" }}>Verifying payment…</p>
+                </div>
+              )}
+
+              {paymentStatus === "success" && (
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10, padding: "24px 0", color: "#22c55e" }} className="animate-fadeIn">
+                  <div style={{ fontSize: 40 }}>✅</div>
+                  <p style={{ fontSize: 14, fontWeight: 700, color: "var(--text-primary)" }}>Booking Confirmed!</p>
+                  <p style={{ fontSize: 12, color: "var(--text-secondary)" }}>Redirecting to your bookings…</p>
+                </div>
+              )}
+
+              {paymentStatus === "failed" && (
+                <div style={{
+                  display: "flex", alignItems: "flex-start", gap: 8, padding: "10px 14px",
+                  borderRadius: 10, background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.25)",
+                  marginBottom: 14,
+                }} className="animate-fadeIn">
+                  <MdWarning size={15} style={{ color: "#ef4444", flexShrink: 0, marginTop: 1 }} />
+                  <div>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: "#ef4444" }}>Payment failed</div>
+                    <div style={{ fontSize: 11, color: "var(--text-secondary)", marginTop: 2 }}>
+                      Your slot is held for a few more minutes. Go to My Bookings → Pay Now to retry.
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {paymentStatus === "dismissed" && (
+                <div style={{
+                  display: "flex", alignItems: "flex-start", gap: 8, padding: "10px 14px",
+                  borderRadius: 10, background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.25)",
+                  marginBottom: 14,
+                }} className="animate-fadeIn">
+                  <MdPayment size={15} style={{ color: "#d97706", flexShrink: 0, marginTop: 1 }} />
+                  <div>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: "#d97706" }}>Payment not completed</div>
+                    <div style={{ fontSize: 11, color: "var(--text-secondary)", marginTop: 2 }}>
+                      Your slot is temporarily reserved. Use the Repay button in My Bookings before the timer runs out.
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {bookingError && (
+                <div style={{
+                  display: "flex", alignItems: "flex-start", gap: 8, padding: "10px 14px",
+                  borderRadius: 10, background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.25)",
+                }}>
+                  <MdWarning size={15} style={{ color: "#ef4444", flexShrink: 0, marginTop: 1 }} />
+                  <span style={{ fontSize: 12, color: "#ef4444" }}>{bookingError}</span>
+                </div>
+              )}
+
+              {!paymentStatus && selectedAmenity.booking_type === "FULL_DAY" ? (
+                <>
+                  <p className="ra-modal-label">{t("amenSelectedDates", "Selected dates")}</p>
+                  <div className="ra-slot-dates-list">
+                    {rangeDates.map((d, i) => {
+                      const booked = bookedDates.some((bd) => bd.getTime() === d.getTime());
+                      return (
+                        <div key={i} className={`ra-date-row ${booked ? "ra-date-row--taken" : "ra-date-row--ok"}`}>
+                          <span className="ra-date-row-label">
+                            {d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}
+                          </span>
+                          <span className={`ra-date-row-status ${booked ? "ra-date-row-status--taken" : ""}`}>
+                            {booked ? t("amenSlotBooked") : "✓"}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {selectedAmenity.type === "PAID" && (
+                    <div className="ra-booking-summary">
+                      <span>₹{selectedAmenity.rate_per_hour} × {rangeDates.length} {rangeDates.length === 1 ? t("amenDay", "day") : t("amenDays", "days")}</span>
+                      <strong>₹{Number(selectedAmenity.rate_per_hour || 0) * rangeDates.length}</strong>
+                    </div>
+                  )}
+
+                  <button type="button" className="ra-book-btn ra-book-btn--full" disabled={bookingLoading} onClick={bookSlot}>
+                    {bookingLoading ? <Spinner small /> : (
+                      `${t("amenBook", "Book")} ${rangeDates.length} ${rangeDates.length === 1 ? t("amenDay", "day") : t("amenDays", "days")}${selectedAmenity.type === "PAID" ? ` · ₹${Number(selectedAmenity.rate_per_hour || 0) * rangeDates.length}` : ""}`
+                    )}
+                  </button>
+                </>
+              ) : !paymentStatus ? (
+                <>
+                  <p className="ra-modal-label">{t("amenAvailableSlots")}</p>
+                  {slotsLoading ? (
+                    <div className="ra-loading">
+                      <span className="ra-spinner" /><span>{t("amenCheckingAvailability")}</span>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="ra-slots-grid">
+                        {slots.filter(filterFutureSlots).map((s, i) => {
+                          const isSelected = selectedSlots.some((sel) => sel.start_time === s.start_time);
+                          const bookable = s.available;
+                          return (
+                            <button key={i} disabled={!bookable || bookingLoading}
+                              onClick={() => toggleSlot(s)}
+                              className={`ra-slot ${bookable ? (isSelected ? "ra-slot--selected" : "ra-slot--available") : "ra-slot--taken"}`}>
+                              <span className="ra-slot-time">{s.start_time}</span>
+                              {!bookable && <span className="ra-slot-taken-label">{t("amenSlotBooked")}</span>}
+                              {bookable && isSelected && <span className="ra-slot-check">✓</span>}
+                            </button>
+                          );
+                        })}
+                      </div>
+                      {slotSpan && (
+                        <div className="ra-slot-span">
+                          <MdTimer size={16} style={{ color: "var(--accent)" }} />
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div className="ra-slot-span-label">{t("amenTotalTime", "Total time booked")}</div>
+                            <div className="ra-slot-span-value">{slotSpan.start} – {slotSpan.end}</div>
+                          </div>
+                          <span className="ra-slot-span-badge">{slotSpan.label}</span>
+                        </div>
+                      )}
+                      {selectedAmenity.type === "PAID" && (
+                        <div className="ra-booking-summary">
+                          {selectedSlots.length > 0 ? (
+                            <>
+                              <span>₹{selectedAmenity.rate_per_hour} × {selectedSlots.length} {selectedSlots.length === 1 ? t("amenSlot", "slot") : t("amenSlots", "slots")}</span>
+                              <strong>₹{Number(selectedAmenity.rate_per_hour || 0) * selectedSlots.length}</strong>
+                            </>
+                          ) : (
+                            <span>₹{selectedAmenity.rate_per_hour} / {t("amenPerHr")}</span>
+                          )}
+                        </div>
+                      )}
+                      {selectedSlots.length > 0 && (
+                        <button type="button" className="ra-book-btn ra-book-btn--full" disabled={bookingLoading} onClick={bookSlot}>
+                          {bookingLoading ? <Spinner small /> : (
+                            `${t("amenBook", "Book")} ${selectedSlots.length} ${selectedSlots.length > 1 ? t("amenSlots", "slots") : t("amenSlot", "slot")}${selectedAmenity.type === "PAID" ? ` · ₹${Number(selectedAmenity.rate_per_hour || 0) * selectedSlots.length}` : ""}`
+                          )}
+                        </button>
+                      )}
+                    </>
+                  )}
+                </>
+              ) : null}
+            </div>
+          </Modal>
+        )}
+
         {/* PASS MODAL */}
         {showPassModal && selectedBooking && (
           <Modal isOpen={showPassModal} onClose={() => setShowPassModal(false)}>
             {renderPassContent()}
+          </Modal>
+        )}
+
+        {/* ══════════════════════════════
+            DEMO UPI PAYMENT MODAL
+        ══════════════════════════════ */}
+        {showPaymentModal && paymentData && (
+          <Modal isOpen={showPaymentModal}
+            onClose={() => { setShowPaymentModal(false); setPaymentData(null); }}
+            title="Complete Payment">
+            <div className="ra-modal-inner" style={{ textAlign: "center" }}>
+
+              <div className="ra-pay-amount">₹{paymentData.amount}</div>
+              <p style={{ fontSize: 12, color: "var(--text-secondary)", marginBottom: 16 }}>
+                Scan the QR code or pay using UPI ID below
+              </p>
+
+              <div className="ra-pay-qr">
+                <QRCodeCanvas
+                  value={paymentData.upiLink}
+                  size={180}
+                  bgColor="#ffffff"
+                  fgColor="#1a1a2e"
+                  level="M"
+                  includeMargin={false}
+                />
+              </div>
+
+              <div className="ra-pay-divider">
+                <span>or pay via UPI ID</span>
+              </div>
+
+              <div className="ra-pay-upi-row">
+                <span className="ra-pay-upi-id">{paymentData.upiId}</span>
+                <button
+                  type="button"
+                  className="ra-pay-copy-btn"
+                  onClick={() => {
+                    navigator.clipboard.writeText(paymentData.upiId);
+                    setCopied(true);
+                    setTimeout(() => setCopied(false), 2000);
+                  }}>
+                  {copied ? <><MdCheck size={14} /> Copied</> : <><MdContentCopy size={14} /> Copy</>}
+                </button>
+              </div>
+
+              <button
+                type="button"
+                className="ra-pay-confirm-btn"
+                disabled={confirming}
+                onClick={confirmPayment}>
+                {confirming ? (
+                  <><Spinner small /> Confirming…</>
+                ) : (
+                  "I have paid"
+                )}
+              </button>
+
+              <p style={{ fontSize: 10, color: "var(--text-secondary)", marginTop: 10, opacity: 0.7 }}>
+                After payment, click the button above to confirm your booking.
+              </p>
+            </div>
           </Modal>
         )}
       </div>

@@ -432,7 +432,6 @@ export default function ResidentPreApproval() {
                 {t("preapValidDate")} <span className="text-red-400">*</span>
               </label>
               <div className="relative">
-                <MdCalendarToday size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-secondary pointer-events-none" />
                 <input
   type="date"
   value={form.valid_date}

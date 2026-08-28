@@ -15,6 +15,7 @@ export default function Modal({
     md: "max-w-md",
     lg: "max-w-lg",
     xl: "max-w-xl",
+    xxl: "max-w-[1100px] w-[95vw] min-h-[650px]",
   };
 
   return createPortal(
@@ -28,7 +29,7 @@ export default function Modal({
 
       {/* Modal Box */}
       <div
-        className={`relative w-full ${sizeClass[size]} bg-card rounded-xl p-6 animate-scaleIn max-h-[90vh] overflow-y-auto`}
+        className={`relative w-full ${sizeClass[size]} bg-card rounded-xl p-6 animate-scaleIn max-h-[90vh] overflow-y-auto overflow-x-hidden`}
       >
         {/* er */}
         <div className="flex justify-between items-center mb-4">
