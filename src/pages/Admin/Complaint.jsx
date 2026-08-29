@@ -1,4 +1,3 @@
-
 import { useEffect, useState, useRef, useContext, useCallback, useMemo } from "react";
 import { createPortal } from "react-dom";
 import API from "../../services/api";
@@ -7,12 +6,16 @@ import { useLang } from "../../context/LanguageContext";
 import { getSocket } from "../../services/socket";
 import {
   MdReportProblem, MdSearch, MdClose, MdOutlineInbox,
-  MdImage, MdOpenInNew, MdPerson, MdApartment,
+  MdImage, MdOpenInNew, MdPerson, MdApartment, MdDoorFront, MdStairs,
   MdCheckCircle, MdSchedule, MdPending, MdCalendarToday,
   MdChat, MdSend, MdDelete,
   MdChevronLeft, MdChevronRight,
+  MdPublic, MdVisibility, MdDownload, MdAttachFile,
+  MdFilePresent, MdFilterAlt, MdRefresh, MdMoreHoriz,
 } from "react-icons/md";
+import { toast } from "react-toastify";
 import Select from "../../components/common/Select";
+import styles from "./Complaint.module.css";
 
 /* ── Pagination ── */
 function Pagination({ page, totalPages, onPageChange }) {
@@ -142,57 +145,35 @@ const getDot = (s) => ({
   RESOLVED: "#22c55e", IN_PROGRESS: "#9F87D7", PENDING: "#f59e0b", OPEN: "#f59e0b",
 }[s] || "#f59e0b");
 
+/* Drawer actions — uses existing updateStatus handler */
 function ActionButtons({ c, updateStatus, updatingId, t }) {
   const isPending    = c.status === "OPEN" || c.status === "PENDING";
   const isInProgress = c.status === "IN_PROGRESS";
   const isResolved   = c.status === "RESOLVED";
   const busy = updatingId === c.id;
   if (isResolved) return (
-    <span className="action-btn-resolved"><MdCheckCircle size={14} /> {t("adminCompCompleted")}</span>
+    <div className={styles.doneChip}><MdCheckCircle size={15} /> {t("adminCompCompleted") || "Completed"}</div>
   );
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 8, width: "100%" }}>
+    <div className={styles.actionsBar}>
       {isPending && (
-        <button className="action-btn-inprogress" onClick={() => updateStatus(c.id, "IN_PROGRESS")} disabled={busy}>
-          {busy ? <Spinner /> : <><MdSchedule size={14} /> {t("adminCompMarkInProgress")}</>}
+        <button className={`${styles.drawerActionBtn} ${styles.progressAction}`}
+          onClick={() => updateStatus(c.id, "IN_PROGRESS")} disabled={busy}>
+          {busy ? <Spinner small /> : <><MdSchedule size={15} /> {t("adminCompMarkInProgress")}</>}
         </button>
       )}
       {isInProgress && (
-        <button className="action-btn-resolve" onClick={() => updateStatus(c.id, "RESOLVED")} disabled={busy}>
-          {busy ? <Spinner /> : <><MdCheckCircle size={14} /> {t("adminCompMarkResolved")}</>}
+        <button className={`${styles.drawerActionBtn} ${styles.resolveAction}`}
+          onClick={() => updateStatus(c.id, "RESOLVED")} disabled={busy}>
+          {busy ? <Spinner small /> : <><MdCheckCircle size={15} /> {t("adminCompMarkResolved")}</>}
         </button>
       )}
     </div>
   );
 }
 
-function ActionButtonsInline({ c, updateStatus, updatingId, t }) {
-  const isPending    = c.status === "OPEN" || c.status === "PENDING";
-  const isInProgress = c.status === "IN_PROGRESS";
-  const isResolved   = c.status === "RESOLVED";
-  const busy = updatingId === c.id;
-  if (isResolved) return (
-    <span className="action-btn-resolved"><MdCheckCircle size={13} /> {t("adminCompCompleted")}</span>
-  );
-  return (
-    <>
-      {isPending && (
-        <button className="action-btn-inprogress" style={{ width: "auto", padding: "7px 14px" }}
-          onClick={() => updateStatus(c.id, "IN_PROGRESS")} disabled={busy}>
-          {busy ? <Spinner /> : <><MdSchedule size={13} /> {t("adminCompMarkInProgress")}</>}
-        </button>
-      )}
-      {isInProgress && (
-        <button className="action-btn-resolve" style={{ width: "auto", padding: "7px 14px" }}
-          onClick={() => updateStatus(c.id, "RESOLVED")} disabled={busy}>
-          {busy ? <Spinner /> : <><MdCheckCircle size={13} /> {t("adminCompMarkResolved")}</>}
-        </button>
-      )}
-    </>
-  );
-}
-
-// ── ChatPanel ─────────────────────────────────────────────────────────────────
+/* ── ChatPanel ─────────────────────────────────────────────────────────────────
+   Kept exactly as-is — all comment logic / socket events are unchanged. */
 function ChatPanel({ complaintId, societyId, currentUser, onIncomingMessage }) {
   const isSuperAdmin = currentUser?.activeRole === "SUPER_ADMIN";
   const headers = (isSuperAdmin && societyId) ? { "x-society-id": societyId } : {};
@@ -383,7 +364,7 @@ function ChatPanel({ complaintId, societyId, currentUser, onIncomingMessage }) {
         padding: "6px 10px", borderRadius: 8, fontSize: 12, fontWeight: 500,
         background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.15)",
         maxWidth: 220, overflow: "hidden" }}>
-        <span style={{ fontSize: 16, flexShrink: 0 }}>📄</span>
+        <MdFilePresent size={17} style={{ flexShrink: 0, opacity: 0.85 }} />
         <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
           flex: 1, color: "inherit", fontSize: 11 }}>
           {attachment_name || "Attachment"}
@@ -392,13 +373,13 @@ function ChatPanel({ complaintId, societyId, currentUser, onIncomingMessage }) {
           onClick={() => setFilePreview({ url: attachment_url, name: attachment_name, previewUrl })}
           title={t("docView")}
           style={{ background: "none", border: "none", cursor: "pointer", color: "inherit",
-            fontSize: 13, opacity: 0.85, display: "flex", alignItems: "center", flexShrink: 0, padding: 0 }}>
-          👁
+            display: "flex", alignItems: "center", flexShrink: 0, padding: 0, opacity: 0.9 }}>
+          <MdVisibility size={14} />
         </button>
         <a href={attachment_url} download={attachment_name || "attachment"} title={t("docDownload")}
-          style={{ color: "inherit", fontSize: 14, opacity: 0.8, display: "flex",
+          style={{ color: "inherit", opacity: 0.85, display: "flex",
             alignItems: "center", flexShrink: 0, textDecoration: "none" }}>
-          ↓
+          <MdDownload size={14} />
         </a>
       </div>
     );
@@ -490,7 +471,7 @@ function ChatPanel({ complaintId, societyId, currentUser, onIncomingMessage }) {
             <img src={attachPrev} alt="preview"
               style={{ width: 36, height: 36, borderRadius: 6, objectFit: "cover", border: "1px solid var(--glass-border)" }} />
           ) : (
-            <span style={{ fontSize: 22 }}>📄</span>
+            <MdFilePresent size={22} style={{ color: "var(--text-secondary)" }} />
           )}
           <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
             color: "var(--text-primary)", fontSize: 11 }}>
@@ -514,7 +495,7 @@ function ChatPanel({ complaintId, societyId, currentUser, onIncomingMessage }) {
             color: attachment ? "#fff" : "var(--text-secondary)",
             display: "flex", alignItems: "center", justifyContent: "center",
             cursor: "pointer", transition: "all 0.15s" }}>
-          <span style={{ fontSize: 15 }}>📎</span>
+          <MdAttachFile size={17} />
         </button>
         <textarea ref={inputRef} rows={1} className="chat-panel__textarea"
           placeholder={attachment ? t("compPhotoAttached") : t("chatEmpty")}
@@ -561,14 +542,14 @@ function ChatPanel({ complaintId, societyId, currentUser, onIncomingMessage }) {
               <span style={{ color: "white", fontSize: 13, fontWeight: 600,
                 display: "flex", alignItems: "center", gap: 6,
                 overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "60%" }}>
-                📄 {filePreview.name}
+                <MdFilePresent size={15} /> {filePreview.name}
               </span>
               <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
                 <a href={filePreview.url} download={filePreview.name}
                   style={{ padding: "6px 14px", borderRadius: 999, fontSize: 12, fontWeight: 600,
                     color: "white", background: "rgba(255,255,255,0.12)", textDecoration: "none",
                     display: "flex", alignItems: "center", gap: 5 }}>
-                  ↓ {t("docDownload")}
+                  <MdDownload size={13} /> {t("docDownload")}
                 </a>
                 <button onClick={() => setFilePreview(null)}
                   style={{ width: 34, height: 34, borderRadius: "50%", background: "rgba(255,255,255,0.12)",
@@ -585,14 +566,15 @@ function ChatPanel({ complaintId, societyId, currentUser, onIncomingMessage }) {
               <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center",
                 justifyContent: "center", gap: 14, background: "rgba(255,255,255,0.04)",
                 borderRadius: 12, border: "1px solid rgba(255,255,255,0.1)" }}>
-                <span style={{ fontSize: 48 }}>📄</span>
+                <MdFilePresent size={52} style={{ color: "rgba(255,255,255,0.35)" }} />
                 <p style={{ color: "rgba(255,255,255,0.5)", fontSize: 13, margin: 0 }}>
                   Preview unavailable — download to open
                 </p>
                 <a href={filePreview.url} download={filePreview.name}
                   style={{ padding: "8px 20px", borderRadius: 999, background: "var(--accent)",
-                    color: "white", fontSize: 13, fontWeight: 600, textDecoration: "none" }}>
-                  ↓ Download file
+                    color: "white", fontSize: 13, fontWeight: 600, textDecoration: "none",
+                    display: "inline-flex", alignItems: "center", gap: 6 }}>
+                  <MdDownload size={14} /> {t("docDownload")}
                 </a>
               </div>
             )}
@@ -604,126 +586,227 @@ function ChatPanel({ complaintId, societyId, currentUser, onIncomingMessage }) {
   );
 }
 
-// ── FlatInfoBlock — reusable detailed flat display in the drawer ───────────────
+/* ── FlatInfoBlock — reusable Block/Floor/Flat display in the drawer ────────── */
 function FlatInfoBlock({ c, t }) {
   const flat = resolveFlatObj(c);
   if (!flat) {
-    return (
-      <span style={{ fontSize: 13, color: "var(--text-secondary)", opacity: 0.6 }}>NA</span>
-    );
+    return <span style={{ fontSize: 13, color: "var(--text-secondary)", opacity: 0.6 }}>NA</span>;
   }
 
   const block    = flat.Block?.name   || flat.block_name   || null;
   const flatNum  = flat.flat_number   || null;
   const floorNum = flat.floor_number  ?? flat.Floor?.floor_number ?? null;
 
-  const rows = [
-    block    && { icon: "🏢", label: t("blockLabel") || "Block",    value: `${t("blockLabel") || "Block"} ${block}` },
-    flatNum  && { icon: "🚪", label: t("flatLabel") || "Flat",     value: `${t("flatLabel") || "Flat"} ${flatNum}` },
-    floorNum !== null && floorNum !== undefined
-               && { icon: "🏗️", label: t("floorLabel") || "Floor", value: `${t("floorLabel") || "Floor"} ${floorNum}` },
-  ].filter(Boolean);
+  const cells = [];
+  if (block) {
+    const label = t("blockLabel") || "Block";
+    cells.push({ key: "block", label, value: `${label} ${block}` });
+  }
+  if (flatNum) {
+    const label = t("flatLabel") || "Flat";
+    cells.push({ key: "flat", label, value: `${label} ${flatNum}` });
+  }
+  if (floorNum !== null && floorNum !== undefined) {
+    const label = t("floorLabel") || "Floor";
+    cells.push({ key: "floor", label, value: `${label} ${floorNum}` });
+  }
 
-  if (rows.length === 0) return (
-    <span style={{ fontSize: 13, color: "var(--text-secondary)", opacity: 0.6 }}>NA</span>
-  );
+  if (cells.length === 0) {
+    return <span style={{ fontSize: 13, color: "var(--text-secondary)", opacity: 0.6 }}>NA</span>;
+  }
 
   return (
-    <div style={{ display: "flex", flexWrap: "wrap", gap: "6px 14px" }}>
-      {rows.map(({ icon, label, value }) => (
-        <span key={label} style={{
-          display: "inline-flex", alignItems: "center", gap: 5,
-          padding: "4px 10px", borderRadius: 8,
-          background: "var(--card-inner-bg)", border: "1px solid var(--glass-border)",
-          fontSize: 12, fontWeight: 600, color: "var(--text-primary)",
-        }}>
-          <span style={{ fontSize: 13 }}>{icon}</span> {value}
-        </span>
+    <div className={styles.valueGrid}>
+      {cells.map(({ key, label, value }) => (
+        <div key={key} className={styles.metaCell}>
+          <div className={styles.metaLabel}>{label}</div>
+          <div className={styles.metaValue}>{value}</div>
+        </div>
       ))}
     </div>
   );
 }
 
-// ── Mobile card ───────────────────────────────────────────────────────────────
-function MobileComplaintCard({ c, updateStatus, updatingId, t, onOpen, onPhotoClick, unreadMap }) {
+/* ── Row actions ───────────────────────────────────────────────────────────────
+   A single ⋮ (kebab) button in the final ACTIONS column. The dropdown is
+   portal-rendered to <body> at fixed coordinates so it is never clipped by
+   the table's scroll container. All actions call the existing handlers. */
+function ComplaintRowMenu({ c, updatingId, unread, commentCount, onView, onMessages, updateStatus, t }) {
+  const [open, setOpen] = useState(false);
+  const [pos, setPos]   = useState(null);
+  const btnRef  = useRef(null);
+  const menuRef = useRef(null);
+
+  const isPending    = c.status === "OPEN" || c.status === "PENDING";
+  const isResolved   = c.status === "RESOLVED";
+  const busy = updatingId === c.id;
+
+  const openMenu = () => {
+    const r = btnRef.current?.getBoundingClientRect();
+    if (r) setPos({ top: r.bottom + 6, right: window.innerWidth - r.right });
+    setOpen(true);
+  };
+
+  const closeMenu = () => { setOpen(false); setPos(null); };
+
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e) => {
+      if (btnRef.current?.contains(e.target)) return;
+      if (menuRef.current?.contains(e.target)) return;
+      closeMenu();
+    };
+    const onKey = (e) => { if (e.key === "Escape") closeMenu(); };
+    const onScroll = () => closeMenu();
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onKey);
+    window.addEventListener("scroll", onScroll, true);
+    window.addEventListener("resize", onScroll);
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("keydown", onKey);
+      window.removeEventListener("scroll", onScroll, true);
+      window.removeEventListener("resize", onScroll);
+    };
+  }, [open]);
+
+  const run = (fn) => { closeMenu(); fn(); };
+
   return (
-    <div onClick={() => onOpen(c, "details")}
-      style={{ background: "var(--card-bg)", border: "1.5px solid var(--glass-border)",
-        borderRadius: 18, overflow: "hidden", cursor: "pointer",
-        boxShadow: "var(--shadow-sm)", transition: "box-shadow 0.2s" }}>
-      <div style={{ height: 3, background: getDot(c.status) }} />
-      <div style={{ padding: "14px 16px", display: "flex", flexDirection: "column", gap: 10 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
-          <p style={{ fontWeight: 700, fontSize: 14, color: "var(--text-primary)", margin: 0, flex: 1, lineHeight: 1.3 }}>
-            {c.title}
-          </p>
+    <div className={styles.menuWrap} onClick={e => e.stopPropagation()}>
+      <button ref={btnRef} className={`${styles.menuBtn} ${open ? styles.menuBtnOpen : ""}`}
+        onClick={() => (open ? closeMenu() : openMenu())}
+        title={t("compActions")} aria-haspopup="menu" aria-expanded={open}>
+        <MdMoreHoriz size={19} />
+        {(unread || 0) > 0 && <span className={styles.menuDot} />}
+      </button>
+
+      {open && createPortal(
+        <div ref={menuRef} className={styles.menuDropdown} style={{ top: pos.top, right: pos.right }} role="menu">
+          <button className={styles.menuItem} role="menuitem" onClick={() => run(onView)}>
+            <span className={styles.menuItemIcon}><MdVisibility size={15} /></span>
+            {t("compViewDetails")}
+          </button>
+          <button
+            className={`${styles.menuItem} ${(unread || 0) > 0 ? styles.menuItemUnread : ""}`}
+            role="menuitem" onClick={() => run(onMessages)}>
+            <span className={styles.menuItemIcon}><MdChat size={15} /></span>
+            {t("compViewMessages")}
+            {commentCount != null && (
+              <span className={styles.menuItemCount}>{commentCount}</span>
+            )}
+          </button>
+          {!isResolved && <div className={styles.menuSep} />}
+          {isResolved ? (
+            <div className={styles.menuItem} role="menuitem" aria-disabled="true" style={{ cursor: "default" }}>
+              <span className={styles.menuItemIcon} style={{ color: "#4ade80" }}><MdCheckCircle size={15} /></span>
+              {t("adminCompCompleted")}
+            </div>
+          ) : (
+            <button
+              className={`${styles.menuItem} ${isPending ? styles.menuItemProgress : styles.menuItemResolve}`}
+              role="menuitem" disabled={busy} onClick={() => run(() => updateStatus(c.id, isPending ? "IN_PROGRESS" : "RESOLVED"))}>
+              <span className={styles.menuItemIcon}>{isPending ? <MdSchedule size={15} /> : <MdCheckCircle size={15} />}</span>
+              {busy ? <Spinner small /> : isPending
+                ? t("adminCompMarkInProgress")
+                : t("adminCompMarkResolved")}
+            </button>
+          )}
+        </div>,
+        document.body
+      )}
+    </div>
+  );
+}
+
+/* ── Mobile card ─────────────────────────────────────────────────────────────── */
+function MobileComplaintCard({ c, updateStatus, updatingId, t, onOpen, onPhotoClick, unreadMap, commentCount }) {
+  return (
+    <div onClick={() => onOpen(c, "details")} className={styles.mcard}>
+      <div className={styles.mcardBody}>
+        <div className={styles.mcardTop}>
+          <div className={styles.mcardTitleBlock}>
+            <span style={{ width: 8, height: 8, borderRadius: "50%", background: getDot(c.status), flexShrink: 0 }} />
+            <p className={styles.mcardTitle}>{c.title}</p>
+          </div>
           <StatusPill status={c.status} t={t} />
         </div>
-        {c.description && (
-          <p style={{ fontSize: 12, color: "var(--text-secondary)", margin: 0, lineHeight: 1.5,
-            overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>
-            {c.description}
-          </p>
-        )}
+        {c.description && <p className={styles.mcardDesc}>{c.description}</p>}
+
         {c.photo_url && (
-          <div onClick={e => { e.stopPropagation(); onPhotoClick(c.photo_url, c.title); }}
-            style={{ borderRadius: 12, overflow: "hidden", border: "1.5px solid var(--glass-border)",
-              position: "relative", cursor: "pointer" }}>
-            <img src={c.photo_url} alt="complaint" style={{ width: "100%", display: "block", objectFit: "cover", maxHeight: 160 }} />
-            <div style={{ position: "absolute", bottom: 6, right: 8, display: "flex", alignItems: "center", gap: 4,
-              background: "rgba(0,0,0,0.55)", borderRadius: 6, padding: "2px 7px", backdropFilter: "blur(4px)" }}>
-              <MdOpenInNew size={11} style={{ color: "#fff" }} />
-              <span style={{ fontSize: 10, color: "#fff", fontWeight: 600 }}>{t("noticesView") || "View"}</span>
-            </div>
+          <div className={styles.mcardImgWrap} onClick={e => { e.stopPropagation(); onPhotoClick(c.photo_url, c.title); }}>
+            <img src={c.photo_url} alt="complaint" className={styles.mcardThumb} />
           </div>
         )}
-        <div style={{ display: "flex", flexWrap: "wrap", gap: "4px 12px" }}>
-          <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, color: "var(--text-secondary)" }}>
-            <MdPerson size={13} style={{ color: "var(--accent)" }} /> {c.User?.name || "NA"}
-          </span>
-          <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, color: "var(--text-secondary)" }}>
-            <MdApartment size={13} style={{ color: "var(--accent)" }} /> {flatLabel(c, t)}
-          </span>
+
+        <div className={styles.mcardMeta}>
+          <span className={styles.mcardMetaItem}><MdPerson size={13} style={{ color: "var(--accent)" }} /> <span className={styles.mcardMetaVal}>{c.User?.name || "NA"}</span></span>
+          <span className={styles.mcardMetaItem}><MdApartment size={13} style={{ color: "var(--accent)" }} /> <span className={styles.mcardMetaVal}>{flatLabel(c, t)}</span></span>
           {c.Society && (
-            <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: "var(--text-secondary)", opacity: 0.8 }}>
-              🏢 <span style={{ fontWeight: 600 }}>{c.Society.name}</span>
-            </span>
+            <span className={styles.mcardMetaItem}><MdPublic size={12} style={{ color: "var(--accent)" }} /> <span className={styles.mcardMetaVal}>{c.Society.name}</span></span>
           )}
-          <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: "var(--text-secondary)", opacity: 0.7 }}>
-            <MdCalendarToday size={11} /> {formatDate(c.created_at)}
-          </span>
+          <span className={styles.mcardMetaItem}><MdCalendarToday size={12} /> {formatDate(c.created_at)}</span>
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between",
-          paddingTop: 6, borderTop: "1px solid var(--glass-border)", gap: 8 }}
-          onClick={e => e.stopPropagation()}>
-          <div style={{ flex: 1 }}>
-            <ActionButtons c={c} updateStatus={updateStatus} updatingId={updatingId} t={t} />
-          </div>
-          <div style={{ position: "relative", flexShrink: 0 }}>
-            {(unreadMap[c.id] || 0) > 0 && (
-              <span style={{ position: "absolute", top: -8, right: -8, minWidth: 18, height: 18,
-                borderRadius: "50%", background: "linear-gradient(135deg,#ef4444,#dc2626)",
-                color: "#fff", fontSize: 10, fontWeight: 800, display: "flex",
-                alignItems: "center", justifyContent: "center", padding: "0 4px",
-                border: "2px solid var(--card-bg)", boxShadow: "0 2px 8px rgba(239,68,68,0.55)",
-                zIndex: 2, lineHeight: 1,
-                animation: "admin-badge-pop 0.4s cubic-bezier(0.34,1.56,0.64,1) both" }}>
-                {unreadMap[c.id] > 99 ? "99+" : unreadMap[c.id]}
-              </span>
-            )}
-            <button onClick={() => onOpen(c, "chat")}
-              className={`rcr-discuss-btn ${(unreadMap[c.id] || 0) > 0 ? "rcr-discuss-btn--shake" : ""}`}>
-              <MdChat size={13} /><span>{t("chatDiscussion")}</span>
-            </button>
-          </div>
+        <div className={styles.mcardFooter} onClick={e => e.stopPropagation()}>
+          <ComplaintRowMenu
+            c={c}
+            updatingId={updatingId}
+            unread={unreadMap[c.id] || 0}
+            commentCount={commentCount}
+            onView={() => onOpen(c, "details")}
+            onMessages={() => onOpen(c, "chat")}
+            updateStatus={updateStatus}
+            t={t}
+          />
         </div>
       </div>
     </div>
   );
 }
 
-// ── Main ──────────────────────────────────────────────────────────────────────
+/* ── Skeletons ───────────────────────────────────────────────────────────────── */
+function SkeletonStats() {
+  return (
+    <div className={styles.stats}>
+      {[0, 1, 2, 3].map(i => <div key={i} className={`${styles.skel} ${styles.skelStat}`} />)}
+    </div>
+  );
+}
+function SkeletonToolbar() {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 12, padding: "14px 16px", borderBottom: "1px solid var(--glass-border)" }}>
+      <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+        <div className={`${styles.skel} ${styles.skelToolbar}`} style={{ flexBasis: "300px", flexShrink: 1, flexGrow: 1 }} />
+        <div className={`${styles.skel} ${styles.skelToolbar}`} style={{ flexBasis: "110px", flexGrow: 0 }} />
+      </div>
+      <div className={`${styles.skel} ${styles.skelTabs}`} />
+    </div>
+  );
+}
+function SkeletonRows() {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 10, padding: 14 }}>
+      {[0, 1, 2, 3, 4].map(i => (
+        <div key={i} className={styles.skelRow}>
+          <div style={{ padding: "0 14px", height: "100%", display: "flex", alignItems: "center", gap: 12 }}>
+            <div className={`${styles.skel} ${styles.skelCell}`} style={{ width: 40, height: 38 }} />
+            <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 7 }}>
+              <div className={`${styles.skel} ${styles.skelCell}`} style={{ width: "55%" }} />
+              <div className={`${styles.skel} ${styles.skelCell}`} style={{ width: "32%" }} />
+            </div>
+            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+              <div className={`${styles.skel} ${styles.skelCell}`} style={{ width: 120, height: 32 }} />
+              <div className={`${styles.skel} ${styles.skelCell}`} style={{ width: 90, height: 32 }} />
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* ── Main ────────────────────────────────────────────────────────────────────── */
 export default function Complaint() {
   const isMobile           = useIsMobile();
   const { t }              = useLang();
@@ -731,6 +814,7 @@ export default function Complaint() {
 
   const [complaints,    setComplaints]    = useState([]);
   const [loading,       setLoading]       = useState(false);
+  const [loadError,     setLoadError]     = useState(false);
   const [updatingId,    setUpdatingId]    = useState(null);
   const [searchQuery,   setSearchQuery]   = useState("");
   const debSearch = useDebounce(searchQuery, 500);
@@ -742,6 +826,12 @@ export default function Complaint() {
   const [selected,      setSelected]      = useState(null);
   const [drawerTab,     setDrawerTab]     = useState("details");
   const [unreadMap,     setUnreadMap]     = useState({});
+  const [filtersOpen,   setFiltersOpen]   = useState(false);
+
+  /* Lazy comment counts — real data from the existing comments endpoint,
+     cached per complaint so we never refetch across page turns. */
+  const [commentCounts, setCommentCounts] = useState({});
+  const commentCountsRef = useRef({});
 
   /* ── Pagination State ── */
   const [page,       setPage]       = useState(1);
@@ -836,6 +926,7 @@ export default function Complaint() {
   const loadComplaints = useCallback(async (pg = 1, q = debSearch, f = filterStatus) => {
     try {
       setLoading(true);
+      setLoadError(false);
       const params = {
         page: pg,
         limit: LIMIT,
@@ -846,7 +937,7 @@ export default function Complaint() {
         flat_id:  filterFlatId,
       };
       const headers = (isSuperAdmin && filterSocietyId) ? { "x-society-id": filterSocietyId } : {};
-      
+
       const response = await API.get("/complaints", { params, headers });
       const complaintsArray = Array.isArray(response.data?.data)
         ? response.data.data
@@ -864,6 +955,7 @@ export default function Complaint() {
       });
     } catch (error) {
       console.error("Error loading complaints:", error);
+      setLoadError(true);
     } finally {
       setLoading(false);
     }
@@ -900,6 +992,8 @@ export default function Complaint() {
     const onDeleted = ({ complaint_id }) => {
       setComplaints(prev => prev.filter(c => String(c.id) !== String(complaint_id)));
       setUnreadMap(prev => { const n = { ...prev }; delete n[complaint_id]; return n; });
+      setCommentCounts(prev => { const n = { ...prev }; delete n[complaint_id]; return n; });
+      delete commentCountsRef.current[complaint_id];
       if (String(selectedRef.current?.id) === String(complaint_id)) setSelected(null);
     };
     socket.on("complaint_deleted", onDeleted);
@@ -920,10 +1014,53 @@ export default function Complaint() {
         ...m,
         [comment.complaint_id]: (m[comment.complaint_id] || 0) + 1,
       }));
+      setCommentCounts(m =>
+        m[comment.complaint_id] !== undefined
+          ? { ...m, [comment.complaint_id]: m[comment.complaint_id] + 1 }
+          : m
+      );
+    };
+    const onCommentDeleted = ({ complaint_id }) => {
+      setCommentCounts(m =>
+        m[complaint_id] !== undefined && m[complaint_id] > 0
+          ? { ...m, [complaint_id]: m[complaint_id] - 1 }
+          : m
+      );
+    };
+    const onCommentsCleared = ({ complaint_id }) => {
+      setCommentCounts(m =>
+        m[complaint_id] !== undefined ? { ...m, [complaint_id]: 0 } : m
+      );
     };
     socket.on("new_complaint_comment", handler);
-    return () => socket.off("new_complaint_comment", handler);
+    socket.on("complaint_comment_deleted", onCommentDeleted);
+    socket.on("complaint_comments_cleared", onCommentsCleared);
+    return () => {
+      socket.off("new_complaint_comment", handler);
+      socket.off("complaint_comment_deleted", onCommentDeleted);
+      socket.off("complaint_comments_cleared", onCommentsCleared);
+    };
   }, [authUser]);
+
+  // Fetch comment counts for the currently displayed complaints (real data, cached)
+  useEffect(() => {
+    const toFetch = complaints.filter(c => commentCountsRef.current[c.id] === undefined);
+    if (!toFetch.length) return;
+    toFetch.forEach(c => {
+      commentCountsRef.current[c.id] = null;
+      const headers = (isSuperAdmin && c?.society_id) ? { "x-society-id": c.society_id } : {};
+      API.get(`/complaints/${c.id}/comments`, { headers })
+        .then(res => {
+          const n = Array.isArray(res.data) ? res.data.length : 0;
+          commentCountsRef.current[c.id] = n;
+          setCommentCounts(prev => (prev[c.id] === n ? prev : { ...prev, [c.id]: n }));
+        })
+        .catch(() => {
+          commentCountsRef.current[c.id] = 0;
+          setCommentCounts(prev => ({ ...prev, [c.id]: 0 }));
+        });
+    });
+  }, [complaints, isSuperAdmin]);
 
   useEffect(() => {
     const socket = getSocket();
@@ -952,11 +1089,11 @@ export default function Complaint() {
       // Determine society context for the complaint
       const complaint = complaints.find(c => c.id === id);
       const headers = (isSuperAdmin && complaint?.society_id) ? { "x-society-id": complaint.society_id } : {};
-      
+
       await API.put(`/complaints/${id}`, { status }, { headers });
       setComplaints(prev => prev.map(c => c.id === id ? { ...c, status } : c));
       setSelected(prev => prev?.id === id ? { ...prev, status } : prev);
-    } catch (e) { 
+    } catch (e) {
       console.error(e);
       toast.error(e.response?.data?.message || "Failed to update status");
     }
@@ -979,29 +1116,85 @@ export default function Complaint() {
   const hasDateFilter = dateFrom || dateTo;
   const clearDate     = () => { setDateFrom(""); setDateTo(""); };
 
+  const clearAllFilters = () => {
+    setSearchQuery("");
+    setFilterStatus("ALL");
+    setFilterSocietyId("");
+    setFilterBlockId("");
+    setFilterFloorId("");
+    setFilterFlatId("");
+    clearDate();
+  };
+
   const handlePageChange = (p) => loadComplaints(p, debSearch, filterStatus);
 
+  const exportCSV = () => {
+    const escapeCell = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+    const headers = [
+      t("compColTitle"), t("compColDesc"), t("reportResident"), t("reportFlat"),
+      t("reportSociety"), t("billStatusCol"), t("compSubmittedAt"),
+    ];
+    const body = complaints.map(c => [
+      c.title,
+      c.description || "",
+      c.User?.name || "",
+      flatLabel(c, t),
+      c.Society?.name || "",
+      c.status,
+      formatDate(c.created_at),
+    ].map(escapeCell).join(","));
+    const csv = [headers.map(escapeCell).join(","), ...body].join("\n");
+    const blob = new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `complaints-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   const TABS = [
-    { key: "ALL",         label: t("compTabAll"),         shortLabel: t("compTabAll"),        count: counts.ALL,         color: "#5A3BA2" },
-    { key: "PENDING",     label: t("compStatusPending"),  shortLabel: t("compStatusPending"), count: counts.PENDING,     color: "#d97706" },
-    { key: "IN_PROGRESS", label: t("compTabInProgress"),  shortLabel: t("adminCompActive"),   count: counts.IN_PROGRESS, color: "#5A3BA2" },
-    { key: "RESOLVED",    label: t("compStatusResolved"), shortLabel: t("adminCompDone"),     count: counts.RESOLVED,    color: "#16a34a" },
+    { key: "ALL",         label: t("compTabAll"),        shortLabel: t("compTabAll"),        count: counts.ALL },
+    { key: "PENDING",     label: t("compStatusPending"), shortLabel: t("compStatusPending"), count: counts.PENDING },
+    { key: "IN_PROGRESS", label: t("compTabInProgress"), shortLabel: t("adminCompActive"),   count: counts.IN_PROGRESS },
+    { key: "RESOLVED",    label: t("compStatusResolved"), shortLabel: t("adminCompDone"),    count: counts.RESOLVED },
   ];
 
   const STATS = [
-    { label: t("compStatTotal"),      val: counts.ALL,         cls: "complaint-stat-total"      },
-    { label: t("compStatusPending"),  val: counts.PENDING,     cls: "complaint-stat-pending"    },
-    { label: t("compTabInProgress"),  val: counts.IN_PROGRESS, cls: "complaint-stat-inprogress" },
-    { label: t("compStatusResolved"), val: counts.RESOLVED,    cls: "complaint-stat-resolved"   },
+    { key: "total",      label: t("compStatTotal"),      note: t("compStatSubTotal"),    val: counts.ALL,         color: "#F0845D" },
+    { key: "pending",    label: t("compStatusPending"),  note: t("compStatSubPending"),  val: counts.PENDING,     color: "#f59e0b" },
+    { key: "inprogress", label: t("compTabInProgress"),  note: t("compStatSubProgress"), val: counts.IN_PROGRESS, color: "#9F87D7" },
+    { key: "resolved",   label: t("compStatusResolved"), note: t("compStatSubResolved"), val: counts.RESOLVED,    color: "#22c55e" },
   ];
 
-  const filtered = complaints; // Backend handles filtering now, though frontend 'filtered' is still used in UI loop.
-  // Note: Local filtering for search query / status tabs / date could be kept if we want instant feedback, 
-  // but usually with pagination we let backend handle it. 
-  // For now, I'll keep the frontend filter logic if it doesn't conflict, 
-  // but actually it's better to let backend handle searching too if we want correct pagination.
-  // BUT the existing code already has 'filtered' logic using state. 
-  // I'll leave it as is for now since it works on the current page's data.
+  const activeChips = useMemo(() => {
+    const chips = [];
+    if (isSuperAdmin && filterSocietyId) {
+      const s = societiesList.find(x => String(x.id) === String(filterSocietyId));
+      chips.push({ id: "society", label: t("reportSociety") || "Society", value: s?.name || filterSocietyId, remove: () => setFilterSocietyId("") });
+    }
+    if (filterBlockId) {
+      const b = blocksList.find(x => String(x.id) === String(filterBlockId));
+      chips.push({ id: "block", label: t("blockLabel") || "Block", value: b?.name || filterBlockId, remove: () => setFilterBlockId("") });
+    }
+    if (filterFloorId) {
+      const f = floorsList.find(x => String(x.id) === String(filterFloorId));
+      chips.push({ id: "floor", label: t("floorLabel") || "Floor", value: f ? String(f.floor_number) : filterFloorId, remove: () => setFilterFloorId("") });
+    }
+    if (filterFlatId) {
+      const fl = flatsList.find(x => String(x.id) === String(filterFlatId));
+      chips.push({ id: "flat", label: t("flatLabel") || "Flat", value: fl?.flat_number || filterFlatId, remove: () => setFilterFlatId("") });
+    }
+    if (hasDateFilter) {
+      chips.push({ id: "date", label: t("compDate") || "Date", value: `${dateFrom ? formatDate(dateFrom) : "…"} – ${dateTo ? formatDate(dateTo) : "…"}`, remove: clearDate });
+    }
+    return chips;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isSuperAdmin, filterSocietyId, filterBlockId, filterFloorId, filterFlatId, hasDateFilter, dateFrom, dateTo, societiesList, blocksList, floorsList, flatsList]);
+
+  const filtered = complaints; // Backend handles filtering/pagination.
 
   const tabBtn = (key) => ({
     flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 5,
@@ -1013,311 +1206,297 @@ export default function Complaint() {
   });
 
   return (
-    <>
-      <style>{`
-        @keyframes admin-badge-pop {
-          0%   { transform: scale(0); opacity: 0; }
-          70%  { transform: scale(1.25); opacity: 1; }
-          100% { transform: scale(1); opacity: 1; }
-        }
-      `}</style>
-
-      <div className="page-root animate-fadeIn">
-        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-          <div className="er-icon er-icon--complaint"><MdReportProblem size={22} /></div>
-          <div>
-            <h2 className="page-title">{t("adminCompTitle")}</h2>
-            <p className="page-subtitle">{totalItems} {t("adminCompTotal")}</p>
+    <div className={`page-root comp-page animate-fadeIn ${styles.page}`}>
+      {/* ── 1. PAGE HEADER ─────────────────────────────────────────── */}
+      <div className={styles.header}>
+        <div className={styles.headerLeft}>
+          <h2 className={styles.headerTitle}>{t("adminCompTitle")}</h2>
+          <p className={styles.headerSub}>{t("compSubtitle")}</p>
+          <div className={styles.headerMeta}>
+            <span className={styles.headerMetaDot} />
+            <strong>{totalItems}</strong> {t("adminCompTotal")}
           </div>
         </div>
+        <div className={styles.headerRight}>
+          {isSuperAdmin && (
+            <Select className={styles.headerSelect} value={filterSocietyId}
+              onChange={(e) => setFilterSocietyId(e.target.value)}>
+              <option value="">{t("allSocieties")}</option>
+              {societiesList.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+            </Select>
+          )}
+          <button className={styles.exportBtn} onClick={exportCSV} disabled={complaints.length === 0}
+            title={t("compExport")}>
+            <MdDownload size={15} /> {t("compExport")}
+          </button>
+        </div>
+      </div>
 
-        {!loading && complaints.length > 0 && (
-          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(4, 1fr)", gap: isMobile ? 10 : 12 }}>
-            {STATS.map((s, i) => (
-              <div key={i} className={`complaint-stat-card ${s.cls}`}>
-                <span className="complaint-stat-val">{s.val}</span>
-                <span className="complaint-stat-label">{s.label}</span>
+      {/* ── 2. SUMMARY STATISTICS ──────────────────────────────────── */}
+      {loading && counts.ALL === 0 ? (
+        <SkeletonStats />
+      ) : (
+        !loadError && (
+          <div className={styles.stats}>
+            {STATS.map(s => (
+              <div key={s.key} className={styles.stat}>
+                <span className={styles.statAccent} style={{ background: s.color }} />
+                <span className={styles.statLabel}>{s.label}</span>
+                <span className={styles.statValue}>{s.val}</span>
+                <span className={styles.statNote}>{s.note}</span>
               </div>
             ))}
           </div>
-        )}
+        )
+      )}
 
-        <div className="data-table-wrap">
-          <div style={{ padding: "14px 16px", borderBottom: "1px solid var(--glass-border)",
-            display: "flex", flexDirection: "column", gap: 10 }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
-              <span style={{ fontSize: 13, fontWeight: 700, color: "var(--text-primary)", flexShrink: 0 }}>
-                {t("adminCompAllComplaints")}
-              </span>
-              <div style={{ position: "relative", flex: 1, maxWidth: isMobile ? "none" : 260 }}>
-                <MdSearch size={14} style={{ position: "absolute", left: 10, top: "50%",
-                  transform: "translateY(-50%)", color: "var(--text-secondary)", pointerEvents: "none" }} />
-                <input className="input"
-                  style={{ paddingLeft: 30, paddingRight: searchQuery ? 30 : 10, height: 36, fontSize: 12, width: "100%" }}
-                  placeholder={t("adminCompSearch")} value={searchQuery}
-                  onChange={e => setSearchQuery(e.target.value)} />
-                {searchQuery && (
-                  <button onClick={() => setSearchQuery("")} style={{ position: "absolute", right: 8, top: "50%",
-                    transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer",
-                    color: "var(--text-secondary)", display: "flex", alignItems: "center", padding: 0 }}>
-                    <MdClose size={13} />
-                  </button>
-                )}
-              </div>
-            </div>
-
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center" }}>
-              {isSuperAdmin && (
-                <Select className="input" style={{ width: 160, height: 36, fontSize: 12 }}
-                  value={filterSocietyId} onChange={(e) => setFilterSocietyId(e.target.value)}>
-                  <option value="">— {t("allSocieties") || "All Societies"} —</option>
-                  {societiesList.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                </Select>
+      {/* ── 3–6. MAIN SURFACE ──────────────────────────────────────── */}
+      <div className={styles.surface}>
+        <div className={styles.toolbar}>
+          {/* Search + Filters toggle */}
+          <div className={styles.toolbarMain}>
+            <div className={styles.search}>
+              <span className={styles.searchIcon}><MdSearch size={15} /></span>
+              <input className={styles.searchField}
+                placeholder={t("compSearchPh")} value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)} />
+              {searchQuery && (
+                <button className={styles.searchClear} onClick={() => setSearchQuery("")} title={t("compClearDate")}>
+                  <MdClose size={13} />
+                </button>
               )}
-              
-              <Select className="input" style={{ width: 140, height: 36, fontSize: 12 }}
-                value={filterBlockId} onChange={(e) => setFilterBlockId(e.target.value)}>
-                <option value="">— {t("allBlocks") || "All Blocks"} —</option>
-                {blocksList.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
-              </Select>
-
-              <Select className="input" style={{ width: 140, height: 36, fontSize: 12 }}
-                disabled={!filterBlockId}
-                value={filterFloorId} onChange={(e) => setFilterFloorId(e.target.value)}>
-                <option value="">— {t("allFloors") || "All Floors"} —</option>
-                {floorsList.map(f => <option key={f.id} value={f.id}>{f.floor_number}</option>)}
-              </Select>
-
-              <Select className="input" style={{ width: 140, height: 36, fontSize: 12 }}
-                disabled={!filterBlockId}
-                value={filterFlatId} onChange={(e) => setFilterFlatId(e.target.value)}>
-                <option value="">— {t("allFlats") || "All Flats"} —</option>
-                {flatsList.map(f => <option key={f.id} value={f.id}>{f.flat_number}</option>)}
-              </Select>
             </div>
+            <button
+              className={`${styles.filtersBtn} ${filtersOpen ? styles.filtersBtnActive : ""}`}
+              onClick={() => setFiltersOpen(o => !o)}>
+              <MdFilterAlt size={15} /> {t("compFilters")}
+            </button>
+          </div>
 
-            {isSuperAdmin && !filterSocietyId && (
-              <div style={{ fontSize: 11, color: "var(--stat-purple-color)", fontWeight: 600, 
-                padding: "4px 8px", background: "var(--card-inner-bg)", borderRadius: 6, width: "fit-content" }}>
-                🌍 {t("showingComplaintsAllSocieties") || "Showing Complaints from All Societies"}
+          {/* Filter popover */}
+          {filtersOpen && (
+            <div className={styles.filtersPanel}>
+              {isSuperAdmin && (
+                <div className={styles.fGroup}>
+                  <span className={styles.fLabel}>{t("reportSociety") || "Society"}</span>
+                  <Select value={filterSocietyId} onChange={(e) => setFilterSocietyId(e.target.value)}>
+                    <option value="">{t("allSocieties")}</option>
+                    {societiesList.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                  </Select>
+                </div>
+              )}
+              <div className={styles.fGroup}>
+                <span className={styles.fLabel}>{t("blockLabel") || "Block"}</span>
+                <Select value={filterBlockId} onChange={(e) => setFilterBlockId(e.target.value)}>
+                  <option value="">{t("allBlocks")}</option>
+                  {blocksList.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+                </Select>
               </div>
-            )}
+              <div className={styles.fGroup}>
+                <span className={styles.fLabel}>{t("floorLabel") || "Floor"}</span>
+                <Select disabled={!filterBlockId} value={filterFloorId} onChange={(e) => setFilterFloorId(e.target.value)}>
+                  <option value="">{t("allFloors")}</option>
+                  {floorsList.map(f => <option key={f.id} value={f.id}>{f.floor_number}</option>)}
+                </Select>
+              </div>
+              <div className={styles.fGroup}>
+                <span className={styles.fLabel}>{t("flatLabel") || "Flat"}</span>
+                <Select disabled={!filterBlockId} value={filterFlatId} onChange={(e) => setFilterFlatId(e.target.value)}>
+                  <option value="">{t("allFlats")}</option>
+                  {flatsList.map(f => <option key={f.id} value={f.id}>{f.flat_number}</option>)}
+                </Select>
+              </div>
+              <div className={styles.fGroup}>
+                <span className={styles.fLabel}>{t("compDate") || "Date"} — {t("compDateStart")}</span>
+                <input type="date" className={styles.dateInput} value={dateFrom} max={dateTo || undefined}
+                  onChange={e => setDateFrom(e.target.value)} />
+              </div>
+              <div className={styles.fGroup}>
+                <span className={styles.fLabel}>{t("compDate") || "Date"} — {t("compDateEnd")}</span>
+                <input type="date" className={styles.dateInput} value={dateTo} min={dateFrom || undefined}
+                  onChange={e => setDateTo(e.target.value)} />
+              </div>
+            </div>
+          )}
 
-            <div style={{ display: "flex", gap: 4, width: "100%", background: "var(--card-inner-bg)",
-              border: "1px solid var(--glass-border)", borderRadius: 12, padding: 4, boxSizing: "border-box" }}>
-              {TABS.map(({ key, label, shortLabel, count, color }) => {
+          {/* Active filter chips */}
+          {activeChips.length > 0 && (
+            <div className={styles.chipsRow}>
+              <span className={styles.chipsLabel}>{t("compActiveFilters")}</span>
+              {activeChips.map(chip => (
+                <span key={chip.id} className={styles.chip}>
+                  <span className={styles.chipLabel}>{chip.label}:</span>
+                  <span className={styles.chipValue}>{chip.value}</span>
+                  <button className={styles.chipRemove} onClick={chip.remove} title={t("compClearDate")}>
+                    <MdClose size={12} />
+                  </button>
+                </span>
+              ))}
+              <button className={styles.clearAll} onClick={clearAllFilters}>{t("compClearFilters")}</button>
+            </div>
+          )}
+
+          {/* ── 4. STATUS TABS ─────────────────────────────────────── */}
+          {loading ? (
+            <div className={`${styles.skel} ${styles.skelTabs}`} />
+          ) : (
+            <div className={styles.tabs} role="tablist">
+              {TABS.map(({ key, label, shortLabel, count }) => {
                 const on = filterStatus === key;
                 return (
-                  <button key={key} onClick={() => setFilterStatus(key)} style={{
-                    flex: 1, minWidth: 0, display: "flex", alignItems: "center", justifyContent: "center",
-                    gap: 3, padding: "6px 4px", borderRadius: 8, border: "none", cursor: "pointer",
-                    fontSize: isMobile ? 11 : 12, fontWeight: on ? 700 : 500, whiteSpace: "nowrap",
-                    overflow: "hidden", transition: "all 0.18s",
-                    background: on ? color : "transparent",
-                    color: on ? "#fff" : "var(--text-secondary)",
-                    boxShadow: on ? "0 3px 10px rgba(0,0,0,0.25)" : "none" }}>
+                  <button key={key} role="tab" aria-selected={on}
+                    onClick={() => setFilterStatus(key)}
+                    className={`${styles.tab} ${on ? styles.tabActive : ""}`}>
                     {isMobile ? shortLabel : label}
-                    <span style={{ fontSize: 10, fontWeight: 700, padding: "1px 5px", borderRadius: 999,
-                      lineHeight: 1.6, flexShrink: 0,
-                      background: on ? "rgba(255,255,255,0.25)" : "var(--glass-border)",
-                      color: on ? "#fff" : "var(--text-secondary)" }}>
-                      {count}
-                    </span>
+                    <span className={styles.tabCount}>{count}</span>
                   </button>
                 );
               })}
             </div>
+          )}
+        </div>
 
-            {!isMobile && (
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <MdCalendarToday size={13} style={{ color: "var(--text-secondary)", flexShrink: 0 }} />
-                <input type="date" className="complaint-date-input" style={{ width: 140 }}
-                  value={dateFrom} max={dateTo || undefined} onChange={e => setDateFrom(e.target.value)} />
-                <span style={{ fontSize: 12, color: "var(--text-secondary)" }}>{t("compDateTo")}</span>
-                <input type="date" className="complaint-date-input" style={{ width: 140 }}
-                  value={dateTo} min={dateFrom || undefined} onChange={e => setDateTo(e.target.value)} />
-                {hasDateFilter && (
-                  <button onClick={clearDate} style={{ width: 30, height: 30, borderRadius: 8,
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    background: "var(--card-inner-bg)", border: "1px solid var(--glass-border)",
-                    cursor: "pointer", color: "var(--text-secondary)" }}>
-                    <MdClose size={13} />
-                  </button>
-                )}
-              </div>
-            )}
-
-            {hasDateFilter && (
-              <div>
-                <span className="status-pill status-pill--inprogress">
-                  <MdCalendarToday size={11} />
-                  {dateFrom ? formatDate(dateFrom) : t("compDateStart")} → {dateTo ? formatDate(dateTo) : t("compDateEnd")}
-                  <button onClick={clearDate} style={{ background: "none", border: "none", cursor: "pointer",
-                    color: "inherit", display: "flex", alignItems: "center", marginLeft: 2, padding: 0 }}>
-                    <MdClose size={11} />
-                  </button>
-                </span>
-              </div>
-            )}
+        {/* ── 5. COMPLAINT LIST ─────────────────────────────────────── */}
+        {loadError && !loading ? (
+          <div className={styles.state}>
+            <div className={styles.stateIcon}><MdOutlineInbox size={24} /></div>
+            <p className={styles.stateTitle}>{t("compLoadError")}</p>
+            <p className={styles.stateDesc}>{t("compLoadErrorSub")}</p>
+            <button className={styles.stateBtn} onClick={() => loadComplaints(1, debSearch, filterStatus)}>
+              <MdRefresh size={14} /> {t("compRetry")}
+            </button>
           </div>
-
-          {loading ? (
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12, padding: "64px 20px" }}>
-              <Spinner />
-              <p style={{ fontSize: 13, color: "var(--text-secondary)", margin: 0 }}>{t("compLoading")}</p>
-            </div>
-          ) : complaints.length === 0 ? (
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12, padding: "80px 20px" }}>
-              <MdOutlineInbox size={48} style={{ opacity: 0.2, color: "var(--text-secondary)" }} />
-              <p style={{ fontSize: 13, color: "var(--text-secondary)", margin: 0 }}>{t("adminCompEmpty")}</p>
-            </div>
-          ) : filtered.length === 0 ? (
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12, padding: "64px 20px" }}>
-              <MdSearch size={40} style={{ opacity: 0.2, color: "var(--text-secondary)" }} />
-              <p style={{ fontSize: 13, color: "var(--text-secondary)", margin: 0 }}>{t("compNoMatch")}</p>
-              <button onClick={() => { setSearchQuery(""); setFilterStatus("ALL"); clearDate(); }}
-                style={{ fontSize: 12, fontWeight: 600, color: "var(--accent)", background: "none", border: "none", cursor: "pointer" }}>
-                {t("compClearAll")}
-              </button>
-            </div>
-          ) : isMobile ? (
-            <div style={{ display: "flex", flexDirection: "column", gap: 12, padding: 14 }}>
-              {filtered.map((c, i) => (
-                <div key={c.id} className="animate-fadeIn" style={{ animationDelay: `${i * 40}ms`, position: "relative" }}>
-                  <MobileComplaintCard c={c} updateStatus={updateStatus} updatingId={updatingId} t={t}
-                    onOpen={openDrawer} unreadMap={unreadMap}
-                    onPhotoClick={(url, title) => { setLightboxPhoto(url); setLightboxTitle(title); }} />
-                </div>
-              ))}
-              <div style={{ marginTop: 10, display: "flex", justifyContent: "center" }}>
-                <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} />
+        ) : loading && complaints.length === 0 ? (
+          <SkeletonRows />
+        ) : complaints.length === 0 ? (
+          <div className={styles.state}>
+            <div className={styles.stateIcon}><MdSearch size={24} /></div>
+            <p className={styles.stateTitle}>{t("compNoComplaints")}</p>
+            <p className={styles.stateDesc}>{t("compNoComplaintsSub")}</p>
+            <button className={styles.stateBtn} onClick={clearAllFilters}>{t("compClearFilters")}</button>
+          </div>
+        ) : isMobile ? (
+          <div style={{ display: "flex", flexDirection: "column", gap: 12, padding: 14 }}>
+            {filtered.map((c, i) => (
+              <div key={c.id} className="animate-fadeIn" style={{ animationDelay: `${i * 40}ms` }}>
+                <MobileComplaintCard c={c} updateStatus={updateStatus} updatingId={updatingId} t={t}
+                  onOpen={openDrawer} unreadMap={unreadMap} commentCount={commentCounts[c.id]}
+                  onPhotoClick={(url, title) => { setLightboxPhoto(url); setLightboxTitle(title); }} />
               </div>
+            ))}
+            <div style={{ marginTop: 10, display: "flex", justifyContent: "center" }}>
+              <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} />
             </div>
-
-          ) : (
-            <>
-              <table className="data-table">
+          </div>
+        ) : (
+          <>
+            <div className={styles.tableScroll}>
+              <table className={styles.table}>
                 <thead>
                   <tr>
-                    <th style={{ width: 40 }}>#</th>
-                    {isSuperAdmin && <th style={{ width: 120 }}>{t("reportSociety") || "Society"}</th>}
-                    <th>{t("adminCompColTitle")}</th>
-                    <th>{t("adminCompColPhoto")}</th>
+                    <th style={{ minWidth: 300 }}>{t("compColTitle")}</th>
                     <th>{t("reportResident")}</th>
                     <th>{t("reportFlat")}</th>
                     <th>{t("billStatusCol")}</th>
-                    <th>{t("compColDate")}</th>
-                    <th style={{ width: 150 }}>{t("billActionCol")}</th>
+                    <th>{t("compSubmittedAt")}</th>
+                    <th className={styles.thActions}>{t("compActions")}</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {filtered.map((c, idx) => (
-                    <tr key={c.id} onClick={() => openDrawer(c, "details")}>
-                      <td><span style={{ fontSize: 12, fontWeight: 600, color: "var(--text-secondary)" }}>{(page - 1) * LIMIT + idx + 1}</span></td>
-                      {isSuperAdmin && (
-                        <td>
-                          <span style={{ fontSize: 12, fontWeight: 700, color: "var(--accent)" }}>
-                            {c.Society?.name || "—"}
-                          </span>
-                        </td>
-                      )}
-                      <td style={{ maxWidth: 220 }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                          <div style={{ width: 3, height: 36, borderRadius: 99, background: getDot(c.status), flexShrink: 0 }} />
-                          <div>
-                            <p style={{ fontWeight: 700, fontSize: 13, color: "var(--text-primary)", margin: 0,
-                              maxWidth: 180, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                              {c.title}
-                            </p>
+                  {filtered.map((c) => (
+                    <tr key={c.id} onClick={() => openDrawer(c, "details")} style={{ cursor: "pointer" }}>
+                      {/* Complaint */}
+                      <td>
+                        <div className={styles.compCell}>
+                          {c.photo_url ? (
+                            <div className={styles.compThumb}
+                              onClick={e => { e.stopPropagation(); setLightboxPhoto(c.photo_url); setLightboxTitle(c.title); }}
+                              title={c.title}>
+                              <img className={styles.compThumbImg} src={c.photo_url} alt="complaint" />
+                            </div>
+                          ) : (
+                            <div className={styles.compThumb}>
+                              <MdImage size={16} />
+                            </div>
+                          )}
+                          <div className={styles.compInfo}>
+                            <div className={styles.compTitle} title={c.title}>
+                              <span className={styles.compDot} style={{ background: getDot(c.status) }} />
+                              <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{c.title}</span>
+                            </div>
                             {c.description && (
-                              <p style={{ fontSize: 11, color: "var(--text-secondary)", margin: "2px 0 0",
-                                maxWidth: 180, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                                {c.description}
-                              </p>
+                              <div className={styles.compDesc} title={c.description}>{c.description}</div>
                             )}
                           </div>
                         </div>
                       </td>
+                      {/* Resident */}
                       <td>
-                        {c.photo_url ? (
-                          <div style={{ width: 56, height: 40, borderRadius: 10, overflow: "hidden",
-                            cursor: "pointer", border: "1.5px solid var(--glass-border)" }}
-                            onClick={e => { e.stopPropagation(); setLightboxPhoto(c.photo_url); setLightboxTitle(c.title); }}>
-                            <img src={c.photo_url} alt="complaint" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                        <div className={styles.residentCell}>
+                          <div className={styles.avatar}><MdPerson size={15} /></div>
+                          <div style={{ minWidth: 0 }}>
+                            <div className={styles.residentName} title={c.User?.name || "NA"}>{c.User?.name || "NA"}</div>
+                            <div className={styles.residentMeta} title={flatChipLabel(c)}>{flatChipLabel(c)}</div>
                           </div>
-                        ) : (
-                          <span style={{ fontSize: 12, color: "var(--text-secondary)", opacity: 0.3 }}>—</span>
+                        </div>
+                      </td>
+                      {/* Location */}
+                      <td style={{ minWidth: 130 }}>
+                        <div className={styles.locationMain} title={flatLabel(c, t)}>{flatChipLabel(c)}</div>
+                        {c.Society && (
+                          <div className={styles.locationSub} title={c.Society.name}>
+                            <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+                              <MdPublic size={10} /> {c.Society.name}
+                            </span>
+                          </div>
                         )}
                       </td>
-                      <td>
-                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                          <div className="resident-avatar" style={{ width: 28, height: 28 }}>
-                            <MdPerson size={14} style={{ color: "var(--accent)" }} />
-                          </div>
-                          <span style={{ fontSize: 13, fontWeight: 500, color: "var(--text-primary)", whiteSpace: "nowrap" }}>
-                            {c.User?.name || "NA"}
-                          </span>
-                        </div>
-                      </td>
-                      {/* ✅ FIXED: flat column now uses resolveFlatObj for correct data */}
-                      <td>
-                        <span className="info-chip" title={flatLabel(c, t)}>
-                          {flatChipLabel(c)}
-                        </span>
-                      </td>
+                      {/* Status */}
                       <td><StatusPill status={c.status} t={t} /></td>
-                      <td><span style={{ fontSize: 12, color: "var(--text-secondary)", whiteSpace: "nowrap" }}>{formatDate(c.created_at)}</span></td>
-                      <td onClick={e => e.stopPropagation()}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                          <div style={{ position: "relative" }}>
-                            {(unreadMap[c.id] || 0) > 0 && (
-                              <span style={{ position: "absolute", top: -7, right: -7, minWidth: 18, height: 18,
-                                borderRadius: "50%", background: "linear-gradient(135deg,#ef4444,#dc2626)",
-                                color: "#fff", fontSize: 10, fontWeight: 800, display: "flex",
-                                alignItems: "center", justifyContent: "center", padding: "0 4px",
-                                border: "2px solid var(--card-bg)", boxShadow: "0 2px 8px rgba(239,68,68,0.55)",
-                                zIndex: 2, lineHeight: 1,
-                                animation: "admin-badge-pop 0.4s cubic-bezier(0.34,1.56,0.64,1) both" }}>
-                                {unreadMap[c.id] > 99 ? "99+" : unreadMap[c.id]}
-                              </span>
-                            )}
-                            <button onClick={() => openDrawer(c, "chat")}
-                              className={`rcr-discuss-btn ${(unreadMap[c.id] || 0) > 0 ? "rcr-discuss-btn--shake" : ""}`}>
-                              <MdChat size={13} /><span>{t("chatDiscussion")}</span>
-                            </button>
-                          </div>
-                          <ActionButtonsInline c={c} updateStatus={updateStatus} updatingId={updatingId} t={t} />
-                        </div>
+                      {/* Submitted */}
+                      <td>
+                        <div className={styles.dateMain}>{formatDate(c.created_at)}</div>
+                        {(() => { const tm = formatTime(c.created_at); return tm ? (
+                          <div className={styles.dateSub}>{tm}</div>
+                        ) : null; })()}
+                      </td>
+                      {/* Actions — final column */}
+                      <td className={styles.tdActions}>
+                        <ComplaintRowMenu c={c} updatingId={updatingId} unread={unreadMap[c.id] || 0}
+                          commentCount={commentCounts[c.id]} updateStatus={updateStatus} t={t}
+                          onView={() => openDrawer(c, "details")}
+                          onMessages={() => openDrawer(c, "chat")} />
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
-              <div className="table-footer">
-                <span style={{ fontSize: 12, color: "var(--text-secondary)" }}>
-                  {t("reportShowing")} <strong style={{ color: "var(--text-primary)" }}>{(page - 1) * LIMIT + 1}–{Math.min(page * LIMIT, totalItems)}</strong> {t("reportOf")} {totalItems} {t("rcrComplaintsCount")}
-                </span>
-                <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} />
+            </div>
+            <div className={styles.footer}>
+              <span className={styles.footerMeta}>
+                {t("reportShowing")} <strong>{(page - 1) * LIMIT + 1}–{Math.min(page * LIMIT, totalItems)}</strong>
+                {t("reportOf")} {totalItems} {t("rcrComplaintsCount")}
                 {hasDateFilter && (
-                  <span style={{ fontSize: 12, fontWeight: 600, color: "var(--stat-purple-color)" }}>
-                    {t("compFilteredByDate")}
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: 5, color: "var(--stat-purple-color)", fontWeight: 600, marginLeft: 8 }}>
+                    <MdCalendarToday size={12} /> {t("compFilteredByDate")}
                   </span>
                 )}
-              </div>
-            </>
-          )}
-        </div>
+              </span>
+              <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} />
+            </div>
+          </>
+        )}
       </div>
 
-      {/* ── Drawer ── */}
+      {/* ── 6. COMPLAINT DETAILS DRAWER ────────────────────────────── */}
       {selected && createPortal(
         <>
           <div className="modal-overlay-blur animate-fadeIn" onClick={closeDrawer} />
-          <div className="detail-drawer animate-fadeIn"
+          <div className={`detail-drawer inherent-drawer animate-fadeIn ${styles.drawer}`}
             style={isMobile
               ? { position: "fixed", inset: 0, borderRadius: 0, width: "100%", maxWidth: "100%", zIndex: 50 }
-              : { position: "fixed", top: 0, right: 0, bottom: 0, left: "auto", width: 420, borderRadius: "16px 0 0 16px", zIndex: 50 }}>
-            <div className="detail-drawer__header">
+              : { position: "fixed", top: 0, right: 0, bottom: 0, left: "auto", width: "min(470px, 100vw)", borderRadius: "16px 0 0 16px", zIndex: 50 }}>
+            <div className={`detail-drawer__header ${styles.drawerHeader}`}>
               <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                 <div className="er-icon er-icon--complaint" style={{ width: 36, height: 36, borderRadius: 10 }}>
                   <MdReportProblem size={17} />
@@ -1354,74 +1533,87 @@ export default function Complaint() {
               style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
               {drawerTab === "details" && (
                 <>
-                  <StatusPill status={selected.status} t={t} />
-                  <div>
-                    <div className="detail-drawer__label">{t("compColTitle")}</div>
-                    <div style={{ fontSize: 15, fontWeight: 700, color: "var(--text-primary)", lineHeight: 1.35 }}>
-                      {selected.title}
+                  {/* Status + identity */}
+                  <div className={styles.statusRow}>
+                    <div className={styles.statusMeta}>
+                      <span className={styles.statusMetaLabel}>{t("billStatusCol")}</span>
+                      <p className={styles.dTitle} style={{ fontSize: 13.5 }}>{selected.title}</p>
                     </div>
+                    <StatusPill status={selected.status} t={t} />
                   </div>
+
                   {selected.description && (
-                    <div>
-                      <div className="detail-drawer__label">{t("compColDesc")}</div>
-                      <div className="info-row" style={{ borderRadius: 12, padding: "12px 14px" }}>
-                        <span style={{ fontSize: 13, color: "var(--text-primary)" }}>{selected.description}</span>
+                    <>
+                      <span className={styles.sectionTitle}>{t("compColDesc")}</span>
+                      <p className={styles.dDesc}>{selected.description}</p>
+                    </>
+                  )}
+
+                  {/* Resident */}
+                  <div className={styles.section}>
+                    <span className={styles.sectionTitle}>{t("adminCompResidentInfo")}</span>
+                    <div className={styles.valueRow}>
+                      <span className={styles.valueRowIcon}><MdPerson size={17} /></span>
+                      <div className={styles.valueText}>
+                        <div className={styles.valueTitle}>{selected.User?.name || "NA"}</div>
+                        <div className={styles.valueSub}>{selected.User?.email || ""}</div>
                       </div>
                     </div>
-                  )}
-                  {selected.photo_url && (
-                    <div>
-                      <div className="detail-drawer__label">{t("adminCompAttachedPhoto")}</div>
-                      <div style={{ borderRadius: 14, border: "1.5px solid var(--glass-border)",
-                        background: "var(--chip-bg)", overflow: "hidden", cursor: "pointer", position: "relative" }}
-                        onClick={() => { setLightboxPhoto(selected.photo_url); setLightboxTitle(selected.title); }}>
-                        <img src={selected.photo_url} alt="complaint"
-                          style={{ width: "100%", display: "block", objectFit: "contain", maxHeight: 200 }} />
-                        <div style={{ position: "absolute", bottom: 8, right: 10, display: "flex", alignItems: "center", gap: 4,
-                          background: "rgba(0,0,0,0.55)", borderRadius: 6, padding: "3px 8px", backdropFilter: "blur(4px)" }}>
-                          <MdOpenInNew size={11} style={{ color: "#fff" }} />
-                          <span style={{ fontSize: 10, color: "#fff", fontWeight: 600 }}>{t("drawerEnlargePhoto")}</span>
+                  </div>
+
+                  {/* Society / Location */}
+                  {selected.Society && (
+                    <div className={styles.section}>
+                      <span className={styles.sectionTitle}>{t("reportSociety") || "Society"}</span>
+                      <div className={styles.valueRow}>
+                        <span className={styles.valueRowIcon}><MdApartment size={17} /></span>
+                        <div className={styles.valueText}>
+                          <div className={styles.valueTitle}>{selected.Society.name}</div>
+                          <div className={styles.valueSub}>{flatLabel(selected, t)}</div>
                         </div>
                       </div>
                     </div>
                   )}
 
-                  {/* ✅ Resident info */}
-                  <div>
-                    <div className="detail-drawer__label">{t("adminCompResidentInfo")}</div>
-                    <div className="resident-block">
-                      <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 10, flex: "1 1 200px" }}>
-                          <div className="resident-avatar">
-                            <MdPerson size={20} style={{ color: "var(--accent)" }} />
-                          </div>
-                          <div>
-                            <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text-primary)" }}>
-                              {selected.User?.name || "NA"}
-                            </div>
-                            <div style={{ fontSize: 11, color: "var(--text-secondary)", marginTop: 2 }}>
-                              {selected.User?.email || ""}
-                            </div>
-                          </div>
-                        </div>
-                        {selected.Society && (
-                          <div style={{ padding: "8px 12px", background: "var(--card-inner-bg)", borderRadius: 10, border: "1px solid var(--glass-border)", flex: "0 0 auto" }}>
-                            <div style={{ fontSize: 10, color: "var(--text-secondary)", textTransform: "uppercase", fontWeight: 700, marginBottom: 2 }}>{t("reportSociety") || "Society"}</div>
-                            <div style={{ fontSize: 12, fontWeight: 700, color: "var(--accent)" }}>{selected.Society.name}</div>
-                          </div>
+                  {/* Flat / Block / Floor */}
+                  {!selected.Society && (
+                    <div className={styles.section}>
+                      <span className={styles.sectionTitle}>{t("reportFlat")}</span>
+                      <FlatInfoBlock c={selected} t={t} />
+                    </div>
+                  )}
+
+                  {/* Submitted */}
+                  <div className={styles.section}>
+                    <span className={styles.sectionTitle}>{t("compSubmittedAt")}</span>
+                    <div className={styles.valueRow}>
+                      <span className={styles.valueRowIcon}><MdCalendarToday size={16} /></span>
+                      <div className={styles.valueText}>
+                        <div className={styles.valueTitle}>{formatDate(selected.created_at)}</div>
+                        {formatTime(selected.created_at) && (
+                          <div className={styles.valueSub}>{formatTime(selected.created_at)}</div>
                         )}
                       </div>
                     </div>
                   </div>
 
-                  {/* ✅ FIXED: Flat / Block / Floor detail block */}
-                  <div>
-                    <div className="detail-drawer__label">{t("reportFlat")}</div>
-                    <FlatInfoBlock c={selected} t={t} />
+                  {/* Attachment */}
+                  <div className={styles.section}>
+                    <span className={styles.sectionTitle}>{t("adminCompAttachedPhoto")}</span>
+                    {selected.photo_url ? (
+                      <img className={styles.attachedImg} src={selected.photo_url} alt="complaint"
+                        onClick={() => { setLightboxPhoto(selected.photo_url); setLightboxTitle(selected.title); }} />
+                    ) : (
+                      <div className={styles.noAttachment}>
+                        <MdOpenInNew size={18} style={{ opacity: 0.45 }} />
+                        <span>{t("compNoAttachment")}</span>
+                      </div>
+                    )}
                   </div>
 
-                  <div>
-                    <div className="detail-drawer__label">{t("billActionCol")}</div>
+                  {/* Actions */}
+                  <div className={styles.section}>
+                    <span className={styles.sectionTitle}>{t("compActions")}</span>
                     <ActionButtons c={selected} updateStatus={updateStatus} updatingId={updatingId} t={t} />
                   </div>
                 </>
@@ -1461,6 +1653,6 @@ export default function Complaint() {
         </div>,
         document.body
       )}
-    </>
+    </div>
   );
 }

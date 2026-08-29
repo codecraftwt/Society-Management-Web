@@ -17,12 +17,16 @@ import "./light.css";
   completely independent of each other.
 */
 
+import { SidebarProvider } from "./context/SidebarContext";
+
 ReactDOM.createRoot(document.getElementById("root")).render(
   <ThemeProvider>
     <AuthProvider>
-      <BrowserRouter>
-        <App />
-      </BrowserRouter>
+      <SidebarProvider>
+        <BrowserRouter>
+          <App />
+        </BrowserRouter>
+      </SidebarProvider>
     </AuthProvider>
   </ThemeProvider>
 );

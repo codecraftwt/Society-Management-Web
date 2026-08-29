@@ -83,6 +83,20 @@ export default function ManageBillsAccountant() {
     }
   };
 
+  const [confirmingId, setConfirmingId] = useState(null);
+
+  const handleConfirmPayment = async (id) => {
+    setConfirmingId(id);
+    try {
+      await API.put(`/bills/confirm/${id}`);
+      loadBills();
+    } catch (err) {
+      alert(err.response?.data?.message || "Failed to confirm payment");
+    } finally {
+      setConfirmingId(null);
+    }
+  };
+
   /* === DELETE BILL === */
   const handleDeleteBill = async (id) => {
     if (!window.confirm(t("acctBillsConfirmDelete"))) return;
@@ -317,21 +331,40 @@ export default function ManageBillsAccountant() {
                       <td className="p-2">₹{b.amount}</td>
                       <td className="p-2">
                         <span
-                          className={`px-2 py-1 text-xs rounded-full text-white ${
-                            b.status === "PAID" ? "bg-green-600" : "bg-yellow-500"
+                          className={`px-2.5 py-1 text-xs rounded-full text-white font-medium ${
+                            b.status === "PAID"
+                              ? "bg-green-600"
+                              : b.status === "PENDING_VERIFICATION"
+                              ? "bg-blue-600"
+                              : "bg-yellow-500"
                           }`}
                         >
-                          {b.status === "PAID" ? t("billPaid") : t("billPending")}
+                          {b.status === "PAID"
+                            ? t("billPaid")
+                            : b.status === "PENDING_VERIFICATION"
+                            ? "Awaiting Confirmation"
+                            : t("billPending")}
                         </span>
                       </td>
                       <td className="p-2">
                         {b.status !== "PAID" && (
-                          <button
-                            onClick={() => handleDeleteBill(b.id)}
-                            className="text-red-500 hover:text-red-700"
-                          >
-                            {t("acctBillsDelete")}
-                          </button>
+                          <div className="flex items-center gap-2">
+                            {b.status === "PENDING_VERIFICATION" && (
+                              <button
+                                onClick={() => handleConfirmPayment(b.id)}
+                                disabled={confirmingId === b.id}
+                                className="px-2.5 py-1 text-xs rounded-lg font-semibold bg-emerald-600 hover:bg-emerald-500 text-white transition-colors"
+                              >
+                                Confirm Payment
+                              </button>
+                            )}
+                            <button
+                              onClick={() => handleDeleteBill(b.id)}
+                              className="text-red-500 hover:text-red-700 text-xs"
+                            >
+                              {t("acctBillsDelete")}
+                            </button>
+                          </div>
                         )}
                       </td>
                     </tr>

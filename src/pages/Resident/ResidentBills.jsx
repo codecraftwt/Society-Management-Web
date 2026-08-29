@@ -34,8 +34,14 @@ function Spinner({ size = 16, small = false }) {
 function StatusBadge({ status }) {
   const { t } = useLang();
   if (status === "PAID")
-    return <span className="bill-pill-paid"><MdCheckCircle size={11} /> {t("billPaid")}</span>;
-  return <span className="bill-pill-pending"><MdSchedule size={11} /> {t("billPending")}</span>;
+    return <span className="bill-pill-paid"><MdCheckCircle size={11} /> {t("billPaid") || "Paid"}</span>;
+  if (status === "PENDING_VERIFICATION")
+    return (
+      <span className="px-2.5 py-1 text-xs font-bold rounded-full bg-blue-500/15 text-blue-400 border border-blue-500/30 inline-flex items-center gap-1">
+        <MdSchedule size={11} /> Awaiting Confirmation
+      </span>
+    );
+  return <span className="bill-pill-pending"><MdSchedule size={11} /> {t("billPending") || "Pending"}</span>;
 }
 
 function Pagination({ page, totalPages, onPageChange }) {
@@ -457,7 +463,11 @@ export default function ResidentBills() {
                         ₹{Number(b.amount).toLocaleString("en-IN")}
                       </span>
                     </div>
-                    {b.status !== "PAID" && (
+                    {b.status === "PENDING_VERIFICATION" ? (
+                      <span className="text-xs font-bold text-blue-400 px-3 py-1.5 rounded-lg bg-blue-500/10 border border-blue-500/20 inline-block">
+                        Submitted — Awaiting Admin Confirmation
+                      </span>
+                    ) : b.status !== "PAID" ? (
                       <button
                         onClick={() => navigate("/resident/payment", {
                           state: { id: b.id, amount: b.amount, title: b.title, type: "BILL" },
@@ -466,7 +476,7 @@ export default function ResidentBills() {
                         style={{ borderRadius: 10, padding: "8px 16px", fontSize: 13 }}>
                         {t("resBillPayNow")} <MdArrowForward size={14} />
                       </button>
-                    )}
+                    ) : null}
                   </div>
                 </div>
               ))}
@@ -493,6 +503,8 @@ export default function ResidentBills() {
                             width: 3, height: 32, borderRadius: 99,
                             background: b.status === "PAID"
                               ? "linear-gradient(180deg,#34d399,#059669)"
+                              : b.status === "PENDING_VERIFICATION"
+                              ? "linear-gradient(180deg,#60a5fa,#3b82f6)"
                               : "linear-gradient(180deg,#fbbf24,#d97706)",
                           }} />
                           <span className="font-semibold text-sm" style={{ color: "var(--text-primary)" }}>
@@ -515,7 +527,11 @@ export default function ResidentBills() {
                       </td>
                       <td><StatusBadge status={b.status} /></td>
                       <td>
-                        {b.status !== "PAID" ? (
+                        {b.status === "PENDING_VERIFICATION" ? (
+                          <span className="text-xs font-semibold text-blue-400">
+                            Awaiting Confirmation
+                          </span>
+                        ) : b.status !== "PAID" ? (
                           <button
                             onClick={() => navigate("/resident/payment", {
                               state: { id: b.id, amount: b.amount, title: b.title, type: "BILL" },

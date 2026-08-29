@@ -65,13 +65,13 @@ function StatusBadge({ status, t }) {
   if (status === "AVAILABLE")
     return (
       <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold whitespace-nowrap"
-        style={{ background: "rgba(34,197,94,0.12)", color: "#4ade80", border: "1px solid rgba(34,197,94,0.25)" }}>
+        style={{ background: "rgba(47,194,126,0.12)", color: "#2FC27E", border: "1px solid rgba(47,194,126,0.25)" }}>
         <MdCheckCircle size={11} /> {t("parkAvailable")}
       </span>
     );
   return (
     <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold whitespace-nowrap"
-      style={{ background: "rgba(239,68,68,0.10)", color: "#f87171", border: "1px solid rgba(239,68,68,0.22)" }}>
+      style={{ background: "rgba(255,107,107,0.10)", color: "#FF6B6B", border: "1px solid rgba(255,107,107,0.22)" }}>
       <MdBlock size={11} /> {t("parkOccupied")}
     </span>
   );
@@ -80,9 +80,9 @@ function StatusBadge({ status, t }) {
 /* ── Request Status Badge ── */
 function ReqBadge({ status }) {
   const cfg = {
-    PENDING: { label: "Pending", color: "#fbbf24", bg: "rgba(251,191,36,0.12)", border: "rgba(251,191,36,0.28)" },
-    APPROVED: { label: "Approved", color: "#4ade80", bg: "rgba(74,222,128,0.12)", border: "rgba(74,222,128,0.28)" },
-    REJECTED: { label: "Rejected", color: "#f87171", bg: "rgba(248,113,113,0.12)", border: "rgba(248,113,113,0.28)" },
+    PENDING: { label: "Pending", color: "#DD6B20", bg: "rgba(221,107,32,0.12)", border: "rgba(221,107,32,0.28)" },
+    APPROVED: { label: "Approved", color: "#2FC27E", bg: "rgba(47,194,126,0.12)", border: "rgba(47,194,126,0.28)" },
+    REJECTED: { label: "Rejected", color: "#FF6B6B", bg: "rgba(255,107,107,0.12)", border: "rgba(255,107,107,0.28)" },
   }[status] || { label: status, color: "#A39EB2", bg: "rgba(163,158,178,0.10)", border: "rgba(163,158,178,0.22)" };
   return (
     <span style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "3px 10px", borderRadius: 999, fontSize: 11, fontWeight: 700, color: cfg.color, background: cfg.bg, border: `1px solid ${cfg.border}` }}>
@@ -190,7 +190,7 @@ function ResidentEntryPanel({ slots, onCreated, t, societyId }) {
   return (
     <div className="space-y-5 animate-fadeIn">
       <div className="flex items-start gap-3 p-4 rounded-xl"
-        style={{ background: "rgba(251,191,36,0.08)", border: "1.5px solid rgba(251,191,36,0.22)" }}>
+        style={{ background: "rgba(221,107,32,0.10)", border: "1.5px solid rgba(221,107,32,0.24)" }}>
         <span style={{ fontSize: 22, lineHeight: 1 }}>🏠</span>
         <div>
           <p className="font-bold text-sm" style={{ color: "var(--text-primary)", margin: 0 }}>
@@ -205,7 +205,7 @@ function ResidentEntryPanel({ slots, onCreated, t, societyId }) {
 
       {successMsg && (
         <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-semibold"
-          style={{ background: "rgba(74,222,128,0.10)", border: "1px solid rgba(74,222,128,0.25)", color: "#4ade80" }}>
+          style={{ background: "rgba(47,194,126,0.10)", border: "1px solid rgba(47,194,126,0.25)", color: "#2FC27E" }}>
           <MdCheckCircle size={15} /> {successMsg}
           <button onClick={() => setSuccessMsg("")}
             style={{ marginLeft: "auto", background: "none", border: "none", cursor: "pointer", color: "inherit" }}>
@@ -276,7 +276,7 @@ function ResidentEntryPanel({ slots, onCreated, t, societyId }) {
             return (
               <div key={vehicle.vehicle_id}
                 className="bg-card rounded-2xl overflow-hidden transition-all"
-                style={{ border: isExpanded ? "1.5px solid rgba(251,191,36,0.30)" : "1.5px solid var(--glass-border)" }}>
+                style={{ border: isExpanded ? "1.5px solid rgba(221,107,32,0.34)" : "1.5px solid var(--glass-border)" }}>
 
                 <div className="flex items-center justify-between gap-3 px-4 py-3.5">
                   <div className="flex items-center gap-3">
@@ -311,14 +311,14 @@ function ResidentEntryPanel({ slots, onCreated, t, societyId }) {
 
                   <div className="flex items-center gap-2 shrink-0">
                     <span className="flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full"
-                      style={{ background: "rgba(248,113,113,0.10)", color: "#f87171", border: "1px solid rgba(248,113,113,0.22)" }}>
+                      style={{ background: "rgba(255,107,107,0.10)", color: "#FF6B6B", border: "1px solid rgba(255,107,107,0.22)" }}>
                       <MdWarning size={11} /> No slot
                     </span>
                     <button
                       onClick={() => setExpandedId(isExpanded ? null : vehicle.vehicle_id)}
                       className="w-8 h-8 flex items-center justify-center rounded-xl transition-all"
                       style={{
-                        background: isExpanded ? "rgba(251,191,36,0.15)" : "rgba(255,255,255,0.05)",
+                        background: isExpanded ? "rgba(221,107,32,0.15)" : "rgba(255,255,255,0.05)",
                         border: "1px solid var(--glass-border)",
                         color: isExpanded ? "#fbbf24" : "var(--text-secondary)",
                         fontWeight: 700, fontSize: 16, cursor: "pointer",
@@ -338,7 +338,7 @@ function ResidentEntryPanel({ slots, onCreated, t, societyId }) {
                           Assign a Free {vehicle.vehicle_type} Slot
                           {availSlots.length === 0 && (
                             <span className="flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full"
-                              style={{ color: "#f87171", background: "rgba(248,113,113,0.10)", border: "1px solid rgba(248,113,113,0.22)" }}>
+                              style={{ color: "#FF6B6B", background: "rgba(255,107,107,0.10)", border: "1px solid rgba(255,107,107,0.22)" }}>
                               <MdWarning size={11} /> No {vehicle.vehicle_type} slots available
                             </span>
                           )}
@@ -363,7 +363,7 @@ function ResidentEntryPanel({ slots, onCreated, t, societyId }) {
                       </div>
 
                       {chosenSlot && (
-                        <div style={{ padding: "8px 12px", borderRadius: 8, background: "rgba(74,222,128,0.06)", border: "1px solid rgba(74,222,128,0.18)", fontSize: 11, color: "#4ade80" }}>
+                        <div style={{ padding: "8px 12px", borderRadius: 8, background: "rgba(47,194,126,0.06)", border: "1px solid rgba(47,194,126,0.18)", fontSize: 11, color: "#2FC27E" }}>
                           ✓ Slot <strong>{chosenSlot}</strong> will be assigned to{" "}
                           <strong>{vehicle.vehicle_number}</strong> (Flat {vehicle.flat_number}).
                         </div>
@@ -371,7 +371,7 @@ function ResidentEntryPanel({ slots, onCreated, t, societyId }) {
 
                       {errMsg && (
                         <div className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold"
-                          style={{ background: "rgba(248,113,113,0.10)", border: "1px solid rgba(248,113,113,0.28)", color: "#f87171" }}>
+                          style={{ background: "rgba(255,107,107,0.10)", border: "1px solid rgba(255,107,107,0.28)", color: "#FF6B6B" }}>
                           <MdWarning size={13} /> {errMsg}
                         </div>
                       )}
@@ -381,7 +381,7 @@ function ResidentEntryPanel({ slots, onCreated, t, societyId }) {
                           onClick={() => handleCreate(vehicle)}
                           disabled={!chosenSlot || isSubmitting || isRejecting}
                           className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold text-white disabled:opacity-40"
-                          style={{ background: "linear-gradient(135deg,#16a34a,#22c55e)", border: "none", boxShadow: "0 3px 12px rgba(22,163,74,0.25)" }}>
+                          style={{ background: "linear-gradient(135deg,#2FC27E,#3BD095)", border: "none", boxShadow: "0 3px 12px rgba(22,163,74,0.25)" }}>
                           {isSubmitting ? <Spinner small /> : <MdAdd size={15} />}
                           {isSubmitting ? "Assigning…" : "Assign Slot"}
                         </button>
@@ -389,7 +389,7 @@ function ResidentEntryPanel({ slots, onCreated, t, societyId }) {
                           onClick={() => handleReject(vehicle)}
                           disabled={isRejecting || isSubmitting}
                           className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-bold disabled:opacity-40"
-                          style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.22)", color: "#f87171" }}>
+                          style={{ background: "rgba(255,107,107,0.08)", border: "1px solid rgba(255,107,107,0.22)", color: "#FF6B6B" }}>
                           {isRejecting ? <Spinner small /> : <MdBlock size={14} />}
                           Reject
                         </button>
@@ -480,8 +480,8 @@ function ResidentRequestsPanel({ allSlots, onSlotAssigned, societyId }) {
 
   const TABS = [
     { key: "PENDING", label: "Pending", color: "#fbbf24" },
-    { key: "APPROVED", label: "Approved", color: "#4ade80" },
-    { key: "REJECTED", label: "Rejected", color: "#f87171" },
+    { key: "APPROVED", label: "Approved", color: "#2FC27E" },
+    { key: "REJECTED", label: "Rejected", color: "#FF6B6B" },
     { key: "ALL", label: "All", color: "#A39EB2" },
   ];
 
@@ -506,14 +506,14 @@ function ResidentRequestsPanel({ allSlots, onSlotAssigned, societyId }) {
 
       {successMsg && (
         <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-semibold"
-          style={{ background: "rgba(74,222,128,0.10)", border: "1px solid rgba(74,222,128,0.25)", color: "#4ade80" }}>
+          style={{ background: "rgba(47,194,126,0.10)", border: "1px solid rgba(47,194,126,0.25)", color: "#2FC27E" }}>
           <MdCheckCircle size={15} /> {successMsg}
           <button onClick={() => setSuccessMsg("")} style={{ marginLeft: "auto", background: "none", border: "none", cursor: "pointer", color: "inherit" }}><MdClose size={13} /></button>
         </div>
       )}
       {errorMsg && (
         <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-semibold"
-          style={{ background: "rgba(248,113,113,0.10)", border: "1px solid rgba(248,113,113,0.28)", color: "#f87171" }}>
+          style={{ background: "rgba(255,107,107,0.10)", border: "1px solid rgba(255,107,107,0.28)", color: "#FF6B6B" }}>
           <MdWarning size={15} /> {errorMsg}
           <button onClick={() => setErrorMsg("")} style={{ marginLeft: "auto", background: "none", border: "none", cursor: "pointer", color: "inherit" }}><MdClose size={13} /></button>
         </div>
@@ -553,7 +553,7 @@ function ResidentRequestsPanel({ allSlots, onSlotAssigned, societyId }) {
 
             return (
               <div key={req.id} className="bg-card rounded-2xl overflow-hidden transition-all"
-                style={{ border: isPending ? "1.5px solid rgba(251,191,36,0.25)" : "1.5px solid var(--glass-border)" }}>
+                style={{ border: isPending ? "1.5px solid rgba(221,107,32,0.28)" : "1.5px solid var(--glass-border)" }}>
 
                 <div className="flex items-center justify-between gap-3 px-4 py-3.5">
                   <div className="flex items-center gap-3">
@@ -609,7 +609,7 @@ function ResidentRequestsPanel({ allSlots, onSlotAssigned, societyId }) {
                         <button onClick={() => handleAssign(req.id)}
                           disabled={!selectedSlot[req.id] || assigning === req.id}
                           className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white disabled:opacity-40"
-                          style={{ background: "linear-gradient(135deg,#16a34a,#22c55e)", border: "none" }}>
+                          style={{ background: "linear-gradient(135deg,#2FC27E,#3BD095)", border: "none" }}>
                           {assigning === req.id ? <Spinner small /> : "Assign & Notify"}
                         </button>
                         <button onClick={() => handleReject(req.id)}

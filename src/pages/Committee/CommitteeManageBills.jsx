@@ -1,5 +1,5 @@
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import API from "../../services/api";
 import {
   MdReceiptLong,
@@ -110,6 +110,12 @@ function BillStatus({ status }) {
         <MdCheckCircle size={12} /> Paid
       </span>
     );
+  if (status === "PENDING_VERIFICATION")
+    return (
+      <span className="px-2.5 py-1 text-xs font-bold rounded-full bg-blue-500/15 text-blue-400 border border-blue-500/30 inline-flex items-center gap-1">
+        <MdSchedule size={12} /> Awaiting Confirmation
+      </span>
+    );
   return (
     <span className="bill-pill-pending">
       <MdSchedule size={12} /> Pending
@@ -188,20 +194,71 @@ export default function CommitteeManageBills() {
 
   const handlePageChange = (p) => loadBills(p, debSearch, filterStatus);
 
+  const [confirmingId, setConfirmingId] = useState(null);
+
+  const handleConfirmPayment = async (id) => {
+    setConfirmingId(id);
+    try {
+      await API.put(`/bills/confirm/${id}`);
+      loadBills(page, debSearch, filterStatus);
+    } catch (e) {
+      alert(e.response?.data?.message || "Failed to confirm payment");
+    } finally {
+      setConfirmingId(null);
+    }
+  };
+
   /* ── Tabs ── */
   const TABS = [
     { key: "ALL", label: "All", ac: "indigo", count: counts.total },
+    { key: "PENDING_VERIFICATION", label: "Awaiting Confirmation", ac: "blue", count: counts.pendingVerification || 0 },
     { key: "PAID", label: "Paid", ac: "green", count: counts.paid },
     { key: "PENDING", label: "Pending", ac: "amber", count: counts.pending },
   ];
 
+  /* ── Cards reflect active tab ── */
+  const displayedCounts = useMemo(() => {
+    const pagePaidAmount = bills.filter(b => b.status === "PAID").reduce((sum, b) => sum + Number(b.amount || 0), 0);
+    const pagePendingAmount = bills.filter(b => b.status !== "PAID").reduce((sum, b) => sum + Number(b.amount || 0), 0);
+    const pageTotalAmount = bills.reduce((sum, b) => sum + Number(b.amount || 0), 0);
+
+    if (filterStatus === "PAID") {
+      const amountVal = search ? pagePaidAmount : (counts.revenue ?? pagePaidAmount);
+      return {
+        total: totalItems,
+        paid: totalItems,
+        pending: 0,
+        amount: amountVal,
+        amountLabel: "Paid Amount",
+      };
+    }
+    if (filterStatus === "PENDING" || filterStatus === "PENDING_VERIFICATION") {
+      const amountVal = search ? pagePendingAmount : (counts.pendingAmount ?? pagePendingAmount);
+      return {
+        total: totalItems,
+        paid: 0,
+        pending: totalItems,
+        amount: amountVal,
+        amountLabel: "Pending Amount",
+      };
+    }
+    const amountVal = search ? pageTotalAmount : (counts.totalAmount ?? pageTotalAmount);
+    return {
+      total: totalItems || counts.total,
+      paid: counts.paid,
+      pending: counts.pending,
+      amount: amountVal,
+      amountLabel: "Total Amount",
+    };
+  }, [counts, totalItems, filterStatus, bills, search]);
+
   const STATS = [
-    { label: "Total Bills", val: counts.total, icon: "🧾", color: "purple", extra: "" },
-    { label: "Paid", val: counts.paid, icon: "✅", color: "green", extra: "" },
-    { label: "Pending", val: counts.pending, icon: "⏳", color: "amber", extra: "" },
+    { label: "Total Bills", val: displayedCounts.total, icon: "🧾", color: "purple", extra: "" },
+    { label: "Paid", val: displayedCounts.paid, icon: "✅", color: "green", extra: "" },
+    { label: "Pending", val: displayedCounts.pending, icon: "⏳", color: "amber", extra: "" },
     {
-      label: "Revenue",
-      val: `₹${counts.revenue.toLocaleString("en-IN")}`,
+      label: displayedCounts.amountLabel,
+      val: `₹${(displayedCounts.amount || 0).toLocaleString("en-IN")}`,
       icon: "💰",
       color: "blue",
       extra: "stat-card--revenue",
@@ -469,6 +526,7 @@ export default function CommitteeManageBills() {
                 <th>Month</th>
                 <th>Amount</th>
                 <th>Status</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -528,6 +586,20 @@ export default function CommitteeManageBills() {
                   </td>
                   <td>
                     <BillStatus status={b.status} />
+                  </td>
+                  <td>
+                    {b.status === "PENDING_VERIFICATION" ? (
+                      <button
+                        onClick={() => handleConfirmPayment(b.id)}
+                        disabled={confirmingId === b.id}
+                        className="px-3 py-1.5 rounded-lg text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-500 transition-colors inline-flex items-center gap-1 shadow-sm shrink-0"
+                        title="Confirm payment"
+                      >
+                        <MdCheckCircle size={13} /> {confirmingId === b.id ? "Confirming..." : "Confirm Payment"}
+                      </button>
+                    ) : (
+                      <span className="text-xs text-secondary opacity-30">—</span>
+                    )}
                   </td>
                 </tr>
               ))}

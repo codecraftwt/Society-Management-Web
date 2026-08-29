@@ -78,28 +78,47 @@ function Pagination({ page, totalPages, onPageChange }) {
 /* ── Status pill ── */
 function BillStatus({ status, t }) {
   if (status === "PAID")
-    return <span className="bill-pill-paid"><MdCheckCircle size={12} /> {t("billPaid")}</span>;
-  return <span className="bill-pill-pending"><MdSchedule size={12} /> {t("billPending")}</span>;
+    return <span className="bill-pill-paid"><MdCheckCircle size={12} /> {t("billPaid") || "Paid"}</span>;
+  if (status === "PENDING_VERIFICATION")
+    return (
+      <span className="px-2.5 py-1 text-xs font-bold rounded-full bg-blue-500/15 text-blue-400 border border-blue-500/30 inline-flex items-center gap-1">
+        <MdSchedule size={12} /> Awaiting Confirmation
+      </span>
+    );
+  return <span className="bill-pill-pending"><MdSchedule size={12} /> {t("billPending") || "Pending"}</span>;
 }
 
-/* ── Delete controls ── */
-function DeleteControl({ bill, confirmDeleteId, setConfirmDeleteId, handleDeleteBill, deletingId, t }) {
+/* ── Delete & Confirm controls ── */
+function RowActions({ bill, confirmDeleteId, setConfirmDeleteId, handleDeleteBill, deletingId, handleConfirmPayment, confirmingId, t }) {
   if (bill.status === "PAID") return <span className="text-xs text-secondary opacity-30">—</span>;
-  if (confirmDeleteId === bill.id) {
-    return (
-      <div className="flex items-center gap-2 animate-fadeIn">
-        <span className="text-xs text-secondary">{t("billSure")}</span>
-        <button className="btn-delete-confirm" onClick={() => handleDeleteBill(bill.id)} disabled={deletingId === bill.id}>
-          {deletingId === bill.id ? <Spinner /> : t("billYesDelete")}
-        </button>
-        <button className="btn-cancel-sm" onClick={() => setConfirmDeleteId(null)}>{t("cancel")}</button>
-      </div>
-    );
-  }
+
   return (
-    <button className="btn-delete" onClick={() => setConfirmDeleteId(bill.id)}>
-      <MdDelete size={13} /> {t("billDelete")}
-    </button>
+    <div className="flex items-center gap-2 flex-wrap">
+      {bill.status === "PENDING_VERIFICATION" && (
+        <button
+          onClick={() => handleConfirmPayment(bill.id)}
+          disabled={confirmingId === bill.id}
+          className="px-3 py-1.5 rounded-lg text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-500 transition-colors flex items-center gap-1 shadow-sm shrink-0"
+          title="Confirm resident payment and send Web/Mobile notification"
+        >
+          <MdCheckCircle size={13} /> {confirmingId === bill.id ? "Confirming..." : "Confirm Payment"}
+        </button>
+      )}
+
+      {confirmDeleteId === bill.id ? (
+        <div className="flex items-center gap-2 animate-fadeIn">
+          <span className="text-xs text-secondary">{t("billSure")}</span>
+          <button className="btn-delete-confirm" onClick={() => handleDeleteBill(bill.id)} disabled={deletingId === bill.id}>
+            {deletingId === bill.id ? <Spinner /> : t("billYesDelete")}
+          </button>
+          <button className="btn-cancel-sm" onClick={() => setConfirmDeleteId(null)}>{t("cancel")}</button>
+        </div>
+      ) : (
+        <button className="btn-delete" onClick={() => setConfirmDeleteId(bill.id)}>
+          <MdDelete size={13} /> {t("billDelete")}
+        </button>
+      )}
+    </div>
   );
 }
 
@@ -142,9 +161,10 @@ export default function ManageBills() {
     bill_type: "INDIVIDUAL", flat_id: "", title: "", amount: "", billing_month: getCurrentBillingMonth(),
   });
 
-  /* ── Delete ── */
+  /* ── Delete & Confirm ── */
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
+  const [confirmingId, setConfirmingId] = useState(null);
 
   /* ── Super Admin Society Filter ── */
   const isSuperAdmin = authUser?.activeRole === "SUPER_ADMIN";
@@ -242,32 +262,79 @@ export default function ManageBills() {
     finally { setCreating(false); }
   };
 
-  /* ── Delete ── */
+  /* ── Delete & Confirm ── */
   const handleDeleteBill = async (id) => {
     try {
       setDeletingId(id);
       const bill = bills.find(b => b.id === id);
       const headers = (isSuperAdmin && bill?.Flat?.Block?.society_id) ? { "x-society-id": bill.Flat.Block.society_id } : {};
       await API.delete(`/bills/${id}`, { headers });
-      // stay on page unless last item
       const newPage = bills.length === 1 && page > 1 ? page - 1 : page;
       loadBills(newPage, debSearch, filterStatus);
     } catch (e) { alert(e.response?.data?.message || t("billDeleteFailed")); }
     finally { setDeletingId(null); setConfirmDeleteId(null); }
   };
 
+  const handleConfirmPayment = async (id) => {
+    setConfirmingId(id);
+    try {
+      const bill = bills.find(b => b.id === id);
+      const headers = (isSuperAdmin && bill?.Flat?.Block?.society_id) ? { "x-society-id": bill.Flat.Block.society_id } : {};
+      await API.put(`/bills/confirm/${id}`, {}, { headers });
+      loadBills(page, debSearch, filterStatus);
+    } catch (e) { alert(e.response?.data?.message || "Failed to confirm payment"); }
+    finally { setConfirmingId(null); }
+  };
+
   /* ── Tabs ── */
   const TABS = [
     { key: "ALL", label: t("billTabAll"), ac: "indigo", count: counts.total },
+    { key: "PENDING_VERIFICATION", label: "Awaiting Confirmation", ac: "blue", count: counts.pendingVerification || 0 },
     { key: "PAID", label: t("billTabPaid"), ac: "green", count: counts.paid },
     { key: "PENDING", label: t("billTabPending"), ac: "amber", count: counts.pending },
   ];
 
+  /* ── Cards reflect the active tab ── */
+  const displayedCounts = useMemo(() => {
+    const pagePaidAmount = bills.filter(b => b.status === "PAID").reduce((sum, b) => sum + Number(b.amount || 0), 0);
+    const pagePendingAmount = bills.filter(b => b.status !== "PAID").reduce((sum, b) => sum + Number(b.amount || 0), 0);
+    const pageTotalAmount = bills.reduce((sum, b) => sum + Number(b.amount || 0), 0);
+
+    if (filterStatus === "PAID") {
+      const amountVal = search ? pagePaidAmount : (counts.revenue ?? pagePaidAmount);
+      return {
+        total: totalItems,
+        paid: totalItems,
+        pending: 0,
+        amount: amountVal,
+        amountLabel: t("billStatPaidAmount") || "Paid Amount",
+      };
+    }
+    if (filterStatus === "PENDING" || filterStatus === "PENDING_VERIFICATION") {
+      const amountVal = search ? pagePendingAmount : (counts.pendingAmount ?? pagePendingAmount);
+      return {
+        total: totalItems,
+        paid: 0,
+        pending: totalItems,
+        amount: amountVal,
+        amountLabel: t("billStatPendingAmount") || "Pending Amount",
+      };
+    }
+    const amountVal = search ? pageTotalAmount : (counts.totalAmount ?? pageTotalAmount);
+    return {
+      total: totalItems || counts.total,
+      paid: counts.paid,
+      pending: counts.pending,
+      amount: amountVal,
+      amountLabel: t("billStatTotalAmount") || "Total Amount",
+    };
+  }, [counts, totalItems, filterStatus, bills, search, t]);
+
   const STATS = [
-    { label: t("billStatTotal"), val: counts.total, icon: "🧾", color: "purple", extra: "" },
-    { label: t("billStatPaid"), val: counts.paid, icon: "✅", color: "green", extra: "" },
-    { label: t("billStatPending"), val: counts.pending, icon: "⏳", color: "amber", extra: "" },
-    { label: t("billStatRevenue"), val: `₹${counts.revenue.toLocaleString("en-IN")}`, icon: "💰", color: "blue", extra: "stat-card--revenue" },
+    { label: t("billStatTotal"), val: displayedCounts.total, icon: "🧾", color: "purple", extra: "" },
+    { label: t("billStatPaid"), val: displayedCounts.paid, icon: "✅", color: "green", extra: "" },
+    { label: t("billStatPending"), val: displayedCounts.pending, icon: "⏳", color: "amber", extra: "" },
+    { label: displayedCounts.amountLabel, val: `₹${(displayedCounts.amount || 0).toLocaleString("en-IN")}`, icon: "💰", color: "blue", extra: "stat-card--revenue" },
   ];
 
   return (
@@ -519,7 +586,7 @@ export default function ManageBills() {
                       <p className="text-xs font-semibold" style={{ color: "var(--text-primary)" }}>{b.Flat.User?.name || "NA"}</p>
                     </div>
                   </div>
-                  <DeleteControl bill={b} confirmDeleteId={confirmDeleteId} setConfirmDeleteId={setConfirmDeleteId} handleDeleteBill={handleDeleteBill} deletingId={deletingId} t={t} />
+                  <RowActions bill={b} confirmDeleteId={confirmDeleteId} setConfirmDeleteId={setConfirmDeleteId} handleDeleteBill={handleDeleteBill} deletingId={deletingId} handleConfirmPayment={handleConfirmPayment} confirmingId={confirmingId} t={t} />
                 </div>
               </div>
             ))}
@@ -565,7 +632,7 @@ export default function ManageBills() {
                   <td><span className="bill-table-amount">₹{Number(b.amount).toLocaleString("en-IN")}</span></td>
                   <td><BillStatus status={b.status} t={t} /></td>
                   <td onClick={e => e.stopPropagation()}>
-                    <DeleteControl bill={b} confirmDeleteId={confirmDeleteId} setConfirmDeleteId={setConfirmDeleteId} handleDeleteBill={handleDeleteBill} deletingId={deletingId} t={t} />
+                    <RowActions bill={b} confirmDeleteId={confirmDeleteId} setConfirmDeleteId={setConfirmDeleteId} handleDeleteBill={handleDeleteBill} deletingId={deletingId} handleConfirmPayment={handleConfirmPayment} confirmingId={confirmingId} t={t} />
                   </td>
                 </tr>
               ))}

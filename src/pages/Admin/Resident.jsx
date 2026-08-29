@@ -1492,8 +1492,8 @@ function MultiFlatAssignSection({ allUnassignedFlats, availableSlots, assignment
                         ? isApartment ? "rgba(107,70,193,0.12)" : "rgba(16,185,129,0.12)"
                         : "rgba(255,255,255,0.04)",
                       border: `2px solid ${active
-                          ? isApartment ? "#6B46C1" : "#10b981"
-                          : "rgba(255,255,255,0.08)"
+                        ? isApartment ? "#6B46C1" : "#10b981"
+                        : "rgba(255,255,255,0.08)"
                         }`,
                     }}
                   >
@@ -2148,13 +2148,17 @@ export default function Resident() {
   // 2. Fetch all flats for the selected society to build filter dropdowns
   useEffect(() => {
     const socId = isSuperAdmin ? filterSocietyId : user?.society_id;
-    if (socId) {
-      API.get("/flats", { headers: { "x-society-id": socId } })
+    const headers = (isSuperAdmin && filterSocietyId) ? { "x-society-id": filterSocietyId } : {};
+    if (socId || !isSuperAdmin) {
+      API.get("/flats", { headers })
         .then((res) => {
           const data = res.data?.data || res.data || [];
           setAllSocietyFlats(Array.isArray(data) ? data : []);
         })
-        .catch(console.error);
+        .catch((err) => {
+          console.error("Failed to load flats for filter dropdowns", err);
+          setAllSocietyFlats([]);
+        });
     } else {
       setAllSocietyFlats([]);
     }
@@ -2166,14 +2170,14 @@ export default function Resident() {
     if (showForm && !editingId && isSuperAdmin && filterSocietyId) {
       setFormSocietyId(filterSocietyId);
     }
-  }, [showForm, editingId, isSuperAdmin]);
+  }, [showForm, editingId, isSuperAdmin, filterSocietyId]);
 
   // 4. Derive unique Blocks from society flats
   const blocksList = useMemo(() => {
     const blocks = new Map();
     allSocietyFlats.forEach(f => {
       const bId = f.Floor?.Block?.id || f.Block?.id || f.block_id;
-      const bName = f.Floor?.Block?.name || f.Block?.name || `Block ${f.block_id}`;
+      const bName = f.Floor?.Block?.name || f.Block?.name || (bId ? `Block ${bId}` : null);
       if (bId && !blocks.has(bId)) blocks.set(bId, { id: bId, name: bName });
     });
     return Array.from(blocks.values());
@@ -2184,7 +2188,7 @@ export default function Resident() {
     if (!filterBlockId) return [];
     const floors = new Map();
     allSocietyFlats.forEach(f => {
-      const bId = f.Floor?.Block?.id || f.Block?.id;
+      const bId = f.Floor?.Block?.id || f.Block?.id || f.block_id;
       if (String(bId) === String(filterBlockId) && f.Floor) {
         floors.set(f.Floor.id, { id: f.Floor.id, number: f.Floor.floor_number });
       }
@@ -2196,7 +2200,7 @@ export default function Resident() {
   const flatsList = useMemo(() => {
     if (!filterBlockId) return [];
     return allSocietyFlats.filter(f => {
-      const bId = f.Floor?.Block?.id || f.Block?.id;
+      const bId = f.Floor?.Block?.id || f.Block?.id || f.block_id;
       if (String(bId) !== String(filterBlockId)) return false;
       if (filterFloorId && String(f.floor_id) !== String(filterFloorId)) return false;
       return true;
@@ -2278,8 +2282,18 @@ export default function Resident() {
     } catch (err) { toast.error(err.response?.data?.message || "Failed to remove"); }
   };
 
+  const hasActiveFilters = Boolean(filterBlockId || filterFloorId || filterFlatId || (isSuperAdmin && filterSocietyId) || search);
+
+  const handleClearFilters = () => {
+    setFilterBlockId("");
+    setFilterFloorId("");
+    setFilterFlatId("");
+    if (isSuperAdmin) setFilterSocietyId("");
+    setSearch("");
+  };
+
   useEffect(() => { loadResidents(1, "", true); }, [loadResidents]);
-  useEffect(() => { if (initialLoad) return; loadResidents(1, debouncedSearch); }, [debouncedSearch, initialLoad, loadResidents]);
+  useEffect(() => { if (initialLoad) return; loadResidents(1, debouncedSearch); }, [debouncedSearch, filterSocietyId, filterBlockId, filterFloorId, filterFlatId, initialLoad, loadResidents]);
 
   const handlePageChange = (p) => loadResidents(p, debouncedSearch);
 
@@ -2628,7 +2642,7 @@ export default function Resident() {
                 <CounterField value={formData.vehicle_count} onChange={(v) => setFormData((f) => ({ ...f, vehicle_count: v }))} min={0} max={99} />
               </Field>
               <Field label="Family Members">
-                <CounterField value={formData.occupant_count} onChange={(v) => setFormData((f) => ({ ...f, occupant_count:v }))} min={1} max={99} />
+                <CounterField value={formData.occupant_count} onChange={(v) => setFormData((f) => ({ ...f, occupant_count: v }))} min={1} max={99} />
               </Field>
             </div>
 
@@ -2766,6 +2780,18 @@ export default function Resident() {
           <button onClick={() => loadResidents(1, search)} className="btn-primary" style={{ padding: "8px 16px", borderRadius: 8 }}>
             {t("reportApply") || "Apply Filter"}
           </button>
+          {hasActiveFilters && (
+            <button
+              type="button"
+              onClick={handleClearFilters}
+              style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "8px 14px", borderRadius: 8, background: "rgba(239, 68, 68, 0.10)", border: "1px solid rgba(239, 68, 68, 0.22)", color: "#f87171", fontSize: 12, fontWeight: 700, cursor: "pointer", transition: "all 0.15s" }}
+              onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(239, 68, 68, 0.18)")}
+              onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(239, 68, 68, 0.10)")}
+              title="Clear all active filters"
+            >
+              <MdClose size={14} /> {t("colClearFilter") || "Clear Filter"}
+            </button>
+          )}
         </div>
 
         {/* Toolbar */}
@@ -2799,18 +2825,20 @@ export default function Resident() {
         {!initialLoad && totalAll > 0 && residents.length === 0 && !fetching && (
           <div className="flex flex-col items-center gap-2 py-16 text-secondary">
             <MdSearch size={32} className="opacity-20" />
-            <p className="text-sm">No residents match your search.</p>
-            <button onClick={() => setSearch("")} style={{ fontSize: 12, color: "#9F87D7", background: "none", border: "none", cursor: "pointer", marginTop: 4 }}>Clear search</button>
+            <p className="text-sm">No residents match your search / filter.</p>
+            <button onClick={handleClearFilters} style={{ fontSize: 12, color: "#9F87D7", background: "none", border: "none", cursor: "pointer", marginTop: 4, fontWeight: 700 }}>
+              Clear all filters
+            </button>
           </div>
         )}
 
         {!initialLoad && residents.length > 0 && (
-          <>
+          <div key={page} className="animate-slide-page">
             {/* Desktop Table */}
             <div className="hidden md:block overflow-x-auto">
-              <table className="w-full text-sm" style={{ borderCollapse: "collapse" }}>
+              <table className="w-full text-sm res-clean-table" style={{ borderCollapse: "collapse" }}>
                 <thead>
-                  <tr style={{ background: "rgba(255,255,255,0.03)", borderBottom: "1px solid var(--divider)" }}>
+                  <tr style={{ background: "transparent", borderBottom: "1px solid var(--divider)" }}>
                     {[
                       "#",
                       t("colResident") || "Resident",
@@ -2818,18 +2846,15 @@ export default function Resident() {
                       t("colType") || "Type",
                       t("colUnits") || "Units",
                       t("colHousehold") || "Household",
-                      t("colEmergency") || "Emergency",
                       t("colActions") || "Actions"
                     ].map((h, i) => (
-                      <th key={i} style={{ textAlign: i === 7 ? "right" : "left", padding: "12px 16px", fontSize: 10, fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.07em", whiteSpace: "nowrap" }}>{h}</th>
+                      <th key={i} style={{ textAlign: i === 6 ? "right" : "left", padding: "12px 16px", fontSize: 10, fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.07em", whiteSpace: "nowrap" }}>{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
                   {residents.map((r, idx) => (
-                    <tr key={r.id} style={{ borderBottom: "1px solid var(--divider)", verticalAlign: "top", transition: "background 0.15s" }}
-                      onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.02)")}
-                      onMouseLeave={(e) => (e.currentTarget.style.background = "")}>
+                    <tr key={r.id} style={{ borderBottom: "1px solid var(--divider)", verticalAlign: "top", background: "transparent" }}>
                       <td style={{ padding: "14px 16px", fontSize: 12, color: "var(--text-secondary)", fontWeight: 600, width: 40 }}>{(page - 1) * LIMIT + idx + 1}</td>
                       <td style={{ padding: "14px 16px", minWidth: 180 }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -2847,43 +2872,42 @@ export default function Resident() {
                         {r.phone && <div style={{ fontSize: 12, color: "var(--text-secondary)", marginTop: 3, display: "flex", alignItems: "center", gap: 4 }}><MdPhone size={11} style={{ opacity: 0.5 }} /> {r.phone}</div>}
                       </td>
                       <td style={{ padding: "14px 16px" }}><ResidentTypeBadge type={r.resident_type} /></td>
-                      <td style={{ padding: "14px 16px", minWidth: 200 }}>
-                        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                          {r.flats && r.flats.length > 0 ? r.flats.map((flat, fIdx) => {
-                            const isRH = flatIsRowHouse(flat);
-                            return (
+                      <td style={{ padding: "14px 16px", minWidth: 160 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 4, flex: 1 }}>
+                            {r.flats && r.flats.length > 0 ? r.flats.map((flat, fIdx) => (
                               <div
                                 key={flat.id || fIdx}
                                 onClick={() => setFlatDetailModal({ flat, resident: r })}
-                                style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 12, fontWeight: 700, padding: "3px 9px", borderRadius: 999, background: "rgba(34,197,94,0.10)", color: "#4ade80", border: "1px solid rgba(34,197,94,0.22)", cursor: "pointer", transition: "all 0.15s" }}
+                                style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, padding: "3px 8px", borderRadius: 999, background: "rgba(34,197,94,0.10)", color: "#4ade80", border: "1px solid rgba(34,197,94,0.22)", cursor: "pointer", transition: "all 0.15s", whiteSpace: "nowrap" }}
                                 onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(34,197,94,0.18)"; }}
                                 onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(34,197,94,0.10)"; }}
+                                title={`Flat ${flat.flat_number}`}
                               >
-                                {isRH ? <MdHomeWork size={11} /> : <MdHome size={11} />} {flat.flat_number}
+                                {flat.flat_number}
                               </div>
-                            );
-                          }) : <span style={{ fontSize: 12, color: "var(--text-secondary)", opacity: 0.45 }}>{t("colNoUnit") || "No unit assigned"}</span>}
+                            )) : <span style={{ fontSize: 12, color: "var(--text-secondary)", opacity: 0.45 }}>{t("colNoUnit") || "No unit assigned"}</span>}
+                          </div>
                           <button type="button" onClick={() => setAssignModal({ id: r.id, name: r.name, society_id: r.society_id })}
-                            style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 11, fontWeight: 700, padding: "5px 10px", borderRadius: 8, background: "rgba(107,70,193,0.08)", border: "1px dashed rgba(107,70,193,0.35)", color: "#9F87D7", cursor: "pointer", marginTop: 4, alignSelf: "flex-start", transition: "all 0.15s" }}
+                            style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 26, height: 26, padding: 0, borderRadius: 8, background: "rgba(107,70,193,0.08)", border: "1px dashed rgba(107,70,193,0.35)", color: "#9F87D7", cursor: "pointer", flexShrink: 0, transition: "all 0.15s" }}
+                            title={t("colAssignFlat") || "Assign Flat"}
                             onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(107,70,193,0.14)"; e.currentTarget.style.borderColor = "#6B46C1"; }}
                             onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(107,70,193,0.08)"; e.currentTarget.style.borderColor = "rgba(107,70,193,0.35)"; }}>
-                            <MdAdd size={13} /> {t("colAssignFlat") || "Assign Flat"}
+                            <MdAdd size={14} />
                           </button>
                         </div>
                       </td>
                       <td style={{ padding: "14px 16px" }}>
-                        <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-                          <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 12, fontWeight: 600, padding: "3px 9px", borderRadius: 999, background: "rgba(251,191,36,0.10)", color: "#fbbf24", border: "1px solid rgba(251,191,36,0.22)" }}><MdDirectionsCar size={12} /> {r.vehicle_count ?? 0} {t("colVehicles") || "Vehicles"}</span>
-                          <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 12, fontWeight: 600, padding: "3px 9px", borderRadius: 999, background: "rgba(52,211,153,0.10)", color: "#34d399", border: "1px solid rgba(52,211,153,0.22)" }}><MdPeople size={12} /> {r.occupant_count ?? 1} {t("colOccupants") || "Family Members"}</span>
-                        </div>
-                      </td>
-                      <td style={{ padding: "14px 16px", minWidth: 140 }}>
-                        {r.emergency_contact?.name ? (
-                          <div>
-                            <p style={{ fontSize: 12, fontWeight: 600, color: "var(--text-primary)", margin: 0 }}>{r.emergency_contact.name}</p>
-                            <p style={{ fontSize: 11, color: "var(--text-secondary)", margin: "2px 0 0", display: "flex", alignItems: "center", gap: 3 }}><MdPhone size={10} style={{ opacity: 0.5 }} /> {r.emergency_contact.phone}</p>
+                        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 4, cursor: "pointer" }} title={`Vehicles: ${r.vehicle_count ?? 0}`}>
+                            <MdDirectionsCar size={16} style={{ color: "var(--text-secondary)" }} />
+                            <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text-primary)" }}>{r.vehicle_count ?? 0}</span>
                           </div>
-                        ) : <span style={{ fontSize: 12, color: "var(--text-secondary)", opacity: 0.35 }}>—</span>}
+                          <div style={{ display: "flex", alignItems: "center", gap: 4, cursor: "pointer" }} title={`Family Members: ${r.occupant_count ?? 1}`}>
+                            <MdPeople size={16} style={{ color: "var(--text-secondary)" }} />
+                            <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text-primary)" }}>{r.occupant_count ?? 1}</span>
+                          </div>
+                        </div>
                       </td>
                       <td style={{ padding: "14px 16px" }}>
                         <div className="res-actions" style={{ justifyContent: "flex-end" }}>
@@ -2931,19 +2955,15 @@ export default function Resident() {
                       {r.phone && <p style={{ fontSize: 11, color: "var(--text-secondary)", margin: "1px 0 0", display: "flex", alignItems: "center", gap: 3 }}><MdPhone size={10} style={{ opacity: 0.5 }} /> {r.phone}</p>}
                       <div style={{ display: "flex", alignItems: "center", gap: 5, flexWrap: "wrap", marginTop: 6 }}>
                         <ResidentTypeBadge type={r.resident_type} />
-                        {r.flats?.map((flat, fIdx) => {
-                          const isRH = flatIsRowHouse(flat);
-                          return (
-                            <span key={flat.id || fIdx} style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 999, background: "rgba(34,197,94,0.10)", color: "#4ade80", border: "1px solid rgba(34,197,94,0.22)" }}>
-                              {isRH ? <MdHomeWork size={10} /> : <MdHome size={10} />} {flat.flat_number}
-                            </span>
-                          );
-                        })}
+                        {r.flats?.map((flat, fIdx) => (
+                          <span key={flat.id || fIdx} style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 999, background: "rgba(34,197,94,0.10)", color: "#4ade80", border: "1px solid rgba(34,197,94,0.22)" }}>
+                            {flat.flat_number}
+                          </span>
+                        ))}
                         {r.roles?.includes("COMMITTEE_MEMBER") && <span className="res-committee-badge">★ {t("colCommittee") || "Committee"}</span>}
-                        <span style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: 10, fontWeight: 600, padding: "2px 7px", borderRadius: 999, background: "rgba(251,191,36,0.10)", color: "#fbbf24", border: "1px solid rgba(251,191,36,0.20)" }}><MdDirectionsCar size={10} /> {r.vehicle_count ?? 0}</span>
-                        <span style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: 10, fontWeight: 600, padding: "2px 7px", borderRadius: 999, background: "rgba(52,211,153,0.10)", color: "#34d399", border: "1px solid rgba(52,211,153,0.20)" }}><MdPeople size={10} /> {r.occupant_count ?? 1}</span>
+                        <span style={{ cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 3, fontSize: 10, fontWeight: 600, padding: "2px 7px", borderRadius: 999, background: "rgba(251,191,36,0.10)", color: "#fbbf24", border: "1px solid rgba(251,191,36,0.20)" }} title={`Vehicles: ${r.vehicle_count ?? 0}`}><MdDirectionsCar size={10} /> {r.vehicle_count ?? 0}</span>
+                        <span style={{ cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 3, fontSize: 10, fontWeight: 600, padding: "2px 7px", borderRadius: 999, background: "rgba(52,211,153,0.10)", color: "#34d399", border: "1px solid rgba(52,211,153,0.20)" }} title={`Family Members: ${r.occupant_count ?? 1}`}><MdPeople size={10} /> {r.occupant_count ?? 1}</span>
                       </div>
-                      {r.emergency_contact?.name && <p style={{ fontSize: 11, color: "var(--text-secondary)", margin: "5px 0 0", display: "flex", alignItems: "center", gap: 4 }}><MdContactPhone size={11} style={{ color: "#f87171" }} />{r.emergency_contact.name} · {r.emergency_contact.phone}</p>}
                       <button type="button" onClick={() => setAssignModal({ id: r.id, name: r.name, society_id: r.society_id })}
                         style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 11, fontWeight: 700, padding: "5px 10px", borderRadius: 8, background: "rgba(107,70,193,0.08)", border: "1px dashed rgba(107,70,193,0.35)", color: "#9F87D7", cursor: "pointer", marginTop: 8 }}>
                         <MdAdd size={13} /> {t("colAssignFlat") || "Assign Flat"}
@@ -2978,7 +2998,7 @@ export default function Resident() {
               <p className="text-xs text-secondary">{t("colShowing") || "Showing"} {residents.length} {t("colOf") || "of"} {totalItems}</p>
               <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} />
             </div>
-          </>
+          </div>
         )}
       </div>
     </div>

@@ -1,11 +1,20 @@
-
 import { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useLang } from "../../context/LanguageContext";
 import API from "../../services/api";
-import { MdDelete, MdLayers, MdHomeWork } from "react-icons/md";
+import { MdDelete, MdLayers, MdHomeWork, MdArrowBack, MdAdd } from "react-icons/md";
 import { FaBuilding } from "react-icons/fa";
 import Select from "../../components/common/Select";
+
+const PROPERTY_TONES = {
+  "Row Houses": { c: "#2FC27E", bg: "rgba(47, 194, 126, 0.13)", bd: "rgba(47, 194, 126, 0.28)" },
+  "Commercial":  { c: "#9F87D7", bg: "rgba(159, 135, 215, 0.13)", bd: "rgba(159, 135, 215, 0.28)" },
+  "Apartments":  { c: "#F0845D", bg: "rgba(240, 132, 93, 0.13)", bd: "rgba(240, 132, 93, 0.28)" },
+};
+
+function toneFor(type) {
+  return PROPERTY_TONES[type] || PROPERTY_TONES.Apartments;
+}
 
 export default function Blocks() {
   const { societyId } = useParams();
@@ -17,7 +26,7 @@ export default function Blocks() {
   const [name,        setName]          = useState("");
   const [floorCount,  setFloorCount]    = useState("");
   const [flatsPerFloor, setFlatsPerFloor] = useState("");
-  const [propertyType, setPropertyType] = useState("Apartments"); // ✅ NEW STATE FOR BLOCKS
+  const [propertyType, setPropertyType] = useState("Apartments");
 
   useEffect(() => { loadSocietyName(); loadBlocks(); }, [societyId]);
 
@@ -42,11 +51,11 @@ export default function Blocks() {
       return;
     }
     await API.post("/blocks", {
-      name, 
+      name,
       society_id: societyId,
-      floor_count: Number(floorCount), 
+      floor_count: Number(floorCount),
       flats_per_floor: Number(flatsPerFloor),
-      property_type: propertyType // ✅ SENDING IT HERE
+      property_type: propertyType
     });
     setName(""); setFloorCount(""); setFlatsPerFloor(""); setPropertyType("Apartments");
     loadBlocks();
@@ -58,128 +67,195 @@ export default function Blocks() {
     loadBlocks();
   };
 
-  return (
-    <div className="min-h-screen bg-app">
-      <header className="sticky top-0 z-30 bg-navbar text-white shadow">
-        <div className="flex justify-between items-center px-4 sm:px-9 h-16">
-          <div>
-            <h1 className="text-base sm:text-lg font-semibold">{societyName}</h1>
-            <p className="text-xs text-white/70">{t("blkManageBlocks") || "Manage Blocks"}</p>
-          </div>
-          <button onClick={() => navigate(-1)} className="bg-white/10 px-4 py-2 rounded text-sm hover:bg-white/20 transition">
-            {t("socBack") || "Back"}
-          </button>
-        </div>
-      </header>
+  const blockIcon = (type) =>
+    type === "Row Houses" ? <MdHomeWork size={15} /> : <FaBuilding size={13} />;
 
-      <main className="p-4 sm:p-6 lg:p-8 space-y-6">
-        <div className="bg-card rounded-lg shadow p-4 sm:p-6">
-          <h2 className="text-base font-semibold mb-4">{t("blkCreateTitle") || "Create Block"}</h2>
-          <form onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+  return (
+    <div className="sa-page animate-fadeIn">
+
+      {/* ── HERO ── */}
+      <div className="sa-page-er">
+        <div style={{ display: "flex", alignItems: "center", gap: 14, minWidth: 0 }}>
+          <div className="er-icon er-icon--amenity">
+            <MdHomeWork size={22} />
+          </div>
+          <div style={{ minWidth: 0 }}>
+            <h1 className="sa-page-title">{societyName}</h1>
+            <p className="sa-page-subtitle">
+              {t("blkManageBlocks") || "Manage Blocks"} · {blocks.length} block{blocks.length !== 1 ? "s" : ""}
+            </p>
+          </div>
+        </div>
+        <button onClick={() => navigate(-1)} className="sa-hero-back">
+          <MdArrowBack size={16} /> {t("socBack") || "Back"}
+        </button>
+      </div>
+
+      {/* ── CREATE BLOCK ── */}
+      <div className="soc-form-card">
+        <div className="sa-form-er">
+          <div className="sa-form-icon"><MdAdd size={19} /></div>
+          <div className="min-w-0">
+            <h3 className="sa-form-title">{t("blkCreateTitle") || "Create Block"}</h3>
+            <p className="sa-form-subtitle">
+              {(t("blkCreateSub") || "Add a new block to")} {societyName}
+            </p>
+          </div>
+        </div>
+        <form onSubmit={handleSubmit} className="sa-grid-5" style={{ marginTop: 4 }}>
+          <div>
+            <label className="sa-label">{t("blkFieldName") || "Block Name"}</label>
             <input placeholder={t("blkFieldName") || "Block Name"} value={name}
-              onChange={e => setName(e.target.value)} className="input h-12" />
+              onChange={e => setName(e.target.value)} className="input" />
+          </div>
+          <div>
+            <label className="sa-label">No. of Floors</label>
             <input placeholder="No. of Floors" type="number" value={floorCount}
-              onChange={e => setFloorCount(e.target.value)} className="input h-12" />
+              onChange={e => setFloorCount(e.target.value)} className="input" />
+          </div>
+          <div>
+            <label className="sa-label">Flats per Floor</label>
             <input placeholder="Flats per Floor" type="number" value={flatsPerFloor}
-              onChange={e => setFlatsPerFloor(e.target.value)} className="input h-12" />
-            
-            {/* ✅ DROPDOWN MOVED HERE */}
-            <Select className="input h-12" value={propertyType} onChange={e => setPropertyType(e.target.value)}>
+              onChange={e => setFlatsPerFloor(e.target.value)} className="input" />
+          </div>
+          <div>
+            <label className="sa-label">Type</label>
+            <Select className="input" value={propertyType} onChange={e => setPropertyType(e.target.value)}>
               <option value="Apartments">Apartments / Flats</option>
               <option value="Row Houses">Row Houses / Villas</option>
               <option value="Commercial">Commercial Complex</option>
             </Select>
+          </div>
+          <div style={{ display: "flex", alignItems: "flex-end" }}>
+            <button type="submit" className="sa-btn sa-btn-primary" style={{ width: "100%" }}>
+              <MdAdd size={17} /> {t("blkCreateBtn") || "Create"}
+            </button>
+          </div>
+        </form>
+      </div>
 
-            <button type="submit" className="btn-primary h-12">{t("blkCreateBtn") || "Create"}</button>
-          </form>
+      {/* ── BLOCKS LIST ── */}
+      <div className="sa-panel">
+        <div className="sa-panel-head">
+          <div className="sa-panel-accent"><MdLayers size={18} /></div>
+          <div className="min-w-0">
+            <h3 className="sa-panel-title">{t("blkListTitle") || "Blocks List"}</h3>
+            <p className="sa-panel-sub">
+              {blocks.length} block{blocks.length !== 1 ? "s" : ""} in {societyName}
+            </p>
+          </div>
         </div>
 
-        <div className="bg-card rounded-lg shadow p-4 sm:p-6">
-          <h2 className="text-base font-semibold mb-4">{t("blkListTitle") || "Blocks List"}</h2>
-          {blocks.length === 0 ? (
-            <p className="text-secondary text-sm">{t("blkEmpty") || "No blocks found."}</p>
-          ) : (
-            <>
-              <div className="hidden md:block overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-muted text-secondary text-sm">
-                    <tr>
-                      <th className="p-3 text-left">{t("blkColBlock") || "Block Name"}</th>
-                      <th className="p-3 text-left">Type</th>
-                      <th className="p-3 text-left">Floors</th>
-                      <th className="p-3 text-right">{t("billActionCol") || "Actions"}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {blocks.map(b => (
-                      <tr key={b.id} className="border-t text-sm">
-                        <td className="p-3 font-medium flex items-center gap-2">
-                          {b.property_type === "Row Houses" ? <MdHomeWork size={16} className="text-emerald-500"/> : <FaBuilding size={14} className="text-blue-500" />}
-                          {(t("blkBlockLabel")||"Block")} {b.name}
-                        </td>
-                        <td className="p-3">
-                          <span style={{ 
-                            fontSize: "11px", fontWeight: "600", padding: "4px 8px", borderRadius: "6px",
-                            background: b.property_type === "Row Houses" ? "rgba(16, 185, 129, 0.1)" : "rgba(59, 130, 246, 0.1)",
-                            color: b.property_type === "Row Houses" ? "#10b981" : "#5B8DEF" 
+        {blocks.length === 0 ? (
+          <p style={{ color: "var(--text-tertiary)", fontSize: "0.86rem", padding: "18px 0" }}>
+            {t("blkEmpty") || "No blocks found."}
+          </p>
+        ) : (
+          <>
+            {/* Desktop table */}
+            <div className="soc-table-wrap" style={{ overflowX: "auto" }}>
+              <table>
+                <thead>
+                  <tr>
+                    <th>{t("blkColBlock") || "Block Name"}</th>
+                    <th>Type</th>
+                    <th>Floors</th>
+                    <th style={{ textAlign: "right" }}>{t("billActionCol") || "Actions"}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {blocks.map(b => (
+                    <tr key={b.id}>
+                      <td>
+                        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                          <div className="sa-form-icon" style={{
+                            width: 34, height: 34, borderRadius: 9,
+                            background: toneFor(b.property_type).bg,
+                            color: toneFor(b.property_type).c,
                           }}>
-                            {b.property_type || "Apartments"}
-                          </span>
-                        </td>
-                        <td className="p-3">{b.floorCount || "-"}</td>
-                        <td className="p-3">
-                          <div className="flex justify-end gap-3">
-                            <Link to={`/superadmin/block/${b.id}/floors`}
-                              className="icon-btn manage text-xl" title="Manage Floors">
-                              <MdLayers />
-                            </Link>
-                            <button onClick={() => handleDelete(b.id)}
-                              className="icon-btn delete text-xl" title={t("billDelete")}>
-                              <MdDelete />
-                            </button>
+                            {blockIcon(b.property_type)}
                           </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              <div className="md:hidden space-y-3">
-                {blocks.map(b => (
-                  <div key={b.id} className="bg-card rounded-lg p-4">
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="flex items-center gap-2 min-w-0">
-                        {b.property_type === "Row Houses" ? <MdHomeWork size={18} className="text-emerald-500 flex-shrink-0"/> : <FaBuilding size={15} className="text-blue-500 flex-shrink-0" />}
-                        <span className="font-medium text-sm truncate">{(t("blkBlockLabel")||"Block")} {b.name}</span>
+                          <span style={{ fontWeight: 600, color: "var(--text-primary)" }}>
+                            {(t("blkBlockLabel") || "Block")} {b.name}
+                          </span>
+                        </div>
+                      </td>
+                      <td>
+                        <span className="sa-tone-badge"
+                          style={{
+                            "--typeof-c": toneFor(b.property_type).c,
+                            "--typeof-bg": toneFor(b.property_type).bg,
+                            "--typeof-bd": toneFor(b.property_type).bd,
+                          }}>
+                          {b.property_type || "Apartments"}
+                        </span>
+                      </td>
+                      <td>{b.floorCount || "-"}</td>
+                      <td>
+                        <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
+                          <Link to={`/superadmin/block/${b.id}/floors`}
+                            className="icon-btn manage" title="Manage Floors">
+                            <MdLayers size={16} />
+                          </Link>
+                          <button onClick={() => handleDelete(b.id)}
+                            className="icon-btn delete" title={t("billDelete")}>
+                            <MdDelete size={16} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile cards */}
+            <div className="soc-mobile-list">
+              {blocks.map(b => {
+                const tone = toneFor(b.property_type);
+                return (
+                  <div key={b.id} className="soc-mobile-card">
+                    <div className="soc-mobile-head">
+                      <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
+                        <div style={{
+                          width: 34, height: 34, borderRadius: 9, flexShrink: 0,
+                          background: tone.bg, color: tone.c,
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                        }}>
+                          {blockIcon(b.property_type)}
+                        </div>
+                        <span className="soc-mobile-name">
+                          {(t("blkBlockLabel") || "Block")} {b.name}
+                        </span>
                       </div>
-                      <span style={{
-                        fontSize: "11px", fontWeight: "600", padding: "4px 8px", borderRadius: "6px", whiteSpace: "nowrap",
-                        background: b.property_type === "Row Houses" ? "rgba(16, 185, 129, 0.1)" : "rgba(59, 130, 246, 0.1)",
-                        color: b.property_type === "Row Houses" ? "#10b981" : "#5B8DEF"
+                      <span className="sa-tone-badge" style={{
+                        "--typeof-c": tone.c, "--typeof-bg": tone.bg, "--typeof-bd": tone.bd,
                       }}>
                         {b.property_type || "Apartments"}
                       </span>
                     </div>
-                    <div className="mt-4 flex items-center justify-between gap-3">
-                      <span className="text-secondary text-sm">{b.floorCount || "-"} floors</span>
-                      <div className="flex items-center gap-3">
-                        <Link to={`/superadmin/block/${b.id}/floors`}
-                          className="icon-btn manage text-xl" title="Manage Floors" aria-label="Manage Floors">
-                          <MdLayers />
-                        </Link>
-                        <button onClick={() => handleDelete(b.id)}
-                          className="icon-btn delete text-xl" title={t("billDelete")} aria-label={t("billDelete")}>
-                          <MdDelete />
-                        </button>
+                    <div className="soc-mobile-ac">
+                      <div className="soc-mobile-meta-row">
+                        <span>{b.floorCount || "-"} floor{b.floorCount !== 1 ? "s" : ""}</span>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                          <Link to={`/superadmin/block/${b.id}/floors`}
+                            className="icon-btn manage" title="Manage Floors">
+                            <MdLayers size={16} />
+                          </Link>
+                          <button onClick={() => handleDelete(b.id)}
+                            className="icon-btn delete" title={t("billDelete")}>
+                            <MdDelete size={16} />
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>
-                ))}
-              </div>
-            </>
-          )}
-        </div>
-      </main>
+                );
+              })}
+            </div>
+          </>
+        )}
+      </div>
     </div>
   );
 }

@@ -122,9 +122,9 @@ export default function Flats() {
   };
 
   const TABS = [
-    { key: "ALL", label: "All", color: "#5A3BA2" },
-    { key: "OCCUPIED", label: "Occupied", color: "#16a34a" },
-    { key: "VACANT", label: "Vacant", color: "#d97706" },
+    { key: "ALL", label: "All", color: "#d87653" },
+    { key: "OCCUPIED", label: "Occupied", color: "#2FC27E" },
+    { key: "VACANT", label: "Vacant", color: "#DD6B20" },
   ];
 
   return (
@@ -138,43 +138,40 @@ export default function Flats() {
 
       {/* Add Flat Modal */}
       {showAddModal && (
-        <div style={{
-          position: "fixed",
-          top: 0,
-          left: 0,
-          width: "100vw",
-          height: "100vh",
-          background: "rgba(0,0,0,0.5)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          zIndex: 1000,
-        }}>
-          <div style={{
-            background: "var(--card-bg)",
-            padding: 20,
-            borderRadius: 12,
-            width: isMobile ? "90%" : 400,
-            boxShadow: "var(--shadow-md)",
-          }}>
-            <h3 style={{ marginTop: 0, marginBottom: 12, color: "var(--text-primary)" }}>Add New Flat</h3>
+        <div className="sa-modal-overlay">
+          <div className="sa-modal">
+            <div className="sa-modal-header">
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <div className="sa-form-icon"><MdApartment size={18} /></div>
+                <div>
+                  <h3 className="sa-form-title">Add New Flat</h3>
+                  <p className="sa-form-subtitle">
+                    Create a flat unit in this block
+                  </p>
+                </div>
+              </div>
+            </div>
             {addError && (
-              <div style={{ color: "var(--stat-red-color)", marginBottom: 8 }}>{addError}</div>
+              <div style={{
+                color: "var(--danger)", fontSize: 12, margin: "2px 24px 0",
+                background: "rgba(255,107,107,0.08)", border: "1px solid rgba(255,107,107,0.22)",
+                padding: "8px 12px", borderRadius: 9,
+              }}>{addError}</div>
             )}
-            <div style={{ marginBottom: 12 }}>
+            <div className="sa-modal-body">
+              <label className="sa-label">Flat Number</label>
               <input
+                className="input"
                 placeholder="Flat Number"
                 value={newFlatData.flat_number}
                 onChange={e => setNewFlatData({ ...newFlatData, flat_number: e.target.value })}
-                style={{ width: "100%", padding: 8, borderRadius: 6, border: "1px solid var(--glass-border)" }}
               />
             </div>
 
-
-            <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
+            <div className="sa-modal-footer">
               <button
                 onClick={() => { setShowAddModal(false); setNewFlatData({ flat_number: "", block_id: "" }); setAddError(""); setSuccessMessage(""); }}
-                style={{ background: "none", border: "none", color: "var(--text-secondary)", cursor: "pointer" }}
+                className="sa-btn sa-btn-ghost"
               >Cancel</button>
               <button
                 onClick={async () => {
@@ -209,57 +206,39 @@ export default function Flats() {
                   }
                 }}
                 disabled={adding}
-                style={{
-                  background: "var(--accent)", color: "#fff", border: "none", padding: "6px 12px", borderRadius: 6, cursor: adding ? "not-allowed" : "pointer",
-                }}
+                className="sa-btn sa-btn-primary"
+                style={{ opacity: adding ? 0.7 : 1, cursor: adding ? "not-allowed" : "pointer" }}
               >{adding ? <Spinner small /> : "Add"}</button>
             </div>
           </div>
         </div>
       )}
 
-      <div className="page-root animate-fadeIn" style={{ maxWidth: 1000, margin: "0 auto" }}>
+      <div className="sa-page animate-fadeIn" style={{ maxWidth: 1000, margin: "0 auto" }}>
 
-        {/* ── HEADER ── */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+        {/* ── HERO ── */}
+        <div className="sa-page-er">
+          <div style={{ display: "flex", alignItems: "center", gap: 14, minWidth: 0 }}>
             <div className="er-icon er-icon--amenity">
               <MdApartment size={22} />
             </div>
-            <div>
-              <h2 className="page-title">Block Flats</h2>
-              <p className="page-subtitle">{counts.ALL} unit{counts.ALL !== 1 ? "s" : ""} in this block</p>
+            <div style={{ minWidth: 0 }}>
+              <h2 className="sa-page-title">Block Flats</h2>
+              <p className="sa-page-subtitle">{counts.ALL} unit{counts.ALL !== 1 ? "s" : ""} in this block</p>
             </div>
           </div>
-          <button
-            onClick={() => navigate(-1)}
-            style={{
-              display: "flex", alignItems: "center", gap: 7,
-              padding: "8px 16px", borderRadius: 999,
-              background: "var(--card-inner-bg)",
-              border: "1.5px solid var(--glass-border)",
-              color: "var(--text-secondary)", fontSize: 13,
-              fontWeight: 600, cursor: "pointer",
-              transition: "all 0.18s",
-            }}
-          >
-            <MdArrowBack size={16} /> Back
-          </button>
-          {/* Add Flat Button */}
-          <button
-            onClick={() => setShowAddModal(true)}
-            style={{
-              display: "flex", alignItems: "center", gap: 7,
-              padding: "8px 16px", borderRadius: 999,
-              background: "var(--accent)",
-              border: "1.5px solid var(--glass-border)",
-              color: "#fff", fontSize: 13,
-              fontWeight: 600, cursor: "pointer",
-              transition: "all 0.18s",
-            }}
-          >
-            <MdAdd size={16} /> Add Flat
-          </button>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+            <button onClick={() => navigate(-1)} className="sa-hero-back">
+              <MdArrowBack size={16} /> Back
+            </button>
+            <button
+              onClick={() => setShowAddModal(true)}
+              className="sa-btn sa-btn-primary"
+              style={{ height: 40 }}
+            >
+              <MdAdd size={17} /> Add Flat
+            </button>
+          </div>
         </div>
 
         {/* ── ERROR BANNER ── */}
@@ -466,7 +445,7 @@ export default function Flats() {
                                 style={{
                                   display: "flex", alignItems: "center", gap: 5,
                                   padding: "5px 12px", borderRadius: 8, fontSize: 11, fontWeight: 700,
-                                  background: "#dc2626", color: "#fff", border: "none", cursor: "pointer",
+                                  background: "var(--danger)", color: "#fff", border: "none", cursor: "pointer",
                                 }}
                               >
                                 {deletingId === flat.id ? <Spinner small /> : "Yes, delete"}
@@ -568,7 +547,7 @@ export default function Flats() {
                                 style={{
                                   display: "flex", alignItems: "center", gap: 5,
                                   padding: "5px 12px", borderRadius: 8, fontSize: 11, fontWeight: 700,
-                                  background: "#dc2626", color: "#fff", border: "none", cursor: "pointer",
+                                  background: "var(--danger)", color: "#fff", border: "none", cursor: "pointer",
                                 }}
                               >
                                 {deletingId === flat.id ? <Spinner small /> : "Yes, delete"}

@@ -10,6 +10,9 @@ html.light {
   /* ── Core Palette (WEB-DESIGN-TOKENS.md — Light mode) ── */
   --bg-main: #F1EFF5;
   --card-bg: #FFFFFF;
+  --sidebar-w-expanded: 256px;
+  --sidebar-w-collapsed: 76px;
+  --sidebar-w: var(--sidebar-w-expanded);
   --sidebar-bg: #E8E5EE;
   --navbar-bg: #24212C;
   --glass-border: #D6D6E4;

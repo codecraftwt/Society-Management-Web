@@ -768,6 +768,15 @@ export default function AssignParkingSlot() {
   /* Pending extra request count for badge */
   const [pendingResidentCount, setPendingResidentCount] = useState(0);
 
+  /* Slot Ownership tab */
+  const [ownerSlots, setOwnerSlots] = useState([]);
+  const [ownerLoading, setOwnerLoading] = useState(true);
+  const [ownerSearch, setOwnerSearch] = useState("");
+  const [ownerStatus, setOwnerStatus] = useState("ALL");
+  const [ownerType, setOwnerType] = useState("ALL");
+  const [ownerAlloc, setOwnerAlloc] = useState("ALL");
+  const debouncedOwnerSearch = useDebounce(ownerSearch, 400);
+
   /* ────────────────────────────
      LOADERS
   ──────────────────────────── */
@@ -806,6 +815,17 @@ export default function AssignParkingSlot() {
     } catch (e) { /* silent */ }
   }, []);
 
+  const loadOwnerSlots = useCallback(async (showLoader = false) => {
+    if (showLoader) setOwnerLoading(true);
+    try {
+      const res = await API.get("/parking-slots", { params: { limit: 1000 } });
+      setOwnerSlots(Array.isArray(res.data?.data) ? res.data.data : []);
+    } catch (e) { console.error(e); setOwnerSlots([]); }
+    finally { setOwnerLoading(false); }
+  }, []);
+
+  useEffect(() => { loadOwnerSlots(true); }, [loadOwnerSlots]);
+
   useEffect(() => {
     loadSlots(1, "ALL", "", true);
     loadAllSlots();
@@ -824,6 +844,7 @@ export default function AssignParkingSlot() {
     loadAllSlots();
     loadSlots(page, vehicleFilter, debouncedSearch);
     loadPendingResidentCount();
+    loadOwnerSlots();
   };
 
   /* ────────────────────────────
@@ -866,9 +887,52 @@ export default function AssignParkingSlot() {
 
   const mainTabs = [
     { key: "slots", label: "Parking Slots", icon: <FaParking size={13} /> },
+    { key: "ownership", label: "Slot Owners", icon: <MdPersonSearch size={15} /> },
     { key: "resident-entry", label: "Resident Entry", icon: <span style={{ fontSize: 14 }}>🏠</span> },
     { key: "resident-requests", label: "Extra Slot Requests", icon: <MdPendingActions size={14} /> },
   ];
+
+  /* ── Slot Ownership: filtered view ── */
+  const ownerQ = debouncedOwnerSearch.toLowerCase().trim();
+  const ownerFiltered = ownerSlots.filter(s => {
+    if (ownerType !== "ALL" && s.vehicle_type !== ownerType) return false;
+    if (ownerStatus === "AVAILABLE" && s.status !== "AVAILABLE") return false;
+    if (ownerStatus === "ASSIGNED" && s.status === "AVAILABLE") return false;
+    if (ownerAlloc === "WITH_VEHICLE" && !s.vehicle) return false;
+    if (ownerAlloc === "NO_VEHICLE" && s.vehicle) return false;
+    if (ownerAlloc === "ALLOCATED" && !s.resident && !s.flat_number) return false;
+    if (ownerAlloc === "FREE" && s.status !== "AVAILABLE") return false;
+    if (ownerQ) {
+      const hay = [s.slot_number, s.parking_floor, s.flat_number, s.resident?.name, s.resident?.email, s.resident?.phone, s.vehicle?.vehicle_number, s.vehicle?.vehicle_name]
+        .filter(Boolean).join(" ").toLowerCase();
+      if (!hay.includes(ownerQ)) return false;
+    }
+    return true;
+  });
+
+  const ownerSummary = ownerAlloc === "ALL" && ownerStatus === "ALL" && ownerType === "ALL" && !ownerQ
+    ? {
+        free:  ownerSlots.filter(s => s.status === "AVAILABLE").length,
+        assigned: ownerSlots.filter(s => s.status !== "AVAILABLE").length,
+        withFlat: ownerSlots.filter(s => !!s.flat_number && !!s.resident).length,
+        withVehicle: ownerSlots.filter(s => !!s.vehicle).length,
+      }
+    : null;
+
+  const ownerSegment = (opts, value, setValue) => (
+    <div className="flex gap-1 p-1 rounded-xl flex-wrap"
+      style={{ background: "var(--card-inner-bg,rgba(0,0,0,0.05))", border: "1px solid var(--card-inner-border,rgba(255,255,255,0.08))" }}>
+      {opts.map(o => (
+        <button key={o.value} onClick={() => setValue(o.value)}
+          className="text-xs font-semibold px-3 py-1.5 rounded-lg transition-all whitespace-nowrap"
+          style={value === o.value
+            ? { background: "rgba(91,141,239,0.15)", color: "#94B5F5", border: "1px solid rgba(91,141,239,0.35)" }
+            : { background: "transparent", color: "var(--text-secondary)", border: "1px solid transparent" }}>
+          {o.label}
+        </button>
+      ))}
+    </div>
+  );
 
   /* ────────────────────────────
      RENDER
@@ -936,6 +1000,199 @@ export default function AssignParkingSlot() {
           allSlots={allSlots}
           onSlotAssigned={refreshAll}
         />
+      )}
+
+      {/* TAB: SLOT OWNERS */}
+      {mainTab === "ownership" && (
+        <div className="space-y-4 animate-fadeIn">
+          {/* Filters */}
+          <div className="bg-card rounded-2xl p-4 sm:p-5">
+            <div className="flex flex-col lg:flex-row lg:items-center gap-3">
+              <div className="flex items-center gap-2 flex-wrap">
+                {ownerSegment(
+                  [{ value: "ALL", label: "All" }, { value: "CAR", label: "Cars" }, { value: "BIKE", label: "Bikes" }],
+                  ownerType, setOwnerType
+                )}
+                {ownerSegment(
+                  [{ value: "ALL", label: "All status" }, { value: "AVAILABLE", label: "Available" }, { value: "ASSIGNED", label: "Assigned" }],
+                  ownerStatus, setOwnerStatus
+                )}
+                {ownerSegment(
+                  [
+                    { value: "ALL", label: "All" },
+                    { value: "FREE", label: "Free only" },
+                    { value: "ALLOCATED", label: "Allocated" },
+                    { value: "WITH_VEHICLE", label: "With vehicle" },
+                    { value: "NO_VEHICLE", label: "No vehicle" },
+                  ],
+                  ownerAlloc, setOwnerAlloc
+                )}
+              </div>
+              <div className="relative grow max-w-sm">
+                <MdSearch size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-secondary pointer-events-none" />
+                <input className="input h-9 text-xs w-full" style={{ paddingLeft: 32, paddingRight: 28 }}
+                  placeholder="Search slot, flat, resident, vehicle…"
+                  value={ownerSearch} onChange={e => setOwnerSearch(e.target.value)} />
+                {ownerSearch && (
+                  <button onClick={() => setOwnerSearch("")} className="absolute right-2 top-1/2 -translate-y-1/2 text-secondary">
+                    <MdClose size={13} />
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Summary */}
+            {ownerSummary && (
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4">
+                {[
+                  { label: "Total Slots", val: ownerSlots.length, color: "text-pink-500", bg: "bg-pink-500/5 border-pink-500/10" },
+                  { label: "Free", val: ownerSummary.free, color: "text-green-400", bg: "bg-green-500/10 border-green-500/20" },
+                  { label: "Assigned", val: ownerSummary.assigned, color: "text-blue-400", bg: "bg-blue-500/10 border-blue-500/20" },
+                  { label: "Flat + Resident", val: ownerSummary.withFlat, color: "text-purple-400", bg: "bg-purple-500/10 border-purple-500/20" },
+                  { label: "Vehicle Linked", val: ownerSummary.withVehicle, color: "text-amber-400", bg: "bg-amber-500/10 border-amber-500/20" },
+                ].map(s => (
+                  <div key={s.label} className={`rounded-xl border p-3 animate-scaleIn flex flex-col justify-between min-h-16 ${s.bg}`}>
+                    <p className={`text-xl font-bold leading-none ${s.color}`}>{s.val}</p>
+                    <p className="text-[11px] text-secondary mt-1.5">{s.label}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* List */}
+          {ownerLoading && (
+            <div className="bg-card rounded-2xl flex flex-col items-center gap-3 py-14 text-secondary">
+              <Spinner /><p className="text-sm">{t("parkLoading") || "Loading..."}</p>
+            </div>
+          )}
+
+          {!ownerLoading && ownerFiltered.length === 0 && (
+            <div className="bg-card rounded-2xl flex flex-col items-center gap-2 py-16 text-secondary animate-fadeIn">
+              <MdOutlineInbox size={48} className="opacity-25" />
+              <p className="text-sm">{ownerSlots.length === 0 ? (t("parkEmpty") || "No parking slots") : "No slots match your filters"}</p>
+            </div>
+          )}
+
+          {!ownerLoading && ownerFiltered.length > 0 && (
+            <div className="bg-card rounded-2xl overflow-hidden">
+              {/* Mobile cards */}
+              <div className="space-y-2 md:hidden p-4">
+                {ownerFiltered.map((s, i) => (
+                  <div key={s.id} className="rounded-xl p-3.5 animate-fadeIn"
+                    style={{ background: "var(--card-inner-bg)", border: "1px solid var(--card-inner-border)", animationDelay: `${i * 15}ms` }}>
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+                          style={s.vehicle_type === "CAR" ? { background: "rgba(91,141,239,0.12)", border: "1px solid rgba(91,141,239,0.22)" } : { background: "rgba(107,70,193,0.12)", border: "1px solid rgba(107,70,193,0.22)" }}>
+                          {s.vehicle_type === "CAR" ? <MdDirectionsCar size={18} style={{ color: "#94B5F5" }} /> : <MdTwoWheeler size={18} style={{ color: "#9F87D7" }} />}
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-1.5">
+                            <p className="font-semibold text-sm">{s.slot_number}</p>
+                            {s.parking_type === "EXTRA" && (
+                              <span className="text-[9px] font-black px-1.5 py-0.5 rounded"
+                                style={{ background: "rgba(251,191,36,0.15)", color: "#fbbf24", border: "1px solid rgba(251,191,36,0.3)" }}>EXTRA</span>
+                            )}
+                          </div>
+                          <p className="text-xs text-secondary">{s.parking_floor || "—"} · {s.vehicle_type === "CAR" ? "Car" : "Bike"}</p>
+                        </div>
+                      </div>
+                      <StatusBadge status={s.status} t={t} />
+                    </div>
+                    <div className="mt-3 pt-3 space-y-1.5" style={{ borderTop: "1px solid var(--divider)" }}>
+                      <div className="flex items-center gap-2 text-sm">
+                        <span className="text-xs text-secondary w-20 shrink-0">Allocated to</span>
+                        {s.resident ? (
+                          <span className="font-semibold">{s.flat_number ? <span className="text-accent">{s.flat_number} · </span> : null}{s.resident.name}</span>
+                        ) : (
+                          <span className="text-secondary text-xs">— Not allocated</span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 text-sm">
+                        <span className="text-xs text-secondary w-20 shrink-0">Vehicle</span>
+                        {s.vehicle ? (
+                          <span className="font-semibold">{s.vehicle.vehicle_number} {s.vehicle.vehicle_name ? <span className="text-secondary text-xs">({s.vehicle.vehicle_name})</span> : null}</span>
+                        ) : (
+                          <span className="text-secondary text-xs">{s.resident ? "No vehicle linked" : "—"}</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Desktop table */}
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr style={{ background: "var(--card-inner-bg)", borderBottom: "1px solid var(--divider)" }}>
+                      {["#", "Slot", "Type", "Floor", "Allocation", "Allocated To", "Vehicle", "Status"].map((h, i) => (
+                        <th key={h} className={`px-5 py-3 text-xs font-semibold text-secondary uppercase tracking-wider ${i === 7 ? "text-right" : "text-left"}`}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {ownerFiltered.map((s, i) => (
+                      <tr key={s.id} className="transition-colors animate-fadeIn"
+                        style={{ borderBottom: "1px solid var(--divider)", animationDelay: `${i * 15}ms` }}
+                        onMouseEnter={e => e.currentTarget.style.background = "var(--row-hover)"}
+                        onMouseLeave={e => e.currentTarget.style.background = ""}>
+                        <td className="px-5 py-3 text-xs text-secondary">{i + 1}</td>
+                        <td className="px-5 py-3">
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+                              style={s.vehicle_type === "CAR" ? { background: "rgba(91,141,239,0.12)", border: "1px solid rgba(91,141,239,0.22)" } : { background: "rgba(107,70,193,0.12)", border: "1px solid rgba(107,70,193,0.22)" }}>
+                              {s.vehicle_type === "CAR" ? <MdDirectionsCar size={15} style={{ color: "#94B5F5" }} /> : <MdTwoWheeler size={15} style={{ color: "#9F87D7" }} />}
+                            </div>
+                            <span className="font-semibold">{s.slot_number}</span>
+                          </div>
+                        </td>
+                        <td className="px-5 py-3 text-secondary">{s.vehicle_type === "CAR" ? "Car" : "Bike"}</td>
+                        <td className="px-5 py-3 text-secondary">{s.parking_floor || "—"}</td>
+                        <td className="px-5 py-3">
+                          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold"
+                            style={s.parking_type === "EXTRA"
+                              ? { background: "rgba(251,191,36,0.12)", color: "#fbbf24", border: "1px solid rgba(251,191,36,0.28)" }
+                              : { background: "rgba(91,141,239,0.12)", color: "#94B5F5", border: "1px solid rgba(91,141,239,0.28)" }}>
+                            {s.parking_type === "EXTRA" ? "EXTRA" : "DEFAULT"}
+                          </span>
+                        </td>
+                        <td className="px-5 py-3">
+                          {s.resident ? (
+                            <div>
+                              <p className="font-medium text-[13px]">
+                                {s.flat_number ? <span className="text-accent">{s.flat_number} · </span> : null}{s.resident.name}
+                              </p>
+                              {s.resident.email && <p className="text-[11px] text-secondary mt-0.5">{s.resident.email}</p>}
+                            </div>
+                          ) : (
+                            <span className="text-secondary text-xs">{s.status === "AVAILABLE" ? "— Unallocated" : "Occupied (no flat)"}</span>
+                          )}
+                        </td>
+                        <td className="px-5 py-3">
+                          {s.vehicle ? (
+                            <div>
+                              <p className="font-medium text-[13px]">{s.vehicle.vehicle_number}</p>
+                              {s.vehicle.vehicle_name && <p className="text-[11px] text-secondary mt-0.5">{s.vehicle.vehicle_name}</p>}
+                            </div>
+                          ) : (
+                            <span className="text-secondary text-xs">{s.resident ? "No vehicle linked" : "—"}</span>
+                          )}
+                        </td>
+                        <td className="px-5 py-3 text-right"><StatusBadge status={s.status} t={t} /></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="flex justify-end px-5 py-3" style={{ borderTop: "1px solid var(--divider)" }}>
+                <p className="text-xs text-secondary">{ownerFiltered.length} slot{ownerFiltered.length === 1 ? "" : "s"} shown</p>
+              </div>
+            </div>
+          )}
+        </div>
       )}
 
       {/* TAB: PARKING SLOTS */}

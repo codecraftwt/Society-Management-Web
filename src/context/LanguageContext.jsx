@@ -2,7 +2,7 @@
 import { createContext, useContext, useState, useCallback, useEffect } from "react";
 import { translations, LANGUAGES } from "../locales";
 
-const defaultT = (key) => translations["en"]?.[key] ?? key;
+const defaultT = (key, fallback) => translations["en"]?.[key] ?? fallback ?? undefined;
 
 const defaultValue = {
   lang:       "en",
@@ -43,7 +43,7 @@ export function LanguageProvider({ role, children }) {
   }, [storageKey]);
 
   const t = useCallback(
-    (key) => translations[lang]?.[key] ?? translations["en"]?.[key] ?? key,
+    (key, fallback) => translations[lang]?.[key] ?? translations["en"]?.[key] ?? fallback ?? undefined,
     [lang]
   );
 

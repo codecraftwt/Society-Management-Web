@@ -1,24 +1,48 @@
-
-import { Link, useLocation, Outlet, useNavigate } from "react-router-dom";
+import { Outlet, useNavigate } from "react-router-dom";
 import { useState } from "react";
-import { MdDashboard, MdMenu, MdClose, MdLogout, MdAccountBalance, MdReceipt } from "react-icons/md";
+import {
+  MdDashboard,
+  MdMenu,
+  MdLogout,
+  MdAccountBalance,
+  MdReceipt,
+} from "react-icons/md";
 import NotificationBell from "../../components/common/NotificationBell";
 import ThemeToggle from "../../components/common/ThemeToggle";
 import LanguageSelector from "../../components/common/LanguageSelector";
 import { LanguageProvider, useLang } from "../../context/LanguageContext";
+import { useSidebar } from "../../context/SidebarContext";
+import Sidebar from "../../components/common/Sidebar";
+import AppHeader from "../../components/common/AppHeader";
 
 function AccountantLayoutInner() {
-  const location = useLocation();
   const navigate = useNavigate();
   const { t } = useLang();
+  const { openMobile } = useSidebar();
 
-  const [mobileMenu, setMobileMenu] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
+  const base = "/accountant";
+
   const menu = [
-    { label: t("accountantMenuDashboard"),   path: "/accountant",              icon: MdDashboard      },
-    { label: t("accountantMenuManageBills"), path: "/accountant/manage-bills", icon: MdAccountBalance },
-    { label: t("accountantMenuPayments"),    path: "/accountant/payments",     icon: MdReceipt        },
+    {
+      label: t("accountantMenuDashboard"),
+      path: `${base}`,
+      icon: MdDashboard,
+      group: "OVERVIEW",
+    },
+    {
+      label: t("accountantMenuManageBills"),
+      path: `${base}/manage-bills`,
+      icon: MdAccountBalance,
+      group: "FINANCE & BILLING",
+    },
+    {
+      label: t("accountantMenuPayments"),
+      path: `${base}/payments`,
+      icon: MdReceipt,
+      group: "FINANCE & BILLING",
+    },
   ];
 
   const confirmLogout = () => {
@@ -31,78 +55,24 @@ function AccountantLayoutInner() {
       className="h-screen overflow-hidden bg-app flex"
       style={{ color: "var(--text-primary)" }}
     >
+      {/* ── REUSABLE SIDEBAR ── */}
+      <Sidebar
+        menu={menu}
+        brandTitle={
+          <>
+            {t("accountantPanelLabel") || "Accountant"}<span className="text-accent">{t("panelSuffix") || " Panel"}</span>
+          </>
+        }
+        brandSubtitle="Finance View"
+        base={base}
+      />
 
-      {/* ══════════════════════════════════════════
-          DESKTOP SIDEBAR
-      ══════════════════════════════════════════ */}
-      <aside className="hidden md:flex fixed left-0 top-0 h-screen w-64 bg-sidebar p-5 px-6 flex-col z-40">
-        <h2 className="text-xl font-semibold mb-8" style={{ color: "var(--text-primary)" }}>
-          {t("accountantPanelLabel")}
-          <span className="text-accent">{t("panelSuffix")}</span>
-        </h2>
-
-        <nav className="flex-1 space-y-1 overflow-y-auto scrollbar-hide">
-          {menu.map(({ label, path, icon: Icon }) => (
-            <Link
-              key={path}
-              to={path}
-              className={`sidebar-link ${location.pathname === path ? "active" : ""}`}
-            >
-              <Icon size={18} /> {label}
-            </Link>
-          ))}
-        </nav>
-      </aside>
-
-      {/* ══════════════════════════════════════════
-          MAIN CONTENT
-      ══════════════════════════════════════════ */}
-      <div className="flex-1 md:ml-64 flex flex-col">
-
-        {/* NAVBAR */}
-        <header
-          className="h-16 bg-navbar flex items-center justify-between px-4 md:px-6 z-30 shrink-0"
-          style={{ borderBottom: "1px solid var(--glass-border)" }}
-        >
-          <div className="flex items-center gap-2 md:gap-3 min-w-0">
-            <button
-              onClick={() => setMobileMenu(true)}
-              className="md:hidden flex items-center justify-center w-9 h-9 rounded-xl shrink-0"
-              style={{
-                background: "var(--card-inner-bg)",
-                border: "1.5px solid var(--glass-border)",
-                color: "var(--text-primary)",
-              }}
-            >
-              <MdMenu size={20} />
-            </button>
-            <div className="min-w-0">
-              <h1 className="font-medium truncate" style={{ color: "var(--text-primary)" }}>
-                {t("accountantDashboardTitle")}
-              </h1>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <ThemeToggle />
-            <LanguageSelector compact />
-            <NotificationBell />
-
-            {/* Logout */}
-            <button
-              onClick={() => setShowLogoutConfirm(true)}
-              className="flex items-center justify-center w-9 h-9 rounded-xl"
-              style={{
-                background: "var(--card-inner-bg)",
-                border: "1.5px solid var(--glass-border)",
-                color: "var(--text-primary)",
-              }}
-              title={t("logout")}
-            >
-              <MdLogout size={19} />
-            </button>
-          </div>
-        </header>
+      {/* ── MAIN CONTENT ── */}
+      <div className="main-content-layout min-w-0">
+        <AppHeader
+          title={t("accountantDashboardTitle")}
+          onLogout={() => setShowLogoutConfirm(true)}
+        />
 
         {/* PAGE CONTENT */}
         <main className="flex-1 overflow-y-auto scrollbar-hide p-4 sm:p-6 lg:p-8">
@@ -112,58 +82,7 @@ function AccountantLayoutInner() {
         </main>
       </div>
 
-      {/* ══════════════════════════════════════════
-          MOBILE DRAWER
-      ══════════════════════════════════════════ */}
-      {mobileMenu && (
-        <div
-          className="fixed inset-0 z-50 md:hidden"
-          style={{ background: "rgba(0,0,0,0.55)" }}
-          onClick={() => setMobileMenu(false)}
-        >
-          <div
-            className="bg-sidebar w-64 h-full p-6 flex flex-col animate-slide-in"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* drawer header */}
-            <div className="flex justify-between items-center mb-8">
-              <h2 className="text-xl font-semibold" style={{ color: "var(--text-primary)" }}>
-                {t("accountantPanelLabel")}
-                <span className="text-accent">{t("panelSuffix")}</span>
-              </h2>
-              <button
-                onClick={() => setMobileMenu(false)}
-                className="w-8 h-8 rounded-lg flex items-center justify-center"
-                style={{
-                  background: "var(--card-inner-bg)",
-                  border: "1px solid var(--glass-border)",
-                  color: "var(--text-primary)",
-                }}
-              >
-                <MdClose size={18} />
-              </button>
-            </div>
-
-            {/* drawer nav */}
-            <nav className="flex-1 space-y-1 overflow-y-auto scrollbar-hide">
-              {menu.map(({ label, path, icon: Icon }) => (
-                <Link
-                  key={path}
-                  to={path}
-                  onClick={() => setMobileMenu(false)}
-                  className={`sidebar-link ${location.pathname === path ? "active" : ""}`}
-                >
-                  <Icon size={18} /> {label}
-                </Link>
-              ))}
-            </nav>
-          </div>
-        </div>
-      )}
-
-      {/* ══════════════════════════════════════════
-          LOGOUT CONFIRM MODAL
-      ══════════════════════════════════════════ */}
+      {/* LOGOUT CONFIRM MODAL */}
       {showLogoutConfirm && (
         <div
           className="fixed inset-0 flex items-center justify-center z-100 animate-fadeIn"
@@ -177,7 +96,10 @@ function AccountantLayoutInner() {
               boxShadow: "var(--shadow-glass)",
             }}
           >
-            <h2 className="text-lg font-semibold mb-2" style={{ color: "var(--text-primary)" }}>
+            <h2
+              className="text-lg font-semibold mb-2"
+              style={{ color: "var(--text-primary)" }}
+            >
               {t("confirmLogout")}
             </h2>
             <p className="text-secondary text-sm mb-6">
@@ -187,14 +109,16 @@ function AccountantLayoutInner() {
               <button onClick={confirmLogout} className="btn-danger">
                 {t("yesLogout")}
               </button>
-              <button onClick={() => setShowLogoutConfirm(false)} className="btn-primary">
+              <button
+                onClick={() => setShowLogoutConfirm(false)}
+                className="btn-primary"
+              >
                 {t("cancel")}
               </button>
             </div>
           </div>
         </div>
       )}
-
     </div>
   );
 }

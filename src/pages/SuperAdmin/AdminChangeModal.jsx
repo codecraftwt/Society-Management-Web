@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from "react";
-import { useLang } from "../../context/LanguageContext"; // ← NEW
+import { useLang } from "../../context/LanguageContext";
+import { MdClose, MdPersonAdd, MdEdit } from "react-icons/md";
 
 const AdminChangeModal = ({ onClose, onSubmit, existingAdmin }) => {
-  const { t }    = useLang(); // ← NEW
+  const { t }    = useLang();
   const isEdit   = Boolean(existingAdmin);
   const [name, setName] = useState("");
 
@@ -10,23 +11,53 @@ const AdminChangeModal = ({ onClose, onSubmit, existingAdmin }) => {
     if (isEdit) setName(existingAdmin);
   }, [existingAdmin, isEdit]);
 
+  const submit = () => {
+    if (!String(name || "").trim()) return;
+    onSubmit(name.trim());
+  };
+
   return (
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-      <div className="bg-card-bg p-6 rounded-2xl shadow-card w-full max-w-md">
-        <h2 className="text-xl font-semibold text-text-primary mb-4">
-          {isEdit ? t("amModalEditTitle") : t("amModalAddTitle")}
-        </h2>
+    <div className="sa-modal-overlay">
+      <div className="sa-modal">
+        <div className="sa-modal-header">
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <div className="sa-form-icon">
+              {isEdit ? <MdEdit size={18} /> : <MdPersonAdd size={18} />}
+            </div>
+            <div>
+              <h3 className="sa-form-title">
+                {isEdit ? t("amModalEditTitle") : t("amModalAddTitle")}
+              </h3>
+              <p className="sa-form-subtitle">
+                {isEdit ? t("amModalEditSub") || "Update the society administrator" : t("amModalAddSub") || "Assign an administrator to this society"}
+              </p>
+            </div>
+          </div>
+        </div>
 
-        <input placeholder={t("amAdminName")} value={name}
-          onChange={(e) => setName(e.target.value)}
-          className="w-full px-4 py-2 rounded-xl border border-gray-200 mb-4" />
+        <div className="sa-modal-body">
+          <label className="sa-label">{t("amAdminName")}</label>
+          <input
+            placeholder={t("amAdminName")}
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") submit(); }}
+            className="input"
+            autoFocus
+          />
+        </div>
 
-        <div className="flex justify-end gap-3">
-          <button onClick={onClose} className="px-4 py-2 rounded-xl bg-gray-100">
-            {t("cancel")}
+        <div className="sa-modal-footer">
+          <button onClick={onClose} className="sa-btn sa-btn-ghost">
+            <MdClose size={15} /> {t("cancel")}
           </button>
-          <button onClick={() => onSubmit(name)}
-            className={`px-4 py-2 rounded-xl font-medium ${isEdit ? "bg-pastel-purple" : "bg-pastel-green"}`}>
+          <button
+            onClick={submit}
+            disabled={!String(name || "").trim()}
+            className="sa-btn sa-btn-primary"
+            style={{ opacity: (!String(name || "").trim()) ? 0.55 : 1, cursor: (!String(name || "").trim()) ? "not-allowed" : "pointer" }}
+          >
+            {isEdit ? <MdEdit size={15} /> : <MdPersonAdd size={15} />}
             {isEdit ? t("amUpdateBtn") : t("amAddBtn")}
           </button>
         </div>
