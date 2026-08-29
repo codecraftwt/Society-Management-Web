@@ -2642,13 +2642,44 @@ html.light {
     align-items: center;
     flex-shrink: 0;
   }
+  .detail-drawer__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 16px 18px;
+    border-bottom: 1px solid var(--glass-border);
+    background: var(--card-inner-bg);
+    flex-shrink: 0;
+  }
+  .detail-drawer__tabs {
+    display: flex;
+    gap: 4px;
+    padding: 10px 16px 12px;
+    background: var(--card-inner-bg);
+    border-bottom: 1px solid var(--glass-border);
+    flex-shrink: 0;
+  }
+  .detail-drawer__tabs-inner {
+    display: flex;
+    flex: 1;
+    background: var(--card-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 10px;
+    padding: 3px;
+    gap: 3px;
+  }
   .detail-drawer__body {
     flex: 1;
     overflow-y: auto;
-    padding: 20px 22px;
+    padding: 16px 18px 20px;
     display: flex;
     flex-direction: column;
-    gap: 18px;
+    gap: 16px;
+  }
+  .detail-drawer__body--chat {
+    padding: 10px 12px 12px;
+    gap: 0;
   }
   .detail-drawer__label {
     font-size: 10px;
@@ -4598,6 +4629,99 @@ html.light .gd-shift-dates     { color: #5F5C5F; }
 html.light .gd-no-shift        { color: #d97706; }
 html.light .gd-stat-title      { color: #5F5C5F; }
 html.light .gd-stat-val        { color: #24212C; }
+
+/* ====
+   GUARD GATE PARCEL — gc-* classes  (light)
+   ==== */
+
+html.light .gc-hero {
+  background: linear-gradient(135deg, rgba(240,132,93,0.16), rgba(255,255,255,0.65) 52%);
+  border: 1.5px solid #ffe9df;
+  box-shadow: 0 2px 12px rgba(37,99,235,0.08);
+}
+html.light .gc-hero-title { color: #24212C; }
+html.light .gc-hero-sub   { color: #5F5C5F; }
+html.light .gc-hero-total {
+  background: #ffffff;
+  border: 1px solid #D6D6E4;
+  color: #5F5C5F;
+}
+html.light .gc-hero-total b { color: #24212C; }
+html.light .gc-count-chip {
+  background: #ffffff;
+  border: 1px solid #D6D6E4;
+  color: #5F5C5F;
+}
+html.light .gc-count-chip b { color: #dc8a45; }
+
+html.light .gc-card {
+  background: #ffffff;
+  border: 1.5px solid #D6D6E4;
+  box-shadow: 0 2px 12px rgba(15,23,42,0.06);
+}
+html.light .gc-card:hover { box-shadow: 0 8px 22px rgba(15,23,42,0.12); border-color: #c9c9d8; }
+html.light .gc-head-title { color: #24212C; }
+html.light .gc-head-icon { background: rgba(240,132,93,0.12); border-color: rgba(240,132,93,0.3); }
+html.light .gc-flat-chip {
+  background: rgba(0,0,0,0.035);
+  border: 1px solid rgba(0,0,0,0.09);
+  color: #5F5C5F;
+}
+
+html.light .gc-stepper-rail { background: rgba(0,0,0,0.08); border-color: rgba(0,0,0,0.05); }
+html.light .gc-step-dot { background: rgba(0,0,0,0.06); color: #8f8b93; border-color: rgba(0,0,0,0.1); }
+html.light .gc-step-label { color: #8f8b93; }
+html.light .gc-step-label--done   { color: #15803d; }
+html.light .gc-step-label--active { color: #b45309; }
+html.light .gc-step-label--cancel { color: #b91c1c; }
+html.light .gc-step-dot--done {
+  background: linear-gradient(135deg, #16a34a, #22c55e);
+  border-color: rgba(74,222,128,0.65);
+}
+html.light .gc-step-dot--active {
+  background: linear-gradient(135deg, #b45309, #f59e0b);
+  border-color: rgba(252,211,77,0.7);
+}
+html.light .gc-step-dot--cancel {
+  background: linear-gradient(135deg, #b91c1c, #ef4444);
+  border-color: rgba(252,165,165,0.6);
+}
+html.light .gc-step-dot--done,
+html.light .gc-step-dot--active,
+html.light .gc-step-dot--cancel { color: #fff; }
+
+html.light .gc-empty {
+  background: rgba(0,0,0,0.02);
+  border-color: rgba(0,0,0,0.14);
+  color: #8f8b93;
+}
+html.light .gc-otp-input {
+  background: rgba(0,0,0,0.04);
+  border: 1px solid rgba(0,0,0,0.14);
+  color: #24212C;
+}
+html.light .gc-otp-input::placeholder { color: #9a96a0; }
+html.light .gc-otp-input:focus { border-color: #22c55e; background: #fff; box-shadow: 0 0 0 4px rgba(34,197,94,0.14); }
+html.light .gc-otp-hint { color: #8f8b93; }
+html.light .gc-footer-shown { color: #5F5C5F; }
+html.light .gc-footer-shown strong { color: #24212C; }
+html.light .gc-warn {
+  background: rgba(245,158,11,0.1);
+  border-color: rgba(245,158,11,0.35);
+  color: #92400e;
+}
+html.light .gc-otp-show {
+  background: rgba(245,158,11,0.08);
+  border-color: rgba(245,158,11,0.28);
+}
+html.light .gc-otp-show-label { color: #b45309; }
+html.light .gc-otp-show-hint { color: #5F5C5F; }
+html.light .gc-otp-code { color: #92400e; }
+html.light .gc-waiting {
+  background: rgba(59,130,246,0.08);
+  border-color: rgba(59,130,246,0.25);
+  color: #1d4ed8;
+}
 
 
 
@@ -6914,19 +7038,16 @@ html.light {
 
 
 /* ====
-   GUARD HELP & CONTACTS — gh-* classes  (light theme)
-   Append this entire block to the BOTTOM of your light.css
-   All rules are scoped inside html.light {}
+   GUARD HELP & CONTACTS - gh-* classes  (light theme)
    ==== */
-
 html.light {
 
   /* ── Page icon ── */
   .gh-page-icon-wrap {
-    background: linear-gradient(135deg, #fff4ee, #fde7da);
-    border-color: rgba(59,130,246,0.28);
-    color: #b25c3a;
-    box-shadow: 0 4px 14px rgba(37,99,235,0.10);
+    background: linear-gradient(135deg, #F0845D, #d96a43);
+    border: 1px solid rgba(240,132,93,0.4);
+    color: #ffffff;
+    box-shadow: 0 6px 16px rgba(240,132,93,0.28);
   }
   .gh-page-title    { color: #24212C; }
   .gh-page-subtitle { color: #5F5C5F; }
@@ -6934,9 +7055,9 @@ html.light {
   /* ── Emergency banner ── */
   .gh-emerg-banner {
     background: rgba(239,68,68,0.06);
-    border-color: rgba(239,68,68,0.20);
+    border-color: rgba(239,68,68,0.22);
   }
-  .gh-emerg-banner-icon { color: #dc2626; }
+  .gh-emerg-banner-icon { color: #b91c1c; }
   .gh-emerg-banner-text { color: #7f1d1d; }
   .gh-emerg-banner-text strong { color: #b91c1c; }
 
@@ -6944,14 +7065,14 @@ html.light {
   .gh-tab-bar {
     background: #ffffff;
     border-color: #e8edf5;
-    box-shadow: 0 2px 12px rgba(15,23,42,0.06);
+    box-shadow: 0 2px 14px rgba(15,23,42,0.07);
   }
   .gh-tab { color: #5F5C5F; }
   .gh-tab:hover { color: #24212C; background: #EFEBF3; }
   .gh-tab--active {
-    background: linear-gradient(135deg, #fff4ee, #fde7da);
-    color: #8a4426;
-    box-shadow: inset 0 0 0 1px rgba(37,99,235,0.25);
+    background: linear-gradient(135deg, #F0845D, #d96a43);
+    color: #ffffff;
+    box-shadow: 0 4px 14px rgba(240,132,93,0.35);
   }
 
   /* ── Section label ── */
@@ -6959,113 +7080,126 @@ html.light {
 
   /* ── Emergency cards ── */
   .gh-emerg-card--blue {
-    background: linear-gradient(135deg, #fff4ee, #fde7da);
-    border-color: rgba(59,130,246,0.28);
-    box-shadow: 0 2px 10px rgba(37,99,235,0.07);
+    background: linear-gradient(135deg, #eff6ff, #dbeafe);
+    border-color: rgba(59,130,246,0.32);
+    box-shadow: 0 2px 12px rgba(37,99,235,0.08);
   }
   .gh-emerg-card--red {
-    background: linear-gradient(135deg, #fff1f2, #fee2e2);
-    border-color: rgba(239,68,68,0.25);
-    box-shadow: 0 2px 10px rgba(239,68,68,0.06);
+    background: linear-gradient(135deg, #fef2f2, #fee2e2);
+    border-color: rgba(239,68,68,0.28);
+    box-shadow: 0 2px 12px rgba(239,68,68,0.07);
   }
   .gh-emerg-card--green {
     background: linear-gradient(135deg, #f0fdf4, #dcfce7);
-    border-color: rgba(34,197,94,0.25);
-    box-shadow: 0 2px 10px rgba(34,197,94,0.06);
+    border-color: rgba(34,197,94,0.28);
+    box-shadow: 0 2px 12px rgba(34,197,94,0.07);
   }
   .gh-emerg-card--purple {
-    background: linear-gradient(135deg, #fff4ee, #ffe9de);
-    border-color: rgba(139,92,246,0.22);
-    box-shadow: 0 2px 10px rgba(139,92,246,0.06);
+    background: linear-gradient(135deg, #f5f3ff, #ede9fe);
+    border-color: rgba(139,92,246,0.28);
+    box-shadow: 0 2px 12px rgba(109,40,217,0.07);
   }
+  .gh-emerg-card--blue::before   { background: linear-gradient(90deg, #2563eb, #60a5fa); }
+  .gh-emerg-card--red::before    { background: linear-gradient(90deg, #dc2626, #f87171); }
+  .gh-emerg-card--green::before  { background: linear-gradient(90deg, #16a34a, #4ade80); }
+  .gh-emerg-card--purple::before { background: linear-gradient(90deg, #7c3aed, #a78bfa); }
 
-  .gh-emerg-card--blue   .gh-emerg-icon-wrap { background: rgba(37,99,235,0.12); color: #b25c3a; }
-  .gh-emerg-card--red    .gh-emerg-icon-wrap { background: rgba(220,38,38,0.12);  color: #b91c1c; }
-  .gh-emerg-card--green  .gh-emerg-icon-wrap { background: rgba(22,163,74,0.12);  color: #15803d; }
-  .gh-emerg-card--purple .gh-emerg-icon-wrap { background: rgba(109,40,217,0.10); color: #392566; }
+  .gh-emerg-card--blue   .gh-emerg-icon-wrap { background: rgba(59,130,246,0.14); color: #1d4ed8; border-color: rgba(59,130,246,0.32); }
+  .gh-emerg-card--red    .gh-emerg-icon-wrap { background: rgba(239,68,68,0.12);  color: #b91c1c; border-color: rgba(239,68,68,0.30); }
+  .gh-emerg-card--green  .gh-emerg-icon-wrap { background: rgba(34,197,94,0.12);  color: #15803d; border-color: rgba(34,197,94,0.30); }
+  .gh-emerg-card--purple .gh-emerg-icon-wrap { background: rgba(139,92,246,0.12); color: #6d28d9; border-color: rgba(139,92,246,0.30); }
 
-  .gh-emerg-card--blue   .gh-emerg-label { color: #8a4426; }
-  .gh-emerg-card--red    .gh-emerg-label { color: #7f1d1d; }
-  .gh-emerg-card--green  .gh-emerg-label { color: #14532d; }
-  .gh-emerg-card--purple .gh-emerg-label { color: #2B1C4D; }
+  .gh-emerg-card--blue   .gh-emerg-label { color: #1d4ed8; }
+  .gh-emerg-card--red    .gh-emerg-label { color: #b91c1c; }
+  .gh-emerg-card--green  .gh-emerg-label { color: #15803d; }
+  .gh-emerg-card--purple .gh-emerg-label { color: #6d28d9; }
 
-  .gh-emerg-card--blue   .gh-emerg-number { color: #b25c3a; }
+  .gh-emerg-card--blue   .gh-emerg-number { color: #1d4ed8; }
   .gh-emerg-card--red    .gh-emerg-number { color: #b91c1c; }
   .gh-emerg-card--green  .gh-emerg-number { color: #15803d; }
-  .gh-emerg-card--purple .gh-emerg-number { color: #392566; }
+  .gh-emerg-card--purple .gh-emerg-number { color: #6d28d9; }
 
-  .gh-emerg-desc { color: #8f8b93; }
+  .gh-emerg-desc { color: #5F5C5F; }
 
-  .gh-emerg-card--blue   .gh-call-btn { background: rgba(37,99,235,0.10); color: #8a4426; border-color: rgba(37,99,235,0.22); }
-  .gh-emerg-card--red    .gh-call-btn { background: rgba(220,38,38,0.10);  color: #b91c1c; border-color: rgba(220,38,38,0.22); }
-  .gh-emerg-card--green  .gh-call-btn { background: rgba(22,163,74,0.10);  color: #15803d; border-color: rgba(22,163,74,0.22); }
-  .gh-emerg-card--purple .gh-call-btn { background: rgba(109,40,217,0.08); color: #392566; border-color: rgba(109,40,217,0.20); }
-  .gh-call-btn:hover { filter: brightness(1.08); }
+  .gh-emerg-card--blue   .gh-call-btn { background: rgba(59,130,246,0.12); color: #1d4ed8; border-color: rgba(59,130,246,0.30); }
+  .gh-emerg-card--red    .gh-call-btn { background: rgba(239,68,68,0.10);  color: #b91c1c; border-color: rgba(239,68,68,0.28); }
+  .gh-emerg-card--green  .gh-call-btn { background: rgba(34,197,94,0.10);  color: #15803d; border-color: rgba(34,197,94,0.28); }
+  .gh-emerg-card--purple .gh-call-btn { background: rgba(139,92,246,0.10); color: #6d28d9; border-color: rgba(139,92,246,0.28); }
+  .gh-emerg-card--blue   .gh-call-btn:hover { background: rgba(59,130,246,0.20); }
+  .gh-emerg-card--red    .gh-call-btn:hover { background: rgba(239,68,68,0.18);  }
+  .gh-emerg-card--green  .gh-call-btn:hover { background: rgba(34,197,94,0.18);  }
+  .gh-emerg-card--purple .gh-call-btn:hover { background: rgba(139,92,246,0.18); }
 
   /* ── Society contacts ── */
   .gh-contact-card {
-    background: linear-gradient(145deg, #FFFFFF 0%, #ffffff 60%);
-    border-color: #e4e9f5;
-    box-shadow: 0 2px 10px rgba(15,23,42,0.05);
+    background: #ffffff;
+    border-color: #D6D6E4;
+    box-shadow: 0 2px 12px rgba(15,23,42,0.06);
   }
-  .gh-contact-card:hover { border-color: #fbd9c6; }
+  .gh-contact-card:hover {
+    border-color: #fbd9c6;
+    box-shadow: 0 8px 22px rgba(15,23,42,0.10);
+  }
 
-  .gh-avatar--blue   { background: linear-gradient(135deg,#fff4ee,#fde7da); color: #8a4426; border-color: rgba(59,130,246,0.25); }
-  .gh-avatar--amber  { background: linear-gradient(135deg,#fffbeb,#fef3c7); color: #92400e; border-color: rgba(245,158,11,0.25); }
-  .gh-avatar--green  { background: linear-gradient(135deg,#f0fdf4,#dcfce7); color: #14532d; border-color: rgba(34,197,94,0.25);  }
-  .gh-avatar--purple { background: linear-gradient(135deg,#fff4ee,#ffe9de); color: #2B1C4D; border-color: rgba(139,92,246,0.22); }
+  .gh-avatar--blue   { background: linear-gradient(135deg, #eff6ff, #dbeafe); color: #1d4ed8; border-color: rgba(59,130,246,0.3); }
+  .gh-avatar--amber  { background: linear-gradient(135deg, #fffbeb, #fef3c7); color: #b45309; border-color: rgba(217,119,6,0.3); }
+  .gh-avatar--green  { background: linear-gradient(135deg, #f0fdf4, #dcfce7); color: #15803d; border-color: rgba(22,163,74,0.3); }
+  .gh-avatar--purple { background: linear-gradient(135deg, #f5f3ff, #ede9fe); color: #6d28d9; border-color: rgba(109,40,217,0.28); }
 
   .gh-contact-name { color: #24212C; }
   .gh-contact-role { color: #8f8b93; }
 
   .gh-action-btn--phone {
     background: rgba(37,99,235,0.08);
-    border-color: rgba(37,99,235,0.20);
-    color: #8a4426;
+    border-color: rgba(37,99,235,0.22);
+    color: #2563eb;
   }
-  .gh-action-btn--phone:hover { background: rgba(37,99,235,0.14); }
+  .gh-action-btn--phone:hover { background: rgba(37,99,235,0.15); }
 
   .gh-action-btn--whatsapp {
     background: rgba(22,163,74,0.08);
-    border-color: rgba(22,163,74,0.20);
-    color: #15803d;
+    border-color: rgba(22,163,74,0.22);
+    color: #16a34a;
   }
-  .gh-action-btn--whatsapp:hover { background: rgba(22,163,74,0.14); }
+  .gh-action-btn--whatsapp:hover { background: rgba(22,163,74,0.15); }
 
   .gh-action-btn--email {
     background: rgba(109,40,217,0.07);
-    border-color: rgba(109,40,217,0.18);
-    color: #392566;
+    border-color: rgba(109,40,217,0.20);
+    color: #6d28d9;
   }
   .gh-action-btn--email:hover { background: rgba(109,40,217,0.13); }
 
   /* ── Support card ── */
   .gh-support-card {
-    background: linear-gradient(135deg, #F3EFF5, #ffe6d8);
-    border-color: rgba(99,102,241,0.22);
+    background: linear-gradient(135deg, #fff7f2, #ffe9df);
+    border-color: rgba(240,132,93,0.32);
+    box-shadow: 0 4px 18px rgba(240,132,93,0.12);
   }
-  .gh-support-icon { color: #d87653; }
+  .gh-support-icon { color: #d96a43; }
   .gh-support-title { color: #24212C; }
   .gh-support-sub   { color: #5F5C5F; }
   .gh-support-btn {
-    background: rgba(79,70,229,0.12);
-    border-color: rgba(79,70,229,0.25);
-    color: #d87653;
+    background: linear-gradient(135deg, #F0845D, #d96a43);
+    border-color: rgba(240,132,93,0.4);
+    color: #ffffff;
+    box-shadow: 0 6px 14px rgba(240,132,93,0.3);
   }
-  .gh-support-btn:hover { background: rgba(79,70,229,0.20); }
+  .gh-support-btn:hover { filter: brightness(1.06); }
 
   /* ── FAQ search ── */
+  .gh-faq-search-icon { color: #8f8b93; }
   .gh-faq-search-input {
     background: #ffffff;
-    border: 1.5px solid #dde3f0;
+    border: 1.5px solid #D6D6E4;
     color: #24212C;
-    box-shadow: 0 1px 4px rgba(15,23,42,0.06), inset 0 1px 2px rgba(15,23,42,0.03);
+    box-shadow: 0 1px 4px rgba(15,23,42,0.05), inset 0 1px 2px rgba(15,23,42,0.02);
   }
   .gh-faq-search-input::placeholder { color: #8f8b93; }
   .gh-faq-search-input:focus {
     border-color: #F0845D;
-    box-shadow: 0 0 0 3px rgba(37,99,235,0.10), inset 0 1px 2px rgba(15,23,42,0.02);
-    background: #fafbff;
+    box-shadow: 0 0 0 3px rgba(240,132,93,0.16), inset 0 1px 2px rgba(15,23,42,0.02);
+    background: #ffffff;
   }
   .gh-faq-search-clear {
     background: #EFEBF3;
@@ -7076,45 +7210,46 @@ html.light {
 
   /* ── FAQ items ── */
   .gh-faq-item {
-    background: linear-gradient(145deg, #FFFFFF 0%, #ffffff 60%);
-    border-color: #e4e9f5;
-    box-shadow: 0 1px 4px rgba(15,23,42,0.04);
+    background: #ffffff;
+    border-color: #D6D6E4;
+    box-shadow: 0 1px 6px rgba(15,23,42,0.05);
   }
-  .gh-faq-item--open { border-color: #fbd9c6; }
+  .gh-faq-item--open { border-color: #fbd9c6; box-shadow: 0 4px 14px rgba(240,132,93,0.10); }
   .gh-faq-question { color: #24212C; }
-  .gh-faq-question:hover { color: #8a4426; }
+  .gh-faq-question:hover { color: #d96a43; }
   .gh-faq-chevron { color: #8f8b93; }
-  .gh-faq-item--open .gh-faq-chevron { color: #d87653; }
+  .gh-faq-item--open .gh-faq-chevron { color: #F0845D; }
   .gh-faq-answer { border-top-color: #EFEBF3; }
   .gh-faq-answer p { color: #403D4A; }
 
   /* ── Quick guide ── */
   .gh-guide-intro {
-    background: rgba(37,99,235,0.06);
-    border-color: rgba(37,99,235,0.18);
-    color: #8a4426;
+    background: rgba(240,132,93,0.08);
+    border-color: rgba(240,132,93,0.25);
+    color: #b45309;
   }
-  .gh-guide-intro-icon { color: #d87653; }
+  .gh-guide-intro-icon { color: #F0845D; }
 
   .gh-guide-step {
-    background: linear-gradient(145deg, #FFFFFF 0%, #ffffff 60%);
-    border-color: #e4e9f5;
-    box-shadow: 0 1px 4px rgba(15,23,42,0.04);
+    background: #ffffff;
+    border-color: #D6D6E4;
+    box-shadow: 0 1px 6px rgba(15,23,42,0.05);
   }
-  .gh-guide-step:hover { border-color: #fbd9c6; }
+  .gh-guide-step:hover { border-color: #fbd9c6; box-shadow: 0 8px 20px rgba(15,23,42,0.09); }
   .gh-guide-step-num {
-    background: linear-gradient(135deg, #fff4ee, #fde7da);
-    border-color: rgba(37,99,235,0.25);
-    color: #8a4426;
+    background: linear-gradient(135deg, #F0845D, #d96a43);
+    border-color: rgba(240,132,93,0.4);
+    color: #ffffff;
+    box-shadow: 0 4px 12px rgba(240,132,93,0.28);
   }
   .gh-guide-step-title { color: #24212C; }
   .gh-guide-step-desc  { color: #5F5C5F; }
 
   /* ── Shift checklist ── */
   .gh-shift-tips {
-    background: linear-gradient(145deg, #FFFFFF 0%, #ffffff 60%);
-    border-color: #e4e9f5;
-    box-shadow: 0 1px 6px rgba(15,23,42,0.05);
+    background: #ffffff;
+    border-color: #D6D6E4;
+    box-shadow: 0 1px 8px rgba(15,23,42,0.05);
   }
   .gh-shift-tips-title { color: #24212C; }
   .gh-checklist-item {
@@ -7123,7 +7258,7 @@ html.light {
   }
   .gh-checklist-dot {
     background: #F0845D;
-    box-shadow: 0 0 5px rgba(37,99,235,0.25);
+    box-shadow: 0 0 6px rgba(240,132,93,0.35);
   }
 
   /* ── Dos & Don'ts ── */
@@ -7142,7 +7277,7 @@ html.light {
 
   /* ── Empty state ── */
   .gh-empty-state { border-color: #D6D6E4; }
-  .gh-empty-icon  { color: #D6D6E4; }
+  .gh-empty-icon  { color: #c9c4d4; }
   .gh-empty-text  { color: #403D4A; }
   .gh-empty-sub   { color: #8f8b93; }
 }

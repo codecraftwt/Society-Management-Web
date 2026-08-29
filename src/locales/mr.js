@@ -435,6 +435,14 @@ const mr = {
   gcCollectedMsg:   "पार्सल यशस्वीरित्या गोळा केले",
   gcCancelledMsg:   "रहिवाशाने रद्द केले",
   gcInvalidOtp:     "अवैध OTP",
+  gcOtpRequired:    "कृपया वैध 4-अंकी OTP प्रविष्ट करा",
+  gcTotalParcels:   "एकूण पार्सल",
+  gcCountExpected:  "प्रतीक्षित",
+  gcCountAtGate:    "गेटवर",
+  gcCountCollected: "मिळाले",
+  gcCountCancelled: "रद्द",
+  gcAutoHint:       "4 अंक प्रविष्ट करताच स्वयं सबमिट होईल",
+  gcVerifyOtp:      "OTP तपासत आहे...",
 
 
   gcNotOnShift: "तुमची ड्युटी सध्या सुरू नाही. फक्त कर्तव्यावर असलेले रक्षकच ही क्रिया करू शकतात.",
@@ -957,6 +965,8 @@ const mr = {
   parcelDelivered:         "यशस्वीरित्या डिलीव्हर झाले",
   parcelCancelledBanner:   "डिलिव्हरी रद्द झाली",
   parcelCancelBtn:         "डिलिव्हरी रद्द करा",
+  parcelWaiting:           "पार्सल गेटवर येण्याची प्रतीक्षा आहे",
+  parcelOtpSubtitle:       "पार्सल घेण्यासाठी गेटवर हा QR दाखवा",
   parcelModalTitle:        "नवीन पार्सल अपेक्षित करा",
   parcelCourierLabel:      "कूरियर / कंपनीचे नाव",
   parcelCourierPlaceholder:"उदा. Amazon, Delhivery, Flipkart…",

@@ -434,6 +434,14 @@ const en = {
   gcCollectedMsg:   "Parcel Successfully Collected",
   gcCancelledMsg:   "Cancelled by Resident",
   gcInvalidOtp:     "Invalid OTP",
+  gcOtpRequired:    "Please enter a valid 4-digit OTP",
+  gcTotalParcels:   "Total parcels",
+  gcCountExpected:  "Expected",
+  gcCountAtGate:    "At gate",
+  gcCountCollected: "Collected",
+  gcCountCancelled: "Cancelled",
+  gcAutoHint:       "Auto-submits when you enter 4 digits",
+  gcVerifyOtp:      "Verifying OTP...",
 
   // en.json
 
@@ -958,6 +966,8 @@ const en = {
   parcelDelivered:         "Delivered successfully",
   parcelCancelledBanner:   "Delivery cancelled",
   parcelCancelBtn:         "Cancel Delivery",
+  parcelWaiting:           "Waiting for the parcel to arrive at the gate",
+  parcelOtpSubtitle:       "Show this QR at the gate to collect your parcel",
   parcelModalTitle:        "Expect New Parcel",
   parcelCourierLabel:      "Courier / Company Name",
   parcelCourierPlaceholder:"e.g. Amazon, Delivery, Flipkart…",

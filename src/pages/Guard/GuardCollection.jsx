@@ -2,7 +2,15 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import API from "../../services/api";
 import socket from "../../services/socket";
 import { useLang } from "../../context/LanguageContext";
-import { MdChevronLeft, MdChevronRight } from "react-icons/md";
+import {
+  MdChevronLeft,
+  MdChevronRight,
+  MdOutlineInventory2,
+  MdOutlineDoorFront,
+  MdVerified,
+  MdClose,
+  MdMarkEmailRead,
+} from "react-icons/md";
 import { toast } from "react-toastify";
 
 /* ── Spinner ── */
@@ -59,10 +67,13 @@ function Pagination({ page, totalPages, onPageChange }) {
 
 const LIMIT = 5;
 
+const EMPTY_COUNTS = { EXPECTED: 0, AT_GATE: 0, COLLECTED: 0, CANCELLED: 0, ALL: 0 };
+
 export default function GuardCollection() {
   const { t } = useLang();
 
   const [parcels, setParcels] = useState([]);
+  const [counts, setCounts] = useState(EMPTY_COUNTS);
   const [initialLoad, setInitialLoad] = useState(true);
   const [fetching, setFetching] = useState(false);
   const [otpInputs, setOtpInputs] = useState({});
@@ -74,13 +85,20 @@ export default function GuardCollection() {
   // ✅ Better loading state management
   const [processingId, setProcessingId] = useState(null);
   const [collectingId, setCollectingId] = useState(null);
-  
+
   // ✅ New: Visual feedback states
   const [verifyingId, setVerifyingId] = useState(null);
   const [buttonClickedId, setButtonClickedId] = useState(null);
-  
+
   // ✅ Prevent rapid clicks
   const actionTimeoutRef = useRef({});
+
+  const shiftCount = (prev, from, to) => {
+    const next = { ...prev };
+    if (from && next[from] !== undefined) next[from] = Math.max(0, (next[from] || 0) - 1);
+    if (to && next[to] !== undefined) next[to] = (next[to] || 0) + 1;
+    return next;
+  };
 
   const loadData = useCallback(async (pg = 1, isInit = false) => {
     isInit ? setInitialLoad(true) : setFetching(true);
@@ -90,6 +108,14 @@ export default function GuardCollection() {
       setParcels(Array.isArray(data) ? data : data?.data || []);
       setTotalPages(data?.pagination?.totalPages ?? 1);
       setTotalItems(data?.pagination?.totalItems ?? 0);
+      const c = data?.counts || {};
+      setCounts({
+        EXPECTED: c.EXPECTED ?? 0,
+        AT_GATE: c.AT_GATE ?? 0,
+        COLLECTED: c.COLLECTED ?? 0,
+        CANCELLED: c.CANCELLED ?? 0,
+        ALL: c.ALL ?? data?.pagination?.totalItems ?? 0,
+      });
       setPage(pg);
     } catch (err) {
       console.error(err);
@@ -107,6 +133,11 @@ export default function GuardCollection() {
   /* ── Real-time socket listeners ── */
   useEffect(() => {
     const onCreated = (parcel) => {
+      setCounts((prev) => ({
+        ...prev,
+        ALL: (prev.ALL || 0) + 1,
+        [parcel.status]: (prev[parcel.status] || 0) + 1,
+      }));
       setParcels((prev) => {
         if (prev.find((p) => p.id === parcel.id)) return prev;
         setTotalItems((c) => c + 1);
@@ -119,15 +150,23 @@ export default function GuardCollection() {
     };
 
     const onUpdated = (updated) => {
-      setParcels((prev) =>
-        prev.map((p) => (p.id === updated.id ? { ...p, ...updated } : p))
-      );
+      setParcels((prev) => {
+        const existing = prev.find((x) => x.id === updated.id);
+        if (existing && existing.status !== updated.status) {
+          setCounts((c) => shiftCount(c, existing.status, updated.status));
+        }
+        return prev.map((x) => (x.id === updated.id ? { ...x, ...updated } : x));
+      });
     };
 
     const onCollected = (updated) => {
-      setParcels((prev) =>
-        prev.map((p) => (p.id === updated.id ? { ...p, ...updated } : p))
-      );
+      setParcels((prev) => {
+        const existing = prev.find((x) => x.id === updated.id);
+        if (existing && existing.status !== "COLLECTED") {
+          setCounts((c) => shiftCount(c, existing.status, "COLLECTED"));
+        }
+        return prev.map((x) => (x.id === updated.id ? { ...x, ...updated } : x));
+      });
     };
 
     socket.on("parcel_created", onCreated);
@@ -150,92 +189,75 @@ export default function GuardCollection() {
       console.log("⚠️ Action already in progress for parcel", id);
       return;
     }
-    
+
     try {
       // ✅ Instant visual feedback
       setButtonClickedId(id);
       setProcessingId(id);
-      
+
       // ✅ Set timeout lock
       actionTimeoutRef.current[id] = setTimeout(() => {
         delete actionTimeoutRef.current[id];
       }, 2000);
-      
+
       // ✅ Optimistic update
       setParcels((prev) =>
         prev.map((p) => (p.id === id ? { ...p, status: "AT_GATE" } : p))
       );
+      setCounts((c) => shiftCount(c, "EXPECTED", "AT_GATE"));
 
       await API.put(`/parcels/${id}/status`, { status: "AT_GATE" });
       toast.success("Parcel marked as arrived");
-      
+
     } catch (err) {
       console.error("❌ Mark arrived failed:", err);
-      
+
       if (err.response?.status === 403 && err.response?.data?.message?.includes("shift")) {
         toast.warning(t("gcNotOnShift") || "You are not on shift. Please check your active shift.");
       } else {
         toast.error(t("gcError") || "An error occurred. Please try again.");
       }
-      
+
       // ✅ Rollback
       loadData(page);
-      
+
     } finally {
       setProcessingId(null);
       setTimeout(() => setButtonClickedId(null), 500); // Clear visual feedback
     }
   };
 
-  // ✅ IMPROVED: Verify and collect with multi-stage feedback
-  const verifyAndCollect = async (id) => {
-    // ✅ Prevent double-click
-    if (collectingId || actionTimeoutRef.current[id]) {
-      console.log("⚠️ Collection already in progress for parcel", id);
-      return;
-    }
+  const verifyAndCollect = async (id, otpOverride) => {
+    if (collectingId) return;
 
-    const otpValue = otpInputs[id]?.trim();
-    
-    // ✅ Validate OTP immediately
-    if (!otpValue || otpValue.length !== 4) {
+    const otpValue = String(otpOverride ?? otpInputs[id] ?? "")
+      .replace(/\D/g, "")
+      .slice(0, 4);
+
+    if (otpValue.length !== 4) {
       toast.warning(t("gcOtpRequired") || "Please enter a valid 4-digit OTP");
       return;
     }
-    
-    try {
-      // ✅ Stage 1: Button clicked - instant feedback
-      setButtonClickedId(id);
-      
-      // ✅ Stage 2: Start verifying (after 100ms to show click animation)
-      setTimeout(() => {
-        setVerifyingId(id);
-      }, 100);
-      
-      setCollectingId(id);
-      
-      // ✅ Set timeout lock
-      actionTimeoutRef.current[id] = setTimeout(() => {
-        delete actionTimeoutRef.current[id];
-      }, 3000); // Longer timeout for verification
-      
-      // ✅ Optimistic update
-      setParcels((prev) =>
-        prev.map((p) => (p.id === id ? { ...p, status: "COLLECTED" } : p))
-      );
 
+    setButtonClickedId(id);
+    setVerifyingId(id);
+    setCollectingId(id);
+
+    try {
       await API.put(`/parcels/${id}/status`, {
         status: "COLLECTED",
         pickup_code: otpValue,
       });
-      
-      // ✅ Success feedback
+
+      setParcels((prev) =>
+        prev.map((p) => (p.id === id ? { ...p, status: "COLLECTED" } : p))
+      );
+      setCounts((c) => shiftCount(c, "AT_GATE", "COLLECTED"));
       setOtpInputs((prev) => ({ ...prev, [id]: "" }));
       toast.success("✅ Parcel collected successfully!");
-      
     } catch (err) {
       console.error("❌ Collect failed:", err);
-      
+
       if (err.response?.status === 403 && err.response?.data?.message?.includes("shift")) {
         toast.warning(t("gcNotOnShift") || "You are not on shift. Please check your active shift.");
       } else if (err.response?.status === 400) {
@@ -243,28 +265,16 @@ export default function GuardCollection() {
       } else {
         toast.error(t("gcError") || "An error occurred. Please try again.");
       }
-      
-      // ✅ Rollback
-      loadData(page);
-      
     } finally {
       setCollectingId(null);
       setVerifyingId(null);
-      setTimeout(() => setButtonClickedId(null), 500);
+      setButtonClickedId(null);
     }
   };
 
-  // ✅ Auto-submit on 4-digit OTP entry
   const handleOtpChange = (id, value) => {
-    const cleanValue = value.replace(/\D/g, '').slice(0, 4);
+    const cleanValue = value.replace(/\D/g, "").slice(0, 4);
     setOtpInputs((prev) => ({ ...prev, [id]: cleanValue }));
-    
-    // ✅ Auto-submit when 4 digits entered
-    if (cleanValue.length === 4 && !collectingId) {
-      setTimeout(() => {
-        verifyAndCollect(id);
-      }, 300); // Small delay for better UX
-    }
   };
 
   // ✅ Cleanup timeouts on unmount
@@ -284,36 +294,65 @@ export default function GuardCollection() {
     return 1;
   };
 
-  const getStatusStyle = (status) => {
-    if (status === "COLLECTED") return "bg-green-500/20 text-green-400";
-    if (status === "AT_GATE")   return "bg-yellow-500/20 text-yellow-400";
-    if (status === "EXPECTED")  return "bg-blue-500/20 text-blue-400";
-    if (status === "CANCELLED") return "bg-red-500/20 text-red-400";
-    return "";
-  };
-
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-xl font-bold">{t("gcTitle")}</h2>
-        <p className="text-sm text-white/60">
-          {t("gcSubtitle")} — {totalItems} total
-        </p>
+    <div className="gc-page">
+
+      {/* ── HERO ── */}
+      <div className="gc-hero">
+        <div className="gc-hero-top">
+          <div className="gc-hero-icon">
+            <MdOutlineInventory2 />
+          </div>
+          <div>
+            <h2 className="gc-hero-title">{t("gcTitle")}</h2>
+            <p className="gc-hero-sub">{t("gcSubtitle")}</p>
+          </div>
+          <div className="gc-hero-total">
+            <b>{counts.ALL}</b>
+            <span>{t("gcTotalParcels", "Total parcels")}</span>
+          </div>
+        </div>
+
+        <div className="gc-hero-counts">
+          <div className="gc-count-chip">
+            <span className="gc-count-dot gc-count-dot--expect" />
+            {t("gcCountExpected", "Expected")}
+            <b>{counts.EXPECTED}</b>
+          </div>
+          <div className="gc-count-chip">
+            <span className="gc-count-dot gc-count-dot--gate" />
+            {t("gcCountAtGate", "At gate")}
+            <b>{counts.AT_GATE}</b>
+          </div>
+          <div className="gc-count-chip">
+            <span className="gc-count-dot gc-count-dot--done" />
+            {t("gcCountCollected", "Collected")}
+            <b>{counts.COLLECTED}</b>
+          </div>
+          <div className="gc-count-chip">
+            <span className="gc-count-dot gc-count-dot--cancel" />
+            {t("gcCountCancelled", "Cancelled")}
+            <b>{counts.CANCELLED}</b>
+          </div>
+        </div>
       </div>
 
       {initialLoad ? (
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12, padding: "48px 20px" }}>
+        <div className="gc-loading">
           <Spinner size={24} />
-          <p style={{ fontSize: 13, color: "var(--text-secondary)", margin: 0 }}>{t("gcLoading")}</p>
+          <p>{t("gcLoading")}</p>
         </div>
 
       ) : parcels.length === 0 ? (
-        <p className="text-white/60">{t("gcEmpty")}</p>
+        <div className="gc-empty">
+          <MdOutlineInventory2 size={40} />
+          <p>{t("gcEmpty")}</p>
+        </div>
 
       ) : (
         <>
           {fetching && (
-            <div style={{ display: "flex", justifyContent: "center", padding: "8px 0" }}>
+            <div className="gc-fetching">
               <Spinner size={16} />
             </div>
           )}
@@ -328,9 +367,41 @@ export default function GuardCollection() {
               let progressWidth = "0%";
               if (p.status === "AT_GATE")   progressWidth = "50%";
               if (p.status === "COLLECTED") progressWidth = "100%";
-              if (p.status === "CANCELLED") progressWidth = "50%";
+              if (p.status === "CANCELLED") progressWidth = "100%";
 
-              const timelineLabels = [
+              const pillClass =
+                p.status === "EXPECTED"
+                  ? "gc-pill--expected"
+                  : p.status === "AT_GATE"
+                  ? "gc-pill--atgate"
+                  : p.status === "COLLECTED"
+                  ? "gc-pill--collected"
+                  : "gc-pill--cancelled";
+
+              const accentClass =
+                p.status === "EXPECTED"
+                  ? "gc-accent--expect"
+                  : p.status === "AT_GATE"
+                  ? "gc-accent--gate"
+                  : p.status === "COLLECTED"
+                  ? "gc-accent--done"
+                  : "gc-accent--cancel";
+
+              const fillClass = isCancelled
+                ? "gc-fill--cancel"
+                : p.status === "COLLECTED"
+                ? "gc-fill--done"
+                : p.status === "AT_GATE"
+                ? "gc-fill--active"
+                : "";
+
+              const stepIcons = [
+                <MdOutlineInventory2 key="s0" />,
+                <MdOutlineDoorFront key="s1" />,
+                isCancelled ? <MdClose key="s2" /> : <MdVerified key="s2" />,
+              ];
+
+              const stepLabels = [
                 t("gcStepExpected"),
                 t("gcStepAtGate"),
                 isCancelled ? t("gcStepCancelled") : t("gcStepCollected"),
@@ -339,170 +410,187 @@ export default function GuardCollection() {
               return (
                 <div
                   key={p.id}
-                  className="bg-card border border-white/10 rounded-2xl p-5 shadow-md space-y-4 transition-all"
+                  className="gc-card"
                   style={{
-                    transform: isClicked ? 'scale(0.995)' : 'scale(1)',
-                    opacity: isVerifying ? 0.8 : 1,
+                    transform: isClicked ? "scale(0.997)" : undefined,
+                    opacity: isVerifying ? 0.85 : 1,
+                    transition: "transform 0.15s ease, opacity 0.2s ease",
                   }}
                 >
-                  {/* Header */}
-                  <div className="flex justify-between">
-                    <div>
-                      <h3 className="font-semibold text-lg">{p.courier_name}</h3>
-                      <p className="text-sm text-white/60">
-  {t("gcFlat")}: {p.Flat?.Floor?.Block?.name} › {t("gcFloor")} {p.Flat?.Floor?.floor_number} › {p.Flat?.flat_number}
-</p>
-                    </div>
-                    <span className={`text-xs px-3 py-1 rounded-full font-semibold ${getStatusStyle(p.status)}`}>
-                      {p.status}
-                    </span>
-                  </div>
+                  <span className={`gc-card-accent ${accentClass}`} />
 
-                  {/* Timeline */}
-                  <div className="relative flex items-center justify-between">
-                    <div className="absolute top-3 left-0 right-0 h-1 bg-white/10" />
-                    <div
-                      className="absolute top-3 left-0 h-1 bg-green-500 transition-all duration-500"
-                      style={{ width: progressWidth }}
-                    />
-                    {isCancelled && (
-                      <div
-                        className="absolute top-3 left-1/2 h-1 bg-red-500 transition-all duration-500"
-                        style={{ width: "50%" }}
-                      />
-                    )}
-                    {timelineLabels.map((label, index) => (
-                      <div key={index} className="flex flex-col items-center z-10">
-                        <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all
-                          ${
-                            index + 1 === 3
-                              ? isCancelled
-                                ? "bg-red-500 text-white"
-                                : p.status === "COLLECTED"
-                                ? "bg-green-500 text-white"
-                                : "bg-white/20 text-white/50"
-                              : step >= index + 1
-                              ? "bg-green-500 text-white"
-                              : "bg-white/20 text-white/50"
-                          }`}
-                        >
-                          {index + 1}
-                        </div>
-                        <span className="text-xs mt-1 text-white/70">{label}</span>
+                  <div className="gc-card-inner">
+                    {/* ── HEAD ── */}
+                    <div className="gc-head">
+                      <div className="gc-head-icon">
+                        <MdOutlineInventory2 />
                       </div>
-                    ))}
-                  </div>
-
-                  {/* EXPECTED → Mark Arrived */}
-                  {p.status === "EXPECTED" && (
-                    <button
-                      onClick={() => markArrived(p.id)}
-                      disabled={processingId === p.id || actionTimeoutRef.current[p.id]}
-                      className="w-full bg-yellow-600 hover:bg-yellow-700 text-white py-3 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-all transform active:scale-95 font-medium"
-                    >
-                      {processingId === p.id ? (
-                        <>
-                          <Spinner size={16} />
-                          <span>Processing...</span>
-                        </>
-                      ) : (
-                        t("gcMarkArrived")
-                      )}
-                    </button>
-                  )}
-
-                  {/* AT_GATE → OTP verify */}
-                  {p.status === "AT_GATE" && (
-                    <div className="space-y-3">
-                      {/* ✅ Verification status indicator */}
-                      {isVerifying && (
-                        <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-3 flex items-center gap-2 animate-pulse">
-                          <Spinner size={16} />
-                          <span className="text-sm text-blue-400 font-medium">
-                            🔐 Verifying OTP...
-                          </span>
+                      <div className="gc-head-text">
+                        <h3 className="gc-head-title">{p.courier_name}</h3>
+                        <div className="gc-flat-chip">
+                          <MdMarkEmailRead />
+                          {t("gcFlat")}: {p.Flat?.Floor?.Block?.name} › {t("gcFloor")} {p.Flat?.Floor?.floor_number} › {p.Flat?.flat_number}
                         </div>
-                      )}
-                      
-                      <input
-                        type="text"
-                        inputMode="numeric"
-                        placeholder={t("gcOtpPlaceholder") || "Enter 4-digit OTP"}
-                        value={otpInputs[p.id] || ""}
-                        disabled={collectingId === p.id}
-                        onChange={(e) => handleOtpChange(p.id, e.target.value)}
-                        onKeyPress={(e) => {
-                          if (e.key === 'Enter' && otpInputs[p.id]?.length === 4) {
-                            verifyAndCollect(p.id);
-                          }
-                        }}
-                        className="input text-center tracking-widest text-lg font-bold transition-all focus:ring-2 focus:ring-green-500"
-                        maxLength={4}
-                        autoComplete="off"
-                      />
-                      
+                      </div>
+                      <span className={`gc-pill ${pillClass}`}>
+                        <span className="gc-pill-dot" />
+                        {p.status}
+                      </span>
+                    </div>
+
+                    {/* ── PREMIUM STEPPER ── */}
+                    <div className="gc-stepper">
+                      <div className="gc-stepper-rail">
+                        <div
+                          className={`gc-stepper-fill ${fillClass}`}
+                          style={{ width: progressWidth }}
+                        />
+                      </div>
+
+                      <div className="gc-step-row">
+                        {stepIcons.map((icon, index) => {
+                          const stepNo = index + 1;
+                          const done = isCancelled ? stepNo < 3 : step > stepNo;
+                          const active = !isCancelled && step === stepNo;
+                          const cancelledHere = isCancelled && stepNo === 3;
+                          return (
+                            <div key={index} className="gc-step">
+                              <div
+                                className={`gc-step-dot ${
+                                  done
+                                    ? "gc-step-dot--done"
+                                    : active
+                                    ? "gc-step-dot--active"
+                                    : cancelledHere
+                                    ? "gc-step-dot--cancel"
+                                    : ""
+                                }`}
+                              >
+                                {done ? <MdVerified /> : icon}
+                              </div>
+                              <span
+                                className={`gc-step-label ${
+                                  done
+                                    ? "gc-step-label--done"
+                                    : active
+                                    ? "gc-step-label--active"
+                                    : cancelledHere
+                                    ? "gc-step-label--cancel"
+                                    : ""
+                                }`}
+                              >
+                                {stepLabels[index]}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* ── EXPECTED → Mark Arrived ── */}
+                    {p.status === "EXPECTED" && (
                       <button
-                        onClick={() => verifyAndCollect(p.id)}
-                        disabled={collectingId === p.id || !otpInputs[p.id] || otpInputs[p.id].length !== 4 || actionTimeoutRef.current[p.id]}
-                        className="w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-all transform active:scale-95 font-medium shadow-lg"
+                        onClick={() => markArrived(p.id)}
+                        disabled={processingId === p.id || actionTimeoutRef.current[p.id]}
+                        className="gc-btn gc-btn--warn"
                       >
-                        {collectingId === p.id ? (
-                          isVerifying ? (
-                            <>
-                              <Spinner size={18} />
-                              <span>🔐 Verifying OTP...</span>
-                            </>
-                          ) : (
-                            <>
-                              <Spinner size={18} />
-                              <span>Collecting...</span>
-                            </>
-                          )
+                        {processingId === p.id ? (
+                          <>
+                            <Spinner size={16} />
+                            <span>Processing...</span>
+                          </>
                         ) : (
                           <>
-                            <span>✅ {t("gcVerifyCollect") || "Verify & Collect"}</span>
-                            {otpInputs[p.id]?.length === 4 && (
-                              <span className="text-xs opacity-75">(or press Enter)</span>
-                            )}
+                            <MdOutlineDoorFront />
+                            <span>{t("gcMarkArrived")}</span>
                           </>
                         )}
                       </button>
-                      
-                      {/* ✅ Helper text */}
-                      <p className="text-xs text-center text-white/50">
-                        Auto-submits when you enter 4 digits
-                      </p>
-                    </div>
-                  )}
+                    )}
 
-                  {p.status === "COLLECTED" && (
-                    <div className="text-center text-green-400 font-semibold py-2 bg-green-500/10 rounded-lg">
-                      {t("gcCollectedMsg")} ✅
-                    </div>
-                  )}
+                    {/* ── AT_GATE → OTP verify ── */}
+                    {p.status === "AT_GATE" && (
+                      <div className="gc-otp-wrap">
+                        {isVerifying && (
+                          <div className="gc-verify-banner">
+                            <Spinner size={16} />
+                            <span>{t("gcVerifyOtp", "Verifying OTP...")}</span>
+                          </div>
+                        )}
 
-                  {p.status === "CANCELLED" && (
-                    <div className="text-center text-red-400 font-semibold py-2 bg-red-500/10 rounded-lg">
-                      {t("gcCancelledMsg")} ❌
-                    </div>
-                  )}
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          placeholder={t("gcOtpPlaceholder") || "Enter 4-digit OTP"}
+                          value={otpInputs[p.id] || ""}
+                          disabled={collectingId === p.id}
+                          onChange={(e) => handleOtpChange(p.id, e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" && otpInputs[p.id]?.length === 4) {
+                              verifyAndCollect(p.id, otpInputs[p.id]);
+                            }
+                          }}
+                          className="gc-otp-input"
+                          maxLength={4}
+                          autoComplete="off"
+                        />
+
+                        <button
+                          onClick={() => verifyAndCollect(p.id, otpInputs[p.id])}
+                          disabled={collectingId === p.id || !otpInputs[p.id] || otpInputs[p.id].length !== 4}
+                          className="gc-btn gc-btn--success"
+                        >
+                          {collectingId === p.id ? (
+                            isVerifying ? (
+                              <>
+                                <Spinner size={18} />
+                                <span>{t("gcVerifyOtp", "Verifying OTP...")}</span>
+                              </>
+                            ) : (
+                              <>
+                                <Spinner size={18} />
+                                <span>Collecting...</span>
+                              </>
+                            )
+                          ) : (
+                            <>
+                              <MdVerified />
+                              <span>{t("gcVerifyCollect") || "Verify & Collect"}</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    )}
+
+                    {p.status === "COLLECTED" && (
+                      <div className="gc-done-banner">
+                        {t("gcCollectedMsg")} <MdVerified />
+                      </div>
+                    )}
+
+                    {p.status === "CANCELLED" && (
+                      <div className="gc-cancel-banner">
+                        {t("gcCancelledMsg")} <MdClose />
+                      </div>
+                    )}
+                  </div>
                 </div>
               );
             })}
           </div>
 
-          {/* Pagination footer */}
+          {/* ── Pagination footer ── */}
           <div
-            className="table-footer"
-            style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10, marginTop: 16 }}
+            className="gc-footer"
+            style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10 }}
           >
-            <span style={{ fontSize: 12, color: "var(--text-secondary)" }}>
+            <span className="gc-footer-shown">
               Showing{" "}
-              <strong style={{ color: "var(--text-primary)" }}>
+              <strong>
                 {(page - 1) * LIMIT + 1}–{Math.min(page * LIMIT, totalItems)}
               </strong>{" "}
               of{" "}
-              <strong style={{ color: "var(--text-primary)" }}>{totalItems}</strong>{" "}
+              <strong>{totalItems}</strong>{" "}
               parcels
             </span>
             <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} />

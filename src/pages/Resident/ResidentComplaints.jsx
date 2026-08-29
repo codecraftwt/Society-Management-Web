@@ -548,7 +548,6 @@ function ChatPanel({ complaintId, currentUser, onIncomingMessage }) {
 
 // ─── ComplaintDrawer ──────────────────────────────────────────────────────────
 function ComplaintDrawer({ complaint, onClose, currentUser, t, defaultTab = "details", onMarkRead }) {
-  const isMobile = useIsMobile();
   const [drawerTab,     setDrawerTab]     = useState(defaultTab);
   const [lightboxPhoto, setLightboxPhoto] = useState(null);
 
@@ -585,20 +584,13 @@ function ComplaintDrawer({ complaint, onClose, currentUser, t, defaultTab = "det
   return createPortal(
     <>
       <div className="modal-overlay-blur animate-fadeIn" onClick={onClose} />
-      <div className="animate-fadeIn" style={{
-        position: "fixed", zIndex: 50,
-        ...(isMobile
-          ? { inset: 0, borderRadius: 0, width: "100%", maxWidth: "100%" }
-          : { top: 0, right: 0, bottom: 0, left: "auto", width: 420, borderRadius: "16px 0 0 16px" }),
-        background: "var(--card-bg)", border: "1.5px solid var(--glass-border)",
-        boxShadow: "var(--shadow-glass)", display: "flex", flexDirection: "column", overflow: "hidden",
-      }}>
-        <div className="detail-drawer__header" style={{ flexShrink: 0 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <div className="er-icon er-icon--complaint" style={{ width: 36, height: 36, borderRadius: 10 }}>
+      <div className="resident-complaint-drawer animate-fadeIn">
+        <div className="detail-drawer__header">
+          <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
+            <div className="er-icon er-icon--complaint" style={{ width: 36, height: 36, borderRadius: 10, flexShrink: 0 }}>
               <MdReportProblem size={17} />
             </div>
-            <div>
+            <div style={{ minWidth: 0 }}>
               <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text-primary)" }}>{t("drawerComplaintDetails")}</div>
               <div style={{ fontSize: 11, color: "var(--text-secondary)", marginTop: 2 }}>{formatDate(complaint.created_at)}</div>
             </div>
@@ -606,10 +598,8 @@ function ComplaintDrawer({ complaint, onClose, currentUser, t, defaultTab = "det
           <button className="detail-drawer__close-btn" onClick={onClose}><MdClose size={17} /></button>
         </div>
 
-        <div style={{ display: "flex", gap: 4, padding: "10px 14px 0",
-          background: "var(--card-inner-bg)", borderBottom: "1px solid var(--glass-border)", flexShrink: 0 }}>
-          <div style={{ display: "flex", flex: 1, background: "var(--card-bg)",
-            border: "1px solid var(--glass-border)", borderRadius: 10, padding: 3, gap: 3 }}>
+        <div className="detail-drawer__tabs">
+          <div className="detail-drawer__tabs-inner">
             <button style={tabBtn("details")} onClick={() => handleTabChange("details")}>
               <MdReportProblem size={13} /> {t("chatDetails")}
             </button>
@@ -619,29 +609,31 @@ function ComplaintDrawer({ complaint, onClose, currentUser, t, defaultTab = "det
           </div>
         </div>
 
-        <div className="detail-drawer__body scrollbar-hide"
-          style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, overflowY: "auto" }}>
+        <div
+          className={`detail-drawer__body scrollbar-hide${drawerTab === "chat" ? " detail-drawer__body--chat" : ""}`}
+          style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, overflowY: "auto" }}
+        >
           {drawerTab === "details" && (
             <>
-              <span className={`status-pill ${sc.pill}`}>
+              <span className={`status-pill ${sc.pill}`} style={{ alignSelf: "flex-start", margin: 0 }}>
                 <sc.Icon size={12} /> {statusLabel(complaint.status)}
               </span>
-              <div>
+              <div style={{ margin: 0 }}>
                 <div className="detail-drawer__label">{t("compColTitle")}</div>
-                <div style={{ fontSize: 15, fontWeight: 700, color: "var(--text-primary)", lineHeight: 1.35 }}>
+                <div style={{ fontSize: 15, fontWeight: 700, color: "var(--text-primary)", lineHeight: 1.35, margin: 0 }}>
                   {complaint.title}
                 </div>
               </div>
               {complaint.description && (
-                <div>
+                <div style={{ margin: 0 }}>
                   <div className="detail-drawer__label">{t("compColDesc")}</div>
-                  <div className="info-row" style={{ borderRadius: 12, padding: "12px 14px" }}>
+                  <div className="info-row" style={{ borderRadius: 12, padding: "12px 14px", margin: 0 }}>
                     <span style={{ fontSize: 13, color: "var(--text-primary)" }}>{complaint.description}</span>
                   </div>
                 </div>
               )}
               {complaint.photo_url && (
-                <div>
+                <div style={{ margin: 0 }}>
                   <div className="detail-drawer__label">{t("adminCompAttachedPhoto")}</div>
                   <div style={{ borderRadius: 14, border: "1.5px solid var(--glass-border)",
                     background: "var(--chip-bg)", overflow: "hidden", cursor: "pointer", position: "relative" }}
@@ -654,13 +646,13 @@ function ComplaintDrawer({ complaint, onClose, currentUser, t, defaultTab = "det
                       <span style={{ fontSize: 10, color: "#fff", fontWeight: 600 }}>{t("drawerEnlargePhoto")}</span>
                     </div>
                   </div>
-                  <p style={{ fontSize: 11, color: "var(--text-secondary)", marginTop: 5, opacity: 0.6 }}>
+                  <p style={{ fontSize: 11, color: "var(--text-secondary)", margin: "6px 0 0", opacity: 0.6 }}>
                     {t("drawerTapFullImage")}
                   </p>
                 </div>
               )}
               <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12,
-                color: "var(--text-secondary)", paddingTop: 4, borderTop: "1px solid var(--glass-border)" }}>
+                color: "var(--text-secondary)", margin: 0, paddingTop: 12, borderTop: "1px solid var(--glass-border)" }}>
                 <MdCalendarToday size={12} /> {t("drawerFiledOn")} {formatDate(complaint.created_at)}
               </div>
             </>
