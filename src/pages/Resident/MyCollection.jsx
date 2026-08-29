@@ -12,6 +12,7 @@ import {
 import Modal from "../../components/Modal";
 import { toast } from "react-toastify";
 import Select from "../../components/common/Select";
+import { QRCodeCanvas } from "qrcode.react";
 
 /* ── Spinner ── */
 function Spinner() {
@@ -569,10 +570,27 @@ export default function MyCollection() {
                   {/* ── OTP box ── */}
                   {p.status === "AT_GATE" && p.pickup_code && (
                     <div className="parcel-otp-box rounded-xl p-4 animate-scaleIn">
-                      <div className="flex items-center justify-between flex-wrap gap-3">
-                        <div className="flex items-center gap-2">
-                          <MdQrCode size={18} className="parcel-icon--atgate" />
-                          <p className="text-xs font-medium parcel-icon--atgate">{t("parcelOtpLabel")}</p>
+                      <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                        <div className="flex items-center gap-3">
+                          <div
+                            style={{
+                              background: "#fff",
+                              padding: 8,
+                              borderRadius: 12,
+                              lineHeight: 0,
+                            }}
+                          >
+                            <QRCodeCanvas value={String(p.pickup_code)} size={96} />
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <MdQrCode size={18} className="parcel-icon--atgate" />
+                              <p className="text-xs font-medium parcel-icon--atgate">{t("parcelOtpLabel")}</p>
+                            </div>
+                            <p className="text-xs text-secondary mt-1">
+                              {t("parcelOtpSubtitle") || "Show this QR at the gate to collect your parcel"}
+                            </p>
+                          </div>
                         </div>
                         <p className="parcel-otp-code text-3xl font-bold tracking-[0.3em] tabular-nums">
                           {p.pickup_code}
