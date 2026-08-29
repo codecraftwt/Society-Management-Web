@@ -2259,6 +2259,12 @@ html.light {
     font-weight: 700;
     box-shadow: 0 3px 10px rgba(217, 119, 6, 0.35);
   }
+  .filter-pill--active-blue {
+    background: #2563eb;
+    color: #fff;
+    font-weight: 700;
+    box-shadow: 0 3px 10px rgba(37, 99, 235, 0.35);
+  }
   .filter-pill--active-purple {
     background: #e07040;
     color: #fff;
@@ -2273,6 +2279,7 @@ html.light {
   }
   .filter-pill--active-indigo .filter-pill__count,
   .filter-pill--active-amber .filter-pill__count,
+  .filter-pill--active-blue .filter-pill__count,
   .filter-pill--active-purple .filter-pill__count,
   .filter-pill--active-green .filter-pill__count {
     background: rgba(255, 255, 255, 0.25);
@@ -2962,11 +2969,21 @@ html.light {
   }
   .filter-strip {
     width: 100% !important;
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .filter-strip::-webkit-scrollbar {
+    display: none;
   }
   .filter-pill {
-    flex: 1;
+    flex: 0 0 auto !important;
+    min-width: 0;
     justify-content: center;
     display: flex;
+    white-space: nowrap;
   }
 }
 
@@ -5963,6 +5980,18 @@ html.light {
   }
   .pagination-btn:disabled {
     opacity: 0.35;
+  }
+  .pagination-btn.pagination-btn-active,
+  .pagination-btn-active {
+    background: linear-gradient(135deg, #dbeafe, #e0e7ff);
+    border-color: rgba(59,130,246,0.45);
+    color: #1d4ed8;
+    box-shadow: 0 2px 8px rgba(37,99,235,0.12);
+  }
+  .pagination-btn-active:hover:not(:disabled) {
+    background: linear-gradient(135deg, #bfdbfe, #c7d2fe);
+    border-color: rgba(59,130,246,0.60);
+    color: #1e40af;
   }
 
   .pagination-page {

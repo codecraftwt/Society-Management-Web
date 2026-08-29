@@ -6,6 +6,7 @@ import {
   MdLogout,
   MdAccountBalance,
   MdReceipt,
+  MdBarChart,
 } from "react-icons/md";
 import NotificationBell from "../../components/common/NotificationBell";
 import ThemeToggle from "../../components/common/ThemeToggle";
@@ -41,6 +42,12 @@ function AccountantLayoutInner() {
       label: t("accountantMenuPayments"),
       path: `${base}/payments`,
       icon: MdReceipt,
+      group: "FINANCE & BILLING",
+    },
+    {
+      label: t("accountantMenuReports"),
+      path: `${base}/reports`,
+      icon: MdBarChart,
       group: "FINANCE & BILLING",
     },
   ];

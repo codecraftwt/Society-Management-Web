@@ -196,7 +196,7 @@ export default function Sidebar({
               }
               className={`flex items-center justify-center w-10 h-10 mx-auto rounded-xl transition-all ${
                 hasActiveChild
-                  ? "bg-accent/15 text-accent font-semibold border border-accent/20"
+                  ? "bg-accent text-white font-semibold shadow-sm"
                   : "text-secondary hover:text-primary hover:bg-white/5"
               }`}
             >
@@ -233,7 +233,7 @@ export default function Sidebar({
                         }}
                         className={`flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium transition-all ${
                           childActive
-                            ? "bg-accent/15 text-accent font-semibold"
+                            ? "bg-accent text-white font-semibold"
                             : "text-secondary hover:text-primary hover:bg-white/5"
                         }`}
                       >
@@ -256,7 +256,7 @@ export default function Sidebar({
             onClick={closeMobile}
             className={`flex items-center justify-center w-10 h-10 mx-auto rounded-xl transition-all ${
               active
-                ? "bg-accent/15 text-accent font-semibold shadow-sm border border-accent/25"
+                ? "bg-accent text-white font-semibold shadow-sm"
                 : "text-secondary hover:text-primary hover:bg-white/5"
             }`}
           >
@@ -277,11 +277,11 @@ export default function Sidebar({
         onClick={closeMobile}
         className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
           active
-            ? "bg-accent/15 text-accent font-semibold shadow-sm border border-accent/20"
+            ? "bg-accent text-white font-semibold shadow-sm"
             : "text-secondary hover:text-primary hover:bg-white/5"
         }`}
       >
-        <Icon size={18} className={active ? "text-accent" : "text-secondary"} />
+        <Icon size={18} className={active ? "text-white" : "text-secondary"} />
         <span className="truncate">{label}</span>
       </Link>
     );

@@ -1266,6 +1266,9 @@ const hi = {
   billStatTotal:        "कुल बिल",
   billStatPaid:         "भुगतान",
   billStatPending:      "बाकी",
+  billStatPaidAmount:    "भुगतान राशि",
+  billStatPendingAmount: "बकाया राशि",
+  billStatTotalAmount:   "कुल राशि",
   billStatRevenue:      "राजस्व",
   billPaid:             "भुगतान",
   billPending:          "बाकी",
@@ -1455,6 +1458,18 @@ acctSocietyInfo:  "सोसाइटी जानकारी",
 acctStatusTitle:  "खाता स्थिति",
 acctStatusDesc:   "खाता सत्यापित है और वर्तमान में लॉग इन है।",
 acctUserId:       "यूज़र आईडी",
+acctDashThisMonth:       "इस महीने की वसूली",
+acctDashTotalCollected:  "कुल वसूली",
+acctDashPaidBills:       "भुगतान किए गए बिल",
+acctDashPendingBills:    "लंबित बिल",
+acctDashTotalDue:        "बकाया राशि",
+acctDashAwaiting:        "पुष्टि की प्रतीक्षा",
+acctDashRecentPayments:  "हाल के भुगतान",
+acctDashNoPayments:      "अभी कोई भुगतान दर्ज नहीं है।",
+acctDashTransactions:    "इस महीने के लेन-देन",
+acctDashPaidRate:        "बिल साफ हुए",
+acctMenuPaymentsShort:   "भुगतान",
+flatShort:               "फ्लैट",
 
 // Accountant Manage Bills
 acctBillsClose:         "बंद करें",
@@ -1472,7 +1487,8 @@ accountantDashboardTitle:  "अकाउंटेंट डैशबोर्ड
 accountantLogoutMsg:       "क्या आप अकाउंटेंट पैनल से लॉगआउट करना चाहते हैं?",
 accountantMenuDashboard:   "डैशबोर्ड",
 accountantMenuManageBills: "बिल प्रबंधन",
-accountantMenuPayments:    "भुगतान",
+  accountantMenuPayments:    "भुगतान",
+  accountantMenuReports:     "रिपोर्ट",
 
 
 // hi.js

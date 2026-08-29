@@ -114,6 +114,7 @@ import AccountantLayout from "./pages/Accountant/AccountantLayout";
 import ManageBillsAccountant from "./pages/Accountant/ManageBilllsAccountant";
 import PaymentsAccountant from "./pages/Accountant/PaymentsAccountant";
 import AccountDashboard from "./pages/Accountant/AccountantDashboard";
+import AccountantReports from "./pages/Accountant/AccountantReports";
 import Floors from "./pages/SuperAdmin/Floors.jsx";
 import TenantManagement from "./pages/Admin/TenantManagement.jsx";
 
@@ -320,6 +321,8 @@ function App() {
             <Route index element={<AccountDashboard />} />
             <Route path="manage-bills" element={<ManageBillsAccountant />} />
             <Route path="payments" element={<PaymentsAccountant />} />
+            <Route path="reports" element={<AccountantReports />} />
+            <Route path="reports/financial" element={<FinancialReport />} />
           </Route>
         </Route>
       </Routes>
