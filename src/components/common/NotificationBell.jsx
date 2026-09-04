@@ -258,7 +258,7 @@ export default function NotificationBell() {
       ═══════════════════════════════════════════ */}
       {open &&
         createPortal(
-          <div className="fixed inset-0 z-9999 flex items-center justify-center">
+          <div className="fixed inset-0 flex items-center justify-center" style={{ zIndex: 9999 }}>
             {/* Backdrop */}
             <div className="absolute inset-0 modal-overlay" onClick={() => setOpen(false)} />
 

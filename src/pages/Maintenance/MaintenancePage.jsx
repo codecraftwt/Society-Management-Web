@@ -1,13 +1,16 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
+import { createPortal } from "react-dom";
 import { useLang } from "../../context/LanguageContext";
 import {
   MdAdd, MdClose, MdDelete, MdRefresh,
   MdReceiptLong, MdTune, MdOutlineErrorOutline, MdCheckCircle, MdSchedule,
   MdVisibility, MdBuild, MdDashboard, MdBusiness,
+  MdSearch, MdCalendarToday, MdPerson, MdFilterList,
 } from "react-icons/md";
 import { toast } from "react-toastify";
 import maintenanceService from "../../services/maintenanceService";
 import Select from "../../components/common/Select";
+import "../Admin/Admin.css";
 
 /* ── helpers ── */
 const MAINTENANCE_TYPES = [
@@ -232,9 +235,6 @@ function ConfigForm({ initial, onClose, onSaved }) {
             </button>
           ))}
         </div>
-        <p className="text-[11px] text-amber-500 mt-2 flex items-center gap-1">
-          <MdOutlineErrorOutline size={12} /> Per Sq.Ft billing is saved but bill generation is disabled until area data is available.
-        </p>
       </div>
 
       <div>
@@ -319,8 +319,17 @@ function ConfigForm({ initial, onClose, onSaved }) {
 
       <div className="flex justify-end gap-2 pt-2 border-t" style={{ borderColor: "var(--glass-border)" }}>
         <button type="button" onClick={onClose} className={btnGhost} style={{ borderColor: "var(--glass-border)" }}>Cancel</button>
-        <button type="submit" disabled={saving} className={btnPrimary}>
-          {saving ? <Spinner /> : <MdAdd size={16} />} {initial?.id ? "Update" : "Save Configuration"}
+        <button
+          type="submit"
+          disabled={saving}
+          className="sa-add-btn sa-add-pill"
+          style={{ opacity: saving ? 0.6 : 1, cursor: saving ? "not-allowed" : "pointer" }}
+        >
+          <span className="sa-pill-blob sa-pill-blob1" />
+          <span className="sa-pill-inner">
+            {saving ? <Spinner size={16} /> : <MdAdd size={16} />}
+            <span>{initial?.id ? "Update" : "Save Configuration"}</span>
+          </span>
         </button>
       </div>
     </form>
@@ -328,28 +337,71 @@ function ConfigForm({ initial, onClose, onSaved }) {
 }
 
 /* ─────────────────────────────────────────
-   GENERATE MODAL
+   GENERATE MODAL WITH ELIGIBLE RESIDENTS PREVIEW
 ───────────────────────────────────────── */
 function GenerateModal({ configs, onClose, onGenerated }) {
+  const getDefaultDueDate = () => {
+    const d = new Date();
+    d.setDate(d.getDate() + 15);
+    return d.toISOString().split("T")[0];
+  };
+
   const [billingMonth, setBillingMonth] = useState(currentMonthLabel());
+  const [dueDate, setDueDate] = useState(getDefaultDueDate());
   const [selected, setSelected] = useState(() =>
-    configs.filter((c) => c.is_active && c.maintenance_type !== "SQ_FEET").map((c) => c.id)
+    configs.filter((c) => c.is_active).map((c) => c.id)
   );
   const [generating, setGenerating] = useState(false);
-  const [result, setResult] = useState(null);
+  const [preview, setPreview] = useState(null);
+  const [previewLoading, setPreviewLoading] = useState(true);
+  const [searchResident, setSearchResident] = useState("");
 
   const toggle = (id) =>
     setSelected((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]));
 
+  // Live preview fetch whenever billing month, selected rates, or due date change
+  useEffect(() => {
+    let active = true;
+    const fetchPreview = async () => {
+      if (!billingMonth.trim()) {
+        setPreview(null);
+        return;
+      }
+      setPreviewLoading(true);
+      try {
+        const res = await maintenanceService.previewMaintenanceBills({
+          billing_month: billingMonth.trim(),
+          rate_ids: selected,
+          due_date: dueDate,
+        });
+        if (active) setPreview(res);
+      } catch (err) {
+        console.error("Failed to load maintenance preview:", err);
+      } finally {
+        if (active) setPreviewLoading(false);
+      }
+    };
+
+    const timer = setTimeout(fetchPreview, 250);
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
+  }, [billingMonth, selected, dueDate]);
+
   const handleGenerate = async () => {
     if (!billingMonth.trim()) return;
     setGenerating(true);
-    setResult(null);
     try {
-      const res = await maintenanceService.generateMaintenanceBills({ billing_month: billingMonth.trim(), rate_ids: selected });
-      setResult(res.summary);
-      toast.success(`Generated ${res.summary.generated} bill(s)`);
+      const res = await maintenanceService.generateMaintenanceBills({
+        billing_month: billingMonth.trim(),
+        rate_ids: selected,
+        due_date: dueDate,
+      });
+      const genCount = res?.summary?.generated || 0;
+      toast.success(`Successfully generated ${genCount} maintenance bill(s)!`);
       onGenerated();
+      onClose();
     } catch (err) {
       toast.error(err?.response?.data?.message || "Generation failed");
     } finally {
@@ -357,59 +409,391 @@ function GenerateModal({ configs, onClose, onGenerated }) {
     }
   };
 
-  const billable = configs.filter((c) => c.is_active && c.maintenance_type !== "SQ_FEET");
-  const sqft = configs.filter((c) => c.is_active && c.maintenance_type === "SQ_FEET");
+  const billable = configs.filter((c) => c.is_active);
 
-  return (
-    <div className="fixed inset-0 flex items-center justify-center z-100 p-4" style={{ background: "var(--overlay-bg)", backdropFilter: "blur(6px)" }}>
-      <div className="rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto p-6" style={{ background: "var(--card-bg)", border: "1.5px solid var(--glass-border)", boxShadow: "var(--shadow-glass)" }}>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-bold">Generate Maintenance Bills</h2>
-          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-black/5"><MdClose size={20} /></button>
-        </div>
+  const filteredResidents = useMemo(() => {
+    if (!preview?.residents) return [];
+    if (!searchResident.trim()) return preview.residents;
+    const q = searchResident.toLowerCase();
+    return preview.residents.filter(
+      (r) =>
+        r.resident_name?.toLowerCase().includes(q) ||
+        r.flat_number?.toLowerCase().includes(q) ||
+        r.block_name?.toLowerCase().includes(q) ||
+        r.rate_name?.toLowerCase().includes(q)
+    );
+  }, [preview, searchResident]);
 
-        <Label>Billing month</Label>
-        <input
-          className={`${inputCls} mb-4`}
-          style={{ borderColor: "var(--glass-border)", color: "var(--text-primary)" }}
-          value={billingMonth}
-          onChange={(e) => setBillingMonth(e.target.value)}
-          placeholder="e.g. September 2026"
-        />
-
-        {billable.length === 0 && (
-          <p className="text-sm text-amber-500 mb-3">Create at least one active Lumpsum or By-Flat-Type configuration to generate bills.</p>
-        )}
-
-        <Label>Configurations to apply</Label>
-        <div className="flex flex-col gap-2 mb-3">
-          {billable.map((c) => (
-            <label key={c.id} className="flex items-center gap-3 rounded-xl border p-3 cursor-pointer" style={{ borderColor: "var(--glass-border)" }}>
-              <input type="checkbox" checked={selected.includes(c.id)} onChange={() => toggle(c.id)} className="accent-indigo-500" />
-              <TypeChip type={c.maintenance_type} />
-              <span className="text-sm font-bold flex-1">{c.name || c.maintenance_type}
-                {c.maintenance_type === "FLAT" && <span className="text-secondary font-medium"> ({c.flat_type})</span>}
-              </span>
-              <span className="text-sm font-bold">{c.maintenance_type === "SQ_FEET" ? `₹${c.rate_per_sqft}` : formatMoney(c.amount)}</span>
-            </label>
-          ))}
-          {billable.length === 0 && <p className="text-xs text-secondary">No billable configurations.</p>}
-        </div>
-
-        {sqft.length > 0 && (
-          <p className="text-[11px] text-amber-500 mb-3 inline-flex items-center gap-1">
-            <MdOutlineErrorOutline size={12} /> {sqft.length} Per Sq.Ft config(s) saved but cannot be generated (no area data).
-          </p>
-        )}
-
-        <div className="flex justify-end gap-2 pt-2 border-t" style={{ borderColor: "var(--glass-border)" }}>
-          <button onClick={onClose} className={btnGhost} style={{ borderColor: "var(--glass-border)" }}>Close</button>
-          <button onClick={handleGenerate} disabled={generating || selected.length === 0} className={btnPrimary}>
-            {generating ? <Spinner /> : <MdBuild size={16} />} Generate Bills
+  return createPortal(
+    <div
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 1100,
+        background: "rgba(0, 0, 0, 0.65)",
+        backdropFilter: "blur(8px)",
+        WebkitBackdropFilter: "blur(8px)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "16px",
+      }}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          width: "100%",
+          maxWidth: 780,
+          background: "var(--card-bg, #0f172a)",
+          border: "1px solid var(--glass-border, rgba(255,255,255,0.12))",
+          borderRadius: 22,
+          maxHeight: "90vh",
+          overflowY: "auto",
+          backdropFilter: "blur(20px)",
+          boxShadow: "0 24px 80px rgba(0,0,0,0.5), 0 0 20px rgba(37,99,235,0.15)",
+          animation: "adminModalPopIn 0.28s cubic-bezier(0.16, 1, 0.3, 1)",
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
+        {/* Header */}
+        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", padding: "22px 26px 0", flexShrink: 0 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+            <div style={{ width: 44, height: 44, borderRadius: 14, background: "linear-gradient(135deg, #3b82f6, #1d4ed8)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 6px 20px rgba(37,99,235,0.35)", flexShrink: 0 }}>
+              <MdReceiptLong size={24} color="#fff" />
+            </div>
+            <div>
+              <h3 style={{ fontWeight: 800, fontSize: 18, color: "var(--text-primary)", margin: 0, letterSpacing: "-0.02em" }}>
+                Generate Maintenance Bills
+              </h3>
+              <p style={{ fontSize: 12, color: "#38bdf8", margin: "2px 0 0", fontWeight: 600 }}>
+                Review eligible residents, specify due date, and dispatch bills
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            style={{ width: 34, height: 34, borderRadius: 10, border: "1px solid var(--glass-border, rgba(255,255,255,0.12))", background: "var(--card-inner-bg, rgba(255,255,255,0.06))", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-secondary)" }}
+          >
+            <MdClose size={17} />
           </button>
         </div>
+
+        <div style={{ height: 1, background: "var(--glass-border, rgba(255,255,255,0.08))", margin: "16px 0 0" }} />
+
+        <div style={{ padding: "20px 26px 26px", display: "flex", flexDirection: "column", gap: 18, overflowY: "auto" }}>
+          {/* Top Inputs: Billing Month & Due Date */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <Label>Billing Month</Label>
+              <input
+                className={inputCls}
+                style={{ borderColor: "var(--glass-border)", color: "var(--text-primary)" }}
+                value={billingMonth}
+                onChange={(e) => setBillingMonth(e.target.value)}
+                placeholder="e.g. September 2026"
+              />
+              <span className="text-[11px] text-secondary mt-1 block">Month name and year for the statement</span>
+            </div>
+            <div>
+              <Label>Due Date (Last Date to Pay) *</Label>
+              <div style={{ position: "relative" }}>
+                <input
+                  type="date"
+                  className={inputCls}
+                  style={{ borderColor: "var(--glass-border)", color: "var(--text-primary)", colorScheme: "dark" }}
+                  value={dueDate}
+                  min={new Date().toISOString().split("T")[0]}
+                  onChange={(e) => setDueDate(e.target.value)}
+                  required
+                />
+              </div>
+              <span className="text-[11px] text-emerald-400 mt-1 block">Residents can pay without late penalty until this date</span>
+            </div>
+          </div>
+
+          {/* Rate Configurations to Apply */}
+          <div>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
+              <Label>Configurations to Apply</Label>
+              <span className="text-xs text-secondary">{selected.length} of {billable.length} selected</span>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {billable.map((c) => {
+                const isSel = selected.includes(c.id);
+                return (
+                  <label
+                    key={c.id}
+                    className="flex items-center gap-2.5 rounded-xl border px-3 py-2 cursor-pointer transition-all"
+                    style={{
+                      borderColor: isSel ? "rgba(59,130,246,0.5)" : "var(--glass-border)",
+                      background: isSel ? "rgba(59,130,246,0.12)" : "var(--card-inner-bg)",
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={isSel}
+                      onChange={() => toggle(c.id)}
+                      className="accent-indigo-500 rounded"
+                    />
+                    <TypeChip type={c.maintenance_type} />
+                    <span className="text-xs font-bold" style={{ color: "var(--text-primary)" }}>
+                      {c.name || c.maintenance_type}
+                      {c.maintenance_type === "FLAT" && <span className="text-secondary font-medium"> ({c.flat_type})</span>}
+                    </span>
+                    <span className="text-xs font-extrabold text-emerald-400">
+                      {c.maintenance_type === "SQ_FEET" ? `₹${c.rate_per_sqft}` : formatMoney(c.amount)}
+                    </span>
+                  </label>
+                );
+              })}
+              {billable.length === 0 && (
+                <p className="text-xs text-amber-400">No active billable configurations. Create one to enable generation.</p>
+              )}
+            </div>
+          </div>
+
+          {/* ── Eligible Residents Preview Section ── */}
+          <div
+            style={{
+              background: "var(--card-inner-bg, rgba(255,255,255,0.02))",
+              borderRadius: 16,
+              border: "1px solid var(--glass-border)",
+              padding: "16px 18px",
+            }}
+          >
+            {/* Preview Section Header with Counters */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 mb-3">
+              <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <MdPerson size={18} className="text-blue-400" />
+                  <span style={{ fontWeight: 800, fontSize: 13, color: "var(--text-primary)" }}>
+                    Eligible Residents Preview
+                  </span>
+                </div>
+                {preview && (
+                  <span
+                    style={{
+                      fontSize: 11,
+                      fontWeight: 700,
+                      padding: "2px 8px",
+                      borderRadius: 20,
+                      background: "rgba(59,130,246,0.15)",
+                      color: "#60a5fa",
+                      border: "1px solid rgba(59,130,246,0.3)",
+                    }}
+                  >
+                    {preview.billable_count} to bill
+                  </span>
+                )}
+                {preview?.already_billed_count > 0 && (
+                  <span
+                    style={{
+                      fontSize: 11,
+                      fontWeight: 700,
+                      padding: "2px 8px",
+                      borderRadius: 20,
+                      background: "rgba(245,158,11,0.15)",
+                      color: "#f59e0b",
+                      border: "1px solid rgba(245,158,11,0.3)",
+                    }}
+                  >
+                    {preview.already_billed_count} already generated
+                  </span>
+                )}
+              </div>
+
+              {preview && (
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <span style={{ fontSize: 11, color: "var(--text-secondary)" }}>Total Amount:</span>
+                  <span style={{ fontSize: 14, fontWeight: 900, color: "#10b981" }}>
+                    {formatMoney(preview.total_amount)}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* Quick Search */}
+            <div style={{ position: "relative", marginBottom: 12 }}>
+              <MdSearch size={17} style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "var(--text-secondary)" }} />
+              <input
+                className={inputCls}
+                style={{
+                  paddingLeft: 36,
+                  height: 36,
+                  fontSize: 12,
+                  borderColor: "var(--glass-border)",
+                  color: "var(--text-primary)",
+                  borderRadius: 10,
+                }}
+                value={searchResident}
+                onChange={(e) => setSearchResident(e.target.value)}
+                placeholder="Search by resident name, flat number, or block..."
+              />
+            </div>
+
+            {/* Residents Preview List / Table */}
+            {previewLoading ? (
+              <div className="flex flex-col items-center justify-center py-8 gap-2">
+                <Spinner size={22} />
+                <span className="text-xs text-secondary">Loading eligible residents...</span>
+              </div>
+            ) : filteredResidents.length === 0 ? (
+              <div className="text-center py-8 text-secondary">
+                <MdOutlineErrorOutline size={26} className="mx-auto mb-1 opacity-40" />
+                <p className="text-xs font-semibold">
+                  {preview?.eligible_count === 0
+                    ? "No eligible owner flats match the selected configurations."
+                    : "No residents matched your search query."}
+                </p>
+              </div>
+            ) : (
+              <div
+                style={{
+                  maxHeight: 240,
+                  overflowY: "auto",
+                  borderRadius: 12,
+                  border: "1px solid var(--glass-border)",
+                  background: "var(--card-bg)",
+                }}
+              >
+                <table className="w-full text-left" style={{ fontSize: 12, borderCollapse: "collapse" }}>
+                  <thead style={{ position: "sticky", top: 0, background: "var(--card-inner-bg)", borderBottom: "1px solid var(--glass-border)", zIndex: 1 }}>
+                    <tr style={{ color: "var(--text-secondary)", fontSize: 10, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                      <th style={{ padding: "8px 12px" }}>Flat / Unit</th>
+                      <th style={{ padding: "8px 12px" }}>Resident (Owner)</th>
+                      <th style={{ padding: "8px 12px" }}>Applied Rate</th>
+                      <th style={{ padding: "8px 12px" }}>Amount</th>
+                      <th style={{ padding: "8px 12px", textAlign: "right" }}>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredResidents.map((r, idx) => (
+                      <tr
+                        key={`${r.flat_id}-${r.rate_id}-${idx}`}
+                        style={{
+                          borderBottom: idx < filteredResidents.length - 1 ? "1px solid var(--glass-border)" : "none",
+                          opacity: r.is_already_billed ? 0.6 : 1,
+                        }}
+                      >
+                        <td style={{ padding: "10px 12px" }}>
+                          <div style={{ fontWeight: 800, color: "var(--text-primary)" }}>{r.flat_number}</div>
+                          <div style={{ fontSize: 10, color: "var(--text-secondary)" }}>
+                            Block {r.block_name} {r.flat_type && `· ${r.flat_type}`}
+                          </div>
+                        </td>
+                        <td style={{ padding: "10px 12px" }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                            <div
+                              style={{
+                                width: 26,
+                                height: 26,
+                                borderRadius: "50%",
+                                background: "rgba(59,130,246,0.18)",
+                                color: "#60a5fa",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                fontSize: 11,
+                                fontWeight: 800,
+                                flexShrink: 0,
+                              }}
+                            >
+                              {r.resident_name?.charAt(0) || "U"}
+                            </div>
+                            <div>
+                              <div style={{ fontWeight: 700, color: "var(--text-primary)" }}>{r.resident_name}</div>
+                              <div style={{ fontSize: 10, color: "var(--text-secondary)" }}>{r.resident_phone || r.resident_email || "—"}</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td style={{ padding: "10px 12px" }}>
+                          <div style={{ fontWeight: 600, color: "var(--text-secondary)" }}>{r.rate_name}</div>
+                          <div style={{ fontSize: 10, color: "#818cf8" }}>
+                            {r.maintenance_type === "SQ_FEET" && r.area_sqft
+                              ? `₹${r.rate_per_sqft}/sq.ft × ${r.area_sqft} sq.ft`
+                              : r.maintenance_type}
+                          </div>
+                        </td>
+                        <td style={{ padding: "10px 12px", fontWeight: 800, color: "#10b981", fontSize: 13 }}>
+                          {formatMoney(r.amount)}
+                        </td>
+                        <td style={{ padding: "10px 12px", textAlign: "right" }}>
+                          {r.is_already_billed ? (
+                            <span
+                              style={{
+                                display: "inline-block",
+                                fontSize: 10,
+                                fontWeight: 700,
+                                padding: "2px 7px",
+                                borderRadius: 6,
+                                background: "rgba(245,158,11,0.15)",
+                                color: "#f59e0b",
+                                border: "1px solid rgba(245,158,11,0.3)",
+                              }}
+                            >
+                              Already Billed
+                            </span>
+                          ) : (
+                            <span
+                              style={{
+                                display: "inline-block",
+                                fontSize: 10,
+                                fontWeight: 700,
+                                padding: "2px 7px",
+                                borderRadius: 6,
+                                background: "rgba(16,185,129,0.15)",
+                                color: "#10b981",
+                                border: "1px solid rgba(16,185,129,0.3)",
+                              }}
+                            >
+                              Ready to Bill
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+
+          {/* Modal Actions Footer */}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, paddingTop: 14, borderTop: "1px solid var(--glass-border)" }}>
+            <button
+              onClick={onClose}
+              className="sa-btn sa-btn-ghost"
+              style={{ borderRadius: 12, padding: "9px 18px", fontSize: 13 }}
+            >
+              Cancel
+            </button>
+
+            <button
+              onClick={handleGenerate}
+              disabled={generating || !preview || preview.billable_count === 0}
+              className="sa-add-btn sa-add-pill"
+              style={{
+                opacity: generating || !preview || preview.billable_count === 0 ? 0.55 : 1,
+                cursor: generating || !preview || preview.billable_count === 0 ? "not-allowed" : "pointer",
+              }}
+            >
+              <span className="sa-pill-blob sa-pill-blob1" />
+              <span className="sa-pill-inner" style={{ padding: "0 22px", height: 42 }}>
+                {generating ? <Spinner size={16} /> : <MdBuild size={17} />}
+                <span>
+                  {generating
+                    ? "Generating Bills..."
+                    : `Generate ${preview?.billable_count || 0} Bills (${formatMoney(preview?.total_amount || 0)})`}
+                </span>
+              </span>
+            </button>
+          </div>
+        </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
@@ -562,7 +946,17 @@ export default function MaintenancePage() {
           <p className="text-sm text-secondary">Configure rates, generate bills and track them.</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <button onClick={openAdd} className={btnPrimary}><MdAdd size={16} /> New Configuration</button>
+          <button
+            onClick={openAdd}
+            className="sa-add-btn sa-add-pill w-full sm:w-auto justify-center shrink-0"
+            style={{ fontWeight: 700 }}
+          >
+            <span className="sa-pill-blob sa-pill-blob1" />
+            <span className="sa-pill-inner">
+              <MdAdd size={18} />
+              <span>New Configuration</span>
+            </span>
+          </button>
         </div>
       </div>
 
@@ -576,7 +970,7 @@ export default function MaintenancePage() {
         </span>
         {sqftCount > 0 && (
           <span className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1 font-bold" style={{ background: "var(--card-bg)", borderColor: "var(--glass-border)", color: "var(--text-primary)" }}>
-            <MdDashboard size={13} className="text-amber-500" /> {sqftCount} per-sq.ft (not billable)
+            <MdDashboard size={13} className="text-amber-500" /> {sqftCount} per-sq.ft
           </span>
         )}
       </div>
@@ -601,7 +995,17 @@ export default function MaintenancePage() {
         <div className="flex flex-col gap-4">
           <div className="flex sm:items-center justify-between flex-col sm:flex-row gap-2">
             <p className="text-sm text-secondary">{configs.length} configuration(s) — {activeCount} active. Uses standard MaintenanceRates + bills.</p>
-            <button onClick={() => setShowGenerate(true)} className={btnPrimary}><MdBuild size={16} /> Generate Bills</button>
+            <button
+              onClick={() => setShowGenerate(true)}
+              className="sa-add-btn sa-add-pill shrink-0"
+              style={{ fontWeight: 700 }}
+            >
+              <span className="sa-pill-blob sa-pill-blob1" />
+              <span className="sa-pill-inner">
+                <MdBuild size={16} />
+                <span>Generate Bills</span>
+              </span>
+            </button>
           </div>
 
           {loading ? (
@@ -625,21 +1029,73 @@ export default function MaintenancePage() {
       )}
 
       {/* Config form modal */}
-      {showForm && (
-        <div className="fixed inset-0 flex items-center justify-center z-100 p-4" style={{ background: "var(--overlay-bg)", backdropFilter: "blur(6px)" }}>
-          <div className="rounded-2xl w-full max-w-xl max-h-[92vh] overflow-y-auto p-6" style={{ background: "var(--card-bg)", border: "1.5px solid var(--glass-border)", boxShadow: "var(--shadow-glass)" }}>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-bold">{editing?.id ? "Edit Configuration" : "New Configuration"}</h2>
-              <button onClick={() => setShowForm(false)} className="p-1.5 rounded-lg hover:bg-black/5"><MdClose size={20} /></button>
+      {showForm && createPortal(
+        <div
+          onClick={(e) => { if (e.target === e.currentTarget) { setShowForm(false); setEditing(null); } }}
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 1100,
+            background: "rgba(0, 0, 0, 0.65)",
+            backdropFilter: "blur(8px)",
+            WebkitBackdropFilter: "blur(8px)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "16px",
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              width: "100%",
+              maxWidth: 620,
+              background: "var(--card-bg, #0f172a)",
+              border: "1px solid var(--glass-border, rgba(255,255,255,0.12))",
+              borderRadius: 20,
+              maxHeight: "90vh",
+              overflowY: "auto",
+              backdropFilter: "blur(20px)",
+              boxShadow: "0 24px 80px rgba(0,0,0,0.5), 0 0 20px rgba(37,99,235,0.15)",
+              animation: "adminModalPopIn 0.28s cubic-bezier(0.16, 1, 0.3, 1)",
+            }}
+          >
+            {/* Header */}
+            <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", padding: "20px 24px 0" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <div style={{ width: 42, height: 42, borderRadius: 12, background: "linear-gradient(135deg, #7c3aed, #4f46e5)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 6px 18px rgba(124,58,237,0.35)", flexShrink: 0 }}>
+                  <MdTune size={22} color="#fff" />
+                </div>
+                <div>
+                  <h3 style={{ fontWeight: 800, fontSize: 17, color: "var(--text-primary)", margin: 0, letterSpacing: "-0.02em" }}>
+                    {editing?.id ? "Edit Configuration" : "New Maintenance Configuration"}
+                  </h3>
+                  <p style={{ fontSize: 12, color: "#a78bfa", margin: "2px 0 0", fontWeight: 600 }}>
+                    Configure maintenance rules, flat rates & billing frequency
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => { setShowForm(false); setEditing(null); }}
+                style={{ width: 34, height: 34, borderRadius: 10, border: "1px solid var(--glass-border, rgba(255,255,255,0.12))", background: "var(--card-inner-bg, rgba(255,255,255,0.06))", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-secondary)" }}
+              >
+                <MdClose size={17} />
+              </button>
             </div>
-            <ConfigForm
-              key={editing?.id || "new"}
-              initial={editing}
-              onClose={() => setShowForm(false)}
-              onSaved={load}
-            />
+
+            <div style={{ height: 1, background: "var(--glass-border, rgba(255,255,255,0.08))", margin: "16px 0 0" }} />
+
+            <div style={{ padding: "20px 24px 28px" }}>
+              <ConfigForm
+                key={editing?.id || "new"}
+                initial={editing}
+                onClose={() => { setShowForm(false); setEditing(null); }}
+                onSaved={load}
+              />
+            </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Generate modal */}
@@ -680,66 +1136,126 @@ function BillDetailModal({ id, onClose }) {
   const owner = detail?.owner;
   const calc = parseCalculation(bill?.calculation_details);
 
-  return (
-    <div className="fixed inset-0 flex items-center justify-center z-100 p-4" style={{ background: "var(--overlay-bg)", backdropFilter: "blur(6px)" }}>
-      <div className="rounded-2xl w-full max-w-md max-h-[90vh] overflow-y-auto p-6" style={{ background: "var(--card-bg)", border: "1.5px solid var(--glass-border)", boxShadow: "var(--shadow-glass)" }}>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-bold">Bill Details</h2>
-          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-black/5"><MdClose size={20} /></button>
+  return createPortal(
+    <div
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 1100,
+        background: "rgba(0, 0, 0, 0.65)",
+        backdropFilter: "blur(8px)",
+        WebkitBackdropFilter: "blur(8px)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "16px",
+      }}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          width: "100%",
+          maxWidth: 480,
+          background: "var(--card-bg, #0f172a)",
+          border: "1px solid var(--glass-border, rgba(255,255,255,0.12))",
+          borderRadius: 20,
+          maxHeight: "90vh",
+          overflowY: "auto",
+          backdropFilter: "blur(20px)",
+          boxShadow: "0 24px 80px rgba(0,0,0,0.5), 0 0 20px rgba(37,99,235,0.15)",
+          animation: "adminModalPopIn 0.28s cubic-bezier(0.16, 1, 0.3, 1)",
+        }}
+      >
+        {/* Header */}
+        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", padding: "20px 24px 0" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <div style={{ width: 42, height: 42, borderRadius: 12, background: "linear-gradient(135deg, #10b981, #059669)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 6px 18px rgba(16,185,129,0.35)", flexShrink: 0 }}>
+              <MdReceiptLong size={22} color="#fff" />
+            </div>
+            <div>
+              <h3 style={{ fontWeight: 800, fontSize: 17, color: "var(--text-primary)", margin: 0, letterSpacing: "-0.02em" }}>
+                Bill Details
+              </h3>
+              <p style={{ fontSize: 12, color: "#34d399", margin: "2px 0 0", fontWeight: 600 }}>
+                {bill ? `Invoice #${bill.id} · ${bill.billing_month || "Current"}` : "Maintenance Invoice"}
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            style={{ width: 34, height: 34, borderRadius: 10, border: "1px solid var(--glass-border, rgba(255,255,255,0.12))", background: "var(--card-inner-bg, rgba(255,255,255,0.06))", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-secondary)" }}
+          >
+            <MdClose size={17} />
+          </button>
         </div>
 
-        {loading ? (
-          <div className="flex justify-center py-12"><Spinner size={26} /></div>
-        ) : !bill ? (
-          <p className="text-sm text-secondary text-center py-6">Bill not found</p>
-        ) : (
-          <div className="flex flex-col gap-3">
-            <div className="rounded-xl border p-4 flex items-center justify-between" style={{ borderColor: "var(--glass-border)" }}>
-              <div>
-                <p className="text-xs text-secondary">Amount</p>
-                <p className="text-2xl font-extrabold" style={{ color: "var(--text-primary)" }}>{formatMoney(bill.amount)}</p>
+        <div style={{ height: 1, background: "var(--glass-border, rgba(255,255,255,0.08))", margin: "16px 0 0" }} />
+
+        <div style={{ padding: "20px 24px 28px" }}>
+          {loading ? (
+            <div className="flex justify-center py-12"><Spinner size={26} /></div>
+          ) : !bill ? (
+            <p className="text-sm text-secondary text-center py-6">Bill not found</p>
+          ) : (
+            <div className="flex flex-col gap-3">
+              <div className="rounded-xl border p-4 flex items-center justify-between" style={{ borderColor: "var(--glass-border)", background: "var(--card-inner-bg)" }}>
+                <div>
+                  <p className="text-xs text-secondary">Amount</p>
+                  <p className="text-2xl font-extrabold" style={{ color: "var(--text-primary)" }}>{formatMoney(bill.amount)}</p>
+                </div>
+                <StatusPill status={bill.status} />
               </div>
-              <StatusPill status={bill.status} />
+
+              <Row label="Title" value={bill.title} />
+              <Row label="Flat" value={bill.Flat ? `${bill.Flat.flat_number}` : "—"} />
+              <Row label="Billing month" value={bill.billing_month} />
+              <Row label="Due date" value={bill.due_date ? new Date(bill.due_date).toLocaleDateString() : "—"} />
+
+              {rate && (
+                <div className="rounded-xl border p-3" style={{ borderColor: "var(--glass-border)", background: "var(--card-inner-bg)" }}>
+                  <p className="text-xs font-bold text-secondary uppercase tracking-wider mb-2">Configuration</p>
+                  <Row label="Method" value={rate.maintenance_type} />
+                  {rate.maintenance_type === "FLAT" && <Row label="Flat type" value={rate.flat_type} />}
+                  {rate.name && <Row label="Name" value={rate.name} />}
+                </div>
+              )}
+
+              {calc && (
+                <div className="rounded-xl border p-3" style={{ borderColor: "var(--glass-border)", background: "var(--card-inner-bg)" }}>
+                  <p className="text-xs font-bold text-secondary uppercase tracking-wider mb-2">Calculation snapshot</p>
+                  <Row label="Method" value={calc.maintenance_type || "—"} />
+                  {calc.flat_type && <Row label="Flat type" value={calc.flat_type} />}
+                  {calc.maintenance_type === "SQ_FEET" && (
+                    <>
+                      <Row label="Area" value={calc.area_sqft ? `${calc.area_sqft} sq.ft` : "—"} />
+                      <Row label="Rate" value={calc.rate_per_sqft ? `₹${calc.rate_per_sqft}/sq.ft` : "—"} />
+                      <Row label="Calculation" value={calc.calculation || "—"} />
+                    </>
+                  )}
+                  {calc.maintenance_type !== "SQ_FEET" && (
+                    <Row label="Configured amount" value={calc.configured_amount != null ? formatMoney(calc.configured_amount) : "—"} />
+                  )}
+                </div>
+              )}
+
+              {owner && (
+                <div className="rounded-xl border p-3" style={{ borderColor: "var(--glass-border)", background: "var(--card-inner-bg)" }}>
+                  <p className="text-xs font-bold text-secondary uppercase tracking-wider mb-2">Responsible owner</p>
+                  <p className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>{owner.User?.name || `User #${owner.user_id}`}</p>
+                  {owner.User?.mobile && <p className="text-xs text-secondary">{owner.User.mobile}</p>}
+                </div>
+              )}
             </div>
+          )}
 
-            <Row label="Title" value={bill.title} />
-            <Row label="Flat" value={bill.Flat ? `${bill.Flat.flat_number}` : "—"} />
-            <Row label="Billing month" value={bill.billing_month} />
-            <Row label="Due date" value={bill.due_date ? new Date(bill.due_date).toLocaleDateString() : "—"} />
-
-            {rate && (
-              <div className="rounded-xl border p-3" style={{ borderColor: "var(--glass-border)" }}>
-                <p className="text-xs font-bold text-secondary uppercase tracking-wider mb-2">Configuration</p>
-                <Row label="Method" value={rate.maintenance_type} />
-                {rate.maintenance_type === "FLAT" && <Row label="Flat type" value={rate.flat_type} />}
-                {rate.name && <Row label="Name" value={rate.name} />}
-              </div>
-            )}
-
-            {calc && (
-              <div className="rounded-xl border p-3" style={{ borderColor: "var(--glass-border)" }}>
-                <p className="text-xs font-bold text-secondary uppercase tracking-wider mb-2">Calculation snapshot</p>
-                <Row label="Method" value={calc.maintenance_type || "—"} />
-                {calc.flat_type && <Row label="Flat type" value={calc.flat_type} />}
-                <Row label="Configured amount" value={calc.configured_amount != null ? formatMoney(calc.configured_amount) : "—"} />
-              </div>
-            )}
-
-            {owner && (
-              <div className="rounded-xl border p-3" style={{ borderColor: "var(--glass-border)" }}>
-                <p className="text-xs font-bold text-secondary uppercase tracking-wider mb-2">Responsible owner</p>
-                <p className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>{owner.User?.name || `User #${owner.user_id}`}</p>
-                {owner.User?.mobile && <p className="text-xs text-secondary">{owner.User.mobile}</p>}
-              </div>
-            )}
+          <div className="flex justify-end pt-4 border-t mt-4" style={{ borderColor: "var(--glass-border)" }}>
+            <button onClick={onClose} className={btnPrimary} style={{ borderRadius: 12 }}>Close</button>
           </div>
-        )}
-
-        <div className="flex justify-end pt-4">
-          <button onClick={onClose} className={btnPrimary}>Close</button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 

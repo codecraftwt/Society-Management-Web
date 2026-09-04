@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback, useContext, useMemo } from "react";
+import { createPortal } from "react-dom";
 import API from "../../services/api";
 import { AuthContext } from "../../context/AuthContext";
 import { useLang } from "../../context/LanguageContext";
@@ -7,6 +8,7 @@ import {
   MdOutlineInbox, MdReceiptLong,
   MdCheckCircle, MdSchedule,
   MdChevronLeft, MdChevronRight,
+  MdWarning,
 } from "react-icons/md";
 import Select from "../../components/common/Select";
 
@@ -90,8 +92,6 @@ function BillStatus({ status, t }) {
 
 /* ── Delete & Confirm controls ── */
 function RowActions({ bill, confirmDeleteId, setConfirmDeleteId, handleDeleteBill, deletingId, handleConfirmPayment, confirmingId, t }) {
-  if (bill.status === "PAID") return <span className="text-xs text-secondary opacity-30">—</span>;
-
   return (
     <div className="flex items-center gap-2 flex-wrap">
       {bill.status === "PENDING_VERIFICATION" && (
@@ -166,6 +166,107 @@ export default function ManageBills() {
   const [deletingId, setDeletingId] = useState(null);
   const [confirmingId, setConfirmingId] = useState(null);
 
+  /* ── Multi-select & Bulk operations ── */
+  const [selectedBillsMap, setSelectedBillsMap] = useState({});
+  const [showBulkApproveModal, setShowBulkApproveModal] = useState(false);
+  const [showBulkDeleteModal, setShowBulkDeleteModal] = useState(false);
+  const [bulkApproving, setBulkApproving] = useState(false);
+  const [bulkDeleting, setBulkDeleting] = useState(false);
+  const [feedbackBanner, setFeedbackBanner] = useState(null);
+
+  useEffect(() => {
+    if (!feedbackBanner) return;
+    const timer = setTimeout(() => setFeedbackBanner(null), 5000);
+    return () => clearTimeout(timer);
+  }, [feedbackBanner]);
+
+  const selectedIds = useMemo(() => Object.keys(selectedBillsMap).map(Number), [selectedBillsMap]);
+  const selectedCount = selectedIds.length;
+  const selectedBillsList = useMemo(() => Object.values(selectedBillsMap), [selectedBillsMap]);
+
+  const selectedTotalAmount = useMemo(
+    () => selectedBillsList.reduce((sum, b) => sum + Number(b.amount || 0), 0),
+    [selectedBillsList]
+  );
+  const selectedApprovable = useMemo(
+    () => selectedBillsList.filter((b) => b.status !== "PAID"),
+    [selectedBillsList]
+  );
+  const selectedDeletable = selectedBillsList;
+  const selectedPaid = useMemo(
+    () => selectedBillsList.filter((b) => b.status === "PAID"),
+    [selectedBillsList]
+  );
+  const selectedApprovableAmount = useMemo(
+    () => selectedApprovable.reduce((sum, b) => sum + Number(b.amount || 0), 0),
+    [selectedApprovable]
+  );
+  const selectedAwaitingCount = useMemo(
+    () => selectedBillsList.filter((b) => b.status === "PENDING_VERIFICATION").length,
+    [selectedBillsList]
+  );
+  const selectedPendingCount = useMemo(
+    () => selectedBillsList.filter((b) => b.status === "PENDING").length,
+    [selectedBillsList]
+  );
+
+  const isAllPageSelected = useMemo(
+    () => bills.length > 0 && bills.every((b) => Boolean(selectedBillsMap[b.id])),
+    [bills, selectedBillsMap]
+  );
+  const isSomePageSelected = useMemo(
+    () => bills.some((b) => Boolean(selectedBillsMap[b.id])) && !isAllPageSelected,
+    [bills, isAllPageSelected, selectedBillsMap]
+  );
+
+  const toggleSelect = (bill) => {
+    setSelectedBillsMap((prev) => {
+      const next = { ...prev };
+      if (next[bill.id]) {
+        delete next[bill.id];
+      } else {
+        next[bill.id] = {
+          id: bill.id,
+          title: bill.title,
+          amount: bill.amount,
+          status: bill.status,
+          flatNumber: bill.Flat?.flat_number,
+          blockName: bill.Flat?.Block?.name,
+        };
+      }
+      return next;
+    });
+  };
+
+  const toggleSelectAllCurrentPage = () => {
+    if (isAllPageSelected) {
+      setSelectedBillsMap((prev) => {
+        const next = { ...prev };
+        for (const b of bills) {
+          delete next[b.id];
+        }
+        return next;
+      });
+    } else {
+      setSelectedBillsMap((prev) => {
+        const next = { ...prev };
+        for (const b of bills) {
+          next[b.id] = {
+            id: b.id,
+            title: b.title,
+            amount: b.amount,
+            status: b.status,
+            flatNumber: b.Flat?.flat_number,
+            blockName: b.Flat?.Block?.name,
+          };
+        }
+        return next;
+      });
+    }
+  };
+
+  const clearSelection = () => setSelectedBillsMap({});
+
   /* ── Super Admin Society Filter ── */
   const isSuperAdmin = authUser?.activeRole === "SUPER_ADMIN";
   const [societiesList, setSocietiesList] = useState([]);
@@ -183,6 +284,7 @@ export default function ManageBills() {
   useEffect(() => {
     localStorage.setItem("superadmin_society_filter_bills", filterSocietyId || "ALL");
   }, [filterSocietyId]);
+
 
   /* ────────────────────────────────────
      LOAD BILLS — backend paginated
@@ -269,10 +371,20 @@ export default function ManageBills() {
       const bill = bills.find(b => b.id === id);
       const headers = (isSuperAdmin && bill?.Flat?.Block?.society_id) ? { "x-society-id": bill.Flat.Block.society_id } : {};
       await API.delete(`/bills/${id}`, { headers });
+      setSelectedBillsMap(prev => {
+        const next = { ...prev };
+        delete next[id];
+        return next;
+      });
       const newPage = bills.length === 1 && page > 1 ? page - 1 : page;
       loadBills(newPage, debSearch, filterStatus);
-    } catch (e) { alert(e.response?.data?.message || t("billDeleteFailed")); }
-    finally { setDeletingId(null); setConfirmDeleteId(null); }
+      setFeedbackBanner({ type: "success", message: "Bill deleted successfully." });
+    } catch (e) {
+      alert(e.response?.data?.message || t("billDeleteFailed"));
+    } finally {
+      setDeletingId(null);
+      setConfirmDeleteId(null);
+    }
   };
 
   const handleConfirmPayment = async (id) => {
@@ -281,10 +393,69 @@ export default function ManageBills() {
       const bill = bills.find(b => b.id === id);
       const headers = (isSuperAdmin && bill?.Flat?.Block?.society_id) ? { "x-society-id": bill.Flat.Block.society_id } : {};
       await API.put(`/bills/confirm/${id}`, {}, { headers });
+      setSelectedBillsMap(prev => {
+        if (!prev[id]) return prev;
+        return { ...prev, [id]: { ...prev[id], status: "PAID" } };
+      });
       loadBills(page, debSearch, filterStatus);
-    } catch (e) { alert(e.response?.data?.message || "Failed to confirm payment"); }
-    finally { setConfirmingId(null); }
+      setFeedbackBanner({ type: "success", message: "Payment confirmed successfully." });
+    } catch (e) {
+      alert(e.response?.data?.message || "Failed to confirm payment");
+    } finally {
+      setConfirmingId(null);
+    }
   };
+
+  /* ── Bulk Actions ── */
+  const handleBulkApprove = async () => {
+    if (selectedApprovable.length === 0) return;
+    try {
+      setBulkApproving(true);
+      const ids = selectedApprovable.map(b => b.id);
+      const headers = (isSuperAdmin && filterSocietyId) ? { "x-society-id": filterSocietyId } : {};
+      const res = await API.put("/bills/bulk-confirm", { ids }, { headers });
+      setFeedbackBanner({
+        type: "success",
+        message: res.data?.message || `Approved ${res.data?.approvedCount || ids.length} bill(s) successfully!`,
+      });
+      setShowBulkApproveModal(false);
+      clearSelection();
+      loadBills(page, debSearch, filterStatus);
+    } catch (err) {
+      setFeedbackBanner({
+        type: "error",
+        message: err.response?.data?.message || "Failed to approve selected bills.",
+      });
+    } finally {
+      setBulkApproving(false);
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedDeletable.length === 0) return;
+    try {
+      setBulkDeleting(true);
+      const ids = selectedDeletable.map(b => b.id);
+      const headers = (isSuperAdmin && filterSocietyId) ? { "x-society-id": filterSocietyId } : {};
+      const res = await API.post("/bills/bulk-delete", { ids }, { headers });
+      setFeedbackBanner({
+        type: "success",
+        message: res.data?.message || `Deleted ${res.data?.deletedCount || ids.length} bill(s) successfully!`,
+      });
+      setShowBulkDeleteModal(false);
+      clearSelection();
+      const newPage = bills.length === ids.length && page > 1 ? page - 1 : page;
+      loadBills(newPage, debSearch, filterStatus);
+    } catch (err) {
+      setFeedbackBanner({
+        type: "error",
+        message: err.response?.data?.message || "Failed to delete selected bills.",
+      });
+    } finally {
+      setBulkDeleting(false);
+    }
+  };
+
 
   /* ── Tabs ── */
   const TABS = [
@@ -339,6 +510,39 @@ export default function ManageBills() {
 
   return (
     <div className="page-root animate-fadeIn">
+
+      {/* ── FEEDBACK NOTIFICATION BANNER ── */}
+      {feedbackBanner && (
+        <div
+          className="animate-fadeIn"
+          style={{
+            marginBottom: 16,
+            padding: "12px 18px",
+            borderRadius: 14,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 12,
+            background: feedbackBanner.type === "success" ? "rgba(16,185,129,0.12)" : "rgba(239,68,68,0.12)",
+            border: feedbackBanner.type === "success" ? "1px solid rgba(16,185,129,0.35)" : "1px solid rgba(239,68,68,0.35)",
+            color: feedbackBanner.type === "success" ? "#10b981" : "#f87171",
+            fontSize: 13,
+            fontWeight: 700,
+            boxShadow: "0 4px 14px rgba(0,0,0,0.1)",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            {feedbackBanner.type === "success" ? <MdCheckCircle size={20} /> : <MdWarning size={20} />}
+            <span>{feedbackBanner.message}</span>
+          </div>
+          <button
+            onClick={() => setFeedbackBanner(null)}
+            style={{ background: "none", border: "none", color: "inherit", cursor: "pointer", display: "flex", alignItems: "center" }}
+          >
+            <MdClose size={16} />
+          </button>
+        </div>
+      )}
 
       {/* ── HEADER ── */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
@@ -490,27 +694,126 @@ export default function ManageBills() {
               )}
             </span>
 
-            {/* Search — right aligned */}
-            <div className="search-input-wrap" style={{ maxWidth: 240, width: "100%" }}>
-              <MdSearch size={15} className="search-input-icon" />
-              <input
-                key="manage-bills-search"
-                className="input h-10 w-full pl-10 pr-8"
-                placeholder={t("billSearch")}
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-              />
-              {fetching && !initialLoad ? (
-                <div style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)" }}>
-                  <Spinner size={13} />
+            {/* Right side: Bulk Actions (Approve & Delete) & Search */}
+            <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", justifyContent: "flex-end" }}>
+              {selectedCount > 0 && (
+                <div className="animate-fadeIn" style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                  {/* Badge showing selected count & total */}
+                  <span
+                    style={{
+                      fontSize: 12,
+                      fontWeight: 700,
+                      background: "var(--accent-soft, rgba(99,102,241,0.18))",
+                      color: "var(--accent, #818cf8)",
+                      padding: "6px 12px",
+                      borderRadius: 10,
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 5,
+                    }}
+                  >
+                    <MdCheckCircle size={14} /> {selectedCount} Selected
+                    <span style={{ opacity: 0.75, fontWeight: 800 }}>• ₹{selectedTotalAmount.toLocaleString("en-IN")}</span>
+                  </span>
+
+                  {/* Bulk Approve Button */}
+                  <button
+                    type="button"
+                    onClick={() => setShowBulkApproveModal(true)}
+                    disabled={selectedApprovable.length === 0}
+                    title={selectedApprovable.length === 0 ? "No unpaid bills in selection" : "Approve and confirm payment for selected bills"}
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 6,
+                      fontSize: 12,
+                      fontWeight: 700,
+                      background: selectedApprovable.length > 0 ? "linear-gradient(135deg, #10b981, #059669)" : "rgba(16,185,129,0.2)",
+                      color: selectedApprovable.length > 0 ? "#ffffff" : "rgba(255,255,255,0.4)",
+                      border: "none",
+                      borderRadius: 10,
+                      padding: "8px 14px",
+                      cursor: selectedApprovable.length > 0 ? "pointer" : "not-allowed",
+                      boxShadow: selectedApprovable.length > 0 ? "0 4px 12px rgba(16,185,129,0.3)" : "none",
+                      transition: "all 0.2s",
+                    }}
+                  >
+                    <MdCheckCircle size={15} />
+                    <span>Approve ({selectedApprovable.length})</span>
+                  </button>
+
+                  {/* Bulk Delete Button */}
+                  <button
+                    type="button"
+                    onClick={() => setShowBulkDeleteModal(true)}
+                    disabled={selectedDeletable.length === 0}
+                    title={selectedDeletable.length === 0 ? "No bills selected" : "Delete selected bills"}
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 6,
+                      fontSize: 12,
+                      fontWeight: 700,
+                      background: selectedDeletable.length > 0 ? "rgba(239,68,68,0.18)" : "rgba(239,68,68,0.06)",
+                      color: selectedDeletable.length > 0 ? "#f87171" : "rgba(239,68,68,0.3)",
+                      border: selectedDeletable.length > 0 ? "1px solid rgba(239,68,68,0.4)" : "1px solid transparent",
+                      borderRadius: 10,
+                      padding: "8px 14px",
+                      cursor: selectedDeletable.length > 0 ? "pointer" : "not-allowed",
+                      transition: "all 0.2s",
+                    }}
+                  >
+                    <MdDelete size={15} />
+                    <span>Delete ({selectedDeletable.length})</span>
+                  </button>
+
+                  {/* Clear Selection */}
+                  <button
+                    type="button"
+                    onClick={clearSelection}
+                    title="Deselect all"
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      width: 32,
+                      height: 32,
+                      borderRadius: 10,
+                      background: "var(--card-inner-bg, rgba(255,255,255,0.06))",
+                      border: "1px solid var(--glass-border)",
+                      color: "var(--text-secondary)",
+                      cursor: "pointer",
+                      transition: "all 0.2s",
+                    }}
+                  >
+                    <MdClose size={16} />
+                  </button>
                 </div>
-              ) : search ? (
-                <button className="search-input-clear" onClick={() => setSearch("")}>
-                  <MdClose size={13} />
-                </button>
-              ) : null}
+              )}
+
+              {/* Search — right aligned */}
+              <div className="search-input-wrap" style={{ maxWidth: 220, width: "100%" }}>
+                <MdSearch size={15} className="search-input-icon" />
+                <input
+                  key="manage-bills-search"
+                  className="input h-10 w-full pl-10 pr-8"
+                  placeholder={t("billSearch")}
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                />
+                {fetching && !initialLoad ? (
+                  <div style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)" }}>
+                    <Spinner size={13} />
+                  </div>
+                ) : search ? (
+                  <button className="search-input-clear" onClick={() => setSearch("")}>
+                    <MdClose size={13} />
+                  </button>
+                ) : null}
+              </div>
             </div>
           </div>
+
 
           {/* Filter tabs */}
           <div className="filter-strip" style={{ width: "100%" }}>
@@ -560,40 +863,65 @@ export default function ManageBills() {
         {/* ── Mobile cards ── */}
         {!initialLoad && bills.length > 0 && isMobile && (
           <div className="flex flex-col gap-3 p-4">
-            {bills.map((b, i) => (
-              <div key={b.id} className="bill-card animate-fadeIn" style={{ animationDelay: `${i * 30}ms` }}>
-                <div style={{ height: 3, background: b.status === "PAID" ? "linear-gradient(90deg,#34d399,#059669)" : "linear-gradient(90deg,#60A5FA,#2563EB)" }} />
-                <div className="bill-card__body">
-                  <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <p className="font-bold text-sm" style={{ color: "var(--text-primary)" }}>{b.title}</p>
-                      <p className="text-xs text-secondary mt-0.5">{b.billing_month}</p>
+            {bills.map((b, i) => {
+              const isSelected = Boolean(selectedBillsMap[b.id]);
+              return (
+                <div
+                  key={b.id}
+                  className="bill-card animate-fadeIn transition-all"
+                  style={{
+                    animationDelay: `${i * 30}ms`,
+                    border: isSelected ? "1.5px solid var(--accent, #6366f1)" : undefined,
+                    boxShadow: isSelected ? "0 0 16px rgba(99,102,241,0.25)" : undefined,
+                  }}
+                >
+                  <div style={{ height: 3, background: b.status === "PAID" ? "linear-gradient(90deg,#34d399,#059669)" : "linear-gradient(90deg,#60A5FA,#2563EB)" }} />
+                  <div className="bill-card__body">
+                    {/* Select Row */}
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, paddingBottom: 6, borderBottom: "1px solid var(--glass-border)" }}>
+                      <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", fontSize: 12, fontWeight: 700, color: isSelected ? "var(--accent)" : "var(--text-secondary)" }}>
+                        <input
+                          type="checkbox"
+                          style={{ cursor: "pointer", width: 16, height: 16, accentColor: "var(--accent)" }}
+                          checked={isSelected}
+                          onChange={() => toggleSelect(b)}
+                        />
+                        <span>{isSelected ? "Selected" : "Select"}</span>
+                      </label>
+                      <span style={{ fontSize: 11, fontWeight: 600, color: "var(--text-secondary)", opacity: 0.6 }}>#{b.id}</span>
                     </div>
-                    <BillStatus status={b.status} t={t} />
-                  </div>
-                  <div className="bill-amount-box">
-                    <span className="text-xs text-secondary font-medium">{t("billAmountLabel")}</span>
-                    <span className="bill-amount-val">₹{Number(b.amount).toLocaleString("en-IN")}</span>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <p className="text-xs text-secondary mb-1">{t("billFlatCol")}</p>
-                      <span className="flat-chip">{b.Flat.flat_number} · {b.Flat.Block.name}</span>
-                      {isSuperAdmin && (
-                        <div style={{ marginTop: 4, fontSize: 10, fontWeight: 700, color: "var(--accent)" }}>
-                          🏢 {b.Flat.Block?.Society?.name}
-                        </div>
-                      )}
+
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <p className="font-bold text-sm" style={{ color: "var(--text-primary)" }}>{b.title}</p>
+                        <p className="text-xs text-secondary mt-0.5">{b.billing_month}</p>
+                      </div>
+                      <BillStatus status={b.status} t={t} />
                     </div>
-                    <div>
-                      <p className="text-xs text-secondary mb-1">{t("billResidentCol")}</p>
-                      <p className="text-xs font-semibold" style={{ color: "var(--text-primary)" }}>{b.Flat.User?.name || "NA"}</p>
+                    <div className="bill-amount-box">
+                      <span className="text-xs text-secondary font-medium">{t("billAmountLabel")}</span>
+                      <span className="bill-amount-val">₹{Number(b.amount).toLocaleString("en-IN")}</span>
                     </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <p className="text-xs text-secondary mb-1">{t("billFlatCol")}</p>
+                        <span className="flat-chip">{b.Flat.flat_number} · {b.Flat.Block.name}</span>
+                        {isSuperAdmin && (
+                          <div style={{ marginTop: 4, fontSize: 10, fontWeight: 700, color: "var(--accent)" }}>
+                            🏢 {b.Flat.Block?.Society?.name}
+                          </div>
+                        )}
+                      </div>
+                      <div>
+                        <p className="text-xs text-secondary mb-1">{t("billResidentCol")}</p>
+                        <p className="text-xs font-semibold" style={{ color: "var(--text-primary)" }}>{b.Flat.User?.name || "NA"}</p>
+                      </div>
+                    </div>
+                    <RowActions bill={b} confirmDeleteId={confirmDeleteId} setConfirmDeleteId={setConfirmDeleteId} handleDeleteBill={handleDeleteBill} deletingId={deletingId} handleConfirmPayment={handleConfirmPayment} confirmingId={confirmingId} t={t} />
                   </div>
-                  <RowActions bill={b} confirmDeleteId={confirmDeleteId} setConfirmDeleteId={setConfirmDeleteId} handleDeleteBill={handleDeleteBill} deletingId={deletingId} handleConfirmPayment={handleConfirmPayment} confirmingId={confirmingId} t={t} />
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
 
@@ -602,6 +930,16 @@ export default function ManageBills() {
           <table className="data-table">
             <thead>
               <tr>
+                <th style={{ width: 44, textAlign: "center" }}>
+                  <input
+                    type="checkbox"
+                    style={{ cursor: "pointer", width: 16, height: 16, accentColor: "var(--accent)" }}
+                    checked={isAllPageSelected}
+                    ref={el => { if (el) el.indeterminate = isSomePageSelected; }}
+                    onChange={toggleSelectAllCurrentPage}
+                    title="Select all on this page"
+                  />
+                </th>
                 <th>#</th>
                 {isSuperAdmin && <th>Society</th>}
                 <th>{t("billTitleCol")}</th>
@@ -614,32 +952,51 @@ export default function ManageBills() {
               </tr>
             </thead>
             <tbody>
-              {bills.map((b, i) => (
-                <tr key={b.id} className="animate-fadeIn" style={{ animationDelay: `${i * 20}ms` }}>
-                  <td><span className="text-xs font-semibold text-secondary">{(page - 1) * LIMIT + i + 1}</span></td>
-                  {isSuperAdmin && (
-                    <td>
-                      <span style={{ fontSize: 12, fontWeight: 700, color: "var(--accent)" }}>
-                        {b.Flat.Block?.Society?.name || "—"}
-                      </span>
+              {bills.map((b, i) => {
+                const isSelected = Boolean(selectedBillsMap[b.id]);
+                return (
+                  <tr
+                    key={b.id}
+                    className="animate-fadeIn transition-colors"
+                    style={{
+                      animationDelay: `${i * 20}ms`,
+                      background: isSelected ? "rgba(99, 102, 241, 0.09)" : undefined,
+                    }}
+                  >
+                    <td style={{ width: 44, textAlign: "center" }} onClick={e => e.stopPropagation()}>
+                      <input
+                        type="checkbox"
+                        style={{ cursor: "pointer", width: 16, height: 16, accentColor: "var(--accent)" }}
+                        checked={isSelected}
+                        onChange={() => toggleSelect(b)}
+                        title={`Select bill #${b.id}`}
+                      />
                     </td>
-                  )}
-                  <td>
-                    <div className="flex items-center gap-3">
-                      <div style={{ width: 3, height: 32, borderRadius: 99, flexShrink: 0, background: b.status === "PAID" ? "linear-gradient(180deg,#34d399,#059669)" : "linear-gradient(180deg,#60A5FA,#2563EB)" }} />
-                      <span className="font-semibold text-sm" style={{ color: "var(--text-primary)" }}>{b.title}</span>
-                    </div>
-                  </td>
-                  <td><span className="flat-chip">{b.Flat.flat_number}<span style={{ opacity: 0.55 }}> · {b.Flat.Block.name}</span></span></td>
-                  <td><span className="text-sm text-secondary">{b.Flat.User?.name || "—"}</span></td>
-                  <td><span className="info-chip">{b.billing_month}</span></td>
-                  <td><span className="bill-table-amount">₹{Number(b.amount).toLocaleString("en-IN")}</span></td>
-                  <td><BillStatus status={b.status} t={t} /></td>
-                  <td onClick={e => e.stopPropagation()}>
-                    <RowActions bill={b} confirmDeleteId={confirmDeleteId} setConfirmDeleteId={setConfirmDeleteId} handleDeleteBill={handleDeleteBill} deletingId={deletingId} handleConfirmPayment={handleConfirmPayment} confirmingId={confirmingId} t={t} />
-                  </td>
-                </tr>
-              ))}
+                    <td><span className="text-xs font-semibold text-secondary">{(page - 1) * LIMIT + i + 1}</span></td>
+                    {isSuperAdmin && (
+                      <td>
+                        <span style={{ fontSize: 12, fontWeight: 700, color: "var(--accent)" }}>
+                          {b.Flat.Block?.Society?.name || "—"}
+                        </span>
+                      </td>
+                    )}
+                    <td>
+                      <div className="flex items-center gap-3">
+                        <div style={{ width: 3, height: 32, borderRadius: 99, flexShrink: 0, background: b.status === "PAID" ? "linear-gradient(180deg,#34d399,#059669)" : "linear-gradient(180deg,#60A5FA,#2563EB)" }} />
+                        <span className="font-semibold text-sm" style={{ color: "var(--text-primary)" }}>{b.title}</span>
+                      </div>
+                    </td>
+                    <td><span className="flat-chip">{b.Flat.flat_number}<span style={{ opacity: 0.55 }}> · {b.Flat.Block.name}</span></span></td>
+                    <td><span className="text-sm text-secondary">{b.Flat.User?.name || "—"}</span></td>
+                    <td><span className="info-chip">{b.billing_month}</span></td>
+                    <td><span className="bill-table-amount">₹{Number(b.amount).toLocaleString("en-IN")}</span></td>
+                    <td><BillStatus status={b.status} t={t} /></td>
+                    <td onClick={e => e.stopPropagation()}>
+                      <RowActions bill={b} confirmDeleteId={confirmDeleteId} setConfirmDeleteId={setConfirmDeleteId} handleDeleteBill={handleDeleteBill} deletingId={deletingId} handleConfirmPayment={handleConfirmPayment} confirmingId={confirmingId} t={t} />
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         )}
@@ -660,6 +1017,252 @@ export default function ManageBills() {
           </div>
         )}
       </div>
+
+      {/* ── BULK APPROVE MODAL ── */}
+      {showBulkApproveModal &&
+        createPortal(
+          <div
+            style={{
+              position: "fixed",
+              inset: 0,
+              background: "rgba(0,0,0,0.7)",
+              backdropFilter: "blur(8px)",
+              zIndex: 2000,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: 16,
+            }}
+            onClick={() => !bulkApproving && setShowBulkApproveModal(false)}
+          >
+            <div
+              className="animate-scaleIn"
+              style={{
+                background: "var(--card-bg, #1e293b)",
+                border: "1.5px solid var(--glass-border)",
+                borderRadius: 22,
+                maxWidth: 480,
+                width: "100%",
+                padding: "26px 28px",
+                boxShadow: "0 25px 60px -12px rgba(0,0,0,0.6)",
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 18 }}>
+                <div
+                  style={{
+                    width: 48,
+                    height: 48,
+                    borderRadius: 16,
+                    background: "rgba(16,185,129,0.16)",
+                    color: "#10b981",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    flexShrink: 0,
+                  }}
+                >
+                  <MdCheckCircle size={26} />
+                </div>
+                <div>
+                  <h3 style={{ fontSize: 18, fontWeight: 800, margin: 0, color: "var(--text-primary)" }}>
+                    Approve Selected Bills
+                  </h3>
+                  <p style={{ fontSize: 12, margin: "4px 0 0", color: "var(--text-secondary)" }}>
+                    Confirm payment and mark status as PAID
+                  </p>
+                </div>
+              </div>
+
+              <div
+                style={{
+                  background: "var(--card-inner-bg, rgba(255,255,255,0.03))",
+                  borderRadius: 14,
+                  padding: "16px 18px",
+                  border: "1px solid var(--glass-border)",
+                  marginBottom: 16,
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 10,
+                }}
+              >
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13 }}>
+                  <span style={{ color: "var(--text-secondary)" }}>Bills to Approve:</span>
+                  <strong style={{ color: "var(--text-primary)" }}>{selectedApprovable.length} bill(s)</strong>
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13 }}>
+                  <span style={{ color: "var(--text-secondary)" }}>Total Amount:</span>
+                  <strong style={{ color: "var(--accent, #818cf8)", fontSize: 15 }}>₹{selectedApprovableAmount.toLocaleString("en-IN")}</strong>
+                </div>
+                {selectedPaid.length > 0 && (
+                  <div style={{ fontSize: 11, color: "var(--text-secondary)", borderTop: "1px solid var(--glass-border)", paddingTop: 8 }}>
+                    ℹ️ {selectedPaid.length} already PAID bill(s) in selection will remain unaffected.
+                  </div>
+                )}
+              </div>
+
+              <p style={{ fontSize: 12, color: "var(--text-secondary)", marginBottom: 22, lineHeight: 1.5 }}>
+                Approving will update the status of each bill to <strong>PAID</strong>, mark associated payment records as <strong>SUCCESS</strong>, and send real-time web and push notifications to residents.
+              </p>
+
+              <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
+                <button
+                  type="button"
+                  disabled={bulkApproving}
+                  onClick={() => setShowBulkApproveModal(false)}
+                  className="btn-cancel-sm"
+                  style={{ padding: "9px 18px", borderRadius: 12 }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={bulkApproving}
+                  onClick={handleBulkApprove}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
+                    background: "linear-gradient(135deg, #10b981, #059669)",
+                    color: "#ffffff",
+                    fontWeight: 700,
+                    fontSize: 13,
+                    padding: "9px 20px",
+                    borderRadius: 12,
+                    border: "none",
+                    cursor: bulkApproving ? "not-allowed" : "pointer",
+                    boxShadow: "0 4px 14px rgba(16,185,129,0.35)",
+                  }}
+                >
+                  {bulkApproving ? <Spinner size={16} /> : <MdCheckCircle size={17} />}
+                  <span>{bulkApproving ? "Approving..." : `Yes, Approve (${selectedApprovable.length})`}</span>
+                </button>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
+
+      {/* ── BULK DELETE MODAL ── */}
+      {showBulkDeleteModal &&
+        createPortal(
+          <div
+            style={{
+              position: "fixed",
+              inset: 0,
+              background: "rgba(0,0,0,0.7)",
+              backdropFilter: "blur(8px)",
+              zIndex: 2000,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: 16,
+            }}
+            onClick={() => !bulkDeleting && setShowBulkDeleteModal(false)}
+          >
+            <div
+              className="animate-scaleIn"
+              style={{
+                background: "var(--card-bg, #1e293b)",
+                border: "1.5px solid var(--glass-border)",
+                borderRadius: 22,
+                maxWidth: 480,
+                width: "100%",
+                padding: "26px 28px",
+                boxShadow: "0 25px 60px -12px rgba(0,0,0,0.6)",
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 18 }}>
+                <div
+                  style={{
+                    width: 48,
+                    height: 48,
+                    borderRadius: 16,
+                    background: "rgba(239,68,68,0.16)",
+                    color: "#ef4444",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    flexShrink: 0,
+                  }}
+                >
+                  <MdDelete size={26} />
+                </div>
+                <div>
+                  <h3 style={{ fontSize: 18, fontWeight: 800, margin: 0, color: "var(--text-primary)" }}>
+                    Delete Selected Bills
+                  </h3>
+                  <p style={{ fontSize: 12, margin: "4px 0 0", color: "var(--text-secondary)" }}>
+                    Permanently remove selected bills
+                  </p>
+                </div>
+              </div>
+
+              <div
+                style={{
+                  background: "var(--card-inner-bg, rgba(255,255,255,0.03))",
+                  borderRadius: 14,
+                  padding: "16px 18px",
+                  border: "1px solid var(--glass-border)",
+                  marginBottom: 16,
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 10,
+                }}
+              >
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13 }}>
+                  <span style={{ color: "var(--text-secondary)" }}>Bills to Delete:</span>
+                  <strong style={{ color: "#ef4444" }}>{selectedDeletable.length} bill(s)</strong>
+                </div>
+                {selectedPaid.length > 0 && (
+                  <div style={{ fontSize: 11, color: "var(--text-secondary)", borderTop: "1px solid var(--glass-border)", paddingTop: 8 }}>
+                    ℹ️ Includes {selectedPaid.length} approved/paid bill(s). Associated payment records will also be removed.
+                  </div>
+                )}
+              </div>
+
+              <p style={{ fontSize: 12, color: "var(--text-secondary)", marginBottom: 22, lineHeight: 1.5 }}>
+                Are you sure you want to delete these bills? This action <strong>cannot be undone</strong>.
+              </p>
+
+              <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
+                <button
+                  type="button"
+                  disabled={bulkDeleting}
+                  onClick={() => setShowBulkDeleteModal(false)}
+                  className="btn-cancel-sm"
+                  style={{ padding: "9px 18px", borderRadius: 12 }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={bulkDeleting}
+                  onClick={handleBulkDelete}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
+                    background: "linear-gradient(135deg, #ef4444, #dc2626)",
+                    color: "#ffffff",
+                    fontWeight: 700,
+                    fontSize: 13,
+                    padding: "9px 20px",
+                    borderRadius: 12,
+                    border: "none",
+                    cursor: bulkDeleting ? "not-allowed" : "pointer",
+                    boxShadow: "0 4px 14px rgba(239,68,68,0.35)",
+                  }}
+                >
+                  {bulkDeleting ? <Spinner size={16} /> : <MdDelete size={17} />}
+                  <span>{bulkDeleting ? "Deleting..." : `Yes, Delete (${selectedDeletable.length})`}</span>
+                </button>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
     </div>
   );
-}
+}

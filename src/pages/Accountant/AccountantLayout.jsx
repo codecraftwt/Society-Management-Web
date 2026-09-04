@@ -1,5 +1,6 @@
 import { Outlet, useNavigate } from "react-router-dom";
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import {
   MdDashboard,
   MdMenu,
@@ -90,42 +91,46 @@ function AccountantLayoutInner() {
       </div>
 
       {/* LOGOUT CONFIRM MODAL */}
-      {showLogoutConfirm && (
-        <div
-          className="fixed inset-0 flex items-center justify-center z-100 animate-fadeIn"
-          style={{ background: "var(--overlay-bg)", backdropFilter: "blur(6px)" }}
-        >
+      {showLogoutConfirm &&
+        createPortal(
           <div
-            className="p-8 rounded-2xl w-[90%] max-w-sm text-center animate-scaleIn"
-            style={{
-              background: "var(--card-bg)",
-              border: "1.5px solid var(--glass-border)",
-              boxShadow: "var(--shadow-glass)",
-            }}
+            className="fixed inset-0 flex items-center justify-center animate-fadeIn"
+            style={{ background: "var(--overlay-bg)", backdropFilter: "blur(6px)", zIndex: 1200 }}
+            onClick={() => setShowLogoutConfirm(false)}
           >
-            <h2
-              className="text-lg font-semibold mb-2"
-              style={{ color: "var(--text-primary)" }}
+            <div
+              className="p-8 rounded-2xl w-[90%] max-w-sm text-center animate-scaleIn"
+              style={{
+                background: "var(--card-bg)",
+                border: "1.5px solid var(--glass-border)",
+                boxShadow: "var(--shadow-glass)",
+              }}
+              onClick={(e) => e.stopPropagation()}
             >
-              {t("confirmLogout")}
-            </h2>
-            <p className="text-secondary text-sm mb-6">
-              {t("accountantLogoutMsg")}
-            </p>
-            <div className="flex justify-center gap-4">
-              <button onClick={confirmLogout} className="btn-danger">
-                {t("yesLogout")}
-              </button>
-              <button
-                onClick={() => setShowLogoutConfirm(false)}
-                className="btn-primary"
+              <h2
+                className="text-lg font-semibold mb-2"
+                style={{ color: "var(--text-primary)" }}
               >
-                {t("cancel")}
-              </button>
+                {t("confirmLogout")}
+              </h2>
+              <p className="text-secondary text-sm mb-6">
+                {t("accountantLogoutMsg")}
+              </p>
+              <div className="flex justify-center gap-4">
+                <button onClick={confirmLogout} className="btn-danger">
+                  {t("yesLogout")}
+                </button>
+                <button
+                  onClick={() => setShowLogoutConfirm(false)}
+                  className="btn-primary"
+                >
+                  {t("cancel")}
+                </button>
+              </div>
             </div>
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body
+        )}
     </div>
   );
 }

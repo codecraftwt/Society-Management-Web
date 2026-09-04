@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { Outlet, useNavigate } from "react-router-dom";
 import {
   MdLogout,
@@ -236,49 +237,54 @@ function SuperAdminLayoutInner() {
       </div>
 
       {/* LOGOUT CONFIRM MODAL */}
-      {showLogoutConfirm && (
-        <div
-          className="fixed inset-0 flex items-center justify-center z-100 animate-fadeIn"
-          style={{
-            background: "var(--overlay-bg)",
-            backdropFilter: "blur(6px)",
-          }}
-        >
+      {showLogoutConfirm &&
+        createPortal(
           <div
-            className="p-8 rounded-2xl w-[90%] max-w-sm text-center animate-scaleIn"
+            className="fixed inset-0 flex items-center justify-center animate-fadeIn"
             style={{
-              background: "var(--card-bg)",
-              border: "1.5px solid var(--glass-border)",
-              boxShadow: "var(--shadow-glass)",
+              background: "var(--overlay-bg)",
+              backdropFilter: "blur(6px)",
+              zIndex: 1200,
             }}
+            onClick={() => setShowLogoutConfirm(false)}
           >
-            <h2
-              className="text-lg font-semibold mb-2"
-              style={{ color: "var(--text-primary)" }}
+            <div
+              className="p-8 rounded-2xl w-[90%] max-w-sm text-center animate-scaleIn"
+              style={{
+                background: "var(--card-bg)",
+                border: "1.5px solid var(--glass-border)",
+                boxShadow: "var(--shadow-glass)",
+              }}
+              onClick={(e) => e.stopPropagation()}
             >
-              Confirm Logout
-            </h2>
-            <div className="flex justify-center items-center gap-3 mt-6">
-              <button
-                onClick={() => setShowLogoutConfirm(false)}
-                className="sa-btn sa-btn-ghost"
-                style={{ borderRadius: 12, padding: "8px 16px" }}
+              <h2
+                className="text-lg font-semibold mb-2"
+                style={{ color: "var(--text-primary)" }}
               >
-                Cancel
-              </button>
-              <button
-                onClick={confirmLogout}
-                className="sa-add-btn sa-add-pill"
-              >
-                <span className="sa-pill-blob sa-pill-blob1" />
-                <span className="sa-pill-inner" style={{ padding: "0 18px", height: 38 }}>
-                  <MdLogout size={16} /> <span>Yes, Logout</span>
-                </span>
-              </button>
+                Confirm Logout
+              </h2>
+              <div className="flex justify-center items-center gap-3 mt-6">
+                <button
+                  onClick={() => setShowLogoutConfirm(false)}
+                  className="sa-btn sa-btn-ghost"
+                  style={{ borderRadius: 12, padding: "8px 16px" }}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmLogout}
+                  className="sa-add-btn sa-add-pill"
+                >
+                  <span className="sa-pill-blob sa-pill-blob1" />
+                  <span className="sa-pill-inner" style={{ padding: "0 18px", height: 38 }}>
+                    <MdLogout size={16} /> <span>Yes, Logout</span>
+                  </span>
+                </button>
+              </div>
             </div>
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body
+        )}
     </div>
   );
 }

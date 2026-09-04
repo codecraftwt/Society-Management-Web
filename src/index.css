@@ -2833,7 +2833,7 @@
   .modal-overlay-blur {
     position: fixed;
     inset: 0;
-    z-index: 40;
+    z-index: 1050;
     background: var(--overlay-bg);
     backdrop-filter: blur(4px);
   }
@@ -15425,6 +15425,17 @@ html.light .sa-btn-ghost:hover:not(:disabled) {
   0% {
     opacity: 0;
     transform: scale(0.9) translateY(18px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes adminModalPopIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.95) translateY(10px);
   }
   100% {
     opacity: 1;

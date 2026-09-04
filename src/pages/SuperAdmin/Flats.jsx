@@ -1,6 +1,7 @@
 
 
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { useParams, useNavigate } from "react-router-dom";
 import API from "../../services/api";
 import {
@@ -38,7 +39,7 @@ export default function Flats() {
   const [flats, setFlats] = useState([]);
   // New state for Add Flat modal
   const [showAddModal, setShowAddModal] = useState(false);
-  const [newFlatData, setNewFlatData] = useState({ flat_number: "", block_id: "" });
+  const [newFlatData, setNewFlatData] = useState({ flat_number: "", block_id: "", area_sqft: "" });
   const [adding, setAdding] = useState(false);
   const [addError, setAddError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
@@ -137,82 +138,107 @@ export default function Flats() {
       `}</style>
 
       {/* Add Flat Modal */}
-      {showAddModal && (
-        <div className="sa-modal-overlay">
-          <div className="sa-modal">
-            <div className="sa-modal-header">
-              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                <div className="sa-form-icon"><MdApartment size={18} /></div>
-                <div>
-                  <h3 className="sa-form-title">Add New Flat</h3>
-                  <p className="sa-form-subtitle">
-                    Create a flat unit in this block
-                  </p>
+      {showAddModal &&
+        createPortal(
+          <div
+            className="sa-modal-overlay animate-fadeIn"
+            style={{ zIndex: 1100 }}
+            onClick={() => {
+              setShowAddModal(false);
+              setNewFlatData({ flat_number: "", block_id: "", area_sqft: "" });
+              setAddError("");
+              setSuccessMessage("");
+            }}
+          >
+            <div
+              className="sa-modal animate-scaleIn"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="sa-modal-header">
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  <div className="sa-form-icon"><MdApartment size={18} /></div>
+                  <div>
+                    <h3 className="sa-form-title">Add New Flat</h3>
+                    <p className="sa-form-subtitle">
+                      Create a flat unit in this block
+                    </p>
+                  </div>
                 </div>
               </div>
-            </div>
-            {addError && (
-              <div style={{
-                color: "var(--danger)", fontSize: 12, margin: "2px 24px 0",
-                background: "rgba(255,107,107,0.08)", border: "1px solid rgba(255,107,107,0.22)",
-                padding: "8px 12px", borderRadius: 9,
-              }}>{addError}</div>
-            )}
-            <div className="sa-modal-body">
-              <label className="sa-label">Flat Number</label>
-              <input
-                className="input"
-                placeholder="Flat Number"
-                value={newFlatData.flat_number}
-                onChange={e => setNewFlatData({ ...newFlatData, flat_number: e.target.value })}
-              />
-            </div>
+              {addError && (
+                <div style={{
+                  color: "var(--danger)", fontSize: 12, margin: "2px 24px 0",
+                  background: "rgba(255,107,107,0.08)", border: "1px solid rgba(255,107,107,0.22)",
+                  padding: "8px 12px", borderRadius: 9,
+                }}>{addError}</div>
+              )}
+              <div className="sa-modal-body">
+                <label className="sa-label">Flat Number</label>
+                <input
+                  className="input"
+                  placeholder="Flat Number"
+                  value={newFlatData.flat_number}
+                  onChange={e => setNewFlatData({ ...newFlatData, flat_number: e.target.value })}
+                />
+                <label className="sa-label" style={{ marginTop: 12 }}>Area (sq.ft)</label>
+                <input
+                  className="input"
+                  type="number"
+                  min="0.01"
+                  step="0.01"
+                  placeholder="e.g. 1200"
+                  value={newFlatData.area_sqft}
+                  onChange={e => setNewFlatData({ ...newFlatData, area_sqft: e.target.value })}
+                />
+              </div>
 
-            <div className="sa-modal-footer">
-              <button
-                onClick={() => { setShowAddModal(false); setNewFlatData({ flat_number: "", block_id: "" }); setAddError(""); setSuccessMessage(""); }}
-                className="sa-btn sa-btn-ghost"
-              >Cancel</button>
-              <button
-                onClick={async () => {
-                  if (!newFlatData.flat_number) {
-                    setAddError("Flat number is required");
-                    return;
-                  }
-                  // Determine block id from route or fetched floor data
-                  const effectiveBlockId = resolvedBlockId;
-                  if (!effectiveBlockId) {
-                    setAddError("Block ID could not be determined");
-                    return;
-                  }
-                  setAdding(true);
-                  setAddError("");
-                  try {
-                    await API.post(`/flats`, {
-                      ...newFlatData,
-                      block_id: effectiveBlockId,
-                      ...(floorId && { floor_id: floorId }),
-                      resident_id: null,
-                      occupancy_status: "VACANT",
-                    });
-                    await loadFlats();
-                    setSuccessMessage(`Flat ${newFlatData.flat_number} created successfully`);
-                    setShowAddModal(false);
-                    setNewFlatData({ flat_number: "", block_id: "" });
-                  } catch (err) {
-                    setAddError(err?.response?.data?.message || "Failed to add flat");
-                  } finally {
-                    setAdding(false);
-                  }
-                }}
-                disabled={adding}
-                className="sa-btn sa-btn-primary"
-                style={{ opacity: adding ? 0.7 : 1, cursor: adding ? "not-allowed" : "pointer" }}
-              >{adding ? <Spinner small /> : "Add"}</button>
+              <div className="sa-modal-footer">
+                <button
+                  onClick={() => { setShowAddModal(false); setNewFlatData({ flat_number: "", block_id: "" }); setAddError(""); setSuccessMessage(""); }}
+                  className="sa-btn sa-btn-ghost"
+                >Cancel</button>
+                <button
+                  onClick={async () => {
+                    if (!newFlatData.flat_number) {
+                      setAddError("Flat number is required");
+                      return;
+                    }
+                    // Determine block id from route or fetched floor data
+                    const effectiveBlockId = resolvedBlockId;
+                    if (!effectiveBlockId) {
+                      setAddError("Block ID could not be determined");
+                      return;
+                    }
+                    setAdding(true);
+                    setAddError("");
+                    try {
+                      await API.post(`/flats`, {
+                        ...newFlatData,
+                        block_id: effectiveBlockId,
+                        ...(floorId && { floor_id: floorId }),
+                        resident_id: null,
+                        occupancy_status: "VACANT",
+                        area_sqft: newFlatData.area_sqft ? Number(newFlatData.area_sqft) : null,
+                      });
+                      await loadFlats();
+                      setSuccessMessage(`Flat ${newFlatData.flat_number} created successfully`);
+                      setShowAddModal(false);
+                      setNewFlatData({ flat_number: "", block_id: "", area_sqft: "" });
+                    } catch (err) {
+                      setAddError(err?.response?.data?.message || "Failed to add flat");
+                    } finally {
+                      setAdding(false);
+                    }
+                  }}
+                  disabled={adding}
+                  className="sa-btn sa-btn-primary"
+                  style={{ opacity: adding ? 0.7 : 1, cursor: adding ? "not-allowed" : "pointer" }}
+                >{adding ? <Spinner small /> : "Add"}</button>
+              </div>
             </div>
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body
+        )}
 
       <div className="sa-page animate-fadeIn" style={{ maxWidth: 1000, margin: "0 auto" }}>
 

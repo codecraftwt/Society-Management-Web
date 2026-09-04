@@ -1,4 +1,5 @@
 
+import { createPortal } from "react-dom";
 import API from "../../services/api";
 
 export default function AdminEmergencyModal({
@@ -18,20 +19,38 @@ export default function AdminEmergencyModal({
     }
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
-         style={{ background: "var(--overlay-strong)", backdropFilter: "blur(8px)" }}>
-
+  return createPortal(
+    <div
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 1200,
+        background: "rgba(0, 0, 0, 0.7)",
+        backdropFilter: "blur(8px)",
+        WebkitBackdropFilter: "blur(8px)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "16px",
+      }}
+    >
       {/* RED AMBIENT GLOW */}
       <div className="absolute w-175 h-62.5 bg-red-600/20 blur-[120px] rounded-full pointer-events-none"></div>
 
       {/* MODAL CONTAINER */}
-      <div className="relative emergency-modal-bg rounded-2xl w-full max-w-md flex flex-col shadow-xl"
-           style={{
-             background: "var(--modal-bg)",
-             border: "1px solid var(--glass-border)",
-             backdropFilter: "var(--blur)",
-           }}>
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="relative emergency-modal-bg rounded-2xl w-full max-w-md flex flex-col shadow-xl"
+        style={{
+          background: "var(--modal-bg)",
+          border: "1px solid var(--glass-border)",
+          backdropFilter: "var(--blur)",
+          animation: "adminModalPopIn 0.28s cubic-bezier(0.16, 1, 0.3, 1)",
+          maxHeight: "88vh",
+          overflowY: "auto",
+        }}
+      >
 
         {/* ER */}
         <div className="flex justify-between items-center p-5"
@@ -107,6 +126,7 @@ export default function AdminEmergencyModal({
         </div>
 
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

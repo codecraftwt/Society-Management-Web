@@ -731,8 +731,8 @@ function CameraPortal({ cameraError, cameraReady, cameraMode, videoRef, onFlip, 
   }, []);
   return createPortal(
     <>
-      <div className="fixed z-9998 bg-black/75 backdrop-blur-sm animate-fadeIn inset-0" onClick={onClose} aria-hidden="true" />
-      <div className="fixed z-9999 inset-0 pointer-events-none flex items-end md:items-center md:justify-center">
+      <div className="fixed bg-black/75 backdrop-blur-sm animate-fadeIn inset-0" style={{ zIndex: 10000 }} onClick={onClose} aria-hidden="true" />
+      <div className="fixed inset-0 pointer-events-none flex items-end md:items-center md:justify-center" style={{ zIndex: 10001 }}>
         <div className="pointer-events-auto w-full rounded-t-2xl md:max-w-lg md:rounded-2xl bg-[#0d1b35] border border-white/10 shadow-2xl overflow-hidden animate-scaleIn"
           onClick={(e) => e.stopPropagation()}>
           <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">

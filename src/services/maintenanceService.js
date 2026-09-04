@@ -13,6 +13,10 @@ export const deleteMaintenanceConfig = (id) =>
 export const getMaintenanceFlatTypes = () =>
   API.get("/maintenance/flat-types").then((r) => r.data.flat_types || []);
 
+/* Bill preview */
+export const previewMaintenanceBills = (payload) =>
+  API.post("/maintenance/preview", payload).then((r) => r.data);
+
 /* Bill generation */
 export const generateMaintenanceBills = (payload) =>
   API.post("/maintenance/generate", payload).then((r) => r.data);
@@ -29,6 +33,7 @@ export default {
   saveMaintenanceConfig,
   deleteMaintenanceConfig,
   getMaintenanceFlatTypes,
+  previewMaintenanceBills,
   generateMaintenanceBills,
   getMaintenanceBills,
   getMaintenanceBillDetail,

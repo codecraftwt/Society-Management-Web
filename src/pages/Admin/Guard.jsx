@@ -1,4 +1,5 @@
 import { useEffect, useState, useContext, useMemo } from "react";
+import { createPortal } from "react-dom";
 import API from "../../services/api";
 import { useLang } from "../../context/LanguageContext";
 import { AuthContext } from "../../context/AuthContext";
@@ -610,34 +611,36 @@ export default function Guard() {
       </div>
 
       {/* ── SHIFT MODAL ── */}
-      {showShiftForm && (
-        <>
-          <div
-            onClick={() => setShowShiftForm(false)}
-            style={{
-              position: "fixed", inset: 0, zIndex: 50,
-              background: "rgba(0,0,0,0.6)",
-              backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)",
-              animation: "fadeIn 0.2s ease",
-            }}
-          />
-          <style>{`
-            @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-            @keyframes slideUp { from { opacity: 0; transform: translate(-50%, -48%) scale(0.96); } to { opacity: 1; transform: translate(-50%, -50%) scale(1); } }
-            @keyframes shiftPop { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
-          `}</style>
+      {showShiftForm && createPortal(
+        <div
+          onClick={(e) => { if (e.target === e.currentTarget) setShowShiftForm(false); }}
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 1100,
+            background: "rgba(0, 0, 0, 0.65)",
+            backdropFilter: "blur(8px)",
+            WebkitBackdropFilter: "blur(8px)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "16px",
+          }}
+        >
           <div
             onClick={e => e.stopPropagation()}
             className="bill-form-card"
             style={{
-              position: "fixed", top: "50%", left: "50%",
-              transform: "translate(-50%, -50%)",
-              zIndex: 51,
-              width: "min(460px, 92vw)",
-              maxHeight: "88vh", overflowY: "auto",
+              width: "min(480px, 94vw)",
+              maxHeight: "88vh",
+              overflowY: "auto",
               boxSizing: "border-box",
               padding: "24px 26px",
-              animation: "slideUp 0.25s cubic-bezier(0.34,1.56,0.64,1) forwards",
+              borderRadius: 20,
+              background: "var(--card-bg, #0f172a)",
+              border: "1px solid var(--glass-border, rgba(255, 255, 255, 0.12))",
+              boxShadow: "0 24px 80px rgba(0,0,0,0.5), 0 0 20px rgba(37,99,235,0.15)",
+              animation: "adminModalPopIn 0.28s cubic-bezier(0.16, 1, 0.3, 1)",
             }}
           >
             {/* ── HEADER ── */}
@@ -870,7 +873,8 @@ export default function Guard() {
               </div>
             </form>
           </div>
-        </>
+        </div>,
+        document.body
       )}
     </>
   );

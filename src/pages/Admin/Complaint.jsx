@@ -1474,11 +1474,11 @@ export default function Complaint() {
       {/* ── 6. COMPLAINT DETAILS DRAWER ────────────────────────────── */}
       {selected && createPortal(
         <>
-          <div className="modal-overlay-blur animate-fadeIn" onClick={closeDrawer} />
+          <div className="modal-overlay-blur animate-fadeIn" style={{ zIndex: 1050 }} onClick={closeDrawer} />
           <div className={`detail-drawer inherent-drawer animate-fadeIn ${styles.drawer}`}
             style={isMobile
-              ? { position: "fixed", inset: 0, borderRadius: 0, width: "100%", maxWidth: "100%", zIndex: 50 }
-              : { position: "fixed", top: 0, right: 0, bottom: 0, left: "auto", width: "min(470px, 100vw)", borderRadius: "16px 0 0 16px", zIndex: 50 }}>
+              ? { position: "fixed", inset: 0, borderRadius: 0, width: "100%", maxWidth: "100%", zIndex: 1060 }
+              : { position: "fixed", top: 0, right: 0, bottom: 0, left: "auto", width: "min(470px, 100vw)", borderRadius: "16px 0 0 16px", zIndex: 1060 }}>
             <div className={`detail-drawer__header ${styles.drawerHeader}`}>
               <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                 <div className="er-icon er-icon--complaint" style={{ width: 36, height: 36, borderRadius: 10 }}>

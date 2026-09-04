@@ -1,4 +1,5 @@
 import { useState, useEffect, useContext } from "react";
+import { createPortal } from "react-dom";
 import { Outlet, useNavigate } from "react-router-dom";
 import API from "../../services/api";
 import { LanguageProvider, useLang } from "../../context/LanguageContext";
@@ -338,45 +339,50 @@ function CommitteeLayoutInner() {
       </div>
 
       {/* LOGOUT CONFIRM MODAL */}
-      {showLogoutConfirm && (
-        <div
-          className="fixed inset-0 flex items-center justify-center z-100 animate-fadeIn"
-          style={{
-            background: "var(--overlay-bg)",
-            backdropFilter: "blur(6px)",
-          }}
-        >
+      {showLogoutConfirm &&
+        createPortal(
           <div
-            className="p-8 rounded-2xl w-[90%] max-w-sm text-center animate-scaleIn"
+            className="fixed inset-0 flex items-center justify-center animate-fadeIn"
             style={{
-              background: "var(--card-bg)",
-              border: "1.5px solid var(--glass-border)",
-              boxShadow: "var(--shadow-glass)",
+              background: "var(--overlay-bg)",
+              backdropFilter: "blur(6px)",
+              zIndex: 1200,
             }}
+            onClick={() => setShowLogoutConfirm(false)}
           >
-            <h2
-              className="text-lg font-semibold mb-2"
-              style={{ color: "var(--text-primary)" }}
+            <div
+              className="p-8 rounded-2xl w-[90%] max-w-sm text-center animate-scaleIn"
+              style={{
+                background: "var(--card-bg)",
+                border: "1.5px solid var(--glass-border)",
+                boxShadow: "var(--shadow-glass)",
+              }}
+              onClick={(e) => e.stopPropagation()}
             >
-              Confirm Logout
-            </h2>
-            <p className="text-secondary text-sm mb-6">
-              Are you sure you want to log out of the Committee panel?
-            </p>
-            <div className="flex justify-center gap-4">
-              <button onClick={confirmLogout} className="btn-danger">
-                Yes, Logout
-              </button>
-              <button
-                onClick={() => setShowLogoutConfirm(false)}
-                className="btn-primary"
+              <h2
+                className="text-lg font-semibold mb-2"
+                style={{ color: "var(--text-primary)" }}
               >
-                Cancel
-              </button>
+                Confirm Logout
+              </h2>
+              <p className="text-secondary text-sm mb-6">
+                Are you sure you want to log out of the Committee panel?
+              </p>
+              <div className="flex justify-center gap-4">
+                <button onClick={confirmLogout} className="btn-danger">
+                  Yes, Logout
+                </button>
+                <button
+                  onClick={() => setShowLogoutConfirm(false)}
+                  className="btn-primary"
+                >
+                  Cancel
+                </button>
+              </div>
             </div>
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body
+        )}
 
       {/* EMERGENCY MODAL */}
       <AdminEmergencyModal

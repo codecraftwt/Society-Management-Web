@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import { createPortal } from "react-dom";
 import axios from "axios";
 
 const API = import.meta.env.VITE_API_URL || "";
@@ -45,7 +46,7 @@ function ViewModal({ doc, onClose }) {
     };
   }, [onClose]);
 
-  return (
+  return createPortal(
     <div
       onClick={handleBackdrop}
       style={{
@@ -155,7 +156,8 @@ function ViewModal({ doc, onClose }) {
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
@@ -231,7 +233,7 @@ function UploadModal({ docType, existingDoc, onClose, onSuccess }) {
       : `${(file.size / 1024).toFixed(0)} KB`
     : null;
 
-  return (
+  return createPortal(
     <div
       onClick={handleBackdrop}
       style={{
@@ -383,7 +385,8 @@ function UploadModal({ docType, existingDoc, onClose, onSuccess }) {
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
@@ -422,7 +425,7 @@ function DeleteModal({ doc, onClose, onSuccess }) {
     }
   };
 
-  return (
+  return createPortal(
     <div
       onClick={handleBackdrop}
       style={{
@@ -515,7 +518,8 @@ function DeleteModal({ doc, onClose, onSuccess }) {
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 

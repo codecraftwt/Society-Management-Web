@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
+import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import { useLang } from "../../context/LanguageContext";
 import API from "../../services/api";
@@ -198,10 +199,27 @@ export default function Societies() {
       </div>
 
       {/* ── ADD SOCIETY MODAL ── */}
-      {showAddForm && (
-        <div className="fixed inset-0 flex items-center justify-center z-50 p-4"
-          style={{ background: "var(--overlay-bg)", backdropFilter: "blur(8px)" }}>
-          <div className="sa-modal" style={{ width: "100%", maxWidth: 560 }}>
+      {showAddForm && createPortal(
+        <div
+          onClick={(e) => { if (e.target === e.currentTarget) setShowAddForm(false); }}
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 1100,
+            background: "rgba(0, 0, 0, 0.65)",
+            backdropFilter: "blur(8px)",
+            WebkitBackdropFilter: "blur(8px)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "16px",
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="sa-modal"
+            style={{ width: "100%", maxWidth: 560, maxHeight: "90vh", overflowY: "auto" }}
+          >
             <div className="sa-modal-er">
               <div className="sa-modal-icon"><MdApartment size={20} /></div>
               <div>
@@ -258,7 +276,8 @@ export default function Societies() {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* ── SOCIETIES CARDS GRID ── */}
@@ -344,10 +363,27 @@ export default function Societies() {
       )}
 
       {/* ── ADMIN MODAL ── */}
-      {showModal && (
-        <div className="fixed inset-0 flex items-center justify-center z-50 p-4"
-          style={{ background: "var(--overlay-bg)", backdropFilter: "blur(8px)" }}>
-          <div className="sa-modal">
+      {showModal && createPortal(
+        <div
+          onClick={(e) => { if (e.target === e.currentTarget) setShowModal(false); }}
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 1100,
+            background: "rgba(0, 0, 0, 0.65)",
+            backdropFilter: "blur(8px)",
+            WebkitBackdropFilter: "blur(8px)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "16px",
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="sa-modal"
+            style={{ width: "100%", maxWidth: 520, maxHeight: "90vh", overflowY: "auto" }}
+          >
             <div className="sa-modal-er">
               <div className="sa-modal-icon"><FaUserShield size={20} /></div>
               <div>
@@ -393,7 +429,8 @@ export default function Societies() {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

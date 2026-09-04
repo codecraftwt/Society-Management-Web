@@ -1075,11 +1075,11 @@ export default function CommitteeComplaints() {
       {/* ── Detail Drawer ── */}
       {selected && createPortal(
         <>
-          <div className="modal-overlay-blur animate-fadeIn" onClick={closeDrawer} />
+          <div className="modal-overlay-blur animate-fadeIn" style={{ zIndex: 1050 }} onClick={closeDrawer} />
           <div className="detail-drawer animate-fadeIn"
             style={isMobile
-              ? { position: "fixed", inset: 0, borderRadius: 0, width: "100%", maxWidth: "100%", zIndex: 50 }
-              : { position: "fixed", top: 0, right: 0, bottom: 0, left: "auto", width: 420, borderRadius: "16px 0 0 16px", zIndex: 50 }}>
+              ? { position: "fixed", inset: 0, borderRadius: 0, width: "100%", maxWidth: "100%", zIndex: 1060 }
+              : { position: "fixed", top: 0, right: 0, bottom: 0, left: "auto", width: 420, borderRadius: "16px 0 0 16px", zIndex: 1060 }}>
 
             {/* Drawer header */}
             <div className="detail-drawer__header">
