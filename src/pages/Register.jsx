@@ -1,13 +1,21 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { APP_NAME } from "../constants/app";
 import API from "../services/api";
 import { MdEmail } from "react-icons/md";
 import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
-import { FiUser, FiPhone, FiLock, FiArrowRight, FiArrowLeft, FiCheck } from "react-icons/fi";
-import { HiOutlineOfficeBuilding } from "react-icons/hi";
+import { FiUser, FiLock, FiArrowRight, FiArrowLeft, FiCheck } from "react-icons/fi";
+import {
+  HiOutlineBuildingOffice2,
+  HiOutlineSparkles,
+  HiOutlineArrowLeft
+} from "react-icons/hi2";
 import { toast } from "react-toastify";
 import Select from "../components/common/Select";
+import ThemeToggle from "../components/common/ThemeToggle";
+
+import homeBannerImg from "../assets/Photos/Home/Home.png";
+import "./Register.css";
 
 /* ─── Password rule checks ─── */
 const PW_RULES = [
@@ -23,378 +31,7 @@ function pwStrength(p) {
 }
 
 const STRENGTH_LABELS = ["", "Weak", "Fair", "Moderate", "Strong", "Very Strong"];
-const STRENGTH_COLORS = ["", "#ef4444", "#F0845D", "#eab308", "#22c55e", "#10b981"];
-
-/* ─── Scoped styles ─── */
-const STYLES = `
-  @import url('https://fonts.googleapis.com/css2?family=Clash+Display:wght@500;600;700&family=Satoshi:wght@400;500;600&display=swap');
-
-  .reg-root {
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 1.5rem;
-    background: var(--bg-main, #0f1117);
-    position: relative;
-    overflow: hidden;
-    font-family: 'Satoshi', sans-serif;
-  }
-
-  /* ── Ambient blobs ── */
-  .reg-blob {
-    position: absolute;
-    border-radius: 50%;
-    filter: blur(90px);
-    opacity: 0.15;
-    pointer-events: none;
-  }
-  html.light .reg-blob { opacity: 0.10; }
-
-  .reg-blob-1 {
-    width: 420px; height: 420px;
-    background: radial-gradient(circle, #6B46C1, #5B8DEF);
-    top: -130px; left: -110px;
-    animation: regBlobFloat 14s ease-in-out infinite alternate;
-  }
-  .reg-blob-2 {
-    width: 300px; height: 300px;
-    background: radial-gradient(circle, #6B46C1, #B17AB2);
-    bottom: -80px; right: -70px;
-    animation: regBlobFloat 18s ease-in-out infinite alternate-reverse;
-  }
-  .reg-blob-3 {
-    width: 180px; height: 180px;
-    background: radial-gradient(circle, #7AB2B2, #5B8DEF);
-    top: 45%; right: 8%;
-    animation: regBlobFloat 11s ease-in-out infinite alternate;
-  }
-  @keyframes regBlobFloat {
-    from { transform: translate(0, 0) scale(1); }
-    to   { transform: translate(28px, 18px) scale(1.07); }
-  }
-
-  /* ── Card ── */
-  .reg-card {
-    position: relative;
-    z-index: 1;
-    width: 100%;
-    max-width: 440px;
-    background: var(--card-bg, rgba(255,255,255,0.04));
-    border: 1px solid rgba(255,255,255,0.09);
-    border-radius: 20px;
-    padding: 1.5rem 1.75rem 1.25rem;
-    box-shadow: 0 8px 40px rgba(0,0,0,0.4), 0 1px 0 rgba(255,255,255,0.06) inset;
-    backdrop-filter: blur(20px);
-    opacity: 0;
-    transform: translateY(30px);
-    transition: opacity 0.5s ease, transform 0.5s ease;
-  }
-  html.light .reg-card {
-    background: #ffffff;
-    border-color: #E2E1E4;
-    box-shadow: 0 4px 32px rgba(0,0,0,0.10);
-  }
-  .reg-card.reg-visible {
-    opacity: 1;
-    transform: translateY(0);
-  }
-
-  /* ── er ── */
-  .reg-er { text-align: center; margin-bottom: 1rem; }
-  .reg-icon-wrap {
-    display: inline-flex; align-items: center; justify-content: center;
-    width: 44px; height: 44px; border-radius: 12px;
-    background: linear-gradient(135deg, #6B46C1, #5B8DEF);
-    margin-bottom: 0.6rem;
-    box-shadow: 0 4px 20px rgba(107,70,193,0.4);
-    font-size: 1.3rem; color: #fff;
-  }
-  .reg-title {
-    font-family: 'Clash Display', 'DM Serif Display', Georgia, serif;
-    font-size: 1.5rem; font-weight: 600;
-    color: var(--text-primary, #EDECF0);
-    letter-spacing: -0.02em;
-    margin: 0 0 0.2rem;
-  }
-  html.light .reg-title { color: #38363C; }
-  .reg-subtitle {
-    font-size: 0.82rem;
-    color: var(--text-muted, #726988);
-  }
-  html.light .reg-subtitle { color: #8C8795; }
-
-  /* ── Step indicator ── */
-  .reg-steps {
-    display: flex; align-items: center; justify-content: center;
-    margin-bottom: 1.1rem;
-  }
-  .reg-step-dot {
-    width: 32px; height: 32px; border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 0.78rem; font-weight: 600;
-    border: 2px solid rgba(255,255,255,0.14);
-    color: var(--text-muted, #726988);
-    background: transparent;
-    transition: all 0.3s ease;
-  }
-  html.light .reg-step-dot { border-color: #CECCD2; color: #B4B1BA; }
-  .reg-step-dot.reg-active {
-    background: linear-gradient(135deg, #6B46C1, #5B8DEF);
-    border-color: transparent;
-    color: #fff;
-    box-shadow: 0 0 0 3px rgba(107,70,193,0.22);
-  }
-  .reg-step-dot.reg-done {
-    background: #22c55e;
-    border-color: transparent;
-    color: #fff;
-  }
-  .reg-step-line {
-    width: 56px; height: 2px;
-    background: rgba(255,255,255,0.1);
-    transition: background 0.4s;
-  }
-  html.light .reg-step-line { background: #E2E1E4; }
-  .reg-step-line.reg-done { background: #22c55e; }
-
-  /* ── Fields ── */
-  .reg-fields { display: flex; flex-direction: column; gap: 0.65rem; }
-  .reg-field  { display: flex; flex-direction: column; gap: 0.25rem; }
-  .reg-label  {
-    font-size: 0.7rem; font-weight: 600;
-    letter-spacing: 0.05em; text-transform: uppercase;
-    color: var(--text-muted, #726988);
-    padding-left: 2px;
-  }
-  html.light .reg-label { color: #8C8795; }
-
-  .reg-input-wrap { position: relative; }
-  .reg-icon-left {
-    position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
-    color: var(--text-muted, #726988); font-size: 0.95rem;
-    pointer-events: none; transition: color 0.2s;
-  }
-  .reg-input-wrap:focus-within .reg-icon-left { color: #6B46C1; }
-  html.light .reg-input-wrap:focus-within .reg-icon-left { color: #5A3BA2; }
-
-  .reg-input {
-    width: 100%; height: 42px;
-    padding: 0 2.5rem 0 2.5rem;
-    border-radius: 10px;
-    border: 1.5px solid rgba(255,255,255,0.1);
-    background: rgba(255,255,255,0.04);
-    color: var(--text-primary, #EDECF0);
-    font-family: 'Satoshi', sans-serif;
-    font-size: 0.88rem;
-    outline: none;
-    transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
-    box-sizing: border-box;
-  }
-  html.light .reg-input {
-    background: #FAFAFA;
-    border-color: #CECCD2;
-    color: #38363C;
-  }
-  .reg-input::placeholder { color: var(--text-muted, #726988); opacity: 0.7; }
-  html.light .reg-input::placeholder { color: #B4B1BA; opacity: 1; }
-
-  .reg-input:focus {
-    border-color: #6B46C1;
-    box-shadow: 0 0 0 3px rgba(107,70,193,0.16);
-    background: rgba(107,70,193,0.05);
-  }
-  html.light .reg-input:focus {
-    border-color: #5A3BA2;
-    box-shadow: 0 0 0 3px rgba(90,59,162,0.12);
-    background: #F8F7FC;
-  }
-
-  .reg-input.reg-valid:not(:focus)   { border-color: #22c55e !important; }
-  .reg-input.reg-error:not(:focus)   { border-color: #ef4444 !important; }
-
-  .reg-input.reg-select {
-    appearance: none;
-    -webkit-appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 14px center;
-    padding-left: 2.75rem;
-    padding-right: 2.5rem;
-    cursor: pointer;
-  }
-  .reg-input.reg-select-noleft { padding-left: 1rem; }
-  .reg-input.reg-select option { background: #1e2130; color: #EDECF0; }
-  html.light .reg-input.reg-select option { background: #fff; color: #38363C; }
-  .reg-input:disabled { opacity: 0.5; cursor: not-allowed; }
-
-  .reg-eye-btn {
-    position: absolute; right: 11px; top: 50%; transform: translateY(-50%);
-    background: none; border: none; cursor: pointer;
-    color: var(--text-muted, #726988);
-    display: flex; align-items: center; padding: 4px;
-    transition: color 0.2s;
-  }
-  .reg-eye-btn:hover { color: var(--text-primary, #EDECF0); }
-  html.light .reg-eye-btn:hover { color: #38363C; }
-
-  /* Phone */
-  .reg-phone-row { display: flex; }
-  .reg-phone-prefix {
-    height: 42px; padding: 0 10px;
-    border: 1.5px solid rgba(255,255,255,0.1);
-    border-right: none;
-    border-radius: 10px 0 0 10px;
-    display: flex; align-items: center;
-    font-size: 0.82rem; font-weight: 600;
-    color: var(--text-muted, #726988);
-    background: rgba(255,255,255,0.04);
-    white-space: nowrap;
-    user-select: none;
-    flex-shrink: 0;
-  }
-  html.light .reg-phone-prefix {
-    background: #FAFAFA;
-    border-color: #CECCD2;
-    color: #8C8795;
-  }
-  .reg-phone-input {
-    border-radius: 0 10px 10px 0 !important;
-    padding-left: 12px !important;
-    flex: 1;
-  }
-
-  /* Error text */
-  .reg-err {
-    font-size: 0.73rem; color: #ef4444;
-    padding-left: 3px;
-    animation: regFadeIn 0.2s ease;
-  }
-  @keyframes regFadeIn {
-    from { opacity: 0; transform: translateY(-3px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
-
-  /* Strength bar */
-  .reg-strength-row {
-    display: flex; align-items: center; gap: 8px; margin-top: 4px;
-  }
-  .reg-strength-bars { display: flex; gap: 3px; flex: 1; }
-  .reg-strength-seg {
-    height: 3px; flex: 1; border-radius: 99px;
-    background: rgba(255,255,255,0.1);
-    transition: background 0.3s;
-  }
-  html.light .reg-strength-seg { background: #E2E1E4; }
-  .reg-strength-lbl {
-    font-size: 0.68rem; font-weight: 600;
-    min-width: 70px; text-align: right;
-    transition: color 0.3s;
-    color: var(--text-muted, #726988);
-  }
-
-  /* PW Rules */
-  .reg-pw-rules {
-    display: grid; grid-template-columns: 1fr 1fr;
-    gap: 0.2rem 0.6rem;
-    padding: 0.6rem 0.85rem;
-    border-radius: 8px;
-    background: rgba(255,255,255,0.03);
-    border: 1px solid rgba(255,255,255,0.07);
-    margin-top: 0.25rem;
-    animation: regFadeIn 0.2s ease;
-  }
-  html.light .reg-pw-rules { background: #FAFAFA; border-color: #E2E1E4; }
-  .reg-pw-rule {
-    display: flex; align-items: center; gap: 5px;
-    font-size: 0.7rem;
-    color: var(--text-muted, #726988);
-    transition: color 0.2s;
-  }
-  .reg-pw-rule.ok { color: #22c55e; }
-  .reg-pw-dot {
-    width: 5px; height: 5px; border-radius: 50%;
-    background: currentColor; flex-shrink: 0;
-  }
-
-  /* Info box */
-  .reg-info-box {
-    display: flex; gap: 8px; align-items: flex-start;
-    padding: 0.65rem 0.85rem;
-    background: rgba(107,70,193,0.08);
-    border: 1px solid rgba(107,70,193,0.2);
-    border-radius: 10px;
-    font-size: 0.76rem;
-    color: var(--text-secondary, #A39EB2);
-    line-height: 1.5;
-  }
-  html.light .reg-info-box {
-    background: #F8F7FC;
-    border-color: #DAD1F0;
-    color: #493083;
-  }
-
-  /* Buttons */
-  .reg-btn-row { display: flex; flex-direction: column; gap: 0.35rem; padding-top: 0.25rem; }
-  .reg-btn-primary {
-    width: 100%; height: 44px; border-radius: 10px;
-    border: none; cursor: pointer;
-    font-family: 'Satoshi', sans-serif;
-    font-size: 0.92rem; font-weight: 600;
-    display: flex; align-items: center; justify-content: center; gap: 8px;
-    background: linear-gradient(135deg, #6B46C1 0%, #5B8DEF 100%);
-    color: #fff;
-    box-shadow: 0 4px 18px rgba(107,70,193,0.38);
-    transition: opacity 0.2s, transform 0.15s, box-shadow 0.2s;
-  }
-  .reg-btn-primary:hover:not(:disabled) {
-    opacity: 0.9;
-    transform: translateY(-1px);
-    box-shadow: 0 6px 24px rgba(107,70,193,0.48);
-  }
-  .reg-btn-primary:active:not(:disabled) { transform: translateY(0); }
-  .reg-btn-primary:disabled { opacity: 0.55; cursor: not-allowed; }
-
-  .reg-btn-back {
-    background: none; border: none; cursor: pointer;
-    font-family: 'Satoshi', sans-serif;
-    font-size: 0.84rem; font-weight: 500;
-    color: var(--text-muted, #726988);
-    display: flex; align-items: center; justify-content: center; gap: 5px;
-    padding: 6px;
-    transition: color 0.2s;
-    width: 100%;
-  }
-  .reg-btn-back:hover { color: var(--text-primary, #EDECF0); }
-  html.light .reg-btn-back:hover { color: #38363C; }
-
-  /* Spinner */
-  .reg-spinner {
-    width: 18px; height: 18px;
-    border: 2px solid rgba(255,255,255,0.3);
-    border-top-color: #fff;
-    border-radius: 50%;
-    animation: regSpin 0.7s linear infinite;
-  }
-  @keyframes regSpin { to { transform: rotate(360deg); } }
-
-  /* Footer */
-  .reg-footer {
-    text-align: center; margin-top: 1rem;
-    font-size: 0.82rem;
-    color: var(--text-muted, #726988);
-  }
-  html.light .reg-footer { color: #8C8795; }
-  .reg-footer-link {
-    background: none; border: none; cursor: pointer;
-    color: #6B46C1; font-weight: 600;
-    font-family: inherit; font-size: inherit;
-    padding: 0; margin-left: 4px;
-    transition: color 0.2s;
-  }
-  html.light .reg-footer-link { color: #5A3BA2; }
-  .reg-footer-link:hover { color: #9F87D7; text-decoration: underline; }
-`;
+const STRENGTH_COLORS = ["", "#ef4444", "#2563EB", "#eab308", "#22c55e", "#10b981"];
 
 function Register() {
   const navigate = useNavigate();
@@ -487,42 +124,67 @@ function Register() {
   const strength = pwStrength(formData.password);
 
   return (
-    <>
-      <style>{STYLES}</style>
+    <div className="reg-root">
+      {/* Glowing Ambient Orbs */}
+      <div className="reg-glow-orb orb-1" />
+      <div className="reg-glow-orb orb-2" />
 
-      <div className="reg-root">
-        <div className="reg-blob reg-blob-1" />
-        <div className="reg-blob reg-blob-2" />
-        <div className="reg-blob reg-blob-3" />
+      {/* Full-bleed background photo of residential community */}
+      <img
+        src={homeBannerImg}
+        alt="Residential Community Background"
+        className="reg-bg-photo"
+      />
 
-        <div className={`reg-card ${visible ? "reg-visible" : ""}`}>
-
-          {/* ── er ── */}
-          <div className="reg-er">
-            <div className="reg-icon-wrap">
-              <HiOutlineOfficeBuilding />
-            </div>
-            <h1 className="reg-title">Create Account</h1>
-            <p className="reg-subtitle">Join {APP_NAME} — Register below</p>
+      {/* Header Bar */}
+      <header className="reg-top-bar">
+        <Link to="/" className="reg-brand-logo">
+          <div className="reg-brand-icon">
+            <HiOutlineBuildingOffice2 />
           </div>
-
-          {/* ── Steps ── */}
-          <div className="reg-steps">
-            <div className={`reg-step-dot ${step === 1 ? "reg-active" : "reg-done"}`}>
-              {step > 1 ? <FiCheck size={14} /> : "1"}
-            </div>
-            <div className={`reg-step-line ${step > 1 ? "reg-done" : ""}`} />
-            <div className={`reg-step-dot ${step === 2 ? "reg-active" : ""}`}>2</div>
+          <div>
+            <div className="reg-brand-title">Society Management</div>
           </div>
+        </Link>
 
-          {/* ── Form ── */}
-          <form onSubmit={handleRegister}>
+        <div className="reg-top-actions">
+          <ThemeToggle />
+          <Link to="/" className="reg-back-home">
+            <HiOutlineArrowLeft /> Back to Home
+          </Link>
+        </div>
+      </header>
 
-            {/* STEP 1 */}
-            {step === 1 && (
-              <div className="reg-fields">
+      {/* Register Glassmorphism Card */}
+      <div className={`reg-card ${visible ? "reg-visible" : ""}`}>
 
-                {/* Name */}
+        {/* Card Header */}
+        <div className="reg-header">
+          <div className="reg-badge">
+            <HiOutlineSparkles /> Resident Registration Portal
+          </div>
+          <h1 className="reg-title">Create Account</h1>
+          <p className="reg-subtitle">Join {APP_NAME} — Complete details below</p>
+        </div>
+
+        {/* Steps Bar */}
+        <div className="reg-steps">
+          <div className={`reg-step-dot ${step === 1 ? "reg-active" : "reg-done"}`}>
+            {step > 1 ? <FiCheck size={14} /> : "1"}
+          </div>
+          <div className={`reg-step-line ${step > 1 ? "reg-done" : ""}`} />
+          <div className={`reg-step-dot ${step === 2 ? "reg-active" : ""}`}>2</div>
+        </div>
+
+        {/* Registration Form */}
+        <form onSubmit={handleRegister}>
+
+          {/* STEP 1 (Two Textboxes per Row) */}
+          {step === 1 && (
+            <div className="reg-fields">
+
+              {/* Row 1: Full Name & Email Address */}
+              <div className="reg-row-2col">
                 <div className="reg-field">
                   <label className="reg-label">Full Name</label>
                   <div className="reg-input-wrap">
@@ -540,7 +202,6 @@ function Register() {
                     <span className="reg-err">Full name is required.</span>}
                 </div>
 
-                {/* Email */}
                 <div className="reg-field">
                   <label className="reg-label">Email Address</label>
                   <div className="reg-input-wrap">
@@ -555,29 +216,32 @@ function Register() {
                     />
                   </div>
                   {touched.email && !isEmail(formData.email) &&
-                    <span className="reg-err">Enter a valid email address.</span>}
+                    <span className="reg-err">Enter a valid email.</span>}
                 </div>
+              </div>
 
-                {/* Mobile */}
+              {/* Row 2: Mobile Number & Password */}
+              <div className="reg-row-2col">
                 <div className="reg-field">
                   <label className="reg-label">Mobile Number</label>
                   <div className="reg-phone-row">
-                    <div className="reg-phone-prefix">🇮🇳 +91</div>
-                    <input
-                      type="tel" name="mobile"
-                      placeholder="9876543210"
-                      value={formData.mobile}
-                      onChange={handleChange}
-                      onBlur={() => touch("mobile")}
-                      maxLength={10}
-                      className={`${inputClass("mobile", isMobile(formData.mobile))} reg-phone-input`}
-                    />
+                    <div className="reg-input-wrap" style={{ width: "100%" }}>
+                      <div className="reg-phone-prefix">🇮🇳 +91</div>
+                      <input
+                        type="tel" name="mobile"
+                        placeholder="9876543210"
+                        value={formData.mobile}
+                        onChange={handleChange}
+                        onBlur={() => touch("mobile")}
+                        maxLength={10}
+                        className={`${inputClass("mobile", isMobile(formData.mobile))} reg-phone-input`}
+                      />
+                    </div>
                   </div>
                   {touched.mobile && !isMobile(formData.mobile) &&
-                    <span className="reg-err">Enter a valid 10-digit mobile number.</span>}
+                    <span className="reg-err">Enter 10-digit mobile.</span>}
                 </div>
 
-                {/* Password */}
                 <div className="reg-field">
                   <label className="reg-label">Password</label>
                   <div className="reg-input-wrap">
@@ -585,7 +249,7 @@ function Register() {
                     <input
                       type={showPassword ? "text" : "password"}
                       name="password"
-                      placeholder="Create a strong password"
+                      placeholder="Create password"
                       value={formData.password}
                       onChange={handleChange}
                       onFocus={() => setPwFocused(true)}
@@ -623,55 +287,57 @@ function Register() {
                       </span>
                     </div>
                   )}
-
-                  {/* Rules checklist */}
-                  {(pwFocused || (touched.password && !isPwOk(formData.password))) && (
-                    <div className="reg-pw-rules">
-                      {PW_RULES.map((r) => (
-                        <div
-                          key={r.id}
-                          className={`reg-pw-rule ${r.test(formData.password) ? "ok" : ""}`}
-                        >
-                          <div className="reg-pw-dot" />
-                          {r.label}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                <div className="reg-btn-row">
-                  <button type="button" onClick={nextStep} className="reg-btn-primary">
-                    Continue <FiArrowRight size={15} />
-                  </button>
                 </div>
               </div>
-            )}
 
-            {/* STEP 2 */}
-            {step === 2 && (
-              <div className="reg-fields">
-
-                {/* Society */}
-                <div className="reg-field">
-                  <label className="reg-label">Society</label>
-                  <div className="reg-input-wrap">
-                    <HiOutlineOfficeBuilding className="reg-icon-left" />
-                    <Select
-                      value={formData.society_id}
-                      onChange={handleSocietyChange}
-                      className="reg-input reg-select"
-                      required
+              {/* Password Rules Checklist */}
+              {(pwFocused || (touched.password && !isPwOk(formData.password))) && (
+                <div className="reg-pw-rules">
+                  {PW_RULES.map((r) => (
+                    <div
+                      key={r.id}
+                      className={`reg-pw-rule ${r.test(formData.password) ? "ok" : ""}`}
                     >
-                      <option value="">Select your society</option>
-                      {societies.map((s) => (
-                        <option key={s.id} value={s.id}>{s.name}</option>
-                      ))}
-                    </Select>
-                  </div>
+                      <div className="reg-pw-dot" />
+                      {r.label}
+                    </div>
+                  ))}
                 </div>
+              )}
 
-                {/* Block */}
+              <div className="reg-btn-row">
+                <button type="button" onClick={nextStep} className="reg-btn-primary">
+                  Continue <FiArrowRight size={15} />
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* STEP 2 */}
+          {step === 2 && (
+            <div className="reg-fields">
+
+              {/* Society (Full Width) */}
+              <div className="reg-field">
+                <label className="reg-label">Society</label>
+                <div className="reg-input-wrap">
+                  <HiOutlineBuildingOffice2 className="reg-icon-left" />
+                  <Select
+                    value={formData.society_id}
+                    onChange={handleSocietyChange}
+                    className="reg-input reg-select"
+                    required
+                  >
+                    <option value="">Select your society</option>
+                    {societies.map((s) => (
+                      <option key={s.id} value={s.id}>{s.name}</option>
+                    ))}
+                  </Select>
+                </div>
+              </div>
+
+              {/* Row 2: Block & Flat in One Row */}
+              <div className="reg-row-2col">
                 <div className="reg-field">
                   <label className="reg-label">Block / Tower</label>
                   <div className="reg-input-wrap">
@@ -690,7 +356,6 @@ function Register() {
                   </div>
                 </div>
 
-                {/* Flat */}
                 <div className="reg-field">
                   <label className="reg-label">Flat / Unit</label>
                   <div className="reg-input-wrap">
@@ -709,46 +374,46 @@ function Register() {
                     </Select>
                   </div>
                 </div>
-
-                {/* Info */}
-                <div className="reg-info-box">
-                  <span style={{ fontSize: "1rem", marginTop: "1px", flexShrink: 0 }}>ℹ️</span>
-                  <span>
-                    Your account will be <strong>pending approval</strong> until a Society Admin verifies your registration. You'll be notified once approved.
-                  </span>
-                </div>
-
-                <div className="reg-btn-row">
-                  <button
-                    type="submit"
-                    disabled={loading || !formData.society_id || !formData.flat_id}
-                    className="reg-btn-primary"
-                  >
-                    {loading
-                      ? <><div className="reg-spinner" /> Registering…</>
-                      : <><FiCheck size={15} /> Complete Registration</>}
-                  </button>
-                  <button type="button" onClick={() => setStep(1)} className="reg-btn-back">
-                    <FiArrowLeft size={13} /> Back to details
-                  </button>
-                </div>
-
               </div>
-            )}
-          </form>
 
-          {/* Footer */}
-          <div className="reg-footer">
-            Already have an account?
-            <button className="reg-footer-link" onClick={() => navigate("/login")}>
-              Sign in
-            </button>
-          </div>
+              {/* Info */}
+              <div className="reg-info-box">
+                <span style={{ fontSize: "1rem", marginTop: "1px", flexShrink: 0 }}>ℹ️</span>
+                <span>
+                  Your account will be <strong>pending approval</strong> until a Society Admin verifies your registration. You'll be notified once approved.
+                </span>
+              </div>
 
+              <div className="reg-btn-row">
+                <button
+                  type="submit"
+                  disabled={loading || !formData.society_id || !formData.flat_id}
+                  className="reg-btn-primary"
+                >
+                  {loading
+                    ? <><div className="reg-spinner" /> Registering…</>
+                    : <><FiCheck size={15} /> Complete Registration</>}
+                </button>
+                <button type="button" onClick={() => setStep(1)} className="reg-btn-back">
+                  <FiArrowLeft size={13} /> Back to details
+                </button>
+              </div>
+
+            </div>
+          )}
+        </form>
+
+        {/* Footer */}
+        <div className="reg-footer">
+          Already have an account?
+          <button className="reg-footer-link" onClick={() => navigate("/login")}>
+            Sign in
+          </button>
         </div>
+
       </div>
-    </>
+    </div>
   );
 }
 
-export default Register;  
+export default Register;

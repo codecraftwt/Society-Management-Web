@@ -350,11 +350,15 @@ export default function ManageBills() {
           </div>
         </div>
         <button
-          className="btn-primary"
-          style={{ borderRadius: 12, padding: "9px 16px", fontSize: 13, fontWeight: 600, display: "flex", alignItems: "center", gap: 7, flexShrink: 0 }}
+          className="sa-add-btn sa-add-pill"
+          style={{ flexShrink: 0 }}
           onClick={() => setShowCreate(p => !p)}
         >
-          {showCreate ? <><MdClose size={16} />{t("cancel")}</> : <><MdAdd size={16} />{t("billCreate")}</>}
+          <span className="sa-pill-blob sa-pill-blob1" />
+          <span className="sa-pill-inner">
+            {showCreate ? <MdClose size={16} /> : <MdAdd size={16} />}
+            <span>{showCreate ? t("cancel") : t("billCreate")}</span>
+          </span>
         </button>
       </div>
 
@@ -558,7 +562,7 @@ export default function ManageBills() {
           <div className="flex flex-col gap-3 p-4">
             {bills.map((b, i) => (
               <div key={b.id} className="bill-card animate-fadeIn" style={{ animationDelay: `${i * 30}ms` }}>
-                <div style={{ height: 3, background: b.status === "PAID" ? "linear-gradient(90deg,#34d399,#059669)" : "linear-gradient(90deg,#fbbf24,#d97706)" }} />
+                <div style={{ height: 3, background: b.status === "PAID" ? "linear-gradient(90deg,#34d399,#059669)" : "linear-gradient(90deg,#60A5FA,#2563EB)" }} />
                 <div className="bill-card__body">
                   <div className="flex items-start justify-between gap-2">
                     <div>
@@ -622,7 +626,7 @@ export default function ManageBills() {
                   )}
                   <td>
                     <div className="flex items-center gap-3">
-                      <div style={{ width: 3, height: 32, borderRadius: 99, flexShrink: 0, background: b.status === "PAID" ? "linear-gradient(180deg,#34d399,#059669)" : "linear-gradient(180deg,#fbbf24,#d97706)" }} />
+                      <div style={{ width: 3, height: 32, borderRadius: 99, flexShrink: 0, background: b.status === "PAID" ? "linear-gradient(180deg,#34d399,#059669)" : "linear-gradient(180deg,#60A5FA,#2563EB)" }} />
                       <span className="font-semibold text-sm" style={{ color: "var(--text-primary)" }}>{b.title}</span>
                     </div>
                   </td>

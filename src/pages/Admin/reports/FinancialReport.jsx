@@ -47,7 +47,7 @@ function Pagination({ page, totalPages, onPageChange }) {
 
 const STATUS_CFG = {
   PAID: { label: "Paid", Icon: MdCheckCircle, color: "#4ade80", bg: "rgba(74,222,128,0.12)", border: "rgba(74,222,128,0.25)" },
-  PENDING: { label: "Pending", Icon: MdSchedule, color: "#fbbf24", bg: "rgba(251,191,36,0.12)", border: "rgba(251,191,36,0.25)" },
+  PENDING: { label: "Pending", Icon: MdSchedule, color: "#60A5FA", bg: "rgba(251,191,36,0.12)", border: "rgba(251,191,36,0.25)" },
 };
 
 function StatusBadge({ status }) {
@@ -264,7 +264,7 @@ export default function FinancialReport() {
         ) : isMobile ? (
           <div style={{ padding: "10px 12px", display: "flex", flexDirection: "column", gap: 10 }}>
             {bills.map((b, i) => {
-              const isPaid = b.status === "PAID"; const ac = isPaid ? "#4ade80" : "#fbbf24";
+              const isPaid = b.status === "PAID"; const ac = isPaid ? "#4ade80" : "#60A5FA";
               return (
                 <div key={b.id} className="animate-fadeIn" style={{ animationDelay: `${i * 25}ms`, background: "var(--chip-bg,rgba(255,255,255,0.04))", border: "1px solid var(--glass-border)", borderRadius: 12, overflow: "hidden" }}>
                   <div style={{ height: 3, background: ac }} />
@@ -296,7 +296,7 @@ export default function FinancialReport() {
                   <td><span className="info-chip">{b.Flat?.flat_number || "—"}</span></td>
                   <td><span style={{ fontSize: 13, color: "var(--text-secondary)" }}>{b.Flat?.Block?.name || "—"}</span></td>
                   <td><span style={{ fontSize: 13, color: "var(--text-secondary)", maxWidth: 160, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", display: "block" }}>{b.title || "—"}</span></td>
-                  <td><span style={{ fontSize: 14, fontWeight: 800, letterSpacing: "-0.02em", color: b.status === "PAID" ? "#4ade80" : "#fbbf24" }}>{fmtINR(b.amount)}</span></td>
+                  <td><span style={{ fontSize: 14, fontWeight: 800, letterSpacing: "-0.02em", color: b.status === "PAID" ? "#4ade80" : "#60A5FA" }}>{fmtINR(b.amount)}</span></td>
                   <td><StatusBadge status={b.status} /></td>
                 </tr>
               ))}

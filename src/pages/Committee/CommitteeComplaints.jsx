@@ -62,8 +62,8 @@ function StatusPill({ status, t }) {
 }
 
 const getDot = (s) => ({
-  RESOLVED: "#22c55e", IN_PROGRESS: "#9F87D7", PENDING: "#f59e0b", OPEN: "#f59e0b",
-}[s] || "#f59e0b");
+  RESOLVED: "#22c55e", IN_PROGRESS: "#9F87D7", PENDING: "#3B82F6", OPEN: "#3B82F6",
+}[s] || "#3B82F6");
 
 // ── Action Buttons ────────────────────────────────────────────────────────────
 function ActionButtons({ c, updateStatus, updatingId, t }) {
@@ -792,7 +792,7 @@ export default function CommitteeComplaints() {
 
   const TABS = [
     { key: "ALL",         label: t ? t("compTabAll")         : "All",         shortLabel: t ? t("compTabAll")        : "All",        count: counts.ALL,         color: "#5A3BA2" },
-    { key: "PENDING",     label: t ? t("compStatusPending")  : "Pending",     shortLabel: t ? t("compStatusPending") : "Pending",    count: counts.PENDING,     color: "#d97706" },
+    { key: "PENDING",     label: t ? t("compStatusPending")  : "Pending",     shortLabel: t ? t("compStatusPending") : "Pending",    count: counts.PENDING,     color: "#2563EB" },
     { key: "IN_PROGRESS", label: t ? t("compTabInProgress")  : "In Progress", shortLabel: t ? t("adminCompActive")   : "Active",     count: counts.IN_PROGRESS, color: "#5A3BA2" },
     { key: "RESOLVED",    label: t ? t("compStatusResolved") : "Resolved",    shortLabel: t ? t("adminCompDone")     : "Done",       count: counts.RESOLVED,    color: "#16a34a" },
   ];

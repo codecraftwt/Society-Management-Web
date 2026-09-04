@@ -7,9 +7,15 @@ const ThemeContext = createContext({
 });
 
 export function ThemeProvider({ children }) {
-  const [theme, setTheme] = useState(
-    () => localStorage.getItem("theme") || "dark"
-  );
+  const [theme, setTheme] = useState(() => {
+    const saved = localStorage.getItem("theme");
+    if (saved === "light" || saved === "dark") return saved;
+    return window.matchMedia
+      ? window.matchMedia("(prefers-color-scheme: light)").matches
+        ? "light"
+        : "dark"
+      : "dark";
+  });
 
   useEffect(() => {
     const root = document.documentElement;

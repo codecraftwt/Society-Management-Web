@@ -306,10 +306,13 @@ export default function Accountant() {
                 setFormData(p => ({ ...p, society_id: sid }));
                 setShowCreateForm((p) => !p);
               }}
-              className="btn-primary"
-              style={{ display: "flex", alignItems: "center", gap: 8 }}
+              className="sa-add-btn sa-add-pill"
             >
-              <MdAdd size={18} /> {t("acctAddBtn")}
+              <span className="sa-pill-blob sa-pill-blob1" />
+              <span className="sa-pill-inner">
+                {showCreateForm ? <MdClose size={18} /> : <MdAdd size={18} />}
+                <span>{showCreateForm ? t("cancel") : t("acctAddBtn")}</span>
+              </span>
             </button>
           )}
         </div>

@@ -1,0 +1,427 @@
+/* ==========================================================================
+   LOGIN PAGE - UIVERSE STRUCTURE WITH DUAL DARK & LIGHT THEME SUPPORT
+   ========================================================================== */
+.login-page-container {
+  min-height: 100vh;
+  width: 100%;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 5rem 1rem 2rem 1rem;
+  background: linear-gradient(135deg, #0b1329 0%, #0f172a 50%, #1e293b 100%);
+  overflow: hidden;
+  transition: background 0.3s ease;
+}
+
+/* Ambient Glow Orbs */
+.login-glow-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(90px);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.login-glow-orb.orb-1 {
+  width: 400px;
+  height: 400px;
+  background: rgba(37, 99, 235, 0.4);
+  top: -80px;
+  right: -60px;
+}
+
+.login-glow-orb.orb-2 {
+  width: 340px;
+  height: 340px;
+  background: rgba(56, 189, 248, 0.3);
+  bottom: -80px;
+  left: -60px;
+}
+
+/* Background image of residential community */
+.login-bg-photo {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  opacity: 0.45;
+  filter: brightness(0.6) contrast(1.1);
+  z-index: 1;
+  transition: opacity 0.3s ease, filter 0.3s ease;
+}
+
+/* Header bar with Brand Logo, Theme Toggle & Back to Home */
+.login-top-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  padding: 1.5rem 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  z-index: 10;
+}
+
+.login-top-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.login-brand-logo {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  text-decoration: none;
+  color: #ffffff;
+}
+
+.login-brand-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.35rem;
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.4);
+}
+
+.login-brand-title {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: -0.01em;
+  transition: color 0.3s ease;
+}
+
+.login-back-home {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  padding: 0.5rem 1.15rem;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  text-decoration: none;
+  transition: all 0.25s ease;
+}
+
+.login-back-home:hover {
+  background: rgba(255, 255, 255, 0.25);
+  color: #ffffff;
+  transform: translateX(-3px);
+}
+
+/* ==========================================================================
+   From Uiverse.io by Praashoo7 (Dark Theme Default)
+   ========================================================================== */
+.form {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  max-width: 420px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-left: 2.2em;
+  padding-right: 2.2em;
+  padding-bottom: 1.2em;
+  padding-top: 1.2em;
+  background: rgba(15, 23, 42, 0.88);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 25px;
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), border 0.4s ease, box-shadow 0.4s ease, background 0.3s ease;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), 0 0 20px rgba(37, 99, 235, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.form:hover {
+  transform: scale(1.03);
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  box-shadow: 0 25px 65px rgba(0, 0, 0, 0.85), 0 0 30px rgba(56, 189, 248, 0.25);
+}
+
+#heading {
+  text-align: center;
+  margin: 1em 0 0.5em 0;
+  color: #ffffff;
+  font-size: 1.55em;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  transition: color 0.3s ease;
+}
+
+.field {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.7em;
+  border-radius: 25px;
+  padding: 0.75em 1.1em;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  outline: none;
+  color: white;
+  background-color: rgba(11, 19, 41, 0.7);
+  box-shadow: inset 2px 4px 10px rgba(0, 0, 0, 0.6);
+  position: relative;
+  transition: all 0.25s ease;
+}
+
+.field:focus-within {
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: inset 2px 4px 10px rgba(0, 0, 0, 0.6);
+  outline: none;
+}
+
+.input-icon {
+  height: 1.3em;
+  width: 1.3em;
+  fill: #38bdf8;
+  flex-shrink: 0;
+  transition: fill 0.3s ease;
+}
+
+.input-field {
+  background: none;
+  border: none;
+  outline: none;
+  width: 100%;
+  color: #f8fafc;
+  font-size: 0.95rem;
+  transition: color 0.3s ease;
+}
+
+.input-field::placeholder {
+  color: #94a3b8;
+}
+
+.eye-toggle-btn {
+  background: none;
+  border: none;
+  outline: none;
+  color: #94a3b8;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: color 0.2s ease;
+}
+
+.eye-toggle-btn:hover {
+  color: #38bdf8;
+}
+
+/* 2FA Notice */
+.uiverse-notice {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 10px 14px;
+  border-radius: 16px;
+  background: rgba(56, 189, 248, 0.08);
+  border: 1px solid rgba(56, 189, 248, 0.2);
+  margin-top: 0.2rem;
+  transition: background 0.3s ease, border-color 0.3s ease;
+}
+
+.uiverse-notice-icon {
+  font-size: 1.1rem;
+  color: #38bdf8;
+  flex-shrink: 0;
+}
+
+.uiverse-notice-text {
+  font-size: 0.78rem;
+  color: #cbd5e1;
+  line-height: 1.4;
+  transition: color 0.3s ease;
+}
+
+.form .btn {
+  display: flex;
+  justify-content: center;
+  flex-direction: row;
+  margin-top: 1.6em;
+  gap: 0.75em;
+}
+
+.button1 {
+  flex: 1;
+  padding: 0.7em 1.1em;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  outline: none;
+  transition: all 0.3s ease;
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  color: #ffffff;
+  font-weight: 800;
+  font-size: 0.95rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.35);
+}
+
+.button1:hover {
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  box-shadow: 0 10px 25px rgba(37, 99, 235, 0.5);
+  transform: translateY(-2px);
+}
+
+.button1:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.button2 {
+  flex: 1;
+  padding: 0.7em 1.1em;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  outline: none;
+  transition: all 0.3s ease;
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(12px);
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+
+.button2:hover {
+  background: rgba(255, 255, 255, 0.18);
+  border-color: rgba(255, 255, 255, 0.4);
+  transform: translateY(-2px);
+}
+
+.button3 {
+  margin-top: 0.4em;
+  margin-bottom: 1.2em;
+  padding: 0.65em;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  outline: none;
+  transition: all 0.3s ease;
+  background: rgba(255, 255, 255, 0.04);
+  color: #94a3b8;
+  font-weight: 600;
+  font-size: 0.88rem;
+  cursor: pointer;
+  width: 100%;
+}
+
+.button3:hover {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.4);
+  color: #f87171;
+}
+
+/* ==========================================================================
+   LIGHT MODE OVERRIDES FOR LOGIN
+   ========================================================================== */
+html.light .login-page-container {
+  background: #0b1329;
+}
+
+html.light .login-bg-photo {
+  opacity: 0.85;
+  filter: brightness(0.85) contrast(1.05);
+}
+
+html.light .login-brand-title {
+  color: #0f172a;
+}
+
+html.light .login-back-home {
+  background: rgba(15, 23, 42, 0.06);
+  border-color: rgba(15, 23, 42, 0.15);
+  color: #0f172a;
+}
+
+html.light .login-back-home:hover {
+  background: rgba(15, 23, 42, 0.12);
+  color: #0f172a;
+}
+
+html.light .form {
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.08), 0 0 20px rgba(37, 99, 235, 0.1);
+}
+
+html.light .form:hover {
+  border-color: #2563eb;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.12), 0 0 25px rgba(37, 99, 235, 0.2);
+}
+
+html.light #heading {
+  color: #0f172a;
+}
+
+html.light .field {
+  background-color: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  box-shadow: inset 2px 4px 8px rgba(0, 0, 0, 0.05);
+}
+
+html.light .field:focus-within {
+  border-color: #cbd5e1;
+  box-shadow: inset 2px 4px 8px rgba(0, 0, 0, 0.05);
+  outline: none;
+}
+
+html.light .input-icon {
+  fill: #2563eb;
+}
+
+html.light .input-field {
+  color: #0f172a;
+}
+
+html.light .input-field::placeholder {
+  color: #64748b;
+}
+
+html.light .uiverse-notice {
+  background: rgba(37, 99, 235, 0.06);
+  border-color: rgba(37, 99, 235, 0.18);
+}
+
+html.light .uiverse-notice-text {
+  color: #475569;
+}
+
+html.light .button2 {
+  background: rgba(15, 23, 42, 0.06);
+  border-color: rgba(15, 23, 42, 0.15);
+  color: #0f172a;
+}
+
+html.light .button2:hover {
+  background: rgba(15, 23, 42, 0.12);
+}
+
+html.light .button3 {
+  background: rgba(15, 23, 42, 0.04);
+  border-color: rgba(15, 23, 42, 0.1);
+  color: #64748b;
+}

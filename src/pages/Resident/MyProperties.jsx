@@ -273,7 +273,7 @@ export default function MyProperties() {
                           ? "text-green-400 font-semibold"
                           : isPending
                           ? "text-blue-400 font-semibold"
-                          : "text-amber-400 font-semibold"
+                          : "text-blue-400 font-semibold"
                       }
                     >
                       {showSelfOccupied ? "Self-Occupied" : isPending ? "Tenant Verification Pending" : "Rented Out"}
@@ -333,19 +333,19 @@ export default function MyProperties() {
 
               {/* Approved Tenant */}
               {isApproved && (
-                <div className="mt-4 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 flex justify-between items-center">
+                <div className="mt-4 p-3 rounded-xl bg-blue-500/10 border border-blue-500/20 flex justify-between items-center">
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-amber-500/20 text-amber-500 flex items-center justify-center">
+                    <div className="w-8 h-8 rounded-full bg-blue-500/20 text-blue-500 flex items-center justify-center">
                       <MdWarning size={16} />
                     </div>
                     <div>
-                      <p className="text-sm font-semibold text-amber-500">Tenant Occupied</p>
+                      <p className="text-sm font-semibold text-blue-500">Tenant Occupied</p>
                       <p className="text-[10px] text-secondary">You are not living here.</p>
                     </div>
                   </div>
                   <button
                     onClick={() => { setIsRenewing(false); setViewTenantData(prop.tenantData); }}
-                    className="bg-amber-500/20 text-amber-500 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-amber-500/30 transition-all"
+                    className="bg-blue-500/20 text-blue-500 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-blue-500/30 transition-all"
                   >
                     View Tenant
                   </button>

@@ -74,7 +74,7 @@ function Pagination({ page, totalPages, onPageChange }) {
 
 function StatusBadge({ status, t }) {
   const cfg = {
-    PENDING:   { label: t("gpPending") || "Pending",   Icon: MdWarning,      color: "#fbbf24", bg: "rgba(251,191,36,0.12)",  border: "rgba(251,191,36,0.28)"  },
+    PENDING:   { label: t("gpPending") || "Pending",   Icon: MdWarning,      color: "#60A5FA", bg: "rgba(251,191,36,0.12)",  border: "rgba(251,191,36,0.28)"  },
     APPROVED:  { label: t("gpApproved"),                Icon: MdCheckCircle, color: "#4ade80", bg: "rgba(74,222,128,0.12)",  border: "rgba(74,222,128,0.28)"  },
     REJECTED:  { label: t("gpRejected"),                Icon: MdCancel,      color: "#f87171", bg: "rgba(248,113,113,0.12)", border: "rgba(248,113,113,0.28)" },
     COMPLETED: { label: t("gpCompleted"),               Icon: MdDone,        color: "#9F87D7", bg: "rgba(129,140,248,0.12)", border: "rgba(129,140,248,0.28)" },
@@ -111,7 +111,7 @@ function ParkingTypePill({ type }) {
       display:"inline-flex", alignItems:"center", gap:4,
       padding:"2px 8px", borderRadius:999, fontSize:10, fontWeight:800,
       textTransform:"uppercase", letterSpacing:"0.05em",
-      color: isResident ? "#fbbf24" : "#94B5F5",
+      color: isResident ? "#60A5FA" : "#94B5F5",
       background: isResident ? "rgba(251,191,36,0.10)" : "rgba(148,181,245,0.10)",
       border: `1px solid ${isResident ? "rgba(251,191,36,0.25)" : "rgba(148,181,245,0.22)"}`,
     }}>
@@ -132,7 +132,7 @@ function RequestCard({ r, slots, selectedSlot, setSelectedSlot, onAssign, onReje
   const hasSlot    = !!r.assigned_spot;
 
   const stripColor = {
-    PENDING:   "#fbbf24",
+    PENDING:   "#60A5FA",
     APPROVED:  "#4ade80",
     REJECTED:  "#f87171",
     COMPLETED: "#9F87D7",
@@ -318,7 +318,7 @@ function ResidentEntryPanel({ slots, onCreated, t }) {
             display:"flex", alignItems:"center", gap:7,
             padding:"0 18px", height:42, borderRadius:11,
             fontSize:13, fontWeight:700,
-            background:"linear-gradient(135deg,#d97706,#f59e0b)",
+            background:"linear-gradient(135deg,#2563EB,#3B82F6)",
             color:"#fff", border:"none", cursor:"pointer",
             opacity: (!vehicleNumber.trim() || lookupLoading) ? 0.5 : 1,
             boxShadow:"0 4px 14px rgba(217,119,6,0.30)",
@@ -635,7 +635,7 @@ export default function GuardParking() {
         .gp-mode-btn{display:flex;align-items:center;gap:7px;padding:9px 18px;border-radius:10px;font-size:13px;font-weight:700;border:none;cursor:pointer;transition:all 0.18s;background:transparent;color:var(--text-secondary);}
         .gp-mode-btn:hover{color:var(--text-primary);}
         .gp-mode-btn--visitor.active{background:linear-gradient(135deg,#3E60A3,#5B8DEF);color:#fff;box-shadow:0 3px 12px rgba(91,141,239,0.35);}
-        .gp-mode-btn--resident.active{background:linear-gradient(135deg,#92400e,#d97706);color:#fff;box-shadow:0 3px 12px rgba(217,119,6,0.35);}
+        .gp-mode-btn--resident.active{background:linear-gradient(135deg,#1E40AF,#2563EB);color:#fff;box-shadow:0 3px 12px rgba(217,119,6,0.35);}
         .gp-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
         .gp-stat{border-radius:16px;padding:14px 16px;border:1.5px solid;display:flex;flex-direction:column;gap:4px;position:relative;overflow:hidden;transition:transform 0.2s;}
         .gp-stat::before{content:"";position:absolute;top:0;left:0;right:0;height:2px;border-radius:16px 16px 0 0;}
@@ -645,9 +645,9 @@ export default function GuardParking() {
         .gp-stat--total{background:linear-gradient(135deg,rgba(107,70,193,0.12),rgba(91,141,239,0.08));border-color:rgba(107,70,193,0.28);}
         .gp-stat--total::before{background:linear-gradient(90deg,#6B46C1,#5B8DEF);}
         .gp-stat--total .gp-stat__val,.gp-stat--total .gp-stat__label{color:#C0B0E5;}
-        .gp-stat--pending{background:rgba(251,191,36,0.10);border-color:rgba(251,191,36,0.28);}
-        .gp-stat--pending::before{background:linear-gradient(90deg,#d97706,#fbbf24);}
-        .gp-stat--pending .gp-stat__val,.gp-stat--pending .gp-stat__label{color:#fde68a;}
+        .gp-stat--pending{background:rgba(37,99,235,0.10);border-color:rgba(37,99,235,0.28);}
+        .gp-stat--pending::before{background:linear-gradient(90deg,#2563EB,#60A5FA);}
+        .gp-stat--pending .gp-stat__val,.gp-stat--pending .gp-stat__label{color:#93C5FD;}
         .gp-stat--approved{background:rgba(74,222,128,0.10);border-color:rgba(74,222,128,0.28);}
         .gp-stat--approved::before{background:linear-gradient(90deg,#22c55e,#4ade80);}
         .gp-stat--approved .gp-stat__val,.gp-stat--approved .gp-stat__label{color:#86efac;}
@@ -664,7 +664,7 @@ export default function GuardParking() {
         .gp-tab{flex:1;min-width:70px;display:flex;align-items:center;justify-content:center;gap:6px;padding:8px 12px;border-radius:10px;font-size:12px;font-weight:600;border:none;cursor:pointer;transition:all 0.18s;background:transparent;color:var(--text-secondary);white-space:nowrap;}
         .gp-tab:hover{color:var(--text-primary);}
         .gp-tab--active-all{background:linear-gradient(135deg,#5A3BA2,#6B46C1);color:#fff;box-shadow:0 3px 10px rgba(90,59,162,0.35);}
-        .gp-tab--active-pending{background:linear-gradient(135deg,#b45309,#d97706);color:#fff;box-shadow:0 3px 10px rgba(217,119,6,0.35);}
+        .gp-tab--active-pending{background:linear-gradient(135deg,#2563EB,#60A5FA);color:#fff;box-shadow:0 3px 10px rgba(37,99,235,0.35);}
         .gp-tab--active-approved{background:linear-gradient(135deg,#16a34a,#22c55e);color:#fff;box-shadow:0 3px 10px rgba(22,163,74,0.35);}
         .gp-tab--active-rejected{background:linear-gradient(135deg,#dc2626,#ef4444);color:#fff;box-shadow:0 3px 10px rgba(239,68,68,0.35);}
         .gp-tab--active-completed{background:linear-gradient(135deg,#493083,#6B46C1);color:#fff;box-shadow:0 3px 10px rgba(107,70,193,0.35);}

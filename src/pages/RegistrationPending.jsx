@@ -158,8 +158,8 @@ const STYLES = `
 const STATUS_CFG = {
   PENDING: {
     emoji:    "⏳",
-    badgeClr: "#f59e0b",
-    badgeBg:  "rgba(245,158,11,0.12)",
+    badgeClr: "#3B82F6",
+    badgeBg:  "rgba(37,99,235,0.12)",
     label:    "Pending Review",
   },
   APPROVED: {

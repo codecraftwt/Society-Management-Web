@@ -22,7 +22,7 @@ function formatDate(d) {
 
 function StatusBadge({ label }) {
   const map = {
-    PENDING:    { bg: "rgba(251,191,36,0.12)", color: "#fbbf24", border: "rgba(251,191,36,0.25)" },
+    PENDING:    { bg: "rgba(251,191,36,0.12)", color: "#60A5FA", border: "rgba(251,191,36,0.25)" },
     APPROVED:   { bg: "rgba(34,197,94,0.12)",  color: "#22c55e", border: "rgba(34,197,94,0.25)" },
     REJECTED:   { bg: "rgba(239,68,68,0.12)",  color: "#ef4444", border: "rgba(239,68,68,0.25)" },
     LIVING:     { bg: "rgba(59,130,246,0.12)", color: "#3b82f6", border: "rgba(59,130,246,0.25)" },
@@ -46,7 +46,7 @@ function LeaseChip({ date }) {
   const diff = Math.ceil((new Date(date) - new Date()) / (1000 * 60 * 60 * 24));
   let color = "text-emerald-400 bg-emerald-400/10 border-emerald-400/20";
   if (diff <= 0) color = "text-red-400 bg-red-400/10 border-red-400/20";
-  else if (diff <= 30) color = "text-amber-400 bg-amber-400/10 border-amber-400/20";
+  else if (diff <= 30) color = "text-blue-400 bg-blue-400/10 border-blue-400/20";
   return (
     <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md border ${color}`}>
       {diff <= 0 ? "Expired" : diff <= 30 ? `${diff}d left` : formatDate(date)}
@@ -83,7 +83,7 @@ function RejectModal({ open, onClose, onSubmit, loading }) {
         onClick={e => e.stopPropagation()}
       >
         <div className="flex items-center gap-3 px-5 py-4" style={{ borderBottom: "1px solid var(--divider)" }}>
-          <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: "rgba(251,191,36,0.15)", color: "#fbbf24" }}>
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: "rgba(251,191,36,0.15)", color: "#60A5FA" }}>
             <MdWarning size={20} />
           </div>
           <div className="flex-1">
@@ -156,7 +156,7 @@ function DetailModal({ tenant, onClose, onApprove, onReject, isPending }) {
         {/* Header */}
         <div className="flex items-center gap-3 px-5 py-4 sticky top-0 z-10"
           style={{ background: "var(--card-bg)", borderBottom: "1px solid var(--divider)" }}>
-          <div className="w-10 h-10 rounded-xl bg-amber-500/15 text-amber-400 flex items-center justify-center font-black text-lg">
+          <div className="w-10 h-10 rounded-xl bg-blue-500/12 text-blue-400 flex items-center justify-center font-black text-lg">
             {tenant.tenant_name?.charAt(0)}
           </div>
           <div className="flex-1 min-w-0">
@@ -262,7 +262,7 @@ function Row({ label, value, chip, icon, children }) {
 ───────────────────────────────────────────── */
 const STATUS_TABS = [
   { key: "ALL",       label: "All",         color: "var(--text-primary)",    icon: <MdPeople size={14} /> },
-  { key: "PENDING",   label: "Pending",     color: "#fbbf24",               icon: <MdAccessTime size={14} /> },
+  { key: "PENDING",   label: "Pending",     color: "#60A5FA",               icon: <MdAccessTime size={14} /> },
   { key: "APPROVED",  label: "Approved",    color: "#22c55e",               icon: <MdCheck size={14} /> },
   { key: "LIVING",    label: "Living",      color: "#3b82f6",               icon: <MdPerson size={14} /> },
   { key: "REJECTED",  label: "Rejected",    color: "#ef4444",               icon: <MdClose size={14} /> },
@@ -471,7 +471,7 @@ export default function TenantManagement() {
                 onClick={() => setDetailTenant(t)}
               >
                 <div className="p-4 flex items-center gap-3 min-w-0">
-                  <div className="w-10 h-10 rounded-xl bg-amber-500/15 text-amber-400 flex items-center justify-center font-black text-base shrink-0">
+                  <div className="w-10 h-10 rounded-xl bg-blue-500/12 text-blue-400 flex items-center justify-center font-black text-base shrink-0">
                     {t.tenant_name?.charAt(0)}
                   </div>
                   <div className="min-w-0 flex-1">
@@ -551,7 +551,7 @@ export default function TenantManagement() {
                   onClick={() => setDetailTenant(t)}
                 >
                   <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-8 h-8 rounded-lg bg-amber-500/15 text-amber-400 flex items-center justify-center font-black text-sm shrink-0">
+                    <div className="w-8 h-8 rounded-lg bg-blue-500/12 text-blue-400 flex items-center justify-center font-black text-sm shrink-0">
                       {t.tenant_name?.charAt(0)}
                     </div>
                     <div className="min-w-0">

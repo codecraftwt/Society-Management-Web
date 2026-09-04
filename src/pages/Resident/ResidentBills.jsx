@@ -441,7 +441,7 @@ export default function ResidentBills() {
                     height: 3,
                     background: b.status === "PAID"
                       ? "linear-gradient(90deg,#34d399,#059669)"
-                      : "linear-gradient(90deg,#fbbf24,#d97706)",
+                      : "linear-gradient(90deg,#60A5FA,#2563EB)",
                   }} />
                   <div className="p-4 flex flex-col gap-3">
                     <div className="flex justify-between items-start gap-2">
@@ -505,7 +505,7 @@ export default function ResidentBills() {
                               ? "linear-gradient(180deg,#34d399,#059669)"
                               : b.status === "PENDING_VERIFICATION"
                               ? "linear-gradient(180deg,#60a5fa,#3b82f6)"
-                              : "linear-gradient(180deg,#fbbf24,#d97706)",
+                              : "linear-gradient(180deg,#60A5FA,#2563EB)",
                           }} />
                           <span className="font-semibold text-sm" style={{ color: "var(--text-primary)" }}>
                             {b.title}

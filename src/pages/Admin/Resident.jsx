@@ -10,7 +10,7 @@ import {
   MdLayers, MdAdd, MdHomeWork, MdMeetingRoom, MdCheckCircle,
   MdUploadFile, MdBadge, MdCreditCard, MdCheck, MdDirectionsCar,
   MdPeople, MdPhone, MdContactPhone, MdEdit, MdArrowBack,
-  MdArrowForward, MdLocalParking, MdWarning,
+  MdArrowForward, MdLocalParking, MdWarning, MdMoreVert,
 } from "react-icons/md";
 import { toast } from "react-toastify";
 import Select from "../../components/common/Select";
@@ -61,7 +61,7 @@ function Pagination({ page, totalPages, onPageChange }) {
         )
       )}
       <button onClick={() => onPageChange(page + 1)} disabled={page === totalPages} className="pagination-btn">
-        Next <MdChevronRight size={15} />
+        Next  <MdChevronRight size={15} />
       </button>
     </div>
   );
@@ -85,7 +85,7 @@ function flatIsRowHouse(flat) {
 ───────────────────────────────────────── */
 const RESIDENT_TYPE_STYLES = {
   OWNER: { bg: "rgba(16,185,129,0.12)", color: "#34d399", border: "rgba(16,185,129,0.25)", label: "Owner" },
-  TENANT: { bg: "rgba(245,158,11,0.12)", color: "#fbbf24", border: "rgba(245,158,11,0.25)", label: "Tenant" },
+  TENANT: { bg: "rgba(37,99,235,0.12)", color: "#60A5FA", border: "rgba(37,99,235,0.25)", label: "Tenant" },
 };
 const BHK_STYLES = {
   "1BHK": { bg: "rgba(107,70,193,0.10)", color: "#9F87D7", border: "rgba(107,70,193,0.22)" },
@@ -110,6 +110,71 @@ function BhkBadge({ type }) {
     <span style={{ display: "inline-flex", alignItems: "center", fontSize: 10, fontWeight: 700, padding: "2px 7px", borderRadius: 6, background: s.bg, color: s.color, border: `1px solid ${s.border}` }}>
       {type}
     </span>
+  );
+}
+
+/* ─────────────────────────────────────────
+   RESIDENT ACTION MENU (three-dot kebab)
+   ───────────────────────────────────────── */
+function ResidentActionMenu({ onAssignFlat, onEdit, isCommittee, onPromote, onRemove, onDelete, t }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const h = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    document.addEventListener("mousedown", h);
+    return () => document.removeEventListener("mousedown", h);
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    const h = (e) => { if (e.key === "Escape") setOpen(false); };
+    document.addEventListener("keydown", h);
+    return () => document.removeEventListener("keydown", h);
+  }, [open]);
+
+  const act = (fn) => { setOpen(false); fn(); };
+
+  return (
+    <div ref={ref} style={{ position: "relative", flexShrink: 0 }}>
+      <button onClick={() => setOpen(p => !p)} className="sa-action-dots" aria-label="Resident actions" aria-haspopup="menu" aria-expanded={open}>
+        <MdMoreVert size={20} />
+      </button>
+      {open && (
+        <div className="sa-action-dropdown" role="menu">
+          <button role="menuitem" className="sa-action-item" onClick={() => act(onAssignFlat)}>
+            <MdAdd size={15} />
+            {t("colAssignFlat") || "Assign Unit"}
+          </button>
+          <button role="menuitem" className="sa-action-item" onClick={() => act(onEdit)}>
+            <MdEdit size={15} />
+            {t("colEdit") || "Edit"}
+          </button>
+          {isCommittee !== false && (
+            <>
+              <div className="sa-action-divider" />
+              {isCommittee ? (
+                <button role="menuitem" className="sa-action-item" onClick={() => act(onRemove)}>
+                  <MdPerson size={15} />
+                  {t("colRemove") || "Remove Committee"}
+                </button>
+              ) : (
+                <button role="menuitem" className="sa-action-item" onClick={() => act(onPromote)}>
+                  <MdPersonAdd size={15} />
+                  {t("colCommittee") || "Promote to Committee"}
+                </button>
+              )}
+            </>
+          )}
+          <div className="sa-action-divider" />
+          <button role="menuitem" className="sa-action-item sa-action-item-danger" onClick={() => act(onDelete)}>
+            <MdDelete size={15} />
+            {t("mpDelete") || "Delete"}
+          </button>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -229,17 +294,17 @@ function StepIndicator({ step, total, labels }) {
   );
 }
 
-function SelectionCard({ icon, title, subtitle, selected, onClick, color = "#6B46C1", colorBg = "rgba(107,70,193,0.10)" }) {
+function SelectionCard({ icon, title, subtitle, selected, onClick, color = "#2563eb", colorBg = "rgba(37,99,235,0.12)" }) {
   return (
-    <button type="button" onClick={onClick} style={{ width: "100%", padding: "14px 16px", borderRadius: 14, cursor: "pointer", textAlign: "left", transition: "all 0.18s", display: "flex", alignItems: "center", gap: 14, outline: "none", background: selected ? colorBg : "rgba(255,255,255,0.03)", border: `2px solid ${selected ? color : "rgba(255,255,255,0.08)"}`, boxShadow: selected ? `0 0 0 1px ${color}22` : "none" }}>
-      <div style={{ width: 40, height: 40, borderRadius: 12, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", background: selected ? colorBg : "rgba(255,255,255,0.05)", border: `1px solid ${selected ? color : "rgba(255,255,255,0.08)"}` }}>
+    <button type="button" onClick={onClick} style={{ width: "100%", padding: "14px 16px", borderRadius: 14, cursor: "pointer", textAlign: "left", transition: "all 0.18s ease", display: "flex", alignItems: "center", gap: 14, outline: "none", background: selected ? colorBg : "var(--card-inner-bg, rgba(255,255,255,0.04))", border: `2px solid ${selected ? color : "var(--glass-border, rgba(255,255,255,0.12))"}`, boxShadow: selected ? `0 4px 14px ${color}25` : "none" }}>
+      <div style={{ width: 40, height: 40, borderRadius: 12, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", background: selected ? colorBg : "var(--card-bg)", border: `1px solid ${selected ? color : "var(--glass-border)"}` }}>
         {icon}
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: 14, fontWeight: 700, color: selected ? color : "var(--text-primary)" }}>{title}</div>
         {subtitle && <div style={{ fontSize: 12, color: "var(--text-secondary)", marginTop: 2 }}>{subtitle}</div>}
       </div>
-      <div style={{ width: 20, height: 20, borderRadius: "50%", flexShrink: 0, background: selected ? color : "transparent", border: `2px solid ${selected ? color : "rgba(255,255,255,0.2)"}`, display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.2s" }}>
+      <div style={{ width: 20, height: 20, borderRadius: "50%", flexShrink: 0, background: selected ? color : "transparent", border: `2px solid ${selected ? color : "var(--text-secondary)"}`, display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.2s" }}>
         {selected && <MdCheckCircle size={12} color="#fff" />}
       </div>
     </button>
@@ -396,24 +461,24 @@ function AssignFlatModal({ residentId, residentName, societyId, onClose, onSucce
     <div onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
       style={{ position: "fixed", inset: 0, zIndex: 1100, background: "rgba(0,0,0,0.65)", backdropFilter: "blur(8px)", display: "flex", alignItems: "center", justifyContent: "center", padding: "16px" }}>
       <div onClick={(e) => e.stopPropagation()}
-        style={{ width: "100%", maxWidth: 520, background: "var(--card-bg,rgba(15,23,42,0.98))", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 20, maxHeight: "90vh", overflowY: "auto", backdropFilter: "blur(20px)", boxShadow: "0 24px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(107,70,193,0.08)", animation: "modalPop 0.25s cubic-bezier(0.34,1.56,0.64,1)" }}>
+        style={{ width: "100%", maxWidth: 520, background: "var(--card-bg, #0f172a)", border: "1px solid var(--glass-border, rgba(255,255,255,0.12))", borderRadius: 20, maxHeight: "90vh", overflowY: "auto", backdropFilter: "blur(20px)", boxShadow: "0 24px 80px rgba(0,0,0,0.5), 0 0 20px rgba(37,99,235,0.15)", animation: "saModalPopIn 0.25s cubic-bezier(0.16, 1, 0.3, 1)" }}>
         {/* Header */}
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", padding: "20px 22px 0" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <div style={{ width: 36, height: 36, borderRadius: 11, background: "linear-gradient(135deg,#6B46C1,#6B46C1)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 12px rgba(107,70,193,0.3)" }}>
-              <MdHome size={18} color="#fff" />
+            <div style={{ width: 38, height: 38, borderRadius: 11, background: "linear-gradient(135deg,#2563eb,#1d4ed8)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 6px 16px rgba(37,99,235,0.35)" }}>
+              <MdHome size={20} color="#fff" />
             </div>
             <div>
               <p style={{ margin: 0, fontSize: 17, fontWeight: 800, color: "var(--text-primary)", letterSpacing: "-0.02em" }}>Assign New Flat</p>
-              <p style={{ margin: 0, fontSize: 12, color: "#9F87D7", fontWeight: 600 }}>→ {residentName}</p>
+              <p style={{ margin: 0, fontSize: 12, color: "#38bdf8", fontWeight: 600 }}>→ {residentName}</p>
             </div>
           </div>
-          <button onClick={onClose} style={{ width: 34, height: 34, borderRadius: 10, border: "1px solid rgba(255,255,255,0.12)", background: "rgba(255,255,255,0.06)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-secondary)" }}>
+          <button onClick={onClose} style={{ width: 34, height: 34, borderRadius: 10, border: "1px solid var(--glass-border, rgba(255,255,255,0.12))", background: "var(--card-inner-bg, rgba(255,255,255,0.06))", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-secondary)" }}>
             <MdClose size={17} />
           </button>
         </div>
 
-        <div style={{ height: 1, background: "rgba(255,255,255,0.07)", margin: "16px 0 0" }} />
+        <div style={{ height: 1, background: "var(--glass-border, rgba(255,255,255,0.08))", margin: "16px 0 0" }} />
 
         <div style={{ padding: "20px 22px 28px", display: "flex", flexDirection: "column", gap: 16 }}>
           {loadingData ? (
@@ -434,8 +499,8 @@ function AssignFlatModal({ residentId, residentName, societyId, onClose, onSucce
               {step === 1 && (
                 <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                   <p style={{ fontSize: 12, color: "var(--text-secondary)", margin: "0 0 2px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>Property Type</p>
-                  <SelectionCard icon={<MdApartment size={18} style={{ color: "#9F87D7" }} />} title="Apartment / Flat" subtitle="Multi-floor building" selected={propertyType === "APARTMENT"} onClick={() => { setPropertyType("APARTMENT"); setSelectedBlockId(""); setSelectedFloorId(""); setSelectedFlatId(""); setSelectedFlat(null); }} color="#6B46C1" colorBg="rgba(107,70,193,0.10)" />
-                  <SelectionCard icon={<MdHomeWork size={18} style={{ color: "#34d399" }} />} title="Row House / Villa" subtitle="Ground-level independent house" selected={propertyType === "ROW_HOUSE"} onClick={() => { setPropertyType("ROW_HOUSE"); setSelectedBlockId(""); setSelectedFloorId(""); setSelectedFlatId(""); setSelectedFlat(null); }} color="#10b981" colorBg="rgba(16,185,129,0.10)" />
+                  <SelectionCard icon={<MdApartment size={18} style={{ color: "#38bdf8" }} />} title="Apartment / Flat" subtitle="Multi-floor building" selected={propertyType === "APARTMENT"} onClick={() => { setPropertyType("APARTMENT"); setSelectedBlockId(""); setSelectedFloorId(""); setSelectedFlatId(""); setSelectedFlat(null); }} color="#2563eb" colorBg="rgba(37,99,235,0.12)" />
+                  <SelectionCard icon={<MdHomeWork size={18} style={{ color: "#34d399" }} />} title="Row House / Villa" subtitle="Ground-level independent house" selected={propertyType === "ROW_HOUSE"} onClick={() => { setPropertyType("ROW_HOUSE"); setSelectedBlockId(""); setSelectedFloorId(""); setSelectedFlatId(""); setSelectedFlat(null); }} color="#10b981" colorBg="rgba(16,185,129,0.12)" />
                 </div>
               )}
 
@@ -444,17 +509,17 @@ function AssignFlatModal({ residentId, residentName, societyId, onClose, onSucce
                 <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                   <p style={{ fontSize: 12, color: "var(--text-secondary)", margin: "0 0 2px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>Select Block</p>
                   {availableBlocks.length === 0 ? (
-                    <div style={{ padding: "20px", textAlign: "center", color: "var(--text-secondary)", fontSize: 13, borderRadius: 12, background: "rgba(255,255,255,0.03)", border: "1px dashed rgba(255,255,255,0.08)" }}>No available blocks for this property type.</div>
+                    <div style={{ padding: "20px", textAlign: "center", color: "var(--text-secondary)", fontSize: 13, borderRadius: 12, background: "var(--card-inner-bg, rgba(255,255,255,0.03))", border: "1px dashed var(--glass-border, rgba(255,255,255,0.1))" }}>No available blocks for this property type.</div>
                   ) : (
                     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(110px,1fr))", gap: 8 }}>
                       {availableBlocks.map((block) => {
                         const active = String(selectedBlockId) === String(block.id);
                         return (
                           <button key={block.id} type="button" onClick={() => { setSelectedBlockId(block.id); setSelectedFloorId(""); setSelectedFlatId(""); setSelectedFlat(null); }}
-                            style={{ padding: "14px 10px", borderRadius: 14, cursor: "pointer", textAlign: "center", transition: "all 0.18s", outline: "none", background: active ? "rgba(107,70,193,0.12)" : "rgba(255,255,255,0.04)", border: `2px solid ${active ? "#6B46C1" : "rgba(255,255,255,0.08)"}` }}>
-                            {isApartment ? <MdApartment size={22} style={{ color: active ? "#9F87D7" : "var(--text-secondary)", display: "block", margin: "0 auto 6px" }} /> : <MdHomeWork size={22} style={{ color: active ? "#34d399" : "var(--text-secondary)", display: "block", margin: "0 auto 6px" }} />}
-                            <div style={{ fontSize: 13, fontWeight: 700, color: active ? (isApartment ? "#9F87D7" : "#34d399") : "var(--text-primary)" }}>Block {block.name}</div>
-                            {active && <MdCheckCircle size={12} style={{ color: isApartment ? "#9F87D7" : "#34d399", marginTop: 4 }} />}
+                            style={{ padding: "14px 10px", borderRadius: 14, cursor: "pointer", textAlign: "center", transition: "all 0.18s ease", outline: "none", background: active ? "rgba(37,99,235,0.12)" : "var(--card-inner-bg, rgba(255,255,255,0.04))", border: `2px solid ${active ? "#2563eb" : "var(--glass-border, rgba(255,255,255,0.08))"}` }}>
+                            {isApartment ? <MdApartment size={22} style={{ color: active ? "#38bdf8" : "var(--text-secondary)", display: "block", margin: "0 auto 6px" }} /> : <MdHomeWork size={22} style={{ color: active ? "#34d399" : "var(--text-secondary)", display: "block", margin: "0 auto 6px" }} />}
+                            <div style={{ fontSize: 13, fontWeight: 700, color: active ? (isApartment ? "#38bdf8" : "#34d399") : "var(--text-primary)" }}>Block {block.name}</div>
+                            {active && <MdCheckCircle size={12} style={{ color: isApartment ? "#38bdf8" : "#34d399", marginTop: 4 }} />}
                           </button>
                         );
                       })}
@@ -466,18 +531,18 @@ function AssignFlatModal({ residentId, residentName, societyId, onClose, onSucce
               {/* STEP 3: Floor */}
               {step === 3 && isApartment && (
                 <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                  <p style={{ fontSize: 12, color: "var(--text-secondary)", margin: "0 0 2px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>Floor — <span style={{ color: "#9F87D7" }}>Block {selectedBlock?.name}</span></p>
+                  <p style={{ fontSize: 12, color: "var(--text-secondary)", margin: "0 0 2px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>Floor — <span style={{ color: "#38bdf8" }}>Block {selectedBlock?.name}</span></p>
                   {availableFloors.length === 0 ? (
-                    <div style={{ padding: "20px", textAlign: "center", color: "var(--text-secondary)", fontSize: 13, borderRadius: 12, background: "rgba(255,255,255,0.03)", border: "1px dashed rgba(255,255,255,0.08)" }}>No floors with vacant flats.</div>
+                    <div style={{ padding: "20px", textAlign: "center", color: "var(--text-secondary)", fontSize: 13, borderRadius: 12, background: "var(--card-inner-bg, rgba(255,255,255,0.03))", border: "1px dashed var(--glass-border, rgba(255,255,255,0.1))" }}>No floors with vacant flats.</div>
                   ) : (
                     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(90px,1fr))", gap: 8 }}>
                       {availableFloors.map((floor) => {
                         const active = String(selectedFloorId) === String(floor.id);
                         return (
                           <button key={floor.id} type="button" onClick={() => { setSelectedFloorId(floor.id); setSelectedFlatId(""); setSelectedFlat(null); }}
-                            style={{ padding: "14px 8px", borderRadius: 14, cursor: "pointer", textAlign: "center", transition: "all 0.18s", outline: "none", background: active ? "rgba(107,70,193,0.12)" : "rgba(255,255,255,0.04)", border: `2px solid ${active ? "#6B46C1" : "rgba(255,255,255,0.08)"}` }}>
-                            <MdLayers size={20} style={{ color: active ? "#9F87D7" : "var(--text-secondary)", display: "block", margin: "0 auto 6px" }} />
-                            <div style={{ fontSize: 13, fontWeight: 700, color: active ? "#9F87D7" : "var(--text-primary)" }}>Floor {floor.number}</div>
+                            style={{ padding: "14px 8px", borderRadius: 14, cursor: "pointer", textAlign: "center", transition: "all 0.18s ease", outline: "none", background: active ? "rgba(37,99,235,0.12)" : "var(--card-inner-bg, rgba(255,255,255,0.04))", border: `2px solid ${active ? "#2563eb" : "var(--glass-border, rgba(255,255,255,0.08))"}` }}>
+                            <MdLayers size={20} style={{ color: active ? "#38bdf8" : "var(--text-secondary)", display: "block", margin: "0 auto 6px" }} />
+                            <div style={{ fontSize: 13, fontWeight: 700, color: active ? "#38bdf8" : "var(--text-primary)" }}>Floor {floor.number}</div>
                           </button>
                         );
                       })}
@@ -492,17 +557,17 @@ function AssignFlatModal({ residentId, residentName, societyId, onClose, onSucce
                   <div>
                     <p style={{ fontSize: 12, color: "var(--text-secondary)", margin: "0 0 8px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>Select {isApartment ? "Flat" : "House"}</p>
                     {availableFlats.length === 0 ? (
-                      <div style={{ padding: "20px", textAlign: "center", color: "var(--text-secondary)", fontSize: 13, borderRadius: 12, background: "rgba(255,255,255,0.03)", border: "1px dashed rgba(255,255,255,0.08)" }}>No vacant units available.</div>
+                      <div style={{ padding: "20px", textAlign: "center", color: "var(--text-secondary)", fontSize: 13, borderRadius: 12, background: "var(--card-inner-bg, rgba(255,255,255,0.03))", border: "1px dashed var(--glass-border, rgba(255,255,255,0.1))" }}>No vacant units available.</div>
                     ) : (
                       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(86px,1fr))", gap: 8, maxHeight: 180, overflowY: "auto", paddingRight: 2 }}>
                         {availableFlats.map((flat) => {
                           const isSel = String(selectedFlatId) === String(flat.id);
-                          const color = isApartment ? "#9F87D7" : "#34d399";
-                          const bg = isApartment ? "rgba(107,70,193,0.12)" : "rgba(16,185,129,0.12)";
-                          const borderC = isApartment ? "#6B46C1" : "#10b981";
+                          const color = isApartment ? "#38bdf8" : "#34d399";
+                          const bg = isApartment ? "rgba(37,99,235,0.12)" : "rgba(16,185,129,0.12)";
+                          const borderC = isApartment ? "#2563eb" : "#10b981";
                           return (
                             <button key={flat.id} type="button" onClick={() => handleFlatSelect(flat.id)}
-                              style={{ padding: "12px 6px", borderRadius: 12, cursor: "pointer", textAlign: "center", transition: "all 0.16s", outline: "none", background: isSel ? bg : "rgba(255,255,255,0.04)", border: `2px solid ${isSel ? borderC : "rgba(255,255,255,0.08)"}` }}>
+                              style={{ padding: "12px 6px", borderRadius: 12, cursor: "pointer", textAlign: "center", transition: "all 0.16s ease", outline: "none", background: isSel ? bg : "var(--card-inner-bg, rgba(255,255,255,0.04))", border: `2px solid ${isSel ? borderC : "var(--glass-border, rgba(255,255,255,0.08))"}` }}>
                               {isApartment ? <MdMeetingRoom size={18} style={{ color: isSel ? color : "var(--text-secondary)", display: "block", margin: "0 auto 4px" }} /> : <MdHomeWork size={18} style={{ color: isSel ? color : "var(--text-secondary)", display: "block", margin: "0 auto 4px" }} />}
                               <div style={{ fontSize: 12, fontWeight: 700, color: isSel ? color : "var(--text-primary)" }}>{flat.flat_number}</div>
                               {isSel && <MdCheckCircle size={11} style={{ color, marginTop: 3 }} />}
@@ -519,10 +584,9 @@ function AssignFlatModal({ residentId, residentName, societyId, onClose, onSucce
                       <div style={{ display: "flex", gap: 8 }}>
                         {["1BHK", "2BHK", "3BHK"].map((opt) => {
                           const active = flatType === opt;
-                          const s = BHK_STYLES[opt];
                           return (
                             <button key={opt} type="button" onClick={() => setFlatType(opt)}
-                              style={{ flex: 1, padding: "10px 4px", borderRadius: 10, cursor: "pointer", fontSize: 13, fontWeight: 700, transition: "all 0.18s", outline: "none", background: active ? s.bg : "rgba(255,255,255,0.04)", border: `2px solid ${active ? s.border : "rgba(255,255,255,0.08)"}`, color: active ? s.color : "var(--text-secondary)" }}>
+                              style={{ flex: 1, padding: "10px 4px", borderRadius: 10, cursor: "pointer", fontSize: 13, fontWeight: 700, transition: "all 0.18s ease", outline: "none", background: active ? "rgba(37,99,235,0.12)" : "var(--card-inner-bg, rgba(255,255,255,0.04))", border: `2px solid ${active ? "#2563eb" : "var(--glass-border, rgba(255,255,255,0.08))"}`, color: active ? "#38bdf8" : "var(--text-secondary)" }}>
                               {opt}
                             </button>
                           );
@@ -546,12 +610,12 @@ function AssignFlatModal({ residentId, residentName, societyId, onClose, onSucce
                           const badgeLabel = selIdx === 0 ? "DEFAULT" : selIdx > 0 ? "EXTRA" : null;
                           return (
                             <button key={s.id} type="button" onClick={() => toggleSlot(s.id)}
-                              style={{ padding: "10px 6px", borderRadius: 10, cursor: "pointer", textAlign: "center", transition: "all 0.16s", outline: "none", background: isSel ? "rgba(107,70,193,0.12)" : "rgba(255,255,255,0.04)", border: `2px solid ${isSel ? "#6B46C1" : "rgba(255,255,255,0.08)"}` }}>
-                              <MdLocalParking size={16} style={{ color: isSel ? "#C0B0E5" : "var(--text-secondary)", display: "block", margin: "0 auto 3px" }} />
-                              <div style={{ fontSize: 11, fontWeight: 700, color: isSel ? "#C0B0E5" : "var(--text-primary)" }}>{s.slot_number}</div>
+                              style={{ padding: "10px 6px", borderRadius: 10, cursor: "pointer", textAlign: "center", transition: "all 0.16s ease", outline: "none", background: isSel ? "rgba(37,99,235,0.12)" : "var(--card-inner-bg, rgba(255,255,255,0.04))", border: `2px solid ${isSel ? "#2563eb" : "var(--glass-border, rgba(255,255,255,0.08))"}` }}>
+                              <MdLocalParking size={16} style={{ color: isSel ? "#38bdf8" : "var(--text-secondary)", display: "block", margin: "0 auto 3px" }} />
+                              <div style={{ fontSize: 11, fontWeight: 700, color: isSel ? "#38bdf8" : "var(--text-primary)" }}>{s.slot_number}</div>
                               {s.vehicle_type && <div style={{ fontSize: 9, color: "var(--text-secondary)", marginTop: 1 }}>{s.vehicle_type}</div>}
                               {badgeLabel && (
-                                <div style={{ fontSize: 9, fontWeight: 800, color: badgeLabel === "DEFAULT" ? "#4ade80" : "#fbbf24", marginTop: 2 }}>
+                                <div style={{ fontSize: 9, fontWeight: 800, color: badgeLabel === "DEFAULT" ? "#4ade80" : "#60A5FA", marginTop: 2 }}>
                                   {badgeLabel}
                                 </div>
                               )}
@@ -565,12 +629,12 @@ function AssignFlatModal({ residentId, residentName, societyId, onClose, onSucce
                             const slotObj = availableSlots.find(s => String(s.id) === sid);
                             if (!slotObj) return null;
                             return (
-                              <div key={sid} style={{ display: "flex", alignItems: "center", gap: 8, padding: "7px 12px", borderRadius: 8, background: "rgba(107,70,193,0.07)", border: "1px solid rgba(107,70,193,0.18)" }}>
-                                <MdLocalParking size={13} style={{ color: "#C0B0E5", flexShrink: 0 }} />
-                                <span style={{ fontSize: 12, fontWeight: 600, color: "#C0B0E5", flex: 1 }}>
+                              <div key={sid} style={{ display: "flex", alignItems: "center", gap: 8, padding: "7px 12px", borderRadius: 8, background: "rgba(37,99,235,0.08)", border: "1px solid rgba(37,99,235,0.2)" }}>
+                                <MdLocalParking size={13} style={{ color: "#38bdf8", flexShrink: 0 }} />
+                                <span style={{ fontSize: 12, fontWeight: 600, color: "var(--text-primary)", flex: 1 }}>
                                   {slotObj.slot_number}{slotObj.vehicle_type ? ` · ${slotObj.vehicle_type}` : ""}
                                 </span>
-                                <span style={{ fontSize: 10, fontWeight: 800, padding: "2px 7px", borderRadius: 999, background: idx === 0 ? "rgba(74,222,128,0.12)" : "rgba(251,191,36,0.12)", color: idx === 0 ? "#4ade80" : "#fbbf24", border: `1px solid ${idx === 0 ? "rgba(74,222,128,0.25)" : "rgba(251,191,36,0.25)"}` }}>
+                                <span style={{ fontSize: 10, fontWeight: 800, padding: "2px 7px", borderRadius: 999, background: idx === 0 ? "rgba(74,222,128,0.12)" : "rgba(251,191,36,0.12)", color: idx === 0 ? "#4ade80" : "#60A5FA", border: `1px solid ${idx === 0 ? "rgba(74,222,128,0.25)" : "rgba(251,191,36,0.25)"}` }}>
                                   {idx === 0 ? "DEFAULT" : "EXTRA"}
                                 </span>
                                 <button type="button" onClick={() => toggleSlot(slotObj.id)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-secondary)", display: "flex" }}>
@@ -585,10 +649,10 @@ function AssignFlatModal({ residentId, residentName, societyId, onClose, onSucce
                   )}
 
                   {selectedFlat && (
-                    <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 16px", borderRadius: 12, background: isApartment ? "rgba(107,70,193,0.08)" : "rgba(16,185,129,0.08)", border: `1px solid ${isApartment ? "rgba(107,70,193,0.20)" : "rgba(16,185,129,0.20)"}` }}>
-                      {isApartment ? <MdApartment size={20} style={{ color: "#9F87D7", flexShrink: 0 }} /> : <MdHomeWork size={20} style={{ color: "#34d399", flexShrink: 0 }} />}
+                    <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 16px", borderRadius: 12, background: isApartment ? "rgba(37,99,235,0.08)" : "rgba(16,185,129,0.08)", border: `1px solid ${isApartment ? "rgba(37,99,235,0.22)" : "rgba(16,185,129,0.22)"}` }}>
+                      {isApartment ? <MdApartment size={20} style={{ color: "#38bdf8", flexShrink: 0 }} /> : <MdHomeWork size={20} style={{ color: "#34d399", flexShrink: 0 }} />}
                       <div>
-                        <p style={{ fontWeight: 800, fontSize: 14, color: isApartment ? "#9F87D7" : "#34d399", margin: 0, letterSpacing: "-0.01em" }}>
+                        <p style={{ fontWeight: 800, fontSize: 14, color: isApartment ? "#38bdf8" : "#34d399", margin: 0, letterSpacing: "-0.01em" }}>
                           {isApartment ? "Flat" : "House"} {selectedFlat.flat_number}{isApartment && ` · ${flatType}`}
                         </p>
                         <p style={{ fontSize: 12, color: "var(--text-secondary)", margin: "3px 0 0" }}>
@@ -605,20 +669,30 @@ function AssignFlatModal({ residentId, residentName, societyId, onClose, onSucce
               {/* Navigation */}
               <div style={{ display: "flex", gap: 10, marginTop: 4 }}>
                 {step > 1 && (
-                  <button type="button" onClick={goBack} style={{ display: "flex", alignItems: "center", gap: 6, padding: "11px 18px", borderRadius: 12, fontSize: 13, fontWeight: 700, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", color: "var(--text-secondary)", cursor: "pointer" }}>
+                  <button type="button" onClick={goBack} className="sa-btn sa-btn-ghost" style={{ borderRadius: 12 }}>
                     <MdArrowBack size={15} /> Back
                   </button>
                 )}
                 <div style={{ flex: 1 }} />
                 {step < flatStep ? (
-                  <button type="button" onClick={() => { setFormError(""); setStep((s) => s + 1); }} disabled={!canGoNext()}
-                    style={{ display: "flex", alignItems: "center", gap: 6, padding: "11px 24px", borderRadius: 12, fontSize: 13, fontWeight: 700, background: canGoNext() ? "linear-gradient(135deg,#6B46C1,#6B46C1)" : "rgba(255,255,255,0.06)", border: "none", color: canGoNext() ? "#fff" : "var(--text-secondary)", cursor: canGoNext() ? "pointer" : "not-allowed", boxShadow: canGoNext() ? "0 4px 14px rgba(107,70,193,0.35)" : "none", transition: "all 0.2s" }}>
-                    Next <MdArrowForward size={15} />
+                  <button
+                    type="button"
+                    onClick={() => { setFormError(""); setStep((s) => s + 1); }}
+                    disabled={!canGoNext()}
+                    className="btn-primary"
+                    style={{ opacity: canGoNext() ? 1 : 0.5, cursor: canGoNext() ? "pointer" : "not-allowed", fontWeight: 700 }}
+                  >
+                    <span>Next</span> <MdArrowForward size={15} />
                   </button>
                 ) : (
-                  <button type="button" onClick={handleSubmit} disabled={submitting || !selectedFlatId}
-                    style={{ display: "flex", alignItems: "center", gap: 8, padding: "12px 28px", borderRadius: 12, fontSize: 13, fontWeight: 800, background: submitting || !selectedFlatId ? "rgba(255,255,255,0.06)" : "linear-gradient(135deg,#6B46C1,#6B46C1)", border: "none", color: submitting || !selectedFlatId ? "var(--text-secondary)" : "#fff", cursor: submitting || !selectedFlatId ? "not-allowed" : "pointer", boxShadow: submitting || !selectedFlatId ? "none" : "0 4px 16px rgba(107,70,193,0.4)", transition: "all 0.2s" }}>
-                    {submitting ? <><Spinner small /> Assigning…</> : <><MdCheckCircle size={16} /> Confirm Assignment</>}
+                  <button
+                    type="button"
+                    onClick={handleSubmit}
+                    disabled={submitting || !selectedFlatId}
+                    className="btn-primary"
+                    style={{ opacity: submitting || !selectedFlatId ? 0.5 : 1, fontWeight: 700, cursor: submitting || !selectedFlatId ? "not-allowed" : "pointer" }}
+                  >
+                    {submitting ? <><Spinner small /> Assigning…</> : <><MdCheckCircle size={16} /> <span>Confirm Assignment</span></>}
                   </button>
                 )}
               </div>
@@ -757,7 +831,7 @@ function ParkingSlotPicker({ flatNumber, isApartment, selectedSlotIds, available
                       fontSize: 8,
                       fontWeight: 800,
                       marginTop: 2,
-                      color: badge === "DEFAULT" ? "#4ade80" : "#fbbf24",
+                      color: badge === "DEFAULT" ? "#4ade80" : "#60A5FA",
                     }}
                   >
                     {badge}
@@ -787,7 +861,7 @@ function ParkingSlotPicker({ flatNumber, isApartment, selectedSlotIds, available
                   fontSize: 10,
                   fontWeight: 700,
                   background: idx === 0 ? "rgba(74,222,128,0.10)" : "rgba(251,191,36,0.10)",
-                  color: idx === 0 ? "#4ade80" : "#fbbf24",
+                  color: idx === 0 ? "#4ade80" : "#60A5FA",
                   border: `1px solid ${idx === 0 ? "rgba(74,222,128,0.25)" : "rgba(251,191,36,0.25)"}`,
                 }}
               >
@@ -1208,7 +1282,7 @@ function FlatAssignCard({
                         style={{
                           fontSize: 9,
                           fontWeight: 800,
-                          color: badgeLabel === "DEFAULT" ? "#4ade80" : "#fbbf24",
+                          color: badgeLabel === "DEFAULT" ? "#4ade80" : "#60A5FA",
                           marginTop: 2,
                         }}
                       >
@@ -1254,7 +1328,7 @@ function FlatAssignCard({
                         padding: "2px 7px",
                         borderRadius: 999,
                         background: idx === 0 ? "rgba(74,222,128,0.12)" : "rgba(251,191,36,0.12)",
-                        color: idx === 0 ? "#4ade80" : "#fbbf24",
+                        color: idx === 0 ? "#4ade80" : "#60A5FA",
                         border: `1px solid ${idx === 0 ? "rgba(74,222,128,0.25)" : "rgba(251,191,36,0.25)"}`,
                       }}
                     >
@@ -1790,7 +1864,7 @@ function MultiFlatAssignSection({ allUnassignedFlats, availableSlots, assignment
               <span
                 style={{
                   fontSize: 10, fontWeight: 700, padding: "3px 9px", borderRadius: 999,
-                  background: "rgba(251,191,36,0.10)", color: "#fbbf24",
+                  background: "rgba(251,191,36,0.10)", color: "#60A5FA",
                   border: "1px solid rgba(251,191,36,0.22)",
                 }}
               >
@@ -2108,6 +2182,7 @@ export default function Resident() {
   const [formError, setFormError] = useState("");
   const [formData, setFormData] = useState(EMPTY_FORM);
   const [editingId, setEditingId] = useState(null);
+  const [formStep, setFormStep] = useState(1);
 
   const [editFlatData, setEditFlatData] = useState(EMPTY_EDIT_FLAT);
   const [editCurrentFlats, setEditCurrentFlats] = useState([]);
@@ -2232,6 +2307,7 @@ export default function Resident() {
     setEditFlatData(EMPTY_EDIT_FLAT);
     setEditCurrentFlats([]);
     setFormSocietyId("");
+    setFormStep(1);
   };
 
   const loadResidents = useCallback(
@@ -2303,8 +2379,48 @@ export default function Resident() {
     setEditFlatData(EMPTY_EDIT_FLAT);
     setEditingId(resident.id);
     setFormSocietyId(resident.society_id || "");
+    setFormStep(1);
     setShowForm(true);
     setAssignModal(null);
+  };
+
+  const handleNextStep = () => {
+    setFormError("");
+    if (formStep === 1) {
+      if (isSuperAdmin && !formSocietyId) {
+        setFormError("Please select a society.");
+        return;
+      }
+      if (!formData.name?.trim()) {
+        setFormError("Full Name is required.");
+        return;
+      }
+      if (!formData.email?.trim()) {
+        setFormError("Email address is required.");
+        return;
+      }
+      if (!editingId && !formData.password) {
+        setFormError("Password is required for new accounts.");
+        return;
+      }
+      setFormStep(2);
+      return;
+    }
+
+    if (formStep === 2) {
+      const ec = formData.emergency_contact;
+      const ecFilled = ec.name?.trim() || ec.phone?.trim();
+      if (ecFilled && (!ec.name?.trim() || !ec.phone?.trim())) {
+        setFormError("Emergency contact requires both a name and phone.");
+        return;
+      }
+      if (!editingId && (!aadharFile || !panFile)) {
+        setFormError("Both Aadhar and PAN documents are required.");
+        return;
+      }
+      setFormStep(3);
+      return;
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -2427,7 +2543,7 @@ export default function Resident() {
   const AVATAR_COLORS = [
     "linear-gradient(135deg,#6B46C1,#6B46C1)",
     "linear-gradient(135deg,#669696,#7AB2B2)",
-    "linear-gradient(135deg,#F0845D,#F5AF96)",
+    "linear-gradient(135deg,#2563EB,#60A5FA)",
     "linear-gradient(135deg,#f43f5e,#fb7185)",
     "linear-gradient(135deg,#10b981,#34d399)",
     "linear-gradient(135deg,#6B46C1,#9F87D7)",
@@ -2505,7 +2621,7 @@ export default function Resident() {
 
               {flatDetailModal.flat.tenant && (
                 <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13 }}>
-                  <MdPerson size={14} color="#fbbf24" />
+                  <MdPerson size={14} color="#60A5FA" />
                   <div style={{ flex: 1 }}>
                     <span style={{ color: "var(--text-secondary)", fontSize: 11 }}>{t("colTenant") || "Tenant"}</span>
                     <p style={{ margin: 0, fontWeight: 600, color: "var(--text-primary)" }}>{flatDetailModal.flat.tenant.name}</p>
@@ -2553,197 +2669,253 @@ export default function Resident() {
             setAssignModal(null);
             if (showForm) resetForm();
           }}
-          className="btn-primary flex items-center gap-2 w-full sm:w-auto justify-center shrink-0"
-          style={{ borderRadius: 12, fontWeight: 700, boxShadow: "0 4px 14px rgba(107,70,193,0.3)" }}>
-          <MdPersonAdd size={18} />
-          {t("residentAddBtn")}
+          className="sa-add-btn sa-add-pill w-full sm:w-auto justify-center shrink-0"
+          style={{ fontWeight: 700 }}
+        >
+          <span className="sa-pill-blob sa-pill-blob1" />
+          <span className="sa-pill-inner">
+            {showForm ? <MdClose size={18} /> : <MdPersonAdd size={18} />}
+            <span>{showForm ? t("cancel") : t("residentAddBtn")}</span>
+          </span>
         </button>
       </div>
 
-      {/* Add / Edit Form */}
+      {/* Add / Edit Resident Modal Popup */}
       {(showForm || editingId) && (
-        <div className="bg-card rounded-2xl animate-scaleIn" style={{ padding: "24px", maxWidth: 560 }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
-            <div>
-              <h3 style={{ fontWeight: 800, fontSize: 16, color: "var(--text-primary)", margin: 0, letterSpacing: "-0.02em" }}>
-                {editingId ? "Edit Resident" : t("residentAddTitle")}
-              </h3>
-              <p style={{ fontSize: 12, color: "var(--text-secondary)", margin: "3px 0 0" }}>
-                {editingId ? "Update resident info, flat & parking" : "Create a new resident account"}
-              </p>
-            </div>
-            <button onClick={() => { setShowForm(false); resetForm(); }}
-              style={{ width: 34, height: 34, borderRadius: 10, border: "1px solid rgba(255,255,255,0.12)", background: "rgba(255,255,255,0.06)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-secondary)" }}>
-              <MdClose size={17} />
-            </button>
-          </div>
-
-          {formError && (
-            <div style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.25)", borderRadius: 10, padding: "10px 14px", marginBottom: 16, fontSize: 13, color: "#f87171", display: "flex", alignItems: "center", gap: 8 }}>
-              <MdClose size={14} style={{ flexShrink: 0 }} /> {formError}
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-
-            {/* Society (Super Admin Only) */}
-            {isSuperAdmin && (
-              <Field label="Society" required>
-                <Select
-                  className="input w-full"
-                  value={formSocietyId}
-                  onChange={(e) => setFormSocietyId(e.target.value)}
-                  disabled={!!editingId}
-                  required
-                >
-                  <option value="">— Select Society —</option>
-                  {societiesList.map((s) => (
-                    <option key={s.id} value={s.id}>{s.name}</option>
-                  ))}
-                </Select>
-                {editingId && (
-                  <p style={{ fontSize: 10, color: "var(--text-secondary)", marginTop: 4 }}>
-                    Society cannot be changed after creation.
+        <div
+          onClick={(e) => { if (e.target === e.currentTarget) { setShowForm(false); resetForm(); } }}
+          style={{ position: "fixed", inset: 0, zIndex: 1100, background: "rgba(0,0,0,0.65)", backdropFilter: "blur(8px)", display: "flex", alignItems: "center", justifyContent: "center", padding: "16px" }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{ width: "100%", maxWidth: 620, background: "var(--card-bg, #0f172a)", border: "1px solid var(--glass-border, rgba(255,255,255,0.12))", borderRadius: 20, maxHeight: "90vh", overflowY: "auto", backdropFilter: "blur(20px)", boxShadow: "0 24px 80px rgba(0,0,0,0.5), 0 0 20px rgba(37,99,235,0.15)", animation: "adminModalPopIn 0.28s cubic-bezier(0.16, 1, 0.3, 1)" }}
+          >
+            {/* Header */}
+            <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", padding: "20px 24px 0" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <div style={{ width: 42, height: 42, borderRadius: 12, background: "linear-gradient(135deg, #2563eb, #1d4ed8)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 6px 18px rgba(37,99,235,0.35)", flexShrink: 0 }}>
+                  <MdPersonAdd size={22} color="#fff" />
+                </div>
+                <div>
+                  <h3 style={{ fontWeight: 800, fontSize: 17, color: "var(--text-primary)", margin: 0, letterSpacing: "-0.02em" }}>
+                    {editingId ? "Edit Resident Account" : "Create New Resident Account"}
+                  </h3>
+                  <p style={{ fontSize: 12, color: "#38bdf8", margin: "2px 0 0", fontWeight: 600 }}>
+                    Step {formStep} of 3 — {formStep === 1 ? "Personal & Account Details" : formStep === 2 ? "Household & KYC Documents" : "Property & Flat Assignment"}
                   </p>
-                )}
-              </Field>
-            )}
-
-            <SectionDivider icon={MdPerson} label="Personal Info" />
-            <Field label={t("residentName")} required>
-              <input className="input w-full" placeholder="Full name" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} required />
-            </Field>
-            <Field label={t("residentEmail")} required>
-              <input className="input w-full" placeholder="email@example.com" type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} required disabled={!!editingId} style={editingId ? { opacity: 0.6, cursor: "not-allowed" } : {}} />
-            </Field>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-              <Field label="Phone">
-                <input className="input w-full" placeholder="10-digit number" type="tel" value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} />
-              </Field>
-              {!editingId && (
-                <Field label={t("residentPassword")} required>
-                  <input className="input w-full" placeholder="Set password" type="password" value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} required />
-                </Field>
-              )}
-            </div>
-
-            <SectionDivider icon={MdPerson} label="Resident Role" />
-            <div style={{ padding: "12px 14px", borderRadius: 12, background: "rgba(16,185,129,0.08)", border: "1.5px solid rgba(16,185,129,0.22)", display: "flex", alignItems: "center", gap: 10 }}>
-              <div style={{ width: 32, height: 32, borderRadius: 9, background: "rgba(16,185,129,0.15)", display: "flex", alignItems: "center", justifyContent: "center" }}>🏠</div>
-              <div>
-                <div style={{ fontSize: 13, fontWeight: 700, color: "#34d399" }}>Owner</div>
-                <div style={{ fontSize: 11, color: "var(--text-secondary)" }}>Admins register Owners only. Owners register Tenants via the Resident App.</div>
+                </div>
               </div>
-            </div>
-
-            <SectionDivider icon={MdPeople} label="Household Details" />
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-              <Field label="No. of Vehicles">
-                <CounterField value={formData.vehicle_count} onChange={(v) => setFormData((f) => ({ ...f, vehicle_count: v }))} min={0} max={99} />
-              </Field>
-              <Field label="Family Members">
-                <CounterField value={formData.occupant_count} onChange={(v) => setFormData((f) => ({ ...f, occupant_count: v }))} min={1} max={99} />
-              </Field>
-            </div>
-
-            <SectionDivider icon={MdContactPhone} label="Emergency Contact (Optional)" />
-            <div style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "10px 12px", background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.15)", borderRadius: 10, marginTop: -4 }}>
-              <MdPhone size={15} style={{ color: "#f87171", flexShrink: 0, marginTop: 1 }} />
-              <p style={{ fontSize: 11, color: "var(--text-secondary)", margin: 0, lineHeight: 1.5 }}>Both name and phone are required if filled.</p>
-            </div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-              <Field label="Contact Name">
-                <input className="input w-full" placeholder="e.g. Ramesh Sharma" value={formData.emergency_contact.name} onChange={(e) => setFormData((f) => ({ ...f, emergency_contact: { ...f.emergency_contact, name: e.target.value } }))} />
-              </Field>
-              <Field label="Contact Phone">
-                <input className="input w-full" placeholder="10-digit number" type="tel" value={formData.emergency_contact.phone} onChange={(e) => setFormData((f) => ({ ...f, emergency_contact: { ...f.emergency_contact, phone: e.target.value } }))} />
-              </Field>
-            </div>
-
-            {!editingId && (
-              <>
-                <SectionDivider icon={MdUploadFile} label="KYC Documents" />
-                <DocumentUploadField label="Aadhar Card" icon={MdBadge} accept="application/pdf,image/*" file={aadharFile} onChange={setAadharFile} required />
-                <DocumentUploadField label="PAN Card" icon={MdCreditCard} accept="application/pdf,image/*" file={panFile} onChange={setPanFile} required />
-
-                <SectionDivider icon={MdHome} label="Flat Assignment" required />
-
-                {missingFlat && (
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", borderRadius: 10, background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.22)" }}>
-                    <MdWarning size={15} style={{ color: "#f87171", flexShrink: 0 }} />
-                    <p style={{ fontSize: 12, color: "#f87171", margin: 0, fontWeight: 600 }}>
-                      A flat must be assigned to create a resident. Select the property type below to begin.
-                    </p>
-                  </div>
-                )}
-
-                <p style={{ fontSize: 11, color: "var(--text-secondary)", marginTop: -8, marginBottom: 2 }}>
-                  <span style={{ color: "#fbbf24" }}>Parking slots assigned here go to the flat directly — residents add their vehicles themselves.</span>
-                </p>
-
-                {loadingFlats || loadingSlots ? (
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, color: "var(--text-secondary)", fontSize: 13, padding: "10px 0" }}>
-                    <Spinner small /> Loading available units…
-                  </div>
-                ) : (
-                  <MultiFlatAssignSection
-                    allUnassignedFlats={allUnassignedFlats}
-                    availableSlots={availableSlots}
-                    assignments={formData.flat_assignments}
-                    onChange={(assignments) => setFormData((f) => ({ ...f, flat_assignments: assignments }))}
-                  />
-                )}
-              </>
-            )}
-
-            {editingId && (
-              <>
-                <SectionDivider icon={MdHome} label="Reassign Flat & Parking (Optional)" />
-                <p style={{ fontSize: 11, color: "var(--text-secondary)", marginTop: -8, marginBottom: 2 }}>Leave blank to keep the current flat unchanged.</p>
-                {loadingFlats || loadingSlots ? (
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, color: "var(--text-secondary)", fontSize: 13, padding: "10px 0" }}>
-                    <Spinner small /> Loading available units…
-                  </div>
-                ) : (
-                  <EditFlatSection
-                    allUnassignedFlats={allUnassignedFlats}
-                    availableSlots={availableSlots}
-                    currentFlats={editCurrentFlats}
-                    editFlatData={editFlatData}
-                    onChange={setEditFlatData}
-                  />
-                )}
-              </>
-            )}
-
-            <div style={{ display: "flex", gap: 10, paddingTop: 4 }}>
               <button
-                type="submit"
-                disabled={submitting || missingFlat}
-                className="btn-primary"
-                style={{
-                  flex: 1,
-                  justifyContent: "center",
-                  opacity: submitting || missingFlat ? 0.55 : 1,
-                  cursor: submitting || missingFlat ? "not-allowed" : "pointer",
-                  borderRadius: 12,
-                  fontWeight: 700,
-                  background: missingFlat ? "rgba(255,255,255,0.06)" : undefined,
-                  color: missingFlat ? "var(--text-secondary)" : undefined,
-                  border: missingFlat ? "1px solid rgba(255,255,255,0.10)" : undefined,
-                  boxShadow: missingFlat ? "none" : undefined,
-                }}>
-                {submitting ? (
-                  <><Spinner small /> {editingId ? "Updating…" : "Creating…"}</>
-                ) : missingFlat
-                  ? <><MdWarning size={15} /> Assign a flat to continue</>
-                  : editingId
-                    ? "Update Resident"
-                    : t("residentCreate")}
+                onClick={() => { setShowForm(false); resetForm(); }}
+                style={{ width: 34, height: 34, borderRadius: 10, border: "1px solid var(--glass-border, rgba(255,255,255,0.12))", background: "var(--card-inner-bg, rgba(255,255,255,0.06))", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-secondary)" }}
+              >
+                <MdClose size={17} />
               </button>
-              <button type="button" onClick={() => { setShowForm(false); resetForm(); }} className="btn-muted" style={{ borderRadius: 12 }}>{t("cancel")}</button>
             </div>
-          </form>
+
+            <div style={{ padding: "16px 24px 0" }}>
+              <StepIndicator step={formStep} total={3} labels={["1. Personal Info", "2. KYC & Family", "3. Flat Assignment"]} />
+            </div>
+
+            <div style={{ height: 1, background: "var(--glass-border, rgba(255,255,255,0.08))", margin: "16px 0 0" }} />
+
+            <div style={{ padding: "20px 24px 28px" }}>
+              {formError && (
+                <div style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.25)", borderRadius: 10, padding: "10px 14px", marginBottom: 16, fontSize: 13, color: "#f87171", display: "flex", alignItems: "center", gap: 8 }}>
+                  <MdClose size={14} style={{ flexShrink: 0 }} /> {formError}
+                </div>
+              )}
+
+              <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+
+                {/* STEP 1: Personal & Account Details */}
+                {formStep === 1 && (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                    {isSuperAdmin && (
+                      <Field label="Society" required>
+                        <Select
+                          className="input w-full"
+                          value={formSocietyId}
+                          onChange={(e) => setFormSocietyId(e.target.value)}
+                          disabled={!!editingId}
+                          required
+                        >
+                          <option value="">— Select Society —</option>
+                          {societiesList.map((s) => (
+                            <option key={s.id} value={s.id}>{s.name}</option>
+                          ))}
+                        </Select>
+                        {editingId && (
+                          <p style={{ fontSize: 10, color: "var(--text-secondary)", marginTop: 4 }}>
+                            Society cannot be changed after creation.
+                          </p>
+                        )}
+                      </Field>
+                    )}
+
+                    <SectionDivider icon={MdPerson} label="Personal Information" />
+                    <Field label={t("residentName")} required>
+                      <input className="input w-full" placeholder="Full name (e.g. Rahul Sharma)" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} required />
+                    </Field>
+                    <Field label={t("residentEmail")} required>
+                      <input className="input w-full" placeholder="email@example.com" type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} required disabled={!!editingId} style={editingId ? { opacity: 0.6, cursor: "not-allowed" } : {}} />
+                    </Field>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                      <Field label="Phone">
+                        <input className="input w-full" placeholder="10-digit number" type="tel" value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} />
+                      </Field>
+                      {!editingId && (
+                        <Field label={t("residentPassword")} required>
+                          <input className="input w-full" placeholder="Set account password" type="password" value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} required />
+                        </Field>
+                      )}
+                    </div>
+
+                    <SectionDivider icon={MdPerson} label="Resident Role" />
+                    <div style={{ padding: "12px 14px", borderRadius: 12, background: "rgba(16,185,129,0.08)", border: "1.5px solid rgba(16,185,129,0.22)", display: "flex", alignItems: "center", gap: 10 }}>
+                      <div style={{ width: 32, height: 32, borderRadius: 9, background: "rgba(16,185,129,0.15)", display: "flex", alignItems: "center", justifyContent: "center" }}>🏠</div>
+                      <div>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: "#34d399" }}>Owner Account</div>
+                        <div style={{ fontSize: 11, color: "var(--text-secondary)" }}>Admins register Owner accounts. Owners register Tenants directly via the Resident Mobile App.</div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* STEP 2: Household & KYC Details */}
+                {formStep === 2 && (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                    <SectionDivider icon={MdPeople} label="Household Details" />
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                      <Field label="No. of Vehicles">
+                        <CounterField value={formData.vehicle_count} onChange={(v) => setFormData((f) => ({ ...f, vehicle_count: v }))} min={0} max={99} />
+                      </Field>
+                      <Field label="Family Members">
+                        <CounterField value={formData.occupant_count} onChange={(v) => setFormData((f) => ({ ...f, occupant_count: v }))} min={1} max={99} />
+                      </Field>
+                    </div>
+
+                    <SectionDivider icon={MdContactPhone} label="Emergency Contact (Optional)" />
+                    <div style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "10px 12px", background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.15)", borderRadius: 10, marginTop: -4 }}>
+                      <MdPhone size={15} style={{ color: "#f87171", flexShrink: 0, marginTop: 1 }} />
+                      <p style={{ fontSize: 11, color: "var(--text-secondary)", margin: 0, lineHeight: 1.5 }}>Both contact name and phone number are required if provided.</p>
+                    </div>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                      <Field label="Contact Name">
+                        <input className="input w-full" placeholder="e.g. Ramesh Sharma" value={formData.emergency_contact.name} onChange={(e) => setFormData((f) => ({ ...f, emergency_contact: { ...f.emergency_contact, name: e.target.value } }))} />
+                      </Field>
+                      <Field label="Contact Phone">
+                        <input className="input w-full" placeholder="10-digit number" type="tel" value={formData.emergency_contact.phone} onChange={(e) => setFormData((f) => ({ ...f, emergency_contact: { ...f.emergency_contact, phone: e.target.value } }))} />
+                      </Field>
+                    </div>
+
+                    {!editingId && (
+                      <>
+                        <SectionDivider icon={MdUploadFile} label="KYC Documents" />
+                        <DocumentUploadField label="Aadhar Card" icon={MdBadge} accept="application/pdf,image/*" file={aadharFile} onChange={setAadharFile} required />
+                        <DocumentUploadField label="PAN Card" icon={MdCreditCard} accept="application/pdf,image/*" file={panFile} onChange={setPanFile} required />
+                      </>
+                    )}
+                  </div>
+                )}
+
+                {/* STEP 3: Flat Assignment & Parking */}
+                {formStep === 3 && (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                    {!editingId && (
+                      <>
+                        <SectionDivider icon={MdHome} label="Flat Assignment" required />
+
+                        {missingFlat && (
+                          <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", borderRadius: 10, background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.22)" }}>
+                            <MdWarning size={15} style={{ color: "#f87171", flexShrink: 0 }} />
+                            <p style={{ fontSize: 12, color: "#f87171", margin: 0, fontWeight: 600 }}>
+                              A flat must be assigned to create a resident. Select the property type below to begin.
+                            </p>
+                          </div>
+                        )}
+
+                        <p style={{ fontSize: 11, color: "var(--text-secondary)", marginTop: -4, marginBottom: 2 }}>
+                          <span style={{ color: "#60A5FA" }}>Parking slots assigned here go to the flat directly — residents add their vehicles themselves.</span>
+                        </p>
+
+                        {loadingFlats || loadingSlots ? (
+                          <div style={{ display: "flex", alignItems: "center", gap: 8, color: "var(--text-secondary)", fontSize: 13, padding: "10px 0" }}>
+                            <Spinner small /> Loading available units…
+                          </div>
+                        ) : (
+                          <MultiFlatAssignSection
+                            allUnassignedFlats={allUnassignedFlats}
+                            availableSlots={availableSlots}
+                            assignments={formData.flat_assignments}
+                            onChange={(assignments) => setFormData((f) => ({ ...f, flat_assignments: assignments }))}
+                          />
+                        )}
+                      </>
+                    )}
+
+                    {editingId && (
+                      <>
+                        <SectionDivider icon={MdHome} label="Reassign Flat & Parking (Optional)" />
+                        <p style={{ fontSize: 11, color: "var(--text-secondary)", marginTop: -4, marginBottom: 2 }}>Leave blank to keep the current flat unchanged.</p>
+                        {loadingFlats || loadingSlots ? (
+                          <div style={{ display: "flex", alignItems: "center", gap: 8, color: "var(--text-secondary)", fontSize: 13, padding: "10px 0" }}>
+                            <Spinner small /> Loading available units…
+                          </div>
+                        ) : (
+                          <EditFlatSection
+                            allUnassignedFlats={allUnassignedFlats}
+                            availableSlots={availableSlots}
+                            currentFlats={editCurrentFlats}
+                            editFlatData={editFlatData}
+                            onChange={setEditFlatData}
+                          />
+                        )}
+                      </>
+                    )}
+                  </div>
+                )}
+
+                {/* Footer Controls */}
+                <div style={{ display: "flex", gap: 10, paddingTop: 8, borderTop: "1px solid var(--glass-border, rgba(255,255,255,0.08))", marginTop: 8 }}>
+                  {formStep > 1 && (
+                    <button type="button" onClick={() => { setFormError(""); setFormStep(s => s - 1); }} className="sa-btn sa-btn-ghost" style={{ borderRadius: 12 }}>
+                      <MdArrowBack size={15} /> Back
+                    </button>
+                  )}
+                  <button type="button" onClick={() => { setShowForm(false); resetForm(); }} className="sa-btn sa-btn-ghost" style={{ borderRadius: 12 }}>
+                    {t("cancel")}
+                  </button>
+                  <div style={{ flex: 1 }} />
+                  {formStep < 3 ? (
+                    <button
+                      type="button"
+                      onClick={handleNextStep}
+                      className="btn-primary"
+                      style={{ fontWeight: 700 }}
+                    >
+                      <span>Next Step</span> <MdArrowForward size={15} />
+                    </button>
+                  ) : (
+                    <button
+                      type="submit"
+                      disabled={submitting || (!editingId && missingFlat)}
+                      className="btn-primary"
+                      style={{ opacity: submitting || (!editingId && missingFlat) ? 0.5 : 1, fontWeight: 700, cursor: submitting || (!editingId && missingFlat) ? "not-allowed" : "pointer" }}
+                    >
+                      {submitting ? (
+                        <><Spinner small /> {editingId ? "Updating…" : "Creating…"}</>
+                      ) : (!editingId && missingFlat) ? (
+                        <><MdWarning size={15} /> Assign Flat First</>
+                      ) : (
+                        <><MdCheckCircle size={16} /> <span>{editingId ? "Update Resident" : "Confirm & Save"}</span></>
+                      )}
+                    </button>
+                  )}
+                </div>
+              </form>
+            </div>
+          </div>
         </div>
       )}
 
@@ -2777,9 +2949,7 @@ export default function Resident() {
             <option value="">{t("allUnits") || "All Units"}</option>
             {flatsList.map(f => <option key={f.id} value={f.id}>{f.flat_number}</option>)}
           </Select>
-          <button onClick={() => loadResidents(1, search)} className="btn-primary" style={{ padding: "8px 16px", borderRadius: 8 }}>
-            {t("reportApply") || "Apply Filter"}
-          </button>
+
           {hasActiveFilters && (
             <button
               type="button"
@@ -2856,15 +3026,10 @@ export default function Resident() {
                   {residents.map((r, idx) => (
                     <tr key={r.id} style={{ borderBottom: "1px solid var(--divider)", verticalAlign: "top", background: "transparent" }}>
                       <td style={{ padding: "14px 16px", fontSize: 12, color: "var(--text-secondary)", fontWeight: 600, width: 40 }}>{(page - 1) * LIMIT + idx + 1}</td>
-                      <td style={{ padding: "14px 16px", minWidth: 180 }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                          <div style={{ width: 36, height: 36, borderRadius: 11, flexShrink: 0, background: avatarColor(idx), display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 800, color: "#fff", boxShadow: "0 4px 10px rgba(0,0,0,0.2)" }}>
-                            {r.name?.charAt(0)?.toUpperCase()}
-                          </div>
-                          <div>
-                            <div style={{ fontWeight: 700, fontSize: 13, color: "var(--text-primary)" }}>{r.name}</div>
-                            {r.roles?.includes("COMMITTEE_MEMBER") && <span className="res-committee-badge" style={{ marginTop: 3, display: "inline-flex" }}>★ {t("colCommittee") || "Committee"}</span>}
-                          </div>
+                      <td style={{ padding: "14px 16px", minWidth: 160 }}>
+                        <div>
+                          <div style={{ fontWeight: 700, fontSize: 13, color: "var(--text-primary)" }}>{r.name}</div>
+                          {r.roles?.includes("COMMITTEE_MEMBER") && <span className="res-committee-badge" style={{ marginTop: 3, display: "inline-flex" }}>★ {t("colCommittee") || "Committee"}</span>}
                         </div>
                       </td>
                       <td style={{ padding: "14px 16px", minWidth: 170 }}>
@@ -2872,29 +3037,20 @@ export default function Resident() {
                         {r.phone && <div style={{ fontSize: 12, color: "var(--text-secondary)", marginTop: 3, display: "flex", alignItems: "center", gap: 4 }}><MdPhone size={11} style={{ opacity: 0.5 }} /> {r.phone}</div>}
                       </td>
                       <td style={{ padding: "14px 16px" }}><ResidentTypeBadge type={r.resident_type} /></td>
-                      <td style={{ padding: "14px 16px", minWidth: 160 }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 4, flex: 1 }}>
-                            {r.flats && r.flats.length > 0 ? r.flats.map((flat, fIdx) => (
-                              <div
-                                key={flat.id || fIdx}
-                                onClick={() => setFlatDetailModal({ flat, resident: r })}
-                                style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, padding: "3px 8px", borderRadius: 999, background: "rgba(34,197,94,0.10)", color: "#4ade80", border: "1px solid rgba(34,197,94,0.22)", cursor: "pointer", transition: "all 0.15s", whiteSpace: "nowrap" }}
-                                onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(34,197,94,0.18)"; }}
-                                onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(34,197,94,0.10)"; }}
-                                title={`Flat ${flat.flat_number}`}
-                              >
-                                {flat.flat_number}
-                              </div>
-                            )) : <span style={{ fontSize: 12, color: "var(--text-secondary)", opacity: 0.45 }}>{t("colNoUnit") || "No unit assigned"}</span>}
-                          </div>
-                          <button type="button" onClick={() => setAssignModal({ id: r.id, name: r.name, society_id: r.society_id })}
-                            style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 26, height: 26, padding: 0, borderRadius: 8, background: "rgba(107,70,193,0.08)", border: "1px dashed rgba(107,70,193,0.35)", color: "#9F87D7", cursor: "pointer", flexShrink: 0, transition: "all 0.15s" }}
-                            title={t("colAssignFlat") || "Assign Flat"}
-                            onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(107,70,193,0.14)"; e.currentTarget.style.borderColor = "#6B46C1"; }}
-                            onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(107,70,193,0.08)"; e.currentTarget.style.borderColor = "rgba(107,70,193,0.35)"; }}>
-                            <MdAdd size={14} />
-                          </button>
+                      <td style={{ padding: "14px 16px", minWidth: 140 }}>
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+                          {r.flats && r.flats.length > 0 ? r.flats.map((flat, fIdx) => (
+                            <div
+                              key={flat.id || fIdx}
+                              onClick={() => setFlatDetailModal({ flat, resident: r })}
+                              style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, padding: "3px 8px", borderRadius: 999, background: "rgba(34,197,94,0.10)", color: "#4ade80", border: "1px solid rgba(34,197,94,0.22)", cursor: "pointer", transition: "all 0.15s", whiteSpace: "nowrap" }}
+                              onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(34,197,94,0.18)"; }}
+                              onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(34,197,94,0.10)"; }}
+                              title={`Flat ${flat.flat_number}`}
+                            >
+                              {flat.flat_number}
+                            </div>
+                          )) : <span style={{ fontSize: 12, color: "var(--text-secondary)", opacity: 0.45 }}>{t("colNoUnit") || "No unit assigned"}</span>}
                         </div>
                       </td>
                       <td style={{ padding: "14px 16px" }}>
@@ -2910,20 +3066,7 @@ export default function Resident() {
                         </div>
                       </td>
                       <td style={{ padding: "14px 16px" }}>
-                        <div className="res-actions" style={{ justifyContent: "flex-end" }}>
-                          {r.flats && r.flats.length > 0 && !r.roles?.includes("SOCIETY_ADMIN") && (
-                            r.roles?.includes("COMMITTEE_MEMBER") ? (
-                              <button onClick={() => removeCommittee(r.id)} className="res-btn res-btn--remove">{t("colRemove") || "Remove"}</button>
-                            ) : (
-                              <button onClick={() => promoteCommittee(r.id)} className="res-btn res-btn--promote">{t("colCommittee") || "Committee"}</button>
-                            )
-                          )}
-                          <button onClick={() => handleEdit(r)}
-                            style={{ background: "rgba(91,141,239,0.10)", color: "#94B5F5", padding: "6px 12px", borderRadius: 8, border: "1px solid rgba(91,141,239,0.20)", cursor: "pointer", display: "flex", alignItems: "center", gap: 4, fontSize: 12, fontWeight: 700, transition: "all 0.15s" }}
-                            onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(91,141,239,0.18)")}
-                            onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(91,141,239,0.10)")}>
-                            <MdEdit size={13} /> {t("colEdit") || "Edit"}
-                          </button>
+                        <div style={{ display: "flex", justifyContent: "flex-end" }}>
                           {confirmId === r.id ? (
                             <span className="res-confirm">
                               <span className="res-confirm-label">{t("billSure") || "Sure?"}</span>
@@ -2931,7 +3074,15 @@ export default function Resident() {
                               <button onClick={() => setConfirmId(null)} className="res-confirm-cancel">{t("cancel")}</button>
                             </span>
                           ) : (
-                            <button onClick={() => setConfirmId(r.id)} className="res-btn-delete"><MdDelete size={14} /></button>
+                            <ResidentActionMenu
+                              t={t}
+                              onAssignFlat={() => setAssignModal({ id: r.id, name: r.name, society_id: r.society_id })}
+                              onEdit={() => handleEdit(r)}
+                              isCommittee={r.roles?.includes("SOCIETY_ADMIN") ? false : r.roles?.includes("COMMITTEE_MEMBER")}
+                              onPromote={() => promoteCommittee(r.id)}
+                              onRemove={() => removeCommittee(r.id)}
+                              onDelete={() => setConfirmId(r.id)}
+                            />
                           )}
                         </div>
                       </td>
@@ -2941,14 +3092,10 @@ export default function Resident() {
               </table>
             </div>
 
-            {/* Mobile Cards */}
             <div className="md:hidden">
-              {residents.map((r, idx) => (
+              {residents.map((r) => (
                 <div key={r.id} className="animate-fadeIn" style={{ padding: "14px 16px", borderBottom: "1px solid var(--divider)" }}>
-                  <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
-                    <div style={{ width: 40, height: 40, borderRadius: 12, flexShrink: 0, background: avatarColor(idx), display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, fontWeight: 800, color: "#fff", marginTop: 1, boxShadow: "0 4px 10px rgba(0,0,0,0.2)" }}>
-                      {r.name?.charAt(0)?.toUpperCase()}
-                    </div>
+                  <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <p style={{ fontSize: 14, fontWeight: 700, color: "var(--text-primary)", margin: 0 }}>{r.name}</p>
                       <p style={{ fontSize: 11, color: "var(--text-secondary)", margin: "2px 0 0" }}>{r.email}</p>
@@ -2961,32 +3108,26 @@ export default function Resident() {
                           </span>
                         ))}
                         {r.roles?.includes("COMMITTEE_MEMBER") && <span className="res-committee-badge">★ {t("colCommittee") || "Committee"}</span>}
-                        <span style={{ cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 3, fontSize: 10, fontWeight: 600, padding: "2px 7px", borderRadius: 999, background: "rgba(251,191,36,0.10)", color: "#fbbf24", border: "1px solid rgba(251,191,36,0.20)" }} title={`Vehicles: ${r.vehicle_count ?? 0}`}><MdDirectionsCar size={10} /> {r.vehicle_count ?? 0}</span>
+                        <span style={{ cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 3, fontSize: 10, fontWeight: 600, padding: "2px 7px", borderRadius: 999, background: "rgba(251,191,36,0.10)", color: "#60A5FA", border: "1px solid rgba(251,191,36,0.20)" }} title={`Vehicles: ${r.vehicle_count ?? 0}`}><MdDirectionsCar size={10} /> {r.vehicle_count ?? 0}</span>
                         <span style={{ cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 3, fontSize: 10, fontWeight: 600, padding: "2px 7px", borderRadius: 999, background: "rgba(52,211,153,0.10)", color: "#34d399", border: "1px solid rgba(52,211,153,0.20)" }} title={`Family Members: ${r.occupant_count ?? 1}`}><MdPeople size={10} /> {r.occupant_count ?? 1}</span>
                       </div>
-                      <button type="button" onClick={() => setAssignModal({ id: r.id, name: r.name, society_id: r.society_id })}
-                        style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 11, fontWeight: 700, padding: "5px 10px", borderRadius: 8, background: "rgba(107,70,193,0.08)", border: "1px dashed rgba(107,70,193,0.35)", color: "#9F87D7", cursor: "pointer", marginTop: 8 }}>
-                        <MdAdd size={13} /> {t("colAssignFlat") || "Assign Flat"}
-                      </button>
                     </div>
-                    <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6, flexShrink: 0 }}>
-                      <button onClick={() => handleEdit(r)} style={{ background: "rgba(91,141,239,0.10)", color: "#94B5F5", padding: "6px 10px", borderRadius: 8, border: "1px solid rgba(91,141,239,0.20)", cursor: "pointer", display: "flex", alignItems: "center", gap: 4, fontSize: 11, fontWeight: 700 }}>
-                        <MdEdit size={13} /> {t("colEdit") || "Edit"}
-                      </button>
-                      {r.flats && r.flats.length > 0 && !r.roles?.includes("SOCIETY_ADMIN") && (
-                        r.roles?.includes("COMMITTEE_MEMBER") ? (
-                          <button onClick={() => removeCommittee(r.id)} className="res-btn res-btn--remove res-btn--compact">{t("colRemove") || "Remove"}</button>
-                        ) : (
-                          <button onClick={() => promoteCommittee(r.id)} className="res-btn res-btn--promote res-btn--compact">+ {t("colCommittee") || "Committee"}</button>
-                        )
-                      )}
+                    <div style={{ flexShrink: 0 }}>
                       {confirmId === r.id ? (
                         <div className="res-confirm res-confirm--mobile">
                           <button onClick={() => handleDelete(r.id)} className="res-confirm-yes">{t("billYesDelete") || "Delete"}</button>
                           <button onClick={() => setConfirmId(null)} className="res-confirm-cancel">{t("cancel")}</button>
                         </div>
                       ) : (
-                        <button onClick={() => setConfirmId(r.id)} className="res-btn-delete"><MdDelete size={14} /></button>
+                        <ResidentActionMenu
+                          t={t}
+                          onAssignFlat={() => setAssignModal({ id: r.id, name: r.name, society_id: r.society_id })}
+                          onEdit={() => handleEdit(r)}
+                          isCommittee={r.roles?.includes("SOCIETY_ADMIN") ? false : r.roles?.includes("COMMITTEE_MEMBER")}
+                          onPromote={() => promoteCommittee(r.id)}
+                          onRemove={() => removeCommittee(r.id)}
+                          onDelete={() => setConfirmId(r.id)}
+                        />
                       )}
                     </div>
                   </div>

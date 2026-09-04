@@ -112,7 +112,7 @@ export default function AdminDashboard() {
   const chartData = [
     { name: t("dashResidents") || "Residents", value: residents, color: "#5B8DEF" },
     { name: t("dashGuards") || "Guards", value: guards, color: "#10B981" },
-    { name: t("dashOpenComplaints") || "Complaints", value: openComplaints, color: "#F59E0B" },
+    { name: t("dashOpenComplaints") || "Complaints", value: openComplaints, color: "#3B82F6" },
     { name: t("dashTotalFlats") || "Total Flats", value: totalFlats, color: "#8B5CF6" },
   ];
 
@@ -229,22 +229,22 @@ export default function AdminDashboard() {
         {/* KPI 3: Open Complaints (Actionable Link) */}
         <div
           onClick={() => navigate("/admin/complaints")}
-          className="bg-card border border-glass-border rounded-2xl p-5 flex flex-col justify-between hover:border-amber-500/40 transition-all shadow-sm group cursor-pointer"
+          className="bg-card border border-glass-border rounded-2xl p-5 flex flex-col justify-between hover:border-blue-500/40 transition-all shadow-sm group cursor-pointer"
         >
           <div className="flex items-center justify-between mb-3">
             <span className="text-xs font-semibold uppercase tracking-wider text-secondary">
               {t("dashOpenComplaints") || "Open Complaints"}
             </span>
-            <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-500 border border-amber-500/20 flex items-center justify-center transition-transform group-hover:scale-110">
+            <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-500 border border-blue-500/20 flex items-center justify-center transition-transform group-hover:scale-110">
               <MdReportProblem size={20} />
             </div>
           </div>
           <div>
             <div className="flex items-baseline justify-between">
-              <div className="text-2xl md:text-3xl font-bold text-amber-500 tracking-tight">
+              <div className="text-2xl md:text-3xl font-bold text-blue-500 tracking-tight">
                 {openComplaints}
               </div>
-              <span className="text-xs text-amber-500 font-medium inline-flex items-center gap-0.5 group-hover:underline">
+              <span className="text-xs text-blue-500 font-medium inline-flex items-center gap-0.5 group-hover:underline">
                 Resolve <MdArrowForward size={14} />
               </span>
             </div>

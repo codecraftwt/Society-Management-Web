@@ -419,7 +419,7 @@ useEffect(() => {
                       r.status === "APPROVED"  ? "linear-gradient(90deg,#34d399,#059669)"
                       : r.status === "REJECTED"  ? "linear-gradient(90deg,#f87171,#dc2626)"
                       : r.status === "COMPLETED" ? "linear-gradient(90deg,#9F87D7,#5A3BA2)" // ✅ ADDED
-                      : "linear-gradient(90deg,#fbbf24,#d97706)",
+                      : "linear-gradient(90deg,#60A5FA,#2563EB)",
                   }} />
                   <div className="p-4 space-y-3">
                     <div className="flex justify-between items-start gap-2">

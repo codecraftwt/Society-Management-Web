@@ -63,7 +63,7 @@ function Pagination({ page, totalPages, onPageChange }) {
 
 const RESIDENT_TYPE_STYLES = {
   OWNER:  { bg: "rgba(16,185,129,0.12)", color: "#34d399", border: "rgba(16,185,129,0.25)", label: "Owner" },
-  TENANT: { bg: "rgba(245,158,11,0.12)", color: "#fbbf24", border: "rgba(245,158,11,0.25)", label: "Tenant" },
+  TENANT: { bg: "rgba(37,99,235,0.12)", color: "#60A5FA", border: "rgba(37,99,235,0.25)", label: "Tenant" },
 };
 
 const BHK_STYLES = {
@@ -699,10 +699,13 @@ export default function AssignFlat() {
         </div>
         <button
           onClick={() => { setShowForm(p => !p); setConfirmId(null); }}
-          className="btn-primary flex items-center gap-2 w-full sm:w-auto justify-center shrink-0"
+          className="sa-add-btn sa-add-pill w-full sm:w-auto justify-center shrink-0"
         >
-          {showForm ? <MdClose size={18} /> : <MdAdd size={18} />}
-          {showForm ? "Close" : (t("afAssignBtn") || "Assign Unit")}
+          <span className="sa-pill-blob sa-pill-blob1" />
+          <span className="sa-pill-inner">
+            {showForm ? <MdClose size={18} /> : <MdAdd size={18} />}
+            <span>{showForm ? "Close" : (t("afAssignBtn") || "Assign Unit")}</span>
+          </span>
         </button>
       </div>
 

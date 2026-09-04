@@ -69,7 +69,7 @@ export default function ChangePasswordSettings() {
 
   const STRENGTH_MAP = {
     1: { label: t("cpwStrWeak"),   cls: "weak",   color: "#ef4444" },
-    2: { label: t("cpwStrFair"),   cls: "mid",    color: "#f59e0b" },
+    2: { label: t("cpwStrFair"),   cls: "mid",    color: "#3B82F6" },
     3: { label: t("cpwStrGood"),   cls: "mid",    color: "#5B8DEF" },
     4: { label: t("cpwStrStrong"), cls: "strong", color: "#22c55e" },
   };

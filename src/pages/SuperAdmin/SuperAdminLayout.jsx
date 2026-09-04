@@ -18,6 +18,7 @@ import Sidebar from "../../components/common/Sidebar";
 import AppHeader from "../../components/common/AppHeader";
 import API from "../../services/api";
 import Select from "../../components/common/Select";
+import "./SuperAdmin.css";
 
 function SuperAdminLayoutInner() {
   const navigate = useNavigate();
@@ -250,15 +251,22 @@ function SuperAdminLayoutInner() {
             >
               Confirm Logout
             </h2>
-            <div className="flex justify-center gap-4 mt-6">
-              <button onClick={confirmLogout} className="btn-danger">
-                Yes, Logout
-              </button>
+            <div className="flex justify-center items-center gap-3 mt-6">
               <button
                 onClick={() => setShowLogoutConfirm(false)}
-                className="btn-primary"
+                className="sa-btn sa-btn-ghost"
+                style={{ borderRadius: 12, padding: "8px 16px" }}
               >
                 Cancel
+              </button>
+              <button
+                onClick={confirmLogout}
+                className="sa-add-btn sa-add-pill"
+              >
+                <span className="sa-pill-blob sa-pill-blob1" />
+                <span className="sa-pill-inner" style={{ padding: "0 18px", height: 38 }}>
+                  <MdLogout size={16} /> <span>Yes, Logout</span>
+                </span>
               </button>
             </div>
           </div>

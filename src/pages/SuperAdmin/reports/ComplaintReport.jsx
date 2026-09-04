@@ -51,7 +51,7 @@ function Pagination({ page, totalPages, onPageChange }) {
 function StatusBadge({ status, openLabel, inProgressLabel, resolvedLabel }) {
   const cfg = {
     OPEN: { label: openLabel, Icon: MdPending, color: "#f87171", bg: "rgba(248,113,113,0.12)", border: "rgba(248,113,113,0.25)" },
-    IN_PROGRESS: { label: inProgressLabel, Icon: MdSchedule, color: "#fbbf24", bg: "rgba(251,191,36,0.12)", border: "rgba(251,191,36,0.25)" },
+    IN_PROGRESS: { label: inProgressLabel, Icon: MdSchedule, color: "#60A5FA", bg: "rgba(251,191,36,0.12)", border: "rgba(251,191,36,0.25)" },
     RESOLVED: { label: resolvedLabel, Icon: MdCheckCircle, color: "#4ade80", bg: "rgba(74,222,128,0.12)", border: "rgba(74,222,128,0.25)" },
   };
   const c = cfg[status] || cfg.OPEN;
@@ -289,7 +289,7 @@ export default function SuperAdminComplaintReport() {
     allFloors: t("allFloors") || "All Floors",
     allFlats: t("allFlats") || "All Flats"
   };
-  const cfgColors = { OPEN: "#f87171", IN_PROGRESS: "#fbbf24", RESOLVED: "#4ade80" };
+  const cfgColors = { OPEN: "#f87171", IN_PROGRESS: "#60A5FA", RESOLVED: "#4ade80" };
 
   const fetchAllForExport = async () => {
     const params = new URLSearchParams({ page: 1, limit: 1000 });

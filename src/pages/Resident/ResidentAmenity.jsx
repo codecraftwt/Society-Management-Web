@@ -61,7 +61,7 @@
     return (
       <span style={{
         fontSize: 11, fontWeight: 700, display: "flex", alignItems: "center", gap: 3,
-        color: isUrgent ? "#ef4444" : "#f59e0b",
+        color: isUrgent ? "#ef4444" : "#3B82F6",
       }}>
         <MdTimer size={12} /> {m}:{s}
       </span>
@@ -106,7 +106,7 @@
   const STATUS_STYLE = {
     PAYMENT_PENDING: { dot: "#6B46C1", pill: "bg-purple-500/15 text-purple-400" },
     APPROVED:        { dot: "#22c55e", pill: "bg-green-500/15 text-green-400"   },
-    PENDING:         { dot: "#f59e0b", pill: "bg-yellow-500/15 text-yellow-400" },
+    PENDING:         { dot: "#3B82F6", pill: "bg-yellow-500/15 text-yellow-400" },
     CANCELLED:       { dot: "#ef4444", pill: "bg-red-500/15 text-red-400"       },
     REJECTED:        { dot: "#ef4444", pill: "bg-red-500/15 text-red-400"       },
   };
@@ -118,10 +118,10 @@
       <div style={{
         display: "flex", alignItems: "flex-start", gap: 7,
         padding: "8px 10px", borderRadius: 8, margin: "10px 0 0",
-        background: isTemp ? "rgba(245,158,11,0.1)" : "rgba(220,38,38,0.07)",
-        border: `1px solid ${isTemp ? "rgba(245,158,11,0.25)" : "rgba(220,38,38,0.2)"}`,
+        background: isTemp ? "rgba(37,99,235,0.1)" : "rgba(220,38,38,0.07)",
+        border: `1px solid ${isTemp ? "rgba(37,99,235,0.25)" : "rgba(220,38,38,0.2)"}`,
         fontSize: 11, lineHeight: 1.5,
-        color: isTemp ? "#92400e" : "#7f1d1d",
+        color: isTemp ? "#1E40AF" : "#7f1d1d",
       }}>
         {isTemp
           ? <MdWarning size={13} style={{ flexShrink: 0, marginTop: 1 }} />
@@ -628,7 +628,7 @@
             <div style={{ ...passCardStyle, borderTop: "2px solid #eab308" }}>
               <div style={{ letterSpacing: "0.18em", fontSize: "10px", color: "#726988", textTransform: "uppercase", marginBottom: "2px" }}>{t("amenPassResident")}</div>
               <h2 style={{ fontSize: "17px", fontWeight: "700", letterSpacing: "0.08em", margin: "0 0 6px" }}>{t("amenPassTitle")}</h2>
-              <div style={{ width: "36px", height: "2px", background: "linear-gradient(90deg,#eab308,#f59e0b)", margin: "0 auto 14px" }} />
+              <div style={{ width: "36px", height: "2px", background: "linear-gradient(90deg,#eab308,#3B82F6)", margin: "0 auto 14px" }} />
               <div style={{ width: "64px", height: "64px", borderRadius: "50%", background: "rgba(234,179,8,0.13)", border: "1px solid rgba(234,179,8,0.3)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 12px" }}>
                 <FaLock style={{ color: "#eab308", fontSize: "1.35rem" }} />
               </div>
@@ -763,7 +763,7 @@
                 <div key={a.id} className="ra-card" style={{
                   animationDelay: `${idx * 60}ms`,
                   opacity: isDisabled ? 0.72 : 1,
-                  ...(isDisabled && isTemp  ? { borderTop: "2px solid #d97706" } : {}),
+                  ...(isDisabled && isTemp  ? { borderTop: "2px solid #2563EB" } : {}),
                   ...(isDisabled && !isTemp ? { borderTop: "2px solid #991b1b" } : {}),
                 }}>
                   <div className="ra-card-accent" />
@@ -771,9 +771,9 @@
                     <div style={{
                       position: "absolute", top: 10, right: 10,
                       padding: "2px 8px", borderRadius: 999, fontSize: 10, fontWeight: 600,
-                      background: isTemp ? "rgba(245,158,11,0.12)" : "rgba(220,38,38,0.1)",
-                      color:      isTemp ? "#92400e"               : "#7f1d1d",
-                      border: `1px solid ${isTemp ? "rgba(245,158,11,0.28)" : "rgba(220,38,38,0.22)"}`,
+                      background: isTemp ? "rgba(37,99,235,0.12)" : "rgba(220,38,38,0.1)",
+                      color:      isTemp ? "#1E40AF"               : "#7f1d1d",
+                      border: `1px solid ${isTemp ? "rgba(37,99,235,0.28)" : "rgba(220,38,38,0.22)"}`,
                     }}>
                       {isTemp ? "Temp. closed" : "Closed"}
                     </div>
@@ -894,7 +894,7 @@
                                   : s === "APPROVED"
                                   ? { background: "rgba(34,197,94,0.15)", color: "#4ade80", borderColor: "rgba(34,197,94,0.35)" }
                                   : s === "PENDING"
-                                  ? { background: "rgba(234,179,8,0.15)", color: "#fbbf24", borderColor: "rgba(234,179,8,0.35)" }
+                                  ? { background: "rgba(234,179,8,0.15)", color: "#60A5FA", borderColor: "rgba(234,179,8,0.35)" }
                                   : { background: "rgba(239,68,68,0.15)", color: "#f87171", borderColor: "rgba(239,68,68,0.35)" }
                                 : { background: "var(--bg-soft,rgba(0,0,0,0.04))", color: "var(--text-secondary)", borderColor: "var(--border-color)" }
                               }>
@@ -1114,12 +1114,12 @@
               {paymentStatus === "dismissed" && (
                 <div style={{
                   display: "flex", alignItems: "flex-start", gap: 8, padding: "10px 14px",
-                  borderRadius: 10, background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.25)",
+                  borderRadius: 10, background: "rgba(37,99,235,0.08)", border: "1px solid rgba(37,99,235,0.25)",
                   marginBottom: 14,
                 }} className="animate-fadeIn">
-                  <MdPayment size={15} style={{ color: "#d97706", flexShrink: 0, marginTop: 1 }} />
+                  <MdPayment size={15} style={{ color: "#2563EB", flexShrink: 0, marginTop: 1 }} />
                   <div>
-                    <div style={{ fontSize: 12, fontWeight: 700, color: "#d97706" }}>Payment not completed</div>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: "#2563EB" }}>Payment not completed</div>
                     <div style={{ fontSize: 11, color: "var(--text-secondary)", marginTop: 2 }}>
                       Your slot is temporarily reserved. Use the Repay button in My Bookings before the timer runs out.
                     </div>
@@ -1327,12 +1327,12 @@
               {paymentStatus === "dismissed" && (
                 <div style={{
                   display: "flex", alignItems: "flex-start", gap: 8, padding: "10px 14px",
-                  borderRadius: 10, background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.25)",
+                  borderRadius: 10, background: "rgba(37,99,235,0.08)", border: "1px solid rgba(37,99,235,0.25)",
                   marginBottom: 14,
                 }} className="animate-fadeIn">
-                  <MdPayment size={15} style={{ color: "#d97706", flexShrink: 0, marginTop: 1 }} />
+                  <MdPayment size={15} style={{ color: "#2563EB", flexShrink: 0, marginTop: 1 }} />
                   <div>
-                    <div style={{ fontSize: 12, fontWeight: 700, color: "#d97706" }}>Payment not completed</div>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: "#2563EB" }}>Payment not completed</div>
                     <div style={{ fontSize: 11, color: "var(--text-secondary)", marginTop: 2 }}>
                       Your slot is temporarily reserved. Use the Repay button in My Bookings before the timer runs out.
                     </div>

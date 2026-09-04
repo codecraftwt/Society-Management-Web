@@ -1,0 +1,192 @@
+/* ==========================================================================
+   ADMIN SECTION - MODALS, BUTTONS & THEME STYLES
+   Scoped for all Society Admin pages (Resident, Property, Parking, Complaints, etc.)
+   ========================================================================== */
+
+/* ── Modal Pop-In Animation (Admin Scoped) ── */
+@keyframes adminModalPopIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.92) translateY(16px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Modal Dialog Pop-In for Admin Section */
+div[style*="position: fixed"] > div[style*="max-width"],
+div[style*="position: fixed"] > div[style*="maxWidth"],
+.admin-modal,
+.modal-container,
+.bg-card.rounded-2xl.max-w-md,
+.bg-card.rounded-2xl.max-w-lg,
+.bg-card.rounded-2xl.max-w-xl {
+  animation: adminModalPopIn 0.26s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+}
+
+/* ── Universal Primary Button: Matches /superadmin/societies ── */
+.btn-primary,
+.sa-btn-primary,
+.sa-add-btn,
+button.btn-primary {
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
+  color: #ffffff !important;
+  box-shadow: 0 8px 22px rgba(37, 99, 235, 0.35) !important;
+  border: 0 !important;
+  border-radius: 12px !important;
+  font-weight: 700 !important;
+  transition: all 0.2s ease !important;
+}
+
+.btn-primary:hover:not(:disabled),
+.sa-btn-primary:hover:not(:disabled),
+.sa-add-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%) !important;
+  box-shadow: 0 12px 28px rgba(37, 99, 235, 0.5) !important;
+  transform: translateY(-1px) !important;
+}
+
+/* ── Ghost / Muted Buttons ── */
+.btn-muted,
+.sa-btn-ghost {
+  border-radius: 12px !important;
+  font-weight: 600 !important;
+  transition: all 0.2s ease !important;
+}
+
+html:not(.light) .btn-muted,
+html:not(.light) .sa-btn-ghost {
+  background: rgba(255, 255, 255, 0.06) !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  color: #cbd5e1 !important;
+}
+
+html:not(.light) .btn-muted:hover:not(:disabled),
+html:not(.light) .sa-btn-ghost:hover:not(:disabled) {
+  border-color: rgba(56, 189, 248, 0.5) !important;
+  color: #38bdf8 !important;
+  background: rgba(56, 189, 248, 0.12) !important;
+}
+
+html.light .btn-muted,
+html.light .sa-btn-ghost {
+  background: #f1f5f9 !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #0f172a !important;
+}
+
+html.light .btn-muted:hover:not(:disabled),
+html.light .sa-btn-ghost:hover:not(:disabled) {
+  border-color: #2563eb !important;
+  color: #2563eb !important;
+  background: rgba(37, 99, 235, 0.08) !important;
+}
+
+/* ── Light Mode Modal Background & Card Tokens (Matches Home Theme) ── */
+html.light {
+  --modal-card-bg: #f8fafc;
+  --modal-card-border: #cbd5e1;
+  --modal-icon-bg: #e2e8f0;
+}
+
+html:not(.light) {
+  --modal-card-bg: rgba(255, 255, 255, 0.04);
+  --modal-card-border: rgba(255, 255, 255, 0.1);
+  --modal-icon-bg: rgba(255, 255, 255, 0.06);
+}
+
+html.light div[style*="position: fixed"] > div[style*="max-width"],
+html.light div[style*="position: fixed"] > div[style*="maxWidth"] {
+  background: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #0f172a !important;
+  box-shadow: 0 24px 70px rgba(15, 23, 42, 0.16), 0 0 25px rgba(37, 99, 235, 0.08) !important;
+}
+
+html:not(.light) div[style*="position: fixed"] > div[style*="max-width"],
+html:not(.light) div[style*="position: fixed"] > div[style*="maxWidth"] {
+  background: linear-gradient(160deg, rgba(15, 23, 42, 0.98), rgba(11, 19, 41, 0.98)) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  color: #f8fafc !important;
+  box-shadow: 0 25px 80px rgba(0, 0, 0, 0.6), 0 0 25px rgba(37, 99, 235, 0.15) !important;
+}
+
+/* ── Realism Blue Pill Treatment (matches /superadmin/societies Add Society) ── */
+.sa-add-btn.sa-add-pill {
+  position: relative;
+  border-radius: 16px;
+  padding: 2px;
+  background: radial-gradient(circle 80px at 80% -10%, #bfdbfe, #0f172a);
+  box-shadow: none;
+  display: inline-flex;
+  overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.sa-add-btn.sa-add-pill:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(37, 99, 235, 0.5);
+  background: radial-gradient(circle 80px at 80% -10%, #93c5fd, #0f172a);
+}
+.sa-add-btn.sa-add-pill .sa-pill-inner {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 20px;
+  border-radius: 14px;
+  color: #ffffff;
+  font-size: 0.82rem;
+  font-weight: 700;
+  background: radial-gradient(circle 80px at 80% -50%, #2563eb, #0f2b6b);
+  box-shadow: inset 0 0 0 1px rgba(147, 197, 253, 0.35);
+  position: relative;
+  z-index: 2;
+  white-space: nowrap;
+}
+.sa-add-btn.sa-add-pill .sa-pill-inner::before {
+  content: "";
+  width: 100%;
+  height: 100%;
+  left: 0;
+  top: 0;
+  border-radius: 14px;
+  background: radial-gradient(circle 60px at 0% 100%, rgba(0, 225, 255, 0.16), rgba(0, 80, 255, 0.08), transparent);
+  position: absolute;
+  pointer-events: none;
+}
+.sa-add-btn.sa-add-pill .sa-pill-inner > * {
+  position: relative;
+  z-index: 1;
+}
+.sa-add-btn.sa-add-pill .sa-pill-blob1 {
+  position: absolute;
+  width: 70px;
+  height: 100%;
+  border-radius: 16px;
+  bottom: 0;
+  left: 0;
+  background: radial-gradient(circle 60px at 0% 100%, #38bdf8, #1d4ed8aa, transparent);
+  box-shadow: -10px 10px 30px rgba(0, 81, 255, 0.18);
+  pointer-events: none;
+  z-index: 1;
+}
+.sa-add-btn.sa-add-pill::after {
+  content: "";
+  position: absolute;
+  width: 65%;
+  height: 60%;
+  border-radius: 120px;
+  top: 0;
+  right: 0;
+  box-shadow: 0 0 20px rgba(96, 165, 250, 0.35);
+  z-index: -1;
+  pointer-events: none;
+}
+html.light .sa-add-btn.sa-add-pill {
+  background: radial-gradient(circle 80px at 80% -10%, #bfdbfe, #e2e8f0);
+}
+html.light .sa-add-btn.sa-add-pill .sa-pill-inner {
+  color: #ffffff;
+  background: radial-gradient(circle 80px at 80% -50%, #2563eb, #1e3a8a);
+}

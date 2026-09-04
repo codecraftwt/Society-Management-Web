@@ -142,8 +142,8 @@ function StatusPill({ status, t }) {
 }
 
 const getDot = (s) => ({
-  RESOLVED: "#22c55e", IN_PROGRESS: "#9F87D7", PENDING: "#f59e0b", OPEN: "#f59e0b",
-}[s] || "#f59e0b");
+  RESOLVED: "#22c55e", IN_PROGRESS: "#9F87D7", PENDING: "#3B82F6", OPEN: "#3B82F6",
+}[s] || "#3B82F6");
 
 /* Drawer actions — uses existing updateStatus handler */
 function ActionButtons({ c, updateStatus, updatingId, t }) {
@@ -1163,8 +1163,8 @@ export default function Complaint() {
   ];
 
   const STATS = [
-    { key: "total",      label: t("compStatTotal"),      note: t("compStatSubTotal"),    val: counts.ALL,         color: "#F0845D" },
-    { key: "pending",    label: t("compStatusPending"),  note: t("compStatSubPending"),  val: counts.PENDING,     color: "#f59e0b" },
+    { key: "total",      label: t("compStatTotal"),      note: t("compStatSubTotal"),    val: counts.ALL,         color: "#2563EB" },
+    { key: "pending",    label: t("compStatusPending"),  note: t("compStatSubPending"),  val: counts.PENDING,     color: "#3B82F6" },
     { key: "inprogress", label: t("compTabInProgress"),  note: t("compStatSubProgress"), val: counts.IN_PROGRESS, color: "#9F87D7" },
     { key: "resolved",   label: t("compStatusResolved"), note: t("compStatSubResolved"), val: counts.RESOLVED,    color: "#22c55e" },
   ];
@@ -1232,23 +1232,6 @@ export default function Complaint() {
         </div>
       </div>
 
-      {/* ── 2. SUMMARY STATISTICS ──────────────────────────────────── */}
-      {loading && counts.ALL === 0 ? (
-        <SkeletonStats />
-      ) : (
-        !loadError && (
-          <div className={styles.stats}>
-            {STATS.map(s => (
-              <div key={s.key} className={styles.stat}>
-                <span className={styles.statAccent} style={{ background: s.color }} />
-                <span className={styles.statLabel}>{s.label}</span>
-                <span className={styles.statValue}>{s.val}</span>
-                <span className={styles.statNote}>{s.note}</span>
-              </div>
-            ))}
-          </div>
-        )
-      )}
 
       {/* ── 3–6. MAIN SURFACE ──────────────────────────────────────── */}
       <div className={styles.surface}>

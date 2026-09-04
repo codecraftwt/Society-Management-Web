@@ -498,7 +498,7 @@ export default function ManageBillsAccountant() {
           <div className="flex flex-col gap-3 p-4">
             {bills.map((b, i) => (
               <div key={b.id} className="bill-card animate-fadeIn" style={{ animationDelay: `${i * 30}ms` }}>
-                <div style={{ height: 3, background: b.status === "PAID" ? "linear-gradient(90deg,#34d399,#059669)" : "linear-gradient(90deg,#fbbf24,#d97706)" }} />
+                <div style={{ height: 3, background: b.status === "PAID" ? "linear-gradient(90deg,#34d399,#059669)" : "linear-gradient(90deg,#60A5FA,#2563EB)" }} />
                 <div className="bill-card__body">
                   <div className="flex items-start justify-between gap-2">
                     <div>
@@ -549,7 +549,7 @@ export default function ManageBillsAccountant() {
                   <td><span className="text-xs font-semibold text-secondary">{(page - 1) * LIMIT + i + 1}</span></td>
                   <td>
                     <div className="flex items-center gap-3">
-                      <div style={{ width: 3, height: 32, borderRadius: 99, flexShrink: 0, background: b.status === "PAID" ? "linear-gradient(180deg,#34d399,#059669)" : "linear-gradient(180deg,#fbbf24,#d97706)" }} />
+                      <div style={{ width: 3, height: 32, borderRadius: 99, flexShrink: 0, background: b.status === "PAID" ? "linear-gradient(180deg,#34d399,#059669)" : "linear-gradient(180deg,#60A5FA,#2563EB)" }} />
                       <span className="font-semibold text-sm" style={{ color: "var(--text-primary)" }}>{b.title}</span>
                     </div>
                   </td>

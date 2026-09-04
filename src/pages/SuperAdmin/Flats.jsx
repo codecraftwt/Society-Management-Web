@@ -122,9 +122,9 @@ export default function Flats() {
   };
 
   const TABS = [
-    { key: "ALL", label: "All", color: "#d87653" },
+    { key: "ALL", label: "All", color: "#1E40AF" },
     { key: "OCCUPIED", label: "Occupied", color: "#2FC27E" },
-    { key: "VACANT", label: "Vacant", color: "#DD6B20" },
+    { key: "VACANT", label: "Vacant", color: "#2563EB" },
   ];
 
   return (
@@ -233,10 +233,13 @@ export default function Flats() {
             </button>
             <button
               onClick={() => setShowAddModal(true)}
-              className="sa-btn sa-btn-primary"
-              style={{ height: 40 }}
+              className="sa-add-btn sa-add-pill"
+              style={{ height: "auto" }}
             >
-              <MdAdd size={17} /> Add Flat
+              <span className="sa-pill-blob sa-pill-blob1" />
+              <span className="sa-pill-inner">
+                <MdAdd size={17} /> <span>Add Flat</span>
+              </span>
             </button>
           </div>
         </div>
@@ -390,7 +393,7 @@ export default function Flats() {
                       boxShadow: "var(--shadow-sm)",
                     }}>
                       {/* coloured top bar */}
-                      <div style={{ height: 3, background: occupied ? "#22c55e" : "#f59e0b" }} />
+                      <div style={{ height: 3, background: occupied ? "#22c55e" : "#3B82F6" }} />
                       <div style={{ padding: "13px 14px", display: "flex", flexDirection: "column", gap: 10 }}>
 
                         {/* row 1: flat number + status */}

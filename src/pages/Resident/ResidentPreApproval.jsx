@@ -36,7 +36,7 @@ const PURPOSE_ICONS = {
 
 const PURPOSE_COLORS = {
   GUEST:       { bg: "rgba(91,141,239,0.12)",  border: "rgba(91,141,239,0.25)",  text: "#5B8DEF" },
-  DELIVERY:    { bg: "rgba(245,158,11,0.12)",  border: "rgba(245,158,11,0.28)",  text: "#f59e0b" },
+  DELIVERY:    { bg: "rgba(37,99,235,0.12)",  border: "rgba(37,99,235,0.28)",  text: "#3B82F6" },
   CAB:         { bg: "rgba(107,70,193,0.12)",  border: "rgba(107,70,193,0.28)",  text: "#6B46C1" },
   SERVICE:     { bg: "rgba(34,197,94,0.12)",   border: "rgba(34,197,94,0.28)",   text: "#22c55e" },
   MAINTENANCE: { bg: "rgba(239,68,68,0.10)",   border: "rgba(239,68,68,0.25)",   text: "#ef4444" },
@@ -274,9 +274,9 @@ export default function ResidentPreApproval() {
 
       {/* ── OWNER RENTED WARNING ── */}
       {flatAssigned && !hasEligibleFlat && isOwner && (
-        <div className="flex items-start gap-3 bg-amber-500/10 border border-amber-500/25 rounded-xl p-4 animate-scaleIn">
-          <MdWarning size={18} className="text-amber-400 shrink-0 mt-0.5" />
-          <p className="text-sm text-amber-400/90 leading-relaxed">Owners cannot pre-approve visitors for rented units.</p>
+        <div className="flex items-start gap-3 bg-blue-500/10 border border-blue-500/25 rounded-xl p-4 animate-scaleIn">
+          <MdWarning size={18} className="text-blue-400 shrink-0 mt-0.5" />
+          <p className="text-sm text-blue-400/90 leading-relaxed">Owners cannot pre-approve visitors for rented units.</p>
         </div>
       )}
 

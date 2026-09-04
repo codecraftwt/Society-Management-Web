@@ -119,8 +119,8 @@ const formatDate = (d) =>
   d ? new Date(d).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : "—";
 
 const getDot = (s) => ({
-  RESOLVED: "#22c55e", IN_PROGRESS: "#9F87D7", PENDING: "#f59e0b", OPEN: "#f59e0b",
-}[s] || "#f59e0b");
+  RESOLVED: "#22c55e", IN_PROGRESS: "#9F87D7", PENDING: "#3B82F6", OPEN: "#3B82F6",
+}[s] || "#3B82F6");
 
 // ─── ChatPanel ────────────────────────────────────────────────────────────────
 function ChatPanel({ complaintId, currentUser, onIncomingMessage }) {

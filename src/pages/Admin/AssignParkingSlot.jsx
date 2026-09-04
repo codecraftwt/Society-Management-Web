@@ -79,7 +79,7 @@ function StatusBadge({ status, t }) {
 /* ── Request Status Badge ── */
 function ReqBadge({ status }) {
   const cfg = {
-    PENDING: { label: "Pending", color: "#fbbf24", bg: "rgba(251,191,36,0.12)", border: "rgba(251,191,36,0.28)" },
+    PENDING: { label: "Pending", color: "#60A5FA", bg: "rgba(251,191,36,0.12)", border: "rgba(251,191,36,0.28)" },
     APPROVED: { label: "Approved", color: "#4ade80", bg: "rgba(74,222,128,0.12)", border: "rgba(74,222,128,0.28)" },
     REJECTED: { label: "Rejected", color: "#f87171", bg: "rgba(248,113,113,0.12)", border: "rgba(248,113,113,0.28)" },
   }[status] || { label: status, color: "#A39EB2", bg: "rgba(163,158,178,0.10)", border: "rgba(163,158,178,0.22)" };
@@ -324,7 +324,7 @@ function ResidentEntryPanel({ slots, onCreated, t }) {
                       style={{
                         background: isExpanded ? "rgba(251,191,36,0.15)" : "rgba(255,255,255,0.05)",
                         border: "1px solid var(--glass-border)",
-                        color: isExpanded ? "#fbbf24" : "var(--text-secondary)",
+                        color: isExpanded ? "#60A5FA" : "var(--text-secondary)",
                         fontWeight: 700, fontSize: 16, cursor: "pointer",
                       }}>
                       {isExpanded ? "−" : "+"}
@@ -503,7 +503,7 @@ function ResidentRequestsPanel({ allSlots, onSlotAssigned }) {
   };
 
   const TABS = [
-    { key: "PENDING", label: "Pending", color: "#fbbf24" },
+    { key: "PENDING", label: "Pending", color: "#60A5FA" },
     { key: "APPROVED", label: "Approved", color: "#4ade80" },
     { key: "REJECTED", label: "Rejected", color: "#f87171" },
     { key: "ALL", label: "All", color: "#A39EB2" },
@@ -607,7 +607,7 @@ function ResidentRequestsPanel({ allSlots, onSlotAssigned }) {
                         <p className="font-bold text-sm" style={{ fontFamily: "monospace", letterSpacing: "0.05em", margin: 0 }}>
                           {req.vehicle_number}
                         </p>
-                        <span style={{ fontSize: 10, fontWeight: 800, padding: "2px 7px", borderRadius: 999, background: "rgba(251,191,36,0.12)", color: "#fbbf24", border: "1px solid rgba(251,191,36,0.22)" }}>
+                        <span style={{ fontSize: 10, fontWeight: 800, padding: "2px 7px", borderRadius: 999, background: "rgba(251,191,36,0.12)", color: "#60A5FA", border: "1px solid rgba(251,191,36,0.22)" }}>
                           EXTRA
                         </span>
                       </div>
@@ -953,9 +953,12 @@ export default function AssignParkingSlot() {
           </div>
         </div>
         {mainTab === "slots" && (
-          <button onClick={() => { setShowForm(p => !p); setConfirmDel(null); }} className="btn-primary shrink-0 flex items-center gap-2">
-            {showForm ? <MdClose size={17} /> : <MdAdd size={17} />}
-            {showForm ? (t("parkCloseBtn") || "Close") : (t("parkCreateBtn") || "Create Slots")}
+          <button onClick={() => { setShowForm(p => !p); setConfirmDel(null); }} className="sa-add-btn sa-add-pill shrink-0">
+            <span className="sa-pill-blob sa-pill-blob1" />
+            <span className="sa-pill-inner">
+              {showForm ? <MdClose size={17} /> : <MdAdd size={17} />}
+              <span>{showForm ? (t("parkCloseBtn") || "Close") : (t("parkCreateBtn") || "Create Slots")}</span>
+            </span>
           </button>
         )}
       </div>
@@ -968,7 +971,7 @@ export default function AssignParkingSlot() {
             className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all relative"
             style={mainTab === tab.key
               ? tab.key === "resident-entry"
-                ? { background: "linear-gradient(135deg,#92400e,#d97706)", color: "#fff", boxShadow: "0 3px 12px rgba(217,119,6,0.30)", border: "none" }
+                ? { background: "linear-gradient(135deg,#1E40AF,#2563EB)", color: "#fff", boxShadow: "0 3px 12px rgba(217,119,6,0.30)", border: "none" }
                 : tab.key === "resident-requests"
                   ? { background: "linear-gradient(135deg,#493083,#6B46C1)", color: "#fff", boxShadow: "0 3px 12px rgba(107,70,193,0.30)", border: "none" }
                   : { background: "rgba(91,141,239,0.15)", color: "#94B5F5", border: "1px solid rgba(91,141,239,0.35)" }
@@ -1049,7 +1052,7 @@ export default function AssignParkingSlot() {
                   { label: "Free", val: ownerSummary.free, color: "text-green-400", bg: "bg-green-500/10 border-green-500/20" },
                   { label: "Assigned", val: ownerSummary.assigned, color: "text-blue-400", bg: "bg-blue-500/10 border-blue-500/20" },
                   { label: "Flat + Resident", val: ownerSummary.withFlat, color: "text-purple-400", bg: "bg-purple-500/10 border-purple-500/20" },
-                  { label: "Vehicle Linked", val: ownerSummary.withVehicle, color: "text-amber-400", bg: "bg-amber-500/10 border-amber-500/20" },
+                  { label: "Vehicle Linked", val: ownerSummary.withVehicle, color: "text-blue-400", bg: "bg-blue-500/10 border-blue-500/20" },
                 ].map(s => (
                   <div key={s.label} className={`rounded-xl border p-3 animate-scaleIn flex flex-col justify-between min-h-16 ${s.bg}`}>
                     <p className={`text-xl font-bold leading-none ${s.color}`}>{s.val}</p>
@@ -1092,7 +1095,7 @@ export default function AssignParkingSlot() {
                             <p className="font-semibold text-sm">{s.slot_number}</p>
                             {s.parking_type === "EXTRA" && (
                               <span className="text-[9px] font-black px-1.5 py-0.5 rounded"
-                                style={{ background: "rgba(251,191,36,0.15)", color: "#fbbf24", border: "1px solid rgba(251,191,36,0.3)" }}>EXTRA</span>
+                                style={{ background: "rgba(251,191,36,0.15)", color: "#60A5FA", border: "1px solid rgba(251,191,36,0.3)" }}>EXTRA</span>
                             )}
                           </div>
                           <p className="text-xs text-secondary">{s.parking_floor || "—"} · {s.vehicle_type === "CAR" ? "Car" : "Bike"}</p>
@@ -1153,7 +1156,7 @@ export default function AssignParkingSlot() {
                         <td className="px-5 py-3">
                           <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold"
                             style={s.parking_type === "EXTRA"
-                              ? { background: "rgba(251,191,36,0.12)", color: "#fbbf24", border: "1px solid rgba(251,191,36,0.28)" }
+                              ? { background: "rgba(251,191,36,0.12)", color: "#60A5FA", border: "1px solid rgba(251,191,36,0.28)" }
                               : { background: "rgba(91,141,239,0.12)", color: "#94B5F5", border: "1px solid rgba(91,141,239,0.28)" }}>
                             {s.parking_type === "EXTRA" ? "EXTRA" : "DEFAULT"}
                           </span>

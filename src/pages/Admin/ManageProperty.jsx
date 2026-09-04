@@ -229,8 +229,12 @@ function BlocksTab({ isMobile, t }) {
             <span className="complaint-stat-label">{t("mpTotalBlocks") || "Total Blocks"}</span>
           </div>
         </div>
-        <button onClick={() => setShowForm(p => !p)} className="btn-primary">
-          <MdAdd size={17} /> {showForm ? t("mpCloseForm") || "Close Form" : t("mpNewBlock") || "New Phase/Block"}
+        <button onClick={() => setShowForm(p => !p)} className="sa-add-btn sa-add-pill">
+          <span className="sa-pill-blob sa-pill-blob1" />
+          <span className="sa-pill-inner">
+            {showForm ? <MdClose size={17} /> : <MdAdd size={17} />}
+            <span>{showForm ? t("mpCloseForm") || "Close Form" : t("mpNewBlock") || "New Phase/Block"}</span>
+          </span>
         </button>
       </div>
 
@@ -676,7 +680,7 @@ function FlatsTab({ isMobile, t }) {
   const FILTER_TABS = [
     { key: "ALL",      label: t("mpAll") || "All",           color: "#5A3BA2" },
     { key: "OCCUPIED", label: t("mpOccupied") || "Occupied", color: "#16a34a" },
-    { key: "VACANT",   label: t("mpVacant") || "Vacant",     color: "#d97706" },
+    { key: "VACANT",   label: t("mpVacant") || "Vacant",     color: "#2563EB" },
   ];
 
   return (
@@ -743,7 +747,7 @@ function FlatsTab({ isMobile, t }) {
               const blockName = f.Block?.name || (f.Floor ? f.Floor.Block?.name : "—");
               return (
                 <div key={f.id} className="inner-card animate-fadeIn" style={{ animationDelay: `${idx * 25}ms`, borderRadius: 13, overflow: "hidden" }}>
-                  <div style={{ height: 3, background: occ ? "#22c55e" : "#f59e0b" }} />
+                  <div style={{ height: 3, background: occ ? "#22c55e" : "#3B82F6" }} />
                   <div style={{ padding: "11px 13px", display: "flex", alignItems: "center", gap: 11 }}>
                     <div style={{ width: 36, height: 36, borderRadius: 10, flexShrink: 0, background: occ ? "var(--stat-green-bg)" : "var(--stat-amber-bg)", border: `1px solid ${occ ? "var(--stat-green-border)" : "var(--stat-amber-border)"}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
                       {isRowHouse
@@ -929,8 +933,12 @@ function AssignTab({ isMobile, t }) {
         <p style={{ margin: 0, fontSize: 13, color: "var(--text-secondary)" }}>
           {initLoad ? "—" : totalAll} Units {t("mpCurrentlyAssigned") || "currently assigned"}
         </p>
-        <button onClick={() => setShowForm(p => !p)} className="btn-primary">
-          <MdAdd size={17} /> {showForm ? (t("mpCloseForm") || "Close") : "Assign Unit"}
+        <button onClick={() => setShowForm(p => !p)} className="sa-add-btn sa-add-pill">
+          <span className="sa-pill-blob sa-pill-blob1" />
+          <span className="sa-pill-inner">
+            {showForm ? <MdClose size={17} /> : <MdAdd size={17} />}
+            <span>{showForm ? (t("mpCloseForm") || "Close") : "Assign Unit"}</span>
+          </span>
         </button>
       </div>
 

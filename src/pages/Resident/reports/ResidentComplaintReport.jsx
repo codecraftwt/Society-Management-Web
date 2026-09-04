@@ -36,7 +36,7 @@ function Spinner() {
 /* ── Status badge — receives t() from parent ── */
 function StatusBadge({ status, t }) {
   const cfg = {
-    OPEN:        { label: t("compStatusPending"),    Icon: MdSchedule,    color: "#fbbf24", bg: "rgba(251,191,36,0.12)",  border: "rgba(251,191,36,0.25)"  },
+    OPEN:        { label: t("compStatusPending"),    Icon: MdSchedule,    color: "#60A5FA", bg: "rgba(251,191,36,0.12)",  border: "rgba(251,191,36,0.25)"  },
     IN_PROGRESS: { label: t("compStatusInProgress"), Icon: MdSchedule,    color: "#94B5F5", bg: "rgba(148,181,245,0.12)",  border: "rgba(148,181,245,0.25)"  },
     RESOLVED:    { label: t("compStatusResolved"),   Icon: MdCheckCircle, color: "#4ade80", bg: "rgba(74,222,128,0.12)",  border: "rgba(74,222,128,0.25)"  },
   };
@@ -187,8 +187,8 @@ export default function ResidentComplaintReport() {
             <div style={{
               width: 44, height: 44, borderRadius: 13, flexShrink: 0,
               display: "flex", alignItems: "center", justifyContent: "center",
-              background: "linear-gradient(135deg,rgba(251,191,36,0.15),rgba(245,158,11,0.10))",
-              border: "1.5px solid rgba(251,191,36,0.25)", color: "#fbbf24",
+              background: "linear-gradient(135deg,rgba(251,191,36,0.15),rgba(37,99,235,0.10))",
+              border: "1.5px solid rgba(251,191,36,0.25)", color: "#60A5FA",
             }}>
               <MdReportProblem size={21} />
             </div>
@@ -276,10 +276,10 @@ export default function ResidentComplaintReport() {
         ) : isMobile ? (
           <div style={{ padding: "10px 12px", display: "flex", flexDirection: "column", gap: 10 }}>
             {filtered.map((c, i) => {
-              const statusColors = { OPEN: "#fbbf24", IN_PROGRESS: "#94B5F5", RESOLVED: "#4ade80" };
+              const statusColors = { OPEN: "#60A5FA", IN_PROGRESS: "#94B5F5", RESOLVED: "#4ade80" };
               return (
                 <div key={c.id} className="animate-fadeIn" style={{ animationDelay: `${i * 30}ms`, background: "var(--chip-bg, rgba(255,255,255,0.04))", border: "1px solid var(--glass-border)", borderRadius: 12, overflow: "hidden", boxSizing: "border-box" }}>
-                  <div style={{ height: 3, background: statusColors[c.status] || "#fbbf24" }} />
+                  <div style={{ height: 3, background: statusColors[c.status] || "#60A5FA" }} />
                   <div style={{ padding: "11px 13px" }}>
                     <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8, marginBottom: 7 }}>
                       <p style={{ fontSize: 13, fontWeight: 700, color: "var(--text-primary)", flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", margin: 0 }}>

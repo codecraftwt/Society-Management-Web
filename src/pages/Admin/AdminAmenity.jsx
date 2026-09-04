@@ -37,7 +37,7 @@ const PALETTES = [
   { iconBg: "rgba(107,70,193,0.15)", iconBorder: "rgba(107,70,193,0.28)", strip: "#9F87D7", stripEnd: "#493083", glow: "rgba(107,70,193,0.20)" },
   { iconBg: "rgba(91,141,239,0.15)", iconBorder: "rgba(91,141,239,0.28)", strip: "#94B5F5", stripEnd: "#3E60A3", glow: "rgba(91,141,239,0.20)" },
   { iconBg: "rgba(16,185,129,0.15)", iconBorder: "rgba(16,185,129,0.28)", strip: "#34d399", stripEnd: "#059669", glow: "rgba(16,185,129,0.20)" },
-  { iconBg: "rgba(245,158,11,0.15)", iconBorder: "rgba(245,158,11,0.28)", strip: "#fbbf24", stripEnd: "#d97706", glow: "rgba(245,158,11,0.20)" },
+  { iconBg: "rgba(37,99,235,0.15)", iconBorder: "rgba(37,99,235,0.28)", strip: "#60A5FA", stripEnd: "#2563EB", glow: "rgba(37,99,235,0.20)" },
   { iconBg: "rgba(244,63,94,0.15)", iconBorder: "rgba(244,63,94,0.28)", strip: "#fb7185", stripEnd: "#be123c", glow: "rgba(244,63,94,0.20)" },
   { iconBg: "rgba(91,141,239,0.15)", iconBorder: "rgba(91,141,239,0.28)", strip: "#94B5F5", stripEnd: "#3E60A3", glow: "rgba(91,141,239,0.20)" },
 ];
@@ -118,7 +118,7 @@ function DisableModal({ amenity, onClose, onConfirm, isMobile }) {
             <Label>Closure type</Label>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
               {[
-                { key: "TEMPORARY", icon: "🕐", label: "Temporary", sub: "Set a reopen date — auto-enables when reached", borderColor: "#d97706", bg: "rgba(245,158,11,0.08)" },
+                { key: "TEMPORARY", icon: "🕐", label: "Temporary", sub: "Set a reopen date — auto-enables when reached", borderColor: "#2563EB", bg: "rgba(37,99,235,0.08)" },
                 { key: "PERMANENT", icon: "⛔", label: "Permanent", sub: "Closed until manually re-enabled by admin", borderColor: "#dc2626", bg: "rgba(220,38,38,0.07)" },
               ].map(({ key, icon, label, sub, borderColor, bg }) => (
                 <div key={key} onClick={() => setDisableType(key)} style={{ padding: "12px 14px", borderRadius: 10, cursor: "pointer", border: disableType === key ? `1.5px solid ${borderColor}` : "1.5px solid var(--glass-border)", background: disableType === key ? bg : "var(--card-inner-bg)", transition: "all 0.15s" }}>
@@ -171,7 +171,7 @@ function DisableModal({ amenity, onClose, onConfirm, isMobile }) {
 
         <div style={{ padding: "14px 20px", borderTop: "1px solid var(--glass-border)", display: "flex", gap: 8 }}>
           <button onClick={onClose} disabled={submitting} style={{ padding: "9px 18px", borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: "pointer", border: "1px solid var(--glass-border)", background: "var(--card-inner-bg)", color: "var(--text-primary)", flexShrink: 0 }}>Cancel</button>
-          <button onClick={handleConfirm} disabled={!isValid || submitting} style={{ flex: 1, padding: "9px 0", borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: isValid && !submitting ? "pointer" : "not-allowed", border: disableType === "PERMANENT" ? "1.5px solid rgba(220,38,38,0.4)" : "1.5px solid rgba(245,158,11,0.4)", background: disableType === "PERMANENT" ? "rgba(220,38,38,0.1)" : "rgba(245,158,11,0.1)", color: disableType === "PERMANENT" ? "#dc2626" : "#d97706", opacity: isValid && !submitting ? 1 : 0.5, display: "flex", alignItems: "center", justifyContent: "center", gap: 7 }}>
+          <button onClick={handleConfirm} disabled={!isValid || submitting} style={{ flex: 1, padding: "9px 0", borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: isValid && !submitting ? "pointer" : "not-allowed", border: disableType === "PERMANENT" ? "1.5px solid rgba(220,38,38,0.4)" : "1.5px solid rgba(37,99,235,0.4)", background: disableType === "PERMANENT" ? "rgba(220,38,38,0.1)" : "rgba(37,99,235,0.1)", color: disableType === "PERMANENT" ? "#dc2626" : "#2563EB", opacity: isValid && !submitting ? 1 : 0.5, display: "flex", alignItems: "center", justifyContent: "center", gap: 7 }}>
             {submitting ? <Spinner cls="h-3 w-3" /> : disableType === "PERMANENT" ? "⊘ Disable permanently" : "⊘ Disable temporarily"}
           </button>
         </div>
@@ -184,7 +184,7 @@ function ReasonBanner({ amenity }) {
   if (!amenity.disabled_reason) return null;
   const isTemp = amenity.disable_type === "TEMPORARY";
   return (
-    <div style={{ display: "flex", alignItems: "flex-start", gap: 7, padding: "8px 10px", borderRadius: 8, marginBottom: 10, background: isTemp ? "rgba(245,158,11,0.1)" : "rgba(220,38,38,0.07)", border: `1px solid ${isTemp ? "rgba(245,158,11,0.28)" : "rgba(220,38,38,0.22)"}`, fontSize: 11, lineHeight: 1.45, color: isTemp ? "#92400e" : "#7f1d1d" }}>
+    <div style={{ display: "flex", alignItems: "flex-start", gap: 7, padding: "8px 10px", borderRadius: 8, marginBottom: 10, background: isTemp ? "rgba(37,99,235,0.1)" : "rgba(220,38,38,0.07)", border: `1px solid ${isTemp ? "rgba(37,99,235,0.28)" : "rgba(220,38,38,0.22)"}`, fontSize: 11, lineHeight: 1.45, color: isTemp ? "#1E40AF" : "#7f1d1d" }}>
       {isTemp ? <MdWarning size={13} style={{ flexShrink: 0, marginTop: 1 }} /> : <MdBlock size={13} style={{ flexShrink: 0, marginTop: 1 }} />}
       <span>
         <strong>{isTemp ? "Maintenance: " : "Permanently closed: "}</strong>
@@ -338,7 +338,7 @@ export default function AdminAmenity() {
   const BFILTERS = [
     { k: "ALL", label: "All", ac: "#5A3BA2" },
     { k: "PAYMENT_PENDING", label: "Awaiting Payment", ac: "#5A3BA2" },
-    { k: "PENDING", label: "Needs Approval", ac: "#d97706" },
+    { k: "PENDING", label: "Needs Approval", ac: "#2563EB" },
     { k: "APPROVED", label: "Approved", ac: "#16a34a" },
     { k: "REJECTED", label: "Rejected", ac: "#dc2626" },
     { k: "CANCELLED", label: "Cancelled", ac: "#726988" },
@@ -346,7 +346,7 @@ export default function AdminAmenity() {
 
   const getCardStrip = (a, pal) => {
     if (!a.is_active) {
-      if (a.disable_type === "TEMPORARY") return "#d97706";
+      if (a.disable_type === "TEMPORARY") return "#2563EB";
       if (a.disable_type === "PERMANENT") return "#991b1b";
       return "var(--glass-border)";
     }
@@ -355,7 +355,7 @@ export default function AdminAmenity() {
 
   const getStatusLabel = (a) => {
     if (!a.is_active) {
-      if (a.disable_type === "TEMPORARY") return { label: "Temp. off", color: "#d97706", dotColor: "#f59e0b" };
+      if (a.disable_type === "TEMPORARY") return { label: "Temp. off", color: "#2563EB", dotColor: "#3B82F6" };
       if (a.disable_type === "PERMANENT") return { label: "Disabled", color: "#dc2626", dotColor: "#dc2626" };
       return { label: t("amenOff"), color: "var(--text-secondary)", dotColor: "var(--text-secondary)" };
     }
@@ -377,9 +377,12 @@ export default function AdminAmenity() {
           <p style={{ fontSize: 12, color: "var(--text-secondary)", marginTop: 3 }}>{t("amenSubtitle")}</p>
         </div>
         {activeTab === "AMENITIES" && (
-          <button onClick={() => setShowForm(p => !p)} className="btn-primary"
-            style={{ borderRadius: 12, padding: "9px 16px", fontSize: 13, fontWeight: 600, display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
-            {showForm ? <><MdClose size={15} /> {t("cancel")}</> : <><MdAdd size={15} /> {t("amenNewBtn")}</>}
+          <button onClick={() => setShowForm(p => !p)} className="sa-add-btn sa-add-pill" style={{ flexShrink: 0 }}>
+            <span className="sa-pill-blob sa-pill-blob1" />
+            <span className="sa-pill-inner">
+              {showForm ? <MdClose size={15} /> : <MdAdd size={15} />}
+              <span>{showForm ? t("cancel") : t("amenNewBtn")}</span>
+            </span>
           </button>
         )}
       </div>
@@ -409,7 +412,7 @@ export default function AdminAmenity() {
             {[
               { label: t("amenStatTotal"), val: aStats.total, icon: "🏛️", bg: "var(--stat-purple-bg)", border: "var(--stat-purple-border)", color: "var(--stat-purple-color)", iconBg: "rgba(107,70,193,0.15)" },
               { label: t("amenStatActive"), val: aStats.active, icon: "✅", bg: "var(--stat-green-bg)", border: "var(--stat-green-border)", color: "var(--stat-green-color)", iconBg: "rgba(34,197,94,0.15)" },
-              { label: t("amenStatPaid"), val: aStats.paid, icon: "💳", bg: "var(--stat-amber-bg)", border: "var(--stat-amber-border)", color: "var(--stat-amber-color)", iconBg: "rgba(245,158,11,0.15)" },
+              { label: t("amenStatPaid"), val: aStats.paid, icon: "💳", bg: "var(--stat-amber-bg)", border: "var(--stat-amber-border)", color: "var(--stat-amber-color)", iconBg: "rgba(37,99,235,0.15)" },
             ].map((s, i) => (
               <div key={i} style={{ background: s.bg, border: `1px solid ${s.border}`, borderRadius: isMobile ? 14 : 18, padding: isMobile ? "14px 12px" : "18px 20px" }}>
                 <div style={{ fontSize: isMobile ? 22 : 20, marginBottom: isMobile ? 4 : 0 }}>{s.icon}</div>
@@ -601,7 +604,7 @@ export default function AdminAmenity() {
               const isPaymentPending = b.status === "PAYMENT_PENDING";
               const dotColor = {
                 PAYMENT_PENDING: "#6B46C1",
-                APPROVED: "#22c55e", PENDING: "#f59e0b",
+                APPROVED: "#22c55e", PENDING: "#3B82F6",
                 REJECTED: "#ef4444", CANCELLED: "var(--text-secondary)",
               }[b.status] || "var(--text-secondary)";
 

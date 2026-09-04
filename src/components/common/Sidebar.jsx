@@ -1,13 +1,15 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useContext } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPortal } from "react-dom";
 import {
   MdChevronLeft,
   MdExpandMore,
   MdClose,
+  MdPerson,
 } from "react-icons/md";
 import { FaBuilding } from "react-icons/fa";
 import { useSidebar } from "../../context/SidebarContext";
+import { AuthContext } from "../../context/AuthContext";
 
 /* ── Group items helper ── */
 function groupMenuItems(menu) {
@@ -60,6 +62,7 @@ export default function Sidebar({
 }) {
   const location = useLocation();
   const { collapsed, toggleCollapsed, mobileOpen, closeMobile } = useSidebar();
+  const { user } = useContext(AuthContext);
 
   const [expandedGroups, setExpandedGroups] = useState({});
   const [activeFlyoutItem, setActiveFlyoutItem] = useState(null);
@@ -122,31 +125,35 @@ export default function Sidebar({
     // Collapsed desktop header: ONLY centered brand logo icon (click to expand)
     if (collapsed && !isMobileDrawer) {
       return (
-        <div className="flex items-center justify-center mb-6 shrink-0">
+        <div className="flex items-center justify-center mb-6 shrink-0 relative group/tooltip">
           <button
             onClick={toggleCollapsed}
-            className="w-10 h-10 rounded-xl bg-accent/15 border border-accent/30 flex items-center justify-center text-accent shadow-sm hover:scale-105 transition-transform"
+            className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600/20 to-indigo-600/10 border border-blue-500/30 flex items-center justify-center text-accent shadow-sm hover:scale-105 transition-all"
+            aria-label="Expand sidebar"
             title="Expand Sidebar"
           >
-            <FaBuilding size={20} />
+            <FaBuilding size={19} />
           </button>
+          <div className="fixed left-20 ml-1.5 z-50 hidden group-hover/tooltip:block bg-card border border-glass-border text-primary text-xs font-semibold px-3 py-1.5 rounded-lg shadow-xl whitespace-nowrap pointer-events-none animate-fadeIn">
+            Expand Sidebar
+          </div>
         </div>
       );
     }
 
     // Expanded header: Logo + Title + Subtitle on left, '<' toggle button on right
     return (
-      <div className="flex items-center justify-between gap-3 px-1 mb-6 shrink-0">
+      <div className="flex items-center justify-between gap-3 px-1 mb-6 shrink-0 border-b border-glass-border pb-4">
         <div className="flex items-center gap-3 min-w-0">
-          <div className="w-10 h-10 rounded-xl bg-accent/15 border border-accent/30 flex items-center justify-center text-accent shrink-0 shadow-sm">
-            <FaBuilding size={20} />
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-600/25 to-indigo-600/15 border border-blue-500/30 flex items-center justify-center text-accent shrink-0 shadow-sm">
+            <FaBuilding size={18} />
           </div>
           <div className="min-w-0 flex-1 overflow-hidden">
-            <h2 className="text-base font-bold leading-tight truncate text-primary">
+            <h2 className="text-sm font-extrabold leading-tight truncate text-primary tracking-tight">
               {brandTitle}
             </h2>
             {brandSubtitle && (
-              <p className="text-xs text-secondary truncate mt-0.5">
+              <p className="text-[11px] text-secondary truncate mt-0.5 font-medium">
                 {brandSubtitle}
               </p>
             )}
@@ -156,7 +163,8 @@ export default function Sidebar({
         {!isMobileDrawer && (
           <button
             onClick={toggleCollapsed}
-            className="hidden md:flex w-8 h-8 rounded-lg items-center justify-center text-secondary hover:text-primary hover:bg-card-inner-bg border border-glass-border transition-colors shrink-0"
+            className="hidden md:flex w-7 h-7 rounded-lg items-center justify-center text-secondary hover:text-primary hover:bg-card-inner-bg border border-glass-border transition-colors shrink-0"
+            aria-label="Collapse sidebar"
             title="Collapse Sidebar"
           >
             <MdChevronLeft size={18} />
@@ -167,6 +175,7 @@ export default function Sidebar({
           <button
             onClick={closeMobile}
             className="w-8 h-8 rounded-lg flex items-center justify-center text-primary bg-card-inner-bg border border-glass-border shrink-0"
+            aria-label="Close mobile menu"
           >
             <MdClose size={18} />
           </button>
@@ -194,15 +203,18 @@ export default function Sidebar({
                   activeFlyoutItem === label ? null : label
                 )
               }
-              className={`flex items-center justify-center w-10 h-10 mx-auto rounded-xl transition-all ${
+              className={`relative flex items-center justify-center w-10 h-10 mx-auto rounded-xl transition-all ${
                 hasActiveChild
-                  ? "bg-accent text-white font-semibold shadow-sm"
-                  : "text-secondary hover:text-primary hover:bg-white/5"
+                  ? "bg-accent/15 text-accent border border-accent/30 font-semibold shadow-sm"
+                  : "text-secondary hover:text-primary hover:bg-accent/5"
               }`}
             >
+              {hasActiveChild && (
+                <span className="absolute left-0 top-2 bottom-2 w-1 rounded-r-md bg-gradient-to-b from-sky-400 to-blue-600 shadow-[0_0_6px_rgba(37,99,235,0.6)]" />
+              )}
               <Icon size={19} />
             </button>
-            <div className="fixed left-20 ml-1 z-50 hidden group-hover/tooltip:block bg-card border border-glass-border text-primary text-xs font-semibold px-3 py-1.5 rounded-lg shadow-xl whitespace-nowrap pointer-events-none animate-fadeIn">
+            <div className="fixed left-20 ml-1.5 z-50 hidden group-hover/tooltip:block bg-card border border-glass-border text-primary text-xs font-semibold px-3 py-1.5 rounded-lg shadow-xl whitespace-nowrap pointer-events-none animate-fadeIn">
               {label}
             </div>
 
@@ -233,8 +245,8 @@ export default function Sidebar({
                         }}
                         className={`flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium transition-all ${
                           childActive
-                            ? "bg-accent text-white font-semibold"
-                            : "text-secondary hover:text-primary hover:bg-white/5"
+                            ? "bg-accent/15 text-accent font-bold border border-accent/25"
+                            : "text-secondary hover:text-primary hover:bg-accent/5"
                         }`}
                       >
                         <ChildIcon size={16} />
@@ -254,15 +266,18 @@ export default function Sidebar({
           <Link
             to={path}
             onClick={closeMobile}
-            className={`flex items-center justify-center w-10 h-10 mx-auto rounded-xl transition-all ${
+            className={`relative flex items-center justify-center w-10 h-10 mx-auto rounded-xl transition-all ${
               active
-                ? "bg-accent text-white font-semibold shadow-sm"
-                : "text-secondary hover:text-primary hover:bg-white/5"
+                ? "bg-accent/15 text-accent border border-accent/30 font-bold shadow-sm"
+                : "text-secondary hover:text-primary hover:bg-accent/5"
             }`}
           >
+            {active && (
+              <span className="absolute left-0 top-2 bottom-2 w-1 rounded-r-md bg-gradient-to-b from-sky-400 to-blue-600 shadow-[0_0_6px_rgba(37,99,235,0.6)]" />
+            )}
             <Icon size={19} />
           </Link>
-          <div className="fixed left-20 ml-1 z-50 hidden group-hover/tooltip:block bg-card border border-glass-border text-primary text-xs font-semibold px-3 py-1.5 rounded-lg shadow-xl whitespace-nowrap pointer-events-none animate-fadeIn">
+          <div className="fixed left-20 ml-1.5 z-50 hidden group-hover/tooltip:block bg-card border border-glass-border text-primary text-xs font-semibold px-3 py-1.5 rounded-lg shadow-xl whitespace-nowrap pointer-events-none animate-fadeIn">
             {label}
           </div>
         </div>
@@ -275,13 +290,16 @@ export default function Sidebar({
         key={path}
         to={path}
         onClick={closeMobile}
-        className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
+        className={`relative flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition-all duration-150 ${
           active
-            ? "bg-accent text-white font-semibold shadow-sm"
-            : "text-secondary hover:text-primary hover:bg-white/5"
+            ? "bg-accent/12 text-accent font-bold shadow-xs border border-accent/20 translate-x-0.5"
+            : "text-secondary hover:text-primary hover:bg-accent/5 hover:translate-x-0.5"
         }`}
       >
-        <Icon size={18} className={active ? "text-white" : "text-secondary"} />
+        {active && (
+          <span className="absolute left-0 top-1.5 bottom-1.5 w-1 rounded-r-md bg-gradient-to-b from-sky-400 to-blue-600 shadow-[0_0_8px_rgba(37,99,235,0.5)]" />
+        )}
+        <Icon size={18} className={active ? "text-accent" : "text-secondary"} />
         <span className="truncate">{label}</span>
       </Link>
     );
@@ -300,7 +318,7 @@ export default function Sidebar({
 
     // In expanded mode or mobile drawer, group items under section labels
     return (
-      <div className="flex-1 overflow-y-auto scrollbar-hide space-y-6 pr-1">
+      <div className="flex-1 overflow-y-auto scrollbar-hide space-y-5 pr-1">
         {groupedMenu.map(({ groupName, items }) => {
           const isDefaultGroup = groupName === "OVERVIEW";
           const isGroupOpen = expandedGroups[groupName] ?? false;
@@ -312,9 +330,11 @@ export default function Sidebar({
           return (
             <div key={groupName} className="space-y-1">
               {!isDefaultGroup && (
-                <div
+                <button
+                  type="button"
                   onClick={() => toggleGroupExpand(groupName)}
-                  className="flex items-center justify-between px-3 py-1 text-[11px] font-bold tracking-wider text-muted uppercase cursor-pointer hover:text-primary transition-colors group/head"
+                  aria-expanded={isGroupOpen}
+                  className="w-full flex items-center justify-between px-3 py-1.5 text-[11px] font-extrabold tracking-wider text-muted uppercase hover:text-primary transition-colors group/head cursor-pointer select-none"
                 >
                   <span className="truncate">{groupName}</span>
                   <MdExpandMore
@@ -323,11 +343,11 @@ export default function Sidebar({
                       isGroupOpen ? "rotate-0" : "-rotate-90"
                     } ${hasActiveGroupItem ? "text-accent" : ""}`}
                   />
-                </div>
+                </button>
               )}
 
               {(isDefaultGroup || isGroupOpen) && (
-                <div className="space-y-1">
+                <div className={!isDefaultGroup ? "space-y-1 pl-2 border-l border-blue-500/15 ml-3 my-1" : "space-y-1"}>
                   {items.map((item) => renderNavLink(item, isMobileDrawer))}
                 </div>
               )}
@@ -338,26 +358,64 @@ export default function Sidebar({
     );
   };
 
+  /* ── Render Profile Block at Bottom ── */
+  const renderProfileFooter = (isMobileDrawer = false) => {
+    if (!user) return null;
+
+    const initial = user.name ? user.name.slice(0, 2).toUpperCase() : "SA";
+    const roleTitle = user.activeRole || "SUPER_ADMIN";
+
+    if (collapsed && !isMobileDrawer) {
+      return (
+        <div className="mt-auto pt-3 border-t border-glass-border shrink-0 flex justify-center">
+          <div className="relative group/tooltip">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-700 text-white font-extrabold text-xs flex items-center justify-center shadow-md">
+              {initial}
+            </div>
+            <div className="fixed left-20 ml-1.5 z-50 hidden group-hover/tooltip:block bg-card border border-glass-border text-primary text-xs font-semibold px-3 py-1.5 rounded-lg shadow-xl whitespace-nowrap pointer-events-none animate-fadeIn">
+              {user.name || "Super Admin"} ({roleTitle})
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="mt-auto pt-3 border-t border-glass-border shrink-0">
+        <div className="flex items-center gap-3 p-2.5 rounded-xl bg-card-inner-bg border border-glass-border hover:border-accent/30 transition-colors">
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 to-indigo-700 text-white font-extrabold text-xs flex items-center justify-center shrink-0 shadow-sm">
+            {initial}
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-xs font-bold text-primary truncate leading-tight">{user.name || "Super Admin"}</p>
+            <p className="text-[10px] text-secondary truncate mt-0.5">{user.email || "Super Admin Panel"}</p>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <>
       {/* ── DESKTOP SIDEBAR ── */}
       <aside
         className={`hidden md:flex fixed left-0 top-0 h-screen bg-sidebar flex-col z-40 border-r border-glass-border transition-all duration-200 box-border ${
-          collapsed ? "w-[76px] px-3 py-4" : "w-[256px] p-4"
+          collapsed ? "w-[76px] px-3 py-4" : "w-[264px] p-4"
         }`}
       >
         {renderBrand(false)}
         {renderNavList(false)}
+        {renderProfileFooter(false)}
       </aside>
 
       {/* ── MOBILE DRAWER ── */}
-      {mobileMenuOpen(mobileOpen, closeMobile, renderBrand, renderNavList, drawerExtra)}
+      {mobileMenuOpen(mobileOpen, closeMobile, renderBrand, renderNavList, drawerExtra, renderProfileFooter)}
     </>
   );
 }
 
 /* Helper for mobile drawer portal/overlay */
-function mobileMenuOpen(mobileOpen, closeMobile, renderBrand, renderNavList, drawerExtra) {
+function mobileMenuOpen(mobileOpen, closeMobile, renderBrand, renderNavList, drawerExtra, renderProfileFooter) {
   if (!mobileOpen) return null;
 
   return createPortal(
@@ -374,6 +432,8 @@ function mobileMenuOpen(mobileOpen, closeMobile, renderBrand, renderNavList, dra
         {drawerExtra && <div className="mb-4 shrink-0">{drawerExtra}</div>}
 
         {renderNavList(true)}
+
+        {renderProfileFooter(true)}
       </div>
     </div>,
     document.body

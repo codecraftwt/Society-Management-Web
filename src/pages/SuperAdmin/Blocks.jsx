@@ -9,7 +9,7 @@ import Select from "../../components/common/Select";
 const PROPERTY_TONES = {
   "Row Houses": { c: "#2FC27E", bg: "rgba(47, 194, 126, 0.13)", bd: "rgba(47, 194, 126, 0.28)" },
   "Commercial":  { c: "#9F87D7", bg: "rgba(159, 135, 215, 0.13)", bd: "rgba(159, 135, 215, 0.28)" },
-  "Apartments":  { c: "#F0845D", bg: "rgba(240, 132, 93, 0.13)", bd: "rgba(240, 132, 93, 0.28)" },
+  "Apartments":  { c: "#2563EB", bg: "rgba(37, 99, 235, 0.13)", bd: "rgba(37, 99, 235, 0.28)" },
 };
 
 function toneFor(type) {

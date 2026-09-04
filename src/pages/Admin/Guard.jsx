@@ -23,7 +23,7 @@ function useIsMobile() {
 
 function ShiftBadge({ type, t }) {
   const SHIFT_CFG = {
-    MORNING:   { label: t("guardShiftMorning"),   icon: <MdWbSunny size={11} />,     color: "#f59e0b", bg: "rgba(245,158,11,0.12)"  },
+    MORNING:   { label: t("guardShiftMorning"),   icon: <MdWbSunny size={11} />,     color: "#3B82F6", bg: "rgba(37,99,235,0.12)"  },
     AFTERNOON: { label: t("guardShiftAfternoon"), icon: <MdBrightness5 size={11} />, color: "#6B46C1", bg: "rgba(107,70,193,0.12)"  },
     NIGHT:     { label: t("guardShiftNight"),     icon: <MdNightsStay size={11} />,  color: "#6B46C1", bg: "rgba(107,70,193,0.12)"  },
   };
@@ -263,10 +263,14 @@ export default function Guard() {
                 }
                 setShowForm(p => !p);
               }}
-              className="btn-primary"
-              style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13 }}
+              className="sa-add-btn sa-add-pill"
+              style={{ fontSize: 13 }}
             >
-              <MdAdd size={16} /> {editingId ? "Edit Guard" : t("guardAddBtn")}
+              <span className="sa-pill-blob sa-pill-blob1" />
+              <span className="sa-pill-inner">
+                {showForm ? <MdClose size={16} /> : <MdAdd size={16} />}
+                <span>{editingId ? "Edit Guard" : t("guardAddBtn")}</span>
+              </span>
             </button>
           )}
         </div>

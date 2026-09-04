@@ -16,10 +16,12 @@ import {
   MdOutlineArticle,
   MdOutlineOpenInNew,
   MdSchedule,
+  MdPictureAsPdf,
 } from "react-icons/md";
 
 import { BASE_URL } from "../../config/apiConfig";
 import Select from "../../components/common/Select";
+import PdfViewer from "../../components/common/PdfViewer";
 
 function useDebounce(value, delay = 500) {
   const [d, setD] = useState(value);
@@ -74,15 +76,15 @@ function Pagination({ page, totalPages, onPageChange }) {
   );
 }
 
-const BARS = ["#6B46C1", "#5B8DEF", "#6B46C1", "#B17AB2", "#7AB2B2", "#f59e0b"];
-const DOTS = ["#9F87D7", "#94B5F5", "#9F87D7", "#CCA9CD", "#A9CDCD", "#fbbf24"];
+const BARS = ["#6B46C1", "#5B8DEF", "#6B46C1", "#B17AB2", "#7AB2B2", "#3B82F6"];
+const DOTS = ["#9F87D7", "#94B5F5", "#9F87D7", "#CCA9CD", "#A9CDCD", "#60A5FA"];
 const BG   = [
   "rgba(107,70,193,0.10)", "rgba(91,141,239,0.10)", "rgba(107,70,193,0.10)",
-  "rgba(177,122,178,0.10)", "rgba(122,178,178,0.10)",  "rgba(245,158,11,0.10)",
+  "rgba(177,122,178,0.10)", "rgba(122,178,178,0.10)",  "rgba(37,99,235,0.10)",
 ];
 const BDR  = [
   "rgba(107,70,193,0.22)", "rgba(91,141,239,0.22)", "rgba(107,70,193,0.22)",
-  "rgba(177,122,178,0.22)", "rgba(122,178,178,0.22)",  "rgba(245,158,11,0.22)",
+  "rgba(177,122,178,0.22)", "rgba(122,178,178,0.22)",  "rgba(37,99,235,0.22)",
 ];
 
 const fmtDate = (d) =>
@@ -99,6 +101,8 @@ const LIMIT = 10;
 
 const isImageFile = (fileName) =>
   /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(fileName || "");
+
+const isPdfFile = (fileName) => /\.pdf$/i.test(fileName || "");
 
 const isPublicHost = () => {
   const h = window.location.hostname;
@@ -314,6 +318,7 @@ export default function Notice() {
     setFilePreview({
       fullUrl,
       name: fileName,
+      isPdf: isPdfFile(fileName),
       previewUrl: getPreviewUrl(fullUrl, fileName),
     });
   };
@@ -353,9 +358,13 @@ export default function Notice() {
         {canPost && (
           <button
             onClick={() => setShowForm((p) => !p)}
-            className="btn-primary flex items-center gap-2 w-full sm:w-auto justify-center shrink-0"
+            className="sa-add-btn sa-add-pill w-full sm:w-auto justify-center shrink-0"
           >
-            {showForm ? <><MdClose size={16} />{t("cancel")}</> : <><MdAdd size={17} />{t("noticeAddBtn")}</>}
+            <span className="sa-pill-blob sa-pill-blob1" />
+            <span className="sa-pill-inner">
+              {showForm ? <MdClose size={16} /> : <MdAdd size={17} />}
+              <span>{showForm ? t("cancel") : t("noticeAddBtn")}</span>
+            </span>
           </button>
         )}
       </div>
@@ -443,7 +452,7 @@ export default function Notice() {
                 textTransform: "uppercase", letterSpacing: "0.07em" }}>
                 {t("noticeAttachment")}{" "}
                 <span style={{ fontWeight: 400, textTransform: "none", letterSpacing: 0, opacity: 0.5 }}>
-                  (optional)
+                  (PDF & Image only)
                 </span>
               </label>
               {file ? (
@@ -465,8 +474,26 @@ export default function Notice() {
                   borderRadius: 9, cursor: "pointer", border: "1.5px dashed var(--card-inner-border)",
                   background: "var(--card-inner-bg)" }}>
                   <MdAttachFile size={14} style={{ color: "var(--text-secondary)", flexShrink: 0 }} />
-                  <span style={{ fontSize: 12, color: "var(--text-secondary)" }}>Click to attach a file</span>
-                  <input type="file" onChange={(e) => setFile(e.target.files[0])} style={{ display: "none" }} />
+                  <span style={{ fontSize: 12, color: "var(--text-secondary)" }}>
+                    Click to attach PDF or Image file (PDF, JPG, PNG, WEBP)
+                  </span>
+                  <input
+                    type="file"
+                    accept="image/*,application/pdf"
+                    onChange={(e) => {
+                      const selected = e.target.files[0];
+                      if (selected) {
+                        const validTypes = ["application/pdf", "image/jpeg", "image/png", "image/webp", "image/gif", "image/svg+xml"];
+                        if (!validTypes.includes(selected.type) && !selected.type.startsWith("image/")) {
+                          alert("Invalid file type. Please select a PDF or Image file (JPG, PNG, WEBP, GIF, SVG).");
+                          e.target.value = "";
+                          return;
+                        }
+                        setFile(selected);
+                      }
+                    }}
+                    style={{ display: "none" }}
+                  />
                 </label>
               )}
             </div>
@@ -809,64 +836,94 @@ export default function Notice() {
       {/* ══ FILE PREVIEW MODAL (PDF / Doc / Sheet) ══ */}
       {filePreview && createPortal(
         <div
-          style={{ position: "fixed", inset: 0, zIndex: 9999, background: "rgba(0,0,0,0.92)",
+          style={{ position: "fixed", inset: 0, zIndex: 9999, background: "rgba(0,0,0,0.88)", backdropFilter: "blur(8px)",
             display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 20 }}
           onClick={() => setFilePreview(null)}
         >
           <div
-            style={{ width: "100%", maxWidth: 860, height: "82vh",
-              display: "flex", flexDirection: "column", gap: 10 }}
+            style={{ width: "100%", maxWidth: 920, height: "86vh",
+              display: "flex", flexDirection: "column" }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span style={{ color: "white", fontSize: 13, fontWeight: 600,
-                display: "flex", alignItems: "center", gap: 6,
-                overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "60%" }}>
-                📄 {filePreview.name}
-              </span>
-              <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
-                <a href={filePreview.fullUrl} target="_blank" rel="noopener noreferrer"
-                  style={{ padding: "6px 14px", borderRadius: 999, fontSize: 12, fontWeight: 600,
-                    color: "white", background: "rgba(255,255,255,0.12)", textDecoration: "none",
-                    display: "flex", alignItems: "center", gap: 5 }}>
-                  ↓ {t("docDownload") || "Download"}
-                </a>
-                <button onClick={() => setFilePreview(null)}
-                  style={{ width: 34, height: 34, borderRadius: "50%", background: "rgba(255,255,255,0.12)",
-                    border: "none", cursor: "pointer", color: "white",
-                    display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <MdClose size={17} />
-                </button>
-              </div>
-            </div>
-
-            {filePreview.previewUrl ? (
-              <iframe
-                key={filePreview.previewUrl}
-                src={filePreview.previewUrl}
-                title={filePreview.name}
-                style={{ flex: 1, border: "none", borderRadius: 12, background: "white", width: "100%" }}
+            {filePreview.isPdf ? (
+              <PdfViewer
+                key={filePreview.fullUrl}
+                url={filePreview.fullUrl}
+                name={filePreview.name}
+                onClose={() => setFilePreview(null)}
               />
             ) : (
-              <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center",
-                justifyContent: "center", gap: 14, background: "rgba(255,255,255,0.04)",
-                borderRadius: 12, border: "1px solid rgba(255,255,255,0.1)" }}>
-                <span style={{ fontSize: 48 }}>📄</span>
-                <p style={{ color: "rgba(255,255,255,0.6)", fontSize: 14, fontWeight: 600, margin: 0 }}>
-                  {filePreview.name}
-                </p>
-                <p style={{ color: "rgba(255,255,255,0.35)", fontSize: 12, margin: 0, textAlign: "center", maxWidth: 320 }}>
-                  {isPublicHost()
-                    ? "Preview not available for this file type."
-                    : "In-browser preview requires a deployed (public) URL. Download the file to open it."}
-                </p>
-                <a href={filePreview.fullUrl} target="_blank" rel="noopener noreferrer"
-                  style={{ padding: "8px 20px", borderRadius: 999, background: "var(--accent)",
-                    color: "white", fontSize: 13, fontWeight: 600, textDecoration: "none",
-                    display: "flex", alignItems: "center", gap: 6 }}>
-                  ↓ Download file
-                </a>
-              </div>
+              <>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, marginBottom: 10 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, overflow: "hidden", minWidth: 0 }}>
+                    <div style={{
+                      width: 32, height: 32, borderRadius: 10, flexShrink: 0,
+                      background: "var(--accent-soft)", border: "1px solid rgba(37,99,235,0.28)",
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                    }}>
+                      <MdPictureAsPdf size={16} style={{ color: "var(--accent)" }} />
+                    </div>
+                    <span style={{ color: "var(--text-primary)", fontSize: 13, fontWeight: 650,
+                      overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {filePreview.name}
+                    </span>
+                  </div>
+                  <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
+                    <a href={filePreview.fullUrl} target="_blank" rel="noopener noreferrer"
+                      style={{ padding: "7px 14px", borderRadius: 999, fontSize: 12, fontWeight: 650,
+                        color: "var(--text-primary)", background: "var(--card-inner-bg)",
+                        border: "1px solid var(--glass-border)", textDecoration: "none",
+                        display: "flex", alignItems: "center", gap: 5 }}>
+                      ↓ {t("docDownload") || "Download"}
+                    </a>
+                    <button onClick={() => setFilePreview(null)}
+                      style={{ width: 34, height: 34, borderRadius: "50%",
+                        background: "var(--card-inner-bg)", border: "1px solid var(--glass-border)",
+                        cursor: "pointer", color: "var(--text-secondary)",
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        transition: "all 0.18s ease" }}
+                      onMouseEnter={e => { e.currentTarget.style.background = "var(--danger)"; e.currentTarget.style.color = "#fff"; e.currentTarget.style.borderColor = "var(--danger)"; }}
+                      onMouseLeave={e => { e.currentTarget.style.background = "var(--card-inner-bg)"; e.currentTarget.style.color = "var(--text-secondary)"; e.currentTarget.style.borderColor = "var(--glass-border)"; }}>
+                      <MdClose size={17} />
+                    </button>
+                  </div>
+                </div>
+
+                {filePreview.previewUrl ? (
+                  <iframe
+                    key={filePreview.previewUrl}
+                    src={filePreview.previewUrl}
+                    title={filePreview.name}
+                    style={{ flex: 1, border: "none", borderRadius: 12, background: "white", width: "100%" }}
+                  />
+                ) : (
+                  <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center",
+                    justifyContent: "center", gap: 14, background: "var(--card-inner-bg)",
+                    borderRadius: 12, border: "1px solid var(--glass-border)" }}>
+                    <div style={{
+                      width: 48, height: 48, borderRadius: 14,
+                      background: "var(--accent-soft)", border: "1px solid rgba(37,99,235,0.28)",
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                    }}>
+                      <MdPictureAsPdf size={22} style={{ color: "var(--accent)" }} />
+                    </div>
+                    <p style={{ color: "var(--text-primary)", fontSize: 14, fontWeight: 650, margin: 0 }}>
+                      {filePreview.name}
+                    </p>
+                    <p style={{ color: "var(--text-tertiary)", fontSize: 12, margin: 0, textAlign: "center", maxWidth: 320 }}>
+                      {isPublicHost()
+                        ? "Preview not available for this file type."
+                        : "In-browser preview requires a deployed (public) URL. Download the file to open it."}
+                    </p>
+                    <a href={filePreview.fullUrl} target="_blank" rel="noopener noreferrer"
+                      style={{ padding: "8px 20px", borderRadius: 999, background: "var(--accent)",
+                        color: "#fff", fontSize: 13, fontWeight: 600, textDecoration: "none",
+                        display: "flex", alignItems: "center", gap: 6 }}>
+                      ↓ Download file
+                    </a>
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>,

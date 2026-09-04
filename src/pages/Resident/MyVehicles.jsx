@@ -89,7 +89,7 @@ function AllocatedSlotCard({ slot }) {
     )}
   </p>
 ) : (
-              <p style={{ margin:"4px 0 0", fontSize:11, color:"#fbbf24", fontWeight:600 }}>
+              <p style={{ margin:"4px 0 0", fontSize:11, color:"#60A5FA", fontWeight:600 }}>
                 No vehicle linked yet — add a vehicle to claim this slot
               </p>
             )}
@@ -105,7 +105,7 @@ function AllocatedSlotCard({ slot }) {
           <span style={{
             padding: "5px 12px", borderRadius: 999, fontSize: 11, fontWeight: 700,
             background: slot.parking_type === "DEFAULT" ? "rgba(74,222,128,0.10)" : "rgba(251,191,36,0.10)",
-            color: slot.parking_type === "DEFAULT" ? "#4ade80" : "#fbbf24",
+            color: slot.parking_type === "DEFAULT" ? "#4ade80" : "#60A5FA",
             border: `1px solid ${slot.parking_type === "DEFAULT" ? "rgba(74,222,128,0.25)" : "rgba(251,191,36,0.25)"}`,
           }}>
             {slot.parking_type === "DEFAULT" ? "Default" : "Extra"}
@@ -128,7 +128,7 @@ function AllocatedSlotCard({ slot }) {
 /* ── Status badge for parking requests ── */
 function ReqStatusBadge({ status }) {
   const cfg = {
-    PENDING:   { label:"Pending",   color:"#fbbf24", bg:"rgba(251,191,36,0.12)",  border:"rgba(251,191,36,0.28)"  },
+    PENDING:   { label:"Pending",   color:"#60A5FA", bg:"rgba(251,191,36,0.12)",  border:"rgba(251,191,36,0.28)"  },
     APPROVED:  { label:"Approved",  color:"#4ade80", bg:"rgba(74,222,128,0.12)",  border:"rgba(74,222,128,0.28)"  },
     REJECTED:  { label:"Rejected",  color:"#f87171", bg:"rgba(248,113,113,0.12)", border:"rgba(248,113,113,0.28)" },
     COMPLETED: { label:"Completed", color:"#9F87D7", bg:"rgba(129,140,248,0.12)", border:"rgba(129,140,248,0.28)" },
@@ -214,7 +214,7 @@ function SlotPickerOption({ slot, isSelected, isOccupied, onSelect }) {
         <span style={{
           padding: "3px 10px", borderRadius: 999, fontSize: 11, fontWeight: 700,
           background: isDefault ? "rgba(74,222,128,0.10)" : "rgba(251,191,36,0.10)",
-          color: isDefault ? "#4ade80" : "#fbbf24",
+          color: isDefault ? "#4ade80" : "#60A5FA",
           border: `1px solid ${isDefault ? "rgba(74,222,128,0.25)" : "rgba(251,191,36,0.25)"}`,
         }}>
           {isDefault ? "Default" : "Extra"}
@@ -529,7 +529,7 @@ export default function MyVehicles() {
           background: overDeclared ? "rgba(251,191,36,0.08)" : "rgba(74,222,128,0.06)",
           border:    `1px solid ${overDeclared ? "rgba(251,191,36,0.25)" : "rgba(74,222,128,0.20)"}`,
           fontSize:12, fontWeight:600,
-          color: overDeclared ? "#fbbf24" : "#4ade80",
+          color: overDeclared ? "#60A5FA" : "#4ade80",
         }}>
           <MdDirectionsCar size={15} style={{ flexShrink:0 }} />
           <span>
@@ -556,7 +556,7 @@ export default function MyVehicles() {
         <button style={tabStyle("requests")} onClick={() => setActiveTab("requests")}>
           📋 Slot Requests
           {pendingCount > 0 && (
-            <span style={{ marginLeft:6, fontSize:11, fontWeight:800, padding:"1px 7px", borderRadius:999, background:"rgba(251,191,36,0.18)", color:"#fbbf24" }}>
+            <span style={{ marginLeft:6, fontSize:11, fontWeight:800, padding:"1px 7px", borderRadius:999, background:"rgba(251,191,36,0.18)", color:"#60A5FA" }}>
               {pendingCount}
             </span>
           )}
@@ -750,7 +750,7 @@ export default function MyVehicles() {
                             style={{
                               display:"flex", alignItems:"center", justifyContent:"space-between",
                               width:"100%", padding:"13px 16px", borderRadius:12,
-                              border:`2px solid ${selectedSlotId === null ? "#d97706" : "rgba(255,255,255,0.09)"}`,
+                              border:`2px solid ${selectedSlotId === null ? "#2563EB" : "rgba(255,255,255,0.09)"}`,
                               background: selectedSlotId === null ? "rgba(251,191,36,0.07)" : "rgba(255,255,255,0.03)",
                               cursor:"pointer", textAlign:"left", transition:"all 0.15s",
                             }}
@@ -760,14 +760,14 @@ export default function MyVehicles() {
                               <div style={{
                                 width:20, height:20, borderRadius:"50%", flexShrink:0,
                                 display:"flex", alignItems:"center", justifyContent:"center",
-                                border:`2px solid ${selectedSlotId === null ? "#d97706" : "rgba(255,255,255,0.25)"}`,
-                                background: selectedSlotId === null ? "#d97706" : "transparent",
+                                border:`2px solid ${selectedSlotId === null ? "#2563EB" : "rgba(255,255,255,0.25)"}`,
+                                background: selectedSlotId === null ? "#2563EB" : "transparent",
                                 transition:"all 0.15s",
                               }}>
                                 {selectedSlotId === null && <div style={{ width:8, height:8, borderRadius:"50%", background:"#fff" }} />}
                               </div>
                               <div>
-                                <p style={{ margin:0, fontSize:13, fontWeight:700, color: selectedSlotId === null ? "#fbbf24" : "var(--text-primary)" }}>
+                                <p style={{ margin:0, fontSize:13, fontWeight:700, color: selectedSlotId === null ? "#60A5FA" : "var(--text-primary)" }}>
                                   Request New Extra Slot
                                 </p>
                                 <p style={{ margin:"3px 0 0", fontSize:11, color:"var(--text-secondary)", lineHeight:1.5 }}>
@@ -777,7 +777,7 @@ export default function MyVehicles() {
                             </div>
                             <span style={{
                               padding:"3px 10px", borderRadius:999, fontSize:11, fontWeight:700,
-                              background:"rgba(251,191,36,0.10)", color:"#fbbf24",
+                              background:"rgba(251,191,36,0.10)", color:"#60A5FA",
                               border:"1px solid rgba(251,191,36,0.25)", flexShrink:0,
                             }}>
                               Admin assigns
@@ -792,7 +792,7 @@ export default function MyVehicles() {
                             </div>
                           )}
                           {selectedSlotId === null && hasAnyFreeSlot && (
-                            <div style={{ display:"flex", alignItems:"center", gap:8, padding:"10px 12px", borderRadius:10, background:"rgba(251,191,36,0.06)", border:"1px solid rgba(251,191,36,0.18)", fontSize:11, color:"#fbbf24", fontWeight:600 }}>
+                            <div style={{ display:"flex", alignItems:"center", gap:8, padding:"10px 12px", borderRadius:10, background:"rgba(251,191,36,0.06)", border:"1px solid rgba(251,191,36,0.18)", fontSize:11, color:"#60A5FA", fontWeight:600 }}>
                               <MdInfo size={13} />
                               Free slots are available above. A new extra slot request will still go to your admin if you proceed.
                             </div>
@@ -858,11 +858,11 @@ export default function MyVehicles() {
                                 {v.slot?.parking_floor && ` · ${v.slot.parking_floor}`}
                               </span>
                             ) : (
-                              <span style={{ fontSize:11, color:"#fbbf24", display:"flex", alignItems:"center", gap:3 }}>
+                              <span style={{ fontSize:11, color:"#60A5FA", display:"flex", alignItems:"center", gap:3 }}>
                                 <MdHourglassEmpty size={11} /> Awaiting slot from admin
                               </span>
                             )}
-                            <span style={{ fontSize:10, fontWeight:700, padding:"1px 6px", borderRadius:999, background: v.parking_type==="DEFAULT" ? "rgba(74,222,128,0.12)" : "rgba(251,191,36,0.12)", color: v.parking_type==="DEFAULT" ? "#4ade80" : "#fbbf24", border:`1px solid ${v.parking_type==="DEFAULT" ? "rgba(74,222,128,0.25)" : "rgba(251,191,36,0.25)"}` }}>
+                            <span style={{ fontSize:10, fontWeight:700, padding:"1px 6px", borderRadius:999, background: v.parking_type==="DEFAULT" ? "rgba(74,222,128,0.12)" : "rgba(251,191,36,0.12)", color: v.parking_type==="DEFAULT" ? "#4ade80" : "#60A5FA", border:`1px solid ${v.parking_type==="DEFAULT" ? "rgba(74,222,128,0.25)" : "rgba(251,191,36,0.25)"}` }}>
                               {v.parking_type === "DEFAULT" ? "Default" : "Extra"}
                             </span>
                           </div>
@@ -919,13 +919,13 @@ export default function MyVehicles() {
                                 )}
                               </div>
                             ) : (
-                              <span style={{ display:"inline-flex", alignItems:"center", gap:5, padding:"3px 10px", borderRadius:999, fontSize:11, fontWeight:700, color:"#fbbf24", background:"rgba(251,191,36,0.08)", border:"1px solid rgba(251,191,36,0.20)" }}>
+                              <span style={{ display:"inline-flex", alignItems:"center", gap:5, padding:"3px 10px", borderRadius:999, fontSize:11, fontWeight:700, color:"#60A5FA", background:"rgba(251,191,36,0.08)", border:"1px solid rgba(251,191,36,0.20)" }}>
                                 <MdHourglassEmpty size={11} /> Awaiting admin
                               </span>
                             )}
                           </td>
                           <td className="p-3">
-                            <span style={{ display:"inline-flex", alignItems:"center", gap:4, padding:"3px 10px", borderRadius:999, fontSize:11, fontWeight:700, background: v.parking_type==="DEFAULT" ? "rgba(74,222,128,0.10)" : "rgba(251,191,36,0.10)", color: v.parking_type==="DEFAULT" ? "#4ade80" : "#fbbf24", border:`1px solid ${v.parking_type==="DEFAULT" ? "rgba(74,222,128,0.22)" : "rgba(251,191,36,0.22)"}` }}>
+                            <span style={{ display:"inline-flex", alignItems:"center", gap:4, padding:"3px 10px", borderRadius:999, fontSize:11, fontWeight:700, background: v.parking_type==="DEFAULT" ? "rgba(74,222,128,0.10)" : "rgba(251,191,36,0.10)", color: v.parking_type==="DEFAULT" ? "#4ade80" : "#60A5FA", border:`1px solid ${v.parking_type==="DEFAULT" ? "rgba(74,222,128,0.22)" : "rgba(251,191,36,0.22)"}` }}>
                               {v.parking_type === "DEFAULT" ? "Default" : "Extra"}
                             </span>
                           </td>
@@ -1094,7 +1094,7 @@ export default function MyVehicles() {
                         {r.assigned_spot && <> · <span style={{ color:"#4ade80" }}>{r.assigned_spot}</span></>}
                       </p>
                       {!r.assigned_spot && (
-                        <span style={{ display:"inline-flex", marginTop:4, alignItems:"center", gap:4, padding:"2px 8px", borderRadius:999, fontSize:10, fontWeight:700, background:"rgba(251,191,36,0.10)", color:"#fbbf24", border:"1px solid rgba(251,191,36,0.22)" }}>
+                        <span style={{ display:"inline-flex", marginTop:4, alignItems:"center", gap:4, padding:"2px 8px", borderRadius:999, fontSize:10, fontWeight:700, background:"rgba(251,191,36,0.10)", color:"#60A5FA", border:"1px solid rgba(251,191,36,0.22)" }}>
                           Awaiting slot assignment
                         </span>
                       )}

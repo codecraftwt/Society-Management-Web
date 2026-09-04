@@ -80,7 +80,7 @@ function StatusBadge({ status, t }) {
 /* ── Request Status Badge ── */
 function ReqBadge({ status }) {
   const cfg = {
-    PENDING: { label: "Pending", color: "#DD6B20", bg: "rgba(221,107,32,0.12)", border: "rgba(221,107,32,0.28)" },
+    PENDING: { label: "Pending", color: "#2563EB", bg: "rgba(37,99,235,0.12)", border: "rgba(37,99,235,0.28)" },
     APPROVED: { label: "Approved", color: "#2FC27E", bg: "rgba(47,194,126,0.12)", border: "rgba(47,194,126,0.28)" },
     REJECTED: { label: "Rejected", color: "#FF6B6B", bg: "rgba(255,107,107,0.12)", border: "rgba(255,107,107,0.28)" },
   }[status] || { label: status, color: "#A39EB2", bg: "rgba(163,158,178,0.10)", border: "rgba(163,158,178,0.22)" };
@@ -182,7 +182,7 @@ function ResidentEntryPanel({ slots, onCreated, t, societyId }) {
   );
 
       {societyId === "ALL" && (
-        <div className="flex items-center gap-2 p-3 mb-4 rounded-xl text-xs font-bold bg-amber-500/5 text-amber-500/80 border border-amber-500/20">
+        <div className="flex items-center gap-2 p-3 mb-4 rounded-xl text-xs font-bold bg-blue-500/5 text-blue-500/80 border border-blue-500/20">
           <MdWarning size={14} /> You are in View-Only mode. Select a specific society to assign slots.
         </div>
       )}
@@ -190,7 +190,7 @@ function ResidentEntryPanel({ slots, onCreated, t, societyId }) {
   return (
     <div className="space-y-5 animate-fadeIn">
       <div className="flex items-start gap-3 p-4 rounded-xl"
-        style={{ background: "rgba(221,107,32,0.10)", border: "1.5px solid rgba(221,107,32,0.24)" }}>
+        style={{ background: "rgba(37,99,235,0.10)", border: "1.5px solid rgba(37,99,235,0.24)" }}>
         <span style={{ fontSize: 22, lineHeight: 1 }}>🏠</span>
         <div>
           <p className="font-bold text-sm" style={{ color: "var(--text-primary)", margin: 0 }}>
@@ -276,7 +276,7 @@ function ResidentEntryPanel({ slots, onCreated, t, societyId }) {
             return (
               <div key={vehicle.vehicle_id}
                 className="bg-card rounded-2xl overflow-hidden transition-all"
-                style={{ border: isExpanded ? "1.5px solid rgba(221,107,32,0.34)" : "1.5px solid var(--glass-border)" }}>
+                style={{ border: isExpanded ? "1.5px solid rgba(37,99,235,0.34)" : "1.5px solid var(--glass-border)" }}>
 
                 <div className="flex items-center justify-between gap-3 px-4 py-3.5">
                   <div className="flex items-center gap-3">
@@ -318,9 +318,9 @@ function ResidentEntryPanel({ slots, onCreated, t, societyId }) {
                       onClick={() => setExpandedId(isExpanded ? null : vehicle.vehicle_id)}
                       className="w-8 h-8 flex items-center justify-center rounded-xl transition-all"
                       style={{
-                        background: isExpanded ? "rgba(221,107,32,0.15)" : "rgba(255,255,255,0.05)",
+                        background: isExpanded ? "rgba(37,99,235,0.15)" : "rgba(255,255,255,0.05)",
                         border: "1px solid var(--glass-border)",
-                        color: isExpanded ? "#fbbf24" : "var(--text-secondary)",
+                        color: isExpanded ? "#60A5FA" : "var(--text-secondary)",
                         fontWeight: 700, fontSize: 16, cursor: "pointer",
                       }}>
                       {isExpanded ? "−" : "+"}
@@ -479,14 +479,14 @@ function ResidentRequestsPanel({ allSlots, onSlotAssigned, societyId }) {
   };
 
   const TABS = [
-    { key: "PENDING", label: "Pending", color: "#fbbf24" },
+    { key: "PENDING", label: "Pending", color: "#60A5FA" },
     { key: "APPROVED", label: "Approved", color: "#2FC27E" },
     { key: "REJECTED", label: "Rejected", color: "#FF6B6B" },
     { key: "ALL", label: "All", color: "#A39EB2" },
   ];
 
       {societyId === "ALL" && (
-        <div className="flex items-center gap-2 p-3 mb-4 rounded-xl text-xs font-bold bg-amber-500/5 text-amber-500/80 border border-amber-500/20">
+        <div className="flex items-center gap-2 p-3 mb-4 rounded-xl text-xs font-bold bg-blue-500/5 text-blue-500/80 border border-blue-500/20">
           <MdWarning size={14} /> You are in View-Only mode. Select a specific society to approve/reject requests.
         </div>
       )}
@@ -553,7 +553,7 @@ function ResidentRequestsPanel({ allSlots, onSlotAssigned, societyId }) {
 
             return (
               <div key={req.id} className="bg-card rounded-2xl overflow-hidden transition-all"
-                style={{ border: isPending ? "1.5px solid rgba(221,107,32,0.28)" : "1.5px solid var(--glass-border)" }}>
+                style={{ border: isPending ? "1.5px solid rgba(37,99,235,0.28)" : "1.5px solid var(--glass-border)" }}>
 
                 <div className="flex items-center justify-between gap-3 px-4 py-3.5">
                   <div className="flex items-center gap-3">
@@ -570,7 +570,7 @@ function ResidentRequestsPanel({ allSlots, onSlotAssigned, societyId }) {
                         <p className="font-bold text-sm" style={{ fontFamily: "monospace", letterSpacing: "0.05em", margin: 0 }}>
                           {req.vehicle_number}
                         </p>
-                        <span className="text-[10px] font-black px-1.5 py-0.5 rounded-md bg-amber-500/10 text-amber-500 border border-amber-500/20">EXTRA</span>
+                        <span className="text-[10px] font-black px-1.5 py-0.5 rounded-md bg-blue-500/10 text-blue-500 border border-blue-500/20">EXTRA</span>
                       </div>
                       <p className="text-xs text-secondary mt-0.5">
                         {req.guest_name} {req.Flat?.flat_number && <>· Flat {req.Flat.flat_number}</>}
@@ -830,9 +830,12 @@ export default function SuperAdminParking() {
           </div>
 
           {mainTab === "slots" && selectedSocietyId !== "ALL" && (
-            <button onClick={() => { setShowForm(p => !p); setConfirmDel(null); }} className="btn-primary shrink-0 flex items-center gap-2">
-              {showForm ? <MdClose size={17} /> : <MdAdd size={17} />}
-              {showForm ? "Close" : "Create Slots"}
+            <button onClick={() => { setShowForm(p => !p); setConfirmDel(null); }} className="sa-add-btn sa-add-pill shrink-0">
+              <span className="sa-pill-blob sa-pill-blob1" />
+              <span className="sa-pill-inner">
+                {showForm ? <MdClose size={17} /> : <MdAdd size={17} />}
+                <span>{showForm ? "Close" : "Create Slots"}</span>
+              </span>
             </button>
           )}
         </div>
@@ -840,7 +843,7 @@ export default function SuperAdminParking() {
 
       {/* Warning if no society selected */}
       {selectedSocietyId === "ALL" && (
-        <div className="flex items-center gap-3 p-4 rounded-xl bg-amber-500/5 border border-amber-500/20 text-amber-500/80 animate-fadeIn">
+        <div className="flex items-center gap-3 p-4 rounded-xl bg-blue-500/5 border border-blue-500/20 text-blue-500/80 animate-fadeIn">
           <MdWarning size={20} className="shrink-0" />
           <p className="text-sm font-medium">Viewing global stats. Select a specific society to enable management actions like creating slots or assigning resident entries.</p>
         </div>

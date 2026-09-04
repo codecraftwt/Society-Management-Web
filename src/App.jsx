@@ -4,6 +4,8 @@ import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 /* === PUBLIC PAGES === */
+import Home from "./home/Home";
+import { LanguageProvider } from "./context/LanguageContext";
 import Landing from "./pages/Landing";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
@@ -137,7 +139,7 @@ function App() {
       <Suspense fallback={<div className="flex items-center justify-center h-screen">Loading...</div>}>
         <Routes>
           {/* === PUBLIC ROUTES === */}
-        <Route path="/" element={<Landing />} />
+        <Route path="/" element={<LanguageProvider role="home"><Home /></LanguageProvider>} />
         <Route
           path="/login"
           element={

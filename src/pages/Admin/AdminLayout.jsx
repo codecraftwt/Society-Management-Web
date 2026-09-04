@@ -22,6 +22,7 @@ import { AuthContext } from "../../context/AuthContext";
 import { useSidebar } from "../../context/SidebarContext";
 import Sidebar from "../../components/common/Sidebar";
 import AppHeader from "../../components/common/AppHeader";
+import "./Admin.css";
 
 /* Role meta for role-switcher */
 const ROLE_META = {

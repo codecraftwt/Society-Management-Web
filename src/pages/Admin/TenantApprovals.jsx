@@ -32,7 +32,7 @@ function LeaseChip({ date }) {
   let color = "text-emerald-400 bg-emerald-400/10 border-emerald-400/20";
   if (days <= 0)  color = "text-red-400 bg-red-400/10 border-red-400/20";
   else if (days <= 5)  color = "text-red-400 bg-red-400/10 border-red-400/20";
-  else if (days <= 30) color = "text-amber-400 bg-amber-400/10 border-amber-400/20";
+  else if (days <= 30) color = "text-blue-400 bg-blue-400/10 border-blue-400/20";
   return (
     <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md border ${color}`}>
       {days <= 0 ? "Expired" : days <= 30 ? `${days}d left` : formatDate(date)}
@@ -127,7 +127,7 @@ function RejectModal({ open, onClose, onSubmit, loading }) {
         onClick={e => e.stopPropagation()}
       >
         <div className="flex items-center gap-3 px-5 py-4" style={{ borderBottom: "1px solid var(--divider)" }}>
-          <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: "rgba(251,191,36,0.15)", color: "#fbbf24" }}>
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: "rgba(251,191,36,0.15)", color: "#60A5FA" }}>
             <MdWarning size={20} />
           </div>
           <div className="flex-1">
@@ -215,7 +215,7 @@ function DetailDrawer({ resident, onClose, onApprove, onReject, onViewDoc }) {
         {/* Header */}
         <div className="sticky top-0 z-10 flex items-center gap-3 px-5 py-4"
           style={{ background: "var(--card-bg)", borderBottom: "1px solid var(--divider)" }}>
-          <div className="w-10 h-10 rounded-xl bg-amber-500/15 text-amber-400 flex items-center justify-center font-black text-lg">
+          <div className="w-10 h-10 rounded-xl bg-blue-500/12 text-blue-400 flex items-center justify-center font-black text-lg">
             {resident.name?.charAt(0)}
           </div>
           <div className="flex-1 min-w-0">
@@ -230,7 +230,7 @@ function DetailDrawer({ resident, onClose, onApprove, onReject, onViewDoc }) {
         <div className="p-5 space-y-5 flex-1">
           {/* Status badge */}
           <div className="flex justify-center">
-            <span className="bg-amber-500/10 text-amber-400 border border-amber-500/20 px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest">
+            <span className="bg-blue-500/10 text-blue-400 border border-blue-500/20 px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest">
               ⏳ Pending Verification
             </span>
           </div>
@@ -491,7 +491,7 @@ export default function TenantApprovals() {
   if (loading) return (
     <div className="flex items-center justify-center p-24">
       <div className="flex flex-col items-center gap-3">
-        <div className="w-10 h-10 rounded-full border-2 border-amber-500/30 border-t-amber-400 animate-spin" />
+        <div className="w-10 h-10 rounded-full border-2 border-blue-500/30 border-t-blue-400 animate-spin" />
         <p className="text-xs font-medium tracking-widest uppercase" style={{ color: "var(--text-secondary)" }}>Loading approvals…</p>
       </div>
     </div>
@@ -518,8 +518,8 @@ export default function TenantApprovals() {
       {/* ── Stat Pills ── */}
       <div className="flex flex-wrap gap-3">
         {[
-          { label: "Total Pending", value: residents.length, color: "text-amber-400 bg-amber-400/8 border-amber-400/20" },
-          { label: "Expiring ≤30d",  value: expiringCount,   color: "text-orange-400 bg-orange-400/8 border-orange-400/20" },
+          { label: "Total Pending", value: residents.length, color: "text-blue-400 bg-blue-400/8 border-blue-400/20" },
+          { label: "Expiring ≤30d",  value: expiringCount,   color: "text-blue-300 bg-blue-300/10 border-blue-300/25" },
           { label: "Lease Expired",  value: expiredCount,    color: "text-red-400 bg-red-400/8 border-red-400/20" },
           { label: "Filtered",       value: filtered.length, color: "text-blue-400 bg-blue-400/8 border-blue-400/20" },
         ].map(s => (
@@ -606,7 +606,7 @@ export default function TenantApprovals() {
                   onClick={() => setDrawer(r)}
                 >
                   <div className="p-4 flex items-center gap-3 min-w-0">
-                    <div className="w-10 h-10 rounded-xl bg-amber-500/15 text-amber-400 flex items-center justify-center font-black text-base shrink-0">
+                    <div className="w-10 h-10 rounded-xl bg-blue-500/12 text-blue-400 flex items-center justify-center font-black text-base shrink-0">
                       {r.name?.charAt(0)}
                     </div>
                     <div className="min-w-0 flex-1">
@@ -711,7 +711,7 @@ export default function TenantApprovals() {
                   >
                     {/* Tenant */}
                     <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-8 h-8 rounded-lg bg-amber-500/15 text-amber-400 flex items-center justify-center font-black text-sm shrink-0">
+                      <div className="w-8 h-8 rounded-lg bg-blue-500/12 text-blue-400 flex items-center justify-center font-black text-sm shrink-0">
                         {r.name?.charAt(0)}
                       </div>
                       <div className="min-w-0">
