@@ -458,6 +458,7 @@ function AssignFlatModal({ residentId, residentName, societyId, onClose, onSucce
   };
 
   return (
+    createPortal(
     <div onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
       style={{ position: "fixed", inset: 0, zIndex: 1100, background: "rgba(0,0,0,0.65)", backdropFilter: "blur(8px)", display: "flex", alignItems: "center", justifyContent: "center", padding: "16px" }}>
       <div onClick={(e) => e.stopPropagation()}
@@ -701,7 +702,9 @@ function AssignFlatModal({ residentId, residentName, societyId, onClose, onSucce
         </div>
       </div>
       <style>{`@keyframes modalPop { from { transform: scale(0.94) translateY(12px); opacity: 0; } to { transform: scale(1) translateY(0); opacity: 1; } }`}</style>
-    </div>
+    </div>,
+    document.body
+        )
   );
 }
 
@@ -2684,7 +2687,7 @@ export default function Resident() {
       </div>
 
       {/* Add / Edit Resident Modal Popup */}
-      {(showForm || editingId) && (
+      {(showForm || editingId) && createPortal(
         <div
           onClick={(e) => { if (e.target === e.currentTarget) { setShowForm(false); resetForm(); } }}
           style={{ position: "fixed", inset: 0, zIndex: 1100, background: "rgba(0,0,0,0.65)", backdropFilter: "blur(8px)", display: "flex", alignItems: "center", justifyContent: "center", padding: "16px" }}
@@ -2919,7 +2922,8 @@ export default function Resident() {
               </form>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Table */}
@@ -3148,10 +3152,10 @@ export default function Resident() {
         )}
       </div>
 
-      {committeeConfirm && (
+      {committeeConfirm && createPortal(
         <div
           onClick={(e) => { if (e.target === e.currentTarget) setCommitteeConfirm(null); }}
-          style={{ position: "fixed", inset: 0, zIndex: 1200, background: "rgba(0,0,0,0.65)", backdropFilter: "blur(8px)", display: "flex", alignItems: "center", justifyContent: "center", padding: "16px" }}
+          style={{ position: "fixed", inset: 0, zIndex: 9999, background: "rgba(0,0,0,0.65)", backdropFilter: "blur(8px)", display: "flex", alignItems: "center", justifyContent: "center", padding: "16px" }}
         >
           <div
             onClick={(e) => e.stopPropagation()}
@@ -3193,7 +3197,8 @@ export default function Resident() {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

@@ -145,64 +145,34 @@ function OtpModal({ email, tempToken, onVerified, onCancel }) {
   const timerColor = sessionSecs > 60 ? "#38bdf8" : sessionSecs > 30 ? "#3B82F6" : "#ef4444";
 
   return (
-    <div
-      style={{
-        position: "fixed", inset: 0, zIndex: 9999,
-        display: "flex", alignItems: "center", justifyContent: "center",
-        padding: "1rem",
-        background: "rgba(11, 19, 41, 0.88)",
-        backdropFilter: "blur(16px)",
-      }}
-    >
-      <div
-        className="modal-box animate-scaleIn"
-        style={{
-          width: "100%", maxWidth: 430,
-          background: "#171717",
-          borderRadius: 25, overflow: "hidden", position: "relative",
-          boxShadow: "0 25px 60px rgba(0,0,0,0.8)",
-          border: "1px solid rgba(255,255,255,0.1)",
-        }}
-      >
-        <div style={{ height: 4, background: "linear-gradient(90deg,#38bdf8,#2563eb)" }} />
+    <div className="otp-overlay">
+      <div className="otp-modal-box animate-scaleIn">
+        <div className="otp-modal-topbar" />
 
-        <div style={{ padding: "clamp(1.25rem, 5vw, 2rem)" }}>
-          <div style={{ textAlign: "center", marginBottom: "1.5rem" }}>
-            <div style={{
-              width: 60, height: 60, borderRadius: "50%", margin: "0 auto 0.9rem",
-              background: "rgba(56, 189, 248, 0.1)",
-              border: "1.5px solid rgba(56, 189, 248, 0.25)",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              boxShadow: "0 0 24px rgba(56, 189, 248, 0.15)",
-            }}>
-              <HiShieldCheck style={{ fontSize: 28, color: "#38bdf8" }} />
+        <div className="otp-modal-inner">
+          <div className="otp-modal-header">
+            <div className="otp-shield-icon">
+              <HiShieldCheck />
             </div>
 
-            <h2 style={{
-              fontSize: "1.3rem", fontWeight: 800, color: "#ffffff",
-              margin: "0 0 0.35rem", letterSpacing: "-0.02em",
-            }}>
+            <h2 className="otp-title">
               Two-Step Verification
             </h2>
 
-            <p style={{ fontSize: "0.85rem", color: "#a3a3a3", margin: "0 0 0.5rem", lineHeight: 1.6 }}>
+            <p className="otp-subtitle">
               A 6-digit verification code was sent to
             </p>
 
-            <div style={{
-              display: "inline-flex", alignItems: "center", gap: 6,
-              padding: "4px 12px", borderRadius: 999,
-              background: "rgba(56, 189, 248, 0.1)", border: "1px solid rgba(56, 189, 248, 0.2)",
-            }}>
-              <HiMail style={{ fontSize: 13, color: "#38bdf8" }} />
-              <span style={{ fontSize: "0.78rem", fontWeight: 700, color: "#38bdf8" }}>{maskedEmail}</span>
+            <div className="otp-email-badge">
+              <HiMail />
+              <span>{maskedEmail}</span>
             </div>
           </div>
 
           <div style={{ display: "flex", justifyContent: "center", marginBottom: "1.25rem" }}>
             <div style={{ position: "relative", width: 54, height: 54 }}>
-              <svg width="54" height="54" style={{ transform: "rotate(-90deg)" }}>
-                <circle cx="27" cy="27" r={radius} fill="none" stroke="#262626" strokeWidth="3" />
+              <svg className="otp-timer-track" width="54" height="54" style={{ transform: "rotate(-90deg)" }}>
+                <circle cx="27" cy="27" r={radius} fill="none" strokeWidth="3" />
                 <circle cx="27" cy="27" r={radius} fill="none" stroke={timerColor} strokeWidth="3"
                   strokeDasharray={circumference} strokeDashoffset={dashOffset} strokeLinecap="round"
                   style={{ transition: "stroke-dashoffset 1s linear, stroke 0.5s ease" }}
@@ -213,11 +183,7 @@ function OtpModal({ email, tempToken, onVerified, onCancel }) {
                 display: "flex", flexDirection: "column",
                 alignItems: "center", justifyContent: "center",
               }}>
-                <span style={{
-                  fontSize: "0.75rem", fontWeight: 700,
-                  color: sessionExpired ? "#ef4444" : timerColor,
-                  fontFamily: "monospace", lineHeight: 1,
-                }}>
+                <span className="otp-timer-value" style={{ color: sessionExpired ? "#ef4444" : timerColor }}>
                   {sessionExpired ? "00:00" : formatTime(sessionSecs)}
                 </span>
               </div>
@@ -225,13 +191,9 @@ function OtpModal({ email, tempToken, onVerified, onCancel }) {
           </div>
 
           {sessionExpired && (
-            <div style={{
-              display: "flex", alignItems: "center", gap: 8,
-              padding: "10px 14px", borderRadius: 12, marginBottom: "1rem",
-              background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.25)",
-            }}>
-              <HiLockClosed style={{ fontSize: 15, color: "#ef4444", flexShrink: 0 }} />
-              <span style={{ fontSize: "0.78rem", color: "#ef4444", fontWeight: 600 }}>
+            <div className="otp-session-expired">
+              <HiLockClosed />
+              <span>
                 Session expired. Please go back and login again.
               </span>
             </div>
@@ -256,31 +218,15 @@ function OtpModal({ email, tempToken, onVerified, onCancel }) {
                 onChange={(e) => handleChange(i, e.target.value)}
                 onKeyDown={(e) => handleKeyDown(i, e)}
                 onPaste={handlePaste}
-                style={{
-                  width: "100%", maxWidth: 52, height: 54,
-                  textAlign: "center",
-                  fontSize: "1.3rem", fontWeight: 800,
-                  borderRadius: 13,
-                  border: digit ? "2px solid #38bdf8" : "1.5px solid #262626",
-                  background: sessionExpired ? "#262626" : digit ? "rgba(56,189,248,0.1)" : "#171717",
-                  color: sessionExpired ? "#737373" : "#ffffff",
-                  outline: "none",
-                  transition: "all 0.18s ease",
-                  boxShadow: "inset 2px 5px 10px rgb(5, 5, 5)",
-                  caretColor: "#38bdf8",
-                  cursor: sessionExpired ? "not-allowed" : "text",
-                }}
+                className={`otp-input${digit ? " filled" : ""}${sessionExpired ? " disabled" : ""}`}
+                style={{ cursor: sessionExpired ? "not-allowed" : "text" }}
               />
             ))}
           </div>
 
           <div style={{ display: "flex", gap: 4, justifyContent: "center", marginBottom: "1.25rem" }}>
             {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} style={{
-                width: i < filled ? 22 : 6, height: 4, borderRadius: 999,
-                background: i < filled ? "#38bdf8" : "#262626",
-                transition: "all 0.2s ease",
-              }} />
+              <div key={i} className={`otp-progress-dot${i < filled ? " filled" : ""}`} />
             ))}
           </div>
 
@@ -318,27 +264,17 @@ function OtpModal({ email, tempToken, onVerified, onCancel }) {
             <button
               onClick={handleResend}
               disabled={resendCooldown > 0 || resendLoading}
+              className="otp-resend-btn"
               style={{
-                display: "flex", alignItems: "center", gap: 5,
-                background: "none", border: "none", padding: 0,
+                color: resendCooldown > 0 || resendLoading ? "#737373" : undefined,
                 cursor: resendCooldown > 0 || resendLoading ? "not-allowed" : "pointer",
-                color: resendCooldown > 0 || resendLoading ? "#737373" : "#38bdf8",
-                fontSize: "0.82rem", fontWeight: 700,
               }}
             >
               <HiRefresh style={{ fontSize: 14 }} />
               {resendLoading ? "Sending…" : resendCooldown > 0 ? `Resend in ${resendCooldown}s` : "Resend OTP"}
             </button>
 
-            <button
-              onClick={onCancel}
-              style={{
-                background: "#252525", border: "none",
-                padding: "6px 14px", borderRadius: 8, fontSize: "0.81rem",
-                fontWeight: 700, color: "#ffffff", cursor: "pointer",
-                display: "flex", alignItems: "center", gap: 4
-              }}
-            >
+            <button onClick={onCancel} className="otp-cancel-btn">
               <HiX style={{ fontSize: 13 }} />
               Cancel
             </button>

@@ -199,7 +199,7 @@ function SuperAdminLayoutInner() {
           title={t("saDashboardTitle") || "Global Overview"}
           showNotificationBell={false}
           actions={
-            <div className="hidden md:block min-w-0 max-w-[180px] lg:max-w-[220px] shrink">
+            <div className="hidden md:block min-w-0 max-w-45 lg:max-w-55 shrink">
               <Select
                 value={selectedSocietyId}
                 onChange={handleSocietyChange}

@@ -198,7 +198,7 @@ html:not(.light) div[style*="position: fixed"] > div[style*="maxWidth"] {
   align-items: center;
   gap: 6px;
   padding: 10px 20px;
-  border-radius: 14px;
+  border-radius: 20px;
   color: #ffffff;
   font-size: 0.82rem;
   font-weight: 700;
