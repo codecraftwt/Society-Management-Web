@@ -7045,17 +7045,10 @@ html.light {
 
   /* ── Page icon ── */
   .gh-page-icon-wrap {
-<<<<<<< Updated upstream
-    background: linear-gradient(135deg, #F0845D, #d96a43);
-    border: 1px solid rgba(240,132,93,0.4);
-    color: #ffffff;
-    box-shadow: 0 6px 16px rgba(240,132,93,0.28);
-=======
     background: linear-gradient(135deg, #EFF6FF, #DBEAFE);
     border-color: rgba(59,130,246,0.28);
     color: #1E40AF;
     box-shadow: 0 4px 14px rgba(37,99,235,0.10);
->>>>>>> Stashed changes
   }
   .gh-page-title    { color: #24212C; }
   .gh-page-subtitle { color: #5F5C5F; }
@@ -7078,15 +7071,9 @@ html.light {
   .gh-tab { color: #5F5C5F; }
   .gh-tab:hover { color: #24212C; background: #EFEBF3; }
   .gh-tab--active {
-<<<<<<< Updated upstream
-    background: linear-gradient(135deg, #F0845D, #d96a43);
-    color: #ffffff;
-    box-shadow: 0 4px 14px rgba(240,132,93,0.35);
-=======
     background: linear-gradient(135deg, #EFF6FF, #DBEAFE);
     color: #1E3A8A;
     box-shadow: inset 0 0 0 1px rgba(37,99,235,0.25);
->>>>>>> Stashed changes
   }
 
   /* ── Section label ── */
@@ -7094,15 +7081,9 @@ html.light {
 
   /* ── Emergency cards ── */
   .gh-emerg-card--blue {
-<<<<<<< Updated upstream
-    background: linear-gradient(135deg, #eff6ff, #dbeafe);
-    border-color: rgba(59,130,246,0.32);
-    box-shadow: 0 2px 12px rgba(37,99,235,0.08);
-=======
     background: linear-gradient(135deg, #EFF6FF, #DBEAFE);
     border-color: rgba(59,130,246,0.28);
     box-shadow: 0 2px 10px rgba(37,99,235,0.07);
->>>>>>> Stashed changes
   }
   .gh-emerg-card--red {
     background: linear-gradient(135deg, #fef2f2, #fee2e2);
@@ -7115,34 +7096,15 @@ html.light {
     box-shadow: 0 2px 12px rgba(34,197,94,0.07);
   }
   .gh-emerg-card--purple {
-<<<<<<< Updated upstream
-    background: linear-gradient(135deg, #f5f3ff, #ede9fe);
-    border-color: rgba(139,92,246,0.28);
-    box-shadow: 0 2px 12px rgba(109,40,217,0.07);
-=======
     background: linear-gradient(135deg, #EFF6FF, #ffe9de);
     border-color: rgba(139,92,246,0.22);
     box-shadow: 0 2px 10px rgba(139,92,246,0.06);
->>>>>>> Stashed changes
   }
   .gh-emerg-card--blue::before   { background: linear-gradient(90deg, #2563eb, #60a5fa); }
   .gh-emerg-card--red::before    { background: linear-gradient(90deg, #dc2626, #f87171); }
   .gh-emerg-card--green::before  { background: linear-gradient(90deg, #16a34a, #4ade80); }
   .gh-emerg-card--purple::before { background: linear-gradient(90deg, #7c3aed, #a78bfa); }
 
-<<<<<<< Updated upstream
-  .gh-emerg-card--blue   .gh-emerg-icon-wrap { background: rgba(59,130,246,0.14); color: #1d4ed8; border-color: rgba(59,130,246,0.32); }
-  .gh-emerg-card--red    .gh-emerg-icon-wrap { background: rgba(239,68,68,0.12);  color: #b91c1c; border-color: rgba(239,68,68,0.30); }
-  .gh-emerg-card--green  .gh-emerg-icon-wrap { background: rgba(34,197,94,0.12);  color: #15803d; border-color: rgba(34,197,94,0.30); }
-  .gh-emerg-card--purple .gh-emerg-icon-wrap { background: rgba(139,92,246,0.12); color: #6d28d9; border-color: rgba(139,92,246,0.30); }
-
-  .gh-emerg-card--blue   .gh-emerg-label { color: #1d4ed8; }
-  .gh-emerg-card--red    .gh-emerg-label { color: #b91c1c; }
-  .gh-emerg-card--green  .gh-emerg-label { color: #15803d; }
-  .gh-emerg-card--purple .gh-emerg-label { color: #6d28d9; }
-
-  .gh-emerg-card--blue   .gh-emerg-number { color: #1d4ed8; }
-=======
   .gh-emerg-card--blue   .gh-emerg-icon-wrap { background: rgba(37,99,235,0.12); color: #1E40AF; }
   .gh-emerg-card--red    .gh-emerg-icon-wrap { background: rgba(220,38,38,0.12);  color: #b91c1c; }
   .gh-emerg-card--green  .gh-emerg-icon-wrap { background: rgba(22,163,74,0.12);  color: #15803d; }
@@ -7154,29 +7116,17 @@ html.light {
   .gh-emerg-card--purple .gh-emerg-label { color: #2B1C4D; }
 
   .gh-emerg-card--blue   .gh-emerg-number { color: #1E40AF; }
->>>>>>> Stashed changes
   .gh-emerg-card--red    .gh-emerg-number { color: #b91c1c; }
   .gh-emerg-card--green  .gh-emerg-number { color: #15803d; }
   .gh-emerg-card--purple .gh-emerg-number { color: #6d28d9; }
 
   .gh-emerg-desc { color: #5F5C5F; }
 
-<<<<<<< Updated upstream
-  .gh-emerg-card--blue   .gh-call-btn { background: rgba(59,130,246,0.12); color: #1d4ed8; border-color: rgba(59,130,246,0.30); }
-  .gh-emerg-card--red    .gh-call-btn { background: rgba(239,68,68,0.10);  color: #b91c1c; border-color: rgba(239,68,68,0.28); }
-  .gh-emerg-card--green  .gh-call-btn { background: rgba(34,197,94,0.10);  color: #15803d; border-color: rgba(34,197,94,0.28); }
-  .gh-emerg-card--purple .gh-call-btn { background: rgba(139,92,246,0.10); color: #6d28d9; border-color: rgba(139,92,246,0.28); }
-  .gh-emerg-card--blue   .gh-call-btn:hover { background: rgba(59,130,246,0.20); }
-  .gh-emerg-card--red    .gh-call-btn:hover { background: rgba(239,68,68,0.18);  }
-  .gh-emerg-card--green  .gh-call-btn:hover { background: rgba(34,197,94,0.18);  }
-  .gh-emerg-card--purple .gh-call-btn:hover { background: rgba(139,92,246,0.18); }
-=======
   .gh-emerg-card--blue   .gh-call-btn { background: rgba(37,99,235,0.10); color: #1E3A8A; border-color: rgba(37,99,235,0.22); }
   .gh-emerg-card--red    .gh-call-btn { background: rgba(220,38,38,0.10);  color: #b91c1c; border-color: rgba(220,38,38,0.22); }
   .gh-emerg-card--green  .gh-call-btn { background: rgba(22,163,74,0.10);  color: #15803d; border-color: rgba(22,163,74,0.22); }
   .gh-emerg-card--purple .gh-call-btn { background: rgba(109,40,217,0.08); color: #392566; border-color: rgba(109,40,217,0.20); }
   .gh-call-btn:hover { filter: brightness(1.08); }
->>>>>>> Stashed changes
 
   /* ── Society contacts ── */
   .gh-contact-card {
@@ -7188,33 +7138,20 @@ html.light {
     border-color: #fbd9c6;
     box-shadow: 0 8px 22px rgba(15,23,42,0.10);
   }
-<<<<<<< Updated upstream
-
-  .gh-avatar--blue   { background: linear-gradient(135deg, #eff6ff, #dbeafe); color: #1d4ed8; border-color: rgba(59,130,246,0.3); }
-  .gh-avatar--amber  { background: linear-gradient(135deg, #fffbeb, #fef3c7); color: #b45309; border-color: rgba(217,119,6,0.3); }
-  .gh-avatar--green  { background: linear-gradient(135deg, #f0fdf4, #dcfce7); color: #15803d; border-color: rgba(22,163,74,0.3); }
-  .gh-avatar--purple { background: linear-gradient(135deg, #f5f3ff, #ede9fe); color: #6d28d9; border-color: rgba(109,40,217,0.28); }
-=======
   .gh-contact-card:hover { border-color: #BFDBFE; }
 
   .gh-avatar--blue   { background: linear-gradient(135deg,#EFF6FF,#DBEAFE); color: #1E3A8A; border-color: rgba(59,130,246,0.25); }
   .gh-avatar--amber  { background: linear-gradient(135deg,#EFF6FF,#DBEAFE); color: #1E40AF; border-color: rgba(37,99,235,0.25); }
   .gh-avatar--green  { background: linear-gradient(135deg,#f0fdf4,#dcfce7); color: #14532d; border-color: rgba(34,197,94,0.25);  }
   .gh-avatar--purple { background: linear-gradient(135deg,#EFF6FF,#ffe9de); color: #2B1C4D; border-color: rgba(139,92,246,0.22); }
->>>>>>> Stashed changes
 
   .gh-contact-name { color: #24212C; }
   .gh-contact-role { color: #8f8b93; }
 
   .gh-action-btn--phone {
     background: rgba(37,99,235,0.08);
-<<<<<<< Updated upstream
-    border-color: rgba(37,99,235,0.22);
-    color: #2563eb;
-=======
     border-color: rgba(37,99,235,0.20);
     color: #1E3A8A;
->>>>>>> Stashed changes
   }
   .gh-action-btn--phone:hover { background: rgba(37,99,235,0.15); }
 
@@ -7234,20 +7171,6 @@ html.light {
 
   /* ── Support card ── */
   .gh-support-card {
-<<<<<<< Updated upstream
-    background: linear-gradient(135deg, #fff7f2, #ffe9df);
-    border-color: rgba(240,132,93,0.32);
-    box-shadow: 0 4px 18px rgba(240,132,93,0.12);
-  }
-  .gh-support-icon { color: #d96a43; }
-  .gh-support-title { color: #24212C; }
-  .gh-support-sub   { color: #5F5C5F; }
-  .gh-support-btn {
-    background: linear-gradient(135deg, #F0845D, #d96a43);
-    border-color: rgba(240,132,93,0.4);
-    color: #ffffff;
-    box-shadow: 0 6px 14px rgba(240,132,93,0.3);
-=======
     background: linear-gradient(135deg, #F3EFF5, #DBEAFE);
     border-color: rgba(99,102,241,0.22);
   }
@@ -7258,7 +7181,6 @@ html.light {
     background: rgba(79,70,229,0.12);
     border-color: rgba(79,70,229,0.25);
     color: #1E40AF;
->>>>>>> Stashed changes
   }
   .gh-support-btn:hover { filter: brightness(1.06); }
 
@@ -7272,15 +7194,9 @@ html.light {
   }
   .gh-faq-search-input::placeholder { color: #8f8b93; }
   .gh-faq-search-input:focus {
-<<<<<<< Updated upstream
-    border-color: #F0845D;
-    box-shadow: 0 0 0 3px rgba(240,132,93,0.16), inset 0 1px 2px rgba(15,23,42,0.02);
-    background: #ffffff;
-=======
     border-color: #2563EB;
     box-shadow: 0 0 0 3px rgba(37,99,235,0.10), inset 0 1px 2px rgba(15,23,42,0.02);
     background: #fafbff;
->>>>>>> Stashed changes
   }
   .gh-faq-search-clear {
     background: #EFEBF3;
@@ -7295,57 +7211,32 @@ html.light {
     border-color: #D6D6E4;
     box-shadow: 0 1px 6px rgba(15,23,42,0.05);
   }
-<<<<<<< Updated upstream
-  .gh-faq-item--open { border-color: #fbd9c6; box-shadow: 0 4px 14px rgba(240,132,93,0.10); }
-  .gh-faq-question { color: #24212C; }
-  .gh-faq-question:hover { color: #d96a43; }
-  .gh-faq-chevron { color: #8f8b93; }
-  .gh-faq-item--open .gh-faq-chevron { color: #F0845D; }
-=======
   .gh-faq-item--open { border-color: #BFDBFE; }
   .gh-faq-question { color: #24212C; }
   .gh-faq-question:hover { color: #1E3A8A; }
   .gh-faq-chevron { color: #8f8b93; }
   .gh-faq-item--open .gh-faq-chevron { color: #1E40AF; }
->>>>>>> Stashed changes
   .gh-faq-answer { border-top-color: #EFEBF3; }
   .gh-faq-answer p { color: #403D4A; }
 
   /* ── Quick guide ── */
   .gh-guide-intro {
-<<<<<<< Updated upstream
-    background: rgba(240,132,93,0.08);
-    border-color: rgba(240,132,93,0.25);
-    color: #b45309;
-  }
-  .gh-guide-intro-icon { color: #F0845D; }
-=======
     background: rgba(37,99,235,0.06);
     border-color: rgba(37,99,235,0.18);
     color: #1E3A8A;
   }
   .gh-guide-intro-icon { color: #1E40AF; }
->>>>>>> Stashed changes
 
   .gh-guide-step {
     background: #ffffff;
     border-color: #D6D6E4;
     box-shadow: 0 1px 6px rgba(15,23,42,0.05);
   }
-<<<<<<< Updated upstream
-  .gh-guide-step:hover { border-color: #fbd9c6; box-shadow: 0 8px 20px rgba(15,23,42,0.09); }
-  .gh-guide-step-num {
-    background: linear-gradient(135deg, #F0845D, #d96a43);
-    border-color: rgba(240,132,93,0.4);
-    color: #ffffff;
-    box-shadow: 0 4px 12px rgba(240,132,93,0.28);
-=======
   .gh-guide-step:hover { border-color: #BFDBFE; }
   .gh-guide-step-num {
     background: linear-gradient(135deg, #EFF6FF, #DBEAFE);
     border-color: rgba(37,99,235,0.25);
     color: #1E3A8A;
->>>>>>> Stashed changes
   }
   .gh-guide-step-title { color: #24212C; }
   .gh-guide-step-desc  { color: #5F5C5F; }
@@ -7362,13 +7253,8 @@ html.light {
     border-bottom-color: #EFEBF3;
   }
   .gh-checklist-dot {
-<<<<<<< Updated upstream
-    background: #F0845D;
-    box-shadow: 0 0 6px rgba(240,132,93,0.35);
-=======
     background: #2563EB;
     box-shadow: 0 0 5px rgba(37,99,235,0.25);
->>>>>>> Stashed changes
   }
 
   /* ── Dos & Don'ts ── */

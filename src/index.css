@@ -11596,21 +11596,12 @@ Copy
   gap: 0.9rem;
 }
 .gh-page-icon-wrap {
-<<<<<<< Updated upstream
-  width: 50px;
-  height: 50px;
-  border-radius: 15px;
-  background: linear-gradient(135deg, #F0845D, #b7583a);
-  border: 1px solid rgba(240,132,93,0.4);
-  color: #fff;
-=======
   width: 48px;
   height: 48px;
   border-radius: 14px;
   background: rgba(59,130,246,0.14);
   border: 1.5px solid rgba(59,130,246,0.28);
   color: #60A5FA;
->>>>>>> Stashed changes
   display: flex;
   align-items: center;
   justify-content: center;
@@ -11755,17 +11746,10 @@ Copy
   flex-shrink: 0;
   border: 1px solid;
 }
-<<<<<<< Updated upstream
-.gh-emerg-card--blue   .gh-emerg-icon-wrap { background: rgba(59,130,246,0.16); border-color: rgba(59,130,246,0.32); color: #93c5fd; }
-.gh-emerg-card--red    .gh-emerg-icon-wrap { background: rgba(239,68,68,0.16);  border-color: rgba(239,68,68,0.32);  color: #fca5a5; }
-.gh-emerg-card--green  .gh-emerg-icon-wrap { background: rgba(34,197,94,0.16);  border-color: rgba(34,197,94,0.32);  color: #86efac; }
-.gh-emerg-card--purple .gh-emerg-icon-wrap { background: rgba(139,92,246,0.16); border-color: rgba(139,92,246,0.32); color: #C0B0E5; }
-=======
 .gh-emerg-card--blue   .gh-emerg-icon-wrap { background: rgba(59,130,246,0.18); color: #60A5FA; }
 .gh-emerg-card--red    .gh-emerg-icon-wrap { background: rgba(239,68,68,0.18);  color: #fca5a5; }
 .gh-emerg-card--green  .gh-emerg-icon-wrap { background: rgba(34,197,94,0.18);  color: #86efac; }
 .gh-emerg-card--purple .gh-emerg-icon-wrap { background: rgba(139,92,246,0.18); color: #C0B0E5; }
->>>>>>> Stashed changes
 
 .gh-emerg-info { flex: 1; }
 .gh-emerg-label {
@@ -11786,13 +11770,10 @@ Copy
   margin: 0 0 4px;
   color: #F9F8FA;
 }
-<<<<<<< Updated upstream
-=======
 .gh-emerg-card--blue   .gh-emerg-number { color: #BFDBFE; }
 .gh-emerg-card--red    .gh-emerg-number { color: #fecaca; }
 .gh-emerg-card--green  .gh-emerg-number { color: #bbf7d0; }
 .gh-emerg-card--purple .gh-emerg-number { color: #DAD1F0; }
->>>>>>> Stashed changes
 
 .gh-emerg-desc {
   font-size: 10px;
@@ -11856,17 +11837,10 @@ Copy
   letter-spacing: 0.04em;
   border: 1px solid;
 }
-<<<<<<< Updated upstream
-.gh-avatar--blue   { background: rgba(59,130,246,0.16); color: #93c5fd; border-color: rgba(59,130,246,0.32); }
-.gh-avatar--amber  { background: rgba(245,158,11,0.14); color: #fcd34d; border-color: rgba(245,158,11,0.3); }
-.gh-avatar--green  { background: rgba(34,197,94,0.14);  color: #86efac; border-color: rgba(34,197,94,0.3); }
-.gh-avatar--purple { background: rgba(139,92,246,0.14); color: #C0B0E5; border-color: rgba(139,92,246,0.3); }
-=======
 .gh-avatar--blue   { background: rgba(59,130,246,0.18); color: #f6b99c; border: 1px solid rgba(59,130,246,0.28); }
 .gh-avatar--amber  { background: rgba(37,99,235,0.14); color: #93C5FD; border: 1px solid rgba(37,99,235,0.25); }
 .gh-avatar--green  { background: rgba(34,197,94,0.14);  color: #86efac; border: 1px solid rgba(34,197,94,0.25);  }
 .gh-avatar--purple { background: rgba(139,92,246,0.14); color: #C0B0E5; border: 1px solid rgba(139,92,246,0.25); }
->>>>>>> Stashed changes
 
 .gh-contact-info { flex: 1; min-width: 0; }
 .gh-contact-name {
@@ -11936,11 +11910,7 @@ Copy
   flex-wrap: wrap;
   box-shadow: 0 6px 22px rgba(0,0,0,0.3);
 }
-<<<<<<< Updated upstream
-.gh-support-icon { color: #F0845D; flex-shrink: 0; }
-=======
 .gh-support-icon { color: #60A5FA; flex-shrink: 0; }
->>>>>>> Stashed changes
 .gh-support-title {
   font-size: 14px;
   font-weight: 700;
@@ -12059,15 +12029,9 @@ Copy
   color: #F9F8FA;
   transition: color 0.18s;
 }
-<<<<<<< Updated upstream
-.gh-faq-question:hover { color: #F0845D; }
-.gh-faq-chevron { flex-shrink: 0; color: #A39EB2; transition: color 0.2s, transform 0.2s; }
-.gh-faq-item--open .gh-faq-chevron { color: #F0845D; transform: rotate(180deg); }
-=======
 .gh-faq-question:hover { color: #f6b99c; }
 .gh-faq-chevron { flex-shrink: 0; color: #605872; }
 .gh-faq-item--open .gh-faq-chevron { color: #60A5FA; }
->>>>>>> Stashed changes
 .gh-faq-answer {
   padding: 0 16px 15px;
   border-top: 1px solid rgba(255,255,255,0.06);
@@ -12092,11 +12056,7 @@ Copy
   color: #f6b99c;
   line-height: 1.55;
 }
-<<<<<<< Updated upstream
-.gh-guide-intro-icon { flex-shrink: 0; color: #F0845D; margin-top: 1px; }
-=======
 .gh-guide-intro-icon { flex-shrink: 0; color: #60A5FA; margin-top: 1px; }
->>>>>>> Stashed changes
 
 .gh-guide-steps {
   display: grid;
