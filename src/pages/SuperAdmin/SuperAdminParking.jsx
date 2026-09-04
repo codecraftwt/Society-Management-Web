@@ -608,8 +608,7 @@ function ResidentRequestsPanel({ allSlots, onSlotAssigned, societyId }) {
                       <div className="flex gap-2">
                         <button onClick={() => handleAssign(req.id)}
                           disabled={!selectedSlot[req.id] || assigning === req.id}
-                          className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white disabled:opacity-40"
-                          style={{ background: "linear-gradient(135deg,#2FC27E,#3BD095)", border: "none" }}>
+                          className="btn-primary flex-1 py-2.5 text-sm font-bold disabled:opacity-40">
                           {assigning === req.id ? <Spinner small /> : "Assign & Notify"}
                         </button>
                         <button onClick={() => handleReject(req.id)}

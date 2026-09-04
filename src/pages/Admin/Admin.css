@@ -31,11 +31,14 @@ div[style*="position: fixed"] > div[style*="maxWidth"],
 .sa-btn-primary,
 .sa-add-btn,
 button.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
   color: #ffffff !important;
   box-shadow: 0 8px 22px rgba(37, 99, 235, 0.35) !important;
   border: 0 !important;
-  border-radius: 12px !important;
+  border-radius: 999px !important;
   font-weight: 700 !important;
   transition: all 0.2s ease !important;
 }
@@ -48,10 +51,71 @@ button.btn-primary {
   transform: translateY(-1px) !important;
 }
 
+/* ── Color-coded variants (Admin scoped) ── */
+.btn-edit,
+.sa-btn-edit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+  color: #ffffff !important;
+  border: 0 !important;
+  border-radius: 999px !important;
+  box-shadow: 0 8px 22px rgba(16, 185, 129, 0.35) !important;
+  font-weight: 700 !important;
+  transition: all 0.2s ease !important;
+}
+.btn-edit:hover:not(:disabled),
+.sa-btn-edit:hover:not(:disabled) {
+  background: linear-gradient(135deg, #34d399 0%, #059669 100%) !important;
+  box-shadow: 0 12px 28px rgba(16, 185, 129, 0.5) !important;
+  transform: translateY(-1px) !important;
+}
+
+.btn-danger,
+.sa-btn-danger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
+  color: #ffffff !important;
+  border: 0 !important;
+  border-radius: 999px !important;
+  box-shadow: 0 8px 22px rgba(239, 68, 68, 0.32) !important;
+  font-weight: 700 !important;
+  transition: all 0.2s ease !important;
+}
+.btn-danger:hover:not(:disabled),
+.sa-btn-danger:hover:not(:disabled) {
+  background: linear-gradient(135deg, #f87171 0%, #dc2626 100%) !important;
+  box-shadow: 0 12px 28px rgba(239, 68, 68, 0.45) !important;
+  transform: translateY(-1px) !important;
+}
+
+.btn-export,
+.sa-btn-export {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%) !important;
+  color: #ffffff !important;
+  border: 0 !important;
+  border-radius: 999px !important;
+  box-shadow: 0 8px 22px rgba(20, 184, 166, 0.32) !important;
+  font-weight: 700 !important;
+  transition: all 0.2s ease !important;
+}
+.btn-export:hover:not(:disabled),
+.sa-btn-export:hover:not(:disabled) {
+  background: linear-gradient(135deg, #2dd4bf 0%, #0d9488 100%) !important;
+  box-shadow: 0 12px 28px rgba(20, 184, 166, 0.45) !important;
+  transform: translateY(-1px) !important;
+}
+
 /* ── Ghost / Muted Buttons ── */
 .btn-muted,
 .sa-btn-ghost {
-  border-radius: 12px !important;
+  border-radius: 999px !important;
   font-weight: 600 !important;
   transition: all 0.2s ease !important;
 }

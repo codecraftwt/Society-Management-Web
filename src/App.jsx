@@ -52,6 +52,7 @@ import AdminDocument from "./pages/Admin/AdminDocument";
 import ManageProperty from "./pages/Admin/ManageProperty";
 import AdminSetting from "./pages/Admin/AdminSetting";
 import FlatHistory from "./pages/Admin/FlatHistory";
+import MaintenancePage from "./pages/Maintenance/MaintenancePage";
 
 /* === COMMITTEE MEMBER (LIMITED ACCESS) === */
 import CommitteeLayout from "./pages/Committee/CommitteeLayout";
@@ -171,6 +172,7 @@ function App() {
             <Route path="visitor-logs" element={<VisitorLogs />} />
             <Route path="accountant" element={<Accountant />} />
             <Route path="manage-bills" element={<ManageBill />} />
+            <Route path="maintenance" element={<MaintenancePage />} />
             <Route path="parking" element={<SuperAdminParking />} />
             <Route path="reports" element={<SystemReports />} />
             <Route path="reports/visitors" element={<SuperAdminVisitorReport />} />
@@ -194,6 +196,7 @@ function App() {
             <Route path="complaints" element={<Complaint />} />
             <Route path="accountant" element={<Accountant />} />
             <Route path="manage-bills" element={<ManageBill />} />
+            <Route path="maintenance" element={<MaintenancePage />} />
             <Route path="visitor-logs" element={<VisitorLogs />} />
             <Route path="reports" element={<Reports />} />
             <Route path="reports/complaints" element={<ComplaintReport />} />
@@ -235,6 +238,7 @@ function App() {
             <Route path="billing-rules" element={<CommitteeBillingRules />} />
             <Route path="manage-bills" element={<CommitteeManageBills />} />
             <Route path="payment-tracking" element={<CommitteePaymentTracking />} />
+            <Route path="maintenance" element={<MaintenancePage />} />
             <Route path="reports" element={<CommitteeReports />} />
             <Route path="reports/complaints" element={<ComplaintReport />} />
             <Route path="reports/visitors" element={<VisitorReport />} />

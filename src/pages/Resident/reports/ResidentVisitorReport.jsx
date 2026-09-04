@@ -190,10 +190,10 @@ export default function ResidentVisitorReport() {
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-          <button onClick={handleExcel} style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 13px", borderRadius: 10, fontSize: 12, fontWeight: 700, background: "rgba(74,222,128,0.1)", color: "#4ade80", border: "1px solid rgba(74,222,128,0.25)", cursor: "pointer", whiteSpace: "nowrap" }}>
+          <button onClick={handleExcel} className="btn-export" style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 13px", fontSize: 12, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}>
             <MdTableChart size={14} /> {t("reportExcel")}
           </button>
-          <button onClick={handlePDF} style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 13px", borderRadius: 10, fontSize: 12, fontWeight: 700, background: "rgba(248,113,113,0.1)", color: "#f87171", border: "1px solid rgba(248,113,113,0.25)", cursor: "pointer", whiteSpace: "nowrap" }}>
+          <button onClick={handlePDF} className="btn-export" style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 13px", fontSize: 12, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}>
             <MdPictureAsPdf size={14} /> {t("reportPDF")}
           </button>
           {isMobile && (

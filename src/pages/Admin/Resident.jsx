@@ -116,7 +116,7 @@ function BhkBadge({ type }) {
 /* ─────────────────────────────────────────
    RESIDENT ACTION MENU (three-dot kebab)
    ───────────────────────────────────────── */
-function ResidentActionMenu({ onAssignFlat, onEdit, isCommittee, onPromote, onRemove, onDelete, t }) {
+function ResidentActionMenu({ onAssignFlat, onEdit, isCommittee, isSocietyAdmin, onPromote, onRemove, onDelete, t }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
 
@@ -151,7 +151,7 @@ function ResidentActionMenu({ onAssignFlat, onEdit, isCommittee, onPromote, onRe
             <MdEdit size={15} />
             {t("colEdit") || "Edit"}
           </button>
-          {isCommittee !== false && (
+          {!isSocietyAdmin && (
             <>
               <div className="sa-action-divider" />
               {isCommittee ? (
@@ -2198,6 +2198,7 @@ export default function Resident() {
   const [loadingSlots, setLoadingSlots] = useState(false);
 
   const [confirmId, setConfirmId] = useState(null);
+  const [committeeConfirm, setCommitteeConfirm] = useState(null);
   const [flatDetailModal, setFlatDetailModal] = useState(null);
 
   const { user } = useContext(AuthContext);
@@ -2345,6 +2346,7 @@ export default function Resident() {
   const promoteCommittee = async (userId) => {
     try {
       await API.post("/users/committee/promote", { userId });
+      setCommitteeConfirm(null);
       loadResidents(page, debouncedSearch);
       toast.success("Promoted to committee member");
     } catch (err) { toast.error(err.response?.data?.message || "Failed to promote"); }
@@ -2353,6 +2355,7 @@ export default function Resident() {
   const removeCommittee = async (userId) => {
     try {
       await API.post("/users/committee/remove", { userId });
+      setCommitteeConfirm(null);
       loadResidents(page, debouncedSearch);
       toast.success("Removed from committee");
     } catch (err) { toast.error(err.response?.data?.message || "Failed to remove"); }
@@ -3078,9 +3081,10 @@ export default function Resident() {
                               t={t}
                               onAssignFlat={() => setAssignModal({ id: r.id, name: r.name, society_id: r.society_id })}
                               onEdit={() => handleEdit(r)}
-                              isCommittee={r.roles?.includes("SOCIETY_ADMIN") ? false : r.roles?.includes("COMMITTEE_MEMBER")}
-                              onPromote={() => promoteCommittee(r.id)}
-                              onRemove={() => removeCommittee(r.id)}
+                              isCommittee={!!r.roles?.includes("COMMITTEE_MEMBER")}
+                              isSocietyAdmin={!!r.roles?.includes("SOCIETY_ADMIN")}
+                              onPromote={() => setCommitteeConfirm({ type: "promote", id: r.id, name: r.name })}
+                              onRemove={() => setCommitteeConfirm({ type: "remove", id: r.id, name: r.name })}
                               onDelete={() => setConfirmId(r.id)}
                             />
                           )}
@@ -3123,9 +3127,10 @@ export default function Resident() {
                           t={t}
                           onAssignFlat={() => setAssignModal({ id: r.id, name: r.name, society_id: r.society_id })}
                           onEdit={() => handleEdit(r)}
-                          isCommittee={r.roles?.includes("SOCIETY_ADMIN") ? false : r.roles?.includes("COMMITTEE_MEMBER")}
-                          onPromote={() => promoteCommittee(r.id)}
-                          onRemove={() => removeCommittee(r.id)}
+                          isCommittee={!!r.roles?.includes("COMMITTEE_MEMBER")}
+                          isSocietyAdmin={!!r.roles?.includes("SOCIETY_ADMIN")}
+                          onPromote={() => setCommitteeConfirm({ type: "promote", id: r.id, name: r.name })}
+                          onRemove={() => setCommitteeConfirm({ type: "remove", id: r.id, name: r.name })}
                           onDelete={() => setConfirmId(r.id)}
                         />
                       )}
@@ -3142,6 +3147,54 @@ export default function Resident() {
           </div>
         )}
       </div>
+
+      {committeeConfirm && (
+        <div
+          onClick={(e) => { if (e.target === e.currentTarget) setCommitteeConfirm(null); }}
+          style={{ position: "fixed", inset: 0, zIndex: 1200, background: "rgba(0,0,0,0.65)", backdropFilter: "blur(8px)", display: "flex", alignItems: "center", justifyContent: "center", padding: "16px" }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{ width: "100%", maxWidth: 420, background: "var(--card-bg, #0f172a)", border: "1px solid var(--glass-border, rgba(255,255,255,0.12))", borderRadius: 20, padding: "24px", boxShadow: "0 24px 80px rgba(0,0,0,0.5)", animation: "saModalPopIn 0.25s cubic-bezier(0.16, 1, 0.3, 1)" }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
+              <div style={{ width: 42, height: 42, borderRadius: 12, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", background: committeeConfirm.type === "promote" ? "rgba(37,99,235,0.14)" : "rgba(239,68,68,0.14)", border: `1px solid ${committeeConfirm.type === "promote" ? "rgba(37,99,235,0.3)" : "rgba(239,68,68,0.3)"}` }}>
+                {committeeConfirm.type === "promote" ? <MdPersonAdd size={22} style={{ color: "#60A5FA" }} /> : <MdPerson size={22} style={{ color: "#f87171" }} />}
+              </div>
+              <div>
+                <p style={{ margin: 0, fontSize: 16, fontWeight: 800, color: "var(--text-primary)", letterSpacing: "-0.02em" }}>
+                  {committeeConfirm.type === "promote" ? "Add to Committee" : "Remove from Committee"}
+                </p>
+                <p style={{ margin: 0, fontSize: 12, color: "var(--text-secondary)" }}>{committeeConfirm.name}</p>
+              </div>
+            </div>
+
+            <p style={{ margin: 0, fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.6 }}>
+              {committeeConfirm.type === "promote"
+                ? "Make this resident a committee member? They will be able to manage society operations."
+                : "Remove this resident from the committee? They will still have resident access."}
+            </p>
+
+            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 22 }}>
+              <button type="button" onClick={() => setCommitteeConfirm(null)} className="sa-btn sa-btn-ghost" style={{ borderRadius: 12 }}>
+                {t("cancel") || "Cancel"}
+              </button>
+              <button
+                type="button"
+                onClick={() => committeeConfirm.type === "promote" ? promoteCommittee(committeeConfirm.id) : removeCommittee(committeeConfirm.id)}
+                className={committeeConfirm.type === "promote" ? "btn-primary" : "btn-danger"}
+                style={{ borderRadius: 999, fontWeight: 700 }}
+              >
+                {committeeConfirm.type === "promote" ? (
+                  <><MdPersonAdd size={16} /> <span>Add as Committee Member</span></>
+                ) : (
+                  <><MdPerson size={16} /> <span>Remove Member</span></>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

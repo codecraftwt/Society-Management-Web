@@ -96,7 +96,7 @@ function ViewModal({ doc, onClose }) {
               target="_blank"
               rel="noopener noreferrer"
               download
-              className="rd-btn rd-btn-download"
+              className="btn-export"
               style={{ textDecoration: "none", padding: "7px 14px", display: "inline-flex", alignItems: "center", gap: "5px" }}
             >
               <span style={{ fontSize: "0.75rem" }}>⬇</span>

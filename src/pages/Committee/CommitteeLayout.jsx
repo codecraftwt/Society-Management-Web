@@ -18,6 +18,7 @@ import {
   MdBookOnline,
   MdDescription,
   MdVisibility,
+  MdBuild,
 } from "react-icons/md";
 import NotificationBell from "../../components/common/NotificationBell";
 import ThemeToggle from "../../components/common/ThemeToggle";
@@ -110,6 +111,12 @@ function CommitteeLayoutInner() {
       label: "Payment Tracking",
       path: `${base}/payment-tracking`,
       icon: MdBarChart,
+      group: "FINANCE & BILLS",
+    },
+    {
+      label: "Maintenance Management",
+      path: `${base}/maintenance`,
+      icon: MdBuild,
       group: "FINANCE & BILLS",
     },
     {

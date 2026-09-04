@@ -199,10 +199,10 @@ function RequestCard({ r, slots, selectedSlot, setSelectedSlot, onAssign, onReje
                   </div>
                 </div>
                 <div className="gp-btn-row">
-                  <button onClick={() => onAssign(r.id)} className="gp-btn-approve" disabled={!selectedSlot[r.id]}>
+                  <button onClick={() => onAssign(r.id)} className="gp-btn-approve btn-primary" disabled={!selectedSlot[r.id]}>
                     <MdCheckCircle size={15} /> {t("gpAssignBtn")}
                   </button>
-                  <button onClick={() => onReject(r.id)} className="gp-btn-reject">
+                  <button onClick={() => onReject(r.id)} className="gp-btn-reject btn-danger">
                     <MdCancel size={15} /> {t("gpRejectBtn")}
                   </button>
                 </div>
@@ -211,7 +211,7 @@ function RequestCard({ r, slots, selectedSlot, setSelectedSlot, onAssign, onReje
 
             {isApproved && hasSlot && (
               <div className="gp-btn-row">
-                <button onClick={() => onExit(r.id)} className="gp-btn-exit">
+                <button onClick={() => onExit(r.id)} className="gp-btn-exit btn-primary">
                   <MdExitToApp size={15} /> {t("gpMarkExit")}
                 </button>
               </div>
@@ -314,15 +314,8 @@ function ResidentEntryPanel({ slots, onCreated, t }) {
         <button
           onClick={handleLookup}
           disabled={lookupLoading || !vehicleNumber.trim()}
-          style={{
-            display:"flex", alignItems:"center", gap:7,
-            padding:"0 18px", height:42, borderRadius:11,
-            fontSize:13, fontWeight:700,
-            background:"linear-gradient(135deg,#2563EB,#3B82F6)",
-            color:"#fff", border:"none", cursor:"pointer",
-            opacity: (!vehicleNumber.trim() || lookupLoading) ? 0.5 : 1,
-            boxShadow:"0 4px 14px rgba(217,119,6,0.30)",
-          }}
+          className="btn-primary shrink-0"
+          style={{ display:"flex", alignItems:"center", gap:7, height:42, padding:"0 18px", fontSize:13, fontWeight:700, opacity: (!vehicleNumber.trim() || lookupLoading) ? 0.5 : 1 }}
         >
           {lookupLoading ? <Spinner size={14} /> : <MdPersonSearch size={16} />}
           Lookup
@@ -384,14 +377,7 @@ function ResidentEntryPanel({ slots, onCreated, t }) {
           <button
             onClick={handleCreate}
             disabled={submitLoading || !selectedSlot}
-            style={{
-              display:"flex", alignItems:"center", justifyContent:"center", gap:8,
-              padding:"11px 0", borderRadius:11, fontSize:13, fontWeight:700,
-              background:"linear-gradient(135deg,#16a34a,#22c55e)",
-              color:"#fff", border:"none", cursor:"pointer",
-              opacity: (!selectedSlot || submitLoading) ? 0.5 : 1,
-              boxShadow:"0 4px 14px rgba(22,163,74,0.30)",
-            }}
+            className="btn-primary w-full py-2.5 text-[13px] font-bold disabled:opacity-50"
           >
             {submitLoading ? <Spinner size={15} /> : <MdAdd size={16} />}
             {submitLoading ? "Creating entry..." : "Create Resident Parking Entry"}

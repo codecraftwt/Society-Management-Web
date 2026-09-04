@@ -143,7 +143,7 @@ export default function PaymentMethods() {
               </span>
               <button
                 onClick={handleCopyUpiId}
-                className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-green-500/30 bg-green-500/10 text-green-400 text-xs font-semibold hover:bg-green-500/20 transition"
+                className="btn-muted flex items-center gap-1 px-3 py-1.5 text-xs font-semibold"
               >
                 {copied ? <IoCheckmarkOutline size={13} /> : <IoCopyOutline size={13} />}
                 {copied ? "Copied" : "Copy"}
@@ -155,7 +155,6 @@ export default function PaymentMethods() {
               onClick={handleConfirm}
               disabled={confirming}
               className="btn-primary w-full justify-center"
-              style={{ backgroundColor: "#16a34a" }}
             >
               {confirming ? "Confirming..." : "I have paid"}
             </button>

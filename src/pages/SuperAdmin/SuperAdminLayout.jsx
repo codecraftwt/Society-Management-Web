@@ -8,6 +8,7 @@ import {
   MdReportProblem,
   MdAccountBalance,
   MdVerified,
+  MdBuild,
 } from "react-icons/md";
 import { FaBuilding, FaUsers, FaUserShield, FaParking } from "react-icons/fa";
 import ThemeToggle from "../../components/common/ThemeToggle";
@@ -88,6 +89,12 @@ function SuperAdminLayoutInner() {
       label: t("saMenuManageBills") || "Manage Bills",
       path: `${base}/manage-bills`,
       icon: MdAccountBalance,
+      group: "FINANCE & ASSETS",
+    },
+    {
+      label: t("saMenuMaintenance") || "Maintenance Management",
+      path: `${base}/maintenance`,
+      icon: MdBuild,
       group: "FINANCE & ASSETS",
     },
     {

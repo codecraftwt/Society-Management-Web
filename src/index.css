@@ -181,6 +181,7 @@
     --radius-lg: 14px;
     --radius-md: 10px;
     --radius-sm: 8px;
+    --radius-dropdown: 12px;
     --shadow-glass: 0 18px 50px rgba(3, 3, 6, 0.5);
     --blur: blur(16px);
     --divider: rgba(255, 255, 255, 0.075);
@@ -2935,9 +2936,10 @@
   .btn-delete {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 6px;
     padding: 6px 14px;
-    border-radius: 10px;
+    border-radius: 999px;
     font-size: 12px;
     font-weight: 700;
     background: var(--stat-red-bg);
@@ -2949,12 +2951,13 @@
   .btn-delete-confirm {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 6px;
     padding: 6px 14px;
-    border-radius: 10px;
+    border-radius: 999px;
     font-size: 12px;
     font-weight: 700;
-    background: #dc2626;
+    background: linear-gradient(135deg, #ef4444, #dc2626);
     color: #fff;
     border: none;
     cursor: pointer;
@@ -2967,9 +2970,10 @@
   .btn-cancel-sm {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 4px;
     padding: 6px 12px;
-    border-radius: 10px;
+    border-radius: 999px;
     font-size: 12px;
     font-weight: 600;
     background: var(--card-inner-bg);
@@ -8813,8 +8817,7 @@ display: flex;
     min-width: 216px;
     padding: 8px;
     border-radius: 16px;
-    border: 1px solid rgba(255,255,255,0.12);
-    background: linear-gradient(180deg, rgba(23,34,58,0.98), rgba(15,23,42,0.98));
+    border: 1px solid rgba(255,255,255,0.12);    background: linear-gradient(180deg, rgba(23,34,58,0.98), rgba(15,23,42,0.98));
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     box-shadow: 0 20px 50px -12px rgba(0,0,0,0.7), 0 0 0 1px rgba(96,165,250,0.06);
@@ -11408,7 +11411,7 @@ Copy
   z-index: 300;
   min-width: 235px;
   padding: 5px;
-  border-radius: 14px;
+  border-radius: var(--radius-dropdown, 12px);
   border: 1px solid var(--glass-border);
   background: var(--card-bg);
   backdrop-filter: var(--blur);
@@ -15064,7 +15067,7 @@ select option:checked {
   z-index: 1300;
   min-width: 196px;
   padding: 6px;
-  border-radius: 12px;
+  border-radius: var(--radius-dropdown, 12px);
   background: var(--card-bg);
   border: 1px solid var(--glass-border);
   box-shadow: 0 14px 40px -12px rgba(0, 0, 0, 0.45);
@@ -15292,15 +15295,19 @@ select option:checked {
    UNIFORM BUTTONS & MODAL ANIMATIONS (SUPERADMIN / ADMIN THEME ALIGNMENT)
    ========================================================================== */
 
-/* 1. Primary Buttons: Identical to /superadmin/societies */
+/* 1. Primary Buttons: Identical to /superadmin/societies (premium pill) */
 .btn-primary,
 .sa-btn-primary,
 .sa-add-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
   background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
   color: #ffffff !important;
   box-shadow: 0 8px 22px rgba(37, 99, 235, 0.35) !important;
   border: 0 !important;
-  border-radius: 12px !important;
+  border-radius: 999px !important;
   font-weight: 700 !important;
   transition: all 0.2s ease !important;
 }
@@ -15313,10 +15320,74 @@ select option:checked {
   transform: translateY(-1px) !important;
 }
 
+/* 1b. Color-coded premium pill variants */
+.btn-edit,
+.sa-btn-edit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+  color: #ffffff !important;
+  border: 0 !important;
+  border-radius: 999px !important;
+  box-shadow: 0 8px 22px rgba(16, 185, 129, 0.35) !important;
+  font-weight: 700 !important;
+  transition: all 0.2s ease !important;
+}
+.btn-edit:hover:not(:disabled),
+.sa-btn-edit:hover:not(:disabled) {
+  background: linear-gradient(135deg, #34d399 0%, #059669 100%) !important;
+  box-shadow: 0 12px 28px rgba(16, 185, 129, 0.5) !important;
+  transform: translateY(-1px) !important;
+}
+
+.btn-danger,
+.sa-btn-danger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
+  color: #ffffff !important;
+  border: 0 !important;
+  border-radius: 999px !important;
+  box-shadow: 0 8px 22px rgba(239, 68, 68, 0.32) !important;
+  font-weight: 700 !important;
+  transition: all 0.2s ease !important;
+}
+.btn-danger:hover:not(:disabled),
+.sa-btn-danger:hover:not(:disabled) {
+  background: linear-gradient(135deg, #f87171 0%, #dc2626 100%) !important;
+  box-shadow: 0 12px 28px rgba(239, 68, 68, 0.45) !important;
+  transform: translateY(-1px) !important;
+}
+
+.btn-export,
+.sa-btn-export {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%) !important;
+  color: #ffffff !important;
+  border: 0 !important;
+  border-radius: 999px !important;
+  box-shadow: 0 8px 22px rgba(20, 184, 166, 0.32) !important;
+  font-weight: 700 !important;
+  transition: all 0.2s ease !important;
+}
+.btn-export:hover:not(:disabled),
+.sa-btn-export:hover:not(:disabled) {
+  background: linear-gradient(135deg, #2dd4bf 0%, #0d9488 100%) !important;
+  box-shadow: 0 12px 28px rgba(20, 184, 166, 0.45) !important;
+  transform: translateY(-1px) !important;
+}
+
 /* 2. Ghost / Muted Buttons */
 .btn-muted,
 .sa-btn-ghost {
-  border-radius: 12px !important;
+  border-radius: 999px !important;
   font-weight: 600 !important;
   transition: all 0.2s ease !important;
 }

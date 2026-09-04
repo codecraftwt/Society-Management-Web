@@ -14,6 +14,7 @@ import {
   MdAccountBalance,
   MdWarning,
   MdVerified,
+  MdBuild,
 } from "react-icons/md";
 import NotificationBell from "../../components/common/NotificationBell";
 import ThemeToggle from "../../components/common/ThemeToggle";
@@ -133,6 +134,12 @@ function AdminLayoutInner() {
       label: t("adminMenuManageBills"),
       path: `${base}/manage-bills`,
       icon: MdAccountBalance,
+      group: "FINANCE & BILLS",
+    },
+    {
+      label: "Maintenance Management",
+      path: `${base}/maintenance`,
+      icon: MdBuild,
       group: "FINANCE & BILLS",
     },
     {

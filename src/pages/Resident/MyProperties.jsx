@@ -301,7 +301,7 @@ export default function MyProperties() {
                     )}
                     <button
                       onClick={() => { setSelectedFlatId(prop.flat_id); setShowForm(true); }}
-                      className="bg-green-500/10 text-green-500 border border-green-500/20 px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-2 hover:bg-green-500/20 transition-all"
+                      className="btn-primary px-3 py-1.5 text-xs font-semibold flex items-center gap-2"
                     >
                       <MdPersonAdd size={14} /> Add Tenant
                     </button>

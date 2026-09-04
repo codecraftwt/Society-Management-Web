@@ -138,7 +138,7 @@ export default function AdminDashboard() {
         </div>
         <button
           onClick={loadDashboardData}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold bg-red-500 text-white hover:bg-red-600 transition-colors shrink-0"
+          className="btn-primary flex items-center gap-2 px-4 py-2 text-xs font-semibold shrink-0"
         >
           <MdRefresh size={16} />
           Retry Loading

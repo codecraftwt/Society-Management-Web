@@ -104,7 +104,7 @@ function RowActions({ bill, confirmDeleteId, setConfirmDeleteId, handleDeleteBil
         <button
           onClick={() => handleConfirmPayment(bill.id)}
           disabled={confirmingId === bill.id}
-          className="px-3 py-1.5 rounded-lg text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-500 transition-colors flex items-center gap-1 shadow-sm shrink-0"
+          className="btn-primary px-3 py-1.5 text-xs font-bold flex items-center gap-1 shrink-0"
           title="Confirm resident payment and send Web/Mobile notification"
         >
           <MdCheckCircle size={13} /> {confirmingId === bill.id ? "Confirming..." : "Confirm Payment"}

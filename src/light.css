@@ -41,9 +41,10 @@ html.light {
   --info: #1617FF;
   --secondary: #f50057;
 
-  --radius-lg: 8px;
-  --radius-md: 8px;
+  --radius-lg: 14px;
+  --radius-md: 10px;
   --radius-sm: 8px;
+  --radius-dropdown: 12px;
 
   --shadow-sm:
     0 1px 3px rgba(15, 23, 42, 0.05), 0 2px 8px rgba(15, 23, 42, 0.04);
@@ -281,6 +282,52 @@ html.light {
   .btn-danger:hover {
     transform: translateY(-1px);
     box-shadow: 0 6px 20px rgba(239, 68, 68, 0.35);
+  }
+
+  .btn-edit,
+  .sa-btn-edit {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: #ffffff !important;
+    padding: 0.52rem 1.15rem;
+    border-radius: 999px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);
+  }
+  .btn-edit:hover,
+  .sa-btn-edit:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+    background: linear-gradient(135deg, #059669, #047857);
+  }
+
+  .btn-export,
+  .sa-btn-export {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    background: linear-gradient(135deg, #14b8a6, #0d9488);
+    color: #ffffff !important;
+    padding: 0.52rem 1.15rem;
+    border-radius: 999px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 14px rgba(20, 184, 166, 0.3);
+  }
+  .btn-export:hover,
+  .sa-btn-export:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(20, 184, 166, 0.4);
+    background: linear-gradient(135deg, #0d9488, #0f766e);
   }
 
   .btn-muted {
@@ -2872,9 +2919,10 @@ html.light {
   .btn-delete {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 6px;
     padding: 6px 14px;
-    border-radius: 10px;
+    border-radius: 999px;
     font-size: 12px;
     font-weight: 700;
     background: var(--stat-red-bg);
@@ -2886,12 +2934,13 @@ html.light {
   .btn-delete-confirm {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 6px;
     padding: 6px 14px;
-    border-radius: 10px;
+    border-radius: 999px;
     font-size: 12px;
     font-weight: 700;
-    background: #dc2626;
+    background: linear-gradient(135deg, #ef4444, #dc2626);
     color: #fff;
     border: none;
     cursor: pointer;
@@ -2904,9 +2953,10 @@ html.light {
   .btn-cancel-sm {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 4px;
     padding: 6px 12px;
-    border-radius: 10px;
+    border-radius: 999px;
     font-size: 12px;
     font-weight: 600;
     background: var(--card-inner-bg);
@@ -6988,6 +7038,7 @@ html.light {
   .rs-dropdown {
     background: #ffffff;
     border-color: #D6D6E4;
+    border-radius: var(--radius-dropdown, 12px);
     box-shadow: 0 16px 48px rgba(15,23,42,0.14), 0 0 0 1px rgba(15,23,42,0.04);
   }
 
