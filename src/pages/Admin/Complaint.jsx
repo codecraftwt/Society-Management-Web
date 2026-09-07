@@ -11,11 +11,12 @@ import {
   MdChat, MdSend, MdDelete,
   MdChevronLeft, MdChevronRight,
   MdPublic, MdVisibility, MdDownload, MdAttachFile,
-  MdFilePresent, MdFilterAlt, MdRefresh, MdMoreHoriz,
+  MdFilePresent, MdFilterAlt, MdRefresh, MdMoreHoriz, MdPictureAsPdf, MdTableChart, MdArrowDropDown,
 } from "react-icons/md";
 import { toast } from "react-toastify";
 import Select from "../../components/common/Select";
 import styles from "./Complaint.module.css";
+import { exportToPDF } from "../../utils/exportPDF";
 
 /* ── Pagination ── */
 function Pagination({ page, totalPages, onPageChange }) {
@@ -827,6 +828,7 @@ export default function Complaint() {
   const [drawerTab,     setDrawerTab]     = useState("details");
   const [unreadMap,     setUnreadMap]     = useState({});
   const [filtersOpen,   setFiltersOpen]   = useState(false);
+  const [exportOpen,    setExportOpen]    = useState(false);
 
   /* Lazy comment counts — real data from the existing comments endpoint,
      cached per complaint so we never refetch across page turns. */
@@ -1155,6 +1157,18 @@ export default function Complaint() {
     URL.revokeObjectURL(url);
   };
 
+  const exportPDF = () => {
+    exportToPDF({
+      title: t("adminCompTitle"),
+      fileName: `complaints-${new Date().toISOString().slice(0, 10)}`,
+      columns: [t("compColTitle"), t("compColDesc"), t("reportResident"), t("reportFlat"), t("reportSociety"), t("billStatusCol"), t("compSubmittedAt")],
+      rows: complaints.map((c) => [
+        c.title || "", c.description || "", c.User?.name || "",
+        flatLabel(c, t), c.Society?.name || "", c.status, formatDate(c.created_at),
+      ]),
+    });
+  };
+
   const TABS = [
     { key: "ALL",         label: t("compTabAll"),        shortLabel: t("compTabAll"),        count: counts.ALL },
     { key: "PENDING",     label: t("compStatusPending"), shortLabel: t("compStatusPending"), count: counts.PENDING },
@@ -1225,10 +1239,24 @@ export default function Complaint() {
               {societiesList.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
             </Select>
           )}
-          <button className={styles.exportBtn} onClick={exportCSV} disabled={complaints.length === 0}
-            title={t("compExport")}>
-            <MdDownload size={15} /> {t("compExport")}
-          </button>
+          <div className={styles.exportWrap}>
+            <button className={styles.exportBtn} onClick={() => setExportOpen(o => !o)}
+              disabled={complaints.length === 0} title={t("compExport")}>
+              <MdDownload size={15} /> {t("compExport")} <MdArrowDropDown size={16} />
+            </button>
+            {exportOpen && (
+              <div className={styles.exportMenu}>
+                <button className={styles.exportMenuItem} disabled={complaints.length === 0}
+                  onClick={() => { exportCSV(); setExportOpen(false); }}>
+                  <MdTableChart size={14} /> CSV
+                </button>
+                <button className={styles.exportMenuItem} disabled={complaints.length === 0}
+                  onClick={() => { exportPDF(); setExportOpen(false); }}>
+                  <MdPictureAsPdf size={14} /> PDF
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
