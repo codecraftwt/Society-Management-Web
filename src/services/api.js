@@ -32,4 +32,15 @@ API.interceptors.request.use((config) => {
   return Promise.reject(error);
 });
 
+API.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401 && localStorage.getItem("token")) {
+      localStorage.clear();
+      window.location.href = "/login";
+    }
+    return Promise.reject(error);
+  }
+);
+
 export default API;
