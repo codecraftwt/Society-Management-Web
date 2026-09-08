@@ -1,5 +1,7 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import API from "../../services/api";
+import { toast } from "react-toastify";
+import { moveOutResident } from "../../services/flatService";
 import { useLang } from "../../context/LanguageContext";
 
 /* ─────────────────────────────────────────────────────────────
@@ -55,7 +57,7 @@ const Pill = ({ status, t }) => (
 /* ─────────────────────────────────────────────────────────────
    TAB: RESIDENTS
 ────────────────────────────────────────────────────────────── */
-const ResidentsTab = ({ residents, t }) => {
+const ResidentsTab = ({ residents, t, onMoveOut }) => {
   if (!residents.length)
     return <Empty icon="👤" text={t("fhNoResidents")} sub={t("fhNoResidentsSub")} />;
 
@@ -95,6 +97,20 @@ const ResidentsTab = ({ residents, t }) => {
                   : moveOut && <span className="fh-date-chip fh-date-chip--out">{t("fhOut")}: {String(moveOut).slice(0, 10)}</span>
                 }
               </div>
+
+              {isCurrent && onMoveOut && (
+                <div className="fh-resident-actions">
+                  <button
+                    type="button"
+                    className="fh-move-out-btn"
+                    onClick={() => onMoveOut(r)}
+                    title={t("fhMoveOutTitle")}
+                  >
+                    <span className="fh-move-out-ico">➜</span>
+                    {t("fhMarkLeft")}
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         );
@@ -104,42 +120,105 @@ const ResidentsTab = ({ residents, t }) => {
 };
 
 /* ─────────────────────────────────────────────────────────────
-   TAB: BILLS
+   TAB: BILLS & PAYMENTS
 ────────────────────────────────────────────────────────────── */
 const BillsTab = ({ bills, t }) => {
+  const [filter, setFilter] = useState("all");
+
   if (!bills.length)
-    return <Empty icon="💰" text={t("fhNoBills")} sub={t("fhNoBillsSub")} />;
+    return <Empty icon="💳" text={t("fhNoBills")} sub={t("fhNoBillsSub")} />;
+
+  const totalAmount = bills.reduce((sum, b) => sum + Number(b.amount || 0), 0);
+  const paidBills = bills.filter((b) => (b.status || "").toLowerCase() === "paid");
+  const pendingBills = bills.filter((b) => (b.status || "").toLowerCase() !== "paid");
+  const paidAmount = paidBills.reduce((sum, b) => sum + Number(b.amount || 0), 0);
+  const pendingAmount = pendingBills.reduce((sum, b) => sum + Number(b.amount || 0), 0);
+
+  const displayedBills =
+    filter === "paid" ? paidBills : filter === "pending" ? pendingBills : bills;
 
   return (
-    <div className="fh-table-wrap">
-      <table className="fh-table">
-        <thead>
-          <tr className="fh-t-row">
-            <th className="fh-th">{t("fhDescription")}</th>
-            <th className="fh-th">{t("fhAmount")}</th>
-            <th className="fh-th">{t("fhDueDate")}</th>
-            <th className="fh-th">{t("fhStatus")}</th>
-          </tr>
-        </thead>
-        <tbody>
-          {bills.map((b, i) => (
-            <tr className="fh-tbody-row" key={b.id || i}>
-              <td className="fh-td fh-td--name">
-                {b.description || b.title || b.bill_type || b.type || `${t("fhBills")} #${i + 1}`}
-              </td>
-              <td className="fh-td fh-td--amount">
-                ₹{Number(b.amount || 0).toLocaleString("en-IN")}
-              </td>
-              <td className="fh-td">
-                {b.due_date || b.dueDate || b.due || "—"}
-              </td>
-              <td className="fh-td">
-                <Pill status={b.status} t={t} />
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <div className="fh-bills-section">
+      {/* Financial Summary Strip */}
+      <div className="fh-bills-summary-row">
+        <div className="fh-bills-sum-card fh-bills-sum-card--total">
+          <span className="fh-bills-sum-label">Total Billed</span>
+          <span className="fh-bills-sum-val">₹{totalAmount.toLocaleString("en-IN")}</span>
+        </div>
+        <div className="fh-bills-sum-card fh-bills-sum-card--paid">
+          <span className="fh-bills-sum-label">Paid Amount</span>
+          <span className="fh-bills-sum-val">₹{paidAmount.toLocaleString("en-IN")}</span>
+        </div>
+        <div className="fh-bills-sum-card fh-bills-sum-card--pending">
+          <span className="fh-bills-sum-label">Pending Amount</span>
+          <span className="fh-bills-sum-val">₹{pendingAmount.toLocaleString("en-IN")}</span>
+        </div>
+      </div>
+
+      {/* Filter Toggle Buttons */}
+      <div className="fh-bills-subtoggle-bar">
+        <button
+          type="button"
+          className={`fh-bills-subtoggle-btn ${filter === "all" ? "fh-bills-subtoggle-btn--active" : ""}`}
+          onClick={() => setFilter("all")}
+        >
+          All Bills ({bills.length})
+        </button>
+        <button
+          type="button"
+          className={`fh-bills-subtoggle-btn ${filter === "paid" ? "fh-bills-subtoggle-btn--active" : ""}`}
+          onClick={() => setFilter("paid")}
+        >
+          Paid ({paidBills.length})
+        </button>
+        <button
+          type="button"
+          className={`fh-bills-subtoggle-btn ${filter === "pending" ? "fh-bills-subtoggle-btn--active" : ""}`}
+          onClick={() => setFilter("pending")}
+        >
+          Pending ({pendingBills.length})
+        </button>
+      </div>
+
+      {displayedBills.length === 0 ? (
+        <Empty icon="💰" text="No bills in this category" sub="Select a different filter above." />
+      ) : (
+        <div className="fh-table-wrap">
+          <table className="fh-table">
+            <thead>
+              <tr className="fh-t-row">
+                <th className="fh-th">{t("fhDescription")}</th>
+                <th className="fh-th">{t("fhAmount")}</th>
+                <th className="fh-th">{t("fhDueDate")}</th>
+                <th className="fh-th">{t("fhStatus")}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {displayedBills.map((b, i) => (
+                <tr className="fh-tbody-row" key={b.id || i}>
+                  <td className="fh-td fh-td--name">
+                    <div style={{ fontWeight: 600 }}>
+                      {b.description || b.title || b.bill_type || b.type || `${t("fhBills")} #${i + 1}`}
+                    </div>
+                    {b.billing_month && (
+                      <span style={{ fontSize: "11px", opacity: 0.7 }}>Month: {b.billing_month}</span>
+                    )}
+                  </td>
+                  <td className="fh-td fh-td--amount">
+                    ₹{Number(b.amount || 0).toLocaleString("en-IN")}
+                  </td>
+                  <td className="fh-td">
+                    {b.due_date ? String(b.due_date).slice(0, 10) : b.dueDate || b.due || "—"}
+                  </td>
+                  <td className="fh-td">
+                    <Pill status={b.status} t={t} />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 };
@@ -354,6 +433,23 @@ const FlatHistory = () => {
   const [search,       setSearch]       = useState("");
   const [loading,      setLoading]      = useState(false);
   const [fetchError,   setFetchError]   = useState(null);
+  const [activeBlock,  setActiveBlock]  = useState("");
+  const [confirmMoveOut, setConfirmMoveOut] = useState(null);
+  const [movingOut,    setMovingOut]    = useState(false);
+
+  const searchInputRef = useRef(null);
+
+  /* ── Keyboard shortcut: Ctrl+K or Cmd+K to focus search ── */
+  useEffect(() => {
+    const handleShortcut = (e) => {
+      if ((e.ctrlKey || e.metaKey) && (e.key === "k" || e.key === "K")) {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+      }
+    };
+    window.addEventListener("keydown", handleShortcut);
+    return () => window.removeEventListener("keydown", handleShortcut);
+  }, []);
 
   const [data, setData] = useState({
     residents:  [],
@@ -366,13 +462,22 @@ const FlatHistory = () => {
 
   /* ── TABS CONFIGURATION ── */
   const TABS = [
-    { id: "residents",  label: t("fhResidents"),  icon: "👤", color: "indigo" },
-    { id: "bills",      label: t("fhBills"),      icon: "💰", color: "amber"  },
-    { id: "parcels",    label: t("fhParcels"),    icon: "📦", color: "blue"   },
-    { id: "visitors",   label: t("fhVisitors"),   icon: "🚶", color: "purple" },
-    { id: "complaints", label: t("fhComplaints"), icon: "📋", color: "red"    },
-    { id: "parking",    label: t("fhParking"),    icon: "🚗", color: "green"  },
+    { id: "residents",  label: t("fhResidents"),              icon: "👥", color: "indigo" },
+    { id: "bills",      label: `${t("fhBills")} & Payments`,  icon: "💳", color: "amber"  },
+    { id: "parcels",    label: t("fhParcels"),                icon: "📦", color: "blue"   },
+    { id: "visitors",   label: t("fhVisitors"),               icon: "🚶", color: "purple" },
+    { id: "complaints", label: t("fhComplaints"),             icon: "📋", color: "red"    },
+    { id: "parking",    label: t("fhParking"),                icon: "🚗", color: "green"  },
   ];
+
+  /* ── Helper: Extract clean block name ── */
+  const getBlockName = useCallback((flat) => {
+    const raw = flat?.Block?.name || flat?.Floor?.Block?.name;
+    if (raw && typeof raw === "string" && raw.trim().length > 0) {
+      return raw.trim();
+    }
+    return flat?.block_id ? `${t("fhBlock")} ${flat.block_id}` : "Unassigned";
+  }, [t]);
 
   /* ── 1. Load flat list on mount ── */
   useEffect(() => {
@@ -452,41 +557,161 @@ const FlatHistory = () => {
     }
   }, [t]);
 
-  /* ── 3. Reset ── */
+  /* ── 3. Reset Detail Drawer ── */
   const goBack = () => {
     setSelectedFlat(null);
     setData({ residents: [], bills: [], parcels: [], visitors: [], complaints: [], parking: [] });
     setFetchError(null);
   };
 
-  /* ── Filtered + grouped flat list ── */
-  const filtered = flats.filter((f) =>
-    `flat ${f.flat_number} block ${f.block_id}`
-      .toLowerCase()
-      .includes(search.toLowerCase())
-  );
+  /* ── Escape key closes detail drawer ── */
+  useEffect(() => {
+    if (!selectedFlat) return;
+    const handleKey = (e) => {
+      if (e.key === "Escape") {
+        if (confirmMoveOut) setConfirmMoveOut(null);
+        else goBack();
+      }
+    };
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [selectedFlat, confirmMoveOut]);
 
-  const grouped = filtered.reduce((acc, flat) => {
-    const key = `${t("fhBlock")} ${flat.block_id}`;
-    if (!acc[key]) acc[key] = [];
-    acc[key].push(flat);
-    return acc;
-  }, {});
+  /* ── Group all flats by blockName ── */
+  const allBlockGroups = useMemo(() => {
+    return flats.reduce((acc, flat) => {
+      const bName = getBlockName(flat);
+      if (!acc[bName]) {
+        acc[bName] = {
+          name: bName,
+          blockId: flat.block_id,
+          flats: [],
+          occupiedCount: 0,
+          vacantCount: 0,
+        };
+      }
+      acc[bName].flats.push(flat);
+      if (flat.resident_id) acc[bName].occupiedCount++;
+      else acc[bName].vacantCount++;
+      return acc;
+    }, {});
+  }, [flats, getBlockName]);
 
-  /* ── Stat counts ── */
-  const paidCount    = data.bills.filter((b) => (b.status || "").toLowerCase() === "paid").length;
-  const pendingCount = data.bills.length - paidCount;
+  const blockNames = useMemo(() => Object.keys(allBlockGroups).sort(), [allBlockGroups]);
 
-  /* ── Tab content renderer ── */
+  /* ── Default active block selection ── */
+  useEffect(() => {
+    if (blockNames.length > 0 && (!activeBlock || !allBlockGroups[activeBlock])) {
+      setActiveBlock(blockNames[0]);
+    }
+  }, [blockNames, activeBlock, allBlockGroups]);
+
+  /* ── Search handling ── */
+  const searchTrim = search.trim().toLowerCase();
+
+  const matchCountsByBlock = useMemo(() => {
+    if (!searchTrim) return {};
+    const res = {};
+    for (const bName of blockNames) {
+      const cnt = allBlockGroups[bName].flats.filter((f) =>
+        `flat ${f.flat_number} ${bName}`.toLowerCase().includes(searchTrim)
+      ).length;
+      if (cnt > 0) res[bName] = cnt;
+    }
+    return res;
+  }, [allBlockGroups, blockNames, searchTrim]);
+
+  // If search matches other blocks but current block has 0, auto switch to first match
+  useEffect(() => {
+    if (!searchTrim) return;
+    if (activeBlock && (matchCountsByBlock[activeBlock] || 0) > 0) return;
+    const firstMatch = blockNames.find((b) => (matchCountsByBlock[b] || 0) > 0);
+    if (firstMatch) {
+      setActiveBlock(firstMatch);
+    }
+  }, [searchTrim, matchCountsByBlock, activeBlock, blockNames]);
+
+  const activeBlockFlats = useMemo(() => {
+    if (!activeBlock || !allBlockGroups[activeBlock]) return [];
+    const blockFlats = allBlockGroups[activeBlock].flats;
+    if (!searchTrim) return blockFlats;
+    return blockFlats.filter((f) =>
+      `flat ${f.flat_number} ${activeBlock}`.toLowerCase().includes(searchTrim)
+    );
+  }, [allBlockGroups, activeBlock, searchTrim]);
+
+  /* ── Navigation between blocks (Slider control) ── */
+  const currentBlockIdx = blockNames.indexOf(activeBlock);
+
+  const handleSelectBlock = (bName) => {
+    setActiveBlock(bName);
+  };
+
+  const handlePrevBlock = () => {
+    if (currentBlockIdx > 0) {
+      const prev = blockNames[currentBlockIdx - 1];
+      handleSelectBlock(prev);
+    }
+  };
+
+  const handleNextBlock = () => {
+    if (currentBlockIdx < blockNames.length - 1) {
+      const next = blockNames[currentBlockIdx + 1];
+      handleSelectBlock(next);
+    }
+  };
+
+  /* ── Move-out flow: open confirm, close, execute ── */
+  const openMoveOutConfirm = useCallback((resident) => {
+    setConfirmMoveOut({ flat: selectedFlat, resident });
+  }, [selectedFlat]);
+
+  const closeMoveOutConfirm = useCallback(() => {
+    if (movingOut) return;
+    setConfirmMoveOut(null);
+  }, [movingOut]);
+
+  const doMoveOut = useCallback(async () => {
+    if (!confirmMoveOut || movingOut) return;
+    const { flat, resident } = confirmMoveOut;
+    const userId =
+      resident.user_id ?? resident.userId ?? resident.User?.id ?? resident.user?.id ?? null;
+
+    if (!flat || !userId) {
+      toast.error(t("fhMoveOutFailId"));
+      setConfirmMoveOut(null);
+      return;
+    }
+
+    setMovingOut(true);
+    try {
+      await moveOutResident(flat.id, userId);
+      toast.success(t("fhMoveOutSuccess"));
+      setConfirmMoveOut(null);
+
+      const res = await API.get("/flats/getall");
+      const fresh = toArr(res);
+      setFlats(fresh);
+      const updated = fresh.find((f) => String(f.id) === String(flat.id));
+      if (updated) await fetchFlatDetails(updated);
+    } catch (err) {
+      console.error("Move-out error:", err);
+      toast.error(err.response?.data?.message || t("fhMoveOutFail"));
+    } finally {
+      setMovingOut(false);
+    }
+  }, [confirmMoveOut, movingOut, t, fetchFlatDetails]);
+
+  /* ── Section content renderer (one section per toggle tab) ── */
   const renderContent = () => {
     if (loading)    return <SpinnerComp t={t} />;
     if (fetchError) return (
-      <div style={{ padding: "2rem", color: "#fca5a5", textAlign: "center", fontSize: "14px" }}>
+      <div style={{ padding: "2rem", color: "var(--danger, #f87171)", textAlign: "center", fontSize: "14px" }}>
         ⚠️ {fetchError}
       </div>
     );
     switch (activeTab) {
-      case "residents":  return <ResidentsTab  residents={data.residents}   t={t} />;
+      case "residents":  return <ResidentsTab  residents={data.residents}   t={t} onMoveOut={openMoveOutConfirm} />;
       case "bills":      return <BillsTab      bills={data.bills}           t={t} />;
       case "parcels":    return <ParcelsTab    parcels={data.parcels}       t={t} />;
       case "visitors":   return <VisitorsTab   visitors={data.visitors}     t={t} />;
@@ -496,183 +721,342 @@ const FlatHistory = () => {
     }
   };
 
-  /* ════════════════════════════════════════════════════════
-     FLAT LIST VIEW
-  ════════════════════════════════════════════════════════ */
-  if (!selectedFlat) {
-    return (
-      <div className="fh-root">
-
-        {/* Page header */}
-        <div className="fh-page-er">
-          <div className="fh-page-er-left">
-            <div className="fh-page-icon-wrap" style={{ fontSize: "1.3rem" }}>🏠</div>
-            <div>
-              <h1 className="fh-page-title">{t("fhTitle")}</h1>
-              <p className="fh-page-subtitle">{t("fhSubtitle")}</p>
-            </div>
+  return (
+    <div className="fh-root">
+      {/* Page Header */}
+      <div className="fh-page-header">
+        <div className="fh-page-header-left">
+          <div className="fh-page-icon-box">🏢</div>
+          <div className="fh-page-titles">
+            <h1 className="fh-page-title">{t("fhTitle") || "Flat Directory"}</h1>
+            <p className="fh-page-subtitle">{t("fhSubtitle") || "Manage and view complete flat history"}</p>
           </div>
-          <span style={{
-            fontSize: "12px",
-            fontWeight: 600,
-            padding: "4px 12px",
-            borderRadius: "999px",
-            background: "rgba(91,141,239,.10)",
-            border: "1px solid rgba(91,141,239,.22)",
-            color: "var(--stat-blue-color, #B9CFF8)",
-            whiteSpace: "nowrap",
-          }}>
-            {flats.length} {t("fhFlats")}
-          </span>
         </div>
+        <div className="fh-flats-badge">
+          <span>{flats.length} {t("fhFlats") || "Flats"}</span>
+        </div>
+      </div>
 
-        {/* Search */}
-        <div className="fh-search-wrap">
-          <span className="fh-search-icon" style={{ pointerEvents: "none" }}>🔍</span>
-          <input
-            className="fh-search-input"
-            placeholder={t("fhSearchPlaceholder")}
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-          {search && (
-            <button className="fh-search-clear" onClick={() => setSearch("")}>✕</button>
+      {/* Modern SaaS Search Bar */}
+      <div className="fh-search-bar">
+        <span className="fh-search-icon">🔍</span>
+        <input
+          ref={searchInputRef}
+          className="fh-search-input"
+          placeholder={t("fhSearchPlaceholder") || "Search flats, blocks, or residents..."}
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+        <div className="fh-search-right-actions">
+          {search ? (
+            <button
+              type="button"
+              className="fh-search-clear"
+              onClick={() => setSearch("")}
+              title="Clear search"
+            >
+              ✕
+            </button>
+          ) : (
+            <span className="fh-kbd">Ctrl K</span>
           )}
         </div>
+      </div>
 
-        {/* Blocks + flat cards */}
-        {Object.keys(grouped).length === 0 ? (
-          <Empty icon="🏠" text={t("fhNoFlatsFound")} sub={t("fhNoFlatsSub")} />
-        ) : (
-          Object.keys(grouped).sort().map((blockName) => (
-            <div className="fh-block-section" key={blockName}>
-              <div className="fh-block-label">
-                <span className="fh-block-dot" />
-                {blockName}
-                <span className="fh-block-count">{grouped[blockName].length}</span>
+      {/* Block Quick Selector Strip */}
+      {blockNames.length > 1 && (
+        <div className="fh-block-selector-row">
+          <div className="fh-block-pills-scroll">
+            {blockNames.map((bName) => {
+              const bData = allBlockGroups[bName];
+              const isAct = bName === activeBlock;
+              const matchCnt = matchCountsByBlock[bName];
+              return (
+                <button
+                  key={bName}
+                  type="button"
+                  className={`fh-block-select-pill ${isAct ? "fh-block-select-pill--active" : ""}`}
+                  onClick={() => handleSelectBlock(bName)}
+                >
+                  <span>🏢 {bName}</span>
+                  <span className="fh-block-pill-count">
+                    {matchCnt !== undefined ? `${matchCnt} match` : `${bData?.flats?.length || 0}`}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Block Section & Flats Container */}
+      <div className="fh-block-section-wrap">
+        {activeBlock && allBlockGroups[activeBlock] ? (
+          <div className="fh-block-content" key={activeBlock}>
+            {/* Compact Block Summary Bar */}
+            <div className="fh-block-summary-bar">
+              <div className="fh-block-summary-left">
+                <span className="fh-block-summary-name">🏢 Block {activeBlock.replace(/^Block\s*/i, "")}</span>
+                <span className="fh-block-summary-stat">
+                  <strong>{allBlockGroups[activeBlock].flats.length}</strong> Flats
+                </span>
+                <span className="fh-status-chip fh-status-chip--occ">
+                  <span className="fh-chip-dot fh-chip-dot--green" />
+                  <strong>{allBlockGroups[activeBlock].occupiedCount}</strong> Occupied
+                </span>
+                <span className="fh-status-chip fh-status-chip--vac">
+                  <span className="fh-chip-dot fh-chip-dot--gray" />
+                  <strong>{allBlockGroups[activeBlock].vacantCount}</strong> Vacant
+                </span>
               </div>
 
+              {/* Prev / Next Pagination Control */}
+              <div className="fh-block-summary-nav">
+                <button
+                  type="button"
+                  className="fh-block-nav-arrow"
+                  onClick={handlePrevBlock}
+                  disabled={currentBlockIdx <= 0}
+                  title="Previous Block"
+                >
+                  ‹
+                </button>
+                <span className="fh-block-pagination-label">
+                  {currentBlockIdx + 1} / {blockNames.length}
+                </span>
+                <button
+                  type="button"
+                  className="fh-block-nav-arrow"
+                  onClick={handleNextBlock}
+                  disabled={currentBlockIdx >= blockNames.length - 1}
+                  title="Next Block"
+                >
+                  ›
+                </button>
+              </div>
+            </div>
+
+            {/* Flats Grid for this block */}
+            {activeBlockFlats.length === 0 ? (
+              <Empty icon="🔍" text={t("fhNoFlatsFound")} sub={t("fhNoFlatsSub")} />
+            ) : (
               <div className="fh-flat-grid">
-                {grouped[blockName].map((flat) => {
-                  const occ = !!flat.resident_id; // ✅ correct occupancy check
+                {activeBlockFlats.map((flat) => {
+                  const occ = !!flat.resident_id;
+                  const isSelected = selectedFlat?.id === flat.id;
+                  const residentName =
+                    flat.User?.name ||
+                    flat.user?.name ||
+                    flat.resident_name ||
+                    (occ ? "Occupied Resident" : null);
+
                   return (
                     <div
                       key={flat.id}
-                      className="fh-flat-card"
-                      style={{ cursor: "pointer", position: "relative", overflow: "hidden" }}
+                      className={`fh-flat-card ${isSelected ? "fh-flat-card--selected" : ""}`}
                       onClick={() => fetchFlatDetails(flat)}
                     >
-                      <div style={{
-                        position: "absolute", top: 0, left: 0, right: 0, height: "2px",
-                        borderRadius: "14px 14px 0 0",
-                        background: occ
-                          ? "linear-gradient(90deg,#22c55e,#4ade80,transparent)"
-                          : "linear-gradient(90deg,#726988,#A39EB2,transparent)",
-                      }} />
+                      {/* Top row: Flat number, BHK/type pill, and Status */}
+                      <div className="fh-card-header-row">
+                        <div className="fh-card-header-left">
+                          <div className={`fh-card-avatar ${occ ? "fh-card-avatar--occ" : "fh-card-avatar--vac"}`}>
+                            <span>{occ ? "👥" : "🏢"}</span>
+                          </div>
+                          <div className="fh-card-title-group">
+                            <div className="fh-card-number-row">
+                              <h3 className="fh-card-number">{t("fhFlat")} {flat.flat_number}</h3>
+                              {flat.flat_type && (
+                                <span className="fh-card-type-tag">{flat.flat_type}</span>
+                              )}
+                            </div>
+                            <span className="fh-card-meta-line">
+                              {flat.Floor?.floor_number != null
+                                ? `Floor ${flat.Floor.floor_number}`
+                                : `Block ${activeBlock.replace(/^Block\s*/i, "")}`}
+                              {flat.area_sqft ? ` · ${flat.area_sqft} sq.ft` : ""}
+                            </span>
+                          </div>
+                        </div>
 
-                      <div className="fh-flat-card-left">
-                        <div
-                          className={`fh-flat-icon ${occ ? "fh-flat-icon--occupied" : "fh-flat-icon--vacant"}`}
-                          style={{ fontSize: "1rem" }}
-                        >
-                          {occ ? "👥" : "🏠"}
-                        </div>
-                        <div>
-                          <p className="fh-flat-number">{t("fhFlat")} {flat.flat_number}</p>
-                          <span className={`fh-flat-status ${occ ? "fh-flat-status--occupied" : "fh-flat-status--vacant"}`}>
-                            {occ ? t("fhOccupied") : t("fhVacant")}
-                          </span>
-                        </div>
+                        {/* Status Badge */}
+                        <span className={`fh-card-status-badge ${occ ? "fh-card-status-badge--occ" : "fh-card-status-badge--vac"}`}>
+                          <span className={`fh-status-indicator-dot ${occ ? "fh-status-indicator-dot--occ" : ""}`} />
+                          {occ ? t("fhOccupied") : t("fhVacant")}
+                        </span>
                       </div>
 
-                      <button
-                        className="fh-view-btn"
-                        onClick={(e) => { e.stopPropagation(); fetchFlatDetails(flat); }}
-                      >
-                        {t("fhOpen")} <span className="fh-view-btn-arrow">›</span>
-                      </button>
+                      {/* Middle row: Useful Info instead of empty space */}
+                      <div className="fh-card-middle-content">
+                        {occ ? (
+                          <div className="fh-card-info-item">
+                            <span className="fh-card-info-label">Resident</span>
+                            <span className="fh-card-info-value" title={residentName}>
+                              {residentName}
+                            </span>
+                          </div>
+                        ) : (
+                          <div className="fh-card-info-item">
+                            <span className="fh-card-info-label">Status</span>
+                            <span className="fh-card-info-value fh-card-info-value--vacant">
+                              Available Unit
+                            </span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Subtle divider */}
+                      <div className="fh-card-divider" />
+
+                      {/* Bottom row: Action View */}
+                      <div className="fh-card-footer-action">
+                        <span className="fh-card-footer-text">View Flat History</span>
+                        <span className="fh-card-footer-arrow">→</span>
+                      </div>
                     </div>
                   );
                 })}
               </div>
-            </div>
-          ))
+            )}
+          </div>
+        ) : (
+          <Empty icon="🏠" text={t("fhNoFlatsFound")} sub={t("fhNoFlatsSub")} />
         )}
       </div>
-    );
-  }
 
-  /* ════════════════════════════════════════════════════════
-     DASHBOARD VIEW
-  ════════════════════════════════════════════════════════ */
-  const occ = !!selectedFlat.resident_id; // ✅ correct occupancy check
+      {/* Flat History Detail Pop-up Modal (Centered Pop instead of Slider) */}
+      {selectedFlat && (
+        <div className="fh-modal-overlay" onClick={goBack}>
+          <div
+            className="fh-modal-box"
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+          >
+            {/* Glowing top accent line */}
+            <div className="fh-modal-top-accent" />
 
-  return (
-    <div className="fh-root">
+            {/* Modal Header */}
+            <div className="fh-modal-header">
+              <div className="fh-modal-header-left">
+                <div
+                  className={`fh-modal-flat-avatar ${
+                    selectedFlat.resident_id
+                      ? "fh-modal-flat-avatar--occ"
+                      : "fh-modal-flat-avatar--vac"
+                  }`}
+                >
+                  <span>{selectedFlat.resident_id ? "👥" : "🏠"}</span>
+                </div>
+                <div>
+                  <div className="fh-modal-title-row">
+                    <h2 className="fh-modal-title">
+                      {t("fhFlat")} {selectedFlat.flat_number}
+                    </h2>
+                    <span
+                      className={`fh-card-status-badge ${
+                        selectedFlat.resident_id
+                          ? "fh-card-status-badge--occ"
+                          : "fh-card-status-badge--vac"
+                      }`}
+                    >
+                      <span className={`fh-status-indicator-dot ${selectedFlat.resident_id ? "fh-status-indicator-dot--occ" : ""}`} />
+                      {selectedFlat.resident_id ? t("fhOccupied") : t("fhVacant")}
+                    </span>
+                  </div>
+                  <div className="fh-modal-subtitle">
+                    <span className="fh-modal-badge-chip">🏢 {getBlockName(selectedFlat)}</span>
+                    {selectedFlat.flat_type && (
+                      <span className="fh-modal-badge-chip">{selectedFlat.flat_type}</span>
+                    )}
+                    {selectedFlat.area_sqft && (
+                      <span className="fh-modal-badge-chip">{selectedFlat.area_sqft} sq.ft</span>
+                    )}
+                  </div>
+                </div>
+              </div>
 
-      {/* Dashboard header */}
-      <div className="fh-dash-er">
-        <button className="fh-back-btn" onClick={goBack}>{t("fhBack")}</button>
-        <div className="fh-dash-title-wrap">
-          <div className="fh-dash-icon" style={{ fontSize: "1.2rem" }}>🏠</div>
-          <div>
-            <h2 className="fh-dash-title">{t("fhFlat")} {selectedFlat.flat_number}</h2>
-            <p className="fh-dash-sub">
-              {t("fhBlock")} {selectedFlat.block_id}&nbsp;·&nbsp;
-              <span style={{ color: occ ? "#22c55e" : "#A39EB2" }}>
-                {occ ? t("fhOccupied") : t("fhVacant")}
-              </span>
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Stat strip */}
-      {!loading && !fetchError && (
-        <div className="fh-stat-strip">
-          {[
-            { cls: "fh-stat-chip--indigo", icon: "👤", count: data.residents.length,  label: t("fhResidents")  },
-            { cls: "fh-stat-chip--green",  icon: "✓",  count: paidCount,              label: t("fhBillsPaid")  },
-            { cls: "fh-stat-chip--amber",  icon: "⏳", count: pendingCount,           label: t("fhPending")    },
-            { cls: "fh-stat-chip--blue",   icon: "📦", count: data.parcels.length,    label: t("fhParcels")    },
-            { cls: "fh-stat-chip--purple", icon: "🚶", count: data.visitors.length,   label: t("fhVisitors")   },
-            { cls: "fh-stat-chip--red",    icon: "📋", count: data.complaints.length, label: t("fhComplaints") },
-          ].map(({ cls, icon, count, label }) => (
-            <div className={`fh-stat-chip ${cls}`} key={label}>
-              <span>{icon}</span>
-              <span className="fh-stat-chip-count">{count}</span>
-              <span className="fh-stat-chip-label">{label}</span>
+              <div className="fh-modal-header-actions">
+                <button className="fh-modal-close-btn" onClick={goBack} title="Close Popup (Esc)">
+                  ✕
+                </button>
+              </div>
             </div>
-          ))}
+
+            {/* Modal Body (scrollbar hidden) */}
+            <div className="fh-modal-body">
+              {/* Section Toggle Buttons */}
+              <div className="fh-section-toggle-wrap">
+                <div className="fh-modern-tab-bar">
+                  {TABS.map((tab) => {
+                    const count = data[tab.id]?.length ?? 0;
+                    const isActive = activeTab === tab.id;
+                    return (
+                      <button
+                        key={tab.id}
+                        type="button"
+                        className={`fh-modern-tab-btn ${isActive ? "fh-modern-tab-btn--active" : ""}`}
+                        onClick={() => setActiveTab(tab.id)}
+                      >
+                        <span className="fh-tab-btn-icon">{tab.icon}</span>
+                        <span className="fh-tab-btn-label">{tab.label}</span>
+                        <span className="fh-modern-tab-badge">{count}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Active Section — slider-type animation on switch */}
+              <div className="fh-section-animated" key={activeTab}>
+                {renderContent()}
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
-      {/* Tab bar */}
-      <div className="fh-tab-bar" style={{ overflowX: "auto", flexWrap: "nowrap" }}>
-        {TABS.map((tab) => {
-          const count    = data[tab.id]?.length ?? 0;
-          const isActive = activeTab === tab.id;
-          return (
-            <button
-              key={tab.id}
-              className={`fh-tab ${isActive ? `fh-tab--active-${tab.color}` : ""}`}
-              onClick={() => setActiveTab(tab.id)}
-            >
-              <span className="fh-tab-icon">{tab.icon}</span>
-              {tab.label}
-              <span className={`fh-tab-badge ${isActive ? "fh-tab-badge--active" : ""}`}>
-                {count}
-              </span>
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Tab content */}
-      <div className="fh-tab-content" key={activeTab}>
-        {renderContent()}
-      </div>
-
+      {/* Move-Out Confirmation Popup (centered, styled like app popups) */}
+      {confirmMoveOut && (
+        <div className="fh-confirm-overlay" onClick={closeMoveOutConfirm}>
+          <div
+            className="fh-confirm-box"
+            onClick={(e) => e.stopPropagation()}
+            role="alertdialog"
+            aria-modal="true"
+          >
+            <div className="fh-confirm-accent" />
+            <div className="fh-confirm-icon">🚪</div>
+            <h3 className="fh-confirm-title">{t("fhMoveOutTitle")}</h3>
+            <p className="fh-confirm-text">
+              {t("fhMoveOutConfirm")} <strong>
+                {confirmMoveOut?.resident?.User?.name ||
+                  confirmMoveOut?.resident?.user?.name ||
+                  confirmMoveOut?.resident?.name ||
+                  t("fhUnknown")}
+              </strong>
+              {confirmMoveOut?.flat ? ` — ${t("fhFlat")} ${confirmMoveOut.flat.flat_number}` : ""}?
+            </p>
+            <div className="fh-confirm-actions">
+              <button
+                type="button"
+                className="fh-confirm-btn--cancel"
+                onClick={closeMoveOutConfirm}
+                disabled={movingOut}
+              >
+                {t("fhCancel")}
+              </button>
+              <button
+                type="button"
+                className="fh-confirm-btn--danger"
+                onClick={doMoveOut}
+                disabled={movingOut}
+              >
+                {movingOut ? t("fhMovingOut") : t("fhConfirmMoveOut")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

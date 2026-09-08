@@ -1,5 +1,6 @@
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo, useRef } from "react";
+import { createPortal } from "react-dom";
 import API from "../../services/api";
 import { useLang } from "../../context/LanguageContext";
 import {
@@ -758,6 +759,42 @@ export default function AssignParkingSlot() {
   const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState({ prefix: "", start_number: "", count: "", vehicle_type: "CAR", parking_floor: "P1" });
 
+  const searchInputRef = useRef(null);
+
+  /* ── Keyboard shortcut: Ctrl+K/Cmd+K to focus search & Esc to close modals ── */
+  useEffect(() => {
+    const handleShortcut = (e) => {
+      if ((e.ctrlKey || e.metaKey) && (e.key === "k" || e.key === "K")) {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+      }
+      if (e.key === "Escape") {
+        setShowForm(false);
+        setConfirmDel(null);
+      }
+    };
+    window.addEventListener("keydown", handleShortcut);
+    return () => window.removeEventListener("keydown", handleShortcut);
+  }, []);
+
+  /* ── Live preview of slots to be generated ── */
+  const generatedPreview = useMemo(() => {
+    if (!form.count || !form.start_number) return null;
+    const start = parseInt(form.start_number, 10);
+    const cnt = parseInt(form.count, 10);
+    if (isNaN(start) || isNaN(cnt) || cnt <= 0) return null;
+    const pfx = (form.prefix || "").trim();
+    const firstSlot = `${pfx}${start}`;
+    const lastSlot = `${pfx}${start + cnt - 1}`;
+    return {
+      firstSlot,
+      lastSlot,
+      cnt,
+      floor: form.parking_floor || "P1",
+      type: form.vehicle_type === "CAR" ? "Car" : "Bike",
+    };
+  }, [form]);
+
   /* Delete */
   const [deleting, setDeleting] = useState(null);
   const [confirmDel, setConfirmDel] = useState(null);
@@ -941,46 +978,47 @@ export default function AssignParkingSlot() {
     <div className="space-y-5 animate-fadeIn">
 
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-            style={{ background: "rgba(91,141,239,0.12)", border: "1px solid rgba(91,141,239,0.25)" }}>
-            <FaParking size={18} style={{ color: "#94B5F5" }} />
+      <div className="ps-page-header">
+        <div className="ps-header-left">
+          <div className="ps-header-icon-box">
+            <FaParking size={20} />
           </div>
           <div>
-            <h2 className="text-lg font-semibold">{t("parkTitle") || "Parking Slots"}</h2>
-            <p className="text-secondary text-xs mt-0.5">{t("parkSubtitle") || "Manage society parking areas"}</p>
+            <div className="ps-header-title-row">
+              <h2 className="ps-header-title">{t("parkTitle") || "Parking Management"}</h2>
+              {!initialLoad && stats.total > 0 && (
+                <span className="ps-badge-pill">
+                  {stats.total} {t("parkSlotCount") || "Slots"}
+                </span>
+              )}
+            </div>
+            <p className="ps-header-subtitle">{t("parkSubtitle") || "Manage society parking spaces, allocations, and requests"}</p>
           </div>
         </div>
         {mainTab === "slots" && (
-          <button onClick={() => { setShowForm(p => !p); setConfirmDel(null); }} className="sa-add-btn sa-add-pill shrink-0">
-            <span className="sa-pill-blob sa-pill-blob1" />
-            <span className="sa-pill-inner">
-              {showForm ? <MdClose size={17} /> : <MdAdd size={17} />}
-              <span>{showForm ? (t("parkCloseBtn") || "Close") : (t("parkCreateBtn") || "Create Slots")}</span>
-            </span>
+          <button
+            type="button"
+            onClick={() => { setShowForm(true); setConfirmDel(null); }}
+            className="ps-create-btn"
+          >
+            <MdAdd size={18} />
+            <span>{t("parkCreateBtn") || "Create Slots"}</span>
           </button>
         )}
       </div>
 
       {/* Main Tab Switcher */}
-      <div className="flex gap-1.5 p-1.5 rounded-xl w-fit flex-wrap"
-        style={{ background: "var(--card-inner-bg,rgba(0,0,0,0.05))", border: "1.5px solid var(--glass-border,rgba(255,255,255,0.08))" }}>
+      <div className="ps-tab-bar">
         {mainTabs.map(tab => (
-          <button key={tab.key} onClick={() => { setMainTab(tab.key); setShowForm(false); }}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all relative"
-            style={mainTab === tab.key
-              ? tab.key === "resident-entry"
-                ? { background: "linear-gradient(135deg,#1E40AF,#2563EB)", color: "#fff", boxShadow: "0 3px 12px rgba(217,119,6,0.30)", border: "none" }
-                : tab.key === "resident-requests"
-                  ? { background: "linear-gradient(135deg,#493083,#6B46C1)", color: "#fff", boxShadow: "0 3px 12px rgba(107,70,193,0.30)", border: "none" }
-                  : { background: "rgba(91,141,239,0.15)", color: "#94B5F5", border: "1px solid rgba(91,141,239,0.35)" }
-              : { background: "transparent", color: "var(--text-secondary)", border: "1px solid transparent" }}>
+          <button
+            key={tab.key}
+            onClick={() => { setMainTab(tab.key); setShowForm(false); }}
+            className={`ps-tab-item ${mainTab === tab.key ? "ps-tab-item--active" : ""}`}
+          >
             {tab.icon}
-            {tab.label}
+            <span>{tab.label}</span>
             {tab.key === "resident-requests" && pendingResidentCount > 0 && (
-              <span className="absolute -top-1.5 -right-1.5 min-w-4.5 h-4.5 flex items-center justify-center rounded-full text-[10px] font-black text-white"
-                style={{ background: "#ef4444", padding: "0 4px" }}>
+              <span className="ps-tab-count-badge">
                 {pendingResidentCount}
               </span>
             )}
@@ -1008,190 +1046,210 @@ export default function AssignParkingSlot() {
       {/* TAB: SLOT OWNERS */}
       {mainTab === "ownership" && (
         <div className="space-y-4 animate-fadeIn">
-          {/* Filters */}
-          <div className="bg-card rounded-2xl p-4 sm:p-5">
-            <div className="flex flex-col lg:flex-row lg:items-center gap-3">
+          {/* Filters & Summary Bar */}
+          <div className="ps-slots-container">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
               <div className="flex items-center gap-2 flex-wrap">
                 {ownerSegment(
-                  [{ value: "ALL", label: "All" }, { value: "CAR", label: "Cars" }, { value: "BIKE", label: "Bikes" }],
-                  ownerType, setOwnerType
+                  [
+                    { value: "ALL", label: "All" },
+                    { value: "CAR", label: "Cars" },
+                    { value: "BIKE", label: "Bikes" },
+                  ],
+                  ownerType,
+                  setOwnerType
                 )}
                 {ownerSegment(
-                  [{ value: "ALL", label: "All status" }, { value: "AVAILABLE", label: "Available" }, { value: "ASSIGNED", label: "Assigned" }],
-                  ownerStatus, setOwnerStatus
+                  [
+                    { value: "ALL", label: "All Status" },
+                    { value: "AVAILABLE", label: "Available" },
+                    { value: "ASSIGNED", label: "Assigned" },
+                  ],
+                  ownerStatus,
+                  setOwnerStatus
                 )}
                 {ownerSegment(
                   [
                     { value: "ALL", label: "All" },
-                    { value: "FREE", label: "Free only" },
+                    { value: "FREE", label: "Free Only" },
                     { value: "ALLOCATED", label: "Allocated" },
-                    { value: "WITH_VEHICLE", label: "With vehicle" },
-                    { value: "NO_VEHICLE", label: "No vehicle" },
+                    { value: "WITH_VEHICLE", label: "With Vehicle" },
+                    { value: "NO_VEHICLE", label: "No Vehicle" },
                   ],
-                  ownerAlloc, setOwnerAlloc
+                  ownerAlloc,
+                  setOwnerAlloc
                 )}
               </div>
               <div className="relative grow max-w-sm">
-                <MdSearch size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-secondary pointer-events-none" />
-                <input className="input h-9 text-xs w-full" style={{ paddingLeft: 32, paddingRight: 28 }}
+                <MdSearch
+                  size={15}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-secondary pointer-events-none"
+                />
+                <input
+                  className="input h-10 text-xs w-full"
+                  style={{ paddingLeft: 34, paddingRight: 28 }}
                   placeholder="Search slot, flat, resident, vehicle…"
-                  value={ownerSearch} onChange={e => setOwnerSearch(e.target.value)} />
+                  value={ownerSearch}
+                  onChange={(e) => setOwnerSearch(e.target.value)}
+                />
                 {ownerSearch && (
-                  <button onClick={() => setOwnerSearch("")} className="absolute right-2 top-1/2 -translate-y-1/2 text-secondary">
-                    <MdClose size={13} />
+                  <button
+                    type="button"
+                    onClick={() => setOwnerSearch("")}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-secondary"
+                  >
+                    <MdClose size={14} />
                   </button>
                 )}
               </div>
             </div>
 
-            {/* Summary */}
+            {/* Summary KPI Strip */}
             {ownerSummary && (
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4">
+              <div
+                className="grid grid-cols-2 sm:grid-cols-5 gap-3 mt-4 pt-4"
+                style={{ borderTop: "1px solid var(--divider, rgba(255,255,255,0.08))" }}
+              >
                 {[
-                  { label: "Total Slots", val: ownerSlots.length, color: "text-pink-500", bg: "bg-pink-500/5 border-pink-500/10" },
-                  { label: "Free", val: ownerSummary.free, color: "text-green-400", bg: "bg-green-500/10 border-green-500/20" },
-                  { label: "Assigned", val: ownerSummary.assigned, color: "text-blue-400", bg: "bg-blue-500/10 border-blue-500/20" },
-                  { label: "Flat + Resident", val: ownerSummary.withFlat, color: "text-purple-400", bg: "bg-purple-500/10 border-purple-500/20" },
-                  { label: "Vehicle Linked", val: ownerSummary.withVehicle, color: "text-blue-400", bg: "bg-blue-500/10 border-blue-500/20" },
-                ].map(s => (
-                  <div key={s.label} className={`rounded-xl border p-3 animate-scaleIn flex flex-col justify-between min-h-16 ${s.bg}`}>
-                    <p className={`text-xl font-bold leading-none ${s.color}`}>{s.val}</p>
-                    <p className="text-[11px] text-secondary mt-1.5">{s.label}</p>
+                  { label: "Total Slots", val: ownerSlots.length, color: "text-blue-400" },
+                  { label: "Free Slots", val: ownerSummary.free, color: "text-emerald-400" },
+                  { label: "Assigned Slots", val: ownerSummary.assigned, color: "text-indigo-400" },
+                  { label: "Flat + Resident", val: ownerSummary.withFlat, color: "text-purple-400" },
+                  { label: "Vehicle Linked", val: ownerSummary.withVehicle, color: "text-sky-400" },
+                ].map((s) => (
+                  <div key={s.label} className="ps-stat-card">
+                    <span className={`ps-stat-val ${s.color}`}>{s.val}</span>
+                    <span className="ps-stat-label">{s.label}</span>
                   </div>
                 ))}
               </div>
             )}
           </div>
 
-          {/* List */}
+          {/* Loading State */}
           {ownerLoading && (
-            <div className="bg-card rounded-2xl flex flex-col items-center gap-3 py-14 text-secondary">
-              <Spinner /><p className="text-sm">{t("parkLoading") || "Loading..."}</p>
+            <div className="ps-slots-container flex flex-col items-center gap-3 py-14 text-secondary">
+              <Spinner />
+              <p className="text-sm">{t("parkLoading") || "Loading slot allocations..."}</p>
             </div>
           )}
 
+          {/* Empty State */}
           {!ownerLoading && ownerFiltered.length === 0 && (
-            <div className="bg-card rounded-2xl flex flex-col items-center gap-2 py-16 text-secondary animate-fadeIn">
-              <MdOutlineInbox size={48} className="opacity-25" />
-              <p className="text-sm">{ownerSlots.length === 0 ? (t("parkEmpty") || "No parking slots") : "No slots match your filters"}</p>
+            <div className="ps-slots-container flex flex-col items-center gap-2 py-16 text-secondary animate-fadeIn">
+              <MdOutlineInbox size={46} className="opacity-25" />
+              <p className="text-sm">
+                {ownerSlots.length === 0
+                  ? t("parkEmpty") || "No parking slots registered"
+                  : "No parking slots match your current filter selection"}
+              </p>
             </div>
           )}
 
+          {/* Modern Card Grid */}
           {!ownerLoading && ownerFiltered.length > 0 && (
-            <div className="bg-card rounded-2xl overflow-hidden">
-              {/* Mobile cards */}
-              <div className="space-y-2 md:hidden p-4">
-                {ownerFiltered.map((s, i) => (
-                  <div key={s.id} className="rounded-xl p-3.5 animate-fadeIn"
-                    style={{ background: "var(--card-inner-bg)", border: "1px solid var(--card-inner-border)", animationDelay: `${i * 15}ms` }}>
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="flex items-center gap-2.5">
-                        <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
-                          style={s.vehicle_type === "CAR" ? { background: "rgba(91,141,239,0.12)", border: "1px solid rgba(91,141,239,0.22)" } : { background: "rgba(107,70,193,0.12)", border: "1px solid rgba(107,70,193,0.22)" }}>
-                          {s.vehicle_type === "CAR" ? <MdDirectionsCar size={18} style={{ color: "#94B5F5" }} /> : <MdTwoWheeler size={18} style={{ color: "#9F87D7" }} />}
+            <div className="ps-slots-container space-y-4">
+              <div className="ps-card-grid">
+                {ownerFiltered.map((s, i) => {
+                  const isCar = s.vehicle_type === "CAR";
+                  const isAvail = s.status === "AVAILABLE";
+                  return (
+                    <div
+                      key={s.id}
+                      className={`ps-slot-card ${
+                        isAvail ? "ps-slot-card--available" : "ps-slot-card--occupied"
+                      }`}
+                      style={{ animationDelay: `${i * 15}ms` }}
+                    >
+                      {/* Top Header */}
+                      <div className="ps-card-top">
+                        <div className="ps-card-left-header">
+                          <div
+                            className={`ps-type-icon ${
+                              isCar ? "ps-type-icon--car" : "ps-type-icon--bike"
+                            }`}
+                          >
+                            {isCar ? <MdDirectionsCar size={18} /> : <MdTwoWheeler size={18} />}
+                          </div>
+                          <div>
+                            <div className="ps-slot-number-row">
+                              <span className="ps-slot-label">Slot</span>
+                              <h4 className="ps-slot-number">{s.slot_number}</h4>
+                            </div>
+                            <span className="ps-slot-meta">
+                              {s.parking_floor ? `Floor ${s.parking_floor}` : "Ground Floor"} ·{" "}
+                              {isCar ? "Car" : "Bike"}
+                            </span>
+                          </div>
                         </div>
-                        <div>
-                          <div className="flex items-center gap-1.5">
-                            <p className="font-semibold text-sm">{s.slot_number}</p>
-                            {s.parking_type === "EXTRA" && (
-                              <span className="text-[9px] font-black px-1.5 py-0.5 rounded"
-                                style={{ background: "rgba(251,191,36,0.15)", color: "#60A5FA", border: "1px solid rgba(251,191,36,0.3)" }}>EXTRA</span>
+                        <StatusBadge status={s.status} t={t} />
+                      </div>
+
+                      {/* Middle Details */}
+                      <div className="ps-card-middle">
+                        {isAvail ? (
+                          <div className="ps-avail-bay">
+                            <span className="ps-avail-dot" />
+                            <span className="ps-avail-bay-text">
+                              Unallocated · Available for assignment
+                            </span>
+                          </div>
+                        ) : (
+                          <div className="ps-occupied-details">
+                            <div className="ps-resident-name-row">
+                              {s.flat_number && (
+                                <span className="ps-flat-badge">Flat {s.flat_number}</span>
+                              )}
+                              <span className="ps-resident-name">
+                                {s.resident?.name || "Occupied"}
+                              </span>
+                            </div>
+                            {s.resident?.email && (
+                              <p className="text-[11px] text-secondary mt-0.5 truncate">
+                                {s.resident.email}
+                              </p>
+                            )}
+                            {s.vehicle ? (
+                              <div className="ps-vehicle-tag">
+                                <span className="ps-vehicle-plate">
+                                  {s.vehicle.vehicle_number}
+                                </span>
+                                {s.vehicle.vehicle_name && (
+                                  <span className="ps-vehicle-model">
+                                    ({s.vehicle.vehicle_name})
+                                  </span>
+                                )}
+                              </div>
+                            ) : (
+                              <p className="text-[11px] text-secondary mt-1 italic">
+                                {s.resident ? "No vehicle linked" : "—"}
+                              </p>
                             )}
                           </div>
-                          <p className="text-xs text-secondary">{s.parking_floor || "—"} · {s.vehicle_type === "CAR" ? "Car" : "Bike"}</p>
-                        </div>
-                      </div>
-                      <StatusBadge status={s.status} t={t} />
-                    </div>
-                    <div className="mt-3 pt-3 space-y-1.5" style={{ borderTop: "1px solid var(--divider)" }}>
-                      <div className="flex items-center gap-2 text-sm">
-                        <span className="text-xs text-secondary w-20 shrink-0">Allocated to</span>
-                        {s.resident ? (
-                          <span className="font-semibold">{s.flat_number ? <span className="text-accent">{s.flat_number} · </span> : null}{s.resident.name}</span>
-                        ) : (
-                          <span className="text-secondary text-xs">— Not allocated</span>
                         )}
                       </div>
-                      <div className="flex items-center gap-2 text-sm">
-                        <span className="text-xs text-secondary w-20 shrink-0">Vehicle</span>
-                        {s.vehicle ? (
-                          <span className="font-semibold">{s.vehicle.vehicle_number} {s.vehicle.vehicle_name ? <span className="text-secondary text-xs">({s.vehicle.vehicle_name})</span> : null}</span>
-                        ) : (
-                          <span className="text-secondary text-xs">{s.resident ? "No vehicle linked" : "—"}</span>
-                        )}
+
+                      {/* Card Footer */}
+                      <div className="ps-card-footer">
+                        <span className="ps-tag-pill">
+                          {s.parking_type === "EXTRA" ? "Extra Space" : "Standard Space"}
+                        </span>
+                        <span className="text-[11px] text-secondary font-medium">#{i + 1}</span>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
-              {/* Desktop table */}
-              <div className="hidden md:block overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr style={{ background: "var(--card-inner-bg)", borderBottom: "1px solid var(--divider)" }}>
-                      {["#", "Slot", "Type", "Floor", "Allocation", "Allocated To", "Vehicle", "Status"].map((h, i) => (
-                        <th key={h} className={`px-5 py-3 text-xs font-semibold text-secondary uppercase tracking-wider ${i === 7 ? "text-right" : "text-left"}`}>{h}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {ownerFiltered.map((s, i) => (
-                      <tr key={s.id} className="transition-colors animate-fadeIn"
-                        style={{ borderBottom: "1px solid var(--divider)", animationDelay: `${i * 15}ms` }}
-                        onMouseEnter={e => e.currentTarget.style.background = "var(--row-hover)"}
-                        onMouseLeave={e => e.currentTarget.style.background = ""}>
-                        <td className="px-5 py-3 text-xs text-secondary">{i + 1}</td>
-                        <td className="px-5 py-3">
-                          <div className="flex items-center gap-2.5">
-                            <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
-                              style={s.vehicle_type === "CAR" ? { background: "rgba(91,141,239,0.12)", border: "1px solid rgba(91,141,239,0.22)" } : { background: "rgba(107,70,193,0.12)", border: "1px solid rgba(107,70,193,0.22)" }}>
-                              {s.vehicle_type === "CAR" ? <MdDirectionsCar size={15} style={{ color: "#94B5F5" }} /> : <MdTwoWheeler size={15} style={{ color: "#9F87D7" }} />}
-                            </div>
-                            <span className="font-semibold">{s.slot_number}</span>
-                          </div>
-                        </td>
-                        <td className="px-5 py-3 text-secondary">{s.vehicle_type === "CAR" ? "Car" : "Bike"}</td>
-                        <td className="px-5 py-3 text-secondary">{s.parking_floor || "—"}</td>
-                        <td className="px-5 py-3">
-                          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold"
-                            style={s.parking_type === "EXTRA"
-                              ? { background: "rgba(251,191,36,0.12)", color: "#60A5FA", border: "1px solid rgba(251,191,36,0.28)" }
-                              : { background: "rgba(91,141,239,0.12)", color: "#94B5F5", border: "1px solid rgba(91,141,239,0.28)" }}>
-                            {s.parking_type === "EXTRA" ? "EXTRA" : "DEFAULT"}
-                          </span>
-                        </td>
-                        <td className="px-5 py-3">
-                          {s.resident ? (
-                            <div>
-                              <p className="font-medium text-[13px]">
-                                {s.flat_number ? <span className="text-accent">{s.flat_number} · </span> : null}{s.resident.name}
-                              </p>
-                              {s.resident.email && <p className="text-[11px] text-secondary mt-0.5">{s.resident.email}</p>}
-                            </div>
-                          ) : (
-                            <span className="text-secondary text-xs">{s.status === "AVAILABLE" ? "— Unallocated" : "Occupied (no flat)"}</span>
-                          )}
-                        </td>
-                        <td className="px-5 py-3">
-                          {s.vehicle ? (
-                            <div>
-                              <p className="font-medium text-[13px]">{s.vehicle.vehicle_number}</p>
-                              {s.vehicle.vehicle_name && <p className="text-[11px] text-secondary mt-0.5">{s.vehicle.vehicle_name}</p>}
-                            </div>
-                          ) : (
-                            <span className="text-secondary text-xs">{s.resident ? "No vehicle linked" : "—"}</span>
-                          )}
-                        </td>
-                        <td className="px-5 py-3 text-right"><StatusBadge status={s.status} t={t} /></td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-
-              <div className="flex justify-end px-5 py-3" style={{ borderTop: "1px solid var(--divider)" }}>
-                <p className="text-xs text-secondary">{ownerFiltered.length} slot{ownerFiltered.length === 1 ? "" : "s"} shown</p>
+              {/* Counter Footer */}
+              <div
+                className="flex justify-between items-center px-1 pt-3"
+                style={{ borderTop: "1px solid var(--divider, rgba(255,255,255,0.08))" }}
+              >
+                <p className="text-xs text-secondary">
+                  Showing <strong>{ownerFiltered.length}</strong> of{" "}
+                  <strong>{ownerSlots.length}</strong> total slots
+                </p>
               </div>
             </div>
           )}
@@ -1203,232 +1261,214 @@ export default function AssignParkingSlot() {
         <>
           {/* Stats strip */}
           {!initialLoad && stats.total > 0 && (
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 animate-fadeIn">
-              {[
-                { label: t("parkStatAll") || "Total Slots", val: stats.total, color: "text-pink-500", bg: "bg-pink-500/5 border-pink-500/10" },
-                { label: t("parkTabCars") || "Car Spots", val: stats.cars, color: "text-blue-400", bg: "bg-blue-500/10 border-blue-500/20" },
-                { label: t("parkTabBikes") || "Bike Spots", val: stats.bikes, color: "text-purple-400", bg: "bg-purple-500/10 border-purple-500/20" },
-                { label: t("parkAvailable") || "Available", val: stats.available, color: "text-green-400", bg: "bg-green-500/10 border-green-500/20" },
-              ].map(s => (
-                <div key={s.label} className={`rounded-xl border p-3.5 animate-scaleIn flex flex-col justify-between min-h-18 ${s.bg}`}>
-                  <p className={`text-2xl font-bold leading-none ${s.color}`}>{s.val}</p>
-                  <p className="text-[11px] text-secondary mt-2">{s.label}</p>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Create form */}
-          {showForm && (
-            <div className="bg-card p-4 sm:p-5 rounded-2xl animate-scaleIn">
-              <div className="flex items-center gap-2 mb-4">
-                <MdAdd size={16} className="text-accent" />
-                <h3 className="font-semibold text-sm">{t("parkFormTitle") || "Generate Multiple Slots"}</h3>
+            <div className="ps-stats-grid">
+              <div className="ps-stat-card">
+                <span className="ps-stat-val text-blue-400">{stats.total}</span>
+                <span className="ps-stat-label">{t("parkStatAll") || "Total Slots"}</span>
               </div>
-              <form onSubmit={handleSubmit}>
-                <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-                  <div>
-                    <label className="text-xs text-secondary mb-1.5 block">Floor / Level</label>
-                    <input className="input h-10 w-full" placeholder="e.g. P1, Basement" required
-                      value={form.parking_floor} onChange={e => setForm({ ...form, parking_floor: e.target.value })} />
-                  </div>
-                  <div>
-                    <label className="text-xs text-secondary mb-1.5 block">{t("parkPrefix") || "Prefix"}</label>
-                    <input className="input h-10 w-full" placeholder="e.g. A" required
-                      value={form.prefix} onChange={e => setForm({ ...form, prefix: e.target.value })} />
-                  </div>
-                  <div>
-                    <label className="text-xs text-secondary mb-1.5 block">{t("parkStartNumber") || "Start Number"}</label>
-                    <input type="number" className="input h-10 w-full" placeholder="101" required
-                      value={form.start_number} onChange={e => setForm({ ...form, start_number: e.target.value })} />
-                  </div>
-                  <div>
-                    <label className="text-xs text-secondary mb-1.5 block">{t("parkCount") || "How Many?"}</label>
-                    <input type="number" className="input h-10 w-full" placeholder="10" required
-                      value={form.count} onChange={e => setForm({ ...form, count: e.target.value })} />
-                  </div>
-                  <div>
-                    <label className="text-xs text-secondary mb-1.5 block">{t("parkVehicleType") || "Vehicle Type"}</label>
-                    <Select className="input h-11 w-full" value={form.vehicle_type} onChange={e => setForm({ ...form, vehicle_type: e.target.value })}>
-                      <option value="CAR">{t("parkCar") || "Car"}</option>
-                      <option value="BIKE">{t("parkBike") || "Bike"}</option>
-                    </Select>
-                  </div>
-                </div>
-                <div className="flex justify-end mt-4">
-                  <button type="submit" disabled={submitting} className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
-                    {submitting ? <><Spinner small /> {t("parkCreating") || "Creating..."}</> : <><MdAdd size={16} /> {t("parkCreateBtn") || "Create"}</>}
-                  </button>
-                </div>
-              </form>
+              <div className="ps-stat-card">
+                <span className="ps-stat-val text-indigo-400">{stats.cars}</span>
+                <span className="ps-stat-label">{t("parkTabCars") || "Car Spots"}</span>
+              </div>
+              <div className="ps-stat-card">
+                <span className="ps-stat-val text-purple-400">{stats.bikes}</span>
+                <span className="ps-stat-label">{t("parkTabBikes") || "Bike Spots"}</span>
+              </div>
+              <div className="ps-stat-card">
+                <span className="ps-stat-val text-emerald-400">{stats.available}</span>
+                <span className="ps-stat-label">{t("parkAvailable") || "Available"}</span>
+              </div>
             </div>
           )}
 
-          {/* Slot list card */}
-          <div className="bg-card rounded-2xl overflow-hidden">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-5 py-4"
-              style={{ borderBottom: "1px solid var(--divider)" }}>
-              <div className="flex items-center gap-2 flex-wrap">
+          {/* Main Slots Container */}
+          <div className="ps-slots-container">
+            {/* Filter and Search Bar */}
+            <div className="ps-filter-bar">
+              <div className="ps-filter-tabs">
                 <MdFilterList size={16} className="text-secondary shrink-0" />
                 {filterTabs.map(tab => (
-                  <button key={tab.key} onClick={() => handleFilterChange(tab.key)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all"
-                    style={vehicleFilter === tab.key
-                      ? { background: "rgba(91,141,239,0.15)", color: "#94B5F5", border: "1px solid rgba(91,141,239,0.35)" }
-                      : { background: "var(--bg-soft,rgba(0,0,0,0.04))", color: "var(--text-secondary)", border: "1px solid var(--border-color)" }}>
-                    {tab.icon} {tab.label} <span className="opacity-55">({tab.count})</span>
+                  <button
+                    key={tab.key}
+                    onClick={() => handleFilterChange(tab.key)}
+                    className={`ps-filter-tab ${vehicleFilter === tab.key ? "ps-filter-tab--active" : ""}`}
+                  >
+                    {tab.icon}
+                    <span>{tab.label}</span>
+                    <span className="ps-filter-count">{tab.count}</span>
                   </button>
                 ))}
               </div>
-              <div className="flex items-center gap-3 shrink-0">
-                {!initialLoad && <p className="text-xs text-secondary hidden sm:block whitespace-nowrap">{totalItems} {t("parkSlotCount") || "Slots"}</p>}
-                <div className="relative" style={{ width: 200 }}>
-                  <MdSearch size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-secondary pointer-events-none" />
-                  <input className="input h-9 text-xs w-full"
-                    style={{ paddingLeft: 32, paddingRight: 26 }}
-                    placeholder={`${t("parkColSlot") || "Search Slot"}…`}
-                    value={search} onChange={e => setSearch(e.target.value)} />
-                  <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center">
-                    {fetching ? <Spinner small /> : search ? (
-                      <button onClick={() => setSearch("")} className="text-secondary"><MdClose size={13} /></button>
+
+              <div className="ps-search-box-wrap">
+                {!initialLoad && (
+                  <span className="ps-total-indicator">
+                    {totalItems} {t("parkSlotCount") || "Slots"}
+                  </span>
+                )}
+                <div className="ps-search-input-wrapper">
+                  <MdSearch size={15} className="ps-search-icon" />
+                  <input
+                    ref={searchInputRef}
+                    className="ps-search-input"
+                    placeholder={`${t("parkColSlot") || "Search slot, level"}... (Ctrl+K)`}
+                    value={search}
+                    onChange={e => setSearch(e.target.value)}
+                  />
+                  <div className="ps-search-actions">
+                    {fetching ? (
+                      <Spinner small />
+                    ) : search ? (
+                      <button onClick={() => setSearch("")} className="ps-search-clear" title="Clear">
+                        <MdClose size={14} />
+                      </button>
                     ) : null}
                   </div>
                 </div>
               </div>
             </div>
 
+            {/* Loading state */}
             {initialLoad && (
-              <div className="flex flex-col items-center gap-3 py-14 text-secondary">
-                <Spinner /><p className="text-sm">{t("parkLoading") || "Loading..."}</p>
+              <div className="ps-loading-state">
+                <Spinner />
+                <p>{t("parkLoading") || "Loading parking slots..."}</p>
               </div>
             )}
 
+            {/* Empty state: No slots at all */}
             {!initialLoad && stats.total === 0 && (
-              <div className="flex flex-col items-center gap-2 py-16 text-secondary animate-fadeIn">
-                <MdOutlineInbox size={48} className="opacity-25" />
-                <p className="text-sm">{t("parkEmpty") || "No parking slots"}</p>
-                <button onClick={() => setShowForm(true)} className="text-xs text-accent hover:underline mt-1">
-                  {t("parkFirstSlot") || "Add the first slot"}
+              <div className="ps-empty-state">
+                <div className="ps-empty-icon">
+                  <MdOutlineInbox size={42} />
+                </div>
+                <h4>{t("parkEmpty") || "No parking slots found"}</h4>
+                <p>Create your society parking slots to begin assigning them to residents.</p>
+                <button
+                  type="button"
+                  onClick={() => setShowForm(true)}
+                  className="ps-btn-primary mt-2"
+                >
+                  <MdAdd size={16} /> {t("parkFirstSlot") || "Add the first slot"}
                 </button>
               </div>
             )}
 
+            {/* Empty state: No search matches */}
             {!initialLoad && stats.total > 0 && slots.length === 0 && !fetching && (
-              <div className="flex flex-col items-center gap-2 py-16 text-secondary animate-fadeIn">
-                <MdOutlineInbox size={48} className="opacity-25" />
-                <p className="text-sm">{search ? `No slots match "${search}"` : "No slots found for this type"}</p>
-                <button onClick={() => { setSearch(""); setVehicleFilter("ALL"); }} className="text-xs text-accent hover:underline mt-1">
-                  {t("parkShowAll") || "Show all slots"}
+              <div className="ps-empty-state">
+                <div className="ps-empty-icon">
+                  <MdSearch size={40} />
+                </div>
+                <h4>{search ? `No slots match "${search}"` : "No slots found for this type"}</h4>
+                <p>Try adjusting your search criteria or vehicle type filter.</p>
+                <button
+                  type="button"
+                  onClick={() => { setSearch(""); setVehicleFilter("ALL"); }}
+                  className="ps-btn-secondary mt-2"
+                >
+                  {t("parkShowAll") || "Reset Filters"}
                 </button>
               </div>
             )}
 
+            {/* Card Grid */}
             {!initialLoad && slots.length > 0 && (
               <>
-                {/* Mobile cards */}
-                <div className="space-y-2 md:hidden p-4">
-                  {slots.map((slot, i) => (
-                    <div key={slot.id} className="flex items-center justify-between gap-3 rounded-xl p-3.5 animate-fadeIn"
-                      style={{ background: "var(--card-inner-bg)", border: "1px solid var(--card-inner-border)", animationDelay: `${i * 15}ms` }}>
-                      <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
-                          style={slot.vehicle_type === "CAR" ? { background: "rgba(91,141,239,0.12)", border: "1px solid rgba(91,141,239,0.22)" } : { background: "rgba(107,70,193,0.12)", border: "1px solid rgba(107,70,193,0.22)" }}>
-                          {slot.vehicle_type === "CAR"
-                            ? <MdDirectionsCar size={18} style={{ color: "#94B5F5" }} />
-                            : <MdTwoWheeler size={18} style={{ color: "#9F87D7" }} />}
-                        </div>
-                        <div>
-                          <p className="font-semibold text-sm">{slot.slot_number}</p>
-                          <p className="text-xs text-secondary">{slot.vehicle_type === "CAR" ? (t("parkCar") || "Car") : (t("parkBike") || "Bike")}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <StatusBadge status={slot.status} t={t} />
-                        {confirmDel === slot.id ? (
-                          <div className="flex items-center gap-1.5">
-                            <button onClick={() => deleteSlot(slot.id)} disabled={deleting === slot.id}
-                              className="text-xs font-semibold px-2.5 py-1 rounded-lg"
-                              style={{ background: "rgba(239,68,68,0.15)", color: "#f87171", border: "1px solid rgba(239,68,68,0.25)" }}>
-                              {deleting === slot.id ? <Spinner small /> : (t("billYesDelete") || "Yes")}
-                            </button>
-                            <button onClick={() => setConfirmDel(null)} className="text-xs text-secondary" style={{ background: "none", border: "none", cursor: "pointer" }}>
-                              {t("cancel") || "Cancel"}
-                            </button>
-                          </div>
-                        ) : (
-                          <button onClick={() => setConfirmDel(slot.id)} className="p-2 rounded-xl transition-all"
-                            style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.18)", color: "#f87171" }}>
-                            <MdDelete size={16} />
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Desktop table */}
-                <div className="hidden md:block overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr style={{ background: "var(--card-inner-bg)", borderBottom: "1px solid var(--divider)" }}>
-                        {["#", "Slot Number", "Type", "Floor/Level", "Status", "Actions"].map((h, i) => (
-                          <th key={h} className={`px-5 py-3 text-xs font-semibold text-secondary uppercase tracking-wider ${i === 5 ? "text-right" : "text-left"}`}>{h}</th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {slots.map((slot, i) => (
-                        <tr key={slot.id} className="transition-colors animate-fadeIn"
-                          style={{ borderBottom: "1px solid var(--divider)", animationDelay: `${i * 15}ms` }}
-                          onMouseEnter={e => e.currentTarget.style.background = "var(--row-hover)"}
-                          onMouseLeave={e => e.currentTarget.style.background = ""}>
-                          <td className="px-5 py-3 text-xs text-secondary">{(page - 1) * LIMIT + i + 1}</td>
-                          <td className="px-5 py-3">
-                            <div className="flex items-center gap-2.5">
-                              <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
-                                style={slot.vehicle_type === "CAR" ? { background: "rgba(91,141,239,0.12)", border: "1px solid rgba(91,141,239,0.22)" } : { background: "rgba(107,70,193,0.12)", border: "1px solid rgba(107,70,193,0.22)" }}>
-                                {slot.vehicle_type === "CAR"
-                                  ? <MdDirectionsCar size={16} style={{ color: "#94B5F5" }} />
-                                  : <MdTwoWheeler size={16} style={{ color: "#9F87D7" }} />}
-                              </div>
-                              <span className="font-semibold">{slot.slot_number}</span>
+                <div className="ps-card-grid">
+                  {slots.map((slot, i) => {
+                    const isCar = slot.vehicle_type === "CAR";
+                    const isAvail = slot.status === "AVAILABLE";
+                    return (
+                      <div
+                        key={slot.id}
+                        className={`ps-slot-card ${isAvail ? "ps-slot-card--available" : "ps-slot-card--occupied"}`}
+                        style={{ animationDelay: `${i * 20}ms` }}
+                      >
+                        {/* Top Card Bar */}
+                        <div className="ps-card-top">
+                          <div className="ps-card-left-header">
+                            <div className={`ps-type-icon ${isCar ? "ps-type-icon--car" : "ps-type-icon--bike"}`}>
+                              {isCar ? <MdDirectionsCar size={18} /> : <MdTwoWheeler size={18} />}
                             </div>
-                          </td>
-                          <td className="px-5 py-3 text-secondary">{slot.vehicle_type === "CAR" ? (t("parkCar") || "Car") : (t("parkBike") || "Bike")}</td>
-                          <td className="px-5 py-3 text-secondary">{slot.parking_floor || "—"}</td>
-                          <td className="px-5 py-3"><StatusBadge status={slot.status} t={t} /></td>
-                          <td className="px-5 py-3 text-right">
-                            {confirmDel === slot.id ? (
-                              <span className="inline-flex items-center gap-2 justify-end">
-                                <span className="text-xs text-secondary">{t("billSure") || "Sure?"}</span>
-                                <button onClick={() => deleteSlot(slot.id)} disabled={deleting === slot.id}
-                                  className="text-xs font-semibold px-2.5 py-1 rounded-lg"
-                                  style={{ background: "rgba(239,68,68,0.15)", color: "#f87171", border: "1px solid rgba(239,68,68,0.25)" }}>
-                                  {deleting === slot.id ? <Spinner small /> : (t("billYesDelete") || "Yes")}
-                                </button>
-                                <button onClick={() => setConfirmDel(null)} className="text-xs text-secondary" style={{ background: "none", border: "none", cursor: "pointer" }}>
-                                  {t("cancel") || "Cancel"}
-                                </button>
-                              </span>
-                            ) : (
-                              <div className="flex justify-end gap-2">
-                                <button onClick={() => setConfirmDel(slot.id)}
-                                  className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition-all"
-                                  style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.18)", color: "#f87171" }}>
-                                  <MdDelete size={14} /> {t("billDelete") || "Delete"}
-                                </button>
+                            <div>
+                              <div className="ps-slot-number-row">
+                                <span className="ps-slot-label">Slot</span>
+                                <h4 className="ps-slot-number">{slot.slot_number}</h4>
                               </div>
-                            )}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                              <span className="ps-slot-meta">
+                                {slot.parking_floor ? `Floor ${slot.parking_floor}` : "Ground"} · {isCar ? "Car" : "Bike"}
+                              </span>
+                            </div>
+                          </div>
+                          <StatusBadge status={slot.status} t={t} />
+                        </div>
+
+                        {/* Middle Allocation Details */}
+                        <div className="ps-card-middle">
+                          {isAvail ? (
+                            <div className="ps-avail-bay">
+                              <span className="ps-avail-dot" />
+                              <span className="ps-avail-bay-text">Bay empty & ready for allocation</span>
+                            </div>
+                          ) : (
+                            <div className="ps-occupied-details">
+                              {slot.resident || slot.flat_number ? (
+                                <div className="ps-resident-info">
+                                  <div className="ps-resident-name-row">
+                                    {slot.flat_number && (
+                                      <span className="ps-flat-badge">
+                                        Flat {slot.flat_number}
+                                      </span>
+                                    )}
+                                    <span className="ps-resident-name">
+                                      {slot.resident?.name || "Resident"}
+                                    </span>
+                                  </div>
+                                  {slot.vehicle?.vehicle_number && (
+                                    <div className="ps-vehicle-tag">
+                                      <span className="ps-vehicle-plate">{slot.vehicle.vehicle_number}</span>
+                                      {slot.vehicle.vehicle_name && (
+                                        <span className="ps-vehicle-model">({slot.vehicle.vehicle_name})</span>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
+                              ) : (
+                                <div className="ps-no-resident-tag">
+                                  <span>Occupied (Allocated)</span>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Bottom Actions Footer */}
+                        <div className="ps-card-footer">
+                          <div className="ps-card-type-tag">
+                            <span className="ps-tag-pill">
+                              {slot.parking_type === "EXTRA" ? "Extra Space" : "Standard"}
+                            </span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setConfirmDel(slot)}
+                            className="ps-card-delete-btn"
+                            title="Delete Slot"
+                          >
+                            <MdDelete size={15} />
+                            <span>Delete</span>
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
 
-                <div className="flex flex-col items-center gap-2 px-5 py-4" style={{ borderTop: "1px solid var(--divider)" }}>
-                  <p className="text-xs text-secondary">
-                    {t("billShowing") || "Showing"} {slots.length} {t("billOf") || "of"} {totalItems} {t("parkSlotCount") || "Slots"}
+                {/* Pagination Footer */}
+                <div className="ps-pagination-container">
+                  <p className="ps-pagination-info">
+                    {t("billShowing") || "Showing"} <strong>{slots.length}</strong> {t("billOf") || "of"} <strong>{totalItems}</strong> {t("parkSlotCount") || "Slots"}
                   </p>
                   <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} />
                 </div>
@@ -1437,6 +1477,327 @@ export default function AssignParkingSlot() {
           </div>
         </>
       )}
+
+      {/* Flat History Style Pop-up Modal: Create Slots */}
+      {showForm &&
+        createPortal(
+          <div
+            className="fh-modal-overlay"
+            onClick={() => setShowForm(false)}
+            style={{
+              position: "fixed",
+              inset: 0,
+              zIndex: 1300,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: "16px",
+              overflowY: "auto",
+            }}
+          >
+            <div
+              className="fh-modal-box"
+              style={{
+                width: "min(520px, 94vw)",
+                maxHeight: "min(620px, 92vh)",
+                margin: "auto",
+                display: "flex",
+                flexDirection: "column",
+              }}
+              onClick={(e) => e.stopPropagation()}
+              role="dialog"
+              aria-modal="true"
+            >
+              {/* Glowing top accent line */}
+              <div className="fh-modal-top-accent" />
+
+              {/* Modal Header */}
+              <div className="fh-modal-header">
+                <div className="fh-modal-header-left">
+                  <div
+                    style={{
+                      width: 42,
+                      height: 42,
+                      borderRadius: 12,
+                      background: "rgba(59, 130, 246, 0.12)",
+                      border: "1px solid rgba(59, 130, 246, 0.28)",
+                      color: "#60A5FA",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      flexShrink: 0,
+                    }}
+                  >
+                    <FaParking size={20} />
+                  </div>
+                  <div>
+                    <h3
+                      className="fh-modal-title"
+                      style={{ fontSize: "1.15rem", margin: 0, fontWeight: 700 }}
+                    >
+                      {t("parkFormTitle") || "Create Parking Slots"}
+                    </h3>
+                    <p
+                      style={{
+                        fontSize: "0.75rem",
+                        color: "var(--text-secondary)",
+                        margin: "2px 0 0",
+                      }}
+                    >
+                      Configure batch slot creation with automated numbering
+                    </p>
+                  </div>
+                </div>
+
+                <div className="fh-modal-header-actions">
+                  <button
+                    type="button"
+                    className="fh-modal-close-btn"
+                    onClick={() => setShowForm(false)}
+                    title="Close Popup (Esc)"
+                  >
+                    <MdClose size={16} />
+                  </button>
+                </div>
+              </div>
+
+              {/* Modal Form */}
+              <form
+                onSubmit={handleSubmit}
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  flex: 1,
+                  minHeight: 0,
+                  overflow: "hidden",
+                }}
+              >
+                {/* Scrollable Body */}
+                <div
+                  className="fh-modal-body"
+                  style={{
+                    flex: 1,
+                    minHeight: 0,
+                    overflowY: "auto",
+                    padding: "18px 22px",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "14px",
+                  }}
+                >
+                  {/* Vehicle Type Toggle */}
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-semibold text-secondary uppercase tracking-wider">
+                      {t("parkVehicleType") || "Vehicle Type"}
+                    </label>
+                    <div className="grid grid-cols-2 gap-2.5">
+                      <button
+                        type="button"
+                        onClick={() => setForm({ ...form, vehicle_type: "CAR" })}
+                        className={`ps-vehicle-mode-btn ${
+                          form.vehicle_type === "CAR" ? "ps-vehicle-mode-btn--active-car" : ""
+                        }`}
+                      >
+                        <MdDirectionsCar size={16} />
+                        <span>{t("parkCar") || "Car Space"}</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setForm({ ...form, vehicle_type: "BIKE" })}
+                        className={`ps-vehicle-mode-btn ${
+                          form.vehicle_type === "BIKE" ? "ps-vehicle-mode-btn--active-bike" : ""
+                        }`}
+                      >
+                        <MdTwoWheeler size={16} />
+                        <span>{t("parkBike") || "Bike Space"}</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Floor & Prefix */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs font-semibold text-secondary">
+                        Floor / Level <span className="text-red-400">*</span>
+                      </label>
+                      <input
+                        className="input h-10 w-full text-xs font-medium"
+                        placeholder="e.g. P1, B1, Ground"
+                        required
+                        value={form.parking_floor}
+                        onChange={(e) => setForm({ ...form, parking_floor: e.target.value })}
+                      />
+                    </div>
+
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs font-semibold text-secondary">
+                        {t("parkPrefix") || "Slot Prefix"}
+                      </label>
+                      <input
+                        className="input h-10 w-full text-xs font-medium"
+                        placeholder="e.g. A, B, P"
+                        value={form.prefix}
+                        onChange={(e) => setForm({ ...form, prefix: e.target.value })}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Start Number & Count */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs font-semibold text-secondary">
+                        {t("parkStartNumber") || "Start Number"} <span className="text-red-400">*</span>
+                      </label>
+                      <input
+                        type="number"
+                        min="1"
+                        className="input h-10 w-full text-xs font-medium"
+                        placeholder="101"
+                        required
+                        value={form.start_number}
+                        onChange={(e) => setForm({ ...form, start_number: e.target.value })}
+                      />
+                    </div>
+
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs font-semibold text-secondary">
+                        {t("parkCount") || "How Many Slots?"} <span className="text-red-400">*</span>
+                      </label>
+                      <input
+                        type="number"
+                        min="1"
+                        max="200"
+                        className="input h-10 w-full text-xs font-medium"
+                        placeholder="10"
+                        required
+                        value={form.count}
+                        onChange={(e) => setForm({ ...form, count: e.target.value })}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Live Preview Banner */}
+                  {generatedPreview && (
+                    <div
+                      className="rounded-xl p-3 text-xs flex items-center justify-between gap-3 animate-fadeIn"
+                      style={{
+                        background: "rgba(59, 130, 246, 0.08)",
+                        border: "1px solid rgba(59, 130, 246, 0.25)",
+                        color: "#93C5FD",
+                      }}
+                    >
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span
+                          className="px-2 py-0.5 rounded font-bold uppercase text-[10px] shrink-0"
+                          style={{ background: "rgba(59, 130, 246, 0.25)", color: "#93C5FD" }}
+                        >
+                          Preview
+                        </span>
+                        <span className="truncate">
+                          Slots <strong>{generatedPreview.firstSlot}</strong> → <strong>{generatedPreview.lastSlot}</strong>
+                        </span>
+                      </div>
+                      <span className="font-semibold shrink-0 text-blue-300">
+                        {generatedPreview.cnt} {generatedPreview.type} {generatedPreview.cnt === 1 ? "slot" : "slots"}
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Fixed Footer: Always visible, never cut off */}
+                <div className="fh-modal-footer">
+                  <button
+                    type="button"
+                    className="fh-confirm-btn--cancel"
+                    onClick={() => setShowForm(false)}
+                  >
+                    {t("cancel") || "Cancel"}
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={submitting}
+                    className="btn-primary flex items-center gap-2 px-5 py-2 text-xs font-semibold rounded-xl"
+                  >
+                    {submitting ? (
+                      <>
+                        <Spinner small /> {t("parkCreating") || "Creating..."}
+                      </>
+                    ) : (
+                      <>
+                        <MdAdd size={16} /> {t("parkCreateBtn") || "Create Slots"}
+                      </>
+                    )}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>,
+          document.body
+        )}
+
+      {/* Flat History Style Move-Out/Delete Confirmation Popup */}
+      {confirmDel &&
+        createPortal(
+          <div
+            className="fh-confirm-overlay"
+            onClick={() => setConfirmDel(null)}
+            style={{
+              position: "fixed",
+              inset: 0,
+              zIndex: 1400,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: "16px",
+              overflowY: "auto",
+            }}
+          >
+            <div
+              className="fh-confirm-box"
+              style={{ margin: "auto" }}
+              onClick={(e) => e.stopPropagation()}
+              role="alertdialog"
+              aria-modal="true"
+            >
+              <div className="fh-confirm-accent" />
+              <div className="fh-confirm-icon">⚠️</div>
+              <h3 className="fh-confirm-title">Delete Parking Slot?</h3>
+              <p className="fh-confirm-text">
+                Are you sure you want to delete slot{" "}
+                <strong>
+                  "{typeof confirmDel === "object" ? confirmDel.slot_number : confirmDel}"
+                </strong>
+                ? This action cannot be undone.
+              </p>
+              <div className="fh-confirm-actions">
+                <button
+                  type="button"
+                  className="fh-confirm-btn--cancel"
+                  onClick={() => setConfirmDel(null)}
+                >
+                  {t("cancel") || "Cancel"}
+                </button>
+                <button
+                  type="button"
+                  className="fh-confirm-btn--danger"
+                  disabled={deleting === (confirmDel?.id || confirmDel)}
+                  onClick={() => deleteSlot(confirmDel?.id || confirmDel)}
+                >
+                  {deleting === (confirmDel?.id || confirmDel) ? (
+                    <>
+                      <Spinner small /> Deleting...
+                    </>
+                  ) : (
+                    <>
+                      <MdDelete size={15} /> Delete Slot
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
     </div>
   );
 }
