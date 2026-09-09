@@ -21,7 +21,7 @@ import {
 import { FaYoutube, FaFacebookF, FaInstagram, FaLinkedinIn } from "react-icons/fa";
 
 /* Image imports from assets/Photos/Home */
-import homeBannerImg from "../assets/Photos/Home/Home.png";
+import homeBannerImg from "../assets/Photos/Home/society-hero-campus.png";
 import adminImg from "../assets/Photos/Home/Admin.png";
 import committeeImg from "../assets/Photos/Home/Commitee.jpg";
 import residentImg from "../assets/Photos/Home/Resident.png";
@@ -91,9 +91,10 @@ const Home = () => {
 
   const scrollToSection = (id) => {
     const element = document.getElementById(id);
-    if (element) {
-      element.scrollIntoView({ behavior: "smooth" });
-    }
+    if (!element) return;
+    const extraGap = 96; /* sticky nav + extra space so the section stops higher */
+    const top = window.scrollY + element.getBoundingClientRect().top - extraGap;
+    window.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
   };
 
   const handleMobileNav = (id) => {
@@ -120,7 +121,7 @@ const Home = () => {
       {/* ==========================================================================
          1. NAVBAR
          ========================================================================== */}
-      <nav className={`home-navbar ${scrolled ? "home-navbar--scrolled" : ""}`}>
+      <nav className={`home-navbar ${scrolled ? "home-navbar--scrolled" : "home-navbar--over-hero"} ${menuOpen ? "home-navbar--menu-open" : ""}`}>
         <div className="home-container">
           <div className="home-navbar-inner">
             {/* Brand Logo */}
@@ -164,7 +165,7 @@ const Home = () => {
               </button>
               <button
                 onClick={() => navigate("/login")}
-                className="home-btn-getstarted"
+                className="home-btn-nav-cta"
               >
                 {t("homeGetStarted")}
               </button>
@@ -227,7 +228,6 @@ const Home = () => {
          2. HERO BANNER SECTION
          ========================================================================== */}
       <section className="home-hero-section">
-        {/* Full Bleed Background Photo of Residential Community */}
         <div className="home-hero-bg-photo">
           <SafeImage
             src={homeBannerImg}
@@ -238,58 +238,43 @@ const Home = () => {
           />
         </div>
 
-        {/* Organic White Curved Backdrop Overlay on Left Side */}
-        <div className="home-hero-white-curve">
-          <svg viewBox="0 0 1000 650" preserveAspectRatio="none" className="home-curve-svg">
-            <path
-              d="M 0,0 L 680,0 C 960,140 740,340 580,480 C 460,570 240,620 0,650 Z"
-              fill="#ffffff"
-            />
-          </svg>
-        </div>
+        <div className="home-hero-copy">
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+            className="home-hero-copy-inner"
+          >
+            <div className="home-eyebrow-badge">
+              {t("homeEyebrow")}
+            </div>
 
-        <div className="home-container">
-          <div className="home-hero-layout">
-            {/* Hero Left Column Text Content */}
-            <motion.div
-              initial={{ opacity: 0, x: -30 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.6 }}
-              className="home-hero-content"
-            >
-              <div className="home-eyebrow-badge">
-                {t("homeEyebrow")}
-              </div>
+            <h1 className="home-hero-title">
+              {t("homeHeroTitle1")}<br />
+              {t("homeHeroTitle2")}<br />
+              {t("homeHeroTitle3")}
+            </h1>
 
-              <h1 className="home-hero-title">
-                {t("homeHeroTitle1")}<br />
-                {t("homeHeroTitle2")}<br />
-                {t("homeHeroTitle3")}
-              </h1>
+            <p className="home-hero-subtitle">
+              {t("homeHeroSubtitle")}
+            </p>
 
-              <p className="home-hero-subtitle">
-                {t("homeHeroSubtitle")}
-              </p>
+            <div className="home-hero-actions">
+              <button
+                onClick={() => navigate("/login")}
+                className="home-btn-hero-primary"
+              >
+                {t("homeGetStarted")}
+              </button>
 
-              <div className="home-hero-actions">
-                <button
-                  onClick={() => navigate("/login")}
-                  className="home-btn-getstarted"
-                  style={{ padding: "0.8rem 1.75rem", fontSize: "1.025rem" }}
-                >
-                  {t("homeGetStarted")}
-                </button>
-
-                <button
-                  onClick={() => scrollToSection("features")}
-                  className="home-btn-explore"
-                  style={{ padding: "0.8rem 1.75rem", fontSize: "1.025rem" }}
-                >
-                  {t("homeExplore")}
-                </button>
-              </div>
-            </motion.div>
-          </div>
+              <button
+                onClick={() => scrollToSection("features")}
+                className="home-btn-hero-secondary"
+              >
+                {t("homeExplore")}
+              </button>
+            </div>
+          </motion.div>
         </div>
       </section>
 
@@ -299,68 +284,69 @@ const Home = () => {
       <motion.section
         initial="hidden"
         whileInView="visible"
-        viewport={{ once: false, amount: 0.2 }}
+        viewport={{ once: true, amount: 0.2 }}
         variants={slideVariants}
         className="home-pillars-section"
         id="features"
       >
         <div className="home-container">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: false, amount: 0.2 }}
-            transition={{ duration: 0.6, delay: 0.1 }}
-            className="home-section-header"
-          >
-            <h2 className="home-section-title">
-              {t("homeSection1Title")}
-            </h2>
-          </motion.div>
+          <div className="home-pillars-panel">
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.2 }}
+              transition={{ duration: 0.6, delay: 0.1 }}
+              className="home-section-header"
+            >
+              <h2 className="home-section-title">
+                {t("homeSection1Title")}
+              </h2>
+            </motion.div>
 
-          <div className="home-pillars-grid">
-            {[
-              {
-                icon: HiOutlineUsers,
-                title: t("homePillar1Title"),
-                desc: t("homePillar1Desc")
-              },
-              {
-                icon: HiOutlineCreditCard,
-                title: t("homePillar2Title"),
-                desc: t("homePillar2Desc")
-              },
-              {
-                icon: HiOutlineShieldCheck,
-                title: t("homePillar3Title"),
-                desc: t("homePillar3Desc")
-              },
-              {
-                icon: HiOutlineChatBubbleLeftRight,
-                title: t("homePillar4Title"),
-                desc: t("homePillar4Desc")
-              }
-            ].map((pillar, idx) => {
-              const IconComp = pillar.icon;
-              return (
-                <motion.div
-                  key={idx}
-                  initial={{ opacity: 0, y: 40 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: false, amount: 0.2 }}
-                  transition={{ duration: 0.5, delay: 0.2 + idx * 0.1 }}
-                  whileHover={{ y: -5 }}
-                  className="home-pillar-card"
-                >
-                  <div className="home-pillar-content">
-                    <div className="home-pillar-icon-box">
-                      <IconComp />
+            <div className="home-pillars-grid">
+              {[
+                {
+                  icon: HiOutlineUsers,
+                  title: t("homePillar1Title"),
+                  desc: t("homePillar1Desc")
+                },
+                {
+                  icon: HiOutlineCreditCard,
+                  title: t("homePillar2Title"),
+                  desc: t("homePillar2Desc")
+                },
+                {
+                  icon: HiOutlineShieldCheck,
+                  title: t("homePillar3Title"),
+                  desc: t("homePillar3Desc")
+                },
+                {
+                  icon: HiOutlineChatBubbleLeftRight,
+                  title: t("homePillar4Title"),
+                  desc: t("homePillar4Desc")
+                }
+              ].map((pillar, idx) => {
+                const IconComp = pillar.icon;
+                return (
+                  <motion.div
+                    key={idx}
+                    initial={{ opacity: 0, y: 40 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true, amount: 0.2 }}
+                    transition={{ duration: 0.5, delay: 0.2 + idx * 0.1 }}
+                    className="home-pillar-card"
+                  >
+                    <div className="home-pillar-content">
+                      <div className="home-pillar-icon-box">
+                        <IconComp />
+                      </div>
+                      <h3 className="home-pillar-title">{pillar.title}</h3>
+                      <p className="home-pillar-desc">{pillar.desc}</p>
                     </div>
-                    <h3 className="home-pillar-title">{pillar.title}</h3>
-                    <p className="home-pillar-desc">{pillar.desc}</p>
-                  </div>
-                </motion.div>
-              );
-            })}
+                  </motion.div>
+                );
+              })}
+            </div>
           </div>
         </div>
       </motion.section>
@@ -371,9 +357,10 @@ const Home = () => {
       <motion.section
         initial="hidden"
         whileInView="visible"
-        viewport={{ once: false, amount: 0.2 }}
+        viewport={{ once: true, amount: 0.2 }}
         variants={slideVariants}
         className="home-admin-section"
+        id="how-it-works"
       >
         <div className="home-container">
           <div className="home-admin-grid">
@@ -381,7 +368,7 @@ const Home = () => {
             <motion.div
               initial={{ opacity: 0, x: -40 }}
               whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: false, amount: 0.2 }}
+              viewport={{ once: true, amount: 0.2 }}
               transition={{ duration: 0.6, delay: 0.2 }}
               className="home-admin-visual"
             >
@@ -399,7 +386,7 @@ const Home = () => {
             <motion.div
               initial={{ opacity: 0, x: 40 }}
               whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: false, amount: 0.2 }}
+              viewport={{ once: true, amount: 0.2 }}
               transition={{ duration: 0.6, delay: 0.2 }}
             >
               <h2 className="home-section-title" style={{ textAlign: "left" }}>
@@ -424,7 +411,7 @@ const Home = () => {
                     key={fIdx}
                     initial={{ opacity: 0, y: 20 }}
                     whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: false, amount: 0.2 }}
+                    viewport={{ once: true, amount: 0.2 }}
                     transition={{ duration: 0.4, delay: 0.3 + fIdx * 0.05 }}
                     className="home-admin-feature-item"
                   >
@@ -449,7 +436,7 @@ const Home = () => {
       <motion.section
         initial="hidden"
         whileInView="visible"
-        viewport={{ once: false, amount: 0.2 }}
+        viewport={{ once: true, amount: 0.2 }}
         variants={slideVariants}
         className="home-roles-section"
         id="roles"
@@ -458,7 +445,7 @@ const Home = () => {
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: false, amount: 0.2 }}
+            viewport={{ once: true, amount: 0.2 }}
             transition={{ duration: 0.6, delay: 0.1 }}
             className="home-section-header"
           >
@@ -516,7 +503,7 @@ const Home = () => {
                   key={rIdx}
                   initial={{ opacity: 0, y: 30 }}
                   whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: false, amount: 0.2 }}
+                  viewport={{ once: true, amount: 0.2 }}
                   transition={{ duration: 0.45, delay: rIdx * 0.08 }}
                   className="home-role-card"
                 >
@@ -551,7 +538,7 @@ const Home = () => {
       <motion.section
         initial="hidden"
         whileInView="visible"
-        viewport={{ once: false, amount: 0.2 }}
+        viewport={{ once: true, amount: 0.2 }}
         variants={slideVariants}
         className="home-cta-section"
       >

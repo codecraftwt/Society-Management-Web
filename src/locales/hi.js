@@ -1604,6 +1604,7 @@ cpwSuccessMsg:            "पासवर्ड सफलतापूर्व�
   homeNavFeatures: "सुविधाएँ",
   homeNavHowItWorks: "यह कैसे काम करता है",
   homeNavUserRoles: "उपयोगकर्ता भूमिकाएँ",
+  homeNavConcierge: "24/7 कंसीयर्ज",
   homeLogin: "लॉग इन",
   homeGetStarted: "शुरू करें",
   homeAltHero: "आवासीय समुदाय",
