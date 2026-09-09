@@ -223,15 +223,26 @@ export default function AdminAmenity() {
 
   const loadAmenities = async () => {
     const r = await API.get("/amenities");
-    setAmenities(r.data.data || []);
+    const data = Array.isArray(r.data)
+      ? r.data
+      : Array.isArray(r.data?.data)
+      ? r.data.data
+      : Array.isArray(r.data?.amenities)
+      ? r.data.amenities
+      : [];
+    setAmenities(data);
   };
 
   const loadBookings = async () => {
     try {
       const r = await API.get("/admin/amenities/bookings");
-      const data = r.data.data || [];
-      // The API already returns grouped records (multi-day full-day + merged
-      // multi-slot ranges), so we trust it directly like the resident view does.
+      const data = Array.isArray(r.data)
+        ? r.data
+        : Array.isArray(r.data?.data)
+        ? r.data.data
+        : Array.isArray(r.data?.bookings)
+        ? r.data.bookings
+        : [];
       setBookings(data);
       setGroupedBookings(data);
     } catch (e) {

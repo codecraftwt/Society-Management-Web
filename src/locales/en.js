@@ -768,6 +768,18 @@ const en = {
   noticePublish:         "Publish",
   noticeEmpty:           "No notices available.",
   noticeSocietyLabel:    "Society Notice",
+  noticeAckRequired:     "Acknowledgement Required",
+  noticeAckHelper:       "Recipients must open the notice and explicitly mark it as read.",
+  noticeMarkAsRead:      "Mark as Read",
+  noticeAcknowledged:    "Acknowledged",
+  noticeViewHistory:     "View History",
+  noticeAckHistoryTitle: "Notice Acknowledgement History",
+  noticeViewed:          "Viewed",
+  noticeNotViewed:       "Not Viewed",
+  noticePending:         "Pending",
+  noticeLeavePromptTitle:"Acknowledgement Required",
+  noticeLeavePromptMsg:  "Please mark this notice as read before leaving.",
+  noticeStayBtn:         "Stay on Notice",
 
   // Admin Layout
   adminPanelLabel:        "Admin",

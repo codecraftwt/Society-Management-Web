@@ -77,7 +77,11 @@ export default function AppHeader({
         {/* Global Preference Controls */}
         <div className="flex items-center gap-1.5 md:gap-2 shrink-0 border-l border-glass-border pl-2 md:pl-3">
           {showThemeToggle && <ThemeToggle />}
-          {showLanguageSelector && <LanguageSelector compact />}
+          {showLanguageSelector && (
+            <span className="hidden sm:inline-flex items-center">
+              <LanguageSelector compact />
+            </span>
+          )}
           {showNotificationBell && <NotificationBell />}
         </div>
 

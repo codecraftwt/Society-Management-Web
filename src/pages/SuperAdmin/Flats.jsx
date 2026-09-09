@@ -1,43 +1,22 @@
-
-
 import { useEffect, useState } from "react";
-import { createPortal } from "react-dom";
 import { useParams, useNavigate } from "react-router-dom";
 import API from "../../services/api";
 import {
   MdApartment, MdArrowBack, MdDelete, MdCheckCircle,
   MdSearch, MdClose, MdPerson, MdLock,
-  MdOutlineInbox,
-  MdAdd,
+  MdOutlineInbox, MdAdd,
 } from "react-icons/md";
-
-function Spinner({ small = false }) {
-  const s = small ? 14 : 16;
-  return (
-    <svg className="animate-spin" style={{ width: s, height: s, color: "currentColor" }} viewBox="0 0 24 24" fill="none">
-      <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" style={{ opacity: 0.25 }} />
-      <path fill="currentColor" style={{ opacity: 0.75 }} d="M4 12a8 8 0 018-8v8z" />
-    </svg>
-  );
-}
-
-function useIsMobile() {
-  const [m, setM] = useState(() => typeof window !== "undefined" && window.innerWidth < 768);
-  useEffect(() => {
-    const fn = () => setM(window.innerWidth < 768);
-    window.addEventListener("resize", fn);
-    return () => window.removeEventListener("resize", fn);
-  }, []);
-  return m;
-}
+import GlobalButton from "../../components/common/GlobalButton";
+import GlobalModal from "../../components/common/GlobalModal";
+import GlobalTable from "../../components/common/GlobalTable";
+import GlobalBadge from "../../components/common/GlobalBadge";
+import GlobalConfirmDialog from "../../components/common/GlobalConfirmDialog";
 
 export default function Flats() {
   const { blockId, floorId } = useParams();
   const navigate = useNavigate();
-  const isMobile = useIsMobile();
 
   const [flats, setFlats] = useState([]);
-  // New state for Add Flat modal
   const [showAddModal, setShowAddModal] = useState(false);
   const [newFlatData, setNewFlatData] = useState({ flat_number: "", block_id: "", area_sqft: "" });
   const [adding, setAdding] = useState(false);
@@ -45,20 +24,18 @@ export default function Flats() {
   const [successMessage, setSuccessMessage] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [deletingId, setDeletingId] = useState(null);
-  const [confirmId, setConfirmId] = useState(null);
+  const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, id: null, loading: false });
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("ALL");
   const [resolvedBlockId, setResolvedBlockId] = useState(blockId || null);
 
-  // Load flats and resolve blockId when on floor view
   useEffect(() => {
     const init = async () => {
       if (floorId) {
         try {
           const floorRes = await API.get(`/floors/detail/${floorId}`);
           setResolvedBlockId(floorRes.data?.block_id || null);
-        } catch { }
+        } catch {}
       }
       loadFlats();
     };
@@ -71,17 +48,13 @@ export default function Flats() {
     try {
       let res;
       if (floorId) {
-        // Load flats for a specific floor
         res = await API.get(`/flats/floor/${floorId}`);
       } else if (blockId) {
-        // Fallback: load flats for a block
         res = await API.get(`/flats/${blockId}`);
       } else {
-        // No identifier, return empty list
         res = { data: [] };
       }
       setFlats(res.data || []);
-      // If we are on a floor view and block ID is not known, infer it from the first flat
       if (floorId && !resolvedBlockId && res.data && res.data.length > 0) {
         setResolvedBlockId(res.data[0].block_id || null);
       }
@@ -92,17 +65,49 @@ export default function Flats() {
     }
   };
 
-  const deleteFlat = async (id) => {
-    setDeletingId(id);
+  const handleDeleteConfirm = async () => {
+    if (!deleteConfirm.id) return;
+    setDeleteConfirm(p => ({ ...p, loading: true }));
     setError("");
     try {
-      await API.delete(`/flats/delete/${id}`);
-      setFlats(prev => prev.filter(f => f.id !== id));
-      setConfirmId(null);
+      await API.delete(`/flats/delete/${deleteConfirm.id}`);
+      setFlats(prev => prev.filter(f => f.id !== deleteConfirm.id));
+      setDeleteConfirm({ isOpen: false, id: null, loading: false });
     } catch (err) {
       setError(err?.response?.data?.message || "Delete failed. Please try again.");
+      setDeleteConfirm(p => ({ ...p, loading: false }));
+    }
+  };
+
+  const handleAddFlat = async () => {
+    if (!newFlatData.flat_number) {
+      setAddError("Flat number is required");
+      return;
+    }
+    const effectiveBlockId = resolvedBlockId;
+    if (!effectiveBlockId) {
+      setAddError("Block ID could not be determined");
+      return;
+    }
+    setAdding(true);
+    setAddError("");
+    try {
+      await API.post(`/flats`, {
+        ...newFlatData,
+        block_id: effectiveBlockId,
+        ...(floorId && { floor_id: floorId }),
+        resident_id: null,
+        occupancy_status: "VACANT",
+        area_sqft: newFlatData.area_sqft ? Number(newFlatData.area_sqft) : null,
+      });
+      await loadFlats();
+      setSuccessMessage(`Flat ${newFlatData.flat_number} created successfully`);
+      setShowAddModal(false);
+      setNewFlatData({ flat_number: "", block_id: "", area_sqft: "" });
+    } catch (err) {
+      setAddError(err?.response?.data?.message || "Failed to add flat");
     } finally {
-      setDeletingId(null);
+      setAdding(false);
     }
   };
 
@@ -123,504 +128,300 @@ export default function Flats() {
   };
 
   const TABS = [
-    { key: "ALL", label: "All", color: "#1E40AF" },
-    { key: "OCCUPIED", label: "Occupied", color: "#2FC27E" },
-    { key: "VACANT", label: "Vacant", color: "#2563EB" },
+    { key: "ALL", label: "All" },
+    { key: "OCCUPIED", label: "Occupied" },
+    { key: "VACANT", label: "Vacant" },
+  ];
+
+  const columns = [
+    {
+      key: "idx",
+      header: "#",
+      width: 60,
+      render: (_, idx) => <span style={{ color: "var(--text-tertiary)", fontSize: "0.8rem" }}>{idx + 1}</span>,
+    },
+    {
+      key: "flat_number",
+      header: "Flat Number",
+      render: (flat) => (
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <div
+            style={{
+              width: 34,
+              height: 34,
+              borderRadius: 9,
+              background: flat.resident_id ? "rgba(16, 185, 129, 0.12)" : "rgba(37, 99, 235, 0.12)",
+              color: flat.resident_id ? "#10b981" : "#60a5fa",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0,
+            }}
+          >
+            <MdApartment size={16} />
+          </div>
+          <div>
+            <span style={{ fontWeight: 600, color: "var(--text-primary)" }}>
+              Flat {flat.flat_number}
+            </span>
+            {flat.area_sqft && (
+              <span style={{ display: "block", fontSize: "0.75rem", color: "var(--text-tertiary)" }}>
+                {flat.area_sqft} sq.ft
+              </span>
+            )}
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: "status",
+      header: "Status",
+      render: (flat) => (
+        <GlobalBadge
+          variant={flat.resident_id ? "success" : "neutral"}
+          icon={flat.resident_id ? MdCheckCircle : MdLock}
+        >
+          {flat.resident_id ? "Occupied" : "Vacant"}
+        </GlobalBadge>
+      ),
+    },
+    {
+      key: "resident",
+      header: "Resident",
+      render: (flat) =>
+        flat.resident_id ? (
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <div
+              style={{
+                width: 26,
+                height: 26,
+                borderRadius: "50%",
+                background: "rgba(37, 99, 235, 0.15)",
+                color: "var(--accent)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <MdPerson size={14} />
+            </div>
+            <span style={{ fontSize: "0.85rem", color: "var(--text-secondary)", fontWeight: 500 }}>
+              Assigned
+            </span>
+          </div>
+        ) : (
+          <span style={{ color: "var(--text-tertiary)", opacity: 0.5 }}>—</span>
+        ),
+    },
+    {
+      key: "actions",
+      header: "Action",
+      align: "right",
+      render: (flat) => (
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
+          <GlobalButton
+            variant="delete"
+            size="sm"
+            icon={MdDelete}
+            onClick={() => setDeleteConfirm({ isOpen: true, id: flat.id, loading: false })}
+          />
+        </div>
+      ),
+    },
   ];
 
   return (
-    <>
-      <style>{`
-        @keyframes fl-fadeIn  { from { opacity:0; transform:translateY(8px) } to { opacity:1; transform:none } }
-        @keyframes fl-scaleIn { from { opacity:0; transform:scale(0.96)      } to { opacity:1; transform:none } }
-        .fl-fadein  { animation: fl-fadeIn  0.35s ease both; }
-        .fl-scalein { animation: fl-scaleIn 0.25s ease both; }
-      `}</style>
-
-      {/* Add Flat Modal */}
-      {showAddModal &&
-        createPortal(
-          <div
-            className="sa-modal-overlay animate-fadeIn"
-            style={{ zIndex: 1100 }}
-            onClick={() => {
-              setShowAddModal(false);
-              setNewFlatData({ flat_number: "", block_id: "", area_sqft: "" });
-              setAddError("");
-              setSuccessMessage("");
-            }}
-          >
-            <div
-              className="sa-modal animate-scaleIn"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="sa-modal-header">
-                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                  <div className="sa-form-icon"><MdApartment size={18} /></div>
-                  <div>
-                    <h3 className="sa-form-title">Add New Flat</h3>
-                    <p className="sa-form-subtitle">
-                      Create a flat unit in this block
-                    </p>
-                  </div>
-                </div>
-              </div>
-              {addError && (
-                <div style={{
-                  color: "var(--danger)", fontSize: 12, margin: "2px 24px 0",
-                  background: "rgba(255,107,107,0.08)", border: "1px solid rgba(255,107,107,0.22)",
-                  padding: "8px 12px", borderRadius: 9,
-                }}>{addError}</div>
-              )}
-              <div className="sa-modal-body">
-                <label className="sa-label">Flat Number</label>
-                <input
-                  className="input"
-                  placeholder="Flat Number"
-                  value={newFlatData.flat_number}
-                  onChange={e => setNewFlatData({ ...newFlatData, flat_number: e.target.value })}
-                />
-                <label className="sa-label" style={{ marginTop: 12 }}>Area (sq.ft)</label>
-                <input
-                  className="input"
-                  type="number"
-                  min="0.01"
-                  step="0.01"
-                  placeholder="e.g. 1200"
-                  value={newFlatData.area_sqft}
-                  onChange={e => setNewFlatData({ ...newFlatData, area_sqft: e.target.value })}
-                />
-              </div>
-
-              <div className="sa-modal-footer">
-                <button
-                  onClick={() => { setShowAddModal(false); setNewFlatData({ flat_number: "", block_id: "" }); setAddError(""); setSuccessMessage(""); }}
-                  className="sa-btn sa-btn-ghost"
-                >Cancel</button>
-                <button
-                  onClick={async () => {
-                    if (!newFlatData.flat_number) {
-                      setAddError("Flat number is required");
-                      return;
-                    }
-                    // Determine block id from route or fetched floor data
-                    const effectiveBlockId = resolvedBlockId;
-                    if (!effectiveBlockId) {
-                      setAddError("Block ID could not be determined");
-                      return;
-                    }
-                    setAdding(true);
-                    setAddError("");
-                    try {
-                      await API.post(`/flats`, {
-                        ...newFlatData,
-                        block_id: effectiveBlockId,
-                        ...(floorId && { floor_id: floorId }),
-                        resident_id: null,
-                        occupancy_status: "VACANT",
-                        area_sqft: newFlatData.area_sqft ? Number(newFlatData.area_sqft) : null,
-                      });
-                      await loadFlats();
-                      setSuccessMessage(`Flat ${newFlatData.flat_number} created successfully`);
-                      setShowAddModal(false);
-                      setNewFlatData({ flat_number: "", block_id: "", area_sqft: "" });
-                    } catch (err) {
-                      setAddError(err?.response?.data?.message || "Failed to add flat");
-                    } finally {
-                      setAdding(false);
-                    }
-                  }}
-                  disabled={adding}
-                  className="sa-btn sa-btn-primary"
-                  style={{ opacity: adding ? 0.7 : 1, cursor: adding ? "not-allowed" : "pointer" }}
-                >{adding ? <Spinner small /> : "Add"}</button>
-              </div>
-            </div>
-          </div>,
-          document.body
-        )}
-
-      <div className="sa-page animate-fadeIn" style={{ maxWidth: 1000, margin: "0 auto" }}>
-
-        {/* ── HERO ── */}
-        <div className="sa-page-er">
-          <div style={{ display: "flex", alignItems: "center", gap: 14, minWidth: 0 }}>
-            <div className="er-icon er-icon--amenity">
-              <MdApartment size={22} />
-            </div>
-            <div style={{ minWidth: 0 }}>
-              <h2 className="sa-page-title">Block Flats</h2>
-              <p className="sa-page-subtitle">{counts.ALL} unit{counts.ALL !== 1 ? "s" : ""} in this block</p>
-            </div>
+    <div className="sa-page animate-fadeIn" style={{ maxWidth: 1100, margin: "0 auto" }}>
+      {/* ── HERO ── */}
+      <div className="sa-page-er">
+        <div style={{ display: "flex", alignItems: "center", gap: 14, minWidth: 0 }}>
+          <div className="er-icon er-icon--amenity">
+            <MdApartment size={22} />
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-            <button onClick={() => navigate(-1)} className="sa-hero-back">
-              <MdArrowBack size={16} /> Back
-            </button>
-            <button
-              onClick={() => setShowAddModal(true)}
-              className="sa-add-btn sa-add-pill"
-              style={{ height: "auto" }}
-            >
-              <span className="sa-pill-blob sa-pill-blob1" />
-              <span className="sa-pill-inner">
-                <MdAdd size={17} /> <span>Add Flat</span>
-              </span>
-            </button>
+          <div style={{ minWidth: 0 }}>
+            <h1 className="sa-page-title">Block Flats</h1>
+            <p className="sa-page-subtitle">{counts.ALL} unit{counts.ALL !== 1 ? "s" : ""} in this block</p>
           </div>
         </div>
-
-        {/* ── ERROR BANNER ── */}
-        {error && (
-          <div className="fl-fadein" style={{
-            display: "flex", alignItems: "center", justifyContent: "space-between",
-            background: "var(--stat-red-bg)", border: "1px solid var(--stat-red-border)",
-            borderRadius: 12, padding: "12px 16px",
-            fontSize: 13, color: "var(--stat-red-color)",
-          }}>
-            <span>{error}</span>
-            <button onClick={() => setError("")} style={{ background: "none", border: "none", cursor: "pointer", color: "inherit", opacity: 0.7, display: "flex", alignItems: "center" }}>
-              <MdClose size={16} />
-            </button>
-          </div>
-        )}
-        {successMessage && (
-          <div className="fl-fadein" style={{
-            display: "flex", alignItems: "center", justifyContent: "space-between",
-            background: "var(--stat-green-bg)", border: "1px solid var(--stat-green-border)",
-            borderRadius: 12, padding: "12px 16px",
-            fontSize: 13, color: "var(--stat-green-color)",
-          }}>
-            <span>{successMessage}</span>
-            <button onClick={() => setSuccessMessage("")} style={{ background: "none", border: "none", cursor: "pointer", color: "inherit", opacity: 0.7, display: "flex", alignItems: "center" }}>
-              <MdClose size={16} />
-            </button>
-          </div>
-        )}
-
-        {/* ── STAT CARDS ── */}
-        {!loading && (
-          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr 1fr" : "repeat(3, 1fr)", gap: isMobile ? 10 : 14 }}>
-            {[
-              { label: "Total Units", val: counts.ALL, cls: "complaint-stat-total" },
-              { label: "Occupied", val: counts.OCCUPIED, cls: "complaint-stat-resolved" },
-              { label: "Vacant", val: counts.VACANT, cls: "complaint-stat-pending" },
-            ].map(s => (
-              <div key={s.label} className={`complaint-stat-card ${s.cls}`}>
-                <span className="complaint-stat-val">{s.val}</span>
-                <span className="complaint-stat-label">{s.label}</span>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* ── MAIN CARD ── */}
-        <div className="data-table-wrap">
-
-          {/* Toolbar */}
-          <div style={{
-            padding: "14px 16px",
-            borderBottom: "1px solid var(--glass-border)",
-            display: "flex", flexDirection: "column", gap: 10,
-          }}>
-            {/* Search row */}
-            <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-              <div style={{ position: "relative", flex: 1, minWidth: 180 }}>
-                <MdSearch size={15} style={{
-                  position: "absolute", left: 11, top: "50%", transform: "translateY(-50%)",
-                  color: "var(--text-secondary)", pointerEvents: "none",
-                }} />
-                <input
-                  className="input"
-                  style={{ paddingLeft: 34, paddingRight: search ? 34 : 12, height: 38, fontSize: 13 }}
-                  placeholder="Search flat number…"
-                  value={search}
-                  onChange={e => setSearch(e.target.value)}
-                />
-                {search && (
-                  <button onClick={() => setSearch("")} style={{
-                    position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)",
-                    background: "none", border: "none", cursor: "pointer",
-                    color: "var(--text-secondary)", display: "flex", alignItems: "center",
-                  }}>
-                    <MdClose size={14} />
-                  </button>
-                )}
-              </div>
-            </div>
-
-            {/* Filter tabs */}
-            <div style={{
-              display: "flex", gap: 4,
-              background: "var(--card-inner-bg)",
-              border: "1px solid var(--glass-border)",
-              borderRadius: 10, padding: 4,
-            }}>
-              {TABS.map(tab => {
-                const on = filterStatus === tab.key;
-                return (
-                  <button
-                    key={tab.key}
-                    onClick={() => setFilterStatus(tab.key)}
-                    style={{
-                      flex: 1, display: "flex", alignItems: "center", justifyContent: "center",
-                      gap: 5, padding: "6px 8px", borderRadius: 7, border: "none",
-                      cursor: "pointer", fontSize: isMobile ? 11 : 12, fontWeight: on ? 700 : 500,
-                      transition: "all 0.18s",
-                      background: on ? tab.color : "transparent",
-                      color: on ? "#fff" : "var(--text-secondary)",
-                      boxShadow: on ? "0 3px 10px rgba(0,0,0,0.22)" : "none",
-                    }}
-                  >
-                    {tab.label}
-                    <span style={{
-                      fontSize: 10, fontWeight: 700, padding: "1px 5px",
-                      borderRadius: 999, lineHeight: 1.6,
-                      background: on ? "rgba(255,255,255,0.22)" : "var(--glass-border)",
-                      color: on ? "#fff" : "var(--text-secondary)",
-                    }}>
-                      {counts[tab.key]}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* ── Content ── */}
-          {loading ? (
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12, padding: "60px 20px" }}>
-              <Spinner />
-              <p style={{ fontSize: 13, color: "var(--text-secondary)", margin: 0 }}>Loading flats…</p>
-            </div>
-          ) : filtered.length === 0 ? (
-            <div className="fl-fadein" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12, padding: "70px 20px" }}>
-              <MdOutlineInbox size={48} style={{ opacity: 0.2, color: "var(--text-secondary)" }} />
-              <p style={{ fontSize: 13, color: "var(--text-secondary)", margin: 0 }}>
-                {search || filterStatus !== "ALL" ? "No flats match your filter." : "No flats found in this block."}
-              </p>
-              {(search || filterStatus !== "ALL") && (
-                <button onClick={() => { setSearch(""); setFilterStatus("ALL"); }} style={{ fontSize: 12, color: "var(--accent)", background: "none", border: "none", cursor: "pointer" }}>
-                  Clear filters
-                </button>
-              )}
-            </div>
-          ) : isMobile ? (
-            /* ── MOBILE CARDS ── */
-            <div style={{ display: "flex", flexDirection: "column", gap: 10, padding: 14 }}>
-              {filtered.map((flat, idx) => {
-                const occupied = !!flat.resident_id;
-                return (
-                  <div key={flat.id} className="fl-fadein" style={{ animationDelay: `${idx * 35}ms` }}>
-                    <div style={{
-                      background: "var(--card-bg)",
-                      border: "1.5px solid var(--glass-border)",
-                      borderRadius: 16, overflow: "hidden",
-                      boxShadow: "var(--shadow-sm)",
-                    }}>
-                      {/* coloured top bar */}
-                      <div style={{ height: 3, background: occupied ? "#22c55e" : "#3B82F6" }} />
-                      <div style={{ padding: "13px 14px", display: "flex", flexDirection: "column", gap: 10 }}>
-
-                        {/* row 1: flat number + status */}
-                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-                          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                            <div style={{
-                              width: 36, height: 36, borderRadius: 10, flexShrink: 0,
-                              background: occupied ? "var(--stat-green-bg)" : "var(--stat-amber-bg)",
-                              border: `1px solid ${occupied ? "var(--stat-green-border)" : "var(--stat-amber-border)"}`,
-                              display: "flex", alignItems: "center", justifyContent: "center",
-                            }}>
-                              <MdApartment size={18} style={{ color: occupied ? "var(--stat-green-color)" : "var(--stat-amber-color)" }} />
-                            </div>
-                            <div>
-                              <p style={{ fontWeight: 700, fontSize: 15, color: "var(--text-primary)", margin: 0 }}>
-                                Flat {flat.flat_number}
-                              </p>
-                              <p style={{ fontSize: 11, color: "var(--text-secondary)", margin: "2px 0 0", opacity: 0.7 }}>
-                                Unit #{idx + 1}
-                              </p>
-                            </div>
-                          </div>
-                          <span className={occupied ? "status-pill status-pill--resolved" : "status-pill status-pill--pending"}>
-                            {occupied ? <MdCheckCircle size={11} /> : <MdLock size={11} />}
-                            {occupied ? "Occupied" : "Vacant"}
-                          </span>
-                        </div>
-
-                        {/* row 2: resident info */}
-                        {occupied && (
-                          <div style={{
-                            display: "flex", alignItems: "center", gap: 7,
-                            padding: "7px 10px", borderRadius: 9,
-                            background: "var(--chip-bg)", border: "1px solid var(--chip-border)",
-                          }}>
-                            <MdPerson size={14} style={{ color: "var(--accent)", flexShrink: 0 }} />
-                            <span style={{ fontSize: 12, color: "var(--text-secondary)", fontWeight: 500 }}>Resident assigned</span>
-                          </div>
-                        )}
-
-                        {/* row 3: delete */}
-                        <div style={{
-                          paddingTop: 8, borderTop: "1px solid var(--glass-border)",
-                          display: "flex", justifyContent: "flex-end",
-                        }}>
-                          {confirmId === flat.id ? (
-                            <div className="fl-scalein" style={{ display: "flex", gap: 6, alignItems: "center" }}>
-                              <span style={{ fontSize: 11, color: "var(--text-secondary)" }}>Delete flat?</span>
-                              <button
-                                onClick={() => deleteFlat(flat.id)}
-                                disabled={deletingId === flat.id}
-                                style={{
-                                  display: "flex", alignItems: "center", gap: 5,
-                                  padding: "5px 12px", borderRadius: 8, fontSize: 11, fontWeight: 700,
-                                  background: "var(--danger)", color: "#fff", border: "none", cursor: "pointer",
-                                }}
-                              >
-                                {deletingId === flat.id ? <Spinner small /> : "Yes, delete"}
-                              </button>
-                              <button
-                                onClick={() => setConfirmId(null)}
-                                style={{
-                                  padding: "5px 10px", borderRadius: 8, fontSize: 11,
-                                  background: "var(--card-inner-bg)", color: "var(--text-secondary)",
-                                  border: "1px solid var(--glass-border)", cursor: "pointer",
-                                }}
-                              >
-                                Cancel
-                              </button>
-                            </div>
-                          ) : (
-                            <button
-                              onClick={() => setConfirmId(flat.id)}
-                              style={{
-                                display: "flex", alignItems: "center", gap: 5,
-                                padding: "6px 13px", borderRadius: 9, fontSize: 12, fontWeight: 600,
-                                background: "var(--stat-red-bg)", color: "var(--stat-red-color)",
-                                border: "1px solid var(--stat-red-border)", cursor: "pointer",
-                              }}
-                            >
-                              <MdDelete size={14} /> Delete
-                            </button>
-                          )}
-                        </div>
-
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            /* ── DESKTOP TABLE ── */
-            <>
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th style={{ width: 50 }}>#</th>
-                    <th>Flat Number</th>
-                    <th>Status</th>
-                    <th>Resident</th>
-                    <th style={{ textAlign: "right" }}>Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filtered.map((flat, idx) => {
-                    const occupied = !!flat.resident_id;
-                    return (
-                      <tr key={flat.id}>
-                        <td style={{ color: "var(--text-secondary)", fontSize: 12 }}>{idx + 1}</td>
-                        <td>
-                          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                            <div style={{
-                              width: 32, height: 32, borderRadius: 9, flexShrink: 0,
-                              background: occupied ? "var(--stat-green-bg)" : "var(--stat-amber-bg)",
-                              border: `1px solid ${occupied ? "var(--stat-green-border)" : "var(--stat-amber-border)"}`,
-                              display: "flex", alignItems: "center", justifyContent: "center",
-                            }}>
-                              <MdApartment size={15} style={{ color: occupied ? "var(--stat-green-color)" : "var(--stat-amber-color)" }} />
-                            </div>
-                            <span style={{ fontWeight: 600, fontSize: 14, color: "var(--text-primary)" }}>
-                              Flat {flat.flat_number}
-                            </span>
-                          </div>
-                        </td>
-                        <td>
-                          <span className={occupied ? "status-pill status-pill--resolved" : "status-pill status-pill--pending"}>
-                            {occupied ? <MdCheckCircle size={11} /> : <MdLock size={11} />}
-                            {occupied ? "Occupied" : "Vacant"}
-                          </span>
-                        </td>
-                        <td>
-                          {occupied ? (
-                            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                              <div style={{
-                                width: 26, height: 26, borderRadius: "50%",
-                                background: "var(--accent-soft)", display: "flex", alignItems: "center", justifyContent: "center",
-                              }}>
-                                <MdPerson size={14} style={{ color: "var(--accent)" }} />
-                              </div>
-                              <span style={{ fontSize: 13, color: "var(--text-secondary)", fontWeight: 500 }}>Assigned</span>
-                            </div>
-                          ) : (
-                            <span style={{ fontSize: 12, color: "var(--text-secondary)", opacity: 0.45 }}>—</span>
-                          )}
-                        </td>
-                        <td style={{ textAlign: "right" }}>
-                          {confirmId === flat.id ? (
-                            <div className="fl-scalein" style={{ display: "flex", alignItems: "center", gap: 6, justifyContent: "flex-end" }}>
-                              <span style={{ fontSize: 11, color: "var(--text-secondary)" }}>Sure?</span>
-                              <button
-                                onClick={() => deleteFlat(flat.id)}
-                                disabled={deletingId === flat.id}
-                                style={{
-                                  display: "flex", alignItems: "center", gap: 5,
-                                  padding: "5px 12px", borderRadius: 8, fontSize: 11, fontWeight: 700,
-                                  background: "var(--danger)", color: "#fff", border: "none", cursor: "pointer",
-                                }}
-                              >
-                                {deletingId === flat.id ? <Spinner small /> : "Yes, delete"}
-                              </button>
-                              <button
-                                onClick={() => setConfirmId(null)}
-                                style={{
-                                  padding: "5px 10px", borderRadius: 8, fontSize: 11,
-                                  background: "var(--card-inner-bg)", color: "var(--text-secondary)",
-                                  border: "1px solid var(--glass-border)", cursor: "pointer",
-                                }}
-                              >
-                                Cancel
-                              </button>
-                            </div>
-                          ) : (
-                            <button
-                              onClick={() => setConfirmId(flat.id)}
-                              style={{
-                                display: "inline-flex", alignItems: "center", gap: 5,
-                                padding: "6px 14px", borderRadius: 9, fontSize: 12, fontWeight: 600,
-                                background: "var(--stat-red-bg)", color: "var(--stat-red-color)",
-                                border: "1px solid var(--stat-red-border)", cursor: "pointer",
-                                transition: "all 0.15s",
-                              }}
-                            >
-                              <MdDelete size={13} /> Delete
-                            </button>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-              <div className="table-footer">
-                <span style={{ fontSize: 12, color: "var(--text-secondary)" }}>
-                  Showing {filtered.length} of {flats.length} flat{flats.length !== 1 ? "s" : ""}
-                </span>
-              </div>
-            </>
-          )}
+        <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+          <GlobalButton
+            variant="secondary"
+            size="sm"
+            icon={MdArrowBack}
+            onClick={() => navigate(-1)}
+          >
+            Back
+          </GlobalButton>
+          <GlobalButton
+            variant="add"
+            icon={MdAdd}
+            onClick={() => setShowAddModal(true)}
+          >
+            Add Flat
+          </GlobalButton>
         </div>
       </div>
-    </>
+
+      {/* ── ERROR & SUCCESS NOTIFICATIONS ── */}
+      {error && (
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            background: "rgba(239, 68, 68, 0.12)",
+            border: "1px solid rgba(239, 68, 68, 0.28)",
+            borderRadius: 12,
+            padding: "12px 16px",
+            fontSize: 13,
+            color: "#ef4444",
+            marginBottom: 14,
+          }}
+        >
+          <span>{error}</span>
+          <button
+            onClick={() => setError("")}
+            style={{ background: "none", border: "none", cursor: "pointer", color: "inherit" }}
+          >
+            <MdClose size={16} />
+          </button>
+        </div>
+      )}
+      {successMessage && (
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            background: "rgba(16, 185, 129, 0.12)",
+            border: "1px solid rgba(16, 185, 129, 0.28)",
+            borderRadius: 12,
+            padding: "12px 16px",
+            fontSize: 13,
+            color: "#10b981",
+            marginBottom: 14,
+          }}
+        >
+          <span>{successMessage}</span>
+          <button
+            onClick={() => setSuccessMessage("")}
+            style={{ background: "none", border: "none", cursor: "pointer", color: "inherit" }}
+          >
+            <MdClose size={16} />
+          </button>
+        </div>
+      )}
+
+      {/* ── TOOLBAR / FILTERS ── */}
+      <div className="sa-toolbar" style={{ marginBottom: 16 }}>
+        <div className="sa-search-wrap" style={{ flex: 1 }}>
+          <MdSearch size={17} style={{ color: "var(--text-muted)", flexShrink: 0 }} />
+          <input
+            className="sa-search-input"
+            placeholder="Search flat number…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
+        <div className="sa-segment">
+          {TABS.map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => setFilterStatus(tab.key)}
+              className={filterStatus === tab.key ? "sa-segment-active" : ""}
+            >
+              {tab.label} ({counts[tab.key]})
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* ── FLATS TABLE ── */}
+      <GlobalTable
+        columns={columns}
+        data={filtered}
+        loading={loading}
+        emptyMessage={search || filterStatus !== "ALL" ? "No flats match your search." : "No flats found in this block."}
+        emptyIcon={MdOutlineInbox}
+        emptyAction={
+          !search && filterStatus === "ALL" ? (
+            <GlobalButton variant="add" icon={MdAdd} onClick={() => setShowAddModal(true)}>
+              Add Flat
+            </GlobalButton>
+          ) : null
+        }
+      />
+
+      {/* ── ADD FLAT MODAL ── */}
+      <GlobalModal
+        isOpen={showAddModal}
+        onClose={() => {
+          setShowAddModal(false);
+          setNewFlatData({ flat_number: "", block_id: "", area_sqft: "" });
+          setAddError("");
+        }}
+        title="Add New Flat"
+        subtitle="Create a flat unit in this block"
+        icon={MdApartment}
+        size="sm"
+        showFooter
+        submitLabel="Add Flat"
+        cancelLabel="Cancel"
+        onSubmit={handleAddFlat}
+        submitLoading={adding}
+        submitDisabled={adding || !newFlatData.flat_number}
+        submitIcon={MdAdd}
+      >
+        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+          {addError && (
+            <div
+              style={{
+                color: "#ef4444",
+                fontSize: 12,
+                background: "rgba(239, 68, 68, 0.08)",
+                border: "1px solid rgba(239, 68, 68, 0.22)",
+                padding: "8px 12px",
+                borderRadius: 9,
+              }}
+            >
+              {addError}
+            </div>
+          )}
+          <div className="sa-input-group">
+            <label className="sa-label">Flat Number</label>
+            <input
+              className="input"
+              placeholder="e.g. A-101"
+              value={newFlatData.flat_number}
+              onChange={(e) => setNewFlatData({ ...newFlatData, flat_number: e.target.value })}
+              required
+            />
+          </div>
+          <div className="sa-input-group">
+            <label className="sa-label">Area (sq.ft)</label>
+            <input
+              className="input"
+              type="number"
+              min="0.01"
+              step="0.01"
+              placeholder="e.g. 1200"
+              value={newFlatData.area_sqft}
+              onChange={(e) => setNewFlatData({ ...newFlatData, area_sqft: e.target.value })}
+            />
+          </div>
+        </div>
+      </GlobalModal>
+
+      {/* ── DELETE CONFIRM DIALOG ── */}
+      <GlobalConfirmDialog
+        isOpen={deleteConfirm.isOpen}
+        onClose={() => setDeleteConfirm({ isOpen: false, id: null, loading: false })}
+        onConfirm={handleDeleteConfirm}
+        title="Delete Flat"
+        message="Are you sure you want to delete this flat? All historical logs and bills for this unit will be affected."
+        variant="danger"
+        loading={deleteConfirm.loading}
+      />
+    </div>
   );
 }

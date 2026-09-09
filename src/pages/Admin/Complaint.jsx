@@ -835,6 +835,27 @@ export default function Complaint() {
   const [commentCounts, setCommentCounts] = useState({});
   const commentCountsRef = useRef({});
 
+  /* Export dropdown — close on outside click / escape / scroll */
+  const exportWrapRef = useRef(null);
+  useEffect(() => {
+    if (!exportOpen) return;
+    const onDown = (e) => {
+      if (exportWrapRef.current && !exportWrapRef.current.contains(e.target)) setExportOpen(false);
+    };
+    const onKey = (e) => { if (e.key === "Escape") setExportOpen(false); };
+    const onScroll = () => setExportOpen(false);
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onKey);
+    window.addEventListener("scroll", onScroll, true);
+    window.addEventListener("resize", onScroll);
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("keydown", onKey);
+      window.removeEventListener("scroll", onScroll, true);
+      window.removeEventListener("resize", onScroll);
+    };
+  }, [exportOpen]);
+
   /* ── Pagination State ── */
   const [page,       setPage]       = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -943,6 +964,10 @@ export default function Complaint() {
       const response = await API.get("/complaints", { params, headers });
       const complaintsArray = Array.isArray(response.data?.data)
         ? response.data.data
+        : Array.isArray(response.data?.complaints)
+        ? response.data.complaints
+        : Array.isArray(response.data)
+        ? response.data
         : [];
       setComplaints(complaintsArray);
       setCounts(response.data?.counts || { ALL: 0, PENDING: 0, IN_PROGRESS: 0, RESOLVED: 0 });
@@ -1239,7 +1264,7 @@ export default function Complaint() {
               {societiesList.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
             </Select>
           )}
-          <div className={styles.exportWrap}>
+          <div className={styles.exportWrap} ref={exportWrapRef}>
             <button className={styles.exportBtn} onClick={() => setExportOpen(o => !o)}
               disabled={complaints.length === 0} title={t("compExport")}>
               <MdDownload size={15} /> {t("compExport")} <MdArrowDropDown size={16} />

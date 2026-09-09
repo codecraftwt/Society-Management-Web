@@ -386,24 +386,25 @@
   text-transform: uppercase;
   letter-spacing: 0.06em;
   color: var(--text-secondary);
-  background: var(--card-inner-bg, rgba(15, 23, 42, 0.8));
+  background: var(--card-inner-bg, var(--card-bg, #fafafa));
   padding: 12px 16px;
   white-space: nowrap;
   position: sticky;
   top: 0;
   z-index: 1;
-  border-bottom: 1px solid var(--glass-border, rgba(255, 255, 255, 0.08));
+  border-bottom: 1px solid var(--glass-border, var(--divider, #d6d6e4));
 }
 .table .thActions { text-align: right; }
 .table td {
   padding: 14px 16px;
   vertical-align: middle;
-  border-bottom: 1px solid var(--glass-border, rgba(255, 255, 255, 0.06));
+  border-bottom: 1px solid var(--glass-border, var(--divider, #d6d6e4));
   font-size: 13px;
   color: var(--text-primary);
 }
-.table tbody tr { transition: background 0.15s ease; }
-.table tbody tr:hover { background: rgba(56, 189, 248, 0.05); }
+.table tbody tr { background: transparent; transition: background 0.15s ease; }
+.table tbody tr:nth-child(even) { background: var(--row-stripe, transparent); }
+.table tbody tr:hover { background: var(--row-hover, rgba(56, 189, 248, 0.08)); }
 .table tbody tr:last-child td { border-bottom: none; }
 
 .tdActions { text-align: right; white-space: nowrap; }
@@ -947,4 +948,139 @@
 @media (max-width: 420px) {
   .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
   .statValue { font-size: 21px; }
+}
+
+/* ── Light Mode Support ───────────────────────────────────────────── */
+:global(html.light) .surface {
+  background: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05) !important;
+}
+
+:global(html.light) .toolbar {
+  border-bottom-color: #f1f5f9 !important;
+}
+
+:global(html.light) .searchField {
+  background: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  color: #0f172a !important;
+  box-shadow: none !important;
+}
+
+:global(html.light) .searchField:focus {
+  border-color: #2563eb !important;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12) !important;
+}
+
+:global(html.light) .filtersBtn {
+  background: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  color: #475569 !important;
+}
+
+:global(html.light) .filtersBtn:hover,
+:global(html.light) .filtersBtnActive {
+  background: #eff6ff !important;
+  border-color: #93c5fd !important;
+  color: #2563eb !important;
+}
+
+:global(html.light) .filtersPanel {
+  background: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08) !important;
+}
+
+:global(html.light) .dateInput {
+  background: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  color: #0f172a !important;
+}
+
+:global(html.light) .table th {
+  background: #f8fafc !important;
+  color: #475569 !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+}
+
+:global(html.light) .table td {
+  color: #0f172a !important;
+  border-bottom: 1px solid #f1f5f9 !important;
+  background: transparent !important;
+}
+
+:global(html.light) .table tbody tr {
+  background: #ffffff !important;
+  box-shadow: none !important;
+}
+
+:global(html.light) .table tbody tr:nth-child(odd),
+:global(html.light) .table tbody tr:nth-child(even) {
+  background: #ffffff !important;
+}
+
+:global(html.light) .table tbody tr:hover {
+  background: #f8fafc !important;
+}
+
+:global(html.light) .compThumb {
+  background: #f8fafc !important;
+  border-color: #e2e8f0 !important;
+  color: #64748b !important;
+}
+
+:global(html.light) .compTitle {
+  color: #0f172a !important;
+}
+
+:global(html.light) .compDesc {
+  color: #64748b !important;
+}
+
+:global(html.light) .residentName {
+  color: #0f172a !important;
+}
+
+:global(html.light) .residentMeta {
+  color: #64748b !important;
+}
+
+:global(html.light) .locationMain {
+  color: #0f172a !important;
+}
+
+:global(html.light) .locationSub {
+  color: #64748b !important;
+}
+
+:global(html.light) .avatar {
+  background: #eff6ff !important;
+  color: #2563eb !important;
+}
+
+:global(html.light) .stat {
+  background: #ffffff !important;
+  border-color: #e2e8f0 !important;
+}
+
+:global(html.light) .exportBtn {
+  background: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  color: #0f172a !important;
+}
+
+:global(html.light) .exportMenu {
+  background: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12) !important;
+}
+
+:global(html.light) .exportMenuItem {
+  color: #0f172a !important;
+}
+
+:global(html.light) .exportMenuItem:hover:not(:disabled) {
+  background: #eff6ff !important;
+  color: #2563eb !important;
 }

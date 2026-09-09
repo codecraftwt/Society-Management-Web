@@ -2330,7 +2330,13 @@ export default function Resident() {
         });
         const headers = (isSuperAdmin && filterSocietyId) ? { "x-society-id": filterSocietyId } : {};
         const res = await API.get(`/users/resident?${params}`, { headers });
-        const data = res.data.data || [];
+        const data = Array.isArray(res.data)
+          ? res.data
+          : Array.isArray(res.data?.data)
+          ? res.data.data
+          : Array.isArray(res.data?.residents)
+          ? res.data.residents
+          : [];
         setResidents(data);
         setTotalAll(res.data.totalAll ?? res.data.pagination?.totalItems ?? 0);
         setTotalPages(res.data.pagination?.totalPages ?? 1);
@@ -2370,7 +2376,10 @@ export default function Resident() {
     setFilterBlockId("");
     setFilterFloorId("");
     setFilterFlatId("");
-    if (isSuperAdmin) setFilterSocietyId("");
+    if (isSuperAdmin) {
+      setFilterSocietyId("");
+      localStorage.setItem("superadmin_society_filter", "ALL");
+    }
     setSearch("");
   };
 
@@ -2933,7 +2942,11 @@ export default function Resident() {
         <div style={{ display: "flex", gap: 10, padding: "16px 20px", borderBottom: "1px solid var(--divider)", flexWrap: "wrap", background: "rgba(0,0,0,0.02)" }}>
           {isSuperAdmin && (
             <Select className="input" style={{ flex: 1, minWidth: 140, padding: "8px 12px" }}
-              value={filterSocietyId} onChange={(e) => setFilterSocietyId(e.target.value)}>
+              value={filterSocietyId} onChange={(e) => {
+                const val = e.target.value;
+                setFilterSocietyId(val);
+                localStorage.setItem("superadmin_society_filter", val || "ALL");
+              }}>
               <option value="">{t("allSocieties") || "All Societies"}</option>
               {societiesList.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
             </Select>

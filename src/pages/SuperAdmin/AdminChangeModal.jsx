@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { useLang } from "../../context/LanguageContext";
-import { MdClose, MdPersonAdd, MdEdit } from "react-icons/md";
+import { MdPersonAdd, MdEdit } from "react-icons/md";
+import GlobalModal from "../../components/common/GlobalModal";
 
 const AdminChangeModal = ({ onClose, onSubmit, existingAdmin }) => {
-  const { t }    = useLang();
-  const isEdit   = Boolean(existingAdmin);
+  const { t } = useLang();
+  const isEdit = Boolean(existingAdmin);
   const [name, setName] = useState("");
 
   useEffect(() => {
@@ -17,52 +18,39 @@ const AdminChangeModal = ({ onClose, onSubmit, existingAdmin }) => {
   };
 
   return (
-    <div className="sa-modal-overlay">
-      <div className="sa-modal">
-        <div className="sa-modal-header">
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <div className="sa-form-icon">
-              {isEdit ? <MdEdit size={18} /> : <MdPersonAdd size={18} />}
-            </div>
-            <div>
-              <h3 className="sa-form-title">
-                {isEdit ? t("amModalEditTitle") : t("amModalAddTitle")}
-              </h3>
-              <p className="sa-form-subtitle">
-                {isEdit ? t("amModalEditSub") || "Update the society administrator" : t("amModalAddSub") || "Assign an administrator to this society"}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="sa-modal-body">
-          <label className="sa-label">{t("amAdminName")}</label>
-          <input
-            placeholder={t("amAdminName")}
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            onKeyDown={(e) => { if (e.key === "Enter") submit(); }}
-            className="input"
-            autoFocus
-          />
-        </div>
-
-        <div className="sa-modal-footer">
-          <button onClick={onClose} className="sa-btn sa-btn-ghost">
-            <MdClose size={15} /> {t("cancel")}
-          </button>
-          <button
-            onClick={submit}
-            disabled={!String(name || "").trim()}
-            className="sa-btn sa-btn-primary"
-            style={{ opacity: (!String(name || "").trim()) ? 0.55 : 1, cursor: (!String(name || "").trim()) ? "not-allowed" : "pointer" }}
-          >
-            {isEdit ? <MdEdit size={15} /> : <MdPersonAdd size={15} />}
-            {isEdit ? t("amUpdateBtn") : t("amAddBtn")}
-          </button>
-        </div>
+    <GlobalModal
+      isOpen={true}
+      onClose={onClose}
+      title={isEdit ? t("amModalEditTitle") : t("amModalAddTitle")}
+      subtitle={
+        isEdit
+          ? t("amModalEditSub") || "Update the society administrator"
+          : t("amModalAddSub") || "Assign an administrator to this society"
+      }
+      icon={isEdit ? MdEdit : MdPersonAdd}
+      size="sm"
+      showFooter
+      submitLabel={isEdit ? t("amUpdateBtn") || "Update Admin" : t("amAddBtn") || "Add Admin"}
+      cancelLabel={t("cancel") || "Cancel"}
+      onSubmit={submit}
+      submitDisabled={!String(name || "").trim()}
+      submitIcon={isEdit ? MdEdit : MdPersonAdd}
+      submitVariant={isEdit ? "edit" : "primary"}
+    >
+      <div className="sa-input-group">
+        <label className="sa-label">{t("amAdminName")}</label>
+        <input
+          placeholder={t("amAdminName")}
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") submit();
+          }}
+          className="input"
+          autoFocus
+        />
       </div>
-    </div>
+    </GlobalModal>
   );
 };
 

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import API from "../../services/api";
 import { MdBarChart, MdSearch } from "react-icons/md";
 
@@ -16,34 +16,36 @@ const toArray = (data) => {
 
 export default function CommitteePaymentTracking() {
   const [bills, setBills] = useState([]);
+  const [fetchCounts, setFetchCounts] = useState({ total: 0, paid: 0, pending: 0, revenue: 0, pendingAmount: 0, totalAmount: 0 });
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("ALL");
   const [search, setSearch] = useState("");
 
-  useEffect(() => { load(); }, []);
-
-  const load = async () => {
+  const load = useCallback(async () => {
     try {
       const res = await API.get("/bills/society");
 
-      console.log("Bills API response:", res.data);
-
-      setBills(toArray(res.data));
+      const body = res.data;
+      // Backend returns a paginated envelope: { data, counts, pagination }
+      setBills(Array.isArray(body?.data) ? body.data : toArray(body));
+      setFetchCounts(body?.counts || { total: 0, paid: 0, pending: 0, revenue: 0, pendingAmount: 0, totalAmount: 0 });
     } catch (err) {
       console.error(err);
       setBills([]); // keep state as array on error
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
 
   const counts = {
-    ALL: bills.length,
-    PAID: bills.filter(b => b.status === "PAID").length,
-    PENDING: bills.filter(b => b.status !== "PAID").length,
+    ALL: fetchCounts.total ?? bills.length,
+    PAID: fetchCounts.paid ?? bills.filter(b => b.status === "PAID").length,
+    PENDING: fetchCounts.pending ?? bills.filter(b => b.status !== "PAID").length,
   };
-  const totalCollected = bills.filter(b => b.status === "PAID").reduce((s, b) => s + Number(b.amount || 0), 0);
-  const totalPending   = bills.filter(b => b.status !== "PAID").reduce((s, b) => s + Number(b.amount || 0), 0);
+  const totalCollected = Number(fetchCounts.revenue ?? 0);
+  const totalPending   = Number(fetchCounts.pendingAmount ?? 0);
 
   const filtered = bills.filter(b => {
     const matchFilter = filter === "ALL" || (filter === "PAID" ? b.status === "PAID" : b.status !== "PAID");

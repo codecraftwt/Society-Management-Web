@@ -16,6 +16,8 @@ import {
   MdReceiptLong,
   MdPerson,
 } from "react-icons/md";
+import GlobalButton from "../../components/common/GlobalButton";
+import GlobalBadge from "../../components/common/GlobalBadge";
 
 const toArray = (data) => {
   if (Array.isArray(data)) return data;
@@ -229,26 +231,21 @@ export default function PaymentsAccountant() {
         </div>
 
         <div className="flex flex-wrap gap-3">
-          <button
+          <GlobalButton
+            variant="primary"
+            icon={MdRefresh}
+            loading={refreshing}
             onClick={() => loadData({ silent: true })}
-            className="btn-primary inline-flex items-center gap-2"
-            disabled={refreshing}
           >
-            <MdRefresh size={18} className={refreshing ? "animate-spin" : ""} />
             {refreshing ? "Refreshing..." : "Refresh"}
-          </button>
-          <button
+          </GlobalButton>
+          <GlobalButton
+            variant="secondary"
+            icon={MdArrowForward}
             onClick={() => navigate("/accountant/manage-bills")}
-            className="inline-flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-medium transition"
-            style={{
-              background: "var(--card-bg)",
-              borderColor: "var(--glass-border)",
-              color: "var(--text-primary)",
-            }}
           >
             Manage bills
-            <MdArrowForward size={18} />
-          </button>
+          </GlobalButton>
         </div>
       </div>
 
@@ -358,11 +355,9 @@ export default function PaymentsAccountant() {
                             {payment.resident_name} • Flat {payment.flat_number}
                           </p>
                         </div>
-                        <span
-                          className={`status-pill ${payment.bill_status === "PAID" ? "status-pill--resolved" : "status-pill--pending"}`}
-                        >
+                        <GlobalBadge variant={payment.bill_status === "PAID" ? "success" : "warning"}>
                           {payment.bill_status}
-                        </span>
+                        </GlobalBadge>
                       </div>
 
                       <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
@@ -416,11 +411,9 @@ export default function PaymentsAccountant() {
                           <td>{formatDate(payment.payment_date)}</td>
                           <td className="font-semibold">{formatCurrency(payment.amount)}</td>
                           <td>
-                            <span
-                              className={`status-pill ${payment.bill_status === "PAID" ? "status-pill--resolved" : "status-pill--pending"}`}
-                            >
+                            <GlobalBadge variant={payment.bill_status === "PAID" ? "success" : "warning"}>
                               {payment.bill_status}
-                            </span>
+                            </GlobalBadge>
                           </td>
                         </tr>
                       ))}

@@ -9,6 +9,9 @@ import {
   MdDirectionsCar,
 } from "react-icons/md";
 import { FaParking } from "react-icons/fa";
+import GlobalButton from "../../components/common/GlobalButton";
+import GlobalConfirmDialog from "../../components/common/GlobalConfirmDialog";
+import GlobalBadge from "../../components/common/GlobalBadge";
 import Select from "../../components/common/Select";
 
 function Spinner({ size = 16 }) {
@@ -247,6 +250,7 @@ export default function MyVehicles() {
   const [showForm,        setShowForm]        = useState(false);
   const [submitLoading,   setSubmitLoading]   = useState(false);
   const [deleteLoadingId, setDeleteLoadingId] = useState(null);
+  const [deleteConfirmId, setDeleteConfirmId] = useState(null);
 
   /* allocated slots */
   const [allocatedSlots, setAllocatedSlots] = useState([]);
@@ -458,11 +462,13 @@ export default function MyVehicles() {
      DELETE VEHICLE
   ──────────────────────────── */
   const handleDelete = async (id) => {
-    if (!window.confirm("Remove this vehicle? Your flat's parking slot will be freed for reuse.")) return;
-    setDeleteLoadingId(id);
+    const targetId = id || deleteConfirmId;
+    if (!targetId) return;
+    setDeleteLoadingId(targetId);
     try {
-      await API.delete(`/vehicles/${id}`);
+      await API.delete(`/vehicles/${targetId}`);
       setSuccessMsg("Vehicle removed successfully!");
+      setDeleteConfirmId(null);
       loadVehicles();
       loadAllocatedSlots();
     } catch (err) {
@@ -515,10 +521,13 @@ export default function MyVehicles() {
           <p className="text-secondary text-xs mt-0.5">Manage your vehicles and parking slots</p>
         </div>
         {activeTab === "vehicles" && (
-          <button onClick={() => { setShowForm(p => !p); setErrorMsg(""); }} className="btn-primary flex items-center gap-2">
-            {showForm ? <MdClose size={16} /> : <MdAdd size={16} />}
-            {showForm ? "Close" : t("vehAddBtn")}
-          </button>
+          <GlobalButton
+            variant="add"
+            icon={showForm ? MdClose : MdAdd}
+            onClick={() => { setShowForm(p => !p); setErrorMsg(""); }}
+          >
+            {showForm ? "Close" : (t("vehAddBtn") || "Add Vehicle")}
+          </GlobalButton>
         )}
       </div>
 
@@ -868,10 +877,12 @@ export default function MyVehicles() {
                           </div>
                         </div>
                       </div>
-                      <button onClick={() => handleDelete(v.id)} disabled={deleteLoadingId === v.id}
-                        style={{ width:34, height:34, borderRadius:10, border:"none", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", background:"rgba(248,113,113,0.10)", color:"#f87171", opacity: deleteLoadingId===v.id ? 0.5 : 1 }}>
-                        {deleteLoadingId === v.id ? <Spinner size={14} /> : <MdDelete size={17} />}
-                      </button>
+                      <GlobalButton
+                        variant="delete"
+                        size="sm"
+                        icon={MdDelete}
+                        onClick={() => setDeleteConfirmId(v.id)}
+                      />
                     </div>
                   ))}
                 </div>
@@ -930,11 +941,14 @@ export default function MyVehicles() {
                             </span>
                           </td>
                           <td className="p-3 text-right">
-                            <button onClick={() => handleDelete(v.id)} disabled={deleteLoadingId === v.id}
-                              style={{ display:"inline-flex", alignItems:"center", gap:5, padding:"6px 12px", borderRadius:8, background:"rgba(248,113,113,0.08)", border:"1px solid rgba(248,113,113,0.20)", color:"#f87171", fontSize:12, fontWeight:700, cursor:"pointer", opacity: deleteLoadingId===v.id ? 0.5 : 1 }}>
-                              {deleteLoadingId === v.id ? <Spinner size={12} /> : <MdDelete size={14} />}
-                              {deleteLoadingId === v.id ? "Deleting..." : "Delete"}
-                            </button>
+                            <GlobalButton
+                              variant="delete"
+                              size="sm"
+                              icon={MdDelete}
+                              onClick={() => setDeleteConfirmId(v.id)}
+                            >
+                              Delete
+                            </GlobalButton>
                           </td>
                         </tr>
                       ))}
@@ -1107,6 +1121,18 @@ export default function MyVehicles() {
           )}
         </div>
       )}
+
+      {/* ── DELETE CONFIRM DIALOG ── */}
+      <GlobalConfirmDialog
+        isOpen={Boolean(deleteConfirmId)}
+        onClose={() => setDeleteConfirmId(null)}
+        onConfirm={() => handleDelete(deleteConfirmId)}
+        title="Remove Vehicle"
+        message="Are you sure you want to remove this vehicle? Your flat's parking slot will be freed for reuse."
+        confirmText="Remove Vehicle"
+        variant="danger"
+        loading={Boolean(deleteLoadingId)}
+      />
     </div>
   );
 }                                  

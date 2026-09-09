@@ -13,6 +13,7 @@ import {
 } from "react-icons/md";
 import { FaParking } from "react-icons/fa";
 import Select from "../../components/common/Select";
+import GlobalButton from "../../components/common/GlobalButton";
 
 /* ── Debounce hook ── */
 function useDebounce(value, delay = 500) {
@@ -112,7 +113,14 @@ function ResidentEntryPanel({ slots, onCreated, t }) {
     setLoading(true);
     try {
       const res = await API.get("/parking/unassigned-resident-vehicles");
-      setVehicles(res.data || []);
+      const list = Array.isArray(res.data)
+        ? res.data
+        : Array.isArray(res.data?.data)
+        ? res.data.data
+        : Array.isArray(res.data?.vehicles)
+        ? res.data.vehicles
+        : [];
+      setVehicles(list);
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
   }, []);
@@ -996,14 +1004,12 @@ export default function AssignParkingSlot() {
           </div>
         </div>
         {mainTab === "slots" && (
-          <button
-            type="button"
+          <GlobalButton
+            variant="add"
             onClick={() => { setShowForm(true); setConfirmDel(null); }}
-            className="ps-create-btn"
           >
-            <MdAdd size={18} />
-            <span>{t("parkCreateBtn") || "Create Slots"}</span>
-          </button>
+            {t("parkCreateBtn") || "Create Slots"}
+          </GlobalButton>
         )}
       </div>
 
@@ -1344,13 +1350,13 @@ export default function AssignParkingSlot() {
                 </div>
                 <h4>{t("parkEmpty") || "No parking slots found"}</h4>
                 <p>Create your society parking slots to begin assigning them to residents.</p>
-                <button
-                  type="button"
+                <GlobalButton
+                  variant="add"
                   onClick={() => setShowForm(true)}
-                  className="ps-btn-primary mt-2"
+                  className="mt-2"
                 >
-                  <MdAdd size={16} /> {t("parkFirstSlot") || "Add the first slot"}
-                </button>
+                  {t("parkFirstSlot") || "Add the first slot"}
+                </GlobalButton>
               </div>
             )}
 
@@ -1450,15 +1456,14 @@ export default function AssignParkingSlot() {
                               {slot.parking_type === "EXTRA" ? "Extra Space" : "Standard"}
                             </span>
                           </div>
-                          <button
-                            type="button"
+                          <GlobalButton
+                            variant="delete"
+                            size="sm"
                             onClick={() => setConfirmDel(slot)}
-                            className="ps-card-delete-btn"
                             title="Delete Slot"
                           >
-                            <MdDelete size={15} />
-                            <span>Delete</span>
-                          </button>
+                            Delete
+                          </GlobalButton>
                         </div>
                       </div>
                     );

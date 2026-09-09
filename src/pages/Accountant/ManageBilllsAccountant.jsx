@@ -8,6 +8,10 @@ import {
   MdCheckCircle, MdSchedule,
   MdChevronLeft, MdChevronRight,
 } from "react-icons/md";
+import GlobalButton from "../../components/common/GlobalButton";
+import GlobalModal from "../../components/common/GlobalModal";
+import GlobalConfirmDialog from "../../components/common/GlobalConfirmDialog";
+import GlobalBadge from "../../components/common/GlobalBadge";
 import Select from "../../components/common/Select";
 
 /* ── helpers ── */
@@ -84,46 +88,38 @@ function Pagination({ page, totalPages, onPageChange }) {
 /* ── Status pill ── */
 function BillStatus({ status, t }) {
   if (status === "PAID")
-    return <span className="bill-pill-paid"><MdCheckCircle size={12} /> {t("billPaid") || "Paid"}</span>;
+    return <GlobalBadge variant="success" icon={MdCheckCircle}>{t("billPaid") || "Paid"}</GlobalBadge>;
   if (status === "PENDING_VERIFICATION")
-    return (
-      <span className="px-2.5 py-1 text-xs font-bold rounded-full bg-blue-500/15 text-blue-400 border border-blue-500/30 inline-flex items-center gap-1">
-        <MdSchedule size={12} /> Awaiting Confirmation
-      </span>
-    );
-  return <span className="bill-pill-pending"><MdSchedule size={12} /> {t("billPending") || "Pending"}</span>;
+    return <GlobalBadge variant="info" icon={MdSchedule}>Awaiting Confirmation</GlobalBadge>;
+  return <GlobalBadge variant="warning" icon={MdSchedule}>{t("billPending") || "Pending"}</GlobalBadge>;
 }
 
 /* ── Delete & Confirm controls ── */
-function RowActions({ bill, confirmDeleteId, setConfirmDeleteId, handleDeleteBill, deletingId, handleConfirmPayment, confirmingId, t }) {
+function RowActions({ bill, onDeleteClick, handleConfirmPayment, confirmingId, t }) {
   if (bill.status === "PAID") return <span className="text-xs text-secondary opacity-30">—</span>;
 
   return (
     <div className="flex items-center gap-2 flex-wrap">
       {bill.status === "PENDING_VERIFICATION" && (
-        <button
+        <GlobalButton
+          variant="primary"
+          size="sm"
+          icon={MdCheckCircle}
+          loading={confirmingId === bill.id}
           onClick={() => handleConfirmPayment(bill.id)}
-          disabled={confirmingId === bill.id}
-          className="btn-primary px-3 py-1.5 text-xs font-bold flex items-center gap-1 shrink-0"
           title="Confirm resident payment and send Web/Mobile notification"
         >
-          <MdCheckCircle size={13} /> {confirmingId === bill.id ? "Confirming..." : "Confirm Payment"}
-        </button>
+          {confirmingId === bill.id ? "Confirming..." : "Confirm Payment"}
+        </GlobalButton>
       )}
-
-      {confirmDeleteId === bill.id ? (
-        <div className="flex items-center gap-2 animate-fadeIn">
-          <span className="text-xs text-secondary">{t("billSure")}</span>
-          <button className="btn-delete-confirm" onClick={() => handleDeleteBill(bill.id)} disabled={deletingId === bill.id}>
-            {deletingId === bill.id ? <Spinner /> : t("billYesDelete")}
-          </button>
-          <button className="btn-cancel-sm" onClick={() => setConfirmDeleteId(null)}>{t("cancel")}</button>
-        </div>
-      ) : (
-        <button className="btn-delete" onClick={() => setConfirmDeleteId(bill.id)}>
-          <MdDelete size={13} /> {t("billDelete")}
-        </button>
-      )}
+      <GlobalButton
+        variant="delete"
+        size="sm"
+        icon={MdDelete}
+        onClick={() => onDeleteClick(bill.id)}
+      >
+        {t("billDelete") || "Delete"}
+      </GlobalButton>
     </div>
   );
 }
@@ -319,13 +315,13 @@ export default function ManageBillsAccountant() {
             <p className="page-subtitle">{t("billsSubtitle")}</p>
           </div>
         </div>
-        <button
-          className="btn-primary"
-          style={{ borderRadius: 12, padding: "9px 16px", fontSize: 13, fontWeight: 600, display: "flex", alignItems: "center", gap: 7, flexShrink: 0 }}
+        <GlobalButton
+          variant="add"
+          icon={showCreate ? MdClose : MdAdd}
           onClick={() => setShowCreate(p => !p)}
         >
-          {showCreate ? <><MdClose size={16} />{t("cancel")}</> : <><MdAdd size={16} />{t("billCreate")}</>}
-        </button>
+          {showCreate ? t("cancel") : t("billCreate")}
+        </GlobalButton>
       </div>
 
       {/* ── STAT CARDS ── */}
@@ -343,72 +339,68 @@ export default function ManageBillsAccountant() {
         </div>
       )}
 
-      {/* ── CREATE FORM ── */}
-      {showCreate && (
-        <div className="bill-form-card animate-scaleIn">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="er-icon er-icon--amenity" style={{ width: 38, height: 38, borderRadius: 10 }}>
-              <MdReceiptLong size={18} />
-            </div>
-            <div>
-              <div className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>{t("billNewBill")}</div>
-              <div className="text-xs text-secondary mt-0.5">{t("billNewBillSub")}</div>
-            </div>
+      {/* ── CREATE MODAL ── */}
+      <GlobalModal
+        isOpen={showCreate}
+        onClose={() => setShowCreate(false)}
+        title={t("billNewBill")}
+        subtitle={t("billNewBillSub")}
+        icon={MdReceiptLong}
+        maxWidth="max-w-2xl"
+      >
+        <form onSubmit={handleCreateBill} className={`grid gap-4 ${isMobile ? "grid-cols-1" : "grid-cols-2"}`}>
+          <div>
+            <Label>{t("billTypeLabel")}</Label>
+            <Select className="input h-11 w-full"
+              value={formData.bill_type}
+              onChange={e => setFormData({ ...formData, bill_type: e.target.value, flat_id: "" })}>
+              <option value="INDIVIDUAL">{t("billTypeIndividual")}</option>
+              <option value="ALL">{t("billTypeAll")}</option>
+            </Select>
           </div>
-          <form onSubmit={handleCreateBill} className={`grid gap-4 ${isMobile ? "grid-cols-1" : "grid-cols-2 lg:grid-cols-5"}`}>
+          {formData.bill_type === "INDIVIDUAL" && (
             <div>
-              <Label>{t("billTypeLabel")}</Label>
-              <Select className="input h-11 w-full"
-                value={formData.bill_type}
-                onChange={e => setFormData({ ...formData, bill_type: e.target.value, flat_id: "" })}>
-                <option value="INDIVIDUAL">{t("billTypeIndividual")}</option>
-                <option value="ALL">{t("billTypeAll")}</option>
+              <Label>{t("billSelectFlat")}</Label>
+              <Select className="input h-11 w-full" required
+                value={formData.flat_id}
+                onChange={e => setFormData({ ...formData, flat_id: e.target.value })}>
+                <option value="">{t("billChooseFlat")}</option>
+                {flats.map(f => (
+                  <option key={f.id} value={f.id}>
+                    {f.flat_number} ({f.Block?.name}) – {f.User?.name || t("billNoResident")}
+                  </option>
+                ))}
               </Select>
             </div>
-            {formData.bill_type === "INDIVIDUAL" && (
-              <div className={isMobile ? "" : "lg:col-span-2"}>
-                <Label>{t("billSelectFlat")}</Label>
-                <Select className="input h-11 w-full" required
-                  value={formData.flat_id}
-                  onChange={e => setFormData({ ...formData, flat_id: e.target.value })}>
-                  <option value="">{t("billChooseFlat")}</option>
-                  {flats.map(f => (
-                    <option key={f.id} value={f.id}>
-                      {f.flat_number} ({f.Block?.name}) – {f.User?.name || t("billNoResident")}
-                    </option>
-                  ))}
-                </Select>
-              </div>
-            )}
-            <div>
-              <Label>{t("billTitleLabel")}</Label>
-              <input className="input h-11 w-full" placeholder={t("billTitlePlaceholder")}
-                value={formData.title} required
-                onChange={e => setFormData({ ...formData, title: e.target.value })} />
-            </div>
-            <div>
-              <Label>{t("billAmountLabel")}</Label>
-              <input type="number" className="input h-11 w-full" placeholder="0"
-                value={formData.amount} required
-                onChange={e => setFormData({ ...formData, amount: e.target.value })} />
-            </div>
-            <div>
-              <Label>{t("billMonthLabel")}</Label>
-              <input type="month" className="input h-11 w-full"
-                value={formData.billing_month} required
-                onChange={e => setFormData({ ...formData, billing_month: e.target.value })} />
-            </div>
-            <div className="flex items-end lg:col-span-4">
-              <button type="submit" disabled={creating} className="btn-primary w-full justify-center h-11" style={{ borderRadius: 12 }}>
-                {creating
-                  ? <span className="flex items-center gap-2"><Spinner />{t("billGenerating")}</span>
-                  : <><MdReceiptLong size={16} />{t("billGenerate")}</>
-                }
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
+          )}
+          <div className={formData.bill_type === "ALL" ? "col-span-2" : ""}>
+            <Label>{t("billTitleLabel")}</Label>
+            <input className="input h-11 w-full" placeholder={t("billTitlePlaceholder")}
+              value={formData.title} required
+              onChange={e => setFormData({ ...formData, title: e.target.value })} />
+          </div>
+          <div>
+            <Label>{t("billAmountLabel")}</Label>
+            <input type="number" className="input h-11 w-full" placeholder="0"
+              value={formData.amount} required
+              onChange={e => setFormData({ ...formData, amount: e.target.value })} />
+          </div>
+          <div>
+            <Label>{t("billMonthLabel")}</Label>
+            <input type="month" className="input h-11 w-full"
+              value={formData.billing_month} required
+              onChange={e => setFormData({ ...formData, billing_month: e.target.value })} />
+          </div>
+          <div className="flex items-center justify-end gap-3 col-span-2 mt-2 pt-3 border-t" style={{ borderColor: "var(--glass-border)" }}>
+            <GlobalButton variant="cancel" type="button" onClick={() => setShowCreate(false)}>
+              {t("cancel")}
+            </GlobalButton>
+            <GlobalButton variant="create" type="submit" loading={creating} icon={MdReceiptLong}>
+              {creating ? t("billGenerating") : t("billGenerate")}
+            </GlobalButton>
+          </div>
+        </form>
+      </GlobalModal>
 
       {/* ── BILLS TABLE ── */}
       <div className="data-table-wrap">
@@ -521,7 +513,7 @@ export default function ManageBillsAccountant() {
                       <p className="text-xs font-semibold" style={{ color: "var(--text-primary)" }}>{b.Flat.User?.name || "NA"}</p>
                     </div>
                   </div>
-                  <RowActions bill={b} confirmDeleteId={confirmDeleteId} setConfirmDeleteId={setConfirmDeleteId} handleDeleteBill={handleDeleteBill} deletingId={deletingId} handleConfirmPayment={handleConfirmPayment} confirmingId={confirmingId} t={t} />
+                  <RowActions bill={b} onDeleteClick={setConfirmDeleteId} handleConfirmPayment={handleConfirmPayment} confirmingId={confirmingId} t={t} />
                 </div>
               </div>
             ))}
@@ -559,7 +551,7 @@ export default function ManageBillsAccountant() {
                   <td><span className="bill-table-amount">₹{Number(b.amount).toLocaleString("en-IN")}</span></td>
                   <td><BillStatus status={b.status} t={t} /></td>
                   <td onClick={e => e.stopPropagation()}>
-                    <RowActions bill={b} confirmDeleteId={confirmDeleteId} setConfirmDeleteId={setConfirmDeleteId} handleDeleteBill={handleDeleteBill} deletingId={deletingId} handleConfirmPayment={handleConfirmPayment} confirmingId={confirmingId} t={t} />
+                    <RowActions bill={b} onDeleteClick={setConfirmDeleteId} handleConfirmPayment={handleConfirmPayment} confirmingId={confirmingId} t={t} />
                   </td>
                 </tr>
               ))}
@@ -583,6 +575,18 @@ export default function ManageBillsAccountant() {
           </div>
         )}
       </div>
+
+      {/* ── DELETE CONFIRM DIALOG ── */}
+      <GlobalConfirmDialog
+        isOpen={Boolean(confirmDeleteId)}
+        onClose={() => setConfirmDeleteId(null)}
+        onConfirm={() => handleDeleteBill(confirmDeleteId)}
+        title={t("billDeleteConfirmTitle") || "Delete Bill"}
+        message={t("billDeleteConfirmMsg") || "Are you sure you want to delete this bill? This action cannot be undone."}
+        confirmText={t("billYesDelete") || "Yes, Delete"}
+        variant="danger"
+        loading={Boolean(deletingId)}
+      />
     </div>
   );
 }

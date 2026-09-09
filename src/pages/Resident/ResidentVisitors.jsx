@@ -7,6 +7,7 @@ import {
   MdDirectionsCar, MdAccessTime, MdExpandMore,
   MdChevronLeft, MdChevronRight,
 } from "react-icons/md";
+import GlobalBadge from "../../components/common/GlobalBadge";
 
 /* ── Helpers ── */
 const formatDate = (d) => {
@@ -79,13 +80,13 @@ function Avatar({ name = "", size = "w-8 h-8", textSize = "text-xs" }) {
 /* ── Status badge ── */
 function StatusBadge({ exitTime, t }) {
   return exitTime ? (
-    <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-red-500/15 text-red-400 border border-red-500/20 whitespace-nowrap">
-      {t("rvLeft")}
-    </span>
+    <GlobalBadge variant="danger">
+      {t("rvLeft") || "Left"}
+    </GlobalBadge>
   ) : (
-    <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-green-500/15 text-green-400 border border-green-500/20 whitespace-nowrap">
-      {t("rvInside")}
-    </span>
+    <GlobalBadge variant="success">
+      {t("rvInside") || "Inside"}
+    </GlobalBadge>
   );
 }
 
@@ -492,15 +493,15 @@ export default function ResidentVisitors() {
             </div>
 
             {/* DESKTOP TABLE */}
-            <div className="hidden md:block overflow-x-auto">
-              <table className="w-full text-sm">
+            <div className="data-table-wrap hidden md:block">
+              <table className="data-table">
                 <thead>
-                  <tr className="border-b border-white/10 text-secondary text-xs uppercase tracking-wide">
-                    <th className="p-3 text-left">{t("vrVisitor")}</th>
-                    <th className="p-3 text-left">{t("vrPurpose")}</th>
-                    <th className="p-3 text-left">{t("vrEntry")}</th>
-                    <th className="p-3 text-left">{t("billStatusCol")}</th>
-                    <th className="p-3 w-8"></th>
+                  <tr>
+                    <th>{t("vrVisitor")}</th>
+                    <th>{t("vrPurpose")}</th>
+                    <th>{t("vrEntry")}</th>
+                    <th>{t("billStatusCol")}</th>
+                    <th style={{ width: 40 }}></th>
                   </tr>
                 </thead>
                 <tbody>

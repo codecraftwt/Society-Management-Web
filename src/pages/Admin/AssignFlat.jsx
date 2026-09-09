@@ -647,7 +647,14 @@ export default function AssignFlat() {
       if (currentSearch) params.set("search", currentSearch);
       if (currentFilter && currentFilter !== "ALL") params.set("filter_type", currentFilter);
       const res = await API.get(`/flats/assigned?${params}`);
-      setAssigned(res.data.data || []);
+      const rawAssigned = Array.isArray(res.data)
+        ? res.data
+        : Array.isArray(res.data?.data)
+        ? res.data.data
+        : Array.isArray(res.data?.assigned)
+        ? res.data.assigned
+        : [];
+      setAssigned(rawAssigned);
       setTotalAll(res.data.totalAll ?? res.data.pagination?.totalItems ?? 0);
       setTotalPages(res.data.pagination?.totalPages ?? 1);
       setTotalItems(res.data.pagination?.totalItems ?? 0);

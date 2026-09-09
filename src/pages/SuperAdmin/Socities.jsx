@@ -1,17 +1,17 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import { useLang } from "../../context/LanguageContext";
 import API from "../../services/api";
 import {
-  MdAdd, MdDelete, MdManageAccounts, MdClose,
-  MdApartment, MdSearch, MdRefresh, MdCheckCircle,
+  MdAdd, MdApartment, MdSearch, MdRefresh, MdCheckCircle,
   MdWarning, MdHomeWork, MdArrowBack
 } from "react-icons/md";
-import { BiSolidEdit } from "react-icons/bi";
 import { FaBuilding, FaUserShield } from "react-icons/fa";
 import Select from "../../components/common/Select";
 import SocietyActionMenu from "../../components/super-admin/SocietyActionMenu";
+import GlobalButton from "../../components/common/GlobalButton";
+import GlobalModal from "../../components/common/GlobalModal";
+import GlobalConfirmDialog from "../../components/common/GlobalConfirmDialog";
 
 const DEFAULT_PASSWORD = "Admin@123";
 
@@ -38,6 +38,9 @@ export default function Societies() {
   const [adminEmail, setAdminEmail] = useState("");
   const [isEditMode, setIsEditMode] = useState(false);
   const [saveLoading, setSaveLoading] = useState(false);
+
+  // Delete Confirm Dialog state
+  const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, id: null, loading: false });
 
   // Toast state
   const [toast, setToast] = useState(null);
@@ -79,14 +82,17 @@ export default function Societies() {
     }
   };
 
-  const deleteSociety = async (id) => {
-    if (!window.confirm(t("saConfirmDelete"))) return;
+  const handleDeleteConfirm = async () => {
+    if (!deleteConfirm.id) return;
     try {
-      await API.delete(`/societies/${id}`);
-      setSocieties((p) => p.filter((s) => s.id !== id));
+      setDeleteConfirm((prev) => ({ ...prev, loading: true }));
+      await API.delete(`/societies/${deleteConfirm.id}`);
+      setSocieties((p) => p.filter((s) => s.id !== deleteConfirm.id));
       showToast(t("saToastSocietyDeleted"));
+      setDeleteConfirm({ isOpen: false, id: null, loading: false });
     } catch {
       showToast(t("saErrDeleteFail"), "error");
+      setDeleteConfirm((prev) => ({ ...prev, loading: false }));
     }
   };
 
@@ -154,20 +160,25 @@ export default function Societies() {
         <div className="sa-dash-header-text">
           <h1 className="sa-page-title">Manage Societies</h1>
         </div>
-        <button onClick={() => setShowAddForm(true)} className="sa-add-btn sa-add-pill">
-          <span className="sa-pill-blob sa-pill-blob1" />
-          <span className="sa-pill-inner">
-            <MdAdd size={18} />
-            <span>{t("saAddSocietyBtn")}</span>
-          </span>
-        </button>
+        <GlobalButton
+          variant="add"
+          icon={MdAdd}
+          onClick={() => setShowAddForm(true)}
+        >
+          {t("saAddSocietyBtn")}
+        </GlobalButton>
       </div>
 
       {/* ── TOOLBAR ── */}
       <div className="sa-toolbar">
-        <button onClick={() => navigate(-1)} className="sa-btn sa-btn-ghost">
-          <MdArrowBack size={16} /> {t("socBack")}
-        </button>
+        <GlobalButton
+          variant="secondary"
+          size="sm"
+          icon={MdArrowBack}
+          onClick={() => navigate(-1)}
+        >
+          {t("socBack")}
+        </GlobalButton>
         <div className="sa-search-wrap" style={{ flex: 1 }}>
           <MdSearch size={17} style={{ color: "var(--text-muted)", flexShrink: 0 }} />
           <input
@@ -188,97 +199,68 @@ export default function Societies() {
             </button>
           ))}
         </div>
-        <button
+        <GlobalButton
+          variant="secondary"
+          size="sm"
+          icon={MdRefresh}
           onClick={loadSocieties}
-          className="sa-btn sa-btn-ghost"
           title={t("gpRefresh")}
-          style={{ width: 38, padding: 0, flexShrink: 0 }}
-        >
-          <MdRefresh size={17} />
-        </button>
+          style={{ width: 38, padding: 0 }}
+        />
       </div>
 
       {/* ── ADD SOCIETY MODAL ── */}
-      {showAddForm && createPortal(
-        <div
-          onClick={(e) => { if (e.target === e.currentTarget) setShowAddForm(false); }}
-          style={{
-            position: "fixed",
-            inset: 0,
-            zIndex: 1100,
-            background: "rgba(0, 0, 0, 0.65)",
-            backdropFilter: "blur(8px)",
-            WebkitBackdropFilter: "blur(8px)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: "16px",
-          }}
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            className="sa-modal"
-            style={{ width: "100%", maxWidth: 560, maxHeight: "90vh", overflowY: "auto" }}
-          >
-            <div className="sa-modal-er">
-              <div className="sa-modal-icon"><MdApartment size={20} /></div>
-              <div>
-                <h3 className="sa-modal-title">{t("saCreateSocietyTitle")}</h3>
-                <p className="sa-modal-subtitle">{t("saCreateSocietySub")}</p>
-              </div>
-              <button onClick={() => setShowAddForm(false)} className="sa-modal-close">
-                <MdClose size={18} />
-              </button>
-            </div>
-
-            <form onSubmit={addSociety} className="sa-modal-body" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))", gap: "12px" }}>
-              <div className="sa-input-group">
-                <label className="sa-label">{t("saSocietyName")}</label>
-                <div className="sa-input">
-                  <MdApartment size={16} className="sa-input-icon" />
-                  <input
-                    placeholder={t("saSocietyNamePlaceholder")}
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    required
-                  />
-                </div>
-              </div>
-              <div className="sa-input-group">
-                <label className="sa-label">{t("saSocietyAddress")}</label>
-                <div className="sa-input">
-                  <MdHomeWork size={16} className="sa-input-icon" />
-                  <input
-                    placeholder={t("saSocietyAddressPlaceholder")}
-                    value={address}
-                    onChange={(e) => setAddress(e.target.value)}
-                    required
-                  />
-                </div>
-              </div>
-              <div className="sa-input-group">
-                <label className="sa-label">Property Type</label>
-                <Select className="input" value={propertyType} onChange={(e) => setPropertyType(e.target.value)}>
-                  <option value="Apartments">Apartments / Flats</option>
-                  <option value="Row Houses">Row Houses / Villas</option>
-                  <option value="Mixed">Mixed (Flats &amp; Villas)</option>
-                  <option value="Commercial">Commercial Complex</option>
-                </Select>
-              </div>
-            </form>
-
-            <div className="sa-modal-footer">
-              <button onClick={() => setShowAddForm(false)} className="sa-modal-cancel">{t("cancel")}</button>
-              <button onClick={addSociety} disabled={addLoading || !name || !address}
-                className="sa-modal-save">
-                {addLoading ? <span className="sa-spinner" /> : <MdAdd size={16} />}
-                {t("saCreateSocietyBtn")}
-              </button>
+      <GlobalModal
+        isOpen={showAddForm}
+        onClose={() => setShowAddForm(false)}
+        title={t("saCreateSocietyTitle")}
+        subtitle={t("saCreateSocietySub")}
+        icon={MdApartment}
+        size="md"
+        showFooter
+        submitLabel={t("saCreateSocietyBtn")}
+        cancelLabel={t("cancel")}
+        onSubmit={addSociety}
+        submitLoading={addLoading}
+        submitDisabled={addLoading || !name || !address}
+        submitIcon={MdAdd}
+      >
+        <form onSubmit={addSociety} style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))", gap: "12px" }}>
+          <div className="sa-input-group">
+            <label className="sa-label">{t("saSocietyName")}</label>
+            <div className="sa-input">
+              <MdApartment size={16} className="sa-input-icon" />
+              <input
+                placeholder={t("saSocietyNamePlaceholder")}
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+              />
             </div>
           </div>
-        </div>,
-        document.body
-      )}
+          <div className="sa-input-group">
+            <label className="sa-label">{t("saSocietyAddress")}</label>
+            <div className="sa-input">
+              <MdHomeWork size={16} className="sa-input-icon" />
+              <input
+                placeholder={t("saSocietyAddressPlaceholder")}
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+                required
+              />
+            </div>
+          </div>
+          <div className="sa-input-group" style={{ gridColumn: "1 / -1" }}>
+            <label className="sa-label">Property Type</label>
+            <Select className="input" value={propertyType} onChange={(e) => setPropertyType(e.target.value)}>
+              <option value="Apartments">Apartments / Flats</option>
+              <option value="Row Houses">Row Houses / Villas</option>
+              <option value="Mixed">Mixed (Flats &amp; Villas)</option>
+              <option value="Commercial">Commercial Complex</option>
+            </Select>
+          </div>
+        </form>
+      </GlobalModal>
 
       {/* ── SOCIETIES CARDS GRID ── */}
       {loading ? (
@@ -293,13 +275,14 @@ export default function Societies() {
             {searchQuery ? t("saEmptySearchSub") : t("saEmptyDefaultSub")}
           </p>
           {!searchQuery && (
-            <button onClick={() => setShowAddForm(true)} className="sa-add-btn sa-add-pill" style={{ marginTop: 12 }}>
-              <span className="sa-pill-blob sa-pill-blob1" />
-              <span className="sa-pill-inner">
-                <MdAdd size={16} />
-                <span>{t("saAddSocietyBtn")}</span>
-              </span>
-            </button>
+            <GlobalButton
+              variant="add"
+              icon={MdAdd}
+              onClick={() => setShowAddForm(true)}
+              style={{ marginTop: 12 }}
+            >
+              {t("saAddSocietyBtn")}
+            </GlobalButton>
           )}
         </div>
       ) : (
@@ -326,7 +309,7 @@ export default function Societies() {
                     t={t}
                     onEditAdmin={() => openAdminModal(s)}
                     onManage={() => navigate(`/superadmin/society/${s.id}/blocks`)}
-                    onDelete={() => deleteSociety(s.id)}
+                    onDelete={() => setDeleteConfirm({ isOpen: true, id: s.id, loading: false })}
                   />
                 </div>
 
@@ -363,75 +346,54 @@ export default function Societies() {
       )}
 
       {/* ── ADMIN MODAL ── */}
-      {showModal && createPortal(
-        <div
-          onClick={(e) => { if (e.target === e.currentTarget) setShowModal(false); }}
-          style={{
-            position: "fixed",
-            inset: 0,
-            zIndex: 1100,
-            background: "rgba(0, 0, 0, 0.65)",
-            backdropFilter: "blur(8px)",
-            WebkitBackdropFilter: "blur(8px)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: "16px",
-          }}
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            className="sa-modal"
-            style={{ width: "100%", maxWidth: 520, maxHeight: "90vh", overflowY: "auto" }}
-          >
-            <div className="sa-modal-er">
-              <div className="sa-modal-icon"><FaUserShield size={20} /></div>
-              <div>
-                <h3 className="sa-modal-title">
-                  {isEditMode ? t("saModalUpdateTitle") : t("saModalAssignTitle")}
-                </h3>
-                <p className="sa-modal-subtitle">
-                  {isEditMode ? t("saModalUpdateSub") : t("saModalAssignSub")}
-                </p>
-              </div>
-              <button onClick={() => setShowModal(false)} className="sa-modal-close">
-                <MdClose size={18} />
-              </button>
-            </div>
-
-            <div className="sa-modal-body">
-              <div className="sa-input-group">
-                <label className="sa-label">{t("saAdminName")}</label>
-                <input className="input" placeholder={t("saAdminNamePlaceholder")}
-                  value={adminName} onChange={(e) => setAdminName(e.target.value)} />
-              </div>
-              <div className="sa-input-group">
-                <label className="sa-label">{t("saAdminEmail")}</label>
-                <input className="input" placeholder={t("saAdminEmailPlaceholder")}
-                  value={adminEmail} disabled={isEditMode}
-                  onChange={(e) => setAdminEmail(e.target.value)}
-                  style={isEditMode ? { opacity: 0.6, cursor: "not-allowed" } : {}} />
-              </div>
-              <div className="sa-input-group">
-                <label className="sa-label">{t("saDefaultPassword")}</label>
-                <input className="input" value={DEFAULT_PASSWORD} readOnly
-                  style={{ opacity: 0.6, cursor: "default" }} />
-                <p className="sa-hint">{t("saPasswordHint")}</p>
-              </div>
-            </div>
-
-            <div className="sa-modal-footer">
-              <button onClick={() => setShowModal(false)} className="sa-modal-cancel">{t("cancel")}</button>
-              <button onClick={saveAdmin} disabled={saveLoading || !adminName || !adminEmail}
-                className="sa-modal-save">
-                {saveLoading ? <span className="sa-spinner" /> : null}
-                {isEditMode ? t("saModalUpdateBtn") : t("saModalAssignBtn")}
-              </button>
-            </div>
+      <GlobalModal
+        isOpen={showModal}
+        onClose={() => setShowModal(false)}
+        title={isEditMode ? t("saModalUpdateTitle") : t("saModalAssignTitle")}
+        subtitle={isEditMode ? t("saModalUpdateSub") : t("saModalAssignSub")}
+        icon={FaUserShield}
+        size="md"
+        showFooter
+        submitLabel={isEditMode ? t("saModalUpdateBtn") : t("saModalAssignBtn")}
+        cancelLabel={t("cancel")}
+        onSubmit={saveAdmin}
+        submitLoading={saveLoading}
+        submitDisabled={saveLoading || !adminName || !adminEmail}
+      >
+        <div className="sa-modal-body" style={{ padding: 0 }}>
+          <div className="sa-input-group">
+            <label className="sa-label">{t("saAdminName")}</label>
+            <input className="input" placeholder={t("saAdminNamePlaceholder")}
+              value={adminName} onChange={(e) => setAdminName(e.target.value)} />
           </div>
-        </div>,
-        document.body
-      )}
+          <div className="sa-input-group">
+            <label className="sa-label">{t("saAdminEmail")}</label>
+            <input className="input" placeholder={t("saAdminEmailPlaceholder")}
+              value={adminEmail} disabled={isEditMode}
+              onChange={(e) => setAdminEmail(e.target.value)}
+              style={isEditMode ? { opacity: 0.6, cursor: "not-allowed" } : {}} />
+          </div>
+          <div className="sa-input-group">
+            <label className="sa-label">{t("saDefaultPassword")}</label>
+            <input className="input" value={DEFAULT_PASSWORD} readOnly
+              style={{ opacity: 0.6, cursor: "default" }} />
+            <p className="sa-hint">{t("saPasswordHint")}</p>
+          </div>
+        </div>
+      </GlobalModal>
+
+      {/* ── DELETE CONFIRM DIALOG ── */}
+      <GlobalConfirmDialog
+        isOpen={deleteConfirm.isOpen}
+        onClose={() => setDeleteConfirm({ isOpen: false, id: null, loading: false })}
+        onConfirm={handleDeleteConfirm}
+        title={t("saConfirmDelete") || "Delete Society"}
+        message="Are you sure you want to delete this society? This will remove all associated units, records, and accounts. This action cannot be undone."
+        confirmLabel="Delete Society"
+        cancelLabel={t("cancel") || "Cancel"}
+        variant="danger"
+        loading={deleteConfirm.loading}
+      />
     </div>
   );
 }

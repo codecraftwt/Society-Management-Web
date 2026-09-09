@@ -5,6 +5,10 @@ import API from "../../services/api";
 import { MdDelete, MdLayers, MdHomeWork, MdArrowBack, MdAdd } from "react-icons/md";
 import { FaBuilding } from "react-icons/fa";
 import Select from "../../components/common/Select";
+import GlobalButton from "../../components/common/GlobalButton";
+import GlobalTable from "../../components/common/GlobalTable";
+import GlobalBadge from "../../components/common/GlobalBadge";
+import GlobalConfirmDialog from "../../components/common/GlobalConfirmDialog";
 
 const PROPERTY_TONES = {
   "Row Houses": { c: "#2FC27E", bg: "rgba(47, 194, 126, 0.13)", bd: "rgba(47, 194, 126, 0.28)" },
@@ -23,25 +27,37 @@ export default function Blocks() {
 
   const [societyName, setSocietyName]   = useState("Society");
   const [blocks,      setBlocks]        = useState([]);
+  const [loading,     setLoading]       = useState(true);
   const [name,        setName]          = useState("");
   const [floorCount,  setFloorCount]    = useState("");
   const [flatsPerFloor, setFlatsPerFloor] = useState("");
   const [propertyType, setPropertyType] = useState("Apartments");
+  const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, id: null, loading: false });
 
-  useEffect(() => { loadSocietyName(); loadBlocks(); }, [societyId]);
+  useEffect(() => {
+    loadSocietyName();
+    loadBlocks();
+  }, [societyId]);
 
   const loadSocietyName = async () => {
     try {
       const res = await API.get(`/blocks/getname/${societyId}`);
       setSocietyName(res.data?.name || "Society");
-    } catch (err) { console.error("Failed to load society name", err); }
+    } catch (err) {
+      console.error("Failed to load society name", err);
+    }
   };
 
   const loadBlocks = async () => {
     try {
+      setLoading(true);
       const res = await API.get(`/blocks/${societyId}`);
-      setBlocks(res.data);
-    } catch (err) { console.error("Failed to load blocks", err); }
+      setBlocks(res.data || []);
+    } catch (err) {
+      console.error("Failed to load blocks", err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -57,22 +73,101 @@ export default function Blocks() {
       flats_per_floor: Number(flatsPerFloor),
       property_type: propertyType
     });
-    setName(""); setFloorCount(""); setFlatsPerFloor(""); setPropertyType("Apartments");
+    setName("");
+    setFloorCount("");
+    setFlatsPerFloor("");
+    setPropertyType("Apartments");
     loadBlocks();
   };
 
-  const handleDelete = async (blockId) => {
-    if (!window.confirm(t("blkConfirmDelete") || "Delete Block?")) return;
-    await API.delete(`/blocks/${blockId}`);
-    loadBlocks();
+  const handleDeleteConfirm = async () => {
+    if (!deleteConfirm.id) return;
+    try {
+      setDeleteConfirm(p => ({ ...p, loading: true }));
+      await API.delete(`/blocks/${deleteConfirm.id}`);
+      setDeleteConfirm({ isOpen: false, id: null, loading: false });
+      loadBlocks();
+    } catch (err) {
+      console.error("Delete block error", err);
+      setDeleteConfirm(p => ({ ...p, loading: false }));
+    }
   };
 
   const blockIcon = (type) =>
     type === "Row Houses" ? <MdHomeWork size={15} /> : <FaBuilding size={13} />;
 
+  const columns = [
+    {
+      key: "name",
+      header: t("blkColBlock") || "Block Name",
+      render: (b) => (
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <div
+            style={{
+              width: 34,
+              height: 34,
+              borderRadius: 9,
+              background: toneFor(b.property_type).bg,
+              color: toneFor(b.property_type).c,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0,
+            }}
+          >
+            {blockIcon(b.property_type)}
+          </div>
+          <span style={{ fontWeight: 600, color: "var(--text-primary)" }}>
+            {(t("blkBlockLabel") || "Block")} {b.name}
+          </span>
+        </div>
+      ),
+    },
+    {
+      key: "property_type",
+      header: "Type",
+      render: (b) => (
+        <GlobalBadge
+          variant="info"
+          style={{
+            color: toneFor(b.property_type).c,
+            background: toneFor(b.property_type).bg,
+            border: `1px solid ${toneFor(b.property_type).bd}`,
+          }}
+        >
+          {b.property_type || "Apartments"}
+        </GlobalBadge>
+      ),
+    },
+    {
+      key: "floorCount",
+      header: "Floors",
+      render: (b) => <span style={{ color: "var(--text-secondary)" }}>{b.floorCount || "-"}</span>,
+    },
+    {
+      key: "actions",
+      header: t("billActionCol") || "Actions",
+      align: "right",
+      render: (b) => (
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
+          <Link to={`/superadmin/block/${b.id}/floors`} style={{ textDecoration: "none" }}>
+            <GlobalButton variant="secondary" size="sm" icon={MdLayers}>
+              Manage
+            </GlobalButton>
+          </Link>
+          <GlobalButton
+            variant="delete"
+            size="sm"
+            icon={MdDelete}
+            onClick={() => setDeleteConfirm({ isOpen: true, id: b.id, loading: false })}
+          />
+        </div>
+      ),
+    },
+  ];
+
   return (
     <div className="sa-page animate-fadeIn">
-
       {/* ── HERO ── */}
       <div className="sa-page-er">
         <div style={{ display: "flex", alignItems: "center", gap: 14, minWidth: 0 }}>
@@ -86,13 +181,18 @@ export default function Blocks() {
             </p>
           </div>
         </div>
-        <button onClick={() => navigate(-1)} className="sa-hero-back">
-          <MdArrowBack size={16} /> {t("socBack") || "Back"}
-        </button>
+        <GlobalButton
+          variant="secondary"
+          size="sm"
+          icon={MdArrowBack}
+          onClick={() => navigate(-1)}
+        >
+          {t("socBack") || "Back"}
+        </GlobalButton>
       </div>
 
       {/* ── CREATE BLOCK ── */}
-      <div className="soc-form-card">
+      <div className="soc-form-card" style={{ marginBottom: 20 }}>
         <div className="sa-form-er">
           <div className="sa-form-icon"><MdAdd size={19} /></div>
           <div className="min-w-0">
@@ -127,135 +227,37 @@ export default function Blocks() {
             </Select>
           </div>
           <div style={{ display: "flex", alignItems: "flex-end" }}>
-            <button type="submit" className="sa-btn sa-btn-primary" style={{ width: "100%" }}>
-              <MdAdd size={17} /> {t("blkCreateBtn") || "Create"}
-            </button>
+            <GlobalButton
+              type="submit"
+              variant="add"
+              icon={MdAdd}
+              fullWidth
+            >
+              {t("blkCreateBtn") || "Create"}
+            </GlobalButton>
           </div>
         </form>
       </div>
 
-      {/* ── BLOCKS LIST ── */}
-      <div className="sa-panel">
-        <div className="sa-panel-head">
-          <div className="sa-panel-accent"><MdLayers size={18} /></div>
-          <div className="min-w-0">
-            <h3 className="sa-panel-title">{t("blkListTitle") || "Blocks List"}</h3>
-            <p className="sa-panel-sub">
-              {blocks.length} block{blocks.length !== 1 ? "s" : ""} in {societyName}
-            </p>
-          </div>
-        </div>
+      {/* ── BLOCKS TABLE ── */}
+      <GlobalTable
+        columns={columns}
+        data={blocks}
+        loading={loading}
+        emptyMessage={t("blkEmpty") || "No blocks found."}
+        emptyIcon={MdLayers}
+      />
 
-        {blocks.length === 0 ? (
-          <p style={{ color: "var(--text-tertiary)", fontSize: "0.86rem", padding: "18px 0" }}>
-            {t("blkEmpty") || "No blocks found."}
-          </p>
-        ) : (
-          <>
-            {/* Desktop table */}
-            <div className="soc-table-wrap" style={{ overflowX: "auto" }}>
-              <table>
-                <thead>
-                  <tr>
-                    <th>{t("blkColBlock") || "Block Name"}</th>
-                    <th>Type</th>
-                    <th>Floors</th>
-                    <th style={{ textAlign: "right" }}>{t("billActionCol") || "Actions"}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {blocks.map(b => (
-                    <tr key={b.id}>
-                      <td>
-                        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                          <div className="sa-form-icon" style={{
-                            width: 34, height: 34, borderRadius: 9,
-                            background: toneFor(b.property_type).bg,
-                            color: toneFor(b.property_type).c,
-                          }}>
-                            {blockIcon(b.property_type)}
-                          </div>
-                          <span style={{ fontWeight: 600, color: "var(--text-primary)" }}>
-                            {(t("blkBlockLabel") || "Block")} {b.name}
-                          </span>
-                        </div>
-                      </td>
-                      <td>
-                        <span className="sa-tone-badge"
-                          style={{
-                            "--typeof-c": toneFor(b.property_type).c,
-                            "--typeof-bg": toneFor(b.property_type).bg,
-                            "--typeof-bd": toneFor(b.property_type).bd,
-                          }}>
-                          {b.property_type || "Apartments"}
-                        </span>
-                      </td>
-                      <td>{b.floorCount || "-"}</td>
-                      <td>
-                        <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
-                          <Link to={`/superadmin/block/${b.id}/floors`}
-                            className="icon-btn manage" title="Manage Floors">
-                            <MdLayers size={16} />
-                          </Link>
-                          <button onClick={() => handleDelete(b.id)}
-                            className="icon-btn delete" title={t("billDelete")}>
-                            <MdDelete size={16} />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Mobile cards */}
-            <div className="soc-mobile-list">
-              {blocks.map(b => {
-                const tone = toneFor(b.property_type);
-                return (
-                  <div key={b.id} className="soc-mobile-card">
-                    <div className="soc-mobile-head">
-                      <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
-                        <div style={{
-                          width: 34, height: 34, borderRadius: 9, flexShrink: 0,
-                          background: tone.bg, color: tone.c,
-                          display: "flex", alignItems: "center", justifyContent: "center",
-                        }}>
-                          {blockIcon(b.property_type)}
-                        </div>
-                        <span className="soc-mobile-name">
-                          {(t("blkBlockLabel") || "Block")} {b.name}
-                        </span>
-                      </div>
-                      <span className="sa-tone-badge" style={{
-                        "--typeof-c": tone.c, "--typeof-bg": tone.bg, "--typeof-bd": tone.bd,
-                      }}>
-                        {b.property_type || "Apartments"}
-                      </span>
-                    </div>
-                    <div className="soc-mobile-ac">
-                      <div className="soc-mobile-meta-row">
-                        <span>{b.floorCount || "-"} floor{b.floorCount !== 1 ? "s" : ""}</span>
-                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                          <Link to={`/superadmin/block/${b.id}/floors`}
-                            className="icon-btn manage" title="Manage Floors">
-                            <MdLayers size={16} />
-                          </Link>
-                          <button onClick={() => handleDelete(b.id)}
-                            className="icon-btn delete" title={t("billDelete")}>
-                            <MdDelete size={16} />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </>
-        )}
-      </div>
+      {/* ── DELETE CONFIRM DIALOG ── */}
+      <GlobalConfirmDialog
+        isOpen={deleteConfirm.isOpen}
+        onClose={() => setDeleteConfirm({ isOpen: false, id: null, loading: false })}
+        onConfirm={handleDeleteConfirm}
+        title={t("blkConfirmDelete") || "Delete Block"}
+        message="Are you sure you want to delete this block? This will permanently remove all associated floors and flats."
+        variant="danger"
+        loading={deleteConfirm.loading}
+      />
     </div>
   );
 }

@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import API from "../../services/api";
-import { MdSearch, MdVisibility } from "react-icons/md";
+import { MdSearch, MdPerson, MdAccessTime, MdOutlineInbox } from "react-icons/md";
+import GlobalTable from "../../components/common/GlobalTable";
+import GlobalBadge from "../../components/common/GlobalBadge";
 
 export default function CommitteeVisitorLogs() {
   const [visitors, setVisitors] = useState([]);
@@ -14,17 +16,7 @@ export default function CommitteeVisitorLogs() {
   const loadVisitors = async () => {
     try {
       const res = await API.get("/visitors");
-
-      console.log("Visitors API response:", res.data);
-
-      // ✅ Backend returns { data: [...], pagination: {...}, counts: {...} }
-      let data = res.data?.data || [];
-
-      if (!Array.isArray(data)) {
-        console.error("Unexpected API shape:", typeof data, data);
-        data = [];
-      }
-
+      let data = res.data?.visitors || res.data?.data || (Array.isArray(res.data) ? res.data : []);
       setVisitors(data);
     } catch (err) {
       console.error("Failed to load visitors:", err);
@@ -34,7 +26,6 @@ export default function CommitteeVisitorLogs() {
     }
   };
 
-  // ✅ Fixed: Match actual backend field names
   const filtered = visitors.filter(v =>
     `${v.visitor_name || ""} ${v.mobile || ""} ${v.purpose || ""}`
       .toLowerCase()
@@ -47,7 +38,6 @@ export default function CommitteeVisitorLogs() {
       timeStyle: "short" 
     }) : "—";
 
-  // ✅ Helper to get flat display name
   const getFlatDisplay = (visitor) => {
     if (!visitor.Flat) return "—";
     const blockName = visitor.Flat.Block?.name || "";
@@ -55,8 +45,96 @@ export default function CommitteeVisitorLogs() {
     return blockName && flatNumber ? `${blockName}-${flatNumber}` : flatNumber || "—";
   };
 
+  const columns = [
+    {
+      key: "visitor",
+      header: "Visitor",
+      render: (v) => (
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <div style={{
+            width: 32, height: 32, borderRadius: "50%",
+            background: "rgba(37, 99, 235, 0.15)", color: "var(--accent)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            flexShrink: 0,
+          }}>
+            <MdPerson size={15} />
+          </div>
+          <div>
+            <p style={{ fontWeight: 600, color: "var(--text-primary)", margin: 0 }}>
+              {v.visitor_name || "—"}
+            </p>
+            <p style={{ fontSize: "0.78rem", color: "var(--text-secondary)", margin: "2px 0 0 0" }}>
+              {v.mobile || "—"}
+            </p>
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: "purpose",
+      header: "Purpose",
+      render: (v) => (
+        <span style={{ color: "var(--text-secondary)", fontSize: "0.85rem" }}>
+          {v.purpose || "—"}
+        </span>
+      ),
+    },
+    {
+      key: "vehicle",
+      header: "Vehicle",
+      render: (v) => (
+        <span style={{ color: "var(--text-secondary)", fontSize: "0.82rem" }}>
+          {v.vehicle_number || "—"}
+        </span>
+      ),
+    },
+    {
+      key: "flat",
+      header: "Flat",
+      render: (v) => (
+        <span style={{ color: "var(--text-secondary)", fontWeight: 500, fontSize: "0.85rem" }}>
+          {getFlatDisplay(v)}
+        </span>
+      ),
+    },
+    {
+      key: "entry",
+      header: "Entry",
+      render: (v) => (
+        <span style={{ display: "inline-flex", alignItems: "center", gap: 4, color: "#10b981", fontSize: "0.8rem", fontWeight: 600 }}>
+          <MdAccessTime size={13} /> {fmt(v.entry_time)}
+        </span>
+      ),
+    },
+    {
+      key: "exit",
+      header: "Exit",
+      render: (v) => (
+        v.exit_time ? (
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 4, color: "var(--text-secondary)", fontSize: "0.8rem" }}>
+            <MdAccessTime size={13} /> {fmt(v.exit_time)}
+          </span>
+        ) : (
+          <span style={{ color: "var(--text-tertiary)", opacity: 0.5 }}>—</span>
+        )
+      ),
+    },
+    {
+      key: "status",
+      header: "Status",
+      render: (v) => (
+        <GlobalBadge
+          variant={v.exit_time ? "neutral" : "success"}
+          dot
+        >
+          {v.exit_time ? "OUT" : "IN"}
+        </GlobalBadge>
+      ),
+    },
+  ];
+
   return (
-    <div className="comm-root">
+    <div className="comm-root animate-fadeIn">
       <div className="comm-page-header">
         <div>
           <h1 className="comm-page-title">Visitor Logs</h1>
@@ -64,8 +142,8 @@ export default function CommitteeVisitorLogs() {
         </div>
       </div>
 
-      <div className="comm-search-wrap">
-        <MdSearch className="comm-search-icon" size={16} />
+      <div className="comm-search-wrap" style={{ marginBottom: 16 }}>
+        <MdSearch className="comm-search-icon" size={18} />
         <input
           className="comm-search-input"
           placeholder="Search visitor, phone or purpose…"
@@ -74,94 +152,13 @@ export default function CommitteeVisitorLogs() {
         />
       </div>
 
-      {loading ? (
-        <div className="comm-loading">
-          <div className="comm-spinner" />
-          Loading…
-        </div>
-      ) : (
-        <>
-          {/* Desktop Table */}
-          <div className="comm-table-wrap comm-desktop-only">
-            <table className="comm-table">
-              <thead>
-                <tr className="comm-t-row">
-                  <th className="comm-th">Visitor</th>
-                  <th className="comm-th">Phone</th>
-                  <th className="comm-th">Purpose</th>
-                  <th className="comm-th">Vehicle</th>
-                  <th className="comm-th">Flat</th>
-                  <th className="comm-th">Entry</th>
-                  <th className="comm-th">Exit</th>
-                  <th className="comm-th">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map(v => (
-                  <tr key={v.id} className="comm-tbody-row">
-                    <td className="comm-td comm-td--name">{v.visitor_name || "—"}</td>
-                    <td className="comm-td">{v.mobile || "—"}</td>
-                    <td className="comm-td">
-                      <span className="comm-purpose-badge">
-                        {v.purpose || "—"}
-                      </span>
-                    </td>
-                    <td className="comm-td">{v.vehicle_number || "—"}</td>
-                    <td className="comm-td">{getFlatDisplay(v)}</td>
-                    <td className="comm-td">{fmt(v.entry_time)}</td>
-                    <td className="comm-td">{fmt(v.exit_time)}</td>
-                    <td className="comm-td">
-                      <span className={`comm-status-pill comm-status-pill--${v.exit_time ? "exited" : "inside"}`}>
-                        {v.exit_time ? "Exited" : "Inside"}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-                {filtered.length === 0 && (
-                  <tr>
-                    <td colSpan={8} className="comm-empty-row">
-                      No visitor records found
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Mobile Cards */}
-          <div className="comm-mobile-list comm-mobile-only">
-            {filtered.length === 0 ? (
-              <div className="comm-empty">
-                <MdVisibility size={28} />
-                <p>No visitors found</p>
-              </div>
-            ) : filtered.map(v => (
-              <div key={v.id} className="comm-mobile-card">
-                <div className="comm-mobile-card-top">
-                  <p className="comm-row-name">{v.visitor_name || "Unknown"}</p>
-                  <span className={`comm-status-pill comm-status-pill--${v.exit_time ? "exited" : "inside"}`}>
-                    {v.exit_time ? "Exited" : "Inside"}
-                  </span>
-                </div>
-                <div className="comm-mobile-card-meta">
-                  {v.mobile && <span className="comm-meta-chip">📱 {v.mobile}</span>}
-                  {v.purpose && <span className="comm-meta-chip">{v.purpose}</span>}
-                  {v.Flat && <span className="comm-meta-chip">🏠 {getFlatDisplay(v)}</span>}
-                  {v.vehicle_number && <span className="comm-meta-chip">🚗 {v.vehicle_number}</span>}
-                </div>
-                <p className="comm-mobile-card-time">
-                  📥 Entry: {fmt(v.entry_time)}
-                </p>
-                {v.exit_time && (
-                  <p className="comm-mobile-card-time">
-                    📤 Exit: {fmt(v.exit_time)}
-                  </p>
-                )}
-              </div>
-            ))}
-          </div>
-        </>
-      )}
+      <GlobalTable
+        columns={columns}
+        data={filtered}
+        loading={loading}
+        emptyMessage={search ? "No visitors match your search." : "No visitor logs available."}
+        emptyIcon={MdOutlineInbox}
+      />
     </div>
   );
 }

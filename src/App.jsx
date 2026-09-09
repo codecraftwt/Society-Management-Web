@@ -233,8 +233,8 @@ function App() {
             <Route index element={<CommitteeDashboard />} />
             <Route path="residents" element={<CommitteeResidents />} />
             <Route path="visitor-logs" element={<CommitteeVisitorLogs />} />
-            <Route path="notices" element={<CommitteeNotices />} />
-            <Route path="complaints" element={<CommitteeComplaints />} />
+            <Route path="notices" element={<Notice />} />
+            <Route path="complaints" element={<Complaint />} />
             <Route path="billing-rules" element={<CommitteeBillingRules />} />
             <Route path="manage-bills" element={<CommitteeManageBills />} />
             <Route path="payment-tracking" element={<CommitteePaymentTracking />} />

@@ -379,7 +379,16 @@ export default function TenantApprovals() {
     try {
       setLoading(true);
       const res = await API.get("/users/resident/pending");
-      setResidents(Array.isArray(res.data) ? res.data : []);
+      const list = Array.isArray(res.data)
+        ? res.data
+        : Array.isArray(res.data?.data)
+        ? res.data.data
+        : Array.isArray(res.data?.pending)
+        ? res.data.pending
+        : Array.isArray(res.data?.residents)
+        ? res.data.residents
+        : [];
+      setResidents(list);
     } catch {
       toast.error("Failed to load pending approvals.");
     } finally {

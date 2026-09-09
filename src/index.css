@@ -186,6 +186,7 @@
     --blur: blur(16px);
     --divider: rgba(255, 255, 255, 0.075);
     --row-hover: rgba(255, 255, 255, 0.05);
+    --row-stripe: rgba(255, 255, 255, 0.02);
     --input-bg: #0F172A;
     --input-border: rgba(255, 255, 255, 0.12);
 
@@ -529,38 +530,40 @@
     box-shadow: inset 2px 4px 10px rgba(0, 0, 0, 0.6);
   }
 
-  /* === DARK TABLE FIX === */
+  /* === TABLE STYLES === */
   table {
     border-collapse: collapse;
     width: 100%;
   }
-  t {
-    background: #24212C;
-    color: #FFFFFF;
+  thead {
+    background: var(--card-inner-bg, #24212C);
+    color: var(--text-primary, #FFFFFF);
   }
-  t th {
-    color: #E8E5EE;
-    font-weight: 500;
+  thead th {
+    color: var(--text-secondary, #E8E5EE);
+    font-weight: 600;
     font-size: 0.75rem;
     text-transform: uppercase;
     letter-spacing: 0.05em;
     padding: 0.75rem;
   }
   tbody tr {
-    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    border-bottom: 1px solid var(--glass-border, rgba(255, 255, 255, 0.06));
+    background: var(--card-bg, transparent);
+    color: var(--text-primary);
   }
-  tbody tr:nth-child(odd) {
-    background: #2E2B37;
+  html:not(.light) tbody tr:nth-child(odd) {
+    background: #1e293b;
   }
-  tbody tr:nth-child(even) {
-    background: #403D4A;
+  html:not(.light) tbody tr:nth-child(even) {
+    background: #0f172a;
   }
-  tbody tr:hover {
-    background: #4a4654;
+  html:not(.light) tbody tr:hover {
+    background: rgba(56, 189, 248, 0.08);
   }
   tbody td {
     padding: 0.75rem;
-    color: #FFFFFF;
+    color: var(--text-primary, #FFFFFF);
     font-size: 0.875rem;
   }
 
@@ -2473,15 +2476,17 @@
   .data-table tbody tr {
     cursor: pointer;
     transition: background 0.15s;
+    background: var(--card-bg, transparent);
+    color: var(--text-primary);
   }
-  .data-table tbody tr:nth-child(odd) {
-    background: #2E2B37;
+  html:not(.light) .data-table tbody tr:nth-child(odd) {
+    background: #1e293b;
   }
-  .data-table tbody tr:nth-child(even) {
-    background: #403D4A;
+  html:not(.light) .data-table tbody tr:nth-child(even) {
+    background: #0f172a;
   }
-  .data-table tbody tr:hover {
-    background: #4a4654;
+  html:not(.light) .data-table tbody tr:hover {
+    background: rgba(56, 189, 248, 0.08);
   }
   .data-table tbody tr:last-child td {
     border-bottom: none;
@@ -15690,14 +15695,14 @@ select option:checked {
 /* 1. Primary Buttons: Identical to /superadmin/societies (premium pill) */
 .btn-primary,
 .sa-btn-primary,
-.sa-add-btn {
+.sa-add-btn:not([class*="sa-btn-"]) {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.45rem;
-  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
   color: #ffffff !important;
-  box-shadow: 0 8px 22px rgba(37, 99, 235, 0.35) !important;
+  box-shadow: 0 8px 22px rgba(37, 99, 235, 0.35);
   border: 0 !important;
   border-radius: 999px !important;
   font-weight: 700 !important;
@@ -15706,9 +15711,9 @@ select option:checked {
 
 .btn-primary:hover:not(:disabled),
 .sa-btn-primary:hover:not(:disabled),
-.sa-add-btn:hover:not(:disabled) {
-  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%) !important;
-  box-shadow: 0 12px 28px rgba(37, 99, 235, 0.5) !important;
+.sa-add-btn:not([class*="sa-btn-"]):hover:not(:disabled) {
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  box-shadow: 0 12px 28px rgba(37, 99, 235, 0.5);
   transform: translateY(-1px) !important;
 }
 
@@ -16686,4 +16691,312 @@ html.light div[style*="position: fixed"] > div[style*="maxWidth"] {
   color: #C084FC !important;
   box-shadow: 0 0 12px rgba(168, 85, 247, 0.2);
 }
+
+/* ==========================================================================
+   GLOBAL DESIGN SYSTEM CORE (SUPERADMIN / GLOBAL UI STANDARDIZATION)
+   ========================================================================== */
+
+.global-table-container {
+  background: var(--card-bg, #111827);
+  border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.08));
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.global-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.global-table-th {
+  background: var(--card-inner-bg, rgba(255, 255, 255, 0.03));
+  color: var(--text-tertiary, #94a3b8) !important;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 0.74rem;
+  border-bottom: 1px solid var(--glass-border, rgba(255, 255, 255, 0.08));
+}
+
+.global-table-td {
+  color: var(--text-primary, #f8fafc) !important;
+  border-bottom: 1px solid var(--glass-border, rgba(255, 255, 255, 0.06));
+}
+
+.global-table-row:hover td {
+  background: var(--row-hover, rgba(255, 255, 255, 0.035)) !important;
+}
+
+.global-btn {
+  font-family: inherit;
+  font-weight: 600;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  cursor: pointer;
+}
+
+.global-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.global-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+/* ==========================================================================
+   MASTER GLOBAL BUTTON SYSTEM — REALISM PILL TREATMENT FOR ALL VARIANTS
+   ========================================================================== */
+.sa-add-btn.sa-add-pill {
+  position: relative;
+  overflow: hidden;
+  border-radius: 9999px !important;
+  padding: 2px !important;
+  box-shadow: none !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border: none !important;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease !important;
+  text-decoration: none !important;
+  user-select: none;
+}
+
+.sa-add-btn.sa-add-pill:hover:not(:disabled) {
+  transform: translateY(-2px) !important;
+}
+
+.sa-add-btn.sa-add-pill:active:not(:disabled) {
+  transform: translateY(0) !important;
+}
+
+.sa-add-btn.sa-add-pill:disabled {
+  opacity: 0.55 !important;
+  cursor: not-allowed !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+.sa-add-btn.sa-add-pill .sa-pill-inner {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border-radius: 9999px !important;
+  color: #ffffff !important;
+  font-weight: 700 !important;
+  z-index: 3;
+  position: relative;
+  white-space: nowrap;
+  transition: color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease !important;
+  width: 100%;
+  height: 100%;
+}
+
+.sa-add-btn.sa-add-pill .sa-pill-inner::before {
+  content: "";
+  width: 100%;
+  height: 100%;
+  left: 0;
+  top: 0;
+  border-radius: 9999px;
+  position: absolute;
+  pointer-events: none;
+}
+
+.sa-add-btn.sa-add-pill .sa-pill-inner > * {
+  position: relative;
+  z-index: 1;
+  color: #ffffff !important;
+}
+
+.sa-pill-blob1 {
+  position: absolute;
+  width: 70px;
+  height: 100%;
+  border-radius: 9999px;
+  bottom: 0;
+  left: 0;
+  pointer-events: none;
+}
+
+/* --- VARIANT: PRIMARY (Blue) --- */
+.sa-btn-primary {
+  background: radial-gradient(circle 80px at 80% -10%, #bfdbfe, #0f172a) !important;
+}
+.sa-btn-primary:hover:not(:disabled) {
+  box-shadow: 0 8px 24px rgba(37, 99, 235, 0.45) !important;
+  background: radial-gradient(circle 80px at 80% -10%, #93c5fd, #0f172a) !important;
+}
+.sa-btn-primary .sa-pill-blob1 {
+  background: radial-gradient(circle 60px at 0% 100%, #38bdf8, #1d4ed8aa, transparent);
+  box-shadow: -10px 10px 30px rgba(0, 81, 255, 0.18);
+}
+.sa-btn-primary .sa-pill-inner {
+  background: radial-gradient(circle 80px at 80% -50%, #2563eb, #0f2b6b) !important;
+  box-shadow: inset 0 0 0 1px rgba(147, 197, 253, 0.35) !important;
+}
+.sa-btn-primary .sa-pill-inner::before {
+  background: radial-gradient(circle 60px at 0% 100%, rgba(0, 225, 255, 0.16), rgba(0, 80, 255, 0.08), transparent);
+}
+.sa-btn-primary::after {
+  box-shadow: 0 0 20px rgba(96, 165, 250, 0.35);
+}
+
+html.light .sa-btn-primary {
+  background: radial-gradient(circle 80px at 80% -10%, #bfdbfe, #cbd5e1) !important;
+}
+html.light .sa-btn-primary .sa-pill-inner {
+  background: radial-gradient(circle 80px at 80% -50%, #2563eb, #1e3a8a) !important;
+}
+
+/* --- VARIANT: SUCCESS (Green) --- */
+.sa-btn-success {
+  background: radial-gradient(circle 80px at 80% -10%, #a7f3d0, #064e3b) !important;
+}
+.sa-btn-success:hover:not(:disabled) {
+  box-shadow: 0 8px 24px rgba(16, 185, 129, 0.45) !important;
+  background: radial-gradient(circle 80px at 80% -10%, #6ee7b7, #064e3b) !important;
+}
+.sa-btn-success .sa-pill-blob1 {
+  background: radial-gradient(circle 60px at 0% 100%, #34d399, #047857aa, transparent);
+  box-shadow: -10px 10px 30px rgba(16, 185, 129, 0.18);
+}
+.sa-btn-success .sa-pill-inner {
+  background: radial-gradient(circle 80px at 80% -50%, #059669, #064e3b) !important;
+  box-shadow: inset 0 0 0 1px rgba(167, 243, 208, 0.35) !important;
+}
+.sa-btn-success .sa-pill-inner::before {
+  background: radial-gradient(circle 60px at 0% 100%, rgba(52, 211, 153, 0.2), rgba(4, 120, 87, 0.1), transparent);
+}
+.sa-btn-success::after {
+  box-shadow: 0 0 20px rgba(52, 211, 153, 0.35) !important;
+}
+
+html.light .sa-btn-success {
+  background: radial-gradient(circle 80px at 80% -10%, #a7f3d0, #cbd5e1) !important;
+}
+html.light .sa-btn-success .sa-pill-inner {
+  background: radial-gradient(circle 80px at 80% -50%, #059669, #047857) !important;
+}
+
+/* --- VARIANT: DANGER (Red) --- */
+.sa-btn-danger {
+  background: radial-gradient(circle 80px at 80% -10%, #fecaca, #7f1d1d) !important;
+}
+.sa-btn-danger:hover:not(:disabled) {
+  box-shadow: 0 8px 24px rgba(239, 68, 68, 0.45) !important;
+  background: radial-gradient(circle 80px at 80% -10%, #fca5a5, #7f1d1d) !important;
+}
+.sa-btn-danger .sa-pill-blob1 {
+  background: radial-gradient(circle 60px at 0% 100%, #f87171, #b91c1caa, transparent);
+  box-shadow: -10px 10px 30px rgba(239, 68, 68, 0.18);
+}
+.sa-btn-danger .sa-pill-inner {
+  background: radial-gradient(circle 80px at 80% -50%, #dc2626, #7f1d1d) !important;
+  box-shadow: inset 0 0 0 1px rgba(254, 202, 202, 0.35) !important;
+}
+.sa-btn-danger .sa-pill-inner::before {
+  background: radial-gradient(circle 60px at 0% 100%, rgba(248, 113, 113, 0.2), rgba(185, 28, 28, 0.1), transparent);
+}
+.sa-btn-danger::after {
+  box-shadow: 0 0 20px rgba(248, 113, 113, 0.35) !important;
+}
+
+html.light .sa-btn-danger {
+  background: radial-gradient(circle 80px at 80% -10%, #fecaca, #cbd5e1) !important;
+}
+html.light .sa-btn-danger .sa-pill-inner {
+  background: radial-gradient(circle 80px at 80% -50%, #dc2626, #991b1b) !important;
+}
+
+/* --- VARIANT: WARNING (Amber/Orange) --- */
+.sa-btn-warning {
+  background: radial-gradient(circle 80px at 80% -10%, #fde68a, #78350f) !important;
+}
+.sa-btn-warning:hover:not(:disabled) {
+  box-shadow: 0 8px 24px rgba(245, 158, 11, 0.45) !important;
+  background: radial-gradient(circle 80px at 80% -10%, #fcd34d, #78350f) !important;
+}
+.sa-btn-warning .sa-pill-blob1 {
+  background: radial-gradient(circle 60px at 0% 100%, #fbbf24, #b45309aa, transparent);
+  box-shadow: -10px 10px 30px rgba(245, 158, 11, 0.18);
+}
+.sa-btn-warning .sa-pill-inner {
+  background: radial-gradient(circle 80px at 80% -50%, #d97706, #78350f) !important;
+  box-shadow: inset 0 0 0 1px rgba(253, 230, 138, 0.35) !important;
+}
+.sa-btn-warning .sa-pill-inner::before {
+  background: radial-gradient(circle 60px at 0% 100%, rgba(251, 191, 36, 0.2), rgba(180, 83, 9, 0.1), transparent);
+}
+.sa-btn-warning::after {
+  box-shadow: 0 0 20px rgba(251, 191, 36, 0.35) !important;
+}
+
+html.light .sa-btn-warning {
+  background: radial-gradient(circle 80px at 80% -10%, #fde68a, #cbd5e1) !important;
+}
+html.light .sa-btn-warning .sa-pill-inner {
+  background: radial-gradient(circle 80px at 80% -50%, #d97706, #92400e) !important;
+}
+
+/* --- VARIANT: SECONDARY (Neutral / Slate) --- */
+.sa-btn-secondary {
+  background: radial-gradient(circle 80px at 80% -10%, #cbd5e1, #1e293b) !important;
+}
+.sa-btn-secondary:hover:not(:disabled) {
+  box-shadow: 0 8px 24px rgba(100, 116, 139, 0.4) !important;
+  background: radial-gradient(circle 80px at 80% -10%, #94a3b8, #1e293b) !important;
+}
+.sa-btn-secondary .sa-pill-blob1 {
+  background: radial-gradient(circle 60px at 0% 100%, #64748b, #334155aa, transparent);
+  box-shadow: -10px 10px 30px rgba(100, 116, 139, 0.15);
+}
+.sa-btn-secondary .sa-pill-inner {
+  background: radial-gradient(circle 80px at 80% -50%, #475569, #0f172a) !important;
+  box-shadow: inset 0 0 0 1px rgba(226, 232, 240, 0.25) !important;
+}
+.sa-btn-secondary .sa-pill-inner::before {
+  background: radial-gradient(circle 60px at 0% 100%, rgba(148, 163, 184, 0.15), rgba(51, 65, 85, 0.08), transparent);
+}
+.sa-btn-secondary::after {
+  box-shadow: 0 0 20px rgba(148, 163, 184, 0.25) !important;
+}
+
+html.light .sa-btn-secondary {
+  background: radial-gradient(circle 80px at 80% -10%, #e2e8f0, #cbd5e1) !important;
+}
+html.light .sa-btn-secondary .sa-pill-inner {
+  background: radial-gradient(circle 80px at 80% -50%, #64748b, #334155) !important;
+}
+
+/* --- VARIANT: INFO (Cyan/Sky) --- */
+.sa-btn-info {
+  background: radial-gradient(circle 80px at 80% -10%, #a5f3fc, #164e63) !important;
+}
+.sa-btn-info:hover:not(:disabled) {
+  box-shadow: 0 8px 24px rgba(6, 182, 212, 0.45) !important;
+  background: radial-gradient(circle 80px at 80% -10%, #67e8f9, #164e63) !important;
+}
+.sa-btn-info .sa-pill-blob1 {
+  background: radial-gradient(circle 60px at 0% 100%, #22d3ee, #0e7490aa, transparent);
+  box-shadow: -10px 10px 30px rgba(6, 182, 212, 0.18);
+}
+.sa-btn-info .sa-pill-inner {
+  background: radial-gradient(circle 80px at 80% -50%, #0891b2, #164e63) !important;
+  box-shadow: inset 0 0 0 1px rgba(165, 243, 252, 0.35) !important;
+}
+.sa-btn-info .sa-pill-inner::before {
+  background: radial-gradient(circle 60px at 0% 100%, rgba(34, 211, 238, 0.2), rgba(14, 116, 144, 0.1), transparent);
+}
+.sa-btn-info::after {
+  box-shadow: 0 0 20px rgba(34, 211, 238, 0.35) !important;
+}
+
+html.light .sa-btn-info {
+  background: radial-gradient(circle 80px at 80% -10%, #a5f3fc, #cbd5e1) !important;
+}
+html.light .sa-btn-info .sa-pill-inner {
+  background: radial-gradient(circle 80px at 80% -50%, #0891b2, #155e75) !important;
+}
+
 

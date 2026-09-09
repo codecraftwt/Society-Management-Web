@@ -1,17 +1,16 @@
-
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { createPortal } from "react-dom";
 import API from "../../services/api";
 import socket from "../../services/socket";
 import { useLang } from "../../context/LanguageContext";
 import {
-  MdCampaign, MdAttachFile, MdAccessTime,
-  MdOutlineInbox, MdSearch, MdClose, MdOpenInNew,
-  MdChevronLeft, MdChevronRight, MdPictureAsPdf,
+  MdSearch, MdRefresh, MdChevronLeft, MdChevronRight,
+  MdCampaign, MdAccessTime, MdAttachFile, MdOpenInNew, MdClose,
+  MdCheckCircle, MdWarning, MdDoneAll
 } from "react-icons/md";
-
-import { BASE_URL } from "../../config/apiConfig";
 import PdfViewer from "../../components/common/PdfViewer";
+import GlobalModal from "../../components/common/GlobalModal";
+import GlobalButton from "../../components/common/GlobalButton";
 
 function useDebounce(value, delay = 500) {
   const [debounced, setDebounced] = useState(value);
@@ -22,14 +21,31 @@ function useDebounce(value, delay = 500) {
   return debounced;
 }
 
-function Spinner({ small = false }) {
-  const s = small ? 13 : 20;
-  return (
-    <svg style={{ width: s, height: s }} className="animate-spin" viewBox="0 0 24 24" fill="none">
-      <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" className="opacity-25" />
-      <path fill="currentColor" className="opacity-75" d="M4 12a8 8 0 018-8v8z" />
-    </svg>
-  );
+const LIMIT = 10;
+
+function timeAgoRaw(date) {
+  if (!date) return null;
+  const diffSec = Math.floor((new Date() - new Date(date)) / 1000);
+  if (diffSec < 60) return { key: "timeJustNow" };
+  const diffMin = Math.floor(diffSec / 60);
+  if (diffMin < 60) return { key: "timeMinutesAgo", val: diffMin };
+  const diffHours = Math.floor(diffMin / 60);
+  if (diffHours < 24) return { key: "timeHoursAgo", val: diffHours };
+  const diffDays = Math.floor(diffHours / 24);
+  if (diffDays < 7) return { key: "timeDaysAgo", val: diffDays };
+  const diffWeeks = Math.floor(diffDays / 7);
+  if (diffWeeks < 4) return { key: "timeWeeksAgo", val: diffWeeks };
+  const diffMonths = Math.floor(diffDays / 30);
+  return { key: "timeMonthsAgo", val: diffMonths };
+}
+
+function formatDate(date) {
+  if (!date) return "—";
+  return new Date(date).toLocaleDateString("en-IN", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
 }
 
 function Pagination({ page, totalPages, onPageChange }) {
@@ -41,6 +57,7 @@ function Pagination({ page, totalPages, onPageChange }) {
       acc.push(p);
       return acc;
     }, []);
+
   return (
     <div className="pagination-wrap">
       <button onClick={() => onPageChange(page - 1)} disabled={page === 1} className="pagination-btn">
@@ -48,13 +65,9 @@ function Pagination({ page, totalPages, onPageChange }) {
       </button>
       {pages.map((p, idx) =>
         p === "..." ? (
-          <span key={`ellipsis-${idx}`} className="pagination-ellipsis">...</span>
+          <span key={`e-${idx}`} className="pagination-ellipsis">...</span>
         ) : (
-          <button
-            key={p}
-            onClick={() => onPageChange(p)}
-            className={`pagination-page ${p === page ? "pagination-page--active" : ""}`}
-          >
+          <button key={p} onClick={() => onPageChange(p)} className={`pagination-page ${p === page ? "pagination-page--active" : ""}`}>
             {p}
           </button>
         )
@@ -66,59 +79,12 @@ function Pagination({ page, totalPages, onPageChange }) {
   );
 }
 
-const LIMIT = 10;
-
-const formatDate = (date) => {
-  if (!date) return "";
-  return new Date(date).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" });
-};
-
-const timeAgoRaw = (date) => {
-  if (!date) return "";
-  const diff = (Date.now() - new Date(date)) / 1000;
-  if (diff < 60)    return { key: "timeJustNow",  val: 0 };
-  if (diff < 3600)  return { key: "timeMinsAgo",  val: Math.floor(diff / 60) };
-  if (diff < 86400) return { key: "timeHoursAgo", val: Math.floor(diff / 3600) };
-  return { key: "timeDaysAgo", val: Math.floor(diff / 86400) };
-};
-
-/* ── File helpers ── */
-
-const isImageFile = (fileName) =>
-  /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(fileName || "");
-
-const isPdfFile = (fileName) => /\.pdf$/i.test(fileName || "");
-
-const isPublicHost = () => {
-  const h = window.location.hostname;
-  return (
-    h !== "localhost" &&
-    !h.startsWith("127.") &&
-    !h.startsWith("192.168.") &&
-    !h.startsWith("10.")
-  );
-};
-
-const getPreviewUrl = (url, name) => {
-  const ext = (name || "").split(".").pop().toLowerCase();
-  if (ext === "pdf") return url;
-  if (["doc", "docx", "ppt", "pptx", "csv"].includes(ext)) {
-    if (!isPublicHost()) return null;
-    return `https://docs.google.com/viewer?url=${encodeURIComponent(url)}&embedded=true`;
-  }
-  if (["xls", "xlsx"].includes(ext)) {
-    if (!isPublicHost()) return null;
-    return `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(url)}`;
-  }
-  return null;
-};
-
 export default function ResidentNotices() {
   const { t } = useLang();
 
   const [notices, setNotices] = useState([]);
   const [totalAll, setTotalAll] = useState(0);
-  const [expanded, setExpanded] = useState(null);
+  const [selectedNotice, setSelectedNotice] = useState(null);
 
   const [initialLoad, setInitialLoad] = useState(true);
   const [fetching, setFetching] = useState(false);
@@ -133,11 +99,15 @@ export default function ResidentNotices() {
   const [lightbox, setLightbox] = useState(null);
   const [filePreview, setFilePreview] = useState(null);
 
+  // Acknowledgement prompt guard modal state
+  const [showLeaveGuardModal, setShowLeaveGuardModal] = useState(false);
+  const [ackLoading, setAckLoading] = useState(false);
+
   const timeAgo = (date) => {
     const r = timeAgoRaw(date);
     if (!r) return "";
-    if (r.key === "timeJustNow") return t("timeJustNow");
-    return `${r.val} ${t(r.key)}`;
+    if (r.key === "timeJustNow") return t("timeJustNow") || "Just now";
+    return `${r.val} ${t(r.key) || "ago"}`;
   };
 
   const loadNotices = useCallback(async (pageNum, currentSearch, isInitial = false) => {
@@ -151,9 +121,9 @@ export default function ResidentNotices() {
       });
       const res = await API.get(`/notices?${params}`);
       setNotices(res.data.data || []);
-      setTotalAll(res.data.totalAll ?? res.data.pagination.totalItems);
-      setTotalPages(res.data.pagination.totalPages);
-      setTotalItems(res.data.pagination.totalItems);
+      setTotalAll(res.data.totalAll ?? res.data.pagination?.totalItems ?? 0);
+      setTotalPages(res.data.pagination?.totalPages ?? 1);
+      setTotalItems(res.data.pagination?.totalItems ?? 0);
       setPage(pageNum);
     } catch (err) {
       console.error("Failed to load notices", err);
@@ -163,11 +133,11 @@ export default function ResidentNotices() {
     }
   }, []);
 
-  useEffect(() => { loadNotices(1, "", true); }, []);
+  useEffect(() => { loadNotices(1, "", true); }, [loadNotices]);
   useEffect(() => {
     if (initialLoad) return;
     loadNotices(1, debouncedSearch);
-  }, [debouncedSearch]);
+  }, [debouncedSearch, initialLoad, loadNotices]);
 
   useEffect(() => {
     const onNoticeCreated = (notice) => {
@@ -184,383 +154,393 @@ export default function ResidentNotices() {
 
   const handlePageChange = (newPage) => loadNotices(newPage, debouncedSearch);
 
- const handleFileView = (fileUrl) => {
-  if (!fileUrl) return;
+  // Open Notice Detail Modal and Record View
+  const handleOpenNotice = async (n) => {
+    setSelectedNotice(n);
+    try {
+      const res = await API.post(`/notices/${n.id}/view`);
+      if (res.data?.acknowledgement_status) {
+        setNotices((prev) =>
+          prev.map((item) =>
+            item.id === n.id
+              ? {
+                  ...item,
+                  acknowledgement_status: res.data.acknowledgement_status,
+                  viewed_at: res.data.viewed_at,
+                  acknowledged_at: res.data.acknowledged_at,
+                }
+              : item
+          )
+        );
+        setSelectedNotice((prev) =>
+          prev && prev.id === n.id
+            ? {
+                ...prev,
+                acknowledgement_status: res.data.acknowledgement_status,
+                viewed_at: res.data.viewed_at,
+                acknowledged_at: res.data.acknowledged_at,
+              }
+            : prev
+        );
+      }
+    } catch (err) {
+      console.error("Record view failed", err);
+    }
+  };
 
-  // 1. Recover the original human-readable filename
-  //    Priority: ?filename= query param  →  last path segment
-  let fileName = "attachment";
-  try {
-    const paramMatch = fileUrl.match(/[?&]filename=([^&]+)/);
-    fileName = paramMatch
-      ? decodeURIComponent(paramMatch[1])
-      : decodeURIComponent(fileUrl.split("?")[0].split("/").pop()) || "attachment";
-  } catch (_) {
-    fileName = fileUrl.split("?")[0].split("/").pop() || "attachment";
-  }
+  // Explicitly Acknowledge Notice
+  const handleAcknowledgeNotice = async (noticeId) => {
+    try {
+      setAckLoading(true);
+      const res = await API.post(`/notices/${noticeId}/acknowledge`);
+      if (res.data?.success) {
+        setNotices((prev) =>
+          prev.map((item) =>
+            item.id === noticeId
+              ? {
+                  ...item,
+                  acknowledgement_status: "ACKNOWLEDGED",
+                  acknowledged_at: res.data.acknowledged_at,
+                }
+              : item
+          )
+        );
+        setSelectedNotice((prev) =>
+          prev && prev.id === noticeId
+            ? {
+                ...prev,
+                acknowledgement_status: "ACKNOWLEDGED",
+                acknowledged_at: res.data.acknowledged_at,
+              }
+            : prev
+        );
+        setShowLeaveGuardModal(false);
+      }
+    } catch (err) {
+      alert(err.response?.data?.message || "Failed to acknowledge notice");
+    } finally {
+      setAckLoading(false);
+    }
+  };
 
-  // 2. Build a clean URL — strip ALL query params for the actual src/href.
-  //    Cloudinary URLs are already absolute → use as-is.
-  //    Legacy local paths (/uploads/...) → prepend BASE_URL.
-  const rawPath = fileUrl.split("?")[0];
-  const fullUrl =
-    rawPath.startsWith("http://") || rawPath.startsWith("https://")
-      ? rawPath                      // ✅ Cloudinary absolute URL, no prefix
-      : `${BASE_URL}${rawPath}`;     // ✅ legacy local path
+  // Attempt Close Notice Detail Modal
+  const handleAttemptClose = () => {
+    if (
+      selectedNotice &&
+      selectedNotice.acknowledgement_required &&
+      selectedNotice.acknowledgement_status !== "ACKNOWLEDGED"
+    ) {
+      setShowLeaveGuardModal(true);
+    } else {
+      setSelectedNotice(null);
+    }
+  };
 
-  // 3. Route to the right viewer
-  if (isImageFile(fileName)) {
-    setLightbox(fullUrl);
-    return;
-  }
+  const handleFileView = (fileUrl) => {
+    if (!fileUrl) return;
+    let fileName = "attachment";
+    try {
+      const paramMatch = fileUrl.match(/[?&]filename=([^&]+)/);
+      fileName = paramMatch
+        ? decodeURIComponent(paramMatch[1])
+        : decodeURIComponent(fileUrl.split("?")[0].split("/").pop()) || "attachment";
+    } catch (_) {
+      fileName = fileUrl.split("?")[0].split("/").pop() || "attachment";
+    }
 
-  setFilePreview({
-    fullUrl,
-    name: fileName,
-    isPdf: isPdfFile(fileName),
-    previewUrl: getPreviewUrl(fullUrl, fileName),
-  });
-};
+    const isPdf = fileName.toLowerCase().endsWith(".pdf") || fileUrl.toLowerCase().includes(".pdf?");
+    const isImage = /\.(jpg|jpeg|png|webp|gif|svg)(\?.*)?$/i.test(fileName);
+    const rawPath = fileUrl.split("?")[0];
+    const fullUrl = rawPath.startsWith("http") ? rawPath : `${API.defaults.baseURL.replace("/api", "")}${rawPath}`;
+
+    if (isImage) {
+      setLightbox(fullUrl);
+      return;
+    }
+
+    setFilePreview({ fullUrl, name: fileName, isPdf });
+  };
+
   return (
-    <div className="space-y-5 animate-fadeIn">
-      {/* ✅ FULL UI REMAINS EXACTLY SAME AS YOUR ORIGINAL */}
-
-            {/* HEADER */}
+    <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
+      {/* ── HEADER ── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div
-            className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-            style={{ background: "rgba(91,141,239,0.12)", border: "1px solid rgba(91,141,239,0.25)" }}
-          >
-            <MdCampaign size={21} className="text-accent" />
-          </div>
-          <div>
-            <h2 className="text-lg font-semibold">{t("noticesTitle")}</h2>
-            <p className="text-secondary text-xs mt-0.5">
-              {initialLoad ? "—" : totalAll} {t("noticesSubtitle")}
-            </p>
-          </div>
+        <div>
+          <h2 className="text-xl font-bold tracking-tight" style={{ color: "var(--text-primary)" }}>
+            {t("noticesTitle") || "Society Notices"}
+          </h2>
+          <p className="text-xs text-secondary mt-1">
+            {initialLoad ? "—" : `${totalAll} notices published for your society`}
+          </p>
         </div>
 
-        {!initialLoad && totalAll > 0 && (
-          <div className="relative">
-            <MdSearch
-              size={15}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-secondary pointer-events-none"
-            />
-            <input
-              key="notices-search-input"
-              className="input h-9 pl-8 pr-8 text-xs w-full sm:w-56"
-              placeholder={t("noticesSearch")}
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-            <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center">
-              {fetching ? (
-                <Spinner small />
-              ) : search ? (
-                <button onClick={() => setSearch("")} className="text-secondary transition-colors">
-                  <MdClose size={13} />
-                </button>
-              ) : null}
-            </div>
-          </div>
-        )}
+        {/* Search */}
+        <div className="relative w-full sm:w-64">
+          <MdSearch size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-secondary pointer-events-none" />
+          <input
+            type="text"
+            placeholder={t("noticesSearch") || "Search notices..."}
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="input w-full pl-10 pr-4 h-10 text-xs rounded-xl"
+          />
+        </div>
       </div>
 
-      {/* STATES */}
-      {initialLoad ? (
-        <div className="bg-card p-12 flex flex-col items-center gap-3 text-secondary">
-          <Spinner />
-          <p className="text-sm">{t("noticesLoading")}</p>
+      {/* ── CARDS GRID VIEW ── */}
+      {fetching || initialLoad ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <div key={i} className="animate-pulse bg-card p-5 rounded-2xl border border-white/5 space-y-3">
+              <div className="h-4 w-3/4 bg-white/10 rounded" />
+              <div className="h-3 w-1/2 bg-white/5 rounded" />
+              <div className="h-12 w-full bg-white/5 rounded mt-3" />
+            </div>
+          ))}
         </div>
-
-      ) : totalAll === 0 ? (
-        <div className="bg-card p-16 flex flex-col items-center gap-3 text-secondary animate-fadeIn">
-          <MdOutlineInbox size={48} className="opacity-25" />
-          <p className="text-sm">{t("noticesEmpty")}</p>
-        </div>
-
       ) : notices.length === 0 ? (
-        <div className="bg-card p-14 flex flex-col items-center gap-2 text-secondary animate-fadeIn">
-          <MdSearch size={36} className="opacity-25" />
-          <p className="text-sm">{t("noticesNoMatch")}</p>
-          <button onClick={() => setSearch("")} className="text-xs text-accent hover:underline mt-1">
-            {t("noticesClearSearch")}
-          </button>
+        <div className="bg-card rounded-2xl border border-white/5 p-12 text-center space-y-3">
+          <MdCampaign size={36} className="mx-auto text-secondary opacity-40" />
+          <p className="font-semibold text-sm">{t("noticesEmpty") || "No notices available right now."}</p>
         </div>
-
       ) : (
-        <div className="bg-card p-4 sm:p-5">
-          <p className="text-xs text-secondary mb-4">
-            {totalItems} {t("noticesCount")}
-            {search && ` ${t("noticesMatching")} "${search}"`}
-          </p>
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            {notices.map((n) => {
+              const isAckReq = Boolean(n.acknowledgement_required);
+              const isAcked = n.acknowledgement_status === "ACKNOWLEDGED";
 
-          {/* ── MOBILE CARDS ── */}
-          <div className="md:hidden space-y-3">
-            {notices.map((n, i) => {
-              const isExpanded = expanded === n.id;
               return (
                 <div
                   key={n.id}
-                  className="rounded-xl overflow-hidden animate-fadeIn transition-colors duration-200"
-                  style={{
-                    background: "var(--card-inner-bg)",
-                    border: "1px solid var(--card-inner-border)",
-                    animationDelay: `${i * 40}ms`,
-                  }}
+                  onClick={() => handleOpenNotice(n)}
+                  className="bg-card rounded-2xl border border-white/10 p-5 flex flex-col justify-between gap-4 cursor-pointer hover:border-blue-500/40 hover:shadow-lg transition-all duration-200"
                 >
-                  <button
-                    onClick={() => setExpanded(isExpanded ? null : n.id)}
-                    className="w-full text-left p-4 flex items-start gap-3"
-                  >
-                    <div
-                      className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5"
-                      style={{ background: "rgba(91,141,239,0.12)", border: "1px solid rgba(91,141,239,0.22)" }}
-                    >
-                      <MdCampaign size={16} className="text-accent" />
+                  <div className="space-y-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center shrink-0">
+                        <MdCampaign size={20} className="text-accent" />
+                      </div>
+                      <div className="flex items-center gap-1.5 flex-wrap justify-end">
+                        {isAckReq && (
+                          <span
+                            className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                              isAcked
+                                ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+                                : "bg-amber-500/10 text-amber-400 border-amber-500/20 animate-pulse"
+                            }`}
+                          >
+                            {isAcked ? "✓ ACKNOWLEDGED" : "ACK REQUIRED"}
+                          </span>
+                        )}
+                      </div>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-sm leading-snug">{n.title}</p>
-                      <div className="flex items-center gap-1.5 mt-1 text-[11px] text-secondary flex-wrap">
-                        <MdAccessTime size={11} />
+
+                    <div>
+                      <h3 className="font-bold text-sm leading-snug" style={{ color: "var(--text-primary)" }}>
+                        {n.title}
+                      </h3>
+                      <div className="flex items-center gap-2 mt-1 text-[11px] text-secondary">
+                        <MdAccessTime size={12} />
                         <span>{timeAgo(n.created_at)}</span>
-                        <span className="opacity-20">·</span>
+                        <span>·</span>
                         <span>{formatDate(n.created_at)}</span>
                       </div>
                     </div>
-                    <svg
-                      className={`w-4 h-4 text-secondary shrink-0 mt-1 transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`}
-                      fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
-                    >
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </button>
 
-                  {isExpanded && (
-                    <div
-                      className="px-4 pb-4 space-y-3 pt-3 animate-fadeIn"
-                      style={{ borderTop: "1px solid var(--card-inner-border)" }}
-                    >
-                      {n.description && (
-                        <p className="text-xs text-secondary leading-relaxed">{n.description}</p>
-                      )}
-                      {n.file_url && (
-                        <button
-                          onClick={(e) => { e.stopPropagation(); handleFileView(n.file_url); }}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all duration-200"
-                          style={{
-                            background: "rgba(91,141,239,0.10)",
-                            border: "1px solid rgba(91,141,239,0.22)",
-                            color: "#94B5F5",
-                          }}
-                        >
-                          <MdAttachFile size={13} /> {t("noticesViewAttachment")} <MdOpenInNew size={11} />
-                        </button>
-                      )}
-                    </div>
-                  )}
+                    <p className="text-xs text-secondary line-clamp-3 leading-relaxed">
+                      {n.description || "—"}
+                    </p>
+                  </div>
+
+                  <div className="pt-3 border-t border-white/5 flex items-center justify-between gap-2">
+                    {n.file_url ? (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleFileView(n.file_url);
+                        }}
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold text-accent bg-blue-500/10 border border-blue-500/20 hover:bg-blue-500/20 transition-colors"
+                      >
+                        <MdAttachFile size={13} /> {t("noticesViewAttachment") || "Attachment"} <MdOpenInNew size={11} />
+                      </button>
+                    ) : (
+                      <span className="text-[11px] text-secondary/40">Click to read details</span>
+                    )}
+
+                    {isAckReq && !isAcked && (
+                      <span className="text-[11px] font-semibold text-amber-400 flex items-center gap-1">
+                        <MdWarning size={12} /> Action Needed
+                      </span>
+                    )}
+                  </div>
                 </div>
               );
             })}
-            <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} />
           </div>
 
-          {/* ── DESKTOP TABLE ── */}
-          <div className="hidden md:block overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="text-secondary border-b border-white/10">
-                  <th className="p-3 text-left">#</th>
-                  <th className="p-3 text-left w-1/4">{t("noticesColTitle")}</th>
-                  <th className="p-3 text-left">{t("noticesColDesc")}</th>
-                  <th className="p-3 text-left w-28">{t("noticesColAttachment")}</th>
-                  <th className="p-3 text-left w-44">{t("noticesColDate")}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {notices.map((n, i) => (
-                  <tr
-                    key={n.id}
-                    className="border-b border-white/5 hover:bg-white/3 transition-colors duration-150 animate-fadeIn"
-                    style={{ animationDelay: `${i * 25}ms` }}
-                  >
-                    <td className="p-3 text-secondary text-xs">
-                      {(page - 1) * LIMIT + i + 1}
-                    </td>
-                    <td className="p-3">
-                      <div className="flex items-center gap-2">
-                        <div
-                          className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
-                          style={{ background: "rgba(91,141,239,0.12)", border: "1px solid rgba(91,141,239,0.22)" }}
-                        >
-                          <MdCampaign size={13} className="text-accent" />
-                        </div>
-                        <span className="font-medium">{n.title}</span>
-                      </div>
-                    </td>
-                    <td className="p-3 text-secondary text-xs max-w-xs">
-                      <span className="line-clamp-2 leading-relaxed">{n.description || "—"}</span>
-                    </td>
-                    <td className="p-3">
-                      {n.file_url ? (
-                        <button
-                          onClick={() => handleFileView(n.file_url)}
-                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs transition-all duration-200"
-                          style={{
-                            background: "rgba(91,141,239,0.10)",
-                            border: "1px solid rgba(91,141,239,0.22)",
-                            color: "#94B5F5",
-                          }}
-                        >
-                          <MdAttachFile size={12} /> {t("noticesView")}
-                        </button>
-                      ) : (
-                        <span className="text-secondary/40 text-xs">—</span>
-                      )}
-                    </td>
-                    <td className="p-3">
-                      <p className="text-xs text-secondary/70">{timeAgo(n.created_at)}</p>
-                      <p className="text-[10px] text-secondary/40 mt-0.5">{formatDate(n.created_at)}</p>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-
-            <div className="flex flex-col gap-2 mt-3">
-              <p className="text-xs text-secondary text-right">
-                {t("billShowing") || "Showing"} {notices.length} {t("billOf") || "of"} {totalItems} {t("noticesCount")}
-              </p>
-              <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} />
-            </div>
-          </div>
+          <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} />
         </div>
       )}
 
-      {/* ══ IMAGE LIGHTBOX ══ */}
-      {lightbox && createPortal(
-        <div
-          style={{ position: "fixed", inset: 0, zIndex: 9999, background: "rgba(0,0,0,0.92)",
-            display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}
-          onClick={() => setLightbox(null)}
+      {/* ── NOTICE DETAIL MODAL ── */}
+      {selectedNotice && (
+        <GlobalModal
+          isOpen={!!selectedNotice}
+          onClose={handleAttemptClose}
+          title={selectedNotice.title}
+          subtitle={`Published ${formatDate(selectedNotice.created_at)}`}
+          icon={MdCampaign}
+          size="md"
         >
-          <div style={{ width: "100%", maxWidth: 680 }} onClick={(e) => e.stopPropagation()}>
-            <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 10 }}>
-              <button onClick={() => setLightbox(null)}
-                style={{ width: 34, height: 34, borderRadius: "50%", background: "rgba(255,255,255,0.12)",
-                  border: "none", cursor: "pointer", color: "white",
-                  display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <MdClose size={17} />
-              </button>
-            </div>
-            <img src={lightbox} alt="attachment"
-              style={{ width: "100%", borderRadius: 12, objectFit: "contain", maxHeight: "75vh", display: "block" }} />
-            <p style={{ textAlign: "center", fontSize: 11, marginTop: 10, color: "rgba(255,255,255,0.3)" }}>
-              {t("chatTapClose") || "Tap outside to close"}
-            </p>
-          </div>
-        </div>,
-        document.body
-      )}
-
-      {/* ══ FILE PREVIEW MODAL (PDF / Doc / Sheet) ══ */}
-      {filePreview && createPortal(
-        <div
-          style={{ position: "fixed", inset: 0, zIndex: 9999, background: "rgba(0,0,0,0.88)", backdropFilter: "blur(8px)",
-            display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 20 }}
-          onClick={() => setFilePreview(null)}
-        >
-          <div
-            style={{ width: "100%", maxWidth: 920, height: "86vh", display: "flex", flexDirection: "column" }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            {filePreview.isPdf && filePreview.fullUrl ? (
-              <PdfViewer
-                key={filePreview.fullUrl}
-                url={filePreview.fullUrl}
-                name={filePreview.name}
-                onClose={() => setFilePreview(null)}
-              />
-            ) : (
-              <>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, marginBottom: 10 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 10, overflow: "hidden", minWidth: 0 }}>
-                    <div style={{
-                      width: 32, height: 32, borderRadius: 10, flexShrink: 0,
-                      background: "var(--accent-soft)", border: "1px solid rgba(37,99,235,0.28)",
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                    }}>
-                      <MdPictureAsPdf size={16} style={{ color: "var(--accent)" }} />
-                    </div>
-                    <span style={{ color: "var(--text-primary)", fontSize: 13, fontWeight: 650,
-                      overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                      {filePreview.name}
-                    </span>
-                  </div>
-                  <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
-                    <a
-                      href={filePreview.fullUrl} target="_blank" rel="noopener noreferrer"
-                      style={{ padding: "7px 14px", borderRadius: 999, fontSize: 12, fontWeight: 650,
-                        color: "var(--text-primary)", background: "var(--card-inner-bg)",
-                        border: "1px solid var(--glass-border)", textDecoration: "none",
-                        display: "flex", alignItems: "center", gap: 5 }}
-                    >
-                      ↓ {t("docDownload") || "Download"}
-                    </a>
-                    <button onClick={() => setFilePreview(null)}
-                      style={{ width: 34, height: 34, borderRadius: "50%",
-                        background: "var(--card-inner-bg)", border: "1px solid var(--glass-border)",
-                        cursor: "pointer", color: "var(--text-secondary)",
-                        display: "flex", alignItems: "center", justifyContent: "center",
-                        transition: "all 0.18s ease" }}
-                      onMouseEnter={e => { e.currentTarget.style.background = "var(--danger)"; e.currentTarget.style.color = "#fff"; e.currentTarget.style.borderColor = "var(--danger)"; }}
-                      onMouseLeave={e => { e.currentTarget.style.background = "var(--card-inner-bg)"; e.currentTarget.style.color = "var(--text-secondary)"; e.currentTarget.style.borderColor = "var(--glass-border)"; }}>
-                      <MdClose size={17} />
-                    </button>
+          <div className="space-y-5">
+            {/* Acknowledgement Status Header Banner */}
+            {selectedNotice.acknowledgement_required && (
+              <div
+                className={`p-3.5 rounded-xl border flex items-center justify-between gap-3 ${
+                  selectedNotice.acknowledgement_status === "ACKNOWLEDGED"
+                    ? "bg-emerald-500/10 border-emerald-500/25 text-emerald-400"
+                    : "bg-amber-500/10 border-amber-500/25 text-amber-400"
+                }`}
+              >
+                <div className="flex items-center gap-2.5">
+                  {selectedNotice.acknowledgement_status === "ACKNOWLEDGED" ? (
+                    <MdDoneAll size={20} />
+                  ) : (
+                    <MdWarning size={20} />
+                  )}
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-wider">
+                      {selectedNotice.acknowledgement_status === "ACKNOWLEDGED"
+                        ? "Notice Acknowledged"
+                        : "Acknowledgement Required"}
+                    </p>
+                    <p className="text-[11px] opacity-80 mt-0.5">
+                      {selectedNotice.acknowledgement_status === "ACKNOWLEDGED"
+                        ? `Acknowledged on ${fmtDate(selectedNotice.acknowledged_at)}`
+                        : "Please read carefully and click 'Mark as Read' below to confirm."}
+                    </p>
                   </div>
                 </div>
 
-                {filePreview.previewUrl ? (
-                  <iframe
-                    key={filePreview.previewUrl}
-                    src={filePreview.previewUrl}
-                    title={filePreview.name}
-                    style={{ flex: 1, border: "none", borderRadius: 12, background: "white", width: "100%" }}
-                  />
-                ) : (
-                  <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center",
-                    justifyContent: "center", gap: 14, background: "var(--card-inner-bg)",
-                    borderRadius: 12, border: "1px solid var(--glass-border)" }}>
-                    <div style={{
-                      width: 48, height: 48, borderRadius: 14,
-                      background: "var(--accent-soft)", border: "1px solid rgba(37,99,235,0.28)",
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                    }}>
-                      <MdPictureAsPdf size={22} style={{ color: "var(--accent)" }} />
-                    </div>
-                    <p style={{ color: "var(--text-primary)", fontSize: 14, fontWeight: 650, margin: 0 }}>
-                      {filePreview.name}
-                    </p>
-                    <p style={{ color: "var(--text-tertiary)", fontSize: 12, margin: 0, textAlign: "center", maxWidth: 320 }}>
-                      {isPublicHost()
-                        ? "Preview not available for this file type."
-                        : "In-browser preview requires a deployed (public) URL. Download the file to open it."}
-                    </p>
-                    <a
-                      href={filePreview.fullUrl} target="_blank" rel="noopener noreferrer" 
-                      style={{ padding: "8px 20px", borderRadius: 999, background: "var(--accent)",
-                        color: "#fff", fontSize: 13, fontWeight: 600, textDecoration: "none",
-                        display: "flex", alignItems: "center", gap: 6 }}
-                    >
-                      ↓ Download file
-                    </a>
-                  </div>
+                {selectedNotice.acknowledgement_status !== "ACKNOWLEDGED" && (
+                  <GlobalButton
+                    variant="primary"
+                    size="sm"
+                    icon={MdCheckCircle}
+                    onClick={() => handleAcknowledgeNotice(selectedNotice.id)}
+                    loading={ackLoading}
+                  >
+                    {t("noticeMarkAsRead") || "Mark as Read"}
+                  </GlobalButton>
                 )}
-              </>
+              </div>
             )}
+
+            {/* Notice Body */}
+            <div className="space-y-2">
+              <h4 className="text-xs font-semibold text-secondary uppercase tracking-wider">Notice Details</h4>
+              <p className="text-sm text-primary leading-relaxed whitespace-pre-line bg-white/5 p-4 rounded-xl border border-white/5">
+                {selectedNotice.description}
+              </p>
+            </div>
+
+            {/* Attachment Section */}
+            {selectedNotice.file_url && (
+              <div className="space-y-2">
+                <h4 className="text-xs font-semibold text-secondary uppercase tracking-wider">Attachment</h4>
+                <button
+                  type="button"
+                  onClick={() => handleFileView(selectedNotice.file_url)}
+                  className="w-full flex items-center justify-between p-3.5 rounded-xl bg-blue-500/10 border border-blue-500/25 text-accent hover:bg-blue-500/20 transition-colors"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <MdAttachFile size={18} />
+                    <span className="text-xs font-semibold">View Notice Document / File</span>
+                  </div>
+                  <MdOpenInNew size={16} />
+                </button>
+              </div>
+            )}
+
+            {/* Action Footer */}
+            <div className="pt-3 border-t border-white/10 flex items-center justify-end gap-3">
+              {selectedNotice.acknowledgement_required && selectedNotice.acknowledgement_status !== "ACKNOWLEDGED" ? (
+                <GlobalButton
+                  variant="primary"
+                  icon={MdCheckCircle}
+                  onClick={() => handleAcknowledgeNotice(selectedNotice.id)}
+                  loading={ackLoading}
+                >
+                  {t("noticeMarkAsRead") || "Mark as Read"}
+                </GlobalButton>
+              ) : (
+                <GlobalButton variant="secondary" onClick={() => setSelectedNotice(null)}>
+                  Close
+                </GlobalButton>
+              )}
+            </div>
           </div>
+        </GlobalModal>
+      )}
+
+      {/* ── ACKNOWLEDGEMENT LEAVE GUARD PROMPT MODAL ── */}
+      {showLeaveGuardModal && (
+        <GlobalModal
+          isOpen={showLeaveGuardModal}
+          onClose={() => setShowLeaveGuardModal(false)}
+          title={t("noticeLeavePromptTitle") || "Acknowledgement Required"}
+          subtitle={t("noticeLeavePromptMsg") || "Please mark this notice as read before leaving."}
+          icon={MdWarning}
+          size="sm"
+        >
+          <div className="space-y-4">
+            <p className="text-xs text-secondary leading-relaxed">
+              This notice requires explicit read confirmation. You must acknowledge this notice before closing or navigating away.
+            </p>
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <GlobalButton
+                variant="secondary"
+                onClick={() => setShowLeaveGuardModal(false)}
+              >
+                {t("noticeStayBtn") || "Stay on Notice"}
+              </GlobalButton>
+              <GlobalButton
+                variant="primary"
+                icon={MdCheckCircle}
+                onClick={() => handleAcknowledgeNotice(selectedNotice.id)}
+                loading={ackLoading}
+              >
+                {t("noticeMarkAsRead") || "Mark as Read"}
+              </GlobalButton>
+            </div>
+          </div>
+        </GlobalModal>
+      )}
+
+      {/* ── FILE PREVIEW MODAL ── */}
+      {filePreview && (
+        <GlobalModal
+          isOpen={true}
+          onClose={() => setFilePreview(null)}
+          title={filePreview.name}
+          size="lg"
+        >
+          {filePreview.isPdf ? (
+            <PdfViewer url={filePreview.fullUrl} fileName={filePreview.name} />
+          ) : (
+            <img src={filePreview.fullUrl} alt={filePreview.name} className="w-full rounded-xl" />
+          )}
+        </GlobalModal>
+      )}
+
+      {/* ── LIGHTBOX ── */}
+      {lightbox && createPortal(
+        <div
+          className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4"
+          onClick={() => setLightbox(null)}
+        >
+          <img src={lightbox} alt="Preview" className="max-w-full max-h-[90vh] rounded-xl" />
         </div>,
         document.body
       )}

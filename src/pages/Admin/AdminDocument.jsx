@@ -15,6 +15,7 @@ import {
 import API from "../../services/api";
 import { BASE_URL } from "../../config/apiConfig";
 import Select from "../../components/common/Select";
+import GlobalButton from "../../components/common/GlobalButton";
 
 
 /* ── Constants ── */
@@ -192,7 +193,14 @@ export default function AdminDocument() {
       const res  = await API.get(`/documents/admin?${params}`);
       const data = res.data;
 
-      setDocs(data.data || []);
+      const rawDocs = Array.isArray(data)
+        ? data
+        : Array.isArray(data?.data)
+        ? data.data
+        : Array.isArray(data?.documents)
+        ? data.documents
+        : [];
+      setDocs(rawDocs);
       setCounts(data.counts || { All: 0, Legal: 0, Meetings: 0, Guidelines: 0, Finance: 0, Security: 0 });
       setTotalPages(data.pagination?.totalPages ?? 1);
       setTotalItems(data.pagination?.totalItems ?? 0);
@@ -401,11 +409,11 @@ const handleDelete = async () => {
             </div>
 
             <div className="ad-form-footer">
-              <button type="submit" className="btn-primary ad-submit-btn" disabled={uploading}>
+              <GlobalButton type="submit" variant="add" disabled={uploading}>
                 {uploading
                   ? <><span className="ad-spinner ad-spinner--white" /> {t("adDocUploading")}</>
                   : <><MdCloudUpload size={16} /> {t("adDocUploadBtn")}</>}
-              </button>
+              </GlobalButton>
             </div>
           </form>
         </div>
@@ -545,9 +553,9 @@ const handleDelete = async () => {
                               <MdVisibility size={14} />
                               <span className="ad-btn-label">{t("docView")}</span>
                             </a>
-                            <button className="ad-btn ad-btn-delete" onClick={() => setDeleteTarget(doc)}>
+                            <GlobalButton variant="delete" size="sm" onClick={() => setDeleteTarget(doc)}>
                               <MdDelete size={14} />
-                            </button>
+                            </GlobalButton>
                           </div>
                         </td>
                       </tr>

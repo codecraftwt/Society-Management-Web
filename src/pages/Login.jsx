@@ -335,6 +335,10 @@ function Login() {
       ACCOUNTANT: "/accountant",
     };
 
+    if (user.activeRole === "SUPER_ADMIN") {
+      localStorage.setItem("superadmin_society_filter", "ALL");
+    }
+
     const targetRoute = routeMap[user.activeRole] || "/";
     navigate(targetRoute, { replace: true });
   };

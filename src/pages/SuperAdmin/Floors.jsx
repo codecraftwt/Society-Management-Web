@@ -3,22 +3,69 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 import { useLang } from "../../context/LanguageContext";
 import API from "../../services/api";
 import { MdApartment, MdArrowBack, MdLayers } from "react-icons/md";
+import GlobalButton from "../../components/common/GlobalButton";
+import GlobalTable from "../../components/common/GlobalTable";
 
 export default function Floors() {
   const { blockId } = useParams();
   const navigate = useNavigate();
   const { t } = useLang();
   const [floors, setFloors] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    setLoading(true);
     API.get(`/floors/${blockId}`)
-      .then(res => setFloors(res.data))
-      .catch(err => console.error(err));
+      .then(res => setFloors(res.data || []))
+      .catch(err => console.error(err))
+      .finally(() => setLoading(false));
   }, [blockId]);
+
+  const columns = [
+    {
+      key: "floor_number",
+      header: "Floor Number",
+      render: (f) => (
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <div
+            style={{
+              width: 34,
+              height: 34,
+              borderRadius: 9,
+              background: "rgba(37, 99, 235, 0.12)",
+              color: "#60a5fa",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0,
+            }}
+          >
+            <MdApartment size={16} />
+          </div>
+          <span style={{ fontWeight: 600, color: "var(--text-primary)" }}>
+            Floor {f.floor_number}
+          </span>
+        </div>
+      ),
+    },
+    {
+      key: "actions",
+      header: t("billActionCol") || "Actions",
+      align: "right",
+      render: (f) => (
+        <div style={{ display: "flex", justifyContent: "flex-end" }}>
+          <Link to={`/superadmin/floor/${f.id}/flats`} style={{ textDecoration: "none" }}>
+            <GlobalButton variant="secondary" size="sm" icon={MdApartment}>
+              Manage Flats
+            </GlobalButton>
+          </Link>
+        </div>
+      ),
+    },
+  ];
 
   return (
     <div className="sa-page animate-fadeIn">
-
       {/* ── HERO ── */}
       <div className="sa-page-er">
         <div style={{ display: "flex", alignItems: "center", gap: 14, minWidth: 0 }}>
@@ -32,64 +79,24 @@ export default function Floors() {
             </p>
           </div>
         </div>
-        <button onClick={() => navigate(-1)} className="sa-hero-back">
-          <MdArrowBack size={16} /> {t("socBack") || "Back"}
-        </button>
+        <GlobalButton
+          variant="secondary"
+          size="sm"
+          icon={MdArrowBack}
+          onClick={() => navigate(-1)}
+        >
+          {t("socBack") || "Back"}
+        </GlobalButton>
       </div>
 
       {/* ── FLOORS LIST ── */}
-      <div className="sa-panel">
-        <div className="sa-panel-head">
-          <div className="sa-panel-accent"><MdLayers size={18} /></div>
-          <div>
-            <h3 className="sa-panel-title">{t("flrListTitle") || "Floors List"}</h3>
-            <p className="sa-panel-sub">
-              {t("flrListSub") || "Manage the flats inside each floor"}
-            </p>
-          </div>
-        </div>
-
-        {floors.length === 0 ? (
-          <p style={{ color: "var(--text-tertiary)", fontSize: "0.86rem", padding: "18px 0" }}>
-            No floors found.
-          </p>
-        ) : (
-          <div className="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Floor Number</th>
-                  <th style={{ textAlign: "right" }}>{t("billActionCol") || "Actions"}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {floors.map(f => (
-                  <tr key={f.id}>
-                    <td>
-                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                        <div className="sa-form-icon" style={{ width: 34, height: 34, borderRadius: 9 }}>
-                          <MdApartment size={15} />
-                        </div>
-                        <span style={{ fontWeight: 600, color: "var(--text-primary)" }}>
-                          Floor {f.floor_number}
-                        </span>
-                      </div>
-                    </td>
-                    <td>
-                      <div style={{ display: "flex", justifyContent: "flex-end" }}>
-                        <Link to={`/superadmin/floor/${f.id}/flats`}
-                          className="icon-btn manage" title="Manage Flats">
-                          <MdApartment size={16} />
-                        </Link>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+      <GlobalTable
+        columns={columns}
+        data={floors}
+        loading={loading}
+        emptyMessage="No floors found."
+        emptyIcon={MdLayers}
+      />
     </div>
   );
 }

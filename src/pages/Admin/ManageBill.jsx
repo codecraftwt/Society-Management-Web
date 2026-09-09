@@ -11,6 +11,7 @@ import {
   MdWarning,
 } from "react-icons/md";
 import Select from "../../components/common/Select";
+import GlobalButton from "../../components/common/GlobalButton";
 
 /* ── helpers ── */
 const getCurrentBillingMonth = () => {
@@ -301,8 +302,14 @@ export default function ManageBills() {
       const headers = (isSuperAdmin && filterSocietyId) ? { "x-society-id": filterSocietyId } : {};
       const res = await API.get(`/bills/society?${params}`, { headers });
       const data = res.data;
-
-      setBills(data.data || []);
+      const rawBills = Array.isArray(data)
+        ? data
+        : Array.isArray(data?.data)
+        ? data.data
+        : Array.isArray(data?.bills)
+        ? data.bills
+        : [];
+      setBills(rawBills);
       setCounts(data.counts || { total: 0, paid: 0, pending: 0, revenue: 0 });
       setTotalPages(data.pagination?.totalPages ?? 1);
       setTotalItems(data.pagination?.totalItems ?? 0);
@@ -316,7 +323,7 @@ export default function ManageBills() {
       const headers = (isSuperAdmin && targetSocId) ? { "x-society-id": targetSocId } : {};
       const res = await API.get("/flats/assigned", { headers });
       const d = res.data;
-      setFlats(Array.isArray(d) ? d : d?.data || []);
+      setFlats(Array.isArray(d) ? d : (d?.data || d?.flats || []));
     } catch (e) { console.error(e); }
   };
 
@@ -553,17 +560,16 @@ export default function ManageBills() {
             <p className="page-subtitle">{t("billsSubtitle")}</p>
           </div>
         </div>
-        <button
-          className="sa-add-btn sa-add-pill"
-          style={{ flexShrink: 0 }}
-          onClick={() => setShowCreate(p => !p)}
-        >
-          <span className="sa-pill-blob sa-pill-blob1" />
-          <span className="sa-pill-inner">
-            {showCreate ? <MdClose size={16} /> : <MdAdd size={16} />}
-            <span>{showCreate ? t("cancel") : t("billCreate")}</span>
-          </span>
-        </button>
+            <GlobalButton
+              variant="primary"
+              size="md"
+              onClick={() => setShowCreate(p => !p)}
+              fullWidth={false}
+              style={{ flexShrink: 0 }}
+            >
+              {showCreate ? <MdClose size={16} /> : <MdAdd size={16} />}
+              {showCreate ? t("cancel") : t("billCreate")}
+            </GlobalButton>
       </div>
 
       {/* ── SUPER ADMIN FILTER ── */}

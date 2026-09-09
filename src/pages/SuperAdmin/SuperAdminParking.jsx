@@ -13,6 +13,10 @@ import {
 } from "react-icons/md";
 import { FaParking } from "react-icons/fa";
 import Select from "../../components/common/Select";
+import GlobalButton from "../../components/common/GlobalButton";
+import GlobalBadge from "../../components/common/GlobalBadge";
+import GlobalConfirmDialog from "../../components/common/GlobalConfirmDialog";
+import GlobalModal from "../../components/common/GlobalModal";
 
 /* ── Debounce hook ── */
 function useDebounce(value, delay = 500) {
@@ -109,7 +113,14 @@ function ResidentEntryPanel({ slots, onCreated, t, societyId }) {
     setLoading(true);
     try {
       const res = await API.get("/parking/unassigned-resident-vehicles");
-      setVehicles(res.data || []);
+      const list = Array.isArray(res.data)
+        ? res.data
+        : Array.isArray(res.data?.data)
+        ? res.data.data
+        : Array.isArray(res.data?.vehicles)
+        ? res.data.vehicles
+        : [];
+      setVehicles(list);
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
   }, []);
@@ -424,7 +435,14 @@ function ResidentRequestsPanel({ allSlots, onSlotAssigned, societyId }) {
     setLoading(true);
     try {
       const res = await API.get("/parking?parking_type=RESIDENT&limit=100&filter=ALL");
-      setRequests(res.data?.data || []);
+      const list = Array.isArray(res.data)
+        ? res.data
+        : Array.isArray(res.data?.data)
+        ? res.data.data
+        : Array.isArray(res.data?.requests)
+        ? res.data.requests
+        : [];
+      setRequests(list);
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
   }, []);
@@ -637,6 +655,10 @@ export default function SuperAdminParking() {
   const [selectedSocietyId, setSelectedSocietyId] = useState(() => {
     return localStorage.getItem("superadmin_society_filter") || "ALL";
   });
+  const [showSocietyModal, setShowSocietyModal] = useState(() => {
+    const cached = localStorage.getItem("superadmin_society_filter");
+    return !cached || cached === "ALL";
+  });
 
   const [mainTab, setMainTab] = useState("slots");
 
@@ -702,7 +724,14 @@ export default function SuperAdminParking() {
       });
       // Headers will be added by API interceptor based on selectedSocietyId in localStorage
       const res = await API.get(`/parking-slots?${params}`);
-      setSlots(res.data.data || []);
+      const list = Array.isArray(res.data)
+        ? res.data
+        : Array.isArray(res.data?.data)
+        ? res.data.data
+        : Array.isArray(res.data?.slots)
+        ? res.data.slots
+        : [];
+      setSlots(list);
       setStats(res.data.stats || { total: 0, cars: 0, bikes: 0, available: 0, occupied: 0 });
       setTotalPages(res.data.pagination?.totalPages || 1);
       setTotalItems(res.data.pagination?.totalItems || 0);
@@ -796,6 +825,43 @@ export default function SuperAdminParking() {
 
   return (
     <div className="space-y-5 animate-fadeIn">
+      {/* Initial Society Selector Modal */}
+      <GlobalModal
+        isOpen={showSocietyModal}
+        onClose={() => setShowSocietyModal(false)}
+        title="Select Society Context"
+        subtitle="Choose a specific society to manage parking slots, assign vehicles, and process extra slot requests."
+        icon={MdBusiness}
+        showFooter
+        submitLabel="Confirm Selection"
+        cancelLabel="View All (Read Only)"
+        onCancel={() => {
+          handleSocietyChange({ target: { value: "ALL" } });
+          setShowSocietyModal(false);
+        }}
+        onSubmit={() => {
+          setShowSocietyModal(false);
+        }}
+      >
+        <div className="space-y-3 py-2">
+          <label className="text-xs font-bold uppercase tracking-wider text-secondary">
+            Target Society
+          </label>
+          <Select
+            className="input h-11 w-full text-sm font-semibold"
+            value={selectedSocietyId}
+            onChange={(e) => handleSocietyChange(e)}
+          >
+            <option value="ALL">All Societies (View Only Mode)</option>
+            {societies.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name} ({s.code || s.id})
+              </option>
+            ))}
+          </Select>
+        </div>
+      </GlobalModal>
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
@@ -829,13 +895,14 @@ export default function SuperAdminParking() {
           </div>
 
           {mainTab === "slots" && selectedSocietyId !== "ALL" && (
-            <button onClick={() => { setShowForm(p => !p); setConfirmDel(null); }} className="sa-add-btn sa-add-pill shrink-0">
-              <span className="sa-pill-blob sa-pill-blob1" />
-              <span className="sa-pill-inner">
-                {showForm ? <MdClose size={17} /> : <MdAdd size={17} />}
-                <span>{showForm ? "Close" : "Create Slots"}</span>
-              </span>
-            </button>
+            <GlobalButton
+              variant={showForm ? "secondary" : "add"}
+              icon={showForm ? MdClose : MdAdd}
+              onClick={() => { setShowForm(p => !p); setConfirmDel(null); }}
+              className="shrink-0"
+            >
+              {showForm ? "Close" : "Create Slots"}
+            </GlobalButton>
           )}
         </div>
       </div>
@@ -941,9 +1008,13 @@ export default function SuperAdminParking() {
                   </div>
                 </div>
                 <div className="flex justify-end mt-4">
-                  <button type="submit" disabled={submitting} className="btn-primary">
-                    {submitting ? <Spinner small /> : "Create Slots"}
-                  </button>
+                  <GlobalButton
+                    type="submit"
+                    variant="create"
+                    loading={submitting}
+                  >
+                    Create Slots
+                  </GlobalButton>
                 </div>
               </form>
             </div>
