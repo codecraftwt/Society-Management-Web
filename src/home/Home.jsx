@@ -216,7 +216,7 @@ const Home = () => {
             </button>
             <button
               onClick={() => { setMenuOpen(false); navigate("/login"); }}
-              className="home-btn-getstarted"
+              className="home-btn-nav-cta"
             >
               {t("homeGetStarted")}
             </button>
