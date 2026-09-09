@@ -2,6 +2,7 @@ import { lazy, Suspense } from "react";
 import { Routes, Route } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import SeoHead from "./seo/SeoHead";
 
 /* === PUBLIC PAGES === */
 import Home from "./home/Home";
@@ -125,6 +126,7 @@ import TenantManagement from "./pages/Admin/TenantManagement.jsx";
 function App() {
   return (
     <>
+      <SeoHead />
       {/* === GLOBAL TOAST === */}
       <ToastContainer
         position="top-center"

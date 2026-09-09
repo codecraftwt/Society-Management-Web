@@ -1,0 +1,17 @@
+User-agent: *
+Allow: /
+Allow: /login
+Allow: /register
+Allow: /forgot-password
+
+Disallow: /superadmin
+Disallow: /admin
+Disallow: /committee
+Disallow: /resident
+Disallow: /family
+Disallow: /guard
+Disallow: /accountant
+Disallow: /registration-pending
+Disallow: /reset-password
+
+Sitemap: /sitemap.xml
