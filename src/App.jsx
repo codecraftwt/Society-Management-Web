@@ -14,6 +14,12 @@ import RegistrationPending from "./pages/RegistrationPending";
 import ForgetPassword from "./pages/auth/ForgetPassword";
 import ResetPassword from "./pages/auth/ResetPassword";
 
+/* === LEGAL PAGES === */
+import PrivacyPolicy from "./pages/legal/PrivacyPolicy";
+import TermsOfService from "./pages/legal/TermsOfService";
+import SecurityPolicy from "./pages/legal/SecurityPolicy";
+import CookiePolicy from "./pages/legal/CookiePolicy";
+
 /* === PROTECTED ROUTE === */
 import ProtectedRoute from "./components/protectedRoute";
 import PublicRoute from "./components/PublicRoute";
@@ -155,6 +161,12 @@ function App() {
         <Route path="/registration-pending" element={<RegistrationPending />} />
         <Route path="/forgot-password" element={<ForgetPassword />} />
         <Route path="/reset-password/:token" element={<ResetPassword />} />
+
+        {/* === LEGAL PAGES === */}
+        <Route path="/privacy-policy" element={<LanguageProvider role="home"><PrivacyPolicy /></LanguageProvider>} />
+        <Route path="/terms-of-service" element={<LanguageProvider role="home"><TermsOfService /></LanguageProvider>} />
+        <Route path="/security-policy" element={<LanguageProvider role="home"><SecurityPolicy /></LanguageProvider>} />
+        <Route path="/cookie-policy" element={<LanguageProvider role="home"><CookiePolicy /></LanguageProvider>} />
 
         {/* === SUPER ADMIN === */}
         <Route element={<ProtectedRoute roles={["SUPER_ADMIN"]} />}>

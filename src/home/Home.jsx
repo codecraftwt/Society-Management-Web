@@ -642,10 +642,10 @@ const Home = () => {
             <div>
               <h4 className="home-footer-col-title">{t("homeFooterLegal")}</h4>
               <ul className="home-footer-links">
-                <li><Link to="/" className="home-footer-link">{t("homeFooterPrivacy")}</Link></li>
-                <li><Link to="/" className="home-footer-link">{t("homeFooterTerms")}</Link></li>
-                <li><Link to="/" className="home-footer-link">{t("homeFooterSecurityPolicy")}</Link></li>
-                <li><Link to="/" className="home-footer-link">{t("homeFooterCookie")}</Link></li>
+                <li><Link to="/privacy-policy" className="home-footer-link">{t("homeFooterPrivacy")}</Link></li>
+                <li><Link to="/terms-of-service" className="home-footer-link">{t("homeFooterTerms")}</Link></li>
+                <li><Link to="/security-policy" className="home-footer-link">{t("homeFooterSecurityPolicy")}</Link></li>
+                <li><Link to="/cookie-policy" className="home-footer-link">{t("homeFooterCookie")}</Link></li>
               </ul>
             </div>
           </div>
