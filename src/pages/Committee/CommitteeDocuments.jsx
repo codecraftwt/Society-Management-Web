@@ -13,6 +13,7 @@ import {
 import API from "../../services/api";
 import { BASE_URL } from "../../config/apiConfig";
 import Select from "../../components/common/Select";
+import GlobalButton from "../../components/common/GlobalButton";
 
 /* ── Constants ── */
 const ALL_CATS  = ["All", "Legal", "Meetings", "Guidelines", "Finance", "Security"];
@@ -291,17 +292,14 @@ export default function CommitteeDocuments() {
           <span className="ad-count-badge">
             <MdDescription size={13} /> {initialLoad ? "…" : counts.All} docs
           </span>
-          <button
-            className={`ad-upload-toggle-btn${uploadOpen ? " ad-upload-toggle-btn--open" : ""}`}
+          <GlobalButton
+            variant={uploadOpen ? "danger" : "add"}
+            borderDraw
+            icon={uploadOpen ? MdClose : MdAdd}
             onClick={() => setUploadOpen(o => !o)}
           >
-            <span className="ad-upload-toggle-icon">
-              {uploadOpen ? <MdClose size={17} /> : <MdAdd size={17} />}
-            </span>
-            <span className="ad-upload-toggle-label">
-              {uploadOpen ? "Cancel" : "Upload Document"}
-            </span>
-          </button>
+            {uploadOpen ? "Cancel" : "Upload Document"}
+          </GlobalButton>
         </div>
       </div>
 

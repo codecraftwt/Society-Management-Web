@@ -17088,5 +17088,27 @@ html:not(.light) .sa-add-btn.sa-add-pill:not([class*="sa-btn-"]) .sa-pill-inner 
   background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%) !important;
 }
 
+/* ────────────────────────────────────────────────
+   BORDER DRAW ANIMATION — SVG stroke draws a rounded
+   outline around the pill border on hover (keeps radius).
+   ──────────────────────────────────────────────── */
+.global-btn-draw rect {
+  stroke: var(--sa-bd-color, #60a5fa);
+  stroke-linecap: round;
+  stroke-dasharray: var(--sa-bd-p) var(--sa-bd-p);
+  stroke-dashoffset: var(--sa-bd-p);
+  transition: stroke-dashoffset 1s cubic-bezier(0.16, 1, 0.3, 1);
+  filter: drop-shadow(0 0 6px rgba(96, 165, 250, 0.7));
+}
+html.light .global-btn-draw rect {
+  stroke: var(--sa-bd-color, #3b82f6);
+  filter: drop-shadow(0 0 6px rgba(37, 99, 235, 0.6));
+}
+
+.global-btn:hover:not(:disabled) .global-btn-draw rect,
+.global-btn:focus-visible .global-btn-draw rect {
+  stroke-dashoffset: 0;
+}
+
 
 

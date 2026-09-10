@@ -7,6 +7,7 @@ import {
 } from "react-icons/md";
 import { FaBuilding, FaUserShield, FaUsers } from "react-icons/fa";
 import DashboardAnalytics from "../../components/super-admin/DashboardAnalytics";
+import GlobalButton from "../../components/common/GlobalButton";
 
 export default function SuperAdminDashboard() {
   const { t } = useLang();
@@ -96,13 +97,9 @@ export default function SuperAdminDashboard() {
           <h1 className="sa-page-title">{t("saOverviewTitle")}</h1>
           <p className="sa-page-subtitle">Executive Command Center &amp; Platform Intelligence</p>
         </div>
-        <button onClick={fetchSocieties} className="sa-add-btn sa-add-pill" title="Reload">
-          <span className="sa-pill-blob sa-pill-blob1" />
-          <span className="sa-pill-inner" style={{ padding: "0 18px", height: 38 }}>
-            <MdRefresh size={18} />
-            <span>Reload</span>
-          </span>
-        </button>
+        <GlobalButton variant="add" borderDraw onClick={fetchSocieties} icon={MdRefresh} title="Reload">
+          Reload
+        </GlobalButton>
       </div>
 
       {/* ── KPI CARDS ── */}

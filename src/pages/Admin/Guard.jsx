@@ -397,6 +397,7 @@ export default function Guard() {
           <GlobalButton
             variant="add"
             icon={MdAdd}
+            borderDraw
             onClick={() => {
               setEditingId(null);
               setFormData({ name: "", email: "", password: "", society_id: filterSocietyId === "ALL" ? "" : filterSocietyId });
@@ -419,6 +420,7 @@ export default function Guard() {
           <GlobalButton
             variant="add"
             icon={MdAdd}
+            borderDraw
             onClick={() => {
               setEditingId(null);
               setFormData({ name: "", email: "", password: "", society_id: filterSocietyId === "ALL" ? "" : filterSocietyId });

@@ -14,6 +14,7 @@ import {
 } from "react-icons/md";
 import { toast } from "react-toastify";
 import Select from "../../components/common/Select";
+import GlobalButton from "../../components/common/GlobalButton";
 
 /* ─────────────────────────────────────────
    HELPERS
@@ -2675,7 +2676,12 @@ export default function Resident() {
           </div>
         </div>
 
-        <button
+        <GlobalButton
+          variant="add"
+          borderDraw
+          icon={showForm ? MdClose : MdPersonAdd}
+          className="w-full sm:w-auto justify-center shrink-0"
+          style={{ fontWeight: 700 }}
           onClick={() => {
             const next = !showForm;
             setShowForm(next);
@@ -2684,15 +2690,9 @@ export default function Resident() {
             setAssignModal(null);
             if (showForm) resetForm();
           }}
-          className="sa-add-btn sa-add-pill w-full sm:w-auto justify-center shrink-0"
-          style={{ fontWeight: 700 }}
         >
-          <span className="sa-pill-blob sa-pill-blob1" />
-          <span className="sa-pill-inner">
-            {showForm ? <MdClose size={18} /> : <MdPersonAdd size={18} />}
-            <span>{showForm ? t("cancel") : t("residentAddBtn")}</span>
-          </span>
-        </button>
+          {showForm ? t("cancel") : t("residentAddBtn")}
+        </GlobalButton>
       </div>
 
       {/* Add / Edit Resident Modal Popup */}

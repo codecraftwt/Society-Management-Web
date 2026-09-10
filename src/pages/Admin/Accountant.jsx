@@ -400,6 +400,7 @@ export default function Accountant() {
             <GlobalButton
               variant="add"
               icon={MdAdd}
+              borderDraw
               onClick={() => {
                 const sid = (filterSocietyId === "ALL" ? "" : filterSocietyId);
                 setFormData({ name: "", email: "", password: "", phone: "", society_id: sid });
@@ -424,6 +425,7 @@ export default function Accountant() {
             <GlobalButton
               variant="add"
               icon={MdAdd}
+              borderDraw
               onClick={() => {
                 setFormData({ name: "", email: "", password: "", phone: "", society_id: "" });
                 setShowCreateModal(true);

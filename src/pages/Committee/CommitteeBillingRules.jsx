@@ -61,7 +61,7 @@ export default function CommitteeBillingRules() {
           <h1 className="page-title">Billing Rules</h1>
           <p className="page-subtitle">Configure maintenance & recurring billing schedules</p>
         </div>
-        <GlobalButton variant="add" icon={MdAdd} onClick={() => setShowForm(true)}>
+        <GlobalButton variant="add" icon={MdAdd} borderDraw onClick={() => setShowForm(true)}>
           Add Rule
         </GlobalButton>
       </div>

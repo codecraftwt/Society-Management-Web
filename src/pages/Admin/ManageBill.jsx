@@ -563,6 +563,7 @@ export default function ManageBills() {
             <GlobalButton
               variant="primary"
               size="md"
+              borderDraw
               onClick={() => setShowCreate(p => !p)}
               fullWidth={false}
               style={{ flexShrink: 0 }}

@@ -10,6 +10,7 @@ import {
 import { toast } from "react-toastify";
 import maintenanceService from "../../services/maintenanceService";
 import Select from "../../components/common/Select";
+import GlobalButton from "../../components/common/GlobalButton";
 import "../Admin/Admin.css";
 
 /* ── helpers ── */
@@ -946,17 +947,16 @@ export default function MaintenancePage() {
           <p className="text-sm text-secondary">Configure rates, generate bills and track them.</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <button
+          <GlobalButton
+            variant="add"
+            icon={MdAdd}
+            borderDraw
             onClick={openAdd}
-            className="sa-add-btn sa-add-pill w-full sm:w-auto justify-center shrink-0"
+            className="w-full sm:w-auto justify-center shrink-0"
             style={{ fontWeight: 700 }}
           >
-            <span className="sa-pill-blob sa-pill-blob1" />
-            <span className="sa-pill-inner">
-              <MdAdd size={18} />
-              <span>New Configuration</span>
-            </span>
-          </button>
+            New Configuration
+          </GlobalButton>
         </div>
       </div>
 
@@ -995,17 +995,16 @@ export default function MaintenancePage() {
         <div className="flex flex-col gap-4">
           <div className="flex sm:items-center justify-between flex-col sm:flex-row gap-2">
             <p className="text-sm text-secondary">{configs.length} configuration(s) — {activeCount} active. Uses standard MaintenanceRates + bills.</p>
-            <button
+            <GlobalButton
+              variant="add"
+              icon={MdBuild}
+              borderDraw
               onClick={() => setShowGenerate(true)}
-              className="sa-add-btn sa-add-pill shrink-0"
+              className="shrink-0"
               style={{ fontWeight: 700 }}
             >
-              <span className="sa-pill-blob sa-pill-blob1" />
-              <span className="sa-pill-inner">
-                <MdBuild size={16} />
-                <span>Generate Bills</span>
-              </span>
-            </button>
+              Generate Bills
+            </GlobalButton>
           </div>
 
           {loading ? (

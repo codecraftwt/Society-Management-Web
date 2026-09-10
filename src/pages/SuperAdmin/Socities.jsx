@@ -163,6 +163,7 @@ export default function Societies() {
         <GlobalButton
           variant="add"
           icon={MdAdd}
+          borderDraw
           onClick={() => setShowAddForm(true)}
         >
           {t("saAddSocietyBtn")}
@@ -278,6 +279,7 @@ export default function Societies() {
             <GlobalButton
               variant="add"
               icon={MdAdd}
+              borderDraw
               onClick={() => setShowAddForm(true)}
               style={{ marginTop: 12 }}
             >

@@ -466,6 +466,7 @@ export default function Notice() {
             <GlobalButton
               variant="add"
               icon={MdAdd}
+              borderDraw
               onClick={() => {
                 setEditingId(null);
                 setForm({
@@ -555,6 +556,7 @@ export default function Notice() {
             <GlobalButton
               variant="add"
               icon={MdAdd}
+              borderDraw
               style={{ marginTop: 6 }}
               onClick={() => {
                 setEditingId(null);

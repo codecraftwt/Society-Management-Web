@@ -79,7 +79,7 @@ export default function CommitteeAmenities() {
           <h1 className="page-title">Amenities</h1>
           <p className="page-subtitle">Configure and manage society amenities</p>
         </div>
-        <GlobalButton variant="add" icon={MdAdd} onClick={() => setShowForm(true)}>
+        <GlobalButton variant="add" icon={MdAdd} borderDraw onClick={() => setShowForm(true)}>
           Add Amenity
         </GlobalButton>
       </div>

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
 
 /**
  * GlobalButton
@@ -27,6 +27,7 @@ export default function GlobalButton({
   iconOnly = false,
   className = "",
   style = {},
+  borderDraw = false,
   ...props
 }) {
   // Variant mapping
@@ -110,8 +111,30 @@ export default function GlobalButton({
   const currentIconSize = iconSizes[size] || iconSizes.md;
   const isIconOnly = iconOnly || (!children && Icon);
 
+  const btnRef = useRef(null);
+  const [box, setBox] = useState(null);
+
+  useEffect(() => {
+    if (!borderDraw) return;
+    const el = btnRef.current;
+    if (!el) return;
+    const update = () => {
+      const r = el.getBoundingClientRect();
+      if (r.width > 0 && r.height > 0) setBox({ w: r.width, h: r.height });
+    };
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [borderDraw]);
+
+  const perimeter = box && box.h > 0
+    ? 2 * (box.w - box.h) + Math.PI * box.h
+    : 0;
+
   return (
     <button
+      ref={btnRef}
       type={type}
       onClick={onClick}
       disabled={disabled || loading}
@@ -174,6 +197,33 @@ export default function GlobalButton({
           </span>
         ) : null}
       </span>
+
+      {borderDraw && box && perimeter > 0 ? (
+        <svg
+          className="global-btn-draw"
+          width={box.w}
+          height={box.h}
+          style={{
+            position: "absolute",
+            left: 0,
+            top: 0,
+            pointerEvents: "none",
+            overflow: "visible",
+            zIndex: 5,
+          }}
+        >
+          <rect
+            x="1"
+            y="1"
+            width={box.w - 2}
+            height={box.h - 2}
+            rx={box.h / 2 - 1}
+            fill="none"
+            strokeWidth="2"
+            style={{ "--sa-bd-p": String(perimeter) }}
+          />
+        </svg>
+      ) : null}
     </button>
   );
 }
