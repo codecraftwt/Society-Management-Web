@@ -12,7 +12,7 @@ export default function CommitteeGuards() {
 
   const load = async () => {
     try {
-      const res = await API.get("/user/guard");
+      const res = await API.get("/guards");
       setGuards(res.data || []);
     } catch (err) { console.error(err); }
     finally { setLoading(false); }
