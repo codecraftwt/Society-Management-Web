@@ -14710,6 +14710,32 @@ html:not(.light) :focus-visible {
   outline-offset: 1px;
 }
 
+/* ── Thin scrollbar for modals (Add/Edit Resident) ── */
+.modal-scroll-thin {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
+  scrollbar-gutter: stable;
+}
+.modal-scroll-thin::-webkit-scrollbar {
+  width: 6px;
+}
+.modal-scroll-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+.modal-scroll-thin::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+}
+.modal-scroll-thin::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+html.light .modal-scroll-thin {
+  scrollbar-color: rgba(15, 23, 42, 0.2) transparent;
+}
+html.light .modal-scroll-thin::-webkit-scrollbar-thumb {
+  background: rgba(15, 23, 42, 0.2);
+}
+
 /* ════════════════════════════════════════════════════════════════════
    SUPERAADMIN/SHARED — GENERAL CLASS REFINEMENTS (Blocks, Floors, Flats,
    Reports, createSocietyAdmin, AdminChangeModal)

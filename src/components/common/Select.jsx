@@ -223,7 +223,7 @@ export default function Select({
       >
         <span
           className="truncate"
-          style={{ color: selected ? "inherit" : "var(--text-secondary)" }}
+          style={{ color: selected ? "var(--text-primary)" : "var(--text-secondary)", fontWeight: selected ? 500 : 400 }}
         >
           {selected ? selected.label : placeholder}
         </span>
@@ -327,9 +327,12 @@ export default function Select({
                       background: isSel
                         ? "var(--accent-soft)"
                         : isHl
-                          ? "rgba(255,255,255,0.08)"
+                          ? "var(--row-hover, rgba(255,255,255,0.08))"
                           : "transparent",
-                      color: isSel ? "#B9CFF8" : "var(--text-secondary)",
+                      color: isSel ? "var(--accent)" : isHl ? "var(--text-primary)" : "var(--text-secondary)",
+                      fontWeight: isSel ? 600 : 400,
+                      borderLeft: isSel ? "3px solid var(--accent)" : "3px solid transparent",
+                      paddingLeft: isSel ? "11px" : "14px",
                       whiteSpace: "nowrap",
                       overflow: "hidden",
                       textOverflow: "ellipsis",

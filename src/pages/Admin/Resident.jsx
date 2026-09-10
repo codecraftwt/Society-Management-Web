@@ -2704,6 +2704,7 @@ export default function Resident() {
           <div
             onClick={(e) => e.stopPropagation()}
             style={{ width: "100%", maxWidth: 620, background: "var(--card-bg, #0f172a)", border: "1px solid var(--glass-border, rgba(255,255,255,0.12))", borderRadius: 20, maxHeight: "90vh", overflowY: "auto", backdropFilter: "blur(20px)", boxShadow: "0 24px 80px rgba(0,0,0,0.5), 0 0 20px rgba(37,99,235,0.15)", animation: "adminModalPopIn 0.28s cubic-bezier(0.16, 1, 0.3, 1)" }}
+            className="modal-scroll-thin"
           >
             {/* Header */}
             <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", padding: "20px 24px 0" }}>
