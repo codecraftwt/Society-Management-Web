@@ -73,34 +73,60 @@ function Pagination({ page, totalPages, onPageChange }) {
   );
 }
 
-/* ── Stat card ── */
-function StatCard({ value, label, variant }) {
+/* ── Document card ── */
+function DocCard({ doc, t, onDelete }) {
+  const Icon  = ICON_MAP[doc.category]  || MdDescription;
+  const color = COLOR_MAP[doc.category] || "blue";
+  const catLabel = cat => ({
+    All: t("docCatAll"), Legal: t("docCatLegal"), Meetings: t("docCatMeetings"),
+    Guidelines: t("docCatGuidelines"), Finance: t("docCatFinance"), Security: t("docCatSecurity"),
+  }[cat] || cat);
+  const formatDate = d => !d ? "—" : new Date(d).toLocaleDateString("en-US", { month: "short", year: "numeric" });
+  const fileUrl    = doc => doc.file_url?.startsWith("http") ? doc.file_url : `${BASE_URL}/${doc.file_url}`;
   return (
-    <div className={`ad-stat-card ad-stat-${variant}`}>
-      <p className="ad-stat-val">{value}</p>
-      <p className="ad-stat-label">{label}</p>
+    <div className="ad-mobile-card animate-fadeIn">
+      <div className="ad-mc-top">
+        <div className="ad-mc-left">
+          <div className={`ad-row-icon ad-icon-${color}`}><Icon size={16} /></div>
+          <div>
+            <p className="ad-doc-name" title={doc.title}>{doc.title}</p>
+            <p className="ad-doc-file" title={doc.file_name}>{doc.file_name}</p>
+          </div>
+        </div>
+        <span className={`ad-cat-badge ad-badge-${color}`}>{catLabel(doc.category)}</span>
+      </div>
+      <div className="ad-mc-meta">
+        <span className="ad-size-chip"><MdInsertDriveFile size={11} />{doc.file_size_formatted || "—"}</span>
+        <span className="ad-size-chip">{formatDate(doc.created_at)}</span>
+      </div>
+      <div className="ad-mc-actions">
+        <a href={fileUrl(doc)} target="_blank" rel="noopener noreferrer"
+          className="ad-btn ad-btn-view ad-btn-flex">
+          <MdVisibility size={14} /> {t("docView")}
+        </a>
+        <GlobalButton variant="delete" size="sm" icon={MdDelete} onClick={() => onDelete(doc)} />
+      </div>
     </div>
   );
 }
 
-/* ── Skeleton row ── */
-function SkeletonRow() {
+/* ── Skeleton card ── */
+function SkeletonCard() {
   return (
-    <tr className="ad-tbody-row">
-      <td className="ad-td">
-        <div className="ad-name-cell">
-          <div className="ad-skeleton ad-sk-icon" />
-          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-            <div className="ad-skeleton ad-sk-title" />
-            <div className="ad-skeleton ad-sk-sub" />
-          </div>
+    <div className="ad-mobile-card">
+      <div className="ad-mc-top" style={{ alignItems: "center" }}>
+        <div className="ad-skeleton ad-sk-icon" style={{ width: 40, height: 40, borderRadius: 10 }} />
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 6 }}>
+          <div className="ad-skeleton ad-sk-title" />
+          <div className="ad-skeleton ad-sk-sub" />
         </div>
-      </td>
-      <td className="ad-td ad-col-cat"><div className="ad-skeleton ad-sk-badge" /></td>
-      <td className="ad-td ad-col-meta"><div className="ad-skeleton ad-sk-meta" /></td>
-      <td className="ad-td ad-col-meta"><div className="ad-skeleton ad-sk-meta" /></td>
-      <td className="ad-td"><div className="ad-skeleton ad-sk-btn" /></td>
-    </tr>
+      </div>
+      <div style={{ display: "flex", gap: 8 }}>
+        <div className="ad-skeleton ad-sk-badge" />
+        <div className="ad-skeleton ad-sk-badge" />
+      </div>
+      <div className="ad-skeleton ad-sk-btn" style={{ width: "60%" }} />
+    </div>
   );
 }
 
@@ -175,9 +201,6 @@ export default function AdminDocument() {
     All: t("docCatAll"), Legal: t("docCatLegal"), Meetings: t("docCatMeetings"),
     Guidelines: t("docCatGuidelines"), Finance: t("docCatFinance"), Security: t("docCatSecurity"),
   }[cat] || cat);
-
-  const formatDate = d => !d ? "—" : new Date(d).toLocaleDateString("en-US", { month: "short", year: "numeric" });
-  const fileUrl    = doc => doc.file_url?.startsWith("http") ? doc.file_url : `${BASE_URL}/${doc.file_url}`;
 
   /* ────────────────────────────────────
      LOAD DOCUMENTS — backend paginated
@@ -324,14 +347,6 @@ const handleDelete = async () => {
         </div>
       </div>
 
-      {/* ── STATS ── */}
-      <div className="ad-stats-row">
-        <StatCard value={initialLoad ? "—" : counts.All}        label={t("docStatTotal")}   variant="indigo" />
-        <StatCard value={initialLoad ? "—" : counts.Legal}      label={t("docCatLegal")}    variant="purple" />
-        <StatCard value={initialLoad ? "—" : counts.Finance}    label={t("docCatFinance")}  variant="green"  />
-        <StatCard value={initialLoad ? "—" : counts.Meetings}   label={t("docCatMeetings")} variant="amber"  />
-      </div>
-
       {/* ── UPLOAD PANEL ── */}
       <div className={`ad-upload-panel${uploadOpen ? " ad-upload-panel--open" : ""}`}>
         <div className="bg-card ad-upload-card">
@@ -474,19 +489,8 @@ const handleDelete = async () => {
 
         {/* Loading skeletons */}
         {initialLoad && (
-          <div className="ad-table-wrap">
-            <table className="ad-table">
-              <thead>
-                <tr className="ad-t-row">
-                  <th className="ad-th">{t("adDocColDoc")}</th>
-                  <th className="ad-th ad-col-cat">{t("adDocFieldCategory")}</th>
-                  <th className="ad-th ad-col-meta">{t("adDocColSize")}</th>
-                  <th className="ad-th ad-col-meta">{t("adDocColDate")}</th>
-                  <th className="ad-th ad-th-actions">{t("billActionCol")}</th>
-                </tr>
-              </thead>
-              <tbody>{[...Array(5)].map((_, i) => <SkeletonRow key={i} />)}</tbody>
-            </table>
+          <div className="ad-card-grid">
+            {[...Array(4)].map((_, i) => <SkeletonCard key={i} />)}
           </div>
         )}
 
@@ -509,95 +513,13 @@ const handleDelete = async () => {
           </div>
         )}
 
-        {/* Table */}
+        {/* Document cards */}
         {!initialLoad && !error && docs.length > 0 && (
           <>
-            <div className="ad-table-wrap">
-              <table className="ad-table">
-                <thead>
-                  <tr className="ad-t-row">
-                    <th className="ad-th">{t("adDocColDoc")}</th>
-                    <th className="ad-th ad-col-cat">{t("adDocFieldCategory")}</th>
-                    <th className="ad-th ad-col-meta">{t("adDocColSize")}</th>
-                    <th className="ad-th ad-col-meta">{t("adDocColDate")}</th>
-                    <th className="ad-th ad-th-actions">{t("billActionCol")}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {docs.map((doc, i) => {
-                    const Icon  = ICON_MAP[doc.category]  || MdDescription;
-                    const color = COLOR_MAP[doc.category] || "blue";
-                    return (
-                      <tr key={doc.id} className="ad-tbody-row animate-fadeIn" style={{ animationDelay: `${i * 20}ms` }}>
-                        <td className="ad-td">
-                          <div className="ad-name-cell">
-                            <div className={`ad-row-icon ad-icon-${color}`}><Icon size={15} /></div>
-                            <div className="ad-name-text">
-                              <p className="ad-doc-name">{doc.title}</p>
-                              <p className="ad-doc-file">{doc.file_name}</p>
-                              <span className={`ad-cat-badge ad-badge-${color} ad-badge-inline`}>
-                                {catLabel(doc.category)}
-                              </span>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="ad-td ad-col-cat">
-                          <span className={`ad-cat-badge ad-badge-${color}`}>{catLabel(doc.category)}</span>
-                        </td>
-                        <td className="ad-td ad-td-meta ad-col-meta">{doc.file_size_formatted || "—"}</td>
-                        <td className="ad-td ad-td-meta ad-col-meta">{formatDate(doc.created_at)}</td>
-                        <td className="ad-td">
-                          <div className="ad-row-actions">
-                            <a href={fileUrl(doc)} target="_blank" rel="noopener noreferrer"
-                              className="ad-btn ad-btn-view">
-                              <MdVisibility size={14} />
-                              <span className="ad-btn-label">{t("docView")}</span>
-                            </a>
-                            <GlobalButton variant="delete" size="sm" onClick={() => setDeleteTarget(doc)}>
-                              <MdDelete size={14} />
-                            </GlobalButton>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Mobile cards */}
-            <div className="ad-mobile-list">
-              {docs.map((doc, i) => {
-                const Icon  = ICON_MAP[doc.category]  || MdDescription;
-                const color = COLOR_MAP[doc.category] || "blue";
-                return (
-                  <div key={doc.id} className="ad-mobile-card animate-fadeIn" style={{ animationDelay: `${i * 20}ms` }}>
-                    <div className="ad-mc-top">
-                      <div className="ad-mc-left">
-                        <div className={`ad-row-icon ad-icon-${color}`}><Icon size={16} /></div>
-                        <div>
-                          <p className="ad-doc-name">{doc.title}</p>
-                          <p className="ad-doc-file">{doc.file_name}</p>
-                        </div>
-                      </div>
-                      <span className={`ad-cat-badge ad-badge-${color}`}>{catLabel(doc.category)}</span>
-                    </div>
-                    <div className="ad-mc-meta">
-                      <span className="ad-size-chip"><MdInsertDriveFile size={11} />{doc.file_size_formatted || "—"}</span>
-                      <span className="ad-size-chip">{formatDate(doc.created_at)}</span>
-                    </div>
-                    <div className="ad-mc-actions">
-                      <a href={fileUrl(doc)} target="_blank" rel="noopener noreferrer"
-                        className="ad-btn ad-btn-view ad-btn-flex">
-                        <MdVisibility size={14} /> {t("docView")}
-                      </a>
-                      <button className="ad-btn ad-btn-delete" onClick={() => setDeleteTarget(doc)}>
-                        <MdDelete size={14} />
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
+            <div className="ad-card-grid">
+              {docs.map((doc) => (
+                <DocCard key={doc.id} doc={doc} t={t} onDelete={setDeleteTarget} />
+              ))}
             </div>
 
             {/* Footer: count + pagination */}

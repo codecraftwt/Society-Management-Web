@@ -276,13 +276,14 @@ export default function ResidentNotices() {
 
         {/* Search */}
         <div className="relative w-full sm:w-64">
-          <MdSearch size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-secondary pointer-events-none" />
+          <MdSearch size={18} style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: "var(--text-secondary)", pointerEvents: "none" }} />
           <input
             type="text"
             placeholder={t("noticesSearch") || "Search notices..."}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="input w-full pl-10 pr-4 h-10 text-xs rounded-xl"
+            className="input w-full text-xs rounded-xl"
+            style={{ height: 42, paddingLeft: 42, paddingRight: 14 }}
           />
         </div>
       </div>

@@ -403,7 +403,7 @@ export default function Accountant() {
               borderDraw
               onClick={() => {
                 const sid = (filterSocietyId === "ALL" ? "" : filterSocietyId);
-                setFormData({ name: "", email: "", password: "", phone: "", society_id: sid });
+                setFormData({ name: "", email: "", password: "Admin@123", phone: "", society_id: sid });
                 setShowCreateModal(true);
               }}
             >
@@ -427,7 +427,7 @@ export default function Accountant() {
               icon={MdAdd}
               borderDraw
               onClick={() => {
-                setFormData({ name: "", email: "", password: "", phone: "", society_id: "" });
+                setFormData({ name: "", email: "", password: "Admin@123", phone: "", society_id: "" });
                 setShowCreateModal(true);
               }}
             >
@@ -588,7 +588,7 @@ export default function Accountant() {
               onChange={(e) => setFormData({ ...formData, password: e.target.value })}
             />
             <p style={{ fontSize: 11, color: "var(--text-secondary)", marginTop: 4, opacity: 0.7 }}>
-              This password will be sent to the accountant for account activation.
+              Leave blank to use the default password: Admin@123
             </p>
           </div>
         </form>

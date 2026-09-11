@@ -336,22 +336,6 @@ export default function VisitorLog() {
         </div>
       </div>
 
-      {/* ── STATS CARDS ── */}
-      <div className="grid grid-cols-3 gap-3 sm:gap-4">
-        <div className="bg-card p-4 rounded-xl border border-white/5 space-y-1">
-          <p className="text-xs text-secondary font-medium">{t("vlTotalVisitors")}</p>
-          <p className="text-2xl sm:text-3xl font-bold text-white">{counts.ALL}</p>
-        </div>
-        <div className="bg-card p-4 rounded-xl border border-green-500/10 space-y-1 bg-green-500/5">
-          <p className="text-xs text-green-400 font-medium">{t("vlCurrentlyInside")}</p>
-          <p className="text-2xl sm:text-3xl font-bold text-green-400">{counts.IN}</p>
-        </div>
-        <div className="bg-card p-4 rounded-xl border border-white/5 space-y-1">
-          <p className="text-xs text-secondary font-medium">{t("vlExited")}</p>
-          <p className="text-2xl sm:text-3xl font-bold text-secondary">{counts.OUT}</p>
-        </div>
-      </div>
-
       {/* ── TOOLBAR / SEARCH & FILTERS ── */}
       <div className="bg-card p-4 rounded-xl border border-white/5 space-y-4">
         <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">

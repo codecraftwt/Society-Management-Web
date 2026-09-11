@@ -1,6 +1,8 @@
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useEffect, useState, useCallback, useMemo, useContext, useRef } from "react";
 import { createPortal } from "react-dom";
 import { useLang } from "../../context/LanguageContext";
+import API from "../../services/api";
+import { AuthContext } from "../../context/AuthContext";
 import {
   MdAdd, MdClose, MdDelete, MdRefresh,
   MdReceiptLong, MdTune, MdOutlineErrorOutline, MdCheckCircle, MdSchedule,
@@ -46,11 +48,11 @@ const Spinner = ({ size = 18 }) => (
 );
 
 const Label = ({ children }) => (
-  <label className="block text-xs font-bold text-secondary uppercase tracking-wider mb-1.5">{children}</label>
+  <label className="block text-[11px] font-bold text-secondary uppercase tracking-wider mb-1.5" style={{ color: "var(--text-secondary)" }}>{children}</label>
 );
 
 const inputCls =
-  "w-full px-3 py-2 rounded-lg border bg-transparent outline-none transition-colors focus:ring-2 text-sm";
+  "mc-field w-full px-3.5 rounded-[10px] border bg-transparent outline-none transition-all text-sm";
 
 const btnPrimary =
   "inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm";
@@ -130,17 +132,18 @@ function ConfigCard({ rate, deleting, onEdit, onDelete, last }) {
       <div className="flex items-center gap-2 shrink-0">
         <button
           onClick={() => onEdit(rate)}
-          className="px-2.5 py-1.5 rounded-lg text-xs font-bold border transition-colors"
-          style={{ borderColor: "var(--glass-border)" }}
+          className="sa-btn-edit inline-flex items-center gap-1 px-3 py-1.5 text-xs"
         >
           Edit
         </button>
         <button
           onClick={() => onDelete(rate)}
           disabled={deleting === rate.id}
-          className="px-2.5 py-1.5 rounded-lg text-xs font-bold text-red-400 border border-red-400/30 hover:bg-red-500/10 transition-colors inline-flex items-center gap-1"
+          title="Delete configuration"
+          aria-label="Delete configuration"
+          className="sa-btn-delete inline-flex items-center justify-center w-8 h-8 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none disabled:transform-none"
         >
-          {deleting === rate.id ? <Spinner size={12} /> : <MdDelete size={13} />} Delete
+          {deleting === rate.id ? <Spinner size={14} /> : <MdDelete size={15} />}
         </button>
       </div>
     </div>
@@ -150,7 +153,7 @@ function ConfigCard({ rate, deleting, onEdit, onDelete, last }) {
 /* ─────────────────────────────────────────
    CONFIG FORM (modal body)
 ───────────────────────────────────────── */
-function ConfigForm({ initial, onClose, onSaved }) {
+function ConfigForm({ initial, onClose, onSaved, isSuperAdmin = false, societies = [], societyId = "", onSocietyChange }) {
   const [type, setType] = useState(initial?.maintenance_type || "LUMPSUM");
   const [name, setName] = useState(initial?.name || "");
   const [amount, setAmount] = useState(initial?.amount ?? "");
@@ -164,6 +167,7 @@ function ConfigForm({ initial, onClose, onSaved }) {
   const [error, setError] = useState("");
   const [flatOptions, setFlatOptions] = useState([]);
   const [flatTypesLoading, setFlatTypesLoading] = useState(true);
+  const societyWrapRef = useRef(null);
 
   useEffect(() => {
     let mounted = true;
@@ -184,11 +188,15 @@ function ConfigForm({ initial, onClose, onSaved }) {
       }
     })();
     return () => { mounted = false; };
-  }, [initial]);
+  }, [initial, societyId]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+    if (isSuperAdmin && !societyId) {
+      setError("Select a society to continue");
+      return;
+    }
     const payload = {
       maintenance_type: type,
       name,
@@ -222,33 +230,95 @@ function ConfigForm({ initial, onClose, onSaved }) {
       {/* Type selector */}
       <div>
         <Label>Billing method</Label>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-          {MAINTENANCE_TYPES.map((mt) => (
-            <button
-              type="button"
-              key={mt.value}
-              onClick={() => setType(mt.value)}
-              className={`rounded-xl border p-3 text-left transition-colors ${type === mt.value ? "border-indigo-500 bg-indigo-500/10" : ""}`}
-              style={{ borderColor: type === mt.value ? undefined : "var(--glass-border)" }}
-            >
-              <p className="text-sm font-bold">{mt.label}</p>
-              <p className="text-[11px] text-secondary mt-0.5">{mt.desc}</p>
-            </button>
-          ))}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          {MAINTENANCE_TYPES.map((mt) => {
+            const active = type === mt.value;
+            return (
+              <button
+                type="button"
+                key={mt.value}
+                onClick={() => setType(mt.value)}
+                aria-pressed={active}
+                className="rounded-xl border p-3.5 text-left transition-all cursor-pointer"
+                onMouseEnter={(e) => {
+                  if (active) return;
+                  e.currentTarget.style.borderColor = "var(--accent-light)";
+                }}
+                onMouseLeave={(e) => {
+                  if (active) return;
+                  e.currentTarget.style.borderColor = "var(--input-border)";
+                }}
+                style={{
+                  borderColor: active ? "var(--accent)" : "var(--input-border)",
+                  background: active ? "var(--accent-soft)" : "var(--card-inner-bg)",
+                  boxShadow: active ? "0 0 0 2px var(--accent)" : "none",
+                  display: "flex",
+                  flexDirection: "column",
+                }}
+              >
+                <p className="text-sm font-bold" style={{ color: active ? "var(--accent)" : "var(--text-primary)" }}>{mt.label}</p>
+                <p className="text-[11px] mt-1" style={{ color: "var(--text-secondary)" }}>{mt.desc}</p>
+              </button>
+            );
+          })}
         </div>
       </div>
 
-      <div>
-        <Label>Name (optional)</Label>
-        <input className={inputCls} style={{ borderColor: "var(--glass-border)", color: "var(--text-primary)" }} value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Monthly Maintenance" />
-      </div>
-
-      {type === "LUMPSUM" && (
+      {/* Society + Name row */}
+      {isSuperAdmin ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-center">
+          <div>
+            <Label>SOCIETY</Label>
+            <div ref={societyWrapRef} style={{ display: "flex", alignItems: "center", background: "var(--input-bg)", border: `1px solid ${societyId ? "var(--accent)" : "var(--input-border)"}`, borderRadius: 10, overflow: "hidden", transition: "border-color 0.2s" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 44, height: 44, flexShrink: 0, borderRight: "1px solid var(--input-border)", background: "var(--card-inner-bg)" }}>
+                <MdBusiness size={17} style={{ color: "var(--accent)" }} />
+              </div>
+              <Select
+                value={societyId}
+                onChange={(e) => onSocietyChange?.(e.target.value)}
+                searchable
+                placeholder="Select society..."
+                rootStyle={{ flex: 1 }}
+                anchorRef={societyWrapRef}
+                style={{ height: 44, fontSize: 13, fontWeight: 600, flex: 1, border: "none", borderRadius: 0, background: "transparent", paddingLeft: 12 }}
+              >
+                <option value="">— Select Society —</option>
+                {societies.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+              </Select>
+            </div>
+          </div>
+          <div>
+            <Label>Name (optional)</Label>
+            <input className={inputCls} style={{ borderColor: "var(--input-border)", color: "var(--text-primary)", height: 44 }} value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Monthly Maintenance" />
+          </div>
+        </div>
+      ) : (
         <div>
-          <Label>Amount (₹) for every flat *</Label>
-          <input type="number" min="0" className={inputCls} style={{ borderColor: "var(--glass-border)", color: "var(--text-primary)" }} value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="e.g. 3000" required />
+          <Label>Name (optional)</Label>
+          <input className={inputCls} style={{ borderColor: "var(--input-border)", color: "var(--text-primary)", height: 44 }} value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Monthly Maintenance" />
         </div>
       )}
+
+      {/* Society status row */}
+      {isSuperAdmin && (societyId ? (
+        <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 10px", borderRadius: 8, background: "var(--accent-soft)" }}>
+          <MdCheckCircle size={13} style={{ color: "var(--accent)", flexShrink: 0 }} />
+          <span style={{ fontSize: 12, fontWeight: 600, color: "var(--accent)" }}>
+            Working on: {societies.find((s) => String(s.id) === String(societyId))?.name || ""}
+          </span>
+        </div>
+      ) : (
+        <p style={{ fontSize: 11, color: "var(--text-secondary)", marginTop: -6 }}>
+          Select a society to configure amounts, frequency and description below.
+        </p>
+      ))}
+
+      {isSuperAdmin && !societyId ? (
+        <p className="text-xs text-secondary" style={{ padding: "14px 0", border: "1px dashed var(--glass-border)", borderRadius: 10, textAlign: "center" }}>
+          Select a society to unlock the rest of the form.
+        </p>
+      ) : (
+      <>
 
       {type === "FLAT" && (
         <>
@@ -259,7 +329,6 @@ function ConfigForm({ initial, onClose, onSaved }) {
               <MdOutlineErrorOutline size={12} /> No flats exist in this society yet, so no flat type can be selected.
             </p>
           ) : (
-          <>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <Label>Flat type *</Label>
@@ -267,6 +336,7 @@ function ConfigForm({ initial, onClose, onSaved }) {
                 options={flatOptions.map((f) => ({ value: f, label: FLAT_LABELS[f] || f }))}
                 value={flatType || flatOptions[0]}
                 onChange={(e) => setFlatType(e.target.value)}
+                style={{ height: 44, fontSize: 13, fontWeight: 600, borderColor: "var(--input-border)", borderRadius: 10, background: "var(--input-bg)" }}
               />
             </div>
             <div>
@@ -275,56 +345,104 @@ function ConfigForm({ initial, onClose, onSaved }) {
                 options={RESIDENT_TYPES.map((r) => ({ value: r, label: r === "OWNER" ? "Owner" : "Tenant" }))}
                 value={residentType}
                 onChange={(e) => setResidentType(e.target.value)}
+                style={{ height: 44, fontSize: 13, fontWeight: 600, borderColor: "var(--input-border)", borderRadius: 10, background: "var(--input-bg)" }}
               />
             </div>
           </div>
-          <div>
-            <Label>Amount (₹) for {FLAT_LABELS[flatType || flatOptions[0]] || flatType || flatOptions[0]} *</Label>
-            <input type="number" min="0" className={inputCls} style={{ borderColor: "var(--glass-border)", color: "var(--text-primary)" }} value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="e.g. 3500" required />
-          </div>
-          </>
           )}
         </>
       )}
 
-      {type === "SQ_FEET" && (
-        <div>
-          <Label>Rate per sq.ft (₹) *</Label>
-          <input type="number" min="0" step="0.01" className={inputCls} style={{ borderColor: "var(--glass-border)", color: "var(--text-primary)" }} value={ratePerSqft} onChange={(e) => setRatePerSqft(e.target.value)} placeholder="e.g. 2.5" required />
-        </div>
-      )}
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div>
+      {/* Amount + Frequency + Active row */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
+        {type !== "FLAT" || (flatOptions.length > 0 && !flatTypesLoading) ? (
+          <div>
+            <Label>
+              {type === "LUMPSUM" && "Amount (₹) for every flat *"}
+              {type === "FLAT" && `Amount (₹) for ${FLAT_LABELS[flatType || flatOptions[0]] || flatType || flatOptions[0]} *`}
+              {type === "SQ_FEET" && "Rate per sq.ft (₹) *"}
+            </Label>
+            <input
+              type="number"
+              min="0"
+              {...(type === "SQ_FEET" ? { step: "0.01" } : {})}
+              className={inputCls}
+              style={{ borderColor: "var(--input-border)", color: "var(--text-primary)", height: 44 }}
+              value={type === "SQ_FEET" ? ratePerSqft : amount}
+              onChange={(e) => (type === "SQ_FEET" ? setRatePerSqft(e.target.value) : setAmount(e.target.value))}
+              placeholder={type === "SQ_FEET" ? "e.g. 2.5" : type === "FLAT" ? "e.g. 3500" : "e.g. 3000"}
+              required
+            />
+          </div>
+        ) : (
+          <div className="hidden sm:block" />
+        )}
+        <div className={type !== "FLAT" || (flatOptions.length > 0 && !flatTypesLoading) ? "" : "sm:col-span-2"}>
           <Label>Frequency</Label>
           <Select
             options={FREQUENCIES.map((f) => ({ value: f, label: f }))}
             value={frequency}
             onChange={(e) => setFrequency(e.target.value)}
+            style={{ height: 44, fontSize: 13, fontWeight: 600, borderColor: "var(--input-border)", borderRadius: 10, background: "var(--input-bg)" }}
           />
         </div>
-        <div className="flex items-end pb-1">
-          <label className="flex items-center gap-2 text-sm font-bold cursor-pointer">
-            <input type="checkbox" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} className="accent-emerald-500" />
-            Active
+        <div style={{ display: "flex", alignItems: "center", paddingBottom: 4 }}>
+          <label
+            className="flex items-center gap-2.5 cursor-pointer select-none"
+            role="switch"
+            aria-checked={isActive}
+          >
+            <button
+              type="button"
+              onClick={() => setIsActive(!isActive)}
+              role="switch"
+              aria-checked={!!isActive}
+              style={{
+                width: 40,
+                height: 22,
+                borderRadius: 999,
+                padding: 0,
+                border: "none",
+                cursor: "pointer",
+                position: "relative",
+                background: isActive ? "var(--accent)" : "var(--text-tertiary)",
+                transition: "background 0.2s ease",
+                flexShrink: 0,
+              }}
+            >
+              <span
+                style={{
+                  position: "absolute",
+                  top: 3,
+                  left: isActive ? 21 : 3,
+                  width: 16,
+                  height: 16,
+                  borderRadius: 999,
+                  background: "#fff",
+                  boxShadow: "0 1px 2px rgba(0,0,0,0.25)",
+                  transition: "left 0.2s ease",
+                }}
+              />
+            </button>
+            <span className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>Active</span>
           </label>
         </div>
       </div>
 
       <div>
         <Label>Description (optional)</Label>
-        <textarea rows={2} className={inputCls} style={{ borderColor: "var(--glass-border)", color: "var(--text-primary)" }} value={description} onChange={(e) => setDescription(e.target.value)} />
+        <textarea rows={2} className={inputCls} style={{ borderColor: "var(--input-border)", color: "var(--text-primary)", height: 96, resize: "vertical", minHeight: 60, paddingTop: 12 }} value={description} onChange={(e) => setDescription(e.target.value)} />
       </div>
 
-      {error && <p className="text-xs text-red-400">{error}</p>}
+      {error && <p className="text-xs" style={{ color: "var(--danger)" }}>{error}</p>}
 
-      <div className="flex justify-end gap-2 pt-2 border-t" style={{ borderColor: "var(--glass-border)" }}>
-        <button type="button" onClick={onClose} className={btnGhost} style={{ borderColor: "var(--glass-border)" }}>Cancel</button>
+      <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-4 border-t mt-1" style={{ borderColor: "var(--glass-border)" }}>
+        <button type="button" onClick={onClose} className={btnGhost} style={{ borderColor: "var(--glass-border)", height: 44, borderRadius: 10, padding: "0 20px", minWidth: 110, justifyContent: "center" }}>Cancel</button>
         <button
           type="submit"
           disabled={saving}
-          className="sa-add-btn sa-add-pill"
-          style={{ opacity: saving ? 0.6 : 1, cursor: saving ? "not-allowed" : "pointer" }}
+          className="sa-add-btn sa-add-pill sa-btn-primary"
+          style={{ opacity: saving ? 0.6 : 1, cursor: saving ? "not-allowed" : "pointer", height: 44 }}
         >
           <span className="sa-pill-blob sa-pill-blob1" />
           <span className="sa-pill-inner">
@@ -333,6 +451,8 @@ function ConfigForm({ initial, onClose, onSaved }) {
           </span>
         </button>
       </div>
+      </>
+      )}
     </form>
   );
 }
@@ -347,7 +467,8 @@ function GenerateModal({ configs, onClose, onGenerated }) {
     return d.toISOString().split("T")[0];
   };
 
-  const [billingMonth, setBillingMonth] = useState(currentMonthLabel());
+  const billingMonth = currentMonthLabel();
+  const [issueDate, setIssueDate] = useState(() => new Date().toISOString().split("T")[0]);
   const [dueDate, setDueDate] = useState(getDefaultDueDate());
   const [selected, setSelected] = useState(() =>
     configs.filter((c) => c.is_active).map((c) => c.id)
@@ -373,7 +494,8 @@ function GenerateModal({ configs, onClose, onGenerated }) {
         const res = await maintenanceService.previewMaintenanceBills({
           billing_month: billingMonth.trim(),
           rate_ids: selected,
-          due_date: dueDate,
+          issue_date: issueDate,
+          last_pay_date: dueDate,
         });
         if (active) setPreview(res);
       } catch (err) {
@@ -388,7 +510,7 @@ function GenerateModal({ configs, onClose, onGenerated }) {
       active = false;
       clearTimeout(timer);
     };
-  }, [billingMonth, selected, dueDate]);
+  }, [billingMonth, selected, dueDate, issueDate]);
 
   const handleGenerate = async () => {
     if (!billingMonth.trim()) return;
@@ -397,7 +519,8 @@ function GenerateModal({ configs, onClose, onGenerated }) {
       const res = await maintenanceService.generateMaintenanceBills({
         billing_month: billingMonth.trim(),
         rate_ids: selected,
-        due_date: dueDate,
+        issue_date: issueDate,
+        last_pay_date: dueDate,
       });
       const genCount = res?.summary?.generated || 0;
       toast.success(`Successfully generated ${genCount} maintenance bill(s)!`);
@@ -484,32 +607,31 @@ function GenerateModal({ configs, onClose, onGenerated }) {
         <div style={{ height: 1, background: "var(--glass-border, rgba(255,255,255,0.08))", margin: "16px 0 0" }} />
 
         <div style={{ padding: "20px 26px 26px", display: "flex", flexDirection: "column", gap: 18, overflowY: "auto" }}>
-          {/* Top Inputs: Billing Month & Due Date */}
+          {/* Top Inputs: Issue Date & Due Date */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <Label>Billing Month</Label>
+              <Label>Issue Date *</Label>
               <input
-                className={inputCls}
+                type="date"
+                className={`${inputCls} mc-date`}
                 style={{ borderColor: "var(--glass-border)", color: "var(--text-primary)" }}
-                value={billingMonth}
-                onChange={(e) => setBillingMonth(e.target.value)}
-                placeholder="e.g. September 2026"
+                value={issueDate}
+                onChange={(e) => setIssueDate(e.target.value)}
+                required
               />
-              <span className="text-[11px] text-secondary mt-1 block">Month name and year for the statement</span>
+              <span className="text-[11px] text-secondary mt-1 block">Bill issue date (defaults to today)</span>
             </div>
             <div>
               <Label>Due Date (Last Date to Pay) *</Label>
-              <div style={{ position: "relative" }}>
-                <input
-                  type="date"
-                  className={inputCls}
-                  style={{ borderColor: "var(--glass-border)", color: "var(--text-primary)", colorScheme: "dark" }}
-                  value={dueDate}
-                  min={new Date().toISOString().split("T")[0]}
-                  onChange={(e) => setDueDate(e.target.value)}
-                  required
-                />
-              </div>
+              <input
+                type="date"
+                className={`${inputCls} mc-date`}
+                style={{ borderColor: "var(--glass-border)", color: "var(--text-primary)" }}
+                value={dueDate}
+                min={issueDate || new Date().toISOString().split("T")[0]}
+                onChange={(e) => setDueDate(e.target.value)}
+                required
+              />
               <span className="text-[11px] text-emerald-400 mt-1 block">Residents can pay without late penalty until this date</span>
             </div>
           </div>
@@ -766,7 +888,7 @@ function GenerateModal({ configs, onClose, onGenerated }) {
             <button
               onClick={onClose}
               className="sa-btn sa-btn-ghost"
-              style={{ borderRadius: 12, padding: "9px 18px", fontSize: 13 }}
+              style={{ padding: "9px 18px", fontSize: 13 }}
             >
               Cancel
             </button>
@@ -774,7 +896,7 @@ function GenerateModal({ configs, onClose, onGenerated }) {
             <button
               onClick={handleGenerate}
               disabled={generating || !preview || preview.billable_count === 0}
-              className="sa-add-btn sa-add-pill"
+              className="sa-add-btn sa-add-pill sa-btn-primary"
               style={{
                 opacity: generating || !preview || preview.billable_count === 0 ? 0.55 : 1,
                 cursor: generating || !preview || preview.billable_count === 0 ? "not-allowed" : "pointer",
@@ -895,6 +1017,10 @@ function BillsTab({ billingMonth, setBillingMonth, onView }) {
 ───────────────────────────────────────── */
 export default function MaintenancePage() {
   const { t } = useLang();
+  const { user } = useContext(AuthContext);
+  const activeRole = user?.activeRole ?? user?.role;
+  const isSuperAdmin = activeRole === "SUPER_ADMIN";
+
   const [configs, setConfigs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState("config");
@@ -905,6 +1031,31 @@ export default function MaintenancePage() {
   const [billingMonth, setBillingMonth] = useState(currentMonthLabel());
   const [detailId, setDetailId] = useState(null);
 
+  /* ── SuperAdmin society gate ── */
+  const [societies, setSocieties] = useState([]);
+  const [societyId, setSocietyId] = useState(
+    () => localStorage.getItem("superadmin_society_filter") || ""
+  );
+
+  useEffect(() => {
+    if (!isSuperAdmin) return;
+    API.get("/societies")
+      .then((r) => setSocieties(r.data || []))
+      .catch(() => setSocieties([]));
+  }, [isSuperAdmin]);
+
+  const applySocietyFilter = (val) => {
+    setSocietyId(val);
+    localStorage.setItem("superadmin_society_filter", val);
+  };
+
+  const handleSocietyChange = (e) => {
+    const val = e.target.value;
+    applySocietyFilter(val);
+    setShowForm(false);
+    setShowGenerate(false);
+  };
+
   const load = useCallback(async () => {
     try {
       const data = await maintenanceService.getMaintenanceConfigs();
@@ -914,7 +1065,7 @@ export default function MaintenancePage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [isSuperAdmin, societyId]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -960,6 +1111,44 @@ export default function MaintenancePage() {
         </div>
       </div>
 
+      {/* SuperAdmin: must select a society first */}
+      {isSuperAdmin && (
+        <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap", background: "var(--card-inner-bg)", padding: "8px 14px", borderRadius: 14, border: "1px solid var(--glass-border)" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, flex: 1, minWidth: 220 }}>
+            <MdBusiness size={18} style={{ color: "var(--accent)" }} />
+            <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase", whiteSpace: "nowrap" }}>Select Society</span>
+            <Select
+              className="input"
+              value={societyId}
+              onChange={handleSocietyChange}
+              style={{ height: 38, fontSize: 13, fontWeight: 700, flex: 1, border: "1.5px solid var(--accent-alpha,rgba(107,70,193,0.25))" }}
+            >
+              <option value="">— Choose a Society —</option>
+              {societies.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+            </Select>
+          </div>
+          {!societyId ? (
+            <span style={{ fontSize: 12, color: "var(--stat-amber-color)", fontWeight: 700 }}>
+              💡 Select a society to manage its maintenance
+            </span>
+          ) : (
+            <span style={{ fontSize: 12, color: "var(--stat-green-color)", fontWeight: 700 }}>
+              ✓ Working on: {societies.find((s) => String(s.id) === String(societyId))?.name || ""}
+            </span>
+          )}
+        </div>
+      )}
+
+      {isSuperAdmin && !societyId && (
+        <div className="rounded-xl border p-8 flex flex-col items-center gap-3 text-center"
+          style={{ background: "var(--card-bg)", borderColor: "var(--glass-border)" }}>
+          <MdBusiness size={36} className="opacity-30" />
+          <p className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>Select a society to continue</p>
+          <p className="text-xs text-secondary">Maintenance configurations, bill generation and reports need a society context.</p>
+        </div>
+      )}
+
+      {!(isSuperAdmin && !societyId) && (<>
       {/* Compact stat strip */}
       <div className="flex flex-wrap items-center gap-2 text-xs" style={{ color: "var(--text-secondary)" }}>
         <span className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1 font-bold" style={{ background: "var(--card-bg)", borderColor: "var(--glass-border)", color: "var(--text-primary)" }}>
@@ -1044,52 +1233,58 @@ export default function MaintenancePage() {
             padding: "16px",
           }}
         >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              width: "100%",
-              maxWidth: 620,
-              background: "var(--card-bg, #0f172a)",
-              border: "1px solid var(--glass-border, rgba(255,255,255,0.12))",
-              borderRadius: 20,
-              maxHeight: "90vh",
-              overflowY: "auto",
-              backdropFilter: "blur(20px)",
-              boxShadow: "0 24px 80px rgba(0,0,0,0.5), 0 0 20px rgba(37,99,235,0.15)",
-              animation: "adminModalPopIn 0.28s cubic-bezier(0.16, 1, 0.3, 1)",
-            }}
-          >
+        <div
+          onClick={(e) => e.stopPropagation()}
+          style={{
+            width: "100%",
+            maxWidth: 740,
+            background: "var(--card-bg)",
+            border: "1px solid var(--glass-border)",
+            borderRadius: 16,
+            maxHeight: "90vh",
+            display: "flex",
+            flexDirection: "column",
+            boxShadow: "var(--shadow-glass, 0 18px 50px rgba(0,0,0,0.5))",
+            animation: "adminModalPopIn 0.28s cubic-bezier(0.16, 1, 0.3, 1)",
+          }}
+        >
             {/* Header */}
-            <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", padding: "20px 24px 0" }}>
+            <div className="px-5 sm:px-6 pt-5" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                <div style={{ width: 42, height: 42, borderRadius: 12, background: "linear-gradient(135deg, #7c3aed, #4f46e5)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 6px 18px rgba(124,58,237,0.35)", flexShrink: 0 }}>
-                  <MdTune size={22} color="#fff" />
+                <div style={{ width: 38, height: 38, borderRadius: 10, background: "var(--accent)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 12px rgba(37,99,235,0.25)", flexShrink: 0 }}>
+                  <MdTune size={20} color="#fff" />
                 </div>
                 <div>
-                  <h3 style={{ fontWeight: 800, fontSize: 17, color: "var(--text-primary)", margin: 0, letterSpacing: "-0.02em" }}>
+                  <h3 className="text-[15px] sm:text-base" style={{ fontWeight: 700, color: "var(--text-primary)", margin: 0, letterSpacing: "-0.01em" }}>
                     {editing?.id ? "Edit Configuration" : "New Maintenance Configuration"}
                   </h3>
-                  <p style={{ fontSize: 12, color: "#a78bfa", margin: "2px 0 0", fontWeight: 600 }}>
+                  <p className="text-[11px] sm:text-xs" style={{ color: "var(--text-secondary)", margin: "2px 0 0", fontWeight: 500 }}>
                     Configure maintenance rules, flat rates & billing frequency
                   </p>
                 </div>
               </div>
               <button
                 onClick={() => { setShowForm(false); setEditing(null); }}
-                style={{ width: 34, height: 34, borderRadius: 10, border: "1px solid var(--glass-border, rgba(255,255,255,0.12))", background: "var(--card-inner-bg, rgba(255,255,255,0.06))", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-secondary)" }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = "var(--accent-soft)"; e.currentTarget.style.color = "var(--accent)"; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = "var(--card-inner-bg)"; e.currentTarget.style.color = "var(--text-secondary)"; }}
+                style={{ width: 32, height: 32, borderRadius: 8, border: "1px solid var(--glass-border)", background: "var(--card-inner-bg)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-secondary)", transition: "all 0.15s ease", flexShrink: 0 }}
               >
-                <MdClose size={17} />
+                <MdClose size={16} />
               </button>
             </div>
 
-            <div style={{ height: 1, background: "var(--glass-border, rgba(255,255,255,0.08))", margin: "16px 0 0" }} />
+            <div style={{ height: 1, background: "var(--glass-border)", margin: "16px 0 0", flexShrink: 0 }} />
 
-            <div style={{ padding: "20px 24px 28px" }}>
+            <div className="sm:px-6 px-5 pt-5 pb-7" style={{ overflowY: "auto", flex: 1, minHeight: 0 }}>
               <ConfigForm
                 key={editing?.id || "new"}
                 initial={editing}
                 onClose={() => { setShowForm(false); setEditing(null); }}
                 onSaved={load}
+                isSuperAdmin={isSuperAdmin}
+                societies={societies}
+                societyId={societyId}
+                onSocietyChange={applySocietyFilter}
               />
             </div>
           </div>
@@ -1105,6 +1300,8 @@ export default function MaintenancePage() {
       {/* Detail modal */}
       {detailId && (
         <BillDetailModal id={detailId} onClose={() => setDetailId(null)} />
+      )}
+      </>
       )}
     </div>
   );

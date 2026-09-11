@@ -120,16 +120,22 @@ function FilterSheet({ show, onClose, isMobile, statusFilter, setStatusFilter, f
     </div>
   );
 
-  if (!isMobile) return (
-    <div className="data-table-wrap animate-fadeIn">
-      <div style={{ padding: "13px 18px", borderBottom: "1px solid var(--glass-border)", display: "flex", alignItems: "center", gap: 8 }}>
-        <MdFilterList size={15} style={{ color: "var(--accent,#6B46C1)" }} />
-        <span style={{ fontSize: 13, fontWeight: 700, color: "var(--text-primary)", flex: 1 }}>{labels.filtersTitle}</span>
-        {applied && <button onClick={onClear} style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, fontWeight: 700, color: "var(--accent,#6B46C1)", background: "none", border: "none", cursor: "pointer" }}><MdClose size={13} /> {labels.clearFilters}</button>}
+  if (!isMobile) {
+    if (!show) return null;
+    return (
+      <div style={{ position: "relative" }}>
+        <div className="animate-fadeIn" style={{ position: "absolute", right: 0, top: 8, zIndex: 40, minWidth: 400, maxWidth: "min(92vw, 460px)", background: "var(--card-inner-bg, rgba(11,19,41,0.95))", border: "1px solid var(--glass-border)", borderRadius: 16, boxShadow: "0 18px 50px rgba(0,0,0,0.45)", backdropFilter: "blur(10px)", overflow: "hidden" }}>
+          <div style={{ padding: "12px 16px", borderBottom: "1px solid var(--glass-border)", display: "flex", alignItems: "center", gap: 8 }}>
+            <MdFilterList size={15} style={{ color: "var(--accent,#6B46C1)" }} />
+            <span style={{ fontSize: 13, fontWeight: 700, color: "var(--text-primary)", flex: 1 }}>{labels.filtersTitle}</span>
+            {applied && <button onClick={onClear} style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, fontWeight: 700, color: "var(--accent,#6B46C1)", background: "none", border: "none", cursor: "pointer" }}><MdClose size={13} /> {labels.clearFilters}</button>}
+            <button onClick={onClose} style={{ width: 26, height: 26, borderRadius: 8, background: "var(--card-bg,rgba(255,255,255,0.06))", border: "1px solid var(--glass-border)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "var(--text-secondary)" }}><MdClose size={14} /></button>
+          </div>
+          {formBody}
+        </div>
       </div>
-      {formBody}
-    </div>
-  );
+    );
+  }
 
   if (!show) return null;
   return createPortal(
@@ -273,24 +279,9 @@ export default function VisitorReport() {
         <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
           <button onClick={handleExcelExport} className="btn-export" style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 13px", fontSize: 12, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}><MdTableChart size={14} /> {t("rptExcel")}</button>
           <button onClick={handlePDFExport} className="btn-export" style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 13px", fontSize: 12, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}><MdPictureAsPdf size={14} /> {t("rptPDF")}</button>
-          {isMobile && <button onClick={() => setShowFilters(true)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 13px", borderRadius: 10, fontSize: 12, fontWeight: 700, background: applied ? "rgba(107,70,193,0.15)" : "var(--card-inner-bg,rgba(255,255,255,0.06))", color: applied ? "#9F87D7" : "var(--text-secondary)", border: applied ? "1px solid rgba(107,70,193,0.35)" : "1px solid var(--glass-border)", cursor: "pointer", position: "relative", whiteSpace: "nowrap" }}><MdFilterList size={14} /> {t("rptFilters")}{applied && <span style={{ position: "absolute", top: -3, right: -3, width: 8, height: 8, borderRadius: "50%", background: "#6B46C1", boxShadow: "0 0 6px rgba(107,70,193,0.6)" }} />}</button>}
+          {<button onClick={() => setShowFilters(true)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 13px", borderRadius: 10, fontSize: 12, fontWeight: 700, background: applied ? "rgba(107,70,193,0.15)" : "var(--card-inner-bg,rgba(255,255,255,0.06))", color: applied ? "#9F87D7" : "var(--text-secondary)", border: applied ? "1px solid rgba(107,70,193,0.35)" : "1px solid var(--glass-border)", cursor: "pointer", position: "relative", whiteSpace: "nowrap" }}><MdFilterList size={14} /> {t("rptFilters")}{applied && <span style={{ position: "absolute", top: -3, right: -3, width: 8, height: 8, borderRadius: "50%", background: "#6B46C1", boxShadow: "0 0 6px rgba(107,70,193,0.6)" }} />}</button>}
         </div>
       </div>
-
-      {/* ── STATS ── */}
-      {!loading && counts.total > 0 && (
-        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr 1fr" : "repeat(3,1fr)", gap: 10 }}>
-          {[
-            { label: t("rptTotalVisitors"), val: counts.total, color: "purple" },
-            { label: t("rptInside"), val: counts.inside, color: "green" },
-            { label: t("rptExited"), val: counts.exited, color: "amber" },
-          ].map((s, i) => (
-            <div key={i} className={`stat-card stat-card--${s.color}`} style={{ borderRadius: isMobile ? 14 : 18, padding: isMobile ? "12px 14px" : "16px 18px" }}>
-              <div><div className="stat-card__val">{s.val}</div><div className="stat-card__label">{s.label}</div></div>
-            </div>
-          ))}
-        </div>
-      )}
 
       <FilterSheet show={showFilters} onClose={() => setShowFilters(false)} isMobile={isMobile}
         statusFilter={pendingStatus} setStatusFilter={setPendingStatus}

@@ -863,7 +863,7 @@
                   <button type="button" onClick={() => setShowFilterPanel((p) => !p)}
                     className="flex items-center gap-1.5 h-9 px-3 rounded-xl text-xs font-semibold border shrink-0"
                     style={showFilterPanel || hasFilters
-                      ? { background: "rgba(91,141,239,0.15)", color: "#94B5F5", borderColor: "rgba(91,141,239,0.35)" }
+                      ? { background: "var(--accent-soft)", color: "var(--accent)", borderColor: "var(--accent)" }
                       : { background: "var(--bg-soft,rgba(0,0,0,0.04))", color: "var(--text-secondary)", borderColor: "var(--border-color)", border: "1px solid var(--border-color)" }
                     }>
                     <MdFilterList size={15} />
@@ -888,14 +888,14 @@
                               className="flex items-center gap-1.5 h-7 px-3 rounded-full text-xs font-semibold border"
                               style={statusFilter === s
                                 ? s === "PAYMENT_PENDING"
-                                  ? { background: "rgba(107,70,193,0.15)", color: "#9F87D7", borderColor: "rgba(107,70,193,0.35)" }
+                                  ? { background: "var(--stat-purple-bg)", color: "var(--stat-purple-color)", borderColor: "var(--stat-purple-border)" }
                                   : s === "ALL"
-                                  ? { background: "rgba(91,141,239,0.15)", color: "#94B5F5", borderColor: "rgba(91,141,239,0.35)" }
+                                  ? { background: "var(--stat-blue-bg)", color: "var(--stat-blue-color)", borderColor: "var(--stat-blue-border)" }
                                   : s === "APPROVED"
-                                  ? { background: "rgba(34,197,94,0.15)", color: "#4ade80", borderColor: "rgba(34,197,94,0.35)" }
+                                  ? { background: "var(--stat-green-bg)", color: "var(--stat-green-color)", borderColor: "var(--stat-green-border)" }
                                   : s === "PENDING"
-                                  ? { background: "rgba(234,179,8,0.15)", color: "#60A5FA", borderColor: "rgba(234,179,8,0.35)" }
-                                  : { background: "rgba(239,68,68,0.15)", color: "#f87171", borderColor: "rgba(239,68,68,0.35)" }
+                                  ? { background: "var(--stat-amber-bg)", color: "var(--stat-amber-color)", borderColor: "var(--stat-amber-border)" }
+                                  : { background: "var(--stat-red-bg)", color: "var(--stat-red-color)", borderColor: "var(--stat-red-border)" }
                                 : { background: "var(--bg-soft,rgba(0,0,0,0.04))", color: "var(--text-secondary)", borderColor: "var(--border-color)" }
                               }>
                               {s !== "ALL" && (
@@ -916,7 +916,7 @@
                               <button key={name} type="button" onClick={() => setAmenityFilter(name)}
                                 className="flex items-center gap-1 h-7 px-3 rounded-full text-xs font-semibold border"
                                 style={amenityFilter === name
-                                  ? { background: "rgba(91,141,239,0.15)", color: "#94B5F5", borderColor: "rgba(91,141,239,0.35)" }
+                                  ? { background: "var(--stat-blue-bg)", color: "var(--stat-blue-color)", borderColor: "var(--stat-blue-border)" }
                                   : { background: "var(--bg-soft,rgba(0,0,0,0.04))", color: "var(--text-secondary)", borderColor: "var(--border-color)" }
                                 }>
                                 {name !== "ALL" && <span style={{ fontSize: 12 }}>{amenityIcon(name)}</span>}
@@ -932,7 +932,7 @@
                           Clear all
                         </button>
                         <button type="button" onClick={() => setShowFilterPanel(false)}
-                          style={{ background: "none", border: "none", cursor: "pointer", fontSize: 12, color: "#94B5F5", fontWeight: 600 }}>
+                          style={{ background: "none", border: "none", cursor: "pointer", fontSize: 12, color: "var(--accent)", fontWeight: 600 }}>
                           Done
                         </button>
                       </div>
@@ -960,7 +960,7 @@
                 <span className="ra-empty-icon">🔍</span>
                 <p>No bookings match your filters</p>
                 <button type="button" onClick={clearAllFilters}
-                  style={{ color: "#94B5F5", background: "none", border: "none", cursor: "pointer", fontSize: 12, marginTop: 6 }}>
+                  style={{ color: "var(--accent)", background: "none", border: "none", cursor: "pointer", fontSize: 12, marginTop: 6 }}>
                   Clear filters
                 </button>
               </div>
@@ -979,8 +979,8 @@
                     animationDelay: `${idx * 50}ms`,
                     cursor: isPaymentPending ? "default" : "pointer",
                     ...(isPaymentPending ? {
-                      border: "1px solid rgba(107,70,193,0.3)",
-                      background: "rgba(107,70,193,0.04)",
+                      border: "1px solid var(--stat-purple-border)",
+                      background: "var(--stat-purple-bg)",
                     } : {}),
                   }}>
                   <div className="ra-booking-left">
@@ -1000,8 +1000,8 @@
                       <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6 }}>
                         <span style={{
                           fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 999,
-                          background: "rgba(107,70,193,0.12)", color: "#9F87D7",
-                          border: "1px solid rgba(107,70,193,0.28)",
+                          background: "var(--stat-purple-bg)", color: "var(--stat-purple-color)",
+                          border: "1px solid var(--stat-purple-border)",
                         }}>
                           Awaiting Payment
                         </span>
@@ -1013,8 +1013,8 @@
                             style={{
                               display: "flex", alignItems: "center", gap: 5,
                               padding: "6px 12px", borderRadius: 10, fontSize: 12, fontWeight: 700,
-                              background: "rgba(107,70,193,0.12)", color: "#9F87D7",
-                              border: "1.5px solid rgba(107,70,193,0.35)",
+                              background: "var(--stat-purple-bg)", color: "var(--stat-purple-color)",
+                              border: "1.5px solid var(--stat-purple-border)",
                               cursor: repayingId === b.id ? "not-allowed" : "pointer",
                               opacity: repayingId === b.id ? 0.6 : 1,
                             }}>

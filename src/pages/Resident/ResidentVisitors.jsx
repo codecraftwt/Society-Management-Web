@@ -279,10 +279,11 @@ export default function ResidentVisitors() {
 
         {/* Mobile search — stable key so React never remounts this input */}
         <div className="relative w-full max-w-sm">
-          <MdSearch size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-secondary pointer-events-none" />
+          <MdSearch size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-secondary pointer-events-none" />
           <input
             key="visitor-search-mobile"
-            className="input h-9 pl-8 text-xs w-full"
+            className="input h-9 pl-9 text-xs w-full"
+            style={{ paddingRight: search || fetching ? 34 : 12 }}
             placeholder={t("visSearch")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -350,10 +351,11 @@ export default function ResidentVisitors() {
 
             {/* Desktop search — stable key so React never remounts this input */}
             <div className="relative w-56">
-              <MdSearch size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-secondary pointer-events-none" />
+              <MdSearch size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-secondary pointer-events-none" />
               <input
                 key="visitor-search-desktop"
-                className="input h-9 pl-8 text-xs w-full"
+                className="input h-9 pl-9 text-xs w-full"
+                style={{ paddingRight: search || fetching ? 34 : 12 }}
                 placeholder={t("visSearchShort")}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
@@ -440,11 +442,11 @@ export default function ResidentVisitors() {
                           { icon: MdPhone,         label: t("vrMobile"),  val: v.mobile               },
                           { icon: MdDirectionsCar, label: t("rvVehicle"), val: v.vehicle_number || "—" },
                         ].map(({ icon: Icon, label, val }) => (
-                          <div key={label} className="bg-white/5 rounded-xl px-3 py-2.5 flex items-center gap-2">
+                          <div key={label} className="bg-white/5 rounded-xl px-3 py-2.5 flex items-center gap-2 min-w-0">
                             <Icon size={14} className="text-accent shrink-0" />
-                            <div>
+                            <div className="min-w-0">
                               <p className="text-[10px] text-secondary uppercase tracking-wide">{label}</p>
-                              <p className="text-xs font-medium mt-0.5">{val}</p>
+                              <p className="text-xs font-medium mt-0.5 break-words">{val}</p>
                             </div>
                           </div>
                         ))}
@@ -538,45 +540,44 @@ export default function ResidentVisitors() {
                         <tr>
                           <td colSpan={5} className="px-4 pb-4 pt-1">
                             <div className="rounded-xl bg-white/3 border border-white/8 p-4 animate-scaleIn">
-                              <div className="grid grid-cols-4 gap-4">
-
-                                <div className="flex items-start gap-2.5">
+                              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+                                <div className="flex items-start gap-2.5 min-w-0">
                                   <div className="w-7 h-7 rounded-lg bg-blue-500/15 flex items-center justify-center shrink-0 mt-0.5">
                                     <MdPhone size={14} className="text-blue-400" />
                                   </div>
-                                  <div>
+                                  <div className="min-w-0">
                                     <p className="text-[10px] text-secondary uppercase tracking-wider">{t("vrMobile")}</p>
-                                    <p className="text-xs font-medium mt-0.5">{v.mobile}</p>
+                                    <p className="text-xs font-medium mt-0.5 break-words">{v.mobile}</p>
                                   </div>
                                 </div>
 
-                                <div className="flex items-start gap-2.5">
+                                <div className="flex items-start gap-2.5 min-w-0">
                                   <div className="w-7 h-7 rounded-lg bg-white/8 flex items-center justify-center shrink-0 mt-0.5">
                                     <MdDirectionsCar size={14} className="text-secondary" />
                                   </div>
-                                  <div>
+                                  <div className="min-w-0">
                                     <p className="text-[10px] text-secondary uppercase tracking-wider">{t("rvVehicle")}</p>
-                                    <p className="text-xs font-medium mt-0.5">{v.vehicle_number || "—"}</p>
+                                    <p className="text-xs font-medium mt-0.5 break-words">{v.vehicle_number || "—"}</p>
                                   </div>
                                 </div>
 
-                                <div className="flex items-start gap-2.5">
+                                <div className="flex items-start gap-2.5 min-w-0">
                                   <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5 ${v.exit_time ? "bg-red-500/15" : "bg-white/5"}`}>
                                     <MdLogout size={14} className={v.exit_time ? "text-red-400" : "text-white/25"} />
                                   </div>
-                                  <div>
+                                  <div className="min-w-0">
                                     <p className="text-[10px] text-secondary uppercase tracking-wider">{t("visExitTime")}</p>
-                                    <p className={`text-xs font-medium mt-0.5 ${!v.exit_time ? "text-white/30" : ""}`}>
+                                    <p className={`text-xs font-medium mt-0.5 break-words ${!v.exit_time ? "text-white/30" : ""}`}>
                                       {v.exit_time ? formatDate(v.exit_time) : t("visStillInside")}
                                     </p>
                                   </div>
                                 </div>
 
-                                <div className="flex items-start gap-2.5">
+                                <div className="flex items-start gap-2.5 min-w-0">
                                   <div className="w-7 h-7 rounded-lg bg-yellow-500/15 flex items-center justify-center shrink-0 mt-0.5">
                                     <MdAccessTime size={14} className="text-yellow-400" />
                                   </div>
-                                  <div>
+                                  <div className="min-w-0">
                                     <p className="text-[10px] text-secondary uppercase tracking-wider">{t("visDuration")}</p>
                                     <p className="text-xs font-medium mt-0.5 text-yellow-400">
                                       {v.exit_time

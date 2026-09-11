@@ -206,6 +206,8 @@ export default function AdminAmenity() {
   const [showForm, setShowForm] = useState(false);
   const [activeTab, setActiveTab] = useState("AMENITIES");
   const [searchAmenity, setSearchAmenity] = useState("");
+  const [amenityStatusFilter, setAmenityStatusFilter] = useState("ALL");
+  const [amenityPricingFilter, setAmenityPricingFilter] = useState("ALL");
   const [searchBooking, setSearchBooking] = useState("");
   const [bookingFilter, setBookingFilter] = useState("ALL");
   const [togglingId, setTogglingId] = useState(null);
@@ -308,8 +310,12 @@ export default function AdminAmenity() {
   };
 
   const filteredAmenities = useMemo(() =>
-    amenities.filter(a => a.name.toLowerCase().includes(searchAmenity.toLowerCase())),
-    [amenities, searchAmenity]
+    amenities.filter(a =>
+      a.name.toLowerCase().includes(searchAmenity.toLowerCase()) &&
+      (amenityStatusFilter === "ALL" || (amenityStatusFilter === "ACTIVE" ? !!a.is_active : !a.is_active)) &&
+      (amenityPricingFilter === "ALL" || a.type === amenityPricingFilter)
+    ),
+    [amenities, searchAmenity, amenityStatusFilter, amenityPricingFilter]
   );
 
   const filteredBookings = useMemo(() =>
@@ -324,11 +330,6 @@ export default function AdminAmenity() {
     [groupedBookings, searchBooking, bookingFilter]
   );
 
-  const aStats = {
-    total: amenities.length,
-    active: amenities.filter(a => a.is_active).length,
-    paid: amenities.filter(a => a.type === "PAID").length,
-  };
   const bStats = {
     total: groupedBookings.length,
     paymentPending: groupedBookings.filter(b => b.status === "PAYMENT_PENDING").length,
@@ -343,7 +344,7 @@ export default function AdminAmenity() {
   );
 
   const TABS = [
-    { key: "AMENITIES", label: t("amenTabAmenities"), Icon: MdGridView, count: aStats.total, alert: 0 },
+    { key: "AMENITIES", label: t("amenTabAmenities"), Icon: MdGridView, count: amenities.length, alert: 0 },
     { key: "BOOKINGS", label: t("amenTabBookings"), Icon: MdCalendarMonth, count: bStats.total, alert: bStats.pending },
   ];
 
@@ -389,7 +390,7 @@ export default function AdminAmenity() {
           <p style={{ fontSize: 12, color: "var(--text-secondary)", marginTop: 3 }}>{t("amenSubtitle")}</p>
         </div>
         {activeTab === "AMENITIES" && (
-          <button onClick={() => setShowForm(p => !p)} className="sa-add-btn sa-add-pill" style={{ flexShrink: 0 }}>
+          <button onClick={() => setShowForm(p => !p)} className="sa-add-btn sa-add-pill sa-btn-primary" style={{ flexShrink: 0 }}>
             <span className="sa-pill-blob sa-pill-blob1" />
             <span className="sa-pill-inner">
               {showForm ? <MdClose size={15} /> : <MdAdd size={15} />}
@@ -420,20 +421,6 @@ export default function AdminAmenity() {
       {/* ════════════ AMENITIES ════════════ */}
       {activeTab === "AMENITIES" && (
         <>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: isMobile ? 8 : 14 }}>
-            {[
-              { label: t("amenStatTotal"), val: aStats.total, icon: "🏛️", bg: "var(--stat-purple-bg)", border: "var(--stat-purple-border)", color: "var(--stat-purple-color)", iconBg: "rgba(107,70,193,0.15)" },
-              { label: t("amenStatActive"), val: aStats.active, icon: "✅", bg: "var(--stat-green-bg)", border: "var(--stat-green-border)", color: "var(--stat-green-color)", iconBg: "rgba(34,197,94,0.15)" },
-              { label: t("amenStatPaid"), val: aStats.paid, icon: "💳", bg: "var(--stat-amber-bg)", border: "var(--stat-amber-border)", color: "var(--stat-amber-color)", iconBg: "rgba(37,99,235,0.15)" },
-            ].map((s, i) => (
-              <div key={i} style={{ background: s.bg, border: `1px solid ${s.border}`, borderRadius: isMobile ? 14 : 18, padding: isMobile ? "14px 12px" : "18px 20px" }}>
-                <div style={{ fontSize: isMobile ? 22 : 20, marginBottom: isMobile ? 4 : 0 }}>{s.icon}</div>
-                <div style={{ fontSize: isMobile ? 26 : 32, fontWeight: 800, color: s.color, letterSpacing: "-0.04em", lineHeight: 1 }}>{s.val}</div>
-                <div style={{ fontSize: isMobile ? 10 : 12, fontWeight: 600, color: s.color, opacity: 0.7, marginTop: isMobile ? 4 : 5 }}>{s.label}</div>
-              </div>
-            ))}
-          </div>
-
           {showForm && (
             <div className="animate-scaleIn" style={{ background: "var(--card-bg)", border: "1.5px solid var(--glass-border)", borderRadius: 20, padding: isMobile ? "18px 16px" : "24px 28px" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
@@ -472,10 +459,22 @@ export default function AdminAmenity() {
             </div>
           )}
 
-          <div style={{ position: "relative", width: "100%" }}>
-            <MdSearch size={15} style={{ position: "absolute", left: 13, top: "50%", transform: "translateY(-50%)", color: "var(--text-secondary)", pointerEvents: "none" }} />
-            <input style={{ ...inputStyle, paddingLeft: 38, paddingRight: searchAmenity ? 34 : 14 }} placeholder={t("amenSearchPlaceholder")} value={searchAmenity} onChange={e => setSearchAmenity(e.target.value)} />
-            {searchAmenity && <button onClick={() => setSearchAmenity("")} style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "var(--text-secondary)" }}><MdClose size={14} /></button>}
+          <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", gap: 12, alignItems: "stretch" }}>
+            <div style={{ position: "relative", flex: 1, minWidth: 0 }}>
+              <MdSearch size={15} style={{ position: "absolute", left: 13, top: "50%", transform: "translateY(-50%)", color: "var(--text-secondary)", pointerEvents: "none" }} />
+              <input style={{ ...inputStyle, paddingLeft: 38, paddingRight: searchAmenity ? 34 : 14 }} placeholder={t("amenSearchPlaceholder")} value={searchAmenity} onChange={e => setSearchAmenity(e.target.value)} />
+              {searchAmenity && <button onClick={() => setSearchAmenity("")} style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "var(--text-secondary)" }}><MdClose size={14} /></button>}
+            </div>
+            <select style={{ ...inputStyle, flex: isMobile ? "1" : "0 0 auto", width: isMobile ? "100%" : "auto", cursor: "pointer" }} value={amenityStatusFilter} onChange={e => setAmenityStatusFilter(e.target.value)}>
+              <option value="ALL">{t("amenFilterStatusAll")}</option>
+              <option value="ACTIVE">{t("amenFilterStatusActive")}</option>
+              <option value="DISABLED">{t("amenFilterStatusDisabled")}</option>
+            </select>
+            <select style={{ ...inputStyle, flex: isMobile ? "1" : "0 0 auto", width: isMobile ? "100%" : "auto", cursor: "pointer" }} value={amenityPricingFilter} onChange={e => setAmenityPricingFilter(e.target.value)}>
+              <option value="ALL">{t("amenFilterPricingAll")}</option>
+              <option value="FREE">{t("amenFreeAccess")}</option>
+              <option value="PAID">{t("amenPaid")}</option>
+            </select>
           </div>
 
           {filteredAmenities.length === 0 ? (
@@ -556,23 +555,6 @@ export default function AdminAmenity() {
       {/* ════════════ BOOKINGS ════════════ */}
       {activeTab === "BOOKINGS" && (
         <>
-          {/* Stat cards */}
-          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(5,1fr)", gap: isMobile ? 8 : 12 }}>
-            {[
-              { label: "Total", val: bStats.total, icon: "📋", bg: "var(--stat-purple-bg)", border: "var(--stat-purple-border)", color: "var(--stat-purple-color)" },
-              { label: "Awaiting Payment", val: bStats.paymentPending, icon: "💳", bg: "rgba(107,70,193,0.1)", border: "rgba(107,70,193,0.25)", color: "#9F87D7" },
-              { label: "Needs Approval", val: bStats.pending, icon: "⏳", bg: "var(--stat-amber-bg)", border: "var(--stat-amber-border)", color: "var(--stat-amber-color)" },
-              { label: "Approved", val: bStats.approved, icon: "✅", bg: "var(--stat-green-bg)", border: "var(--stat-green-border)", color: "var(--stat-green-color)" },
-              { label: "Rejected", val: bStats.rejected, icon: "❌", bg: "var(--stat-red-bg)", border: "var(--stat-red-border)", color: "var(--stat-red-color)" },
-            ].map((s, i) => (
-              <div key={i} style={{ background: s.bg, border: `1px solid ${s.border}`, borderRadius: 16, padding: isMobile ? "12px" : "16px 18px" }}>
-                <div style={{ fontSize: isMobile ? 17 : 20, marginBottom: 5 }}>{s.icon}</div>
-                <div style={{ fontSize: isMobile ? 24 : 28, fontWeight: 800, color: s.color, letterSpacing: "-0.04em", lineHeight: 1 }}>{s.val}</div>
-                <div style={{ fontSize: 11, fontWeight: 600, color: s.color, opacity: 0.65, marginTop: 5 }}>{s.label}</div>
-              </div>
-            ))}
-          </div>
-
           {/* Search */}
           <div style={{ position: "relative", width: "100%" }}>
             <MdSearch size={15} style={{ position: "absolute", left: 13, top: "50%", transform: "translateY(-50%)", color: "var(--text-secondary)", pointerEvents: "none" }} />

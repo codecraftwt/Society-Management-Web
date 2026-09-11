@@ -613,6 +613,18 @@
 
 .unreadShake { animation: shake 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) both; }
 
+/* Card grid (all viewports) */
+.cardGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 14px;
+  padding: 16px;
+  align-items: stretch;
+}
+@media (max-width: 640px) {
+  .cardGrid { grid-template-columns: 1fr; padding: 14px; }
+}
+
 /* Footer */
 .footer {
   display: flex;

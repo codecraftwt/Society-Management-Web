@@ -660,6 +660,10 @@ const hi = {
   amenRequiresApprovalSub: "एडमिन को बुकिंग अनुमोदित करनी होगी",
   amenCreateBtn:           "सुविधा बनाएं",
   amenSearchPlaceholder:   "सुविधाएं खोजें…",
+  amenFilterStatusAll:     "सभी स्थितियाँ",
+  amenFilterStatusActive:  "सक्रिय",
+  amenFilterStatusDisabled:"अक्षम",
+  amenFilterPricingAll:    "सभी मूल्य निर्धारण",
   amenEmpty:               "कोई सुविधा नहीं मिली।",
   amenLive:                "लाइव",
   amenOff:                 "बंद",
@@ -1223,6 +1227,8 @@ const hi = {
   resBillDue:            "बकाया राशि",
   resBillEmpty:          "अभी कोई बिल उपलब्ध नहीं है।",
   resBillPayNow:         "अभी भुगतान करें",
+  resBillIssueDate:      "जारी तिथि",
+  resBillLastPayDate:    "अंतिम भुगतान तिथि",
 
   // Admin Dashboard
   dashHello:            "नमस्ते, एडमिन",
@@ -1289,6 +1295,8 @@ const hi = {
   billFlatCol:          "फ्लैट",
   billResidentCol:      "निवासी",
   billMonthCol:         "माह",
+  billIssueDateCol:     "जारी तिथि",
+  billLastPayDateCol:   "अंतिम भुगतान",
   billAmountCol:        "राशि",
   billStatusCol:        "स्थिति",
   billActionCol:        "कार्रवाई",

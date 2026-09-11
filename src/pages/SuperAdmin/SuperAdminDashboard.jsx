@@ -97,7 +97,7 @@ export default function SuperAdminDashboard() {
           <h1 className="sa-page-title">{t("saOverviewTitle")}</h1>
           <p className="sa-page-subtitle">Executive Command Center &amp; Platform Intelligence</p>
         </div>
-        <GlobalButton variant="add" borderDraw onClick={fetchSocieties} icon={MdRefresh} title="Reload">
+<GlobalButton variant="add" borderDraw onClick={fetchSocieties} icon={MdRefresh} title="Reload">
           Reload
         </GlobalButton>
       </div>

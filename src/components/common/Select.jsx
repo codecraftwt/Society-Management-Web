@@ -51,6 +51,8 @@ export default function Select({
   searchable,
   icon,
   menuClassName = "",
+  anchorRef,
+  rootStyle,
 }) {
   const options = useMemo(() => buildOptions(optionsProp, children), [optionsProp, children]);
   const [open, setOpen] = useState(false);
@@ -85,16 +87,16 @@ export default function Select({
   }, [options, query]);
 
   const computePos = useCallback(() => {
-    const el = triggerRef.current;
+    const el = (anchorRef && anchorRef.current) || triggerRef.current;
     if (!el) return null;
     const r = el.getBoundingClientRect();
-    const estH = Math.min(filtered.length * 36 + (showSearch ? 46 : 0) + 12, 320);
+    const estH = Math.min(filtered.length * 36 + (showSearch ? 50 : 0) + 14, 350);
     const menuW = Math.min(Math.max(r.width, 150), window.innerWidth - 16);
     let top = r.bottom + 6;
     if (top + estH > window.innerHeight - 8) top = Math.max(8, r.top - estH - 6);
     const left = Math.max(8, Math.min(r.left, window.innerWidth - menuW - 8));
     return { top, left, width: menuW };
-  }, [filtered.length, showSearch]);
+  }, [filtered.length, showSearch, anchorRef]);
 
   useEffect(() => {
     if (!open) return;
@@ -185,7 +187,7 @@ export default function Select({
   };
 
   return (
-    <div ref={rootRef} style={{ position: "relative" }}>
+    <div ref={rootRef} style={{ position: "relative", ...rootStyle }}>
       {(required || name) && (
         <select
           name={name}
@@ -258,7 +260,7 @@ export default function Select({
               background: "var(--modal-bg)",
               backdropFilter: "blur(18px)",
               border: "1px solid var(--glass-border)",
-              borderRadius: 14,
+              borderRadius: 12,
               boxShadow: "var(--shadow-glass)",
               overflow: "hidden",
               zIndex: 10000,
@@ -273,11 +275,13 @@ export default function Select({
                   display: "flex",
                   alignItems: "center",
                   gap: 8,
-                  padding: "0 10px",
+                  height: 44,
+                  padding: "0 14px",
+                  boxSizing: "border-box",
                   borderBottom: "1px solid var(--glass-border)",
                 }}
               >
-                <MdSearch style={{ color: "var(--text-secondary)" }} />
+                <MdSearch size={17} style={{ color: "var(--text-secondary)", flexShrink: 0 }} />
                 <input
                   ref={searchRef}
                   value={query}
@@ -288,17 +292,18 @@ export default function Select({
                   placeholder="Search..."
                   style={{
                     width: "100%",
-                    padding: "9px 0",
+                    padding: 0,
+                    boxSizing: "border-box",
                     background: "transparent",
                     border: "none",
                     outline: "none",
                     color: "var(--text-primary)",
-                    fontSize: 13,
+                    fontSize: 14,
                   }}
                 />
               </div>
             )}
-            <div style={{ maxHeight: 272, overflowY: "auto", padding: "4px 0" }}>
+            <div className="sel-menu-scroll" style={{ maxHeight: 380, overflowY: "auto", padding: "4px 0" }}>
               {filtered.length === 0 && (
                 <div style={{ padding: "12px 14px", fontSize: 13, color: "var(--text-secondary)" }}>
                   No options
@@ -320,14 +325,14 @@ export default function Select({
                     style={{
                       display: "block",
                       width: "100%",
-                      padding: "8px 14px",
+                      padding: "10px 14px",
                       textAlign: "left",
-                      fontSize: 13,
+                      fontSize: 13.5,
                       border: "none",
                       background: isSel
                         ? "var(--accent-soft)"
                         : isHl
-                          ? "var(--row-hover, rgba(255,255,255,0.08))"
+                        ? "var(--row-hover, rgba(255,255,255,0.08))"
                           : "transparent",
                       color: isSel ? "var(--accent)" : isHl ? "var(--text-primary)" : "var(--text-secondary)",
                       fontWeight: isSel ? 600 : 400,

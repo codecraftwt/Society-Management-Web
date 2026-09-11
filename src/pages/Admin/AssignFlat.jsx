@@ -706,7 +706,7 @@ export default function AssignFlat() {
         </div>
         <button
           onClick={() => { setShowForm(p => !p); setConfirmId(null); }}
-          className="sa-add-btn sa-add-pill w-full sm:w-auto justify-center shrink-0"
+          className="sa-add-btn sa-add-pill sa-btn-primary w-full sm:w-auto justify-center shrink-0"
         >
           <span className="sa-pill-blob sa-pill-blob1" />
           <span className="sa-pill-inner">

@@ -740,3 +740,12 @@ html.light .otp-cancel-btn {
 html.light .otp-cancel-btn:hover {
   background: #e2e8f0;
 }
+
+.login-panel-option:hover {
+  border-color: var(--accent, #2563eb) !important;
+  box-shadow: 0 6px 18px -6px rgba(37, 99, 235, 0.35);
+  transform: translateY(-1px);
+}
+.login-panel-option:active {
+  transform: translateY(0);
+}

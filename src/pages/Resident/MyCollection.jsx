@@ -14,11 +14,15 @@ import {
   MdVerified,
   MdQrCode,
   MdHome,
+  MdDownload,
+  MdPictureAsPdf,
+  MdZoomOutMap,
 } from "react-icons/md";
 import Modal from "../../components/Modal";
 import { toast } from "react-toastify";
 import Select from "../../components/common/Select";
 import { QRCodeCanvas } from "qrcode.react";
+import { jsPDF } from "jspdf";
 
 function Spinner({ size = 16 }) {
   return (
@@ -65,6 +69,9 @@ export default function MyCollection() {
   const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState({ courier_name: "" });
+  const [trackParcel, setTrackParcel] = useState(null);
+  const [qrParcel, setQrParcel] = useState(null);
+  const qrRef = useRef(null);
 
   const [submitting, setSubmitting] = useState(false);
   const [cancellingId, setCancellingId] = useState(null);
@@ -303,6 +310,64 @@ export default function MyCollection() {
     }
   };
 
+  /* ── QR export helpers ── */
+  const expandQRCanvas = (canvas, px = 1024) => {
+    const out = document.createElement("canvas");
+    out.width = px; out.height = px;
+    const ctx = out.getContext("2d");
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, px, px);
+    ctx.drawImage(canvas, (px - canvas.width) / 2, (px - canvas.height) / 2, canvas.width, canvas.height);
+    return out;
+  };
+
+  const downloadQRPNG = (canvas, name) => {
+    if (!canvas) return;
+    const a = document.createElement("a");
+    a.href = expandQRCanvas(canvas).toDataURL("image/png");
+    a.download = `${name}.png`;
+    a.click();
+  };
+
+  const downloadQRPDF = (canvas, name, { title = "", code = "", meta = [] } = {}) => {
+    if (!canvas) return;
+    const doc = new jsPDF({ orientation: "portrait", unit: "pt", format: "a4" });
+    doc.setFillColor(255, 255, 255);
+    doc.rect(0, 0, 595, 842, "F");
+    doc.setFontSize(20);
+    doc.setTextColor(30, 41, 59);
+    doc.text(title, 297.5, 72, { align: "center" });
+    doc.addImage(canvas.toDataURL("image/png"), "PNG", 297.5 - 128, 96, 256, 256);
+    doc.setFontSize(26);
+    doc.setTextColor(16, 185, 129);
+    doc.text(code, 297.5, 410, { align: "center" });
+    meta.forEach((line, i) => {
+      doc.setFontSize(10);
+      doc.setTextColor(100, 116, 139);
+      doc.text(line, 297.5, 440 + i * 16, { align: "center" });
+    });
+    doc.save(`${name}.pdf`);
+  };
+
+  const downloadQrPNG = () =>
+    downloadQRPNG(qrRef.current, `Pickup_QR_${qrParcel?.pickup_code || "parcel"}`);
+  const downloadQrPDF = () =>
+    downloadQRPDF(qrRef.current, `Pickup_QR_${qrParcel?.pickup_code || "parcel"}`, {
+      title: t("parcelTitle"),
+      code: qrParcel?.pickup_code || "",
+      meta: [
+        qrParcel?.courier_name || "",
+        flatLabelForParcel(qrParcel),
+        t("parcelOtpSubtitle") || "Show this QR at the gate to collect your parcel",
+      ].filter(Boolean),
+    });
+
+  const flatLabelForParcel = (p) => {
+    if (!p) return "";
+    return (p.Flat ? buildFlatLabel({ Flat: p.Flat }) : null) ||
+      parcelFlatMap[p.id] || p._flatLabel || "";
+  };
+
   useEffect(() => {
     return () => {
       if (submitTimeoutRef.current) clearTimeout(submitTimeoutRef.current);
@@ -514,7 +579,12 @@ export default function MyCollection() {
                     </span>
                   </div>
 
-                  <div className="gc-stepper">
+                  <div
+                    className="gc-stepper"
+                    onClick={() => setTrackParcel(p)}
+                    title={t("parcelTrackHint") || "View the tracking trail"}
+                    style={{ cursor: "pointer" }}
+                  >
                     <div className="gc-stepper-rail">
                       <div className={`gc-stepper-fill ${fillClass}`} style={{ width: progressWidth }} />
                     </div>
@@ -568,8 +638,16 @@ export default function MyCollection() {
                   {p.status === "AT_GATE" && p.pickup_code && (
                     <div className="gc-otp-show">
                       <div className="gc-otp-show-left">
-                        <div className="gc-otp-qr">
+                        <div
+                          className="gc-otp-qr"
+                          onClick={() => setQrParcel(p)}
+                          title={t("parcelQrView") || "View & download the pickup QR"}
+                          style={{ cursor: "pointer" }}
+                        >
                           <QRCodeCanvas value={String(p.pickup_code)} size={88} />
+                          <div className="gc-otp-qr-zoom">
+                            <MdZoomOutMap size={14} />
+                          </div>
                         </div>
                         <div>
                           <p className="gc-otp-show-label">
@@ -579,6 +657,13 @@ export default function MyCollection() {
                           <p className="gc-otp-show-hint">
                             {t("parcelOtpSubtitle") || "Show this QR at the gate to collect your parcel"}
                           </p>
+                          <button
+                            onClick={() => setQrParcel(p)}
+                            className="gc-btn gc-btn--compact gc-btn--accent gc-btn--qrview"
+                          >
+                            <MdQrCode size={15} />
+                            <span>{t("parcelQrView") || "View QR"}</span>
+                          </button>
                         </div>
                       </div>
                       <p className="gc-otp-code">{p.pickup_code}</p>
@@ -719,6 +804,130 @@ export default function MyCollection() {
             )}
           </button>
         </form>
+      </Modal>
+
+      <Modal
+        isOpen={!!trackParcel}
+        onClose={() => setTrackParcel(null)}
+        title={t("parcelTrackTitle") || "Parcel Tracking"}
+      >
+        {trackParcel &&
+          (() => {
+            const tp = trackParcel;
+            const tpCancelled = tp.status === "CANCELLED";
+            const tpStep = getStep(tp.status);
+            const steps = [
+              {
+                label: t("parcelExpected"),
+                icon: <MdOutlineInventory2 size={18} />,
+                state:
+                  tpCancelled || tp.status === "COLLECTED" || tpStep >= 1
+                    ? tp.status === "EXPECTED" ? "active" : "done"
+                    : "todo",
+              },
+              {
+                label: t("parcelAtGate"),
+                icon: <MdOutlineDoorFront size={18} />,
+                state:
+                  tpCancelled || tp.status === "COLLECTED" || tpStep >= 2
+                    ? tp.status === "AT_GATE" ? "active" : "done"
+                    : "todo",
+              },
+              {
+                label: tpCancelled ? t("parcelCancelled") : t("parcelCollected"),
+                icon: tpCancelled ? <MdClose size={18} /> : <MdVerified size={18} />,
+                state:
+                  tp.status === "COLLECTED" || tpCancelled
+                    ? "done"
+                    : tpStep >= 3
+                    ? "active"
+                    : "todo",
+              },
+            ];
+            return (
+              <div className="gc-track">
+                <div className="gc-track-head">
+                  <div className="gc-head-icon" style={{ width: 40, height: 40, fontSize: 20 }}>
+                    <MdLocalShipping />
+                  </div>
+                  <div className="gc-head-text">
+                    <h3 className="gc-head-title" style={{ fontSize: 15 }}>{tp.courier_name}</h3>
+                    <p className="gc-otp-show-hint" style={{ marginTop: 3 }}>
+                      {flatLabelForParcel(tp)}
+                    </p>
+                  </div>
+                  <span className={`gc-pill ${pillClass(tp.status)}`}>
+                    <span className="gc-pill-dot" />
+                    {statusLabel(tp.status)}
+                  </span>
+                </div>
+
+                <div className="gc-track-timeline">
+                  {steps.map((s, i) => (
+                    <div key={i} className={`gc-track-step gc-track-step--${s.state}`}>
+                      <div className="gc-track-dot">{s.icon}</div>
+                      <div className="gc-track-line" />
+                      <div className="gc-track-content">
+                        <p className="gc-track-label">{s.label}</p>
+                        {tp.entry_time && i === 0 && (
+                          <p className="gc-track-time">
+                            {new Date(tp.entry_time).toLocaleString("en-IN", {
+                              day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit",
+                            })}
+                          </p>
+                        )}
+                        {i === 1 && tp.pickup_code && (
+                          <p className="gc-track-time">
+                            {t("parcelOtpLabel")}: {tp.pickup_code}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="gc-track-note">
+                  {tpCancelled
+                    ? (t("parcelCancelledBanner") || "This parcel was cancelled.")
+                    : tp.status === "COLLECTED"
+                    ? (t("parcelDelivered") || "This parcel was collected from the gate.")
+                    : tp.status === "AT_GATE"
+                    ? (t("parcelOtpSubtitle") || "Show this QR at the gate to collect your parcel")
+                    : (t("parcelWaiting") || "Waiting for the parcel to arrive at the gate")}
+                </div>
+              </div>
+            );
+          })()}
+      </Modal>
+
+      <Modal
+        isOpen={!!qrParcel}
+        onClose={() => setQrParcel(null)}
+        title={t("parcelQrView") || "Pickup QR"}
+      >
+        {qrParcel && (
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 14 }}>
+            <div className="gc-otp-qr gc-otp-qr--large">
+              <QRCodeCanvas ref={qrRef} value={String(qrParcel.pickup_code)} size={200} />
+            </div>
+            <p className="gc-otp-code" style={{ fontSize: 40 }}>
+              {qrParcel.pickup_code}
+            </p>
+            <p className="gc-otp-show-hint" style={{ textAlign: "center", margin: 0 }}>
+              {t("parcelOtpSubtitle") || "Show this QR at the gate to collect your parcel"}
+            </p>
+            <div style={{ display: "flex", gap: 10, width: "100%", marginTop: 6 }}>
+              <button onClick={downloadQrPNG} className="gc-btn gc-btn--compact gc-btn--accent">
+                <MdDownload size={16} />
+                <span>PNG</span>
+              </button>
+              <button onClick={downloadQrPDF} className="gc-btn gc-btn--compact gc-btn--success">
+                <MdPictureAsPdf size={16} />
+                <span>PDF</span>
+              </button>
+            </div>
+          </div>
+        )}
       </Modal>
     </div>
   );

@@ -52,8 +52,8 @@ export default function AppHeader({
 
             {/* Optional Society Name Badge */}
             {societyName && (
-              <span className="hidden lg:inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-xs font-medium bg-accent/10 text-accent border border-accent/20 truncate">
-                <MdApartment size={13} />
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-xs font-medium bg-accent/10 text-accent border border-accent/20 truncate max-w-[220px]">
+                <MdApartment size={13} className="shrink-0" />
                 <span className="truncate">{societyName}</span>
               </span>
             )}

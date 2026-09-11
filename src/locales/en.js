@@ -667,6 +667,10 @@ const en = {
   amenRequiresApprovalSub: "Admin must approve bookings",
   amenCreateBtn:           "Create Amenity",
   amenSearchPlaceholder:   "Search amenities…",
+  amenFilterStatusAll:     "All Statuses",
+  amenFilterStatusActive:  "Active",
+  amenFilterStatusDisabled:"Disabled",
+  amenFilterPricingAll:    "All Pricing",
   amenEmpty:               "No amenities found.",
   amenLive:                "Live",
   amenOff:                 "Off",
@@ -1242,6 +1246,8 @@ const en = {
   resBillDue:            "Due Amount",
   resBillEmpty:          "No bills available yet.",
   resBillPayNow:         "Pay Now",
+  resBillIssueDate:      "Issue Date",
+  resBillLastPayDate:    "Last Pay Date",
 
   // Admin Dashboard
   dashHello:            "Hello, Admin",
@@ -1310,6 +1316,8 @@ const en = {
   billFlatCol:          "Flat",
   billResidentCol:      "Resident",
   billMonthCol:         "Month",
+  billIssueDateCol:     "Issue Date",
+  billLastPayDateCol:   "Last Pay",
   billAmountCol:        "Amount",
   billStatusCol:        "Status",
   billActionCol:        "Action",

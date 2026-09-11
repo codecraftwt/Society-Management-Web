@@ -649,7 +649,7 @@ function AreaAssignModal({
                     <button
                       type="button"
                       onClick={() => applyBulk()}
-                      className="sa-add-btn sa-add-pill"
+                      className="sa-add-btn sa-add-pill sa-btn-primary"
                       style={{ fontWeight: 700, height: 38, padding: "0 16px" }}
                     >
                       <span className="sa-pill-blob sa-pill-blob1" />
@@ -1079,7 +1079,7 @@ function AreaAssignModal({
               type="button"
               onClick={onSave}
               disabled={saving}
-              className="sa-add-btn sa-add-pill"
+              className="sa-add-btn sa-add-pill sa-btn-primary"
               style={{ fontWeight: 700, opacity: saving ? 0.6 : 1 }}
             >
               <span className="sa-pill-blob sa-pill-blob1" />
@@ -1238,7 +1238,7 @@ function BlocksTab({ isMobile, t }) {
           <p style={{ fontSize: 12, color: "var(--text-secondary)", margin: "3px 0 0" }}>Create apartment towers, wings, or independent row house layouts.</p>
         </div>
 
-        <button onClick={() => setShowForm(p => !p)} className="sa-add-btn sa-add-pill">
+        <button onClick={() => setShowForm(p => !p)} className="sa-add-btn sa-add-pill sa-btn-primary">
           <span className="sa-pill-blob sa-pill-blob1" />
           <span className="sa-pill-inner">
             {showForm ? <MdClose size={16} /> : <MdAdd size={16} />}
@@ -1569,7 +1569,7 @@ function BlocksTab({ isMobile, t }) {
               <button
                 type="submit"
                 disabled={submitting}
-                className="sa-add-btn sa-add-pill"
+                className="sa-add-btn sa-add-pill sa-btn-primary"
                 style={{ fontWeight: 700, opacity: submitting ? 0.65 : 1 }}
               >
                 <span className="sa-pill-blob sa-pill-blob1" />
@@ -2379,7 +2379,7 @@ function AssignTab({ isMobile, t }) {
         <p style={{ margin: 0, fontSize: 13, color: "var(--text-secondary)" }}>
           {initLoad ? "—" : totalAll} Units {t("mpCurrentlyAssigned") || "currently assigned"}
         </p>
-        <button onClick={() => setShowForm(p => !p)} className="sa-add-btn sa-add-pill">
+        <button onClick={() => setShowForm(p => !p)} className="sa-add-btn sa-add-pill sa-btn-primary">
           <span className="sa-pill-blob sa-pill-blob1" />
           <span className="sa-pill-inner">
             {showForm ? <MdClose size={17} /> : <MdAdd size={17} />}

@@ -22,6 +22,7 @@ import {
   MdVerified,
   MdOutlineCardGiftcard,
   MdHome,
+  MdRefresh,
 } from "react-icons/md";
 import ResidentEmergencyModal from "../../components/resident/ResidentEmergencyModal";
 import { useSidebar } from "../../context/SidebarContext";
@@ -52,12 +53,13 @@ function ResidentLayoutInner() {
   const { user, switchRole } = useContext(AuthContext);
   const { t } = useLang();
   const navigate = useNavigate();
-  const { openMobile } = useSidebar();
+  const { openMobile, collapsed } = useSidebar();
 
   const [alerts, setAlerts] = useState([]);
   const [showEmergency, setShowEmergency] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [rsOpen, setRsOpen] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
 
   const isFamilyMember = user?.role === "FAMILY_MEMBER";
   const base = isFamilyMember ? "/family" : "/resident";
@@ -353,7 +355,7 @@ function ResidentLayoutInner() {
             {word1}<span className="text-accent">{word2}</span>
           </>
         }
-        brandSubtitle={isFamilyMember ? "Family View" : "Resident View"}
+        brandSubtitle={user?.society_name || (isFamilyMember ? "Family View" : "Resident View")}
         base={base}
         drawerExtra={mobileRoleSwitcher}
       />
@@ -363,8 +365,22 @@ function ResidentLayoutInner() {
         <AppHeader
           title={panelLabel}
           subtitle={user?.name ? `${t("welcome")}, ${user.name}` : null}
+          societyName={collapsed ? user?.society_name : null}
           actions={
             <>
+              <button
+                onClick={() => setReloadKey(k => k + 1)}
+                className="flex items-center justify-center w-9 h-9 rounded-xl transition-colors"
+                style={{
+                  background: "var(--card-inner-bg)",
+                  border: "1.5px solid var(--glass-border)",
+                  color: "var(--text-primary)",
+                }}
+                title="Reload page"
+                aria-label="Reload page"
+              >
+                <MdRefresh size={18} />
+              </button>
               <RoleSwitcher />
               {alerts.length > 0 && (
                 <button
@@ -386,7 +402,7 @@ function ResidentLayoutInner() {
         {/* PAGE CONTENT */}
         <main className="flex-1 overflow-y-auto scrollbar-hide p-4 sm:p-6 lg:p-8">
           <div className="bg-card p-4 sm:p-6 rounded-xl">
-            <Outlet />
+            <Outlet key={reloadKey} />
           </div>
         </main>
       </div>

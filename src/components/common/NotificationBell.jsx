@@ -49,7 +49,7 @@ export default function NotificationBell() {
       toast.info(`${notification.title}\n${notification.message}`, {
         position: "top-right",
         autoClose: 6000,
-        theme: "colored",
+        theme: "dark",
       });
     };
 

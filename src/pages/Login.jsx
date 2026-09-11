@@ -1,4 +1,5 @@
 import { useState, useContext, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { useNavigate, Link } from "react-router-dom";
 import { APP_NAME } from "../constants/app";
 import API from "../services/api";
@@ -18,6 +19,7 @@ import {
   HiOutlineBuildingOffice2,
   HiOutlineArrowLeft
 } from "react-icons/hi2";
+import { MdHome, MdGroups } from "react-icons/md";
 
 import ThemeToggle from "../components/common/ThemeToggle";
 import homeBannerImg from "../assets/Photos/Home/Home.png";
@@ -290,7 +292,7 @@ function OtpModal({ email, tempToken, onVerified, onCancel }) {
    ═══════════════════════════════════════════════════════════ */
 function Login() {
   const navigate = useNavigate();
-  const { login } = useContext(AuthContext);
+  const { login, switchRole } = useContext(AuthContext);
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -299,6 +301,17 @@ function Login() {
 
   const [step, setStep] = useState("credentials");
   const [tempToken, setTempToken] = useState(null);
+  const [panelPrompt, setPanelPrompt] = useState(null);
+
+  const ROUTE_MAP = {
+    SUPER_ADMIN: "/superadmin",
+    SOCIETY_ADMIN: "/admin",
+    COMMITTEE_MEMBER: "/committee",
+    RESIDENT: "/resident",
+    FAMILY_MEMBER: "/family",
+    GUARD: "/guard",
+    ACCOUNTANT: "/accountant",
+  };
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -325,22 +338,34 @@ function Login() {
   const handleVerified = (user, token) => {
     login(user, token);
 
-    const routeMap = {
-      SUPER_ADMIN: "/superadmin",
-      SOCIETY_ADMIN: "/admin",
-      COMMITTEE_MEMBER: "/committee",
-      RESIDENT: "/resident",
-      FAMILY_MEMBER: "/family",
-      GUARD: "/guard",
-      ACCOUNTANT: "/accountant",
-    };
+    const roles = user.roles || [user.role];
+    if (roles.includes("COMMITTEE_MEMBER") && roles.includes("RESIDENT")) {
+      setPanelPrompt(user);
+      return;
+    }
 
     if (user.activeRole === "SUPER_ADMIN") {
       localStorage.setItem("superadmin_society_filter", "ALL");
     }
 
-    const targetRoute = routeMap[user.activeRole] || "/";
+    const targetRoute = ROUTE_MAP[user.activeRole] || "/";
     navigate(targetRoute, { replace: true });
+  };
+
+  const enterPanel = async (panelRole) => {
+    if (panelRole === "SUPER_ADMIN") {
+      localStorage.setItem("superadmin_society_filter", "ALL");
+    }
+    setPanelPrompt(null);
+    if (panelRole !== panelPrompt?.activeRole) {
+      try {
+        await switchRole(panelRole);
+      } catch (err) {
+        console.error(err);
+        toast.error(err.response?.data?.message || "Failed to switch panel");
+      }
+    }
+    navigate(ROUTE_MAP[panelRole] || "/", { replace: true });
   };
 
   const handleCancelOtp = () => {
@@ -389,6 +414,152 @@ function Login() {
           onCancel={handleCancelOtp}
         />
       )}
+
+      {/* Panel Chooser Modal (Committee members who are also residents) */}
+      {panelPrompt &&
+        createPortal(
+          <div
+            className="animate-fadeIn"
+            style={{
+              position: "fixed",
+              inset: 0,
+              zIndex: 1500,
+              background: "rgba(0,0,0,0.65)",
+              backdropFilter: "blur(8px)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: 16,
+            }}
+            onClick={() => setPanelPrompt(null)}
+          >
+            <div
+              className="animate-scaleIn"
+              style={{
+                background: "var(--card-bg, #ffffff)",
+                border: "1.5px solid var(--glass-border)",
+                borderRadius: 22,
+                maxWidth: 440,
+                width: "100%",
+                padding: "28px 26px",
+                boxShadow: "0 25px 60px -12px rgba(0,0,0,0.5)",
+                color: "var(--text-primary)",
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 6 }}>
+                <div
+                  style={{
+                    width: 48,
+                    height: 48,
+                    borderRadius: 16,
+                    background: "rgba(37,99,235,0.12)",
+                    color: "var(--accent)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    flexShrink: 0,
+                  }}
+                >
+                  <MdGroups size={26} />
+                </div>
+                <div>
+                  <h3 style={{ fontSize: 18, fontWeight: 800, margin: 0 }}>Select Panel</h3>
+                  <p style={{ fontSize: 12, margin: "4px 0 0", color: "var(--text-secondary)" }}>
+                    Hi {panelPrompt.name} — you have access to both panels
+                  </p>
+                </div>
+              </div>
+
+              <p style={{ fontSize: 13, color: "var(--text-secondary)", marginBottom: 18, lineHeight: 1.55 }}>
+                Which panel would you like to open?
+              </p>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                <button
+                  type="button"
+                  onClick={() => enterPanel("RESIDENT")}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 14,
+                    padding: "14px 16px",
+                    borderRadius: 16,
+                    background: "var(--card-inner-bg, #f5f6fa)",
+                    border: "1px solid var(--glass-border)",
+                    cursor: "pointer",
+                    transition: "all 0.2s",
+                    textAlign: "left",
+                  }}
+                  className="login-panel-option"
+                >
+                  <div
+                    style={{
+                      width: 40,
+                      height: 40,
+                      minWidth: 40,
+                      borderRadius: 12,
+                      background: "rgba(37,99,235,0.12)",
+                      color: "var(--accent)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <MdHome size={20} />
+                  </div>
+                  <div style={{ minWidth: 0 }}>
+                    <p style={{ fontSize: 14, fontWeight: 800, margin: 0 }}>Resident Panel</p>
+                    <p style={{ fontSize: 11, margin: "2px 0 0", color: "var(--text-secondary)" }}>
+                      Bills, complaints, visitors, & daily services
+                    </p>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => enterPanel("COMMITTEE_MEMBER")}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 14,
+                    padding: "14px 16px",
+                    borderRadius: 16,
+                    background: "var(--card-inner-bg, #f5f6fa)",
+                    border: "1px solid var(--glass-border)",
+                    cursor: "pointer",
+                    transition: "all 0.2s",
+                    textAlign: "left",
+                  }}
+                  className="login-panel-option"
+                >
+                  <div
+                    style={{
+                      width: 40,
+                      height: 40,
+                      minWidth: 40,
+                      borderRadius: 12,
+                      background: "rgba(139,92,246,0.12)",
+                      color: "#8b5cf6",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <MdGroups size={20} />
+                  </div>
+                  <div style={{ minWidth: 0 }}>
+                    <p style={{ fontSize: 14, fontWeight: 800, margin: 0 }}>Committee Panel</p>
+                    <p style={{ fontSize: 11, margin: "2px 0 0", color: "var(--text-secondary)" }}>
+                      Manage notices, complaints & society operations
+                    </p>
+                  </div>
+                </button>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
 
       {/* From Uiverse.io by Praashoo7 Form Card */}
       <form className="form" onSubmit={handleLogin}>

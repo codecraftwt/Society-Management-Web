@@ -855,7 +855,7 @@ export default function SuperAdminParking() {
             <option value="ALL">All Societies (View Only Mode)</option>
             {societies.map((s) => (
               <option key={s.id} value={s.id}>
-                {s.name} ({s.code || s.id})
+                {s.name}
               </option>
             ))}
           </Select>
@@ -955,22 +955,6 @@ export default function SuperAdminParking() {
 
       {mainTab === "slots" && (
         <>
-          {!initialLoad && stats.total > 0 && (
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 animate-fadeIn">
-              {[
-                { label: "Total Slots", val: stats.total, color: "text-pink-500", bg: "bg-pink-500/5 border-pink-500/10" },
-                { label: "Car Spots", val: stats.cars, color: "text-blue-400", bg: "bg-blue-500/10 border-blue-500/20" },
-                { label: "Bike Spots", val: stats.bikes, color: "text-purple-400", bg: "bg-purple-500/10 border-purple-500/20" },
-                { label: "Available", val: stats.available, color: "text-green-400", bg: "bg-green-500/10 border-green-500/20" },
-              ].map(s => (
-                <div key={s.label} className={`rounded-xl border p-3.5 animate-scaleIn flex flex-col justify-between min-h-18 ${s.bg}`}>
-                  <p className={`text-2xl font-bold leading-none ${s.color}`}>{s.val}</p>
-                  <p className="text-[11px] text-secondary mt-2">{s.label}</p>
-                </div>
-              ))}
-            </div>
-          )}
-
           {showForm && selectedSocietyId !== "ALL" && (
             <div className="bg-card p-5 rounded-2xl animate-scaleIn border border-accent/20">
               <div className="flex items-center gap-2 mb-4">

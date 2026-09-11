@@ -117,7 +117,7 @@ function BhkBadge({ type }) {
 /* ─────────────────────────────────────────
    RESIDENT ACTION MENU (three-dot kebab)
    ───────────────────────────────────────── */
-function ResidentActionMenu({ onAssignFlat, onEdit, isCommittee, isSocietyAdmin, onPromote, onRemove, onDelete, t }) {
+function ResidentActionMenu({ onAssignFlat, onEdit, isCommittee, isSocietyAdmin, isTenant, onPromote, onRemove, onDelete, t }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
 
@@ -152,7 +152,7 @@ function ResidentActionMenu({ onAssignFlat, onEdit, isCommittee, isSocietyAdmin,
             <MdEdit size={15} />
             {t("colEdit") || "Edit"}
           </button>
-          {!isSocietyAdmin && (
+          {!isSocietyAdmin && !isTenant && (
             <>
               <div className="sa-action-divider" />
               {isCommittee ? (
@@ -671,7 +671,7 @@ function AssignFlatModal({ residentId, residentName, societyId, onClose, onSucce
               {/* Navigation */}
               <div style={{ display: "flex", gap: 10, marginTop: 4 }}>
                 {step > 1 && (
-                  <button type="button" onClick={goBack} className="sa-btn sa-btn-ghost" style={{ borderRadius: 12 }}>
+                  <button type="button" onClick={goBack} className="sa-btn sa-btn-ghost">
                     <MdArrowBack size={15} /> Back
                   </button>
                 )}
@@ -2895,11 +2895,11 @@ export default function Resident() {
                 {/* Footer Controls */}
                 <div style={{ display: "flex", gap: 10, paddingTop: 8, borderTop: "1px solid var(--glass-border, rgba(255,255,255,0.08))", marginTop: 8 }}>
                   {formStep > 1 && (
-                    <button type="button" onClick={() => { setFormError(""); setFormStep(s => s - 1); }} className="sa-btn sa-btn-ghost" style={{ borderRadius: 12 }}>
+                    <button type="button" onClick={() => { setFormError(""); setFormStep(s => s - 1); }} className="sa-btn sa-btn-ghost">
                       <MdArrowBack size={15} /> Back
                     </button>
                   )}
-                  <button type="button" onClick={() => { setShowForm(false); resetForm(); }} className="sa-btn sa-btn-ghost" style={{ borderRadius: 12 }}>
+                  <button type="button" onClick={() => { setShowForm(false); resetForm(); }} className="sa-btn sa-btn-ghost">
                     {t("cancel")}
                   </button>
                   <div style={{ flex: 1 }} />
@@ -3101,6 +3101,7 @@ export default function Resident() {
                               onEdit={() => handleEdit(r)}
                               isCommittee={!!r.roles?.includes("COMMITTEE_MEMBER")}
                               isSocietyAdmin={!!r.roles?.includes("SOCIETY_ADMIN")}
+                              isTenant={r.resident_type === "TENANT"}
                               onPromote={() => setCommitteeConfirm({ type: "promote", id: r.id, name: r.name })}
                               onRemove={() => setCommitteeConfirm({ type: "remove", id: r.id, name: r.name })}
                               onDelete={() => setConfirmId(r.id)}
@@ -3147,6 +3148,7 @@ export default function Resident() {
                           onEdit={() => handleEdit(r)}
                           isCommittee={!!r.roles?.includes("COMMITTEE_MEMBER")}
                           isSocietyAdmin={!!r.roles?.includes("SOCIETY_ADMIN")}
+                          isTenant={r.resident_type === "TENANT"}
                           onPromote={() => setCommitteeConfirm({ type: "promote", id: r.id, name: r.name })}
                           onRemove={() => setCommitteeConfirm({ type: "remove", id: r.id, name: r.name })}
                           onDelete={() => setConfirmId(r.id)}
@@ -3194,7 +3196,7 @@ export default function Resident() {
             </p>
 
             <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 22 }}>
-              <button type="button" onClick={() => setCommitteeConfirm(null)} className="sa-btn sa-btn-ghost" style={{ borderRadius: 12 }}>
+              <button type="button" onClick={() => setCommitteeConfirm(null)} className="sa-btn sa-btn-ghost">
                 {t("cancel") || "Cancel"}
               </button>
               <button

@@ -666,6 +666,10 @@ const mr = {
   amenRequiresApprovalSub: "बुकिंगसाठी अ‍ॅडमिन ची मंजुरी आवश्यक",
   amenCreateBtn:           "सुविधा तयार करा",
   amenSearchPlaceholder:   "सुविधा शोधा…",
+  amenFilterStatusAll:     "सर्व स्थिती",
+  amenFilterStatusActive:  "सक्रिय",
+  amenFilterStatusDisabled:"अक्षम",
+  amenFilterPricingAll:    "सर्व किंमत निर्धारण",
   amenEmpty:               "कोणतीही सुविधा सापडली नाही.",
   amenLive:                "लाइव्ह",
   amenOff:                 "बंद",
@@ -1229,6 +1233,8 @@ const mr = {
   resBillDue:            "थकित रक्कम",
   resBillEmpty:          "अद्याप कोणतीही बिले उपलब्ध नाहीत.",
   resBillPayNow:         "आत्ता भरा",
+  resBillIssueDate:      "जारी तारीख",
+  resBillLastPayDate:    "अंतिम भरणा तारीख",
 
   // Admin Dashboard
   dashHello:            "नमस्कार, अ‍ॅडमिन",
@@ -1295,6 +1301,8 @@ const mr = {
   billFlatCol:          "फ्लॅट",
   billResidentCol:      "रहिवासी",
   billMonthCol:         "महिना",
+  billIssueDateCol:     "जारी तारीख",
+  billLastPayDateCol:   "अंतिम भरणा",
   billAmountCol:        "रक्कम",
   billStatusCol:        "स्थिती",
   billActionCol:        "कृती",

@@ -12,8 +12,13 @@ import {
 } from "react-icons/md";
 import Select from "../../components/common/Select";
 import GlobalButton from "../../components/common/GlobalButton";
+import GlobalModal from "../../components/common/GlobalModal";
 
 /* ── helpers ── */
+const getTodayISO = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+};
 const getCurrentBillingMonth = () => {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
@@ -160,6 +165,7 @@ export default function ManageBills() {
   const [formSocietyId, setFormSocietyId] = useState("");
   const [formData, setFormData] = useState({
     bill_type: "INDIVIDUAL", flat_id: "", title: "", amount: "", billing_month: getCurrentBillingMonth(),
+    issue_date: getTodayISO(), last_pay_date: "",
   });
 
   /* ── Delete & Confirm ── */
@@ -174,6 +180,7 @@ export default function ManageBills() {
   const [bulkApproving, setBulkApproving] = useState(false);
   const [bulkDeleting, setBulkDeleting] = useState(false);
   const [feedbackBanner, setFeedbackBanner] = useState(null);
+  const [createdBill, setCreatedBill] = useState(null);
 
   useEffect(() => {
     if (!feedbackBanner) return;
@@ -357,13 +364,21 @@ export default function ManageBills() {
 
   /* ── Create ── */
   const handleCreateBill = async (e) => {
-    e.preventDefault();
+    if (e) e.preventDefault();
     try {
       setCreating(true);
       const activeSocId = filterSocietyId || formSocietyId;
       const headers = (isSuperAdmin && activeSocId) ? { "x-society-id": activeSocId } : {};
-      await API.post("/bills", formData, { headers });
-      setFormData({ bill_type: "INDIVIDUAL", flat_id: "", title: "", amount: "", billing_month: getCurrentBillingMonth() });
+      const res = await API.post("/bills", formData, { headers });
+      setCreatedBill({
+        type: formData.bill_type,
+        title: formData.title,
+        amount: formData.amount,
+        flatId: formData.flat_id,
+        societyId: activeSocId,
+        total: res.data?.total,
+      });
+      setFormData({ bill_type: "INDIVIDUAL", flat_id: "", title: "", amount: "", billing_month: getCurrentBillingMonth(), issue_date: getTodayISO(), last_pay_date: "" });
       setFormSocietyId("");
       setShowCreate(false);
       loadBills(1, debSearch, filterStatus);
@@ -472,49 +487,6 @@ export default function ManageBills() {
     { key: "PENDING", label: t("billTabPending"), ac: "amber", count: counts.pending },
   ];
 
-  /* ── Cards reflect the active tab ── */
-  const displayedCounts = useMemo(() => {
-    const pagePaidAmount = bills.filter(b => b.status === "PAID").reduce((sum, b) => sum + Number(b.amount || 0), 0);
-    const pagePendingAmount = bills.filter(b => b.status !== "PAID").reduce((sum, b) => sum + Number(b.amount || 0), 0);
-    const pageTotalAmount = bills.reduce((sum, b) => sum + Number(b.amount || 0), 0);
-
-    if (filterStatus === "PAID") {
-      const amountVal = search ? pagePaidAmount : (counts.revenue ?? pagePaidAmount);
-      return {
-        total: totalItems,
-        paid: totalItems,
-        pending: 0,
-        amount: amountVal,
-        amountLabel: t("billStatPaidAmount") || "Paid Amount",
-      };
-    }
-    if (filterStatus === "PENDING" || filterStatus === "PENDING_VERIFICATION") {
-      const amountVal = search ? pagePendingAmount : (counts.pendingAmount ?? pagePendingAmount);
-      return {
-        total: totalItems,
-        paid: 0,
-        pending: totalItems,
-        amount: amountVal,
-        amountLabel: t("billStatPendingAmount") || "Pending Amount",
-      };
-    }
-    const amountVal = search ? pageTotalAmount : (counts.totalAmount ?? pageTotalAmount);
-    return {
-      total: totalItems || counts.total,
-      paid: counts.paid,
-      pending: counts.pending,
-      amount: amountVal,
-      amountLabel: t("billStatTotalAmount") || "Total Amount",
-    };
-  }, [counts, totalItems, filterStatus, bills, search, t]);
-
-  const STATS = [
-    { label: t("billStatTotal"), val: displayedCounts.total, icon: "🧾", color: "purple", extra: "" },
-    { label: t("billStatPaid"), val: displayedCounts.paid, icon: "✅", color: "green", extra: "" },
-    { label: t("billStatPending"), val: displayedCounts.pending, icon: "⏳", color: "amber", extra: "" },
-    { label: displayedCounts.amountLabel, val: `₹${(displayedCounts.amount || 0).toLocaleString("en-IN")}`, icon: "💰", color: "blue", extra: "stat-card--revenue" },
-  ];
-
   return (
     <div className="page-root animate-fadeIn">
 
@@ -561,15 +533,18 @@ export default function ManageBills() {
           </div>
         </div>
             <GlobalButton
-              variant="primary"
+              variant="add"
               size="md"
-              borderDraw
-              onClick={() => setShowCreate(p => !p)}
+borderDraw
+              icon={MdAdd}
+              onClick={() => {
+                setFormSocietyId(filterSocietyId || "");
+                setShowCreate(true);
+              }}
               fullWidth={false}
-              style={{ flexShrink: 0 }}
+              style={{ flexShrink: 0, whiteSpace: "nowrap" }}
             >
-              {showCreate ? <MdClose size={16} /> : <MdAdd size={16} />}
-              {showCreate ? t("cancel") : t("billCreate")}
+              {t("billCreate")}
             </GlobalButton>
       </div>
 
@@ -592,98 +567,141 @@ export default function ManageBills() {
         </div>
       )}
 
-      {/* ── STAT CARDS ── */}
-      {!initialLoad && counts.total > 0 && (
-        <div className={`grid gap-3 ${isMobile ? "grid-cols-2" : "grid-cols-4"}`}>
-          {STATS.map((s, i) => (
-            <div key={i} className={`${isMobile ? "stat-card--mobile" : "stat-card"} stat-card--${s.color} ${s.extra}`}>
-              {isMobile ? (
-                <><div className="text-xl mb-1">{s.icon}</div><div className="stat-card__val">{s.val}</div><div className="stat-card__label">{s.label}</div></>
-              ) : (
-                <><div><div className="stat-card__val">{s.val}</div><div className="stat-card__label">{s.label}</div></div><div className="stat-card__icon">{s.icon}</div></>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* ── CREATE FORM ── */}
-      {showCreate && (
-        <div className="bill-form-card animate-scaleIn">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="er-icon er-icon--amenity" style={{ width: 38, height: 38, borderRadius: 10 }}>
-              <MdReceiptLong size={18} />
-            </div>
-            <div>
-              <div className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>{t("billNewBill")}</div>
-              <div className="text-xs text-secondary mt-0.5">{t("billNewBillSub")}</div>
-            </div>
-          </div>
-          <form onSubmit={handleCreateBill} className={`grid gap-4 ${isMobile ? "grid-cols-1" : "grid-cols-2 lg:grid-cols-5"}`}>
-            {isSuperAdmin && !filterSocietyId && (
-              <div>
-                <Label>Target Society</Label>
-                <Select className="input h-11 w-full" required
-                  value={formSocietyId}
-                  onChange={e => handleFormSocietyChange(e.target.value)}>
-                  <option value="">Choose Society</option>
-                  {societiesList.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                </Select>
-              </div>
-            )}
-            <div>
-              <Label>{t("billTypeLabel")}</Label>
-              <Select className="input h-11 w-full"
-                value={formData.bill_type}
-                onChange={e => setFormData({ ...formData, bill_type: e.target.value, flat_id: "" })}>
-                <option value="INDIVIDUAL">{t("billTypeIndividual")}</option>
-                <option value="ALL">{t("billTypeAll")}</option>
+      {/* ── CREATE BILL MODAL ── */}
+      <GlobalModal
+        isOpen={showCreate}
+        onClose={() => setShowCreate(false)}
+        title={t("billNewBill")}
+        subtitle={t("billNewBillSub")}
+        icon={MdReceiptLong}
+        size="md"
+        showFooter
+        submitLabel={t("billGenerate")}
+        cancelLabel={t("cancel")}
+        onSubmit={handleCreateBill}
+        submitLoading={creating}
+        submitDisabled={creating || (isSuperAdmin && !filterSocietyId && !formSocietyId) || !formData.title || !formData.amount}
+        submitIcon={MdCheckCircle}
+      >
+        <form onSubmit={handleCreateBill} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {isSuperAdmin && !filterSocietyId && (
+            <div className="sm:col-span-2">
+              <Label>Target Society</Label>
+              <Select className="input h-10 w-full" required
+                value={formSocietyId}
+                onChange={e => handleFormSocietyChange(e.target.value)}>
+                <option value="">Choose Society</option>
+                {societiesList.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
               </Select>
             </div>
-            {formData.bill_type === "INDIVIDUAL" && (
-              <div className={isMobile ? "" : (isSuperAdmin && !filterSocietyId) ? "" : "lg:col-span-2"}>
-                <Label>{t("billSelectFlat")}</Label>
-                <Select className="input h-11 w-full" required
-                  value={formData.flat_id}
-                  onChange={e => setFormData({ ...formData, flat_id: e.target.value })}>
-                  <option value="">{t("billChooseFlat")}</option>
-                  {flats.map(f => (
-                    <option key={f.id} value={f.id}>
-                      {f.flat_number} ({f.Block?.name}) – {f.User?.name || t("billNoResident")}
-                    </option>
-                  ))}
-                </Select>
+          )}
+          <div>
+            <Label>{t("billTypeLabel")}</Label>
+            <Select className="input h-10 w-full"
+              value={formData.bill_type}
+              onChange={e => setFormData({ ...formData, bill_type: e.target.value, flat_id: "" })}>
+              <option value="INDIVIDUAL">{t("billTypeIndividual")}</option>
+              <option value="ALL">{t("billTypeAll")}</option>
+            </Select>
+          </div>
+          {formData.bill_type === "INDIVIDUAL" ? (
+            <div>
+              <Label>{t("billSelectFlat")}</Label>
+              <Select className="input h-10 w-full" required
+                value={formData.flat_id}
+                onChange={e => setFormData({ ...formData, flat_id: e.target.value })}>
+                <option value="">{t("billChooseFlat")}</option>
+                {flats.map(f => (
+                  <option key={f.id} value={f.id}>
+                    {f.flat_number} ({f.Block?.name}) – {f.User?.name || t("billNoResident")}
+                  </option>
+                ))}
+              </Select>
+            </div>
+          ) : null}
+          <div>
+            <Label>{t("billTitleLabel")}</Label>
+            <input className="input h-10 w-full" placeholder={t("billTitlePlaceholder")}
+              value={formData.title} required
+              onChange={e => setFormData({ ...formData, title: e.target.value })} />
+          </div>
+          <div>
+            <Label>{t("billAmountLabel")}</Label>
+            <input type="number" className="input h-10 w-full" placeholder="0"
+              value={formData.amount} required
+              onChange={e => setFormData({ ...formData, amount: e.target.value })} />
+          </div>
+          <div>
+            <Label>Issue Date</Label>
+            <input type="date" className="input h-10 w-full"
+              value={formData.issue_date}
+              onChange={e => setFormData({ ...formData, issue_date: e.target.value })} />
+          </div>
+          <div>
+            <Label>Last Pay Date</Label>
+            <input type="date" className="input h-10 w-full"
+              value={formData.last_pay_date}
+              min={formData.issue_date || undefined}
+              onChange={e => setFormData({ ...formData, last_pay_date: e.target.value })} />
+            <p style={{ fontSize: 10, color: "var(--text-secondary)", opacity: 0.7, marginTop: 4 }}>
+              Leave blank to auto-set 30 days from today
+            </p>
+          </div>
+        </form>
+      </GlobalModal>
+
+      {/* ── CREATE SUCCESS POPUP ── */}
+      <GlobalModal
+        isOpen={!!createdBill}
+        onClose={() => setCreatedBill(null)}
+        title="Bill Created Successfully"
+        subtitle={createdBill?.type === "ALL" ? "Bills generated for all owner-occupied flats" : "Bill generated successfully"}
+        icon={MdCheckCircle}
+        size="sm"
+        showFooter
+        submitLabel="Done"
+        onSubmit={() => setCreatedBill(null)}
+      >
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          {createdBill && (
+            <>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: "var(--text-secondary)" }}>
+                <span>Bill Title</span>
+                <strong style={{ color: "var(--text-primary)" }}>{createdBill.title}</strong>
               </div>
-            )}
-            <div>
-              <Label>{t("billTitleLabel")}</Label>
-              <input className="input h-11 w-full" placeholder={t("billTitlePlaceholder")}
-                value={formData.title} required
-                onChange={e => setFormData({ ...formData, title: e.target.value })} />
-            </div>
-            <div>
-              <Label>{t("billAmountLabel")}</Label>
-              <input type="number" className="input h-11 w-full" placeholder="0"
-                value={formData.amount} required
-                onChange={e => setFormData({ ...formData, amount: e.target.value })} />
-            </div>
-            <div>
-              <Label>{t("billMonthLabel")}</Label>
-              <input type="month" className="input h-11 w-full"
-                value={formData.billing_month} required
-                onChange={e => setFormData({ ...formData, billing_month: e.target.value })} />
-            </div>
-            <div className={`flex items-end ${isMobile ? "" : (isSuperAdmin && !filterSocietyId) ? "lg:col-span-5" : "lg:col-span-4"}`}>
-              <button type="submit" disabled={creating} className="btn-primary w-full justify-center h-11" style={{ borderRadius: 12 }}>
-                {creating
-                  ? <span className="flex items-center gap-2"><Spinner />{t("billGenerating")}</span>
-                  : <><MdReceiptLong size={16} />{t("billGenerate")}</>
-                }
-              </button>
-            </div>
-          </form>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: "var(--text-secondary)" }}>
+                <span>Amount</span>
+                <strong style={{ color: "var(--accent)" }}>₹{Number(createdBill.amount || 0).toLocaleString("en-IN")}</strong>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: "var(--text-secondary)" }}>
+                <span>Bill Type</span>
+                <strong style={{ color: "var(--text-primary)" }}>{createdBill.type === "ALL" ? "All Flats" : "Individual"}</strong>
+              </div>
+              {createdBill.type === "ALL" ? (
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: "var(--text-secondary)" }}>
+                  <span>Bills Generated</span>
+                  <strong style={{ color: "var(--text-primary)" }}>{createdBill.total ?? "—"} bill(s)</strong>
+                </div>
+              ) : (
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: "var(--text-secondary)" }}>
+                  <span>Flat</span>
+                  <strong style={{ color: "var(--text-primary)" }}>
+                    {flats.find(f => f.id === Number(createdBill.flatId))?.flat_number || "—"}
+                  </strong>
+                </div>
+              )}
+              {isSuperAdmin && createdBill.societyId && (
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: "var(--text-secondary)" }}>
+                  <span>Society</span>
+                  <strong style={{ color: "var(--text-primary)" }}>
+                    {societiesList.find(s => String(s.id) === String(createdBill.societyId))?.name || "—"}
+                  </strong>
+                </div>
+              )}
+            </>
+          )}
         </div>
-      )}
+      </GlobalModal>
 
       {/* ── BILLS TABLE ── */}
       <div className="data-table-wrap">
@@ -912,16 +930,16 @@ export default function ManageBills() {
                     <div className="grid grid-cols-2 gap-3">
                       <div>
                         <p className="text-xs text-secondary mb-1">{t("billFlatCol")}</p>
-                        <span className="flat-chip">{b.Flat.flat_number} · {b.Flat.Block.name}</span>
+                        <span className="flat-chip">{b.Flat?.flat_number || "—"} · {b.Flat?.Block?.name || "—"}</span>
                         {isSuperAdmin && (
                           <div style={{ marginTop: 4, fontSize: 10, fontWeight: 700, color: "var(--accent)" }}>
-                            🏢 {b.Flat.Block?.Society?.name}
+                            🏢 {b.Flat?.Block?.Society?.name || "—"}
                           </div>
                         )}
                       </div>
                       <div>
                         <p className="text-xs text-secondary mb-1">{t("billResidentCol")}</p>
-                        <p className="text-xs font-semibold" style={{ color: "var(--text-primary)" }}>{b.Flat.User?.name || "NA"}</p>
+                        <p className="text-xs font-semibold" style={{ color: "var(--text-primary)" }}>{b.Flat?.User?.name || "NA"}</p>
                       </div>
                     </div>
                     <RowActions bill={b} confirmDeleteId={confirmDeleteId} setConfirmDeleteId={setConfirmDeleteId} handleDeleteBill={handleDeleteBill} deletingId={deletingId} handleConfirmPayment={handleConfirmPayment} confirmingId={confirmingId} t={t} />
@@ -983,7 +1001,7 @@ export default function ManageBills() {
                     {isSuperAdmin && (
                       <td>
                         <span style={{ fontSize: 12, fontWeight: 700, color: "var(--accent)" }}>
-                          {b.Flat.Block?.Society?.name || "—"}
+                          {b.Flat?.Block?.Society?.name || "—"}
                         </span>
                       </td>
                     )}
@@ -993,8 +1011,8 @@ export default function ManageBills() {
                         <span className="font-semibold text-sm" style={{ color: "var(--text-primary)" }}>{b.title}</span>
                       </div>
                     </td>
-                    <td><span className="flat-chip">{b.Flat.flat_number}<span style={{ opacity: 0.55 }}> · {b.Flat.Block.name}</span></span></td>
-                    <td><span className="text-sm text-secondary">{b.Flat.User?.name || "—"}</span></td>
+                    <td><span className="flat-chip">{b.Flat?.flat_number || "—"}<span style={{ opacity: 0.55 }}> · {b.Flat?.Block?.name || "—"}</span></span></td>
+                    <td><span className="text-sm text-secondary">{b.Flat?.User?.name || "—"}</span></td>
                     <td><span className="info-chip">{b.billing_month}</span></td>
                     <td><span className="bill-table-amount">₹{Number(b.amount).toLocaleString("en-IN")}</span></td>
                     <td><BillStatus status={b.status} t={t} /></td>

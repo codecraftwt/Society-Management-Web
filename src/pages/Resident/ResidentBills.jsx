@@ -1,6 +1,7 @@
 
 
 import { useEffect, useState, useCallback, useContext } from "react";
+import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import API from "../../services/api";
 import { useLang } from "../../context/LanguageContext";
@@ -42,6 +43,13 @@ function StatusBadge({ status }) {
       </span>
     );
   return <span className="bill-pill-pending"><MdSchedule size={11} /> {t("billPending") || "Pending"}</span>;
+}
+
+function formatBillDate(d) {
+  if (!d) return "—";
+  const date = new Date(d);
+  if (isNaN(date.getTime())) return "—";
+  return date.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
 }
 
 function Pagination({ page, totalPages, onPageChange }) {
@@ -182,6 +190,7 @@ export default function ResidentBills() {
 
   const [accountant,  setAccountant]  = useState(null);
   const [loadingAcct, setLoadingAcct] = useState(true);
+  const [showAccountant, setShowAccountant] = useState(false);
 
   const [bills,      setBills]      = useState([]);
   const [counts,     setCounts]     = useState({ total: 0, paid: 0, pending: 0, due: 0 });
@@ -277,35 +286,29 @@ export default function ResidentBills() {
         </div>
       </div>
 
-      {/* ── Accountant card ── */}
-      <div className="premium-card p-4">
-        <div className="flex items-center gap-2 mb-3">
-          <MdPerson size={15} style={{ color: "var(--accent)" }} />
-          <span className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>
-            {t("resBillAccountant")}
-          </span>
-        </div>
-        {loadingAcct ? (
-          <AccountantSkeleton />
-        ) : !accountant ? (
-          <p className="text-sm text-secondary">{t("resBillAccountantNone")}</p>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            {ACCT_ROWS.map(({ Icon, label, val }) => (
-              <div key={label} className="flex items-center gap-3 rounded-xl p-3"
-                style={{ background: "var(--card-inner-bg)" }}>
-                <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
-                  style={{ background: "var(--accent-soft)" }}>
-                  <Icon size={15} style={{ color: "var(--accent)" }} />
-                </div>
-                <div>
-                  <p className="text-secondary uppercase tracking-wider" style={{ fontSize: 10 }}>{label}</p>
-                  <p className="font-semibold text-sm" style={{ color: "var(--text-primary)" }}>{val}</p>
-                </div>
-              </div>
-            ))}
+      {/* ── Accountant contact ── */}
+      <div className="flex items-center justify-between gap-3 rounded-xl p-4"
+        style={{ background: "var(--card-inner-bg)", border: "1px solid var(--glass-border)" }}>
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+            style={{ background: "var(--accent-soft)", color: "var(--accent)" }}>
+            <MdPerson size={20} />
           </div>
-        )}
+          <div className="min-w-0">
+            <p className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>
+              {t("resBillAccountant")}
+            </p>
+            <p className="text-xs text-secondary truncate">
+              {t("resBillAccountantNone") || "Contact your society accountant for bill enquiries"}
+            </p>
+          </div>
+        </div>
+        <button
+          onClick={() => setShowAccountant(true)}
+          className="btn-primary flex items-center gap-2 shrink-0"
+          style={{ borderRadius: 999, padding: "9px 16px", fontSize: 12 }}>
+          {t("resBillViewAcctInfo") || "View Accountant"} <MdArrowForward size={14} />
+        </button>
       </div>
 
       {/* ── Stat cards — skeleton on first load ── */}
@@ -389,7 +392,8 @@ export default function ResidentBills() {
               <table className="data-table">
                 <thead>
                   <tr>
-                    {[t("billTitleCol"), t("billFlatCol") || "Flat", t("billMonthCol"), t("billAmountCol"),
+                    {[t("billTitleCol"), t("billFlatCol") || "Flat", t("billMonthCol"), t("billIssueDateCol"),
+                      t("billLastPayDateCol"), t("billAmountCol"),
                       t("billStatusCol"), t("billActionCol")].map((h) => (
                       <th key={h}>{h}</th>
                     ))}
@@ -453,6 +457,26 @@ export default function ResidentBills() {
                           </p>
                         )}
                         <p className="text-xs text-secondary mt-1">{b.billing_month}</p>
+                        {b.issue_date || b.last_pay_date ? (
+                          <div className="flex gap-6 mt-2.5">
+                            <div>
+                              <p className="text-[10px] font-semibold uppercase tracking-wider text-secondary">
+                                {t("resBillIssueDate")}
+                              </p>
+                              <p className="text-xs font-semibold mt-0.5" style={{ color: "var(--text-primary)" }}>
+                                {formatBillDate(b.issue_date)}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-[10px] font-semibold uppercase tracking-wider text-secondary">
+                                {t("resBillLastPayDate")}
+                              </p>
+                              <p className="text-xs font-bold mt-0.5" style={{ color: "var(--accent)" }}>
+                                {formatBillDate(b.last_pay_date)}
+                              </p>
+                            </div>
+                          </div>
+                        ) : null}
                       </div>
                       <StatusBadge status={b.status} />
                     </div>
@@ -488,7 +512,8 @@ export default function ResidentBills() {
               <table className="data-table">
                 <thead>
                   <tr>
-                    {[t("billTitleCol"), t("billFlatCol") || "Flat", t("billMonthCol"), t("billAmountCol"),
+                    {[t("billTitleCol"), t("billFlatCol") || "Flat", t("billMonthCol"), t("billIssueDateCol"),
+                      t("billLastPayDateCol"), t("billAmountCol"),
                       t("billStatusCol"), t("billActionCol")].map((h) => (
                       <th key={h}>{h}</th>
                     ))}
@@ -522,6 +547,12 @@ export default function ResidentBills() {
                         )}
                       </td>
                       <td><span className="info-chip">{b.billing_month}</span></td>
+                      <td><span className="info-chip">{formatBillDate(b.issue_date)}</span></td>
+                      <td>
+                        <span className="info-chip" style={b.last_pay_date ? { color: "var(--accent)", fontWeight: 700 } : undefined}>
+                          {formatBillDate(b.last_pay_date)}
+                        </span>
+                      </td>
                       <td>
                         <span className="bill-table-amount">₹{Number(b.amount).toLocaleString("en-IN")}</span>
                       </td>
@@ -563,6 +594,52 @@ export default function ResidentBills() {
           </>
         )}
       </div>
+
+      {/* ── Accountant info modal ── */}
+      {showAccountant && createPortal(
+        <div
+          className="fixed inset-0 flex items-center justify-center p-4 animate-fadeIn"
+          style={{ background: "var(--overlay-bg, rgba(0,0,0,0.7))", backdropFilter: "blur(6px)", zIndex: 9999 }}
+          onClick={() => setShowAccountant(false)}
+        >
+          <div
+            className="rounded-2xl w-full max-w-md animate-scaleIn"
+            style={{ background: "var(--card-bg)", border: "1px solid var(--glass-border)", boxShadow: "var(--shadow-glass)" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex justify-between items-center p-5 border-b" style={{ borderColor: "var(--divider)" }}>
+              <h3 className="text-lg font-bold" style={{ color: "var(--text-primary)" }}>{t("resBillAccountant")}</h3>
+              <button type="button" onClick={() => setShowAccountant(false)}
+                className="text-secondary hover:text-white transition">
+                <MdClose size={22} />
+              </button>
+            </div>
+            <div className="p-5">
+              {loadingAcct ? (
+                <AccountantSkeleton />
+              ) : !accountant ? (
+                <p className="text-sm text-secondary">{t("resBillAccountantNone")}</p>
+              ) : (
+                <div className="flex flex-col gap-3">
+                  {ACCT_ROWS.map(({ Icon, label, val }) => (
+                    <div key={label} className="flex items-center gap-3 rounded-xl p-3"
+                      style={{ background: "var(--card-inner-bg)" }}>
+                      <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0"
+                        style={{ background: "var(--accent-soft)" }}>
+                        <Icon size={18} style={{ color: "var(--accent)" }} />
+                      </div>
+                      <div>
+                        <p className="text-secondary uppercase tracking-wider" style={{ fontSize: 10 }}>{label}</p>
+                        <p className="font-semibold text-sm" style={{ color: "var(--text-primary)" }}>{val}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>, document.body
+      )}
     </div>
   );
 }

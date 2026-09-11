@@ -40,16 +40,6 @@ const COLOR_MAP = {
   Security:   { icon: "rd-icon-green",  badge: "rd-badge-green",  glow: "rd-glow-green"  },
 };
 
-/* ── Stat card ── */
-function StatCard({ value, label, colorClass }) {
-  return (
-    <div className={`rd-stat-card ${colorClass}`}>
-      <p className="rd-stat-val">{value}</p>
-      <p className="rd-stat-label">{label}</p>
-    </div>
-  );
-}
-
 /* ── Skeleton loader ── */
 function SkeletonCard() {
   return (
@@ -304,41 +294,31 @@ export default function ResidentDocument() {
         </div>
       </div>
 
-      {/* ── STATS — always from server counts, stable regardless of search ── */}
-      <div className="rd-stats-row">
-        <StatCard value={initialLoad ? "—" : counts.All}        label={t("docStatTotal")}    colorClass="rd-stat-indigo" />
-        <StatCard value={initialLoad ? "—" : counts.Legal}      label={t("docCatLegal")}      colorClass="rd-stat-purple" />
-        <StatCard value={initialLoad ? "—" : counts.Finance}    label={t("docCatFinance")}    colorClass="rd-stat-green"  />
-        <StatCard value={initialLoad ? "—" : counts.Guidelines} label={t("docCatGuidelines")} colorClass="rd-stat-amber"  />
-      </div>
-
       {/* ── TOOLBAR ── */}
       <div className="rd-toolbar">
-        <div className="rd-search-row">
-          <div className="rd-search-wrap">
-            <MdSearch size={17} className="rd-search-icon" />
-            {/* stable key so React never remounts this input */}
-            <input
-              key="document-search-input"
-              className="rd-search-input"
-              placeholder={t("docSearch")}
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-            {/* subtle spinner while fetching, clear button when idle */}
-            {fetching ? (
-              <div className="rd-search-clear" style={{ pointerEvents: "none" }}>
-                <svg className="animate-spin" style={{ width: 13, height: 13 }} viewBox="0 0 24 24" fill="none">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
-                </svg>
-              </div>
-            ) : search ? (
-              <button className="rd-search-clear" onClick={() => setSearch("")} title={t("cancel")}>
-                <MdClose size={13} />
-              </button>
-            ) : null}
-          </div>
+        <div className="rd-search-wrap">
+          <MdSearch size={17} className="rd-search-icon" />
+          {/* stable key so React never remounts this input */}
+          <input
+            key="document-search-input"
+            className="rd-search-input"
+            placeholder={t("docSearch")}
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+          {/* subtle spinner while fetching, clear button when idle */}
+          {fetching ? (
+            <div className="rd-search-clear" style={{ pointerEvents: "none" }}>
+              <svg className="animate-spin" style={{ width: 13, height: 13 }} viewBox="0 0 24 24" fill="none">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+              </svg>
+            </div>
+          ) : search ? (
+            <button className="rd-search-clear" onClick={() => setSearch("")} title={t("cancel")}>
+              <MdClose size={13} />
+            </button>
+          ) : null}
         </div>
 
         {/* Filter chips */}

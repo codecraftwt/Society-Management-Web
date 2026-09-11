@@ -178,3 +178,29 @@ html:not(.light) div[style*="position: fixed"] > div[style*="maxWidth"] {
 }
 
 /* Realism Pill Master System — Deferred to index.css for full variant support */
+
+/* Maintenance Config modal: form field focus states */
+.mc-field {
+  background: var(--input-bg);
+  border-color: var(--input-border);
+  color: var(--text-primary);
+  box-sizing: border-box;
+}
+.mc-field::placeholder {
+  color: var(--text-muted, #94a3b8);
+}
+.mc-field:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+.mc-field:hover:not(:focus) {
+  border-color: var(--text-tertiary);
+}
+
+/* Theme-aware native date pickers (match global theme both modes) */
+input.mc-date {
+  color-scheme: light;
+}
+html:not(.light) input.mc-date {
+  color-scheme: dark;
+}

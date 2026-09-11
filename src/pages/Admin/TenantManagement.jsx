@@ -396,37 +396,17 @@ export default function TenantManagement() {
         </button>
       </div>
 
-      {/* ── Status Tabs ── */}
-      <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
-        {STATUS_TABS.map(tab => {
-          const isActive = activeTab === tab.key;
-          const count = tabCounts[tab.key] || 0;
-          return (
-            <button
-              key={tab.key}
-              onClick={() => setActiveTab(tab.key)}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition border"
-              style={{
-                background: isActive ? `${tab.color}15` : "var(--card-inner-bg)",
-                color: isActive ? tab.color : "var(--text-secondary)",
-                borderColor: isActive ? `${tab.color}30` : "var(--glass-border)",
-              }}
-            >
-              {tab.icon}
-              {tab.label}
-              <span
-                className="ml-1 px-1.5 py-0 rounded-full text-[10px] font-black"
-                style={{ background: isActive ? `${tab.color}20` : "var(--glass-border)", color: isActive ? tab.color : "var(--text-secondary)" }}
-              >
-                {count}
-              </span>
-            </button>
-          );
-        })}
-      </div>
-
       {/* ── Filters Bar ── */}
       <div className="flex flex-wrap gap-3 items-center">
+        <FilterSelect
+          icon={<MdFilterList size={13} />}
+          value={activeTab}
+          onChange={setActiveTab}
+          options={STATUS_TABS.map(tab => ({
+            value: tab.key,
+            label: `${tab.label} (${tabCounts[tab.key] || 0})`,
+          }))}
+        />
         <div className="relative flex-1 min-w-48">
           <MdSearch size={16} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: "var(--text-secondary)" }} />
           <input

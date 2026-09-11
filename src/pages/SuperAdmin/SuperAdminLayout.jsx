@@ -20,6 +20,7 @@ import Sidebar from "../../components/common/Sidebar";
 import AppHeader from "../../components/common/AppHeader";
 import API from "../../services/api";
 import Select from "../../components/common/Select";
+import GlobalButton from "../../components/common/GlobalButton";
 import "./SuperAdmin.css";
 
 function SuperAdminLayoutInner() {
@@ -267,19 +268,13 @@ function SuperAdminLayoutInner() {
                 <button
                   onClick={() => setShowLogoutConfirm(false)}
                   className="sa-btn sa-btn-ghost"
-                  style={{ borderRadius: 12, padding: "8px 16px" }}
+                  style={{ padding: "8px 16px" }}
                 >
                   Cancel
                 </button>
-                <button
-                  onClick={confirmLogout}
-                  className="sa-add-btn sa-add-pill"
-                >
-                  <span className="sa-pill-blob sa-pill-blob1" />
-                  <span className="sa-pill-inner" style={{ padding: "0 18px", height: 38 }}>
-                    <MdLogout size={16} /> <span>Yes, Logout</span>
-                  </span>
-                </button>
+                <GlobalButton variant="primary" size="sm" icon={MdLogout} onClick={confirmLogout}>
+                  Yes, Logout
+                </GlobalButton>
               </div>
             </div>
           </div>,

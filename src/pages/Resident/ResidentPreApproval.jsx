@@ -1,4 +1,4 @@
-import { useEffect, useState, useContext } from "react";
+import { useEffect, useState, useContext, useRef } from "react";
 import API from "../../services/api";
 import { AuthContext } from "../../context/AuthContext";
 import { useLang } from "../../context/LanguageContext";
@@ -6,11 +6,12 @@ import {
   MdPersonAdd, MdPhone, MdDirectionsCar,
   MdCalendarToday, MdQrCode, MdWarning,
   MdCheckCircle, MdContentCopy, MdPerson,
-  MdVisibility,
+  MdVisibility, MdDownload, MdPictureAsPdf,
 } from "react-icons/md";
 import { QRCodeCanvas } from "qrcode.react";
 import Modal from "../../components/Modal";
 import Select from "../../components/common/Select";
+import { jsPDF } from "jspdf";
 
 /* ── IST date helpers ── */
 const getTodayIST = () =>
@@ -70,6 +71,9 @@ export default function ResidentPreApproval() {
   const [istTime,      setIstTime]      = useState("");
   const [istDate,      setIstDate]      = useState("");
   const [viewPass,     setViewPass]     = useState(null);
+  const [showForm,     setShowForm]     = useState(false);
+  const gatePassQrRef  = useRef(null);
+  const viewPassQrRef  = useRef(null);
 
   const eligibleFlats = myFlats.filter(item => {
     const flatObj = item.Flat || item;
@@ -191,6 +195,7 @@ export default function ResidentPreApproval() {
     const res = await API.post("/preapproval", payload);
 
     setGatePass(res.data.GatePass);
+    setShowForm(false);
 
     setForm({
       visitor_name: "",
@@ -241,6 +246,58 @@ export default function ResidentPreApproval() {
     setTimeout(() => setCopiedId(null), 2000);
   };
 
+  /* ── QR download helpers ── */
+  const expandQRCanvas = (canvas, px = 1024) => {
+    const out = document.createElement("canvas");
+    out.width = px; out.height = px;
+    const ctx = out.getContext("2d");
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, px, px);
+    ctx.drawImage(canvas, (px - canvas.width) / 2, (px - canvas.height) / 2, canvas.width, canvas.height);
+    return out;
+  };
+
+  const downloadQRPNG = (canvas, name) => {
+    if (!canvas) return;
+    const a = document.createElement("a");
+    a.href = expandQRCanvas(canvas).toDataURL("image/png");
+    a.download = `${name}.png`;
+    a.click();
+  };
+
+  const downloadQRPDF = (canvas, name, { title = "", code = "", meta = [] } = {}) => {
+    if (!canvas) return;
+    const doc = new jsPDF({ orientation: "portrait", unit: "pt", format: "a4" });
+    doc.setFillColor(255, 255, 255);
+    doc.rect(0, 0, 595, 842, "F");
+    doc.setFontSize(20);
+    doc.setTextColor(30, 41, 59);
+    doc.text(title, 297.5, 72, { align: "center" });
+    doc.addImage(canvas.toDataURL("image/png"), "PNG", 297.5 - 128, 96, 256, 256);
+    doc.setFontSize(26);
+    doc.setTextColor(16, 185, 129);
+    doc.text(code, 297.5, 410, { align: "center" });
+    meta.forEach((line, i) => {
+      doc.setFontSize(10);
+      doc.setTextColor(100, 116, 139);
+      doc.text(line, 297.5, 440 + i * 16, { align: "center" });
+    });
+    doc.save(`${name}.pdf`);
+  };
+
+  const downloadBannerPNG = () => downloadQRPNG(gatePassQrRef.current, `Gate_Pass_${gatePass || "QR"}`);
+  const downloadBannerPDF = () => downloadQRPDF(gatePassQrRef.current, `Gate_Pass_${gatePass || "QR"}`, {
+    title: t("preapTitle"),
+    code: gatePass || "",
+    meta: [t("preapPassGenerated")],
+  });
+  const downloadViewPNG = () => downloadQRPNG(viewPassQrRef.current, `Gate_Pass_${viewPass?.otp || "QR"}`);
+  const downloadViewPDF = () => downloadQRPDF(viewPassQrRef.current, `Gate_Pass_${viewPass?.otp || "QR"}`, {
+    title: t("preapTitle"),
+    code: viewPass?.otp || "",
+    meta: [viewPass?.visitor_name || "", viewPass ? `${t("preapValidDate")}: ${formatDateIST(viewPass.valid_date)}` : ""].filter(Boolean),
+  });
+
   return (
     <div className="space-y-5 animate-fadeIn">
 
@@ -254,6 +311,16 @@ export default function ResidentPreApproval() {
           <p className="text-secondary text-xs mt-0.5">{t("preapSubtitle")}</p>
         </div>
       </div>
+
+      {/* ── GENERATE NEW PASS (primary action) ── */}
+      {hasEligibleFlat && (
+        <button
+          onClick={() => setShowForm(true)}
+          className="btn-primary w-full sm:w-auto justify-center px-6 py-3 text-sm font-semibold"
+        >
+          <MdQrCode size={18} /> {t("preapGenerateBtn")}
+        </button>
+      )}
 
       {/* ── LIVE IST CLOCK ── */}
       <div className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl bg-white/5 border border-white/10 text-sm">
@@ -306,13 +373,13 @@ export default function ResidentPreApproval() {
             </div>
             <div className="flex flex-col items-center gap-1">
               <div className="bg-white rounded-xl p-1.5 flex items-center justify-center">
-                <QRCodeCanvas value={gatePass} size={48} />
+                <QRCodeCanvas ref={gatePassQrRef} value={gatePass} size={128} />
               </div>
               <p className="text-[10px] text-secondary">QR</p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 mt-4">
+          <div className="flex items-center gap-2 mt-4 flex-wrap">
             <button
               onClick={handleCopy}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all duration-200 ${
@@ -324,139 +391,150 @@ export default function ResidentPreApproval() {
               {copied ? <MdCheckCircle size={13} /> : <MdContentCopy size={13} />}
               {copied ? t("preapCopied") : t("preapCopyCode")}
             </button>
-            <p className="text-[11px] text-secondary/60">{t("preapShareHint")}</p>
+            <button
+              onClick={downloadBannerPNG}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all duration-200 bg-white/8 text-secondary border-white/10 hover:bg-white/12 hover:text-white"
+            >
+              <MdDownload size={13} /> {t("docDownload")} PNG
+            </button>
+            <button
+              onClick={downloadBannerPDF}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all duration-200 bg-white/8 text-secondary border-white/10 hover:bg-white/12 hover:text-white"
+            >
+              <MdPictureAsPdf size={13} /> {t("docDownload")} PDF
+            </button>
+            <p className="text-[11px] text-secondary/60 w-full sm:w-auto">{t("preapShareHint")}</p>
           </div>
         </div>
       )}
 
-      {/* ── FORM ── */}
-      {hasEligibleFlat && (
-        <div className="bg-card p-4 sm:p-5 rounded-2xl">
-          <p className="text-xs font-semibold text-secondary uppercase tracking-wider mb-4">
-            {t("preapVisitorDetails")}
-          </p>
+      {/* ── GENERATE PASS MODAL ── */}
+      <Modal
+        isOpen={showForm}
+        onClose={() => { if (!submitting) setShowForm(false); }}
+        title={t("preapVisitorDetails")}
+        icon={MdQrCode}
+        size="md"
+      >
+        <form onSubmit={handleSubmit} className="space-y-4">
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-
-            {myFlats.length > 0 && (
-              <div>
-                <label className="text-xs text-secondary mb-1.5 block">
-                  {t("preapSelectFlat") || "Select Flat"} <span className="text-red-400">*</span>
-                </label>
-                <Select
-                  className="input h-11 w-full"
-                  value={selectedFlatId}
-                  onChange={(e) => setSelectedFlatId(e.target.value)}
-                  required
-                >
-                  {eligibleFlats.map((flat) => (
-                    <option key={flat.flat_id || flat.id} value={flat.flat_id || flat.id}>
-                      Flat {flat.Flat?.flat_number || flat.flat_number || flat.flatNumber || flat.number || "—"}
-                    </option>
-                  ))}
-                </Select>
-              </div>
-            )}
-
-            {/* Row 1: Name + Mobile */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="text-xs text-secondary mb-1.5 block">
-                  {t("preapVisitorName")} <span className="text-red-400">*</span>
-                </label>
-                <div className="relative">
-                  <MdPerson size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-secondary pointer-events-none" />
-                  <input
-                    className="input h-11 w-full pl-9"
-                    placeholder={t("preapVisitorNamePlaceholder")}
-                    required
-                    value={form.visitor_name}
-                    onChange={(e) => setForm({ ...form, visitor_name: e.target.value })}
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="text-xs text-secondary mb-1.5 block">
-                  {t("preapMobile")} <span className="text-red-400">*</span>
-                </label>
-                <div className="relative">
-                  <MdPhone size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-secondary pointer-events-none" />
-                  <input
-                    className="input h-11 w-full pl-9"
-                    placeholder={t("preapMobilePlaceholder")}
-                    required
-                    value={form.mobile}
-                    onChange={(e) => setForm({ ...form, mobile: e.target.value })}
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Row 2: Vehicle + Purpose */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="text-xs text-secondary mb-1.5 block">{t("preapVehicle")}</label>
-                <div className="relative">
-                  <MdDirectionsCar size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-secondary pointer-events-none" />
-                  <input
-                    className="input h-11 w-full pl-9"
-                    placeholder={t("preapVehiclePlaceholder")}
-                    value={form.vehicle_number}
-                    onChange={(e) => setForm({ ...form, vehicle_number: e.target.value })}
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="text-xs text-secondary mb-1.5 block">
-                  {t("preapPurpose")} <span className="text-red-400">*</span>
-                </label>
-                <Select
-                  className="input h-11 w-full"
-                  required
-                  value={form.purpose}
-                  onChange={(e) => setForm({ ...form, purpose: e.target.value })}
-                >
-                  <option value="">{t("preapSelectPurpose")}</option>
-                  {Object.entries(PURPOSE_ICONS).map(([val, emoji]) => (
-                    <option key={val} value={val}>
-                      {emoji} {purposeLabels[val]}
-                    </option>
-                  ))}
-                </Select>
-              </div>
-            </div>
-
-            {/* Row 3: Valid Date */}
-            <div className="sm:w-1/2">
+          {myFlats.length > 0 && (
+            <div>
               <label className="text-xs text-secondary mb-1.5 block">
-                {t("preapValidDate")} <span className="text-red-400">*</span>
+                {t("preapSelectFlat") || "Select Flat"} <span className="text-red-400">*</span>
+              </label>
+              <Select
+                className="input h-11 w-full"
+                value={selectedFlatId}
+                onChange={(e) => setSelectedFlatId(e.target.value)}
+                required
+              >
+                {eligibleFlats.map((flat) => (
+                  <option key={flat.flat_id || flat.id} value={flat.flat_id || flat.id}>
+                    Flat {flat.Flat?.flat_number || flat.flat_number || flat.flatNumber || flat.number || "—"}
+                  </option>
+                ))}
+              </Select>
+            </div>
+          )}
+
+          {/* Row 1: Name + Mobile */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs text-secondary mb-1.5 block">
+                {t("preapVisitorName")} <span className="text-red-400">*</span>
               </label>
               <div className="relative">
+                <MdPerson size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-secondary pointer-events-none" />
                 <input
-  type="date"
-  value={form.valid_date}
-  onChange={(e) =>
-    setForm({ ...form, valid_date: e.target.value })
-  }
-  required
-/>
+                  className="input h-11 w-full pl-9"
+                  placeholder={t("preapVisitorNamePlaceholder")}
+                  required
+                  value={form.visitor_name}
+                  onChange={(e) => setForm({ ...form, visitor_name: e.target.value })}
+                />
               </div>
             </div>
-            
-            {/* Submit */}
-            <button
-              type="submit"
-              disabled={submitting || !hasEligibleFlat}
-              className="btn-primary w-full justify-center py-2.5 mt-1 disabled:opacity-60 disabled:cursor-not-allowed"
-            >
-              {submitting
-                ? <><Spinner /> {t("preapGenerating")}</>
-                : <><MdQrCode size={17} /> {t("preapGenerateBtn")}</>
-              }
-            </button>
-          </form>
-        </div>
-      )}
+            <div>
+              <label className="text-xs text-secondary mb-1.5 block">
+                {t("preapMobile")} <span className="text-red-400">*</span>
+              </label>
+              <div className="relative">
+                <MdPhone size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-secondary pointer-events-none" />
+                <input
+                  className="input h-11 w-full pl-9"
+                  placeholder={t("preapMobilePlaceholder")}
+                  required
+                  value={form.mobile}
+                  onChange={(e) => setForm({ ...form, mobile: e.target.value })}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Row 2: Vehicle + Purpose */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs text-secondary mb-1.5 block">{t("preapVehicle")}</label>
+              <div className="relative">
+                <MdDirectionsCar size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-secondary pointer-events-none" />
+                <input
+                  className="input h-11 w-full pl-9"
+                  placeholder={t("preapVehiclePlaceholder")}
+                  value={form.vehicle_number}
+                  onChange={(e) => setForm({ ...form, vehicle_number: e.target.value })}
+                />
+              </div>
+            </div>
+            <div>
+              <label className="text-xs text-secondary mb-1.5 block">
+                {t("preapPurpose")} <span className="text-red-400">*</span>
+              </label>
+              <Select
+                className="input h-11 w-full"
+                required
+                value={form.purpose}
+                onChange={(e) => setForm({ ...form, purpose: e.target.value })}
+              >
+                <option value="">{t("preapSelectPurpose")}</option>
+                {Object.entries(PURPOSE_ICONS).map(([val, emoji]) => (
+                  <option key={val} value={val}>
+                    {emoji} {purposeLabels[val]}
+                  </option>
+                ))}
+              </Select>
+            </div>
+          </div>
+
+          {/* Row 3: Valid Date */}
+          <div className="sm:w-1/2">
+            <label className="text-xs text-secondary mb-1.5 block">
+              {t("preapValidDate")} <span className="text-red-400">*</span>
+            </label>
+            <div className="relative">
+              <input
+                type="date"
+                className="input h-11 w-full"
+                value={form.valid_date}
+                onChange={(e) => setForm({ ...form, valid_date: e.target.value })}
+                required
+              />
+            </div>
+          </div>
+
+          {/* Submit */}
+          <button
+            type="submit"
+            disabled={submitting || !hasEligibleFlat}
+            className="btn-primary w-full justify-center py-2.5 mt-1 disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            {submitting
+              ? <><Spinner /> {t("preapGenerating")}</>
+              : <><MdQrCode size={17} /> {t("preapGenerateBtn")}</>
+            }
+          </button>
+        </form>
+      </Modal>
 
       {/* ── ACTIVE PASSES ── */}
       {myPasses.length > 0 && (
@@ -589,7 +667,7 @@ export default function ResidentPreApproval() {
 
               {/* large QR */}
               <div className="bg-white rounded-2xl p-4 flex items-center justify-center">
-                <QRCodeCanvas value={viewPass.otp} size={160} />
+                <QRCodeCanvas ref={viewPassQrRef} value={viewPass.otp} size={160} />
               </div>
 
               {/* pass code */}
@@ -619,6 +697,22 @@ export default function ResidentPreApproval() {
                 {copiedId === viewPass.id ? <MdCheckCircle size={14} /> : <MdContentCopy size={14} />}
                 {copiedId === viewPass.id ? "Copied!" : "Copy Code"}
               </button>
+
+              {/* download buttons */}
+              <div className="grid grid-cols-2 gap-2 w-full">
+                <button
+                  onClick={downloadViewPNG}
+                  className="flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold border transition-all duration-200 bg-white/8 text-secondary border-white/10 hover:bg-white/12 hover:text-white"
+                >
+                  <MdDownload size={14} /> {t("docDownload")} PNG
+                </button>
+                <button
+                  onClick={downloadViewPDF}
+                  className="flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold border transition-all duration-200 bg-white/8 text-secondary border-white/10 hover:bg-white/12 hover:text-white"
+                >
+                  <MdPictureAsPdf size={14} /> {t("docDownload")} PDF
+                </button>
+              </div>
             </div>
           );
         })()}

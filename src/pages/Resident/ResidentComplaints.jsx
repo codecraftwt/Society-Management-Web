@@ -1636,19 +1636,8 @@ export default function ResidentComplaints() {
                 {[...Array(SKELETON_COUNT)].map((_, i) => <MobileComplaintSkeleton key={i} />)}
               </div>
             ) : (
-              <div style={{ overflowX: "auto" }}>
-                <table className="data-table" style={{ minWidth: 640 }}>
-                  <thead>
-                    <tr>
-                      <th>#</th><th>{t("compColTitle")}</th><th>{t("compColDesc")}</th>
-                      <th>{t("compColPhoto")}</th><th>{t("billStatusCol")}</th>
-                      <th>{t("compColDate")}</th><th>{t("billActionCol")}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {[...Array(SKELETON_COUNT)].map((_, i) => <TableRowSkeleton key={i} cols={7} />)}
-                  </tbody>
-                </table>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(330px, 1fr))", gap: 14 }}>
+                {[...Array(SKELETON_COUNT)].map((_, i) => <MobileComplaintSkeleton key={i} />)}
               </div>
             )
           )}
@@ -1689,99 +1678,19 @@ export default function ResidentComplaints() {
                 </div>
               )}
               {!isMobile && (
-                <div style={{ overflowX: "auto" }}>
-                  <table className="data-table" style={{ minWidth: 640 }}>
-                    <thead>
-                      <tr>
-                        <th>#</th><th>{t("compColTitle")}</th><th>{t("compColDesc")}</th>
-                        <th>{t("compColPhoto")}</th><th>{t("billStatusCol")}</th>
-                        <th>{t("compColDate")}</th><th>{t("billActionCol")}</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {complaints.map((c, idx) => {
-                        const sc     = statusCfg[c.status] || statusCfg.PENDING;
-                        const unread = unreadMap[c.id] || 0;
-                        return (
-                          <tr key={c.id} onClick={() => openDrawer(c, "details")}>
-                            <td style={{ color: "var(--text-secondary)", fontSize: 12 }}>{(page - 1) * LIMIT + idx + 1}</td>
-                            <td style={{ maxWidth: 180 }}>
-                              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                                <div style={{ width: 3, height: 32, borderRadius: 99, background: getDot(c.status), flexShrink: 0 }} />
-                                <span style={{ fontWeight: 600, fontSize: 13, color: "var(--text-primary)",
-                                  overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-                                  display: "block", maxWidth: 160 }}>{c.title}</span>
-                              </div>
-                            </td>
-                            <td style={{ maxWidth: 200 }}>
-                              <span style={{ fontSize: 12, color: "var(--text-secondary)", overflow: "hidden",
-                                textOverflow: "ellipsis", whiteSpace: "nowrap", display: "block", maxWidth: 190 }}>
-                                {c.description}
-                              </span>
-                            </td>
-                            <td onClick={e => e.stopPropagation()}>
-                              {c.photo_url ? (
-                                <div style={{ width: 54, height: 38, borderRadius: 10, overflow: "hidden",
-                                  border: "1.5px solid var(--glass-border)", cursor: "pointer" }}
-                                  onClick={() => setLightboxUrl(c.photo_url)}>
-                                  <img src={c.photo_url} alt="Complaint" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                                </div>
-                              ) : <span style={{ fontSize: 12, color: "var(--text-secondary)", opacity: 0.35 }}>—</span>}
-                            </td>
-                            <td>
-                              <span className={`status-pill ${sc.pill}`}><sc.Icon size={11} /> {statusLabel(c.status)}</span>
-                            </td>
-                            <td style={{ fontSize: 12, color: "var(--text-secondary)", whiteSpace: "nowrap" }}>{formatDate(c.created_at)}</td>
-                            <td onClick={e => e.stopPropagation()}>
-                              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                                <div style={{ position: "relative" }}>
-                                  {unread > 0 && (
-                                    <span style={{ position: "absolute", top: -7, right: -7, minWidth: 18, height: 18,
-                                      borderRadius: "50%", background: "linear-gradient(135deg, #25d366, #128c7e)",
-                                      color: "#fff", fontSize: 10, fontWeight: 800, display: "flex", alignItems: "center",
-                                      justifyContent: "center", padding: "0 4px", border: "2px solid var(--card-bg)",
-                                      boxShadow: "0 2px 8px rgba(37,211,102,0.55)", zIndex: 2, letterSpacing: 0, lineHeight: 1,
-                                      animation: "rcr-badge-pop 0.4s cubic-bezier(0.34,1.56,0.64,1) both" }}>
-                                      {unread > 99 ? "99+" : unread}
-                                    </span>
-                                  )}
-                                  <button onClick={() => openDrawer(c, "chat")} className={`rcr-discuss-btn ${unread > 0 ? "rcr-discuss-btn--shake" : ""}`}>
-                                    <MdChat size={13} /><span>{t("chatDiscussion")}</span>
-                                  </button>
-                                </div>
-                                {(c.status === "OPEN" || c.status === "PENDING") && (
-                                  confirmDeleteId === c.id ? (
-                                    <div style={{ display: "flex", alignItems: "center", gap: 6 }} className="animate-fadeIn">
-                                      <span style={{ fontSize: 11, color: "var(--text-secondary)" }}>{t("billSure")}</span>
-                                      <button onClick={() => handleDelete(c.id)} disabled={deletingId === c.id}
-                                        style={{ padding: "4px 10px", borderRadius: 8, background: "#dc2626", color: "#fff",
-                                          fontSize: 11, fontWeight: 700, border: "none", cursor: "pointer",
-                                          display: "flex", alignItems: "center", gap: 4 }}>
-                                        {deletingId === c.id ? <Spinner small /> : t("compConfirmYes")}
-                                      </button>
-                                      <button onClick={() => setConfirmDeleteId(null)}
-                                        style={{ padding: "4px 8px", borderRadius: 8, fontSize: 11,
-                                          background: "var(--card-inner-bg)", color: "var(--text-secondary)",
-                                          border: "1px solid var(--glass-border)", cursor: "pointer" }}>
-                                        {t("compConfirmNo")}
-                                      </button>
-                                    </div>
-                                  ) : (
-                                    <button onClick={() => setConfirmDeleteId(c.id)}
-                                      style={{ display: "flex", alignItems: "center", gap: 5, padding: "6px 12px",
-                                        borderRadius: 10, background: "var(--stat-red-bg)", color: "var(--stat-red-color)",
-                                        border: "1px solid var(--stat-red-border)", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>
-                                      <MdDelete size={13} /> {t("billDelete")}
-                                    </button>
-                                  )
-                                )}
-                              </div>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
+                <>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(330px, 1fr))", gap: 14 }}>
+                    {complaints.map((c, idx) => (
+                      <div key={c.id} className="animate-fadeIn" style={{ animationDelay: `${idx * 40}ms` }}>
+                        <MobileComplaintCard
+                          c={c} unreadMap={unreadMap} confirmDeleteId={confirmDeleteId} deletingId={deletingId}
+                          onOpen={openDrawer} onPhotoOpen={url => setLightboxUrl(url)}
+                          onDelete={handleDelete} onCancelDelete={() => setConfirmDeleteId(null)}
+                          statusLabel={statusLabel} statusCfg={statusCfg} t={t}
+                        />
+                      </div>
+                    ))}
+                  </div>
                   <div className="table-footer">
                     <span style={{ fontSize: 12, color: "var(--text-secondary)" }}>
                       {t("billShowing")} {complaints.length} {t("billOf")} {totalItems} {t("compCount")}
@@ -1789,7 +1698,7 @@ export default function ResidentComplaints() {
                     </span>
                     <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} />
                   </div>
-                </div>
+                </>
               )}
             </>
           )}

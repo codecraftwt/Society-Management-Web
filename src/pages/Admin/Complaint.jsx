@@ -118,15 +118,6 @@ const flatLabel = (c, t) => {
   return label;
 };
 
-/* Short chip label used in the table cell */
-const flatChipLabel = (c) => {
-  const flat = resolveFlatObj(c);
-  if (!flat) return "NA";
-  const block   = flat.Block?.name || flat.block_name || "";
-  const flatNum = flat.flat_number || "";
-  return [block, flatNum].filter(Boolean).join(" - ") || "NA";
-};
-
 function StatusPill({ status, t }) {
   const cfg = {
     RESOLVED:    { key: "compStatusResolved",   Icon: MdCheckCircle, cls: "status-pill--resolved"   },
@@ -350,7 +341,7 @@ function ChatPanel({ complaintId, societyId, currentUser, onIncomingMessage }) {
     if (attachment_type === "image") {
       return (
         <div style={{ marginTop: 6, borderRadius: 10, overflow: "hidden", cursor: "pointer",
-          border: "1.5px solid rgba(255,255,255,0.15)", maxWidth: 220 }}
+          border: "1.5px solid var(--glass-border)", maxWidth: 220 }}
           onClick={() => setLightbox(attachment_url)}>
           <img src={attachment_url} alt="attachment"
             style={{ width: "100%", display: "block", objectFit: "cover", maxHeight: 160 }} />
@@ -363,7 +354,7 @@ function ChatPanel({ complaintId, societyId, currentUser, onIncomingMessage }) {
     return (
       <div style={{ marginTop: 6, display: "inline-flex", alignItems: "center", gap: 6,
         padding: "6px 10px", borderRadius: 8, fontSize: 12, fontWeight: 500,
-        background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.15)",
+        background: "var(--card-inner-bg)", border: "1px solid var(--glass-border)",
         maxWidth: 220, overflow: "hidden" }}>
         <MdFilePresent size={17} style={{ flexShrink: 0, opacity: 0.85 }} />
         <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
@@ -767,13 +758,6 @@ function MobileComplaintCard({ c, updateStatus, updatingId, t, onOpen, onPhotoCl
 }
 
 /* ── Skeletons ───────────────────────────────────────────────────────────────── */
-function SkeletonStats() {
-  return (
-    <div className={styles.stats}>
-      {[0, 1, 2, 3].map(i => <div key={i} className={`${styles.skel} ${styles.skelStat}`} />)}
-    </div>
-  );
-}
 function SkeletonToolbar() {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12, padding: "14px 16px", borderBottom: "1px solid var(--glass-border)" }}>
@@ -1201,13 +1185,6 @@ export default function Complaint() {
     { key: "RESOLVED",    label: t("compStatusResolved"), shortLabel: t("adminCompDone"),    count: counts.RESOLVED },
   ];
 
-  const STATS = [
-    { key: "total",      label: t("compStatTotal"),      note: t("compStatSubTotal"),    val: counts.ALL,         color: "#2563EB" },
-    { key: "pending",    label: t("compStatusPending"),  note: t("compStatSubPending"),  val: counts.PENDING,     color: "#3B82F6" },
-    { key: "inprogress", label: t("compTabInProgress"),  note: t("compStatSubProgress"), val: counts.IN_PROGRESS, color: "#9F87D7" },
-    { key: "resolved",   label: t("compStatusResolved"), note: t("compStatSubResolved"), val: counts.RESOLVED,    color: "#22c55e" },
-  ];
-
   const activeChips = useMemo(() => {
     const chips = [];
     if (isSuperAdmin && filterSocietyId) {
@@ -1411,8 +1388,8 @@ export default function Complaint() {
             <p className={styles.stateDesc}>{t("compNoComplaintsSub")}</p>
             <button className={styles.stateBtn} onClick={clearAllFilters}>{t("compClearFilters")}</button>
           </div>
-        ) : isMobile ? (
-          <div style={{ display: "flex", flexDirection: "column", gap: 12, padding: 14 }}>
+        ) : (
+          <div className={styles.cardGrid}>
             {filtered.map((c, i) => (
               <div key={c.id} className="animate-fadeIn" style={{ animationDelay: `${i * 40}ms` }}>
                 <MobileComplaintCard c={c} updateStatus={updateStatus} updatingId={updatingId} t={t}
@@ -1420,107 +1397,23 @@ export default function Complaint() {
                   onPhotoClick={(url, title) => { setLightboxPhoto(url); setLightboxTitle(title); }} />
               </div>
             ))}
-            <div style={{ marginTop: 10, display: "flex", justifyContent: "center" }}>
-              <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} />
-            </div>
           </div>
-        ) : (
-          <>
-            <div className={styles.tableScroll}>
-              <table className={styles.table}>
-                <thead>
-                  <tr>
-                    <th style={{ minWidth: 300 }}>{t("compColTitle")}</th>
-                    <th>{t("reportResident")}</th>
-                    <th>{t("reportFlat")}</th>
-                    <th>{t("billStatusCol")}</th>
-                    <th>{t("compSubmittedAt")}</th>
-                    <th className={styles.thActions}>{t("compActions")}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filtered.map((c) => (
-                    <tr key={c.id} onClick={() => openDrawer(c, "details")} style={{ cursor: "pointer" }}>
-                      {/* Complaint */}
-                      <td>
-                        <div className={styles.compCell}>
-                          {c.photo_url ? (
-                            <div className={styles.compThumb}
-                              onClick={e => { e.stopPropagation(); setLightboxPhoto(c.photo_url); setLightboxTitle(c.title); }}
-                              title={c.title}>
-                              <img className={styles.compThumbImg} src={c.photo_url} alt="complaint" />
-                            </div>
-                          ) : (
-                            <div className={styles.compThumb}>
-                              <MdImage size={16} />
-                            </div>
-                          )}
-                          <div className={styles.compInfo}>
-                            <div className={styles.compTitle} title={c.title}>
-                              <span className={styles.compDot} style={{ background: getDot(c.status) }} />
-                              <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{c.title}</span>
-                            </div>
-                            {c.description && (
-                              <div className={styles.compDesc} title={c.description}>{c.description}</div>
-                            )}
-                          </div>
-                        </div>
-                      </td>
-                      {/* Resident */}
-                      <td>
-                        <div className={styles.residentCell}>
-                          <div className={styles.avatar}><MdPerson size={15} /></div>
-                          <div style={{ minWidth: 0 }}>
-                            <div className={styles.residentName} title={c.User?.name || "NA"}>{c.User?.name || "NA"}</div>
-                            <div className={styles.residentMeta} title={flatChipLabel(c)}>{flatChipLabel(c)}</div>
-                          </div>
-                        </div>
-                      </td>
-                      {/* Location */}
-                      <td style={{ minWidth: 130 }}>
-                        <div className={styles.locationMain} title={flatLabel(c, t)}>{flatChipLabel(c)}</div>
-                        {c.Society && (
-                          <div className={styles.locationSub} title={c.Society.name}>
-                            <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
-                              <MdPublic size={10} /> {c.Society.name}
-                            </span>
-                          </div>
-                        )}
-                      </td>
-                      {/* Status */}
-                      <td><StatusPill status={c.status} t={t} /></td>
-                      {/* Submitted */}
-                      <td>
-                        <div className={styles.dateMain}>{formatDate(c.created_at)}</div>
-                        {(() => { const tm = formatTime(c.created_at); return tm ? (
-                          <div className={styles.dateSub}>{tm}</div>
-                        ) : null; })()}
-                      </td>
-                      {/* Actions — final column */}
-                      <td className={styles.tdActions}>
-                        <ComplaintRowMenu c={c} updatingId={updatingId} unread={unreadMap[c.id] || 0}
-                          commentCount={commentCounts[c.id]} updateStatus={updateStatus} t={t}
-                          onView={() => openDrawer(c, "details")}
-                          onMessages={() => openDrawer(c, "chat")} />
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            <div className={styles.footer}>
-              <span className={styles.footerMeta}>
-                {t("reportShowing")} <strong>{(page - 1) * LIMIT + 1}–{Math.min(page * LIMIT, totalItems)}</strong>
-                {t("reportOf")} {totalItems} {t("rcrComplaintsCount")}
-                {hasDateFilter && (
-                  <span style={{ display: "inline-flex", alignItems: "center", gap: 5, color: "var(--stat-purple-color)", fontWeight: 600, marginLeft: 8 }}>
-                    <MdCalendarToday size={12} /> {t("compFilteredByDate")}
-                  </span>
-                )}
-              </span>
-              <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} />
-            </div>
-          </>
+        )}
+
+        {/* ── PAGINATION FOOTER ── */}
+        {!loading && complaints.length > 0 && (
+          <div className={styles.footer}>
+            <span className={styles.footerMeta}>
+              {t("reportShowing")} <strong>{(page - 1) * LIMIT + 1}–{Math.min(page * LIMIT, totalItems)}</strong>
+              {t("reportOf")} {totalItems} {t("rcrComplaintsCount")}
+              {hasDateFilter && (
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 5, color: "var(--stat-purple-color)", fontWeight: 600, marginLeft: 8 }}>
+                  <MdCalendarToday size={12} /> {t("compFilteredByDate")}
+                </span>
+              )}
+            </span>
+            <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} />
+          </div>
         )}
       </div>
 

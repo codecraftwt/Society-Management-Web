@@ -7,6 +7,7 @@ import {
 } from "react-icons/md";
 import { toast } from "react-toastify";
 import { AuthContext } from "../../context/AuthContext";
+import GlobalButton from "../../components/common/GlobalButton";
 
 /* ─────────────────────────────────────────────
    Document Upload Field
@@ -192,9 +193,9 @@ export default function MyProperties() {
      Styles
   ───────────────────────────────────────── */
   const inputStyle = {
-    background:   "var(--bg-default, #151521)",
-    border:       "1px solid var(--divider, rgba(255,255,255,0.1))",
-    color:        "var(--text-primary, #ffffff)",
+    background:   "var(--input-bg, #ffffff)",
+    border:       "1px solid var(--divider, rgba(0,0,0,0.12))",
+    color:        "var(--text-primary, #111827)",
     padding:      "10px 12px",
     borderRadius: "8px",
     outline:      "none",
@@ -299,12 +300,14 @@ export default function MyProperties() {
                         )}
                       </div>
                     )}
-                    <button
+                    <GlobalButton
+                      variant="add"
+                      size="xs"
+                      icon={MdPersonAdd}
                       onClick={() => { setSelectedFlatId(prop.flat_id); setShowForm(true); }}
-                      className="btn-primary px-3 py-1.5 text-xs font-semibold flex items-center gap-2"
                     >
-                      <MdPersonAdd size={14} /> Add Tenant
-                    </button>
+                      Add Tenant
+                    </GlobalButton>
                   </div>
                 )}
               </div>
@@ -409,9 +412,15 @@ export default function MyProperties() {
               </div>
 
               <div className="pt-1">
-                <button type="submit" disabled={submitting} className="btn-primary w-full py-2.5 text-sm flex justify-center items-center gap-2">
-                  {submitting ? "Uploading Documents & Saving..." : <><MdPersonAdd size={18} /> Submit Tenant</>}
-                </button>
+                <GlobalButton
+                  type="submit"
+                  variant="add"
+                  fullWidth
+                  icon={MdPersonAdd}
+                  loading={submitting}
+                >
+                  {submitting ? "Uploading Documents & Saving..." : "Submit Tenant"}
+                </GlobalButton>
               </div>
             </form>
           </div>
