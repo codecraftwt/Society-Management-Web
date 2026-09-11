@@ -93,6 +93,11 @@ const Home = () => {
   const goToApp = () => navigate(loggedIn ? dashboardPath : "/login");
 
   useEffect(() => {
+    document.documentElement.classList.add("home-page-scroll");
+    return () => document.documentElement.classList.remove("home-page-scroll");
+  }, []);
+
+  useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 24);
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
@@ -627,6 +632,10 @@ const Home = () => {
          8. FOOTER SECTION
          ========================================================================== */}
       <footer className="home-footer">
+        <div className="home-footer-bg" aria-hidden="true">
+          <img src={homeBannerImg} alt="" />
+        </div>
+        <div className="home-footer-frost" aria-hidden="true" />
         <div className="home-container">
           <div className="home-footer-grid">
             {/* Col 1: Company Info */}
