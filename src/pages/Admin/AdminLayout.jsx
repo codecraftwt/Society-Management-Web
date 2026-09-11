@@ -1,6 +1,6 @@
 import { useState, useEffect, useContext } from "react";
 import { createPortal } from "react-dom";
-import { Outlet, useNavigate } from "react-router-dom";
+import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import API from "../../services/api";
 import { LanguageProvider, useLang } from "../../context/LanguageContext";
 import LanguageSelector from "../../components/common/LanguageSelector";
@@ -26,6 +26,8 @@ import Sidebar from "../../components/common/Sidebar";
 import AppHeader from "../../components/common/AppHeader";
 import "./Admin.css";
 
+import { hasPermission, isCommitteeMember } from "../../utils/permissions";
+
 /* Role meta for role-switcher */
 const ROLE_META = {
   SOCIETY_ADMIN: { label: "Society Admin", icon: "🏢", desc: "Manage your society" },
@@ -39,6 +41,7 @@ const ROLE_META = {
 
 function AdminLayoutInner() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { t } = useLang();
   const { openMobile } = useSidebar();
 
@@ -50,6 +53,7 @@ function AdminLayoutInner() {
   const { user, switchRole } = useContext(AuthContext);
 
   const base = "/admin";
+  const isCommittee = isCommitteeMember(user);
 
   /* Menu definitions with non-breaking grouping metadata */
   const menu = [
@@ -58,110 +62,128 @@ function AdminLayoutInner() {
       path: `${base}`,
       icon: MdDashboard,
       group: "OVERVIEW",
+      module: "dashboard",
     },
     {
       label: t("adminMenuResidents"),
       path: `${base}/resident`,
       icon: FaUsers,
       group: "COMMUNITY & PROPERTY",
+      module: "resident",
     },
     {
       label: t("adminMenuAssignFlat"),
       path: `${base}/assign-flat`,
       icon: MdApartment,
       group: "COMMUNITY & PROPERTY",
-    },
-    {
-      label: "Admin Setting",
-      path: `${base}/settings`,
-      icon: MdApartment,
-      group: "COMMUNITY & PROPERTY",
+      module: "resident",
+      action: "create",
     },
     {
       label: t("adminManageProperty"),
       path: `${base}/property`,
       icon: MdApartment,
       group: "COMMUNITY & PROPERTY",
+      module: "property",
     },
     {
       label: t("adminMenuParking"),
       path: `${base}/parking-slots`,
       icon: FaParking,
       group: "COMMUNITY & PROPERTY",
+      module: "parking_slots",
     },
     {
       label: "Flat History",
       path: `${base}/flat-history`,
       icon: MdVerified,
       group: "COMMUNITY & PROPERTY",
+      module: "flat_history",
     },
     {
       label: "Tenant Management",
       path: `${base}/tenant-management`,
       icon: FaUsers,
       group: "COMMUNITY & PROPERTY",
+      module: "tenant_management",
     },
     {
       label: t("adminMenuGuards"),
       path: `${base}/guard`,
       icon: FaUserShield,
       group: "SECURITY & LOGS",
+      module: "guard",
     },
     {
       label: t("adminMenuVisitorLogs"),
       path: `${base}/visitor-logs`,
       icon: MdCampaign,
       group: "SECURITY & LOGS",
+      module: "visitor_logs",
     },
     {
       label: t("adminMenuNotices"),
       path: `${base}/notice`,
       icon: MdCampaign,
       group: "COMMUNICATION",
+      module: "notice",
     },
     {
       label: t("adminMenuComplaints"),
       path: `${base}/complaints`,
       icon: MdReportProblem,
       group: "COMMUNICATION",
+      module: "complaints",
     },
     {
       label: t("adminMenuAccountant"),
       path: `${base}/accountant`,
       icon: MdAccountBalance,
       group: "FINANCE & BILLS",
+      module: "accountant",
     },
     {
       label: t("adminMenuManageBills"),
       path: `${base}/manage-bills`,
       icon: MdAccountBalance,
       group: "FINANCE & BILLS",
+      module: "manage_bills",
     },
     {
       label: "Maintenance Management",
       path: `${base}/maintenance`,
       icon: MdBuild,
       group: "FINANCE & BILLS",
+      module: "manage_bills",
     },
     {
       label: t("adminMenuAmenities"),
       path: `${base}/amenities`,
       icon: MdVerified,
       group: "SERVICES & REPORTS",
+      module: "amenities",
     },
     {
       label: t("adminMenuReports"),
       path: `${base}/reports`,
       icon: MdReportProblem,
       group: "SERVICES & REPORTS",
+      module: "reports",
     },
     {
       label: t("adminMenuDocument"),
       path: `${base}/society_documents`,
       icon: MdVerified,
       group: "SERVICES & REPORTS",
+      module: "society_documents",
     },
   ];
+
+  const visibleMenu = menu.filter((item) => {
+    if (!item.module) return true;
+    const reqAction = item.action || "view";
+    return hasPermission(user, item.module, reqAction);
+  });
 
   /* Close role-switcher on outside click */
   useEffect(() => {
@@ -253,13 +275,19 @@ function AdminLayoutInner() {
     >
       {/* ── REUSABLE SIDEBAR ── */}
       <Sidebar
-        menu={menu}
+        menu={visibleMenu}
         brandTitle={
-          <>
-            {t("adminPanelLabel") || "Society"}<span className="text-accent">{t("panelSuffix") || "Admin"}</span>
-          </>
+          isCommittee ? (
+            <>
+              Committee<span className="text-accent"> Panel</span>
+            </>
+          ) : (
+            <>
+              Society<span className="text-accent">{t("panelSuffix") || "Admin"}</span>
+            </>
+          )
         }
-        brandSubtitle="Society Admin"
+        brandSubtitle={isCommittee ? (user?.committee_position || user?.designation || "Committee Member") : "Society Admin"}
         base={base}
         drawerExtra={mobileRoleSwitcher}
       />
@@ -267,8 +295,12 @@ function AdminLayoutInner() {
       {/* ── MAIN CONTENT ── */}
       <div className="main-content-layout min-w-0">
         <AppHeader
-          title={t("adminDashboardTitle")}
-          subtitle={t("adminDashboardSubtitle")}
+          title={isCommittee ? "Committee Member Panel" : t("adminDashboardTitle")}
+          subtitle={
+            isCommittee
+              ? (user?.name ? `Welcome to Committee Member Panel, ${user.name}` : "Welcome to Committee Member Panel")
+              : t("adminDashboardSubtitle")
+          }
           actions={
             <>
               {/* ROLE SWITCHER */}
@@ -348,13 +380,18 @@ function AdminLayoutInner() {
             </>
           }
           onLogout={() => setShowLogoutConfirm(true)}
+          settingsPath={`${base}/settings`}
         />
 
         {/* PAGE CONTENT */}
         <main className="flex-1 overflow-y-auto overflow-x-auto scrollbar-hide p-4 sm:p-6 lg:p-8">
-          <div className="bg-card p-4 sm:p-6 rounded-xl min-w-0">
+          {location.pathname.endsWith("/settings") ? (
             <Outlet />
-          </div>
+          ) : (
+            <div className="bg-card p-4 sm:p-6 rounded-xl min-w-0">
+              <Outlet />
+            </div>
+          )}
         </main>
       </div>
 
@@ -385,7 +422,11 @@ function AdminLayoutInner() {
               >
                 {t("confirmLogout")}
               </h2>
-              <p className="text-secondary text-sm mb-6">{t("adminLogoutMsg")}</p>
+              <p className="text-secondary text-sm mb-6">
+                {isCommittee
+                  ? "Are you sure you want to logout from the committee member panel?"
+                  : t("adminLogoutMsg")}
+              </p>
               <div className="flex justify-center gap-4">
                 <button onClick={confirmLogout} className="btn-danger">
                   {t("yesLogout")}

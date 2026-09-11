@@ -1,6 +1,8 @@
 
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback, useContext } from "react";
 import { useLang } from "../../context/LanguageContext";
+import { AuthContext } from "../../context/AuthContext";
+import { isCommitteeMember } from "../../utils/permissions";
 import {
   MdOutlineAdminPanelSettings,
   MdCloudUpload, MdDescription, MdDelete,
@@ -74,8 +76,8 @@ function Pagination({ page, totalPages, onPageChange }) {
 }
 
 /* ── Document card ── */
-function DocCard({ doc, t, onDelete }) {
-  const Icon  = ICON_MAP[doc.category]  || MdDescription;
+function DocCard({ doc, t, onDelete, isCommittee }) {
+  const Icon  = ICON_MAP[doc.category] || MdDescription;
   const color = COLOR_MAP[doc.category] || "blue";
   const catLabel = cat => ({
     All: t("docCatAll"), Legal: t("docCatLegal"), Meetings: t("docCatMeetings"),
@@ -104,7 +106,9 @@ function DocCard({ doc, t, onDelete }) {
           className="ad-btn ad-btn-view ad-btn-flex">
           <MdVisibility size={14} /> {t("docView")}
         </a>
-        <GlobalButton variant="delete" size="sm" icon={MdDelete} onClick={() => onDelete(doc)} />
+        {!isCommittee && (
+          <GlobalButton variant="delete" size="sm" icon={MdDelete} onClick={() => onDelete(doc)} />
+        )}
       </div>
     </div>
   );
@@ -159,6 +163,8 @@ function DeleteModal({ doc, loading, onConfirm, onCancel, t }) {
 ═══════════════════════════════════════════ */
 export default function AdminDocument() {
   const { t }   = useLang();
+  const { user } = useContext(AuthContext);
+  const isCommittee = isCommitteeMember(user);
   const fileRef = useRef();
 
   /* ── List state ── */
@@ -333,17 +339,19 @@ const handleDelete = async () => {
           <span className="ad-count-badge">
             <MdDescription size={13} /> {initialLoad ? "…" : counts.All} {t("adDocBadgeCount")}
           </span>
-          <button
-            className={`ad-upload-toggle-btn${uploadOpen ? " ad-upload-toggle-btn--open" : ""}`}
-            onClick={() => setUploadOpen(o => !o)}
-          >
-            <span className="ad-upload-toggle-icon">
-              {uploadOpen ? <MdClose size={17} /> : <MdAdd size={17} />}
-            </span>
-            <span className="ad-upload-toggle-label">
-              {uploadOpen ? t("cancel") : t("adDocUploadBtn")}
-            </span>
-          </button>
+          {!isCommittee && (
+            <button
+              className={`ad-upload-toggle-btn${uploadOpen ? " ad-upload-toggle-btn--open" : ""}`}
+              onClick={() => setUploadOpen(o => !o)}
+            >
+              <span className="ad-upload-toggle-icon">
+                {uploadOpen ? <MdClose size={17} /> : <MdAdd size={17} />}
+              </span>
+              <span className="ad-upload-toggle-label">
+                {uploadOpen ? t("cancel") : t("adDocUploadBtn")}
+              </span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -518,7 +526,7 @@ const handleDelete = async () => {
           <>
             <div className="ad-card-grid">
               {docs.map((doc) => (
-                <DocCard key={doc.id} doc={doc} t={t} onDelete={setDeleteTarget} />
+                <DocCard key={doc.id} doc={doc} t={t} onDelete={setDeleteTarget} isCommittee={isCommittee} />
               ))}
             </div>
 

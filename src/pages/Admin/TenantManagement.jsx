@@ -200,6 +200,12 @@ function DetailModal({ tenant, onClose, onApprove, onReject, isPending }) {
             <Row label="User Status" value={tenant.user_status || "—"} chip />
             <Row label="Currently Staying" value={tenant.is_staying ? "Yes" : "No"} />
             <Row label="Current Membership" value={tenant.is_current ? "Yes" : "No"} />
+            {tenant.approved_by_name && (
+              <>
+                <Row label="Approved/Action By" value={`${tenant.approved_by_name} (${tenant.approved_by_role ? tenant.approved_by_role.replace('_', ' ') : 'Admin'})`} />
+                <Row label="Action Date" value={formatDate(tenant.approved_at)} />
+              </>
+            )}
           </Section>
         </div>
 

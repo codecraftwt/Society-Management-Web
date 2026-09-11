@@ -1,8 +1,11 @@
-import React, { useEffect, useState, useCallback, useMemo, useRef } from "react";
+import React, { useEffect, useState, useCallback, useMemo, useRef, useContext } from "react";
 import API from "../../services/api";
 import { toast } from "react-toastify";
 import { moveOutResident } from "../../services/flatService";
+import GlobalModal from "../../components/common/GlobalModal";
 import { useLang } from "../../context/LanguageContext";
+import { AuthContext } from "../../context/AuthContext";
+import { isCommitteeMember } from "../../utils/permissions";
 
 /* ─────────────────────────────────────────────────────────────
    UTILITY – normalise ANY API response shape into a plain array
@@ -426,6 +429,8 @@ const ParkingTab = ({ parking, t }) => {
 ────────────────────────────────────────────────────────────── */
 const FlatHistory = () => {
   const { t } = useLang();
+  const { user } = useContext(AuthContext);
+  const canMoveOut = !isCommitteeMember(user);
 
   const [flats,        setFlats]        = useState([]);
   const [selectedFlat, setSelectedFlat] = useState(null);
@@ -711,7 +716,7 @@ const FlatHistory = () => {
       </div>
     );
     switch (activeTab) {
-      case "residents":  return <ResidentsTab  residents={data.residents}   t={t} onMoveOut={openMoveOutConfirm} />;
+      case "residents":  return <ResidentsTab  residents={data.residents}   t={t} onMoveOut={canMoveOut ? openMoveOutConfirm : null} />;
       case "bills":      return <BillsTab      bills={data.bills}           t={t} />;
       case "parcels":    return <ParcelsTab    parcels={data.parcels}       t={t} />;
       case "visitors":   return <VisitorsTab   visitors={data.visitors}     t={t} />;
@@ -923,96 +928,69 @@ const FlatHistory = () => {
         )}
       </div>
 
-      {/* Flat History Detail Pop-up Modal (Centered Pop instead of Slider) */}
+      {/* Flat History Detail Pop-up Modal (centered, global modal style) */}
       {selectedFlat && (
-        <div className="fh-modal-overlay" onClick={goBack}>
-          <div
-            className="fh-modal-box"
-            onClick={(e) => e.stopPropagation()}
-            role="dialog"
-            aria-modal="true"
-          >
-            {/* Glowing top accent line */}
-            <div className="fh-modal-top-accent" />
-
-            {/* Modal Header */}
-            <div className="fh-modal-header">
-              <div className="fh-modal-header-left">
-                <div
-                  className={`fh-modal-flat-avatar ${
-                    selectedFlat.resident_id
-                      ? "fh-modal-flat-avatar--occ"
-                      : "fh-modal-flat-avatar--vac"
-                  }`}
-                >
-                  <span>{selectedFlat.resident_id ? "👥" : "🏠"}</span>
-                </div>
-                <div>
-                  <div className="fh-modal-title-row">
-                    <h2 className="fh-modal-title">
-                      {t("fhFlat")} {selectedFlat.flat_number}
-                    </h2>
-                    <span
-                      className={`fh-card-status-badge ${
-                        selectedFlat.resident_id
-                          ? "fh-card-status-badge--occ"
-                          : "fh-card-status-badge--vac"
-                      }`}
-                    >
-                      <span className={`fh-status-indicator-dot ${selectedFlat.resident_id ? "fh-status-indicator-dot--occ" : ""}`} />
-                      {selectedFlat.resident_id ? t("fhOccupied") : t("fhVacant")}
-                    </span>
-                  </div>
-                  <div className="fh-modal-subtitle">
-                    <span className="fh-modal-badge-chip">🏢 {getBlockName(selectedFlat)}</span>
-                    {selectedFlat.flat_type && (
-                      <span className="fh-modal-badge-chip">{selectedFlat.flat_type}</span>
-                    )}
-                    {selectedFlat.area_sqft && (
-                      <span className="fh-modal-badge-chip">{selectedFlat.area_sqft} sq.ft</span>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              <div className="fh-modal-header-actions">
-                <button className="fh-modal-close-btn" onClick={goBack} title="Close Popup (Esc)">
-                  ✕
-                </button>
-              </div>
-            </div>
-
-            {/* Modal Body (scrollbar hidden) */}
-            <div className="fh-modal-body">
-              {/* Section Toggle Buttons */}
-              <div className="fh-section-toggle-wrap">
-                <div className="fh-modern-tab-bar">
-                  {TABS.map((tab) => {
-                    const count = data[tab.id]?.length ?? 0;
-                    const isActive = activeTab === tab.id;
-                    return (
-                      <button
-                        key={tab.id}
-                        type="button"
-                        className={`fh-modern-tab-btn ${isActive ? "fh-modern-tab-btn--active" : ""}`}
-                        onClick={() => setActiveTab(tab.id)}
-                      >
-                        <span className="fh-tab-btn-icon">{tab.icon}</span>
-                        <span className="fh-tab-btn-label">{tab.label}</span>
-                        <span className="fh-modern-tab-badge">{count}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Active Section — slider-type animation on switch */}
-              <div className="fh-section-animated" key={activeTab}>
-                {renderContent()}
-              </div>
+        <GlobalModal
+          isOpen={!!selectedFlat}
+          onClose={goBack}
+          size="xl"
+          icon={<span style={{ fontSize: 20 }}>{selectedFlat.resident_id ? "👥" : "🏠"}</span>}
+          title={
+            <span className="fh-modal-title-row">
+              {t("fhFlat")} {selectedFlat.flat_number}{" "}
+              <span
+                className={`fh-card-status-badge ${
+                  selectedFlat.resident_id
+                    ? "fh-card-status-badge--occ"
+                    : "fh-card-status-badge--vac"
+                }`}
+              >
+                <span
+                  className={`fh-status-indicator-dot ${selectedFlat.resident_id ? "fh-status-indicator-dot--occ" : ""}`}
+                />
+                {selectedFlat.resident_id ? t("fhOccupied") : t("fhVacant")}
+              </span>
+            </span>
+          }
+          subtitle={
+            <span className="fh-modal-subtitle">
+              <span className="fh-modal-badge-chip">🏢 {getBlockName(selectedFlat)}</span>
+              {selectedFlat.flat_type && (
+                <span className="fh-modal-badge-chip">{selectedFlat.flat_type}</span>
+              )}
+              {selectedFlat.area_sqft && (
+                <span className="fh-modal-badge-chip">{selectedFlat.area_sqft} sq.ft</span>
+              )}
+            </span>
+          }
+        >
+          {/* Section Toggle Buttons */}
+          <div className="fh-section-toggle-wrap">
+            <div className="fh-modern-tab-bar">
+              {TABS.map((tab) => {
+                const count = data[tab.id]?.length ?? 0;
+                const isActive = activeTab === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    className={`fh-modern-tab-btn ${isActive ? "fh-modern-tab-btn--active" : ""}`}
+                    onClick={() => setActiveTab(tab.id)}
+                  >
+                    <span className="fh-tab-btn-icon">{tab.icon}</span>
+                    <span className="fh-tab-btn-label">{tab.label}</span>
+                    <span className="fh-modern-tab-badge">{count}</span>
+                  </button>
+                );
+              })}
             </div>
           </div>
-        </div>
+
+          {/* Active Section — slider-type animation on switch */}
+          <div className="fh-section-animated" key={activeTab}>
+            {renderContent()}
+          </div>
+        </GlobalModal>
       )}
 
       {/* Move-Out Confirmation Popup (centered, styled like app popups) */}

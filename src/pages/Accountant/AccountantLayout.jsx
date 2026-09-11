@@ -12,6 +12,8 @@ import Sidebar from "../../components/common/Sidebar";
 import AppHeader from "../../components/common/AppHeader";
 import "./Accountant.css";
 
+import RoleSwitcher from "../../components/RoleSwitcher";
+
 function AccountantLayoutInner() {
   const navigate = useNavigate();
   const { t } = useLang();
@@ -72,12 +74,14 @@ function AccountantLayoutInner() {
         }
         brandSubtitle="Finance View"
         base={base}
+        drawerExtra={<div className="p-3"><RoleSwitcher /></div>}
       />
 
       {/* ── MAIN CONTENT ── */}
       <div className="main-content-layout min-w-0">
         <AppHeader
           title={t("accountantDashboardTitle")}
+          actions={<RoleSwitcher />}
           onLogout={() => setShowLogoutConfirm(true)}
         />
 

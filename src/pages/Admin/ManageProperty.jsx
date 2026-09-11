@@ -1,8 +1,10 @@
-import React, { useEffect, useState, useCallback, useMemo, useRef } from "react";
+import React, { useEffect, useState, useCallback, useMemo, useRef, useContext } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import API from "../../services/api";
 import { useLang } from "../../context/LanguageContext";
+import { AuthContext } from "../../context/AuthContext";
+import { isCommitteeMember } from "../../utils/permissions";
 import {
   MdApartment, MdAdd, MdDelete, MdSearch, MdClose,
   MdLinkOff, MdHome, MdPerson, MdCheckCircle, MdLock,
@@ -91,6 +93,8 @@ export default function ManageProperty() {
   const navigate  = useNavigate();
   const { t }     = useLang();
   const isMobile  = useIsMobile();
+  const { user }  = useContext(AuthContext);
+  const canEdit   = !isCommitteeMember(user);
   const [tab, setTab] = useState("blocks");
 
   const TABS = [
@@ -148,9 +152,9 @@ export default function ManageProperty() {
       </div>
 
       {/* ── Tab panels ── */}
-      {tab === "blocks"  && <BlocksTab  isMobile={isMobile} t={t} />}
-      {tab === "flats"   && <FlatsTab   isMobile={isMobile} t={t} />}
-      {tab === "assign"  && <AssignTab  isMobile={isMobile} t={t} />}
+      {tab === "blocks"  && <BlocksTab  isMobile={isMobile} t={t} canEdit={canEdit} />}
+      {tab === "flats"   && <FlatsTab   isMobile={isMobile} t={t} canEdit={canEdit} />}
+      {tab === "assign"  && <AssignTab  isMobile={isMobile} t={t} canEdit={canEdit} />}
     </div>
   );
 }
@@ -1099,7 +1103,7 @@ function AreaAssignModal({
 /* ══════════════════════════════════════════════
   TAB 1 — BLOCKS
 ══════════════════════════════════════════════ */
-function BlocksTab({ isMobile, t }) {
+function BlocksTab({ isMobile, t, canEdit = true }) {
   const [blocks,        setBlocks]        = useState([]);
   const [loading,       setLoading]       = useState(true);
   const [name,          setName]          = useState("");
@@ -1238,13 +1242,15 @@ function BlocksTab({ isMobile, t }) {
           <p style={{ fontSize: 12, color: "var(--text-secondary)", margin: "3px 0 0" }}>Create apartment towers, wings, or independent row house layouts.</p>
         </div>
 
-        <button onClick={() => setShowForm(p => !p)} className="sa-add-btn sa-add-pill sa-btn-primary">
-          <span className="sa-pill-blob sa-pill-blob1" />
-          <span className="sa-pill-inner">
-            {showForm ? <MdClose size={16} /> : <MdAdd size={16} />}
-            <span>{showForm ? t("mpCancel") || "Cancel" : t("mpAddBlock") || "Add Phase"}</span>
-          </span>
-        </button>
+        {canEdit && (
+          <button onClick={() => setShowForm(p => !p)} className="sa-add-btn sa-add-pill sa-btn-primary">
+            <span className="sa-pill-blob sa-pill-blob1" />
+            <span className="sa-pill-inner">
+              {showForm ? <MdClose size={16} /> : <MdAdd size={16} />}
+              <span>{showForm ? t("mpCancel") || "Cancel" : t("mpAddBlock") || "Add Phase"}</span>
+            </span>
+          </button>
+        )}
       </div>
 
       {error && (
@@ -1652,25 +1658,27 @@ function BlocksTab({ isMobile, t }) {
 
                     {selectedBlock?.id === b.id && !isNaN(blockId) && (
                       isRowHouse
-                        ? <InlineFlats blockId={blockId} isMobile={true} t={t} onOpenAreaModal={openAreaModalForFlats} blockName={b.name} refreshKey={refreshFlatsKey} />
-                        : <InlineFloors blockId={blockId} isMobile={true} t={t} />
+                        ? <InlineFlats blockId={blockId} isMobile={true} t={t} onOpenAreaModal={openAreaModalForFlats} blockName={b.name} refreshKey={refreshFlatsKey} canEdit={canEdit} />
+                        : <InlineFloors blockId={blockId} isMobile={true} t={t} canEdit={canEdit} />
                     )}
 
-                    <div style={{ borderTop: "1px solid var(--glass-border)", paddingTop: 8, display: "flex", justifyContent: "flex-end" }}>
-                      {confirmId === b.id ? (
-                        <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-                          <span style={{ fontSize: 11, color: "var(--text-secondary)" }}>{t("mpDeleteBlock") || "Delete?"}</span>
-                          <button onClick={() => handleDelete(b.id)} disabled={deletingId === b.id} style={{ display: "flex", alignItems: "center", gap: 5, padding: "4px 11px", borderRadius: 7, fontSize: 11, fontWeight: 700, background: "#dc2626", color: "#fff", border: "none", cursor: "pointer" }}>
-                            {deletingId === b.id ? <Spinner size={12} /> : t("mpYes") || "Yes"}
+                    {canEdit && (
+                      <div style={{ borderTop: "1px solid var(--glass-border)", paddingTop: 8, display: "flex", justifyContent: "flex-end" }}>
+                        {confirmId === b.id ? (
+                          <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                            <span style={{ fontSize: 11, color: "var(--text-secondary)" }}>{t("mpDeleteBlock") || "Delete?"}</span>
+                            <button onClick={() => handleDelete(b.id)} disabled={deletingId === b.id} style={{ display: "flex", alignItems: "center", gap: 5, padding: "4px 11px", borderRadius: 7, fontSize: 11, fontWeight: 700, background: "#dc2626", color: "#fff", border: "none", cursor: "pointer" }}>
+                              {deletingId === b.id ? <Spinner size={12} /> : t("mpYes") || "Yes"}
+                            </button>
+                            <button onClick={() => setConfirmId(null)} style={{ padding: "4px 9px", borderRadius: 7, fontSize: 11, background: "var(--card-inner-bg)", color: "var(--text-secondary)", border: "1px solid var(--glass-border)", cursor: "pointer" }}>{t("mpCancel") || "Cancel"}</button>
+                          </div>
+                        ) : (
+                          <button onClick={() => setConfirmId(b.id)} style={{ display: "flex", alignItems: "center", gap: 5, padding: "5px 12px", borderRadius: 8, fontSize: 12, fontWeight: 600, background: "var(--stat-red-bg)", color: "var(--stat-red-color)", border: "1px solid var(--stat-red-border)", cursor: "pointer" }}>
+                            <MdDelete size={14} /> {t("mpDelete") || "Delete"}
                           </button>
-                          <button onClick={() => setConfirmId(null)} style={{ padding: "4px 9px", borderRadius: 7, fontSize: 11, background: "var(--card-inner-bg)", color: "var(--text-secondary)", border: "1px solid var(--glass-border)", cursor: "pointer" }}>{t("mpCancel") || "Cancel"}</button>
-                        </div>
-                      ) : (
-                        <button onClick={() => setConfirmId(b.id)} style={{ display: "flex", alignItems: "center", gap: 5, padding: "5px 12px", borderRadius: 8, fontSize: 12, fontWeight: 600, background: "var(--stat-red-bg)", color: "var(--stat-red-color)", border: "1px solid var(--stat-red-border)", cursor: "pointer" }}>
-                          <MdDelete size={14} /> {t("mpDelete") || "Delete"}
-                        </button>
-                      )}
-                    </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               );
@@ -1718,18 +1726,22 @@ function BlocksTab({ isMobile, t }) {
                               {isRowHouse ? <MdHomeWork size={13} /> : <MdLayers size={13} />}
                               {selectedBlock?.id === b.id ? "Hide" : (isRowHouse ? "Houses" : "Floors")}
                             </button>
-                            {confirmId === b.id ? (
-                              <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-                                <span style={{ fontSize: 11, color: "var(--text-secondary)" }}>{t("mpSure") || "Sure?"}</span>
-                                <button onClick={() => handleDelete(b.id)} disabled={deletingId === b.id} style={{ display: "flex", alignItems: "center", gap: 5, padding: "4px 11px", borderRadius: 7, fontSize: 11, fontWeight: 700, background: "#dc2626", color: "#fff", border: "none", cursor: "pointer" }}>
-                                  {deletingId === b.id ? <Spinner size={12} /> : t("mpYes") || "Yes"}
-                                </button>
-                                <button onClick={() => setConfirmId(null)} style={{ padding: "4px 9px", borderRadius: 7, fontSize: 11, background: "var(--card-inner-bg)", color: "var(--text-secondary)", border: "1px solid var(--glass-border)", cursor: "pointer" }}>{t("mpCancel") || "Cancel"}</button>
-                              </span>
-                            ) : (
-                              <button onClick={() => setConfirmId(b.id)} style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "5px 12px", borderRadius: 8, fontSize: 12, fontWeight: 600, background: "var(--stat-red-bg)", color: "var(--stat-red-color)", border: "1px solid var(--stat-red-border)", cursor: "pointer" }}>
-                                <MdDelete size={13} /> {t("mpDelete") || "Delete"}
-                              </button>
+                            {canEdit && (
+                              <>
+                                {confirmId === b.id ? (
+                                  <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                                    <span style={{ fontSize: 11, color: "var(--text-secondary)" }}>{t("mpSure") || "Sure?"}</span>
+                                    <button onClick={() => handleDelete(b.id)} disabled={deletingId === b.id} style={{ display: "flex", alignItems: "center", gap: 5, padding: "4px 11px", borderRadius: 7, fontSize: 11, fontWeight: 700, background: "#dc2626", color: "#fff", border: "none", cursor: "pointer" }}>
+                                      {deletingId === b.id ? <Spinner size={12} /> : t("mpYes") || "Yes"}
+                                    </button>
+                                    <button onClick={() => setConfirmId(null)} style={{ padding: "4px 9px", borderRadius: 7, fontSize: 11, background: "var(--card-inner-bg)", color: "var(--text-secondary)", border: "1px solid var(--glass-border)", cursor: "pointer" }}>{t("mpCancel") || "Cancel"}</button>
+                                  </span>
+                                ) : (
+                                  <button onClick={() => setConfirmId(b.id)} style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "5px 12px", borderRadius: 8, fontSize: 12, fontWeight: 600, background: "var(--stat-red-bg)", color: "var(--stat-red-color)", border: "1px solid var(--stat-red-border)", cursor: "pointer" }}>
+                                    <MdDelete size={13} /> {t("mpDelete") || "Delete"}
+                                  </button>
+                                )}
+                              </>
                             )}
                           </div>
                         </td>
@@ -1738,8 +1750,8 @@ function BlocksTab({ isMobile, t }) {
                         <tr key={`expand-${b.id}`}>
                           <td colSpan={4} style={{ padding: "0 0 16px 48px", background: "rgba(255,255,255,0.015)" }}>
                             {isRowHouse
-                              ? <InlineFlats blockId={blockId} isMobile={false} t={t} onOpenAreaModal={openAreaModalForFlats} blockName={b.name} refreshKey={refreshFlatsKey} />
-                              : <InlineFloors blockId={blockId} isMobile={false} t={t} />
+                              ? <InlineFlats blockId={blockId} isMobile={false} t={t} onOpenAreaModal={openAreaModalForFlats} blockName={b.name} refreshKey={refreshFlatsKey} canEdit={canEdit} />
+                              : <InlineFloors blockId={blockId} isMobile={false} t={t} canEdit={canEdit} />
                             }
                           </td>
                         </tr>
@@ -1760,7 +1772,7 @@ function BlocksTab({ isMobile, t }) {
 }
 
 /* ── Inline Floors sub-panel (For Apartments / Commercial) ── */
-function InlineFloors({ blockId, isMobile, t }) {
+function InlineFloors({ blockId, isMobile, t, canEdit = true }) {
   const [floors,          setFloors]          = useState([]);
   const [loading,         setLoading]         = useState(true);
   const [error,           setError]           = useState("");
@@ -1811,7 +1823,7 @@ function InlineFloors({ blockId, isMobile, t }) {
               </div>
               {/* ✅ Only render InlineFlats when BOTH blockId and floorId are valid numbers */}
               {isSelected && !isNaN(safeBlockId) && safeBlockId > 0 && !isNaN(floorId) && floorId > 0 && (
-                <InlineFlats blockId={safeBlockId} floorId={floorId} isMobile={isMobile} t={t} />
+                <InlineFlats blockId={safeBlockId} floorId={floorId} isMobile={isMobile} t={t} canEdit={canEdit} />
               )}
             </div>
           );
@@ -1822,7 +1834,7 @@ function InlineFloors({ blockId, isMobile, t }) {
 }
 
 /* ── Inline flats sub-panel (Universal: floors + row houses) ── */
-function InlineFlats({ floorId, blockId, isMobile, t, onOpenAreaModal, blockName = "", refreshKey = 0 }) {
+function InlineFlats({ floorId, blockId, isMobile, t, onOpenAreaModal, blockName = "", refreshKey = 0, canEdit = true }) {
   const [flats,      setFlats]      = useState([]);
   const [loading,    setLoading]    = useState(true);
   const [confirmId,  setConfirmId]  = useState(null);
@@ -1938,7 +1950,7 @@ function InlineFlats({ floorId, blockId, isMobile, t, onOpenAreaModal, blockName
           </span>
         </div>
 
-        {isRowHouseContext && flats.length > 0 && (
+        {canEdit && isRowHouseContext && flats.length > 0 && (
           <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
             {onOpenAreaModal && (
               <button
@@ -2021,14 +2033,14 @@ function InlineFlats({ floorId, blockId, isMobile, t, onOpenAreaModal, blockName
                     {occupied ? t("mpOcc") || "Occ" : t("mpVac") || "Vac"}
                   </span>
                 </div>
-                {confirmId === f.id ? (
+                {confirmId === f.id && canEdit ? (
                   <div style={{ display: "flex", gap: 4 }}>
                     <button onClick={() => deleteFlat(f.id)} disabled={deletingId === f.id} style={{ padding: "2px 7px", borderRadius: 5, fontSize: 10, fontWeight: 700, background: "#dc2626", color: "#fff", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 3 }}>
                       {deletingId === f.id ? <Spinner size={10} /> : t("mpYes") || "Yes"}
                     </button>
                     <button onClick={() => setConfirmId(null)} style={{ padding: "2px 6px", borderRadius: 5, fontSize: 10, background: "var(--card-bg)", color: "var(--text-secondary)", border: "1px solid var(--glass-border)", cursor: "pointer" }}>✕</button>
                   </div>
-                ) : (
+                ) : canEdit && (
                   <button onClick={() => setConfirmId(f.id)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--stat-red-color,#fca5a5)", display: "flex", padding: 2 }}><MdDelete size={14} /></button>
                 )}
               </div>
@@ -2058,12 +2070,14 @@ function InlineFlats({ floorId, blockId, isMobile, t, onOpenAreaModal, blockName
                       <span style={{ fontSize: 10, color: "var(--text-secondary)" }}>
                         {f.area_sqft ? <span style={{ fontWeight: 600, color: "var(--text-primary)" }}>{f.area_sqft}</span> : <span style={{ opacity: 0.5 }}>No area</span>} sq.ft
                       </span>
-                      <button
-                        onClick={() => { setEditingAreaId(f.id); setAreaValue(f.area_sqft || ""); }}
-                        style={{ marginLeft: "auto", padding: "1px 5px", borderRadius: 4, fontSize: 9, fontWeight: 600, background: "rgba(91,141,239,0.10)", border: "1px solid rgba(91,141,239,0.22)", color: "#94B5F5", cursor: "pointer" }}
-                      >
-                        Edit
-                      </button>
+                      {canEdit && (
+                        <button
+                          onClick={() => { setEditingAreaId(f.id); setAreaValue(f.area_sqft || ""); }}
+                          style={{ marginLeft: "auto", padding: "1px 5px", borderRadius: 4, fontSize: 9, fontWeight: 600, background: "rgba(91,141,239,0.10)", border: "1px solid rgba(91,141,239,0.22)", color: "#94B5F5", cursor: "pointer" }}
+                        >
+                          Edit
+                        </button>
+                      )}
                     </div>
                   )}
                 </div>
@@ -2079,7 +2093,7 @@ function InlineFlats({ floorId, blockId, isMobile, t, onOpenAreaModal, blockName
 /* ══════════════════════════════════════════════
   TAB 2 — ALL FLATS
 ══════════════════════════════════════════════ */
-function FlatsTab({ isMobile, t }) {
+function FlatsTab({ isMobile, t, canEdit = true }) {
   const [flats,        setFlats]        = useState([]);
   const [loading,      setLoading]      = useState(true);
   const [search,       setSearch]       = useState("");
@@ -2207,7 +2221,7 @@ function FlatsTab({ isMobile, t }) {
                         {f.Floor ? `Fl. ${f.Floor.floor_number} • Blk. ${blockName}` : `Blk. ${blockName}`} · {occ ? (t("mpOccupied") || "Occupied") : (t("mpVacant") || "Vacant")}
                       </p>
                     </div>
-                    {confirmId === f.id ? (
+                    {canEdit && (confirmId === f.id ? (
                       <div style={{ display: "flex", gap: 5, alignItems: "center", flexShrink: 0 }}>
                         <button onClick={() => deleteFlat(f.id)} disabled={deletingId === f.id} style={{ padding: "4px 9px", borderRadius: 6, fontSize: 11, fontWeight: 700, background: "#dc2626", color: "#fff", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 3 }}>
                           {deletingId === f.id ? <Spinner size={11} /> : (t("mpYes") || "Yes")}
@@ -2216,7 +2230,7 @@ function FlatsTab({ isMobile, t }) {
                       </div>
                     ) : (
                       <button onClick={() => setConfirmId(f.id)} style={{ width: 32, height: 32, borderRadius: 9, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", background: "var(--stat-red-bg)", border: "1px solid var(--stat-red-border)", color: "var(--stat-red-color)", cursor: "pointer" }}><MdDelete size={14} /></button>
-                    )}
+                    ))}
                   </div>
                 </div>
               );
@@ -2266,7 +2280,7 @@ function FlatsTab({ isMobile, t }) {
                         </span>
                       </td>
                       <td style={{ textAlign: "right" }}>
-                        {confirmId === f.id ? (
+                        {canEdit && (confirmId === f.id ? (
                           <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
                             <span style={{ fontSize: 11, color: "var(--text-secondary)" }}>{t("mpSure") || "Sure?"}</span>
                             <button onClick={() => deleteFlat(f.id)} disabled={deletingId === f.id} style={{ display: "flex", alignItems: "center", gap: 5, padding: "4px 11px", borderRadius: 7, fontSize: 11, fontWeight: 700, background: "#dc2626", color: "#fff", border: "none", cursor: "pointer" }}>
@@ -2278,7 +2292,7 @@ function FlatsTab({ isMobile, t }) {
                           <button onClick={() => setConfirmId(f.id)} style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "5px 12px", borderRadius: 8, fontSize: 12, fontWeight: 600, background: "var(--stat-red-bg)", color: "var(--stat-red-color)", border: "1px solid var(--stat-red-border)", cursor: "pointer" }}>
                             <MdDelete size={13} /> {t("mpDelete") || "Delete"}
                           </button>
-                        )}
+                        ))}
                       </td>
                     </tr>
                   );
@@ -2300,7 +2314,7 @@ function FlatsTab({ isMobile, t }) {
 ══════════════════════════════════════════════ */
 const LIMIT = 10;
 
-function AssignTab({ isMobile, t }) {
+function AssignTab({ isMobile, t, canEdit = true }) {
   const [showForm,   setShowForm]   = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [flats,      setFlats]      = useState([]);
@@ -2379,16 +2393,18 @@ function AssignTab({ isMobile, t }) {
         <p style={{ margin: 0, fontSize: 13, color: "var(--text-secondary)" }}>
           {initLoad ? "—" : totalAll} Units {t("mpCurrentlyAssigned") || "currently assigned"}
         </p>
-        <button onClick={() => setShowForm(p => !p)} className="sa-add-btn sa-add-pill sa-btn-primary">
-          <span className="sa-pill-blob sa-pill-blob1" />
-          <span className="sa-pill-inner">
-            {showForm ? <MdClose size={17} /> : <MdAdd size={17} />}
-            <span>{showForm ? (t("mpCloseForm") || "Close") : "Assign Unit"}</span>
-          </span>
-        </button>
+        {canEdit && (
+          <button onClick={() => setShowForm(p => !p)} className="sa-add-btn sa-add-pill sa-btn-primary">
+            <span className="sa-pill-blob sa-pill-blob1" />
+            <span className="sa-pill-inner">
+              {showForm ? <MdClose size={17} /> : <MdAdd size={17} />}
+              <span>{showForm ? (t("mpCloseForm") || "Close") : "Assign Unit"}</span>
+            </span>
+          </button>
+        )}
       </div>
 
-      {showForm && (
+      {canEdit && showForm && (
         <div className="bg-card animate-scaleIn" style={{ padding: "20px 22px", borderRadius: 18, maxWidth: 520 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
             <div style={{ width: 32, height: 32, borderRadius: 9, background: "rgba(76,118,201,0.12)", border: "1px solid rgba(76,118,201,0.25)", display: "flex", alignItems: "center", justifyContent: "center", color: "#5B8DEF" }}><MdAdd size={17} /></div>
@@ -2486,7 +2502,7 @@ function AssignTab({ isMobile, t }) {
                       </div>
                     </div>
                   </div>
-                  {confirmId === flat.id ? (
+                  {canEdit && (confirmId === flat.id ? (
                     <div style={{ display: "flex", gap: 5, alignItems: "center", flexShrink: 0 }}>
                       <button onClick={() => handleUnassign(flat.id)} style={{ padding: "4px 9px", borderRadius: 6, fontSize: 11, fontWeight: 700, background: "rgba(239,68,68,0.15)", color: "#f87171", border: "1px solid rgba(239,68,68,0.25)", cursor: "pointer" }}>{t("mpYes") || "Yes"}</button>
                       <button onClick={() => setConfirmId(null)} style={{ padding: "4px 7px", borderRadius: 6, fontSize: 11, background: "var(--card-inner-bg)", color: "var(--text-secondary)", border: "1px solid var(--glass-border)", cursor: "pointer" }}>✕</button>
@@ -2495,7 +2511,7 @@ function AssignTab({ isMobile, t }) {
                     <button onClick={() => setConfirmId(flat.id)} style={{ width: 32, height: 32, borderRadius: 9, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.18)", color: "#f87171", cursor: "pointer" }}>
                       <MdLinkOff size={16} />
                     </button>
-                  )}
+                  ))}
                 </div>
               );
             })}
@@ -2534,7 +2550,7 @@ function AssignTab({ isMobile, t }) {
                       </div>
                     </td>
                     <td style={{ textAlign: "right" }}>
-                      {confirmId === flat.id ? (
+                      {canEdit && (confirmId === flat.id ? (
                         <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
                           <span style={{ fontSize: 11, color: "var(--text-secondary)" }}>{t("mpSure") || "Sure?"}</span>
                           <button onClick={() => handleUnassign(flat.id)} style={{ padding: "4px 11px", borderRadius: 7, fontSize: 11, fontWeight: 700, background: "rgba(239,68,68,0.15)", color: "#f87171", border: "1px solid rgba(239,68,68,0.25)", cursor: "pointer" }}>{t("mpYes") || "Yes"}</button>
@@ -2544,7 +2560,7 @@ function AssignTab({ isMobile, t }) {
                         <button onClick={() => setConfirmId(flat.id)} style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "5px 12px", borderRadius: 8, fontSize: 12, fontWeight: 600, background: "rgba(239,68,68,0.08)", color: "#f87171", border: "1px solid rgba(239,68,68,0.18)", cursor: "pointer" }}>
                           <MdLinkOff size={13} /> {t("mpUnassign") || "Unassign"}
                         </button>
-                      )}
+                      ))}
                     </td>
                   </tr>
                 );

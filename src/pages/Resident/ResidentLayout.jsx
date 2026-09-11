@@ -397,6 +397,7 @@ function ResidentLayoutInner() {
             </>
           }
           onLogout={() => setShowLogoutConfirm(true)}
+          settingsPath={`${base}/settings`}
         />
 
         {/* PAGE CONTENT */}

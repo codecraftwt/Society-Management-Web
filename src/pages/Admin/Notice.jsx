@@ -30,6 +30,7 @@ import GlobalButton from "../../components/common/GlobalButton";
 import GlobalModal from "../../components/common/GlobalModal";
 import GlobalTable from "../../components/common/GlobalTable";
 import GlobalConfirmDialog from "../../components/common/GlobalConfirmDialog";
+import { isCommitteeMember } from "../../utils/permissions";
 
 function useDebounce(value, delay = 500) {
   const [d, setD] = useState(value);
@@ -654,6 +655,22 @@ export default function Notice() {
                             <span>{fmtDate(n.created_at)}</span>
                           </div>
 
+                          {n.created_by_name && (
+                            <span
+                              style={{
+                                fontSize: "0.7rem",
+                                fontWeight: 600,
+                                padding: "2px 8px",
+                                borderRadius: 6,
+                                background: "rgba(59, 130, 246, 0.12)",
+                                color: "#60a5fa",
+                                border: "1px solid rgba(59, 130, 246, 0.25)",
+                              }}
+                            >
+                              By: {n.created_by_name} ({n.created_by_role === "COMMITTEE_MEMBER" ? "Committee" : "Admin"})
+                            </span>
+                          )}
+
                           {socName && (
                             <span
                               style={{
@@ -744,41 +761,49 @@ export default function Notice() {
                       <div />
                     )}
 
-                    {canPost && (
-                      <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-                        {n.acknowledgement_required && (
-                          <GlobalButton
-                            variant="secondary"
-                            size="sm"
-                            icon={MdOutlineArticle}
-                            onClick={() => openHistoryModal(n)}
-                          >
-                            {t("noticeViewHistory") || "View History"}
-                          </GlobalButton>
-                        )}
-                        <GlobalButton
-                          variant="edit"
-                          size="sm"
-                          icon={MdEdit}
-                          onClick={() => handleEdit(n)}
-                        >
-                          Edit
-                        </GlobalButton>
-                        <GlobalButton
-                          variant="delete"
-                          size="sm"
-                          icon={MdDelete}
-                          onClick={() =>
-                            setDeleteConfirm({
-                              isOpen: true,
-                              id: n.id,
-                              societyId: n.society_id,
-                              loading: false,
-                            })
-                          }
-                        />
-                      </div>
-                    )}
+                    {canPost && (() => {
+                      const isCommittee = isCommitteeMember(user);
+                      const isOwn = !isCommittee || n.created_by_user_id === user?.id || !n.created_by_user_id;
+                      return (
+                        <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                          {n.acknowledgement_required && (
+                            <GlobalButton
+                              variant="secondary"
+                              size="sm"
+                              icon={MdOutlineArticle}
+                              onClick={() => openHistoryModal(n)}
+                            >
+                              {t("noticeViewHistory") || "View History"}
+                            </GlobalButton>
+                          )}
+                          {isOwn && (
+                            <>
+                              <GlobalButton
+                                variant="edit"
+                                size="sm"
+                                icon={MdEdit}
+                                onClick={() => handleEdit(n)}
+                              >
+                                Edit
+                              </GlobalButton>
+                              <GlobalButton
+                                variant="delete"
+                                size="sm"
+                                icon={MdDelete}
+                                onClick={() =>
+                                  setDeleteConfirm({
+                                    isOpen: true,
+                                    id: n.id,
+                                    societyId: n.society_id,
+                                    loading: false,
+                                  })
+                                }
+                              />
+                            </>
+                          )}
+                        </div>
+                      );
+                    })()}
                   </div>
                 </div>
               );

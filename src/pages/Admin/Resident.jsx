@@ -10,11 +10,12 @@ import {
   MdLayers, MdAdd, MdHomeWork, MdMeetingRoom, MdCheckCircle,
   MdUploadFile, MdBadge, MdCreditCard, MdCheck, MdDirectionsCar,
   MdPeople, MdPhone, MdContactPhone, MdEdit, MdArrowBack,
-  MdArrowForward, MdLocalParking, MdWarning, MdMoreVert,
+  MdArrowForward, MdLocalParking, MdWarning, MdMoreVert, MdBlock,
 } from "react-icons/md";
 import { toast } from "react-toastify";
 import Select from "../../components/common/Select";
 import GlobalButton from "../../components/common/GlobalButton";
+import { isCommitteeMember } from "../../utils/permissions";
 
 /* ─────────────────────────────────────────
    HELPERS
@@ -117,7 +118,7 @@ function BhkBadge({ type }) {
 /* ─────────────────────────────────────────
    RESIDENT ACTION MENU (three-dot kebab)
    ───────────────────────────────────────── */
-function ResidentActionMenu({ onAssignFlat, onEdit, isCommittee, isSocietyAdmin, isTenant, onPromote, onRemove, onDelete, t }) {
+function ResidentActionMenu({ onAssignFlat, onEdit, isCommittee, isAccountant, isSocietyAdmin, isTenant, onPromote, onRemoveCommittee, onDeactivateAccountant, onDelete, t }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
 
@@ -156,9 +157,14 @@ function ResidentActionMenu({ onAssignFlat, onEdit, isCommittee, isSocietyAdmin,
             <>
               <div className="sa-action-divider" />
               {isCommittee ? (
-                <button role="menuitem" className="sa-action-item" onClick={() => act(onRemove)}>
+                <button role="menuitem" className="sa-action-item" onClick={() => act(onRemoveCommittee)}>
                   <MdPerson size={15} />
-                  {t("colRemove") || "Remove Committee"}
+                  {t("colRemoveCommittee") || "Remove from Committee"}
+                </button>
+              ) : isAccountant ? (
+                <button role="menuitem" className="sa-action-item" onClick={() => act(onDeactivateAccountant)}>
+                  <MdBlock size={15} style={{ color: "#f87171" }} />
+                  {t("colDeactivateAccountant") || "Deactivate Accountant"}
                 </button>
               ) : (
                 <button role="menuitem" className="sa-action-item" onClick={() => act(onPromote)}>
@@ -2203,10 +2209,12 @@ export default function Resident() {
 
   const [confirmId, setConfirmId] = useState(null);
   const [committeeConfirm, setCommitteeConfirm] = useState(null);
+  const [accountantConfirm, setAccountantConfirm] = useState(null);
   const [flatDetailModal, setFlatDetailModal] = useState(null);
 
   const { user } = useContext(AuthContext);
   const isSuperAdmin = user?.activeRole === "SUPER_ADMIN";
+  const canManageResidents = !isCommitteeMember(user);
   const [societiesList, setSocietiesList] = useState([]);
   const [filterSocietyId, setFilterSocietyId] = useState(() => {
     const saved = localStorage.getItem("superadmin_society_filter");
@@ -2369,6 +2377,17 @@ export default function Resident() {
       loadResidents(page, debouncedSearch);
       toast.success("Removed from committee");
     } catch (err) { toast.error(err.response?.data?.message || "Failed to remove"); }
+  };
+
+  const deactivateAccountant = async (userId) => {
+    try {
+      await API.patch(`/accountant/${userId}/status`, { status: "INACTIVE" });
+      setAccountantConfirm(null);
+      loadResidents(page, debouncedSearch);
+      toast.success("Accountant role deactivated successfully");
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to deactivate accountant");
+    }
   };
 
   const hasActiveFilters = Boolean(filterBlockId || filterFloorId || filterFlatId || (isSuperAdmin && filterSocietyId) || search);
@@ -2676,23 +2695,25 @@ export default function Resident() {
           </div>
         </div>
 
-        <GlobalButton
-          variant="add"
-          borderDraw
-          icon={showForm ? MdClose : MdPersonAdd}
-          className="w-full sm:w-auto justify-center shrink-0"
-          style={{ fontWeight: 700 }}
-          onClick={() => {
-            const next = !showForm;
-            setShowForm(next);
-            if (next) setFormSocietyId(filterSocietyId);
-            setConfirmId(null);
-            setAssignModal(null);
-            if (showForm) resetForm();
-          }}
-        >
-          {showForm ? t("cancel") : t("residentAddBtn")}
-        </GlobalButton>
+        {canManageResidents && (
+          <GlobalButton
+            variant="add"
+            borderDraw
+            icon={showForm ? MdClose : MdPersonAdd}
+            className="w-full sm:w-auto justify-center shrink-0"
+            style={{ fontWeight: 700 }}
+            onClick={() => {
+              const next = !showForm;
+              setShowForm(next);
+              if (next) setFormSocietyId(filterSocietyId);
+              setConfirmId(null);
+              setAssignModal(null);
+              if (showForm) resetForm();
+            }}
+          >
+            {showForm ? t("cancel") : t("residentAddBtn")}
+          </GlobalButton>
+        )}
       </div>
 
       {/* Add / Edit Resident Modal Popup */}
@@ -3037,9 +3058,9 @@ export default function Resident() {
                       t("colType") || "Type",
                       t("colUnits") || "Units",
                       t("colHousehold") || "Household",
-                      t("colActions") || "Actions"
-                    ].map((h, i) => (
-                      <th key={i} style={{ textAlign: i === 6 ? "right" : "left", padding: "12px 16px", fontSize: 10, fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.07em", whiteSpace: "nowrap" }}>{h}</th>
+                      ...(canManageResidents ? [t("colActions") || "Actions"] : []),
+                    ].map((h, i, arr) => (
+                      <th key={i} style={{ textAlign: (canManageResidents && i === arr.length - 1) ? "right" : "left", padding: "12px 16px", fontSize: 10, fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.07em", whiteSpace: "nowrap" }}>{h}</th>
                     ))}
                   </tr>
                 </thead>
@@ -3050,7 +3071,10 @@ export default function Resident() {
                       <td style={{ padding: "14px 16px", minWidth: 160 }}>
                         <div>
                           <div style={{ fontWeight: 700, fontSize: 13, color: "var(--text-primary)" }}>{r.name}</div>
-                          {r.roles?.includes("COMMITTEE_MEMBER") && <span className="res-committee-badge" style={{ marginTop: 3, display: "inline-flex" }}>★ {t("colCommittee") || "Committee"}</span>}
+                          <div style={{ display: "flex", gap: 5, flexWrap: "wrap", marginTop: 3 }}>
+                            {r.roles?.includes("COMMITTEE_MEMBER") && <span className="res-committee-badge" style={{ display: "inline-flex" }}>★ {t("colCommittee") || "Committee"}</span>}
+                            {r.roles?.includes("ACCOUNTANT") && <span className="res-accountant-badge" style={{ display: "inline-flex" }}>★ Accountant</span>}
+                          </div>
                         </div>
                       </td>
                       <td style={{ padding: "14px 16px", minWidth: 170 }}>
@@ -3086,29 +3110,33 @@ export default function Resident() {
                           </div>
                         </div>
                       </td>
-                      <td style={{ padding: "14px 16px" }}>
-                        <div style={{ display: "flex", justifyContent: "flex-end" }}>
-                          {confirmId === r.id ? (
-                            <span className="res-confirm">
-                              <span className="res-confirm-label">{t("billSure") || "Sure?"}</span>
-                              <button onClick={() => handleDelete(r.id)} className="res-confirm-yes">{t("billYesDelete") || "Yes"}</button>
-                              <button onClick={() => setConfirmId(null)} className="res-confirm-cancel">{t("cancel")}</button>
-                            </span>
-                          ) : (
-                            <ResidentActionMenu
-                              t={t}
-                              onAssignFlat={() => setAssignModal({ id: r.id, name: r.name, society_id: r.society_id })}
-                              onEdit={() => handleEdit(r)}
-                              isCommittee={!!r.roles?.includes("COMMITTEE_MEMBER")}
-                              isSocietyAdmin={!!r.roles?.includes("SOCIETY_ADMIN")}
-                              isTenant={r.resident_type === "TENANT"}
-                              onPromote={() => setCommitteeConfirm({ type: "promote", id: r.id, name: r.name })}
-                              onRemove={() => setCommitteeConfirm({ type: "remove", id: r.id, name: r.name })}
-                              onDelete={() => setConfirmId(r.id)}
-                            />
-                          )}
-                        </div>
-                      </td>
+                      {canManageResidents && (
+                        <td style={{ padding: "14px 16px" }}>
+                          <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                            {confirmId === r.id ? (
+                              <span className="res-confirm">
+                                <span className="res-confirm-label">{t("billSure") || "Sure?"}</span>
+                                <button onClick={() => handleDelete(r.id)} className="res-confirm-yes">{t("billYesDelete") || "Yes"}</button>
+                                <button onClick={() => setConfirmId(null)} className="res-confirm-cancel">{t("cancel")}</button>
+                              </span>
+                            ) : (
+                              <ResidentActionMenu
+                                t={t}
+                                onAssignFlat={() => setAssignModal({ id: r.id, name: r.name, society_id: r.society_id })}
+                                onEdit={() => handleEdit(r)}
+                                isCommittee={!!r.roles?.includes("COMMITTEE_MEMBER")}
+                                isAccountant={!!r.roles?.includes("ACCOUNTANT")}
+                                isSocietyAdmin={!!r.roles?.includes("SOCIETY_ADMIN")}
+                                isTenant={r.resident_type === "TENANT"}
+                                onPromote={() => setCommitteeConfirm({ type: "promote", id: r.id, name: r.name })}
+                                onRemoveCommittee={() => setCommitteeConfirm({ type: "remove", id: r.id, name: r.name })}
+                                onDeactivateAccountant={() => setAccountantConfirm({ id: r.id, name: r.name })}
+                                onDelete={() => setConfirmId(r.id)}
+                              />
+                            )}
+                          </div>
+                        </td>
+                      )}
                     </tr>
                   ))}
                 </tbody>
@@ -3131,30 +3159,35 @@ export default function Resident() {
                           </span>
                         ))}
                         {r.roles?.includes("COMMITTEE_MEMBER") && <span className="res-committee-badge">★ {t("colCommittee") || "Committee"}</span>}
+                        {r.roles?.includes("ACCOUNTANT") && <span className="res-accountant-badge">★ Accountant</span>}
                         <span style={{ cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 3, fontSize: 10, fontWeight: 600, padding: "2px 7px", borderRadius: 999, background: "rgba(251,191,36,0.10)", color: "#60A5FA", border: "1px solid rgba(251,191,36,0.20)" }} title={`Vehicles: ${r.vehicle_count ?? 0}`}><MdDirectionsCar size={10} /> {r.vehicle_count ?? 0}</span>
                         <span style={{ cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 3, fontSize: 10, fontWeight: 600, padding: "2px 7px", borderRadius: 999, background: "rgba(52,211,153,0.10)", color: "#34d399", border: "1px solid rgba(52,211,153,0.20)" }} title={`Family Members: ${r.occupant_count ?? 1}`}><MdPeople size={10} /> {r.occupant_count ?? 1}</span>
                       </div>
                     </div>
-                    <div style={{ flexShrink: 0 }}>
-                      {confirmId === r.id ? (
-                        <div className="res-confirm res-confirm--mobile">
-                          <button onClick={() => handleDelete(r.id)} className="res-confirm-yes">{t("billYesDelete") || "Delete"}</button>
-                          <button onClick={() => setConfirmId(null)} className="res-confirm-cancel">{t("cancel")}</button>
-                        </div>
-                      ) : (
-                        <ResidentActionMenu
-                          t={t}
-                          onAssignFlat={() => setAssignModal({ id: r.id, name: r.name, society_id: r.society_id })}
-                          onEdit={() => handleEdit(r)}
-                          isCommittee={!!r.roles?.includes("COMMITTEE_MEMBER")}
-                          isSocietyAdmin={!!r.roles?.includes("SOCIETY_ADMIN")}
-                          isTenant={r.resident_type === "TENANT"}
-                          onPromote={() => setCommitteeConfirm({ type: "promote", id: r.id, name: r.name })}
-                          onRemove={() => setCommitteeConfirm({ type: "remove", id: r.id, name: r.name })}
-                          onDelete={() => setConfirmId(r.id)}
-                        />
-                      )}
-                    </div>
+                    {canManageResidents && (
+                      <div style={{ flexShrink: 0 }}>
+                        {confirmId === r.id ? (
+                          <div className="res-confirm res-confirm--mobile">
+                            <button onClick={() => handleDelete(r.id)} className="res-confirm-yes">{t("billYesDelete") || "Delete"}</button>
+                            <button onClick={() => setConfirmId(null)} className="res-confirm-cancel">{t("cancel")}</button>
+                          </div>
+                        ) : (
+                          <ResidentActionMenu
+                            t={t}
+                            onAssignFlat={() => setAssignModal({ id: r.id, name: r.name, society_id: r.society_id })}
+                            onEdit={() => handleEdit(r)}
+                            isCommittee={!!r.roles?.includes("COMMITTEE_MEMBER")}
+                            isAccountant={!!r.roles?.includes("ACCOUNTANT")}
+                            isSocietyAdmin={!!r.roles?.includes("SOCIETY_ADMIN")}
+                            isTenant={r.resident_type === "TENANT"}
+                            onPromote={() => setCommitteeConfirm({ type: "promote", id: r.id, name: r.name })}
+                            onRemoveCommittee={() => setCommitteeConfirm({ type: "remove", id: r.id, name: r.name })}
+                            onDeactivateAccountant={() => setAccountantConfirm({ id: r.id, name: r.name })}
+                            onDelete={() => setConfirmId(r.id)}
+                          />
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
@@ -3168,6 +3201,7 @@ export default function Resident() {
         )}
       </div>
 
+      {/* Committee Confirm Dialog */}
       {committeeConfirm && createPortal(
         <div
           onClick={(e) => { if (e.target === e.currentTarget) setCommitteeConfirm(null); }}
@@ -3210,6 +3244,50 @@ export default function Resident() {
                 ) : (
                   <><MdPerson size={16} /> <span>Remove Member</span></>
                 )}
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Accountant Deactivate Confirm Dialog */}
+      {accountantConfirm && createPortal(
+        <div
+          onClick={(e) => { if (e.target === e.currentTarget) setAccountantConfirm(null); }}
+          style={{ position: "fixed", inset: 0, zIndex: 9999, background: "rgba(0,0,0,0.65)", backdropFilter: "blur(8px)", display: "flex", alignItems: "center", justifyContent: "center", padding: "16px" }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{ width: "100%", maxWidth: 420, background: "var(--card-bg, #0f172a)", border: "1px solid var(--glass-border, rgba(255,255,255,0.12))", borderRadius: 20, padding: "24px", boxShadow: "0 24px 80px rgba(0,0,0,0.5)", animation: "saModalPopIn 0.25s cubic-bezier(0.16, 1, 0.3, 1)" }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
+              <div style={{ width: 42, height: 42, borderRadius: 12, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(239,68,68,0.14)", border: "1px solid rgba(239,68,68,0.3)" }}>
+                <MdBlock size={22} style={{ color: "#f87171" }} />
+              </div>
+              <div>
+                <p style={{ margin: 0, fontSize: 16, fontWeight: 800, color: "var(--text-primary)", letterSpacing: "-0.02em" }}>
+                  Deactivate Accountant
+                </p>
+                <p style={{ margin: 0, fontSize: 12, color: "var(--text-secondary)" }}>{accountantConfirm.name}</p>
+              </div>
+            </div>
+
+            <p style={{ margin: 0, fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.6 }}>
+              Make this resident inactive as an accountant? They will lose accountant access and permissions, but will retain their full resident profile and unit access.
+            </p>
+
+            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 22 }}>
+              <button type="button" onClick={() => setAccountantConfirm(null)} className="sa-btn sa-btn-ghost">
+                {t("cancel") || "Cancel"}
+              </button>
+              <button
+                type="button"
+                onClick={() => deactivateAccountant(accountantConfirm.id)}
+                className="btn-danger"
+                style={{ borderRadius: 999, fontWeight: 700 }}
+              >
+                <MdBlock size={16} /> <span>Make Inactive</span>
               </button>
             </div>
           </div>

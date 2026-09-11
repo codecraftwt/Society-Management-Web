@@ -9,7 +9,6 @@ import {
   MdDashboard,
   MdCampaign,
   MdReportProblem,
-  MdAccountBalance,
   MdVerified,
   MdMenu,
   MdLogout,
@@ -97,21 +96,9 @@ function CommitteeLayoutInner() {
       group: "SECURITY & NOTICES",
     },
     {
-      label: "Billing Rules",
-      path: `${base}/billing-rules`,
-      icon: MdAccountBalance,
-      group: "FINANCE & BILLS",
-    },
-    {
       label: "Manage Bills",
       path: `${base}/manage-bills`,
       icon: MdDescription,
-      group: "FINANCE & BILLS",
-    },
-    {
-      label: "Payment Tracking",
-      path: `${base}/payment-tracking`,
-      icon: MdBarChart,
       group: "FINANCE & BILLS",
     },
     {

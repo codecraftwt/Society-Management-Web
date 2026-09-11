@@ -1,4 +1,3 @@
-
 import { useState, useRef } from "react";
 import API from "../../services/api";
 import { toast } from "react-toastify";
@@ -29,6 +28,16 @@ function lockIcon() {
       stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
       <rect x="3" y="11" width="18" height="11" rx="2"/>
       <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+    </svg>
+  );
+}
+
+function shieldIcon(size) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+      <path d="M9 12l2 2 4-4"/>
     </svg>
   );
 }
@@ -137,195 +146,228 @@ export default function ChangePasswordSettings() {
   }
 
   function segCls(idx) {
-    if (!np || sc < idx) return "cpw-seg";
-    return `cpw-seg ${info?.cls || ""}`;
+    if (!np || sc < idx) return "as-seg";
+    return `as-seg ${info?.cls || ""}`;
   }
 
   return (
-    <div style={{ maxWidth: 620, width: "100%" }}>
+    <div className="as-root animate-fadeIn">
 
-      <div className="cpw-card">
-        {/* Header */}
-        <div className="cpw-card-header">
-          <div className="cpw-header-icon">
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none"
-              stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <rect x="3" y="11" width="18" height="11" rx="2"/>
-              <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-            </svg>
-          </div>
-          <div>
-            <p className="cpw-header-title">{t("cpwChangePassword")}</p>
-            <p className="cpw-header-sub">{t("cpwChangePasswordSub")}</p>
+      {/* ── Page header ── */}
+      <div className="as-header">
+        <div className="as-header-left">
+          <div className="as-header-icon">{shieldIcon(20)}</div>
+          <div className="as-header-titles">
+            <h1 className="as-header-title">{t("settings")}</h1>
+            <p className="as-header-sub">{t("asSubtitle")}</p>
           </div>
         </div>
+        <div className="as-badge">
+          {lockIcon()}
+          <span>{t("asBadge")}</span>
+        </div>
+      </div>
 
-        {/* Body */}
-        <div className="cpw-body">
+      {/* ── Two column layout ── */}
+      <div className="as-grid">
 
-          {/* Current password */}
-          <div className="cpw-field">
-            <label className="cpw-label" htmlFor="cpw-cur">
-              {t("cpwCurrentPassword")}<span className="cpw-req">*</span>
-            </label>
-            <div className="cpw-input-wrap">
-              <span className="cpw-input-icon">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
-                  stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/>
-                </svg>
-              </span>
-              <input
-                id="cpw-cur"
-                className={`cpw-input${errors.cur ? " cpw-error" : cur ? " cpw-ok" : ""}`}
-                type={showCur ? "text" : "password"}
-                placeholder={t("cpwCurrentPasswordPh")}
-                autoComplete="current-password"
-                value={cur}
-                onChange={e => { setCur(e.target.value); clearField("cur"); }}
-              />
-              <button className="cpw-eye-btn" type="button"
-                onClick={() => setShowCur(v => !v)} aria-label="Toggle visibility">
-                {eyeIcon(showCur)}
-              </button>
-            </div>
-            {errors.cur && (
-              <span className="cpw-field-err" style={{ display: "flex" }}>
-                {errIcon()}<span>{errors.cur}</span>
-              </span>
-            )}
-          </div>
-
-          <div className="cpw-divider" />
-
-          {/* New password */}
-          <div className="cpw-field">
-            <label className="cpw-label" htmlFor="cpw-np">
-              {t("cpwNewPassword")}<span className="cpw-req">*</span>
-            </label>
-            <div className="cpw-input-wrap">
-              <span className="cpw-input-icon">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
-                  stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="3" y="11" width="18" height="11" rx="2"/>
-                  <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                </svg>
-              </span>
-              <input
-                id="cpw-np"
-                className={`cpw-input${errors.np ? " cpw-error" : npOk ? " cpw-ok" : ""}`}
-                type={showNp ? "text" : "password"}
-                placeholder={t("cpwNewPasswordPh")}
-                autoComplete="new-password"
-                value={np}
-                onChange={e => { setNp(e.target.value); clearField("np"); }}
-              />
-              {npOk && (
-                <span className="cpw-check-icon" style={{ display: "block", right: 36 }}>
-                  {checkIcon()}
-                </span>
-              )}
-              <button className="cpw-eye-btn" type="button"
-                onClick={() => setShowNp(v => !v)} aria-label="Toggle visibility">
-                {eyeIcon(showNp)}
-              </button>
-            </div>
-
-            {/* Strength bar */}
-            <div className="cpw-strength-wrap" style={{ opacity: np ? 1 : 0 }}>
-              <div className={segCls(1)} />
-              <div className={segCls(2)} />
-              <div className={segCls(3)} />
-              <div className={segCls(4)} />
-              <span className="cpw-str-label" style={{ color: info?.color }}>
-                {info?.label || ""}
-              </span>
-            </div>
-
-            {errors.np && (
-              <span className="cpw-field-err" style={{ display: "flex" }}>
-                {errIcon()}<span>{errors.np}</span>
-              </span>
-            )}
-          </div>
-
-          {/* Confirm password */}
-          <div className="cpw-field">
-            <label className="cpw-label" htmlFor="cpw-cp">
-              {t("cpwConfirmPassword")}<span className="cpw-req">*</span>
-            </label>
-            <div className="cpw-input-wrap">
-              <span className="cpw-input-icon">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
-                  stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112
-                           2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0
-                           003 9c0 5.591 3.824 10.29 9 11.622
-                           5.176-1.332 9-6.03 9-11.622
-                           0-1.042-.133-2.052-.382-3.016z"/>
-                </svg>
-              </span>
-              <input
-                id="cpw-cp"
-                className={`cpw-input${errors.cp ? " cpw-error" : cpOk ? " cpw-ok" : ""}`}
-                type={showCp ? "text" : "password"}
-                placeholder={t("cpwConfirmPasswordPh")}
-                autoComplete="new-password"
-                value={cp}
-                onChange={e => { setCp(e.target.value); clearField("cp"); }}
-              />
-              {cpOk && (
-                <span className="cpw-check-icon" style={{ display: "block", right: 36 }}>
-                  {checkIcon()}
-                </span>
-              )}
-              <button className="cpw-eye-btn" type="button"
-                onClick={() => setShowCp(v => !v)} aria-label="Toggle visibility">
-                {eyeIcon(showCp)}
-              </button>
-            </div>
-            {errors.cp && (
-              <span className="cpw-field-err" style={{ display: "flex" }}>
-                {errIcon()}<span>{errors.cp}</span>
-              </span>
-            )}
-          </div>
-
-          {/* Tips checklist */}
-          <div className="cpw-tips">
-            {tips.map(t => (
-              <div key={t.id} className="cpw-tip-row">
-                <div className={`cpw-tip-dot${t.ok ? " cpw-tip-ok" : ""}`} />
-                <span>{t.label}</span>
+        {/* Side panel */}
+        <aside className="as-side">
+          <div className="as-hero animate-scaleIn">
+            <div className="as-hero-glow" />
+            <div className="as-hero-head">
+              <div className="as-hero-icon">{shieldIcon(20)}</div>
+              <div className="as-hero-titles">
+                <h2 className="as-hero-title">{t("asSecurityTitle")}</h2>
+                <p className="as-hero-sub">{t("asSecuritySub")}</p>
               </div>
-            ))}
+            </div>
+
+            <div className="as-hero-status">
+              <span className="as-status-dot" />
+              <span>{t("asProtected")}</span>
+            </div>
+
+            {/* Live strength meter */}
+            <div className="as-meter">
+              <p className="as-meter-label">{t("asHealthLabel")}</p>
+              <div className="cpw-strength-wrap" style={{ opacity: np ? 1 : 0.35 }}>
+                <div className={segCls(1)} />
+                <div className={segCls(2)} />
+                <div className={segCls(3)} />
+                <div className={segCls(4)} />
+                <span className="cpw-str-label" style={{ color: info?.color }}>
+                  {info?.label || ""}
+                </span>
+              </div>
+            </div>
+
+            {/* Requirement checklist */}
+            <div className="as-criteria">
+              <p className="as-criteria-title">{t("asChecklistTitle")}</p>
+              <div className="cpw-tips">
+                {tips.map(t => (
+                  <div key={t.id} className="cpw-tip-row">
+                    <div className={`cpw-tip-dot${t.ok ? " cpw-tip-ok" : ""}`} />
+                    <span>{t.label}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
 
-          {/* Footer */}
-          <div className="cpw-footer">
-            <button className="cpw-btn-cancel" type="button" onClick={reset}>
-              {t("cpwCancelBtn")}
-            </button>
-            <button
-              className="cpw-btn-save"
-              type="button"
-              onClick={handleSave}
-              disabled={!canSave}
-            >
-              {loading ? (
-                <>
-                  <div className="cpw-spinner" style={{ display: "block" }} />
-                  <span>{t("cpwUpdating")}</span>
-                </>
-              ) : (
-                <>
-                  {lockIcon()}
-                  <span>{t("cpwUpdateBtn")}</span>
-                </>
-              )}
-            </button>
+          <div className="as-help animate-fadeIn">
+            <div className="as-help-icon">{lockIcon()}</div>
+            <div className="as-help-text">
+              <p className="as-help-title">{t("asHelpTitle")}</p>
+              <p className="as-help-note">{t("asHelpNote")}</p>
+            </div>
           </div>
+        </aside>
 
+        {/* Change password form */}
+        <div className="as-main">
+          <div className="cpw-card animate-scaleIn">
+            {/* Header */}
+            <div className="cpw-card-header">
+              <div className="cpw-header-icon">{lockIcon()}</div>
+              <div>
+                <p className="cpw-header-title">{t("cpwChangePassword")}</p>
+                <p className="cpw-header-sub">{t("cpwChangePasswordSub")}</p>
+              </div>
+            </div>
+
+            {/* Body */}
+            <div className="cpw-body">
+
+              {/* Current password */}
+              <div className="cpw-field">
+                <label className="cpw-label" htmlFor="cpw-cur">
+                  {t("cpwCurrentPassword")}<span className="cpw-req">*</span>
+                </label>
+                <div className="cpw-input-wrap">
+                  <span className="cpw-input-icon">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+                      stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/>
+                    </svg>
+                  </span>
+                  <input
+                    id="cpw-cur"
+                    className={`cpw-input${errors.cur ? " cpw-error" : cur ? " cpw-ok" : ""}`}
+                    type={showCur ? "text" : "password"}
+                    placeholder={t("cpwCurrentPasswordPh")}
+                    autoComplete="current-password"
+                    value={cur}
+                    onChange={e => { setCur(e.target.value); clearField("cur"); }}
+                  />
+                  <button className="cpw-eye-btn" type="button"
+                    onClick={() => setShowCur(v => !v)} aria-label="Toggle visibility">
+                    {eyeIcon(showCur)}
+                  </button>
+                </div>
+                {errors.cur && (
+                  <span className="cpw-field-err" style={{ display: "flex" }}>
+                    {errIcon()}<span>{errors.cur}</span>
+                  </span>
+                )}
+              </div>
+
+              <div className="cpw-divider" />
+
+              {/* New password */}
+              <div className="cpw-field">
+                <label className="cpw-label" htmlFor="cpw-np">
+                  {t("cpwNewPassword")}<span className="cpw-req">*</span>
+                </label>
+                <div className="cpw-input-wrap">
+                  <span className="cpw-input-icon">{lockIcon()}</span>
+                  <input
+                    id="cpw-np"
+                    className={`cpw-input${errors.np ? " cpw-error" : npOk ? " cpw-ok" : ""}`}
+                    type={showNp ? "text" : "password"}
+                    placeholder={t("cpwNewPasswordPh")}
+                    autoComplete="new-password"
+                    value={np}
+                    onChange={e => { setNp(e.target.value); clearField("np"); }}
+                  />
+                  {npOk && (
+                    <span className="cpw-check-icon" style={{ display: "block", right: 36 }}>
+                      {checkIcon()}
+                    </span>
+                  )}
+                  <button className="cpw-eye-btn" type="button"
+                    onClick={() => setShowNp(v => !v)} aria-label="Toggle visibility">
+                    {eyeIcon(showNp)}
+                  </button>
+                </div>
+                {errors.np && (
+                  <span className="cpw-field-err" style={{ display: "flex" }}>
+                    {errIcon()}<span>{errors.np}</span>
+                  </span>
+                )}
+              </div>
+
+              {/* Confirm password */}
+              <div className="cpw-field">
+                <label className="cpw-label" htmlFor="cpw-cp">
+                  {t("cpwConfirmPassword")}<span className="cpw-req">*</span>
+                </label>
+                <div className="cpw-input-wrap">
+                  <span className="cpw-input-icon">{lockIcon()}</span>
+                  <input
+                    id="cpw-cp"
+                    className={`cpw-input${errors.cp ? " cpw-error" : cpOk ? " cpw-ok" : ""}`}
+                    type={showCp ? "text" : "password"}
+                    placeholder={t("cpwConfirmPasswordPh")}
+                    autoComplete="new-password"
+                    value={cp}
+                    onChange={e => { setCp(e.target.value); clearField("cp"); }}
+                  />
+                  {cpOk && (
+                    <span className="cpw-check-icon" style={{ display: "block", right: 36 }}>
+                      {checkIcon()}
+                    </span>
+                  )}
+                  <button className="cpw-eye-btn" type="button"
+                    onClick={() => setShowCp(v => !v)} aria-label="Toggle visibility">
+                    {eyeIcon(showCp)}
+                  </button>
+                </div>
+                {errors.cp && (
+                  <span className="cpw-field-err" style={{ display: "flex" }}>
+                    {errIcon()}<span>{errors.cp}</span>
+                  </span>
+                )}
+              </div>
+
+              {/* Footer */}
+              <div className="cpw-footer">
+                <button className="cpw-btn-cancel" type="button" onClick={reset}>
+                  {t("cpwCancelBtn")}
+                </button>
+                <button
+                  className="cpw-btn-save"
+                  type="button"
+                  onClick={handleSave}
+                  disabled={!canSave}
+                >
+                  {loading ? (
+                    <>
+                      <div className="cpw-spinner" style={{ display: "block" }} />
+                      <span>{t("cpwUpdating")}</span>
+                    </>
+                  ) : (
+                    <>
+                      {lockIcon()}
+                      <span>{t("cpwUpdateBtn")}</span>
+                    </>
+                  )}
+                </button>
+              </div>
+
+            </div>
+          </div>
         </div>
       </div>
     </div>

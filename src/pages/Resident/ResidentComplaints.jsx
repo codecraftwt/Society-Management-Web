@@ -583,8 +583,8 @@ function ComplaintDrawer({ complaint, onClose, currentUser, t, defaultTab = "det
 
   return createPortal(
     <>
-      <div className="modal-overlay-blur animate-fadeIn" onClick={onClose} />
-      <div className="resident-complaint-drawer animate-fadeIn">
+      <div className="modal-overlay-blur animate-fadeIn" style={{ zIndex: 1050 }} onClick={onClose} />
+      <div className="resident-complaint-drawer animate-fadeIn" style={{ zIndex: 1060 }}>
         <div className="detail-drawer__header">
           <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
             <div className="er-icon er-icon--complaint" style={{ width: 36, height: 36, borderRadius: 10, flexShrink: 0 }}>

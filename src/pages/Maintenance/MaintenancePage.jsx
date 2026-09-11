@@ -13,6 +13,8 @@ import { toast } from "react-toastify";
 import maintenanceService from "../../services/maintenanceService";
 import Select from "../../components/common/Select";
 import GlobalButton from "../../components/common/GlobalButton";
+import GlobalModal from "../../components/common/GlobalModal";
+import { isCommitteeMember } from "../../utils/permissions";
 import "../Admin/Admin.css";
 
 /* ── helpers ── */
@@ -26,6 +28,7 @@ const FLAT_TYPES = ["1BHK", "2BHK", "3BHK", "ROW_HOUSE", "COMMERCIAL"];
 const RESIDENT_TYPES = ["OWNER", "TENANT"];
 const FREQUENCIES = ["MONTHLY", "QUARTERLY", "YEARLY", "ONE_TIME"];
 const FLAT_LABELS = { "1BHK": "1 BHK", "2BHK": "2 BHK", "3BHK": "3 BHK", ROW_HOUSE: "Row House", COMMERCIAL: "Commercial" };
+const MONTH_NAMES = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
 const currentMonthLabel = () => {
   const d = new Date();
@@ -90,7 +93,7 @@ function TypeChip({ type }) {
 /* ─────────────────────────────────────────
    CONFIG CARD / ROW
 ───────────────────────────────────────── */
-function ConfigCard({ rate, deleting, onEdit, onDelete, last }) {
+function ConfigCard({ rate, deleting, onEdit, onDelete, last, canEdit = true }) {
   const Icon = TYPE_META[rate.maintenance_type]?.icon || MdTune;
   const color = TYPE_META[rate.maintenance_type]?.color || "text-gray-400";
   const label =
@@ -119,33 +122,37 @@ function ConfigCard({ rate, deleting, onEdit, onDelete, last }) {
         </p>
       </div>
 
-      <label className="flex items-center gap-1.5 text-xs text-secondary shrink-0 mr-1">
-        <input
-          type="checkbox"
-          checked={!!rate.is_active}
-          onChange={() => onEdit({ ...rate, is_active: !rate.is_active })}
-          className="accent-emerald-500"
-        />
-        Active
-      </label>
+      {canEdit && (
+        <label className="flex items-center gap-1.5 text-xs text-secondary shrink-0 mr-1">
+          <input
+            type="checkbox"
+            checked={!!rate.is_active}
+            onChange={() => onEdit({ ...rate, is_active: !rate.is_active })}
+            className="accent-emerald-500"
+          />
+          Active
+        </label>
+      )}
 
-      <div className="flex items-center gap-2 shrink-0">
-        <button
-          onClick={() => onEdit(rate)}
-          className="sa-btn-edit inline-flex items-center gap-1 px-3 py-1.5 text-xs"
-        >
-          Edit
-        </button>
-        <button
-          onClick={() => onDelete(rate)}
-          disabled={deleting === rate.id}
-          title="Delete configuration"
-          aria-label="Delete configuration"
-          className="sa-btn-delete inline-flex items-center justify-center w-8 h-8 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none disabled:transform-none"
-        >
-          {deleting === rate.id ? <Spinner size={14} /> : <MdDelete size={15} />}
-        </button>
-      </div>
+      {canEdit && (
+        <div className="flex items-center gap-2 shrink-0">
+          <button
+            onClick={() => onEdit(rate)}
+            className="sa-btn-edit inline-flex items-center gap-1 px-3 py-1.5 text-xs"
+          >
+            Edit
+          </button>
+          <button
+            onClick={() => onDelete(rate)}
+            disabled={deleting === rate.id}
+            title="Delete configuration"
+            aria-label="Delete configuration"
+            className="sa-btn-delete inline-flex items-center justify-center w-8 h-8 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none disabled:transform-none"
+          >
+            {deleting === rate.id ? <Spinner size={14} /> : <MdDelete size={15} />}
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -923,17 +930,88 @@ function GenerateModal({ configs, onClose, onGenerated }) {
 /* ─────────────────────────────────────────
    BILLS TAB
 ───────────────────────────────────────── */
-function BillsTab({ billingMonth, setBillingMonth, onView }) {
+const toISODate = (d) => {
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
+const formatDisplayDate = (str) => {
+  if (!str) return "";
+  try {
+    const parts = str.split("-").map(Number);
+    if (parts.length !== 3) return str;
+    const date = new Date(parts[0], parts[1] - 1, parts[2]);
+    return date.toLocaleDateString("en-US", { day: "numeric", month: "short", year: "numeric" });
+  } catch {
+    return str;
+  }
+};
+
+function BillsTab({ billingMonth, setBillingMonth, onView, configs = [] }) {
   const [bills, setBills] = useState([]);
   const [loading, setLoading] = useState(true);
   const [status, setStatus] = useState("");
+  const [typeFilter, setTypeFilter] = useState("");
+  const [customOpen, setCustomOpen] = useState(false);
+
+  // Type filter options matching the creation types (Lumpsum, By Flat Type, Per Sq. Ft.)
+  const typeOptions = [
+    { value: "", label: "All Types" },
+    { value: "LUMPSUM", label: "Lumpsum" },
+    { value: "FLAT", label: "By Flat Type" },
+    { value: "SQ_FEET", label: "Per Sq. Ft." },
+  ];
+
+  // Custom range type: 'date_range' (Day Dates) | 'month_range' (Month/Year)
+  const [customType, setCustomType] = useState("date_range");
+
+  // Day date state (YYYY-MM-DD)
+  const now = new Date();
+  const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  const [startDate, setStartDate] = useState(toISODate(firstDayOfMonth));
+  const [endDate, setEndDate] = useState(toISODate(now));
+  const [dateField, setDateField] = useState("created_at"); // 'created_at' | 'due_date'
+
+  // Month-year state
+  const [fromMonth, setFromMonth] = useState(now.getMonth());
+  const [fromYear, setFromYear] = useState(now.getFullYear());
+  const [toMonth, setToMonth] = useState(now.getMonth());
+  const [toYear, setToYear] = useState(now.getFullYear());
+
+  const parsed = billingMonth.match(/^([A-Za-z]+)\s+(\d{4})$/);
+  const [monthIdx, setMonthIdx] = useState(parsed ? MONTH_NAMES.indexOf(parsed[1]) : now.getMonth());
+  const [year, setYear] = useState(parsed ? Number(parsed[2]) : now.getFullYear());
+
+  const years = [];
+  for (let y = now.getFullYear() - 5; y <= now.getFullYear() + 5; y++) years.push(y);
+
+  const currentLabel = `${MONTH_NAMES[monthIdx]} ${year}`;
+  const [mode, setMode] = useState(billingMonth ? "month" : "custom");
+
+  useEffect(() => {
+    if (mode === "month") setBillingMonth(currentLabel);
+  }, [mode, currentLabel, setBillingMonth]);
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
       const params = {};
-      if (billingMonth) params.billing_month = billingMonth;
+      if (mode === "custom") {
+        if (customType === "date_range") {
+          if (startDate) params.from_date = startDate;
+          if (endDate) params.to_date = endDate;
+          if (dateField) params.date_field = dateField;
+        } else {
+          if (fromMonth !== null && fromYear) params.from_month = `${MONTH_NAMES[fromMonth]} ${fromYear}`;
+          if (toMonth !== null && toYear) params.to_month = `${MONTH_NAMES[toMonth]} ${toYear}`;
+        }
+      } else if (billingMonth) {
+        params.billing_month = billingMonth;
+      }
       if (status) params.status = status;
+      if (typeFilter) params.maintenance_type = typeFilter;
       const data = await maintenanceService.getMaintenanceBills(params);
       setBills(data);
     } catch (err) {
@@ -941,27 +1019,454 @@ function BillsTab({ billingMonth, setBillingMonth, onView }) {
     } finally {
       setLoading(false);
     }
-  }, [billingMonth, status]);
+  }, [mode, customType, startDate, endDate, dateField, billingMonth, status, typeFilter, fromMonth, fromYear, toMonth, toYear]);
 
   useEffect(() => { load(); }, [load]);
 
+  const onChangeMonth = (e) => {
+    setMonthIdx(Number(e.target.value));
+    setMode("month");
+  };
+  const onChangeYear = (e) => {
+    setYear(Number(e.target.value));
+    setMode("month");
+  };
+
+  const applyCustom = () => {
+    setMode("custom");
+    setCustomOpen(false);
+  };
+
+  const applyPreset = (presetKey) => {
+    const today = new Date();
+    let start = new Date();
+    let end = new Date();
+
+    if (presetKey === "today") {
+      // start and end are today
+    } else if (presetKey === "yesterday") {
+      start.setDate(today.getDate() - 1);
+      end.setDate(today.getDate() - 1);
+    } else if (presetKey === "last7") {
+      start.setDate(today.getDate() - 6);
+    } else if (presetKey === "thisMonth") {
+      start = new Date(today.getFullYear(), today.getMonth(), 1);
+    } else if (presetKey === "last30") {
+      start.setDate(today.getDate() - 29);
+    } else if (presetKey === "lastMonth") {
+      start = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+      end = new Date(today.getFullYear(), today.getMonth(), 0);
+    } else if (presetKey === "thisYear") {
+      start = new Date(today.getFullYear(), 0, 1);
+    }
+
+    setStartDate(toISODate(start));
+    setEndDate(toISODate(end));
+    setCustomType("date_range");
+  };
+
+  const monthOptions = MONTH_NAMES.map((m, i) => ({ value: i, label: m }));
+  const yearOptions = years.map((y) => ({ value: y, label: String(y) }));
+
+  // Label for active custom period
+  const customPeriodLabel = useMemo(() => {
+    if (customType === "date_range") {
+      return `${formatDisplayDate(startDate)} – ${formatDisplayDate(endDate)}`;
+    }
+    return `${MONTH_NAMES[fromMonth]?.slice(0, 3)} ${fromYear} – ${MONTH_NAMES[toMonth]?.slice(0, 3)} ${toYear}`;
+  }, [customType, startDate, endDate, fromMonth, fromYear, toMonth, toYear]);
+
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-        <input
-          className={`${inputCls} sm:w-56`}
-          style={{ borderColor: "var(--glass-border)", color: "var(--text-primary)" }}
-          value={billingMonth}
-          onChange={(e) => setBillingMonth(e.target.value)}
-          placeholder="Filter by month"
-        />
-        <Select
-          options={[{ value: "", label: "All statuses" }, { value: "PENDING", label: "Pending" }, { value: "PAID", label: "Paid" }, { value: "PENDING_VERIFICATION", label: "Awaiting" }]}
-          value={status}
-          onChange={(e) => setStatus(e.target.value)}
-          className="sm:w-48"
-        />
-        <button onClick={load} className={btnGhost} style={{ borderColor: "var(--glass-border)" }}><MdRefresh size={15} /> Refresh</button>
+      {/* Proportional Unified Filter Toolbar */}
+      <div className="flex flex-wrap items-end gap-3">
+        {/* Month Dropdown */}
+        <div className="flex flex-col gap-1.5 min-w-[140px] flex-1 sm:flex-none">
+          <span className="text-[11px] font-bold text-secondary uppercase tracking-wider">Month</span>
+          <Select
+            options={monthOptions}
+            value={mode === "month" ? monthIdx : -1}
+            onChange={onChangeMonth}
+            disabled={mode === "custom"}
+            style={{
+              height: 42,
+              borderRadius: 10,
+              fontSize: 13,
+              fontWeight: 600,
+              background: "var(--input-bg)",
+              borderColor: "var(--input-border)",
+            }}
+            className={mode === "custom" ? "opacity-40 pointer-events-none" : "w-full sm:w-36"}
+          />
+        </div>
+
+        {/* Year Dropdown */}
+        <div className="flex flex-col gap-1.5 min-w-[100px] flex-1 sm:flex-none">
+          <span className="text-[11px] font-bold text-secondary uppercase tracking-wider">Year</span>
+          <Select
+            options={yearOptions}
+            value={mode === "month" ? year : -1}
+            onChange={onChangeYear}
+            disabled={mode === "custom"}
+            style={{
+              height: 42,
+              borderRadius: 10,
+              fontSize: 13,
+              fontWeight: 600,
+              background: "var(--input-bg)",
+              borderColor: "var(--input-border)",
+            }}
+            className={mode === "custom" ? "opacity-40 pointer-events-none" : "w-full sm:w-28"}
+          />
+        </div>
+
+        {/* Custom Period Button */}
+        <div className="flex flex-col gap-1.5 min-w-[170px] flex-1 sm:flex-none">
+          <span className="text-[11px] font-bold text-secondary uppercase tracking-wider">Period Mode</span>
+          <button
+            type="button"
+            onClick={() => setCustomOpen(true)}
+            className="inline-flex items-center justify-center gap-2 px-3.5 rounded-[10px] text-xs sm:text-sm font-bold border transition-all cursor-pointer select-none"
+            style={{
+              height: 42,
+              background: mode === "custom" ? "var(--accent-soft)" : "var(--input-bg)",
+              borderColor: mode === "custom" ? "var(--accent)" : "var(--input-border)",
+              color: mode === "custom" ? "var(--accent)" : "var(--text-primary)",
+              boxShadow: mode === "custom" ? "0 0 0 1px var(--accent)" : "none",
+            }}
+          >
+            <MdCalendarToday size={15} style={{ color: mode === "custom" ? "var(--accent)" : "var(--text-secondary)", flexShrink: 0 }} />
+            <span className="truncate max-w-[220px]">
+              {mode === "custom" ? `Custom: ${customPeriodLabel}` : "Custom Period (Dates)"}
+            </span>
+          </button>
+        </div>
+
+        {/* Type Dropdown */}
+        <div className="flex flex-col gap-1.5 min-w-[155px] flex-1 sm:flex-none">
+          <span className="text-[11px] font-bold text-secondary uppercase tracking-wider">Type</span>
+          <Select
+            options={typeOptions}
+            value={typeFilter}
+            onChange={(e) => setTypeFilter(e.target.value)}
+            style={{
+              height: 42,
+              borderRadius: 10,
+              fontSize: 13,
+              fontWeight: 600,
+              background: "var(--input-bg)",
+              borderColor: "var(--input-border)",
+            }}
+            className="w-full sm:w-48"
+          />
+        </div>
+
+        {/* Status Dropdown */}
+        <div className="flex flex-col gap-1.5 min-w-[145px] flex-1 sm:flex-none">
+          <span className="text-[11px] font-bold text-secondary uppercase tracking-wider">Status</span>
+          <Select
+            options={[
+              { value: "", label: "All statuses" },
+              { value: "PENDING", label: "Pending" },
+              { value: "PAID", label: "Paid" },
+              { value: "PENDING_VERIFICATION", label: "Awaiting" },
+            ]}
+            value={status}
+            onChange={(e) => setStatus(e.target.value)}
+            style={{
+              height: 42,
+              borderRadius: 10,
+              fontSize: 13,
+              fontWeight: 600,
+              background: "var(--input-bg)",
+              borderColor: "var(--input-border)",
+            }}
+            className="w-full sm:w-40"
+          />
+        </div>
+
+        {/* Refresh Button */}
+        <div className="flex flex-col gap-1.5 sm:ml-auto">
+          <span className="text-[11px] font-bold text-transparent uppercase tracking-wider hidden sm:block">&nbsp;</span>
+          <button
+            type="button"
+            onClick={load}
+            className="inline-flex items-center justify-center gap-2 px-4 rounded-[10px] text-xs sm:text-sm font-bold border transition-all cursor-pointer shrink-0"
+            style={{
+              height: 42,
+              background: "var(--card-inner-bg)",
+              borderColor: "var(--glass-border)",
+              color: "var(--text-primary)",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = "var(--hover-bg)";
+              e.currentTarget.style.borderColor = "var(--accent-light)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "var(--card-inner-bg)";
+              e.currentTarget.style.borderColor = "var(--glass-border)";
+            }}
+          >
+            <MdRefresh size={16} className={loading ? "animate-spin text-accent" : "text-secondary"} />
+            <span>Refresh</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Global Theme Custom Period Modal with Day Date Support */}
+      <GlobalModal
+        isOpen={customOpen}
+        onClose={() => setCustomOpen(false)}
+        title="Custom Period Range"
+        subtitle="Filter maintenance bills by specific day dates or month range"
+        icon={MdCalendarToday}
+        size="md"
+        showFooter
+        submitLabel="Apply Filter"
+        cancelLabel="Cancel"
+        onSubmit={applyCustom}
+        onCancel={() => setCustomOpen(false)}
+      >
+        {/* Type Selector Tabs */}
+        <div
+          className="flex items-center p-1 rounded-xl mb-4 gap-1"
+          style={{ background: "var(--card-inner-bg)", border: "1px solid var(--glass-border)" }}
+        >
+          <button
+            type="button"
+            onClick={() => setCustomType("date_range")}
+            className="flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition-all"
+            style={{
+              background: customType === "date_range" ? "var(--accent)" : "transparent",
+              color: customType === "date_range" ? "#ffffff" : "var(--text-secondary)",
+              boxShadow: customType === "date_range" ? "0 2px 8px rgba(37,99,235,0.3)" : "none",
+            }}
+          >
+            Specific Dates (Day / Month / Year)
+          </button>
+          <button
+            type="button"
+            onClick={() => setCustomType("month_range")}
+            className="flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition-all"
+            style={{
+              background: customType === "month_range" ? "var(--accent)" : "transparent",
+              color: customType === "month_range" ? "#ffffff" : "var(--text-secondary)",
+              boxShadow: customType === "month_range" ? "0 2px 8px rgba(37,99,235,0.3)" : "none",
+            }}
+          >
+            Month Range
+          </button>
+        </div>
+
+        {customType === "date_range" ? (
+          <div className="flex flex-col gap-4">
+            {/* Quick Presets */}
+            <div>
+              <Label>Quick Presets</Label>
+              <div className="flex flex-wrap gap-1.5">
+                {[
+                  { key: "today", label: "Today" },
+                  { key: "yesterday", label: "Yesterday" },
+                  { key: "last7", label: "Last 7 Days" },
+                  { key: "thisMonth", label: "This Month" },
+                  { key: "last30", label: "Last 30 Days" },
+                  { key: "lastMonth", label: "Last Month" },
+                  { key: "thisYear", label: "This Year" },
+                ].map((p) => (
+                  <button
+                    key={p.key}
+                    type="button"
+                    onClick={() => applyPreset(p.key)}
+                    className="px-2.5 py-1 rounded-lg text-xs font-semibold border transition-colors cursor-pointer"
+                    style={{
+                      background: "var(--card-inner-bg)",
+                      borderColor: "var(--glass-border)",
+                      color: "var(--text-secondary)",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = "var(--accent-soft)";
+                      e.currentTarget.style.color = "var(--accent)";
+                      e.currentTarget.style.borderColor = "var(--accent-light)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = "var(--card-inner-bg)";
+                      e.currentTarget.style.color = "var(--text-secondary)";
+                      e.currentTarget.style.borderColor = "var(--glass-border)";
+                    }}
+                  >
+                    {p.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Date Pickers */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="flex flex-col gap-1.5">
+                <Label>From Date (Start Day) *</Label>
+                <input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="w-full px-3.5 rounded-[10px] border outline-none transition-all text-sm font-semibold"
+                  style={{
+                    height: 44,
+                    background: "var(--input-bg)",
+                    borderColor: "var(--input-border)",
+                    color: "var(--text-primary)",
+                  }}
+                  required
+                />
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <Label>To Date (End Day) *</Label>
+                <input
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className="w-full px-3.5 rounded-[10px] border outline-none transition-all text-sm font-semibold"
+                  style={{
+                    height: 44,
+                    background: "var(--input-bg)",
+                    borderColor: "var(--input-border)",
+                    color: "var(--text-primary)",
+                  }}
+                  required
+                />
+              </div>
+            </div>
+
+            {/* Date Target Field */}
+            <div className="flex flex-col gap-1.5">
+              <Label>Filter Date By</Label>
+              <div className="flex items-center gap-3">
+                <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold" style={{ color: "var(--text-primary)" }}>
+                  <input
+                    type="radio"
+                    name="dateField"
+                    value="created_at"
+                    checked={dateField === "created_at"}
+                    onChange={(e) => setDateField(e.target.value)}
+                    className="accent-blue-600"
+                  />
+                  <span>Bill Creation Date</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold" style={{ color: "var(--text-primary)" }}>
+                  <input
+                    type="radio"
+                    name="dateField"
+                    value="due_date"
+                    checked={dateField === "due_date"}
+                    onChange={(e) => setDateField(e.target.value)}
+                    className="accent-blue-600"
+                  />
+                  <span>Due Date</span>
+                </label>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="flex flex-col gap-1.5">
+              <Label>From Month</Label>
+              <Select
+                options={monthOptions}
+                value={fromMonth}
+                onChange={(e) => setFromMonth(Number(e.target.value))}
+                style={{
+                  height: 44,
+                  borderRadius: 10,
+                  fontSize: 13,
+                  fontWeight: 600,
+                  background: "var(--input-bg)",
+                  borderColor: "var(--input-border)",
+                }}
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label>From Year</Label>
+              <Select
+                options={yearOptions}
+                value={fromYear}
+                onChange={(e) => setFromYear(Number(e.target.value))}
+                style={{
+                  height: 44,
+                  borderRadius: 10,
+                  fontSize: 13,
+                  fontWeight: 600,
+                  background: "var(--input-bg)",
+                  borderColor: "var(--input-border)",
+                }}
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label>To Month</Label>
+              <Select
+                options={monthOptions}
+                value={toMonth}
+                onChange={(e) => setToMonth(Number(e.target.value))}
+                style={{
+                  height: 44,
+                  borderRadius: 10,
+                  fontSize: 13,
+                  fontWeight: 600,
+                  background: "var(--input-bg)",
+                  borderColor: "var(--input-border)",
+                }}
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label>To Year</Label>
+              <Select
+                options={yearOptions}
+                value={toYear}
+                onChange={(e) => setToYear(Number(e.target.value))}
+                style={{
+                  height: 44,
+                  borderRadius: 10,
+                  fontSize: 13,
+                  fontWeight: 600,
+                  background: "var(--input-bg)",
+                  borderColor: "var(--input-border)",
+                }}
+              />
+            </div>
+          </div>
+        )}
+
+        <div
+          className="mt-4 p-3.5 rounded-xl flex items-center justify-between text-xs font-semibold"
+          style={{
+            background: "var(--card-inner-bg)",
+            border: "1px solid var(--glass-border)",
+            color: "var(--text-secondary)",
+          }}
+        >
+          <span>Selected Range:</span>
+          <span className="font-bold text-sm" style={{ color: "var(--accent)" }}>
+            {customPeriodLabel}
+          </span>
+        </div>
+      </GlobalModal>
+
+      <div className="flex flex-wrap items-center gap-2 pl-1">
+        <span className="inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full border" style={{ borderColor: "var(--glass-border)", color: "var(--text-secondary)" }}>
+          <MdFilterList size={13} />
+          {mode === "custom"
+            ? customPeriodLabel
+            : billingMonth || "No month selected"}
+        </span>
+        {typeFilter && (
+          <span className="inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full border" style={{ borderColor: "var(--accent-light, #818cf8)", background: "var(--accent-soft)", color: "var(--accent)" }}>
+            Type: {typeOptions.find((o) => o.value === typeFilter)?.label || typeFilter}
+          </span>
+        )}
+        {status && (
+          <span className="inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full border" style={{ borderColor: "var(--glass-border)", color: "var(--text-secondary)" }}>
+            Status: {status}
+          </span>
+        )}
       </div>
 
       {loading ? (
@@ -978,10 +1483,10 @@ function BillsTab({ billingMonth, setBillingMonth, onView }) {
               <tr className="text-left text-xs uppercase tracking-wider text-secondary">
                 <th className="py-2 pr-3">Bill / Flat</th>
                 <th className="py-2 pr-3">Type</th>
-                <th className="py-2 pr-3">Month</th>
+                <th className="py-2 pr-3">Issue Date</th>
                 <th className="py-2 pr-3">Amount</th>
                 <th className="py-2 pr-3">Status</th>
-                <th className="py-2 pr-3">Due</th>
+                <th className="py-2 pr-3">Due Date</th>
                 <th className="py-2 text-right">View</th>
               </tr>
             </thead>
@@ -993,10 +1498,21 @@ function BillsTab({ billingMonth, setBillingMonth, onView }) {
                     <p className="text-xs text-secondary">{b.Flat?.flat_number} · {b.Flat?.Block?.name || "—"}</p>
                   </td>
                   <td className="py-3 pr-3"><TypeChip type={b.rate?.maintenance_type} /></td>
-                  <td className="py-3 pr-3">{b.billing_month}</td>
+                  <td className="py-3 pr-3 text-xs">
+                    <div className="font-semibold" style={{ color: "var(--text-primary)" }}>
+                      {b.issue_date
+                        ? new Date(b.issue_date).toLocaleDateString("en-US", { day: "numeric", month: "short", year: "numeric" })
+                        : b.created_at
+                        ? new Date(b.created_at).toLocaleDateString("en-US", { day: "numeric", month: "short", year: "numeric" })
+                        : b.billing_month || "—"}
+                    </div>
+                    {b.billing_month && (
+                      <div className="text-[11px] text-secondary">{b.billing_month}</div>
+                    )}
+                  </td>
                   <td className="py-3 pr-3 font-bold">{formatMoney(b.amount)}</td>
                   <td className="py-3 pr-3"><StatusPill status={b.status} /></td>
-                  <td className="py-3 pr-3 text-xs text-secondary">{b.due_date ? new Date(b.due_date).toLocaleDateString() : "—"}</td>
+                  <td className="py-3 pr-3 text-xs text-secondary">{b.due_date ? new Date(b.due_date).toLocaleDateString("en-US", { day: "numeric", month: "short", year: "numeric" }) : "—"}</td>
                   <td className="py-3 text-right">
                     <button onClick={() => onView(b.id)} className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold border transition-colors" style={{ borderColor: "var(--glass-border)" }}>
                       <MdVisibility size={13} /> Details
@@ -1020,6 +1536,7 @@ export default function MaintenancePage() {
   const { user } = useContext(AuthContext);
   const activeRole = user?.activeRole ?? user?.role;
   const isSuperAdmin = activeRole === "SUPER_ADMIN";
+  const canEdit = !isCommitteeMember(user);
 
   const [configs, setConfigs] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -1098,16 +1615,18 @@ export default function MaintenancePage() {
           <p className="text-sm text-secondary">Configure rates, generate bills and track them.</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <GlobalButton
-            variant="add"
-            icon={MdAdd}
-            borderDraw
-            onClick={openAdd}
-            className="w-full sm:w-auto justify-center shrink-0"
-            style={{ fontWeight: 700 }}
-          >
-            New Configuration
-          </GlobalButton>
+          {canEdit && (
+            <GlobalButton
+              variant="add"
+              icon={MdAdd}
+              borderDraw
+              onClick={openAdd}
+              className="w-full sm:w-auto justify-center shrink-0"
+              style={{ fontWeight: 700 }}
+            >
+              New Configuration
+            </GlobalButton>
+          )}
         </div>
       </div>
 
@@ -1184,16 +1703,18 @@ export default function MaintenancePage() {
         <div className="flex flex-col gap-4">
           <div className="flex sm:items-center justify-between flex-col sm:flex-row gap-2">
             <p className="text-sm text-secondary">{configs.length} configuration(s) — {activeCount} active. Uses standard MaintenanceRates + bills.</p>
-            <GlobalButton
-              variant="add"
-              icon={MdBuild}
-              borderDraw
-              onClick={() => setShowGenerate(true)}
-              className="shrink-0"
-              style={{ fontWeight: 700 }}
-            >
-              Generate Bills
-            </GlobalButton>
+            {canEdit && (
+              <GlobalButton
+                variant="add"
+                icon={MdBuild}
+                borderDraw
+                onClick={() => setShowGenerate(true)}
+                className="shrink-0"
+                style={{ fontWeight: 700 }}
+              >
+                Generate Bills
+              </GlobalButton>
+            )}
           </div>
 
           {loading ? (
@@ -1202,18 +1723,20 @@ export default function MaintenancePage() {
             <div className="flex flex-col items-center gap-2 py-16 text-secondary">
               <MdTune size={40} className="opacity-30" />
               <p className="text-sm">No maintenance configurations yet</p>
-              <button onClick={openAdd} className={btnGhost} style={{ borderColor: "var(--glass-border)" }}>Add your first configuration</button>
+              {canEdit && (
+                <button onClick={openAdd} className={btnGhost} style={{ borderColor: "var(--glass-border)" }}>Add your first configuration</button>
+              )}
             </div>
           ) : (
             <div className="rounded-xl border overflow-hidden" style={{ background: "var(--card-bg)", borderColor: "var(--glass-border)" }}>
               {configs.map((r) => (
-                <ConfigCard key={r.id} rate={r} deleting={deleting} onEdit={openEdit} onDelete={handleDelete} last={configs[configs.length - 1].id === r.id} />
+                <ConfigCard key={r.id} rate={r} deleting={deleting} onEdit={openEdit} onDelete={handleDelete} last={configs[configs.length - 1].id === r.id} canEdit={canEdit} />
               ))}
             </div>
           )}
         </div>
       ) : (
-        <BillsTab billingMonth={billingMonth} setBillingMonth={setBillingMonth} onView={setDetailId} />
+        <BillsTab billingMonth={billingMonth} setBillingMonth={setBillingMonth} onView={setDetailId} configs={configs} />
       )}
 
       {/* Config form modal */}

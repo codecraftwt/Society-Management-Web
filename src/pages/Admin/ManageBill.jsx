@@ -13,6 +13,7 @@ import {
 import Select from "../../components/common/Select";
 import GlobalButton from "../../components/common/GlobalButton";
 import GlobalModal from "../../components/common/GlobalModal";
+import { isCommitteeMember } from "../../utils/permissions";
 
 /* ── helpers ── */
 const getTodayISO = () => {
@@ -97,10 +98,10 @@ function BillStatus({ status, t }) {
 }
 
 /* ── Delete & Confirm controls ── */
-function RowActions({ bill, confirmDeleteId, setConfirmDeleteId, handleDeleteBill, deletingId, handleConfirmPayment, confirmingId, t }) {
+function RowActions({ bill, confirmDeleteId, setConfirmDeleteId, handleDeleteBill, deletingId, handleConfirmPayment, confirmingId, t, canEdit = true }) {
   return (
     <div className="flex items-center gap-2 flex-wrap">
-      {bill.status === "PENDING_VERIFICATION" && (
+      {canEdit && bill.status === "PENDING_VERIFICATION" && (
         <button
           onClick={() => handleConfirmPayment(bill.id)}
           disabled={confirmingId === bill.id}
@@ -111,7 +112,7 @@ function RowActions({ bill, confirmDeleteId, setConfirmDeleteId, handleDeleteBil
         </button>
       )}
 
-      {confirmDeleteId === bill.id ? (
+      {canEdit && confirmDeleteId === bill.id ? (
         <div className="flex items-center gap-2 animate-fadeIn">
           <span className="text-xs text-secondary">{t("billSure")}</span>
           <button className="btn-delete-confirm" onClick={() => handleDeleteBill(bill.id)} disabled={deletingId === bill.id}>
@@ -141,6 +142,7 @@ export default function ManageBills() {
   const isMobile = useIsMobile();
   const { t } = useLang();
   const { user: authUser } = useContext(AuthContext);
+  const isCommittee = isCommitteeMember(authUser);
 
   /* ── List state ── */
   const [bills, setBills] = useState([]);
@@ -532,20 +534,22 @@ export default function ManageBills() {
             <p className="page-subtitle">{t("billsSubtitle")}</p>
           </div>
         </div>
-            <GlobalButton
-              variant="add"
-              size="md"
-borderDraw
-              icon={MdAdd}
-              onClick={() => {
-                setFormSocietyId(filterSocietyId || "");
-                setShowCreate(true);
-              }}
-              fullWidth={false}
-              style={{ flexShrink: 0, whiteSpace: "nowrap" }}
-            >
-              {t("billCreate")}
-            </GlobalButton>
+        {!isCommittee && (
+          <GlobalButton
+            variant="add"
+            size="md"
+            borderDraw
+            icon={MdAdd}
+            onClick={() => {
+              setFormSocietyId(filterSocietyId || "");
+              setShowCreate(true);
+            }}
+            fullWidth={false}
+            style={{ flexShrink: 0, whiteSpace: "nowrap" }}
+          >
+            {t("billCreate")}
+          </GlobalButton>
+        )}
       </div>
 
       {/* ── SUPER ADMIN FILTER ── */}
@@ -741,6 +745,8 @@ borderDraw
                     <span style={{ opacity: 0.75, fontWeight: 800 }}>• ₹{selectedTotalAmount.toLocaleString("en-IN")}</span>
                   </span>
 
+                  {!isCommittee && (
+                    <>
                   {/* Bulk Approve Button */}
                   <button
                     type="button"
@@ -791,6 +797,8 @@ borderDraw
                     <MdDelete size={15} />
                     <span>Delete ({selectedDeletable.length})</span>
                   </button>
+                  </>
+                  )}
 
                   {/* Clear Selection */}
                   <button
@@ -942,7 +950,7 @@ borderDraw
                         <p className="text-xs font-semibold" style={{ color: "var(--text-primary)" }}>{b.Flat?.User?.name || "NA"}</p>
                       </div>
                     </div>
-                    <RowActions bill={b} confirmDeleteId={confirmDeleteId} setConfirmDeleteId={setConfirmDeleteId} handleDeleteBill={handleDeleteBill} deletingId={deletingId} handleConfirmPayment={handleConfirmPayment} confirmingId={confirmingId} t={t} />
+                    <RowActions bill={b} confirmDeleteId={confirmDeleteId} setConfirmDeleteId={setConfirmDeleteId} handleDeleteBill={handleDeleteBill} deletingId={deletingId} handleConfirmPayment={handleConfirmPayment} confirmingId={confirmingId} t={t} canEdit={!isCommittee} />
                   </div>
                 </div>
               );
@@ -1017,7 +1025,7 @@ borderDraw
                     <td><span className="bill-table-amount">₹{Number(b.amount).toLocaleString("en-IN")}</span></td>
                     <td><BillStatus status={b.status} t={t} /></td>
                     <td onClick={e => e.stopPropagation()}>
-                      <RowActions bill={b} confirmDeleteId={confirmDeleteId} setConfirmDeleteId={setConfirmDeleteId} handleDeleteBill={handleDeleteBill} deletingId={deletingId} handleConfirmPayment={handleConfirmPayment} confirmingId={confirmingId} t={t} />
+                      <RowActions bill={b} confirmDeleteId={confirmDeleteId} setConfirmDeleteId={setConfirmDeleteId} handleDeleteBill={handleDeleteBill} deletingId={deletingId} handleConfirmPayment={handleConfirmPayment} confirmingId={confirmingId} t={t} canEdit={!isCommittee} />
                     </td>
                   </tr>
                 );

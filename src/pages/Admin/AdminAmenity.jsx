@@ -1,8 +1,10 @@
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useContext } from "react";
 import { createPortal } from "react-dom";
 import API from "../../services/api";
 import { useLang } from "../../context/LanguageContext";
+import { AuthContext } from "../../context/AuthContext";
+import { isCommitteeMember } from "../../utils/permissions";
 import {
   MdAdd, MdClose, MdSearch, MdOutlineInbox,
   MdCheckCircle, MdCancel, MdToggleOn, MdToggleOff,
@@ -199,6 +201,8 @@ function ReasonBanner({ amenity }) {
 export default function AdminAmenity() {
   const isMobile = useIsMobile();
   const { t } = useLang();
+  const { user } = useContext(AuthContext);
+  const canEdit  = !isCommitteeMember(user);
 
   const [amenities, setAmenities] = useState([]);
   const [bookings, setBookings] = useState([]);
@@ -389,7 +393,7 @@ export default function AdminAmenity() {
           <h2 style={{ fontSize: isMobile ? 17 : 20, fontWeight: 700, color: "var(--text-primary)", letterSpacing: "-0.03em", margin: 0 }}>{t("amenTitle")}</h2>
           <p style={{ fontSize: 12, color: "var(--text-secondary)", marginTop: 3 }}>{t("amenSubtitle")}</p>
         </div>
-        {activeTab === "AMENITIES" && (
+        {activeTab === "AMENITIES" && canEdit && (
           <button onClick={() => setShowForm(p => !p)} className="sa-add-btn sa-add-pill sa-btn-primary" style={{ flexShrink: 0 }}>
             <span className="sa-pill-blob sa-pill-blob1" />
             <span className="sa-pill-inner">
@@ -421,7 +425,7 @@ export default function AdminAmenity() {
       {/* ════════════ AMENITIES ════════════ */}
       {activeTab === "AMENITIES" && (
         <>
-          {showForm && (
+          {canEdit && showForm && (
             <div className="animate-scaleIn" style={{ background: "var(--card-bg)", border: "1.5px solid var(--glass-border)", borderRadius: 20, padding: isMobile ? "18px 16px" : "24px 28px" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
                 <div style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(107,70,193,0.12)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 17 }}>✨</div>
@@ -534,7 +538,7 @@ export default function AdminAmenity() {
                           <MdEventAvailable size={13} /> {t("amenRequiresApproval")}
                         </div>
                       )}
-                      {active ? (
+                      {canEdit && (active ? (
                         <button onClick={() => setDisableModalAmenity(a)} style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 7, borderRadius: 12, padding: "11px 0", fontSize: 13, fontWeight: 700, cursor: "pointer", background: "var(--reject-bg)", color: "var(--reject-color)", border: "1.5px solid var(--reject-border)" }}>
                           <MdToggleOff size={17} /> Disable amenity
                         </button>
@@ -542,7 +546,7 @@ export default function AdminAmenity() {
                         <button onClick={() => handleReEnable(a.id)} disabled={togglingId === a.id} style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 7, borderRadius: 12, padding: "11px 0", fontSize: 13, fontWeight: 700, cursor: togglingId === a.id ? "not-allowed" : "pointer", background: pal.iconBg, color: pal.strip, border: `1.5px solid ${pal.iconBorder}` }}>
                           {togglingId === a.id ? <Spinner /> : <><MdToggleOn size={17} /> Re-enable amenity</>}
                         </button>
-                      )}
+                      ))}
                     </div>
                   </div>
                 );
@@ -594,7 +598,7 @@ export default function AdminAmenity() {
               const isPast = bDate instanceof Date && !isNaN(bDate) && bDate < today;
               const af = amenities.find(a => a.id === b.amenity_id || a.id === b.Amenity?.id);
               const needsApp = af?.requires_approval ?? b.Amenity?.requires_approval ?? false;
-              const canAct = b.status === "PENDING" && !isPast && needsApp;
+              const canAct = canEdit && b.status === "PENDING" && !isPast && needsApp;
               const isPaymentPending = b.status === "PAYMENT_PENDING";
               const dotColor = {
                 PAYMENT_PENDING: "#6B46C1",

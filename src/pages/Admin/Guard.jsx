@@ -6,7 +6,7 @@ import {
   MdAdd, MdDelete, MdPerson, MdEmail,
   MdVisibility, MdVisibilityOff,
   MdSecurity, MdSchedule, MdCalendarToday,
-  MdWbSunny, MdNightsStay, MdBrightness5, MdEdit,
+  MdWbSunny, MdNightsStay, MdBrightness5, MdEdit, MdApartment,
 } from "react-icons/md";
 import Select from "../../components/common/Select";
 import GlobalButton from "../../components/common/GlobalButton";
@@ -14,6 +14,7 @@ import GlobalModal from "../../components/common/GlobalModal";
 import GlobalTable from "../../components/common/GlobalTable";
 import GlobalBadge from "../../components/common/GlobalBadge";
 import GlobalConfirmDialog from "../../components/common/GlobalConfirmDialog";
+import { isCommitteeMember } from "../../utils/permissions";
 
 function ShiftBadge({ type, t }) {
   const SHIFT_CFG = {
@@ -62,6 +63,7 @@ export default function Guard() {
   const { user } = useContext(AuthContext);
   const activeRole = user?.activeRole ?? user?.role;
   const isSuperAdmin = activeRole === "SUPER_ADMIN";
+  const isCommittee = isCommitteeMember(user);
 
   const [guards, setGuards] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -168,6 +170,7 @@ export default function Guard() {
           name: formData.name,
           email: formData.email,
           ...(formData.password ? { password: formData.password } : {}),
+          ...(isSuperAdmin && formData.society_id ? { society_id: formData.society_id } : {}),
         });
       } else {
         const payload = {
@@ -231,6 +234,19 @@ export default function Guard() {
       return;
     }
 
+    const existingShift = (guardShifts[selectedGuard.id] || [])
+      .filter(s => !editingShiftId || s.id !== editingShiftId)
+      .find(s => shiftForm.start_date <= s.end_date && shiftForm.end_date >= s.start_date);
+    if (existingShift) {
+      const typeLabels = { MORNING: "Morning", AFTERNOON: "Afternoon", NIGHT: "Night" };
+      const label = typeLabels[existingShift.shift_type] || existingShift.shift_type;
+      setShiftError(
+        `Guard already has a ${label} shift from ${existingShift.start_date} to ${existingShift.end_date}. ` +
+        `A guard can only have one shift per date — edit that shift instead of creating a new one.`
+      );
+      return;
+    }
+
     try {
       setSubmitLoading(true);
       if (editingShiftId) {
@@ -241,20 +257,15 @@ export default function Guard() {
       setShowShiftModal(false);
       fetchGuards();
     } catch (err) {
-      setShiftError(err.response?.data?.message || "Failed to save shift");
+      const status = err?.response?.status;
+      const data = err?.response?.data;
+      if (status === 409 && data?.existingShift && !editingShiftId) {
+        openShiftModal(selectedGuard, data.existingShift);
+      } else {
+        setShiftError(data?.message || "Failed to save shift");
+      }
     } finally {
       setSubmitLoading(false);
-    }
-  };
-
-  const handleDeleteShift = async (shiftId) => {
-    if (!window.confirm("Remove this shift assignment?")) return;
-    try {
-      await API.delete(`/guards/shifts/${shiftId}`);
-      fetchGuards();
-      setShowShiftModal(false);
-    } catch (err) {
-      alert(err.response?.data?.message || "Failed to delete shift");
     }
   };
 
@@ -283,6 +294,28 @@ export default function Guard() {
         </div>
       ),
     },
+    ...(isSuperAdmin
+      ? [{
+          key: "society",
+          header: "Society",
+          hiddenMobile: true,
+          render: (g) => {
+            const societyName =
+              (g.societyName && g.societyName !== "NA"
+                ? g.societyName
+                : societiesList.find(s => String(s.id) === String(g.society_id))?.name) ||
+              "Not assigned";
+            return (
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <MdApartment size={13} style={{ color: "var(--accent)", opacity: 0.8 }} />
+                <span style={{ fontSize: "0.84rem", fontWeight: 600, color: "var(--text-primary)" }}>
+                  {societyName}
+                </span>
+              </div>
+            );
+          },
+        }]
+      : []),
     {
       key: "shift",
       header: t("guardColShift") || "Shift",
@@ -291,7 +324,17 @@ export default function Guard() {
         return (
           <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
             {shifts.length > 0 ? (
-              shifts.map(s => <ShiftBadge key={s.id} type={s.shift_type} t={t} />)
+              shifts.map(s => (
+                <button
+                  key={s.id}
+                  type="button"
+                  onClick={() => openShiftModal(g, s)}
+                  style={{ padding: 0, border: "none", background: "none", cursor: "pointer", borderRadius: 6 }}
+                  title={`Edit ${s.shift_type} shift (${s.start_date} → ${s.end_date})`}
+                >
+                  <ShiftBadge type={s.shift_type} t={t} />
+                </button>
+              ))
             ) : (
               <span style={{ fontSize: "0.8rem", color: "var(--text-tertiary)", opacity: 0.6 }}>—</span>
             )}
@@ -308,10 +351,20 @@ export default function Guard() {
         return shifts.length > 0 ? (
           <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
             {shifts.map(s => (
-              <div key={s.id} style={{ display: "flex", alignItems: "center", gap: 5, fontSize: "0.8rem", color: "var(--text-secondary)" }}>
+              <button
+                key={s.id}
+                type="button"
+                onClick={() => openShiftModal(g, s)}
+                style={{
+                  display: "flex", alignItems: "center", gap: 5, fontSize: "0.8rem",
+                  color: "var(--text-secondary)", background: "none", border: "none",
+                  cursor: "pointer", padding: 0, textAlign: "left",
+                }}
+                title={`Edit ${s.shift_type} shift (${s.start_date} → ${s.end_date})`}
+              >
                 <MdCalendarToday size={11} style={{ opacity: 0.7 }} />
                 <span>{s.shift_type}: {s.start_date} → {s.end_date}</span>
-              </div>
+              </button>
             ))}
           </div>
         ) : (
@@ -323,35 +376,40 @@ export default function Guard() {
     },
     {
       key: "actions",
-      header: t("billActionCol") || "Actions",
+      header: t("guardColActions") || "Actions",
       align: "right",
       render: (g) => {
         const shifts = guardShifts[g.id] || [];
         return (
           <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
-            <GlobalButton
-              variant="edit"
-              size="sm"
-              icon={MdEdit}
-              onClick={() => handleEdit(g)}
-              title="Edit Guard"
-            >
-              Edit
-            </GlobalButton>
+            {!isCommittee && (
+              <GlobalButton
+                variant="edit"
+                size="sm"
+                icon={MdEdit}
+                onClick={() => handleEdit(g)}
+                title="Edit Guard"
+              >
+                Edit
+              </GlobalButton>
+            )}
             <GlobalButton
               variant="secondary"
               size="sm"
-              icon={MdSchedule}
+              icon={MdEdit}
               onClick={() => openShiftModal(g, shifts[0] || null)}
+              title={shifts.length > 0 ? "Edit shift" : "Schedule a shift"}
             >
-              {shifts.length > 0 ? "Shift" : "Schedule"}
+              Shift
             </GlobalButton>
-            <GlobalButton
-              variant="delete"
-              size="sm"
-              icon={MdDelete}
-              onClick={() => setDeleteConfirm({ isOpen: true, id: g.id, societyId: g.society_id, loading: false })}
-            />
+            {!isCommittee && (
+              <GlobalButton
+                variant="delete"
+                size="sm"
+                icon={MdDelete}
+                onClick={() => setDeleteConfirm({ isOpen: true, id: g.id, societyId: g.society_id, loading: false })}
+              />
+            )}
           </div>
         );
       },
@@ -394,18 +452,20 @@ export default function Guard() {
             </Select>
           )}
 
-          <GlobalButton
-            variant="add"
-            icon={MdAdd}
-            borderDraw
-            onClick={() => {
-              setEditingId(null);
-              setFormData({ name: "", email: "", password: "", society_id: filterSocietyId === "ALL" ? "" : filterSocietyId });
-              setShowGuardModal(true);
-            }}
-          >
-            {t("guardAddBtn") || "Add Guard"}
-          </GlobalButton>
+          {!isCommittee && (
+            <GlobalButton
+              variant="add"
+              icon={MdAdd}
+              borderDraw
+              onClick={() => {
+                setEditingId(null);
+                setFormData({ name: "", email: "", password: "", society_id: filterSocietyId === "ALL" ? "" : filterSocietyId });
+                setShowGuardModal(true);
+              }}
+            >
+              {t("guardAddBtn") || "Add Guard"}
+            </GlobalButton>
+          )}
         </div>
       </div>
 
@@ -417,18 +477,20 @@ export default function Guard() {
         emptyMessage={t("guardEmpty") || "No security guards registered yet."}
         emptyIcon={MdSecurity}
         emptyAction={
-          <GlobalButton
-            variant="add"
-            icon={MdAdd}
-            borderDraw
-            onClick={() => {
-              setEditingId(null);
-              setFormData({ name: "", email: "", password: "", society_id: filterSocietyId === "ALL" ? "" : filterSocietyId });
-              setShowGuardModal(true);
-            }}
-          >
-            {t("guardAddBtn") || "Add Guard"}
-          </GlobalButton>
+          !isCommittee ? (
+            <GlobalButton
+              variant="add"
+              icon={MdAdd}
+              borderDraw
+              onClick={() => {
+                setEditingId(null);
+                setFormData({ name: "", email: "", password: "", society_id: filterSocietyId === "ALL" ? "" : filterSocietyId });
+                setShowGuardModal(true);
+              }}
+            >
+              {t("guardAddBtn") || "Add Guard"}
+            </GlobalButton>
+          ) : null
         }
       />
 
@@ -534,14 +596,32 @@ export default function Guard() {
         icon={MdSchedule}
         size="md"
         showFooter
-        submitLabel={editingShiftId ? "Update Shift" : "Assign Shift"}
+        submitLabel={editingShiftId ? "Edit Shift" : "Add Shift"}
         cancelLabel={t("cancel") || "Cancel"}
         onSubmit={handleShiftSubmit}
         submitLoading={submitLoading}
         submitDisabled={submitLoading || !shiftForm.shift_type || !shiftForm.start_date || !shiftForm.end_date}
-        submitIcon={MdSchedule}
+        submitIcon={editingShiftId ? MdEdit : MdAdd}
       >
         <form onSubmit={handleShiftSubmit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+          {editingShiftId && (
+            <div style={{ display: "flex", justifyContent: "flex-start" }}>
+              <GlobalButton
+                variant="add"
+                size="sm"
+                icon={MdAdd}
+                onClick={() => {
+                  setEditingShiftId(null);
+                  setShiftForm({ shift_type: "", start_date: "", end_date: "" });
+                  setShiftError("");
+                }}
+                title="Clear the form and schedule a new shift"
+              >
+                Create New
+              </GlobalButton>
+            </div>
+          )}
+
           {shiftError && (
             <div style={{
               color: "#ef4444", fontSize: 12, padding: "8px 12px",
@@ -589,19 +669,6 @@ export default function Guard() {
               />
             </div>
           </div>
-
-          {editingShiftId && (
-            <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 6 }}>
-              <GlobalButton
-                variant="delete"
-                size="sm"
-                icon={MdDelete}
-                onClick={() => handleDeleteShift(editingShiftId)}
-              >
-                Remove Shift
-              </GlobalButton>
-            </div>
-          )}
         </form>
       </GlobalModal>
 

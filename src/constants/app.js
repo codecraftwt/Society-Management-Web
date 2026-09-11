@@ -3,7 +3,7 @@ export const APP_NAME = "MySociety";
 export const DASHBOARD_ROUTES = {
   SUPER_ADMIN: "/superadmin",
   SOCIETY_ADMIN: "/admin",
-  COMMITTEE_MEMBER: "/committee",
+  COMMITTEE_MEMBER: "/admin",
   GUARD: "/guard",
   ACCOUNTANT: "/accountant",
   FAMILY_MEMBER: "/family",

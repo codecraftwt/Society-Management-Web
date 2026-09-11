@@ -62,20 +62,8 @@ import FlatHistory from "./pages/Admin/FlatHistory";
 import MaintenancePage from "./pages/Maintenance/MaintenancePage";
 
 /* === COMMITTEE MEMBER (LIMITED ACCESS) === */
-import CommitteeLayout from "./pages/Committee/CommitteeLayout";
-import CommitteeDashboard from "./pages/Committee/CommitteeDashboard";
-import CommitteeResidents from "./pages/Committee/CommitteeResidents";
-import CommitteeVisitorLogs from "./pages/Committee/CommitteeVisitorLogs.jsx";
-import CommitteeNotices from "./pages/Committee/CommitteeNotices";
-import CommitteeComplaints from "./pages/Committee/CommitteeComplaints";
-import CommitteeBillingRules from "./pages/Committee/CommitteeBillingRules";
-import CommitteeManageBills from "./pages/Committee/CommitteeManageBills";
-import CommitteePaymentTracking from "./pages/Committee/CommitteePaymentTracking";
-import CommitteeAmenities from "./pages/Committee/CommitteeAmenities";
-import CommitteeReports from "./pages/Committee/CommitteeReports";
-import CommitteeDocuments from "./pages/Committee/CommitteeDocuments";
-import CommitteeGuards from "./pages/Committee/CommitteeGuards";
-import CommitteeProperty from "./pages/Committee/CommitteeProperty";
+/* Committee Members reuse the SOCIETY_ADMIN panel (/admin → AdminLayout + shared
+   admin components). Separate Committee pages are retired. */
 
 
 /* === RESIDENT === */
@@ -189,6 +177,7 @@ function App() {
             <Route path="maintenance" element={<MaintenancePage />} />
             <Route path="parking" element={<SuperAdminParking />} />
             <Route path="reports" element={<SystemReports />} />
+            <Route path="settings" element={<AdminSetting />} />
             <Route path="reports/visitors" element={<SuperAdminVisitorReport />} />
             <Route path="reports/complaints" element={<SuperAdminComplaintReport />} />
             <Route path="reports/financial" element={<SuperAdminFinancialReport />} />
@@ -196,8 +185,8 @@ function App() {
           </Route>
         </Route>
 
-        {/* === SOCIETY ADMIN ONLY (FULL ACCESS) === */}
-        <Route element={<ProtectedRoute roles={["SOCIETY_ADMIN"]} />}>
+        {/* === SOCIETY ADMIN & COMMITTEE MEMBER (ADMIN PANEL) === */}
+        <Route element={<ProtectedRoute roles={["SOCIETY_ADMIN", "COMMITTEE_MEMBER", "ADMIN"]} />}>
           <Route path="/admin" element={<AdminLayout />}>
             <Route index element={<AdminDashboard />} />
             <Route path="resident" element={<Resident />} />
@@ -224,45 +213,8 @@ function App() {
         </Route>
 
         {/* === COMMITTEE MEMBER ONLY (LIMITED ACCESS) === */}
-        {/* <Route element={<ProtectedRoute roles={["COMMITTEE_MEMBER"]} />}>
-          <Route path="/committee" element={<CommitteeLayout />}>
-            <Route index element={<CommitteeDashboard />} />
-            <Route path="residents" element={<CommitteeResidents />} />
-            <Route path="visitor-logs" element={<CommitteeVisitorLogs />} />
-            <Route path="notices" element={<CommitteeNotices />} />
-            <Route path="complaints" element={<CommitteeComplaints />} />
-            <Route path="billing-rules" element={<CommitteeBillingRules />} />
-            <Route path="manage-bills" element={<CommitteeManageBills />} />
-            <Route path="payment-tracking" element={<CommitteePaymentTracking />} />
-            <Route path="reports" element={<CommitteeReports />} />
-            <Route path="documents" element={<CommitteeDocuments />} />
-            <Route path="guards" element={<CommitteeGuards />} />
-            <Route path="property" element={<CommitteeProperty />} />
-            <Route path="amenities" element={<CommitteeAmenities />} />
-          </Route>
-        </Route> */}
-
-        <Route element={<ProtectedRoute roles={["COMMITTEE_MEMBER"]} />}>
-          <Route path="/committee" element={<CommitteeLayout />}>
-            <Route index element={<CommitteeDashboard />} />
-            <Route path="residents" element={<CommitteeResidents />} />
-            <Route path="visitor-logs" element={<CommitteeVisitorLogs />} />
-            <Route path="notices" element={<Notice />} />
-            <Route path="complaints" element={<Complaint />} />
-            <Route path="billing-rules" element={<CommitteeBillingRules />} />
-            <Route path="manage-bills" element={<CommitteeManageBills />} />
-            <Route path="payment-tracking" element={<CommitteePaymentTracking />} />
-            <Route path="maintenance" element={<MaintenancePage />} />
-            <Route path="reports" element={<CommitteeReports />} />
-            <Route path="reports/complaints" element={<ComplaintReport />} />
-            <Route path="reports/visitors" element={<VisitorReport />} />
-            <Route path="reports/financial" element={<FinancialReport />} />
-            <Route path="documents" element={<CommitteeDocuments />} />
-            <Route path="guards" element={<CommitteeGuards />} />
-            <Route path="property" element={<CommitteeProperty />} />
-            <Route path="amenities" element={<CommitteeAmenities />} />
-          </Route>
-        </Route>
+        {/* Committee Members land on /admin (AdminLayout + shared admin components).
+             Permissions filtering is handled by AdminLayout / per-page role gating. */}
 
         {/* === RESIDENT (Full Access) === */}
         <Route element={<ProtectedRoute roles={["RESIDENT"]} />}>

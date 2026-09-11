@@ -1,6 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import { useLang } from "../../context/LanguageContext";
+import { AuthContext } from "../../context/AuthContext";
+import { isCommitteeMember } from "../../utils/permissions";
 import API from "../../services/api";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
@@ -116,6 +118,9 @@ export default function AdminDashboard() {
     { name: t("dashTotalFlats") || "Total Flats", value: totalFlats, color: "#8B5CF6" },
   ];
 
+  const { user } = useContext(AuthContext);
+  const isCommittee = isCommitteeMember(user);
+
   /* Greeting phrase based on hour */
   const hour = dateTime.getHours();
   const greeting =
@@ -152,11 +157,20 @@ export default function AdminDashboard() {
       {/* ── 1. DASHBOARD HERO HEADER ── */}
       <div className="bg-card border border-glass-border rounded-2xl p-6 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm">
         <div className="space-y-1 min-w-0">
-          <h1 className="text-xl md:text-2xl font-bold text-primary tracking-tight">
-            {greeting}, Admin
-          </h1>
+          <div className="flex items-center gap-3 flex-wrap">
+            <h1 className="text-xl md:text-2xl font-bold text-primary tracking-tight">
+              {greeting}, {isCommittee ? (user?.name || "Committee Member") : (user?.name || "Admin")}
+            </h1>
+            {isCommittee && (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                ★ {user?.committee_position || user?.designation || "Committee Member"}
+              </span>
+            )}
+          </div>
           <p className="text-xs md:text-sm text-secondary truncate">
-            Here's a quick operational overview of your society today.
+            {isCommittee
+              ? `Operational overview for ${user?.society_name || stats?.societyName || "your society"}`
+              : "Here's a quick operational overview of your society today."}
           </p>
         </div>
 
@@ -249,7 +263,7 @@ export default function AdminDashboard() {
               </span>
             </div>
             <p className="text-xs text-secondary mt-1">
-              {t("dashComplaintsDesc") || "Requires admin attention"}
+              {isCommittee ? "Pending committee review" : (t("dashComplaintsDesc") || "Requires attention")}
             </p>
           </div>
         </div>

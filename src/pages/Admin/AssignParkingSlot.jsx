@@ -1,15 +1,17 @@
 
-import { useEffect, useState, useCallback, useMemo, useRef } from "react";
+import { useEffect, useState, useCallback, useMemo, useRef, useContext } from "react";
 import { createPortal } from "react-dom";
 import API from "../../services/api";
 import { useLang } from "../../context/LanguageContext";
+import { AuthContext } from "../../context/AuthContext";
+import { isCommitteeMember } from "../../utils/permissions";
 import {
-  MdAdd, MdDelete, MdClose,
+  MdAdd, MdDelete, MdClose, MdEdit,
   MdDirectionsCar, MdTwoWheeler,
   MdOutlineInbox, MdCheckCircle,
   MdBlock, MdFilterList, MdSearch,
   MdLocalParking, MdWarning, MdPersonSearch,
-  MdPendingActions, MdDone, MdRefresh,
+  MdPendingActions, MdDone, MdRefresh, MdPersonRemove,
 } from "react-icons/md";
 import { FaParking } from "react-icons/fa";
 import Select from "../../components/common/Select";
@@ -743,6 +745,8 @@ const LIMIT = 10;
 ═══════════════════════════════════════════ */
 export default function AssignParkingSlot() {
   const { t } = useLang();
+  const { user } = useContext(AuthContext);
+  const isCommittee = isCommitteeMember(user);
 
   const [mainTab, setMainTab] = useState("slots");
 
@@ -759,6 +763,7 @@ export default function AssignParkingSlot() {
 
   /* Filters */
   const [vehicleFilter, setVehicleFilter] = useState("ALL");
+  const [statusFilter, setStatusFilter] = useState("ALL");
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 500);
 
@@ -766,6 +771,12 @@ export default function AssignParkingSlot() {
   const [showForm, setShowForm] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState({ prefix: "", start_number: "", count: "", vehicle_type: "CAR", parking_floor: "P1" });
+
+  /* Edit slot */
+  const [editSlot, setEditSlot] = useState(null);
+  const [editForm, setEditForm] = useState({ slot_number: "", parking_floor: "", vehicle_type: "CAR", parking_type: "DEFAULT" });
+  const [editSubmitting, setEditSubmitting] = useState(false);
+  const [editError, setEditError] = useState("");
 
   const searchInputRef = useRef(null);
 
@@ -779,6 +790,8 @@ export default function AssignParkingSlot() {
       if (e.key === "Escape") {
         setShowForm(false);
         setConfirmDel(null);
+        setEditSlot(null);
+        setReleaseConfirm(null);
       }
     };
     window.addEventListener("keydown", handleShortcut);
@@ -807,8 +820,13 @@ export default function AssignParkingSlot() {
   const [deleting, setDeleting] = useState(null);
   const [confirmDel, setConfirmDel] = useState(null);
 
+  /* Release occupant */
+  const [releaseConfirm, setReleaseConfirm] = useState(null);
+  const [releasing, setReleasing] = useState(null);
+
   /* All slots for sub-panel pickers */
   const [allSlots, setAllSlots] = useState([]);
+  const [flats, setFlats] = useState([]);
 
   /* Pending extra request count for badge */
   const [pendingResidentCount, setPendingResidentCount] = useState(0);
@@ -825,6 +843,14 @@ export default function AssignParkingSlot() {
   /* ────────────────────────────
      LOADERS
   ──────────────────────────── */
+  const loadFlats = useCallback(async () => {
+    try {
+      const res = await API.get("/flats");
+      const list = Array.isArray(res.data) ? res.data : Array.isArray(res.data?.data) ? res.data.data : [];
+      setFlats(list);
+    } catch (e) { console.error(e); }
+  }, []);
+
   const loadAllSlots = useCallback(async () => {
     try {
       const res = await API.get("/parking-slots?limit=200");
@@ -833,7 +859,7 @@ export default function AssignParkingSlot() {
     } catch (e) { console.error(e); }
   }, []);
 
-  const loadSlots = useCallback(async (pageNum, vFilter, currentSearch, isInitial = false) => {
+  const loadSlots = useCallback(async (pageNum, vFilter, currentSearch, statusF = "ALL", isInitial = false) => {
     if (isInitial) setInitialLoad(true);
     else setFetching(true);
     try {
@@ -841,6 +867,7 @@ export default function AssignParkingSlot() {
         page: pageNum,
         limit: LIMIT,
         ...(vFilter !== "ALL" ? { vehicle_type: vFilter } : {}),
+        ...(statusF !== "ALL" ? { status: statusF } : {}),
         ...(currentSearch ? { search: currentSearch } : {}),
       });
       const res = await API.get(`/parking-slots?${params}`);
@@ -872,22 +899,32 @@ export default function AssignParkingSlot() {
   useEffect(() => { loadOwnerSlots(true); }, [loadOwnerSlots]);
 
   useEffect(() => {
-    loadSlots(1, "ALL", "", true);
+    loadSlots(1, "ALL", "", "ALL", true);
     loadAllSlots();
+    loadFlats();
     loadPendingResidentCount();
   }, []);
 
   useEffect(() => {
     if (initialLoad) return;
-    loadSlots(1, vehicleFilter, debouncedSearch);
-  }, [debouncedSearch, vehicleFilter]);
+    loadSlots(1, vehicleFilter, debouncedSearch, statusFilter);
+  }, [debouncedSearch, vehicleFilter, statusFilter]);
 
-  const handlePageChange = (p) => loadSlots(p, vehicleFilter, debouncedSearch);
-  const handleFilterChange = (key) => setVehicleFilter(key);
+  const handlePageChange = (p) => loadSlots(p, vehicleFilter, debouncedSearch, statusFilter);
+  const handleFilterChange = (key) => {
+    if (key === "AVAILABLE") {
+      setStatusFilter("AVAILABLE");
+      setVehicleFilter("ALL");
+    } else {
+      setStatusFilter("ALL");
+      setVehicleFilter(key);
+    }
+  };
 
   const refreshAll = () => {
     loadAllSlots();
-    loadSlots(page, vehicleFilter, debouncedSearch);
+    loadFlats();
+    loadSlots(page, vehicleFilter, debouncedSearch, statusFilter);
     loadPendingResidentCount();
     loadOwnerSlots();
   };
@@ -902,7 +939,7 @@ export default function AssignParkingSlot() {
       await API.post("/parking-slots", form);
       setForm({ prefix: "", start_number: "", count: "", vehicle_type: "CAR", parking_floor: "P1" });
       setShowForm(false);
-      loadSlots(1, vehicleFilter, debouncedSearch);
+      loadSlots(1, vehicleFilter, debouncedSearch, statusFilter);
       loadAllSlots();
       loadPendingResidentCount();
     } catch (e) { console.error(e); }
@@ -918,17 +955,68 @@ export default function AssignParkingSlot() {
       await API.delete(`/parking-slots/${id}`);
       setConfirmDel(null);
       const newPage = slots.length === 1 && page > 1 ? page - 1 : page;
-      loadSlots(newPage, vehicleFilter, debouncedSearch);
+      loadSlots(newPage, vehicleFilter, debouncedSearch, statusFilter);
       loadAllSlots();
+      loadOwnerSlots();
     } catch (e) { console.error(e); }
     finally { setDeleting(null); }
+  };
+
+  /* ────────────────────────────
+     EDIT SLOT
+  ──────────────────────────── */
+  const openEdit = (slot) => {
+    setEditSlot(slot);
+    setEditForm({
+      slot_number: slot.slot_number || "",
+      parking_floor: slot.parking_floor || "",
+      vehicle_type: slot.vehicle_type || "CAR",
+      parking_type: slot.parking_type || "DEFAULT",
+    });
+    setEditError("");
+  };
+
+  const handleEditSubmit = async (e) => {
+    e.preventDefault();
+    if (!editSlot) return;
+    setEditSubmitting(true);
+    setEditError("");
+    try {
+      await API.put(`/parking-slots/${editSlot.id}`, editForm);
+      setEditSlot(null);
+      refreshAll();
+    } catch (err) {
+      setEditError(err?.response?.data?.message || "Failed to update parking slot");
+    } finally {
+      setEditSubmitting(false);
+    }
+  };
+
+  /* ────────────────────────────
+     RELEASE SLOT (REVOKE)
+  ──────────────────────────── */
+  const handleReleaseSlot = async (slot) => {
+    if (!slot) return;
+    setReleasing(slot.id);
+    try {
+      await API.post("/parking-slots/revoke", { slot_id: slot.id });
+      setReleaseConfirm(null);
+      refreshAll();
+    } catch (err) {
+      console.error("Failed to release slot:", err);
+    } finally {
+      setReleasing(null);
+    }
   };
 
   const filterTabs = [
     { key: "ALL", label: t("parkTabAll") || "All", icon: <FaParking size={12} />, count: stats.total },
     { key: "CAR", label: t("parkTabCars") || "Cars", icon: <MdDirectionsCar size={14} />, count: stats.cars },
     { key: "BIKE", label: t("parkTabBikes") || "Bikes", icon: <MdTwoWheeler size={14} />, count: stats.bikes },
+    { key: "AVAILABLE", label: t("parkTabAvailable") || "Available", icon: <MdCheckCircle size={13} />, count: stats.available },
   ];
+
+  const activeFilter = statusFilter === "AVAILABLE" ? "AVAILABLE" : vehicleFilter;
 
   const mainTabs = [
     { key: "slots", label: "Parking Slots", icon: <FaParking size={13} /> },
@@ -954,15 +1042,6 @@ export default function AssignParkingSlot() {
     }
     return true;
   });
-
-  const ownerSummary = ownerAlloc === "ALL" && ownerStatus === "ALL" && ownerType === "ALL" && !ownerQ
-    ? {
-        free:  ownerSlots.filter(s => s.status === "AVAILABLE").length,
-        assigned: ownerSlots.filter(s => s.status !== "AVAILABLE").length,
-        withFlat: ownerSlots.filter(s => !!s.flat_number && !!s.resident).length,
-        withVehicle: ownerSlots.filter(s => !!s.vehicle).length,
-      }
-    : null;
 
   const ownerSegment = (opts, value, setValue) => (
     <div className="flex gap-1 p-1 rounded-xl flex-wrap"
@@ -1003,7 +1082,7 @@ export default function AssignParkingSlot() {
             <p className="ps-header-subtitle">{t("parkSubtitle") || "Manage society parking spaces, allocations, and requests"}</p>
           </div>
         </div>
-        {mainTab === "slots" && (
+        {!isCommittee && mainTab === "slots" && (
           <GlobalButton
             variant="add"
             onClick={() => { setShowForm(true); setConfirmDel(null); }}
@@ -1109,27 +1188,6 @@ export default function AssignParkingSlot() {
                 )}
               </div>
             </div>
-
-            {/* Summary KPI Strip */}
-            {ownerSummary && (
-              <div
-                className="grid grid-cols-2 sm:grid-cols-5 gap-3 mt-4 pt-4"
-                style={{ borderTop: "1px solid var(--divider, rgba(255,255,255,0.08))" }}
-              >
-                {[
-                  { label: "Total Slots", val: ownerSlots.length, color: "text-blue-400" },
-                  { label: "Free Slots", val: ownerSummary.free, color: "text-emerald-400" },
-                  { label: "Assigned Slots", val: ownerSummary.assigned, color: "text-indigo-400" },
-                  { label: "Flat + Resident", val: ownerSummary.withFlat, color: "text-purple-400" },
-                  { label: "Vehicle Linked", val: ownerSummary.withVehicle, color: "text-sky-400" },
-                ].map((s) => (
-                  <div key={s.label} className="ps-stat-card">
-                    <span className={`ps-stat-val ${s.color}`}>{s.val}</span>
-                    <span className="ps-stat-label">{s.label}</span>
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
 
           {/* Loading State */}
@@ -1175,7 +1233,7 @@ export default function AssignParkingSlot() {
                               isCar ? "ps-type-icon--car" : "ps-type-icon--bike"
                             }`}
                           >
-                            {isCar ? <MdDirectionsCar size={18} /> : <MdTwoWheeler size={18} />}
+                            {isCar ? <MdDirectionsCar size={15} /> : <MdTwoWheeler size={15} />}
                           </div>
                           <div>
                             <div className="ps-slot-number-row">
@@ -1236,11 +1294,31 @@ export default function AssignParkingSlot() {
                       </div>
 
                       {/* Card Footer */}
-                      <div className="ps-card-footer">
-                        <span className="ps-tag-pill">
-                          {s.parking_type === "EXTRA" ? "Extra Space" : "Standard Space"}
-                        </span>
-                        <span className="text-[11px] text-secondary font-medium">#{i + 1}</span>
+                      <div className="ps-card-footer ps-card-actions">
+                        {!isAvail && (
+                          <GlobalButton
+                            variant="warning"
+                            size="xs"
+                            icon={MdPersonRemove}
+                            onClick={() => setReleaseConfirm(s)}
+                            title="Release Slot (Unlink resident/vehicle)"
+                            style={{ flex: 1 }}
+                          >
+                            Release
+                          </GlobalButton>
+                        )}
+                        {!isCommittee && (
+                          <GlobalButton
+                            variant="edit"
+                            size="xs"
+                            icon={MdEdit}
+                            onClick={() => openEdit(s)}
+                            title="Edit Slot"
+                            style={{ flex: 1 }}
+                          >
+                            Edit
+                          </GlobalButton>
+                        )}
                       </div>
                     </div>
                   );
@@ -1265,28 +1343,6 @@ export default function AssignParkingSlot() {
       {/* TAB: PARKING SLOTS */}
       {mainTab === "slots" && (
         <>
-          {/* Stats strip */}
-          {!initialLoad && stats.total > 0 && (
-            <div className="ps-stats-grid">
-              <div className="ps-stat-card">
-                <span className="ps-stat-val text-blue-400">{stats.total}</span>
-                <span className="ps-stat-label">{t("parkStatAll") || "Total Slots"}</span>
-              </div>
-              <div className="ps-stat-card">
-                <span className="ps-stat-val text-indigo-400">{stats.cars}</span>
-                <span className="ps-stat-label">{t("parkTabCars") || "Car Spots"}</span>
-              </div>
-              <div className="ps-stat-card">
-                <span className="ps-stat-val text-purple-400">{stats.bikes}</span>
-                <span className="ps-stat-label">{t("parkTabBikes") || "Bike Spots"}</span>
-              </div>
-              <div className="ps-stat-card">
-                <span className="ps-stat-val text-emerald-400">{stats.available}</span>
-                <span className="ps-stat-label">{t("parkAvailable") || "Available"}</span>
-              </div>
-            </div>
-          )}
-
           {/* Main Slots Container */}
           <div className="ps-slots-container">
             {/* Filter and Search Bar */}
@@ -1297,7 +1353,7 @@ export default function AssignParkingSlot() {
                   <button
                     key={tab.key}
                     onClick={() => handleFilterChange(tab.key)}
-                    className={`ps-filter-tab ${vehicleFilter === tab.key ? "ps-filter-tab--active" : ""}`}
+                    className={`ps-filter-tab ${activeFilter === tab.key ? "ps-filter-tab--active" : ""}`}
                   >
                     {tab.icon}
                     <span>{tab.label}</span>
@@ -1370,7 +1426,7 @@ export default function AssignParkingSlot() {
                 <p>Try adjusting your search criteria or vehicle type filter.</p>
                 <button
                   type="button"
-                  onClick={() => { setSearch(""); setVehicleFilter("ALL"); }}
+                  onClick={() => { setSearch(""); setVehicleFilter("ALL"); setStatusFilter("ALL"); }}
                   className="ps-btn-secondary mt-2"
                 >
                   {t("parkShowAll") || "Reset Filters"}
@@ -1395,7 +1451,7 @@ export default function AssignParkingSlot() {
                         <div className="ps-card-top">
                           <div className="ps-card-left-header">
                             <div className={`ps-type-icon ${isCar ? "ps-type-icon--car" : "ps-type-icon--bike"}`}>
-                              {isCar ? <MdDirectionsCar size={18} /> : <MdTwoWheeler size={18} />}
+                              {isCar ? <MdDirectionsCar size={15} /> : <MdTwoWheeler size={15} />}
                             </div>
                             <div>
                               <div className="ps-slot-number-row">
@@ -1450,20 +1506,42 @@ export default function AssignParkingSlot() {
                         </div>
 
                         {/* Bottom Actions Footer */}
-                        <div className="ps-card-footer">
-                          <div className="ps-card-type-tag">
-                            <span className="ps-tag-pill">
-                              {slot.parking_type === "EXTRA" ? "Extra Space" : "Standard"}
-                            </span>
-                          </div>
-                          <GlobalButton
-                            variant="delete"
-                            size="sm"
-                            onClick={() => setConfirmDel(slot)}
-                            title="Delete Slot"
-                          >
-                            Delete
-                          </GlobalButton>
+                        <div className="ps-card-footer ps-card-actions">
+                          {!isCommittee && (
+                            <GlobalButton
+                              variant="edit"
+                              size="xs"
+                              icon={MdEdit}
+                              onClick={() => openEdit(slot)}
+                              title="Edit Slot"
+                              style={{ flex: 1 }}
+                            >
+                              Edit
+                            </GlobalButton>
+                          )}
+                          {!isAvail && (
+                            <GlobalButton
+                              variant="warning"
+                              size="xs"
+                              icon={MdPersonRemove}
+                              onClick={() => setReleaseConfirm(slot)}
+                              title="Release Slot (Unlink resident/vehicle)"
+                              style={{ flex: 1 }}
+                            >
+                              Release
+                            </GlobalButton>
+                          )}
+                          {!isCommittee && (
+                            <GlobalButton
+                              variant="delete"
+                              size="xs"
+                              onClick={() => setConfirmDel(slot)}
+                              title="Delete Slot"
+                              style={{ flex: 1 }}
+                            >
+                              Delete
+                            </GlobalButton>
+                          )}
                         </div>
                       </div>
                     );
@@ -1795,6 +1873,362 @@ export default function AssignParkingSlot() {
                   ) : (
                     <>
                       <MdDelete size={15} /> Delete Slot
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
+
+      {/* Edit Slot Modal */}
+      {editSlot &&
+        createPortal(
+          <div
+            className="fh-modal-overlay"
+            onClick={() => setEditSlot(null)}
+            style={{
+              position: "fixed",
+              inset: 0,
+              zIndex: 1300,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: "16px",
+              overflowY: "auto",
+            }}
+          >
+            <div
+              className="fh-modal-box"
+              style={{
+                width: "min(500px, 94vw)",
+                maxHeight: "min(620px, 92vh)",
+                margin: "auto",
+                display: "flex",
+                flexDirection: "column",
+              }}
+              onClick={(e) => e.stopPropagation()}
+              role="dialog"
+              aria-modal="true"
+            >
+              {/* Glowing top accent line */}
+              <div className="fh-modal-top-accent" style={{ background: "linear-gradient(90deg, #10b981, #3b82f6)" }} />
+
+              {/* Modal Header */}
+              <div className="fh-modal-header">
+                <div className="fh-modal-header-left">
+                  <div
+                    style={{
+                      width: 42,
+                      height: 42,
+                      borderRadius: 12,
+                      background: "rgba(16, 185, 129, 0.12)",
+                      border: "1px solid rgba(16, 185, 129, 0.28)",
+                      color: "#34d399",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      flexShrink: 0,
+                    }}
+                  >
+                    <MdEdit size={20} />
+                  </div>
+                  <div>
+                    <h3
+                      className="fh-modal-title"
+                      style={{ fontSize: "1.15rem", margin: 0, fontWeight: 700 }}
+                    >
+                      Edit Parking Slot
+                    </h3>
+                    <p
+                      style={{
+                        fontSize: "0.75rem",
+                        color: "var(--text-secondary)",
+                        margin: "2px 0 0",
+                      }}
+                    >
+                      Update slot number, floor level, vehicle type, or parking type
+                    </p>
+                  </div>
+                </div>
+
+                <div className="fh-modal-header-actions">
+                  <button
+                    type="button"
+                    className="fh-modal-close-btn"
+                    onClick={() => setEditSlot(null)}
+                    title="Close Popup (Esc)"
+                  >
+                    <MdClose size={16} />
+                  </button>
+                </div>
+              </div>
+
+              {/* Modal Form */}
+              <form
+                onSubmit={handleEditSubmit}
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  flex: 1,
+                  minHeight: 0,
+                  overflow: "hidden",
+                }}
+              >
+                {/* Scrollable Body */}
+                <div
+                  className="fh-modal-body"
+                  style={{
+                    flex: 1,
+                    minHeight: 0,
+                    overflowY: "auto",
+                    padding: "18px 22px",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "14px",
+                  }}
+                >
+                  {/* Error banner */}
+                  {editError && (
+                    <div
+                      className="flex items-center gap-2 p-3 rounded-xl text-xs font-semibold animate-fadeIn"
+                      style={{
+                        background: "rgba(248, 113, 113, 0.12)",
+                        border: "1px solid rgba(248, 113, 113, 0.28)",
+                        color: "#f87171",
+                      }}
+                    >
+                      <MdWarning size={16} className="shrink-0" />
+                      <span>{editError}</span>
+                    </div>
+                  )}
+
+                  {/* Vehicle Type Toggle */}
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-semibold text-secondary uppercase tracking-wider">
+                      {t("parkVehicleType") || "Vehicle Type"}
+                    </label>
+                    <div className="grid grid-cols-2 gap-2.5">
+                      <button
+                        type="button"
+                        onClick={() => setEditForm({ ...editForm, vehicle_type: "CAR" })}
+                        className={`ps-vehicle-mode-btn ${
+                          editForm.vehicle_type === "CAR" ? "ps-vehicle-mode-btn--active-car" : ""
+                        }`}
+                      >
+                        <MdDirectionsCar size={16} />
+                        <span>{t("parkCar") || "Car Space"}</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setEditForm({ ...editForm, vehicle_type: "BIKE" })}
+                        className={`ps-vehicle-mode-btn ${
+                          editForm.vehicle_type === "BIKE" ? "ps-vehicle-mode-btn--active-bike" : ""
+                        }`}
+                      >
+                        <MdTwoWheeler size={16} />
+                        <span>{t("parkBike") || "Bike Space"}</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Slot Number & Floor */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs font-semibold text-secondary">
+                        Slot Number <span className="text-red-400">*</span>
+                      </label>
+                      <input
+                        className="input h-10 w-full text-xs font-medium"
+                        placeholder="e.g. A-101, B2-12"
+                        required
+                        value={editForm.slot_number}
+                        onChange={(e) => setEditForm({ ...editForm, slot_number: e.target.value })}
+                      />
+                    </div>
+
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs font-semibold text-secondary">
+                        Floor / Level
+                      </label>
+                      <input
+                        className="input h-10 w-full text-xs font-medium"
+                        placeholder="e.g. P1, B1, Ground"
+                        value={editForm.parking_floor}
+                        onChange={(e) => setEditForm({ ...editForm, parking_floor: e.target.value })}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Allocated Flat Dropdown / Viewer */}
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-semibold text-secondary uppercase tracking-wider flex items-center justify-between">
+                      <span>Allocated Flat</span>
+                      {editSlot.flat_number && (
+                        <span className="text-[11px] font-bold text-emerald-400">
+                          Current: Flat {editSlot.flat_number}
+                        </span>
+                      )}
+                    </label>
+                    <div className="relative">
+                      <Select
+                        className="input h-10 w-full text-xs font-medium"
+                        value={editForm.flat_id || ""}
+                        onChange={(e) => setEditForm({ ...editForm, flat_id: e.target.value })}
+                      >
+                        <option value="">-- No Flat Allocated (Unassigned / General) --</option>
+                        {flats.map((f) => {
+                          const blockName = f.Floor?.Block?.name || f.Block?.name;
+                          return (
+                            <option key={f.id} value={f.id}>
+                              Flat {f.flat_number}{blockName ? ` (${blockName})` : ""}{f.resident?.name ? ` · ${f.resident.name}` : ""}
+                            </option>
+                          );
+                        })}
+                      </Select>
+                    </div>
+                    {editSlot.resident && (
+                      <div className="text-[11px] text-secondary flex items-center gap-1.5 mt-0.5">
+                        <span>Resident: <strong>{editSlot.resident.name}</strong></span>
+                        {editSlot.vehicle && (
+                          <span>· Vehicle: <strong style={{ fontFamily: "monospace" }}>{editSlot.vehicle.vehicle_number}</strong></span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Parking Type (DEFAULT vs EXTRA) */}
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-semibold text-secondary uppercase tracking-wider">
+                      Parking Type / Category
+                    </label>
+                    <div className="grid grid-cols-2 gap-2.5">
+                      <button
+                        type="button"
+                        onClick={() => setEditForm({ ...editForm, parking_type: "DEFAULT" })}
+                        className={`ps-vehicle-mode-btn ${
+                          editForm.parking_type === "DEFAULT" ? "ps-vehicle-mode-btn--active-car" : ""
+                        }`}
+                        style={editForm.parking_type === "DEFAULT" ? { borderColor: "rgba(59,130,246,0.4)" } : {}}
+                      >
+                        <FaParking size={14} />
+                        <span>Standard (Default)</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setEditForm({ ...editForm, parking_type: "EXTRA" })}
+                        className={`ps-vehicle-mode-btn ${
+                          editForm.parking_type === "EXTRA" ? "ps-vehicle-mode-btn--active-car" : ""
+                        }`}
+                        style={editForm.parking_type === "EXTRA" ? { borderColor: "rgba(251,191,36,0.5)", color: "#60A5FA" } : {}}
+                      >
+                        <span style={{ fontSize: 13, fontWeight: 800 }}>⚡</span>
+                        <span>Extra Space</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Fixed Footer */}
+                <div className="fh-modal-footer">
+                  <button
+                    type="button"
+                    className="fh-confirm-btn--cancel"
+                    onClick={() => setEditSlot(null)}
+                  >
+                    {t("cancel") || "Cancel"}
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={editSubmitting}
+                    className="btn-primary flex items-center gap-2 px-5 py-2 text-xs font-semibold rounded-xl"
+                    style={{ background: "linear-gradient(135deg, #10b981 0%, #059669 100%)" }}
+                  >
+                    {editSubmitting ? (
+                      <>
+                        <Spinner small /> Saving...
+                      </>
+                    ) : (
+                      <>
+                        <MdDone size={16} /> Save Changes
+                      </>
+                    )}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>,
+          document.body
+        )}
+
+      {/* Release Slot Confirmation Popup */}
+      {releaseConfirm &&
+        createPortal(
+          <div
+            className="fh-confirm-overlay"
+            onClick={() => setReleaseConfirm(null)}
+            style={{
+              position: "fixed",
+              inset: 0,
+              zIndex: 1400,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: "16px",
+              overflowY: "auto",
+            }}
+          >
+            <div
+              className="fh-confirm-box"
+              style={{ margin: "auto" }}
+              onClick={(e) => e.stopPropagation()}
+              role="alertdialog"
+              aria-modal="true"
+            >
+              <div className="fh-confirm-accent" style={{ background: "linear-gradient(90deg, #f59e0b, #ef4444)" }} />
+              <div className="fh-confirm-icon" style={{ background: "rgba(245, 158, 11, 0.15)", color: "#fbbf24" }}>
+                <MdPersonRemove size={26} />
+              </div>
+              <h3 className="fh-confirm-title">Release Parking Slot?</h3>
+              <p className="fh-confirm-text">
+                Are you sure you want to release slot{" "}
+                <strong>"{releaseConfirm.slot_number}"</strong>?
+                <br />
+                {releaseConfirm.resident?.name || releaseConfirm.flat_number ? (
+                  <span className="block mt-2 text-xs text-secondary">
+                    This will unassign resident{" "}
+                    <strong>{releaseConfirm.resident?.name || "assigned"}</strong>
+                    {releaseConfirm.flat_number ? ` (Flat ${releaseConfirm.flat_number})` : ""} and clear any registered vehicles from this spot.
+                  </span>
+                ) : (
+                  <span className="block mt-2 text-xs text-secondary">
+                    This will reset the slot status back to <strong>AVAILABLE</strong>.
+                  </span>
+                )}
+              </p>
+              <div className="fh-confirm-actions">
+                <button
+                  type="button"
+                  className="fh-confirm-btn--cancel"
+                  onClick={() => setReleaseConfirm(null)}
+                >
+                  {t("cancel") || "Cancel"}
+                </button>
+                <button
+                  type="button"
+                  className="fh-confirm-btn--danger"
+                  style={{ background: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)" }}
+                  disabled={releasing === releaseConfirm.id}
+                  onClick={() => handleReleaseSlot(releaseConfirm)}
+                >
+                  {releasing === releaseConfirm.id ? (
+                    <>
+                      <Spinner small /> Releasing...
+                    </>
+                  ) : (
+                    <>
+                      <MdPersonRemove size={15} /> Release Slot
                     </>
                   )}
                 </button>

@@ -19,7 +19,7 @@ import {
   HiOutlineBuildingOffice2,
   HiOutlineArrowLeft
 } from "react-icons/hi2";
-import { MdHome, MdGroups } from "react-icons/md";
+import { MdHome, MdGroups, MdAccountBalance } from "react-icons/md";
 
 import ThemeToggle from "../components/common/ThemeToggle";
 import homeBannerImg from "../assets/Photos/Home/Home.png";
@@ -306,7 +306,7 @@ function Login() {
   const ROUTE_MAP = {
     SUPER_ADMIN: "/superadmin",
     SOCIETY_ADMIN: "/admin",
-    COMMITTEE_MEMBER: "/committee",
+    COMMITTEE_MEMBER: "/admin",
     RESIDENT: "/resident",
     FAMILY_MEMBER: "/family",
     GUARD: "/guard",
@@ -339,7 +339,11 @@ function Login() {
     login(user, token);
 
     const roles = user.roles || [user.role];
-    if (roles.includes("COMMITTEE_MEMBER") && roles.includes("RESIDENT")) {
+    const isResident = roles.includes("RESIDENT");
+    const isCommittee = roles.includes("COMMITTEE_MEMBER");
+    const isAccountant = roles.includes("ACCOUNTANT");
+
+    if (isResident && (isCommittee || isAccountant)) {
       setPanelPrompt(user);
       return;
     }
@@ -415,7 +419,7 @@ function Login() {
         />
       )}
 
-      {/* Panel Chooser Modal (Committee members who are also residents) */}
+      {/* Panel Chooser Modal (Residents with Committee or Accountant role) */}
       {panelPrompt &&
         createPortal(
           <div
@@ -466,7 +470,7 @@ function Login() {
                 <div>
                   <h3 style={{ fontSize: 18, fontWeight: 800, margin: 0 }}>Select Panel</h3>
                   <p style={{ fontSize: 12, margin: "4px 0 0", color: "var(--text-secondary)" }}>
-                    Hi {panelPrompt.name} — you have access to both panels
+                    Hi {panelPrompt.name} — choose a panel to continue
                   </p>
                 </div>
               </div>
@@ -476,85 +480,131 @@ function Login() {
               </p>
 
               <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                <button
-                  type="button"
-                  onClick={() => enterPanel("RESIDENT")}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 14,
-                    padding: "14px 16px",
-                    borderRadius: 16,
-                    background: "var(--card-inner-bg, #f5f6fa)",
-                    border: "1px solid var(--glass-border)",
-                    cursor: "pointer",
-                    transition: "all 0.2s",
-                    textAlign: "left",
-                  }}
-                  className="login-panel-option"
-                >
-                  <div
+                {(panelPrompt.roles || [panelPrompt.role]).includes("RESIDENT") && (
+                  <button
+                    type="button"
+                    onClick={() => enterPanel("RESIDENT")}
                     style={{
-                      width: 40,
-                      height: 40,
-                      minWidth: 40,
-                      borderRadius: 12,
-                      background: "rgba(37,99,235,0.12)",
-                      color: "var(--accent)",
                       display: "flex",
                       alignItems: "center",
-                      justifyContent: "center",
+                      gap: 14,
+                      padding: "14px 16px",
+                      borderRadius: 16,
+                      background: "var(--card-inner-bg, #f5f6fa)",
+                      border: "1px solid var(--glass-border)",
+                      cursor: "pointer",
+                      transition: "all 0.2s",
+                      textAlign: "left",
                     }}
+                    className="login-panel-option"
                   >
-                    <MdHome size={20} />
-                  </div>
-                  <div style={{ minWidth: 0 }}>
-                    <p style={{ fontSize: 14, fontWeight: 800, margin: 0 }}>Resident Panel</p>
-                    <p style={{ fontSize: 11, margin: "2px 0 0", color: "var(--text-secondary)" }}>
-                      Bills, complaints, visitors, & daily services
-                    </p>
-                  </div>
-                </button>
+                    <div
+                      style={{
+                        width: 40,
+                        height: 40,
+                        minWidth: 40,
+                        borderRadius: 12,
+                        background: "rgba(37,99,235,0.12)",
+                        color: "var(--accent)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <MdHome size={20} />
+                    </div>
+                    <div style={{ minWidth: 0 }}>
+                      <p style={{ fontSize: 14, fontWeight: 800, margin: 0 }}>Resident Panel</p>
+                      <p style={{ fontSize: 11, margin: "2px 0 0", color: "var(--text-secondary)" }}>
+                        Bills, complaints, visitors & daily services
+                      </p>
+                    </div>
+                  </button>
+                )}
 
-                <button
-                  type="button"
-                  onClick={() => enterPanel("COMMITTEE_MEMBER")}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 14,
-                    padding: "14px 16px",
-                    borderRadius: 16,
-                    background: "var(--card-inner-bg, #f5f6fa)",
-                    border: "1px solid var(--glass-border)",
-                    cursor: "pointer",
-                    transition: "all 0.2s",
-                    textAlign: "left",
-                  }}
-                  className="login-panel-option"
-                >
-                  <div
+                {(panelPrompt.roles || [panelPrompt.role]).includes("COMMITTEE_MEMBER") && (
+                  <button
+                    type="button"
+                    onClick={() => enterPanel("COMMITTEE_MEMBER")}
                     style={{
-                      width: 40,
-                      height: 40,
-                      minWidth: 40,
-                      borderRadius: 12,
-                      background: "rgba(139,92,246,0.12)",
-                      color: "#8b5cf6",
                       display: "flex",
                       alignItems: "center",
-                      justifyContent: "center",
+                      gap: 14,
+                      padding: "14px 16px",
+                      borderRadius: 16,
+                      background: "var(--card-inner-bg, #f5f6fa)",
+                      border: "1px solid var(--glass-border)",
+                      cursor: "pointer",
+                      transition: "all 0.2s",
+                      textAlign: "left",
                     }}
+                    className="login-panel-option"
                   >
-                    <MdGroups size={20} />
-                  </div>
-                  <div style={{ minWidth: 0 }}>
-                    <p style={{ fontSize: 14, fontWeight: 800, margin: 0 }}>Committee Panel</p>
-                    <p style={{ fontSize: 11, margin: "2px 0 0", color: "var(--text-secondary)" }}>
-                      Manage notices, complaints & society operations
-                    </p>
-                  </div>
-                </button>
+                    <div
+                      style={{
+                        width: 40,
+                        height: 40,
+                        minWidth: 40,
+                        borderRadius: 12,
+                        background: "rgba(139,92,246,0.12)",
+                        color: "#8b5cf6",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <MdGroups size={20} />
+                    </div>
+                    <div style={{ minWidth: 0 }}>
+                      <p style={{ fontSize: 14, fontWeight: 800, margin: 0 }}>Committee Panel</p>
+                      <p style={{ fontSize: 11, margin: "2px 0 0", color: "var(--text-secondary)" }}>
+                        Manage notices, complaints & society operations
+                      </p>
+                    </div>
+                  </button>
+                )}
+
+                {(panelPrompt.roles || [panelPrompt.role]).includes("ACCOUNTANT") && (
+                  <button
+                    type="button"
+                    onClick={() => enterPanel("ACCOUNTANT")}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 14,
+                      padding: "14px 16px",
+                      borderRadius: 16,
+                      background: "var(--card-inner-bg, #f5f6fa)",
+                      border: "1px solid var(--glass-border)",
+                      cursor: "pointer",
+                      transition: "all 0.2s",
+                      textAlign: "left",
+                    }}
+                    className="login-panel-option"
+                  >
+                    <div
+                      style={{
+                        width: 40,
+                        height: 40,
+                        minWidth: 40,
+                        borderRadius: 12,
+                        background: "rgba(16,185,129,0.12)",
+                        color: "#10b981",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <MdAccountBalance size={20} />
+                    </div>
+                    <div style={{ minWidth: 0 }}>
+                      <p style={{ fontSize: 14, fontWeight: 800, margin: 0 }}>Accountant Panel</p>
+                      <p style={{ fontSize: 11, margin: "2px 0 0", color: "var(--text-secondary)" }}>
+                        Manage bills, payments & society finance
+                      </p>
+                    </div>
+                  </button>
+                )}
               </div>
             </div>
           </div>,

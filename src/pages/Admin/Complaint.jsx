@@ -4,6 +4,7 @@ import API from "../../services/api";
 import { AuthContext } from "../../context/AuthContext";
 import { useLang } from "../../context/LanguageContext";
 import { getSocket } from "../../services/socket";
+import { isCommitteeMember } from "../../utils/permissions";
 import {
   MdReportProblem, MdSearch, MdClose, MdOutlineInbox,
   MdImage, MdOpenInNew, MdPerson, MdApartment, MdDoorFront, MdStairs,
@@ -385,7 +386,7 @@ function ChatPanel({ complaintId, societyId, currentUser, onIncomingMessage }) {
         <span className="chat-panel__count">
           {comments.filter(c => !String(c.id).startsWith("opt_")).length}
         </span>
-        {comments.length > 0 && (
+        {comments.length > 0 && !isCommitteeMember(currentUser) && (
           <div style={{ marginLeft: "auto" }}>
             {confirmClear ? (
               <div style={{ display: "flex", alignItems: "center", gap: 6 }} className="animate-fadeIn">

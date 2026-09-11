@@ -6,7 +6,7 @@ import { Navigate, Outlet } from "react-router-dom";
 const DASHBOARD_ROUTES = {
   SUPER_ADMIN:      "/superadmin",
   SOCIETY_ADMIN:    "/admin",
-  COMMITTEE_MEMBER: "/committee",
+  COMMITTEE_MEMBER: "/admin",
   RESIDENT:         "/resident",
   FAMILY_MEMBER:    "/family",
   GUARD:            "/guard",

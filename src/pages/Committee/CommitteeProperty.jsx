@@ -12,7 +12,18 @@ export default function CommitteeProperty() {
   const load = async () => {
     try {
       const res = await API.get("/flats");
-      setFlats(res.data || []);
+      const raw = Array.isArray(res.data) ? res.data : [];
+      setFlats(raw.map(f => ({
+        id: f.id,
+        flatNumber: f.flat_number,
+        flatType: f.flat_type,
+        block: f.Block?.name || "",
+        floorNumber: f.Floor?.floor_number ?? "",
+        areaSqft: f.area_sqft,
+        residentId: f.resident_id,
+        residentName: f.User?.name || "",
+        isOccupied: !!f.resident_id,
+      })));
     } catch (err) { console.error(err); }
     finally { setLoading(false); }
   };
@@ -60,7 +71,7 @@ export default function CommitteeProperty() {
           {filtered.length === 0 ? (
             <div className="comm-empty"><MdApartment size={32} /><p>No units found</p></div>
           ) : filtered.map(f => (
-            <div key={f._id} className={`comm-flat-card ${f.isOccupied ? "comm-flat-card--occupied" : "comm-flat-card--vacant"}`}>
+            <div key={f.id} className={`comm-flat-card ${f.isOccupied ? "comm-flat-card--occupied" : "comm-flat-card--vacant"}`}>
               <div className="comm-flat-top">
                 <span className="comm-flat-number">{f.flatNumber}</span>
                 {f.block && <span className="comm-meta-chip">Block {f.block}</span>}

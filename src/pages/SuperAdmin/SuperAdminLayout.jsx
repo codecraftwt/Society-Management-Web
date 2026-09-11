@@ -230,6 +230,7 @@ function SuperAdminLayoutInner() {
             </div>
           }
           onLogout={() => setShowLogoutConfirm(true)}
+          settingsPath={`${base}/settings`}
         />
 
         <main className="flex-1 overflow-y-auto overflow-x-hidden scrollbar-hide p-4 sm:p-6 lg:p-8">

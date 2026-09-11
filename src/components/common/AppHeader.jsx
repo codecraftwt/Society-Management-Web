@@ -1,5 +1,6 @@
 import React from "react";
-import { MdMenu, MdLogout, MdApartment } from "react-icons/md";
+import { useNavigate } from "react-router-dom";
+import { MdMenu, MdLogout, MdApartment, MdSettings } from "react-icons/md";
 import ThemeToggle from "./ThemeToggle";
 import LanguageSelector from "./LanguageSelector";
 import NotificationBell from "./NotificationBell";
@@ -14,10 +15,12 @@ export default function AppHeader({
   showThemeToggle = true,
   showLanguageSelector = true,
   showNotificationBell = true,
+  settingsPath = null,
   onLogout = null,
 }) {
   const { openMobile } = useSidebar();
   const { t } = useLang();
+  const navigate = useNavigate();
 
   return (
     <header
@@ -84,6 +87,23 @@ export default function AppHeader({
           )}
           {showNotificationBell && <NotificationBell />}
         </div>
+
+        {/* Settings Action Button */}
+        {settingsPath && (
+          <button
+            onClick={() => navigate(settingsPath)}
+            className="flex items-center justify-center w-10 h-10 rounded-xl transition-all hover:bg-accent/10 hover:border-accent/30 hover:text-accent active:scale-95"
+            style={{
+              background: "var(--card-inner-bg)",
+              border: "1.5px solid var(--glass-border)",
+              color: "var(--text-primary)",
+            }}
+            aria-label={t("settings") || "Settings"}
+            title={t("settings") || "Settings"}
+          >
+            <MdSettings size={18} />
+          </button>
+        )}
 
         {/* Logout Action Button */}
         {onLogout && (
