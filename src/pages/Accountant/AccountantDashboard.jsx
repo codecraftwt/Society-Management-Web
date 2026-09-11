@@ -118,12 +118,7 @@ export default function AccountDashboard() {
         </div>
         <button
           onClick={() => navigate("/accountant/payments")}
-          className="inline-flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-medium transition"
-          style={{
-            background: "var(--card-bg)",
-            borderColor: "var(--glass-border)",
-            color: "var(--text-primary)",
-          }}
+          className="btn-primary inline-flex items-center gap-2"
         >
           <MdOutlinePayments size={18} />
           {t("acctMenuPaymentsShort") || "Payments"}
@@ -235,8 +230,8 @@ export default function AccountDashboard() {
               </h3>
             </div>
             <div className="flex items-center gap-2">
-              <span className="w-3 h-3 rounded-full bg-green-500"></span>
-              <span className="font-medium text-green-500">{t("active")}</span>
+              <span className="w-3 h-3 rounded-full" style={{ background: "var(--success)" }}></span>
+              <span className="font-medium" style={{ color: "var(--success)" }}>{t("active")}</span>
             </div>
             <p className="text-xs text-secondary">{t("acctStatusDesc")}</p>
           </div>

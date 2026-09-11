@@ -46,8 +46,8 @@ function Pagination({ page, totalPages, onPageChange }) {
 }
 
 const STATUS_CFG = {
-  PAID: { label: "Paid", Icon: MdCheckCircle, color: "#4ade80", bg: "rgba(74,222,128,0.12)", border: "rgba(74,222,128,0.25)" },
-  PENDING: { label: "Pending", Icon: MdSchedule, color: "#60A5FA", bg: "rgba(251,191,36,0.12)", border: "rgba(251,191,36,0.25)" },
+  PAID: { label: "Paid", Icon: MdCheckCircle, color: "var(--success)", bg: "var(--badge-paid-bg)", border: "var(--badge-paid-border)" },
+  PENDING: { label: "Pending", Icon: MdSchedule, color: "var(--accent-light)", bg: "var(--accent-soft)", border: "var(--approval-border)" },
 };
 
 function StatusBadge({ status }) {
@@ -214,7 +214,7 @@ export default function FinancialReport() {
           <button onClick={() => navigate(-1)} style={{ width: 36, height: 36, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", background: "var(--card-inner-bg,rgba(255,255,255,0.06))", border: "1px solid var(--glass-border)", cursor: "pointer", color: "var(--text-secondary)", flexShrink: 0 }}>
             <MdArrowBack size={18} />
           </button>
-          <div style={{ width: 46, height: 46, borderRadius: 14, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", background: "linear-gradient(135deg,rgba(74,222,128,0.15),rgba(16,185,129,0.10))", border: "1.5px solid rgba(74,222,128,0.25)", color: "#4ade80" }}>
+          <div style={{ width: 46, height: 46, borderRadius: 14, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", background: "var(--accent-soft)", border: "1.5px solid var(--glass-border)", color: "var(--accent)" }}>
             <MdAccountBalance size={22} />
           </div>
           <div><h2 className="page-title">Financial Report</h2><p className="page-subtitle">{loading ? "—" : `${counts.total} bills · Collected ${fmtINR(counts.collected)}`}</p></div>
@@ -222,7 +222,7 @@ export default function FinancialReport() {
         <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
           <button onClick={handleExcelExport} className="btn-export" style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 13px", fontSize: 12, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}><MdTableChart size={14} /> Excel</button>
           <button onClick={handlePDFExport} className="btn-export" style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 13px", fontSize: 12, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}><MdPictureAsPdf size={14} /> PDF</button>
-          {isMobile && <button onClick={() => setShowFilters(true)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 13px", borderRadius: 10, fontSize: 12, fontWeight: 700, background: applied ? "rgba(107,70,193,0.15)" : "var(--card-inner-bg,rgba(255,255,255,0.06))", color: applied ? "#9F87D7" : "var(--text-secondary)", border: applied ? "1px solid rgba(107,70,193,0.35)" : "1px solid var(--glass-border)", cursor: "pointer", position: "relative", whiteSpace: "nowrap" }}><MdFilterList size={14} /> Filters{applied && <span style={{ position: "absolute", top: -3, right: -3, width: 8, height: 8, borderRadius: "50%", background: "#6B46C1", boxShadow: "0 0 6px rgba(107,70,193,0.6)" }} />}</button>}
+          {isMobile && <button onClick={() => setShowFilters(true)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 13px", borderRadius: 10, fontSize: 12, fontWeight: 700, background: applied ? "var(--accent-soft)" : "var(--card-inner-bg)", color: applied ? "var(--accent)" : "var(--text-secondary)", border: applied ? "1px solid var(--accent-light)" : "1px solid var(--glass-border)", cursor: "pointer", position: "relative", whiteSpace: "nowrap" }}><MdFilterList size={14} /> Filters{applied && <span style={{ position: "absolute", top: -3, right: -3, width: 8, height: 8, borderRadius: "50%", background: "var(--accent)" }} />}</button>}
         </div>
       </div>
 
@@ -254,7 +254,7 @@ export default function FinancialReport() {
             {!loading && <span style={{ fontSize: 12, fontWeight: 400, color: "var(--text-secondary)", marginLeft: 8 }}>— {totalItems} records{applied ? " (filtered)" : ""}</span>}
           </span>
           {fetching && <Spinner small />}
-          {applied && !fetching && <span style={{ fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 99, background: "rgba(107,70,193,0.1)", color: "#9F87D7", border: "1px solid rgba(107,70,193,0.2)", whiteSpace: "nowrap" }}>Filtered</span>}
+          {applied && !fetching && <span style={{ fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 99, background: "var(--accent-soft)", color: "var(--accent)", border: "1px solid var(--glass-border)", whiteSpace: "nowrap" }}>Filtered</span>}
         </div>
 
         {loading ? (
@@ -264,7 +264,7 @@ export default function FinancialReport() {
         ) : isMobile ? (
           <div style={{ padding: "10px 12px", display: "flex", flexDirection: "column", gap: 10 }}>
             {bills.map((b, i) => {
-              const isPaid = b.status === "PAID"; const ac = isPaid ? "#4ade80" : "#60A5FA";
+              const isPaid = b.status === "PAID"; const ac = isPaid ? "var(--success)" : "var(--accent)";
               return (
                 <div key={b.id} className="animate-fadeIn" style={{ animationDelay: `${i * 25}ms`, background: "var(--chip-bg,rgba(255,255,255,0.04))", border: "1px solid var(--glass-border)", borderRadius: 12, overflow: "hidden" }}>
                   <div style={{ height: 3, background: ac }} />
@@ -273,7 +273,7 @@ export default function FinancialReport() {
                       <p style={{ fontSize: 13, fontWeight: 700, color: "var(--text-primary)", flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", margin: 0 }}>{b.title || "Maintenance Bill"}</p>
                       <StatusBadge status={b.status} />
                     </div>
-                    <div style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "4px 10px", borderRadius: 8, marginBottom: 8, background: isPaid ? "rgba(74,222,128,0.08)" : "rgba(251,191,36,0.08)", border: `1px solid ${isPaid ? "rgba(74,222,128,0.2)" : "rgba(251,191,36,0.2)"}` }}>
+                    <div style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "4px 10px", borderRadius: 8, marginBottom: 8, background: isPaid ? "var(--badge-paid-bg)" : "var(--accent-soft)", border: `1px solid ${isPaid ? "var(--badge-paid-border)" : "var(--glass-border)"}` }}>
                       <span style={{ fontSize: 15, fontWeight: 800, color: ac, letterSpacing: "-0.02em" }}>{fmtINR(b.amount)}</span>
                     </div>
                     <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
@@ -296,7 +296,7 @@ export default function FinancialReport() {
                   <td><span className="info-chip">{b.Flat?.flat_number || "—"}</span></td>
                   <td><span style={{ fontSize: 13, color: "var(--text-secondary)" }}>{b.Flat?.Block?.name || "—"}</span></td>
                   <td><span style={{ fontSize: 13, color: "var(--text-secondary)", maxWidth: 160, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", display: "block" }}>{b.title || "—"}</span></td>
-                  <td><span style={{ fontSize: 14, fontWeight: 800, letterSpacing: "-0.02em", color: b.status === "PAID" ? "#4ade80" : "#60A5FA" }}>{fmtINR(b.amount)}</span></td>
+                  <td><span style={{ fontSize: 14, fontWeight: 800, letterSpacing: "-0.02em", color: b.status === "PAID" ? "var(--success)" : "var(--accent)" }}>{fmtINR(b.amount)}</span></td>
                   <td><StatusBadge status={b.status} /></td>
                 </tr>
               ))}

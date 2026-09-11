@@ -1,28 +1,27 @@
 import { Outlet, useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import {
   MdDashboard,
-  MdMenu,
-  MdLogout,
   MdAccountBalance,
   MdReceipt,
   MdBarChart,
 } from "react-icons/md";
-import NotificationBell from "../../components/common/NotificationBell";
-import ThemeToggle from "../../components/common/ThemeToggle";
-import LanguageSelector from "../../components/common/LanguageSelector";
 import { LanguageProvider, useLang } from "../../context/LanguageContext";
-import { useSidebar } from "../../context/SidebarContext";
 import Sidebar from "../../components/common/Sidebar";
 import AppHeader from "../../components/common/AppHeader";
+import "./Accountant.css";
 
 function AccountantLayoutInner() {
   const navigate = useNavigate();
   const { t } = useLang();
-  const { openMobile } = useSidebar();
 
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+
+  useEffect(() => {
+    document.documentElement.classList.add("accountant-theme");
+    return () => document.documentElement.classList.remove("accountant-theme");
+  }, []);
 
   const base = "/accountant";
 
@@ -60,7 +59,7 @@ function AccountantLayoutInner() {
 
   return (
     <div
-      className="h-screen overflow-hidden bg-app flex"
+      className="accountant-shell h-screen overflow-hidden bg-app flex"
       style={{ color: "var(--text-primary)" }}
     >
       {/* ── REUSABLE SIDEBAR ── */}
@@ -83,10 +82,8 @@ function AccountantLayoutInner() {
         />
 
         {/* PAGE CONTENT */}
-        <main className="flex-1 overflow-y-auto scrollbar-hide p-4 sm:p-6 lg:p-8">
-          <div className="bg-card p-4 sm:p-6 rounded-xl">
-            <Outlet />
-          </div>
+        <main className="flex-1 overflow-y-auto overflow-x-hidden scrollbar-hide p-4 sm:p-6 lg:p-8">
+          <Outlet />
         </main>
       </div>
 
@@ -99,11 +96,12 @@ function AccountantLayoutInner() {
             onClick={() => setShowLogoutConfirm(false)}
           >
             <div
-              className="p-8 rounded-2xl w-[90%] max-w-sm text-center animate-scaleIn"
+              className="acct-logout-card p-8 rounded-2xl w-[90%] max-w-sm text-center animate-scaleIn"
               style={{
-                background: "var(--card-bg)",
+                background: "var(--modal-bg)",
                 border: "1.5px solid var(--glass-border)",
                 boxShadow: "var(--shadow-glass)",
+                backdropFilter: "var(--blur)",
               }}
               onClick={(e) => e.stopPropagation()}
             >

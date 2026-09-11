@@ -242,6 +242,7 @@ export default function PaymentsAccountant() {
           <GlobalButton
             variant="secondary"
             icon={MdArrowForward}
+            iconPosition="right"
             onClick={() => navigate("/accountant/manage-bills")}
           >
             Manage bills
@@ -280,8 +281,8 @@ export default function PaymentsAccountant() {
         />
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
-        <div className="premium-card xl:col-span-2">
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 min-w-0">
+        <div className="premium-card xl:col-span-2 min-w-0">
           <div className="p-4 sm:p-5 border-b" style={{ borderColor: "var(--glass-border)" }}>
             <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               <div>
@@ -425,16 +426,16 @@ export default function PaymentsAccountant() {
           </div>
         </div>
 
-        <div className="space-y-4">
-          <div className="premium-card p-5">
-            <div className="flex items-center gap-2">
+        <div className="space-y-4 min-w-0">
+          <div className="premium-card acct-summary-card">
+            <div className="acct-summary-card__head">
               <MdFilterAlt size={18} style={{ color: "var(--accent)" }} />
               <h3 className="font-semibold" style={{ color: "var(--text-primary)" }}>
                 Monthly summary
               </h3>
             </div>
 
-            <div className="mt-4 space-y-3">
+            <div className="acct-mode-list">
               {loading ? (
                 <>
                   <LoadingCard />
@@ -442,32 +443,22 @@ export default function PaymentsAccountant() {
                   <LoadingCard />
                 </>
               ) : paymentModes.length === 0 ? (
-                <p className="text-sm text-secondary">No summary data available yet.</p>
+                <p className="text-sm text-secondary px-0.5">No summary data available yet.</p>
               ) : (
                 paymentModes.map((item) => {
                   const total = monthlyCollected || totals.totalCollected || 1;
-                  const pct = Math.max(6, Math.round((item.total / total) * 100));
+                  const pct = Math.min(100, Math.max(6, Math.round((item.total / total) * 100)));
                   return (
-                    <div key={item.mode} className="info-row flex-col items-stretch">
-                      <div className="flex items-center justify-between gap-3">
-                        <div>
-                          <p className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>
-                            {paymentModeLabel(item.mode)}
-                          </p>
-                          <p className="text-xs text-secondary">
-                            {formatCurrency(item.total)} • {item.transactions} transaction{item.transactions === 1 ? "" : "s"}
-                          </p>
-                        </div>
-                        <span className="text-xs text-secondary">{pct}%</span>
+                    <div key={item.mode} className="acct-mode-row">
+                      <div className="acct-mode-row__top">
+                        <p className="acct-mode-row__name">{paymentModeLabel(item.mode)}</p>
+                        <span className="acct-mode-row__pct">{pct}%</span>
                       </div>
-                      <div className="h-2 rounded-full bg-white/10 overflow-hidden">
-                        <div
-                          className="h-full rounded-full"
-                          style={{
-                            width: `${pct}%`,
-                            background: "linear-gradient(90deg, var(--accent), rgba(91,141,239,0.8))",
-                          }}
-                        />
+                      <p className="acct-mode-row__meta">
+                        {formatCurrency(item.total)} • {item.transactions} transaction{item.transactions === 1 ? "" : "s"}
+                      </p>
+                      <div className="acct-mode-row__track">
+                        <div className="acct-mode-row__fill" style={{ width: `${pct}%` }} />
                       </div>
                     </div>
                   );
@@ -476,15 +467,15 @@ export default function PaymentsAccountant() {
             </div>
           </div>
 
-          <div className="premium-card p-5">
-            <div className="flex items-center gap-2">
+          <div className="premium-card acct-summary-card">
+            <div className="acct-summary-card__head">
               <MdHomeWork size={18} style={{ color: "var(--accent)" }} />
               <h3 className="font-semibold" style={{ color: "var(--text-primary)" }}>
                 Quick snapshot
               </h3>
             </div>
 
-            <div className="mt-4 space-y-3 text-sm">
+            <div className="acct-snapshot-list text-sm">
               <div className="info-row justify-between">
                 <span className="text-secondary">Filtered rows</span>
                 <span className="font-semibold">{filteredPayments.length}</span>

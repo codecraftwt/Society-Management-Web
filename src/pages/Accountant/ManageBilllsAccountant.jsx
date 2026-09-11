@@ -490,7 +490,7 @@ export default function ManageBillsAccountant() {
           <div className="flex flex-col gap-3 p-4">
             {bills.map((b, i) => (
               <div key={b.id} className="bill-card animate-fadeIn" style={{ animationDelay: `${i * 30}ms` }}>
-                <div style={{ height: 3, background: b.status === "PAID" ? "linear-gradient(90deg,#34d399,#059669)" : "linear-gradient(90deg,#60A5FA,#2563EB)" }} />
+                <div style={{ height: 3, background: b.status === "PAID" ? "linear-gradient(90deg, var(--success), var(--accent-light))" : "linear-gradient(90deg, var(--warning), var(--danger))" }} />
                 <div className="bill-card__body">
                   <div className="flex items-start justify-between gap-2">
                     <div>
@@ -506,11 +506,11 @@ export default function ManageBillsAccountant() {
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <p className="text-xs text-secondary mb-1">{t("billFlatCol")}</p>
-                      <span className="flat-chip">{b.Flat.flat_number} · {b.Flat.Block.name}</span>
+                      <span className="flat-chip">{b.Flat?.flat_number || "—"}{b.Flat?.Block?.name ? ` · ${b.Flat.Block.name}` : ""}</span>
                     </div>
                     <div>
                       <p className="text-xs text-secondary mb-1">{t("billResidentCol")}</p>
-                      <p className="text-xs font-semibold" style={{ color: "var(--text-primary)" }}>{b.Flat.User?.name || "NA"}</p>
+                      <p className="text-xs font-semibold" style={{ color: "var(--text-primary)" }}>{b.Flat?.User?.name || "NA"}</p>
                     </div>
                   </div>
                   <RowActions bill={b} onDeleteClick={setConfirmDeleteId} handleConfirmPayment={handleConfirmPayment} confirmingId={confirmingId} t={t} />
@@ -541,12 +541,12 @@ export default function ManageBillsAccountant() {
                   <td><span className="text-xs font-semibold text-secondary">{(page - 1) * LIMIT + i + 1}</span></td>
                   <td>
                     <div className="flex items-center gap-3">
-                      <div style={{ width: 3, height: 32, borderRadius: 99, flexShrink: 0, background: b.status === "PAID" ? "linear-gradient(180deg,#34d399,#059669)" : "linear-gradient(180deg,#60A5FA,#2563EB)" }} />
+                      <div style={{ width: 3, height: 32, borderRadius: 99, flexShrink: 0, background: b.status === "PAID" ? "linear-gradient(180deg, var(--success), var(--accent))" : "linear-gradient(180deg, var(--warning), var(--danger))" }} />
                       <span className="font-semibold text-sm" style={{ color: "var(--text-primary)" }}>{b.title}</span>
                     </div>
                   </td>
-                  <td><span className="flat-chip">{b.Flat.flat_number}<span style={{ opacity: 0.55 }}> · {b.Flat.Block.name}</span></span></td>
-                  <td><span className="text-sm text-secondary">{b.Flat.User?.name || "—"}</span></td>
+                  <td><span className="flat-chip">{b.Flat?.flat_number || "—"}{b.Flat?.Block?.name ? <span style={{ opacity: 0.55 }}> · {b.Flat.Block.name}</span> : null}</span></td>
+                  <td><span className="text-sm text-secondary">{b.Flat?.User?.name || "—"}</span></td>
                   <td><span className="info-chip">{b.billing_month}</span></td>
                   <td><span className="bill-table-amount">₹{Number(b.amount).toLocaleString("en-IN")}</span></td>
                   <td><BillStatus status={b.status} t={t} /></td>

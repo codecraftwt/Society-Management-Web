@@ -1,0 +1,879 @@
+/* ==========================================================================
+   ACCOUNTANT THEME
+   Light  = Purple admin  (#A05AFF #1BCFB4 #4BCBEB #FE9496 #9E58FF)
+   Dark   = Corona surfaces (#191C24) + Purple light accents (#A05AFF #1BCFB4 #9E58FF)
+   Scoped to html.accountant-theme
+   ========================================================================== */
+
+html.accountant-theme {
+  --acct-purple: #a05aff;
+  --acct-teal: #1bcfb4;
+  --acct-cyan: #4bcbeb;
+  --acct-coral: #fe9496;
+  --acct-violet: #9e58ff;
+  --acct-navy: #191c24;
+  --acct-blue: #0d6efd;
+  --acct-green: #198754;
+  --acct-sky: #0dcaf0;
+  --acct-red: #ab2e3c;
+  --acct-yellow: #ffc107;
+
+  --acct-purple-rgb: 160, 90, 255;
+  --acct-teal-rgb: 27, 207, 180;
+  --acct-cyan-rgb: 75, 203, 235;
+  --acct-coral-rgb: 254, 148, 150;
+  --acct-violet-rgb: 158, 88, 255;
+  --acct-navy-rgb: 25, 28, 36;
+  --acct-blue-rgb: 13, 110, 253;
+  --acct-green-rgb: 25, 135, 84;
+  --acct-sky-rgb: 13, 202, 240;
+  --acct-red-rgb: 171, 46, 60;
+  --acct-yellow-rgb: 255, 193, 7;
+
+  --acct-on-accent: #ffffff;
+}
+
+html.light.accountant-theme {
+  --acct-on-accent: #ffffff;
+}
+
+/* --------------------------------------------------------------------------
+   DARK — Corona
+   -------------------------------------------------------------------------- */
+html.accountant-theme {
+  --bg-main: var(--acct-navy);
+  --glass-bg: #22252e;
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --sidebar-bg: var(--acct-navy);
+  --navbar-bg: #1e2129;
+  --card-bg: #22252e;
+  --card-inner-bg: #2a2d36;
+  --card-inner-bg-hover: #32353e;
+  --card-inner-border: rgba(255, 255, 255, 0.08);
+  --overlay-bg: rgba(25, 28, 36, 0.72);
+  --overlay-strong: rgba(25, 28, 36, 0.86);
+  --modal-bg: #22252e;
+  --emergency-modal-bg: #22252e;
+
+  --text-primary: #ffffff;
+  --text-secondary: #c4c9d1;
+  --text-tertiary: #959db1;
+  --text-muted: #959db1;
+
+  --accent: var(--acct-purple);
+  --accent-dark: #7d3ad6;
+  --accent-light: var(--acct-violet);
+  --accent-soft: rgba(var(--acct-purple-rgb), 0.22);
+  --secondary: var(--acct-sky);
+  --info: var(--acct-blue);
+  --success: var(--acct-green);
+  --warning: var(--acct-yellow);
+  --danger: var(--acct-red);
+
+  --input-bg: #191c24;
+  --input-border: rgba(255, 255, 255, 0.12);
+  --chip-bg: #2a2d36;
+  --chip-border: rgba(255, 255, 255, 0.1);
+  --divider: rgba(255, 255, 255, 0.08);
+  --row-hover: rgba(var(--acct-purple-rgb), 0.12);
+  --row-stripe: rgba(255, 255, 255, 0.02);
+
+  --blur: blur(0px);
+  --shadow-glass: 0 8px 24px rgba(0, 0, 0, 0.28);
+  --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.22);
+  --shadow-md: 0 10px 28px rgba(0, 0, 0, 0.3);
+  --shadow-hover: 0 14px 32px rgba(0, 0, 0, 0.38);
+  --glass-inset: none;
+
+  --stat-green-bg: #22252e;
+  --stat-green-border: rgba(25, 135, 84, 0.35);
+  --stat-green-color: #ffffff;
+  --stat-blue-bg: #22252e;
+  --stat-blue-border: rgba(13, 110, 253, 0.35);
+  --stat-blue-color: #ffffff;
+  --stat-amber-bg: #22252e;
+  --stat-amber-border: rgba(255, 193, 7, 0.35);
+  --stat-amber-color: #ffffff;
+  --stat-red-bg: #22252e;
+  --stat-red-border: rgba(171, 46, 60, 0.4);
+  --stat-red-color: #ffffff;
+  --stat-purple-bg: #22252e;
+  --stat-purple-border: rgba(var(--acct-purple-rgb), 0.4);
+  --stat-purple-color: #ffffff;
+
+  --badge-paid-bg: rgba(var(--acct-green-rgb), 0.16);
+  --badge-paid-color: var(--acct-green);
+  --badge-paid-border: rgba(var(--acct-green-rgb), 0.35);
+  --badge-free-bg: rgba(var(--acct-green-rgb), 0.16);
+  --badge-free-color: var(--acct-green);
+  --badge-free-border: rgba(var(--acct-green-rgb), 0.35);
+
+  --approval-bg: rgba(var(--acct-yellow-rgb), 0.12);
+  --approval-color: var(--acct-yellow);
+  --approval-border: rgba(var(--acct-yellow-rgb), 0.35);
+  --approve-bg: rgba(var(--acct-green-rgb), 0.16);
+  --approve-color: var(--acct-green);
+  --approve-border: rgba(var(--acct-green-rgb), 0.35);
+  --reject-bg: rgba(var(--acct-red-rgb), 0.16);
+  --reject-color: var(--acct-red);
+  --reject-border: rgba(var(--acct-red-rgb), 0.35);
+}
+
+html.accountant-theme,
+html.accountant-theme body {
+  background: var(--bg-main);
+  background-attachment: fixed;
+  color: var(--text-primary);
+  overflow-x: hidden;
+  max-width: 100%;
+}
+
+html.accountant-theme .accountant-shell {
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+html.accountant-theme .main-content-layout,
+html.accountant-theme .main-content-layout > main {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+/* --------------------------------------------------------------------------
+   LIGHT — Purple
+   -------------------------------------------------------------------------- */
+html.light.accountant-theme {
+  --bg-main:
+    radial-gradient(900px 500px at 100% 0%, rgba(var(--acct-purple-rgb), 0.1), transparent 50%),
+    #f6f2fb;
+  --glass-bg: #ffffff;
+  --glass-border: rgba(var(--acct-purple-rgb), 0.12);
+  --sidebar-bg: #ffffff;
+  --navbar-bg: #ffffff;
+  --card-bg: #ffffff;
+  --card-inner-bg: #f8f5fc;
+  --card-inner-bg-hover: #f1eafb;
+  --card-inner-border: rgba(var(--acct-purple-rgb), 0.12);
+  --overlay-bg: rgba(160, 90, 255, 0.22);
+  --overlay-strong: rgba(25, 28, 36, 0.45);
+  --modal-bg: #ffffff;
+  --emergency-modal-bg: #ffffff;
+
+  --text-primary: #000000;
+  --text-secondary: #333333;
+  --text-tertiary: #555555;
+  --text-muted: #555555;
+
+  --accent: var(--acct-purple);
+  --accent-dark: #7d3ad6;
+  --accent-light: var(--acct-violet);
+  --accent-soft: rgba(var(--acct-purple-rgb), 0.12);
+  --accent-light-bg: rgba(var(--acct-purple-rgb), 0.08);
+  --secondary: var(--acct-cyan);
+  --info: var(--acct-cyan);
+  --success: var(--acct-teal);
+  --warning: var(--acct-coral);
+  --danger: var(--acct-coral);
+
+  --input-bg: #ffffff;
+  --input-border: rgba(var(--acct-purple-rgb), 0.18);
+  --chip-bg: #f8f5fc;
+  --chip-border: rgba(var(--acct-purple-rgb), 0.14);
+  --divider: rgba(var(--acct-purple-rgb), 0.1);
+  --row-hover: rgba(var(--acct-purple-rgb), 0.06);
+  --row-stripe: #fbf8ff;
+
+  --blur: blur(0px);
+  --shadow-glass: 0 10px 30px rgba(160, 90, 255, 0.08);
+  --shadow-sm: 0 4px 14px rgba(160, 90, 255, 0.06);
+  --shadow-md: 0 10px 28px rgba(160, 90, 255, 0.1);
+  --shadow-hover: 0 14px 36px rgba(160, 90, 255, 0.14);
+  --glass-inset: none;
+
+  --stat-green-bg: linear-gradient(135deg, #1bcfb4 0%, #4bcbeb 100%);
+  --stat-green-border: transparent;
+  --stat-green-color: #ffffff;
+  --stat-blue-bg: linear-gradient(135deg, #4bcbeb 0%, #0d6efd 100%);
+  --stat-blue-border: transparent;
+  --stat-blue-color: #ffffff;
+  --stat-amber-bg: linear-gradient(135deg, #fe9496 0%, #ffc4c6 100%);
+  --stat-amber-border: transparent;
+  --stat-amber-color: #ffffff;
+  --stat-red-bg: linear-gradient(135deg, #9e58ff 0%, #a05aff 100%);
+  --stat-red-border: transparent;
+  --stat-red-color: #ffffff;
+  --stat-purple-bg: linear-gradient(135deg, #a05aff 0%, #9e58ff 100%);
+  --stat-purple-border: transparent;
+  --stat-purple-color: #ffffff;
+
+  --badge-paid-bg: rgba(var(--acct-teal-rgb), 0.16);
+  --badge-paid-color: #0e8f7d;
+  --badge-paid-border: rgba(var(--acct-teal-rgb), 0.35);
+  --badge-free-bg: rgba(var(--acct-teal-rgb), 0.16);
+  --badge-free-color: #0e8f7d;
+  --badge-free-border: rgba(var(--acct-teal-rgb), 0.35);
+
+  --approval-bg: rgba(var(--acct-coral-rgb), 0.16);
+  --approval-color: #d45b5e;
+  --approval-border: rgba(var(--acct-coral-rgb), 0.4);
+  --approve-bg: rgba(var(--acct-teal-rgb), 0.16);
+  --approve-color: #0e8f7d;
+  --approve-border: rgba(var(--acct-teal-rgb), 0.35);
+  --reject-bg: rgba(var(--acct-coral-rgb), 0.16);
+  --reject-color: #d45b5e;
+  --reject-border: rgba(var(--acct-coral-rgb), 0.4);
+}
+
+/* --------------------------------------------------------------------------
+   SURFACES
+   -------------------------------------------------------------------------- */
+html.accountant-theme .bg-app {
+  background: transparent;
+}
+
+html.accountant-theme .bg-sidebar,
+html.light.accountant-theme .bg-sidebar {
+  background: var(--sidebar-bg);
+  backdrop-filter: none;
+  border-right: 1px solid var(--glass-border);
+  box-shadow: none;
+}
+
+html.accountant-theme .bg-navbar,
+html.light.accountant-theme .bg-navbar {
+  background: var(--navbar-bg) !important;
+  backdrop-filter: none;
+  border-bottom: 1px solid var(--glass-border) !important;
+  box-shadow: none;
+}
+
+html.accountant-theme .bg-card,
+html.light.accountant-theme .bg-card {
+  background: var(--card-bg);
+  backdrop-filter: none;
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow-sm);
+  color: var(--text-primary);
+  transform: none;
+}
+
+html.light.accountant-theme .bg-card:hover {
+  transform: none;
+  box-shadow: var(--shadow-md);
+}
+
+html.light.accountant-theme .bg-card * {
+  color: unset;
+}
+
+html.accountant-theme .premium-card,
+html.accountant-theme .data-table-wrap,
+html.accountant-theme .bill-card,
+html.accountant-theme .bill-form-card {
+  background: var(--card-bg);
+  backdrop-filter: none;
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow-sm);
+}
+
+html.accountant-theme .data-table-wrap {
+  overflow-x: auto;
+  max-width: 100%;
+}
+
+html.accountant-theme .premium-card:hover {
+  box-shadow: var(--shadow-hover);
+}
+
+html.accountant-theme .info-row {
+  background: var(--card-inner-bg);
+  border-color: var(--glass-border);
+}
+
+html.accountant-theme .chip,
+html.accountant-theme .info-chip,
+html.accountant-theme .flat-chip {
+  background: var(--chip-bg);
+  border-color: var(--chip-border);
+  color: var(--text-primary);
+}
+
+html.accountant-theme .search-input,
+html.accountant-theme .input,
+html.accountant-theme select.input,
+html.accountant-theme input.input {
+  background: var(--input-bg);
+  border-color: var(--input-border);
+  color: var(--text-primary);
+}
+
+html.accountant-theme .search-input-wrap {
+  background: var(--input-bg);
+  border-color: var(--input-border);
+}
+
+html.accountant-theme .filter-pill {
+  background: var(--card-inner-bg);
+  border-color: var(--glass-border);
+  color: var(--text-secondary);
+}
+
+html.accountant-theme .filter-pill--active-indigo,
+html.accountant-theme .filter-pill--active-amber,
+html.accountant-theme .filter-pill--active-blue,
+html.accountant-theme .filter-pill--active-purple {
+  background: var(--accent);
+  color: #ffffff;
+  box-shadow: 0 6px 16px rgba(var(--acct-purple-rgb), 0.28);
+}
+
+html.light.accountant-theme .filter-pill--active-indigo,
+html.light.accountant-theme .filter-pill--active-amber,
+html.light.accountant-theme .filter-pill--active-blue,
+html.light.accountant-theme .filter-pill--active-purple {
+  box-shadow: 0 6px 16px rgba(var(--acct-purple-rgb), 0.28);
+}
+
+html.accountant-theme .filter-pill--active-green {
+  background: var(--success);
+  color: #ffffff;
+}
+
+html.accountant-theme .acct-logout-card,
+html.accountant-theme .global-modal-container,
+html.light.accountant-theme .global-modal-container {
+  background: var(--modal-bg) !important;
+  border: 1px solid var(--glass-border) !important;
+  box-shadow: var(--shadow-md) !important;
+  color: var(--text-primary) !important;
+  backdrop-filter: none;
+}
+
+html.accountant-theme .global-modal-backdrop,
+html.light.accountant-theme .global-modal-backdrop {
+  background: var(--overlay-bg) !important;
+}
+
+/* --------------------------------------------------------------------------
+   KPI CARDS
+   -------------------------------------------------------------------------- */
+html.accountant-theme .stat-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 16px;
+  box-shadow: var(--shadow-sm);
+}
+
+html.accountant-theme .stat-card--mobile {
+  overflow: hidden;
+}
+
+html.light.accountant-theme .stat-card--mobile .stat-card__val,
+html.light.accountant-theme .stat-card--mobile .stat-card__label {
+  color: #ffffff;
+}
+
+html.accountant-theme .stat-card::after {
+  content: "";
+  position: absolute;
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  right: -18px;
+  top: -18px;
+  background: rgba(255, 255, 255, 0.16);
+  pointer-events: none;
+}
+
+html.accountant-theme .stat-card__val,
+html.accountant-theme .stat-card__label {
+  color: #ffffff;
+}
+
+html.accountant-theme .stat-card--green .stat-card__icon,
+html.accountant-theme .stat-card--blue .stat-card__icon,
+html.accountant-theme .stat-card--amber .stat-card__icon,
+html.accountant-theme .stat-card--red .stat-card__icon,
+html.accountant-theme .stat-card--purple .stat-card__icon {
+  background: rgba(255, 255, 255, 0.18);
+  color: #ffffff;
+}
+
+/* Dark Corona: flat tiles, white values, semantic captions */
+html.accountant-theme:not(.light) .stat-card {
+  background: #22252e;
+}
+
+html.accountant-theme:not(.light) .stat-card::after {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+html.accountant-theme:not(.light) .stat-card--green .stat-card__icon {
+  background: rgba(var(--acct-green-rgb), 0.18);
+  color: var(--acct-green);
+}
+html.accountant-theme:not(.light) .stat-card--blue .stat-card__icon {
+  background: rgba(var(--acct-blue-rgb), 0.18);
+  color: var(--acct-blue);
+}
+html.accountant-theme:not(.light) .stat-card--amber .stat-card__icon {
+  background: rgba(var(--acct-yellow-rgb), 0.16);
+  color: var(--acct-yellow);
+}
+html.accountant-theme:not(.light) .stat-card--red .stat-card__icon {
+  background: rgba(var(--acct-red-rgb), 0.18);
+  color: var(--acct-red);
+}
+html.accountant-theme:not(.light) .stat-card--purple .stat-card__icon {
+  background: rgba(var(--acct-purple-rgb), 0.18);
+  color: var(--acct-purple);
+}
+
+html.accountant-theme:not(.light) .stat-card--green {
+  border-color: rgba(var(--acct-green-rgb), 0.28);
+}
+html.accountant-theme:not(.light) .stat-card--blue {
+  border-color: rgba(var(--acct-blue-rgb), 0.28);
+}
+html.accountant-theme:not(.light) .stat-card--amber {
+  border-color: rgba(var(--acct-yellow-rgb), 0.28);
+}
+html.accountant-theme:not(.light) .stat-card--red {
+  border-color: rgba(var(--acct-red-rgb), 0.28);
+}
+html.accountant-theme:not(.light) .stat-card--green .stat-card__label {
+  color: var(--acct-green);
+}
+html.accountant-theme:not(.light) .stat-card--blue .stat-card__label {
+  color: var(--acct-sky);
+}
+html.accountant-theme:not(.light) .stat-card--amber .stat-card__label {
+  color: var(--acct-yellow);
+}
+html.accountant-theme:not(.light) .stat-card--red .stat-card__label {
+  color: var(--acct-red);
+}
+html.accountant-theme:not(.light) .stat-card--purple .stat-card__label {
+  color: var(--acct-purple);
+}
+
+/* Light Purple: pastel gradients, white type */
+html.light.accountant-theme .stat-card--green,
+html.light.accountant-theme .stat-card--blue,
+html.light.accountant-theme .stat-card--amber,
+html.light.accountant-theme .stat-card--red,
+html.light.accountant-theme .stat-card--purple {
+  border: none;
+  box-shadow: 0 12px 28px rgba(160, 90, 255, 0.12);
+}
+
+html.light.accountant-theme .stat-card--green .stat-card__val,
+html.light.accountant-theme .stat-card--green .stat-card__label,
+html.light.accountant-theme .stat-card--blue .stat-card__val,
+html.light.accountant-theme .stat-card--blue .stat-card__label,
+html.light.accountant-theme .stat-card--amber .stat-card__val,
+html.light.accountant-theme .stat-card--amber .stat-card__label,
+html.light.accountant-theme .stat-card--red .stat-card__val,
+html.light.accountant-theme .stat-card--red .stat-card__label,
+html.light.accountant-theme .stat-card--purple .stat-card__val,
+html.light.accountant-theme .stat-card--purple .stat-card__label {
+  color: #ffffff;
+}
+
+/* --------------------------------------------------------------------------
+   SIDEBAR / NAV
+   -------------------------------------------------------------------------- */
+html.accountant-theme .sidebar-link:hover,
+html.light.accountant-theme .sidebar-link:hover {
+  background: var(--card-inner-bg);
+  color: var(--text-primary);
+}
+
+html.accountant-theme .sidebar-link.active,
+html.light.accountant-theme .sidebar-link.active {
+  background: var(--accent);
+  color: #ffffff;
+  border-radius: 12px;
+  box-shadow: none;
+}
+
+html.accountant-theme .sidebar-link.active,
+html.accountant-theme .sidebar-link.active *,
+html.light.accountant-theme .sidebar-link.active,
+html.light.accountant-theme .sidebar-link.active * {
+  color: #ffffff !important;
+}
+
+html.accountant-theme .text-accent,
+html.light.accountant-theme .text-accent {
+  color: var(--accent) !important;
+}
+
+html.accountant-theme .bill-amount-val {
+  color: var(--text-primary) !important;
+}
+
+html.accountant-theme .bg-green-500,
+html.light.accountant-theme .bg-green-500 {
+  background-color: var(--success) !important;
+}
+
+html.accountant-theme .text-green-400,
+html.accountant-theme .text-green-500,
+html.light.accountant-theme .text-green-400,
+html.light.accountant-theme .text-green-500 {
+  color: var(--success) !important;
+}
+
+/* --------------------------------------------------------------------------
+   BUTTONS
+   -------------------------------------------------------------------------- */
+html.accountant-theme .btn-primary,
+html.light.accountant-theme .btn-primary,
+html.light.accountant-theme button.btn-primary,
+html.light.accountant-theme .btn-submit {
+  background: var(--accent) !important;
+  box-shadow: 0 8px 20px rgba(var(--acct-purple-rgb), 0.32) !important;
+  color: #ffffff !important;
+  border-color: transparent !important;
+}
+
+html.light.accountant-theme .btn-primary,
+html.light.accountant-theme button.btn-primary,
+html.light.accountant-theme .btn-submit {
+  box-shadow: 0 8px 20px rgba(var(--acct-purple-rgb), 0.28) !important;
+}
+
+html.accountant-theme .sa-btn-primary,
+html.light.accountant-theme .sa-btn-primary {
+  background: var(--accent) !important;
+}
+
+html.accountant-theme .sa-btn-primary .sa-pill-inner,
+html.accountant-theme .sa-add-btn.sa-add-pill:not([class*="sa-btn-"]) .sa-pill-inner,
+html.light.accountant-theme .sa-btn-primary .sa-pill-inner,
+html.light.accountant-theme .sa-add-btn.sa-add-pill:not([class*="sa-btn-"]) .sa-pill-inner,
+html.accountant-theme .sa-btn-info .sa-pill-inner,
+html.light.accountant-theme .sa-btn-info .sa-pill-inner {
+  background: var(--accent) !important;
+  color: #ffffff !important;
+}
+
+html.accountant-theme .sa-btn-success .sa-pill-inner,
+html.light.accountant-theme .sa-btn-success .sa-pill-inner {
+  background: var(--success) !important;
+  color: #ffffff !important;
+}
+
+html.accountant-theme .sa-btn-danger .sa-pill-inner,
+html.light.accountant-theme .sa-btn-danger .sa-pill-inner,
+html.accountant-theme .btn-danger {
+  background: var(--danger) !important;
+  color: #ffffff !important;
+  box-shadow: 0 8px 20px rgba(var(--acct-red-rgb), 0.28) !important;
+}
+
+html.accountant-theme .sa-btn-warning .sa-pill-inner,
+html.light.accountant-theme .sa-btn-warning .sa-pill-inner {
+  background: var(--warning) !important;
+  color: #191c24 !important;
+}
+
+html.light.accountant-theme .sa-btn-warning .sa-pill-inner {
+  color: #ffffff !important;
+}
+
+html.accountant-theme .sa-add-btn.sa-add-pill.sa-btn-secondary,
+html.light.accountant-theme .sa-add-btn.sa-add-pill.sa-btn-secondary,
+html.accountant-theme .sa-add-btn.sa-add-pill.sa-btn-secondary:hover:not(:disabled),
+html.light.accountant-theme .sa-add-btn.sa-add-pill.sa-btn-secondary:hover:not(:disabled) {
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html.accountant-theme .sa-btn-secondary .sa-pill-blob,
+html.accountant-theme .sa-btn-secondary .sa-pill-blob1,
+html.accountant-theme .sa-btn-secondary .sa-pill-inner::before,
+html.light.accountant-theme .sa-btn-secondary .sa-pill-blob,
+html.light.accountant-theme .sa-btn-secondary .sa-pill-blob1,
+html.light.accountant-theme .sa-btn-secondary .sa-pill-inner::before {
+  display: none !important;
+  background: none !important;
+  box-shadow: none !important;
+}
+
+html.accountant-theme .sa-add-btn.sa-add-pill.sa-btn-secondary .sa-pill-inner,
+html.light.accountant-theme .sa-add-btn.sa-add-pill.sa-btn-secondary .sa-pill-inner {
+  background: var(--glass-bg) !important;
+  color: var(--text-primary) !important;
+  border: 1px solid var(--glass-border) !important;
+  box-shadow: none !important;
+}
+
+html.accountant-theme .sa-add-btn.sa-add-pill.sa-btn-secondary .sa-pill-inner > *,
+html.light.accountant-theme .sa-add-btn.sa-add-pill.sa-btn-secondary .sa-pill-inner > *,
+html.accountant-theme .sa-add-btn.sa-add-pill.sa-btn-secondary .sa-pill-inner svg,
+html.light.accountant-theme .sa-add-btn.sa-add-pill.sa-btn-secondary .sa-pill-inner svg {
+  color: var(--text-primary) !important;
+  fill: currentColor !important;
+}
+
+html.accountant-theme .sa-add-btn.sa-add-pill.sa-btn-secondary:hover:not(:disabled) .sa-pill-inner,
+html.light.accountant-theme .sa-add-btn.sa-add-pill.sa-btn-secondary:hover:not(:disabled) .sa-pill-inner {
+  background: var(--card-inner-bg-hover) !important;
+  border-color: var(--accent) !important;
+}
+
+html.accountant-theme .sa-btn-primary:hover:not(:disabled),
+html.light.accountant-theme .sa-btn-primary:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
+html.accountant-theme .sa-add-btn.sa-add-pill:not([class*="sa-btn-"]):hover:not(:disabled) .sa-pill-inner,
+html.light.accountant-theme .sa-add-btn.sa-add-pill:not([class*="sa-btn-"]):hover:not(:disabled) .sa-pill-inner {
+  background: var(--accent-light) !important;
+}
+
+html.accountant-theme .btn-export {
+  background: var(--card-inner-bg);
+  border: 1px solid var(--glass-border);
+  color: var(--text-primary);
+}
+
+html.accountant-theme .pagination-page--active,
+html.accountant-theme .pagination-btn-active,
+html.accountant-theme .pagination-btn.pagination-btn-active {
+  background: var(--accent);
+  color: #ffffff;
+  border-color: var(--accent);
+}
+
+html.accountant-theme .pagination-btn {
+  background: var(--card-inner-bg);
+  border-color: var(--glass-border);
+  color: var(--text-secondary);
+}
+
+html.accountant-theme .sa-modal-icon,
+html.accountant-theme .sa-modal-icon span,
+html.light.accountant-theme .sa-modal-icon,
+html.light.accountant-theme .sa-modal-icon span {
+  color: var(--accent) !important;
+  background: var(--accent-soft) !important;
+  border-color: var(--glass-border) !important;
+}
+
+html.accountant-theme .btn-muted,
+html.light.accountant-theme .btn-muted {
+  background: var(--card-inner-bg) !important;
+  border: 1px solid var(--glass-border) !important;
+  color: var(--text-primary) !important;
+}
+
+html.accountant-theme .er-icon,
+html.accountant-theme .er-icon--amenity {
+  background: var(--accent-soft);
+  border: 1px solid var(--glass-border);
+  color: var(--accent);
+}
+
+/* --------------------------------------------------------------------------
+   BADGES
+   -------------------------------------------------------------------------- */
+html.accountant-theme .global-badge-success {
+  background: var(--badge-paid-bg) !important;
+  color: var(--badge-paid-color) !important;
+  border-color: var(--badge-paid-border) !important;
+}
+
+html.accountant-theme .global-badge-warning {
+  background: var(--approval-bg) !important;
+  color: var(--approval-color) !important;
+  border-color: var(--approval-border) !important;
+}
+
+html.accountant-theme .global-badge-info {
+  background: rgba(var(--acct-sky-rgb), 0.16) !important;
+  color: var(--acct-sky) !important;
+  border-color: rgba(var(--acct-sky-rgb), 0.35) !important;
+}
+
+html.light.accountant-theme .global-badge-info {
+  background: rgba(var(--acct-cyan-rgb), 0.18) !important;
+  color: #1499b8 !important;
+  border-color: rgba(var(--acct-cyan-rgb), 0.4) !important;
+}
+
+html.accountant-theme .global-badge-danger {
+  background: var(--reject-bg) !important;
+  color: var(--reject-color) !important;
+  border-color: var(--reject-border) !important;
+}
+
+html.accountant-theme .global-badge-neutral {
+  background: var(--chip-bg) !important;
+  color: var(--text-secondary) !important;
+  border-color: var(--chip-border) !important;
+}
+
+/* --------------------------------------------------------------------------
+   PAYMENTS — monthly summary / snapshot
+   -------------------------------------------------------------------------- */
+html.accountant-theme .acct-summary-card {
+  padding: 18px;
+  min-width: 0;
+}
+
+html.accountant-theme .acct-summary-card__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+}
+
+html.accountant-theme .acct-mode-list,
+html.accountant-theme .acct-snapshot-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 14px;
+  min-width: 0;
+}
+
+html.accountant-theme .acct-mode-row {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: var(--card-inner-bg);
+  border: 1px solid var(--glass-border);
+}
+
+html.accountant-theme .acct-mode-row__top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+}
+
+html.accountant-theme .acct-mode-row__name {
+  margin: 0;
+  min-width: 0;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+html.accountant-theme .acct-mode-row__pct {
+  flex-shrink: 0;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+
+html.accountant-theme .acct-mode-row__meta {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--text-secondary);
+}
+
+html.accountant-theme .acct-mode-row__track {
+  height: 6px;
+  width: 100%;
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--input-bg);
+}
+
+html.accountant-theme .acct-mode-row__fill {
+  height: 100%;
+  max-width: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--accent), var(--success));
+}
+
+html.accountant-theme .acct-snapshot-list .info-row {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  flex-wrap: nowrap;
+}
+
+/* --------------------------------------------------------------------------
+   TABLES / REPORT
+   -------------------------------------------------------------------------- */
+html.accountant-theme .page-root,
+html.accountant-theme .page-title {
+  color: var(--text-primary);
+}
+
+html.accountant-theme .page-subtitle {
+  color: var(--text-secondary);
+}
+
+html.accountant-theme:not(.light) tbody tr:nth-child(odd),
+html.accountant-theme:not(.light) .data-table tbody tr:nth-child(odd) {
+  background: #1e2129;
+}
+
+html.accountant-theme:not(.light) tbody tr:nth-child(even),
+html.accountant-theme:not(.light) .data-table tbody tr:nth-child(even) {
+  background: #22252e;
+}
+
+html.accountant-theme:not(.light) tbody tr:hover,
+html.accountant-theme:not(.light) .data-table tbody tr:hover {
+  background: var(--row-hover);
+}
+
+html.light.accountant-theme thead,
+html.light.accountant-theme thead tr,
+html.light.accountant-theme th,
+html.light.accountant-theme .data-table th,
+html.light.accountant-theme .table th {
+  background: var(--card-inner-bg) !important;
+  color: var(--text-secondary) !important;
+  border-bottom: 1px solid var(--glass-border) !important;
+}
+
+html.light.accountant-theme tbody,
+html.light.accountant-theme tbody tr,
+html.light.accountant-theme .data-table tbody tr,
+html.light.accountant-theme .table tbody tr,
+html.light.accountant-theme tbody tr:nth-child(odd),
+html.light.accountant-theme tbody tr:nth-child(even),
+html.light.accountant-theme .data-table tbody tr:nth-child(odd),
+html.light.accountant-theme .data-table tbody tr:nth-child(even) {
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html.light.accountant-theme tbody tr:hover,
+html.light.accountant-theme tbody tr:hover td,
+html.light.accountant-theme .data-table tbody tr:hover,
+html.light.accountant-theme .data-table tbody tr:hover td {
+  background: var(--row-hover) !important;
+}
+
+html.light.accountant-theme td,
+html.light.accountant-theme .data-table td,
+html.light.accountant-theme .table td {
+  color: var(--text-primary) !important;
+  border-bottom: 1px solid var(--glass-border) !important;
+  background: transparent !important;
+}
