@@ -8981,6 +8981,60 @@ display: flex;
     animation: langDropIn 0.28s cubic-bezier(0.22, 1, 0.36, 1);
   }
 
+  html.light .lang-dropdown {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(241, 245, 249, 0.96));
+    border: 1px solid rgba(15, 23, 42, 0.12);
+    box-shadow: 0 20px 50px -12px rgba(15, 23, 42, 0.18), 0 0 0 1px rgba(37, 99, 235, 0.06);
+  }
+
+  html.light .lang-option:hover {
+    background: rgba(15, 23, 42, 0.05);
+    box-shadow: none;
+  }
+
+  html.light .lang-option--active {
+    background: rgba(37, 99, 235, 0.1);
+    border-color: rgba(37, 99, 235, 0.28);
+    box-shadow: none;
+  }
+
+  html.light .lang-opt-native {
+    color: #0f172a;
+  }
+
+  html.light .lang-opt-english {
+    color: #64748b;
+  }
+
+  html.light .lang-opt-check {
+    color: #2563eb;
+    filter: none;
+  }
+
+  html.light .lang-trigger {
+    background: rgba(255, 255, 255, 0.86);
+    border-color: rgba(15, 23, 42, 0.12);
+    color: #0f172a;
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.8) inset;
+  }
+
+  html.light .lang-trigger:hover {
+    background: #ffffff;
+    border-color: rgba(37, 99, 235, 0.35);
+    color: #0f172a;
+    box-shadow: 0 6px 18px -8px rgba(37, 99, 235, 0.28);
+  }
+
+  html.light .lang-globe,
+  html.light .lang-current,
+  html.light .lang-chevron {
+    color: #0f172a;
+  }
+
+  html.light .lang-globe {
+    color: #2563eb;
+  }
+
   /* ====
     LANGUAGE ROW inside MySetting card  (dark)
     ==== */

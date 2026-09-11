@@ -675,18 +675,53 @@ html.dark .home-navbar .lang-chevron,
 }
 
 /* ==========================================================================
-   3. PILLARS — dark glass panel, 4 feature cards
+   3–6. FEATURES / HOW IT WORKS / ROLES — related photo + navbar glass
    ========================================================================== */
-.home-pillars-section {
-  padding-top: 5rem;
+.home-glass-section {
+  position: relative;
+  display: flex;
+  align-items: center;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-height: 100vh;
+  min-height: 100dvh;
+  overflow: hidden;
+  background-color: #0b1220;
+  scroll-margin-top: 0;
+}
+
+.home-glass-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+.home-glass-bg img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  object-position: center center;
+}
+
+.home-glass-frost {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: rgba(10, 16, 26, 0.18);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14);
+}
+
+.home-glass-section > .home-container {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  padding-top: 6rem;
   padding-bottom: 6rem;
-  background-color: #070b12;
-  background-image:
-    linear-gradient(rgba(148, 163, 184, 0.07) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(148, 163, 184, 0.07) 1px, transparent 1px);
-  background-size: 52px 48px;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .home-pillars-panel {
@@ -694,10 +729,10 @@ html.dark .home-navbar .lang-chevron,
   padding: 3.25rem 2rem 2.5rem;
   border-radius: 28px;
   border: 1px solid rgba(255, 255, 255, 0.14);
-  background: rgba(8, 12, 22, 0.42);
+  background: rgba(10, 16, 26, 0.38);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.28);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.12);
 }
 
 .home-pillars-section .home-section-header {
@@ -760,12 +795,12 @@ html.dark .home-navbar .lang-chevron,
   align-items: stretch;
   overflow: hidden;
   position: relative;
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: 20px;
-  background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.22);
+  background: rgba(10, 16, 26, 0.38);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.12);
   cursor: pointer;
   padding: 0;
   transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
@@ -860,15 +895,6 @@ html.dark .home-navbar .lang-chevron,
 /* ==========================================================================
    4. EFFICIENT ADMINISTRATION SHOWCASE
    ========================================================================== */
-.home-admin-section {
-  padding-top: 6rem;
-  padding-bottom: 6rem;
-  background-color: #070b12;
-  background-image: none;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-}
-
 .home-admin-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -885,9 +911,11 @@ html.dark .home-navbar .lang-chevron,
   height: 400px;
   border-radius: 24px;
   overflow: hidden;
-  background: rgba(8, 12, 22, 0.42);
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.28);
+  background: rgba(10, 16, 26, 0.38);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.12);
 }
 
 .home-admin-img {
@@ -919,10 +947,13 @@ html.dark .home-navbar .lang-chevron,
   font-size: 0.92rem;
   font-weight: 600;
   color: rgba(255, 255, 255, 0.92);
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(10, 16, 26, 0.38);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: 999px;
   padding: 0.65rem 0.9rem;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
 }
 
 .home-bullet-dot {
@@ -1010,29 +1041,22 @@ html.dark .home-navbar .lang-chevron,
    6. ROLE SECTION
    ========================================================================== */
 .home-roles-section {
-  padding-top: 6rem;
-  padding-bottom: 6rem;
-  background-color: #070b12;
-  background-image: none;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   position: relative;
   overflow: hidden;
 }
 
-.home-roles-section::before {
-  display: none;
-}
-
 .home-roles-section .home-section-tag {
-  color: rgba(255, 255, 255, 0.82);
-  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.9);
+  background: rgba(10, 16, 26, 0.38);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   padding: 4px 14px;
   border-radius: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.22);
+  border: 1px solid rgba(255, 255, 255, 0.14);
   margin-bottom: 0.75rem;
   letter-spacing: 0.14em;
   font-weight: 500;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
 }
 
 .home-roles-section .home-section-title {
@@ -1053,17 +1077,17 @@ html.dark .home-navbar .lang-chevron,
 .home-role-card {
   width: 100%;
   height: 195px;
-  background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  background: rgba(10, 16, 26, 0.38);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   border-radius: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.14);
   overflow: hidden;
   position: relative;
   display: flex;
   flex-direction: row;
   align-items: center;
-  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.22);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.12);
   transition: transform 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease, border-color 0.3s ease;
   cursor: pointer;
 }
@@ -1656,9 +1680,13 @@ html.dark .home-navbar .lang-chevron,
     grid-template-columns: 1fr 1fr;
   }
 
-  .home-admin-section {
-    padding-top: 3.5rem;
+  .home-glass-section > .home-container {
+    padding-top: 4rem;
     padding-bottom: 4rem;
+  }
+
+  .home-admin-section {
+    padding: 0;
   }
 
   .home-admin-grid {
@@ -1935,65 +1963,81 @@ html.dark .home-section-subtitle {
 }
 
 /* ── Pillars ── */
-html.dark .home-pillars-section {
-  background-color: #070b12;
-  background-image:
-    linear-gradient(rgba(148, 163, 184, 0.07) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(148, 163, 184, 0.07) 1px, transparent 1px);
-  background-size: 52px 48px;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-}
-
-html.dark .home-admin-section {
-  background-color: #070b12;
+html.dark .home-pillars-section,
+html.light .home-pillars-section,
+html.dark .home-admin-section,
+html.light .home-admin-section,
+html.dark .home-roles-section,
+html.light .home-roles-section {
+  background-color: #0b1220;
   background-image: none;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  border: 0;
 }
 
-html.dark .home-pillars-panel {
-  background: rgba(8, 12, 22, 0.42);
+html.dark .home-pillars-panel,
+html.light .home-pillars-panel {
+  background: rgba(10, 16, 26, 0.38);
   border-color: rgba(255, 255, 255, 0.14);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.12);
 }
 
 html.dark .home-pillars-section .home-section-title,
-html.dark .home-pillar-title {
+html.light .home-pillars-section .home-section-title,
+html.dark .home-pillar-title,
+html.light .home-pillar-title {
   color: #ffffff;
 }
 
-html.dark .home-pillar-desc {
+html.dark .home-pillar-desc,
+html.light .home-pillar-desc {
   color: rgba(255, 255, 255, 0.78);
 }
 
-html.dark .home-pillar-card {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.22);
+html.dark .home-pillar-card,
+html.light .home-pillar-card {
+  background: rgba(10, 16, 26, 0.38);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.12);
 }
 
-html.dark .home-pillar-card:hover {
-  border-color: rgba(96, 165, 250, 0.45);
+html.dark .home-pillar-card:hover,
+html.light .home-pillar-card:hover {
+  border-color: rgba(255, 255, 255, 0.28);
   box-shadow: 0 16px 36px rgba(0, 0, 0, 0.28), 0 10px 28px rgba(37, 99, 235, 0.28);
 }
 
-html.dark .home-pillar-content {
+html.dark .home-pillar-content,
+html.light .home-pillar-content {
   background: transparent;
 }
 
 /* ── Admin ── */
-html.dark .home-admin-section .home-section-title {
+html.dark .home-admin-section .home-section-title,
+html.light .home-admin-section .home-section-title {
   color: #ffffff;
 }
 
-html.dark .home-admin-section .home-section-subtitle {
+html.dark .home-admin-section .home-section-subtitle,
+html.light .home-admin-section .home-section-subtitle {
   color: rgba(255, 255, 255, 0.78);
 }
 
-html.dark .home-admin-feature-item {
+html.dark .home-admin-image-box,
+html.light .home-admin-image-box {
+  background: rgba(10, 16, 26, 0.38);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+html.dark .home-admin-feature-item,
+html.light .home-admin-feature-item {
   color: rgba(255, 255, 255, 0.92);
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(10, 16, 26, 0.38);
   border-color: rgba(255, 255, 255, 0.14);
+}
+
+html.light .home-admin-section .home-bullet-dot {
+  color: #93c5fd;
 }
 
 /* ── How it works ── */
@@ -2023,34 +2067,42 @@ html.dark .home-step-desc {
 }
 
 /* ── Roles ── */
-html.dark .home-roles-section {
-  background-color: #070b12;
-  background-image: none;
-}
-
-html.dark .home-roles-section .home-section-title {
+html.dark .home-roles-section .home-section-title,
+html.light .home-roles-section .home-section-title {
   color: #ffffff;
 }
 
-html.dark .home-roles-section .home-section-subtitle {
+html.dark .home-roles-section .home-section-subtitle,
+html.light .home-roles-section .home-section-subtitle {
   color: rgba(255, 255, 255, 0.78);
 }
 
-html.dark .home-role-card {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.16);
+html.dark .home-roles-section .home-section-tag,
+html.light .home-roles-section .home-section-tag {
+  color: rgba(255, 255, 255, 0.9);
+  background: rgba(10, 16, 26, 0.38);
+  border-color: rgba(255, 255, 255, 0.14);
 }
 
-html.dark .home-role-card:hover {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(96, 165, 250, 0.45);
+html.dark .home-role-card,
+html.light .home-role-card {
+  background: rgba(10, 16, 26, 0.38);
+  border-color: rgba(255, 255, 255, 0.14);
 }
 
-html.dark .home-role-title {
+html.dark .home-role-card:hover,
+html.light .home-role-card:hover {
+  background: rgba(10, 16, 26, 0.52);
+  border-color: rgba(255, 255, 255, 0.28);
+}
+
+html.dark .home-role-title,
+html.light .home-role-title {
   color: #ffffff;
 }
 
-html.dark .home-role-desc {
+html.dark .home-role-desc,
+html.light .home-role-desc {
   color: rgba(255, 255, 255, 0.78);
 }
 
@@ -2113,131 +2165,6 @@ html.light .home-navbar .home-btn-login:hover {
 
 html.light .home-mobile-burger {
   color: #ffffff;
-}
-
-html.light .home-pillars-section {
-  background-color: #eef2f7;
-  background-image:
-    linear-gradient(rgba(15, 23, 42, 0.05) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(15, 23, 42, 0.05) 1px, transparent 1px);
-  background-size: 52px 48px;
-  border-top: 1px solid rgba(15, 23, 42, 0.08);
-  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
-}
-
-html.light .home-admin-section {
-  background-color: #eef2f7;
-  background-image: none;
-  border-top: 1px solid rgba(15, 23, 42, 0.08);
-  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
-}
-
-html.light .home-pillars-panel {
-  background: rgba(255, 255, 255, 0.72);
-  border: 1px solid rgba(15, 23, 42, 0.12);
-  box-shadow: 0 20px 48px rgba(15, 23, 42, 0.08);
-}
-
-html.light .home-pillars-section .home-section-title {
-  color: #0f172a;
-}
-
-html.light .home-pillar-card {
-  background: rgba(255, 255, 255, 0.78);
-  border: 1px solid rgba(15, 23, 42, 0.12);
-  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
-}
-
-html.light .home-pillar-card:hover {
-  border-color: rgba(37, 99, 235, 0.45);
-  box-shadow: 0 16px 36px rgba(15, 23, 42, 0.1), 0 10px 28px rgba(37, 99, 235, 0.18);
-}
-
-html.light .home-pillar-content {
-  background: transparent;
-}
-
-html.light .home-pillar-title {
-  color: #0f172a;
-}
-
-html.light .home-pillar-desc {
-  color: #475569;
-}
-
-html.light .home-admin-section .home-section-title {
-  color: #0f172a;
-}
-
-html.light .home-admin-section .home-section-subtitle {
-  color: #475569;
-}
-
-html.light .home-admin-image-box {
-  background: rgba(255, 255, 255, 0.72);
-  border: 1px solid rgba(15, 23, 42, 0.12);
-  box-shadow: 0 20px 48px rgba(15, 23, 42, 0.08);
-}
-
-html.light .home-admin-feature-item {
-  color: #0f172a;
-  background: rgba(255, 255, 255, 0.78);
-  border: 1px solid rgba(15, 23, 42, 0.12);
-}
-
-html.light .home-admin-section .home-bullet-dot {
-  color: #2563eb;
-}
-
-html.light .home-admin-card {
-  background: #ffffff;
-  border: 1px solid #cbd5e1;
-  box-shadow: 0 16px 36px rgba(15, 23, 42, 0.08);
-}
-
-html.light .home-roles-section {
-  background-color: #eef2f7;
-  background-image: none;
-  border-top: 1px solid rgba(15, 23, 42, 0.08);
-  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
-}
-
-html.light .home-roles-section .home-section-tag {
-  color: #334155;
-  background: rgba(255, 255, 255, 0.78);
-  border-color: rgba(15, 23, 42, 0.12);
-}
-
-html.light .home-roles-section .home-section-title {
-  color: #0f172a;
-}
-
-html.light .home-roles-section .home-section-subtitle {
-  color: #475569;
-}
-
-html.light .home-role-card {
-  background: rgba(255, 255, 255, 0.78);
-  border: 1px solid rgba(15, 23, 42, 0.12);
-  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
-}
-
-html.light .home-role-card:hover {
-  background: rgba(255, 255, 255, 0.92);
-  border-color: rgba(37, 99, 235, 0.45);
-  box-shadow: 0 16px 36px rgba(15, 23, 42, 0.1), 0 10px 28px rgba(37, 99, 235, 0.16);
-}
-
-html.light .home-role-title {
-  color: #0f172a;
-}
-
-html.light .home-role-desc {
-  color: #475569;
-}
-
-html.light .home-role-image-right {
-  background: #e2e8f0;
 }
 
 html.light .home-footer {

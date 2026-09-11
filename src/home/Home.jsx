@@ -22,11 +22,14 @@ import { FaYoutube, FaFacebookF, FaInstagram, FaLinkedinIn } from "react-icons/f
 
 /* Image imports from assets/Photos/Home */
 import homeBannerImg from "../assets/Photos/Home/society-hero-campus.png";
+import featuresBgImg from "../assets/Photos/Home/Features.avif";
+import howItWorksBgImg from "../assets/Photos/Home/HowItWorks.avif";
+import userRolesBgImg from "../assets/Photos/Home/UserRoles.avif";
 import adminImg from "../assets/Photos/Home/Admin.png";
 import committeeImg from "../assets/Photos/Home/Commitee.jpg";
 import residentImg from "../assets/Photos/Home/Resident.png";
 import guardImg from "../assets/Photos/Home/Guard.png";
-import soloGuardImg from "../assets/Photos/Home/Solo-Guard.jpg";
+import securityGuardImg from "../assets/Photos/Home/Guard1.png";
 import accountantImg from "../assets/Photos/Home/Accountant.png";
 
 import ThemeToggle from "../components/common/ThemeToggle";
@@ -99,14 +102,23 @@ const Home = () => {
   const scrollToSection = (id) => {
     const element = document.getElementById(id);
     if (!element) return;
-    const extraGap = 96; /* sticky nav + extra space so the section stops higher */
-    const top = window.scrollY + element.getBoundingClientRect().top - extraGap;
-    window.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
+
+    const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const nav = document.querySelector(".home-navbar");
+    const navHeight = nav ? nav.getBoundingClientRect().height : 80;
+    const isGlass = element.classList.contains("home-glass-section");
+    const offset = isGlass ? 0 : navHeight;
+    const top = window.scrollY + element.getBoundingClientRect().top - offset;
+
+    window.scrollTo({
+      top: Math.max(0, top),
+      behavior: prefersReduced ? "auto" : "smooth",
+    });
   };
 
   const handleMobileNav = (id) => {
     setMenuOpen(false);
-    scrollToSection(id);
+    window.setTimeout(() => scrollToSection(id), 80);
   };
 
   /* Slide transition variant settings matching executive PPT presentation decks */
@@ -311,14 +323,11 @@ const Home = () => {
       {/* ==========================================================================
          3. PILLARS / PLATFORM OVERVIEW SECTION (PPT SLIDE 1 - SOFT SLATE BG)
          ========================================================================== */}
-      <motion.section
-        initial="hidden"
-        whileInView="visible"
-        viewport={{ once: true, amount: 0.2 }}
-        variants={slideVariants}
-        className="home-pillars-section"
-        id="features"
-      >
+      <section className="home-pillars-section home-glass-section" id="features">
+        <div className="home-glass-bg" aria-hidden="true">
+          <img src={featuresBgImg} alt="" />
+        </div>
+        <div className="home-glass-frost" aria-hidden="true" />
         <div className="home-container">
           <div className="home-pillars-panel">
             <motion.div
@@ -379,19 +388,16 @@ const Home = () => {
             </div>
           </div>
         </div>
-      </motion.section>
+      </section>
 
       {/* ==========================================================================
-         4. EFFICIENT ADMINISTRATION SHOWCASE SECTION (PPT SLIDE 2 - PURE WHITE BG)
+         4. EFFICIENT ADMINISTRATION SHOWCASE SECTION
          ========================================================================== */}
-      <motion.section
-        initial="hidden"
-        whileInView="visible"
-        viewport={{ once: true, amount: 0.2 }}
-        variants={slideVariants}
-        className="home-admin-section"
-        id="how-it-works"
-      >
+      <section className="home-admin-section home-glass-section" id="how-it-works">
+        <div className="home-glass-bg" aria-hidden="true">
+          <img src={howItWorksBgImg} alt="" />
+        </div>
+        <div className="home-glass-frost" aria-hidden="true" />
         <div className="home-container">
           <div className="home-admin-grid">
             {/* Left Visual */}
@@ -453,24 +459,16 @@ const Home = () => {
             </motion.div>
           </div>
         </div>
-      </motion.section>
+      </section>
 
       {/* ==========================================================================
-         5. HOW IT WORKS SECTION (PPT SLIDE 3 - SOFT BLUE TINT BG)
+         6. ROLE SECTION
          ========================================================================== */}
-
-
-      {/* ==========================================================================
-         6. ROLE SECTION (PPT SLIDE 4 - 3 IN ROW 1, 3 IN ROW 2 GRID)
-         ========================================================================== */}
-      <motion.section
-        initial="hidden"
-        whileInView="visible"
-        viewport={{ once: true, amount: 0.2 }}
-        variants={slideVariants}
-        className="home-roles-section"
-        id="roles"
-      >
+      <section className="home-roles-section home-glass-section" id="roles">
+        <div className="home-glass-bg" aria-hidden="true">
+          <img src={userRolesBgImg} alt="" />
+        </div>
+        <div className="home-glass-frost" aria-hidden="true" />
         <div className="home-container">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -509,7 +507,7 @@ const Home = () => {
                 desc: t("homeRole3Desc")
               },
               {
-                img: soloGuardImg,
+                img: securityGuardImg,
                 icon: HiOutlineLockClosed,
                 title: t("homeRole4Title"),
                 desc: t("homeRole4Desc")
@@ -560,7 +558,7 @@ const Home = () => {
             })}
           </div>
         </div>
-      </motion.section>
+      </section>
 
       {/* ==========================================================================
          7. CALL TO ACTION (CTA) BANNER (PPT SLIDE 5 - MODERN LUXURY REDESIGN)
