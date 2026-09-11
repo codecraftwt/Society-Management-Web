@@ -219,18 +219,19 @@ export default function PaymentsAccountant() {
       }, []);
 
   return (
-    <div className="space-y-6 animate-fadeIn">
-      <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-        <div>
-          <div className="flex items-center gap-2 text-secondary text-xs uppercase tracking-[0.18em]">
-            <MdOutlinePayments size={15} />
-            Accountant Payments
+    <div className="acct-payments-page space-y-6 animate-fadeIn">
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="er-icon er-icon--amenity">
+            <MdOutlinePayments size={22} />
           </div>
-          <h1 className="page-title mt-2">Payments</h1>
-          <p className="page-subtitle">Track collections, dues, and payment modes for the current society.</p>
+          <div className="min-w-0">
+            <h2 className="page-title">Payments</h2>
+            <p className="page-subtitle">Track collections, dues, and payment modes for the current society.</p>
+          </div>
         </div>
 
-        <div className="flex flex-wrap gap-3">
+        <div className="flex flex-wrap gap-3 shrink-0">
           <GlobalButton
             variant="primary"
             icon={MdRefresh}
@@ -281,7 +282,7 @@ export default function PaymentsAccountant() {
         />
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 min-w-0">
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 min-w-0 xl:items-start">
         <div className="premium-card xl:col-span-2 min-w-0">
           <div className="p-4 sm:p-5 border-b" style={{ borderColor: "var(--glass-border)" }}>
             <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
@@ -426,7 +427,7 @@ export default function PaymentsAccountant() {
           </div>
         </div>
 
-        <div className="space-y-4 min-w-0">
+        <div className="acct-payments-aside space-y-4 min-w-0">
           <div className="premium-card acct-summary-card">
             <div className="acct-summary-card__head">
               <MdFilterAlt size={18} style={{ color: "var(--accent)" }} />

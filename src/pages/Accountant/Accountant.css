@@ -137,7 +137,7 @@ html.accountant-theme .accountant-shell {
 html.accountant-theme .main-content-layout,
 html.accountant-theme .main-content-layout > main {
   max-width: 100%;
-  overflow-x: hidden;
+  overflow-x: clip;
 }
 
 /* --------------------------------------------------------------------------
@@ -356,6 +356,85 @@ html.light.accountant-theme .global-modal-backdrop {
 }
 
 /* --------------------------------------------------------------------------
+   LANGUAGE SELECTOR
+   -------------------------------------------------------------------------- */
+html.accountant-theme .lang-trigger,
+html.light.accountant-theme .lang-trigger {
+  background: var(--card-inner-bg) !important;
+  border: 1px solid var(--glass-border) !important;
+  color: var(--text-primary) !important;
+  box-shadow: none !important;
+}
+
+html.accountant-theme .lang-trigger:hover,
+html.light.accountant-theme .lang-trigger:hover {
+  background: var(--card-inner-bg-hover) !important;
+  border-color: var(--accent) !important;
+  color: var(--text-primary) !important;
+  box-shadow: none !important;
+  transform: none;
+}
+
+html.accountant-theme .lang-globe,
+html.accountant-theme .lang-current,
+html.accountant-theme .lang-chevron,
+html.light.accountant-theme .lang-globe,
+html.light.accountant-theme .lang-current,
+html.light.accountant-theme .lang-chevron {
+  color: var(--text-primary) !important;
+}
+
+html.accountant-theme .lang-globe,
+html.light.accountant-theme .lang-globe {
+  color: var(--accent) !important;
+}
+
+html.accountant-theme .lang-dropdown,
+html.light.accountant-theme .lang-dropdown {
+  background: var(--modal-bg) !important;
+  border: 1px solid var(--glass-border) !important;
+  box-shadow: var(--shadow-md) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  color: var(--text-primary);
+}
+
+html.accountant-theme .lang-option,
+html.light.accountant-theme .lang-option {
+  border-color: transparent !important;
+  box-shadow: none !important;
+}
+
+html.accountant-theme .lang-option:hover,
+html.light.accountant-theme .lang-option:hover {
+  background: var(--row-hover) !important;
+  box-shadow: none !important;
+}
+
+html.accountant-theme .lang-option--active,
+html.light.accountant-theme .lang-option--active {
+  background: var(--accent-soft) !important;
+  border-color: rgba(var(--acct-purple-rgb), 0.35) !important;
+  box-shadow: none !important;
+}
+
+html.accountant-theme .lang-opt-native,
+html.light.accountant-theme .lang-opt-native {
+  color: var(--text-primary) !important;
+}
+
+html.accountant-theme .lang-opt-english,
+html.light.accountant-theme .lang-opt-english {
+  color: var(--text-secondary) !important;
+}
+
+html.accountant-theme .lang-opt-check,
+html.light.accountant-theme .lang-opt-check {
+  color: var(--accent) !important;
+  filter: none !important;
+}
+
+/* --------------------------------------------------------------------------
    KPI CARDS
    -------------------------------------------------------------------------- */
 html.accountant-theme .stat-card {
@@ -566,12 +645,48 @@ html.light.accountant-theme .sa-btn-success .sa-pill-inner {
   color: #ffffff !important;
 }
 
-html.accountant-theme .sa-btn-danger .sa-pill-inner,
-html.light.accountant-theme .sa-btn-danger .sa-pill-inner,
-html.accountant-theme .btn-danger {
-  background: var(--danger) !important;
+html.accountant-theme .sa-add-btn.sa-add-pill.sa-btn-danger,
+html.light.accountant-theme .sa-add-btn.sa-add-pill.sa-btn-danger,
+html.accountant-theme .sa-add-btn.sa-add-pill.sa-btn-danger:hover:not(:disabled),
+html.light.accountant-theme .sa-add-btn.sa-add-pill.sa-btn-danger:hover:not(:disabled) {
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html.accountant-theme .sa-btn-danger .sa-pill-blob,
+html.accountant-theme .sa-btn-danger .sa-pill-blob1,
+html.accountant-theme .sa-btn-danger .sa-pill-inner::before,
+html.light.accountant-theme .sa-btn-danger .sa-pill-blob,
+html.light.accountant-theme .sa-btn-danger .sa-pill-blob1,
+html.light.accountant-theme .sa-btn-danger .sa-pill-inner::before {
+  display: none !important;
+  background: none !important;
+  box-shadow: none !important;
+}
+
+html.accountant-theme .sa-add-btn.sa-add-pill.sa-btn-danger .sa-pill-inner,
+html.light.accountant-theme .sa-add-btn.sa-add-pill.sa-btn-danger .sa-pill-inner,
+html.accountant-theme .btn-danger,
+html.light.accountant-theme .btn-danger {
+  background: #ab2e3c !important;
+  background-image: none !important;
   color: #ffffff !important;
-  box-shadow: 0 8px 20px rgba(var(--acct-red-rgb), 0.28) !important;
+  box-shadow: 0 8px 20px rgba(171, 46, 60, 0.28) !important;
+}
+
+html.accountant-theme .sa-add-btn.sa-add-pill.sa-btn-danger .sa-pill-inner > *,
+html.light.accountant-theme .sa-add-btn.sa-add-pill.sa-btn-danger .sa-pill-inner > *,
+html.accountant-theme .sa-add-btn.sa-add-pill.sa-btn-danger .sa-pill-inner svg,
+html.light.accountant-theme .sa-add-btn.sa-add-pill.sa-btn-danger .sa-pill-inner svg {
+  color: #ffffff !important;
+  fill: currentColor !important;
+}
+
+html.accountant-theme .sa-add-btn.sa-add-pill.sa-btn-danger:hover:not(:disabled) .sa-pill-inner,
+html.light.accountant-theme .sa-add-btn.sa-add-pill.sa-btn-danger:hover:not(:disabled) .sa-pill-inner,
+html.accountant-theme .btn-danger:hover:not(:disabled),
+html.light.accountant-theme .btn-danger:hover:not(:disabled) {
+  filter: brightness(1.08);
 }
 
 html.accountant-theme .sa-btn-warning .sa-pill-inner,
@@ -720,6 +835,23 @@ html.accountant-theme .global-badge-neutral {
 /* --------------------------------------------------------------------------
    PAYMENTS — monthly summary / snapshot
    -------------------------------------------------------------------------- */
+html.accountant-theme .acct-payments-page {
+  transform: none;
+}
+
+@media (min-width: 1280px) {
+  html.accountant-theme .acct-payments-aside {
+    position: sticky;
+    top: -1.5rem;
+    align-self: start;
+    z-index: 5;
+    max-height: calc(100dvh - 4.5rem);
+    overflow-x: hidden;
+    overflow-y: auto;
+    transform: none;
+  }
+}
+
 html.accountant-theme .acct-summary-card {
   padding: 18px;
   min-width: 0;
