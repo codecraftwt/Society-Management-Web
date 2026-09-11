@@ -1,16 +1,22 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { HiOutlineBuildingOffice2, HiBars3, HiOutlineXMark } from "react-icons/hi2";
 import ThemeToggle from "./ThemeToggle";
 import LanguageSelector from "./LanguageSelector";
 import { useLang } from "../../context/LanguageContext";
-import { APP_NAME } from "../../constants/app";
+import { AuthContext } from "../../context/AuthContext";
+import { getDashboardPath } from "../../constants/app";
 
 const LegalNavbar = () => {
   const navigate = useNavigate();
   const { t } = useLang();
+  const { user } = useContext(AuthContext);
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const loggedIn = Boolean(user && localStorage.getItem("token"));
+  const dashboardPath = getDashboardPath(user);
+
+  const goToApp = () => navigate(loggedIn ? dashboardPath : "/login");
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 24);
@@ -37,18 +43,29 @@ const LegalNavbar = () => {
           {/* Nav Right Actions */}
           <div className="home-nav-actions">
             <LanguageSelector compact />
-            <button
-              onClick={() => navigate("/login")}
-              className="home-btn-login"
-            >
-              {t("homeLogin")}
-            </button>
-            <button
-              onClick={() => navigate("/login")}
-              className="home-btn-nav-cta"
-            >
-              {t("homeGetStarted")}
-            </button>
+            {loggedIn ? (
+              <button
+                onClick={goToApp}
+                className="home-btn-nav-cta"
+              >
+                {t("homeDashboard")}
+              </button>
+            ) : (
+              <>
+                <button
+                  onClick={() => navigate("/login")}
+                  className="home-btn-login"
+                >
+                  {t("homeLogin")}
+                </button>
+                <button
+                  onClick={() => navigate("/login")}
+                  className="home-btn-nav-cta"
+                >
+                  {t("homeGetStarted")}
+                </button>
+              </>
+            )}
             <div className="home-nav-theme-toggle">
               <ThemeToggle />
             </div>
@@ -76,18 +93,29 @@ const LegalNavbar = () => {
         </div>
 
         <div className="home-mobile-actions">
-          <button
-            onClick={() => { setMenuOpen(false); navigate("/login"); }}
-            className="home-btn-login"
-          >
-            {t("homeLogin")}
-          </button>
-          <button
-            onClick={() => { setMenuOpen(false); navigate("/login"); }}
-            className="home-btn-nav-cta"
-          >
-            {t("homeGetStarted")}
-          </button>
+          {loggedIn ? (
+            <button
+              onClick={() => { setMenuOpen(false); goToApp(); }}
+              className="home-btn-nav-cta"
+            >
+              {t("homeDashboard")}
+            </button>
+          ) : (
+            <>
+              <button
+                onClick={() => { setMenuOpen(false); navigate("/login"); }}
+                className="home-btn-login"
+              >
+                {t("homeLogin")}
+              </button>
+              <button
+                onClick={() => { setMenuOpen(false); navigate("/login"); }}
+                className="home-btn-nav-cta"
+              >
+                {t("homeGetStarted")}
+              </button>
+            </>
+          )}
         </div>
       </div>
     </nav>

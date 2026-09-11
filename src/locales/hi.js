@@ -1615,6 +1615,7 @@ cpwSuccessMsg:            "पासवर्ड सफलतापूर्व�
   homeNavConcierge: "24/7 कंसीयर्ज",
   homeLogin: "लॉग इन",
   homeGetStarted: "शुरू करें",
+  homeDashboard: "डैशबोर्ड",
   homeAltHero: "आवासीय समुदाय",
   homeEyebrow: "आवासीय समुदाय प्रबंधन मंच",
   homeHeroTitle1: "सोसायटी को सरल बनाएं।",

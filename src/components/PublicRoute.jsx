@@ -3,16 +3,7 @@
 import { useContext } from "react";
 import { Navigate } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
-
-const DASHBOARD_ROUTES = {
-  SUPER_ADMIN: "/superadmin",
-  SOCIETY_ADMIN: "/admin",
-  COMMITTEE_MEMBER: "/committee",
-  GUARD: "/guard",
-  ACCOUNTANT: "/accountant",
-  FAMILY_MEMBER: "/family",
-  RESIDENT: "/resident",
-};
+import { DASHBOARD_ROUTES } from "../constants/app";
 
 export default function PublicRoute({ children }) {
   const { user, logout } = useContext(AuthContext);

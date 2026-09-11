@@ -1620,6 +1620,7 @@ cpwSuccessMsg:            "पासवर्ड यशस्वीरित्�
   homeNavConcierge: "24/7 कंसीयर्ज",
   homeLogin: "लॉगिन",
   homeGetStarted: "सुरू करा",
+  homeDashboard: "डॅशबोर्ड",
   homeAltHero: "निवासी समुदाय",
   homeEyebrow: "निवासी समुदाय व्यवस्थापन प्लॅटफॉर्म",
   homeHeroTitle1: "सोसायटी सोपी करा.",
