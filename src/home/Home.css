@@ -23,7 +23,7 @@
   background-color: #ffffff;
   min-height: 100vh;
   width: 100%;
-  overflow-x: hidden;
+  overflow-x: clip;
   line-height: 1.5;
   margin: 0;
   padding: 0;
@@ -94,8 +94,11 @@
    1. NAVBAR SECTION
    ========================================================================== */
 .home-navbar {
-  position: sticky;
+  position: fixed;
   top: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
   z-index: 1000;
   height: 80px;
   display: flex;
@@ -402,7 +405,7 @@ html.dark .home-navbar .lang-chevron,
   width: 100%;
   min-height: 100vh;
   min-height: 100dvh;
-  margin-top: -80px;
+  margin-top: 0;
   padding: 0;
   overflow: hidden;
   background-color: #0b1220;
