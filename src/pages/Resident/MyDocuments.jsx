@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { createPortal } from "react-dom";
-import { MdFolderOpen } from "react-icons/md";
+import { MdFolderOpen, MdSearch, MdClose, MdAdd } from "react-icons/md";
+import SlidingTabs from "../../components/common/SlidingTabs";
 import axios from "axios";
 
 const API = import.meta.env.VITE_API_URL || "";
@@ -48,32 +49,17 @@ function ViewModal({ doc, onClose }) {
   }, [onClose]);
 
   return createPortal(
-    <div
-      onClick={handleBackdrop}
-      style={{
-        position: "fixed", inset: 0, zIndex: 1200,
-        background: "rgba(0,0,0,0.75)",
-        backdropFilter: "blur(10px)",
-        display: "flex", alignItems: "center", justifyContent: "center",
-        padding: "1rem",
-        animation: "fadeIn 0.2s ease",
-      }}
-    >
+    <div onClick={handleBackdrop} className="hh-overlay" style={{ zIndex: 1200 }}>
       <div
         onClick={(e) => e.stopPropagation()}
+        className="bg-card animate-scaleIn"
         style={{
           width: "100%", maxWidth: "820px",
-          background: "var(--card-bg)",
-          border: "1px solid var(--glass-border)",
-          borderRadius: "20px",
           overflow: "hidden",
-          boxShadow: "0 32px 80px rgba(0,0,0,0.55)",
           display: "flex", flexDirection: "column",
           maxHeight: "90vh",
-          animation: "scaleIn 0.22s ease",
         }}
       >
-        {/* Header */}
         <div style={{
           display: "flex", alignItems: "center", justifyContent: "space-between",
           padding: "14px 18px",
@@ -104,26 +90,13 @@ function ViewModal({ doc, onClose }) {
               <span style={{ fontSize: "0.75rem" }}>⬇</span>
               <span>Download</span>
             </a>
-            <button
-              onClick={onClose}
-              style={{
-                width: "32px", height: "32px", borderRadius: "8px",
-                border: "1px solid rgba(239,68,68,0.28)",
-                background: "rgba(239,68,68,0.10)", color: "#f87171",
-                cursor: "pointer", display: "flex", alignItems: "center",
-                justifyContent: "center", fontSize: "16px", fontWeight: 700, flexShrink: 0,
-              }}
-            >✕</button>
+            <button type="button" onClick={onClose} className="hh-close-btn">
+              <MdClose size={16} />
+            </button>
           </div>
         </div>
 
-        {/* Body */}
-        <div style={{
-          flex: 1, overflow: "auto",
-          background: "rgba(0,0,0,0.20)",
-          display: "flex", alignItems: "center", justifyContent: "center",
-          minHeight: "340px",
-        }}>
+        <div className="md-view-body">
           {isImage && (
             <img
               src={fileUrl}
@@ -235,30 +208,12 @@ function UploadModal({ docType, existingDoc, onClose, onSuccess }) {
     : null;
 
   return createPortal(
-    <div
-      onClick={handleBackdrop}
-      style={{
-        position: "fixed", inset: 0, zIndex: 1200,
-        background: "rgba(0,0,0,0.68)",
-        backdropFilter: "blur(10px)",
-        display: "flex", alignItems: "center", justifyContent: "center",
-        padding: "1rem",
-        animation: "fadeIn 0.2s ease",
-      }}
-    >
+    <div onClick={handleBackdrop} className="hh-overlay" style={{ zIndex: 1200 }}>
       <div
         onClick={(e) => e.stopPropagation()}
-        style={{
-          width: "100%", maxWidth: "440px",
-          background: "var(--card-bg)",
-          border: "1px solid var(--glass-border)",
-          borderRadius: "20px",
-          overflow: "hidden",
-          boxShadow: "0 24px 64px rgba(0,0,0,0.50)",
-          animation: "scaleIn 0.22s ease",
-        }}
+        className="bg-card animate-scaleIn"
+        style={{ width: "100%", maxWidth: "440px", overflow: "hidden" }}
       >
-        {/* Header */}
         <div style={{
           display: "flex", alignItems: "center", justifyContent: "space-between",
           padding: "16px 20px",
@@ -278,28 +233,14 @@ function UploadModal({ docType, existingDoc, onClose, onSuccess }) {
               </p>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            style={{
-              width: "28px", height: "28px", borderRadius: "7px",
-              border: "1px solid var(--glass-border)",
-              background: "rgba(255,255,255,0.06)", color: "var(--text-secondary)",
-              cursor: "pointer", display: "flex", alignItems: "center",
-              justifyContent: "center", fontSize: "14px",
-            }}
-          >✕</button>
+          <button type="button" onClick={onClose} className="hh-close-btn">
+            <MdClose size={16} />
+          </button>
         </div>
 
-        {/* Body */}
         <div style={{ padding: "20px" }}>
-          {/* Error Banner */}
           {error && (
-            <div style={{
-              display: "flex", alignItems: "center", gap: "8px",
-              padding: "10px 14px", borderRadius: "10px", marginBottom: "14px",
-              background: "rgba(239,68,68,0.10)", border: "1px solid rgba(239,68,68,0.25)",
-              color: "#fca5a5", fontSize: "13px",
-            }}>
+            <div className="md-error">
               <span>⚠</span> {error}
             </div>
           )}
@@ -346,13 +287,10 @@ function UploadModal({ docType, existingDoc, onClose, onSuccess }) {
           {/* Actions */}
           <div style={{ display: "flex", gap: "10px", marginTop: "16px" }}>
             <button
+              type="button"
               onClick={onClose}
-              style={{
-                flex: 1, padding: "0.65rem", borderRadius: "10px",
-                border: "1px solid var(--glass-border)",
-                background: "rgba(255,255,255,0.05)", color: "var(--text-secondary)",
-                fontSize: "13px", fontWeight: 600, cursor: "pointer",
-              }}
+              className="hh-btn-cancel"
+              style={{ flex: 1, padding: "0.65rem", borderRadius: "10px", fontSize: "13px", fontWeight: 600, cursor: "pointer" }}
             >
               Cancel
             </button>
@@ -427,95 +365,43 @@ function DeleteModal({ doc, onClose, onSuccess }) {
   };
 
   return createPortal(
-    <div
-      onClick={handleBackdrop}
-      style={{
-        position: "fixed", inset: 0, zIndex: 1200,
-        background: "rgba(0,0,0,0.68)",
-        backdropFilter: "blur(10px)",
-        display: "flex", alignItems: "center", justifyContent: "center",
-        padding: "1rem",
-        animation: "fadeIn 0.2s ease",
-      }}
-    >
+    <div onClick={handleBackdrop} className="hh-overlay" style={{ zIndex: 1200 }}>
       <div
         onClick={(e) => e.stopPropagation()}
-        style={{
-          width: "100%", maxWidth: "360px",
-          background: "var(--card-bg)",
-          border: "1px solid var(--glass-border)",
-          borderRadius: "20px",
-          padding: "1.75rem 1.5rem",
-          textAlign: "center",
-          boxShadow: "0 24px 64px rgba(0,0,0,0.50)",
-          animation: "scaleIn 0.22s ease",
-        }}
+        className="bg-card animate-scaleIn hh-confirm-box"
+        style={{ textAlign: "center" }}
       >
-        {/* Icon */}
-        <div style={{
-          width: "52px", height: "52px", borderRadius: "14px",
-          margin: "0 auto 1rem",
-          display: "flex", alignItems: "center", justifyContent: "center",
-          background: "rgba(239,68,68,0.12)",
-          border: "1.5px solid rgba(239,68,68,0.28)",
-          fontSize: "1.4rem",
-        }}>🗑</div>
+        <div className="hh-confirm-icon hh-confirm-icon--danger" style={{ fontSize: "1.4rem" }}>🗑</div>
 
-        <h3 style={{ margin: "0 0 8px", fontSize: "1rem", fontWeight: 700, color: "var(--text-primary)" }}>
+        <h3 className="hh-confirm-title" style={{ margin: "0 0 8px", fontSize: "1rem", fontWeight: 700 }}>
           Delete {meta.label}?
         </h3>
-        <p style={{ margin: "0 0 1.25rem", fontSize: "0.8rem", color: "var(--text-secondary)", lineHeight: 1.6 }}>
+        <p className="hh-confirm-sub" style={{ margin: "0 0 1.25rem", fontSize: "0.8rem", lineHeight: 1.6 }}>
           This will permanently remove your{" "}
-          <strong style={{ color: "#fca5a5" }}>{meta.label}</strong> from the system.
+          <strong style={{ color: "var(--reject-color)" }}>{meta.label}</strong> from the system.
           This action cannot be undone.
         </p>
 
         {error && (
-          <p style={{
-            color: "#fca5a5", fontSize: "12px", marginBottom: "12px",
-            background: "rgba(239,68,68,0.10)", border: "1px solid rgba(239,68,68,0.22)",
-            borderRadius: "8px", padding: "8px 12px",
-          }}>{error}</p>
+          <p className="md-error">{error}</p>
         )}
 
         <div style={{ display: "flex", gap: "8px" }}>
           <button
+            type="button"
             onClick={onClose}
             disabled={deleting}
-            style={{
-              flex: 1, padding: "0.65rem", borderRadius: "10px",
-              border: "1px solid var(--glass-border)",
-              background: "rgba(255,255,255,0.05)", color: "var(--text-secondary)",
-              fontSize: "0.85rem", fontWeight: 600, cursor: "pointer",
-              opacity: deleting ? 0.55 : 1,
-            }}
+            className="hh-btn-cancel"
+            style={{ flex: 1, padding: "0.65rem", borderRadius: "10px", fontSize: "0.85rem", fontWeight: 600, cursor: "pointer", opacity: deleting ? 0.55 : 1 }}
           >Cancel</button>
           <button
+            type="button"
             onClick={handleDelete}
             disabled={deleting}
-            style={{
-              flex: 1, display: "inline-flex", alignItems: "center",
-              justifyContent: "center", gap: "6px", padding: "0.65rem",
-              borderRadius: "10px",
-              background: "linear-gradient(135deg,#dc2626,#b91c1c)",
-              color: "#fff", border: "none", fontSize: "0.85rem",
-              fontWeight: 700, cursor: deleting ? "not-allowed" : "pointer",
-              boxShadow: "0 4px 14px rgba(220,38,38,0.4)",
-              opacity: deleting ? 0.6 : 1,
-            }}
+            className="btn-danger"
+            style={{ flex: 1, display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "6px", padding: "0.65rem" }}
           >
-            {deleting ? (
-              <>
-                <span style={{
-                  width: "13px", height: "13px",
-                  border: "2px solid rgba(255,255,255,0.3)",
-                  borderTopColor: "#fff", borderRadius: "50%",
-                  animation: "spin 0.65s linear infinite",
-                  display: "inline-block",
-                }} />
-                Deleting…
-              </>
-            ) : "Delete"}
+            {deleting ? "Deleting…" : "Delete"}
           </button>
         </div>
       </div>
@@ -578,31 +464,14 @@ function DocCard({ doc, onView, onEdit, onDelete }) {
             </button>
 
             {/* Edit / Re-upload */}
-            <button
-              onClick={() => onEdit(doc)}
-              style={{
-                display: "inline-flex", alignItems: "center", gap: "4px",
-                fontSize: "12px", fontWeight: 600, borderRadius: "9px",
-                padding: "6px 10px", border: "1px solid rgba(107,70,193,0.28)",
-                cursor: "pointer", transition: "all 0.18s ease",
-                background: "rgba(107,70,193,0.12)", color: "#C0B0E5",
-              }}
-            >
+            <button type="button" className="md-btn-edit" onClick={() => onEdit(doc)}>
               <span style={{ fontSize: "0.72rem" }}>✏️</span>
               <span>Edit</span>
             </button>
 
-            {/* Delete */}
-            <button
-              onClick={() => onDelete(doc)}
-              style={{
-                display: "inline-flex", alignItems: "center", justifyContent: "center",
-                fontSize: "13px", borderRadius: "9px",
-                padding: "6px 8px", border: "1px solid rgba(239,68,68,0.25)",
-                cursor: "pointer", transition: "all 0.18s ease",
-                background: "rgba(239,68,68,0.10)", color: "#fca5a5",
-              }}
-            >🗑</button>
+            <button type="button" className="md-btn-delete" onClick={() => onDelete(doc)}>
+              🗑
+            </button>
           </div>
         </div>
       </div>
@@ -657,6 +526,8 @@ export default function MyDocuments() {
   const [viewDoc, setViewDoc] = useState(null);
   const [uploadModal, setUploadModal] = useState(null); // { docType, existingDoc? }
   const [deleteDoc, setDeleteDoc] = useState(null);
+  const [search, setSearch] = useState("");
+  const [tab, setTab] = useState("ALL");
 
   const [toast, setToast] = useState(null);
   const toastTimer = useRef();
@@ -705,54 +576,94 @@ export default function MyDocuments() {
   const uploadedTypes = (docs || []).map((d) => d.type);
   const missingTypes = Object.keys(CATEGORY_MAP).filter((t) => !uploadedTypes.includes(t));
   const totalDocs = Object.keys(CATEGORY_MAP).length;
+  const uploadedCount = docs ? docs.length : 0;
+  const pendingCount = docs ? totalDocs - docs.length : 0;
+
+  const q = search.trim().toLowerCase();
+  const matchesMeta = (type) => {
+    const meta = CATEGORY_MAP[type];
+    if (!q) return true;
+    return [type, meta?.label, meta?.desc].some((v) => String(v || "").toLowerCase().includes(q));
+  };
+  const visibleDocs = (docs || []).filter((d) => matchesMeta(d.type) || String(d.file_url || "").toLowerCase().includes(q));
+  const visibleMissing = missingTypes.filter((type) => matchesMeta(type));
+  const showUploaded = tab !== "PENDING";
+  const showPending = tab !== "UPLOADED";
+  const gridEmpty = (!showUploaded || visibleDocs.length === 0) && (!showPending || visibleMissing.length === 0);
 
   return (
-    <div className="rd-root">
-      {/* ── Toast ── */}
+    <div className="ge-root rd-root md-page animate-fadeIn">
       {toast && (
-        <div style={{
-          position: "fixed", top: "1.2rem", right: "1.2rem", zIndex: 2000,
-          display: "inline-flex", alignItems: "center", gap: "8px",
-          padding: "10px 18px", borderRadius: "12px",
-          fontSize: "13px", fontWeight: 600,
-          backdropFilter: "blur(12px)",
-          boxShadow: "0 8px 28px rgba(0,0,0,0.35)",
-          animation: "fadeInUp 0.3s ease both",
-          background: toast.type === "success" ? "rgba(34,197,94,0.18)" : "rgba(239,68,68,0.18)",
-          border: `1px solid ${toast.type === "success" ? "rgba(34,197,94,0.35)" : "rgba(239,68,68,0.35)"}`,
-          color: toast.type === "success" ? "#86efac" : "#fca5a5",
-        }}>
+        <div className={`md-toast ${toast.type === "success" ? "md-toast--ok" : "md-toast--err"}`}>
           <span>{toast.type === "success" ? "✓" : "⚠"}</span>
           {toast.msg}
         </div>
       )}
 
-      {/* ── Page Header ── */}
-      <div className="rd-er">
-        <div className="rd-er-left">
+      <div className="ge-er">
+        <div className="ge-er-left">
           <div className="ad-page-icon">
             <MdFolderOpen size={22} />
           </div>
           <div>
-            <h1 className="rd-page-title">My Documents</h1>
-            <p className="rd-page-subtitle">View, upload and manage your identity documents</p>
+            <h2 className="page-title">My Documents</h2>
+            <p className="page-subtitle">View, upload and manage your identity documents</p>
           </div>
         </div>
+        {missingTypes.length > 0 && (
+          <button
+            type="button"
+            className="btn-primary flex items-center gap-2"
+            onClick={() => setUploadModal({ docType: missingTypes[0], existingDoc: null })}
+          >
+            <MdAdd size={18} /> Upload
+          </button>
+        )}
       </div>
 
-      {/* ── Stats ── */}
-      <div className="rd-stats-row" style={{ gridTemplateColumns: "repeat(2, 1fr)" }}>
-        <div className="rd-stat-card rd-stat-green">
-          <div className="rd-stat-val">{docs ? docs.length : "—"}</div>
-          <div className="rd-stat-label">Uploaded</div>
+      <div className="ge-stats">
+        <div className="complaint-stat-card complaint-stat-total">
+          <span className="complaint-stat-val">{docs ? uploadedCount : "—"}</span>
+          <span className="complaint-stat-label">Uploaded</span>
         </div>
-        <div className="rd-stat-card rd-stat-amber">
-          <div className="rd-stat-val">{docs ? totalDocs - docs.length : "—"}</div>
-          <div className="rd-stat-label">Pending</div>
+        <div className="complaint-stat-card complaint-stat-inprogress">
+          <span className="complaint-stat-val">{docs ? pendingCount : "—"}</span>
+          <span className="complaint-stat-label">Pending</span>
+        </div>
+        <div className="complaint-stat-card complaint-stat-resolved">
+          <span className="complaint-stat-val">{totalDocs}</span>
+          <span className="complaint-stat-label">Required</span>
         </div>
       </div>
 
-      {/* ── Loading ── */}
+      <div className="ge-toolbar">
+        <div className="ge-search-wrap">
+          <MdSearch className="ge-search-icon" size={17} />
+          <input
+            className="ge-search-input"
+            placeholder="Search Aadhaar, PAN…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+          {search ? (
+            <button type="button" onClick={() => setSearch("")} className="ge-search-clear" aria-label="Clear search">
+              <MdClose size={13} />
+            </button>
+          ) : null}
+        </div>
+
+        <SlidingTabs
+          className="ge-filter-tabs"
+          value={tab}
+          onChange={setTab}
+          items={[
+            { id: "ALL", label: "All", badge: totalDocs },
+            { id: "UPLOADED", label: "Uploaded", badge: uploadedCount },
+            { id: "PENDING", label: "Pending", badge: pendingCount, alert: pendingCount },
+          ]}
+        />
+      </div>
+
       {loading && (
         <div style={{
           display: "flex", alignItems: "center", justifyContent: "center",
@@ -768,24 +679,27 @@ export default function MyDocuments() {
         </div>
       )}
 
-      {/* ── Error ── */}
       {error && !loading && (
-        <div style={{
-          display: "flex", flexDirection: "column", alignItems: "center",
-          gap: "10px", padding: "2.5rem 1rem", borderRadius: "14px",
-          background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.18)",
-          textAlign: "center",
-        }}>
-          <span style={{ fontSize: "1.5rem" }}>⚠️</span>
-          <p style={{ fontSize: "13px", color: "#fca5a5", margin: 0 }}>{error}</p>
-          <button className="btn-primary" onClick={fetchDocs} style={{ marginTop: "4px" }}>Retry</button>
+        <div className="rd-error">
+          <p className="rd-error-text">{error}</p>
+          <button type="button" className="rd-btn rd-btn-view" onClick={fetchDocs}>Retry</button>
         </div>
       )}
 
-      {/* ── Document Grid ── */}
-      {!loading && !error && docs !== null && (
+      {!loading && !error && docs !== null && gridEmpty && (
+        <div className="rd-empty">
+          <div className="md-empty">
+            <MdSearch size={36} style={{ opacity: 0.28 }} />
+            <p style={{ fontSize: 15, fontWeight: 600 }}>
+              {q ? `No documents match “${search.trim()}”` : "No documents in this tab"}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {!loading && !error && docs !== null && !gridEmpty && (
         <div className="rd-grid">
-          {docs.map((doc) => (
+          {showUploaded && visibleDocs.map((doc) => (
             <DocCard
               key={doc.type}
               doc={doc}
@@ -795,7 +709,7 @@ export default function MyDocuments() {
             />
           ))}
 
-          {missingTypes.map((type) => (
+          {showPending && visibleMissing.map((type) => (
             <EmptySlotCard
               key={type}
               docType={type}

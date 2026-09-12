@@ -1,25 +1,24 @@
-
-
-import { useEffect, useState, useCallback, useContext } from "react";
+import { useEffect, useState, useCallback, useContext, useMemo } from "react";
 import { createPortal } from "react-dom";
 import {
   MdWarning, MdLocalFireDepartment, MdLocalHospital,
   MdSecurity, MdHelp, MdAdd, MdClose, MdSend,
-  MdChevronLeft, MdChevronRight, MdHome,
+  MdChevronLeft, MdChevronRight, MdHome, MdSearch,
 } from "react-icons/md";
 import { toast } from "react-toastify";
 import API from "../../services/api";
 import { useLang } from "../../context/LanguageContext";
 import { AuthContext } from "../../context/AuthContext";
 import Select from "../../components/common/Select";
+import SlidingTabs from "../../components/common/SlidingTabs";
 
 /* ── Type meta ── */
 const TYPE_META = {
-  FIRE:         { icon: MdLocalFireDepartment, color: "#ef4444", bg: "rgba(239,68,68,0.12)",    border: "rgba(239,68,68,0.25)"    },
-  MEDICAL:      { icon: MdLocalHospital,       color: "#4BCBEB", bg: "rgba(75,203,235,0.12)",   border: "rgba(75,203,235,0.25)"   },
-  SECURITY:     { icon: MdSecurity,            color: "var(--accent)", bg: "rgba(var(--acct-purple-rgb),0.12)",   border: "rgba(var(--acct-purple-rgb),0.28)"   },
-  OTHER:        { icon: MdHelp,                color: "#6B46C1", bg: "rgba(107,70,193,0.12)",   border: "rgba(107,70,193,0.25)"   },
-  RESIDENT_SOS: { icon: MdWarning,             color: "#ef4444", bg: "rgba(239,68,68,0.12)",    border: "rgba(239,68,68,0.25)"    },
+  FIRE:         { icon: MdLocalFireDepartment, color: "var(--reject-color)", bg: "var(--reject-bg)", border: "var(--reject-border)" },
+  MEDICAL:      { icon: MdLocalHospital,       color: "var(--acct-cyan)",    bg: "rgba(var(--acct-cyan-rgb),0.16)",   border: "rgba(var(--acct-cyan-rgb),0.35)" },
+  SECURITY:     { icon: MdSecurity,            color: "var(--accent)",       bg: "var(--accent-soft)",                border: "rgba(var(--acct-purple-rgb),0.28)" },
+  OTHER:        { icon: MdHelp,                color: "var(--acct-violet)",  bg: "rgba(var(--acct-violet-rgb),0.12)", border: "rgba(var(--acct-violet-rgb),0.28)" },
+  RESIDENT_SOS: { icon: MdWarning,             color: "var(--reject-color)", bg: "var(--reject-bg)", border: "var(--reject-border)" },
 };
 
 const fmt = (d) =>
@@ -28,21 +27,13 @@ const fmt = (d) =>
     hour: "2-digit", minute: "2-digit",
   });
 
-const TABS = [
-  { key: "",         label: "All"      },
-  { key: "ACTIVE",   label: "Active"   },
-  { key: "RESOLVED", label: "Resolved" },
-];
-
 const LIMIT = 10;
 
-/* ── Portal ── */
 function PortalModal({ children }) {
   if (typeof document === "undefined") return null;
   return createPortal(children, document.body);
 }
 
-/* ── Pagination ── */
 function Pagination({ page, totalPages, onPageChange }) {
   if (totalPages <= 1) return null;
   const pages = Array.from({ length: totalPages }, (_, i) => i + 1)
@@ -54,39 +45,37 @@ function Pagination({ page, totalPages, onPageChange }) {
     }, []);
   return (
     <div className="pagination-wrap" style={{ marginTop: 0 }}>
-      <button onClick={() => onPageChange(page - 1)} disabled={page === 1} className="pagination-btn">
+      <button type="button" onClick={() => onPageChange(page - 1)} disabled={page === 1} className="pagination-btn">
         <MdChevronLeft size={14} /> Prev
       </button>
       {pages.map((p, i) =>
         p === "..." ? (
           <span key={`e${i}`} className="pagination-ellipsis">...</span>
         ) : (
-          <button key={p} onClick={() => onPageChange(p)}
+          <button key={p} type="button" onClick={() => onPageChange(p)}
             className={`pagination-page ${p === page ? "pagination-page--active" : ""}`}>
             {p}
           </button>
         )
       )}
-      <button onClick={() => onPageChange(page + 1)} disabled={page === totalPages} className="pagination-btn">
+      <button type="button" onClick={() => onPageChange(page + 1)} disabled={page === totalPages} className="pagination-btn">
         Next <MdChevronRight size={14} />
       </button>
     </div>
   );
 }
 
-/* ── Spinner ── */
 function Spinner({ size = 20 }) {
   return (
     <div style={{
       width: size, height: size, borderRadius: "50%",
-      border: "2px solid rgba(239,68,68,0.20)",
-      borderTopColor: "#ef4444",
+      border: "2px solid var(--reject-border)",
+      borderTopColor: "var(--reject-color)",
       animation: "spin 0.65s linear infinite",
     }} />
   );
 }
 
-/* ── Helpers: flat label builders (same as MyCollection / ResidentComplaints) ── */
 function getFloorNumber(item) {
   const flatObj = item?.Flat || item;
   return (
@@ -115,9 +104,9 @@ export default function MyEmergency() {
   const { user: authUser } = useContext(AuthContext);
 
   const [alerts,      setAlerts]      = useState([]);
-  const [pagination,  setPagination]  = useState(null);
   const [page,        setPage]        = useState(1);
-  const [activeTab,   setActiveTab]   = useState("");
+  const [activeTab,   setActiveTab]   = useState("ALL");
+  const [search,      setSearch]      = useState("");
   const [initialLoad, setInitialLoad] = useState(true);
   const [fetching,    setFetching]    = useState(false);
   const [showModal,   setShowModal]   = useState(false);
@@ -126,21 +115,19 @@ export default function MyEmergency() {
 
   const [form, setForm] = useState({ type: "FIRE", message: "" });
 
-  // ── Flat / unit state ──
   const [myFlats,        setMyFlats]        = useState([]);
   const [selectedFlatId, setSelectedFlatId] = useState("");
   const [checkingFlat,   setCheckingFlat]   = useState(true);
 
   const isOwner = authUser?.resident_type === "OWNER";
+  const hasFlat = myFlats.length > 0;
 
-  /* ── Responsive ── */
   useEffect(() => {
     const handler = () => setIsMobile(window.innerWidth < 768);
     window.addEventListener("resize", handler);
     return () => window.removeEventListener("resize", handler);
   }, []);
 
-  /* ── Fetch flats (same dual-attempt as ResidentComplaints) ── */
   useEffect(() => {
     if (!authUser?.id) return;
 
@@ -148,7 +135,6 @@ export default function MyEmergency() {
       try {
         let flatsArr = [];
 
-        // Attempt 1: memberships endpoint
         try {
           const res     = await API.get(`/users/${authUser.id}/memberships`);
           const payload = res.data?.data || res.data;
@@ -161,7 +147,6 @@ export default function MyEmergency() {
           console.warn("[MyEmergency] Attempt 1 FAILED:", err.message);
         }
 
-        // Attempt 2: get-flat fallback
         if (flatsArr.length === 0) {
           try {
             const res     = await API.get("/users/get-flat");
@@ -180,7 +165,6 @@ export default function MyEmergency() {
 
         setMyFlats(flatsArr);
 
-        // Auto-select first flat
         if (flatsArr.length > 0) {
           const first = flatsArr[0];
           const fId   = first.flat_id || first.id || first.Flat?.id;
@@ -196,7 +180,6 @@ export default function MyEmergency() {
     fetchProperties();
   }, [authUser?.id]);
 
-  // Auto-select when single flat
   useEffect(() => {
     if (isOwner && myFlats.length === 1) {
       const first = myFlats[0];
@@ -205,35 +188,24 @@ export default function MyEmergency() {
     }
   }, [isOwner, myFlats]);
 
-  /* ── Load alerts ── */
-  const load = useCallback(async (pg, tabStatus, isInit = false) => {
+  const load = useCallback(async (isInit = false) => {
     isInit ? setInitialLoad(true) : setFetching(true);
     try {
-      const params = new URLSearchParams({ page: pg, limit: LIMIT });
-      if (tabStatus) params.append("status", tabStatus);
-      const res = await API.get(`/emergency/mine?${params}`);
+      const res = await API.get("/emergency/mine?page=1&limit=200");
       setAlerts(Array.isArray(res.data.data) ? res.data.data : []);
-      setPagination(res.data.pagination || null);
-      setPage(pg);
     } catch {
       setAlerts([]);
-      setPagination(null);
     } finally {
       setInitialLoad(false);
       setFetching(false);
     }
   }, []);
 
-  useEffect(() => { load(1, "", true); }, []);
+  useEffect(() => { load(true); }, [load]);
 
-  const handleTabChange  = (key) => { setActiveTab(key); load(1, key); };
-  const handlePageChange = (pg)  => load(pg, activeTab);
-
-  /* ── Send emergency ── */
   const handleSend = async () => {
     if (sending) return;
 
-    // Owners with multiple flats must pick one
     if (isOwner && myFlats.length > 1 && !selectedFlatId) {
       toast.error("Please select a unit for this emergency.");
       return;
@@ -244,7 +216,6 @@ export default function MyEmergency() {
 
       const payload = { type: form.type, message: form.message };
 
-      // Pass flat_id when owner has selected a specific unit
       if (isOwner && selectedFlatId) {
         payload.flat_id = selectedFlatId;
       }
@@ -254,10 +225,9 @@ export default function MyEmergency() {
       setShowModal(false);
       setForm({ type: "FIRE", message: "" });
 
-      // Reset selection to first flat for next time
       if (isOwner && myFlats.length > 1) setSelectedFlatId("");
 
-      load(page, activeTab);
+      load(false);
     } catch {
       toast.error(t("emergencySentFail"));
     } finally {
@@ -270,31 +240,31 @@ export default function MyEmergency() {
     return { meta, Icon: meta.icon, isActive: a.status === "ACTIVE" };
   };
 
-  const totalItems = pagination?.totalItems ?? 0;
-  const totalPages = pagination?.totalPages ?? 1;
+  const counts = useMemo(() => ({
+    ALL: alerts.length,
+    ACTIVE: alerts.filter((a) => a.status === "ACTIVE").length,
+    RESOLVED: alerts.filter((a) => a.status === "RESOLVED").length,
+  }), [alerts]);
 
-  /* ── Tab style ── */
-  const tabStyle = (key) => ({
-    display: "inline-flex", alignItems: "center", gap: 6,
-    padding: "7px 16px", borderRadius: 10, cursor: "pointer",
-    fontSize: 13, fontWeight: 600, border: "1px solid",
-    transition: "all 0.18s",
-    ...(activeTab === key ? {
-      background: key === "ACTIVE"   ? "rgba(239,68,68,0.15)"
-                : key === "RESOLVED" ? "rgba(34,197,94,0.15)"
-                :                      "rgba(107,70,193,0.15)",
-      borderColor: key === "ACTIVE"   ? "rgba(239,68,68,0.40)"
-                 : key === "RESOLVED" ? "rgba(34,197,94,0.40)"
-                 :                      "rgba(107,70,193,0.40)",
-      color: key === "ACTIVE"   ? "var(--stat-red-color)"
-           : key === "RESOLVED" ? "var(--stat-green-color)"
-           :                      "var(--stat-purple-color)",
-    } : {
-      background: "rgba(255,255,255,0.03)",
-      borderColor: "var(--glass-border)",
-      color: "var(--text-secondary)",
-    }),
-  });
+  const q = search.trim().toLowerCase();
+  const filtered = useMemo(() => {
+    return alerts.filter((a) => {
+      if (activeTab !== "ALL" && a.status !== activeTab) return false;
+      if (!q) return true;
+      const flat = a.Flat ? buildFlatLabel({ Flat: a.Flat }) : "";
+      return [a.type, a.message, a.status, flat].join(" ").toLowerCase().includes(q);
+    });
+  }, [alerts, activeTab, q]);
+
+  const totalItems = filtered.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / LIMIT));
+  const safePage = Math.min(page, totalPages);
+  const pageItems = filtered.slice((safePage - 1) * LIMIT, safePage * LIMIT);
+
+  const handleTabChange = (key) => {
+    setActiveTab(key);
+    setPage(1);
+  };
 
   const TYPES = [
     { key: "FIRE",     label: t("emergencyTypeFire")     },
@@ -303,9 +273,7 @@ export default function MyEmergency() {
     { key: "OTHER",    label: t("emergencyTypeOther")    },
   ];
 
-  /* ── Flat selector / info section for modal ── */
   const renderFlatSection = () => {
-    // Tenant or family member with single flat — show read-only chip
     if (myFlats.length === 1) {
       return (
         <div style={{
@@ -315,7 +283,7 @@ export default function MyEmergency() {
           border: "1px solid var(--glass-border)",
           fontSize: 13, color: "var(--text-secondary)",
         }}>
-          <MdHome size={15} style={{ color: "#ef4444", flexShrink: 0 }} />
+          <MdHome size={15} style={{ color: "var(--reject-color)", flexShrink: 0 }} />
           <span>
             Unit:{" "}
             <strong style={{ color: "var(--text-primary)" }}>
@@ -326,7 +294,6 @@ export default function MyEmergency() {
       );
     }
 
-    // Owner with multiple flats — show dropdown
     if (isOwner && myFlats.length > 1) {
       return (
         <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
@@ -336,7 +303,7 @@ export default function MyEmergency() {
             display: "flex", alignItems: "center", gap: 4,
           }}>
             <MdHome size={12} /> Select Unit{" "}
-            <span style={{ color: "#ef4444" }}>*</span>
+            <span style={{ color: "var(--reject-color)" }}>*</span>
           </label>
           <Select
             className="input"
@@ -364,100 +331,109 @@ export default function MyEmergency() {
       );
     }
 
-    // No flats found (still loading or no association) — show nothing
     return null;
   };
 
   return (
-    <div className="page-root" style={{ maxWidth: 900, margin: "0 auto" }}>
+    <div className="ge-root me-page animate-fadeIn">
 
-      {/* ── Header ── */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-          <div style={{
-            width: 48, height: 48, borderRadius: 14, flexShrink: 0,
-            display: "flex", alignItems: "center", justifyContent: "center",
-            background: "rgba(239,68,68,0.12)", border: "1.5px solid rgba(239,68,68,0.28)", color: "#ef4444",
-          }}>
-            <MdWarning size={24} />
+      <div className="ge-er">
+        <div className="ge-er-left">
+          <div className="ad-page-icon">
+            <MdWarning size={22} />
           </div>
           <div>
-            <h2 className="page-title" style={{ margin: 0 }}>{t("emergencyTitle")}</h2>
-            <p className="page-subtitle" style={{ margin: "3px 0 0" }}>{t("emergencySubtitle")}</p>
+            <h2 className="page-title">{t("emergencyTitle")}</h2>
+            <p className="page-subtitle">{t("emergencySubtitle")}</p>
           </div>
         </div>
         <button
+          type="button"
+          className="btn-danger flex items-center gap-2"
           onClick={() => setShowModal(true)}
-          style={{
-            display: "inline-flex", alignItems: "center", gap: 7,
-            padding: "9px 18px", borderRadius: 12,
-            background: "linear-gradient(135deg,#dc2626,#ef4444)",
-            color: "#fff", border: "none", cursor: "pointer",
-            fontSize: 13, fontWeight: 700,
-            boxShadow: "0 4px 16px rgba(220,38,38,0.35)",
-          }}
+          disabled={checkingFlat || !hasFlat}
         >
           <MdAdd size={18} /> {t("emergencyRaiseBtn")}
         </button>
       </div>
 
-      {/* ── Tabs ── */}
-      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-        {TABS.map(({ key, label }) => (
-          <button key={key} onClick={() => handleTabChange(key)} style={tabStyle(key)}>
-            <span style={{
-              width: 7, height: 7, borderRadius: "50%", flexShrink: 0,
-              background: activeTab === key
-                ? key === "ACTIVE" ? "#ef4444" : key === "RESOLVED" ? "#22c55e" : "#6B46C1"
-                : "var(--text-secondary)",
-              opacity: activeTab === key ? 1 : 0.4,
-            }} />
-            {label}
-            {activeTab === key && pagination && (
-              <span style={{
-                fontSize: 10, fontWeight: 700,
-                background: "rgba(255,255,255,0.08)",
-                padding: "1px 6px", borderRadius: 999,
-              }}>
-                {totalItems}
-              </span>
-            )}
-          </button>
-        ))}
+      {!checkingFlat && !hasFlat && (
+        <div className="gc-warn">
+          <MdWarning size={15} /> {t("emergencyNoFlat")}
+        </div>
+      )}
+
+      <div className="ge-stats">
+        <div className="complaint-stat-card complaint-stat-total">
+          <span className="complaint-stat-val">{counts.ALL}</span>
+          <span className="complaint-stat-label">{t("emergencyStatTotal")}</span>
+        </div>
+        <div className="complaint-stat-card complaint-stat-inprogress">
+          <span className="complaint-stat-val">{counts.ACTIVE}</span>
+          <span className="complaint-stat-label">{t("emergencyStatActive")}</span>
+        </div>
+        <div className="complaint-stat-card complaint-stat-resolved">
+          <span className="complaint-stat-val">{counts.RESOLVED}</span>
+          <span className="complaint-stat-label">{t("emergencyStatResolved")}</span>
+        </div>
       </div>
 
-      {/* ── Content ── */}
+      <div className="ge-toolbar">
+        <div className="ge-search-wrap">
+          <MdSearch className="ge-search-icon" size={17} />
+          <input
+            className="ge-search-input"
+            placeholder="Search type, message or unit…"
+            value={search}
+            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+          />
+          {search ? (
+            <button type="button" onClick={() => { setSearch(""); setPage(1); }} className="ge-search-clear" aria-label="Clear search">
+              <MdClose size={13} />
+            </button>
+          ) : null}
+        </div>
+
+        <SlidingTabs
+          className="ge-filter-tabs"
+          value={activeTab}
+          onChange={handleTabChange}
+          items={[
+            { id: "ALL", label: "All", badge: counts.ALL },
+            { id: "ACTIVE", label: t("emergencyActive"), badge: counts.ACTIVE, alert: counts.ACTIVE },
+            { id: "RESOLVED", label: t("emergencyResolved"), badge: counts.RESOLVED },
+          ]}
+        />
+      </div>
+
       {initialLoad ? (
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "3rem", gap: 10, color: "var(--text-secondary)", fontSize: 14 }}>
           <Spinner /> {t("loadingProfile")}
         </div>
       ) : alerts.length === 0 ? (
-        <div style={{
-          display: "flex", flexDirection: "column", alignItems: "center",
-          justifyContent: "center", padding: "3.5rem 1rem",
-          borderRadius: 14, border: "1.5px dashed var(--glass-border)", gap: 8,
-        }}>
-          <MdWarning size={36} style={{ color: "var(--text-secondary)", opacity: 0.4 }} />
-          <p style={{ margin: 0, fontSize: 15, fontWeight: 600, color: "var(--text-secondary)" }}>
-            {t("emergencyEmpty")}
-          </p>
+        <div className="bg-card rounded-xl">
+          <div className="me-empty">
+            <MdWarning size={36} style={{ opacity: 0.35 }} />
+            <p style={{ fontSize: 15, fontWeight: 600 }}>{t("emergencyEmpty")}</p>
+          </div>
+        </div>
+      ) : filtered.length === 0 ? (
+        <div className="bg-card rounded-xl">
+          <div className="me-empty">
+            <MdSearch size={36} style={{ opacity: 0.28 }} />
+            <p style={{ fontSize: 15, fontWeight: 600 }}>
+              {q ? `No alerts match “${search.trim()}”` : t("emergencyEmpty")}
+            </p>
+          </div>
         </div>
       ) : isMobile ? (
-
-        /* ── Mobile cards ── */
         <>
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            {alerts.map((a) => {
+          <div style={{ display: "flex", flexDirection: "column", gap: 10, opacity: fetching ? 0.5 : 1 }}>
+            {pageItems.map((a) => {
               const { meta, Icon, isActive } = renderAlertMeta(a);
-              // Build flat label from embedded Flat association if present
               const flatLabel = a.Flat ? buildFlatLabel({ Flat: a.Flat }) : null;
               return (
-                <div key={a.id} style={{
-                  background: "var(--card-bg)", border: "1px solid var(--glass-border)",
-                  borderRadius: 16, padding: "14px 16px",
-                  display: "flex", flexDirection: "column", gap: 10,
-                  opacity: fetching ? 0.5 : 1, transition: "opacity 0.2s",
-                }}>
+                <div key={a.id} className="me-card">
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                       <div style={{ width: 38, height: 38, borderRadius: 10, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", background: meta.bg, border: `1px solid ${meta.border}` }}>
@@ -465,30 +441,16 @@ export default function MyEmergency() {
                       </div>
                       <div>
                         <span style={{ fontSize: 14, fontWeight: 700, color: "var(--text-primary)" }}>{a.type}</span>
-                        {/* ── Flat chip ── */}
                         {flatLabel && (
                           <div style={{ marginTop: 3 }}>
-                            <span style={{
-                              display: "inline-flex", alignItems: "center", gap: 4,
-                              padding: "2px 8px", borderRadius: 999,
-                              fontSize: 10, fontWeight: 600,
-                              background: "rgba(239,68,68,0.10)",
-                              color: "#ef4444",
-                              border: "1px solid rgba(239,68,68,0.22)",
-                            }}>
+                            <span className="me-unit">
                               <MdHome size={10} /> {flatLabel}
                             </span>
                           </div>
                         )}
                       </div>
                     </div>
-                    <span style={{
-                      padding: "4px 10px", borderRadius: 999,
-                      fontSize: 11, fontWeight: 700, border: "1px solid",
-                      background: isActive ? "rgba(239,68,68,0.12)" : "rgba(34,197,94,0.12)",
-                      color: isActive ? "var(--stat-red-color)" : "var(--stat-green-color)",
-                      borderColor: isActive ? "rgba(239,68,68,0.28)" : "rgba(34,197,94,0.28)",
-                    }}>
+                    <span className={`me-status ${isActive ? "me-status--active" : "me-status--resolved"}`}>
                       {isActive ? t("emergencyActive") : t("emergencyResolved")}
                     </span>
                   </div>
@@ -503,21 +465,14 @@ export default function MyEmergency() {
             })}
           </div>
           <div style={{ display: "flex", justifyContent: "center", padding: "4px 0" }}>
-            <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} />
+            <Pagination page={safePage} totalPages={totalPages} onPageChange={setPage} />
           </div>
         </>
-
       ) : (
-
-        /* ── Desktop table ── */
-        <div style={{
-          background: "var(--card-bg)", border: "1px solid var(--glass-border)",
-          borderRadius: 16, overflow: "hidden",
-          opacity: fetching ? 0.5 : 1, transition: "opacity 0.2s",
-        }}>
+        <div className="me-table-wrap" style={{ opacity: fetching ? 0.5 : 1 }}>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
-              <tr style={{ background: "rgba(255,255,255,0.03)", borderBottom: "1px solid var(--glass-border)" }}>
+              <tr>
                 {[t("emergencyColType"), "Unit", t("emergencyColMessage"), t("emergencyColStatus"), t("emergencyColTime")].map((h) => (
                   <th key={h} style={{ padding: "11px 16px", textAlign: "left", fontSize: 10, fontWeight: 700, letterSpacing: "0.07em", textTransform: "uppercase", color: "var(--text-secondary)", whiteSpace: "nowrap" }}>
                     {h}
@@ -526,11 +481,11 @@ export default function MyEmergency() {
               </tr>
             </thead>
             <tbody>
-              {alerts.map((a) => {
+              {pageItems.map((a) => {
                 const { meta, Icon, isActive } = renderAlertMeta(a);
                 const flatLabel = a.Flat ? buildFlatLabel({ Flat: a.Flat }) : null;
                 return (
-                  <tr key={a.id} style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+                  <tr key={a.id} className="me-row" style={{ borderBottom: "1px solid var(--glass-border)" }}>
                     <td style={{ padding: "13px 16px" }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
                         <div style={{ width: 34, height: 34, borderRadius: 9, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", background: meta.bg, border: `1px solid ${meta.border}` }}>
@@ -539,18 +494,9 @@ export default function MyEmergency() {
                         <span style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)" }}>{a.type}</span>
                       </div>
                     </td>
-                    {/* ── Unit column ── */}
                     <td style={{ padding: "13px 16px" }}>
                       {flatLabel ? (
-                        <span style={{
-                          display: "inline-flex", alignItems: "center", gap: 5,
-                          padding: "3px 9px", borderRadius: 999,
-                          fontSize: 11, fontWeight: 600,
-                          background: "rgba(239,68,68,0.10)",
-                          color: "#ef4444",
-                          border: "1px solid rgba(239,68,68,0.22)",
-                          whiteSpace: "nowrap",
-                        }}>
+                        <span className="me-unit" style={{ fontSize: 11, padding: "3px 9px", gap: 5 }}>
                           <MdHome size={11} /> {flatLabel}
                         </span>
                       ) : (
@@ -563,14 +509,7 @@ export default function MyEmergency() {
                       </span>
                     </td>
                     <td style={{ padding: "13px 16px" }}>
-                      <span style={{
-                        display: "inline-flex", alignItems: "center", gap: 5,
-                        padding: "4px 11px", borderRadius: 999,
-                        fontSize: 11, fontWeight: 700, border: "1px solid",
-                        background: isActive ? "rgba(239,68,68,0.12)" : "rgba(34,197,94,0.12)",
-                        color: isActive ? "var(--stat-red-color)" : "var(--stat-green-color)",
-                        borderColor: isActive ? "rgba(239,68,68,0.28)" : "rgba(34,197,94,0.28)",
-                      }}>
+                      <span className={`me-status ${isActive ? "me-status--active" : "me-status--resolved"}`}>
                         {isActive ? t("emergencyActive") : t("emergencyResolved")}
                       </span>
                     </td>
@@ -583,57 +522,32 @@ export default function MyEmergency() {
             </tbody>
           </table>
 
-          {/* Table footer */}
           <div className="table-footer" style={{ flexWrap: "wrap", gap: 10 }}>
             <span style={{ fontSize: 12, color: "var(--text-secondary)" }}>
               Showing{" "}
               <strong style={{ color: "var(--text-primary)" }}>
-                {(page - 1) * LIMIT + 1}–{Math.min(page * LIMIT, totalItems)}
+                {(safePage - 1) * LIMIT + 1}–{Math.min(safePage * LIMIT, totalItems)}
               </strong>{" "}
               of <strong style={{ color: "var(--text-primary)" }}>{totalItems}</strong> alerts
             </span>
-            <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} />
+            <Pagination page={safePage} totalPages={totalPages} onPageChange={setPage} />
           </div>
         </div>
       )}
 
-      {/* ── Raise Emergency Modal ── */}
       {showModal && (
         <PortalModal>
           <div
             onClick={() => !sending && setShowModal(false)}
-            style={{
-              position: "fixed", inset: 0, zIndex: 1100,
-              background: "var(--overlay-bg)", backdropFilter: "blur(6px)",
-              display: "flex", alignItems: "center", justifyContent: "center", padding: "1rem",
-            }}
+            className="hh-overlay"
           >
             <div
               onClick={(e) => e.stopPropagation()}
-              style={{
-                width: "100%", maxWidth: 460,
-                background: "var(--card-bg)",
-                border: "1.5px solid var(--glass-border)",
-                borderRadius: 20,
-                boxShadow: "var(--shadow-glass)",
-                overflow: "hidden",
-                animation: "scaleIn 0.22s ease",
-              }}
+              className="bg-card animate-scaleIn me-modal"
             >
-              {/* Modal header */}
-              <div style={{
-                display: "flex", alignItems: "center", justifyContent: "space-between",
-                padding: "18px 22px",
-                borderBottom: "1px solid var(--glass-border)",
-                background: "rgba(239,68,68,0.05)",
-              }}>
+              <div className="me-modal-head">
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                  <div style={{
-                    width: 36, height: 36, borderRadius: 10,
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    background: "rgba(239,68,68,0.12)", border: "1px solid rgba(239,68,68,0.25)",
-                    color: "#ef4444",
-                  }}>
+                  <div className="me-modal-icon">
                     <MdWarning size={18} />
                   </div>
                   <div>
@@ -646,25 +560,17 @@ export default function MyEmergency() {
                   </div>
                 </div>
                 <button
+                  type="button"
                   onClick={() => !sending && setShowModal(false)}
-                  style={{
-                    width: 28, height: 28, borderRadius: 8,
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    background: "rgba(255,255,255,0.06)", border: "1px solid var(--glass-border)",
-                    color: "var(--text-secondary)", cursor: "pointer",
-                  }}
+                  className="hh-close-btn"
                 >
                   <MdClose size={16} />
                 </button>
               </div>
 
-              {/* Modal body */}
               <div style={{ padding: "20px 22px", display: "flex", flexDirection: "column", gap: 16 }}>
-
-                {/* ── Flat selector / info ── */}
                 {!checkingFlat && renderFlatSection()}
 
-                {/* Type selector */}
                 <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                   <label style={{ fontSize: 11, fontWeight: 600, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.06em" }}>
                     {t("emergencyTypeLabel")}
@@ -676,13 +582,12 @@ export default function MyEmergency() {
                       return (
                         <button
                           key={key}
+                          type="button"
+                          className="me-type-btn"
                           onClick={() => setForm((f) => ({ ...f, type: key }))}
                           style={{
-                            display: "flex", alignItems: "center", gap: 8,
-                            padding: "10px 12px", borderRadius: 10,
-                            border: `1.5px solid ${isSelected ? m.border : "var(--glass-border)"}`,
-                            background: isSelected ? m.bg : "rgba(255,255,255,0.03)",
-                            cursor: "pointer", transition: "all 0.18s",
+                            borderColor: isSelected ? m.border : "var(--glass-border)",
+                            background: isSelected ? m.bg : "var(--card-inner-bg)",
                           }}
                         >
                           <m.icon size={16} style={{ color: m.color, flexShrink: 0 }} />
@@ -695,7 +600,6 @@ export default function MyEmergency() {
                   </div>
                 </div>
 
-                {/* Message */}
                 <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                   <label style={{ fontSize: 11, fontWeight: 600, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.06em" }}>
                     {t("emergencyMsgLabel")}
@@ -710,20 +614,12 @@ export default function MyEmergency() {
                   />
                 </div>
 
-                {/* Send button */}
                 <button
+                  type="button"
                   onClick={handleSend}
                   disabled={sending || (isOwner && myFlats.length > 1 && !selectedFlatId)}
-                  style={{
-                    display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-                    width: "100%", height: 46, borderRadius: 12, border: "none",
-                    cursor: (sending || (isOwner && myFlats.length > 1 && !selectedFlatId)) ? "not-allowed" : "pointer",
-                    fontSize: 14, fontWeight: 700, color: "#fff",
-                    background: "linear-gradient(135deg,#dc2626,#ef4444)",
-                    boxShadow: "0 4px 16px rgba(220,38,38,0.30)",
-                    opacity: (sending || (isOwner && myFlats.length > 1 && !selectedFlatId)) ? 0.55 : 1,
-                    transition: "all 0.2s",
-                  }}
+                  className="btn-danger flex items-center justify-center gap-2"
+                  style={{ width: "100%", height: 46 }}
                 >
                   {sending ? (
                     <><Spinner size={16} /> {t("emergencySending")}</>

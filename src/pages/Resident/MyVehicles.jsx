@@ -6,12 +6,12 @@ import {
   MdTwoWheeler, MdClose, MdCheckCircle,
   MdLocalParking, MdApartment, MdHome,
   MdSend, MdWarning, MdInfo, MdHourglassEmpty,
-  MdDirectionsCar,
+  MdDirectionsCar, MdSearch,
 } from "react-icons/md";
 import { FaParking } from "react-icons/fa";
+import SlidingTabs from "../../components/common/SlidingTabs";
 import GlobalButton from "../../components/common/GlobalButton";
 import GlobalConfirmDialog from "../../components/common/GlobalConfirmDialog";
-import GlobalBadge from "../../components/common/GlobalBadge";
 import Select from "../../components/common/Select";
 
 function Spinner({ size = 16 }) {
@@ -36,13 +36,13 @@ const TYPE_LABEL = { CAR: "Car 🚗", BIKE: "Bike 🏍️" };
 function AllocatedSlotCard({ slot }) {
   const isCAR = slot.vehicle_type === "CAR";
   const ac    = isCAR ? "var(--accent)" : "var(--acct-violet)";
-  const abg   = isCAR ? "rgba(var(--acct-purple-rgb),0.10)"  : "rgba(159,135,215,0.10)";
-  const abdr  = isCAR ? "rgba(var(--acct-purple-rgb),0.22)"  : "rgba(159,135,215,0.22)";
+  const abg   = isCAR ? "var(--accent-soft)"  : "rgba(var(--acct-violet-rgb),0.12)";
+  const abdr  = isCAR ? "rgba(var(--acct-purple-rgb),0.28)"  : "rgba(var(--acct-violet-rgb),0.28)";
 
   return (
-    <div style={{ borderRadius: 16, border: "1px solid var(--glass-border)", background: "var(--card-inner-bg,rgba(255,255,255,0.04))", overflow: "hidden" }}>
+    <div style={{ borderRadius: 16, border: "1px solid var(--glass-border)", background: "var(--card-inner-bg)", overflow: "hidden" }}>
       {slot.flat && (
-        <div style={{ display:"flex", alignItems:"center", gap:8, padding:"10px 16px", borderBottom:"1px solid var(--glass-border)", background:"rgba(255,255,255,0.03)" }}>
+        <div style={{ display:"flex", alignItems:"center", gap:8, padding:"10px 16px", borderBottom:"1px solid var(--glass-border)", background:"var(--card-inner-bg)" }}>
           <MdApartment style={{ color:"var(--text-secondary)", fontSize:15 }} />
           <span style={{ fontSize:12, color:"var(--text-secondary)", fontWeight:700, letterSpacing:"0.04em" }}>
             Flat {slot.flat.flat_number}{slot.flat.floor_id != null && ` · Floor ${slot.flat.floor_id}`}
@@ -69,7 +69,7 @@ function AllocatedSlotCard({ slot }) {
     style={{
       margin: "4px 0 0",
       fontSize: 11,
-      color: "#C0B0E5",
+      color: "var(--accent)",
       display: "flex",
       alignItems: "center",
       gap: 4,
@@ -107,18 +107,18 @@ function AllocatedSlotCard({ slot }) {
           {/* DEFAULT / EXTRA badge */}
           <span style={{
             padding: "5px 12px", borderRadius: 999, fontSize: 11, fontWeight: 700,
-            background: slot.parking_type === "DEFAULT" ? "rgba(74,222,128,0.10)" : "rgba(251,191,36,0.10)",
-            color: slot.parking_type === "DEFAULT" ? "#4ade80" : "var(--accent)",
-            border: `1px solid ${slot.parking_type === "DEFAULT" ? "rgba(74,222,128,0.25)" : "rgba(251,191,36,0.25)"}`,
+            background: slot.parking_type === "DEFAULT" ? "var(--approve-bg)" : "var(--approval-bg)",
+            color: slot.parking_type === "DEFAULT" ? "var(--approve-color)" : "var(--approval-color)",
+            border: `1px solid ${slot.parking_type === "DEFAULT" ? "var(--approve-border)" : "var(--approval-border)"}`,
           }}>
             {slot.parking_type === "DEFAULT" ? "Default" : "Extra"}
           </span>
           {/* Occupancy badge */}
           <span style={{
             padding: "4px 10px", borderRadius: 999, fontSize: 10, fontWeight: 700,
-            background: slot.linked_vehicle ? "rgba(148,181,245,0.10)" : "rgba(255,255,255,0.05)",
+            background: slot.linked_vehicle ? "var(--accent-soft)" : "var(--card-inner-bg)",
             color: slot.linked_vehicle ? "var(--accent)" : "var(--text-secondary)",
-            border: `1px solid ${slot.linked_vehicle ? "rgba(148,181,245,0.25)" : "rgba(255,255,255,0.08)"}`,
+            border: `1px solid ${slot.linked_vehicle ? "rgba(var(--acct-purple-rgb),0.28)" : "var(--glass-border)"}`,
           }}>
             {slot.linked_vehicle ? "Occupied" : "Unlinked"}
           </span>
@@ -131,10 +131,10 @@ function AllocatedSlotCard({ slot }) {
 /* ── Status badge for parking requests ── */
 function ReqStatusBadge({ status }) {
   const cfg = {
-    PENDING:   { label:"Pending",   color:"var(--accent)", bg:"rgba(251,191,36,0.12)",  border:"rgba(251,191,36,0.28)"  },
-    APPROVED:  { label:"Approved",  color:"#4ade80", bg:"rgba(74,222,128,0.12)",  border:"rgba(74,222,128,0.28)"  },
-    REJECTED:  { label:"Rejected",  color:"#f87171", bg:"rgba(248,113,113,0.12)", border:"rgba(248,113,113,0.28)" },
-    COMPLETED: { label:"Completed", color:"var(--accent)", bg:"rgba(129,140,248,0.12)", border:"rgba(129,140,248,0.28)" },
+    PENDING:   { label:"Pending",   color:"var(--approval-color)", bg:"var(--approval-bg)",  border:"var(--approval-border)"  },
+    APPROVED:  { label:"Approved",  color:"var(--approve-color)", bg:"var(--approve-bg)",  border:"var(--approve-border)"  },
+    REJECTED:  { label:"Rejected",  color:"var(--reject-color)", bg:"var(--reject-bg)", border:"var(--reject-border)" },
+    COMPLETED: { label:"Completed", color:"var(--accent)", bg:"var(--accent-soft)", border:"rgba(var(--acct-purple-rgb),0.28)" },
   }[status] || { label:status, color:"#A39EB2", bg:"rgba(163,158,178,0.10)", border:"rgba(163,158,178,0.22)" };
 
   return (
@@ -170,8 +170,8 @@ function SlotPickerOption({ slot, isSelected, isOccupied, onSelect }) {
         background: isSelected
           ? "var(--accent-soft)"
           : isOccupied
-          ? "rgba(255,255,255,0.02)"
-          : "rgba(255,255,255,0.04)",
+          ? "var(--card-inner-bg)"
+          : "var(--card-inner-bg)",
         cursor: isOccupied ? "not-allowed" : "pointer",
         opacity: isOccupied ? 0.55 : 1,
         textAlign: "left",
@@ -184,7 +184,7 @@ function SlotPickerOption({ slot, isSelected, isOccupied, onSelect }) {
         <div style={{
           width: 20, height: 20, borderRadius: "50%", flexShrink: 0,
           display: "flex", alignItems: "center", justifyContent: "center",
-          border: `2px solid ${isSelected ? "var(--accent)" : isOccupied ? "rgba(255,255,255,0.15)" : "rgba(255,255,255,0.25)"}`,
+          border: `2px solid ${isSelected ? "var(--accent)" : "var(--glass-border)"}`,
           background: isSelected ? "var(--accent)" : "transparent",
           transition: "all 0.15s",
         }}>
@@ -216,9 +216,9 @@ function SlotPickerOption({ slot, isSelected, isOccupied, onSelect }) {
         {/* DEFAULT / EXTRA */}
         <span style={{
           padding: "3px 10px", borderRadius: 999, fontSize: 11, fontWeight: 700,
-          background: isDefault ? "rgba(74,222,128,0.10)" : "rgba(251,191,36,0.10)",
-          color: isDefault ? "#4ade80" : "var(--accent)",
-          border: `1px solid ${isDefault ? "rgba(74,222,128,0.25)" : "rgba(251,191,36,0.25)"}`,
+          background: isDefault ? "var(--approve-bg)" : "var(--approval-bg)",
+          color: isDefault ? "var(--approve-color)" : "var(--approval-color)",
+          border: `1px solid ${isDefault ? "var(--approve-border)" : "var(--approval-border)"}`,
         }}>
           {isDefault ? "Default" : "Extra"}
         </span>
@@ -226,9 +226,9 @@ function SlotPickerOption({ slot, isSelected, isOccupied, onSelect }) {
         {/* Available / Occupied */}
         <span style={{
           padding: "3px 10px", borderRadius: 999, fontSize: 11, fontWeight: 700,
-          background: isOccupied ? "rgba(248,113,113,0.10)" : "rgba(74,222,128,0.10)",
-          color: isOccupied ? "#f87171" : "#4ade80",
-          border: `1px solid ${isOccupied ? "rgba(248,113,113,0.25)" : "rgba(74,222,128,0.25)"}`,
+          background: isOccupied ? "var(--reject-bg)" : "var(--approve-bg)",
+          color: isOccupied ? "var(--reject-color)" : "var(--approve-color)",
+          border: `1px solid ${isOccupied ? "var(--reject-border)" : "var(--approve-border)"}`,
         }}>
           {isOccupied ? "Occupied" : "Available"}
         </span>
@@ -273,6 +273,7 @@ export default function MyVehicles() {
   /* feedback */
   const [errorMsg,   setErrorMsg]   = useState("");
   const [successMsg, setSuccessMsg] = useState("");
+  const [search,     setSearch]     = useState("");
 
   /* form */
   const [form, setForm] = useState({
@@ -490,57 +491,65 @@ export default function MyVehicles() {
     });
   };
 
-  /* ────────────────────────────
-     TAB STYLES
-  ──────────────────────────── */
-  const tabStyle = (key) => ({
-    padding:"8px 18px", borderRadius:10, border:"none", cursor:"pointer",
-    fontSize:13, fontWeight:700, transition:"all 0.15s", background:"transparent",
-    color:        activeTab === key ? "var(--primary-text,var(--accent))" : "var(--text-secondary)",
-    borderBottom: activeTab === key ? "2px solid var(--primary-text,var(--accent))" : "2px solid transparent",
-  });
-
-  const countBadge = (val, active) => ({
-    marginLeft:6, fontSize:11, fontWeight:800, padding:"1px 7px", borderRadius:999,
-    background: active ? "var(--accent-soft)" : "rgba(255,255,255,0.06)",
-    color:      active ? "var(--accent)"               : "var(--text-secondary)",
-  });
-
   const pendingCount = parkingRequests.filter(r => r.status === "PENDING").length;
+  const q = search.trim().toLowerCase();
+  const includesQ = (...vals) => !q || vals.some((v) => String(v || "").toLowerCase().includes(q));
+  const visibleVehicles = vehicles.filter((v) =>
+    includesQ(v.vehicle_name, v.vehicle_number, v.vehicle_type, v.slot?.slot_number)
+  );
+  const visibleSlots = allocatedSlots.filter((s) =>
+    includesQ(s.slot_number, s.vehicle_type, s.linked_vehicle?.vehicle_number, s.linked_vehicle?.vehicle_name, s.flat?.flat_number)
+  );
+  const visibleRequests = parkingRequests.filter((r) =>
+    includesQ(r.vehicle_number, r.vehicle_type, r.assigned_spot, r.status)
+  );
 
   /* ─────────────────────────────────────────
      RENDER
   ───────────────────────────────────────── */
   return (
-    <div className="space-y-6">
+    <div className="ge-root mv-page animate-fadeIn">
 
-      {/* HEADER */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-lg font-semibold">{t("vehTitle")}</h2>
-          <p className="text-secondary text-xs mt-0.5">Manage your vehicles and parking slots</p>
+      <div className="ge-er">
+        <div className="ge-er-left">
+          <div className="ad-page-icon">
+            <MdDirectionsCarFilled size={22} />
+          </div>
+          <div>
+            <h2 className="page-title">{t("vehTitle")}</h2>
+            <p className="page-subtitle">Manage your vehicles and parking slots</p>
+          </div>
         </div>
         {activeTab === "vehicles" && (
-          <GlobalButton
-            variant="add"
-            icon={showForm ? MdClose : MdAdd}
+          <button
+            type="button"
+            className="btn-primary flex items-center gap-2"
             onClick={() => { setShowForm(p => !p); setErrorMsg(""); }}
           >
+            {showForm ? <MdClose size={18} /> : <MdAdd size={18} />}
             {showForm ? "Close" : (t("vehAddBtn") || "Add Vehicle")}
-          </GlobalButton>
+          </button>
         )}
       </div>
 
-      {/* Vehicle count awareness banner */}
+      <div className="ge-stats">
+        <div className="complaint-stat-card complaint-stat-total">
+          <span className="complaint-stat-val">{vehicles.length}</span>
+          <span className="complaint-stat-label">{t("vehTitle")}</span>
+        </div>
+        <div className="complaint-stat-card complaint-stat-pending">
+          <span className="complaint-stat-val">{allocatedSlots.length}</span>
+          <span className="complaint-stat-label">Parking Slots</span>
+        </div>
+        <div className="complaint-stat-card complaint-stat-inprogress">
+          <span className="complaint-stat-val">{pendingCount}</span>
+          <span className="complaint-stat-label">Pending Requests</span>
+        </div>
+      </div>
+
       {residentProfile && declaredVehicleCount > 0 && (
-        <div style={{
-          display:"flex", alignItems:"center", gap:10, padding:"10px 16px", borderRadius:12,
-          background: overDeclared ? "rgba(251,191,36,0.08)" : "rgba(74,222,128,0.06)",
-          border:    `1px solid ${overDeclared ? "rgba(251,191,36,0.25)" : "rgba(74,222,128,0.20)"}`,
-          fontSize:12, fontWeight:600,
-          color: overDeclared ? "var(--accent)" : "#4ade80",
-        }}>
-          <MdDirectionsCar size={15} style={{ flexShrink:0 }} />
+        <div className={`mv-banner ${overDeclared ? "mv-banner--warn" : "mv-banner--ok"}`}>
+          <MdDirectionsCar size={15} />
           <span>
             {actualVehicleCount} of {declaredVehicleCount} declared vehicle{declaredVehicleCount !== 1 ? "s" : ""} registered.
             {overDeclared
@@ -550,39 +559,45 @@ export default function MyVehicles() {
         </div>
       )}
 
-      {/* TABS */}
-      <div style={{ display:"flex", gap:4, borderBottom:"1px solid var(--glass-border)" }}>
-        <button style={tabStyle("vehicles")} onClick={() => setActiveTab("vehicles")}>
-          🚗 My Vehicles
-          <span style={countBadge(vehicles.length, activeTab === "vehicles")}>{vehicles.length}</span>
-        </button>
-        <button style={tabStyle("slots")} onClick={() => setActiveTab("slots")}>
-          🅿️ My Parking Slots
-          {allocatedSlots.length > 0 && (
-            <span style={countBadge(allocatedSlots.length, activeTab === "slots")}>{allocatedSlots.length}</span>
-          )}
-        </button>
-        <button style={tabStyle("requests")} onClick={() => setActiveTab("requests")}>
-          📋 Slot Requests
-          {pendingCount > 0 && (
-            <span style={{ marginLeft:6, fontSize:11, fontWeight:800, padding:"1px 7px", borderRadius:999, background:"rgba(251,191,36,0.18)", color:"var(--accent)" }}>
-              {pendingCount}
-            </span>
-          )}
-        </button>
+      <div className="ge-toolbar">
+        <div className="ge-search-wrap">
+          <MdSearch className="ge-search-icon" size={17} />
+          <input
+            className="ge-search-input"
+            placeholder="Search vehicles, slots or requests…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+          {search ? (
+            <button type="button" onClick={() => setSearch("")} className="ge-search-clear" aria-label="Clear search">
+              <MdClose size={13} />
+            </button>
+          ) : null}
+        </div>
+
+        <SlidingTabs
+          className="ge-filter-tabs"
+          value={activeTab}
+          onChange={setActiveTab}
+          items={[
+            { id: "vehicles", label: t("vehTitle"), icon: <MdDirectionsCarFilled size={15} />, badge: vehicles.length },
+            { id: "slots", label: "Parking Slots", icon: <MdLocalParking size={15} />, badge: allocatedSlots.length },
+            { id: "requests", label: "Slot Requests", icon: <FaParking size={14} />, badge: parkingRequests.length, alert: pendingCount },
+          ]}
+        />
       </div>
 
       {/* FEEDBACK */}
       {successMsg && (
-        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:10, padding:"12px 16px", borderRadius:12, background:"rgba(74,222,128,0.10)", border:"1px solid rgba(74,222,128,0.30)", color:"#4ade80", fontSize:13, fontWeight:600 }}>
-          <span style={{ display:"flex", alignItems:"center", gap:8 }}><MdCheckCircle size={16} /> {successMsg}</span>
-          <button onClick={() => setSuccessMsg("")} style={{ background:"none", border:"none", cursor:"pointer", color:"inherit", display:"flex" }}><MdClose size={14} /></button>
+        <div className="mv-banner mv-banner--ok">
+          <span className="mv-banner-row"><MdCheckCircle size={16} /> {successMsg}</span>
+          <button type="button" onClick={() => setSuccessMsg("")} className="mv-banner-close"><MdClose size={14} /></button>
         </div>
       )}
       {errorMsg && (
-        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:10, padding:"12px 16px", borderRadius:12, background:"rgba(248,113,113,0.10)", border:"1px solid rgba(248,113,113,0.30)", color:"#f87171", fontSize:13, fontWeight:600 }}>
-          <span style={{ display:"flex", alignItems:"center", gap:8 }}><MdWarning size={16} /> {errorMsg}</span>
-          <button onClick={() => setErrorMsg("")} style={{ background:"none", border:"none", cursor:"pointer", color:"inherit", display:"flex" }}><MdClose size={14} /></button>
+        <div className="mv-banner mv-banner--err">
+          <span className="mv-banner-row"><MdWarning size={16} /> {errorMsg}</span>
+          <button type="button" onClick={() => setErrorMsg("")} className="mv-banner-close"><MdClose size={14} /></button>
         </div>
       )}
 
@@ -637,7 +652,7 @@ export default function MyVehicles() {
                 {myFlats.length > 1 && (
                   <div>
                     <label style={{ fontSize:12, fontWeight:700, color:"var(--text-secondary)", textTransform:"uppercase", letterSpacing:"0.05em" }}>
-                      Which Flat? <span style={{ color:"#f87171" }}>*</span>
+                      Which Flat? <span style={{ color:"var(--reject-color)" }}>*</span>
                     </label>
                     {flatsLoading ? (
                       <div style={{ display:"flex", alignItems:"center", gap:8, padding:"10px 0", color:"var(--text-secondary)", fontSize:13 }}>
@@ -659,12 +674,12 @@ export default function MyVehicles() {
                               style={{
                                 display:"flex", alignItems:"center", justifyContent:"space-between",
                                 padding:"12px 14px", borderRadius:12, cursor:"pointer", textAlign:"left",
-                                background: isSel ? "var(--accent-soft)" : "rgba(255,255,255,0.03)",
-                                border:`2px solid ${isSel ? "var(--accent)" : "rgba(255,255,255,0.08)"}`,
+                                background: isSel ? "var(--accent-soft)" : "var(--card-inner-bg)",
+                                border:`2px solid ${isSel ? "var(--accent)" : "var(--glass-border)"}`,
                                 transition:"all 0.15s",
                               }}>
                               <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-                                <div style={{ width:34, height:34, borderRadius:10, flexShrink:0, display:"flex", alignItems:"center", justifyContent:"center", background: isSel ? "var(--accent-soft)" : "rgba(255,255,255,0.05)" }}>
+                                <div style={{ width:34, height:34, borderRadius:10, flexShrink:0, display:"flex", alignItems:"center", justifyContent:"center", background: isSel ? "var(--accent-soft)" : "var(--card-inner-bg)" }}>
                                   <MdHome size={17} style={{ color: isSel ? "var(--accent)" : "var(--text-secondary)" }} />
                                 </div>
                                 <div>
@@ -676,16 +691,16 @@ export default function MyVehicles() {
                                 {form.vehicle_type && flatSlots.length > 0 && (
                                   <span style={{
                                     display:"flex", alignItems:"center", gap:4, padding:"4px 10px", borderRadius:999, fontSize:11, fontWeight:700,
-                                    background: freeCount > 0 ? "rgba(74,222,128,0.10)" : "rgba(248,113,113,0.10)",
-                                    color:      freeCount > 0 ? "#4ade80"              : "#f87171",
-                                    border:    `1px solid ${freeCount > 0 ? "rgba(74,222,128,0.25)" : "rgba(248,113,113,0.25)"}`,
+                                    background: freeCount > 0 ? "var(--approve-bg)" : "var(--reject-bg)",
+                                    color:      freeCount > 0 ? "var(--approve-color)"              : "var(--reject-color)",
+                                    border:    `1px solid ${freeCount > 0 ? "var(--approve-border)" : "var(--reject-border)"}`,
                                   }}>
                                     <MdLocalParking size={12} />
                                     {freeCount > 0 ? `${freeCount} slot${freeCount > 1 ? "s" : ""} free` : "All occupied"}
                                   </span>
                                 )}
                                 {form.vehicle_type && flatSlots.length === 0 && (
-                                  <span style={{ fontSize:10, color:"var(--text-secondary)", fontWeight:600, padding:"3px 8px", borderRadius:999, background:"rgba(255,255,255,0.04)", border:"1px solid rgba(255,255,255,0.08)" }}>
+                                  <span style={{ fontSize:10, color:"var(--text-secondary)", fontWeight:600, padding:"3px 8px", borderRadius:999, background:"var(--card-inner-bg)", border:"1px solid var(--glass-border)" }}>
                                     No {form.vehicle_type} slot assigned
                                   </span>
                                 )}
@@ -706,7 +721,7 @@ export default function MyVehicles() {
                   <div style={{ borderRadius:14, overflow:"hidden", border:"1px solid var(--glass-border)" }}>
 
                     {/* Panel header */}
-                    <div style={{ display:"flex", alignItems:"center", gap:8, padding:"12px 16px", borderBottom:"1px solid var(--glass-border)", background:"rgba(255,255,255,0.03)" }}>
+                    <div style={{ display:"flex", alignItems:"center", gap:8, padding:"12px 16px", borderBottom:"1px solid var(--glass-border)", background:"var(--card-inner-bg)" }}>
                       <FaParking style={{ color:"var(--accent)", fontSize:14 }} />
                       <span style={{ fontSize:12, fontWeight:700, color:"var(--text-primary)", textTransform:"uppercase", letterSpacing:"0.05em" }}>
                         Select Parking Slot
@@ -717,8 +732,8 @@ export default function MyVehicles() {
 
                       {availableSlots.length === 0 ? (
                         /* No slots assigned to this flat for this vehicle type */
-                        <div style={{ display:"flex", alignItems:"flex-start", gap:10, padding:"14px", borderRadius:12, background:"rgba(148,181,245,0.06)", border:"1px solid rgba(148,181,245,0.18)" }}>
-                          <MdInfo style={{ color:"var(--accent)", fontSize:16, flexShrink:0, marginTop:1 }} />
+                        <div className="mv-info">
+                          <MdInfo size={16} />
                           <div>
                             <p style={{ margin:0, fontSize:13, fontWeight:700, color:"var(--accent)" }}>
                               No {form.vehicle_type} slot pre-assigned to your flat
@@ -759,8 +774,8 @@ export default function MyVehicles() {
                             style={{
                               display:"flex", alignItems:"center", justifyContent:"space-between",
                               width:"100%", padding:"13px 16px", borderRadius:12,
-                              border:`2px solid ${selectedSlotId === null ? "var(--accent)" : "rgba(255,255,255,0.09)"}`,
-                              background: selectedSlotId === null ? "rgba(251,191,36,0.07)" : "rgba(255,255,255,0.03)",
+                              border:`2px solid ${selectedSlotId === null ? "var(--accent)" : "var(--glass-border)"}`,
+                              background: selectedSlotId === null ? "var(--approval-bg)" : "var(--card-inner-bg)",
                               cursor:"pointer", textAlign:"left", transition:"all 0.15s",
                             }}
                           >
@@ -769,7 +784,7 @@ export default function MyVehicles() {
                               <div style={{
                                 width:20, height:20, borderRadius:"50%", flexShrink:0,
                                 display:"flex", alignItems:"center", justifyContent:"center",
-                                border:`2px solid ${selectedSlotId === null ? "var(--accent)" : "rgba(255,255,255,0.25)"}`,
+                                border:`2px solid ${selectedSlotId === null ? "var(--accent)" : "var(--glass-border)"}`,
                                 background: selectedSlotId === null ? "var(--accent)" : "transparent",
                                 transition:"all 0.15s",
                               }}>
@@ -786,8 +801,8 @@ export default function MyVehicles() {
                             </div>
                             <span style={{
                               padding:"3px 10px", borderRadius:999, fontSize:11, fontWeight:700,
-                              background:"rgba(251,191,36,0.10)", color:"var(--accent)",
-                              border:"1px solid rgba(251,191,36,0.25)", flexShrink:0,
+                              background:"var(--approval-bg)", color:"var(--approval-color)",
+                              border:"1px solid var(--approval-border)", flexShrink:0,
                             }}>
                               Admin assigns
                             </span>
@@ -795,19 +810,19 @@ export default function MyVehicles() {
 
                           {/* Context hint */}
                           {selectedSlotId !== null && (
-                            <div style={{ display:"flex", alignItems:"center", gap:8, padding:"10px 12px", borderRadius:10, background:"rgba(74,222,128,0.06)", border:"1px solid rgba(74,222,128,0.18)", fontSize:11, color:"#4ade80", fontWeight:600 }}>
+                            <div className="mv-hint mv-hint--ok">
                               <MdCheckCircle size={13} />
                               Slot {availableSlots.find(s => s.id === selectedSlotId)?.slot_number} will be linked to this vehicle immediately — no admin action needed.
                             </div>
                           )}
                           {selectedSlotId === null && hasAnyFreeSlot && (
-                            <div style={{ display:"flex", alignItems:"center", gap:8, padding:"10px 12px", borderRadius:10, background:"rgba(251,191,36,0.06)", border:"1px solid rgba(251,191,36,0.18)", fontSize:11, color:"var(--accent)", fontWeight:600 }}>
+                            <div className="mv-hint mv-hint--warn">
                               <MdInfo size={13} />
                               Free slots are available above. A new extra slot request will still go to your admin if you proceed.
                             </div>
                           )}
                           {selectedSlotId === null && !hasAnyFreeSlot && (
-                            <div style={{ display:"flex", alignItems:"center", gap:8, padding:"10px 12px", borderRadius:10, background:"rgba(148,181,245,0.06)", border:"1px solid rgba(148,181,245,0.18)", fontSize:11, color:"#B9CFF8", fontWeight:600 }}>
+                            <div className="mv-info">
                               <MdInfo size={13} />
                               All your assigned slots are occupied. A new extra slot request will be sent to the admin.
                             </div>
@@ -837,21 +852,26 @@ export default function MyVehicles() {
           {/* VEHICLE LIST */}
           <div className="bg-card p-5 rounded-xl">
             {vehicles.length === 0 ? (
-              <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:10, padding:"40px 20px", color:"var(--text-secondary)" }}>
+              <div className="mv-empty">
                 <MdDirectionsCarFilled size={40} style={{ opacity:0.2 }} />
-                <p style={{ fontSize:14, margin:0 }}>{t("vehEmpty")}</p>
-                <button onClick={() => setShowForm(true)} className="btn-primary flex items-center gap-2" style={{ marginTop:4 }}>
+                <p style={{ fontSize:14 }}>{t("vehEmpty")}</p>
+                <button type="button" onClick={() => setShowForm(true)} className="btn-primary flex items-center gap-2" style={{ marginTop:4 }}>
                   <MdAdd /> {t("vehAddBtn")}
                 </button>
+              </div>
+            ) : visibleVehicles.length === 0 ? (
+              <div className="mv-empty">
+                <MdSearch size={36} style={{ opacity:0.2 }} />
+                <p style={{ fontSize:14 }}>No vehicles match “{search.trim()}”</p>
               </div>
             ) : (
               <>
                 {/* Mobile cards */}
                 <div className="md:hidden space-y-3">
-                  {vehicles.map(v => (
-                    <div key={v.id} style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"14px 16px", borderRadius:14, background:"var(--card-inner-bg,rgba(255,255,255,0.05))", border:"1px solid var(--glass-border)" }}>
+                  {visibleVehicles.map(v => (
+                    <div key={v.id} style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"14px 16px", borderRadius:14, background:"var(--card-inner-bg)", border:"1px solid var(--glass-border)" }}>
                       <div style={{ display:"flex", alignItems:"center", gap:12 }}>
-                        <div style={{ width:40, height:40, borderRadius:12, display:"flex", alignItems:"center", justifyContent:"center", background: v.vehicle_type==="BIKE" ? "rgba(159,135,215,0.12)" : "rgba(148,181,245,0.12)", border: v.vehicle_type==="BIKE" ? "1px solid rgba(159,135,215,0.25)" : "1px solid rgba(148,181,245,0.25)" }}>
+                        <div style={{ width:40, height:40, borderRadius:12, display:"flex", alignItems:"center", justifyContent:"center", background: v.vehicle_type==="BIKE" ? "rgba(var(--acct-violet-rgb),0.12)" : "var(--accent-soft)", border: v.vehicle_type==="BIKE" ? "1px solid rgba(var(--acct-violet-rgb),0.28)" : "1px solid rgba(var(--acct-purple-rgb),0.28)" }}>
                           {VEHICLE_ICON[v.vehicle_type] || <MdDirectionsCarFilled style={{ fontSize:20, color:"var(--accent)" }} />}
                         </div>
                         <div>
@@ -861,7 +881,7 @@ export default function MyVehicles() {
                           </p>
                           <div style={{ display:"flex", alignItems:"center", gap:6, marginTop:3, flexWrap:"wrap" }}>
                             {v.parking_slot_id ? (
-                              <span style={{ fontSize:11, color:"#4ade80", display:"flex", alignItems:"center", gap:3 }}>
+                              <span style={{ fontSize:11, color:"var(--approve-color)", display:"flex", alignItems:"center", gap:3 }}>
                                 <MdLocalParking size={11} />
                                 {v.slot?.slot_number || "Slot linked"}
                                 {v.slot?.parking_floor && ` · ${v.slot.parking_floor}`}
@@ -871,7 +891,7 @@ export default function MyVehicles() {
                                 <MdHourglassEmpty size={11} /> Awaiting slot from admin
                               </span>
                             )}
-                            <span style={{ fontSize:10, fontWeight:700, padding:"1px 6px", borderRadius:999, background: v.parking_type==="DEFAULT" ? "rgba(74,222,128,0.12)" : "rgba(251,191,36,0.12)", color: v.parking_type==="DEFAULT" ? "#4ade80" : "var(--accent)", border:`1px solid ${v.parking_type==="DEFAULT" ? "rgba(74,222,128,0.25)" : "rgba(251,191,36,0.25)"}` }}>
+                            <span style={{ fontSize:10, fontWeight:700, padding:"1px 6px", borderRadius:999, background: v.parking_type==="DEFAULT" ? "var(--approve-bg)" : "var(--approval-bg)", color: v.parking_type==="DEFAULT" ? "var(--approve-color)" : "var(--approval-color)", border:`1px solid ${v.parking_type==="DEFAULT" ? "var(--approve-border)" : "var(--approval-border)"}` }}>
                               {v.parking_type === "DEFAULT" ? "Default" : "Extra"}
                             </span>
                           </div>
@@ -898,14 +918,12 @@ export default function MyVehicles() {
                       </tr>
                     </thead>
                     <tbody>
-                      {vehicles.map((v, i) => (
-                        <tr key={v.id} style={{ borderBottom:"1px solid var(--glass-border)", transition:"background 0.15s" }}
-                          onMouseEnter={e => e.currentTarget.style.background="rgba(255,255,255,0.03)"}
-                          onMouseLeave={e => e.currentTarget.style.background="transparent"}>
+                      {visibleVehicles.map((v, i) => (
+                        <tr key={v.id} className="mv-row" style={{ borderBottom:"1px solid var(--glass-border)" }}>
                           <td className="p-3 text-xs text-secondary">{i + 1}</td>
                           <td className="p-3">
                             <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-                              <div style={{ width:34, height:34, borderRadius:10, display:"flex", alignItems:"center", justifyContent:"center", background: v.vehicle_type==="BIKE" ? "rgba(159,135,215,0.12)" : "rgba(148,181,245,0.12)", border: v.vehicle_type==="BIKE" ? "1px solid rgba(159,135,215,0.25)" : "1px solid rgba(148,181,245,0.25)" }}>
+                              <div style={{ width:34, height:34, borderRadius:10, display:"flex", alignItems:"center", justifyContent:"center", background: v.vehicle_type==="BIKE" ? "rgba(var(--acct-violet-rgb),0.12)" : "var(--accent-soft)", border: v.vehicle_type==="BIKE" ? "1px solid rgba(var(--acct-violet-rgb),0.28)" : "1px solid rgba(var(--acct-purple-rgb),0.28)" }}>
                                 {VEHICLE_ICON[v.vehicle_type] || <MdDirectionsCarFilled style={{ color:"var(--accent)", fontSize:18 }} />}
                               </div>
                               <span style={{ fontWeight:700, color:"var(--text-primary)" }}>{v.vehicle_name}</span>
@@ -915,14 +933,14 @@ export default function MyVehicles() {
                             <span style={{ fontWeight:700, letterSpacing:"0.06em", fontSize:13, color:"var(--text-primary)", fontFamily:"monospace" }}>{v.vehicle_number}</span>
                           </td>
                           <td className="p-3">
-                            <span style={{ display:"inline-flex", alignItems:"center", gap:5, padding:"3px 10px", borderRadius:999, fontSize:11, fontWeight:700, color: v.vehicle_type==="BIKE" ? "var(--accent)" : "var(--accent)", background: v.vehicle_type==="BIKE" ? "rgba(159,135,215,0.10)" : "rgba(148,181,245,0.10)", border:`1px solid ${v.vehicle_type==="BIKE" ? "rgba(159,135,215,0.22)" : "rgba(148,181,245,0.22)"}` }}>
+                            <span style={{ display:"inline-flex", alignItems:"center", gap:5, padding:"3px 10px", borderRadius:999, fontSize:11, fontWeight:700, color: v.vehicle_type==="BIKE" ? "var(--acct-violet)" : "var(--accent)", background: v.vehicle_type==="BIKE" ? "rgba(var(--acct-violet-rgb),0.12)" : "var(--accent-soft)", border:`1px solid ${v.vehicle_type==="BIKE" ? "rgba(var(--acct-violet-rgb),0.28)" : "rgba(var(--acct-purple-rgb),0.28)"}` }}>
                               {TYPE_LABEL[v.vehicle_type] || v.vehicle_type}
                             </span>
                           </td>
                           <td className="p-3">
                             {v.parking_slot_id ? (
                               <div style={{ display:"flex", alignItems:"center", gap:6 }}>
-                                <span style={{ display:"inline-flex", alignItems:"center", gap:5, padding:"3px 10px", borderRadius:999, fontSize:11, fontWeight:700, color:"#4ade80", background:"rgba(74,222,128,0.10)", border:"1px solid rgba(74,222,128,0.22)" }}>
+                                <span style={{ display:"inline-flex", alignItems:"center", gap:5, padding:"3px 10px", borderRadius:999, fontSize:11, fontWeight:700, color:"var(--approve-color)", background:"var(--approve-bg)", border:"1px solid var(--approve-border)" }}>
                                   <MdLocalParking size={11} /> {v.slot?.slot_number || "Linked"}
                                 </span>
                                 {v.slot?.parking_floor && (
@@ -930,13 +948,13 @@ export default function MyVehicles() {
                                 )}
                               </div>
                             ) : (
-                              <span style={{ display:"inline-flex", alignItems:"center", gap:5, padding:"3px 10px", borderRadius:999, fontSize:11, fontWeight:700, color:"var(--accent)", background:"rgba(251,191,36,0.08)", border:"1px solid rgba(251,191,36,0.20)" }}>
+                              <span style={{ display:"inline-flex", alignItems:"center", gap:5, padding:"3px 10px", borderRadius:999, fontSize:11, fontWeight:700, color:"var(--approval-color)", background:"var(--approval-bg)", border:"1px solid var(--approval-border)" }}>
                                 <MdHourglassEmpty size={11} /> Awaiting admin
                               </span>
                             )}
                           </td>
                           <td className="p-3">
-                            <span style={{ display:"inline-flex", alignItems:"center", gap:4, padding:"3px 10px", borderRadius:999, fontSize:11, fontWeight:700, background: v.parking_type==="DEFAULT" ? "rgba(74,222,128,0.10)" : "rgba(251,191,36,0.10)", color: v.parking_type==="DEFAULT" ? "#4ade80" : "var(--accent)", border:`1px solid ${v.parking_type==="DEFAULT" ? "rgba(74,222,128,0.22)" : "rgba(251,191,36,0.22)"}` }}>
+                            <span style={{ display:"inline-flex", alignItems:"center", gap:4, padding:"3px 10px", borderRadius:999, fontSize:11, fontWeight:700, background: v.parking_type==="DEFAULT" ? "var(--approve-bg)" : "var(--approval-bg)", color: v.parking_type==="DEFAULT" ? "var(--approve-color)" : "var(--approval-color)", border:`1px solid ${v.parking_type==="DEFAULT" ? "var(--approve-border)" : "var(--approval-border)"}` }}>
                               {v.parking_type === "DEFAULT" ? "Default" : "Extra"}
                             </span>
                           </td>
@@ -972,10 +990,10 @@ export default function MyVehicles() {
             </div>
           ) : allocatedSlots.length === 0 ? (
             <div className="bg-card rounded-xl">
-              <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:10, padding:"48px 20px", color:"var(--text-secondary)" }}>
+              <div className="mv-empty">
                 <MdLocalParking size={44} style={{ opacity:0.18 }} />
-                <p style={{ fontSize:14, margin:0, fontWeight:600 }}>No parking slots assigned to your flat yet</p>
-                <p style={{ fontSize:12, margin:0, textAlign:"center", maxWidth:320, lineHeight:1.5 }}>
+                <p style={{ fontSize:14, fontWeight:600 }}>No parking slots assigned to your flat yet</p>
+                <p style={{ fontSize:12, maxWidth:320, lineHeight:1.5 }}>
                   Your admin will assign parking slots to your flat when registering you.
                   Once assigned, add a vehicle from "My Vehicles" to link to that slot automatically.
                 </p>
@@ -983,8 +1001,8 @@ export default function MyVehicles() {
             </div>
           ) : (
             <>
-              <div style={{ display:"flex", alignItems:"flex-start", gap:10, padding:"12px 16px", borderRadius:12, background:"rgba(148,181,245,0.08)", border:"1px solid rgba(148,181,245,0.20)", color:"#B9CFF8", fontSize:12, fontWeight:600 }}>
-                <MdInfo size={15} style={{ marginTop:1, flexShrink:0 }} />
+              <div className="mv-info">
+                <MdInfo size={15} />
                 <span>
                   These slots were <strong>pre-assigned to your flat</strong> by the admin.
                   Add a vehicle from the "My Vehicles" tab and manually choose which slot to link it to.
@@ -993,8 +1011,8 @@ export default function MyVehicles() {
               </div>
 
               {allocatedSlots.length > 1 && (
-                <div style={{ display:"flex", alignItems:"flex-start", gap:10, padding:"12px 16px", borderRadius:12, background:"rgba(148,181,245,0.08)", border:"1px solid rgba(148,181,245,0.20)", color:"#B9CFF8", fontSize:12, fontWeight:600 }}>
-                  <MdApartment size={15} style={{ marginTop:1, flexShrink:0 }} />
+                <div className="mv-info">
+                  <MdApartment size={15} />
                   <span>
                     You have <strong>{allocatedSlots.length}</strong> parking slots across{" "}
                     {new Set(allocatedSlots.map(s => s.flat_id)).size} flat(s).
@@ -1002,9 +1020,18 @@ export default function MyVehicles() {
                 </div>
               )}
 
-              <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(280px,1fr))", gap:16 }}>
-                {allocatedSlots.map(slot => <AllocatedSlotCard key={slot.id} slot={slot} />)}
-              </div>
+              {visibleSlots.length === 0 ? (
+                <div className="bg-card rounded-xl">
+                  <div className="mv-empty">
+                    <MdSearch size={36} style={{ opacity:0.2 }} />
+                    <p style={{ fontSize:14 }}>No parking slots match “{search.trim()}”</p>
+                  </div>
+                </div>
+              ) : (
+                <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(280px,1fr))", gap:16 }}>
+                  {visibleSlots.map(slot => <AllocatedSlotCard key={slot.id} slot={slot} />)}
+                </div>
+              )}
 
               <div style={{ display:"flex", gap:12, flexWrap:"wrap", marginTop:4 }}>
                 {[
@@ -1014,7 +1041,7 @@ export default function MyVehicles() {
                   { label:"In Use",          value: allocatedSlots.filter(s => s.linked_vehicle).length },
                   { label:"Free / Unlinked", value: allocatedSlots.filter(s => !s.linked_vehicle).length },
                 ].map(stat => (
-                  <div key={stat.label} style={{ flex:"1 1 90px", padding:"12px 16px", borderRadius:12, background:"var(--card-inner-bg,rgba(255,255,255,0.04))", border:"1px solid var(--glass-border)", textAlign:"center" }}>
+                  <div key={stat.label} style={{ flex:"1 1 90px", padding:"12px 16px", borderRadius:12, background:"var(--card-inner-bg)", border:"1px solid var(--glass-border)", textAlign:"center" }}>
                     <p style={{ margin:0, fontSize:22, fontWeight:800, color:"var(--text-primary)" }}>{stat.value}</p>
                     <p style={{ margin:"3px 0 0", fontSize:11, color:"var(--text-secondary)", fontWeight:600 }}>{stat.label}</p>
                   </div>
@@ -1030,8 +1057,8 @@ export default function MyVehicles() {
       ══════════════════════════════ */}
       {activeTab === "requests" && (
         <div className="space-y-4">
-          <div style={{ display:"flex", alignItems:"flex-start", gap:10, padding:"12px 16px", borderRadius:12, background:"rgba(148,181,245,0.08)", border:"1px solid rgba(148,181,245,0.20)", color:"#B9CFF8", fontSize:12, fontWeight:600 }}>
-            <MdInfo size={15} style={{ marginTop:1, flexShrink:0 }} />
+          <div className="mv-info">
+            <MdInfo size={15} />
             <span>
               These are <strong>extra slot requests</strong> sent to your admin when you added a vehicle
               and either had no free pre-assigned slot or chose to request a new one manually.
@@ -1045,13 +1072,20 @@ export default function MyVehicles() {
             </div>
           ) : parkingRequests.length === 0 ? (
             <div className="bg-card rounded-xl">
-              <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:10, padding:"48px 20px", color:"var(--text-secondary)" }}>
+              <div className="mv-empty">
                 <MdHourglassEmpty size={44} style={{ opacity:0.18 }} />
-                <p style={{ fontSize:14, margin:0, fontWeight:600 }}>No extra slot requests</p>
-                <p style={{ fontSize:12, margin:0, textAlign:"center", maxWidth:300, lineHeight:1.5 }}>
+                <p style={{ fontSize:14, fontWeight:600 }}>No extra slot requests</p>
+                <p style={{ fontSize:12, maxWidth:300, lineHeight:1.5 }}>
                   When you add a vehicle and no pre-assigned slot is free (or you choose to request a new one),
                   an extra slot request will appear here.
                 </p>
+              </div>
+            </div>
+          ) : visibleRequests.length === 0 ? (
+            <div className="bg-card rounded-xl">
+              <div className="mv-empty">
+                <MdSearch size={36} style={{ opacity:0.2 }} />
+                <p style={{ fontSize:14 }}>No slot requests match “{search.trim()}”</p>
               </div>
             </div>
           ) : (
@@ -1067,20 +1101,18 @@ export default function MyVehicles() {
                     </tr>
                   </thead>
                   <tbody>
-                    {parkingRequests.map((r, i) => (
-                      <tr key={r.id} style={{ borderBottom:"1px solid var(--divider)", transition:"background 0.15s" }}
-                        onMouseEnter={e => e.currentTarget.style.background="var(--row-hover)"}
-                        onMouseLeave={e => e.currentTarget.style.background=""}>
+                    {visibleRequests.map((r, i) => (
+                      <tr key={r.id} className="mv-row" style={{ borderBottom:"1px solid var(--divider)" }}>
                         <td className="px-5 py-3 text-xs text-secondary">{i + 1}</td>
                         <td className="px-5 py-3 font-mono font-bold text-sm">{r.vehicle_number}</td>
                         <td className="px-5 py-3">
-                          <span style={{ display:"inline-flex", alignItems:"center", gap:5, padding:"3px 10px", borderRadius:999, fontSize:11, fontWeight:700, color: r.vehicle_type==="BIKE" ? "var(--accent)" : "var(--accent)", background: r.vehicle_type==="BIKE" ? "rgba(159,135,215,0.10)" : "rgba(148,181,245,0.10)", border:`1px solid ${r.vehicle_type==="BIKE" ? "rgba(159,135,215,0.22)" : "rgba(148,181,245,0.22)"}` }}>
+                          <span style={{ display:"inline-flex", alignItems:"center", gap:5, padding:"3px 10px", borderRadius:999, fontSize:11, fontWeight:700, color: r.vehicle_type==="BIKE" ? "var(--acct-violet)" : "var(--accent)", background: r.vehicle_type==="BIKE" ? "rgba(var(--acct-violet-rgb),0.12)" : "var(--accent-soft)", border:`1px solid ${r.vehicle_type==="BIKE" ? "rgba(var(--acct-violet-rgb),0.28)" : "rgba(var(--acct-purple-rgb),0.28)"}` }}>
                             {TYPE_LABEL[r.vehicle_type] || r.vehicle_type}
                           </span>
                         </td>
                         <td className="px-5 py-3">
                           {r.assigned_spot ? (
-                            <span style={{ display:"inline-flex", alignItems:"center", gap:5, padding:"3px 10px", borderRadius:999, fontSize:11, fontWeight:700, color:"#4ade80", background:"rgba(74,222,128,0.10)", border:"1px solid rgba(74,222,128,0.22)" }}>
+                            <span style={{ display:"inline-flex", alignItems:"center", gap:5, padding:"3px 10px", borderRadius:999, fontSize:11, fontWeight:700, color:"var(--approve-color)", background:"var(--approve-bg)", border:"1px solid var(--approve-border)" }}>
                               <MdLocalParking size={11} /> {r.assigned_spot}
                             </span>
                           ) : (
@@ -1099,16 +1131,16 @@ export default function MyVehicles() {
 
               {/* Mobile */}
               <div className="md:hidden space-y-2 p-4">
-                {parkingRequests.map(r => (
+                {visibleRequests.map(r => (
                   <div key={r.id} style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:12, padding:"14px", borderRadius:14, background:"var(--card-inner-bg)", border:"1px solid var(--glass-border)" }}>
                     <div>
                       <p style={{ margin:0, fontWeight:700, fontSize:14, fontFamily:"monospace" }}>{r.vehicle_number}</p>
                       <p style={{ margin:"3px 0 0", fontSize:12, color:"var(--text-secondary)" }}>
                         {TYPE_LABEL[r.vehicle_type] || r.vehicle_type}
-                        {r.assigned_spot && <> · <span style={{ color:"#4ade80" }}>{r.assigned_spot}</span></>}
+                        {r.assigned_spot && <> · <span style={{ color:"var(--approve-color)" }}>{r.assigned_spot}</span></>}
                       </p>
                       {!r.assigned_spot && (
-                        <span style={{ display:"inline-flex", marginTop:4, alignItems:"center", gap:4, padding:"2px 8px", borderRadius:999, fontSize:10, fontWeight:700, background:"rgba(251,191,36,0.10)", color:"var(--accent)", border:"1px solid rgba(251,191,36,0.22)" }}>
+                        <span style={{ display:"inline-flex", marginTop:4, alignItems:"center", gap:4, padding:"2px 8px", borderRadius:999, fontSize:10, fontWeight:700, background:"var(--approval-bg)", color:"var(--approval-color)", border:"1px solid var(--approval-border)" }}>
                           Awaiting slot assignment
                         </span>
                       )}

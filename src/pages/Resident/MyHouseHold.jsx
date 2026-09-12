@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import {
-  MdArrowBack, MdPerson, MdAdd, MdClose, MdDelete,
+  MdPerson, MdAdd, MdClose, MdDelete,
   MdShield, MdPhone, MdEmail, MdWork,
-  MdFamilyRestroom, MdAdminPanelSettings, MdEdit, MdCheck,
+  MdFamilyRestroom, MdAdminPanelSettings, MdEdit, MdCheck, MdSearch,
 } from "react-icons/md";
-import { useNavigate } from "react-router-dom";
 import { useLang } from "../../context/LanguageContext";
 import API from "../../services/api";
+import SlidingTabs from "../../components/common/SlidingTabs";
 
 function PortalModal({ children }) {
   if (typeof document === "undefined") return null;
@@ -127,7 +127,6 @@ function EditModal({ member, onClose, onSaved, t }) {
 
 /* ═══════════════════════════ MAIN ═══════════════════════════ */
 export default function MyHouseHold() {
-  const navigate = useNavigate();
   const { t }    = useLang();
 
   const [activeTab,    setActiveTab]    = useState("family");
@@ -137,6 +136,7 @@ export default function MyHouseHold() {
   const [confirm,      setConfirm]      = useState(null);
   const [confirmError, setConfirmError] = useState(null);
   const [editMember,   setEditMember]   = useState(null);
+  const [search,       setSearch]       = useState("");
 
   const [formData, setFormData] = useState({
     name: "", phone: "", email: "", relation: "", work: "",
@@ -222,88 +222,117 @@ export default function MyHouseHold() {
     }
   };
 
-  const filtered   = activeTab === "family" ? members.filter((m) => !m.work) : members.filter((m) => m.work);
-  const adminCount = members.filter((m) => !m.work && m.isAdmin).length;
-
-  const tabs = [
-    { key: "family", label: t("hhTabFamily"), icon: <MdFamilyRestroom size={14} />, count: members.filter(m => !m.work).length },
-    { key: "help",   label: t("hhTabHelp"),   icon: <MdWork size={14} />,           count: members.filter(m =>  m.work).length  },
-  ];
+  const familyMembers = members.filter((m) => !m.work);
+  const helpMembers   = members.filter((m) => m.work);
+  const adminCount    = familyMembers.filter((m) => m.isAdmin).length;
+  const q = search.trim().toLowerCase();
+  const matches = (m) =>
+    !q ||
+    [m.name, m.phone, m.email, m.relation, m.work].some((v) =>
+      String(v || "").toLowerCase().includes(q)
+    );
+  const filtered = (activeTab === "family" ? familyMembers : helpMembers).filter(matches);
 
   return (
     <>
-      <div className="w-full px-6 py-8">
-        <div className="mx-auto" style={{ maxWidth: 640 }}>
-
-          {/* ── HEADER ── */}
-          <div className="flex items-center gap-4 mb-6">
-            <button type="button" onClick={() => navigate(-1)} className="bg-card p-2.5 rounded-full">
-              <MdArrowBack size={18} />
-            </button>
+      <div className="ge-root hh-page animate-fadeIn">
+        <div className="ge-er">
+          <div className="ge-er-left">
             <div className="ad-page-icon">
               <MdFamilyRestroom size={22} />
             </div>
             <div>
-              <h2 className="page-title" style={{ lineHeight: 1.2 }}>{t("hhTitle")}</h2>
-              <p className="page-subtitle" style={{ marginTop: 2 }}>
+              <h2 className="page-title">{t("hhTitle")}</h2>
+              <p className="page-subtitle">
                 {members.length} {members.length !== 1 ? t("hhMembers") : t("hhMember")} · {adminCount} {adminCount !== 1 ? t("hhAdmins") : t("hhAdmin")}
               </p>
             </div>
           </div>
-
-          {/* ── FLAT WARNING ── */}
-          {!flatAssigned && (
-            <div className="bg-card hh-flat-warning mb-5">
-              <MdShield size={15} /> {t("hhFlatWarning")}
-            </div>
-          )}
-
-          {/* ── TABS ── */}
-          <div className="ra-tab-bar mb-5">
-            {tabs.map(({ key, label, icon, count }) => (
-              <button key={key} type="button" onClick={() => setActiveTab(key)}
-                className={`ra-tab${activeTab === key ? " ra-tab--active" : ""}`}>
-                {icon} {label}
-                <span className={`ra-tab-badge ${activeTab === key ? "ra-tab-badge--active" : ""}`}>
-                  {count}
-                </span>
-              </button>
-            ))}
-          </div>
-
-          {/* ── MEMBER LIST ── */}
           {flatAssigned && (
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              {filtered.length === 0 ? (
-                <div className="bg-card hh-empty-state">
-                  <div className="hh-empty-icon-wrap">
-                    {activeTab === "family"
-                      ? <MdFamilyRestroom size={19} className="hh-icon-admin" />
-                      : <MdWork size={19} className="hh-icon-admin" />}
-                  </div>
-                  <p className="text-secondary" style={{ fontSize: "0.83rem", margin: 0 }}>
-                    {activeTab === "family" ? t("hhEmptyFamily") : t("hhEmptyHelp")}
-                  </p>
-                  <p className="hh-empty-hint">{t("hhEmptyHint")}</p>
-                </div>
-              ) : filtered.map((m) => (
-                <MemberRow key={m.id} member={m} isFamily={activeTab === "family"}
-                  onDelete={() => askDelete(m.id, m.name)}
-                  onToggleAdmin={() => askToggleAdmin(m.id, m.name, m.isAdmin)}
-                  onEdit={() => setEditMember(m)}
-                  t={t} />
-              ))}
-            </div>
+            <button
+              type="button"
+              onClick={() => setShowModal(true)}
+              className="btn-primary flex items-center gap-2"
+            >
+              <MdAdd size={18} /> {t("hhAddMemberBtn")}
+            </button>
           )}
         </div>
-      </div>
 
-      {/* ── FAB ── */}
-      {flatAssigned && (
-        <button type="button" onClick={() => setShowModal(true)} className="btn-primary hh-fab">
-          <MdAdd size={22} />
-        </button>
-      )}
+        {!flatAssigned && (
+          <div className="gc-warn">
+            <MdShield size={15} /> {t("hhFlatWarning")}
+          </div>
+        )}
+
+        <div className="ge-stats">
+          <div className="complaint-stat-card complaint-stat-total">
+            <span className="complaint-stat-val">{familyMembers.length}</span>
+            <span className="complaint-stat-label">{t("hhTabFamily")}</span>
+          </div>
+          <div className="complaint-stat-card complaint-stat-inprogress">
+            <span className="complaint-stat-val">{helpMembers.length}</span>
+            <span className="complaint-stat-label">{t("hhTabHelp")}</span>
+          </div>
+          <div className="complaint-stat-card complaint-stat-resolved">
+            <span className="complaint-stat-val">{adminCount}</span>
+            <span className="complaint-stat-label">{t("hhAdmins")}</span>
+          </div>
+        </div>
+
+        <div className="ge-toolbar">
+          <div className="ge-search-wrap">
+            <MdSearch className="ge-search-icon" size={17} />
+            <input
+              className="ge-search-input"
+              placeholder={t("hhFieldNamePlaceholder")}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+            {search ? (
+              <button type="button" onClick={() => setSearch("")} className="ge-search-clear" aria-label="Clear search">
+                <MdClose size={13} />
+              </button>
+            ) : null}
+          </div>
+
+          <SlidingTabs
+            className="ge-filter-tabs"
+            value={activeTab}
+            onChange={setActiveTab}
+            items={[
+              { id: "family", label: t("hhTabFamily"), icon: <MdFamilyRestroom size={15} />, badge: familyMembers.length },
+              { id: "help",   label: t("hhTabHelp"),   icon: <MdWork size={15} />,           badge: helpMembers.length },
+            ]}
+          />
+        </div>
+
+        {flatAssigned && (
+          <div className="hh-list">
+            {filtered.length === 0 ? (
+              <div className="bg-card hh-empty-state">
+                <div className="hh-empty-icon-wrap">
+                  {activeTab === "family"
+                    ? <MdFamilyRestroom size={19} />
+                    : <MdWork size={19} />}
+                </div>
+                <p className="text-secondary" style={{ fontSize: "0.83rem", margin: 0 }}>
+                  {q
+                    ? t("hhEmptyHint")
+                    : activeTab === "family" ? t("hhEmptyFamily") : t("hhEmptyHelp")}
+                </p>
+                {!q && <p className="hh-empty-hint">{t("hhEmptyHint")}</p>}
+              </div>
+            ) : filtered.map((m) => (
+              <MemberRow key={m.id} member={m} isFamily={activeTab === "family"}
+                onDelete={() => askDelete(m.id, m.name)}
+                onToggleAdmin={() => askToggleAdmin(m.id, m.name, m.isAdmin)}
+                onEdit={() => setEditMember(m)}
+                t={t} />
+            ))}
+          </div>
+        )}
+      </div>
 
       {/* ── ADD MODAL ── */}
       {showModal && flatAssigned && (
