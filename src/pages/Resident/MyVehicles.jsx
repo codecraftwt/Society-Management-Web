@@ -27,17 +27,17 @@ function Spinner({ size = 16 }) {
 }
 
 const VEHICLE_ICON = {
-  CAR:  <MdDirectionsCarFilled style={{ fontSize: 20, color: "#94B5F5" }} />,
-  BIKE: <MdTwoWheeler          style={{ fontSize: 20, color: "#9F87D7" }} />,
+  CAR:  <MdDirectionsCarFilled style={{ fontSize: 20, color: "var(--accent)" }} />,
+  BIKE: <MdTwoWheeler          style={{ fontSize: 20, color: "var(--acct-violet, var(--accent))" }} />,
 };
 const TYPE_LABEL = { CAR: "Car 🚗", BIKE: "Bike 🏍️" };
 
 /* ── Allocated Slot Card ── */
 function AllocatedSlotCard({ slot }) {
   const isCAR = slot.vehicle_type === "CAR";
-  const ac    = isCAR ? "#94B5F5" : "#9F87D7";
-  const abg   = isCAR ? "rgba(148,181,245,0.10)"  : "rgba(159,135,215,0.10)";
-  const abdr  = isCAR ? "rgba(148,181,245,0.22)"  : "rgba(159,135,215,0.22)";
+  const ac    = isCAR ? "var(--accent)" : "var(--acct-violet)";
+  const abg   = isCAR ? "rgba(var(--acct-purple-rgb),0.10)"  : "rgba(159,135,215,0.10)";
+  const abdr  = isCAR ? "rgba(var(--acct-purple-rgb),0.22)"  : "rgba(159,135,215,0.22)";
 
   return (
     <div style={{ borderRadius: 16, border: "1px solid var(--glass-border)", background: "var(--card-inner-bg,rgba(255,255,255,0.04))", overflow: "hidden" }}>
@@ -92,7 +92,7 @@ function AllocatedSlotCard({ slot }) {
     )}
   </p>
 ) : (
-              <p style={{ margin:"4px 0 0", fontSize:11, color:"#60A5FA", fontWeight:600 }}>
+              <p style={{ margin:"4px 0 0", fontSize:11, color:"var(--accent)", fontWeight:600 }}>
                 No vehicle linked yet — add a vehicle to claim this slot
               </p>
             )}
@@ -108,7 +108,7 @@ function AllocatedSlotCard({ slot }) {
           <span style={{
             padding: "5px 12px", borderRadius: 999, fontSize: 11, fontWeight: 700,
             background: slot.parking_type === "DEFAULT" ? "rgba(74,222,128,0.10)" : "rgba(251,191,36,0.10)",
-            color: slot.parking_type === "DEFAULT" ? "#4ade80" : "#60A5FA",
+            color: slot.parking_type === "DEFAULT" ? "#4ade80" : "var(--accent)",
             border: `1px solid ${slot.parking_type === "DEFAULT" ? "rgba(74,222,128,0.25)" : "rgba(251,191,36,0.25)"}`,
           }}>
             {slot.parking_type === "DEFAULT" ? "Default" : "Extra"}
@@ -117,7 +117,7 @@ function AllocatedSlotCard({ slot }) {
           <span style={{
             padding: "4px 10px", borderRadius: 999, fontSize: 10, fontWeight: 700,
             background: slot.linked_vehicle ? "rgba(148,181,245,0.10)" : "rgba(255,255,255,0.05)",
-            color: slot.linked_vehicle ? "#94B5F5" : "var(--text-secondary)",
+            color: slot.linked_vehicle ? "var(--accent)" : "var(--text-secondary)",
             border: `1px solid ${slot.linked_vehicle ? "rgba(148,181,245,0.25)" : "rgba(255,255,255,0.08)"}`,
           }}>
             {slot.linked_vehicle ? "Occupied" : "Unlinked"}
@@ -131,10 +131,10 @@ function AllocatedSlotCard({ slot }) {
 /* ── Status badge for parking requests ── */
 function ReqStatusBadge({ status }) {
   const cfg = {
-    PENDING:   { label:"Pending",   color:"#60A5FA", bg:"rgba(251,191,36,0.12)",  border:"rgba(251,191,36,0.28)"  },
+    PENDING:   { label:"Pending",   color:"var(--accent)", bg:"rgba(251,191,36,0.12)",  border:"rgba(251,191,36,0.28)"  },
     APPROVED:  { label:"Approved",  color:"#4ade80", bg:"rgba(74,222,128,0.12)",  border:"rgba(74,222,128,0.28)"  },
     REJECTED:  { label:"Rejected",  color:"#f87171", bg:"rgba(248,113,113,0.12)", border:"rgba(248,113,113,0.28)" },
-    COMPLETED: { label:"Completed", color:"#9F87D7", bg:"rgba(129,140,248,0.12)", border:"rgba(129,140,248,0.28)" },
+    COMPLETED: { label:"Completed", color:"var(--accent)", bg:"rgba(129,140,248,0.12)", border:"rgba(129,140,248,0.28)" },
   }[status] || { label:status, color:"#A39EB2", bg:"rgba(163,158,178,0.10)", border:"rgba(163,158,178,0.22)" };
 
   return (
@@ -162,13 +162,13 @@ function SlotPickerOption({ slot, isSelected, isOccupied, onSelect }) {
         borderRadius: 12,
         border: `2px solid ${
           isSelected
-            ? "#6B46C1"
+            ? "var(--accent)"
             : isOccupied
-            ? "rgba(255,255,255,0.05)"
-            : "rgba(255,255,255,0.09)"
+            ? "var(--glass-border)"
+            : "var(--glass-border)"
         }`,
         background: isSelected
-          ? "rgba(107,70,193,0.10)"
+          ? "var(--accent-soft)"
           : isOccupied
           ? "rgba(255,255,255,0.02)"
           : "rgba(255,255,255,0.04)",
@@ -184,8 +184,8 @@ function SlotPickerOption({ slot, isSelected, isOccupied, onSelect }) {
         <div style={{
           width: 20, height: 20, borderRadius: "50%", flexShrink: 0,
           display: "flex", alignItems: "center", justifyContent: "center",
-          border: `2px solid ${isSelected ? "#6B46C1" : isOccupied ? "rgba(255,255,255,0.15)" : "rgba(255,255,255,0.25)"}`,
-          background: isSelected ? "#6B46C1" : "transparent",
+          border: `2px solid ${isSelected ? "var(--accent)" : isOccupied ? "rgba(255,255,255,0.15)" : "rgba(255,255,255,0.25)"}`,
+          background: isSelected ? "var(--accent)" : "transparent",
           transition: "all 0.15s",
         }}>
           {isSelected && <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#fff" }} />}
@@ -217,7 +217,7 @@ function SlotPickerOption({ slot, isSelected, isOccupied, onSelect }) {
         <span style={{
           padding: "3px 10px", borderRadius: 999, fontSize: 11, fontWeight: 700,
           background: isDefault ? "rgba(74,222,128,0.10)" : "rgba(251,191,36,0.10)",
-          color: isDefault ? "#4ade80" : "#60A5FA",
+          color: isDefault ? "#4ade80" : "var(--accent)",
           border: `1px solid ${isDefault ? "rgba(74,222,128,0.25)" : "rgba(251,191,36,0.25)"}`,
         }}>
           {isDefault ? "Default" : "Extra"}
@@ -496,14 +496,14 @@ export default function MyVehicles() {
   const tabStyle = (key) => ({
     padding:"8px 18px", borderRadius:10, border:"none", cursor:"pointer",
     fontSize:13, fontWeight:700, transition:"all 0.15s", background:"transparent",
-    color:        activeTab === key ? "var(--primary-text,#9F87D7)" : "var(--text-secondary)",
-    borderBottom: activeTab === key ? "2px solid var(--primary-text,#9F87D7)" : "2px solid transparent",
+    color:        activeTab === key ? "var(--primary-text,var(--accent))" : "var(--text-secondary)",
+    borderBottom: activeTab === key ? "2px solid var(--primary-text,var(--accent))" : "2px solid transparent",
   });
 
   const countBadge = (val, active) => ({
     marginLeft:6, fontSize:11, fontWeight:800, padding:"1px 7px", borderRadius:999,
-    background: active ? "rgba(107,70,193,0.18)" : "rgba(255,255,255,0.06)",
-    color:      active ? "#9F87D7"               : "var(--text-secondary)",
+    background: active ? "var(--accent-soft)" : "rgba(255,255,255,0.06)",
+    color:      active ? "var(--accent)"               : "var(--text-secondary)",
   });
 
   const pendingCount = parkingRequests.filter(r => r.status === "PENDING").length;
@@ -538,7 +538,7 @@ export default function MyVehicles() {
           background: overDeclared ? "rgba(251,191,36,0.08)" : "rgba(74,222,128,0.06)",
           border:    `1px solid ${overDeclared ? "rgba(251,191,36,0.25)" : "rgba(74,222,128,0.20)"}`,
           fontSize:12, fontWeight:600,
-          color: overDeclared ? "#60A5FA" : "#4ade80",
+          color: overDeclared ? "var(--accent)" : "#4ade80",
         }}>
           <MdDirectionsCar size={15} style={{ flexShrink:0 }} />
           <span>
@@ -565,7 +565,7 @@ export default function MyVehicles() {
         <button style={tabStyle("requests")} onClick={() => setActiveTab("requests")}>
           📋 Slot Requests
           {pendingCount > 0 && (
-            <span style={{ marginLeft:6, fontSize:11, fontWeight:800, padding:"1px 7px", borderRadius:999, background:"rgba(251,191,36,0.18)", color:"#60A5FA" }}>
+            <span style={{ marginLeft:6, fontSize:11, fontWeight:800, padding:"1px 7px", borderRadius:999, background:"rgba(251,191,36,0.18)", color:"var(--accent)" }}>
               {pendingCount}
             </span>
           )}
@@ -659,16 +659,16 @@ export default function MyVehicles() {
                               style={{
                                 display:"flex", alignItems:"center", justifyContent:"space-between",
                                 padding:"12px 14px", borderRadius:12, cursor:"pointer", textAlign:"left",
-                                background: isSel ? "rgba(107,70,193,0.10)" : "rgba(255,255,255,0.03)",
-                                border:`2px solid ${isSel ? "#6B46C1" : "rgba(255,255,255,0.08)"}`,
+                                background: isSel ? "var(--accent-soft)" : "rgba(255,255,255,0.03)",
+                                border:`2px solid ${isSel ? "var(--accent)" : "rgba(255,255,255,0.08)"}`,
                                 transition:"all 0.15s",
                               }}>
                               <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-                                <div style={{ width:34, height:34, borderRadius:10, flexShrink:0, display:"flex", alignItems:"center", justifyContent:"center", background: isSel ? "rgba(107,70,193,0.15)" : "rgba(255,255,255,0.05)" }}>
-                                  <MdHome size={17} style={{ color: isSel ? "#9F87D7" : "var(--text-secondary)" }} />
+                                <div style={{ width:34, height:34, borderRadius:10, flexShrink:0, display:"flex", alignItems:"center", justifyContent:"center", background: isSel ? "var(--accent-soft)" : "rgba(255,255,255,0.05)" }}>
+                                  <MdHome size={17} style={{ color: isSel ? "var(--accent)" : "var(--text-secondary)" }} />
                                 </div>
                                 <div>
-                                  <p style={{ margin:0, fontSize:13, fontWeight:700, color: isSel ? "#9F87D7" : "var(--text-primary)" }}>Flat {flat.flat_number}</p>
+                                  <p style={{ margin:0, fontSize:13, fontWeight:700, color: isSel ? "var(--accent)" : "var(--text-primary)" }}>Flat {flat.flat_number}</p>
                                   {flat.floor_id && <p style={{ margin:"2px 0 0", fontSize:11, color:"var(--text-secondary)" }}>Floor {flat.floor_id}</p>}
                                 </div>
                               </div>
@@ -689,7 +689,7 @@ export default function MyVehicles() {
                                     No {form.vehicle_type} slot assigned
                                   </span>
                                 )}
-                                {isSel && <MdCheckCircle size={16} style={{ color:"#9F87D7", flexShrink:0 }} />}
+                                {isSel && <MdCheckCircle size={16} style={{ color:"var(--accent)", flexShrink:0 }} />}
                               </div>
                             </button>
                           );
@@ -707,7 +707,7 @@ export default function MyVehicles() {
 
                     {/* Panel header */}
                     <div style={{ display:"flex", alignItems:"center", gap:8, padding:"12px 16px", borderBottom:"1px solid var(--glass-border)", background:"rgba(255,255,255,0.03)" }}>
-                      <FaParking style={{ color:"#9F87D7", fontSize:14 }} />
+                      <FaParking style={{ color:"var(--accent)", fontSize:14 }} />
                       <span style={{ fontSize:12, fontWeight:700, color:"var(--text-primary)", textTransform:"uppercase", letterSpacing:"0.05em" }}>
                         Select Parking Slot
                       </span>
@@ -718,9 +718,9 @@ export default function MyVehicles() {
                       {availableSlots.length === 0 ? (
                         /* No slots assigned to this flat for this vehicle type */
                         <div style={{ display:"flex", alignItems:"flex-start", gap:10, padding:"14px", borderRadius:12, background:"rgba(148,181,245,0.06)", border:"1px solid rgba(148,181,245,0.18)" }}>
-                          <MdInfo style={{ color:"#94B5F5", fontSize:16, flexShrink:0, marginTop:1 }} />
+                          <MdInfo style={{ color:"var(--accent)", fontSize:16, flexShrink:0, marginTop:1 }} />
                           <div>
-                            <p style={{ margin:0, fontSize:13, fontWeight:700, color:"#94B5F5" }}>
+                            <p style={{ margin:0, fontSize:13, fontWeight:700, color:"var(--accent)" }}>
                               No {form.vehicle_type} slot pre-assigned to your flat
                             </p>
                             <p style={{ margin:"4px 0 0", fontSize:11, color:"var(--text-secondary)", lineHeight:1.5 }}>
@@ -759,7 +759,7 @@ export default function MyVehicles() {
                             style={{
                               display:"flex", alignItems:"center", justifyContent:"space-between",
                               width:"100%", padding:"13px 16px", borderRadius:12,
-                              border:`2px solid ${selectedSlotId === null ? "#2563EB" : "rgba(255,255,255,0.09)"}`,
+                              border:`2px solid ${selectedSlotId === null ? "var(--accent)" : "rgba(255,255,255,0.09)"}`,
                               background: selectedSlotId === null ? "rgba(251,191,36,0.07)" : "rgba(255,255,255,0.03)",
                               cursor:"pointer", textAlign:"left", transition:"all 0.15s",
                             }}
@@ -769,14 +769,14 @@ export default function MyVehicles() {
                               <div style={{
                                 width:20, height:20, borderRadius:"50%", flexShrink:0,
                                 display:"flex", alignItems:"center", justifyContent:"center",
-                                border:`2px solid ${selectedSlotId === null ? "#2563EB" : "rgba(255,255,255,0.25)"}`,
-                                background: selectedSlotId === null ? "#2563EB" : "transparent",
+                                border:`2px solid ${selectedSlotId === null ? "var(--accent)" : "rgba(255,255,255,0.25)"}`,
+                                background: selectedSlotId === null ? "var(--accent)" : "transparent",
                                 transition:"all 0.15s",
                               }}>
                                 {selectedSlotId === null && <div style={{ width:8, height:8, borderRadius:"50%", background:"#fff" }} />}
                               </div>
                               <div>
-                                <p style={{ margin:0, fontSize:13, fontWeight:700, color: selectedSlotId === null ? "#60A5FA" : "var(--text-primary)" }}>
+                                <p style={{ margin:0, fontSize:13, fontWeight:700, color: selectedSlotId === null ? "var(--accent)" : "var(--text-primary)" }}>
                                   Request New Extra Slot
                                 </p>
                                 <p style={{ margin:"3px 0 0", fontSize:11, color:"var(--text-secondary)", lineHeight:1.5 }}>
@@ -786,7 +786,7 @@ export default function MyVehicles() {
                             </div>
                             <span style={{
                               padding:"3px 10px", borderRadius:999, fontSize:11, fontWeight:700,
-                              background:"rgba(251,191,36,0.10)", color:"#60A5FA",
+                              background:"rgba(251,191,36,0.10)", color:"var(--accent)",
                               border:"1px solid rgba(251,191,36,0.25)", flexShrink:0,
                             }}>
                               Admin assigns
@@ -801,7 +801,7 @@ export default function MyVehicles() {
                             </div>
                           )}
                           {selectedSlotId === null && hasAnyFreeSlot && (
-                            <div style={{ display:"flex", alignItems:"center", gap:8, padding:"10px 12px", borderRadius:10, background:"rgba(251,191,36,0.06)", border:"1px solid rgba(251,191,36,0.18)", fontSize:11, color:"#60A5FA", fontWeight:600 }}>
+                            <div style={{ display:"flex", alignItems:"center", gap:8, padding:"10px 12px", borderRadius:10, background:"rgba(251,191,36,0.06)", border:"1px solid rgba(251,191,36,0.18)", fontSize:11, color:"var(--accent)", fontWeight:600 }}>
                               <MdInfo size={13} />
                               Free slots are available above. A new extra slot request will still go to your admin if you proceed.
                             </div>
@@ -852,7 +852,7 @@ export default function MyVehicles() {
                     <div key={v.id} style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"14px 16px", borderRadius:14, background:"var(--card-inner-bg,rgba(255,255,255,0.05))", border:"1px solid var(--glass-border)" }}>
                       <div style={{ display:"flex", alignItems:"center", gap:12 }}>
                         <div style={{ width:40, height:40, borderRadius:12, display:"flex", alignItems:"center", justifyContent:"center", background: v.vehicle_type==="BIKE" ? "rgba(159,135,215,0.12)" : "rgba(148,181,245,0.12)", border: v.vehicle_type==="BIKE" ? "1px solid rgba(159,135,215,0.25)" : "1px solid rgba(148,181,245,0.25)" }}>
-                          {VEHICLE_ICON[v.vehicle_type] || <MdDirectionsCarFilled style={{ fontSize:20, color:"#94B5F5" }} />}
+                          {VEHICLE_ICON[v.vehicle_type] || <MdDirectionsCarFilled style={{ fontSize:20, color:"var(--accent)" }} />}
                         </div>
                         <div>
                           <p style={{ fontWeight:700, fontSize:14, margin:0, color:"var(--text-primary)" }}>{v.vehicle_name}</p>
@@ -867,11 +867,11 @@ export default function MyVehicles() {
                                 {v.slot?.parking_floor && ` · ${v.slot.parking_floor}`}
                               </span>
                             ) : (
-                              <span style={{ fontSize:11, color:"#60A5FA", display:"flex", alignItems:"center", gap:3 }}>
+                              <span style={{ fontSize:11, color:"var(--accent)", display:"flex", alignItems:"center", gap:3 }}>
                                 <MdHourglassEmpty size={11} /> Awaiting slot from admin
                               </span>
                             )}
-                            <span style={{ fontSize:10, fontWeight:700, padding:"1px 6px", borderRadius:999, background: v.parking_type==="DEFAULT" ? "rgba(74,222,128,0.12)" : "rgba(251,191,36,0.12)", color: v.parking_type==="DEFAULT" ? "#4ade80" : "#60A5FA", border:`1px solid ${v.parking_type==="DEFAULT" ? "rgba(74,222,128,0.25)" : "rgba(251,191,36,0.25)"}` }}>
+                            <span style={{ fontSize:10, fontWeight:700, padding:"1px 6px", borderRadius:999, background: v.parking_type==="DEFAULT" ? "rgba(74,222,128,0.12)" : "rgba(251,191,36,0.12)", color: v.parking_type==="DEFAULT" ? "#4ade80" : "var(--accent)", border:`1px solid ${v.parking_type==="DEFAULT" ? "rgba(74,222,128,0.25)" : "rgba(251,191,36,0.25)"}` }}>
                               {v.parking_type === "DEFAULT" ? "Default" : "Extra"}
                             </span>
                           </div>
@@ -906,7 +906,7 @@ export default function MyVehicles() {
                           <td className="p-3">
                             <div style={{ display:"flex", alignItems:"center", gap:10 }}>
                               <div style={{ width:34, height:34, borderRadius:10, display:"flex", alignItems:"center", justifyContent:"center", background: v.vehicle_type==="BIKE" ? "rgba(159,135,215,0.12)" : "rgba(148,181,245,0.12)", border: v.vehicle_type==="BIKE" ? "1px solid rgba(159,135,215,0.25)" : "1px solid rgba(148,181,245,0.25)" }}>
-                                {VEHICLE_ICON[v.vehicle_type] || <MdDirectionsCarFilled style={{ color:"#94B5F5", fontSize:18 }} />}
+                                {VEHICLE_ICON[v.vehicle_type] || <MdDirectionsCarFilled style={{ color:"var(--accent)", fontSize:18 }} />}
                               </div>
                               <span style={{ fontWeight:700, color:"var(--text-primary)" }}>{v.vehicle_name}</span>
                             </div>
@@ -915,7 +915,7 @@ export default function MyVehicles() {
                             <span style={{ fontWeight:700, letterSpacing:"0.06em", fontSize:13, color:"var(--text-primary)", fontFamily:"monospace" }}>{v.vehicle_number}</span>
                           </td>
                           <td className="p-3">
-                            <span style={{ display:"inline-flex", alignItems:"center", gap:5, padding:"3px 10px", borderRadius:999, fontSize:11, fontWeight:700, color: v.vehicle_type==="BIKE" ? "#9F87D7" : "#94B5F5", background: v.vehicle_type==="BIKE" ? "rgba(159,135,215,0.10)" : "rgba(148,181,245,0.10)", border:`1px solid ${v.vehicle_type==="BIKE" ? "rgba(159,135,215,0.22)" : "rgba(148,181,245,0.22)"}` }}>
+                            <span style={{ display:"inline-flex", alignItems:"center", gap:5, padding:"3px 10px", borderRadius:999, fontSize:11, fontWeight:700, color: v.vehicle_type==="BIKE" ? "var(--accent)" : "var(--accent)", background: v.vehicle_type==="BIKE" ? "rgba(159,135,215,0.10)" : "rgba(148,181,245,0.10)", border:`1px solid ${v.vehicle_type==="BIKE" ? "rgba(159,135,215,0.22)" : "rgba(148,181,245,0.22)"}` }}>
                               {TYPE_LABEL[v.vehicle_type] || v.vehicle_type}
                             </span>
                           </td>
@@ -930,13 +930,13 @@ export default function MyVehicles() {
                                 )}
                               </div>
                             ) : (
-                              <span style={{ display:"inline-flex", alignItems:"center", gap:5, padding:"3px 10px", borderRadius:999, fontSize:11, fontWeight:700, color:"#60A5FA", background:"rgba(251,191,36,0.08)", border:"1px solid rgba(251,191,36,0.20)" }}>
+                              <span style={{ display:"inline-flex", alignItems:"center", gap:5, padding:"3px 10px", borderRadius:999, fontSize:11, fontWeight:700, color:"var(--accent)", background:"rgba(251,191,36,0.08)", border:"1px solid rgba(251,191,36,0.20)" }}>
                                 <MdHourglassEmpty size={11} /> Awaiting admin
                               </span>
                             )}
                           </td>
                           <td className="p-3">
-                            <span style={{ display:"inline-flex", alignItems:"center", gap:4, padding:"3px 10px", borderRadius:999, fontSize:11, fontWeight:700, background: v.parking_type==="DEFAULT" ? "rgba(74,222,128,0.10)" : "rgba(251,191,36,0.10)", color: v.parking_type==="DEFAULT" ? "#4ade80" : "#60A5FA", border:`1px solid ${v.parking_type==="DEFAULT" ? "rgba(74,222,128,0.22)" : "rgba(251,191,36,0.22)"}` }}>
+                            <span style={{ display:"inline-flex", alignItems:"center", gap:4, padding:"3px 10px", borderRadius:999, fontSize:11, fontWeight:700, background: v.parking_type==="DEFAULT" ? "rgba(74,222,128,0.10)" : "rgba(251,191,36,0.10)", color: v.parking_type==="DEFAULT" ? "#4ade80" : "var(--accent)", border:`1px solid ${v.parking_type==="DEFAULT" ? "rgba(74,222,128,0.22)" : "rgba(251,191,36,0.22)"}` }}>
                               {v.parking_type === "DEFAULT" ? "Default" : "Extra"}
                             </span>
                           </td>
@@ -1074,7 +1074,7 @@ export default function MyVehicles() {
                         <td className="px-5 py-3 text-xs text-secondary">{i + 1}</td>
                         <td className="px-5 py-3 font-mono font-bold text-sm">{r.vehicle_number}</td>
                         <td className="px-5 py-3">
-                          <span style={{ display:"inline-flex", alignItems:"center", gap:5, padding:"3px 10px", borderRadius:999, fontSize:11, fontWeight:700, color: r.vehicle_type==="BIKE" ? "#9F87D7" : "#94B5F5", background: r.vehicle_type==="BIKE" ? "rgba(159,135,215,0.10)" : "rgba(148,181,245,0.10)", border:`1px solid ${r.vehicle_type==="BIKE" ? "rgba(159,135,215,0.22)" : "rgba(148,181,245,0.22)"}` }}>
+                          <span style={{ display:"inline-flex", alignItems:"center", gap:5, padding:"3px 10px", borderRadius:999, fontSize:11, fontWeight:700, color: r.vehicle_type==="BIKE" ? "var(--accent)" : "var(--accent)", background: r.vehicle_type==="BIKE" ? "rgba(159,135,215,0.10)" : "rgba(148,181,245,0.10)", border:`1px solid ${r.vehicle_type==="BIKE" ? "rgba(159,135,215,0.22)" : "rgba(148,181,245,0.22)"}` }}>
                             {TYPE_LABEL[r.vehicle_type] || r.vehicle_type}
                           </span>
                         </td>
@@ -1108,7 +1108,7 @@ export default function MyVehicles() {
                         {r.assigned_spot && <> · <span style={{ color:"#4ade80" }}>{r.assigned_spot}</span></>}
                       </p>
                       {!r.assigned_spot && (
-                        <span style={{ display:"inline-flex", marginTop:4, alignItems:"center", gap:4, padding:"2px 8px", borderRadius:999, fontSize:10, fontWeight:700, background:"rgba(251,191,36,0.10)", color:"#60A5FA", border:"1px solid rgba(251,191,36,0.22)" }}>
+                        <span style={{ display:"inline-flex", marginTop:4, alignItems:"center", gap:4, padding:"2px 8px", borderRadius:999, fontSize:10, fontWeight:700, background:"rgba(251,191,36,0.10)", color:"var(--accent)", border:"1px solid rgba(251,191,36,0.22)" }}>
                           Awaiting slot assignment
                         </span>
                       )}

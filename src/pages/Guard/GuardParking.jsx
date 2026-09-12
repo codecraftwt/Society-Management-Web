@@ -11,6 +11,7 @@ import {
   MdSearch, MdClose, MdPersonSearch, MdAdd,
 } from "react-icons/md";
 import Select from "../../components/common/Select";
+import SlidingTabs from "../../components/common/SlidingTabs";
 
 function useIsMobile() {
   const [m, setM] = useState(() => typeof window !== "undefined" && window.innerWidth < 768);
@@ -33,7 +34,7 @@ function useDebounce(value, delay = 500) {
 
 function Spinner({ size = 22 }) {
   return (
-    <svg style={{ color: "var(--accent,#5B8DEF)", margin: "0 auto", width: size, height: size, animation: "spin 0.8s linear infinite" }}
+    <svg style={{ color: "var(--accent)", margin: "0 auto", width: size, height: size, animation: "spin 0.8s linear infinite" }}
       viewBox="0 0 24 24" fill="none">
       <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" style={{ opacity: 0.2 }} />
       <path fill="currentColor" style={{ opacity: 0.85 }} d="M4 12a8 8 0 018-8v8z" />
@@ -74,11 +75,11 @@ function Pagination({ page, totalPages, onPageChange }) {
 
 function StatusBadge({ status, t }) {
   const cfg = {
-    PENDING:   { label: t("gpPending") || "Pending",   Icon: MdWarning,      color: "#60A5FA", bg: "rgba(251,191,36,0.12)",  border: "rgba(251,191,36,0.28)"  },
-    APPROVED:  { label: t("gpApproved"),                Icon: MdCheckCircle, color: "#4ade80", bg: "rgba(74,222,128,0.12)",  border: "rgba(74,222,128,0.28)"  },
-    REJECTED:  { label: t("gpRejected"),                Icon: MdCancel,      color: "#f87171", bg: "rgba(248,113,113,0.12)", border: "rgba(248,113,113,0.28)" },
-    COMPLETED: { label: t("gpCompleted"),               Icon: MdDone,        color: "#9F87D7", bg: "rgba(129,140,248,0.12)", border: "rgba(129,140,248,0.28)" },
-  }[status] || { label: status, Icon: MdCheckCircle, color: "#4ade80", bg: "rgba(74,222,128,0.12)", border: "rgba(74,222,128,0.28)" };
+    PENDING:   { label: t("gpPending") || "Pending",   Icon: MdWarning,      color: "var(--warning)", bg: "rgba(255,193,7,0.12)",  border: "rgba(255,193,7,0.28)"  },
+    APPROVED:  { label: t("gpApproved"),                Icon: MdCheckCircle, color: "var(--success)", bg: "rgba(25,135,84,0.12)",  border: "rgba(25,135,84,0.28)"  },
+    REJECTED:  { label: t("gpRejected"),                Icon: MdCancel,      color: "var(--danger)",  bg: "rgba(171,46,60,0.12)", border: "rgba(171,46,60,0.28)" },
+    COMPLETED: { label: t("gpCompleted"),               Icon: MdDone,        color: "var(--acct-violet, #9E58FF)", bg: "rgba(158,88,255,0.12)", border: "rgba(158,88,255,0.28)" },
+  }[status] || { label: status, Icon: MdCheckCircle, color: "var(--success)", bg: "rgba(25,135,84,0.12)", border: "rgba(25,135,84,0.28)" };
 
   return (
     <span className="gp-status-badge" style={{ color: cfg.color, background: cfg.bg, border: `1.5px solid ${cfg.border}` }}>
@@ -88,8 +89,8 @@ function StatusBadge({ status, t }) {
 }
 
 const VEHICLE_CFG = {
-  CAR:  { emoji: "🚗", label: "Car",  color: "#94B5F5", bg: "rgba(148,181,245,0.10)",  border: "rgba(148,181,245,0.22)"  },
-  BIKE: { emoji: "🏍️", label: "Bike", color: "#9F87D7", bg: "rgba(159,135,215,0.10)", border: "rgba(159,135,215,0.22)" },
+  CAR:  { emoji: "🚗", label: "Car",  color: "var(--acct-cyan, #4BCBEB)", bg: "rgba(75,203,235,0.12)",  border: "rgba(75,203,235,0.28)"  },
+  BIKE: { emoji: "🏍️", label: "Bike", color: "var(--acct-violet, #9E58FF)", bg: "rgba(158,88,255,0.12)", border: "rgba(158,88,255,0.28)" },
 };
 
 function VehicleTypeBadge({ type }) {
@@ -111,9 +112,9 @@ function ParkingTypePill({ type }) {
       display:"inline-flex", alignItems:"center", gap:4,
       padding:"2px 8px", borderRadius:999, fontSize:10, fontWeight:800,
       textTransform:"uppercase", letterSpacing:"0.05em",
-      color: isResident ? "#60A5FA" : "#94B5F5",
-      background: isResident ? "rgba(251,191,36,0.10)" : "rgba(148,181,245,0.10)",
-      border: `1px solid ${isResident ? "rgba(251,191,36,0.25)" : "rgba(148,181,245,0.22)"}`,
+      color: isResident ? "var(--accent)" : "var(--acct-cyan, #4BCBEB)",
+      background: isResident ? "rgba(160,90,255,0.12)" : "rgba(75,203,235,0.12)",
+      border: `1px solid ${isResident ? "rgba(160,90,255,0.28)" : "rgba(75,203,235,0.28)"}`,
     }}>
       {isResident ? "🏠 Resident" : "👤 Visitor"}
     </span>
@@ -132,11 +133,11 @@ function RequestCard({ r, slots, selectedSlot, setSelectedSlot, onAssign, onReje
   const hasSlot    = !!r.assigned_spot;
 
   const stripColor = {
-    PENDING:   "#60A5FA",
-    APPROVED:  "#4ade80",
-    REJECTED:  "#f87171",
-    COMPLETED: "#9F87D7",
-  }[r.status] || "#4ade80";
+    PENDING:   "var(--warning)",
+    APPROVED:  "var(--success)",
+    REJECTED:  "var(--danger)",
+    COMPLETED: "var(--acct-violet, #9E58FF)",
+  }[r.status] || "var(--success)";
 
   return (
     <div className="gp-card animate-fadeIn">
@@ -282,9 +283,9 @@ function ResidentEntryPanel({ slots, onCreated, t }) {
   };
 
   return (
-    <div style={{
-      background: "var(--card-inner-bg, rgba(255,255,255,0.04))",
-      border: "1.5px solid rgba(251,191,36,0.25)",
+    <div className="gp-resident-panel" style={{
+      background: "var(--card-bg)",
+      border: "1.5px solid var(--glass-border)",
       borderRadius: 16,
       padding: 20,
       display: "flex",
@@ -299,12 +300,12 @@ function ResidentEntryPanel({ slots, onCreated, t }) {
         </div>
       </div>
 
-      <div style={{ display:"flex", gap:10, flexWrap:"wrap" }}>
-        <div style={{ position:"relative", flex:1, minWidth:200 }}>
-          <MdDirectionsCar size={15} style={{ position:"absolute", left:12, top:"50%", transform:"translateY(-50%)", color:"var(--text-secondary)", pointerEvents:"none" }} />
+      <div style={{ display:"flex", gap:10, flexWrap:"wrap", alignItems:"center" }}>
+        <div className="ge-search-wrap gp-lookup-search">
+          <MdDirectionsCar className="ge-search-icon" size={17} />
           <input
-            className="input"
-            style={{ paddingLeft:34, height:42, fontSize:13, fontWeight:600, textTransform:"uppercase" }}
+            className="ge-search-input"
+            style={{ fontWeight: 600, textTransform: "uppercase" }}
             placeholder="Enter vehicle number (e.g. TN01AB1234)"
             value={vehicleNumber}
             onChange={e => { setVehicleNumber(e.target.value.toUpperCase()); setLookupResult(null); setLookupError(""); }}
@@ -610,65 +611,65 @@ export default function GuardParking() {
         .gp-root{display:flex;flex-direction:column;gap:20px;padding-bottom:24px;}
         .gp-er{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;}
         .gp-er-left{display:flex;align-items:center;gap:14px;}
-        .gp-er-icon{width:48px;height:48px;border-radius:14px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,rgba(91,141,239,0.15),rgba(107,70,193,0.12));border:1.5px solid rgba(91,141,239,0.25);color:#94B5F5;}
+        .gp-er-icon{width:48px;height:48px;border-radius:14px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:var(--accent-soft);border:1.5px solid rgba(160,90,255,0.25);color:var(--accent);}
         .gp-er-title{font-size:20px;font-weight:800;color:var(--text-primary);letter-spacing:-0.03em;margin:0;}
         .gp-er-sub{font-size:12px;color:var(--text-secondary);margin-top:2px;}
-        .gp-refresh-btn{display:flex;align-items:center;gap:6px;padding:8px 14px;border-radius:10px;font-size:12px;font-weight:700;background:var(--card-inner-bg,rgba(255,255,255,0.06));border:1px solid var(--glass-border);color:var(--text-secondary);cursor:pointer;transition:all 0.2s;}
+        .gp-refresh-btn{display:flex;align-items:center;gap:6px;padding:8px 14px;border-radius:10px;font-size:12px;font-weight:700;background:var(--card-bg);border:1px solid var(--glass-border);color:var(--text-secondary);cursor:pointer;transition:all 0.2s;}
         .gp-refresh-btn:hover{color:var(--text-primary);}
         .gp-refresh-btn svg{transition:transform 0.6s;}
         .gp-refresh-btn.spinning svg{animation:spin 0.8s linear infinite;}
-        .gp-mode-switcher{display:flex;gap:8px;padding:5px;background:var(--card-inner-bg,rgba(255,255,255,0.05));border:1.5px solid var(--glass-border);border-radius:14px;width:fit-content;}
+        .gp-mode-switcher{display:flex;gap:8px;padding:5px;background:var(--card-bg);border:1.5px solid var(--glass-border);border-radius:14px;width:fit-content;}
         .gp-mode-btn{display:flex;align-items:center;gap:7px;padding:9px 18px;border-radius:10px;font-size:13px;font-weight:700;border:none;cursor:pointer;transition:all 0.18s;background:transparent;color:var(--text-secondary);}
         .gp-mode-btn:hover{color:var(--text-primary);}
-        .gp-mode-btn--visitor.active{background:linear-gradient(135deg,#3E60A3,#5B8DEF);color:#fff;box-shadow:0 3px 12px rgba(91,141,239,0.35);}
-        .gp-mode-btn--resident.active{background:linear-gradient(135deg,#1E40AF,#2563EB);color:#fff;box-shadow:0 3px 12px rgba(217,119,6,0.35);}
+        .gp-mode-btn--visitor.active{background:var(--accent);color:#fff;box-shadow:0 3px 12px rgba(160,90,255,0.35);}
+        .gp-mode-btn--resident.active{background:var(--accent);color:#fff;box-shadow:0 3px 12px rgba(160,90,255,0.35);}
         .gp-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
         .gp-stat{border-radius:16px;padding:14px 16px;border:1.5px solid;display:flex;flex-direction:column;gap:4px;position:relative;overflow:hidden;transition:transform 0.2s;}
         .gp-stat::before{content:"";position:absolute;top:0;left:0;right:0;height:2px;border-radius:16px 16px 0 0;}
         .gp-stat:hover{transform:translateY(-2px);}
         .gp-stat__val{font-size:26px;font-weight:800;letter-spacing:-0.04em;line-height:1;}
         .gp-stat__label{font-size:10px;font-weight:600;opacity:0.75;letter-spacing:0.03em;text-transform:uppercase;}
-        .gp-stat--total{background:linear-gradient(135deg,rgba(107,70,193,0.12),rgba(91,141,239,0.08));border-color:rgba(107,70,193,0.28);}
-        .gp-stat--total::before{background:linear-gradient(90deg,#6B46C1,#5B8DEF);}
-        .gp-stat--total .gp-stat__val,.gp-stat--total .gp-stat__label{color:#C0B0E5;}
-        .gp-stat--pending{background:rgba(37,99,235,0.10);border-color:rgba(37,99,235,0.28);}
-        .gp-stat--pending::before{background:linear-gradient(90deg,#2563EB,#60A5FA);}
-        .gp-stat--pending .gp-stat__val,.gp-stat--pending .gp-stat__label{color:#93C5FD;}
-        .gp-stat--approved{background:rgba(74,222,128,0.10);border-color:rgba(74,222,128,0.28);}
-        .gp-stat--approved::before{background:linear-gradient(90deg,#22c55e,#4ade80);}
-        .gp-stat--approved .gp-stat__val,.gp-stat--approved .gp-stat__label{color:#86efac;}
-        .gp-stat--completed{background:rgba(129,140,248,0.10);border-color:rgba(129,140,248,0.28);}
-        .gp-stat--completed::before{background:linear-gradient(90deg,#6B46C1,#9F87D7);}
-        .gp-stat--completed .gp-stat__val,.gp-stat--completed .gp-stat__label{color:#DAD1F0;}
+        .gp-stat--total{background:var(--card-bg);border-color:var(--glass-border);}
+        .gp-stat--total::before{background:var(--accent);}
+        .gp-stat--total .gp-stat__val,.gp-stat--total .gp-stat__label{color:var(--accent);}
+        .gp-stat--pending{background:var(--card-bg);border-color:var(--glass-border);}
+        .gp-stat--pending::before{background:var(--warning);}
+        .gp-stat--pending .gp-stat__val,.gp-stat--pending .gp-stat__label{color:var(--warning);}
+        .gp-stat--approved{background:var(--card-bg);border-color:var(--glass-border);}
+        .gp-stat--approved::before{background:var(--success);}
+        .gp-stat--approved .gp-stat__val,.gp-stat--approved .gp-stat__label{color:var(--success);}
+        .gp-stat--completed{background:var(--card-bg);border-color:var(--glass-border);}
+        .gp-stat--completed::before{background:var(--acct-violet,#9E58FF);}
+        .gp-stat--completed .gp-stat__val,.gp-stat--completed .gp-stat__label{color:var(--acct-violet,#9E58FF);}
         .gp-toolbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
         .gp-search-wrap{position:relative;flex:1;min-width:180px;max-width:320px;}
         .gp-search-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text-secondary);pointer-events:none;}
-        .gp-search-input{width:100%;padding:9px 36px 9px 36px;border-radius:10px;font-size:13px;font-weight:500;background:var(--card-inner-bg,rgba(255,255,255,0.06));border:1.5px solid var(--glass-border);color:var(--text-primary);outline:none;transition:border-color 0.2s;}
-        .gp-search-input:focus{border-color:var(--accent,#5B8DEF);}
+        .gp-search-input{width:100%;padding:9px 36px 9px 36px;border-radius:10px;font-size:13px;font-weight:500;background:var(--input-bg);border:1.5px solid var(--input-border);color:var(--text-primary);outline:none;transition:border-color 0.2s;}
+        .gp-search-input:focus{border-color:var(--accent);}
         .gp-search-input::placeholder{color:var(--text-secondary);}
-        .gp-tabs{display:flex;gap:6px;flex-wrap:wrap;background:var(--card-inner-bg,rgba(255,255,255,0.05));border:1.5px solid var(--glass-border);border-radius:14px;padding:5px;}
+        .gp-tabs{display:flex;gap:6px;flex-wrap:wrap;background:var(--card-bg);border:1.5px solid var(--glass-border);border-radius:14px;padding:5px;}
         .gp-tab{flex:1;min-width:70px;display:flex;align-items:center;justify-content:center;gap:6px;padding:8px 12px;border-radius:10px;font-size:12px;font-weight:600;border:none;cursor:pointer;transition:all 0.18s;background:transparent;color:var(--text-secondary);white-space:nowrap;}
         .gp-tab:hover{color:var(--text-primary);}
-        .gp-tab--active-all{background:linear-gradient(135deg,#5A3BA2,#6B46C1);color:#fff;box-shadow:0 3px 10px rgba(90,59,162,0.35);}
-        .gp-tab--active-pending{background:linear-gradient(135deg,#2563EB,#60A5FA);color:#fff;box-shadow:0 3px 10px rgba(37,99,235,0.35);}
-        .gp-tab--active-approved{background:linear-gradient(135deg,#16a34a,#22c55e);color:#fff;box-shadow:0 3px 10px rgba(22,163,74,0.35);}
-        .gp-tab--active-rejected{background:linear-gradient(135deg,#dc2626,#ef4444);color:#fff;box-shadow:0 3px 10px rgba(239,68,68,0.35);}
-        .gp-tab--active-completed{background:linear-gradient(135deg,#493083,#6B46C1);color:#fff;box-shadow:0 3px 10px rgba(107,70,193,0.35);}
+        .gp-tab--active-all{background:var(--accent);color:#fff;box-shadow:0 3px 10px rgba(160,90,255,0.35);}
+        .gp-tab--active-pending{background:var(--warning);color:#191C24;box-shadow:0 3px 10px rgba(255,193,7,0.35);}
+        .gp-tab--active-approved{background:var(--success);color:#fff;box-shadow:0 3px 10px rgba(25,135,84,0.35);}
+        .gp-tab--active-rejected{background:var(--danger);color:#fff;box-shadow:0 3px 10px rgba(171,46,60,0.35);}
+        .gp-tab--active-completed{background:var(--acct-violet,#9E58FF);color:#fff;box-shadow:0 3px 10px rgba(158,88,255,0.35);}
         .gp-tab-count{background:rgba(255,255,255,0.15);color:inherit;font-size:10px;font-weight:700;padding:1px 6px;border-radius:999px;line-height:1.6;}
         .gp-tab:not([class*="active"]) .gp-tab-count{background:var(--glass-border);color:var(--text-secondary);}
         @media(max-width:767px){.gp-tab-count{display:none;}}
-        .gp-card{display:flex;background:var(--card-bg,rgba(15,23,42,0.7));border:1.5px solid var(--glass-border);border-radius:18px;overflow:hidden;transition:border-color 0.2s,box-shadow 0.2s;}
-        .gp-card:hover{border-color:rgba(107,70,193,0.3);box-shadow:0 4px 20px rgba(0,0,0,0.18);}
+        .gp-card{display:flex;background:var(--card-bg);border:1.5px solid var(--glass-border);border-radius:18px;overflow:hidden;transition:border-color 0.2s,box-shadow 0.2s;}
+        .gp-card:hover{border-color:rgba(160,90,255,0.3);box-shadow:0 4px 20px rgba(0,0,0,0.18);}
         .gp-card-strip{width:4px;flex-shrink:0;}
         .gp-card-inner{flex:1;padding:16px 18px;display:flex;flex-direction:column;gap:12px;min-width:0;}
         .gp-card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;}
-        .gp-avatar{width:40px;height:40px;border-radius:12px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,rgba(91,141,239,0.14),rgba(107,70,193,0.10));border:1px solid rgba(91,141,239,0.2);color:#94B5F5;}
+        .gp-avatar{width:40px;height:40px;border-radius:12px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:var(--accent-soft);border:1px solid rgba(160,90,255,0.2);color:var(--accent);}
         .gp-guest-name{font-size:14px;font-weight:700;color:var(--text-primary);margin:0;line-height:1.2;}
         .gp-vehicle-num{font-size:12px;color:var(--text-secondary);margin:3px 0 0;font-weight:600;letter-spacing:0.04em;}
         .gp-status-badge{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:700;white-space:nowrap;}
         .gp-meta-row{display:flex;align-items:center;flex-wrap:wrap;gap:8px;}
-        .gp-assigned-chip{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700;background:rgba(91,141,239,0.10);color:#94B5F5;border:1px solid rgba(91,141,239,0.22);}
-        .gp-actions-panel{background:var(--card-inner-bg,rgba(255,255,255,0.04));border:1px solid var(--glass-border);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:12px;}
+        .gp-assigned-chip{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700;background:var(--accent-soft);color:var(--accent);border:1px solid rgba(160,90,255,0.22);}
+        .gp-actions-panel{background:var(--card-inner-bg);border:1px solid var(--glass-border);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:12px;}
         .gp-select-label{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px;font-size:10px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:var(--text-secondary);margin-bottom:6px;}
         .gp-no-slots-hint{display:flex;align-items:center;gap:3px;font-size:10px;color:#f87171;background:rgba(248,113,113,0.10);border:1px solid rgba(248,113,113,0.22);padding:2px 7px;border-radius:999px;font-weight:700;}
         .gp-slot-select{padding-left:34px !important;height:42px;font-size:13px;font-weight:600;}
@@ -679,12 +680,12 @@ export default function GuardParking() {
         .gp-btn-approve:disabled{opacity:0.45;cursor:not-allowed;transform:none;box-shadow:none;}
         .gp-btn-reject{flex:1;display:flex;align-items:center;justify-content:center;gap:7px;padding:10px 0;border-radius:11px;font-size:13px;font-weight:700;background:linear-gradient(135deg,#dc2626,#ef4444);color:#fff;border:none;cursor:pointer;box-shadow:0 4px 14px rgba(239,68,68,0.28);transition:all 0.2s;}
         .gp-btn-reject:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(239,68,68,0.42);}
-        .gp-btn-exit{flex:1;display:flex;align-items:center;justify-content:center;gap:7px;padding:10px 0;border-radius:11px;font-size:13px;font-weight:700;background:linear-gradient(135deg,#493083,#6B46C1);color:#fff;border:none;cursor:pointer;box-shadow:0 4px 14px rgba(107,70,193,0.30);transition:all 0.2s;}
-        .gp-btn-exit:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(107,70,193,0.45);}
+        .gp-btn-exit{flex:1;display:flex;align-items:center;justify-content:center;gap:7px;padding:10px 0;border-radius:11px;font-size:13px;font-weight:700;background:var(--accent);color:#fff;border:none;cursor:pointer;box-shadow:0 4px 14px rgba(160,90,255,0.30);transition:all 0.2s;}
+        .gp-btn-exit:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(160,90,255,0.45);}
         .gp-expand-btn{width:30px;height:30px;border-radius:8px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:var(--card-inner-bg,rgba(255,255,255,0.06));border:1px solid var(--glass-border);cursor:pointer;color:var(--text-secondary);transition:all 0.18s;}
         .gp-expand-btn:hover{color:var(--text-primary);}
         .gp-empty{display:flex;flex-direction:column;align-items:center;gap:10px;padding:60px 20px;color:var(--text-secondary);}
-        .gp-empty-icon{width:56px;height:56px;border-radius:16px;display:flex;align-items:center;justify-content:center;background:var(--card-inner-bg,rgba(255,255,255,0.06));border:1.5px solid var(--glass-border);font-size:24px;}
+        .gp-empty-icon{width:56px;height:56px;border-radius:16px;display:flex;align-items:center;justify-content:center;background:var(--card-inner-bg);border:1.5px solid var(--glass-border);font-size:24px;}
         .gp-list{display:flex;flex-direction:column;gap:12px;}
         .gp-footer{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-top:4px;}
         .gp-footer-text{font-size:12px;color:var(--text-secondary);}
@@ -709,7 +710,7 @@ export default function GuardParking() {
         {/* ── HEADER ── */}
         <div className="gp-er">
           <div className="gp-er-left">
-            <div className="gp-er-icon"><MdLocalParking size={24} /></div>
+            <div className="ad-page-icon"><MdLocalParking size={22} /></div>
             <div>
               <h2 className="gp-er-title">{t("gpTitle")}</h2>
               <p className="gp-er-sub">{counts.ALL} {t("gpSubtitle")}</p>
@@ -722,20 +723,15 @@ export default function GuardParking() {
         </div>
 
         {/* ── VIEW MODE SWITCHER ── */}
-        <div className="gp-mode-switcher">
-          <button
-            onClick={() => handleViewMode("visitor")}
-            className={`gp-mode-btn gp-mode-btn--visitor ${viewMode === "visitor" ? "active" : ""}`}
-          >
-            👤 Visitor Parking
-          </button>
-          <button
-            onClick={() => handleViewMode("resident")}
-            className={`gp-mode-btn gp-mode-btn--resident ${viewMode === "resident" ? "active" : ""}`}
-          >
-            🏠 Resident Parking
-          </button>
-        </div>
+        <SlidingTabs
+          className="gp-mode-tabs"
+          value={viewMode}
+          onChange={handleViewMode}
+          items={[
+            { id: "visitor",  label: "Visitor Parking" },
+            { id: "resident", label: "Resident Parking" },
+          ]}
+        />
 
         {/* ── RESIDENT ENTRY PANEL ── */}
         {viewMode === "resident" && (
@@ -762,46 +758,38 @@ export default function GuardParking() {
         )}
 
         {/* ── SEARCH + TABS ── */}
-        {!initialLoad && counts.ALL > 0 && (
-          <>
-            <div className="gp-toolbar">
-              <div className="gp-search-wrap">
-                <MdSearch className="gp-search-icon" size={17} />
+        {!initialLoad && (
+            <div className="ge-toolbar">
+              <div className="ge-search-wrap">
+                <MdSearch className="ge-search-icon" size={17} />
                 <input
-                  className="gp-search-input"
+                  className="ge-search-input"
                   placeholder={t("gpSearchPlaceholder") || "Search guest, vehicle..."}
                   value={search}
                   onChange={e => setSearch(e.target.value)}
-                  style={{ paddingRight: search || fetching ? 36 : 12 }}
                 />
                 {fetching && !initialLoad ? (
-                  <div style={{ position:"absolute", right:10, top:"50%", transform:"translateY(-50%)" }}>
+                  <div className="ge-search-action">
                     <Spinner size={13} />
                   </div>
                 ) : search ? (
-                  <button
-                    onClick={() => setSearch("")}
-                    style={{ position:"absolute", right:10, top:"50%", transform:"translateY(-50%)", background:"none", border:"none", cursor:"pointer", color:"var(--text-secondary)", display:"flex", alignItems:"center" }}
-                  >
+                  <button type="button" onClick={() => setSearch("")} className="ge-search-clear" aria-label="Clear search">
                     <MdClose size={13} />
                   </button>
                 ) : null}
               </div>
-            </div>
 
-            <div className="gp-tabs">
-              {tabs.map(tab => {
-                const isActive = activeTab === tab.key;
-                return (
-                  <button key={tab.key} onClick={() => handleTabChange(tab.key)}
-                    className={`gp-tab ${isActive ? `gp-tab--active-${tab.key.toLowerCase()}` : ""}`}>
-                    {tab.label}
-                    <span className="gp-tab-count">{tab.count}</span>
-                  </button>
-                );
-              })}
+              <SlidingTabs
+                className="gp-filter-tabs"
+                value={activeTab}
+                onChange={handleTabChange}
+                items={tabs.map(({ key, label, count }) => ({
+                  id: key,
+                  label,
+                  badge: count,
+                }))}
+              />
             </div>
-          </>
         )}
 
         {/* ── LIST ── */}

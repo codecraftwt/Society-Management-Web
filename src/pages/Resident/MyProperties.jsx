@@ -216,7 +216,7 @@ export default function MyProperties() {
   if (properties.length === 0)
     return (
       <div className="flex flex-col items-center justify-center p-20 gap-4 text-center">
-        <div className="w-16 h-16 rounded-2xl flex items-center justify-center bg-blue-500/10 text-blue-400 border border-blue-500/20">
+        <div className="w-16 h-16 rounded-2xl flex items-center justify-center ad-page-icon">
           <MdHome size={32} />
         </div>
         <h3 className="text-lg font-semibold">No Properties Found</h3>
@@ -231,7 +231,7 @@ export default function MyProperties() {
 
       {/* ── Header ── */}
       <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-blue-500/10 text-blue-400 border border-blue-500/20">
+        <div className="ad-page-icon">
           <MdHome size={20} />
         </div>
         <div>
@@ -376,7 +376,7 @@ export default function MyProperties() {
               style={{ background: "var(--card-bg, #1e1e2d)", borderColor: "var(--divider, rgba(255,255,255,0.1))" }}
             >
               <h3 className="text-lg font-bold" style={{ color: "var(--text-primary, #fff)" }}>Add Tenant Details</h3>
-              <button type="button" onClick={() => setShowForm(false)} className="text-secondary hover:text-white transition">
+              <button type="button" onClick={() => setShowForm(false)} className="text-secondary hover:opacity-80 transition">
                 <MdClose size={22} />
               </button>
             </div>
@@ -442,7 +442,7 @@ export default function MyProperties() {
           >
             <div className="flex justify-between items-center p-5 border-b" style={{ borderColor: "var(--divider, rgba(255,255,255,0.1))" }}>
               <h3 className="text-lg font-bold" style={{ color: "var(--text-primary, #fff)" }}>Tenant Profile</h3>
-              <button type="button" onClick={() => { setViewTenantData(null); setIsRenewing(false); }} className="text-secondary hover:text-white transition">
+              <button type="button" onClick={() => { setViewTenantData(null); setIsRenewing(false); }} className="text-secondary hover:opacity-80 transition">
                 <MdClose size={22} />
               </button>
             </div>

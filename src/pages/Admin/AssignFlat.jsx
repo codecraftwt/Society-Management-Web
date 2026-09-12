@@ -9,6 +9,7 @@ import {
   MdArrowBack, MdMeetingRoom,
 } from "react-icons/md";
 import Select from "../../components/common/Select";
+import GlobalButton from "../../components/common/GlobalButton";
 
 /* ─────────────────────────────────────────
    HELPERS
@@ -63,7 +64,7 @@ function Pagination({ page, totalPages, onPageChange }) {
 
 const RESIDENT_TYPE_STYLES = {
   OWNER:  { bg: "rgba(16,185,129,0.12)", color: "#34d399", border: "rgba(16,185,129,0.25)", label: "Owner" },
-  TENANT: { bg: "rgba(37,99,235,0.12)", color: "#60A5FA", border: "rgba(37,99,235,0.25)", label: "Tenant" },
+  TENANT: { bg: "rgba(160,90,255,0.12)", color: "var(--accent)", border: "rgba(160,90,255,0.25)", label: "Tenant" },
 };
 
 const BHK_STYLES = {
@@ -545,7 +546,7 @@ function AssignWizard({ onClose, onSuccess }) {
             <p style={{ fontSize: 12, fontWeight: 600, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8 }}>Select Resident</p>
             <div style={{ position: "relative", marginBottom: 8 }}>
               <MdSearch size={14} style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: "var(--text-secondary)", pointerEvents: "none" }} />
-              <input className="input w-full" style={{ paddingLeft: 32 }} placeholder="Search by name..." value={residentSearch} onChange={e => setResidentSearch(e.target.value)} />
+              <input className="input search-input w-full" style={{ paddingLeft: 32 }} placeholder="Search by name..." value={residentSearch} onChange={e => setResidentSearch(e.target.value)} />
             </div>
 
             <div style={{ maxHeight: 220, overflowY: "auto", display: "flex", flexDirection: "column", gap: 6 }}>
@@ -693,27 +694,25 @@ export default function AssignFlat() {
     <div className="space-y-5 animate-fadeIn">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-            style={{ background: "rgba(91,141,239,0.12)", border: "1px solid rgba(91,141,239,0.25)" }}>
-            <MdHome size={20} style={{ color: "#94B5F5" }} />
+          <div className="ad-page-icon">
+            <MdHome size={22} />
           </div>
           <div>
-            <h2 className="text-lg font-semibold">{t("afTitle") || "Assign Flat"}</h2>
+            <h2 className="text-lg font-semibold" style={{ letterSpacing: "-0.02em" }}>{t("afTitle") || "Assign Flat"}</h2>
             <p className="text-secondary text-xs mt-0.5">
               {initialLoad ? "—" : totalAll} {t("afAssignedFlats")?.toLowerCase() || "assigned flats"}
             </p>
           </div>
         </div>
-        <button
+        <GlobalButton
+          variant="add"
+          borderDraw
+          icon={showForm ? MdClose : MdAdd}
+          className="w-full sm:w-auto justify-center shrink-0"
           onClick={() => { setShowForm(p => !p); setConfirmId(null); }}
-          className="sa-add-btn sa-add-pill sa-btn-primary w-full sm:w-auto justify-center shrink-0"
         >
-          <span className="sa-pill-blob sa-pill-blob1" />
-          <span className="sa-pill-inner">
-            {showForm ? <MdClose size={18} /> : <MdAdd size={18} />}
-            <span>{showForm ? "Close" : (t("afAssignBtn") || "Assign Unit")}</span>
-          </span>
-        </button>
+          {showForm ? (t("cancel") || "Cancel") : (t("afAssignBtn") || "Assign Unit")}
+        </GlobalButton>
       </div>
 
       {showForm && <AssignWizard onClose={() => setShowForm(false)} onSuccess={handleSuccess} />}
@@ -727,7 +726,7 @@ export default function AssignFlat() {
             </p>
             <div style={{ position: "relative", maxWidth: 260, width: "100%" }}>
               <MdSearch size={14} style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: "var(--text-secondary)", pointerEvents: "none" }} />
-              <input className="input h-9 text-xs w-full" style={{ paddingLeft: 30 }}
+              <input className="input search-input h-9 text-xs w-full" style={{ paddingLeft: 30 }}
                 placeholder="Search flat or resident…" value={search} onChange={(e) => setSearch(e.target.value)} />
               {fetching && <span style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)" }}><Spinner small /></span>}
               {!fetching && search && (

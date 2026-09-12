@@ -5,13 +5,15 @@
   import DatePicker from "react-datepicker";
   import "react-datepicker/dist/react-datepicker.css";
   import Modal from "../../components/Modal";
+  import SlidingTabs from "../../components/common/SlidingTabs";
   import { QRCodeCanvas } from "qrcode.react";
   import html2canvas from "html2canvas";
   import { FaDownload, FaShareAlt, FaTimes, FaLock, FaBan } from "react-icons/fa";
   import {
-    MdSearch, MdClose, MdFilterList,
+    MdSearch, MdClose,
     MdChevronLeft, MdChevronRight, MdWarning, MdBlock,
     MdPayment, MdRefresh, MdTimer, MdContentCopy, MdCheck, MdDateRange,
+    MdPool,
   } from "react-icons/md";
 
   /* ─── Debounce ─── */
@@ -61,7 +63,7 @@
     return (
       <span style={{
         fontSize: 11, fontWeight: 700, display: "flex", alignItems: "center", gap: 3,
-        color: isUrgent ? "#ef4444" : "#3B82F6",
+        color: isUrgent ? "#ef4444" : "var(--accent)",
       }}>
         <MdTimer size={12} /> {m}:{s}
       </span>
@@ -106,7 +108,7 @@
   const STATUS_STYLE = {
     PAYMENT_PENDING: { dot: "#6B46C1", pill: "bg-purple-500/15 text-purple-400" },
     APPROVED:        { dot: "#22c55e", pill: "bg-green-500/15 text-green-400"   },
-    PENDING:         { dot: "#3B82F6", pill: "bg-yellow-500/15 text-yellow-400" },
+    PENDING:         { dot: "var(--accent)", pill: "bg-yellow-500/15 text-yellow-400" },
     CANCELLED:       { dot: "#ef4444", pill: "bg-red-500/15 text-red-400"       },
     REJECTED:        { dot: "#ef4444", pill: "bg-red-500/15 text-red-400"       },
   };
@@ -118,10 +120,10 @@
       <div style={{
         display: "flex", alignItems: "flex-start", gap: 7,
         padding: "8px 10px", borderRadius: 8, margin: "10px 0 0",
-        background: isTemp ? "rgba(37,99,235,0.1)" : "rgba(220,38,38,0.07)",
-        border: `1px solid ${isTemp ? "rgba(37,99,235,0.25)" : "rgba(220,38,38,0.2)"}`,
+        background: isTemp ? "rgba(160,90,255,0.1)" : "rgba(220,38,38,0.07)",
+        border: `1px solid ${isTemp ? "rgba(160,90,255,0.25)" : "rgba(220,38,38,0.2)"}`,
         fontSize: 11, lineHeight: 1.5,
-        color: isTemp ? "#1E40AF" : "#7f1d1d",
+        color: isTemp ? "var(--acct-cyan)" : "#7f1d1d",
       }}>
         {isTemp
           ? <MdWarning size={13} style={{ flexShrink: 0, marginTop: 1 }} />
@@ -205,7 +207,6 @@
     const [bookingSearch,   setBookingSearch]   = useState("");
     const [statusFilter,    setStatusFilter]    = useState("ALL");
     const [amenityFilter,   setAmenityFilter]   = useState("ALL");
-    const [showFilterPanel, setShowFilterPanel] = useState(false);
     const debouncedSearch = useDebounce(bookingSearch, 500);
 
     /* ── Pagination ── */
@@ -237,10 +238,6 @@
       return `${date} · ${start}${end}`;
     };
 
-    const hasFilters        = statusFilter !== "ALL" || amenityFilter !== "ALL";
-    const activeFilterCount = (statusFilter !== "ALL" ? 1 : 0) + (amenityFilter !== "ALL" ? 1 : 0);
-
-    /* ── Load amenities ── */
     useEffect(() => {
       API.get("/amenities").then((res) => setAmenities(res.data.data || []));
     }, []);
@@ -609,16 +606,16 @@
       const { status } = selectedBooking;
       const passCardStyle = {
         width: "340px",
-        background: "linear-gradient(160deg, rgba(255,255,255,0.045) 0%, #2E2A36 35%)",
-        padding: "18px 22px 14px", borderRadius: "20px", color: "white",
-        textAlign: "center", border: "1px solid rgba(255,255,255,0.09)", position: "relative", overflow: "hidden",
+        background: "var(--card-inner-bg)",
+        padding: "18px 22px 14px", borderRadius: "20px", color: "var(--text-primary)",
+        textAlign: "center", border: "1px solid var(--glass-border)", position: "relative", overflow: "hidden",
       };
-      const gridLabelStyle = { color: "#726988" };
-      const gridValueStyle = { textAlign: "right", color: "#F9F8FA", fontWeight: "500" };
+      const gridLabelStyle = { color: "var(--text-secondary)" };
+      const gridValueStyle = { textAlign: "right", color: "var(--text-primary)", fontWeight: "500" };
       const tearLine = (
-        <div style={{ borderTop: "1px dashed rgba(255,255,255,0.08)", margin: "0 -22px 14px", position: "relative" }}>
-          <span style={{ position: "absolute", left: "-7px", top: "-7px", width: "13px", height: "13px", borderRadius: "50%", background: "#0a0f1e", display: "block" }} />
-          <span style={{ position: "absolute", right: "-7px", top: "-7px", width: "13px", height: "13px", borderRadius: "50%", background: "#0a0f1e", display: "block" }} />
+        <div style={{ borderTop: "1px dashed var(--glass-border)", margin: "0 -22px 14px", position: "relative" }}>
+          <span style={{ position: "absolute", left: "-7px", top: "-7px", width: "13px", height: "13px", borderRadius: "50%", background: "var(--bg-main)", display: "block" }} />
+          <span style={{ position: "absolute", right: "-7px", top: "-7px", width: "13px", height: "13px", borderRadius: "50%", background: "var(--bg-main)", display: "block" }} />
         </div>
       );
 
@@ -626,14 +623,14 @@
         return (
           <div className="ra-pass-wrapper">
             <div style={{ ...passCardStyle, borderTop: "2px solid #eab308" }}>
-              <div style={{ letterSpacing: "0.18em", fontSize: "10px", color: "#726988", textTransform: "uppercase", marginBottom: "2px" }}>{t("amenPassResident")}</div>
+              <div style={{ letterSpacing: "0.18em", fontSize: "10px", color: "var(--text-secondary)", textTransform: "uppercase", marginBottom: "2px" }}>{t("amenPassResident")}</div>
               <h2 style={{ fontSize: "17px", fontWeight: "700", letterSpacing: "0.08em", margin: "0 0 6px" }}>{t("amenPassTitle")}</h2>
-              <div style={{ width: "36px", height: "2px", background: "linear-gradient(90deg,#eab308,#3B82F6)", margin: "0 auto 14px" }} />
+              <div style={{ width: "36px", height: "2px", background: "linear-gradient(90deg,#eab308,var(--accent))", margin: "0 auto 14px" }} />
               <div style={{ width: "64px", height: "64px", borderRadius: "50%", background: "rgba(234,179,8,0.13)", border: "1px solid rgba(234,179,8,0.3)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 12px" }}>
                 <FaLock style={{ color: "#eab308", fontSize: "1.35rem" }} />
               </div>
-              <h3 style={{ fontSize: "15px", fontWeight: "700", color: "#EDECF0", margin: "0 0 4px" }}>Awaiting Admin Approval</h3>
-              <p style={{ fontSize: "11px", color: "#726988", lineHeight: "1.55", margin: "0 0 14px" }}>Your payment was received. The admin will approve your booking shortly.</p>
+              <h3 style={{ fontSize: "15px", fontWeight: "700", color: "var(--text-primary)", margin: "0 0 4px" }}>Awaiting Admin Approval</h3>
+              <p style={{ fontSize: "11px", color: "var(--text-secondary)", lineHeight: "1.55", margin: "0 0 14px" }}>Your payment was received. The admin will approve your booking shortly.</p>
               {tearLine}
               <div style={{ background: "rgba(255,255,255,0.05)", borderRadius: "10px", padding: "10px 12px", display: "grid", gridTemplateColumns: "1fr 1fr", rowGap: "7px", fontSize: "12px", textAlign: "left", marginBottom: "10px" }}>
                 <span style={gridLabelStyle}>Amenity</span><span style={gridValueStyle}>{selectedBooking.Amenity?.name}</span>
@@ -653,13 +650,13 @@
         return (
           <div className="ra-pass-wrapper">
             <div style={{ ...passCardStyle, borderTop: "2px solid #ef4444" }}>
-              <div style={{ letterSpacing: "0.18em", fontSize: "10px", color: "#726988", textTransform: "uppercase", marginBottom: "2px" }}>{t("amenPassResident")}</div>
+              <div style={{ letterSpacing: "0.18em", fontSize: "10px", color: "var(--text-secondary)", textTransform: "uppercase", marginBottom: "2px" }}>{t("amenPassResident")}</div>
               <h2 style={{ fontSize: "17px", fontWeight: "700", letterSpacing: "0.08em", margin: "0 0 6px" }}>{t("amenPassTitle")}</h2>
               <div style={{ width: "36px", height: "2px", background: "linear-gradient(90deg,#ef4444,#f87171)", margin: "0 auto 14px" }} />
               <div style={{ width: "64px", height: "64px", borderRadius: "50%", background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.25)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 12px" }}>
                 <FaBan style={{ color: "#ef4444", fontSize: "1.35rem" }} />
               </div>
-              <h3 style={{ fontSize: "15px", fontWeight: "700", color: "#EDECF0", margin: "0 0 4px" }}>Booking {status === "CANCELLED" ? "Cancelled" : "Rejected"}</h3>
+              <h3 style={{ fontSize: "15px", fontWeight: "700", color: "var(--text-primary)", margin: "0 0 4px" }}>Booking {status === "CANCELLED" ? "Cancelled" : "Rejected"}</h3>
               {tearLine}
               <div style={{ background: "rgba(255,255,255,0.05)", borderRadius: "10px", padding: "10px 12px", display: "grid", gridTemplateColumns: "1fr 1fr", rowGap: "7px", fontSize: "12px", textAlign: "left", marginBottom: "10px" }}>
                 <span style={gridLabelStyle}>Amenity</span><span style={gridValueStyle}>{selectedBooking.Amenity?.name}</span>
@@ -677,10 +674,10 @@
       // APPROVED — show QR pass
       return (
         <div className="ra-pass-wrapper">
-          <div ref={passRef} style={{ ...passCardStyle, borderTop: "2px solid #5B8DEF" }}>
-            <div style={{ letterSpacing: "0.18em", fontSize: "10px", color: "#A39EB2", textTransform: "uppercase", marginBottom: "2px" }}>{t("amenPassResident")}</div>
+          <div ref={passRef} style={{ ...passCardStyle, borderTop: "2px solid var(--accent)" }}>
+            <div style={{ letterSpacing: "0.18em", fontSize: "10px", color: "var(--text-secondary)", textTransform: "uppercase", marginBottom: "2px" }}>{t("amenPassResident")}</div>
             <h2 style={{ fontSize: "17px", fontWeight: "700", letterSpacing: "0.08em", margin: "0" }}>{t("amenPassTitle")}</h2>
-            <div style={{ width: "36px", height: "2px", background: "linear-gradient(90deg,#5B8DEF,#6B46C1)", margin: "7px auto" }} />
+            <div style={{ width: "36px", height: "2px", background: "linear-gradient(90deg,var(--acct-cyan),var(--accent))", margin: "7px auto" }} />
             <div style={{ display: "flex", justifyContent: "center", marginTop: "4px" }}>
               <div style={{ padding: "8px", background: "white", borderRadius: "10px", display: "inline-block" }}>
                 <QRCodeCanvas value={JSON.stringify({ bookingId: selectedBooking.id })} size={140} bgColor="#ffffff" />
@@ -694,7 +691,7 @@
               <span style={gridLabelStyle}>Amenity</span><span style={gridValueStyle}>{selectedBooking.Amenity?.name}</span>
               <span style={gridLabelStyle}>Amount</span><span style={gridValueStyle}>₹{selectedBooking.Amenity?.rate_per_hour || 0}</span>
             </div>
-            <div style={{ marginTop: "8px", fontSize: "9px", color: "#4E475C", letterSpacing: "0.1em" }}>{t("amenPassScanNote")}</div>
+            <div style={{ marginTop: "8px", fontSize: "9px", color: "var(--text-muted)", letterSpacing: "0.1em" }}>{t("amenPassScanNote")}</div>
           </div>
           <div className="ra-pass-actions">
             <button className="ra-pass-btn ra-pass-btn--download" onClick={downloadPass}><FaDownload /><span>{t("amenPassDownload")}</span></button>
@@ -709,47 +706,40 @@
       RENDER
     ══════════════════════════════════════════════════ */
     return (
-      <div className="ra-root animate-fadeIn">
+      <div className="ge-root ra-root animate-fadeIn">
 
         {/* PAGE HEADER */}
-        <div className="ra-er">
-          <div className="ra-er-left">
-            <span className="ra-er-icon">✦</span>
+        <div className="ge-er ra-er">
+          <div className="ge-er-left ra-er-left">
+            <div className="ad-page-icon">
+              <MdPool size={22} />
+            </div>
             <div>
-              <h1 className="ra-title">{t("amenTitle")}</h1>
-              <p className="ra-subtitle">{t("amenSubtitle")}</p>
+              <h1 className="ra-title page-title">{t("amenTitle")}</h1>
+              <p className="ra-subtitle page-subtitle">{t("amenSubtitle")}</p>
             </div>
           </div>
         </div>
 
-        {/* TABS */}
-        <div className="ra-tab-bar">
-          <button type="button" onClick={() => setTab("AMENITIES")}
-            className={`ra-tab ${tab === "AMENITIES" ? "ra-tab--active" : ""}`}>
-            <span className="ra-tab-icon">◈</span>
-            {t("amenTabFacilities")}
-          </button>
-          <button type="button" onClick={() => setTab("BOOKINGS")}
-            className={`ra-tab ${tab === "BOOKINGS" ? "ra-tab--active" : ""}`}>
-            <span className="ra-tab-icon">◉</span>
-            {t("amenTabBookings")}
-            {counts.ALL > 0 && (
-              <span className={`ra-tab-badge ${tab === "BOOKINGS" ? "ra-tab-badge--active" : ""}`}>
-                {counts.ALL}
-              </span>
-            )}
-            {/* Separate badge for pending payment actions */}
-            {counts.PAYMENT_PENDING > 0 && (
-              <span style={{
-                marginLeft: 4, background: "#6B46C1", color: "#fff",
-                borderRadius: 999, fontSize: 10, fontWeight: 800,
-                padding: "1px 6px", lineHeight: "1.7",
-              }}>
-                {counts.PAYMENT_PENDING} 💳
-              </span>
-            )}
-          </button>
-        </div>
+        <SlidingTabs
+          className="ge-filter-tabs"
+          value={tab}
+          onChange={setTab}
+          items={[
+            {
+              id: "AMENITIES",
+              label: t("amenTabFacilities"),
+              icon: <MdPool size={15} />,
+            },
+            {
+              id: "BOOKINGS",
+              label: t("amenTabBookings"),
+              icon: <MdDateRange size={15} />,
+              badge: counts.ALL > 0 ? counts.ALL : undefined,
+              alert: counts.PAYMENT_PENDING,
+            },
+          ]}
+        />
 
         {/* ══════════════════════════════
             AMENITIES TAB
@@ -763,7 +753,7 @@
                 <div key={a.id} className="ra-card" style={{
                   animationDelay: `${idx * 60}ms`,
                   opacity: isDisabled ? 0.72 : 1,
-                  ...(isDisabled && isTemp  ? { borderTop: "2px solid #2563EB" } : {}),
+                  ...(isDisabled && isTemp  ? { borderTop: "2px solid var(--accent)" } : {}),
                   ...(isDisabled && !isTemp ? { borderTop: "2px solid #991b1b" } : {}),
                 }}>
                   <div className="ra-card-accent" />
@@ -771,9 +761,9 @@
                     <div style={{
                       position: "absolute", top: 10, right: 10,
                       padding: "2px 8px", borderRadius: 999, fontSize: 10, fontWeight: 600,
-                      background: isTemp ? "rgba(37,99,235,0.12)" : "rgba(220,38,38,0.1)",
-                      color:      isTemp ? "#1E40AF"               : "#7f1d1d",
-                      border: `1px solid ${isTemp ? "rgba(37,99,235,0.28)" : "rgba(220,38,38,0.22)"}`,
+                      background: isTemp ? "rgba(160,90,255,0.12)" : "rgba(220,38,38,0.1)",
+                      color:      isTemp ? "var(--acct-cyan)"               : "#7f1d1d",
+                      border: `1px solid ${isTemp ? "rgba(160,90,255,0.28)" : "rgba(220,38,38,0.22)"}`,
                     }}>
                       {isTemp ? "Temp. closed" : "Closed"}
                     </div>
@@ -824,121 +814,94 @@
 
             {/* Pending-payment notice banner */}
             {counts.PAYMENT_PENDING > 0 && (
-              <div style={{
-                display: "flex", alignItems: "flex-start", gap: 10,
-                padding: "12px 16px", borderRadius: 12, marginBottom: 12,
-                background: "rgba(107,70,193,0.08)", border: "1px solid rgba(107,70,193,0.25)",
-              }} className="animate-fadeIn">
-                <MdPayment size={18} style={{ color: "#6B46C1", flexShrink: 0, marginTop: 1 }} />
+              <div className="ra-pay-banner animate-fadeIn">
+                <MdPayment size={18} className="ra-pay-banner-icon" />
                 <div>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text-primary)" }}>
+                  <div className="ra-pay-banner-title">
                     {counts.PAYMENT_PENDING} booking{counts.PAYMENT_PENDING > 1 ? "s" : ""} awaiting payment
                   </div>
-                  <div style={{ fontSize: 11, color: "var(--text-secondary)", marginTop: 2 }}>
+                  <div className="ra-pay-banner-sub">
                     Complete payment before the timer runs out, or use the Repay button below.
                   </div>
                 </div>
               </div>
             )}
 
-            {!initialLoad && counts.ALL > 0 && (
-              <div className="flex flex-col gap-2 mb-3">
-                <div className="flex items-center gap-2">
-                  <div className="relative flex-1">
-                    <MdSearch size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-secondary pointer-events-none" />
-                    <input
-                      className="input h-9 pl-8 pr-8 text-xs w-full"
-                      placeholder="Search by amenity…"
-                      value={bookingSearch}
-                      onChange={(e) => setBookingSearch(e.target.value)}
-                    />
-                    <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center">
-                      {fetching ? <Spinner small /> : bookingSearch ? (
-                        <button onClick={() => setBookingSearch("")} className="text-secondary">
-                          <MdClose size={13} />
-                        </button>
-                      ) : null}
+            {!initialLoad && (
+              <div className="ge-toolbar">
+                <div className="ge-search-wrap">
+                  <MdSearch className="ge-search-icon" size={17} />
+                  <input
+                    className="ge-search-input"
+                    placeholder="Search by amenity…"
+                    value={bookingSearch}
+                    onChange={(e) => setBookingSearch(e.target.value)}
+                  />
+                  {fetching ? (
+                    <div className="ge-search-action">
+                      <Spinner small />
                     </div>
-                  </div>
-                  <button type="button" onClick={() => setShowFilterPanel((p) => !p)}
-                    className="flex items-center gap-1.5 h-9 px-3 rounded-xl text-xs font-semibold border shrink-0"
-                    style={showFilterPanel || hasFilters
-                      ? { background: "var(--accent-soft)", color: "var(--accent)", borderColor: "var(--accent)" }
-                      : { background: "var(--bg-soft,rgba(0,0,0,0.04))", color: "var(--text-secondary)", borderColor: "var(--border-color)", border: "1px solid var(--border-color)" }
-                    }>
-                    <MdFilterList size={15} />
-                    Filters
-                    {activeFilterCount > 0 && (
-                      <span className="bg-blue-500 text-white rounded-full px-1.5 text-[10px] font-bold leading-4">
-                        {activeFilterCount}
-                      </span>
-                    )}
-                  </button>
+                  ) : bookingSearch ? (
+                    <button
+                      type="button"
+                      onClick={() => setBookingSearch("")}
+                      className="ge-search-clear"
+                      aria-label="Clear search"
+                    >
+                      <MdClose size={13} />
+                    </button>
+                  ) : null}
                 </div>
+              </div>
+            )}
 
-                {showFilterPanel && (
-                  <div className="rounded-xl overflow-hidden animate-scaleIn"
-                    style={{ background: "var(--card-bg)", border: "1px solid var(--border-color)" }}>
-                    <div className="p-4 space-y-4">
-                      <div>
-                        <p className="text-[10px] font-semibold uppercase tracking-wider text-secondary mb-2">Status</p>
-                        <div className="flex flex-wrap gap-1.5">
-                          {STATUS_OPTIONS.map((s) => (
-                            <button key={s} type="button" onClick={() => setStatusFilter(s)}
-                              className="flex items-center gap-1.5 h-7 px-3 rounded-full text-xs font-semibold border"
-                              style={statusFilter === s
-                                ? s === "PAYMENT_PENDING"
-                                  ? { background: "var(--stat-purple-bg)", color: "var(--stat-purple-color)", borderColor: "var(--stat-purple-border)" }
-                                  : s === "ALL"
-                                  ? { background: "var(--stat-blue-bg)", color: "var(--stat-blue-color)", borderColor: "var(--stat-blue-border)" }
-                                  : s === "APPROVED"
-                                  ? { background: "var(--stat-green-bg)", color: "var(--stat-green-color)", borderColor: "var(--stat-green-border)" }
-                                  : s === "PENDING"
-                                  ? { background: "var(--stat-amber-bg)", color: "var(--stat-amber-color)", borderColor: "var(--stat-amber-border)" }
-                                  : { background: "var(--stat-red-bg)", color: "var(--stat-red-color)", borderColor: "var(--stat-red-border)" }
-                                : { background: "var(--bg-soft,rgba(0,0,0,0.04))", color: "var(--text-secondary)", borderColor: "var(--border-color)" }
-                              }>
-                              {s !== "ALL" && (
-                                <span className="w-1.5 h-1.5 rounded-full shrink-0"
-                                  style={{ background: STATUS_STYLE[s]?.dot || "#888" }} />
-                              )}
-                              {statusDisplayLabel(s)}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                      <div style={{ height: "1px", background: "var(--border-color)" }} />
-                      {amenityNames.length > 0 && (
-                        <div>
-                          <p className="text-[10px] font-semibold uppercase tracking-wider text-secondary mb-2">Amenity</p>
-                          <div className="flex flex-wrap gap-1.5">
-                            {["ALL", ...amenityNames].map((name) => (
-                              <button key={name} type="button" onClick={() => setAmenityFilter(name)}
-                                className="flex items-center gap-1 h-7 px-3 rounded-full text-xs font-semibold border"
-                                style={amenityFilter === name
-                                  ? { background: "var(--stat-blue-bg)", color: "var(--stat-blue-color)", borderColor: "var(--stat-blue-border)" }
-                                  : { background: "var(--bg-soft,rgba(0,0,0,0.04))", color: "var(--text-secondary)", borderColor: "var(--border-color)" }
-                                }>
-                                {name !== "ALL" && <span style={{ fontSize: 12 }}>{amenityIcon(name)}</span>}
-                                {name === "ALL" ? "All" : name}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                      <div className="flex items-center justify-between pt-1">
-                        <button type="button" onClick={clearAllFilters}
-                          style={{ background: "none", border: "none", cursor: "pointer", fontSize: 12, color: "var(--text-secondary)" }}>
-                          Clear all
-                        </button>
-                        <button type="button" onClick={() => setShowFilterPanel(false)}
-                          style={{ background: "none", border: "none", cursor: "pointer", fontSize: 12, color: "var(--accent)", fontWeight: 600 }}>
-                          Done
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                )}
+            {!initialLoad && counts.ALL > 0 && (
+              <div className="ge-stats ra-booking-stats">
+                <div className="complaint-stat-card complaint-stat-total">
+                  <span className="complaint-stat-val">{counts.ALL}</span>
+                  <span className="complaint-stat-label">{t("geFilterAll") || "All"}</span>
+                </div>
+                <div className="complaint-stat-card complaint-stat-pending">
+                  <span className="complaint-stat-val">{(counts.PAYMENT_PENDING || 0) + (counts.PENDING || 0)}</span>
+                  <span className="complaint-stat-label">Pending</span>
+                </div>
+                <div className="complaint-stat-card complaint-stat-resolved">
+                  <span className="complaint-stat-val">{counts.APPROVED || 0}</span>
+                  <span className="complaint-stat-label">{statusDisplayLabel("APPROVED")}</span>
+                </div>
+                <div className="complaint-stat-card complaint-stat-inprogress">
+                  <span className="complaint-stat-val">{(counts.CANCELLED || 0) + (counts.REJECTED || 0)}</span>
+                  <span className="complaint-stat-label">{statusDisplayLabel("CANCELLED")}</span>
+                </div>
+              </div>
+            )}
+
+            {!initialLoad && (
+              <SlidingTabs
+                className="gp-filter-tabs"
+                value={statusFilter}
+                onChange={setStatusFilter}
+                items={STATUS_OPTIONS.map((s) => ({
+                  id: s,
+                  label: s === "ALL" ? (t("geFilterAll") || "All") : statusDisplayLabel(s),
+                  badge: counts[s] ?? 0,
+                  alert: s === "PAYMENT_PENDING" ? counts.PAYMENT_PENDING : undefined,
+                }))}
+              />
+            )}
+
+            {!initialLoad && amenityNames.length > 0 && (
+              <div className="ra-amenity-chips">
+                {["ALL", ...amenityNames].map((name) => (
+                  <button
+                    key={name}
+                    type="button"
+                    onClick={() => setAmenityFilter(name)}
+                    className={`ra-filter-chip ${amenityFilter === name ? "ra-filter-chip--active" : ""}`}
+                  >
+                    {name === "ALL" ? (t("geFilterAll") || "All") : name}
+                  </button>
+                ))}
               </div>
             )}
 
@@ -966,7 +929,6 @@
               </div>
             )}
 
-            {/* Render grouped bookings for full‑day amenities to avoid duplicate rows */}
             {!initialLoad && groupedBookings.map((b, idx) => {
               const isPaymentPending = b.status === "PAYMENT_PENDING";
               const dotColor = STATUS_STYLE[b.status]?.dot || "#726988";
@@ -1114,12 +1076,12 @@
               {paymentStatus === "dismissed" && (
                 <div style={{
                   display: "flex", alignItems: "flex-start", gap: 8, padding: "10px 14px",
-                  borderRadius: 10, background: "rgba(37,99,235,0.08)", border: "1px solid rgba(37,99,235,0.25)",
+                  borderRadius: 10, background: "rgba(160,90,255,0.08)", border: "1px solid rgba(160,90,255,0.25)",
                   marginBottom: 14,
                 }} className="animate-fadeIn">
-                  <MdPayment size={15} style={{ color: "#2563EB", flexShrink: 0, marginTop: 1 }} />
+                  <MdPayment size={15} style={{ color: "var(--accent)", flexShrink: 0, marginTop: 1 }} />
                   <div>
-                    <div style={{ fontSize: 12, fontWeight: 700, color: "#2563EB" }}>Payment not completed</div>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: "var(--accent)" }}>Payment not completed</div>
                     <div style={{ fontSize: 11, color: "var(--text-secondary)", marginTop: 2 }}>
                       Your slot is temporarily reserved. Use the Repay button in My Bookings before the timer runs out.
                     </div>
@@ -1327,12 +1289,12 @@
               {paymentStatus === "dismissed" && (
                 <div style={{
                   display: "flex", alignItems: "flex-start", gap: 8, padding: "10px 14px",
-                  borderRadius: 10, background: "rgba(37,99,235,0.08)", border: "1px solid rgba(37,99,235,0.25)",
+                  borderRadius: 10, background: "rgba(160,90,255,0.08)", border: "1px solid rgba(160,90,255,0.25)",
                   marginBottom: 14,
                 }} className="animate-fadeIn">
-                  <MdPayment size={15} style={{ color: "#2563EB", flexShrink: 0, marginTop: 1 }} />
+                  <MdPayment size={15} style={{ color: "var(--accent)", flexShrink: 0, marginTop: 1 }} />
                   <div>
-                    <div style={{ fontSize: 12, fontWeight: 700, color: "#2563EB" }}>Payment not completed</div>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: "var(--accent)" }}>Payment not completed</div>
                     <div style={{ fontSize: 11, color: "var(--text-secondary)", marginTop: 2 }}>
                       Your slot is temporarily reserved. Use the Repay button in My Bookings before the timer runs out.
                     </div>

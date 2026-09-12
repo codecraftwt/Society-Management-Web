@@ -36,8 +36,8 @@ const PURPOSE_ICONS = {
 };
 
 const PURPOSE_COLORS = {
-  GUEST:       { bg: "rgba(91,141,239,0.12)",  border: "rgba(91,141,239,0.25)",  text: "#5B8DEF" },
-  DELIVERY:    { bg: "rgba(37,99,235,0.12)",  border: "rgba(37,99,235,0.28)",  text: "#3B82F6" },
+  GUEST:       { bg: "rgba(var(--acct-purple-rgb),0.12)",  border: "rgba(var(--acct-purple-rgb),0.28)",  text: "var(--accent)" },
+  DELIVERY:    { bg: "rgba(160,90,255,0.12)",  border: "rgba(160,90,255,0.28)",  text: "var(--accent)" },
   CAB:         { bg: "rgba(107,70,193,0.12)",  border: "rgba(107,70,193,0.28)",  text: "#6B46C1" },
   SERVICE:     { bg: "rgba(34,197,94,0.12)",   border: "rgba(34,197,94,0.28)",   text: "#22c55e" },
   MAINTENANCE: { bg: "rgba(239,68,68,0.10)",   border: "rgba(239,68,68,0.25)",   text: "#ef4444" },
@@ -303,8 +303,8 @@ export default function ResidentPreApproval() {
 
       {/* ── HEADER ── */}
       <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-xl bg-blue-500/15 border border-blue-500/25 flex items-center justify-center shrink-0">
-          <MdPersonAdd size={20} className="text-blue-400" />
+        <div className="ad-page-icon">
+          <MdPersonAdd size={22} />
         </div>
         <div>
           <h2 className="text-lg font-semibold">{t("preapTitle")}</h2>
@@ -326,7 +326,7 @@ export default function ResidentPreApproval() {
       <div className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl bg-white/5 border border-white/10 text-sm">
         <span className="w-2 h-2 rounded-full bg-green-400 shrink-0" />
         <span className="text-secondary text-xs">Current time (IST)</span>
-        <span className="ml-auto font-mono text-xs font-medium tabular-nums text-white/80 tracking-wide">
+        <span className="ml-auto font-mono text-xs font-medium tabular-nums text-secondary tracking-wide">
           {istDate}&nbsp;&nbsp;{istTime}
         </span>
       </div>
@@ -385,7 +385,7 @@ export default function ResidentPreApproval() {
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all duration-200 ${
                 copied
                   ? "bg-green-500/20 text-green-400 border-green-500/30"
-                  : "bg-white/8 text-secondary border-white/10 hover:bg-white/12 hover:text-white"
+                  : "bg-white/8 text-secondary border-white/10 hover:bg-white/12 hover:opacity-90"
               }`}
             >
               {copied ? <MdCheckCircle size={13} /> : <MdContentCopy size={13} />}
@@ -393,13 +393,13 @@ export default function ResidentPreApproval() {
             </button>
             <button
               onClick={downloadBannerPNG}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all duration-200 bg-white/8 text-secondary border-white/10 hover:bg-white/12 hover:text-white"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all duration-200 bg-white/8 text-secondary border-white/10 hover:bg-white/12 hover:opacity-90"
             >
               <MdDownload size={13} /> {t("docDownload")} PNG
             </button>
             <button
               onClick={downloadBannerPDF}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all duration-200 bg-white/8 text-secondary border-white/10 hover:bg-white/12 hover:text-white"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all duration-200 bg-white/8 text-secondary border-white/10 hover:bg-white/12 hover:opacity-90"
             >
               <MdPictureAsPdf size={13} /> {t("docDownload")} PDF
             </button>
@@ -578,7 +578,7 @@ export default function ResidentPreApproval() {
                           {PURPOSE_ICONS[pass.purpose] || "🔖"}
                         </div>
                         <div>
-                          <p className="text-sm font-semibold text-white leading-tight">{pass.visitor_name}</p>
+                          <p className="text-sm font-semibold leading-tight" style={{ color: "var(--text-primary)" }}>{pass.visitor_name}</p>
                           <span
                             className="text-[10px] px-1.5 py-0.5 rounded-md mt-0.5 inline-block"
                             style={{ background: pc.bg, border: `1px solid ${pc.border}`, color: pc.text }}
@@ -597,7 +597,7 @@ export default function ResidentPreApproval() {
                       <p className="text-2xl font-bold tracking-[0.2em] text-green-300 tabular-nums">
                         {pass.otp}
                       </p>
-                      <div className="bg-white rounded-lg p-1 flex-shrink-0">
+                      <div className="bg-white rounded-lg p-1 shrink-0">
                         <QRCodeCanvas value={pass.otp} size={40} />
                       </div>
                     </div>
@@ -627,7 +627,7 @@ export default function ResidentPreApproval() {
                         className={`flex items-center justify-center gap-1.5 flex-1 py-1.5 rounded-lg text-xs font-medium border transition-all duration-200 ${
                           isCopied
                             ? "bg-green-500/20 text-green-400 border-green-500/30"
-                            : "bg-white/8 text-secondary border-white/10 hover:bg-white/12 hover:text-white"
+                            : "bg-white/8 text-secondary border-white/10 hover:bg-white/12 hover:opacity-90"
                         }`}
                       >
                         {isCopied ? <MdCheckCircle size={13} /> : <MdContentCopy size={13} />}
@@ -656,7 +656,7 @@ export default function ResidentPreApproval() {
             <div className="flex flex-col items-center gap-4">
               {/* visitor info */}
               <div className="text-center">
-                <p className="text-lg font-semibold text-white">{viewPass.visitor_name}</p>
+                <p className="text-lg font-semibold" style={{ color: "var(--text-primary)" }}>{viewPass.visitor_name}</p>
                 <span
                   className="text-xs px-2 py-0.5 rounded-md mt-1 inline-block"
                   style={{ background: pc.bg, border: `1px solid ${pc.border}`, color: pc.text }}
@@ -691,7 +691,7 @@ export default function ResidentPreApproval() {
                 className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold border transition-all duration-200 w-full justify-center ${
                   copiedId === viewPass.id
                     ? "bg-green-500/20 text-green-400 border-green-500/30"
-                    : "bg-white/8 text-secondary border-white/10 hover:bg-white/12 hover:text-white"
+                    : "bg-white/8 text-secondary border-white/10 hover:bg-white/12 hover:opacity-90"
                 }`}
               >
                 {copiedId === viewPass.id ? <MdCheckCircle size={14} /> : <MdContentCopy size={14} />}
@@ -702,13 +702,13 @@ export default function ResidentPreApproval() {
               <div className="grid grid-cols-2 gap-2 w-full">
                 <button
                   onClick={downloadViewPNG}
-                  className="flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold border transition-all duration-200 bg-white/8 text-secondary border-white/10 hover:bg-white/12 hover:text-white"
+                  className="flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold border transition-all duration-200 bg-white/8 text-secondary border-white/10 hover:bg-white/12 hover:opacity-90"
                 >
                   <MdDownload size={14} /> {t("docDownload")} PNG
                 </button>
                 <button
                   onClick={downloadViewPDF}
-                  className="flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold border transition-all duration-200 bg-white/8 text-secondary border-white/10 hover:bg-white/12 hover:text-white"
+                  className="flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold border transition-all duration-200 bg-white/8 text-secondary border-white/10 hover:bg-white/12 hover:opacity-90"
                 >
                   <MdPictureAsPdf size={14} /> {t("docDownload")} PDF
                 </button>

@@ -46,7 +46,7 @@ function PhoneInput({ value, onChange, required = false, disabled = false }) {
         padding: "0 12px", height: 40,
         display: "flex", alignItems: "center", gap: 6,
         borderRight: "1px solid var(--glass-border)",
-        background: "rgba(37,99,235,0.08)",
+        background: "rgba(160,90,255,0.08)",
         flexShrink: 0,
       }}>
         <span style={{ fontSize: 13 }}>🇮🇳</span>
@@ -380,7 +380,7 @@ export default function Accountant() {
             width: 36, height: 36, borderRadius: "50%",
             background: acc.status === "INACTIVE"
               ? "linear-gradient(135deg, #64748b, #475569)"
-              : "linear-gradient(135deg, #2563eb, #1d4ed8)",
+              : "linear-gradient(135deg, var(--accent), #9e58ff)",
             display: "flex", alignItems: "center", justifyContent: "center",
             fontSize: 13, fontWeight: 800, color: "#fff",
             flexShrink: 0,
@@ -544,8 +544,8 @@ export default function Accountant() {
           <div style={{
             width: 46, height: 46, borderRadius: 14, flexShrink: 0,
             display: "flex", alignItems: "center", justifyContent: "center",
-            background: "linear-gradient(135deg, rgba(37,99,235,0.15), rgba(37,99,235,0.08))",
-            border: "1.5px solid rgba(37,99,235,0.25)", color: "var(--accent)",
+            background: "linear-gradient(135deg, rgba(160,90,255,0.15), rgba(160,90,255,0.08))",
+            border: "1.5px solid rgba(160,90,255,0.25)", color: "var(--accent)",
           }}>
             <MdAccountBalance size={22} />
           </div>
@@ -640,7 +640,7 @@ export default function Accountant() {
             <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
               <div style={{
                 width: 44, height: 44, borderRadius: 12,
-                background: "rgba(37,99,235,0.12)", color: "var(--accent)",
+                background: "rgba(160,90,255,0.12)", color: "var(--accent)",
                 display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
               }}>
                 <MdHome size={22} />
@@ -798,7 +798,7 @@ export default function Accountant() {
           <div style={{
             display: "flex", alignItems: "flex-start", gap: 10,
             padding: "12px 14px", borderRadius: 12,
-            background: "rgba(37,99,235,0.08)", border: "1px solid rgba(37,99,235,0.22)",
+            background: "rgba(160,90,255,0.08)", border: "1px solid rgba(160,90,255,0.22)",
           }}>
             <MdInfoOutline size={18} style={{ color: "var(--accent)", flexShrink: 0, marginTop: 1 }} />
             <p style={{ fontSize: 12, color: "var(--text-secondary)", margin: 0, lineHeight: 1.5 }}>

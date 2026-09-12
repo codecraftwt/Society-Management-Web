@@ -2,10 +2,11 @@
 import { useEffect, useState, useCallback } from "react";
 import API from "../../services/api";
 import { useLang } from "../../context/LanguageContext";
-import { MdAdd, MdSearch, MdClose, MdChevronLeft, MdChevronRight } from "react-icons/md";
+import { MdAdd, MdSearch, MdClose, MdChevronLeft, MdChevronRight, MdDirectionsWalk } from "react-icons/md";
 import Modal from "../../components/Modal";
 import { toast } from "react-toastify";
 import Select from "../../components/common/Select";
+import SlidingTabs from "../../components/common/SlidingTabs";
 
 function useDebounce(value, delay = 500) {
   const [d, setD] = useState(value);
@@ -135,9 +136,10 @@ export default function GuestEntry() {
     isInit ? setInitialLoad(true) : setFetching(true);
     try {
       const params = new URLSearchParams({
-        page:   pg,
-        limit:  LIMIT,
-        filter: f,
+        page:    pg,
+        limit:   LIMIT,
+        filter:  f,
+        purpose: "GUEST",
         ...(q ? { search: q } : {}),
       });
       const res  = await API.get(`/visitors?${params}`);
@@ -214,9 +216,9 @@ export default function GuestEntry() {
     : [];
 
   const filterTabs = [
-    { key: "ALL", label: t("geFilterAll"),    count: counts.ALL, cls: "all"        },
-    { key: "IN",  label: t("geFilterInside"), count: counts.IN,  cls: "inprogress" },
-    { key: "OUT", label: t("geFilterLeft"),   count: counts.OUT, cls: "resolved"   },
+    { key: "ALL", label: t("geFilterAll"),    count: counts.ALL },
+    { key: "IN",  label: t("geFilterInside"), count: counts.IN },
+    { key: "OUT", label: t("geFilterLeft"),   count: counts.OUT },
   ];
 
   return (
@@ -225,7 +227,9 @@ export default function GuestEntry() {
       {/* ── HEADER ── */}
       <div className="ge-er">
         <div className="ge-er-left">
-          <div className="er-icon er-icon--complaint" style={{ fontSize: 22 }}>🚶</div>
+          <div className="ad-page-icon">
+            <MdDirectionsWalk size={22} />
+          </div>
           <div>
             <h2 className="page-title">{t("geTitle")}</h2>
             <p className="page-subtitle">{counts.ALL} {t("geTotal")}</p>
@@ -254,39 +258,35 @@ export default function GuestEntry() {
 
       {/* ── SEARCH + FILTER ── */}
       <div className="ge-toolbar">
-        <div className="ge-search-wrap" style={{ position: "relative" }}>
+        <div className="ge-search-wrap">
           <MdSearch className="ge-search-icon" size={17} />
           <input
             className="ge-search-input"
             placeholder={t("geSearch")}
             value={search}
             onChange={e => setSearch(e.target.value)}
-            style={{ paddingRight: (search || fetching) ? 36 : 12 }}
           />
           {fetching && !initialLoad ? (
-            <div style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)" }}>
+            <div className="ge-search-action">
               <Spinner size={13} />
             </div>
           ) : search ? (
-            <button onClick={() => setSearch("")} style={{
-              position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)",
-              background: "none", border: "none", cursor: "pointer",
-              color: "var(--text-secondary)", display: "flex", alignItems: "center",
-            }}>
+            <button type="button" onClick={() => setSearch("")} className="ge-search-clear" aria-label="Clear search">
               <MdClose size={13} />
             </button>
           ) : null}
         </div>
 
-        <div className="ge-filter-pills">
-          {filterTabs.map(({ key, label, count, cls }) => (
-            <button key={key} onClick={() => handleFilterChange(key)}
-              className={`complaint-filter-pill complaint-filter-pill--${cls} ${filter === key ? "active" : ""}`}>
-              {label}
-              <span className="complaint-filter-pill-count">{count}</span>
-            </button>
-          ))}
-        </div>
+        <SlidingTabs
+          className="ge-filter-tabs"
+          value={filter}
+          onChange={handleFilterChange}
+          items={filterTabs.map(({ key, label, count }) => ({
+            id: key,
+            label,
+            badge: count,
+          }))}
+        />
       </div>
 
       {/* ── DESKTOP TABLE ── */}

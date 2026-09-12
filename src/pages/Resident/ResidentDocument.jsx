@@ -1,9 +1,10 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { useLang } from "../../context/LanguageContext";
+import SlidingTabs from "../../components/common/SlidingTabs";
 import {
   MdDescription, MdDownload, MdOpenInNew,
-  MdSearch, MdFilterList,
+  MdSearch,
   MdGavel, MdGroups, MdDirectionsCar,
   MdBarChart, MdSecurity,
   MdClose, MdRefresh,
@@ -34,7 +35,7 @@ const ICON_MAP = {
 
 const COLOR_MAP = {
   Legal:      { icon: "rd-icon-purple", badge: "rd-badge-purple", glow: "rd-glow-purple" },
-  Meetings:   { icon: "rd-icon-blue",   badge: "rd-badge-blue",   glow: "rd-glow-blue"   },
+  Meetings:   { icon: "rd-icon-cyan",   badge: "rd-badge-cyan",   glow: "rd-glow-cyan"   },
   Guidelines: { icon: "rd-icon-amber",  badge: "rd-badge-amber",  glow: "rd-glow-amber"  },
   Finance:    { icon: "rd-icon-red",    badge: "rd-badge-red",    glow: "rd-glow-red"    },
   Security:   { icon: "rd-icon-green",  badge: "rd-badge-green",  glow: "rd-glow-green"  },
@@ -279,62 +280,53 @@ export default function ResidentDocument() {
 
   /* ── RENDER ── */
   return (
-    <div className="rd-root animate-fadeIn">
+    <div className="ge-root rd-root animate-fadeIn">
 
-      {/* ── HEADER ── */}
-      <div className="rd-er">
-        <div className="rd-er-left">
-          <div className="rd-er-icon-wrap">
+      <div className="ge-er rd-er">
+        <div className="ge-er-left rd-er-left">
+          <div className="ad-page-icon">
             <MdDescription size={22} />
           </div>
           <div>
-            <h1 className="rd-page-title">{t("docTitle")}</h1>
-            <p className="rd-page-subtitle">{t("docSubtitle")}</p>
+            <h1 className="rd-page-title page-title">{t("docTitle")}</h1>
+            <p className="rd-page-subtitle page-subtitle">{t("docSubtitle")}</p>
           </div>
         </div>
       </div>
 
-      {/* ── TOOLBAR ── */}
-      <div className="rd-toolbar">
-        <div className="rd-search-wrap">
-          <MdSearch size={17} className="rd-search-icon" />
-          {/* stable key so React never remounts this input */}
+      <div className="ge-toolbar">
+        <div className="ge-search-wrap">
+          <MdSearch className="ge-search-icon" size={17} />
           <input
-            key="document-search-input"
-            className="rd-search-input"
+            className="ge-search-input"
             placeholder={t("docSearch")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
-          {/* subtle spinner while fetching, clear button when idle */}
           {fetching ? (
-            <div className="rd-search-clear" style={{ pointerEvents: "none" }}>
+            <div className="ge-search-action">
               <svg className="animate-spin" style={{ width: 13, height: 13 }} viewBox="0 0 24 24" fill="none">
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
               </svg>
             </div>
           ) : search ? (
-            <button className="rd-search-clear" onClick={() => setSearch("")} title={t("cancel")}>
+            <button type="button" className="ge-search-clear" onClick={() => setSearch("")} title={t("cancel")}>
               <MdClose size={13} />
             </button>
           ) : null}
         </div>
 
-        {/* Filter chips */}
-        <div className="rd-filter-row-bar">
-          <MdFilterList size={15} className="rd-filter-icon" />
-          {CATEGORY_KEYS.map((cat) => (
-            <button
-              key={cat}
-              onClick={() => handleCategoryChange(cat)}
-              className={`rd-filter-chip ${activeCategory === cat ? "rd-filter-chip--active" : ""}`}
-            >
-              {categoryLabel(cat)}
-              <span className="rd-chip-count">{counts[cat] ?? 0}</span>
-            </button>
-          ))}
-        </div>
+        <SlidingTabs
+          className="gp-filter-tabs"
+          value={activeCategory}
+          onChange={handleCategoryChange}
+          items={CATEGORY_KEYS.map((cat) => ({
+            id: cat,
+            label: categoryLabel(cat),
+            badge: counts[cat] ?? 0,
+          }))}
+        />
       </div>
 
       {/* ── ERROR STATE ── */}

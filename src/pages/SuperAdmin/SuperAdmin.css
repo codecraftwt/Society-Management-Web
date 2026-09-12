@@ -1,174 +1,174 @@
 /* ==========================================================================
-   SUPER ADMIN DASHBOARD - SCOPED THEME
-   Matches the Home page (executive navy / blue glow) and the login page
-   (glassy uiverse-style inputs + rounded buttons). Imported by the
-   SuperAdmin layout so it applies to every Super Admin screen.
-   Both dark (default) and light themes are supported.
+   SUPER ADMIN — Purple light / Corona dark
+   Scoped via html.role-theme (shared role theme from theme/role-theme.css).
    ========================================================================== */
 
-/* ------------------------------------------------------------------
-   SA page header (hero card) -> navy glass like login top bar
-   ------------------------------------------------------------------ */
-html:not(.light) .sa-page-er {
-  background:
-    radial-gradient(460px 180px at 10% -60%, rgba(37, 99, 235, 0.28), transparent 70%),
-    radial-gradient(420px 180px at 95% 130%, rgba(56, 189, 248, 0.18), transparent 70%),
-    linear-gradient(135deg, rgba(15, 23, 42, 0.9), rgba(11, 19, 41, 0.96) 55%);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), 0 0 20px rgba(37, 99, 235, 0.15);
+html.role-theme .sa-page-er,
+html.light.role-theme .sa-page-er {
+  background: var(--card-bg) !important;
+  border: 1px solid var(--glass-border) !important;
+  box-shadow: var(--shadow-sm) !important;
 }
 
-html:not(.light) .sa-page-er::before {
-  background: linear-gradient(180deg, #38bdf8, #2563eb);
+html.role-theme .sa-page-er::before,
+html.light.role-theme .sa-page-er::before {
+  background: var(--accent) !important;
 }
 
-html:not(.light) .sa-page-title {
-  color: #ffffff;
+html.role-theme .sa-page-title,
+html.light.role-theme .sa-page-title {
+  color: var(--text-primary) !important;
+  -webkit-text-fill-color: unset !important;
 }
 
-html:not(.light) .sa-page-subtitle {
-  color: #cbd5e1;
+html.role-theme .sa-page-subtitle,
+html.light.role-theme .sa-page-subtitle {
+  color: var(--text-secondary) !important;
 }
 
-/* ------------------------------------------------------------------
-   Add-society primary button -> login button1 (blue gradient)
-   ------------------------------------------------------------------ */
-html:not(.light) .sa-add-btn:not([class*="sa-btn-"]),
-html:not(.light) .sa-btn-primary {
-  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-  box-shadow: 0 8px 22px rgba(37, 99, 235, 0.35);
+html.role-theme .sa-add-btn:not([class*="sa-btn-"]),
+html.role-theme .sa-btn-primary,
+html.role-theme .sa-segment button.sa-segment-active,
+html.light.role-theme .sa-add-btn,
+html.light.role-theme .sa-btn-primary,
+html.light.role-theme .sa-segment button.sa-segment-active {
+  background: var(--accent) !important;
+  box-shadow: 0 8px 20px rgba(var(--acct-purple-rgb), 0.32) !important;
+  color: #ffffff !important;
 }
 
-html:not(.light) .sa-add-btn:not([class*="sa-btn-"]):hover,
-html:not(.light) .sa-btn-primary:hover {
-  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
-  box-shadow: 0 12px 28px rgba(37, 99, 235, 0.5);
-}
-
-/* segmented active pill -> navy */
-html:not(.light) .sa-segment button.sa-segment-active {
-  background: linear-gradient(135deg, #2563eb, #1d4ed8);
-  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
+html.role-theme .sa-add-btn:not([class*="sa-btn-"]):hover,
+html.role-theme .sa-btn-primary:hover,
+html.light.role-theme .sa-add-btn:hover,
+html.light.role-theme .sa-btn-primary:hover {
+  background: var(--accent-dark) !important;
+  box-shadow: 0 12px 24px rgba(var(--acct-purple-rgb), 0.4) !important;
 }
 
 /* ------------------------------------------------------------------
    Form card -> login-style navy glass panel
    ------------------------------------------------------------------ */
-html:not(.light) .sa-form-card {
-  background: linear-gradient(160deg, rgba(17, 26, 46, 0.92), rgba(11, 19, 41, 0.9));
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55), 0 0 24px rgba(37, 99, 235, 0.12);
+html.role-theme .sa-form-card,
+html.light.role-theme .sa-form-card {
+  background: var(--card-bg) !important;
+  border: 1px solid var(--glass-border) !important;
+  box-shadow: var(--shadow-sm) !important;
 }
 
-html:not(.light) .sa-form-card::before {
-  background: linear-gradient(90deg, #38bdf8, #2563eb, transparent 70%);
+html.role-theme .sa-form-card::before,
+html.light.role-theme .sa-form-card::before {
+  background: var(--accent) !important;
 }
 
-html:not(.light) .sa-form-title {
-  color: #ffffff;
+html.role-theme .sa-form-title,
+html.light.role-theme .sa-form-title {
+  color: var(--text-primary) !important;
 }
 
-html:not(.light) .sa-form-subtitle {
-  color: #cbd5e1;
+html.role-theme .sa-form-subtitle,
+html.light.role-theme .sa-form-subtitle {
+  color: var(--text-secondary) !important;
 }
 
-html:not(.light) .sa-form-icon {
-  background: rgba(37, 99, 235, 0.18);
-  color: #38bdf8;
-  box-shadow: inset 0 0 0 1px rgba(56, 189, 248, 0.3);
+html.role-theme .sa-form-icon,
+html.role-theme .sa-card-icon,
+html.light.role-theme .sa-form-icon,
+html.light.role-theme .sa-card-icon {
+  background: var(--accent-soft) !important;
+  color: var(--accent) !important;
+  box-shadow: none !important;
 }
 
 /* ------------------------------------------------------------------
    LOGIN-STYLE INPUTS (uiverse "field" glassy inset look)
    ------------------------------------------------------------------ */
-html:not(.light) .sa-form-card .sa-input input,
-html:not(.light) .sa-form-card .sa-input select,
-html:not(.light) .sa-form-card input.input,
-html:not(.light) .sa-form-card select.input,
-html:not(.light) .sa-input-group input.input,
-html:not(.light) .sa-modal-body input.input,
-html:not(.light) .sa-modal-body select.input {
-  border-radius: 25px;
-  background-color: rgba(11, 19, 41, 0.7);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: inset 2px 4px 10px rgba(0, 0, 0, 0.6);
-  color: #f8fafc;
-  transition: all 0.25s ease;
+html.role-theme .sa-form-card .sa-input input,
+html.role-theme .sa-form-card .sa-input select,
+html.role-theme .sa-form-card input.input,
+html.role-theme .sa-form-card select.input,
+html.role-theme .sa-input-group input.input,
+html.role-theme .sa-modal-body input.input,
+html.role-theme .sa-modal-body select.input {
+  border-radius: 12px;
+  background-color: var(--input-bg) !important;
+  border: 1px solid var(--input-border) !important;
+  box-shadow: none !important;
+  color: var(--text-primary) !important;
+  transition: all 0.2s ease;
 }
 
-html:not(.light) .sa-form-card .sa-input input::placeholder,
-html:not(.light) .sa-form-card .sa-input select::placeholder,
-html:not(.light) .sa-form-card input.input::placeholder {
-  color: #94a3b8;
+html.role-theme .sa-form-card .sa-input input::placeholder,
+html.role-theme .sa-form-card .sa-input select::placeholder,
+html.role-theme .sa-form-card input.input::placeholder {
+  color: var(--text-muted) !important;
 }
 
-html:not(.light) .sa-form-card .sa-input input:focus,
-html:not(.light) .sa-form-card .sa-input select:focus,
-html:not(.light) .sa-form-card input.input:focus,
-html:not(.light) .sa-form-card select.input:focus {
+html.role-theme .sa-form-card .sa-input input:focus,
+html.role-theme .sa-form-card .sa-input select:focus,
+html.role-theme .sa-form-card input.input:focus,
+html.role-theme .sa-form-card select.input:focus {
   outline: none;
-  border-color: rgba(56, 189, 248, 0.5);
-  box-shadow: inset 2px 4px 10px rgba(0, 0, 0, 0.6), 0 0 0 3px rgba(56, 189, 248, 0.14);
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 3px var(--accent-soft) !important;
 }
 
-/* search wrap (toolbar) -> login style */
-html:not(.light) .soc-form-card .sa-search-wrap,
-html:not(.light) .sa-toolbar .sa-search-wrap {
+html.role-theme .soc-form-card .sa-search-wrap,
+html.role-theme .sa-toolbar .sa-search-wrap {
   border-radius: 25px;
-  background-color: rgba(11, 19, 41, 0.7);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: inset 2px 4px 10px rgba(0, 0, 0, 0.6);
+  background-color: var(--search-inset-bg) !important;
+  border: 1px solid var(--search-inset-border) !important;
+  box-shadow: var(--search-inset-shadow) !important;
 }
 
-html:not(.light) .soc-form-card .sa-search-wrap:focus-within,
-html:not(.light) .sa-toolbar .sa-search-wrap:focus-within {
-  border-color: rgba(56, 189, 248, 0.5);
-  box-shadow: inset 2px 4px 10px rgba(0, 0, 0, 0.6), 0 0 0 3px rgba(56, 189, 248, 0.14);
-  background: var(--card-bg);
+html.role-theme .soc-form-card .sa-search-wrap:focus-within,
+html.role-theme .sa-toolbar .sa-search-wrap:focus-within {
+  border-color: var(--search-inset-border) !important;
+  box-shadow: var(--search-inset-shadow) !important;
+  background: var(--search-inset-bg) !important;
 }
 
 /* ------------------------------------------------------------------
    SA stat cards -> navy card with blue accent
    ------------------------------------------------------------------ */
-html:not(.light) .sa-stat-card {
-  background: linear-gradient(160deg, rgba(17, 26, 46, 0.92), rgba(11, 19, 41, 0.9));
-  border: 1px solid rgba(255, 255, 255, 0.1);
+html.role-theme .sa-stat-card,
+html.light.role-theme .sa-stat-card {
+  background: var(--card-bg) !important;
+  border: 1px solid var(--glass-border) !important;
 }
 
-html:not(.light) .sa-stat-card::after {
-  background: linear-gradient(90deg, #38bdf8, transparent 70%);
+html.role-theme .sa-stat-card::after,
+html.light.role-theme .sa-stat-card::after {
+  background: var(--accent) !important;
 }
 
-/* ------------------------------------------------------------------
-   SA society cards -> navy glass
-   ------------------------------------------------------------------ */
-html:not(.light) .sa-card {
-  background: linear-gradient(160deg, rgba(17, 26, 46, 0.92), rgba(11, 19, 41, 0.9));
-  border: 1px solid rgba(255, 255, 255, 0.1);
+html.role-theme .sa-card,
+html.light.role-theme .sa-card {
+  background: var(--card-bg) !important;
+  border: 1px solid var(--glass-border) !important;
 }
 
-html:not(.light) .sa-card::before {
-  background: linear-gradient(90deg, transparent, rgba(56, 189, 248, 0.6), transparent);
+html.role-theme .sa-card::before,
+html.light.role-theme .sa-card::before {
+  background: var(--accent) !important;
 }
 
-html:not(.light) .sa-card:hover {
-  border-color: rgba(56, 189, 248, 0.35);
+html.role-theme .sa-card:hover,
+html.light.role-theme .sa-card:hover {
+  border-color: rgba(var(--acct-purple-rgb), 0.4) !important;
 }
 
-html:not(.light) .sa-card-icon {
-  background: linear-gradient(135deg, rgba(37, 99, 235, 0.25), rgba(37, 99, 235, 0.08));
-  color: #38bdf8;
-  box-shadow: inset 0 0 0 1px rgba(56, 189, 248, 0.2);
+html.role-theme .sa-card-title,
+html.role-theme .sa-admin-name,
+html.light.role-theme .sa-card-title,
+html.light.role-theme .sa-admin-name {
+  color: var(--text-primary) !important;
 }
 
-html:not(.light) .sa-card-title,
-html:not(.light) .sa-admin-name {
-  color: #ffffff;
-}
-
-html:not(.light) .sa-card-address,
-html:not(.light) .sa-admin-email {
-  color: #94a3b8;
+html.role-theme .sa-card-address,
+html.role-theme .sa-admin-email,
+html.light.role-theme .sa-card-address,
+html.light.role-theme .sa-admin-email {
+  color: var(--text-secondary) !important;
 }
 
 @keyframes saModalPopIn {
@@ -182,97 +182,36 @@ html:not(.light) .sa-admin-email {
   }
 }
 
-html:not(.light) .sa-modal {
-  background: linear-gradient(160deg, rgba(17, 26, 46, 0.96), rgba(11, 19, 41, 0.98));
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.6), 0 0 25px rgba(37, 99, 235, 0.15);
+html.role-theme .sa-modal,
+html.light.role-theme .sa-modal {
+  background: var(--modal-bg) !important;
+  border: 1px solid var(--glass-border) !important;
+  box-shadow: var(--shadow-md) !important;
   animation: saModalPopIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-html.light .sa-modal {
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  box-shadow: 0 20px 60px rgba(15, 23, 42, 0.15);
-  animation: saModalPopIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+html.role-theme .sa-modal-title,
+html.light.role-theme .sa-modal-title {
+  color: var(--text-primary) !important;
 }
 
-html:not(.light) .sa-modal-title {
-  color: #ffffff;
+html.role-theme .sa-modal-subtitle,
+html.light.role-theme .sa-modal-subtitle {
+  color: var(--text-secondary) !important;
 }
 
-html:not(.light) .sa-modal-subtitle {
-  color: #94a3b8;
+html.role-theme .sa-btn-ghost,
+html.light.role-theme .sa-btn-ghost {
+  background: var(--card-inner-bg) !important;
+  border: 1px solid var(--glass-border) !important;
+  color: var(--text-primary) !important;
 }
 
-/* ------------------------------------------------------------------
-   Buttons -> ghost stays glass, primary navy, danger stays red
-   ------------------------------------------------------------------ */
-html:not(.light) .sa-btn-ghost {
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  color: #cbd5e1;
-}
-
-html:not(.light) .sa-btn-ghost:hover {
-  border-color: rgba(56, 189, 248, 0.5);
-  color: #38bdf8;
-  background: rgba(56, 189, 248, 0.12);
-}
-
-/* ==========================================================================
-   LIGHT MODE - Keep the clean premium light panels but with blue accents
-   ========================================================================== */
-html.light .sa-add-btn,
-html.light .sa-btn-primary,
-html.light .sa-segment button.sa-segment-active {
-  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-  color: #ffffff;
-  box-shadow: 0 8px 20px rgba(37, 99, 235, 0.3);
-}
-
-html.light .sa-add-btn:hover,
-html.light .sa-btn-primary:hover {
-  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
-}
-
-html.light .sa-form-card {
-  background: linear-gradient(160deg, #ffffff 0%, #f8fafc 100%);
-  border: 1px solid rgba(15, 23, 42, 0.1);
-  box-shadow: 0 20px 50px rgba(15, 23, 42, 0.1), 0 0 20px rgba(37, 99, 235, 0.08);
-}
-
-html.light .sa-form-icon {
-  background: rgba(37, 99, 235, 0.1);
-  color: #2563eb;
-}
-
-html.light .sa-card-icon {
-  background: linear-gradient(135deg, rgba(37, 99, 235, 0.14), rgba(37, 99, 235, 0.05));
-  color: #2563eb;
-}
-
-/* Login-style rounded glassy inputs (light) */
-html.light .sa-form-card .sa-input input,
-html.light .sa-form-card .sa-input select,
-html.light .sa-form-card input.input,
-html.light .sa-form-card select.input,
-html.light .sa-input-group input.input,
-html.light .sa-modal-body input.input,
-html.light .sa-modal-body select.input {
-  border-radius: 25px;
-  background-color: #f1f5f9;
-  border: 1px solid #cbd5e1;
-  box-shadow: inset 2px 4px 8px rgba(0, 0, 0, 0.05);
-  color: #0f172a;
-}
-
-html.light .sa-form-card .sa-input input:focus,
-html.light .sa-form-card .sa-input select:focus,
-html.light .sa-form-card input.input:focus,
-html.light .sa-form-card select.input:focus {
-  outline: none;
-  border-color: #cbd5e1;
-  box-shadow: inset 2px 4px 8px rgba(0, 0, 0, 0.05);
+html.role-theme .sa-btn-ghost:hover,
+html.light.role-theme .sa-btn-ghost:hover {
+  border-color: var(--accent) !important;
+  color: var(--accent) !important;
+  background: var(--accent-soft) !important;
 }
 
 /* ==========================================================================
@@ -301,7 +240,7 @@ html.light .sa-form-card select.input:focus {
   display: flex;
   align-items: center;
   gap: 12px;
-  color: var(--accent, #60A5FA);
+  color: var(--accent);
   padding-bottom: 4px;
   border-bottom: 1px solid var(--glass-border, rgba(255,255,255,0.08));
 }
@@ -334,13 +273,14 @@ html.light .sa-form-card select.input:focus {
   padding: 20px 18px;
   border-radius: 16px;
   background: var(--card-bg);
-  border: 1px solid var(--glass-border, rgba(255,255,255,0.08));
+  border: 1px solid var(--glass-border);
   overflow: hidden;
-  transition: transform 0.2s, box-shadow 0.2s;
+  box-shadow: var(--shadow-sm);
+  transition: none;
 }
 .sa-kpi-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 28px rgba(0,0,0,0.22);
+  transform: none;
+  box-shadow: var(--shadow-sm);
 }
 .sa-kpi-icon-wrap {
   width: 44px;
@@ -351,7 +291,7 @@ html.light .sa-form-card select.input:focus {
   justify-content: center;
   flex-shrink: 0;
   background: var(--kpi-bg, rgba(96,165,250,0.12));
-  color: var(--kpi-c, #60A5FA);
+  color: var(--kpi-c, var(--accent));
 }
 .sa-kpi-body { flex: 1; min-width: 0; }
 .sa-kpi-label {
@@ -381,13 +321,9 @@ html.light .sa-form-card select.input:focus {
   top: -30px; right: -30px;
   width: 100px; height: 100px;
   border-radius: 50%;
-  background: var(--kpi-c, #60A5FA);
+  background: var(--kpi-c, var(--accent));
   opacity: 0.06;
   pointer-events: none;
-}
-html:not(.light) .sa-kpi-card {
-  background: linear-gradient(160deg, rgba(17,26,46,0.92), rgba(11,19,41,0.9));
-  border-color: rgba(255,255,255,0.08);
 }
 
 /* ── Analytics grid ── */
@@ -418,11 +354,7 @@ html:not(.light) .sa-kpi-card {
   transition: box-shadow 0.2s;
 }
 .sa-chart-card:hover {
-  box-shadow: 0 8px 24px rgba(0,0,0,0.15);
-}
-html:not(.light) .sa-chart-card {
-  background: linear-gradient(160deg, rgba(17,26,46,0.92), rgba(11,19,41,0.9));
-  border-color: rgba(255,255,255,0.08);
+  box-shadow: var(--shadow-md);
 }
 .sa-chart-card-header {
   display: flex;
@@ -446,9 +378,9 @@ html:not(.light) .sa-chart-card {
   font-weight: 600;
   padding: 2px 8px;
   border-radius: 999px;
-  background: rgba(37,99,235,0.12);
-  color: #2563EB;
-  border: 1px solid rgba(37,99,235,0.25);
+  background: var(--accent-soft);
+  color: var(--accent);
+  border: 1px solid rgba(var(--acct-purple-rgb), 0.28);
   white-space: nowrap;
   flex-shrink: 0;
 }
@@ -533,9 +465,9 @@ html:not(.light) .sa-chart-card {
   background: var(--glass-border, rgba(255,255,255,0.06));
   color: var(--text-secondary);
 }
-.sa-top-rank-1 { background: rgba(37,99,235,0.15); color: #2563EB; }
-.sa-top-rank-2 { background: rgba(96,165,250,0.12); color: #60A5FA; }
-.sa-top-rank-3 { background: rgba(139,92,246,0.12); color: #8B5CF6; }
+.sa-top-rank-1 { background: var(--accent-soft); color: var(--accent); }
+.sa-top-rank-2 { background: rgba(var(--acct-cyan-rgb), 0.16); color: var(--acct-cyan); }
+.sa-top-rank-3 { background: rgba(var(--acct-violet-rgb), 0.16); color: var(--acct-violet); }
 .sa-top-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 5px; }
 .sa-top-name {
   font-size: 0.8rem;
@@ -586,13 +518,9 @@ html:not(.light) .sa-chart-card {
   transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
 }
 .sa-society-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 28px rgba(0,0,0,0.22);
-  border-color: rgba(96,165,250,0.3);
-}
-html:not(.light) .sa-society-card {
-  background: linear-gradient(160deg, rgba(17,26,46,0.92), rgba(11,19,41,0.9));
-  border-color: rgba(255,255,255,0.08);
+  transform: none;
+  box-shadow: var(--shadow-md);
+  border-color: rgba(var(--acct-purple-rgb), 0.35);
 }
 .sa-soc-card-top {
   display: flex;
@@ -632,7 +560,7 @@ html:not(.light) .sa-society-card {
   font-weight: 600;
 }
 .sa-soc-active { color: #22C55E; }
-.sa-soc-pending { color: #2563EB; }
+.sa-soc-pending { color: var(--accent); }
 .sa-soc-dot {
   width: 6px;
   height: 6px;
@@ -678,8 +606,8 @@ html:not(.light) .sa-society-card {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(96,165,250,0.15);
-  color: #60A5FA;
+  background: var(--accent-soft);
+  color: var(--accent);
   font-size: 0.72rem;
   font-weight: 700;
   flex-shrink: 0;
@@ -698,7 +626,7 @@ html:not(.light) .sa-society-card {
   align-items: center;
   gap: 4px;
   font-size: 0.72rem;
-  color: #2563EB;
+  color: var(--accent);
   opacity: 0.8;
 }
 
@@ -741,14 +669,11 @@ html:not(.light) .sa-society-card {
   gap: 2px;
   animation: fadeInUp 0.12s ease both;
 }
-html:not(.light) .sa-action-dropdown {
-  background: #111827;
-  border-color: rgba(255,255,255,0.1);
-}
-html.light .sa-action-dropdown {
-  background: #ffffff;
-  border-color: #E5E7EB;
-  box-shadow: 0 12px 32px rgba(0,0,0,0.12);
+html.role-theme .sa-action-dropdown,
+html.light.role-theme .sa-action-dropdown {
+  background: var(--modal-bg);
+  border-color: var(--glass-border);
+  box-shadow: var(--shadow-md);
 }
 .sa-action-item {
   display: flex;
@@ -781,60 +706,125 @@ html.light .sa-action-dropdown {
    REALISM-STYLE BLUE PILL TREATMENT (inspired by Uiverse.io by Spacious74)
    ========================================================================== */
 /* Blue glow blob (left) */
-.sa-pill-blob1 {
+html.role-theme .sa-pill-blob1 {
+  background: radial-gradient(circle 60px at 0% 100%, var(--acct-cyan), rgba(var(--acct-purple-rgb), 0.55), transparent);
+  box-shadow: -10px 10px 30px rgba(var(--acct-purple-rgb), 0.18);
+}
+
+html.role-theme .sa-pill-inner {
+  color: var(--text-secondary);
+  background: var(--card-inner-bg);
+}
+
+html.role-theme .sa-pill-inner::before {
+  background: radial-gradient(circle 60px at 0% 100%, rgba(var(--acct-cyan-rgb), 0.16), rgba(var(--acct-purple-rgb), 0.1), transparent);
+}
+
+html.light.role-theme .sa-pill-inner {
+  color: var(--text-primary);
+  background: var(--card-inner-bg);
+}
+
+html.light.role-theme .sa-pill-inner::before {
+  background: radial-gradient(circle 60px at 0% 100%, rgba(var(--acct-cyan-rgb), 0.14), rgba(var(--acct-purple-rgb), 0.08), transparent);
+}
+
+/* --------------------------------------------------------------------------
+   KPI tiles — Accountant / Guard pattern
+   Light: pastel fills + white text + corner circle
+   Dark: solid Corona + colored labels
+   -------------------------------------------------------------------------- */
+html.role-theme .sa-kpi-card::after {
+  content: "";
   position: absolute;
-  width: 70px;
-  height: 100%;
-  border-radius: 16px;
-  bottom: 0;
-  left: 0;
-  background: radial-gradient(circle 60px at 0% 100%, #38bdf8, #1d4ed8aa, transparent);
-  box-shadow: -10px 10px 30px rgba(0, 81, 255, 0.18);
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  right: -18px;
+  top: -18px;
+  background: rgba(255, 255, 255, 0.16);
   pointer-events: none;
 }
 
-/* Inner cap */
-.sa-pill-inner {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 10px 20px;
-  border-radius: 14px;
-  color: #cbd5e1;
-  font-size: 0.82rem;
-  font-weight: 600;
-  z-index: 3;
-  position: relative;
-  background: radial-gradient(circle 80px at 80% -50%, #334155, #0b1220);
-  white-space: nowrap;
-  transition: color 0.2s ease, background 0.2s ease;
+html.role-theme .sa-kpi-glow {
+  display: none;
 }
-.sa-pill-inner::before {
-  content: "";
-  width: 100%;
-  height: 100%;
-  left: 0;
-  top: 0;
-  border-radius: 14px;
-  background: radial-gradient(circle 60px at 0% 100%, rgba(0, 225, 255, 0.10), rgba(0, 80, 255, 0.07), transparent);
-  position: absolute;
-  pointer-events: none;
-}
-.sa-pill-inner > * {
+
+html.role-theme .sa-kpi-label,
+html.role-theme .sa-kpi-value,
+html.role-theme .sa-kpi-desc,
+html.role-theme .sa-kpi-icon-wrap {
   position: relative;
   z-index: 1;
+  box-shadow: none !important;
+  text-shadow: none !important;
 }
 
-/* Light mode adjustment */
-html.light .sa-pill-inner {
-  color: #334155;
-  background: radial-gradient(circle 80px at 80% -50%, #f1f5f9, #e2e8f0);
+html.role-theme:not(.light) .sa-kpi-card {
+  background: #22252e !important;
+  border: 2px solid var(--glass-border) !important;
 }
-html.light .sa-pill-inner::before {
-  background: radial-gradient(circle 60px at 0% 100%, rgba(0, 225, 255, 0.14), rgba(0, 80, 255, 0.08), transparent);
+
+html.role-theme:not(.light) .sa-kpi-card::after {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+html.role-theme:not(.light) .sa-kpi-value {
+  color: #ffffff !important;
+}
+
+html.role-theme:not(.light) .sa-kpi-label,
+html.role-theme:not(.light) .sa-kpi-icon-wrap {
+  color: var(--kpi-c, var(--accent)) !important;
+  background: transparent;
+}
+
+html.role-theme:not(.light) .sa-kpi-desc {
+  color: var(--text-secondary) !important;
+}
+
+html.light.role-theme .sa-kpi-grid .sa-kpi-card:nth-child(1) {
+  background: var(--stat-purple-bg) !important;
+  border: none !important;
+}
+html.light.role-theme .sa-kpi-grid .sa-kpi-card:nth-child(2) {
+  background: var(--stat-green-bg) !important;
+  border: none !important;
+}
+html.light.role-theme .sa-kpi-grid .sa-kpi-card:nth-child(3) {
+  background: var(--stat-purple-bg) !important;
+  border: none !important;
+}
+html.light.role-theme .sa-kpi-grid .sa-kpi-card:nth-child(4) {
+  background: var(--stat-blue-bg) !important;
+  border: none !important;
+}
+
+html.light.role-theme .sa-kpi-value,
+html.light.role-theme .sa-kpi-label,
+html.light.role-theme .sa-kpi-desc {
+  color: #ffffff !important;
+}
+
+html.light.role-theme .sa-kpi-icon-wrap {
+  background: rgba(255, 255, 255, 0.18) !important;
+  color: #ffffff !important;
+}
+
+html.light.role-theme .sa-root .text-white,
+html.light.role-theme .sa-root .hover\:text-white:hover {
+  color: var(--text-primary) !important;
+}
+
+html.light.role-theme .sa-root .btn-primary,
+html.light.role-theme .sa-root .btn-primary *,
+html.light.role-theme .sa-root .sa-kpi-val,
+html.light.role-theme .sa-root .sa-kpi-value,
+html.light.role-theme .sa-root .sa-kpi-label,
+html.light.role-theme .sa-root button.text-white {
+  color: #ffffff !important;
 }
 
 /* ==========================================================================
-   ADD SOCIETY BUTTON — Realism blue treatment
+   ADD SOCIETY BUTTON — Realism treatment (layout lives in index.css)
    ========================================================================== */
-/* Realism Pill Master System — Deferred to index.css for full variant support */

@@ -179,7 +179,7 @@ export default function ResidentVisitorReport() {
             <MdArrowBack size={17} />
           </button>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <div style={{ width: 44, height: 44, borderRadius: 13, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", background: "linear-gradient(135deg,rgba(148,181,245,0.15),rgba(91,141,239,0.10))", border: "1.5px solid rgba(148,181,245,0.25)", color: "#94B5F5" }}>
+            <div className="ad-page-icon">
               <MdPeople size={21} />
             </div>
             <div>

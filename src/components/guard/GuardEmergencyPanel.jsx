@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import API from "../../services/api";
 import { toast } from "react-toastify";
 import Select from "../common/Select";
@@ -7,6 +7,7 @@ export default function GuardEmergencyPanel({ onSent }) {
   const [type, setType] = useState("FIRE");
   const [description, setDescription] = useState("");
   const [loading, setLoading] = useState(false);
+  const descRef = useRef(null);
 
   /* === SEND EMERGENCY === */
   const sendEmergency = async () => {
@@ -26,6 +27,7 @@ export default function GuardEmergencyPanel({ onSent }) {
       toast.success("Emergency alert sent successfully 🚨");
 
       setDescription("");
+      if (descRef.current) descRef.current.style.height = "";
 
       // SAFE CALLBACK
       if (onSent) onSent();
@@ -41,7 +43,7 @@ export default function GuardEmergencyPanel({ onSent }) {
   return (
     <div className="bg-card p-5 rounded-xl space-y-4">
 
-      <h2 className="text-lg font-semibold text-red-400">
+      <h2 className="text-lg font-semibold gd-emergency-title">
         Emergency Alert
       </h2>
 
@@ -59,18 +61,23 @@ export default function GuardEmergencyPanel({ onSent }) {
 
       {/* DESCRIPTION */}
       <textarea
+        ref={descRef}
         placeholder="Describe emergency..."
-        className="input resize-none"
+        className="input resize-none gd-emergency-desc"
         rows="3"
         value={description}
-        onChange={(e) => setDescription(e.target.value)}
+        onChange={(e) => {
+          setDescription(e.target.value);
+          e.target.style.height = "auto";
+          e.target.style.height = `${Math.max(e.target.scrollHeight, 96)}px`;
+        }}
       />
 
       {/* BUTTON */}
       <button
         onClick={sendEmergency}
         disabled={loading}
-        className="btn-primary w-full"
+        className="btn-danger w-full gd-emergency-send"
       >
         {loading ? "Sending..." : "Send Emergency"}
       </button>

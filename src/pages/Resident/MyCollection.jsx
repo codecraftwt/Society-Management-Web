@@ -17,8 +17,10 @@ import {
   MdDownload,
   MdPictureAsPdf,
   MdZoomOutMap,
+  MdSearch,
 } from "react-icons/md";
 import Modal from "../../components/Modal";
+import SlidingTabs from "../../components/common/SlidingTabs";
 import { toast } from "react-toastify";
 import Select from "../../components/common/Select";
 import { QRCodeCanvas } from "qrcode.react";
@@ -91,6 +93,8 @@ export default function MyCollection() {
   const hasEligibleFlat = eligibleFlats.length > 0;
 
   const [parcelFlatMap, setParcelFlatMap] = useState({});
+  const [search, setSearch] = useState("");
+  const [tab, setTab] = useState("ALL");
 
   useEffect(() => {
     if (!authUser?.id) return;
@@ -382,6 +386,22 @@ export default function MyCollection() {
     cancelled: parcels.filter((p) => p.status === "CANCELLED").length,
   };
 
+  const q = search.trim().toLowerCase();
+  const visibleParcels = parcels.filter((p) => {
+    if (tab !== "ALL" && p.status !== tab) return false;
+    if (!q) return true;
+    const flat =
+      (p.Flat ? buildFlatLabel({ Flat: p.Flat }) : "") ||
+      parcelFlatMap[p.id] ||
+      p._flatLabel ||
+      "";
+    return (
+      (p.courier_name || "").toLowerCase().includes(q) ||
+      (p.pickup_code || "").toLowerCase().includes(q) ||
+      String(flat).toLowerCase().includes(q)
+    );
+  });
+
   useEffect(() => {
     if (isOwner && myFlats.length === 1) {
       const first = myFlats[0];
@@ -426,51 +446,43 @@ export default function MyCollection() {
 
   return (
     <div className="gc-page">
-      <div className="gc-hero">
-        <div className="gc-hero-top">
-          <div className="gc-hero-icon">
-            <MdOutlineInventory2 />
+      <div className="gc-er">
+        <div className="gc-er-left">
+          <div className="ad-page-icon">
+            <MdOutlineInventory2 size={22} />
           </div>
           <div>
-            <h2 className="gc-hero-title">{t("parcelTitle")}</h2>
-            <p className="gc-hero-sub">{t("parcelSubtitle")}</p>
-          </div>
-          <div className="gc-hero-actions">
-            <div className="gc-hero-total">
-              <b>{counts.total}</b>
-              <span>{t("parcelStatTotal")}</span>
-            </div>
-            <button
-              onClick={() => hasEligibleFlat && setShowModal(true)}
-              className="gc-btn gc-btn--accent gc-btn--compact"
-              disabled={submitting || checkingFlat || !hasEligibleFlat}
-            >
-              <MdAdd size={18} /> {t("parcelExpectBtn")}
-            </button>
+            <h2 className="gc-er-title page-title">{t("parcelTitle")}</h2>
+            <p className="gc-er-sub page-subtitle">{counts.total} {t("parcelStatTotal")}</p>
           </div>
         </div>
+        <div className="gc-er-actions">
+          <button
+            onClick={() => hasEligibleFlat && setShowModal(true)}
+            className="gc-btn gc-btn--accent gc-btn--compact"
+            disabled={submitting || checkingFlat || !hasEligibleFlat}
+          >
+            <MdAdd size={18} /> {t("parcelExpectBtn")}
+          </button>
+        </div>
+      </div>
 
-        <div className="gc-hero-counts">
-          <div className="gc-count-chip">
-            <span className="gc-count-dot gc-count-dot--expect" />
-            {t("parcelExpected")}
-            <b>{counts.expected}</b>
-          </div>
-          <div className="gc-count-chip">
-            <span className="gc-count-dot gc-count-dot--gate" />
-            {t("parcelAtGate")}
-            <b>{counts.atGate}</b>
-          </div>
-          <div className="gc-count-chip">
-            <span className="gc-count-dot gc-count-dot--done" />
-            {t("parcelCollected")}
-            <b>{counts.collected}</b>
-          </div>
-          <div className="gc-count-chip">
-            <span className="gc-count-dot gc-count-dot--cancel" />
-            {t("parcelCancelled")}
-            <b>{counts.cancelled}</b>
-          </div>
+      <div className="gc-stats">
+        <div className="gc-kpi gc-kpi--expect">
+          <span className="gc-kpi-val">{counts.expected}</span>
+          <span className="gc-kpi-label">{t("parcelExpected")}</span>
+        </div>
+        <div className="gc-kpi gc-kpi--gate">
+          <span className="gc-kpi-val">{counts.atGate}</span>
+          <span className="gc-kpi-label">{t("parcelAtGate")}</span>
+        </div>
+        <div className="gc-kpi gc-kpi--done">
+          <span className="gc-kpi-val">{counts.collected}</span>
+          <span className="gc-kpi-label">{t("parcelCollected")}</span>
+        </div>
+        <div className="gc-kpi gc-kpi--cancel">
+          <span className="gc-kpi-val">{counts.cancelled}</span>
+          <span className="gc-kpi-label">{t("parcelCancelled")}</span>
         </div>
       </div>
 
@@ -480,6 +492,43 @@ export default function MyCollection() {
           {isOwner && myFlats.length > 0
             ? "Owners cannot manage parcels for rented units."
             : t("compNoFlat") || "No unit associated with your account. Please contact admin."}
+        </div>
+      )}
+
+      {!loading && (parcels.length > 0 || search || tab !== "ALL") && (
+        <div className="ge-toolbar">
+          <div className="ge-search-wrap">
+            <MdSearch className="ge-search-icon" size={17} />
+            <input
+              className="ge-search-input"
+              placeholder={t("gcSearch") || "Search courier..."}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+            {search ? (
+              <button
+                type="button"
+                onClick={() => setSearch("")}
+                className="ge-search-clear"
+                aria-label="Clear search"
+              >
+                <MdClose size={13} />
+              </button>
+            ) : null}
+          </div>
+
+          <SlidingTabs
+            className="gp-filter-tabs"
+            value={tab}
+            onChange={setTab}
+            items={[
+              { id: "ALL", label: t("geFilterAll") || "All", badge: counts.total },
+              { id: "EXPECTED", label: t("parcelExpected"), badge: counts.expected },
+              { id: "AT_GATE", label: t("parcelAtGate"), badge: counts.atGate, alert: counts.atGate },
+              { id: "COLLECTED", label: t("parcelCollected"), badge: counts.collected },
+              { id: "CANCELLED", label: t("parcelCancelled"), badge: counts.cancelled },
+            ]}
+          />
         </div>
       )}
 
@@ -500,9 +549,14 @@ export default function MyCollection() {
             <MdAdd size={16} /> {t("parcelExpectBtn")}
           </button>
         </div>
+      ) : visibleParcels.length === 0 ? (
+        <div className="gc-empty">
+          <MdOutlineInbox size={40} />
+          <p>{t("parcelEmpty")}</p>
+        </div>
       ) : (
-        <div className="space-y-5">
-          {parcels.map((p) => {
+        <div className="gc-list">
+          {visibleParcels.map((p) => {
             const isCancelled = p.status === "CANCELLED";
             const isTempParcel = String(p.id).startsWith("temp_");
             const step = getStep(p.status);

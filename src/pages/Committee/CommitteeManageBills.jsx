@@ -460,7 +460,7 @@ export default function CommitteeManageBills() {
                     background:
                       b.status === "PAID"
                         ? "linear-gradient(90deg,#34d399,#059669)"
-                        : "linear-gradient(90deg,#60A5FA,#2563EB)",
+                        : "linear-gradient(90deg,#4BCBEB,var(--accent))",
                   }}
                 />
                 <div className="bill-card__body">
@@ -552,7 +552,7 @@ export default function CommitteeManageBills() {
                           background:
                             b.status === "PAID"
                               ? "linear-gradient(180deg,#34d399,#059669)"
-                              : "linear-gradient(180deg,#60A5FA,#2563EB)",
+                              : "linear-gradient(180deg,#4BCBEB,var(--accent))",
                         }}
                       />
                       <span

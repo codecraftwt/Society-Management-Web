@@ -37,10 +37,10 @@ function Avatar({ name, size = 34 }) {
   return (
     <div style={{
       width: size, height: size, borderRadius: "50%", flexShrink: 0,
-      background: "linear-gradient(135deg, #2563eb, #1d4ed8)",
+      background: "linear-gradient(135deg, var(--accent), #9e58ff)",
       display: "flex", alignItems: "center", justifyContent: "center",
       fontSize: size * 0.36, fontWeight: 800, color: "#fff",
-      boxShadow: "0 2px 8px rgba(37,99,235,0.35)",
+      boxShadow: "0 2px 8px rgba(160,90,255,0.35)",
     }}>
       {initials}
     </div>
@@ -424,8 +424,8 @@ export default function Guard() {
           <div style={{
             width: 46, height: 46, borderRadius: 14, flexShrink: 0,
             display: "flex", alignItems: "center", justifyContent: "center",
-            background: "linear-gradient(135deg, rgba(37,99,235,0.15), rgba(37,99,235,0.08))",
-            border: "1.5px solid rgba(37,99,235,0.25)", color: "var(--accent)",
+            background: "linear-gradient(135deg, rgba(160,90,255,0.15), rgba(160,90,255,0.08))",
+            border: "1.5px solid rgba(160,90,255,0.25)", color: "var(--accent)",
           }}>
             <MdSecurity size={22} />
           </div>

@@ -388,12 +388,12 @@ export default function Notice() {
               height: 44,
               borderRadius: 13,
               flexShrink: 0,
-              background: "linear-gradient(135deg, rgba(37,99,235,0.18), rgba(37,99,235,0.1))",
-              border: "1.5px solid rgba(37,99,235,0.28)",
+              background: "linear-gradient(135deg, rgba(160,90,255,0.18), rgba(160,90,255,0.1))",
+              border: "1.5px solid rgba(160,90,255,0.28)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              boxShadow: "0 4px 14px rgba(37,99,235,0.18)",
+              boxShadow: "0 4px 14px rgba(160,90,255,0.18)",
             }}
           >
             <MdCampaign size={22} style={{ color: "var(--accent, #3b82f6)" }} />
@@ -429,7 +429,7 @@ export default function Notice() {
               placeholder="Search notices..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="input"
+              className="input search-input"
               style={{
                 width: "100%",
                 paddingLeft: "36px",
@@ -538,7 +538,7 @@ export default function Notice() {
               width: 56,
               height: 56,
               borderRadius: 16,
-              background: "rgba(37, 99, 235, 0.1)",
+              background: "rgba(160, 90, 255, 0.1)",
               color: "var(--accent, #3b82f6)",
               display: "flex",
               alignItems: "center",
@@ -610,9 +610,9 @@ export default function Notice() {
                           width: 40,
                           height: 40,
                           borderRadius: 12,
-                          background: "rgba(37, 99, 235, 0.12)",
+                          background: "rgba(160, 90, 255, 0.12)",
                           color: "var(--accent, #3b82f6)",
-                          border: "1px solid rgba(37, 99, 235, 0.2)",
+                          border: "1px solid rgba(160, 90, 255, 0.2)",
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
@@ -746,8 +746,8 @@ export default function Notice() {
                           fontSize: "0.78rem",
                           fontWeight: 600,
                           color: "var(--accent, #3b82f6)",
-                          background: "rgba(37, 99, 235, 0.1)",
-                          border: "1px solid rgba(37, 99, 235, 0.25)",
+                          background: "rgba(160, 90, 255, 0.1)",
+                          border: "1px solid rgba(160, 90, 255, 0.25)",
                           padding: "5px 11px",
                           borderRadius: 8,
                           cursor: "pointer",
@@ -939,13 +939,13 @@ export default function Notice() {
           </div>
 
           {/* Acknowledgement Required Checkbox */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 4, padding: "12px", borderRadius: 10, background: "rgba(37,99,235,0.06)", border: "1px solid rgba(37,99,235,0.15)" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 4, padding: "12px", borderRadius: 10, background: "rgba(160,90,255,0.06)", border: "1px solid rgba(160,90,255,0.15)" }}>
             <label style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}>
               <input
                 type="checkbox"
                 checked={form.acknowledgement_required}
                 onChange={(e) => setForm({ ...form, acknowledgement_required: e.target.checked })}
-                style={{ width: 18, height: 18, accentColor: "#2563EB", cursor: "pointer" }}
+                style={{ width: 18, height: 18, accentColor: "var(--accent)", cursor: "pointer" }}
               />
               <span style={{ fontSize: "0.88rem", fontWeight: 700, color: "var(--text-primary)" }}>
                 {t("noticeAckRequired") || "Acknowledgement Required"}
@@ -1036,8 +1036,8 @@ export default function Notice() {
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             {/* Summary Cards Row */}
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: 12 }}>
-              <div style={{ padding: "12px 14px", borderRadius: 12, background: "rgba(37,99,235,0.08)", border: "1px solid rgba(37,99,235,0.2)", display: "flex", alignItems: "center", gap: 10 }}>
-                <MdPeople size={22} style={{ color: "#2563EB" }} />
+              <div style={{ padding: "12px 14px", borderRadius: 12, background: "rgba(160,90,255,0.08)", border: "1px solid rgba(160,90,255,0.2)", display: "flex", alignItems: "center", gap: 10 }}>
+                <MdPeople size={22} style={{ color: "var(--accent)" }} />
                 <div>
                   <p style={{ fontSize: 11, color: "var(--text-secondary)", margin: 0, textTransform: "uppercase", fontWeight: 600 }}>Total</p>
                   <p style={{ fontSize: 18, fontWeight: 800, margin: 0, color: "var(--text-primary)" }}>{historyModal.data?.summary?.total ?? 0}</p>
@@ -1079,7 +1079,7 @@ export default function Notice() {
                     setHistoryModal(p => ({ ...p, search: val }));
                     fetchHistory(historyModal.notice.id, val, historyModal.statusFilter);
                   }}
-                  className="input"
+                  className="input search-input"
                   style={{ width: "100%", paddingLeft: "36px", height: "38px", fontSize: "13px", borderRadius: "10px" }}
                 />
               </div>
@@ -1105,9 +1105,9 @@ export default function Notice() {
                       fontWeight: 600,
                       cursor: "pointer",
                       border: "1px solid",
-                      borderColor: historyModal.statusFilter === key ? "var(--accent, #2563EB)" : "var(--glass-border)",
-                      background: historyModal.statusFilter === key ? "rgba(37,99,235,0.15)" : "var(--card-inner-bg)",
-                      color: historyModal.statusFilter === key ? "var(--accent, #2563EB)" : "var(--text-secondary)",
+                      borderColor: historyModal.statusFilter === key ? "var(--accent)" : "var(--glass-border)",
+                      background: historyModal.statusFilter === key ? "rgba(160,90,255,0.15)" : "var(--card-inner-bg)",
+                      color: historyModal.statusFilter === key ? "var(--accent)" : "var(--text-secondary)",
                     }}
                   >
                     {label}

@@ -128,7 +128,7 @@ export default function AccountDashboard() {
 
       {/* === STAT CARDS === */}
       {hasStats && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 xl:gap-4">
           <StatCard
             icon={MdTrendingUp}
             value={formatCurrency(stats.monthlyCollected)}

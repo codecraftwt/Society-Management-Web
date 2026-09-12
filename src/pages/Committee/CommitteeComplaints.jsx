@@ -792,7 +792,7 @@ export default function CommitteeComplaints() {
 
   const TABS = [
     { key: "ALL",         label: t ? t("compTabAll")         : "All",         shortLabel: t ? t("compTabAll")        : "All",        count: counts.ALL,         color: "#5A3BA2" },
-    { key: "PENDING",     label: t ? t("compStatusPending")  : "Pending",     shortLabel: t ? t("compStatusPending") : "Pending",    count: counts.PENDING,     color: "#2563EB" },
+    { key: "PENDING",     label: t ? t("compStatusPending")  : "Pending",     shortLabel: t ? t("compStatusPending") : "Pending",    count: counts.PENDING,     color: "var(--accent)" },
     { key: "IN_PROGRESS", label: t ? t("compTabInProgress")  : "In Progress", shortLabel: t ? t("adminCompActive")   : "Active",     count: counts.IN_PROGRESS, color: "#5A3BA2" },
     { key: "RESOLVED",    label: t ? t("compStatusResolved") : "Resolved",    shortLabel: t ? t("adminCompDone")     : "Done",       count: counts.RESOLVED,    color: "#16a34a" },
   ];
@@ -857,7 +857,7 @@ export default function CommitteeComplaints() {
               <div style={{ position: "relative", flex: 1, maxWidth: isMobile ? "none" : 260 }}>
                 <MdSearch size={14} style={{ position: "absolute", left: 10, top: "50%",
                   transform: "translateY(-50%)", color: "var(--text-secondary)", pointerEvents: "none" }} />
-                <input className="input"
+                <input className="input search-input"
                   style={{ paddingLeft: 30, paddingRight: searchQuery ? 30 : 10, height: 36, fontSize: 12, width: "100%" }}
                   placeholder={t ? t("adminCompSearch") : "Search complaints…"} value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)} />

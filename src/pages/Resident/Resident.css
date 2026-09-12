@@ -1,0 +1,1048 @@
+/* ==========================================================================
+   RESIDENT PAGES — Purple light / Corona dark
+   Scoped to html.role-theme (shared role theme)
+   Guard.css is also imported from ResidentLayout for collection (gc-*) styles.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   Layout utilities — old navy glass (bg-white/5, text-white) → theme tokens
+   -------------------------------------------------------------------------- */
+html.role-theme .resident-root .bg-white\/3,
+html.role-theme .resident-root .bg-white\/5,
+html.role-theme .resident-root .bg-white\/8,
+html.role-theme .resident-root .bg-white\/10,
+html.role-theme .resident-root .hover\:bg-white\/3:hover,
+html.role-theme .resident-root .hover\:bg-white\/10:hover,
+html.role-theme .resident-root .hover\:bg-white\/12:hover,
+html.role-theme .resident-root .hover\:bg-white\/15:hover {
+  background: var(--card-inner-bg) !important;
+}
+
+html.role-theme .resident-root .border-white\/5,
+html.role-theme .resident-root .border-white\/8,
+html.role-theme .resident-root .border-white\/10 {
+  border-color: var(--glass-border) !important;
+}
+
+html.light.role-theme .resident-root .text-white,
+html.light.role-theme .resident-root .hover\:text-white:hover {
+  color: var(--text-primary) !important;
+}
+
+html.light.role-theme .resident-root .text-white\/80,
+html.light.role-theme .resident-root .text-white\/50,
+html.light.role-theme .resident-root .text-white\/30,
+html.light.role-theme .resident-root .text-white\/25 {
+  color: var(--text-secondary) !important;
+}
+
+html.light.role-theme .resident-root .btn-primary,
+html.light.role-theme .resident-root .btn-primary *,
+html.light.role-theme .resident-root .btn-danger,
+html.light.role-theme .resident-root .btn-danger *,
+html.light.role-theme .resident-root .bg-red-600,
+html.light.role-theme .resident-root .bg-red-600 .text-white,
+html.light.role-theme .resident-root .bg-red-600 *:not(.header-sos-count),
+html.light.role-theme .resident-root .rounded-full.text-white,
+html.light.role-theme .resident-root button.text-white,
+html.light.role-theme .resident-root .bg-blue-500,
+html.light.role-theme .resident-root .bg-blue-500 .text-white,
+html.light.role-theme .resident-root .gc-kpi-val,
+html.light.role-theme .resident-root .gc-kpi-label,
+html.light.role-theme .resident-root .complaint-stat-val,
+html.light.role-theme .resident-root .complaint-stat-label {
+  color: #ffffff !important;
+}
+
+html.role-theme .header-sos-count,
+html.light.role-theme .resident-root .header-sos-count {
+  background: #ffffff !important;
+  color: var(--acct-red) !important;
+}
+
+html.role-theme .resident-root .page-root,
+html.role-theme .resident-root .ra-root,
+html.role-theme .resident-root .rd-root,
+html.role-theme .resident-root .ms-root {
+  max-width: none;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+/* --------------------------------------------------------------------------
+   Collection extras (Expect Parcel sits in the header)
+   -------------------------------------------------------------------------- */
+html.role-theme .gc-er-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-left: auto;
+}
+
+html.role-theme .gc-btn--compact {
+  width: auto !important;
+  margin-top: 0 !important;
+  padding: 10px 16px;
+  white-space: nowrap;
+}
+
+html.role-theme .gc-warn {
+  background: var(--approval-bg) !important;
+  border: 1px solid var(--approval-border) !important;
+  color: var(--approval-color) !important;
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+
+html.light.role-theme .gc-hero-title,
+html.light.role-theme .gc-hero-sub,
+html.light.role-theme .gc-count-chip,
+html.light.role-theme .gc-count-chip b {
+  color: var(--text-primary) !important;
+}
+
+html.role-theme .gc-hero {
+  background: var(--card-bg) !important;
+  border-color: var(--glass-border) !important;
+}
+
+/* --------------------------------------------------------------------------
+   KPI tiles (complaints / reports)
+   -------------------------------------------------------------------------- */
+html.role-theme .resident-root .complaint-stat-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 16px;
+  box-shadow: var(--shadow-sm) !important;
+  backdrop-filter: none !important;
+  filter: none !important;
+}
+
+html.role-theme .resident-root .complaint-stat-card::before {
+  content: none !important;
+  display: none !important;
+}
+
+html.role-theme .resident-root .complaint-stat-card::after {
+  content: "" !important;
+  display: block !important;
+  position: absolute;
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  right: -18px;
+  top: -18px;
+  background: rgba(255, 255, 255, 0.16);
+  pointer-events: none;
+  box-shadow: none !important;
+}
+
+html.role-theme:not(.light) .resident-root .complaint-stat-card::after {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+html.role-theme .resident-root .complaint-stat-val,
+html.role-theme .resident-root .complaint-stat-label,
+html.role-theme .resident-root .complaint-stat-total .complaint-stat-val,
+html.role-theme .resident-root .complaint-stat-total .complaint-stat-label {
+  position: relative;
+  z-index: 1;
+  box-shadow: none !important;
+  text-shadow: none !important;
+}
+
+html.role-theme .resident-root .complaint-stat-card:hover {
+  transform: none !important;
+  box-shadow: var(--shadow-sm) !important;
+}
+
+html.role-theme:not(.light) .resident-root .complaint-stat-card {
+  background: #22252e !important;
+  border: 2px solid var(--glass-border) !important;
+}
+
+html.role-theme:not(.light) .resident-root .complaint-stat-total {
+  border-color: rgba(var(--acct-purple-rgb), 0.4) !important;
+}
+html.role-theme:not(.light) .resident-root .complaint-stat-pending {
+  border-color: rgba(var(--acct-cyan-rgb), 0.35) !important;
+}
+html.role-theme:not(.light) .resident-root .complaint-stat-inprogress {
+  border-color: rgba(var(--acct-yellow-rgb), 0.35) !important;
+}
+html.role-theme:not(.light) .resident-root .complaint-stat-resolved {
+  border-color: rgba(var(--acct-green-rgb), 0.35) !important;
+}
+
+html.role-theme:not(.light) .resident-root .complaint-stat-val {
+  color: #ffffff !important;
+}
+html.role-theme:not(.light) .resident-root .complaint-stat-total .complaint-stat-label {
+  color: var(--acct-purple) !important;
+}
+html.role-theme:not(.light) .resident-root .complaint-stat-pending .complaint-stat-label {
+  color: var(--acct-cyan) !important;
+}
+html.role-theme:not(.light) .resident-root .complaint-stat-inprogress .complaint-stat-label {
+  color: var(--acct-yellow) !important;
+}
+html.role-theme:not(.light) .resident-root .complaint-stat-resolved .complaint-stat-label {
+  color: var(--acct-teal) !important;
+}
+
+html.light.role-theme .resident-root .complaint-stat-total {
+  background: var(--stat-purple-bg) !important;
+  border: none !important;
+}
+html.light.role-theme .resident-root .complaint-stat-pending {
+  background: var(--stat-blue-bg) !important;
+  border: none !important;
+}
+html.light.role-theme .resident-root .complaint-stat-inprogress {
+  background: var(--stat-amber-bg) !important;
+  border: none !important;
+}
+html.light.role-theme .resident-root .complaint-stat-resolved {
+  background: var(--stat-green-bg) !important;
+  border: none !important;
+}
+
+html.light.role-theme .resident-root .complaint-stat-val,
+html.light.role-theme .resident-root .complaint-stat-label {
+  color: #ffffff !important;
+}
+
+/* --------------------------------------------------------------------------
+   Amenities
+   -------------------------------------------------------------------------- */
+html.role-theme .ra-title {
+  background: none !important;
+  -webkit-background-clip: unset !important;
+  background-clip: unset !important;
+  -webkit-text-fill-color: var(--text-primary) !important;
+  color: var(--text-primary) !important;
+  filter: none !important;
+}
+
+html.role-theme .ra-subtitle,
+html.role-theme .ra-card-price .ra-per,
+html.role-theme .ra-booking-date,
+html.role-theme .ra-empty p,
+html.role-theme .ra-summary-empty {
+  color: var(--text-secondary) !important;
+}
+
+html.role-theme .ra-er-icon {
+  color: var(--accent) !important;
+  filter: none !important;
+  animation: none !important;
+}
+
+html.role-theme .ra-tab-bar {
+  background: var(--card-bg) !important;
+  border: 1px solid var(--glass-border) !important;
+  box-shadow: var(--shadow-sm) !important;
+  backdrop-filter: none !important;
+}
+
+html.role-theme .ra-tab {
+  color: var(--text-secondary) !important;
+  background: transparent !important;
+}
+
+html.role-theme .ra-tab:hover {
+  color: var(--text-primary) !important;
+  background: var(--row-hover) !important;
+}
+
+html.role-theme .ra-tab--active {
+  background: var(--accent) !important;
+  color: #ffffff !important;
+  border: none !important;
+  box-shadow: 0 4px 14px rgba(var(--acct-purple-rgb), 0.28) !important;
+}
+
+html.role-theme .ra-tab--active .ra-tab-icon {
+  opacity: 1;
+  color: #ffffff !important;
+}
+
+html.role-theme .ra-tab-badge {
+  background: var(--accent) !important;
+  box-shadow: none !important;
+}
+
+html.role-theme .ra-card,
+html.role-theme .ra-booking-row,
+html.role-theme .ra-summary-card,
+html.role-theme .ra-modal-inner,
+html.role-theme .ra-calendar-section,
+html.role-theme .ra-summary-section,
+html.role-theme .ra-empty,
+html.role-theme .ra-pass-wrapper {
+  background: var(--card-bg) !important;
+  border-color: var(--glass-border) !important;
+  box-shadow: var(--shadow-sm) !important;
+  backdrop-filter: none !important;
+}
+
+html.role-theme .ra-bookings {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+html.role-theme .ra-card::before {
+  display: none !important;
+}
+
+html.role-theme .ra-card:hover {
+  transform: none !important;
+  box-shadow: var(--shadow-md) !important;
+  border-color: rgba(var(--acct-purple-rgb), 0.28) !important;
+}
+
+html.role-theme .ra-card-accent {
+  background: var(--accent) !important;
+}
+
+html.role-theme .ra-card-name,
+html.role-theme .ra-booking-name,
+html.role-theme .ra-summary-title,
+html.role-theme .ra-summary-total-amt,
+html.role-theme .ra-card-price {
+  color: var(--text-primary) !important;
+}
+
+html.role-theme .ra-book-btn {
+  background: var(--accent-soft) !important;
+  border-color: rgba(var(--acct-purple-rgb), 0.28) !important;
+  color: var(--accent) !important;
+  box-shadow: none !important;
+}
+
+html.role-theme .ra-book-btn:hover:not(:disabled) {
+  background: var(--accent) !important;
+  color: #ffffff !important;
+  border-color: var(--accent) !important;
+  transform: none !important;
+  box-shadow: 0 6px 16px rgba(var(--acct-purple-rgb), 0.28) !important;
+}
+
+html.role-theme .ra-next-btn,
+html.role-theme .ra-pass-btn--download,
+html.role-theme .ra-pass-btn--share {
+  background: var(--accent) !important;
+  color: #ffffff !important;
+  border-color: var(--accent) !important;
+}
+
+html.role-theme .ra-back-btn,
+html.role-theme .ra-pass-btn--close {
+  background: var(--card-inner-bg) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--glass-border) !important;
+}
+
+html.role-theme .ra-cancel-btn {
+  background: var(--acct-red) !important;
+  color: #ffffff !important;
+  border: none !important;
+}
+
+html.role-theme .ra-cancel-btn:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--acct-red) 72%, #000) !important;
+  transform: none !important;
+}
+
+html.role-theme .ra-pill--type {
+  background: var(--accent-soft) !important;
+  color: var(--accent) !important;
+  border-color: rgba(var(--acct-purple-rgb), 0.28) !important;
+}
+
+html.role-theme .ra-filter-chip {
+  background: var(--card-inner-bg) !important;
+  color: var(--text-secondary) !important;
+  border-color: var(--glass-border) !important;
+}
+
+html.role-theme .ra-filter-chip--active {
+  background: var(--accent) !important;
+  color: #ffffff !important;
+  border-color: var(--accent) !important;
+}
+
+html.role-theme .ra-inline-calendar .react-datepicker {
+  background: var(--card-bg) !important;
+  border-color: var(--glass-border) !important;
+  color: var(--text-primary) !important;
+}
+
+html.role-theme .ra-inline-calendar .react-datepicker__header {
+  background: var(--card-inner-bg) !important;
+  border-color: var(--glass-border) !important;
+}
+
+html.role-theme .ra-inline-calendar .react-datepicker__current-month,
+html.role-theme .ra-inline-calendar .react-datepicker__day-name,
+html.role-theme .ra-inline-calendar .react-datepicker__day {
+  color: var(--text-primary) !important;
+}
+
+html.role-theme .ra-inline-calendar .react-datepicker__day--selected,
+html.role-theme .ra-inline-calendar .react-datepicker__day.ra-day-endpoint {
+  background: var(--accent) !important;
+  color: #ffffff !important;
+}
+
+/* --------------------------------------------------------------------------
+   Documents
+   -------------------------------------------------------------------------- */
+html.role-theme .rd-page-title,
+html.role-theme .rd-doc-title {
+  color: var(--text-primary) !important;
+}
+
+html.role-theme .rd-page-subtitle,
+html.role-theme .rd-doc-desc,
+html.role-theme .rd-empty-text,
+html.role-theme .rd-empty-sub,
+html.role-theme .rd-footer-note,
+html.role-theme .rd-date-chip {
+  color: var(--text-secondary) !important;
+}
+
+html.role-theme .rd-er-icon-wrap {
+  background: var(--accent-soft) !important;
+  border-color: rgba(var(--acct-purple-rgb), 0.28) !important;
+  color: var(--accent) !important;
+}
+
+html.role-theme .rd-toolbar,
+html.role-theme .rd-doc-card,
+html.role-theme .rd-empty,
+html.role-theme .rd-error,
+html.role-theme .rd-search-wrap {
+  background: var(--card-bg) !important;
+  border-color: var(--glass-border) !important;
+  box-shadow: var(--shadow-sm) !important;
+}
+
+html.role-theme .rd-doc-card:hover {
+  transform: none !important;
+  border-color: rgba(var(--acct-purple-rgb), 0.28) !important;
+  box-shadow: var(--shadow-md) !important;
+}
+
+html.role-theme .rd-search-input {
+  background: var(--search-inset-bg) !important;
+  border-color: var(--search-inset-border) !important;
+  color: var(--text-primary) !important;
+  box-shadow: var(--search-inset-shadow) !important;
+}
+
+html.role-theme .rd-search-input::placeholder,
+html.role-theme .rd-search-icon {
+  color: var(--search-inset-placeholder) !important;
+}
+
+html.role-theme .rd-btn-view,
+html.role-theme .rd-btn-download {
+  background: var(--accent-soft) !important;
+  color: var(--accent) !important;
+  border-color: rgba(var(--acct-purple-rgb), 0.28) !important;
+}
+
+html.role-theme .rd-date-chip,
+html.role-theme .rd-size-chip {
+  background: var(--chip-bg) !important;
+  border-color: var(--chip-border) !important;
+  color: var(--text-secondary) !important;
+}
+
+html.role-theme .rd-skeleton {
+  background: var(--card-inner-bg) !important;
+}
+
+/* --------------------------------------------------------------------------
+   Settings
+   -------------------------------------------------------------------------- */
+html.role-theme .ms-hero,
+html.role-theme .ms-card,
+html.role-theme .ms-form,
+html.role-theme .ms-setting-row {
+  background: var(--card-bg) !important;
+  border: 1px solid var(--glass-border) !important;
+  box-shadow: var(--shadow-sm) !important;
+  border-radius: 16px;
+}
+
+html.role-theme .ms-hero-accent {
+  background: var(--accent) !important;
+}
+
+html.role-theme .ms-hero-name,
+html.role-theme .ms-section-title,
+html.role-theme .ms-setting-label {
+  color: var(--text-primary) !important;
+}
+
+html.role-theme .ms-hero-email,
+html.role-theme .ms-section-sub,
+html.role-theme .ms-setting-desc,
+html.role-theme .ms-label,
+html.role-theme .ms-loading-text,
+html.role-theme .ms-footer {
+  color: var(--text-secondary) !important;
+}
+
+html.role-theme .ms-tab {
+  background: var(--card-inner-bg) !important;
+  color: var(--text-secondary) !important;
+  border-color: var(--glass-border) !important;
+}
+
+html.role-theme .ms-tab:hover {
+  color: var(--text-primary) !important;
+}
+
+html.role-theme .ms-tab--active {
+  background: var(--accent) !important;
+  color: #ffffff !important;
+  border-color: var(--accent) !important;
+  box-shadow: 0 4px 14px rgba(var(--acct-purple-rgb), 0.28) !important;
+}
+
+html.role-theme .ms-badge--blue {
+  background: var(--accent-soft) !important;
+  color: var(--accent) !important;
+  border-color: rgba(var(--acct-purple-rgb), 0.28) !important;
+}
+
+html.role-theme .ms-badge--green {
+  background: var(--badge-paid-bg) !important;
+  color: var(--badge-paid-color) !important;
+  border-color: var(--badge-paid-border) !important;
+}
+
+html.role-theme .ms-badge--muted {
+  background: var(--chip-bg) !important;
+  color: var(--text-secondary) !important;
+  border-color: var(--chip-border) !important;
+}
+
+html.role-theme .ms-input-icon,
+html.role-theme .ms-eye-btn {
+  color: var(--text-secondary) !important;
+}
+
+html.role-theme .ms-banner--success {
+  background: var(--badge-paid-bg) !important;
+  border-color: var(--badge-paid-border) !important;
+  color: var(--badge-paid-color) !important;
+}
+
+html.role-theme .ms-banner--error {
+  background: var(--reject-bg) !important;
+  border-color: var(--reject-border) !important;
+  color: var(--reject-color) !important;
+}
+
+html.role-theme .ms-avatar {
+  background: linear-gradient(135deg, var(--accent), #9e58ff) !important;
+  color: #ffffff !important;
+  box-shadow: 0 8px 20px rgba(var(--acct-purple-rgb), 0.3) !important;
+}
+
+html.role-theme .ms-badge--warn {
+  background: var(--approval-bg) !important;
+  color: var(--approval-color) !important;
+  border-color: var(--approval-border) !important;
+}
+
+html.role-theme .ms-section-icon {
+  background: var(--accent-soft) !important;
+  color: var(--accent) !important;
+}
+
+/* --------------------------------------------------------------------------
+   Role switcher
+   -------------------------------------------------------------------------- */
+html.role-theme .rs-dropdown {
+  background: var(--modal-bg) !important;
+  border-color: var(--glass-border) !important;
+  box-shadow: var(--shadow-md) !important;
+}
+
+html.role-theme .rs-option:hover {
+  background: var(--row-hover) !important;
+}
+
+html.role-theme .rs-option.active {
+  background: var(--accent-soft) !important;
+}
+
+html.role-theme .rs-option.active .rs-option-name {
+  color: var(--accent) !important;
+}
+
+html.role-theme .rs-option.active .rs-option-desc {
+  color: var(--text-secondary) !important;
+}
+
+html.role-theme .rs-option.active .rs-option-icon {
+  background: var(--accent-soft) !important;
+  border-color: rgba(var(--acct-purple-rgb), 0.35) !important;
+}
+
+html.role-theme .rs-option-name {
+  color: var(--text-primary) !important;
+}
+
+html.role-theme .rs-mobile-bar {
+  background: var(--card-bg) !important;
+  border-color: var(--glass-border) !important;
+}
+
+html.role-theme .rs-check {
+  background: var(--accent) !important;
+}
+
+html.role-theme .res-camera-sheet .text-white\/50,
+html.role-theme .res-camera-sheet .hover\:text-white:hover {
+  color: var(--text-secondary) !important;
+}
+
+/* --------------------------------------------------------------------------
+   Drawers / camera / notices / tables
+   -------------------------------------------------------------------------- */
+html.role-theme .chat-panel__bubble--mine {
+  background: var(--accent) !important;
+  border-color: rgba(var(--acct-purple-rgb), 0.35) !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 14px rgba(var(--acct-purple-rgb), 0.28) !important;
+}
+
+html.role-theme .gc-hero-sub {
+  color: var(--text-secondary) !important;
+}
+
+html.role-theme .res-camera-sheet {
+  background: var(--modal-bg) !important;
+  border: 1px solid var(--glass-border) !important;
+  color: var(--text-primary) !important;
+}
+
+html.role-theme .res-camera-sheet .text-white {
+  color: var(--text-primary) !important;
+}
+
+html.role-theme .resident-root table th {
+  color: var(--text-secondary);
+}
+
+html.role-theme .resident-root .hover\:border-blue-500\/40:hover,
+html.role-theme .resident-root .hover\:border-blue-500\/30:hover {
+  border-color: rgba(var(--acct-purple-rgb), 0.4) !important;
+}
+
+/* --------------------------------------------------------------------------
+   Leftover Tailwind blues → purple accent
+   -------------------------------------------------------------------------- */
+html.role-theme .resident-root .text-blue-400,
+html.role-theme .resident-root .text-blue-500,
+html.light.role-theme .resident-root .text-blue-400,
+html.light.role-theme .resident-root .text-blue-500 {
+  color: var(--accent) !important;
+}
+
+html.role-theme .resident-root .bg-blue-500\/5,
+html.role-theme .resident-root .bg-blue-500\/8,
+html.role-theme .resident-root .bg-blue-500\/10,
+html.role-theme .resident-root .bg-blue-500\/15,
+html.role-theme .resident-root .bg-blue-500\/20,
+html.role-theme .resident-root .hover\:bg-blue-500\/10:hover,
+html.role-theme .resident-root .hover\:bg-blue-500\/20:hover,
+html.role-theme .resident-root .hover\:bg-blue-500\/30:hover {
+  background: var(--accent-soft) !important;
+}
+
+html.role-theme .resident-root .bg-blue-500 {
+  background: var(--accent) !important;
+}
+
+html.role-theme .resident-root .border-blue-500\/20,
+html.role-theme .resident-root .border-blue-500\/25,
+html.role-theme .resident-root .border-blue-500\/30 {
+  border-color: rgba(var(--acct-purple-rgb), 0.28) !important;
+}
+
+html.role-theme .resident-root .er-icon,
+html.role-theme .resident-root .er-icon--complaint,
+html.role-theme .resident-root .er-icon--amenity,
+html.role-theme .resident-root .rd-er-icon-wrap,
+html.role-theme .resident-root .gc-er-icon,
+html.role-theme .resident-root .ra-er-icon,
+html.role-theme .resident-root .hh-edit-er-icon,
+html.role-theme .resident-root .ms-section-icon,
+html.role-theme .resident-root .preap-header-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  flex-shrink: 0;
+  background: linear-gradient(135deg, var(--accent), #9e58ff) !important;
+  border: none !important;
+  color: #ffffff !important;
+  box-shadow: 0 8px 20px rgba(var(--acct-purple-rgb), 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  filter: none !important;
+  animation: none !important;
+}
+
+html.role-theme .resident-root .ms-tab-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+html.role-theme .resident-root .filter-pill--active-amber,
+html.role-theme .resident-root .filter-pill--active-green,
+html.role-theme .resident-root .filter-pill--active {
+  box-shadow: none;
+}
+
+/* --------------------------------------------------------------------------
+   Resident dashboard (/resident)
+   -------------------------------------------------------------------------- */
+html.role-theme .rp-dash .ge-stats.rp-stats--3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+html.role-theme .rp-dash .ge-stats.rp-stats--4 {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+html.role-theme .rp-dash .complaint-stat-card {
+  min-height: 92px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 6px;
+  padding: 16px 18px 14px;
+}
+
+html.role-theme .rp-dash .complaint-stat-val {
+  font-size: 16px !important;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+html.role-theme .rp-dash .rp-stat-btn {
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+html.role-theme .rp-sos {
+  position: relative;
+  overflow: hidden;
+  background: var(--card-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 18px;
+  box-shadow: var(--shadow-sm);
+  padding: 20px;
+}
+
+html.role-theme .rp-sos::before {
+  content: none;
+  display: none;
+}
+
+html.role-theme .rp-sos-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+html.role-theme .rp-sos-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--acct-red);
+  color: #ffffff;
+  box-shadow: 0 8px 20px rgba(var(--acct-red-rgb), 0.32);
+}
+
+html.role-theme .rp-sos-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-primary);
+}
+
+html.role-theme .rp-sos-sub {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+html.role-theme .rp-sos-label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+html.role-theme .rp-sos-input {
+  width: 100%;
+  resize: none;
+  font-size: 14px;
+  line-height: 1.45;
+  border-radius: 16px;
+  padding: 12px 14px;
+  outline: none;
+  background: var(--search-inset-bg);
+  border: 1px solid var(--search-inset-border);
+  box-shadow: var(--search-inset-shadow);
+  color: var(--text-primary);
+}
+
+html.role-theme .rp-sos-input::placeholder {
+  color: var(--text-secondary);
+}
+
+html.role-theme .rp-sos-input:focus {
+  border-color: var(--acct-red);
+  box-shadow: var(--search-inset-shadow);
+}
+
+html.role-theme .rp-sos-btn {
+  width: 100%;
+  margin-top: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 16px;
+  border: none;
+  border-radius: 14px;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: #ffffff;
+  background: var(--acct-red);
+  box-shadow: 0 8px 20px rgba(var(--acct-red-rgb), 0.32);
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+html.role-theme .rp-sos-btn:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--acct-red) 72%, #000);
+  transform: none;
+}
+
+html.role-theme .rp-sos-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+html.light.role-theme .rp-sos-btn,
+html.light.role-theme .rp-sos-btn * {
+  color: #ffffff !important;
+}
+
+@media (max-width: 900px) {
+  html.role-theme .rp-dash .ge-stats.rp-stats--4 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  html.role-theme .rp-dash .ge-stats.rp-stats--3,
+  html.role-theme .rp-dash .ge-stats.rp-stats--4 {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   My Profile
+   -------------------------------------------------------------------------- */
+html.role-theme .mp-manage {
+  padding: 16px 18px 18px;
+  border-radius: 16px;
+}
+
+html.role-theme .mp-manage-heading {
+  margin: 0 0 14px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+html.role-theme .mp-manage-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+html.role-theme .mp-manage-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 14px;
+  text-align: left;
+  cursor: pointer;
+  background: var(--card-inner-bg);
+  border: 1px solid var(--glass-border);
+  color: var(--text-primary);
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+html.role-theme .mp-manage-card:hover {
+  transform: none;
+  background: var(--row-hover);
+  border-color: rgba(var(--acct-purple-rgb), 0.28);
+}
+
+html.role-theme .mp-manage-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+html.role-theme .mp-manage-card--danger .mp-manage-icon {
+  background: rgba(var(--acct-red-rgb), 0.16);
+  color: var(--acct-red);
+}
+
+html.role-theme .mp-manage-card--muted .mp-manage-icon {
+  background: var(--chip-bg);
+  color: var(--text-secondary);
+}
+
+html.role-theme .mp-manage-label {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+html.role-theme .mp-manage-arrow {
+  margin-left: auto;
+  color: var(--text-secondary);
+  opacity: 0;
+}
+
+html.role-theme .mp-manage-card:hover .mp-manage-arrow {
+  opacity: 1;
+}
+
+@media (max-width: 640px) {
+  html.role-theme .mp-manage-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Amenities extras
+   -------------------------------------------------------------------------- */
+html.role-theme .ra-pay-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  margin-bottom: 12px;
+  background: var(--accent-soft);
+  border: 1px solid rgba(var(--acct-purple-rgb), 0.28);
+}
+
+html.role-theme .ra-pay-banner-icon {
+  color: var(--accent);
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+html.role-theme .ra-pay-banner-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+html.role-theme .ra-pay-banner-sub {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+
+html.role-theme .ra-booking-stats {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+html.role-theme .ra-amenity-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+html.role-theme .ra-next-btn:hover:not(:disabled),
+html.role-theme .ra-range-book:hover:not(:disabled),
+html.role-theme .ra-pass-btn:hover:not(:disabled),
+html.role-theme .ra-slot-btn:hover:not(:disabled) {
+  transform: none !important;
+}
+
+@media (max-width: 700px) {
+  html.role-theme .ra-booking-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Society documents extras
+   -------------------------------------------------------------------------- */
+html.role-theme .rd-icon-blue,
+html.role-theme .rd-icon-cyan,
+html.role-theme .rd-badge-blue,
+html.role-theme .rd-badge-cyan {
+  background: rgba(var(--acct-cyan-rgb), 0.16) !important;
+  border-color: rgba(var(--acct-cyan-rgb), 0.35) !important;
+  color: var(--acct-cyan) !important;
+}
+
+html.role-theme .rd-glow-blue,
+html.role-theme .rd-glow-cyan {
+  background: linear-gradient(90deg, var(--acct-cyan), transparent) !important;
+}
+
+html.role-theme .rd-btn:hover,
+html.role-theme .rd-filter-chip:hover {
+  transform: none !important;
+}

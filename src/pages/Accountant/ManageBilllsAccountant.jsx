@@ -1,24 +1,142 @@
 
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useEffect, useState, useCallback, useMemo, useRef } from "react";
+import { createPortal } from "react-dom";
 import API from "../../services/api";
 import { useLang } from "../../context/LanguageContext";
 import {
   MdAdd, MdClose, MdSearch, MdDelete,
   MdOutlineInbox, MdReceiptLong,
-  MdCheckCircle, MdSchedule,
-  MdChevronLeft, MdChevronRight,
+  MdCheckCircle, MdSchedule, MdPayments,
+  MdChevronLeft, MdChevronRight, MdCalendarMonth,
 } from "react-icons/md";
 import GlobalButton from "../../components/common/GlobalButton";
 import GlobalModal from "../../components/common/GlobalModal";
 import GlobalConfirmDialog from "../../components/common/GlobalConfirmDialog";
 import GlobalBadge from "../../components/common/GlobalBadge";
 import Select from "../../components/common/Select";
+import SlidingTabs from "../../components/common/SlidingTabs";
 
 /* ── helpers ── */
-const getCurrentBillingMonth = () => {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+const monthToDate = (value) => {
+  if (!value) return null;
+  const [year, month] = String(value).split("-").map(Number);
+  if (!year || !month) return null;
+  return new Date(year, month - 1, 1);
 };
+
+const dateToMonth = (date) => {
+  if (!date) return "";
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+};
+
+const getCurrentBillingMonth = () => dateToMonth(new Date());
+
+function formatBillingMonth(value) {
+  const date = monthToDate(value);
+  if (!date) return "";
+  return date.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+}
+
+function BillingMonthPicker({ value, onChange, required }) {
+  const wrapRef = useRef(null);
+  const calRef = useRef(null);
+  const [open, setOpen] = useState(false);
+  const [coords, setCoords] = useState(null);
+  const selected = monthToDate(value) || new Date();
+  const [viewYear, setViewYear] = useState(selected.getFullYear());
+
+  const placeCalendar = () => {
+    const rect = wrapRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const width = Math.max(rect.width, 260);
+    const left = Math.min(rect.left, window.innerWidth - width - 12);
+    const below = rect.bottom + 8;
+    const estimatedHeight = 220;
+    const top = below + estimatedHeight > window.innerHeight - 12
+      ? Math.max(12, rect.top - estimatedHeight - 8)
+      : below;
+    setCoords({ top, left, width });
+  };
+
+  useEffect(() => {
+    if (!open) return undefined;
+    setViewYear((monthToDate(value) || new Date()).getFullYear());
+    placeCalendar();
+    const onDocClick = (e) => {
+      if (wrapRef.current?.contains(e.target) || calRef.current?.contains(e.target)) return;
+      setOpen(false);
+    };
+    const onReposition = () => placeCalendar();
+    document.addEventListener("mousedown", onDocClick);
+    window.addEventListener("resize", onReposition);
+    window.addEventListener("scroll", onReposition, true);
+    return () => {
+      document.removeEventListener("mousedown", onDocClick);
+      window.removeEventListener("resize", onReposition);
+      window.removeEventListener("scroll", onReposition, true);
+    };
+  }, [open, value]);
+
+  const calendar = open && coords ? createPortal(
+    <div
+      ref={calRef}
+      className="bill-month-calendar"
+      role="dialog"
+      aria-label="Choose billing month"
+      style={{ top: coords.top, left: coords.left, width: coords.width }}
+    >
+      <div className="bill-month-calendar__header">
+        <button type="button" className="bill-month-calendar__nav" onClick={() => setViewYear((y) => y - 1)} aria-label="Previous year">
+          <MdChevronLeft size={18} />
+        </button>
+        <span className="bill-month-calendar__year">{viewYear}</span>
+        <button type="button" className="bill-month-calendar__nav" onClick={() => setViewYear((y) => y + 1)} aria-label="Next year">
+          <MdChevronRight size={18} />
+        </button>
+      </div>
+      <div className="bill-month-calendar__grid">
+        {MONTHS.map((label, index) => {
+          const active = value === `${viewYear}-${String(index + 1).padStart(2, "0")}`;
+          return (
+            <button
+              key={label}
+              type="button"
+              className={`bill-month-calendar__month${active ? " is-active" : ""}`}
+              onClick={() => {
+                onChange(`${viewYear}-${String(index + 1).padStart(2, "0")}`);
+                setOpen(false);
+              }}
+            >
+              {label}
+            </button>
+          );
+        })}
+      </div>
+    </div>,
+    document.body
+  ) : null;
+
+  return (
+    <div className="bill-month-picker" ref={wrapRef}>
+      <button
+        type="button"
+        className="input h-11 w-full bill-month-picker__trigger"
+        onClick={() => setOpen((v) => !v)}
+        aria-haspopup="dialog"
+        aria-expanded={open}
+      >
+        <MdCalendarMonth size={18} />
+        <span>{formatBillingMonth(value) || "Select billing month"}</span>
+      </button>
+      {required && (
+        <input type="text" value={value || ""} required readOnly tabIndex={-1} className="bill-month-picker__required" />
+      )}
+      {calendar}
+    </div>
+  );
+}
 
 /* ── Debounce ── */
 function useDebounce(value, delay = 500) {
@@ -60,19 +178,20 @@ function Pagination({ page, totalPages, onPageChange }) {
     else if (pages[pages.length - 1] !== "…") pages.push("…");
   }
   return (
-    <div className="flex items-center gap-1.5">
+    <div className="pagination-wrap" style={{ marginTop: 0 }}>
       <button className="pagination-btn" disabled={page === 1} onClick={() => onPageChange(page - 1)}>
         <MdChevronLeft size={14} />
       </button>
       {pages.map((p, idx) =>
         p === "…" ? (
-          <span key={`e-${idx}`} className="w-6 text-center text-xs text-secondary">…</span>
+          <span key={`e-${idx}`} className="pagination-ellipsis">…</span>
         ) : (
           <button
             key={p}
-            className={`pagination-btn ${p === page ? "pagination-btn-active" : ""}`}
+            type="button"
+            className={`pagination-page ${p === page ? "pagination-page--active" : ""}`}
             onClick={() => onPageChange(p)}
-            disabled={p === page}
+            aria-current={p === page ? "page" : undefined}
           >
             {p}
           </button>
@@ -297,27 +416,31 @@ export default function ManageBillsAccountant() {
   }, [counts, totalItems, filterStatus, bills, search, t]);
 
   const STATS = [
-    { label: t("billStatTotal"), val: displayedCounts.total, icon: "🧾", color: "purple", extra: "" },
-    { label: t("billStatPaid"), val: displayedCounts.paid, icon: "✅", color: "green", extra: "" },
-    { label: t("billStatPending"), val: displayedCounts.pending, icon: "⏳", color: "amber", extra: "" },
-    { label: displayedCounts.amountLabel, val: `₹${(displayedCounts.amount || 0).toLocaleString("en-IN")}`, icon: "💰", color: "blue", extra: "stat-card--revenue" },
+    { label: t("billStatTotal"), val: displayedCounts.total, Icon: MdReceiptLong, color: "purple", extra: "" },
+    { label: t("billStatPaid"), val: displayedCounts.paid, Icon: MdCheckCircle, color: "green", extra: "" },
+    { label: t("billStatPending"), val: displayedCounts.pending, Icon: MdSchedule, color: "amber", extra: "" },
+    { label: displayedCounts.amountLabel, val: `₹${(displayedCounts.amount || 0).toLocaleString("en-IN")}`, Icon: MdPayments, color: "blue", extra: "stat-card--revenue" },
   ];
 
   return (
     <div className="page-root animate-fadeIn">
 
       {/* ── HEADER ── */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-          <div className="er-icon er-icon--amenity"><MdReceiptLong size={22} /></div>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="ad-page-icon">
+            <MdReceiptLong size={22} />
+          </div>
           <div>
-            <h2 className="page-title" style={{ fontSize: isMobile ? 17 : 20 }}>{t("billsTitle")}</h2>
-            <p className="page-subtitle">{t("billsSubtitle")}</p>
+            <h2 className="text-lg font-semibold" style={{ letterSpacing: "-0.02em" }}>{t("billsTitle")}</h2>
+            <p className="text-secondary text-xs mt-0.5">{t("billsSubtitle")}</p>
           </div>
         </div>
         <GlobalButton
           variant="add"
           icon={showCreate ? MdClose : MdAdd}
+          borderDraw
+          className="w-full sm:w-auto justify-center shrink-0"
           onClick={() => setShowCreate(p => !p)}
         >
           {showCreate ? t("cancel") : t("billCreate")}
@@ -327,15 +450,28 @@ export default function ManageBillsAccountant() {
       {/* ── STAT CARDS ── */}
       {!initialLoad && counts.total > 0 && (
         <div className={`grid gap-3 ${isMobile ? "grid-cols-2" : "grid-cols-4"}`}>
-          {STATS.map((s, i) => (
-            <div key={i} className={`${isMobile ? "stat-card--mobile" : "stat-card"} stat-card--${s.color} ${s.extra}`}>
-              {isMobile ? (
-                <><div className="text-xl mb-1">{s.icon}</div><div className="stat-card__val">{s.val}</div><div className="stat-card__label">{s.label}</div></>
-              ) : (
-                <><div><div className="stat-card__val">{s.val}</div><div className="stat-card__label">{s.label}</div></div><div className="stat-card__icon">{s.icon}</div></>
-              )}
-            </div>
-          ))}
+          {STATS.map((s, i) => {
+            const Icon = s.Icon;
+            return (
+              <div key={i} className={`${isMobile ? "stat-card--mobile" : "stat-card"} stat-card--${s.color} ${s.extra}`}>
+                {isMobile ? (
+                  <>
+                    <div className="stat-card__icon mb-1"><Icon size={20} /></div>
+                    <div className="stat-card__val">{s.val}</div>
+                    <div className="stat-card__label">{s.label}</div>
+                  </>
+                ) : (
+                  <>
+                    <div>
+                      <div className="stat-card__val">{s.val}</div>
+                      <div className="stat-card__label">{s.label}</div>
+                    </div>
+                    <div className="stat-card__icon"><Icon size={20} /></div>
+                  </>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
 
@@ -387,9 +523,11 @@ export default function ManageBillsAccountant() {
           </div>
           <div>
             <Label>{t("billMonthLabel")}</Label>
-            <input type="month" className="input h-11 w-full"
-              value={formData.billing_month} required
-              onChange={e => setFormData({ ...formData, billing_month: e.target.value })} />
+            <BillingMonthPicker
+              value={formData.billing_month}
+              onChange={(month) => setFormData({ ...formData, billing_month: month })}
+              required
+            />
           </div>
           <div className="flex items-center justify-end gap-3 col-span-2 mt-2 pt-3 border-t" style={{ borderColor: "var(--glass-border)" }}>
             <GlobalButton variant="cancel" type="button" onClick={() => setShowCreate(false)}>
@@ -406,20 +544,19 @@ export default function ManageBillsAccountant() {
       <div className="data-table-wrap">
 
         {/* Toolbar */}
-        <div style={{ padding: "14px 18px", borderBottom: "1px solid var(--glass-border)", display: "flex", flexDirection: "column", gap: 11 }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
-            <span className="text-sm font-bold" style={{ color: "var(--text-primary)", flexShrink: 0 }}>
+        <div className="mb-bills-toolbar">
+          <div className="mb-bills-toolbar__top">
+            <span className="mb-bills-toolbar__title">
               {t("billSocietyBills")}
               {!initialLoad && (
-                <span className="text-xs font-normal text-secondary ml-2">
+                <span className="mb-bills-toolbar__count">
                   — {totalItems} {filterStatus !== "ALL" ? filterStatus.toLowerCase() : ""} {t("billCount")}
                   {search ? ` matching "${search}"` : ""}
                 </span>
               )}
             </span>
 
-            {/* Search — right aligned */}
-            <div className="search-input-wrap" style={{ maxWidth: 240, width: "100%" }}>
+            <div className="search-input-wrap mb-bills-toolbar__search">
               <MdSearch size={15} className="search-input-icon" />
               <input
                 key="accountant-manage-bills-search"
@@ -440,20 +577,17 @@ export default function ManageBillsAccountant() {
             </div>
           </div>
 
-          {/* Filter tabs */}
-          <div className="filter-strip" style={{ width: "100%" }}>
-            {TABS.map(({ key, label, ac, count }) => {
-              const on = filterStatus === key;
-              return (
-                <button key={key}
-                  className={`filter-pill ${on ? `filter-pill--active-${ac}` : ""}`}
-                  style={{ flex: 1, justifyContent: "center", display: "flex" }}
-                  onClick={() => handleFilterChange(key)}>
-                  {label}
-                  <span className="filter-pill__count">{count}</span>
-                </button>
-              );
-            })}
+          <div className="mb-bills-toolbar__tabs">
+            <SlidingTabs
+              fullWidth={!isMobile}
+              value={filterStatus}
+              onChange={handleFilterChange}
+              items={TABS.map(({ key, label, count }) => ({
+                id: key,
+                label: isMobile && key === "PENDING_VERIFICATION" ? "Awaiting" : label,
+                badge: count,
+              }))}
+            />
           </div>
         </div>
 

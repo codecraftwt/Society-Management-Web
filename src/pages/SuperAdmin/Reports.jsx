@@ -16,7 +16,7 @@ export default function SuperAdminReports() {
       description: t("adminRptVisitorsDesc") || "Detailed log of all visitor entries and exits.",
       icon:        MdPeople,
       path:        "/superadmin/reports/visitors",
-      tone:        { c: "#2563EB", bg: "rgba(37, 99, 235, 0.13)", bd: "rgba(37, 99, 235, 0.28)" },
+      tone:        { c: "var(--accent)", bg: "rgba(160, 90, 255, 0.13)", bd: "rgba(160, 90, 255, 0.28)" },
       stat:        t("adminRptVisitorsStat") || "Total Logs",
     },
     {
@@ -24,7 +24,7 @@ export default function SuperAdminReports() {
       description: t("adminRptComplaintsDesc") || "Status tracking for all society complaints.",
       icon:        MdReportProblem,
       path:        "/superadmin/reports/complaints",
-      tone:        { c: "#2563EB", bg: "rgba(37, 99, 235, 0.13)", bd: "rgba(37, 99, 235, 0.28)" },
+      tone:        { c: "var(--accent)", bg: "rgba(160, 90, 255, 0.13)", bd: "rgba(160, 90, 255, 0.28)" },
       stat:        t("adminRptComplaintsStat") || "Total Issues",
     },
     {

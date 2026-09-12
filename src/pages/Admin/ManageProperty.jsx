@@ -15,6 +15,7 @@ import {
 } from "react-icons/md";
 import { toast } from "react-toastify";
 import Select from "../../components/common/Select";
+import SlidingTabs from "../../components/common/SlidingTabs";
 import "./Admin.css";
 
 /* ── helpers ── */
@@ -104,52 +105,29 @@ export default function ManageProperty() {
   ];
 
   return (
-    <div className="page-root animate-fadeIn" style={{ maxWidth: 1050, margin: "0 auto" }}>
+    <div className="space-y-5 animate-fadeIn">
       {/* ── Page header ── */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-          <div className="er-icon er-icon--amenity">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="ad-page-icon">
             <MdHome size={22} />
           </div>
           <div>
-            <h2 className="page-title">{t("mpTitle") || "Manage Property"}</h2>
-            <p className="page-subtitle">{t("mpSubtitle") || "Manage blocks, properties, and assignments"}</p>
+            <h2 className="text-lg font-semibold" style={{ letterSpacing: "-0.02em" }}>{t("mpTitle") || "Manage Property"}</h2>
+            <p className="text-secondary text-xs mt-0.5">{t("mpSubtitle") || "Manage blocks, properties, and assignments"}</p>
           </div>
         </div>
       </div>
 
-      {/* ── Tab strip ── */}
-      <div style={{
-        display: "flex", gap: 4,
-        background: "var(--card-inner-bg)",
-        border: "1.5px solid var(--glass-border)",
-        borderRadius: 16, padding: 5,
-        boxShadow: "var(--shadow-sm)",
-        overflowX: "auto",
-      }}>
-        {TABS.map(({ key, label, icon: Icon }) => {
-          const on = tab === key;
-          return (
-            <button key={key} onClick={() => setTab(key)}
-              style={{
-                flex: 1, minWidth: isMobile ? 90 : "auto",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                gap: 7, padding: isMobile ? "9px 10px" : "9px 18px",
-                borderRadius: 12, border: "none", cursor: "pointer",
-                fontSize: isMobile ? 12 : 13, fontWeight: on ? 700 : 500,
-                transition: "all 0.2s",
-                background: on
-                  ? "linear-gradient(135deg, #4C76C9 0%, #5A3BA2 100%)"
-                  : "transparent",
-                color: on ? "#fff" : "var(--text-secondary)",
-                boxShadow: on ? "0 4px 16px rgba(76,118,201,0.35), inset 0 1px 0 rgba(255,255,255,0.15)" : "none",
-              }}>
-              <Icon size={16} />
-              {label}
-            </button>
-          );
-        })}
-      </div>
+      <SlidingTabs
+        value={tab}
+        onChange={setTab}
+        items={TABS.map(({ key, label, icon: Icon }) => ({
+          id: key,
+          label,
+          icon: <Icon size={16} />,
+        }))}
+      />
 
       {/* ── Tab panels ── */}
       {tab === "blocks"  && <BlocksTab  isMobile={isMobile} t={t} canEdit={canEdit} />}
@@ -803,7 +781,7 @@ function AreaAssignModal({
                 <div style={{ position: "relative", minWidth: 180, flex: 1, maxWidth: 260 }}>
                   <MdSearch size={15} style={{ position: "absolute", left: 11, top: "50%", transform: "translateY(-50%)", color: "var(--text-secondary)", pointerEvents: "none" }} />
                   <input
-                    className="input"
+                    className="input search-input"
                     placeholder="Search house #..."
                     value={search}
                     onChange={e => setSearch(e.target.value)}
@@ -1609,7 +1587,7 @@ function BlocksTab({ isMobile, t, canEdit = true }) {
         <div style={{ padding: "12px 16px", borderBottom: "1px solid var(--glass-border)", display: "flex", alignItems: "center", gap: 10 }}>
           <div style={{ position: "relative", flex: 1, maxWidth: 280 }}>
             <MdSearch size={14} style={{ position: "absolute", left: 11, top: "50%", transform: "translateY(-50%)", color: "var(--text-secondary)", pointerEvents: "none" }} />
-            <input className="input" style={{ paddingLeft: 32, height: 36, fontSize: 13 }} placeholder={t("mpSearchBlocks") || "Search blocks/phases..."} value={search} onChange={e => setSearch(e.target.value)} />
+            <input className="input search-input" style={{ paddingLeft: 32, height: 36, fontSize: 13 }} placeholder={t("mpSearchBlocks") || "Search blocks/phases..."} value={search} onChange={e => setSearch(e.target.value)} />
             {search && <button onClick={() => setSearch("")} style={{ position: "absolute", right: 9, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "var(--text-secondary)", display: "flex" }}><MdClose size={13} /></button>}
           </div>
           <span style={{ fontSize: 12, color: "var(--text-secondary)", whiteSpace: "nowrap" }}>
@@ -2140,7 +2118,7 @@ function FlatsTab({ isMobile, t, canEdit = true }) {
   const FILTER_TABS = [
     { key: "ALL",      label: t("mpAll") || "All",           color: "#5A3BA2" },
     { key: "OCCUPIED", label: t("mpOccupied") || "Occupied", color: "#16a34a" },
-    { key: "VACANT",   label: t("mpVacant") || "Vacant",     color: "#2563EB" },
+    { key: "VACANT",   label: t("mpVacant") || "Vacant",     color: "var(--accent)" },
   ];
 
   return (
@@ -2172,7 +2150,7 @@ function FlatsTab({ isMobile, t, canEdit = true }) {
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <div style={{ position: "relative", flex: 1, maxWidth: 300 }}>
               <MdSearch size={14} style={{ position: "absolute", left: 11, top: "50%", transform: "translateY(-50%)", color: "var(--text-secondary)", pointerEvents: "none" }} />
-              <input className="input" style={{ paddingLeft: 32, height: 36, fontSize: 13 }} placeholder={t("mpSearchFlatBlock") || "Search property..."} value={search} onChange={e => setSearch(e.target.value)} />
+              <input className="input search-input" style={{ paddingLeft: 32, height: 36, fontSize: 13 }} placeholder={t("mpSearchFlatBlock") || "Search property..."} value={search} onChange={e => setSearch(e.target.value)} />
               {search && <button onClick={() => setSearch("")} style={{ position: "absolute", right: 9, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "var(--text-secondary)", display: "flex" }}><MdClose size={13} /></button>}
             </div>
             <span style={{ fontSize: 12, color: "var(--text-secondary)", whiteSpace: "nowrap" }}>{filtered.length} Units</span>
@@ -2416,7 +2394,7 @@ function AssignTab({ isMobile, t, canEdit = true }) {
           <form onSubmit={handleAssign} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
             <div>
               <label style={{ fontSize: 11, fontWeight: 600, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.06em", display: "block", marginBottom: 5 }}>Search Unit</label>
-              <input className="input" style={{ height: 40 }} placeholder="Search e.g. 101 or Phase A" value={flatSearch} onChange={e => setFlatSearch(e.target.value)} />
+              <input className="input search-input" style={{ height: 40 }} placeholder="Search e.g. 101 or Phase A" value={flatSearch} onChange={e => setFlatSearch(e.target.value)} />
             </div>
             <div style={{ display: isMobile ? "flex" : "grid", flexDirection: isMobile ? "column" : undefined, gridTemplateColumns: "1fr 1fr", gap: 10 }}>
               <div>
@@ -2455,7 +2433,7 @@ function AssignTab({ isMobile, t, canEdit = true }) {
           </p>
           <div style={{ position: "relative", width: isMobile ? "100%" : 240 }}>
             <MdSearch size={14} style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: "var(--text-secondary)", pointerEvents: "none" }} />
-            <input className="input" style={{ paddingLeft: 30, paddingRight: search ? 30 : 10, height: 36, fontSize: 13, width: "100%" }} placeholder={t("mpSearchResidentFlat") || "Search resident or unit..."} value={search} onChange={e => setSearch(e.target.value)} />
+            <input className="input search-input" style={{ paddingLeft: 30, paddingRight: search ? 30 : 10, height: 36, fontSize: 13, width: "100%" }} placeholder={t("mpSearchResidentFlat") || "Search resident or unit..."} value={search} onChange={e => setSearch(e.target.value)} />
             <div style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", display: "flex" }}>
               {fetching ? <Spinner size={13} /> : search ? (
                 <button onClick={() => setSearch("")} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-secondary)", display: "flex" }}><MdClose size={13} /></button>

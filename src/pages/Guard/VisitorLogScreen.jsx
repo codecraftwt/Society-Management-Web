@@ -1,11 +1,12 @@
 import { useEffect, useState, useCallback } from "react";
 import API from "../../services/api";
 import { useLang } from "../../context/LanguageContext";
-import { MdSearch, MdExitToApp, MdAccessTime, MdPerson, MdOutlineInbox } from "react-icons/md";
+import { MdSearch, MdExitToApp, MdAccessTime, MdPerson, MdOutlineInbox, MdHistory, MdClose } from "react-icons/md";
 import { toast } from "react-toastify";
 import GlobalTable from "../../components/common/GlobalTable";
 import GlobalBadge from "../../components/common/GlobalBadge";
 import GlobalButton from "../../components/common/GlobalButton";
+import SlidingTabs from "../../components/common/SlidingTabs";
 
 function useDebounce(value, delay = 500) {
   const [d, setD] = useState(value);
@@ -97,9 +98,9 @@ export default function VisitorLogScreen() {
   };
 
   const filterTabs = [
+    { key: "ALL", label: t("geFilterAll") || "All", count: counts.ALL },
     { key: "IN",  label: t("geFilterInside") || "Inside", count: counts.IN },
-    { key: "OUT", label: t("geFilterLeft") || "Exited", count: counts.OUT },
-    { key: "ALL", label: t("geFilterAll") || "All Logs", count: counts.ALL },
+    { key: "OUT", label: t("geFilterLeft") || "Left", count: counts.OUT },
   ];
 
   const columns = [
@@ -116,7 +117,7 @@ export default function VisitorLogScreen() {
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <div style={{
             width: 32, height: 32, borderRadius: "50%",
-            background: "rgba(37, 99, 235, 0.15)", color: "var(--accent)",
+            background: "var(--accent-soft)", color: "var(--accent)",
             display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0
           }}>
             <MdPerson size={15} />
@@ -199,37 +200,44 @@ export default function VisitorLogScreen() {
   return (
     <div className="vls-page animate-fadeIn space-y-5">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-bold text-white">{t("vlsTitle")}</h1>
-          <p className="text-xs text-secondary mt-0.5">{t("vlsSubtitle")}</p>
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="ad-page-icon">
+            <MdHistory size={22} />
+          </div>
+          <div className="min-w-0">
+            <h1 className="text-xl font-bold" style={{ color: "var(--text-primary)" }}>{t("vlsTitle")}</h1>
+            <p className="text-xs text-secondary mt-0.5">{t("vlsSubtitle")}</p>
+          </div>
         </div>
       </div>
 
-      <div className="bg-card p-4 rounded-xl border border-white/5 space-y-4">
-        <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
-          <div className="relative flex-1">
-            <MdSearch size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-secondary" />
-            <input
-              type="text"
-              placeholder={t("vlsSearchPlaceholder")}
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="input w-full pl-10 pr-4 h-10 text-sm bg-white/5 border-white/10"
-            />
-          </div>
-
-          <div className="sa-segment">
-            {filterTabs.map((tabItem) => (
-              <button
-                key={tabItem.key}
-                onClick={() => handleTabChange(tabItem.key)}
-                className={tab === tabItem.key ? "sa-segment-active" : ""}
-              >
-                {tabItem.label} ({tabItem.count})
-              </button>
-            ))}
-          </div>
+      <div className="ge-toolbar">
+        <div className="ge-search-wrap">
+          <MdSearch className="ge-search-icon" size={17} />
+          <input
+            type="text"
+            className="ge-search-input"
+            placeholder={t("vlsSearchPlaceholder")}
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+          {search ? (
+            <button type="button" onClick={() => setSearch("")} className="ge-search-clear" aria-label="Clear search">
+              <MdClose size={13} />
+            </button>
+          ) : null}
         </div>
+
+        <SlidingTabs
+          className="ge-filter-tabs"
+          value={tab}
+          onChange={handleTabChange}
+          items={filterTabs.map(({ key, label, count }) => ({
+            id: key,
+            label,
+            badge: count,
+          }))}
+        />
       </div>
 
       <GlobalTable

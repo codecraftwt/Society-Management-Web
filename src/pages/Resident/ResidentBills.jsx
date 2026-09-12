@@ -276,8 +276,7 @@ export default function ResidentBills() {
 
       {/* ── Header ── */}
       <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-          style={{ background: "var(--accent-soft)", border: "1.5px solid var(--glass-border)", color: "var(--accent)" }}>
+        <div className="ad-page-icon">
           <MdReceiptLong size={22} />
         </div>
         <div>
@@ -348,7 +347,7 @@ export default function ResidentBills() {
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-secondary pointer-events-none" />
               <input
                 key="bill-search-input"
-                className="input w-full h-9 pl-8 pr-8 text-xs"
+                className="input search-input w-full h-9 pl-8 pr-8 text-xs"
                 placeholder={t("billSearch")}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
@@ -357,7 +356,7 @@ export default function ResidentBills() {
               <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center">
                 {fetching ? <Spinner small /> : search ? (
                   <button onClick={() => setSearch("")}
-                    className="text-secondary hover:text-white transition-colors">
+                    className="text-secondary hover:opacity-80 transition-colors">
                     <MdClose size={13} />
                   </button>
                 ) : null}
@@ -445,7 +444,7 @@ export default function ResidentBills() {
                     height: 3,
                     background: b.status === "PAID"
                       ? "linear-gradient(90deg,#34d399,#059669)"
-                      : "linear-gradient(90deg,#60A5FA,#2563EB)",
+                      : "linear-gradient(90deg,#4BCBEB,var(--accent))",
                   }} />
                   <div className="p-4 flex flex-col gap-3">
                     <div className="flex justify-between items-start gap-2">
@@ -529,8 +528,8 @@ export default function ResidentBills() {
                             background: b.status === "PAID"
                               ? "linear-gradient(180deg,#34d399,#059669)"
                               : b.status === "PENDING_VERIFICATION"
-                              ? "linear-gradient(180deg,#60a5fa,#3b82f6)"
-                              : "linear-gradient(180deg,#60A5FA,#2563EB)",
+                              ? "linear-gradient(180deg,var(--acct-cyan),var(--acct-sky))"
+                              : "linear-gradient(180deg,var(--warning),#eab308)",
                           }} />
                           <span className="font-semibold text-sm" style={{ color: "var(--text-primary)" }}>
                             {b.title}
@@ -610,7 +609,7 @@ export default function ResidentBills() {
             <div className="flex justify-between items-center p-5 border-b" style={{ borderColor: "var(--divider)" }}>
               <h3 className="text-lg font-bold" style={{ color: "var(--text-primary)" }}>{t("resBillAccountant")}</h3>
               <button type="button" onClick={() => setShowAccountant(false)}
-                className="text-secondary hover:text-white transition">
+                className="text-secondary hover:opacity-80 transition">
                 <MdClose size={22} />
               </button>
             </div>

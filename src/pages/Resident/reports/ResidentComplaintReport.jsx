@@ -48,7 +48,7 @@ function Pagination({ page, totalPages, onPageChange }) {
 function StatusBadge({ status, t }) {
   const cfg = {
     OPEN:        { label: t("crStatOpen"),           Icon: MdPending,    color: "#f87171", bg: "rgba(248,113,113,0.12)",  border: "rgba(248,113,113,0.25)"  },
-    IN_PROGRESS: { label: t("compTabInProgress"),    Icon: MdSchedule,   color: "#60A5FA", bg: "rgba(251,191,36,0.12)",   border: "rgba(251,191,36,0.25)"   },
+    IN_PROGRESS: { label: t("compTabInProgress"),    Icon: MdSchedule,   color: "var(--warning)", bg: "rgba(251,191,36,0.12)",   border: "rgba(251,191,36,0.25)"   },
     RESOLVED:    { label: t("compStatusResolved"),   Icon: MdCheckCircle, color: "#4ade80", bg: "rgba(74,222,128,0.12)",  border: "rgba(74,222,128,0.25)"   },
   };
   const c = cfg[status] || cfg.OPEN;
@@ -226,7 +226,7 @@ export default function ResidentComplaintReport() {
     { label: t("compTabInProgress"), val: stats.inProgress, color: "blue" },
     { label: t("compStatusResolved"), val: stats.resolved,  color: "green" },
   ];
-  const cfgColors = { OPEN: "#f87171", IN_PROGRESS: "#60A5FA", RESOLVED: "#4ade80" };
+  const cfgColors = { OPEN: "#f87171", IN_PROGRESS: "var(--warning)", RESOLVED: "#4ade80" };
 
   const bleed = isMobile ? { marginLeft: "calc(-1 * var(--page-padding,16px))", marginRight: "calc(-1 * var(--page-padding,16px))", width: "calc(100% + 2 * var(--page-padding,16px))", borderRadius: 0, boxSizing: "border-box" } : { boxSizing: "border-box" };
 
@@ -239,7 +239,7 @@ export default function ResidentComplaintReport() {
           <button onClick={() => navigate(-1)} style={{ width: 36, height: 36, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", background: "var(--card-inner-bg,rgba(255,255,255,0.06))", border: "1px solid var(--glass-border)", cursor: "pointer", color: "var(--text-secondary)", flexShrink: 0 }}>
             <MdArrowBack size={18} />
           </button>
-          <div className="er-icon er-icon--complaint"><MdReportProblem size={22} /></div>
+          <div className="ad-page-icon"><MdReportProblem size={22} /></div>
           <div><h2 className="page-title">{t("rcrTitle")}</h2><p className="page-subtitle">{loading ? "—" : `${stats.total} ${t("rcrSubtitle")}`}</p></div>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>

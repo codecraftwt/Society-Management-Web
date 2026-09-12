@@ -1,5 +1,5 @@
 import { Outlet, useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { createPortal } from "react-dom";
 import {
   MdDashboard,
@@ -10,20 +10,16 @@ import {
 import { LanguageProvider, useLang } from "../../context/LanguageContext";
 import Sidebar from "../../components/common/Sidebar";
 import AppHeader from "../../components/common/AppHeader";
-import "./Accountant.css";
+import { useRoleTheme } from "../../context/ThemeContext";
 
 import RoleSwitcher from "../../components/RoleSwitcher";
 
 function AccountantLayoutInner() {
   const navigate = useNavigate();
   const { t } = useLang();
+  useRoleTheme();
 
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
-
-  useEffect(() => {
-    document.documentElement.classList.add("accountant-theme");
-    return () => document.documentElement.classList.remove("accountant-theme");
-  }, []);
 
   const base = "/accountant";
 
@@ -74,7 +70,7 @@ function AccountantLayoutInner() {
         }
         brandSubtitle="Finance View"
         base={base}
-        drawerExtra={<div className="p-3"><RoleSwitcher /></div>}
+        drawerExtra={<RoleSwitcher />}
       />
 
       {/* ── MAIN CONTENT ── */}

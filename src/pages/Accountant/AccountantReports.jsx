@@ -9,19 +9,12 @@ export default function AccountantReports() {
 
   return (
     <div className="space-y-6 animate-fadeIn">
-      <div className="flex items-start gap-3">
-        <div
-          className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 mt-0.5"
-          style={{
-            background: "var(--accent-soft)",
-            border: "1px solid var(--glass-border)",
-            color: "var(--accent)",
-          }}
-        >
-          <MdBarChart size={20} />
+      <div className="flex items-center gap-3">
+        <div className="ad-page-icon">
+          <MdBarChart size={22} />
         </div>
         <div>
-          <h2 className="text-lg font-semibold" style={{ color: "var(--text-primary)" }}>
+          <h2 className="text-lg font-semibold" style={{ letterSpacing: "-0.02em" }}>
             {t("adminRptTitle")}
           </h2>
           <p className="text-secondary text-xs mt-0.5">{t("adminRptSubtitle")}</p>

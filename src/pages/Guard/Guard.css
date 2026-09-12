@@ -1,0 +1,2102 @@
+/* ==========================================================================
+   GUARD PAGES — Purple light / Corona dark
+   Scoped to html.role-theme (shared role theme)
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   Dashboard
+   -------------------------------------------------------------------------- */
+html.role-theme .gd-welcome-card,
+html.role-theme .gd-shift-card {
+  background: var(--card-bg) !important;
+  border: 1.5px solid var(--glass-border) !important;
+  box-shadow: var(--shadow-sm) !important;
+  backdrop-filter: none !important;
+}
+
+html.role-theme .gd-welcome-bar {
+  background: var(--accent) !important;
+}
+
+html.role-theme .gd-welcome-title {
+  color: var(--text-primary) !important;
+}
+
+html.role-theme .gd-welcome-society,
+html.role-theme .gd-welcome-time,
+html.role-theme .gd-shift-label,
+html.role-theme .gd-shift-dates {
+  color: var(--text-secondary) !important;
+}
+
+html.role-theme .gd-shift-type {
+  color: var(--success) !important;
+}
+
+html.role-theme .gd-shift-time {
+  color: var(--acct-teal) !important;
+}
+
+html.role-theme .gd-no-shift {
+  color: var(--accent) !important;
+}
+
+html.role-theme .gd-emergency-title {
+  color: var(--danger) !important;
+}
+
+html.role-theme .ge-search-wrap {
+  position: relative;
+  background: var(--search-inset-bg);
+  border: 1px solid var(--search-inset-border);
+  border-radius: 25px;
+  box-shadow: var(--search-inset-shadow);
+}
+
+html.role-theme .ge-search-wrap .ge-search-input {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  height: 42px;
+  border-radius: 25px;
+  padding-right: 40px;
+}
+
+html.role-theme .ge-search-wrap .ge-search-input:focus {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  outline: none;
+}
+
+html.role-theme .ge-search-action,
+html.role-theme .ge-search-clear {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  padding: 0;
+}
+
+html.role-theme .ge-filter-tabs,
+html.role-theme .gp-mode-tabs {
+  flex-shrink: 0;
+}
+
+html.role-theme .gp-filter-tabs {
+  flex-shrink: 1;
+  min-width: 0;
+  max-width: 100%;
+}
+
+html.role-theme .gp-lookup-search {
+  flex: 1;
+  min-width: 200px;
+}
+
+@media (max-width: 767px) {
+  html.role-theme .ge-filter-tabs.sliding-tabs,
+  html.role-theme .gp-mode-tabs.sliding-tabs,
+  html.role-theme .gp-filter-tabs.sliding-tabs {
+    display: flex;
+    width: 100%;
+    max-width: 100%;
+    align-self: stretch;
+  }
+
+  html.role-theme .ge-filter-tabs .sliding-tabs__item,
+  html.role-theme .gp-mode-tabs .sliding-tabs__item {
+    flex: 1 1 0;
+    min-width: 0;
+    justify-content: center;
+  }
+
+  html.role-theme .gp-filter-tabs .sliding-tabs__badge {
+    display: none;
+  }
+}
+
+html.role-theme .gd-emergency-send.btn-danger {
+  width: 100%;
+}
+
+html.role-theme textarea.gd-emergency-desc,
+html.role-theme .gd-emergency-desc {
+  height: auto !important;
+  min-height: 96px;
+  padding-top: 12px;
+  padding-bottom: 12px;
+  line-height: 1.45;
+  overflow: hidden;
+  resize: none;
+  scrollbar-width: none;
+}
+
+html.role-theme .gd-emergency-desc::-webkit-scrollbar {
+  display: none;
+}
+
+html.role-theme .gd-stat-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 16px;
+  box-shadow: var(--shadow-sm) !important;
+  backdrop-filter: none !important;
+  filter: none !important;
+}
+
+html.role-theme .gd-stat-card::after {
+  content: "" !important;
+  display: block !important;
+  position: absolute;
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  right: -18px;
+  top: -18px;
+  background: rgba(255, 255, 255, 0.16);
+  pointer-events: none;
+  box-shadow: none !important;
+}
+
+html.role-theme .gd-stat-title,
+html.role-theme .gd-stat-val {
+  position: relative;
+  z-index: 1;
+  box-shadow: none !important;
+  text-shadow: none !important;
+}
+
+html.role-theme .gd-stat-card:hover {
+  box-shadow: var(--shadow-sm) !important;
+  transform: none !important;
+}
+
+html.role-theme:not(.light) .gd-stat-card {
+  background: #22252e !important;
+  border: 2px solid var(--glass-border) !important;
+}
+
+html.role-theme:not(.light) .gd-stat-card::after {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+html.role-theme:not(.light) .gd-stat-card--today {
+  border-color: rgba(var(--acct-purple-rgb), 0.4) !important;
+}
+html.role-theme:not(.light) .gd-stat-card--inside {
+  border-color: rgba(var(--acct-cyan-rgb), 0.35) !important;
+}
+html.role-theme:not(.light) .gd-stat-card--exited {
+  border-color: rgba(var(--acct-green-rgb), 0.35) !important;
+}
+
+html.role-theme:not(.light) .gd-stat-val {
+  color: #ffffff !important;
+}
+html.role-theme:not(.light) .gd-stat-card--today .gd-stat-title {
+  color: var(--acct-purple) !important;
+}
+html.role-theme:not(.light) .gd-stat-card--inside .gd-stat-title {
+  color: var(--acct-cyan) !important;
+}
+html.role-theme:not(.light) .gd-stat-card--exited .gd-stat-title {
+  color: var(--acct-teal) !important;
+}
+
+html.light.role-theme .gd-stat-card--today {
+  background: var(--stat-purple-bg) !important;
+  border: none !important;
+}
+html.light.role-theme .gd-stat-card--inside {
+  background: var(--stat-blue-bg) !important;
+  border: none !important;
+}
+html.light.role-theme .gd-stat-card--exited {
+  background: var(--stat-green-bg) !important;
+  border: none !important;
+}
+
+html.light.role-theme .gd-stat-card .gd-stat-val,
+html.light.role-theme .gd-stat-card .gd-stat-title {
+  color: #ffffff !important;
+}
+
+/* --------------------------------------------------------------------------
+   Collection — header + KPI tiles + parcel cards
+   -------------------------------------------------------------------------- */
+html.role-theme .gc-page {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-width: 0;
+}
+
+html.role-theme .gc-er {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+html.role-theme .gc-er-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+
+html.role-theme .gc-er-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--accent-soft);
+  border: 1.5px solid rgba(var(--acct-purple-rgb), 0.28);
+  color: var(--accent);
+}
+
+html.role-theme .gc-er-title {
+  font-size: 1.25rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  margin: 0;
+  color: var(--text-primary);
+}
+
+html.role-theme .gc-er-sub {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin: 2px 0 0;
+}
+
+html.role-theme .gc-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+html.role-theme .gc-kpi {
+  position: relative;
+  overflow: hidden;
+  border-radius: 16px;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  box-shadow: var(--shadow-sm);
+  backdrop-filter: none;
+}
+
+html.role-theme .gc-kpi::after {
+  content: "";
+  position: absolute;
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  right: -18px;
+  top: -18px;
+  background: rgba(255, 255, 255, 0.16);
+  pointer-events: none;
+}
+
+html.role-theme .gc-kpi-val,
+html.role-theme .gc-kpi-label {
+  position: relative;
+  z-index: 1;
+  box-shadow: none !important;
+  text-shadow: none !important;
+}
+
+html.role-theme .gc-kpi-val {
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 1;
+}
+
+html.role-theme .gc-kpi-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+html.role-theme:not(.light) .gc-kpi {
+  background: #22252e;
+  border: 2px solid var(--glass-border);
+}
+
+html.role-theme:not(.light) .gc-kpi::after {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+html.role-theme:not(.light) .gc-kpi--expect { border-color: rgba(var(--acct-purple-rgb), 0.4); }
+html.role-theme:not(.light) .gc-kpi--gate { border-color: rgba(var(--acct-yellow-rgb), 0.35); }
+html.role-theme:not(.light) .gc-kpi--done { border-color: rgba(var(--acct-green-rgb), 0.35); }
+html.role-theme:not(.light) .gc-kpi--cancel { border-color: rgba(var(--acct-red-rgb), 0.4); }
+
+html.role-theme:not(.light) .gc-kpi-val { color: #ffffff; }
+html.role-theme:not(.light) .gc-kpi--expect .gc-kpi-label { color: var(--acct-purple); }
+html.role-theme:not(.light) .gc-kpi--gate .gc-kpi-label { color: var(--acct-yellow); }
+html.role-theme:not(.light) .gc-kpi--done .gc-kpi-label { color: var(--acct-teal); }
+html.role-theme:not(.light) .gc-kpi--cancel .gc-kpi-label { color: var(--acct-red); }
+
+html.light.role-theme .gc-kpi--expect {
+  background: var(--stat-purple-bg);
+  border: none;
+}
+html.light.role-theme .gc-kpi--gate {
+  background: var(--stat-amber-bg);
+  border: none;
+}
+html.light.role-theme .gc-kpi--done {
+  background: var(--stat-green-bg);
+  border: none;
+}
+html.light.role-theme .gc-kpi--cancel {
+  background: linear-gradient(135deg, #ab2e3c 0%, #fe9496 100%);
+  border: none;
+}
+
+html.light.role-theme .gc-kpi-val,
+html.light.role-theme .gc-kpi-label {
+  color: #ffffff;
+}
+
+html.role-theme .gc-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+
+html.role-theme .gc-card {
+  background: var(--card-bg) !important;
+  border: 1.5px solid var(--glass-border) !important;
+  box-shadow: var(--shadow-sm) !important;
+  backdrop-filter: none !important;
+  border-radius: 18px !important;
+  overflow: hidden;
+  transform: none !important;
+}
+
+html.role-theme .gc-card:hover {
+  border-color: rgba(var(--acct-purple-rgb), 0.28) !important;
+  box-shadow: var(--shadow-md) !important;
+  transform: none !important;
+}
+
+html.role-theme .gc-card-inner {
+  padding: 16px 18px 16px 22px !important;
+}
+
+html.role-theme .gc-accent--expect { background: var(--accent) !important; box-shadow: none !important; }
+html.role-theme .gc-accent--gate { background: var(--warning) !important; box-shadow: none !important; }
+html.role-theme .gc-accent--done { background: var(--success) !important; box-shadow: none !important; }
+html.role-theme .gc-accent--cancel { background: var(--danger) !important; box-shadow: none !important; }
+
+html.role-theme .gc-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+html.role-theme .gc-head-icon {
+  background: linear-gradient(135deg, var(--accent), #9e58ff) !important;
+  color: #ffffff !important;
+  border: none !important;
+  box-shadow: 0 6px 14px rgba(var(--acct-purple-rgb), 0.28) !important;
+}
+
+html.role-theme .gc-head-text {
+  flex: 1;
+  min-width: 0;
+}
+
+html.role-theme .gc-head-title {
+  color: var(--text-primary) !important;
+  overflow-wrap: anywhere;
+}
+
+html.role-theme .gc-flat-chip {
+  background: var(--chip-bg) !important;
+  border-color: var(--chip-border) !important;
+  color: var(--text-secondary) !important;
+  flex-wrap: wrap;
+  white-space: normal;
+  max-width: 100%;
+}
+
+html.role-theme .gc-flat-chip svg {
+  color: var(--accent) !important;
+}
+
+html.role-theme .gc-pill {
+  margin-left: auto;
+}
+
+html.role-theme .gc-pill--expected {
+  background: var(--accent-soft) !important;
+  color: var(--accent) !important;
+  border-color: rgba(var(--acct-purple-rgb), 0.35) !important;
+}
+html.role-theme .gc-pill--expected .gc-pill-dot { background: var(--accent) !important; }
+html.role-theme .gc-pill--atgate {
+  background: var(--approval-bg) !important;
+  color: var(--approval-color) !important;
+  border-color: var(--approval-border) !important;
+}
+html.role-theme .gc-pill--collected {
+  background: var(--badge-paid-bg) !important;
+  color: var(--badge-paid-color) !important;
+  border-color: var(--badge-paid-border) !important;
+}
+html.role-theme .gc-pill--cancelled {
+  background: var(--reject-bg) !important;
+  color: var(--reject-color) !important;
+  border-color: var(--reject-border) !important;
+}
+
+html.role-theme .gc-stepper {
+  margin-top: 16px;
+}
+
+html.role-theme .gc-stepper-rail {
+  background: var(--card-inner-bg) !important;
+  border-color: var(--glass-border) !important;
+  height: 6px !important;
+}
+
+html.role-theme .gc-step-label {
+  color: var(--text-secondary) !important;
+}
+html.role-theme .gc-step-label--done { color: var(--success) !important; }
+html.role-theme .gc-step-label--active { color: var(--warning) !important; }
+html.role-theme .gc-step-label--cancel { color: var(--acct-red) !important; }
+
+html.role-theme .gc-step-dot {
+  background: var(--card-inner-bg) !important;
+  border-color: var(--glass-border) !important;
+  color: var(--text-muted) !important;
+  box-shadow: none !important;
+}
+html.role-theme .gc-step-dot svg {
+  color: inherit !important;
+  fill: currentColor !important;
+  opacity: 1 !important;
+}
+html.role-theme .gc-step-dot--done {
+  background: var(--acct-teal) !important;
+  border-color: var(--acct-teal) !important;
+  color: #ffffff !important;
+}
+html.role-theme .gc-step-dot--active {
+  background: #d45b5e !important;
+  border-color: #d45b5e !important;
+  color: #ffffff !important;
+}
+html.role-theme .gc-step-dot--cancel {
+  background: var(--acct-red) !important;
+  border-color: var(--acct-red) !important;
+  color: #ffffff !important;
+}
+
+html.role-theme .gc-stepper-fill {
+  background: var(--acct-teal) !important;
+  box-shadow: none !important;
+}
+html.role-theme .gc-fill--active {
+  background: #d45b5e !important;
+}
+html.role-theme .gc-fill--done {
+  background: var(--acct-teal) !important;
+}
+html.role-theme .gc-fill--cancel {
+  background: var(--acct-red) !important;
+}
+
+html.role-theme .gc-btn {
+  margin-top: 14px !important;
+}
+
+html.role-theme .gc-otp-wrap {
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+html.role-theme .gc-otp-row {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+html.role-theme .gc-otp-search {
+  flex: 1;
+  min-width: 0;
+}
+
+html.role-theme .gc-otp-search .ge-search-input {
+  padding-left: 16px;
+  padding-right: 16px;
+  height: 46px;
+  letter-spacing: 0.32em;
+  font-weight: 800;
+  font-size: 18px;
+  text-align: center;
+}
+
+html.role-theme .gc-otp-search .ge-search-input::placeholder {
+  letter-spacing: 0.02em;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+html.role-theme .gc-otp-row .gc-btn {
+  margin-top: 0 !important;
+  width: 100%;
+}
+
+html.role-theme .gc-verify-banner {
+  background: var(--accent-soft) !important;
+  border-color: rgba(var(--acct-purple-rgb), 0.35) !important;
+  color: var(--accent) !important;
+  animation: none !important;
+}
+
+html.role-theme .gc-done-banner,
+html.role-theme .gc-cancel-banner {
+  margin-top: 14px !important;
+}
+
+html.role-theme .gc-done-banner {
+  background: var(--badge-paid-bg) !important;
+  border-color: var(--badge-paid-border) !important;
+  color: var(--badge-paid-color) !important;
+}
+
+html.role-theme .gc-cancel-banner {
+  background: var(--reject-bg) !important;
+  border-color: var(--reject-border) !important;
+  color: var(--reject-color) !important;
+}
+
+html.role-theme .gc-empty,
+html.role-theme .gc-loading {
+  background: var(--card-bg) !important;
+  border: 1.5px solid var(--glass-border) !important;
+  border-radius: 18px;
+  color: var(--text-secondary) !important;
+  box-shadow: var(--shadow-sm);
+}
+
+html.role-theme .gc-empty p,
+html.role-theme .gc-loading p,
+html.role-theme .gc-footer-shown {
+  color: var(--text-secondary) !important;
+}
+
+html.role-theme .gc-footer-shown strong {
+  color: var(--text-primary) !important;
+}
+
+html.role-theme .gc-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+html.role-theme .gc-btn:hover:not(:disabled) {
+  transform: none !important;
+}
+
+html.role-theme .gc-btn--success {
+  background: var(--success) !important;
+  box-shadow: 0 6px 16px rgba(var(--acct-green-rgb), 0.28) !important;
+}
+
+html.role-theme .gc-btn--success:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--success) 72%, #000) !important;
+}
+
+html.role-theme .gc-btn--warn {
+  background: var(--warning) !important;
+  color: #191c24 !important;
+  box-shadow: 0 6px 16px rgba(var(--acct-yellow-rgb), 0.28) !important;
+}
+
+html.role-theme .gc-btn--warn:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--warning) 72%, #000) !important;
+  color: #ffffff !important;
+}
+
+html.light.role-theme .gc-btn--warn {
+  color: #ffffff !important;
+  background: #d45b5e !important;
+}
+
+html.light.role-theme .gc-btn--warn:hover:not(:disabled) {
+  background: color-mix(in srgb, #d45b5e 72%, #000) !important;
+  color: #ffffff !important;
+}
+
+@media (min-width: 640px) {
+  html.role-theme .gc-otp-row {
+    flex-direction: row;
+    align-items: stretch;
+  }
+  html.role-theme .gc-otp-row .gc-otp-search {
+    flex: 1;
+    min-width: 0;
+  }
+  html.role-theme .gc-otp-row .gc-btn {
+    width: auto;
+    min-width: 180px;
+    flex-shrink: 0;
+  }
+}
+
+@media (max-width: 767px) {
+  html.role-theme .gc-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+  html.role-theme .gc-kpi {
+    padding: 14px 14px;
+  }
+  html.role-theme .gc-kpi-val {
+    font-size: 22px;
+  }
+  html.role-theme .gc-pill {
+    width: 100%;
+    justify-content: center;
+    margin-left: 0;
+  }
+}
+
+html.role-theme .gc-btn--accent {
+  background: var(--accent) !important;
+  box-shadow: 0 8px 20px rgba(var(--acct-purple-rgb), 0.32) !important;
+  color: #ffffff !important;
+}
+
+/* --------------------------------------------------------------------------
+   Guest entry — solid surfaces + accountant KPI tiles
+   -------------------------------------------------------------------------- */
+html.role-theme .ge-table-wrap,
+html.role-theme .ge-empty,
+html.role-theme .ge-mobile-card {
+  background: var(--card-bg) !important;
+  border-color: var(--glass-border) !important;
+  box-shadow: var(--shadow-sm) !important;
+  backdrop-filter: none !important;
+}
+
+html.role-theme .ge-root .complaint-stat-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 16px;
+  box-shadow: var(--shadow-sm) !important;
+  backdrop-filter: none !important;
+  filter: none !important;
+}
+
+html.role-theme .ge-root .complaint-stat-card::before {
+  content: none !important;
+  display: none !important;
+}
+
+html.role-theme .ge-root .complaint-stat-card::after {
+  content: "" !important;
+  display: block !important;
+  position: absolute;
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  right: -18px;
+  top: -18px;
+  background: rgba(255, 255, 255, 0.16);
+  pointer-events: none;
+  box-shadow: none !important;
+}
+
+html.role-theme:not(.light) .ge-root .complaint-stat-card::after {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+html.role-theme .ge-root .complaint-stat-val,
+html.role-theme .ge-root .complaint-stat-label,
+html.role-theme .ge-root .complaint-stat-total .complaint-stat-val,
+html.role-theme .ge-root .complaint-stat-total .complaint-stat-label {
+  box-shadow: none !important;
+  text-shadow: none !important;
+  filter: none !important;
+}
+
+html.role-theme .ge-root .complaint-stat-card:hover,
+html.role-theme .ge-root .complaint-stat-total:hover,
+html.role-theme .ge-root .complaint-stat-inprogress:hover,
+html.role-theme .ge-root .complaint-stat-resolved:hover {
+  box-shadow: var(--shadow-sm) !important;
+  transform: none !important;
+}
+
+html.role-theme .ge-root .complaint-stat-label {
+  opacity: 1 !important;
+}
+
+/* Dark: solid Corona tiles */
+html.role-theme:not(.light) .ge-root .complaint-stat-card {
+  background: #22252e !important;
+  border: 2px solid var(--glass-border) !important;
+}
+
+html.role-theme:not(.light) .ge-root .complaint-stat-total {
+  border-color: rgba(var(--acct-purple-rgb), 0.4) !important;
+}
+html.role-theme:not(.light) .ge-root .complaint-stat-inprogress {
+  border-color: rgba(var(--acct-cyan-rgb), 0.35) !important;
+}
+html.role-theme:not(.light) .ge-root .complaint-stat-resolved {
+  border-color: rgba(var(--acct-green-rgb), 0.35) !important;
+}
+
+html.role-theme:not(.light) .ge-root .complaint-stat-val {
+  color: #ffffff !important;
+}
+html.role-theme:not(.light) .ge-root .complaint-stat-total .complaint-stat-label {
+  color: var(--acct-purple) !important;
+}
+html.role-theme:not(.light) .ge-root .complaint-stat-inprogress .complaint-stat-label {
+  color: var(--acct-cyan) !important;
+}
+html.role-theme:not(.light) .ge-root .complaint-stat-resolved .complaint-stat-label {
+  color: var(--acct-teal) !important;
+}
+
+/* Light: solid pastel KPI fills, white type */
+html.light.role-theme .ge-root .complaint-stat-total {
+  background: var(--stat-purple-bg) !important;
+  border: none !important;
+  box-shadow: var(--shadow-sm) !important;
+}
+html.light.role-theme .ge-root .complaint-stat-inprogress {
+  background: var(--stat-blue-bg) !important;
+  border: none !important;
+  box-shadow: var(--shadow-sm) !important;
+}
+html.light.role-theme .ge-root .complaint-stat-resolved {
+  background: var(--stat-green-bg) !important;
+  border: none !important;
+  box-shadow: var(--shadow-sm) !important;
+}
+
+html.light.role-theme .ge-root .complaint-stat-val,
+html.light.role-theme .ge-root .complaint-stat-label,
+html.light.role-theme .ge-root .complaint-stat-total .complaint-stat-val,
+html.light.role-theme .ge-root .complaint-stat-total .complaint-stat-label,
+html.light.role-theme .ge-root .complaint-stat-inprogress .complaint-stat-val,
+html.light.role-theme .ge-root .complaint-stat-inprogress .complaint-stat-label,
+html.light.role-theme .ge-root .complaint-stat-resolved .complaint-stat-val,
+html.light.role-theme .ge-root .complaint-stat-resolved .complaint-stat-label {
+  color: #ffffff !important;
+}
+
+html.role-theme .ge-row-bar--inside {
+  background: var(--accent) !important;
+}
+
+html.role-theme .ge-row-bar--left {
+  background: var(--success) !important;
+}
+
+html.role-theme .ge-badge--inside {
+  background: var(--accent-soft) !important;
+  color: var(--accent) !important;
+  border-color: rgba(var(--acct-purple-rgb), 0.35) !important;
+}
+
+html.role-theme .ge-badge--left {
+  background: var(--badge-paid-bg) !important;
+  color: var(--badge-paid-color) !important;
+  border-color: var(--badge-paid-border) !important;
+}
+
+html.role-theme .ge-flat-chip {
+  background: var(--chip-bg) !important;
+  border-color: var(--chip-border) !important;
+  color: var(--text-secondary) !important;
+}
+
+html.role-theme .ge-mobile-card,
+html.role-theme .vl-mc {
+  background: var(--card-bg) !important;
+  border-color: var(--glass-border) !important;
+}
+
+html.role-theme .ge-mobile-card:hover,
+html.role-theme .vl-mc:hover {
+  border-color: rgba(var(--acct-purple-rgb), 0.35) !important;
+}
+
+html.role-theme .ge-tbody-row:hover {
+  background: var(--row-hover) !important;
+}
+
+/* --------------------------------------------------------------------------
+   Help & contacts
+   -------------------------------------------------------------------------- */
+html.role-theme .gh-page-title {
+  color: var(--text-primary) !important;
+}
+
+html.role-theme .gh-page-subtitle,
+html.role-theme .gh-section-label,
+html.role-theme .gh-contact-role,
+html.role-theme .gh-tab,
+html.role-theme .gh-emerg-desc {
+  color: var(--text-secondary) !important;
+}
+
+html.role-theme .gh-page-icon-wrap {
+  background: linear-gradient(135deg, var(--accent), #9e58ff) !important;
+  border: none !important;
+  color: #ffffff !important;
+  box-shadow: 0 8px 20px rgba(var(--acct-purple-rgb), 0.3) !important;
+}
+
+html.role-theme .gh-tab-bar {
+  background: var(--card-bg) !important;
+  border-color: var(--glass-border) !important;
+  box-shadow: var(--shadow-sm) !important;
+  backdrop-filter: none !important;
+}
+
+html.role-theme .gh-tab:hover {
+  color: var(--text-primary) !important;
+  background: var(--row-hover) !important;
+}
+
+html.role-theme .gh-tab--active {
+  background: var(--accent) !important;
+  color: #ffffff !important;
+  box-shadow: 0 6px 16px rgba(var(--acct-purple-rgb), 0.28) !important;
+}
+
+html.role-theme .gh-contact-card,
+html.role-theme .gh-faq-item,
+html.role-theme .gh-guide-step,
+html.role-theme .gh-guide-intro,
+html.role-theme .gh-empty-state,
+html.role-theme .gh-emerg-card,
+html.role-theme .gh-emerg-card--blue,
+html.role-theme .gh-emerg-card--red,
+html.role-theme .gh-emerg-card--green,
+html.role-theme .gh-emerg-card--purple {
+  background: var(--card-bg) !important;
+  border-color: var(--glass-border) !important;
+  box-shadow: var(--shadow-sm) !important;
+  backdrop-filter: none !important;
+}
+
+html.role-theme .gh-contact-card:hover,
+html.role-theme .gh-faq-item--open,
+html.role-theme .gh-guide-step:hover {
+  border-color: rgba(var(--acct-purple-rgb), 0.35) !important;
+}
+
+html.role-theme .gh-contact-name,
+html.role-theme .gh-faq-question,
+html.role-theme .gh-guide-step-title,
+html.role-theme .gh-emerg-number {
+  color: var(--text-primary) !important;
+}
+
+html.role-theme .gh-faq-question:hover {
+  color: var(--accent) !important;
+}
+
+html.role-theme .gh-faq-item--open .gh-faq-chevron,
+html.role-theme .gh-guide-intro-icon {
+  color: var(--accent) !important;
+}
+
+html.role-theme .gh-faq-search-input {
+  background: var(--search-inset-bg) !important;
+  border-color: var(--search-inset-border) !important;
+  color: var(--text-primary) !important;
+  box-shadow: var(--search-inset-shadow) !important;
+}
+
+html.role-theme .gh-faq-search-input::placeholder {
+  color: var(--text-secondary) !important;
+}
+
+html.role-theme .gh-emerg-card {
+  position: relative;
+  overflow: hidden;
+}
+
+html.role-theme .gh-emerg-card::before {
+  content: none !important;
+  display: none !important;
+}
+
+html.role-theme .gh-emerg-card::after {
+  content: "" !important;
+  display: block !important;
+  position: absolute;
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  right: -18px;
+  top: -18px;
+  background: rgba(255, 255, 255, 0.16);
+  pointer-events: none;
+  box-shadow: none !important;
+}
+
+html.role-theme:not(.light) .gh-emerg-card::after {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+html.role-theme:not(.light) .gh-emerg-card--blue,
+html.role-theme:not(.light) .gh-emerg-card--red,
+html.role-theme:not(.light) .gh-emerg-card--green,
+html.role-theme:not(.light) .gh-emerg-card--purple {
+  background: #22252e !important;
+}
+
+html.role-theme:not(.light) .gh-emerg-card--blue {
+  border-color: rgba(var(--acct-purple-rgb), 0.4) !important;
+}
+html.role-theme:not(.light) .gh-emerg-card--blue::before { background: var(--accent) !important; }
+html.role-theme:not(.light) .gh-emerg-card--blue .gh-emerg-icon-wrap,
+html.role-theme:not(.light) .gh-emerg-card--blue .gh-call-btn {
+  background: rgba(var(--acct-purple-rgb), 0.18) !important;
+  color: var(--accent) !important;
+  border-color: rgba(var(--acct-purple-rgb), 0.32) !important;
+}
+html.role-theme:not(.light) .gh-emerg-card--blue .gh-emerg-label { color: var(--accent) !important; }
+
+html.role-theme:not(.light) .gh-emerg-card--red {
+  border-color: rgba(var(--acct-red-rgb), 0.4) !important;
+}
+html.role-theme:not(.light) .gh-emerg-card--red::before { background: var(--acct-red) !important; }
+html.role-theme:not(.light) .gh-emerg-card--red .gh-emerg-icon-wrap,
+html.role-theme:not(.light) .gh-emerg-card--red .gh-call-btn {
+  background: rgba(var(--acct-red-rgb), 0.18) !important;
+  color: var(--acct-red) !important;
+  border-color: rgba(var(--acct-red-rgb), 0.32) !important;
+}
+html.role-theme:not(.light) .gh-emerg-card--red .gh-emerg-label { color: var(--acct-red) !important; }
+
+html.role-theme:not(.light) .gh-emerg-card--green {
+  border-color: rgba(var(--acct-green-rgb), 0.35) !important;
+}
+html.role-theme:not(.light) .gh-emerg-card--green::before { background: var(--acct-teal) !important; }
+html.role-theme:not(.light) .gh-emerg-card--green .gh-emerg-icon-wrap,
+html.role-theme:not(.light) .gh-emerg-card--green .gh-call-btn {
+  background: rgba(var(--acct-teal-rgb), 0.16) !important;
+  color: var(--acct-teal) !important;
+  border-color: rgba(var(--acct-teal-rgb), 0.32) !important;
+}
+html.role-theme:not(.light) .gh-emerg-card--green .gh-emerg-label { color: var(--acct-teal) !important; }
+
+html.role-theme:not(.light) .gh-emerg-card--purple {
+  border-color: rgba(var(--acct-violet-rgb), 0.4) !important;
+}
+html.role-theme:not(.light) .gh-emerg-card--purple::before { background: var(--acct-violet) !important; }
+html.role-theme:not(.light) .gh-emerg-card--purple .gh-emerg-icon-wrap,
+html.role-theme:not(.light) .gh-emerg-card--purple .gh-call-btn {
+  background: rgba(var(--acct-violet-rgb), 0.16) !important;
+  color: var(--acct-violet) !important;
+  border-color: rgba(var(--acct-violet-rgb), 0.32) !important;
+}
+html.role-theme:not(.light) .gh-emerg-card--purple .gh-emerg-label { color: var(--acct-violet) !important; }
+
+html.light.role-theme .gh-emerg-card::before {
+  display: none;
+}
+
+html.light.role-theme .gh-emerg-card--blue {
+  background: var(--stat-blue-bg) !important;
+  border: none !important;
+  box-shadow: 0 12px 28px rgba(75, 203, 235, 0.18) !important;
+}
+html.light.role-theme .gh-emerg-card--red {
+  background: var(--stat-amber-bg) !important;
+  border: none !important;
+  box-shadow: 0 12px 28px rgba(254, 148, 150, 0.22) !important;
+}
+html.light.role-theme .gh-emerg-card--green {
+  background: var(--stat-green-bg) !important;
+  border: none !important;
+  box-shadow: 0 12px 28px rgba(27, 207, 180, 0.18) !important;
+}
+html.light.role-theme .gh-emerg-card--purple {
+  background: var(--stat-purple-bg) !important;
+  border: none !important;
+  box-shadow: 0 12px 28px rgba(160, 90, 255, 0.16) !important;
+}
+
+html.light.role-theme .gh-emerg-card--blue .gh-emerg-label,
+html.light.role-theme .gh-emerg-card--blue .gh-emerg-number,
+html.light.role-theme .gh-emerg-card--blue .gh-emerg-desc,
+html.light.role-theme .gh-emerg-card--red .gh-emerg-label,
+html.light.role-theme .gh-emerg-card--red .gh-emerg-number,
+html.light.role-theme .gh-emerg-card--red .gh-emerg-desc,
+html.light.role-theme .gh-emerg-card--green .gh-emerg-label,
+html.light.role-theme .gh-emerg-card--green .gh-emerg-number,
+html.light.role-theme .gh-emerg-card--green .gh-emerg-desc,
+html.light.role-theme .gh-emerg-card--purple .gh-emerg-label,
+html.light.role-theme .gh-emerg-card--purple .gh-emerg-number,
+html.light.role-theme .gh-emerg-card--purple .gh-emerg-desc {
+  color: #ffffff !important;
+}
+
+html.light.role-theme .gh-emerg-card .gh-emerg-icon-wrap,
+html.light.role-theme .gh-emerg-card .gh-call-btn {
+  background: rgba(255, 255, 255, 0.2) !important;
+  color: #ffffff !important;
+  border-color: rgba(255, 255, 255, 0.28) !important;
+}
+
+html.role-theme .gh-avatar--blue {
+  background: var(--accent-soft) !important;
+  color: var(--accent) !important;
+  border-color: rgba(var(--acct-purple-rgb), 0.28) !important;
+}
+html.role-theme .gh-avatar--amber {
+  background: var(--approval-bg) !important;
+  color: var(--warning) !important;
+  border-color: var(--approval-border) !important;
+}
+html.role-theme .gh-avatar--green {
+  background: var(--badge-paid-bg) !important;
+  color: var(--success) !important;
+  border-color: var(--badge-paid-border) !important;
+}
+html.role-theme .gh-avatar--purple {
+  background: rgba(var(--acct-violet-rgb), 0.16) !important;
+  color: var(--acct-violet) !important;
+  border-color: rgba(var(--acct-violet-rgb), 0.28) !important;
+}
+
+html.role-theme .gh-guide-step-num {
+  background: linear-gradient(135deg, var(--accent), #9e58ff) !important;
+  color: #ffffff !important;
+  border: none !important;
+  box-shadow: 0 6px 14px rgba(var(--acct-purple-rgb), 0.28) !important;
+}
+
+html.role-theme .gh-guide-intro {
+  background: var(--accent-soft) !important;
+  border: 1px solid rgba(var(--acct-purple-rgb), 0.28) !important;
+  color: var(--text-primary) !important;
+}
+
+html.role-theme .gh-shift-tips {
+  background: var(--card-bg) !important;
+  border: 1.5px solid var(--glass-border) !important;
+  box-shadow: var(--shadow-sm) !important;
+  backdrop-filter: none !important;
+}
+
+html.role-theme:not(.light) .gh-shift-tips,
+html.role-theme:not(.light) .gh-guide-step {
+  background: #22252e !important;
+  border-width: 2px !important;
+}
+
+html.role-theme .gh-shift-tips-title,
+html.role-theme .gh-do-item,
+html.role-theme .gh-dont-item {
+  color: var(--text-primary) !important;
+}
+
+html.role-theme .gh-checklist-item {
+  color: var(--text-secondary) !important;
+  border-bottom-color: var(--glass-border) !important;
+}
+
+html.role-theme .gh-checklist-dot {
+  background: var(--accent) !important;
+  box-shadow: none !important;
+}
+
+html.role-theme .gh-do-card {
+  background: var(--badge-paid-bg) !important;
+  border: 1.5px solid var(--badge-paid-border) !important;
+}
+
+html.role-theme .gh-dont-card {
+  background: var(--reject-bg) !important;
+  border: 1.5px solid var(--reject-border) !important;
+}
+
+html.role-theme .gh-do-title {
+  color: var(--success) !important;
+}
+
+html.role-theme .gh-dont-title {
+  color: var(--danger) !important;
+}
+
+html.role-theme .gh-do-dot {
+  background: var(--success) !important;
+}
+
+html.role-theme .gh-dont-dot {
+  background: var(--danger) !important;
+}
+
+@media (max-width: 1023px) {
+  html.role-theme .gh-guide-steps {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 639px) {
+  html.role-theme .gh-guide-steps {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Parking (beats the page <style> tag via html.role-theme)
+   -------------------------------------------------------------------------- */
+html.role-theme .gp-avatar {
+  background: var(--accent-soft) !important;
+  border-color: rgba(var(--acct-purple-rgb), 0.28) !important;
+  color: var(--accent) !important;
+}
+
+html.role-theme .gp-tab--active-pending {
+  background: var(--warning) !important;
+  color: #191c24 !important;
+  box-shadow: 0 3px 10px rgba(var(--acct-yellow-rgb), 0.35) !important;
+}
+
+html.role-theme .gp-tab--active-approved {
+  background: var(--success) !important;
+  color: #ffffff !important;
+}
+
+html.role-theme .gp-tab--active-rejected {
+  background: var(--danger) !important;
+  color: #ffffff !important;
+}
+
+html.role-theme .gp-stat {
+  position: relative;
+  overflow: hidden;
+  border-radius: 16px;
+  box-shadow: var(--shadow-sm) !important;
+  backdrop-filter: none !important;
+}
+
+html.role-theme .gp-stat::before {
+  content: none !important;
+  display: none !important;
+}
+
+html.role-theme .gp-stat::after {
+  content: "" !important;
+  display: block !important;
+  position: absolute;
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  right: -18px;
+  top: -18px;
+  background: rgba(255, 255, 255, 0.16);
+  pointer-events: none;
+  box-shadow: none !important;
+}
+
+html.role-theme:not(.light) .gp-stat::after {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+html.role-theme .gp-stat__label {
+  opacity: 1 !important;
+}
+
+html.role-theme:not(.light) .gp-stat,
+html.role-theme:not(.light) .gp-stat--total,
+html.role-theme:not(.light) .gp-stat--pending,
+html.role-theme:not(.light) .gp-stat--approved,
+html.role-theme:not(.light) .gp-stat--completed {
+  background: #22252e !important;
+  border-width: 2px !important;
+  border-style: solid !important;
+  border-color: var(--glass-border) !important;
+}
+
+html.role-theme:not(.light) .gp-stat--total { border-color: rgba(var(--acct-purple-rgb), 0.4) !important; }
+html.role-theme:not(.light) .gp-stat--pending { border-color: rgba(var(--acct-yellow-rgb), 0.35) !important; }
+html.role-theme:not(.light) .gp-stat--approved { border-color: rgba(var(--acct-green-rgb), 0.35) !important; }
+html.role-theme:not(.light) .gp-stat--completed { border-color: rgba(var(--acct-violet-rgb), 0.4) !important; }
+
+html.role-theme:not(.light) .gp-stat--total::before { background: var(--accent) !important; }
+html.role-theme:not(.light) .gp-stat--pending::before { background: var(--acct-yellow) !important; }
+html.role-theme:not(.light) .gp-stat--approved::before { background: var(--acct-teal) !important; }
+html.role-theme:not(.light) .gp-stat--completed::before { background: var(--acct-violet) !important; }
+
+html.role-theme:not(.light) .gp-stat__val {
+  color: #ffffff !important;
+}
+html.role-theme:not(.light) .gp-stat--total .gp-stat__label { color: var(--acct-purple) !important; }
+html.role-theme:not(.light) .gp-stat--pending .gp-stat__label { color: var(--acct-yellow) !important; }
+html.role-theme:not(.light) .gp-stat--approved .gp-stat__label { color: var(--acct-teal) !important; }
+html.role-theme:not(.light) .gp-stat--completed .gp-stat__label { color: var(--acct-violet) !important; }
+
+html.light.role-theme .gp-stat::before {
+  display: none;
+}
+
+html.light.role-theme .gp-stat--total {
+  background: var(--stat-purple-bg) !important;
+  border: none !important;
+  box-shadow: 0 12px 28px rgba(160, 90, 255, 0.12) !important;
+}
+html.light.role-theme .gp-stat--pending {
+  background: var(--stat-amber-bg) !important;
+  border: none !important;
+  box-shadow: 0 12px 28px rgba(254, 148, 150, 0.22) !important;
+}
+html.light.role-theme .gp-stat--approved {
+  background: var(--stat-green-bg) !important;
+  border: none !important;
+  box-shadow: 0 12px 28px rgba(27, 207, 180, 0.18) !important;
+}
+html.light.role-theme .gp-stat--completed {
+  background: var(--stat-blue-bg) !important;
+  border: none !important;
+  box-shadow: 0 12px 28px rgba(75, 203, 235, 0.18) !important;
+}
+
+html.light.role-theme .gp-stat__val,
+html.light.role-theme .gp-stat__label,
+html.light.role-theme .gp-stat--total .gp-stat__val,
+html.light.role-theme .gp-stat--total .gp-stat__label,
+html.light.role-theme .gp-stat--pending .gp-stat__val,
+html.light.role-theme .gp-stat--pending .gp-stat__label,
+html.light.role-theme .gp-stat--approved .gp-stat__val,
+html.light.role-theme .gp-stat--approved .gp-stat__label,
+html.light.role-theme .gp-stat--completed .gp-stat__val,
+html.light.role-theme .gp-stat--completed .gp-stat__label {
+  color: #ffffff !important;
+}
+
+html.role-theme .gp-search-input:focus {
+  border-color: var(--search-inset-border) !important;
+  box-shadow: var(--search-inset-shadow) !important;
+}
+
+html.role-theme .gp-card,
+html.role-theme .gp-empty,
+html.role-theme .gp-mode-switcher,
+html.role-theme .gp-tabs,
+html.role-theme .gp-resident-panel {
+  background: var(--card-bg) !important;
+  border-color: var(--glass-border) !important;
+  backdrop-filter: none !important;
+}
+
+html.role-theme .gp-actions-panel {
+  background: var(--card-inner-bg) !important;
+  border-color: var(--glass-border) !important;
+  backdrop-filter: none !important;
+}
+
+html.role-theme .gp-card:hover {
+  border-color: rgba(var(--acct-purple-rgb), 0.3) !important;
+}
+
+html.role-theme .gp-assigned-chip {
+  background: var(--accent-soft) !important;
+  color: var(--accent) !important;
+  border-color: rgba(var(--acct-purple-rgb), 0.28) !important;
+}
+
+html.role-theme .gp-btn-exit {
+  background: var(--accent) !important;
+  box-shadow: 0 4px 14px rgba(var(--acct-purple-rgb), 0.3) !important;
+}
+
+html.role-theme .gp-btn-exit:hover {
+  background: var(--accent-dark) !important;
+  box-shadow: 0 6px 20px rgba(var(--acct-purple-rgb), 0.42) !important;
+}
+
+html.role-theme .gp-btn-approve {
+  background: var(--success) !important;
+}
+
+html.role-theme .gp-btn-approve:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--success) 72%, #000) !important;
+}
+
+html.role-theme .gp-btn-reject {
+  background: var(--danger) !important;
+}
+
+html.role-theme .gp-btn-reject:hover {
+  background: color-mix(in srgb, var(--danger) 72%, #000) !important;
+}
+
+/* --------------------------------------------------------------------------
+   Gate pass slot picker
+   -------------------------------------------------------------------------- */
+html.role-theme .gg-card {
+  max-width: 560px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+html.role-theme .gg-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+}
+
+html.role-theme .gg-action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+html.role-theme .gg-slot-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 16px;
+  background: var(--card-inner-bg);
+  border: 1.5px solid var(--glass-border);
+  border-radius: 16px;
+}
+
+html.role-theme .gg-slot-heading {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+html.role-theme .gg-slot-empty {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--danger);
+}
+
+html.role-theme .gg-slot-selected {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--success);
+}
+
+html.role-theme .gg-slot-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+html.role-theme .gg-type-btn,
+html.role-theme .gg-slot-btn {
+  background: var(--card-bg);
+  border: 1.5px solid var(--glass-border);
+  color: var(--text-primary);
+  border-radius: 12px;
+  padding: 10px 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+html.role-theme .gg-type-btn:hover,
+html.role-theme .gg-slot-btn:hover {
+  border-color: rgba(var(--acct-purple-rgb), 0.35);
+  background: var(--row-hover);
+}
+
+html.role-theme .gg-type-btn.is-active,
+html.role-theme .gg-slot-btn.is-active {
+  background: var(--accent) !important;
+  border-color: var(--accent) !important;
+  color: #ffffff !important;
+  font-weight: 700;
+}
+
+html.role-theme .gg-cancel {
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+html.role-theme .gg-cancel:hover {
+  color: var(--text-primary);
+}
+
+html.role-theme .gp-mode-btn--visitor.active,
+html.role-theme .gp-mode-btn--resident.active,
+html.role-theme .gp-tab--active-all,
+html.role-theme .gp-tab--active-completed {
+  background: var(--accent) !important;
+  color: #ffffff !important;
+  box-shadow: 0 3px 12px rgba(var(--acct-purple-rgb), 0.32) !important;
+}
+
+/* --------------------------------------------------------------------------
+   Collection extras + light-mode beats html.light .gc-* in index.css
+   -------------------------------------------------------------------------- */
+html.light.role-theme .gc-hero,
+html.role-theme .gc-hero {
+  background: var(--card-bg) !important;
+  border-color: var(--glass-border) !important;
+}
+
+html.light.role-theme .gc-step-dot {
+  background: var(--card-inner-bg) !important;
+  border-color: var(--glass-border) !important;
+  color: var(--text-muted) !important;
+  box-shadow: none !important;
+}
+html.light.role-theme .gc-step-dot--done {
+  background: var(--acct-teal) !important;
+  border-color: var(--acct-teal) !important;
+  color: #ffffff !important;
+}
+html.light.role-theme .gc-step-dot--active {
+  background: #d45b5e !important;
+  border-color: #d45b5e !important;
+  color: #ffffff !important;
+}
+html.light.role-theme .gc-step-dot--cancel {
+  background: var(--acct-red) !important;
+  border-color: var(--acct-red) !important;
+  color: #ffffff !important;
+}
+html.light.role-theme .gc-step-dot svg,
+html.light.role-theme .gc-step-dot--done svg,
+html.light.role-theme .gc-step-dot--active svg,
+html.light.role-theme .gc-step-dot--cancel svg {
+  color: inherit !important;
+  fill: currentColor !important;
+  opacity: 1 !important;
+}
+html.light.role-theme .gc-step-label--cancel {
+  color: var(--acct-red) !important;
+}
+
+html.light.role-theme .gc-pill--expected,
+html.role-theme .gc-pill--expected {
+  background: var(--accent-soft) !important;
+  color: var(--accent) !important;
+  border-color: rgba(var(--acct-purple-rgb), 0.35) !important;
+}
+
+html.light.role-theme .gc-verify-banner,
+html.role-theme .gc-verify-banner,
+html.role-theme .gc-waiting {
+  background: var(--accent-soft) !important;
+  border-color: rgba(var(--acct-purple-rgb), 0.35) !important;
+  color: var(--accent) !important;
+}
+
+html.role-theme .gc-warn,
+html.role-theme .gc-otp-show {
+  background: var(--approval-bg) !important;
+  border-color: var(--approval-border) !important;
+}
+
+html.role-theme .gc-warn,
+html.role-theme .gc-otp-show-label,
+html.role-theme .gc-otp-code {
+  color: var(--warning) !important;
+}
+
+html.role-theme .gc-otp-show-hint {
+  color: var(--text-secondary) !important;
+}
+
+html.role-theme .gc-track-label {
+  color: var(--text-primary) !important;
+}
+
+html.role-theme .gc-track-step--todo .gc-track-label,
+html.role-theme .gc-track-time {
+  color: var(--text-secondary) !important;
+}
+
+html.role-theme .gc-track-step--done .gc-track-label {
+  color: var(--success) !important;
+}
+
+html.role-theme .gc-track-step--active .gc-track-label {
+  color: var(--warning) !important;
+}
+
+html.role-theme .gc-track-note {
+  background: var(--accent-soft) !important;
+  border-color: rgba(var(--acct-purple-rgb), 0.28) !important;
+  color: var(--accent) !important;
+}
+
+html.role-theme .gc-btn--danger {
+  background: var(--danger) !important;
+  box-shadow: 0 6px 18px rgba(var(--acct-red-rgb), 0.35) !important;
+}
+
+html.role-theme .gc-btn--danger:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--acct-red) 72%, #000) !important;
+  transform: none !important;
+}
+
+html.role-theme .vl-exit-btn {
+  background: var(--badge-paid-bg) !important;
+  border-color: var(--badge-paid-border) !important;
+  color: var(--success) !important;
+}
+
+/* --------------------------------------------------------------------------
+   Help FAQ / guide leftovers
+   -------------------------------------------------------------------------- */
+html.role-theme .gh-faq-search-icon {
+  color: var(--search-inset-placeholder) !important;
+}
+
+html.role-theme .gh-faq-search-input:focus {
+  border-color: var(--search-inset-border) !important;
+  box-shadow: var(--search-inset-shadow) !important;
+  background: var(--search-inset-bg) !important;
+}
+
+html.role-theme .gh-faq-answer p,
+html.role-theme .gh-guide-step-desc {
+  color: var(--text-secondary) !important;
+  font-size: 13px !important;
+  line-height: 1.55;
+}
+
+html.role-theme .gh-action-btn--phone {
+  background: var(--accent-soft) !important;
+  border-color: rgba(var(--acct-purple-rgb), 0.28) !important;
+  color: var(--accent) !important;
+}
+
+html.role-theme .gh-action-btn--whatsapp {
+  background: var(--badge-paid-bg) !important;
+  border-color: var(--badge-paid-border) !important;
+  color: var(--success) !important;
+}
+
+html.role-theme .ge-t-row {
+  background: var(--card-inner-bg) !important;
+}
+
+html.role-theme .ge-root .complaint-filter-pill {
+  background: var(--card-bg);
+  border-color: var(--glass-border);
+  color: var(--text-secondary);
+}
+
+html.role-theme .ge-root .complaint-filter-pill:hover {
+  border-color: rgba(var(--acct-purple-rgb), 0.35);
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+html.role-theme .ge-root .complaint-filter-pill-count {
+  background: var(--chip-bg);
+  color: var(--text-secondary);
+}
+
+html.role-theme .ge-root .complaint-filter-pill--all.active,
+html.role-theme .ge-root .complaint-filter-pill--inprogress.active {
+  background: var(--accent-soft) !important;
+  border-color: rgba(var(--acct-purple-rgb), 0.4) !important;
+  color: var(--accent) !important;
+  box-shadow: none !important;
+}
+
+html.role-theme .ge-root .complaint-filter-pill--all.active .complaint-filter-pill-count,
+html.role-theme .ge-root .complaint-filter-pill--inprogress.active .complaint-filter-pill-count {
+  background: rgba(var(--acct-purple-rgb), 0.2) !important;
+  color: var(--accent) !important;
+}
+
+html.role-theme .ge-root .complaint-filter-pill--resolved.active {
+  background: var(--badge-paid-bg) !important;
+  border-color: var(--badge-paid-border) !important;
+  color: var(--success) !important;
+}
+
+html.role-theme .ge-root .complaint-filter-pill--resolved.active .complaint-filter-pill-count {
+  background: rgba(var(--acct-green-rgb), 0.18) !important;
+  color: var(--success) !important;
+}
+
+html.role-theme .gh-action-btn--email {
+  background: rgba(var(--acct-violet-rgb), 0.16) !important;
+  border-color: rgba(var(--acct-violet-rgb), 0.32) !important;
+  color: var(--acct-violet) !important;
+}
+
+html.role-theme .gh-support-card {
+  background: var(--card-bg) !important;
+  border-color: var(--glass-border) !important;
+  box-shadow: var(--shadow-sm) !important;
+  backdrop-filter: none !important;
+}
+
+html.role-theme .gh-support-icon {
+  color: var(--accent) !important;
+}
+
+html.role-theme .gh-support-title {
+  color: var(--text-primary) !important;
+}
+
+html.role-theme .gh-support-sub {
+  color: var(--text-secondary) !important;
+}
+
+html.role-theme .gh-support-btn {
+  background: var(--accent) !important;
+  border-color: var(--accent) !important;
+  color: #ffffff !important;
+  box-shadow: 0 6px 16px rgba(var(--acct-purple-rgb), 0.32) !important;
+}
+
+html.role-theme .gh-support-btn:hover {
+  background: var(--accent-dark) !important;
+  border-color: var(--accent-dark) !important;
+}
+
+/* --------------------------------------------------------------------------
+   Settings
+   -------------------------------------------------------------------------- */
+html.role-theme .gs-root {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding-bottom: 24px;
+}
+
+html.role-theme .gs-er {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+html.role-theme .gs-er-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+html.role-theme .gs-title {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--text-primary);
+  letter-spacing: -0.03em;
+  margin: 0;
+}
+
+html.role-theme .gs-sub,
+html.role-theme .gs-hero-email,
+html.role-theme .gs-section-sub,
+html.role-theme .gs-label,
+html.role-theme .gs-lang-label,
+html.role-theme .gs-lang-note,
+html.role-theme .gs-loading p {
+  color: var(--text-secondary);
+}
+
+html.role-theme .gs-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 64px 20px;
+  font-size: 13px;
+}
+
+html.role-theme .gs-hero,
+html.role-theme .gs-card {
+  background: var(--card-bg);
+  border: 1.5px solid var(--glass-border);
+  border-radius: 16px;
+  box-shadow: var(--shadow-sm);
+}
+
+html.role-theme:not(.light) .gs-hero,
+html.role-theme:not(.light) .gs-card {
+  background: #22252e;
+  border-width: 2px;
+}
+
+html.role-theme .gs-hero {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 18px 20px;
+}
+
+html.role-theme .gs-avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: 800;
+  color: #ffffff;
+  background: linear-gradient(135deg, var(--accent), #9e58ff);
+  box-shadow: 0 8px 20px rgba(var(--acct-purple-rgb), 0.3);
+}
+
+html.role-theme .gs-hero-name,
+html.role-theme .gs-section-title,
+html.role-theme .gs-lang-native {
+  color: var(--text-primary);
+  margin: 0;
+}
+
+html.role-theme .gs-hero-name {
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+html.role-theme .gs-hero-email {
+  font-size: 13px;
+  margin: 2px 0 0;
+}
+
+html.role-theme .gs-hero-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+html.role-theme .gs-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  border: 1px solid;
+}
+
+html.role-theme .gs-badge--role {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-color: rgba(var(--acct-purple-rgb), 0.28);
+}
+
+html.role-theme .gs-badge--active {
+  background: var(--badge-paid-bg);
+  color: var(--badge-paid-color);
+  border-color: var(--badge-paid-border);
+}
+
+html.role-theme .gs-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  border: 1px solid;
+}
+
+html.role-theme .gs-banner--success {
+  background: var(--badge-paid-bg);
+  border-color: var(--badge-paid-border);
+  color: var(--badge-paid-color);
+}
+
+html.role-theme .gs-banner--error {
+  background: var(--reject-bg);
+  border-color: var(--reject-border);
+  color: var(--danger);
+}
+
+html.role-theme .gs-card {
+  padding: 20px;
+}
+
+html.role-theme .gs-section-er {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+html.role-theme .gs-section-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+html.role-theme .gs-section-title {
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+html.role-theme .gs-section-sub {
+  font-size: 11px;
+  margin: 2px 0 0;
+}
+
+html.role-theme .gs-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+html.role-theme .gs-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+html.role-theme .gs-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+html.role-theme .gs-label-muted {
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 400;
+  opacity: 0.75;
+}
+
+html.role-theme .gs-input-wrap {
+  position: relative;
+}
+
+html.role-theme .gs-input-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-secondary);
+  pointer-events: none;
+}
+
+html.role-theme .gs-input {
+  width: 100%;
+  height: 42px;
+  padding-left: 36px !important;
+}
+
+html.role-theme .gs-input--padded-right {
+  padding-right: 40px !important;
+}
+
+html.role-theme .gs-input--disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+html.role-theme .gs-eye-btn {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  padding: 0;
+}
+
+html.role-theme .gs-eye-btn:hover {
+  color: var(--text-primary);
+}
+
+html.role-theme .gs-save-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  margin-top: 4px;
+}
+
+html.role-theme .gs-lang-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+html.role-theme .gs-lang-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: var(--card-inner-bg);
+  border: 1.5px solid var(--glass-border);
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.18s, background 0.18s;
+}
+
+html.role-theme .gs-lang-row:hover,
+html.role-theme .gs-lang-row.is-active {
+  border-color: rgba(var(--acct-purple-rgb), 0.4);
+}
+
+html.role-theme .gs-lang-row.is-active {
+  background: var(--accent-soft);
+}
+
+html.role-theme .gs-lang-flag {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  background: var(--chip-bg);
+  flex-shrink: 0;
+}
+
+html.role-theme .gs-lang-row.is-active .gs-lang-flag {
+  background: rgba(255, 255, 255, 0.16);
+}
+
+html.role-theme .gs-lang-native {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+html.role-theme .gs-lang-row.is-active .gs-lang-native {
+  color: var(--accent);
+}
+
+html.role-theme .gs-lang-label {
+  font-size: 12px;
+  margin: 2px 0 0;
+}
+
+html.role-theme .gs-lang-radio {
+  margin-left: auto;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid var(--chip-border);
+  flex-shrink: 0;
+}
+
+html.role-theme .gs-lang-radio.is-active {
+  border: 5px solid var(--accent);
+}
+
+html.role-theme .gs-lang-note {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  margin: 14px 0 0;
+}
+
+@media (max-width: 639px) {
+  html.role-theme .gs-hero {
+    padding: 16px;
+  }
+
+  html.role-theme .gs-card {
+    padding: 16px;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Emergency history
+   -------------------------------------------------------------------------- */
+html.role-theme .eh-type {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  border: 1px solid;
+  text-transform: uppercase;
+}
+
+html.role-theme .eh-type--fire {
+  background: var(--reject-bg);
+  color: var(--danger);
+  border-color: var(--reject-border);
+}
+
+html.role-theme .eh-type--medical {
+  background: var(--badge-paid-bg);
+  color: var(--badge-paid-color);
+  border-color: var(--badge-paid-border);
+}
+
+html.role-theme .eh-type--security {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-color: rgba(var(--acct-purple-rgb), 0.28);
+}
+
+html.role-theme .eh-type--other {
+  background: rgba(var(--acct-cyan-rgb), 0.16);
+  color: var(--acct-cyan);
+  border-color: rgba(var(--acct-cyan-rgb), 0.32);
+}

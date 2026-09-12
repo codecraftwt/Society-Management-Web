@@ -10,8 +10,10 @@ import {
   MdVerified,
   MdClose,
   MdMarkEmailRead,
+  MdSearch,
 } from "react-icons/md";
 import { toast } from "react-toastify";
+import SlidingTabs from "../../components/common/SlidingTabs";
 
 /* ── Spinner ── */
 function Spinner({ size = 16 }) {
@@ -67,6 +69,15 @@ function Pagination({ page, totalPages, onPageChange }) {
 
 const LIMIT = 5;
 
+function useDebounce(value, delay = 400) {
+  const [d, setD] = useState(value);
+  useEffect(() => {
+    const t = setTimeout(() => setD(value), delay);
+    return () => clearTimeout(t);
+  }, [value, delay]);
+  return d;
+}
+
 const EMPTY_COUNTS = { EXPECTED: 0, AT_GATE: 0, COLLECTED: 0, CANCELLED: 0, ALL: 0 };
 
 export default function GuardCollection() {
@@ -81,6 +92,9 @@ export default function GuardCollection() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
+  const [search, setSearch] = useState("");
+  const [tab, setTab] = useState("ALL");
+  const debSearch = useDebounce(search, 400);
 
   // ✅ Better loading state management
   const [processingId, setProcessingId] = useState(null);
@@ -100,10 +114,13 @@ export default function GuardCollection() {
     return next;
   };
 
-  const loadData = useCallback(async (pg = 1, isInit = false) => {
+  const loadData = useCallback(async (pg = 1, isInit = false, f = tab, q = debSearch) => {
     isInit ? setInitialLoad(true) : setFetching(true);
     try {
-      const res = await API.get(`/parcels?page=${pg}&limit=${LIMIT}`);
+      const params = new URLSearchParams({ page: String(pg), limit: String(LIMIT) });
+      if (f && f !== "ALL") params.set("status", f);
+      if (q) params.set("search", q);
+      const res = await API.get(`/parcels?${params}`);
       const data = res.data;
       setParcels(Array.isArray(data) ? data : data?.data || []);
       setTotalPages(data?.pagination?.totalPages ?? 1);
@@ -124,20 +141,33 @@ export default function GuardCollection() {
       setInitialLoad(false);
       setFetching(false);
     }
+  }, [tab, debSearch]);
+
+  useEffect(() => {
+    loadData(1, true, "ALL", "");
   }, []);
 
   useEffect(() => {
-    loadData(1, true);
-  }, [loadData]);
+    if (initialLoad) return;
+    loadData(1, false, tab, debSearch);
+  }, [tab, debSearch]);
 
   /* ── Real-time socket listeners ── */
   useEffect(() => {
+    const matchesView = (parcel) => {
+      const matchesTab = tab === "ALL" || parcel.status === tab;
+      const q = debSearch.trim().toLowerCase();
+      const matchesSearch = !q || (parcel.courier_name || "").toLowerCase().includes(q);
+      return matchesTab && matchesSearch;
+    };
+
     const onCreated = (parcel) => {
       setCounts((prev) => ({
         ...prev,
         ALL: (prev.ALL || 0) + 1,
         [parcel.status]: (prev[parcel.status] || 0) + 1,
       }));
+      if (!matchesView(parcel)) return;
       setParcels((prev) => {
         if (prev.find((p) => p.id === parcel.id)) return prev;
         setTotalItems((c) => c + 1);
@@ -155,6 +185,8 @@ export default function GuardCollection() {
         if (existing && existing.status !== updated.status) {
           setCounts((c) => shiftCount(c, existing.status, updated.status));
         }
+        if (!matchesView(updated)) return prev.filter((x) => x.id !== updated.id);
+        if (!existing && page === 1) return [updated, ...prev].slice(0, LIMIT);
         return prev.map((x) => (x.id === updated.id ? { ...x, ...updated } : x));
       });
     };
@@ -165,7 +197,9 @@ export default function GuardCollection() {
         if (existing && existing.status !== "COLLECTED") {
           setCounts((c) => shiftCount(c, existing.status, "COLLECTED"));
         }
-        return prev.map((x) => (x.id === updated.id ? { ...x, ...updated } : x));
+        const next = { ...updated, status: "COLLECTED" };
+        if (!matchesView(next)) return prev.filter((x) => x.id !== updated.id);
+        return prev.map((x) => (x.id === updated.id ? { ...x, ...next } : x));
       });
     };
 
@@ -178,7 +212,7 @@ export default function GuardCollection() {
       socket.off("parcel_updated", onUpdated);
       socket.off("parcel_collected", onCollected);
     };
-  }, [page]);
+  }, [page, tab, debSearch]);
 
   const handlePageChange = (pg) => loadData(pg);
 
@@ -297,45 +331,72 @@ export default function GuardCollection() {
   return (
     <div className="gc-page">
 
-      {/* ── HERO ── */}
-      <div className="gc-hero">
-        <div className="gc-hero-top">
-          <div className="gc-hero-icon">
-            <MdOutlineInventory2 />
+      <div className="gc-er">
+        <div className="gc-er-left">
+          <div className="ad-page-icon">
+            <MdOutlineInventory2 size={22} />
           </div>
           <div>
-            <h2 className="gc-hero-title">{t("gcTitle")}</h2>
-            <p className="gc-hero-sub">{t("gcSubtitle")}</p>
-          </div>
-          <div className="gc-hero-total">
-            <b>{counts.ALL}</b>
-            <span>{t("gcTotalParcels", "Total parcels")}</span>
-          </div>
-        </div>
-
-        <div className="gc-hero-counts">
-          <div className="gc-count-chip">
-            <span className="gc-count-dot gc-count-dot--expect" />
-            {t("gcCountExpected", "Expected")}
-            <b>{counts.EXPECTED}</b>
-          </div>
-          <div className="gc-count-chip">
-            <span className="gc-count-dot gc-count-dot--gate" />
-            {t("gcCountAtGate", "At gate")}
-            <b>{counts.AT_GATE}</b>
-          </div>
-          <div className="gc-count-chip">
-            <span className="gc-count-dot gc-count-dot--done" />
-            {t("gcCountCollected", "Collected")}
-            <b>{counts.COLLECTED}</b>
-          </div>
-          <div className="gc-count-chip">
-            <span className="gc-count-dot gc-count-dot--cancel" />
-            {t("gcCountCancelled", "Cancelled")}
-            <b>{counts.CANCELLED}</b>
+            <h2 className="gc-er-title">{t("gcTitle")}</h2>
+            <p className="gc-er-sub">{counts.ALL} {t("gcTotalParcels") || "Total parcels"}</p>
           </div>
         </div>
       </div>
+
+      <div className="gc-stats">
+        <div className="gc-kpi gc-kpi--expect">
+          <span className="gc-kpi-val">{counts.EXPECTED}</span>
+          <span className="gc-kpi-label">{t("gcCountExpected") || "Expected"}</span>
+        </div>
+        <div className="gc-kpi gc-kpi--gate">
+          <span className="gc-kpi-val">{counts.AT_GATE}</span>
+          <span className="gc-kpi-label">{t("gcCountAtGate") || "At gate"}</span>
+        </div>
+        <div className="gc-kpi gc-kpi--done">
+          <span className="gc-kpi-val">{counts.COLLECTED}</span>
+          <span className="gc-kpi-label">{t("gcCountCollected") || "Collected"}</span>
+        </div>
+        <div className="gc-kpi gc-kpi--cancel">
+          <span className="gc-kpi-val">{counts.CANCELLED}</span>
+          <span className="gc-kpi-label">{t("gcCountCancelled") || "Cancelled"}</span>
+        </div>
+      </div>
+
+      {!initialLoad && (
+        <div className="ge-toolbar">
+          <div className="ge-search-wrap">
+            <MdSearch className="ge-search-icon" size={17} />
+            <input
+              className="ge-search-input"
+              placeholder={t("gcSearch") || "Search courier..."}
+              value={search}
+              onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+            />
+            {fetching ? (
+              <div className="ge-search-action">
+                <Spinner size={13} />
+              </div>
+            ) : search ? (
+              <button type="button" onClick={() => setSearch("")} className="ge-search-clear" aria-label="Clear search">
+                <MdClose size={13} />
+              </button>
+            ) : null}
+          </div>
+
+          <SlidingTabs
+            className="gp-filter-tabs"
+            value={tab}
+            onChange={(next) => { setTab(next); setPage(1); }}
+            items={[
+              { id: "ALL", label: t("geFilterAll") || "All", badge: counts.ALL },
+              { id: "EXPECTED", label: t("gcCountExpected") || "Expected", badge: counts.EXPECTED },
+              { id: "AT_GATE", label: t("gcCountAtGate") || "At gate", badge: counts.AT_GATE, alert: counts.AT_GATE },
+              { id: "COLLECTED", label: t("gcCountCollected") || "Collected", badge: counts.COLLECTED },
+              { id: "CANCELLED", label: t("gcCountCancelled") || "Cancelled", badge: counts.CANCELLED },
+            ]}
+          />
+        </div>
+      )}
 
       {initialLoad ? (
         <div className="gc-loading">
@@ -346,7 +407,7 @@ export default function GuardCollection() {
       ) : parcels.length === 0 ? (
         <div className="gc-empty">
           <MdOutlineInventory2 size={40} />
-          <p>{t("gcEmpty")}</p>
+          <p>{search || tab !== "ALL" ? (t("gcEmptyFilter") || "No parcels match your filters") : t("gcEmpty")}</p>
         </div>
 
       ) : (
@@ -357,7 +418,7 @@ export default function GuardCollection() {
             </div>
           )}
 
-          <div className="space-y-5">
+          <div className="gc-list">
             {parcels.map((p) => {
               const step = getStep(p.status);
               const isCancelled = p.status === "CANCELLED";
@@ -518,28 +579,31 @@ export default function GuardCollection() {
                           </div>
                         )}
 
-                        <input
-                          type="text"
-                          inputMode="numeric"
-                          placeholder={t("gcOtpPlaceholder") || "Enter 4-digit OTP"}
-                          value={otpInputs[p.id] || ""}
-                          disabled={collectingId === p.id}
-                          onChange={(e) => handleOtpChange(p.id, e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter" && otpInputs[p.id]?.length === 4) {
-                              verifyAndCollect(p.id, otpInputs[p.id]);
-                            }
-                          }}
-                          className="gc-otp-input"
-                          maxLength={4}
-                          autoComplete="off"
-                        />
+                        <div className="gc-otp-row">
+                          <div className="ge-search-wrap gc-otp-search">
+                            <input
+                              type="text"
+                              inputMode="numeric"
+                              placeholder={t("gcOtpPlaceholder") || "Enter 4-digit OTP"}
+                              value={otpInputs[p.id] || ""}
+                              disabled={collectingId === p.id}
+                              onChange={(e) => handleOtpChange(p.id, e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter" && otpInputs[p.id]?.length === 4) {
+                                  verifyAndCollect(p.id, otpInputs[p.id]);
+                                }
+                              }}
+                              className="ge-search-input"
+                              maxLength={4}
+                              autoComplete="off"
+                            />
+                          </div>
 
-                        <button
-                          onClick={() => verifyAndCollect(p.id, otpInputs[p.id])}
-                          disabled={collectingId === p.id || !otpInputs[p.id] || otpInputs[p.id].length !== 4}
-                          className="gc-btn gc-btn--success"
-                        >
+                          <button
+                            onClick={() => verifyAndCollect(p.id, otpInputs[p.id])}
+                            disabled={collectingId === p.id || !otpInputs[p.id] || otpInputs[p.id].length !== 4}
+                            className="gc-btn gc-btn--success"
+                          >
                           {collectingId === p.id ? (
                             isVerifying ? (
                               <>
@@ -558,7 +622,8 @@ export default function GuardCollection() {
                               <span>{t("gcVerifyCollect") || "Verify & Collect"}</span>
                             </>
                           )}
-                        </button>
+                          </button>
+                        </div>
                       </div>
                     )}
 
@@ -580,10 +645,7 @@ export default function GuardCollection() {
           </div>
 
           {/* ── Pagination footer ── */}
-          <div
-            className="gc-footer"
-            style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10 }}
-          >
+          <div className="gc-footer">
             <span className="gc-footer-shown">
               Showing{" "}
               <strong>

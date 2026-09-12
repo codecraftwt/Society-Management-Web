@@ -1,10 +1,11 @@
 import { useEffect, useState, useCallback } from "react";
 import API from "../../services/api";
 import { useLang } from "../../context/LanguageContext";
+import SlidingTabs from "../../components/common/SlidingTabs";
 import {
   MdAdd, MdSearch, MdClose, MdOutlineInbox,
   MdDirectionsCar, MdTwoWheeler,
-  MdChevronLeft, MdChevronRight,
+  MdChevronLeft, MdChevronRight, MdLocalParking,
 } from "react-icons/md";
 import Select from "../../components/common/Select";
 
@@ -210,15 +211,11 @@ useEffect(() => {
     return t("parkStatusPending");
   };
 
-  const tabActive   = "bg-blue-500/20 text-blue-400 border border-blue-500/30";
-  const tabInactive = "bg-white/5 text-secondary border border-white/10 hover:bg-white/10 hover:text-white";
-
-  // ✅ FIX: Added COMPLETED filter tab
   const filterTabs = [
     { key: "ALL",       label: t("billTabAll"),          count: counts.ALL       },
     { key: "PENDING",   label: t("parkStatusPending"),   count: counts.PENDING   },
     { key: "APPROVED",  label: t("parkStatusApproved"),  count: counts.APPROVED  },
-    { key: "COMPLETED", label: t("parkStatusCompleted"), count: counts.COMPLETED }, // ✅ ADDED
+    { key: "COMPLETED", label: t("parkStatusCompleted"), count: counts.COMPLETED },
     { key: "REJECTED",  label: t("parkStatusRejected"),  count: counts.REJECTED  },
   ];
 
@@ -227,15 +224,17 @@ useEffect(() => {
   const hasResults = !initialLoad && requests.length > 0;
 
   return (
-    <div className="space-y-6 animate-fadeIn">
+    <div className="ge-root animate-fadeIn">
 
-      {/* ── HEADER ── */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-lg font-semibold">{t("parkTitle")}</h2>
-          <p className="text-secondary text-xs mt-0.5">
-            {counts.ALL} {t("parkCount") || "requests"}
-          </p>
+      <div className="ge-er">
+        <div className="ge-er-left">
+          <div className="ad-page-icon">
+            <MdLocalParking size={22} />
+          </div>
+          <div>
+            <h2 className="page-title">{t("parkTitle")}</h2>
+            <p className="page-subtitle">{counts.ALL} {t("parkCount") || "requests"}</p>
+          </div>
         </div>
         {hasFlat && (
           <button
@@ -327,44 +326,38 @@ useEffect(() => {
       <div className="bg-card p-4 sm:p-5">
 
         {/* Toolbar — search + filter */}
-        {!initialLoad && counts.ALL > 0 && (
-          <div className="flex flex-col gap-3 mb-4">
-            {/* Search */}
-            <div className="relative">
-              <MdSearch size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-secondary pointer-events-none" />
+        {!initialLoad && (
+          <div className="ge-toolbar mb-4">
+            <div className="ge-search-wrap">
+              <MdSearch className="ge-search-icon" size={17} />
               <input
-                key="parking-search-input"
-                className="input h-9 pl-8 pr-8 text-xs w-full"
+                className="ge-search-input"
                 placeholder={t("visSearch") || "Search guest, vehicle…"}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
-              <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center">
-                {fetching ? (
+              {fetching ? (
+                <div className="ge-search-action">
                   <Spinner small />
-                ) : search ? (
-                  <button onClick={() => setSearch("")} className="text-secondary hover:text-white transition-colors">
-                    <MdClose size={13} />
-                  </button>
-                ) : null}
-              </div>
+                </div>
+              ) : search ? (
+                <button type="button" onClick={() => setSearch("")} className="ge-search-clear" aria-label="Clear search">
+                  <MdClose size={13} />
+                </button>
+              ) : null}
             </div>
 
-            {/* Filter tabs */}
-            <div className="flex items-center gap-1.5 flex-wrap">
-              {filterTabs.map((tab) => (
-                <button
-                  key={tab.key}
-                  onClick={() => handleFilterChange(tab.key)}
-                  className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all duration-200 ${
-                    filter === tab.key ? tabActive : tabInactive
-                  }`}
-                >
-                  {tab.label}
-                  <span className="opacity-60 ml-0.5">({tab.count})</span>
-                </button>
-              ))}
-            </div>
+            <SlidingTabs
+              className="gp-filter-tabs"
+              value={filter}
+              onChange={handleFilterChange}
+              items={filterTabs.map((tab) => ({
+                id: tab.key,
+                label: tab.label,
+                badge: tab.count,
+                alert: tab.key === "PENDING" ? tab.count : undefined,
+              }))}
+            />
           </div>
         )}
 
@@ -419,7 +412,7 @@ useEffect(() => {
                       r.status === "APPROVED"  ? "linear-gradient(90deg,#34d399,#059669)"
                       : r.status === "REJECTED"  ? "linear-gradient(90deg,#f87171,#dc2626)"
                       : r.status === "COMPLETED" ? "linear-gradient(90deg,#9F87D7,#5A3BA2)" // ✅ ADDED
-                      : "linear-gradient(90deg,#60A5FA,#2563EB)",
+                      : "linear-gradient(90deg,#4BCBEB,var(--accent))",
                   }} />
                   <div className="p-4 space-y-3">
                     <div className="flex justify-between items-start gap-2">

@@ -236,7 +236,7 @@ export default function VisitorLog() {
               width: 32,
               height: 32,
               borderRadius: "50%",
-              background: "rgba(37, 99, 235, 0.15)",
+              background: "rgba(160, 90, 255, 0.15)",
               color: "var(--accent)",
               display: "flex",
               alignItems: "center",
@@ -329,7 +329,7 @@ export default function VisitorLog() {
       {/* ── HEADER ── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-white">{t("vlTitle")}</h1>
+          <h1 className="text-2xl font-bold tracking-tight" style={{ color: "var(--text-primary)" }}>{t("vlTitle")}</h1>
           <p className="text-xs text-secondary mt-0.5">
             {totalItems} {t("vlSubtitle")}
           </p>
@@ -347,7 +347,7 @@ export default function VisitorLog() {
               placeholder={t("vlSearchPlaceholder")}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="input w-full pl-10 pr-4 h-10 text-sm bg-white/5 border-white/10"
+              className="input search-input w-full pl-10 pr-4 h-10 text-sm bg-white/5 border-white/10"
             />
           </div>
 

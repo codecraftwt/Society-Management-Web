@@ -16,6 +16,7 @@ import {
 import { FaParking } from "react-icons/fa";
 import Select from "../../components/common/Select";
 import GlobalButton from "../../components/common/GlobalButton";
+import SlidingTabs from "../../components/common/SlidingTabs";
 
 /* ── Debounce hook ── */
 function useDebounce(value, delay = 500) {
@@ -83,7 +84,7 @@ function StatusBadge({ status, t }) {
 /* ── Request Status Badge ── */
 function ReqBadge({ status }) {
   const cfg = {
-    PENDING: { label: "Pending", color: "#60A5FA", bg: "rgba(251,191,36,0.12)", border: "rgba(251,191,36,0.28)" },
+    PENDING: { label: "Pending", color: "var(--accent)", bg: "rgba(251,191,36,0.12)", border: "rgba(251,191,36,0.28)" },
     APPROVED: { label: "Approved", color: "#4ade80", bg: "rgba(74,222,128,0.12)", border: "rgba(74,222,128,0.28)" },
     REJECTED: { label: "Rejected", color: "#f87171", bg: "rgba(248,113,113,0.12)", border: "rgba(248,113,113,0.28)" },
   }[status] || { label: status, color: "#A39EB2", bg: "rgba(163,158,178,0.10)", border: "rgba(163,158,178,0.22)" };
@@ -231,7 +232,7 @@ function ResidentEntryPanel({ slots, onCreated, t }) {
         <div className="relative flex-1">
           <MdSearch size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-secondary pointer-events-none" />
           <input
-            className="input h-10 w-full text-sm"
+            className="input search-input h-10 w-full text-sm"
             style={{ paddingLeft: 34 }}
             placeholder="Search by vehicle number, resident, or flat…"
             value={search}
@@ -335,7 +336,7 @@ function ResidentEntryPanel({ slots, onCreated, t }) {
                       style={{
                         background: isExpanded ? "rgba(251,191,36,0.15)" : "rgba(255,255,255,0.05)",
                         border: "1px solid var(--glass-border)",
-                        color: isExpanded ? "#60A5FA" : "var(--text-secondary)",
+                        color: isExpanded ? "var(--accent)" : "var(--text-secondary)",
                         fontWeight: 700, fontSize: 16, cursor: "pointer",
                       }}>
                       {isExpanded ? "−" : "+"}
@@ -514,7 +515,7 @@ function ResidentRequestsPanel({ allSlots, onSlotAssigned }) {
   };
 
   const TABS = [
-    { key: "PENDING", label: "Pending", color: "#60A5FA" },
+    { key: "PENDING", label: "Pending", color: "var(--accent)" },
     { key: "APPROVED", label: "Approved", color: "#4ade80" },
     { key: "REJECTED", label: "Rejected", color: "#f87171" },
     { key: "ALL", label: "All", color: "#A39EB2" },
@@ -618,7 +619,7 @@ function ResidentRequestsPanel({ allSlots, onSlotAssigned }) {
                         <p className="font-bold text-sm" style={{ fontFamily: "monospace", letterSpacing: "0.05em", margin: 0 }}>
                           {req.vehicle_number}
                         </p>
-                        <span style={{ fontSize: 10, fontWeight: 800, padding: "2px 7px", borderRadius: 999, background: "rgba(251,191,36,0.12)", color: "#60A5FA", border: "1px solid rgba(251,191,36,0.22)" }}>
+                        <span style={{ fontSize: 10, fontWeight: 800, padding: "2px 7px", borderRadius: 999, background: "rgba(251,191,36,0.12)", color: "var(--accent)", border: "1px solid rgba(251,191,36,0.22)" }}>
                           EXTRA
                         </span>
                       </div>
@@ -1065,26 +1066,28 @@ export default function AssignParkingSlot() {
     <div className="space-y-5 animate-fadeIn">
 
       {/* Header */}
-      <div className="ps-page-header">
-        <div className="ps-header-left">
-          <div className="ps-header-icon-box">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="ad-page-icon">
             <FaParking size={20} />
           </div>
           <div>
-            <div className="ps-header-title-row">
-              <h2 className="ps-header-title">{t("parkTitle") || "Parking Management"}</h2>
+            <div className="flex items-center gap-2.5 flex-wrap">
+              <h2 className="text-lg font-semibold" style={{ letterSpacing: "-0.02em" }}>{t("parkTitle") || "Parking Management"}</h2>
               {!initialLoad && stats.total > 0 && (
                 <span className="ps-badge-pill">
                   {stats.total} {t("parkSlotCount") || "Slots"}
                 </span>
               )}
             </div>
-            <p className="ps-header-subtitle">{t("parkSubtitle") || "Manage society parking spaces, allocations, and requests"}</p>
+            <p className="text-secondary text-xs mt-0.5">{t("parkSubtitle") || "Manage society parking spaces, allocations, and requests"}</p>
           </div>
         </div>
         {!isCommittee && mainTab === "slots" && (
           <GlobalButton
             variant="add"
+            borderDraw
+            className="w-full sm:w-auto justify-center shrink-0"
             onClick={() => { setShowForm(true); setConfirmDel(null); }}
           >
             {t("parkCreateBtn") || "Create Slots"}
@@ -1092,24 +1095,16 @@ export default function AssignParkingSlot() {
         )}
       </div>
 
-      {/* Main Tab Switcher */}
-      <div className="ps-tab-bar">
-        {mainTabs.map(tab => (
-          <button
-            key={tab.key}
-            onClick={() => { setMainTab(tab.key); setShowForm(false); }}
-            className={`ps-tab-item ${mainTab === tab.key ? "ps-tab-item--active" : ""}`}
-          >
-            {tab.icon}
-            <span>{tab.label}</span>
-            {tab.key === "resident-requests" && pendingResidentCount > 0 && (
-              <span className="ps-tab-count-badge">
-                {pendingResidentCount}
-              </span>
-            )}
-          </button>
-        ))}
-      </div>
+      <SlidingTabs
+        value={mainTab}
+        onChange={(key) => { setMainTab(key); setShowForm(false); }}
+        items={mainTabs.map((tab) => ({
+          id: tab.key,
+          label: tab.label,
+          icon: tab.icon,
+          badge: tab.key === "resident-requests" && pendingResidentCount > 0 ? pendingResidentCount : undefined,
+        }))}
+      />
 
       {/* TAB: RESIDENT ENTRY */}
       {mainTab === "resident-entry" && (
@@ -1171,7 +1166,7 @@ export default function AssignParkingSlot() {
                   className="absolute left-3 top-1/2 -translate-y-1/2 text-secondary pointer-events-none"
                 />
                 <input
-                  className="input h-10 text-xs w-full"
+                  className="input search-input h-10 text-xs w-full"
                   style={{ paddingLeft: 34, paddingRight: 28 }}
                   placeholder="Search slot, flat, resident, vehicle…"
                   value={ownerSearch}
@@ -1604,7 +1599,7 @@ export default function AssignParkingSlot() {
                       borderRadius: 12,
                       background: "rgba(59, 130, 246, 0.12)",
                       border: "1px solid rgba(59, 130, 246, 0.28)",
-                      color: "#60A5FA",
+                      color: "var(--accent)",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
@@ -2121,7 +2116,7 @@ export default function AssignParkingSlot() {
                         className={`ps-vehicle-mode-btn ${
                           editForm.parking_type === "EXTRA" ? "ps-vehicle-mode-btn--active-car" : ""
                         }`}
-                        style={editForm.parking_type === "EXTRA" ? { borderColor: "rgba(251,191,36,0.5)", color: "#60A5FA" } : {}}
+                        style={editForm.parking_type === "EXTRA" ? { borderColor: "rgba(251,191,36,0.5)", color: "var(--accent)" } : {}}
                       >
                         <span style={{ fontSize: 13, fontWeight: 800 }}>⚡</span>
                         <span>Extra Space</span>

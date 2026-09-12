@@ -262,28 +262,30 @@ export default function ResidentNotices() {
   };
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
+    <div className="space-y-6">
       {/* ── HEADER ── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-xl font-bold tracking-tight" style={{ color: "var(--text-primary)" }}>
-            {t("noticesTitle") || "Society Notices"}
-          </h2>
-          <p className="text-xs text-secondary mt-1">
-            {initialLoad ? "—" : `${totalAll} notices published for your society`}
-          </p>
+        <div className="ge-er-left">
+            <div className="ad-page-icon">
+              <MdCampaign size={22} />
+            </div>
+            <div>
+              <h2 className="page-title">{t("noticesTitle") || "Society Notices"}</h2>
+              <p className="page-subtitle">
+                {initialLoad ? "—" : `${totalAll} notices published for your society`}
+              </p>
+            </div>
         </div>
 
         {/* Search */}
-        <div className="relative w-full sm:w-64">
-          <MdSearch size={18} style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: "var(--text-secondary)", pointerEvents: "none" }} />
+        <div className="ge-search-wrap" style={{ width: "100%", maxWidth: 280 }}>
+          <MdSearch className="ge-search-icon" size={17} />
           <input
             type="text"
             placeholder={t("noticesSearch") || "Search notices..."}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="input w-full text-xs rounded-xl"
-            style={{ height: 42, paddingLeft: 42, paddingRight: 14 }}
+            className="ge-search-input"
           />
         </div>
       </div>

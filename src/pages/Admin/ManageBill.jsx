@@ -908,7 +908,7 @@ export default function ManageBills() {
                     boxShadow: isSelected ? "0 0 16px rgba(99,102,241,0.25)" : undefined,
                   }}
                 >
-                  <div style={{ height: 3, background: b.status === "PAID" ? "linear-gradient(90deg,#34d399,#059669)" : "linear-gradient(90deg,#60A5FA,#2563EB)" }} />
+                  <div style={{ height: 3, background: b.status === "PAID" ? "linear-gradient(90deg,#34d399,#059669)" : "linear-gradient(90deg,#4BCBEB,var(--accent))" }} />
                   <div className="bill-card__body">
                     {/* Select Row */}
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, paddingBottom: 6, borderBottom: "1px solid var(--glass-border)" }}>
@@ -1015,7 +1015,7 @@ export default function ManageBills() {
                     )}
                     <td>
                       <div className="flex items-center gap-3">
-                        <div style={{ width: 3, height: 32, borderRadius: 99, flexShrink: 0, background: b.status === "PAID" ? "linear-gradient(180deg,#34d399,#059669)" : "linear-gradient(180deg,#60A5FA,#2563EB)" }} />
+                        <div style={{ width: 3, height: 32, borderRadius: 99, flexShrink: 0, background: b.status === "PAID" ? "linear-gradient(180deg,#34d399,#059669)" : "linear-gradient(180deg,#4BCBEB,var(--accent))" }} />
                         <span className="font-semibold text-sm" style={{ color: "var(--text-primary)" }}>{b.title}</span>
                       </div>
                     </td>
@@ -1298,4 +1298,4 @@ export default function ManageBills() {
         )}
     </div>
   );
-}
+}

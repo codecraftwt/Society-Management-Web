@@ -4,9 +4,9 @@ import API from "../../services/api";
 import { useLang } from "../../context/LanguageContext";
 import GuardEmergencyPanel from "../../components/guard/GuardEmergencyPanel";
 
-function Stat({ title, value }) {
+function Stat({ title, value, tone }) {
   return (
-    <div className="gd-stat-card">
+    <div className={`gd-stat-card gd-stat-card--${tone}`}>
       <p className="gd-stat-title">{title}</p>
       <h2 className="gd-stat-val">{value}</h2>
     </div>
@@ -96,9 +96,9 @@ export default function GuardDashboard() {
         </div>
 
         <div className="grid sm:grid-cols-3 gap-4">
-          <Stat title={t("gdStatToday")}  value={stats.today}  />
-          <Stat title={t("gdStatInside")} value={stats.inside} />
-          <Stat title={t("gdStatExited")} value={stats.exited} />
+          <Stat title={t("gdStatToday")}  value={stats.today}  tone="today" />
+          <Stat title={t("gdStatInside")} value={stats.inside} tone="inside" />
+          <Stat title={t("gdStatExited")} value={stats.exited} tone="exited" />
         </div>
 
       </div>

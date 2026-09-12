@@ -16,8 +16,8 @@ import Select from "../../components/common/Select";
 /* ── Type meta ── */
 const TYPE_META = {
   FIRE:         { icon: MdLocalFireDepartment, color: "#ef4444", bg: "rgba(239,68,68,0.12)",    border: "rgba(239,68,68,0.25)"    },
-  MEDICAL:      { icon: MdLocalHospital,       color: "#3B82F6", bg: "rgba(37,99,235,0.12)",   border: "rgba(37,99,235,0.25)"   },
-  SECURITY:     { icon: MdSecurity,            color: "#5B8DEF", bg: "rgba(91,141,239,0.12)",   border: "rgba(91,141,239,0.25)"   },
+  MEDICAL:      { icon: MdLocalHospital,       color: "#4BCBEB", bg: "rgba(75,203,235,0.12)",   border: "rgba(75,203,235,0.25)"   },
+  SECURITY:     { icon: MdSecurity,            color: "var(--accent)", bg: "rgba(var(--acct-purple-rgb),0.12)",   border: "rgba(var(--acct-purple-rgb),0.28)"   },
   OTHER:        { icon: MdHelp,                color: "#6B46C1", bg: "rgba(107,70,193,0.12)",   border: "rgba(107,70,193,0.25)"   },
   RESIDENT_SOS: { icon: MdWarning,             color: "#ef4444", bg: "rgba(239,68,68,0.12)",    border: "rgba(239,68,68,0.25)"    },
 };

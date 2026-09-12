@@ -240,9 +240,12 @@ export default function MyHouseHold() {
             <button type="button" onClick={() => navigate(-1)} className="bg-card p-2.5 rounded-full">
               <MdArrowBack size={18} />
             </button>
+            <div className="ad-page-icon">
+              <MdFamilyRestroom size={22} />
+            </div>
             <div>
-              <h2 className="text-xl font-semibold" style={{ lineHeight: 1.2 }}>{t("hhTitle")}</h2>
-              <p className="text-secondary" style={{ fontSize: "0.72rem", marginTop: 2 }}>
+              <h2 className="page-title" style={{ lineHeight: 1.2 }}>{t("hhTitle")}</h2>
+              <p className="page-subtitle" style={{ marginTop: 2 }}>
                 {members.length} {members.length !== 1 ? t("hhMembers") : t("hhMember")} · {adminCount} {adminCount !== 1 ? t("hhAdmins") : t("hhAdmin")}
               </p>
             </div>

@@ -1,4 +1,6 @@
 import { createContext, useContext, useEffect, useState } from "react";
+/* Shared purple / Corona tokens for authenticated layouts (html.role-theme). */
+import "../theme/role-theme.css";
 
 /* Default value prevents "value prop required" warning */
 const ThemeContext = createContext({
@@ -37,6 +39,14 @@ export function ThemeProvider({ children }) {
       {children}
     </ThemeContext.Provider>
   );
+}
+
+export function useRoleTheme() {
+  useEffect(() => {
+    const root = document.documentElement;
+    root.classList.add("role-theme");
+    return () => root.classList.remove("role-theme");
+  }, []);
 }
 
 export const useTheme = () => useContext(ThemeContext);

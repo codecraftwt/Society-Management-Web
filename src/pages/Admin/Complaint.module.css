@@ -229,7 +229,7 @@
   justify-content: center;
   border-radius: 6px;
 }
-.searchClear:hover { color: var(--accent, #38bdf8); background: rgba(56, 189, 248, 0.1); }
+.searchClear:hover { color: var(--accent); background: var(--accent-soft); }
 
 .filtersBtn {
   height: 40px;
@@ -247,11 +247,11 @@
   white-space: nowrap;
   transition: all 0.2s ease;
 }
-.filtersBtn:hover { border-color: rgba(56, 189, 248, 0.5); color: #38bdf8; }
+.filtersBtn:hover { border-color: var(--accent); color: var(--accent); }
 .filtersBtnActive {
-  border-color: rgba(56, 189, 248, 0.5);
-  color: #38bdf8;
-  background: rgba(56, 189, 248, 0.12);
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-soft);
 }
 
 /* Filter popover panel */
@@ -285,7 +285,7 @@
   outline: none;
   transition: border-color 0.15s;
 }
-.dateInput:focus { border-color: rgba(56, 189, 248, 0.5); }
+.dateInput:focus { border-color: var(--accent); }
 
 /* Active filter chips */
 .chipsRow { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
@@ -295,12 +295,12 @@
   align-items: center;
   gap: 6px;
   padding: 5px 12px;
-  background: rgba(37, 99, 235, 0.12);
-  border: 1px solid rgba(56, 189, 248, 0.25);
+  background: var(--accent-soft);
+  border: 1px solid rgba(var(--acct-purple-rgb), 0.28);
   border-radius: 999px;
   font-size: 11.5px;
   font-weight: 600;
-  color: #38bdf8;
+  color: var(--accent);
   white-space: nowrap;
 }
 .chipLabel { color: var(--text-secondary); }
@@ -322,7 +322,7 @@
   border: none;
   background: none;
   cursor: pointer;
-  color: #38bdf8;
+  color: var(--accent);
   font-size: 12px;
   font-weight: 700;
   border-radius: 8px;
@@ -349,12 +349,12 @@
   white-space: nowrap;
   transition: all 0.2s ease;
 }
-.tab:hover { background: linear-gradient(135deg, #1e56c4, #163da3); color: #ffffff; }
+.tab:hover { background: var(--accent-soft); color: var(--accent); }
 .tabActive {
-  background: linear-gradient(135deg, #2563eb, #1d4ed8);
-  border-color: rgba(56, 189, 248, 0.3);
+  background: var(--accent);
+  border-color: rgba(var(--acct-purple-rgb), 0.3);
   color: #ffffff;
-  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
+  box-shadow: 0 4px 14px rgba(var(--acct-purple-rgb), 0.35);
 }
 .tabCount {
   min-width: 22px;
@@ -526,7 +526,7 @@
 .menuBtn:hover, .menuBtnOpen {
   border-color: var(--accent, #f0845d);
   color: var(--accent, #f0845d);
-  background: rgba(37, 99, 235, 0.06);
+  background: rgba(160, 90, 255, 0.06);
 }
 .menuDot {
   position: absolute;
@@ -604,9 +604,9 @@
   flex-shrink: 0;
 }
 .menuItemUnread { color: var(--accent, #f0845d); }
-.menuItemUnread .menuItemIcon { background: rgba(37, 99, 235, 0.12); color: var(--accent, #f0845d); }
+.menuItemUnread .menuItemIcon { background: rgba(160, 90, 255, 0.12); color: var(--accent, #f0845d); }
 .menuItemProgress { color: #60A5FA; }
-.menuItemProgress .menuItemIcon { background: rgba(37, 99, 235, 0.12); color: #60A5FA; }
+.menuItemProgress .menuItemIcon { background: var(--accent-soft); color: var(--accent); }
 .menuItemResolve { color: #4ade80; }
 .menuItemResolve .menuItemIcon { background: rgba(34, 197, 94, 0.12); color: #4ade80; }
 .menuSep { height: 1px; margin: 5px 6px; background: var(--glass-border, #26262e); }
@@ -895,10 +895,10 @@
 .drawerActionBtn:disabled { opacity: 0.55; cursor: not-allowed; }
 .progressAction {
   color: #60A5FA;
-  background: rgba(37, 99, 235, 0.1);
-  border-color: rgba(37, 99, 235, 0.4);
+  background: rgba(160, 90, 255, 0.1);
+  border-color: rgba(160, 90, 255, 0.4);
 }
-.progressAction:hover:not(:disabled) { background: rgba(37, 99, 235, 0.18); }
+.progressAction:hover:not(:disabled) { background: rgba(160, 90, 255, 0.18); }
 .resolveAction {
   color: #4ade80;
   background: rgba(34, 197, 94, 0.1);
@@ -974,15 +974,15 @@
 }
 
 :global(html.light) .searchField {
-  background: #ffffff !important;
+  background: #f1f5f9 !important;
   border-color: #cbd5e1 !important;
   color: #0f172a !important;
-  box-shadow: none !important;
+  box-shadow: inset 2px 4px 8px rgba(0, 0, 0, 0.05) !important;
 }
 
 :global(html.light) .searchField:focus {
-  border-color: #2563eb !important;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12) !important;
+  border-color: #cbd5e1 !important;
+  box-shadow: inset 2px 4px 8px rgba(0, 0, 0, 0.05) !important;
 }
 
 :global(html.light) .filtersBtn {
@@ -993,9 +993,9 @@
 
 :global(html.light) .filtersBtn:hover,
 :global(html.light) .filtersBtnActive {
-  background: #eff6ff !important;
-  border-color: #93c5fd !important;
-  color: #2563eb !important;
+  background: var(--accent-soft) !important;
+  border-color: rgba(var(--acct-purple-rgb), 0.35) !important;
+  color: var(--accent) !important;
 }
 
 :global(html.light) .filtersPanel {
@@ -1067,8 +1067,8 @@
 }
 
 :global(html.light) .avatar {
-  background: #eff6ff !important;
-  color: #2563eb !important;
+  background: var(--accent-soft) !important;
+  color: var(--accent) !important;
 }
 
 :global(html.light) .stat {
@@ -1093,6 +1093,6 @@
 }
 
 :global(html.light) .exportMenuItem:hover:not(:disabled) {
-  background: #eff6ff !important;
-  color: #2563eb !important;
+  background: var(--accent-soft) !important;
+  color: var(--accent) !important;
 }

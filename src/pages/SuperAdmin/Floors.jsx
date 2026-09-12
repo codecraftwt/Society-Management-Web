@@ -32,7 +32,7 @@ export default function Floors() {
               width: 34,
               height: 34,
               borderRadius: 9,
-              background: "rgba(37, 99, 235, 0.12)",
+              background: "rgba(160, 90, 255, 0.12)",
               color: "#60a5fa",
               display: "flex",
               alignItems: "center",

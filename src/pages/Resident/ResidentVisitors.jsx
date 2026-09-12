@@ -1,11 +1,12 @@
 import React, { useEffect, useState, useCallback } from "react";
 import API from "../../services/api";
 import { useLang } from "../../context/LanguageContext";
+import SlidingTabs from "../../components/common/SlidingTabs";
 import {
   MdSearch, MdClose, MdOutlineInbox,
   MdLogin, MdLogout, MdPhone,
   MdDirectionsCar, MdAccessTime, MdExpandMore,
-  MdChevronLeft, MdChevronRight,
+  MdChevronLeft, MdChevronRight, MdPeople,
 } from "react-icons/md";
 import GlobalBadge from "../../components/common/GlobalBadge";
 
@@ -235,144 +236,72 @@ export default function ResidentVisitors() {
     return `${r.val} ${t(r.key)}`;
   };
 
-  const tabActive   = "bg-blue-500/20 text-blue-400 border border-blue-500/30";
-  const tabInactive = "bg-white/5 text-secondary border border-white/10 hover:bg-white/10 hover:text-white";
   const toggleExpand = (id) => setExpandedId((prev) => prev === id ? null : id);
-
-  const filterTabs = [
-    { key: "ALL",    label: t("visTabAll")    },
-    { key: "INSIDE", label: t("visTabInside") },
-    { key: "LEFT",   label: t("visTabLeft")   },
-  ];
 
   const isEmpty    = !initialLoad && counts.ALL === 0;
   const noMatch    = !initialLoad && counts.ALL > 0 && visitors.length === 0 && !fetching;
   const hasResults = !initialLoad && visitors.length > 0;
 
   return (
-    <div className="space-y-5 animate-fadeIn">
+    <div className="ge-root animate-fadeIn">
 
-      {/* ── MOBILE HEADER ── */}
-      <div className="md:hidden flex flex-col items-center gap-3">
-        <div className="text-center">
-          <h2 className="text-lg font-semibold">{t("visTitle")}</h2>
-          <p className="text-secondary text-xs mt-0.5">
-            {counts.ALL} {t("visRecorded")}
-          </p>
-        </div>
-
-        {!initialLoad && counts.ALL > 0 && (
-          <div className="flex items-center gap-1.5 flex-wrap justify-center">
-            {filterTabs.map((tab) => (
-              <button
-                key={tab.key}
-                onClick={() => handleFilterChange(tab.key)}
-                className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all duration-200 ${
-                  filter === tab.key ? tabActive : tabInactive
-                }`}
-              >
-                {tab.label} <span className="opacity-60 ml-0.5">({counts[tab.key]})</span>
-              </button>
-            ))}
+      <div className="ge-er">
+        <div className="ge-er-left">
+          <div className="ad-page-icon">
+            <MdPeople size={22} />
           </div>
-        )}
-
-        {/* Mobile search — stable key so React never remounts this input */}
-        <div className="relative w-full max-w-sm">
-          <MdSearch size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-secondary pointer-events-none" />
-          <input
-            key="visitor-search-mobile"
-            className="input h-9 pl-9 text-xs w-full"
-            style={{ paddingRight: search || fetching ? 34 : 12 }}
-            placeholder={t("visSearch")}
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-          {/* show subtle spinner while fetching, clear button when not */}
-          <div className="absolute right-3 top-1/2 -translate-y-1/2">
-            {fetching ? (
-              <Spinner small />
-            ) : search ? (
-              <button onClick={() => setSearch("")} className="text-secondary hover:text-white transition-colors">
-                <MdClose size={13} />
-              </button>
-            ) : null}
+          <div>
+            <h2 className="page-title">{t("visTitle")}</h2>
+            <p className="page-subtitle">{counts.ALL} {t("visRecorded")}</p>
           </div>
         </div>
       </div>
 
-      {/* ── DESKTOP HEADER ── */}
-      <div className="hidden md:flex items-center justify-between gap-4">
-        <div>
-          <h2 className="text-lg font-semibold">{t("visTitle")}</h2>
-          <p className="text-secondary text-xs mt-0.5">
-            {counts.ALL} {t("visRecorded")}
-          </p>
+      <div className="ge-stats">
+        <div className="complaint-stat-card complaint-stat-total">
+          <span className="complaint-stat-val">{counts.ALL}</span>
+          <span className="complaint-stat-label">{t("visStatTotal")}</span>
+        </div>
+        <div className="complaint-stat-card complaint-stat-inprogress">
+          <span className="complaint-stat-val">{counts.INSIDE}</span>
+          <span className="complaint-stat-label">{t("visTabInside")}</span>
+        </div>
+        <div className="complaint-stat-card complaint-stat-resolved">
+          <span className="complaint-stat-val">{counts.LEFT}</span>
+          <span className="complaint-stat-label">{t("visTabLeft")}</span>
+        </div>
+      </div>
+
+      <div className="ge-toolbar">
+        <div className="ge-search-wrap">
+          <MdSearch className="ge-search-icon" size={17} />
+          <input
+            className="ge-search-input"
+            placeholder={t("visSearch")}
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+          {fetching && !initialLoad ? (
+            <div className="ge-search-action">
+              <Spinner small />
+            </div>
+          ) : search ? (
+            <button type="button" onClick={() => setSearch("")} className="ge-search-clear" aria-label="Clear search">
+              <MdClose size={13} />
+            </button>
+          ) : null}
         </div>
 
-        {!initialLoad && counts.ALL > 0 && (
-          <div className="flex items-center gap-4">
-            {/* stats */}
-            <div className="flex items-center gap-4">
-              <div className="text-right">
-                <p className="text-lg font-bold leading-none">{counts.ALL}</p>
-                <p className="text-[11px] text-secondary mt-0.5">{t("visStatTotal")}</p>
-              </div>
-              <div className="w-px h-6 bg-white/10" />
-              <div className="text-right">
-                <p className="text-lg font-bold leading-none text-green-400">{counts.INSIDE}</p>
-                <p className="text-[11px] text-secondary mt-0.5">{t("visTabInside")}</p>
-              </div>
-              <div className="w-px h-6 bg-white/10" />
-              <div className="text-right">
-                <p className="text-lg font-bold leading-none text-secondary">{counts.LEFT}</p>
-                <p className="text-[11px] text-secondary mt-0.5">{t("visTabLeft")}</p>
-              </div>
-            </div>
-
-            <div className="w-px h-6 bg-white/10" />
-
-            {/* filter pills */}
-            <div className="flex items-center gap-1.5">
-              {filterTabs.map((tab) => (
-                <button
-                  key={tab.key}
-                  onClick={() => handleFilterChange(tab.key)}
-                  className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all duration-200 ${
-                    filter === tab.key ? tabActive : tabInactive
-                  }`}
-                >
-                  {tab.label} <span className="opacity-60 ml-0.5">({counts[tab.key]})</span>
-                </button>
-              ))}
-            </div>
-
-            <div className="w-px h-6 bg-white/10" />
-
-            {/* Desktop search — stable key so React never remounts this input */}
-            <div className="relative w-56">
-              <MdSearch size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-secondary pointer-events-none" />
-              <input
-                key="visitor-search-desktop"
-                className="input h-9 pl-9 text-xs w-full"
-                style={{ paddingRight: search || fetching ? 34 : 12 }}
-                placeholder={t("visSearchShort")}
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
-              {/* show subtle spinner while fetching, clear button when not */}
-              <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                {fetching ? (
-                  <Spinner small />
-                ) : search ? (
-                  <button onClick={() => setSearch("")} className="text-secondary hover:text-white transition-colors">
-                    <MdClose size={13} />
-                  </button>
-                ) : null}
-              </div>
-            </div>
-          </div>
-        )}
+        <SlidingTabs
+          className="ge-filter-tabs"
+          value={filter}
+          onChange={handleFilterChange}
+          items={[
+            { id: "ALL", label: t("visTabAll"), badge: counts.ALL },
+            { id: "INSIDE", label: t("visTabInside"), badge: counts.INSIDE, alert: counts.INSIDE },
+            { id: "LEFT", label: t("visTabLeft"), badge: counts.LEFT },
+          ]}
+        />
       </div>
 
       {/* ── CONTENT ── */}
@@ -446,7 +375,7 @@ export default function ResidentVisitors() {
                             <Icon size={14} className="text-accent shrink-0" />
                             <div className="min-w-0">
                               <p className="text-[10px] text-secondary uppercase tracking-wide">{label}</p>
-                              <p className="text-xs font-medium mt-0.5 break-words">{val}</p>
+                              <p className="text-xs font-medium mt-0.5 wrap-break-word">{val}</p>
                             </div>
                           </div>
                         ))}
@@ -464,11 +393,11 @@ export default function ResidentVisitors() {
                         </div>
                         <div className="flex items-center gap-2.5 text-xs">
                           <div className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 ${v.exit_time ? "bg-red-500/15" : "bg-white/5"}`}>
-                            <MdLogout size={13} className={v.exit_time ? "text-red-400" : "text-white/25"} />
+                            <MdLogout size={13} className={v.exit_time ? "text-red-400" : "text-secondary"} />
                           </div>
                           <div>
                             <p className="text-[10px] text-secondary uppercase tracking-wide">{t("vrExit")}</p>
-                            <p className={`font-medium ${!v.exit_time ? "text-white/30" : ""}`}>
+                            <p className={`font-medium ${!v.exit_time ? "text-secondary" : ""}`}>
                               {v.exit_time ? formatDate(v.exit_time) : t("visStillInside")}
                             </p>
                           </div>
@@ -547,7 +476,7 @@ export default function ResidentVisitors() {
                                   </div>
                                   <div className="min-w-0">
                                     <p className="text-[10px] text-secondary uppercase tracking-wider">{t("vrMobile")}</p>
-                                    <p className="text-xs font-medium mt-0.5 break-words">{v.mobile}</p>
+                                    <p className="text-xs font-medium mt-0.5 wrap-break-word">{v.mobile}</p>
                                   </div>
                                 </div>
 
@@ -557,17 +486,17 @@ export default function ResidentVisitors() {
                                   </div>
                                   <div className="min-w-0">
                                     <p className="text-[10px] text-secondary uppercase tracking-wider">{t("rvVehicle")}</p>
-                                    <p className="text-xs font-medium mt-0.5 break-words">{v.vehicle_number || "—"}</p>
+                                    <p className="text-xs font-medium mt-0.5 wrap-break-word">{v.vehicle_number || "—"}</p>
                                   </div>
                                 </div>
 
                                 <div className="flex items-start gap-2.5 min-w-0">
                                   <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5 ${v.exit_time ? "bg-red-500/15" : "bg-white/5"}`}>
-                                    <MdLogout size={14} className={v.exit_time ? "text-red-400" : "text-white/25"} />
+                                    <MdLogout size={14} className={v.exit_time ? "text-red-400" : "text-secondary"} />
                                   </div>
                                   <div className="min-w-0">
                                     <p className="text-[10px] text-secondary uppercase tracking-wider">{t("visExitTime")}</p>
-                                    <p className={`text-xs font-medium mt-0.5 break-words ${!v.exit_time ? "text-white/30" : ""}`}>
+                                    <p className={`text-xs font-medium mt-0.5 wrap-break-word ${!v.exit_time ? "text-secondary" : ""}`}>
                                       {v.exit_time ? formatDate(v.exit_time) : t("visStillInside")}
                                     </p>
                                   </div>

@@ -9,8 +9,8 @@ import {
   PieChart, Pie, Cell,
 } from "recharts";
 import {
-  MdPeople, MdSecurity, MdReportProblem, MdHomeWork,
-  MdCheckCircle, MdArrowForward, MdFlashOn, MdApartment,
+  MdReportProblem,
+  MdCheckCircle, MdFlashOn, MdApartment,
   MdRefresh,
 } from "react-icons/md";
 
@@ -112,10 +112,10 @@ export default function AdminDashboard() {
   const totalFlats = stats?.totalFlats ?? 0;
 
   const chartData = [
-    { name: t("dashResidents") || "Residents", value: residents, color: "#5B8DEF" },
-    { name: t("dashGuards") || "Guards", value: guards, color: "#10B981" },
-    { name: t("dashOpenComplaints") || "Complaints", value: openComplaints, color: "#3B82F6" },
-    { name: t("dashTotalFlats") || "Total Flats", value: totalFlats, color: "#8B5CF6" },
+    { name: t("dashResidents") || "Residents", value: residents, color: "#a05aff" },
+    { name: t("dashGuards") || "Guards", value: guards, color: "#1bcfb4" },
+    { name: t("dashOpenComplaints") || "Complaints", value: openComplaints, color: "#4bcbeb" },
+    { name: t("dashTotalFlats") || "Total Flats", value: totalFlats, color: "#9e58ff" },
   ];
 
   const { user } = useContext(AuthContext);
@@ -153,7 +153,7 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="space-y-6 w-full min-w-0 max-w-[1600px] mx-auto pb-8">
+    <div className="space-y-6 w-full min-w-0 max-w-400 mx-auto pb-8">
       {/* ── 1. DASHBOARD HERO HEADER ── */}
       <div className="bg-card border border-glass-border rounded-2xl p-6 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm">
         <div className="space-y-1 min-w-0">
@@ -200,92 +200,32 @@ export default function AdminDashboard() {
 
       {/* ── 2. KEY METRICS KPI CARDS (4 COLUMNS) ── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-        {/* KPI 1: Residents */}
-        <div className="bg-card border border-glass-border rounded-2xl p-5 flex flex-col justify-between hover:border-blue-500/40 transition-all shadow-sm group">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-semibold uppercase tracking-wider text-secondary">
-              {t("dashResidents") || "Residents"}
-            </span>
-            <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-500 border border-blue-500/20 flex items-center justify-center transition-transform group-hover:scale-110">
-              <MdPeople size={20} />
-            </div>
-          </div>
-          <div>
-            <div className="text-2xl md:text-3xl font-bold text-primary tracking-tight">
-              {residents}
-            </div>
-            <p className="text-xs text-secondary mt-1">
-              {t("dashResidentsDesc") || "Active members living in society"}
-            </p>
-          </div>
+        <div className="ad-kpi ad-kpi--residents">
+          <span className="ad-kpi-val">{residents}</span>
+          <span className="ad-kpi-label">{t("dashResidents") || "Residents"}</span>
+          <span className="ad-kpi-desc">{t("dashResidentsDesc") || "Active members living in society"}</span>
         </div>
 
-        {/* KPI 2: Guards */}
-        <div className="bg-card border border-glass-border rounded-2xl p-5 flex flex-col justify-between hover:border-emerald-500/40 transition-all shadow-sm group">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-semibold uppercase tracking-wider text-secondary">
-              {t("dashGuards") || "Guards"}
-            </span>
-            <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 flex items-center justify-center transition-transform group-hover:scale-110">
-              <MdSecurity size={20} />
-            </div>
-          </div>
-          <div>
-            <div className="text-2xl md:text-3xl font-bold text-primary tracking-tight">
-              {guards}
-            </div>
-            <p className="text-xs text-secondary mt-1">
-              {t("dashGuardsDesc") || "On-duty security personnel"}
-            </p>
-          </div>
+        <div className="ad-kpi ad-kpi--guards">
+          <span className="ad-kpi-val">{guards}</span>
+          <span className="ad-kpi-label">{t("dashGuards") || "Guards"}</span>
+          <span className="ad-kpi-desc">{t("dashGuardsDesc") || "On-duty security personnel"}</span>
         </div>
 
-        {/* KPI 3: Open Complaints (Actionable Link) */}
         <div
           onClick={() => navigate("/admin/complaints")}
-          className="bg-card border border-glass-border rounded-2xl p-5 flex flex-col justify-between hover:border-blue-500/40 transition-all shadow-sm group cursor-pointer"
+          className="ad-kpi ad-kpi--complaints"
+          style={{ cursor: "pointer" }}
         >
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-semibold uppercase tracking-wider text-secondary">
-              {t("dashOpenComplaints") || "Open Complaints"}
-            </span>
-            <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-500 border border-blue-500/20 flex items-center justify-center transition-transform group-hover:scale-110">
-              <MdReportProblem size={20} />
-            </div>
-          </div>
-          <div>
-            <div className="flex items-baseline justify-between">
-              <div className="text-2xl md:text-3xl font-bold text-blue-500 tracking-tight">
-                {openComplaints}
-              </div>
-              <span className="text-xs text-blue-500 font-medium inline-flex items-center gap-0.5 group-hover:underline">
-                Resolve <MdArrowForward size={14} />
-              </span>
-            </div>
-            <p className="text-xs text-secondary mt-1">
-              {isCommittee ? "Pending committee review" : (t("dashComplaintsDesc") || "Requires attention")}
-            </p>
-          </div>
+          <span className="ad-kpi-val">{openComplaints}</span>
+          <span className="ad-kpi-label">{t("dashOpenComplaints") || "Open Complaints"}</span>
+          <span className="ad-kpi-desc">{isCommittee ? "Pending committee review" : (t("dashComplaintsDesc") || "Requires attention")}</span>
         </div>
 
-        {/* KPI 4: Total Flats */}
-        <div className="bg-card border border-glass-border rounded-2xl p-5 flex flex-col justify-between hover:border-purple-500/40 transition-all shadow-sm group">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-semibold uppercase tracking-wider text-secondary">
-              {t("dashTotalFlats") || "Total Flats"}
-            </span>
-            <div className="w-10 h-10 rounded-xl bg-purple-500/10 text-purple-500 border border-purple-500/20 flex items-center justify-center transition-transform group-hover:scale-110">
-              <MdHomeWork size={20} />
-            </div>
-          </div>
-          <div>
-            <div className="text-2xl md:text-3xl font-bold text-primary tracking-tight">
-              {totalFlats}
-            </div>
-            <p className="text-xs text-secondary mt-1">
-              {t("dashTotalFlatsDesc") || "Across all blocks & floors"}
-            </p>
-          </div>
+        <div className="ad-kpi ad-kpi--flats">
+          <span className="ad-kpi-val">{totalFlats}</span>
+          <span className="ad-kpi-label">{t("dashTotalFlats") || "Total Flats"}</span>
+          <span className="ad-kpi-desc">{t("dashTotalFlatsDesc") || "Across all blocks & floors"}</span>
         </div>
       </div>
 

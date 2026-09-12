@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { createPortal } from "react-dom";
+import { MdFolderOpen } from "react-icons/md";
 import axios from "axios";
 
 const API = import.meta.env.VITE_API_URL || "";
@@ -729,8 +730,8 @@ export default function MyDocuments() {
       {/* ── Page Header ── */}
       <div className="rd-er">
         <div className="rd-er-left">
-          <div className="rd-er-icon-wrap">
-            <span style={{ fontSize: "1.4rem" }}>🗂️</span>
+          <div className="ad-page-icon">
+            <MdFolderOpen size={22} />
           </div>
           <div>
             <h1 className="rd-page-title">My Documents</h1>
@@ -760,7 +761,7 @@ export default function MyDocuments() {
         }}>
           <div style={{
             width: "20px", height: "20px",
-            border: "2px solid rgba(91,141,239,0.20)", borderTopColor: "#5B8DEF",
+            border: "2px solid rgba(var(--acct-purple-rgb),0.28)", borderTopColor: "var(--accent)",
             borderRadius: "50%", animation: "spin 0.65s linear infinite",
           }} />
           Loading documents…

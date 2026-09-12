@@ -727,14 +727,14 @@ const FlatHistory = () => {
   };
 
   return (
-    <div className="fh-root">
+    <div className="fh-root animate-fadeIn">
       {/* Page Header */}
-      <div className="fh-page-header">
-        <div className="fh-page-header-left">
-          <div className="fh-page-icon-box">🏢</div>
-          <div className="fh-page-titles">
-            <h1 className="fh-page-title">{t("fhTitle") || "Flat Directory"}</h1>
-            <p className="fh-page-subtitle">{t("fhSubtitle") || "Manage and view complete flat history"}</p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="ad-page-icon">🏢</div>
+          <div>
+            <h1 className="text-lg font-semibold" style={{ letterSpacing: "-0.02em", margin: 0 }}>{t("fhTitle") || "Flat Directory"}</h1>
+            <p className="text-secondary text-xs mt-0.5">{t("fhSubtitle") || "Manage and view complete flat history"}</p>
           </div>
         </div>
         <div className="fh-flats-badge">

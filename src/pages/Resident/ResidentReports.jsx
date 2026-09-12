@@ -49,10 +49,10 @@ export default function ResidentReports() {
       icon:        MdPeople,
       path:        "/resident/reports/visitor-report",
       color: {
-        bg:     "bg-blue-500/15",
-        border: "border-blue-500/25",
-        icon:   "text-blue-400",
-        glow:   "rgba(91,141,239,0.15)",
+        bg:     "bg-purple-500/15",
+        border: "border-purple-500/25",
+        icon:   "text-purple-400",
+        glow:   "rgba(160,90,255,0.15)",
         stat:   t("rrVisitorsStat"),
       },
     },
@@ -66,8 +66,8 @@ export default function ResidentReports() {
 
       {/* HEADER */}
       <div className="flex items-start gap-3">
-        <div className="w-10 h-10 rounded-xl bg-blue-500/15 border border-blue-500/25 flex items-center justify-center shrink-0 mt-0.5">
-          <MdBarChart size={20} className="text-blue-400" />
+        <div className="ad-page-icon">
+          <MdBarChart size={22} />
         </div>
         <div>
           <h2 className="text-lg font-semibold">{t("rrTitle")}</h2>

@@ -14,6 +14,7 @@ import maintenanceService from "../../services/maintenanceService";
 import Select from "../../components/common/Select";
 import GlobalButton from "../../components/common/GlobalButton";
 import GlobalModal from "../../components/common/GlobalModal";
+import SlidingTabs from "../../components/common/SlidingTabs";
 import { isCommitteeMember } from "../../utils/permissions";
 import "../Admin/Admin.css";
 
@@ -582,7 +583,7 @@ function GenerateModal({ configs, onClose, onGenerated }) {
           maxHeight: "90vh",
           overflowY: "auto",
           backdropFilter: "blur(20px)",
-          boxShadow: "0 24px 80px rgba(0,0,0,0.5), 0 0 20px rgba(37,99,235,0.15)",
+          boxShadow: "0 24px 80px rgba(0,0,0,0.5), 0 0 20px rgba(160,90,255,0.15)",
           animation: "adminModalPopIn 0.28s cubic-bezier(0.16, 1, 0.3, 1)",
           display: "flex",
           flexDirection: "column",
@@ -591,14 +592,14 @@ function GenerateModal({ configs, onClose, onGenerated }) {
         {/* Header */}
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", padding: "22px 26px 0", flexShrink: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-            <div style={{ width: 44, height: 44, borderRadius: 14, background: "linear-gradient(135deg, #3b82f6, #1d4ed8)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 6px 20px rgba(37,99,235,0.35)", flexShrink: 0 }}>
+            <div style={{ width: 44, height: 44, borderRadius: 14, background: "linear-gradient(135deg, var(--accent), #9e58ff)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 6px 20px rgba(160,90,255,0.35)", flexShrink: 0 }}>
               <MdReceiptLong size={24} color="#fff" />
             </div>
             <div>
               <h3 style={{ fontWeight: 800, fontSize: 18, color: "var(--text-primary)", margin: 0, letterSpacing: "-0.02em" }}>
                 Generate Maintenance Bills
               </h3>
-              <p style={{ fontSize: 12, color: "#38bdf8", margin: "2px 0 0", fontWeight: 600 }}>
+              <p style={{ fontSize: 12, color: "var(--accent)", margin: "2px 0 0", fontWeight: 600 }}>
                 Review eligible residents, specify due date, and dispatch bills
               </p>
             </div>
@@ -748,7 +749,7 @@ function GenerateModal({ configs, onClose, onGenerated }) {
             <div style={{ position: "relative", marginBottom: 12 }}>
               <MdSearch size={17} style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "var(--text-secondary)" }} />
               <input
-                className={inputCls}
+                className={`${inputCls} search-input`}
                 style={{
                   paddingLeft: 36,
                   height: 36,
@@ -1081,7 +1082,7 @@ function BillsTab({ billingMonth, setBillingMonth, onView, configs = [] }) {
       {/* Proportional Unified Filter Toolbar */}
       <div className="flex flex-wrap items-end gap-3">
         {/* Month Dropdown */}
-        <div className="flex flex-col gap-1.5 min-w-[140px] flex-1 sm:flex-none">
+        <div className="flex flex-col gap-1.5 min-w-35 flex-1 sm:flex-none">
           <span className="text-[11px] font-bold text-secondary uppercase tracking-wider">Month</span>
           <Select
             options={monthOptions}
@@ -1101,7 +1102,7 @@ function BillsTab({ billingMonth, setBillingMonth, onView, configs = [] }) {
         </div>
 
         {/* Year Dropdown */}
-        <div className="flex flex-col gap-1.5 min-w-[100px] flex-1 sm:flex-none">
+        <div className="flex flex-col gap-1.5 min-w-25 flex-1 sm:flex-none">
           <span className="text-[11px] font-bold text-secondary uppercase tracking-wider">Year</span>
           <Select
             options={yearOptions}
@@ -1121,7 +1122,7 @@ function BillsTab({ billingMonth, setBillingMonth, onView, configs = [] }) {
         </div>
 
         {/* Custom Period Button */}
-        <div className="flex flex-col gap-1.5 min-w-[170px] flex-1 sm:flex-none">
+        <div className="flex flex-col gap-1.5 min-w-42.5 flex-1 sm:flex-none">
           <span className="text-[11px] font-bold text-secondary uppercase tracking-wider">Period Mode</span>
           <button
             type="button"
@@ -1136,14 +1137,14 @@ function BillsTab({ billingMonth, setBillingMonth, onView, configs = [] }) {
             }}
           >
             <MdCalendarToday size={15} style={{ color: mode === "custom" ? "var(--accent)" : "var(--text-secondary)", flexShrink: 0 }} />
-            <span className="truncate max-w-[220px]">
+            <span className="truncate max-w-55">
               {mode === "custom" ? `Custom: ${customPeriodLabel}` : "Custom Period (Dates)"}
             </span>
           </button>
         </div>
 
         {/* Type Dropdown */}
-        <div className="flex flex-col gap-1.5 min-w-[155px] flex-1 sm:flex-none">
+        <div className="flex flex-col gap-1.5 min-w-38.75 flex-1 sm:flex-none">
           <span className="text-[11px] font-bold text-secondary uppercase tracking-wider">Type</span>
           <Select
             options={typeOptions}
@@ -1162,7 +1163,7 @@ function BillsTab({ billingMonth, setBillingMonth, onView, configs = [] }) {
         </div>
 
         {/* Status Dropdown */}
-        <div className="flex flex-col gap-1.5 min-w-[145px] flex-1 sm:flex-none">
+        <div className="flex flex-col gap-1.5 min-w-36.25 flex-1 sm:flex-none">
           <span className="text-[11px] font-bold text-secondary uppercase tracking-wider">Status</span>
           <Select
             options={[
@@ -1239,7 +1240,7 @@ function BillsTab({ billingMonth, setBillingMonth, onView, configs = [] }) {
             style={{
               background: customType === "date_range" ? "var(--accent)" : "transparent",
               color: customType === "date_range" ? "#ffffff" : "var(--text-secondary)",
-              boxShadow: customType === "date_range" ? "0 2px 8px rgba(37,99,235,0.3)" : "none",
+              boxShadow: customType === "date_range" ? "0 2px 8px rgba(160,90,255,0.3)" : "none",
             }}
           >
             Specific Dates (Day / Month / Year)
@@ -1251,7 +1252,7 @@ function BillsTab({ billingMonth, setBillingMonth, onView, configs = [] }) {
             style={{
               background: customType === "month_range" ? "var(--accent)" : "transparent",
               color: customType === "month_range" ? "#ffffff" : "var(--text-secondary)",
-              boxShadow: customType === "month_range" ? "0 2px 8px rgba(37,99,235,0.3)" : "none",
+              boxShadow: customType === "month_range" ? "0 2px 8px rgba(160,90,255,0.3)" : "none",
             }}
           >
             Month Range
@@ -1478,7 +1479,7 @@ function BillsTab({ billingMonth, setBillingMonth, onView, configs = [] }) {
         </div>
       ) : (
         <div className="overflow-x-auto">
-          <table className="w-full text-sm min-w-[720px]" style={{ color: "var(--text-primary)" }}>
+          <table className="w-full text-sm min-w-180" style={{ color: "var(--text-primary)" }}>
             <thead>
               <tr className="text-left text-xs uppercase tracking-wider text-secondary">
                 <th className="py-2 pr-3">Bill / Flat</th>
@@ -1683,21 +1684,14 @@ export default function MaintenancePage() {
         )}
       </div>
 
-      {/* Tabs */}
-      <div className="flex items-center gap-2 border-b" style={{ borderColor: "var(--glass-border)" }}>
-        <button
-          onClick={() => setTab("config")}
-          className={`px-4 py-2.5 text-sm font-bold border-b-2 transition-colors ${tab === "config" ? "border-indigo-500 text-indigo-500" : "border-transparent text-secondary"}`}
-        >
-          <span className="inline-flex items-center gap-1.5"><MdTune size={15} /> Configure</span>
-        </button>
-        <button
-          onClick={() => setTab("bills")}
-          className={`px-4 py-2.5 text-sm font-bold border-b-2 transition-colors ${tab === "bills" ? "border-indigo-500 text-indigo-500" : "border-transparent text-secondary"}`}
-        >
-          <span className="inline-flex items-center gap-1.5"><MdReceiptLong size={15} /> Generated Bills</span>
-        </button>
-      </div>
+      <SlidingTabs
+        value={tab}
+        onChange={setTab}
+        items={[
+          { id: "config", label: "Configure", icon: <MdTune size={15} /> },
+          { id: "bills", label: "Generated Bills", icon: <MdReceiptLong size={15} /> },
+        ]}
+      />
 
       {tab === "config" ? (
         <div className="flex flex-col gap-4">
@@ -1774,7 +1768,7 @@ export default function MaintenancePage() {
             {/* Header */}
             <div className="px-5 sm:px-6 pt-5" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                <div style={{ width: 38, height: 38, borderRadius: 10, background: "var(--accent)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 12px rgba(37,99,235,0.25)", flexShrink: 0 }}>
+                <div style={{ width: 38, height: 38, borderRadius: 10, background: "var(--accent)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 12px rgba(160,90,255,0.25)", flexShrink: 0 }}>
                   <MdTune size={20} color="#fff" />
                 </div>
                 <div>
@@ -1882,7 +1876,7 @@ function BillDetailModal({ id, onClose }) {
           maxHeight: "90vh",
           overflowY: "auto",
           backdropFilter: "blur(20px)",
-          boxShadow: "0 24px 80px rgba(0,0,0,0.5), 0 0 20px rgba(37,99,235,0.15)",
+          boxShadow: "0 24px 80px rgba(0,0,0,0.5), 0 0 20px rgba(160,90,255,0.15)",
           animation: "adminModalPopIn 0.28s cubic-bezier(0.16, 1, 0.3, 1)",
         }}
       >

@@ -21,12 +21,14 @@ import AppHeader from "../../components/common/AppHeader";
 import API from "../../services/api";
 import Select from "../../components/common/Select";
 import GlobalButton from "../../components/common/GlobalButton";
+import { useRoleTheme } from "../../context/ThemeContext";
 import "./SuperAdmin.css";
 
 function SuperAdminLayoutInner() {
   const navigate = useNavigate();
   const { t } = useLang();
   const { openMobile } = useSidebar();
+  useRoleTheme();
 
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
@@ -179,7 +181,7 @@ function SuperAdminLayoutInner() {
 
   return (
     <div
-      className="h-screen overflow-hidden bg-app flex"
+      className="h-screen overflow-hidden bg-app flex sa-root"
       style={{ color: "var(--text-primary)" }}
     >
       {/* ── REUSABLE SIDEBAR ── */}
@@ -233,7 +235,7 @@ function SuperAdminLayoutInner() {
           settingsPath={`${base}/settings`}
         />
 
-        <main className="flex-1 overflow-y-auto overflow-x-hidden scrollbar-hide p-4 sm:p-6 lg:p-8">
+        <main className="flex-1 overflow-y-auto overflow-x-clip scrollbar-hide p-4 sm:p-6 lg:p-8">
           <Outlet />
         </main>
       </div>
@@ -251,9 +253,9 @@ function SuperAdminLayoutInner() {
             onClick={() => setShowLogoutConfirm(false)}
           >
             <div
-              className="p-8 rounded-2xl w-[90%] max-w-sm text-center animate-scaleIn"
+              className="acct-logout-card p-8 rounded-2xl w-[90%] max-w-sm text-center animate-scaleIn"
               style={{
-                background: "var(--card-bg)",
+                background: "var(--modal-bg)",
                 border: "1.5px solid var(--glass-border)",
                 boxShadow: "var(--shadow-glass)",
               }}

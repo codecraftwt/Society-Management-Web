@@ -23,7 +23,7 @@ export default function GuardEmergencyModal({
             >
 
               {/* TYPE */}
-              <p className="font-semibold text-red-400">
+              <p className="font-semibold" style={{ color: "var(--danger)" }}>
                 {alert.type}
               </p>
 

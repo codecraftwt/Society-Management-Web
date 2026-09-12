@@ -77,11 +77,11 @@ const BARS = ["#6B46C1", "#5B8DEF", "#6B46C1", "#B17AB2", "#7AB2B2", "#3B82F6"];
 const DOTS = ["#9F87D7", "#94B5F5", "#9F87D7", "#CCA9CD", "#A9CDCD", "#60A5FA"];
 const BG = [
   "rgba(107,70,193,0.10)", "rgba(91,141,239,0.10)", "rgba(107,70,193,0.10)",
-  "rgba(177,122,178,0.10)", "rgba(122,178,178,0.10)", "rgba(37,99,235,0.10)",
+  "rgba(177,122,178,0.10)", "rgba(122,178,178,0.10)", "rgba(160,90,255,0.10)",
 ];
 const BDR = [
   "rgba(107,70,193,0.22)", "rgba(91,141,239,0.22)", "rgba(107,70,193,0.22)",
-  "rgba(177,122,178,0.22)", "rgba(122,178,178,0.22)", "rgba(37,99,235,0.22)",
+  "rgba(177,122,178,0.22)", "rgba(122,178,178,0.22)", "rgba(160,90,255,0.22)",
 ];
 
 const fmtDate = (d) =>
@@ -459,7 +459,7 @@ export default function CommitteeNotices() {
               transform: "translateY(-50%)", color: "var(--text-secondary)", pointerEvents: "none",
             }} />
             <input
-              key="notice-search" className="input" placeholder="Search notices…"
+              key="notice-search" className="input search-input" placeholder="Search notices…"
               value={search} onChange={(e) => setSearch(e.target.value)}
               style={{ height: 33, paddingLeft: 28, paddingRight: 26, fontSize: 12, width: "100%", boxSizing: "border-box" }}
             />
@@ -777,7 +777,7 @@ export default function CommitteeNotices() {
                   <div style={{ display: "flex", alignItems: "center", gap: 10, overflow: "hidden", minWidth: 0 }}>
                     <div style={{
                       width: 32, height: 32, borderRadius: 10, flexShrink: 0,
-                      background: "var(--accent-soft)", border: "1px solid rgba(37,99,235,0.28)",
+                      background: "var(--accent-soft)", border: "1px solid rgba(160,90,255,0.28)",
                       display: "flex", alignItems: "center", justifyContent: "center",
                     }}>
                       <MdPictureAsPdf size={16} style={{ color: "var(--accent)" }} />
@@ -833,7 +833,7 @@ export default function CommitteeNotices() {
                   }}>
                     <div style={{
                       width: 48, height: 48, borderRadius: 14,
-                      background: "var(--accent-soft)", border: "1px solid rgba(37,99,235,0.28)",
+                      background: "var(--accent-soft)", border: "1px solid rgba(160,90,255,0.28)",
                       display: "flex", alignItems: "center", justifyContent: "center",
                     }}>
                       <MdPictureAsPdf size={22} style={{ color: "var(--accent)" }} />

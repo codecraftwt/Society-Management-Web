@@ -1,9 +1,8 @@
 /* ==========================================================================
-   ADMIN SECTION - MODALS, BUTTONS & THEME STYLES
-   Scoped for all Society Admin pages (Resident, Property, Parking, Complaints, etc.)
+   ADMIN PAGES — Purple light / Corona dark
+   Scoped to html.role-theme (shared role theme)
    ========================================================================== */
 
-/* ── Modal Pop-In Animation (Admin Scoped) ── */
 @keyframes adminModalPopIn {
   0% {
     opacity: 0;
@@ -15,192 +14,519 @@
   }
 }
 
-/* Modal Dialog Pop-In for Admin Section */
-div[style*="position: fixed"] > div[style*="max-width"],
-div[style*="position: fixed"] > div[style*="maxWidth"],
-.admin-modal,
-.modal-container,
-.bg-card.rounded-2xl.max-w-md,
-.bg-card.rounded-2xl.max-w-lg,
-.bg-card.rounded-2xl.max-w-xl {
-  animation: adminModalPopIn 0.26s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+html.role-theme .admin-root .admin-modal,
+html.role-theme .admin-root .modal-container,
+html.role-theme .admin-root .bg-card.rounded-2xl.max-w-md,
+html.role-theme .admin-root .bg-card.rounded-2xl.max-w-lg,
+html.role-theme .admin-root .bg-card.rounded-2xl.max-w-xl {
+  animation: adminModalPopIn 0.26s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-/* ── Universal Primary Button: Matches /superadmin/societies ── */
-.btn-primary,
-.sa-btn-primary,
-.sa-add-btn:not([class*="sa-btn-"]),
-button.btn-primary {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-  color: #ffffff !important;
-  box-shadow: 0 8px 22px rgba(37, 99, 235, 0.35);
-  border: 0 !important;
-  border-radius: 999px !important;
-  font-weight: 700 !important;
-  transition: all 0.2s ease !important;
-}
-
-.btn-primary:hover:not(:disabled),
-.sa-btn-primary:hover:not(:disabled),
-.sa-add-btn:not([class*="sa-btn-"]):hover:not(:disabled) {
-  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
-  box-shadow: 0 12px 28px rgba(37, 99, 235, 0.5);
-  transform: translateY(-1px) !important;
-}
-
-/* ── Color-coded variants (Admin scoped) ── */
-.btn-edit,
-.sa-btn-edit {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
-  color: #ffffff !important;
-  border: 0 !important;
-  border-radius: 999px !important;
-  box-shadow: 0 8px 22px rgba(16, 185, 129, 0.35) !important;
-  font-weight: 700 !important;
-  transition: all 0.2s ease !important;
-}
-.btn-edit:hover:not(:disabled),
-.sa-btn-edit:hover:not(:disabled) {
-  background: linear-gradient(135deg, #34d399 0%, #059669 100%) !important;
-  box-shadow: 0 12px 28px rgba(16, 185, 129, 0.5) !important;
-  transform: translateY(-1px) !important;
-}
-
-.btn-danger,
-.sa-btn-danger {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
-  color: #ffffff !important;
-  border: 0 !important;
-  border-radius: 999px !important;
-  box-shadow: 0 8px 22px rgba(239, 68, 68, 0.32) !important;
-  font-weight: 700 !important;
-  transition: all 0.2s ease !important;
-}
-.btn-danger:hover:not(:disabled),
-.sa-btn-danger:hover:not(:disabled) {
-  background: linear-gradient(135deg, #f87171 0%, #dc2626 100%) !important;
-  box-shadow: 0 12px 28px rgba(239, 68, 68, 0.45) !important;
-  transform: translateY(-1px) !important;
-}
-
-.btn-export,
-.sa-btn-export {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%) !important;
-  color: #ffffff !important;
-  border: 0 !important;
-  border-radius: 999px !important;
-  box-shadow: 0 8px 22px rgba(20, 184, 166, 0.32) !important;
-  font-weight: 700 !important;
-  transition: all 0.2s ease !important;
-}
-.btn-export:hover:not(:disabled),
-.sa-btn-export:hover:not(:disabled) {
-  background: linear-gradient(135deg, #2dd4bf 0%, #0d9488 100%) !important;
-  box-shadow: 0 12px 28px rgba(20, 184, 166, 0.45) !important;
-  transform: translateY(-1px) !important;
-}
-
-/* ── Ghost / Muted Buttons ── */
-.btn-muted,
-.sa-btn-ghost {
-  border-radius: 999px !important;
-  font-weight: 600 !important;
-  transition: all 0.2s ease !important;
-}
-
-html:not(.light) .btn-muted,
-html:not(.light) .sa-btn-ghost {
-  background: rgba(255, 255, 255, 0.06) !important;
-  border: 1px solid rgba(255, 255, 255, 0.14) !important;
-  color: #cbd5e1 !important;
-}
-
-html:not(.light) .btn-muted:hover:not(:disabled),
-html:not(.light) .sa-btn-ghost:hover:not(:disabled) {
-  border-color: rgba(56, 189, 248, 0.5) !important;
-  color: #38bdf8 !important;
-  background: rgba(56, 189, 248, 0.12) !important;
-}
-
-html.light .btn-muted,
-html.light .sa-btn-ghost {
-  background: #f1f5f9 !important;
-  border: 1px solid #cbd5e1 !important;
-  color: #0f172a !important;
-}
-
-html.light .btn-muted:hover:not(:disabled),
-html.light .sa-btn-ghost:hover:not(:disabled) {
-  border-color: #2563eb !important;
-  color: #2563eb !important;
-  background: rgba(37, 99, 235, 0.08) !important;
-}
-
-/* ── Light Mode Modal Background & Card Tokens (Matches Home Theme) ── */
-html.light {
-  --modal-card-bg: #f8fafc;
-  --modal-card-border: #cbd5e1;
-  --modal-icon-bg: #e2e8f0;
-}
-
-html:not(.light) {
-  --modal-card-bg: rgba(255, 255, 255, 0.04);
-  --modal-card-border: rgba(255, 255, 255, 0.1);
-  --modal-icon-bg: rgba(255, 255, 255, 0.06);
-}
-
-html.light div[style*="position: fixed"] > div[style*="max-width"],
-html.light div[style*="position: fixed"] > div[style*="maxWidth"] {
-  background: #ffffff !important;
-  border: 1px solid #cbd5e1 !important;
-  color: #0f172a !important;
-  box-shadow: 0 24px 70px rgba(15, 23, 42, 0.16), 0 0 25px rgba(37, 99, 235, 0.08) !important;
-}
-
-html:not(.light) div[style*="position: fixed"] > div[style*="max-width"],
-html:not(.light) div[style*="position: fixed"] > div[style*="maxWidth"] {
-  background: linear-gradient(160deg, rgba(15, 23, 42, 0.98), rgba(11, 19, 41, 0.98)) !important;
-  border: 1px solid rgba(255, 255, 255, 0.12) !important;
-  color: #f8fafc !important;
-  box-shadow: 0 25px 80px rgba(0, 0, 0, 0.6), 0 0 25px rgba(37, 99, 235, 0.15) !important;
-}
-
-/* Realism Pill Master System — Deferred to index.css for full variant support */
-
-/* Maintenance Config modal: form field focus states */
-.mc-field {
+html.role-theme .mc-field {
   background: var(--input-bg);
   border-color: var(--input-border);
   color: var(--text-primary);
   box-sizing: border-box;
 }
-.mc-field::placeholder {
-  color: var(--text-muted, #94a3b8);
+html.role-theme .mc-field::placeholder {
+  color: var(--text-secondary);
 }
-.mc-field:focus {
+html.role-theme .mc-field:focus {
   border-color: var(--accent);
   box-shadow: 0 0 0 3px var(--accent-soft);
 }
-.mc-field:hover:not(:focus) {
-  border-color: var(--text-tertiary);
+html.role-theme input.mc-date {
+  color-scheme: dark;
 }
-
-/* Theme-aware native date pickers (match global theme both modes) */
-input.mc-date {
+html.light.role-theme input.mc-date {
   color-scheme: light;
 }
-html:not(.light) input.mc-date {
-  color-scheme: dark;
+
+/* --------------------------------------------------------------------------
+   Layout utilities
+   -------------------------------------------------------------------------- */
+html.role-theme .admin-root .bg-white\/3,
+html.role-theme .admin-root .bg-white\/5,
+html.role-theme .admin-root .bg-white\/8,
+html.role-theme .admin-root .bg-white\/10,
+html.role-theme .admin-root .hover\:bg-white\/2:hover,
+html.role-theme .admin-root .hover\:bg-white\/10:hover {
+  background: var(--card-inner-bg) !important;
+}
+
+html.role-theme .admin-root .border-white\/5,
+html.role-theme .admin-root .border-white\/8,
+html.role-theme .admin-root .border-white\/10 {
+  border-color: var(--glass-border) !important;
+}
+
+html.light.role-theme .admin-root .text-white,
+html.light.role-theme .admin-root .hover\:text-white:hover {
+  color: var(--text-primary) !important;
+}
+
+html.light.role-theme .admin-root .btn-primary,
+html.light.role-theme .admin-root .btn-primary *,
+html.light.role-theme .admin-root .btn-danger,
+html.light.role-theme .admin-root .btn-danger *,
+html.light.role-theme .admin-root .bg-red-600,
+html.light.role-theme .admin-root .bg-red-600 .text-white,
+html.light.role-theme .admin-root .bg-red-600 *:not(.header-sos-count),
+html.light.role-theme .admin-root .rounded-full.text-white,
+html.light.role-theme .admin-root button.text-white,
+html.light.role-theme .admin-root .ad-kpi-val,
+html.light.role-theme .admin-root .ad-kpi-label,
+html.light.role-theme .admin-root .complaint-stat-val,
+html.light.role-theme .admin-root .complaint-stat-label {
+  color: #ffffff !important;
+}
+
+html.light.role-theme .admin-root .header-sos-count {
+  background: #ffffff !important;
+  color: var(--acct-red) !important;
+}
+
+html.role-theme .admin-root .page-root,
+html.role-theme .admin-root .as-root,
+html.role-theme .admin-root .ad-root {
+  max-width: none;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+html.role-theme .admin-root .hover\:border-blue-500\/40:hover {
+  border-color: rgba(var(--acct-purple-rgb), 0.4) !important;
+}
+
+/* --------------------------------------------------------------------------
+   Dashboard KPI tiles
+   -------------------------------------------------------------------------- */
+html.role-theme .ad-kpi {
+  position: relative;
+  overflow: hidden;
+  border-radius: 16px;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  box-shadow: var(--shadow-sm) !important;
+  cursor: inherit;
+}
+
+html.role-theme .ad-kpi::after {
+  content: "";
+  position: absolute;
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  right: -18px;
+  top: -18px;
+  background: rgba(255, 255, 255, 0.16);
+  pointer-events: none;
+}
+
+html.role-theme .ad-kpi-val,
+html.role-theme .ad-kpi-label,
+html.role-theme .ad-kpi-desc {
+  position: relative;
+  z-index: 1;
+  box-shadow: none !important;
+  text-shadow: none !important;
+}
+
+html.role-theme .ad-kpi-val {
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 1;
+}
+
+html.role-theme .ad-kpi-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+html.role-theme .ad-kpi-desc {
+  font-size: 11px;
+}
+
+html.role-theme:not(.light) .ad-kpi {
+  background: #22252e !important;
+  border: 2px solid var(--glass-border) !important;
+}
+html.role-theme:not(.light) .ad-kpi::after {
+  background: rgba(255, 255, 255, 0.04);
+}
+html.role-theme:not(.light) .ad-kpi--residents { border-color: rgba(var(--acct-purple-rgb), 0.4) !important; }
+html.role-theme:not(.light) .ad-kpi--guards { border-color: rgba(var(--acct-green-rgb), 0.35) !important; }
+html.role-theme:not(.light) .ad-kpi--complaints { border-color: rgba(var(--acct-cyan-rgb), 0.35) !important; }
+html.role-theme:not(.light) .ad-kpi--flats { border-color: rgba(var(--acct-violet-rgb), 0.4) !important; }
+
+html.role-theme:not(.light) .ad-kpi-val { color: #ffffff; }
+html.role-theme:not(.light) .ad-kpi--residents .ad-kpi-label { color: var(--acct-purple); }
+html.role-theme:not(.light) .ad-kpi--guards .ad-kpi-label { color: var(--acct-teal); }
+html.role-theme:not(.light) .ad-kpi--complaints .ad-kpi-label { color: var(--acct-cyan); }
+html.role-theme:not(.light) .ad-kpi--flats .ad-kpi-label { color: var(--acct-violet); }
+html.role-theme:not(.light) .ad-kpi-desc { color: var(--text-secondary); }
+
+html.light.role-theme .ad-kpi--residents { background: var(--stat-purple-bg); border: none; }
+html.light.role-theme .ad-kpi--guards { background: var(--stat-green-bg); border: none; }
+html.light.role-theme .ad-kpi--complaints { background: var(--stat-blue-bg); border: none; }
+html.light.role-theme .ad-kpi--flats { background: var(--stat-red-bg); border: none; }
+
+html.light.role-theme .ad-kpi-val,
+html.light.role-theme .ad-kpi-label,
+html.light.role-theme .ad-kpi-desc {
+  color: #ffffff !important;
+}
+
+html.role-theme .ad-kpi:hover {
+  transform: none !important;
+  box-shadow: var(--shadow-sm) !important;
+}
+
+/* --------------------------------------------------------------------------
+   Complaint / property KPI cards
+   -------------------------------------------------------------------------- */
+html.role-theme .admin-root .complaint-stat-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 16px;
+  box-shadow: var(--shadow-sm) !important;
+  backdrop-filter: none !important;
+}
+
+html.role-theme .admin-root .complaint-stat-card::before {
+  content: none !important;
+  display: none !important;
+}
+
+html.role-theme .admin-root .complaint-stat-card::after {
+  content: "" !important;
+  display: block !important;
+  position: absolute;
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  right: -18px;
+  top: -18px;
+  background: rgba(255, 255, 255, 0.16);
+  pointer-events: none;
+}
+
+html.role-theme:not(.light) .admin-root .complaint-stat-card::after {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+html.role-theme .admin-root .complaint-stat-val,
+html.role-theme .admin-root .complaint-stat-label {
+  position: relative;
+  z-index: 1;
+  box-shadow: none !important;
+  text-shadow: none !important;
+}
+
+html.role-theme:not(.light) .admin-root .complaint-stat-card {
+  background: #22252e !important;
+  border: 2px solid var(--glass-border) !important;
+}
+html.role-theme:not(.light) .admin-root .complaint-stat-total { border-color: rgba(var(--acct-purple-rgb), 0.4) !important; }
+html.role-theme:not(.light) .admin-root .complaint-stat-pending { border-color: rgba(var(--acct-cyan-rgb), 0.35) !important; }
+html.role-theme:not(.light) .admin-root .complaint-stat-inprogress { border-color: rgba(var(--acct-yellow-rgb), 0.35) !important; }
+html.role-theme:not(.light) .admin-root .complaint-stat-resolved { border-color: rgba(var(--acct-green-rgb), 0.35) !important; }
+html.role-theme:not(.light) .admin-root .complaint-stat-val { color: #ffffff !important; }
+html.role-theme:not(.light) .admin-root .complaint-stat-total .complaint-stat-label { color: var(--acct-purple) !important; }
+html.role-theme:not(.light) .admin-root .complaint-stat-pending .complaint-stat-label { color: var(--acct-cyan) !important; }
+html.role-theme:not(.light) .admin-root .complaint-stat-inprogress .complaint-stat-label { color: var(--acct-yellow) !important; }
+html.role-theme:not(.light) .admin-root .complaint-stat-resolved .complaint-stat-label { color: var(--acct-teal) !important; }
+
+html.light.role-theme .admin-root .complaint-stat-total { background: var(--stat-purple-bg) !important; border: none !important; }
+html.light.role-theme .admin-root .complaint-stat-pending { background: var(--stat-blue-bg) !important; border: none !important; }
+html.light.role-theme .admin-root .complaint-stat-inprogress { background: var(--stat-amber-bg) !important; border: none !important; }
+html.light.role-theme .admin-root .complaint-stat-resolved { background: var(--stat-green-bg) !important; border: none !important; }
+html.light.role-theme .admin-root .complaint-stat-val,
+html.light.role-theme .admin-root .complaint-stat-label { color: #ffffff !important; }
+
+html.role-theme .admin-root .complaint-stat-card:hover {
+  transform: none !important;
+  box-shadow: var(--shadow-sm) !important;
+}
+
+/* --------------------------------------------------------------------------
+   Settings
+   -------------------------------------------------------------------------- */
+html.role-theme .as-header-icon,
+html.role-theme .as-hero-icon,
+html.role-theme .as-help-icon {
+  background: var(--accent-soft) !important;
+  border-color: rgba(var(--acct-purple-rgb), 0.28) !important;
+  color: var(--accent) !important;
+  box-shadow: none !important;
+}
+
+html.role-theme .as-badge {
+  background: var(--accent-soft) !important;
+  border-color: rgba(var(--acct-purple-rgb), 0.28) !important;
+  color: var(--accent) !important;
+  box-shadow: none !important;
+}
+
+html.role-theme .as-hero,
+html.role-theme .as-help,
+html.role-theme .as-card {
+  background: var(--card-bg) !important;
+  border: 1px solid var(--glass-border) !important;
+  box-shadow: var(--shadow-sm) !important;
+}
+
+html.role-theme .as-header-title,
+html.role-theme .as-hero-title {
+  color: var(--text-primary) !important;
+}
+
+html.role-theme .as-header-sub,
+html.role-theme .as-hero-sub {
+  color: var(--text-secondary) !important;
+}
+
+/* --------------------------------------------------------------------------
+   Documents (ad-*)
+   -------------------------------------------------------------------------- */
+html.role-theme .ad-page-title,
+html.role-theme .ad-list-title,
+html.role-theme .ad-doc-name,
+html.role-theme .ad-card-title,
+html.role-theme .ad-modal-title {
+  color: var(--text-primary) !important;
+}
+
+html.role-theme .ad-page-subtitle,
+html.role-theme .ad-doc-file,
+html.role-theme .ad-empty-text,
+html.role-theme .ad-empty-sub,
+html.role-theme .ad-card-subtitle,
+html.role-theme .ad-label {
+  color: var(--text-secondary) !important;
+}
+
+html.role-theme .ad-er-icon-wrap,
+html.role-theme .ad-card-icon-wrap {
+  background: var(--accent-soft) !important;
+  border-color: rgba(var(--acct-purple-rgb), 0.28) !important;
+  color: var(--accent) !important;
+}
+
+html.role-theme .ad-list-wrap,
+html.role-theme .ad-mobile-card,
+html.role-theme .ad-empty,
+html.role-theme .ad-form,
+html.role-theme .ad-overlay > div {
+  background: var(--card-bg) !important;
+  border-color: var(--glass-border) !important;
+  box-shadow: var(--shadow-sm) !important;
+}
+
+html.role-theme .ad-search-input {
+  background: var(--search-inset-bg) !important;
+  border-color: var(--search-inset-border) !important;
+  color: var(--text-primary) !important;
+  box-shadow: var(--search-inset-shadow) !important;
+}
+
+html.role-theme .ad-count-badge {
+  background: var(--accent-soft) !important;
+  color: var(--accent) !important;
+  border-color: rgba(var(--acct-purple-rgb), 0.28) !important;
+}
+
+html.role-theme .ad-modal-confirm {
+  background: var(--danger) !important;
+  color: #ffffff !important;
+}
+
+/* --------------------------------------------------------------------------
+   Role switcher
+   -------------------------------------------------------------------------- */
+html.role-theme .rs-dropdown {
+  background: var(--modal-bg) !important;
+  border-color: var(--glass-border) !important;
+  box-shadow: var(--shadow-md) !important;
+}
+
+html.role-theme .rs-option:hover {
+  background: var(--row-hover) !important;
+}
+
+html.role-theme .rs-option.active {
+  background: var(--accent-soft) !important;
+}
+
+html.role-theme .rs-option.active .rs-option-name,
+html.role-theme .rs-option-name {
+  color: var(--text-primary) !important;
+}
+
+html.role-theme .rs-option.active .rs-option-name {
+  color: var(--accent) !important;
+}
+
+html.role-theme .rs-check {
+  background: var(--accent) !important;
+}
+
+html.role-theme .rs-mobile-pill.active {
+  background: var(--accent) !important;
+  color: #ffffff !important;
+}
+
+/* --------------------------------------------------------------------------
+   Chat / complaints drawer
+   -------------------------------------------------------------------------- */
+html.role-theme .chat-panel__bubble--mine {
+  background: var(--accent) !important;
+  border-color: rgba(var(--acct-purple-rgb), 0.35) !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 14px rgba(var(--acct-purple-rgb), 0.28) !important;
+}
+
+html.role-theme .resident-complaint-drawer,
+html.role-theme .detail-drawer__header,
+html.role-theme .chat-panel,
+html.role-theme .chat-panel__header {
+  background: var(--modal-bg) !important;
+  border-color: var(--glass-border) !important;
+  color: var(--text-primary) !important;
+}
+
+html.role-theme .btn-edit,
+html.role-theme .sa-btn-edit {
+  background: var(--success) !important;
+  color: #ffffff !important;
+  box-shadow: 0 6px 16px rgba(var(--acct-green-rgb), 0.28) !important;
+  border: 0 !important;
+}
+
+/* --------------------------------------------------------------------------
+   Shared page shell — match /admin/resident (layout padding comes from AdminLayout)
+   -------------------------------------------------------------------------- */
+html.role-theme .admin-root .ad-page-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  flex-shrink: 0;
+  background: linear-gradient(135deg, var(--accent), #9e58ff);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 20px rgba(var(--acct-purple-rgb), 0.3);
+  color: #ffffff;
+}
+
+html.role-theme .admin-root .fh-root {
+  max-width: none;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  padding-bottom: 0;
+  gap: 1.25rem;
+  box-sizing: border-box;
+}
+
+html.role-theme .admin-root .fh-page-title {
+  font-size: 1.125rem !important;
+  font-weight: 600 !important;
+  color: var(--text-primary) !important;
+  letter-spacing: -0.02em;
+}
+
+html.role-theme .admin-root .fh-page-subtitle {
+  font-size: 0.75rem !important;
+  color: var(--text-secondary) !important;
+}
+
+html.role-theme .admin-root .fh-page-icon-box {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, var(--accent), #9e58ff) !important;
+  border: none !important;
+  color: #ffffff !important;
+  box-shadow: 0 8px 20px rgba(var(--acct-purple-rgb), 0.3);
+}
+
+html.role-theme .admin-root .fh-flats-badge {
+  background: var(--accent-soft) !important;
+  border-color: rgba(var(--acct-purple-rgb), 0.28) !important;
+  color: var(--accent) !important;
+}
+
+html.role-theme .admin-root .fh-search-bar {
+  background: var(--search-inset-bg) !important;
+  border: 1px solid var(--search-inset-border) !important;
+  box-shadow: var(--search-inset-shadow) !important;
+}
+
+html.role-theme .admin-root .ps-page-header {
+  margin-bottom: 0;
+}
+
+html.role-theme .admin-root .ps-header-title {
+  font-size: 1.125rem !important;
+  font-weight: 600 !important;
+  color: var(--text-primary) !important;
+  letter-spacing: -0.02em;
+}
+
+html.role-theme .admin-root .ps-header-subtitle {
+  font-size: 0.75rem !important;
+  color: var(--text-secondary) !important;
+}
+
+html.role-theme .admin-root .ps-header-icon-box {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, var(--accent), #9e58ff) !important;
+  border: none !important;
+  color: #ffffff !important;
+  box-shadow: 0 8px 20px rgba(var(--acct-purple-rgb), 0.3);
+}
+
+html.role-theme .admin-root .ps-badge-pill {
+  background: var(--accent-soft) !important;
+  border-color: rgba(var(--acct-purple-rgb), 0.28) !important;
+  color: var(--accent) !important;
+}
+
+html.role-theme .admin-root .ps-tab-bar {
+  margin-bottom: 0;
+  background: var(--card-bg) !important;
+  border: 1px solid var(--glass-border) !important;
+}
+
+html.role-theme .admin-root .ps-tab-item {
+  color: var(--text-secondary) !important;
+}
+
+html.role-theme .admin-root .ps-tab-item:hover {
+  color: var(--text-primary) !important;
+  background: var(--card-inner-bg) !important;
+}
+
+html.role-theme .admin-root .ps-tab-item--active {
+  background: var(--accent-soft) !important;
+  color: var(--accent) !important;
+  border-color: rgba(var(--acct-purple-rgb), 0.28) !important;
+}
+
+html.role-theme .admin-root .ps-slots-container {
+  background: var(--card-bg) !important;
+  border: 1px solid var(--glass-border) !important;
+  box-shadow: var(--shadow-sm) !important;
+}
+
+html.role-theme .admin-root .ps-filter-bar {
+  border-bottom-color: var(--glass-border) !important;
 }

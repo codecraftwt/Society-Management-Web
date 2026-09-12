@@ -576,7 +576,7 @@ function ComplaintDrawer({ complaint, onClose, currentUser, t, defaultTab = "det
     flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 5,
     padding: "7px 8px", borderRadius: 8, border: "none", cursor: "pointer",
     fontSize: 12, fontWeight: 600, transition: "all 0.15s",
-    background: drawerTab === key ? "var(--accent,#5B8DEF)" : "transparent",
+    background: drawerTab === key ? "var(--accent)" : "transparent",
     color:      drawerTab === key ? "#fff" : "var(--text-secondary)",
     boxShadow:  drawerTab === key ? "0 2px 8px rgba(91,141,239,0.35)" : "none",
   });
@@ -733,13 +733,13 @@ function CameraPortal({ cameraError, cameraReady, cameraMode, videoRef, onFlip, 
     <>
       <div className="fixed bg-black/75 backdrop-blur-sm animate-fadeIn inset-0" style={{ zIndex: 10000 }} onClick={onClose} aria-hidden="true" />
       <div className="fixed inset-0 pointer-events-none flex items-end md:items-center md:justify-center" style={{ zIndex: 10001 }}>
-        <div className="pointer-events-auto w-full rounded-t-2xl md:max-w-lg md:rounded-2xl bg-[#0d1b35] border border-white/10 shadow-2xl overflow-hidden animate-scaleIn"
+        <div className="pointer-events-auto w-full rounded-t-2xl md:max-w-lg md:rounded-2xl res-camera-sheet shadow-2xl overflow-hidden animate-scaleIn"
           onClick={(e) => e.stopPropagation()}>
           <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
-            <span className="font-semibold text-sm flex items-center gap-2 text-white">
-              <MdCameraAlt size={18} className="text-blue-400" /> {labels.title}
+            <span className="font-semibold text-sm flex items-center gap-2">
+              <MdCameraAlt size={18} style={{ color: "var(--accent)" }} /> {labels.title}
             </span>
-            <button onClick={onClose} className="p-1.5 rounded-full hover:bg-white/10 text-white/50 hover:text-white transition">
+            <button onClick={onClose} className="p-1.5 rounded-full hover:bg-white/10 text-secondary hover:text-primary transition">
               <MdClose size={20} />
             </button>
           </div>
@@ -770,7 +770,7 @@ function CameraPortal({ cameraError, cameraReady, cameraMode, videoRef, onFlip, 
           )}
           {!cameraError && (
             <div className="flex items-center justify-between px-8 py-5">
-              <button type="button" onClick={onGallery} className="flex flex-col items-center gap-1.5 text-white/50 hover:text-white transition">
+              <button type="button" onClick={onGallery} className="flex flex-col items-center gap-1.5 text-secondary hover:opacity-80 transition">
                 <div className="w-11 h-11 rounded-full border border-white/20 flex items-center justify-center hover:bg-white/10"><MdPhotoLibrary size={20} /></div>
                 <span className="text-[11px]">{labels.gallery}</span>
               </button>
@@ -778,7 +778,7 @@ function CameraPortal({ cameraError, cameraReady, cameraMode, videoRef, onFlip, 
                 className={`w-16 h-16 rounded-full border-4 border-white flex items-center justify-center transition-all duration-150 ${cameraReady ? "bg-white hover:scale-95 active:scale-90 cursor-pointer shadow-lg shadow-white/20" : "bg-white/30 cursor-not-allowed"}`}>
                 <div className="w-10 h-10 rounded-full bg-white border-2 border-black/15" />
               </button>
-              <button type="button" onClick={onClose} className="flex flex-col items-center gap-1.5 text-white/50 hover:text-white transition">
+              <button type="button" onClick={onClose} className="flex flex-col items-center gap-1.5 text-secondary hover:opacity-80 transition">
                 <div className="w-11 h-11 rounded-full border border-white/20 flex items-center justify-center hover:bg-white/10"><MdClose size={20} /></div>
                 <span className="text-[11px]">{labels.cancel}</span>
               </button>
@@ -1286,7 +1286,7 @@ export default function ResidentComplaints() {
       <div className="page-root animate-fadeIn">
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-            <div className="er-icon er-icon--complaint"><MdReportProblem size={22} /></div>
+            <div className="ad-page-icon"><MdReportProblem size={22} /></div>
             <div>
               <h2 className="page-title">{t("compTitle")}</h2>
               <p className="page-subtitle">
@@ -1578,7 +1578,7 @@ export default function ResidentComplaints() {
             <div style={{ position: "relative" }}>
               <MdSearch size={17} style={{ position: "absolute", left: 12, top: "50%",
                 transform: "translateY(-50%)", color: "var(--text-secondary)", pointerEvents: "none" }} />
-              <input className="input"
+              <input className="input search-input"
                 style={{ paddingLeft: 38, paddingRight: fetching || search ? 38 : 12, height: 42 }}
                 placeholder={t("compSearch")} value={search} onChange={e => setSearch(e.target.value)} />
               <div style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", display: "flex", alignItems: "center" }}>

@@ -1,6 +1,6 @@
 import { useState, useEffect, useContext } from "react";
 import { createPortal } from "react-dom";
-import { Outlet, useNavigate, useLocation } from "react-router-dom";
+import { Outlet, useNavigate } from "react-router-dom";
 import API from "../../services/api";
 import { LanguageProvider, useLang } from "../../context/LanguageContext";
 import LanguageSelector from "../../components/common/LanguageSelector";
@@ -24,6 +24,7 @@ import { AuthContext } from "../../context/AuthContext";
 import { useSidebar } from "../../context/SidebarContext";
 import Sidebar from "../../components/common/Sidebar";
 import AppHeader from "../../components/common/AppHeader";
+import { useRoleTheme } from "../../context/ThemeContext";
 import "./Admin.css";
 
 import { hasPermission, isCommitteeMember } from "../../utils/permissions";
@@ -41,9 +42,9 @@ const ROLE_META = {
 
 function AdminLayoutInner() {
   const navigate = useNavigate();
-  const location = useLocation();
   const { t } = useLang();
   const { openMobile } = useSidebar();
+  useRoleTheme();
 
   const [alerts, setAlerts] = useState([]);
   const [showEmergency, setShowEmergency] = useState(false);
@@ -270,7 +271,7 @@ function AdminLayoutInner() {
 
   return (
     <div
-      className="h-screen overflow-hidden bg-app flex"
+      className="h-screen overflow-hidden bg-app flex admin-root"
       style={{ color: "var(--text-primary)" }}
     >
       {/* ── REUSABLE SIDEBAR ── */}
@@ -372,7 +373,7 @@ function AdminLayoutInner() {
                   title={t("adminActiveEmergencies")}
                 >
                   <MdWarning size={18} className="text-white" />
-                  <span className="absolute -top-1 -right-1 bg-white text-red-600 text-[10px] font-bold min-w-4.5 h-4.5 flex items-center justify-center rounded-full leading-none px-1">
+                  <span className="header-sos-count absolute -top-1 -right-1 bg-white text-red-600 text-[10px] font-bold min-w-4.5 h-4.5 flex items-center justify-center rounded-full leading-none px-1">
                     {alerts.length}
                   </span>
                 </button>
@@ -384,14 +385,8 @@ function AdminLayoutInner() {
         />
 
         {/* PAGE CONTENT */}
-        <main className="flex-1 overflow-y-auto overflow-x-auto scrollbar-hide p-4 sm:p-6 lg:p-8">
-          {location.pathname.endsWith("/settings") ? (
-            <Outlet />
-          ) : (
-            <div className="bg-card p-4 sm:p-6 rounded-xl min-w-0">
-              <Outlet />
-            </div>
-          )}
+        <main className="flex-1 overflow-y-auto overflow-x-clip scrollbar-hide p-4 sm:p-6 lg:p-8">
+          <Outlet />
         </main>
       </div>
 
@@ -408,9 +403,9 @@ function AdminLayoutInner() {
             onClick={() => setShowLogoutConfirm(false)}
           >
             <div
-              className="p-8 rounded-2xl w-[90%] max-w-sm text-center animate-scaleIn"
+              className="acct-logout-card p-8 rounded-2xl w-[90%] max-w-sm text-center animate-scaleIn"
               style={{
-                background: "var(--card-bg)",
+                background: "var(--modal-bg)",
                 border: "1.5px solid var(--glass-border)",
                 boxShadow: "var(--shadow-glass)",
               }}

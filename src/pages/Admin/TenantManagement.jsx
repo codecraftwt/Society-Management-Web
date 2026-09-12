@@ -22,7 +22,7 @@ function formatDate(d) {
 
 function StatusBadge({ label }) {
   const map = {
-    PENDING:    { bg: "rgba(251,191,36,0.12)", color: "#60A5FA", border: "rgba(251,191,36,0.25)" },
+    PENDING:    { bg: "rgba(251,191,36,0.12)", color: "var(--accent)", border: "rgba(251,191,36,0.25)" },
     APPROVED:   { bg: "rgba(34,197,94,0.12)",  color: "#22c55e", border: "rgba(34,197,94,0.25)" },
     REJECTED:   { bg: "rgba(239,68,68,0.12)",  color: "#ef4444", border: "rgba(239,68,68,0.25)" },
     LIVING:     { bg: "rgba(59,130,246,0.12)", color: "#3b82f6", border: "rgba(59,130,246,0.25)" },
@@ -83,7 +83,7 @@ function RejectModal({ open, onClose, onSubmit, loading }) {
         onClick={e => e.stopPropagation()}
       >
         <div className="flex items-center gap-3 px-5 py-4" style={{ borderBottom: "1px solid var(--divider)" }}>
-          <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: "rgba(251,191,36,0.15)", color: "#60A5FA" }}>
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: "rgba(251,191,36,0.15)", color: "var(--accent)" }}>
             <MdWarning size={20} />
           </div>
           <div className="flex-1">
@@ -268,7 +268,7 @@ function Row({ label, value, chip, icon, children }) {
 ───────────────────────────────────────────── */
 const STATUS_TABS = [
   { key: "ALL",       label: "All",         color: "var(--text-primary)",    icon: <MdPeople size={14} /> },
-  { key: "PENDING",   label: "Pending",     color: "#60A5FA",               icon: <MdAccessTime size={14} /> },
+  { key: "PENDING",   label: "Pending",     color: "var(--accent)",               icon: <MdAccessTime size={14} /> },
   { key: "APPROVED",  label: "Approved",    color: "#22c55e",               icon: <MdCheck size={14} /> },
   { key: "LIVING",    label: "Living",      color: "#3b82f6",               icon: <MdPerson size={14} /> },
   { key: "REJECTED",  label: "Rejected",    color: "#ef4444",               icon: <MdClose size={14} /> },
@@ -385,17 +385,22 @@ export default function TenantManagement() {
   );
 
   return (
-    <div className="space-y-5" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+    <div className="space-y-5 animate-fadeIn">
 
       {/* ── Page Header ── */}
-      <div className="flex items-start justify-between gap-4 flex-wrap">
-        <div>
-          <h2 className="text-2xl font-black tracking-tight" style={{ color: "var(--text-primary)" }}>Tenant Management</h2>
-          <p className="text-sm mt-1" style={{ color: "var(--text-secondary)" }}>View and manage all tenants across your society</p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="ad-page-icon">
+            <MdPeople size={22} />
+          </div>
+          <div>
+            <h2 className="text-lg font-semibold" style={{ letterSpacing: "-0.02em" }}>Tenant Management</h2>
+            <p className="text-secondary text-xs mt-0.5">View and manage all tenants across your society</p>
+          </div>
         </div>
         <button
           onClick={() => load()}
-          className="flex items-center gap-2 text-xs font-bold px-3 py-2 rounded-xl transition"
+          className="flex items-center gap-2 text-xs font-bold px-3 py-2 rounded-xl transition w-full sm:w-auto justify-center shrink-0"
           style={{ color: "var(--text-secondary)", background: "var(--card-inner-bg)", border: "1px solid var(--glass-border)" }}
         >
           <MdRefresh size={15} /> Refresh
@@ -418,6 +423,7 @@ export default function TenantManagement() {
           <input
             value={search}
             onChange={e => setSearch(e.target.value)}
+            className="search-input"
             placeholder="Search name, email, flat…"
             style={{
               background: "var(--card-inner-bg)",
@@ -502,7 +508,7 @@ export default function TenantManagement() {
           </div>
 
           {/* ── Desktop Table ── */}
-          <div className="hidden md:block rounded-2xl overflow-hidden" style={{ border: "1px solid var(--glass-border)" }}>
+          <div className="hidden md:block bg-card rounded-2xl overflow-hidden">
             <div
               className="grid font-black uppercase tracking-widest px-4 py-3"
               style={{

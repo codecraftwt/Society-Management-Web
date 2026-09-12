@@ -3,6 +3,7 @@ import API from "../../services/api";
 import { AuthContext } from "../../context/AuthContext";
 import { useLang } from "../../context/LanguageContext"; // ← NEW
 import LanguageSelector from "../../components/common/LanguageSelector"; // ← NEW
+import SlidingTabs from "../../components/common/SlidingTabs";
 import {
   MdPerson,
   MdEmail,
@@ -341,21 +342,15 @@ export default function MySetting() {
       {/* ══════════════════════════════════════
           TABS
       ══════════════════════════════════════ */}
-      <div className="ms-tab-row">
-        {tabs.map((tab) => {
+      <SlidingTabs
+        className="gp-filter-tabs"
+        value={activeTab}
+        onChange={setActiveTab}
+        items={tabs.map((tab) => {
           const Icon = tab.icon;
-          return (
-            <button
-              key={tab.key}
-              onClick={() => setActiveTab(tab.key)}
-              className={`ms-tab ${activeTab === tab.key ? "ms-tab--active" : ""}`}
-            >
-              <Icon size={13} />
-              <span className="ms-tab-label">{tab.label}</span>
-            </button>
-          );
+          return { id: tab.key, label: tab.label, icon: <Icon size={13} /> };
         })}
-      </div>
+      />
 
       {/* ── Global Banners ── */}
       {saved && (
@@ -719,7 +714,7 @@ export default function MySetting() {
                         isActive
                           ? {
                               background: "var(--accent-soft, #F8FAFE)",
-                              color: "var(--accent, #5B8DEF)",
+                              color: "var(--accent)",
                             }
                           : {
                               background: "var(--bg-hover, #F9F8FA)",
@@ -735,7 +730,7 @@ export default function MySetting() {
                       <p
                         className="ms-setting-label"
                         style={
-                          isActive ? { color: "var(--accent, #5B8DEF)" } : {}
+                          isActive ? { color: "var(--accent)" } : {}
                         }
                       >
                         {l.nativeLabel}
@@ -751,7 +746,7 @@ export default function MySetting() {
                       height: "18px",
                       borderRadius: "50%",
                       border: isActive
-                        ? "5px solid var(--accent, #5B8DEF)"
+                        ? "5px solid var(--accent)"
                         : "2px solid var(--border, #DCDAE1)",
                       flexShrink: 0,
                       transition: "border 0.15s",

@@ -18,6 +18,7 @@ import {
 } from "react-icons/md";
 import GlobalButton from "../../components/common/GlobalButton";
 import GlobalBadge from "../../components/common/GlobalBadge";
+import SlidingTabs from "../../components/common/SlidingTabs";
 
 const toArray = (data) => {
   if (Array.isArray(data)) return data;
@@ -220,14 +221,14 @@ export default function PaymentsAccountant() {
 
   return (
     <div className="acct-payments-page space-y-6 animate-fadeIn">
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">
-          <div className="er-icon er-icon--amenity">
+          <div className="ad-page-icon">
             <MdOutlinePayments size={22} />
           </div>
           <div className="min-w-0">
-            <h2 className="page-title">Payments</h2>
-            <p className="page-subtitle">Track collections, dues, and payment modes for the current society.</p>
+            <h2 className="text-lg font-semibold" style={{ letterSpacing: "-0.02em" }}>Payments</h2>
+            <p className="text-secondary text-xs mt-0.5">Track collections, dues, and payment modes for the current society.</p>
           </div>
         </div>
 
@@ -251,7 +252,7 @@ export default function PaymentsAccountant() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 xl:gap-4">
         <StatCard
           icon={MdTrendingUp}
           value={formatCurrency(monthlyCollected)}
@@ -285,8 +286,8 @@ export default function PaymentsAccountant() {
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 min-w-0 xl:items-start">
         <div className="premium-card xl:col-span-2 min-w-0">
           <div className="p-4 sm:p-5 border-b" style={{ borderColor: "var(--glass-border)" }}>
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-              <div>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div className="min-w-0">
                 <h2 className="text-lg font-semibold" style={{ color: "var(--text-primary)" }}>
                   Payment ledger
                 </h2>
@@ -295,17 +296,16 @@ export default function PaymentsAccountant() {
                 </p>
               </div>
 
-              <div className="filter-strip w-full lg:w-auto overflow-x-auto">
-                {["ALL", "PAID", "PENDING"].map((key) => (
-                  <button
-                    key={key}
-                    onClick={() => setFilter(key)}
-                    className={`filter-pill ${filter === key ? "filter-pill--active-indigo" : ""}`}
-                  >
-                    {key} <span className="filter-pill__count">{filterCounts[key]}</span>
-                  </button>
-                ))}
-              </div>
+              <SlidingTabs
+                className="acct-payments-tabs w-full md:w-auto shrink-0 md:ml-auto"
+                value={filter}
+                onChange={setFilter}
+                items={[
+                  { id: "ALL", label: "All", badge: filterCounts.ALL },
+                  { id: "PAID", label: "Paid", badge: filterCounts.PAID },
+                  { id: "PENDING", label: "Pending", badge: filterCounts.PENDING },
+                ]}
+              />
             </div>
 
             <div className="search-input-wrap mt-4">

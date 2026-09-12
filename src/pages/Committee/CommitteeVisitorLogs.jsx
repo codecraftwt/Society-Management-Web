@@ -53,7 +53,7 @@ export default function CommitteeVisitorLogs() {
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <div style={{
             width: 32, height: 32, borderRadius: "50%",
-            background: "rgba(37, 99, 235, 0.15)", color: "var(--accent)",
+            background: "rgba(160, 90, 255, 0.15)", color: "var(--accent)",
             display: "flex", alignItems: "center", justifyContent: "center",
             flexShrink: 0,
           }}>

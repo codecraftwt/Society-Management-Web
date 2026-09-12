@@ -136,7 +136,7 @@ export default function Societies() {
     "Row Houses": "#10b981",
     "Commercial": "#5B8DEF",
     "Mixed": "#9F87D7",
-    "Apartments": "#3B82F6",
+    "Apartments": "var(--accent)",
   };
 
   const filterBtns = [

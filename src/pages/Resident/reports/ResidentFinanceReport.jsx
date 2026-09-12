@@ -36,7 +36,7 @@ function Spinner() {
 function StatusBadge({ status, t }) {
   const cfg = {
     PAID:    { label: t("billPaid"),    Icon: MdCheckCircle, color: "#4ade80", bg: "rgba(74,222,128,0.12)",  border: "rgba(74,222,128,0.25)"  },
-    PENDING: { label: t("billPending"), Icon: MdSchedule,    color: "#60A5FA", bg: "rgba(251,191,36,0.12)",  border: "rgba(251,191,36,0.25)"  },
+    PENDING: { label: t("billPending"), Icon: MdSchedule,    color: "var(--warning)", bg: "rgba(251,191,36,0.12)",  border: "rgba(251,191,36,0.25)"  },
   };
   const c = cfg[status] || cfg.PENDING;
   return (
@@ -166,7 +166,7 @@ export default function ResidentFinanceReport() {
             <MdArrowBack size={17} />
           </button>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <div style={{ width: 44, height: 44, borderRadius: 13, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", background: "linear-gradient(135deg,rgba(74,222,128,0.15),rgba(16,185,129,0.10))", border: "1.5px solid rgba(74,222,128,0.25)", color: "#4ade80" }}>
+            <div className="ad-page-icon">
               <MdAccountBalance size={21} />
             </div>
             <div>
@@ -248,7 +248,7 @@ export default function ResidentFinanceReport() {
           <div style={{ padding: "10px 12px", display: "flex", flexDirection: "column", gap: 10 }}>
             {filtered.map((b, i) => {
               const isPaid = b.status === "PAID";
-              const accentColor = isPaid ? "#4ade80" : "#60A5FA";
+              const accentColor = isPaid ? "#4ade80" : "var(--warning)";
               return (
                 <div key={b.id} className="animate-fadeIn" style={{ animationDelay: `${i * 30}ms`, background: "var(--chip-bg, rgba(255,255,255,0.04))", border: "1px solid var(--glass-border)", borderRadius: 12, overflow: "hidden", boxSizing: "border-box" }}>
                   <div style={{ height: 3, background: accentColor }} />
@@ -286,7 +286,7 @@ export default function ResidentFinanceReport() {
                     <td><span style={{ fontSize: 12, color: "var(--text-secondary)" }}>{i + 1}</span></td>
                     <td><span style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)" }}>{b.title}</span></td>
                     <td><span style={{ fontSize: 13, color: "var(--text-secondary)" }}>{b.billing_month}</span></td>
-                    <td><span style={{ fontSize: 14, fontWeight: 800, letterSpacing: "-0.02em", color: b.status === "PAID" ? "#4ade80" : "#60A5FA" }}>{fmtINR(b.amount)}</span></td>
+                    <td><span style={{ fontSize: 14, fontWeight: 800, letterSpacing: "-0.02em", color: b.status === "PAID" ? "#4ade80" : "var(--warning)" }}>{fmtINR(b.amount)}</span></td>
                     <td><StatusBadge status={b.status} t={t} /></td>
                   </tr>
                 ))}

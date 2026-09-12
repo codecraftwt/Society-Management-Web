@@ -28,6 +28,9 @@ import ResidentEmergencyModal from "../../components/resident/ResidentEmergencyM
 import { useSidebar } from "../../context/SidebarContext";
 import Sidebar from "../../components/common/Sidebar";
 import AppHeader from "../../components/common/AppHeader";
+import { useRoleTheme } from "../../context/ThemeContext";
+import "../Guard/Guard.css";
+import "./Resident.css";
 
 const ROLE_META = {
   SOCIETY_ADMIN: { label: "Society Admin", icon: "🏢", desc: "Manage your society" },
@@ -52,6 +55,7 @@ const ROUTE_MAP = {
 function ResidentLayoutInner() {
   const { user, switchRole } = useContext(AuthContext);
   const { t } = useLang();
+  useRoleTheme();
   const navigate = useNavigate();
   const { openMobile, collapsed } = useSidebar();
 
@@ -344,7 +348,7 @@ function ResidentLayoutInner() {
 
   return (
     <div
-      className="h-screen overflow-hidden bg-app flex"
+      className="h-screen overflow-hidden bg-app flex resident-root"
       style={{ color: "var(--text-primary)" }}
     >
       {/* ── REUSABLE SIDEBAR ── */}
@@ -389,7 +393,7 @@ function ResidentLayoutInner() {
                   title={t("adminActiveEmergencies")}
                 >
                   <MdWarning size={18} className="text-white" />
-                  <span className="absolute -top-1 -right-1 bg-white text-red-600 text-[10px] font-bold min-w-4.5 h-4.5 flex items-center justify-center rounded-full leading-none px-1">
+                  <span className="header-sos-count absolute -top-1 -right-1 bg-white text-red-600 text-[10px] font-bold min-w-4.5 h-4.5 flex items-center justify-center rounded-full leading-none px-1">
                     {alerts.length}
                   </span>
                 </button>
@@ -401,10 +405,8 @@ function ResidentLayoutInner() {
         />
 
         {/* PAGE CONTENT */}
-        <main className="flex-1 overflow-y-auto scrollbar-hide p-4 sm:p-6 lg:p-8">
-          <div className="bg-card p-4 sm:p-6 rounded-xl">
-            <Outlet key={reloadKey} />
-          </div>
+        <main className="flex-1 overflow-y-auto overflow-x-clip scrollbar-hide p-4 sm:p-6 lg:p-8">
+          <Outlet key={reloadKey} />
         </main>
       </div>
 
@@ -421,9 +423,9 @@ function ResidentLayoutInner() {
             onClick={() => setShowLogoutConfirm(false)}
           >
             <div
-              className="p-8 rounded-2xl w-[90%] max-w-sm text-center animate-scaleIn"
+              className="acct-logout-card p-8 rounded-2xl w-[90%] max-w-sm text-center animate-scaleIn"
               style={{
-                background: "var(--card-bg)",
+                background: "var(--modal-bg)",
                 border: "1.5px solid var(--glass-border)",
                 boxShadow: "var(--shadow-glass)",
               }}

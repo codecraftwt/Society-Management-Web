@@ -7,6 +7,7 @@ import {
 } from "react-icons/md";
 import { FaWhatsapp, FaAmbulance } from "react-icons/fa";
 import API from "../../services/api";
+import SlidingTabs from "../../components/common/SlidingTabs";
 
 /* ── Static data ── */
 const emergencyContacts = [
@@ -92,7 +93,7 @@ export default function GuardHelpContacts() {
       {/* ── Page Header ── */}
       <div className="gh-page-er">
         <div className="gh-page-er-left">
-          <div className="gh-page-icon-wrap">
+          <div className="ad-page-icon">
             <MdHeadset size={22} />
           </div>
           <div>
@@ -111,17 +112,13 @@ export default function GuardHelpContacts() {
       </div>
 
       {/* ── Tab Strip ── */}
-      <div className="gh-tab-bar">
-        {tabs.map((t) => (
-          <button
-            key={t.key}
-            className={`gh-tab ${activeTab === t.key ? "gh-tab--active" : ""}`}
-            onClick={() => setActiveTab(t.key)}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
+      <SlidingTabs
+        className="ge-filter-tabs"
+        value={activeTab}
+        onChange={setActiveTab}
+        fullWidth
+        items={tabs.map(({ key, label }) => ({ id: key, label }))}
+      />
 
       {/* ════════════════ CONTACTS TAB ════════════════ */}
       {activeTab === "contacts" && (
@@ -229,23 +226,19 @@ export default function GuardHelpContacts() {
       {activeTab === "faq" && (
         <div className="gh-tab-content">
 
-          {/* Search */}
-          <div className="gh-faq-search-wrap" style={{ marginBottom: "0.85rem" }}>
-            <MdSearch size={16} className="gh-faq-search-icon" />
+          <div className="ge-search-wrap" style={{ marginBottom: "0.85rem" }}>
+            <MdSearch className="ge-search-icon" size={17} />
             <input
-              className="gh-faq-search-input"
+              className="ge-search-input"
               placeholder="Search FAQs…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
-            {search && (
-              <button
-                className="gh-faq-search-clear"
-                onClick={() => setSearch("")}
-              >
+            {search ? (
+              <button type="button" onClick={() => setSearch("")} className="ge-search-clear" aria-label="Clear search">
                 <MdClose size={13} />
               </button>
-            )}
+            ) : null}
           </div>
 
           {filteredFaqs.length === 0 ? (

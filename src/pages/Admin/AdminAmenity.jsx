@@ -13,6 +13,7 @@ import {
   MdPayment,
 } from "react-icons/md";
 import Select from "../../components/common/Select";
+import SlidingTabs from "../../components/common/SlidingTabs";
 
 function Spinner({ cls = "h-4 w-4" }) {
   return (
@@ -37,10 +38,10 @@ function amenityEmoji(name = "") {
 }
 
 const PALETTES = [
-  { iconBg: "rgba(107,70,193,0.15)", iconBorder: "rgba(107,70,193,0.28)", strip: "#9F87D7", stripEnd: "#493083", glow: "rgba(107,70,193,0.20)" },
-  { iconBg: "rgba(91,141,239,0.15)", iconBorder: "rgba(91,141,239,0.28)", strip: "#94B5F5", stripEnd: "#3E60A3", glow: "rgba(91,141,239,0.20)" },
+  { iconBg: "rgba(160,90,255,0.15)", iconBorder: "rgba(160,90,255,0.28)", strip: "#a05aff", stripEnd: "#9e58ff", glow: "rgba(160,90,255,0.20)" },
+  { iconBg: "rgba(75,203,235,0.15)", iconBorder: "rgba(75,203,235,0.28)", strip: "#4bcbeb", stripEnd: "#1bcfb4", glow: "rgba(75,203,235,0.20)" },
   { iconBg: "rgba(16,185,129,0.15)", iconBorder: "rgba(16,185,129,0.28)", strip: "#34d399", stripEnd: "#059669", glow: "rgba(16,185,129,0.20)" },
-  { iconBg: "rgba(37,99,235,0.15)", iconBorder: "rgba(37,99,235,0.28)", strip: "#60A5FA", stripEnd: "#2563EB", glow: "rgba(37,99,235,0.20)" },
+  { iconBg: "rgba(160,90,255,0.15)", iconBorder: "rgba(160,90,255,0.28)", strip: "#4BCBEB", stripEnd: "var(--accent)", glow: "rgba(160,90,255,0.20)" },
   { iconBg: "rgba(244,63,94,0.15)", iconBorder: "rgba(244,63,94,0.28)", strip: "#fb7185", stripEnd: "#be123c", glow: "rgba(244,63,94,0.20)" },
   { iconBg: "rgba(91,141,239,0.15)", iconBorder: "rgba(91,141,239,0.28)", strip: "#94B5F5", stripEnd: "#3E60A3", glow: "rgba(91,141,239,0.20)" },
 ];
@@ -121,7 +122,7 @@ function DisableModal({ amenity, onClose, onConfirm, isMobile }) {
             <Label>Closure type</Label>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
               {[
-                { key: "TEMPORARY", icon: "🕐", label: "Temporary", sub: "Set a reopen date — auto-enables when reached", borderColor: "#2563EB", bg: "rgba(37,99,235,0.08)" },
+                { key: "TEMPORARY", icon: "🕐", label: "Temporary", sub: "Set a reopen date — auto-enables when reached", borderColor: "var(--accent)", bg: "rgba(160,90,255,0.08)" },
                 { key: "PERMANENT", icon: "⛔", label: "Permanent", sub: "Closed until manually re-enabled by admin", borderColor: "#dc2626", bg: "rgba(220,38,38,0.07)" },
               ].map(({ key, icon, label, sub, borderColor, bg }) => (
                 <div key={key} onClick={() => setDisableType(key)} style={{ padding: "12px 14px", borderRadius: 10, cursor: "pointer", border: disableType === key ? `1.5px solid ${borderColor}` : "1.5px solid var(--glass-border)", background: disableType === key ? bg : "var(--card-inner-bg)", transition: "all 0.15s" }}>
@@ -174,7 +175,7 @@ function DisableModal({ amenity, onClose, onConfirm, isMobile }) {
 
         <div style={{ padding: "14px 20px", borderTop: "1px solid var(--glass-border)", display: "flex", gap: 8 }}>
           <button onClick={onClose} disabled={submitting} style={{ padding: "9px 18px", borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: "pointer", border: "1px solid var(--glass-border)", background: "var(--card-inner-bg)", color: "var(--text-primary)", flexShrink: 0 }}>Cancel</button>
-          <button onClick={handleConfirm} disabled={!isValid || submitting} style={{ flex: 1, padding: "9px 0", borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: isValid && !submitting ? "pointer" : "not-allowed", border: disableType === "PERMANENT" ? "1.5px solid rgba(220,38,38,0.4)" : "1.5px solid rgba(37,99,235,0.4)", background: disableType === "PERMANENT" ? "rgba(220,38,38,0.1)" : "rgba(37,99,235,0.1)", color: disableType === "PERMANENT" ? "#dc2626" : "#2563EB", opacity: isValid && !submitting ? 1 : 0.5, display: "flex", alignItems: "center", justifyContent: "center", gap: 7 }}>
+          <button onClick={handleConfirm} disabled={!isValid || submitting} style={{ flex: 1, padding: "9px 0", borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: isValid && !submitting ? "pointer" : "not-allowed", border: disableType === "PERMANENT" ? "1.5px solid rgba(220,38,38,0.4)" : "1.5px solid rgba(160,90,255,0.4)", background: disableType === "PERMANENT" ? "rgba(220,38,38,0.1)" : "rgba(160,90,255,0.1)", color: disableType === "PERMANENT" ? "#dc2626" : "var(--accent)", opacity: isValid && !submitting ? 1 : 0.5, display: "flex", alignItems: "center", justifyContent: "center", gap: 7 }}>
             {submitting ? <Spinner cls="h-3 w-3" /> : disableType === "PERMANENT" ? "⊘ Disable permanently" : "⊘ Disable temporarily"}
           </button>
         </div>
@@ -187,7 +188,7 @@ function ReasonBanner({ amenity }) {
   if (!amenity.disabled_reason) return null;
   const isTemp = amenity.disable_type === "TEMPORARY";
   return (
-    <div style={{ display: "flex", alignItems: "flex-start", gap: 7, padding: "8px 10px", borderRadius: 8, marginBottom: 10, background: isTemp ? "rgba(37,99,235,0.1)" : "rgba(220,38,38,0.07)", border: `1px solid ${isTemp ? "rgba(37,99,235,0.28)" : "rgba(220,38,38,0.22)"}`, fontSize: 11, lineHeight: 1.45, color: isTemp ? "#1E40AF" : "#7f1d1d" }}>
+    <div style={{ display: "flex", alignItems: "flex-start", gap: 7, padding: "8px 10px", borderRadius: 8, marginBottom: 10, background: isTemp ? "rgba(160,90,255,0.1)" : "rgba(220,38,38,0.07)", border: `1px solid ${isTemp ? "rgba(160,90,255,0.28)" : "rgba(220,38,38,0.22)"}`, fontSize: 11, lineHeight: 1.45, color: isTemp ? "var(--accent)" : "#7f1d1d" }}>
       {isTemp ? <MdWarning size={13} style={{ flexShrink: 0, marginTop: 1 }} /> : <MdBlock size={13} style={{ flexShrink: 0, marginTop: 1 }} />}
       <span>
         <strong>{isTemp ? "Maintenance: " : "Permanently closed: "}</strong>
@@ -355,7 +356,7 @@ export default function AdminAmenity() {
   const BFILTERS = [
     { k: "ALL", label: "All", ac: "#5A3BA2" },
     { k: "PAYMENT_PENDING", label: "Awaiting Payment", ac: "#5A3BA2" },
-    { k: "PENDING", label: "Needs Approval", ac: "#2563EB" },
+    { k: "PENDING", label: "Needs Approval", ac: "var(--accent)" },
     { k: "APPROVED", label: "Approved", ac: "#16a34a" },
     { k: "REJECTED", label: "Rejected", ac: "#dc2626" },
     { k: "CANCELLED", label: "Cancelled", ac: "#726988" },
@@ -363,7 +364,7 @@ export default function AdminAmenity() {
 
   const getCardStrip = (a, pal) => {
     if (!a.is_active) {
-      if (a.disable_type === "TEMPORARY") return "#2563EB";
+      if (a.disable_type === "TEMPORARY") return "var(--accent)";
       if (a.disable_type === "PERMANENT") return "#991b1b";
       return "var(--glass-border)";
     }
@@ -372,7 +373,7 @@ export default function AdminAmenity() {
 
   const getStatusLabel = (a) => {
     if (!a.is_active) {
-      if (a.disable_type === "TEMPORARY") return { label: "Temp. off", color: "#2563EB", dotColor: "#3B82F6" };
+      if (a.disable_type === "TEMPORARY") return { label: "Temp. off", color: "var(--accent)", dotColor: "#4BCBEB" };
       if (a.disable_type === "PERMANENT") return { label: "Disabled", color: "#dc2626", dotColor: "#dc2626" };
       return { label: t("amenOff"), color: "var(--text-secondary)", dotColor: "var(--text-secondary)" };
     }
@@ -404,23 +405,17 @@ export default function AdminAmenity() {
         )}
       </div>
 
-      {/* TAB SWITCHER */}
-      <div style={{ display: "flex", background: "var(--card-inner-bg)", border: "1.5px solid var(--glass-border)", borderRadius: 16, padding: 5, gap: 4, boxShadow: "var(--shadow-sm)", width: isMobile ? "100%" : "fit-content" }}>
-        {TABS.map(({ key, label, Icon, count, alert }) => {
-          const on = activeTab === key;
-          return (
-            <button key={key} onClick={() => setActiveTab(key)} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 7, padding: isMobile ? "10px 0" : "9px 18px", flex: isMobile ? 1 : "unset", borderRadius: 12, fontSize: 13, fontWeight: on ? 700 : 500, border: "none", cursor: "pointer", transition: "all 0.2s", background: on ? "linear-gradient(135deg,#4C76C9 0%,#5A3BA2 100%)" : "transparent", color: on ? "#fff" : "var(--text-secondary)", boxShadow: on ? "0 4px 16px rgba(76,118,201,0.30)" : "none" }}>
-              <Icon size={15} style={{ opacity: on ? 1 : 0.55 }} />
-              {label}
-              {alert > 0 ? (
-                <span style={{ background: on ? "rgba(255,255,255,0.25)" : "#ef4444", color: "#fff", fontSize: 10, fontWeight: 800, padding: "1px 7px", borderRadius: 999, lineHeight: "1.7" }}>{alert}</span>
-              ) : (
-                <span style={{ background: on ? "rgba(255,255,255,0.18)" : "var(--card-inner-border,rgba(0,0,0,0.08))", color: on ? "#fff" : "var(--text-secondary)", fontSize: 10, fontWeight: 700, padding: "1px 7px", borderRadius: 999, lineHeight: "1.7" }}>{count}</span>
-              )}
-            </button>
-          );
-        })}
-      </div>
+      <SlidingTabs
+        value={activeTab}
+        onChange={setActiveTab}
+        items={TABS.map(({ key, label, Icon, count, alert }) => ({
+          id: key,
+          label,
+          icon: <Icon size={15} />,
+          alert,
+          badge: alert > 0 ? undefined : count,
+        }))}
+      />
 
       {/* ════════════ AMENITIES ════════════ */}
       {activeTab === "AMENITIES" && (
@@ -466,7 +461,7 @@ export default function AdminAmenity() {
           <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", gap: 12, alignItems: "stretch" }}>
             <div style={{ position: "relative", flex: 1, minWidth: 0 }}>
               <MdSearch size={15} style={{ position: "absolute", left: 13, top: "50%", transform: "translateY(-50%)", color: "var(--text-secondary)", pointerEvents: "none" }} />
-              <input style={{ ...inputStyle, paddingLeft: 38, paddingRight: searchAmenity ? 34 : 14 }} placeholder={t("amenSearchPlaceholder")} value={searchAmenity} onChange={e => setSearchAmenity(e.target.value)} />
+              <input className="search-input" style={{ ...inputStyle, paddingLeft: 38, paddingRight: searchAmenity ? 34 : 14 }} placeholder={t("amenSearchPlaceholder")} value={searchAmenity} onChange={e => setSearchAmenity(e.target.value)} />
               {searchAmenity && <button onClick={() => setSearchAmenity("")} style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "var(--text-secondary)" }}><MdClose size={14} /></button>}
             </div>
             <select style={{ ...inputStyle, flex: isMobile ? "1" : "0 0 auto", width: isMobile ? "100%" : "auto", cursor: "pointer" }} value={amenityStatusFilter} onChange={e => setAmenityStatusFilter(e.target.value)}>
@@ -562,7 +557,7 @@ export default function AdminAmenity() {
           {/* Search */}
           <div style={{ position: "relative", width: "100%" }}>
             <MdSearch size={15} style={{ position: "absolute", left: 13, top: "50%", transform: "translateY(-50%)", color: "var(--text-secondary)", pointerEvents: "none" }} />
-            <input style={{ ...inputStyle, paddingLeft: 38, paddingRight: searchBooking ? 34 : 14 }} placeholder={t("amenBookingSearch")} value={searchBooking} onChange={e => setSearchBooking(e.target.value)} />
+            <input className="search-input" style={{ ...inputStyle, paddingLeft: 38, paddingRight: searchBooking ? 34 : 14 }} placeholder={t("amenBookingSearch")} value={searchBooking} onChange={e => setSearchBooking(e.target.value)} />
             {searchBooking && <button onClick={() => setSearchBooking("")} style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "var(--text-secondary)" }}><MdClose size={13} /></button>}
           </div>
 

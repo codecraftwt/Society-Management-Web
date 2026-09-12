@@ -17,6 +17,7 @@ import GlobalButton from "../../components/common/GlobalButton";
 import GlobalBadge from "../../components/common/GlobalBadge";
 import GlobalConfirmDialog from "../../components/common/GlobalConfirmDialog";
 import GlobalModal from "../../components/common/GlobalModal";
+import SlidingTabs from "../../components/common/SlidingTabs";
 
 /* ── Debounce hook ── */
 function useDebounce(value, delay = 500) {
@@ -84,7 +85,7 @@ function StatusBadge({ status, t }) {
 /* ── Request Status Badge ── */
 function ReqBadge({ status }) {
   const cfg = {
-    PENDING: { label: "Pending", color: "#2563EB", bg: "rgba(37,99,235,0.12)", border: "rgba(37,99,235,0.28)" },
+    PENDING: { label: "Pending", color: "var(--accent)", bg: "rgba(160,90,255,0.12)", border: "rgba(160,90,255,0.28)" },
     APPROVED: { label: "Approved", color: "#2FC27E", bg: "rgba(47,194,126,0.12)", border: "rgba(47,194,126,0.28)" },
     REJECTED: { label: "Rejected", color: "#FF6B6B", bg: "rgba(255,107,107,0.12)", border: "rgba(255,107,107,0.28)" },
   }[status] || { label: status, color: "#A39EB2", bg: "rgba(163,158,178,0.10)", border: "rgba(163,158,178,0.22)" };
@@ -201,7 +202,7 @@ function ResidentEntryPanel({ slots, onCreated, t, societyId }) {
   return (
     <div className="space-y-5 animate-fadeIn">
       <div className="flex items-start gap-3 p-4 rounded-xl"
-        style={{ background: "rgba(37,99,235,0.10)", border: "1.5px solid rgba(37,99,235,0.24)" }}>
+        style={{ background: "rgba(160,90,255,0.10)", border: "1.5px solid rgba(160,90,255,0.24)" }}>
         <span style={{ fontSize: 22, lineHeight: 1 }}>🏠</span>
         <div>
           <p className="font-bold text-sm" style={{ color: "var(--text-primary)", margin: 0 }}>
@@ -229,7 +230,7 @@ function ResidentEntryPanel({ slots, onCreated, t, societyId }) {
         <div className="relative flex-1">
           <MdSearch size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-secondary pointer-events-none" />
           <input
-            className="input h-10 w-full text-sm"
+            className="input search-input h-10 w-full text-sm"
             style={{ paddingLeft: 34 }}
             placeholder="Search by vehicle number, resident, or flat…"
             value={search}
@@ -287,7 +288,7 @@ function ResidentEntryPanel({ slots, onCreated, t, societyId }) {
             return (
               <div key={vehicle.vehicle_id}
                 className="bg-card rounded-2xl overflow-hidden transition-all"
-                style={{ border: isExpanded ? "1.5px solid rgba(37,99,235,0.34)" : "1.5px solid var(--glass-border)" }}>
+                style={{ border: isExpanded ? "1.5px solid rgba(160,90,255,0.34)" : "1.5px solid var(--glass-border)" }}>
 
                 <div className="flex items-center justify-between gap-3 px-4 py-3.5">
                   <div className="flex items-center gap-3">
@@ -329,9 +330,9 @@ function ResidentEntryPanel({ slots, onCreated, t, societyId }) {
                       onClick={() => setExpandedId(isExpanded ? null : vehicle.vehicle_id)}
                       className="w-8 h-8 flex items-center justify-center rounded-xl transition-all"
                       style={{
-                        background: isExpanded ? "rgba(37,99,235,0.15)" : "rgba(255,255,255,0.05)",
+                        background: isExpanded ? "rgba(160,90,255,0.15)" : "rgba(255,255,255,0.05)",
                         border: "1px solid var(--glass-border)",
-                        color: isExpanded ? "#60A5FA" : "var(--text-secondary)",
+                        color: isExpanded ? "var(--accent)" : "var(--text-secondary)",
                         fontWeight: 700, fontSize: 16, cursor: "pointer",
                       }}>
                       {isExpanded ? "−" : "+"}
@@ -497,7 +498,7 @@ function ResidentRequestsPanel({ allSlots, onSlotAssigned, societyId }) {
   };
 
   const TABS = [
-    { key: "PENDING", label: "Pending", color: "#60A5FA" },
+    { key: "PENDING", label: "Pending", color: "var(--accent)" },
     { key: "APPROVED", label: "Approved", color: "#2FC27E" },
     { key: "REJECTED", label: "Rejected", color: "#FF6B6B" },
     { key: "ALL", label: "All", color: "#A39EB2" },
@@ -571,7 +572,7 @@ function ResidentRequestsPanel({ allSlots, onSlotAssigned, societyId }) {
 
             return (
               <div key={req.id} className="bg-card rounded-2xl overflow-hidden transition-all"
-                style={{ border: isPending ? "1.5px solid rgba(37,99,235,0.28)" : "1.5px solid var(--glass-border)" }}>
+                style={{ border: isPending ? "1.5px solid rgba(160,90,255,0.28)" : "1.5px solid var(--glass-border)" }}>
 
                 <div className="flex items-center justify-between gap-3 px-4 py-3.5">
                   <div className="flex items-center gap-3">
@@ -915,26 +916,16 @@ export default function SuperAdminParking() {
         </div>
       )}
 
-      {/* Main Tab Switcher */}
-      <div className="flex gap-1.5 p-1.5 rounded-xl w-fit flex-wrap"
-        style={{ background: "var(--card-inner-bg,rgba(0,0,0,0.05))", border: "1.5px solid var(--glass-border,rgba(255,255,255,0.08))" }}>
-        {mainTabs.map(tab => (
-          <button key={tab.key} onClick={() => { setMainTab(tab.key); setShowForm(false); }}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all relative"
-            style={mainTab === tab.key
-              ? { background: "rgba(91,141,239,0.15)", color: "#94B5F5", border: "1px solid rgba(91,141,239,0.35)" }
-              : { background: "transparent", color: "var(--text-secondary)", border: "1px solid transparent" }}>
-            {tab.icon}
-            {tab.label}
-            {tab.key === "resident-requests" && pendingResidentCount > 0 && (
-              <span className="absolute -top-1.5 -right-1.5 min-w-4.5 h-4.5 flex items-center justify-center rounded-full text-[10px] font-black text-white"
-                style={{ background: "#ef4444", padding: "0 4px" }}>
-                {pendingResidentCount}
-              </span>
-            )}
-          </button>
-        ))}
-      </div>
+      <SlidingTabs
+        value={mainTab}
+        onChange={(key) => { setMainTab(key); setShowForm(false); }}
+        items={mainTabs.map((tab) => ({
+          id: tab.key,
+          label: tab.label,
+          icon: tab.icon,
+          badge: tab.key === "resident-requests" && pendingResidentCount > 0 ? pendingResidentCount : undefined,
+        }))}
+      />
 
       {mainTab === "resident-entry" && (
         <ResidentEntryPanel
@@ -1020,7 +1011,7 @@ export default function SuperAdminParking() {
               </div>
               <div className="relative" style={{ width: 220 }}>
                 <MdSearch size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-secondary pointer-events-none" />
-                <input className="input h-9 text-xs w-full"
+                <input className="input search-input h-9 text-xs w-full"
                   style={{ paddingLeft: 34, paddingRight: 26 }}
                   placeholder="Search slot number…"
                   value={search} onChange={e => setSearch(e.target.value)} />

@@ -128,7 +128,7 @@ export default function Sidebar({
         <div className="flex items-center justify-center mb-6 shrink-0 relative group/tooltip">
           <button
             onClick={toggleCollapsed}
-            className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600/20 to-indigo-600/10 border border-blue-500/30 flex items-center justify-center text-accent shadow-sm hover:scale-105 transition-all"
+            className="w-10 h-10 rounded-xl bg-linear-to-br from-blue-600/20 to-indigo-600/10 border border-blue-500/30 flex items-center justify-center text-accent shadow-sm hover:scale-105 transition-all"
             aria-label="Expand sidebar"
             title="Expand Sidebar"
           >
@@ -143,9 +143,9 @@ export default function Sidebar({
 
     // Expanded header: Logo + Title + Subtitle on left, '<' toggle button on right
     return (
-      <div className="flex items-center justify-between gap-3 px-1 mb-6 shrink-0 border-b border-glass-border pb-4">
+      <div className={`flex items-center justify-between gap-3 px-1 shrink-0 border-b border-glass-border ${isMobileDrawer ? "mb-2 pb-2" : "mb-6 pb-4"}`}>
         <div className="flex items-center gap-3 min-w-0">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-600/25 to-indigo-600/15 border border-blue-500/30 flex items-center justify-center text-accent shrink-0 shadow-sm">
+          <div className="w-9 h-9 rounded-xl bg-linear-to-br from-blue-600/25 to-indigo-600/15 border border-blue-500/30 flex items-center justify-center text-accent shrink-0 shadow-sm">
             <FaBuilding size={18} />
           </div>
           <div className="min-w-0 flex-1 overflow-hidden">
@@ -210,7 +210,7 @@ export default function Sidebar({
               }`}
             >
               {hasActiveChild && (
-                <span className="absolute left-0 top-2 bottom-2 w-1 rounded-r-md bg-gradient-to-b from-sky-400 to-blue-600 shadow-[0_0_6px_rgba(37,99,235,0.6)]" />
+                <span className="absolute left-0 top-2 bottom-2 w-1 rounded-r-md bg-linear-to-b from-sky-400 to-blue-600 shadow-[0_0_6px_rgba(37,99,235,0.6)]" />
               )}
               <Icon size={19} />
             </button>
@@ -273,7 +273,7 @@ export default function Sidebar({
             }`}
           >
             {active && (
-              <span className="absolute left-0 top-2 bottom-2 w-1 rounded-r-md bg-gradient-to-b from-sky-400 to-blue-600 shadow-[0_0_6px_rgba(37,99,235,0.6)]" />
+              <span className="absolute left-0 top-2 bottom-2 w-1 rounded-r-md bg-linear-to-b from-sky-400 to-blue-600 shadow-[0_0_6px_rgba(37,99,235,0.6)]" />
             )}
             <Icon size={19} />
           </Link>
@@ -290,16 +290,18 @@ export default function Sidebar({
         key={path}
         to={path}
         onClick={closeMobile}
-        className={`relative flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition-all duration-150 ${
+        className={`relative flex items-center rounded-xl font-medium transition-all duration-150 ${
+          isMobileDrawer ? "gap-3.5 px-3.5 py-3 text-[15px]" : "gap-3 px-3.5 py-2.5 text-xs"
+        } ${
           active
             ? "bg-accent/12 text-accent font-bold shadow-xs border border-accent/20 translate-x-0.5"
             : "text-secondary hover:text-primary hover:bg-accent/5 hover:translate-x-0.5"
         }`}
       >
         {active && (
-          <span className="absolute left-0 top-1.5 bottom-1.5 w-1 rounded-r-md bg-gradient-to-b from-sky-400 to-blue-600 shadow-[0_0_8px_rgba(37,99,235,0.5)]" />
+          <span className={`absolute left-0 w-1 rounded-r-md bg-linear-to-b from-sky-400 to-blue-600 shadow-[0_0_8px_rgba(37,99,235,0.5)] ${isMobileDrawer ? "top-2 bottom-2" : "top-1.5 bottom-1.5"}`} />
         )}
-        <Icon size={18} className={active ? "text-accent" : "text-secondary"} />
+        <Icon size={isMobileDrawer ? 22 : 18} className={active ? "text-accent" : "text-secondary"} />
         <span className="truncate">{label}</span>
       </Link>
     );
@@ -318,7 +320,7 @@ export default function Sidebar({
 
     // In expanded mode or mobile drawer, group items under section labels
     return (
-      <div className="flex-1 overflow-y-auto scrollbar-hide space-y-5 pr-1">
+        <div className={`flex-1 min-h-0 overflow-y-auto scrollbar-hide pr-1 ${isMobileDrawer ? "space-y-2" : "space-y-5"}`}>
         {groupedMenu.map(({ groupName, items }) => {
           const isDefaultGroup = groupName === "OVERVIEW";
           const isGroupOpen = expandedGroups[groupName] ?? false;
@@ -328,13 +330,13 @@ export default function Sidebar({
           );
 
           return (
-            <div key={groupName} className="space-y-1">
+            <div key={groupName} className={isMobileDrawer ? "space-y-1" : "space-y-1"}>
               {!isDefaultGroup && (
                 <button
                   type="button"
                   onClick={() => toggleGroupExpand(groupName)}
                   aria-expanded={isGroupOpen}
-                  className="w-full flex items-center justify-between px-3 py-1.5 text-[11px] font-extrabold tracking-wider text-muted uppercase hover:text-primary transition-colors group/head cursor-pointer select-none"
+                  className={`w-full flex items-center justify-between px-3 font-extrabold tracking-wider text-muted uppercase hover:text-primary transition-colors group/head cursor-pointer select-none ${isMobileDrawer ? "py-1.5 text-[12px]" : "py-1.5 text-[11px]"}`}
                 >
                   <span className="truncate">{groupName}</span>
                   <MdExpandMore
@@ -347,7 +349,7 @@ export default function Sidebar({
               )}
 
               {(isDefaultGroup || isGroupOpen) && (
-                <div className={!isDefaultGroup ? "space-y-1 pl-2 border-l border-blue-500/15 ml-3 my-1" : "space-y-1"}>
+                <div className={!isDefaultGroup ? `${isMobileDrawer ? "space-y-1" : "space-y-1"} pl-2 border-l border-blue-500/15 ml-3 ${isMobileDrawer ? "my-1" : "my-1"}` : (isMobileDrawer ? "space-y-1" : "space-y-1")}>
                   {items.map((item) => renderNavLink(item, isMobileDrawer))}
                 </div>
               )}
@@ -369,7 +371,7 @@ export default function Sidebar({
       return (
         <div className="mt-auto pt-3 border-t border-glass-border shrink-0 flex justify-center">
           <div className="relative group/tooltip">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-700 text-white font-extrabold text-xs flex items-center justify-center shadow-md">
+            <div className="w-9 h-9 rounded-xl bg-linear-to-br from-blue-600 to-indigo-700 text-white font-extrabold text-xs flex items-center justify-center shadow-md">
               {initial}
             </div>
             <div className="fixed left-20 ml-1.5 z-50 hidden group-hover/tooltip:block bg-card border border-glass-border text-primary text-xs font-semibold px-3 py-1.5 rounded-lg shadow-xl whitespace-nowrap pointer-events-none animate-fadeIn">
@@ -381,14 +383,14 @@ export default function Sidebar({
     }
 
     return (
-      <div className="mt-auto pt-3 border-t border-glass-border shrink-0">
-        <div className="flex items-center gap-3 p-2.5 rounded-xl bg-card-inner-bg border border-glass-border hover:border-accent/30 transition-colors">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 to-indigo-700 text-white font-extrabold text-xs flex items-center justify-center shrink-0 shadow-sm">
+      <div className={`${isMobileDrawer ? "mt-auto pt-4" : "mt-auto pt-3"} border-t border-glass-border shrink-0`}>
+        <div className={`flex items-center rounded-xl bg-card-inner-bg border border-glass-border hover:border-accent/30 transition-colors ${isMobileDrawer ? "gap-3 p-3" : "gap-3 p-2.5"}`}>
+          <div className={`${isMobileDrawer ? "w-10 h-10 text-sm" : "w-8 h-8 text-xs"} rounded-lg bg-linear-to-br from-blue-600 to-indigo-700 text-white font-extrabold flex items-center justify-center shrink-0 shadow-sm`}>
             {initial}
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-xs font-bold text-primary truncate leading-tight">{user.name || "Super Admin"}</p>
-            <p className="text-[10px] text-secondary truncate mt-0.5">{user.email || "Super Admin Panel"}</p>
+            <p className={`${isMobileDrawer ? "text-sm" : "text-xs"} font-bold text-primary truncate leading-tight`}>{user.name || "Super Admin"}</p>
+            <p className={`${isMobileDrawer ? "text-[11px]" : "text-[10px]"} text-secondary truncate mt-0.5`}>{user.email || "Super Admin Panel"}</p>
           </div>
         </div>
       </div>
@@ -400,7 +402,7 @@ export default function Sidebar({
       {/* ── DESKTOP SIDEBAR ── */}
       <aside
         className={`hidden md:flex fixed left-0 top-0 h-screen bg-sidebar flex-col z-40 border-r border-glass-border transition-all duration-200 box-border ${
-          collapsed ? "w-[76px] px-3 py-4" : "w-[264px] p-4"
+          collapsed ? "w-19 px-3 py-4" : "w-66 p-4"
         }`}
       >
         {renderBrand(false)}
@@ -424,12 +426,14 @@ function mobileMenuOpen(mobileOpen, closeMobile, renderBrand, renderNavList, dra
       onClick={closeMobile}
     >
       <div
-        className="bg-sidebar w-72 h-full p-5 flex flex-col shadow-2xl animate-slide-in"
+        className="bg-sidebar w-[min(18rem,86vw)] h-full max-h-dvh p-4 flex flex-col shadow-2xl animate-slide-in"
         onClick={(e) => e.stopPropagation()}
       >
         {renderBrand(true)}
 
-        {drawerExtra && <div className="mb-4 shrink-0">{drawerExtra}</div>}
+        {drawerExtra && (
+          <div className="mb-2 shrink-0 empty:hidden empty:mb-0">{drawerExtra}</div>
+        )}
 
         {renderNavList(true)}
 

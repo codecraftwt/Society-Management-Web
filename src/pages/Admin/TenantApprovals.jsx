@@ -127,7 +127,7 @@ function RejectModal({ open, onClose, onSubmit, loading }) {
         onClick={e => e.stopPropagation()}
       >
         <div className="flex items-center gap-3 px-5 py-4" style={{ borderBottom: "1px solid var(--divider)" }}>
-          <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: "rgba(251,191,36,0.15)", color: "#60A5FA" }}>
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: "rgba(251,191,36,0.15)", color: "var(--accent)" }}>
             <MdWarning size={20} />
           </div>
           <div className="flex-1">
@@ -547,6 +547,7 @@ export default function TenantApprovals() {
           <input
             value={search}
             onChange={e => setSearch(e.target.value)}
+            className="search-input"
             placeholder="Search name, email, flat…"
             style={{
               background: "var(--card-inner-bg)",
