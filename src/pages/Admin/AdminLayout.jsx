@@ -4,7 +4,7 @@ import { Outlet, useNavigate } from "react-router-dom";
 import API from "../../services/api";
 import { LanguageProvider, useLang } from "../../context/LanguageContext";
 import LanguageSelector from "../../components/common/LanguageSelector";
-import { FaUsers, FaUserShield, FaParking } from "react-icons/fa";
+import { FaUsers, FaUserShield, FaParking, FaShieldAlt } from "react-icons/fa";
 import {
   MdApartment,
   MdCampaign,
@@ -177,6 +177,13 @@ function AdminLayoutInner() {
       icon: MdVerified,
       group: "SERVICES & REPORTS",
       module: "society_documents",
+    },
+    {
+      label: "Role Permissions",
+      path: `${base}/role-permissions`,
+      icon: FaShieldAlt,
+      group: "SERVICES & REPORTS",
+      module: "settings",
     },
   ];
 

@@ -60,6 +60,7 @@ import ManageProperty from "./pages/Admin/ManageProperty";
 import AdminSetting from "./pages/Admin/AdminSetting";
 import FlatHistory from "./pages/Admin/FlatHistory";
 import MaintenancePage from "./pages/Maintenance/MaintenancePage";
+import RolePermissions from "./pages/Admin/RolePermissions";
 
 /* === COMMITTEE MEMBER (LIMITED ACCESS) === */
 /* Committee Members reuse the SOCIETY_ADMIN panel (/admin → AdminLayout + shared
@@ -176,6 +177,7 @@ function App() {
             <Route path="manage-bills" element={<ManageBill />} />
             <Route path="maintenance" element={<MaintenancePage />} />
             <Route path="parking" element={<SuperAdminParking />} />
+            <Route path="role-permissions" element={<RolePermissions />} />
             <Route path="reports" element={<SystemReports />} />
             <Route path="settings" element={<AdminSetting />} />
             <Route path="reports/visitors" element={<SuperAdminVisitorReport />} />
@@ -192,6 +194,7 @@ function App() {
             <Route path="resident" element={<Resident />} />
             <Route path="assign-flat" element={<AssignFlat />} />
             <Route path="settings" element={<AdminSetting />} />
+            <Route path="role-permissions" element={<RolePermissions />} />
             <Route path="property" element={<ManageProperty />} />
             <Route path="parking-slots" element={<AssignParkingSlot />} />
             <Route path="guard" element={<Guard />} />

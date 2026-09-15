@@ -15,6 +15,7 @@ import GlobalConfirmDialog from "../../components/common/GlobalConfirmDialog";
 import GlobalBadge from "../../components/common/GlobalBadge";
 import Select from "../../components/common/Select";
 import SlidingTabs from "../../components/common/SlidingTabs";
+import { BILL_CATEGORIES } from "../Admin/ManageBill";
 
 /* ── helpers ── */
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -280,8 +281,30 @@ export default function ManageBillsAccountant() {
   const [showCreate, setShowCreate] = useState(false);
   const [creating, setCreating] = useState(false);
   const [formData, setFormData] = useState({
-    bill_type: "INDIVIDUAL", flat_id: "", title: "", amount: "", billing_month: getCurrentBillingMonth(),
+    flat_type: "INDIVIDUAL",
+    bill_type: "INDIVIDUAL",
+    bill_category: "ELECTRICITY",
+    other_bill_type: "",
+    flat_id: "",
+    title: "Electricity Bill",
+    amount: "",
+    billing_month: getCurrentBillingMonth(),
+    issue_date: "",
+    last_pay_date: "",
   });
+
+  const handleCategoryChange = (cat) => {
+    const found = BILL_CATEGORIES.find(c => c.value === cat);
+    setFormData(prev => {
+      const isCustomTitle = prev.title && !BILL_CATEGORIES.some(c => c.defaultTitle === prev.title);
+      return {
+        ...prev,
+        bill_category: cat,
+        other_bill_type: cat === "OTHER" ? prev.other_bill_type : "",
+        title: isCustomTitle ? prev.title : (found?.defaultTitle || ""),
+      };
+    });
+  };
 
   /* ── Delete & Confirm ── */
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
@@ -343,8 +366,24 @@ export default function ManageBillsAccountant() {
     e.preventDefault();
     try {
       setCreating(true);
-      await API.post("/bills", formData);
-      setFormData({ bill_type: "INDIVIDUAL", flat_id: "", title: "", amount: "", billing_month: getCurrentBillingMonth() });
+      const payload = {
+        ...formData,
+        bill_type: formData.flat_type,
+        flat_type: formData.flat_type,
+      };
+      await API.post("/bills", payload);
+      setFormData({
+        flat_type: "INDIVIDUAL",
+        bill_type: "INDIVIDUAL",
+        bill_category: "ELECTRICITY",
+        other_bill_type: "",
+        flat_id: "",
+        title: "Electricity Bill",
+        amount: "",
+        billing_month: getCurrentBillingMonth(),
+        issue_date: "",
+        last_pay_date: "",
+      });
       setShowCreate(false);
       loadBills(1, debSearch, filterStatus);
     } catch (e) { console.error(e); }
@@ -485,50 +524,107 @@ export default function ManageBillsAccountant() {
         maxWidth="max-w-2xl"
       >
         <form onSubmit={handleCreateBill} className={`grid gap-4 ${isMobile ? "grid-cols-1" : "grid-cols-2"}`}>
+          {/* 1. Flat Type */}
           <div>
-            <Label>{t("billTypeLabel")}</Label>
+            <Label>Flat Type</Label>
             <Select className="input h-11 w-full"
-              value={formData.bill_type}
-              onChange={e => setFormData({ ...formData, bill_type: e.target.value, flat_id: "" })}>
-              <option value="INDIVIDUAL">{t("billTypeIndividual")}</option>
-              <option value="ALL">{t("billTypeAll")}</option>
+              value={formData.flat_type}
+              onChange={e => setFormData({ ...formData, flat_type: e.target.value, bill_type: e.target.value, flat_id: "" })}>
+              <option value="INDIVIDUAL">Individual Flat</option>
+              <option value="ALL">All Flats</option>
             </Select>
           </div>
-          {formData.bill_type === "INDIVIDUAL" && (
+
+          {/* 2. Flat Picker */}
+          {formData.flat_type === "INDIVIDUAL" && (
             <div>
-              <Label>{t("billSelectFlat")}</Label>
+              <Label>{t("billSelectFlat") || "Select Flat"}</Label>
               <Select className="input h-11 w-full" required
                 value={formData.flat_id}
                 onChange={e => setFormData({ ...formData, flat_id: e.target.value })}>
-                <option value="">{t("billChooseFlat")}</option>
+                <option value="">{t("billChooseFlat") || "Choose Flat"}</option>
                 {flats.map(f => (
                   <option key={f.id} value={f.id}>
-                    {f.flat_number} ({f.Block?.name}) – {f.User?.name || t("billNoResident")}
+                    {f.flat_number} ({f.Block?.name}) – {f.User?.name || t("billNoResident") || "No Resident"}
                   </option>
                 ))}
               </Select>
             </div>
           )}
-          <div className={formData.bill_type === "ALL" ? "col-span-2" : ""}>
-            <Label>{t("billTitleLabel")}</Label>
-            <input className="input h-11 w-full" placeholder={t("billTitlePlaceholder")}
+
+          {/* 3. Billing Type */}
+          <div className={formData.flat_type === "ALL" ? "col-span-1" : ""}>
+            <Label>Billing Type</Label>
+            <Select className="input h-11 w-full"
+              value={formData.bill_category}
+              onChange={e => handleCategoryChange(e.target.value)}>
+              {BILL_CATEGORIES.map(c => (
+                <option key={c.value} value={c.value}>{c.label}</option>
+              ))}
+            </Select>
+          </div>
+
+          {/* 4. Conditional Other Specification */}
+          {formData.bill_category === "OTHER" && (
+            <div className="col-span-2">
+              <Label>Specify Bill Type / What is this for? *</Label>
+              <input
+                className="input h-11 w-full"
+                placeholder="e.g. Clubhouse Event, Festival Contribution, Garbage Levy"
+                value={formData.other_bill_type}
+                required
+                onChange={e => setFormData({
+                  ...formData,
+                  other_bill_type: e.target.value,
+                  title: formData.title === "Other" || !formData.title ? e.target.value : formData.title,
+                })}
+              />
+            </div>
+          )}
+
+          {/* 5. Title */}
+          <div>
+            <Label>{t("billTitleLabel") || "Bill Title"}</Label>
+            <input className="input h-11 w-full" placeholder={t("billTitlePlaceholder") || "Enter bill title"}
               value={formData.title} required
               onChange={e => setFormData({ ...formData, title: e.target.value })} />
           </div>
+
+          {/* 6. Amount */}
           <div>
-            <Label>{t("billAmountLabel")}</Label>
+            <Label>{t("billAmountLabel") || "Amount (₹)"}</Label>
             <input type="number" className="input h-11 w-full" placeholder="0"
               value={formData.amount} required
               onChange={e => setFormData({ ...formData, amount: e.target.value })} />
           </div>
+
+          {/* 7. Month */}
           <div>
-            <Label>{t("billMonthLabel")}</Label>
+            <Label>{t("billMonthLabel") || "Billing Month"}</Label>
             <BillingMonthPicker
               value={formData.billing_month}
               onChange={(month) => setFormData({ ...formData, billing_month: month })}
               required
             />
           </div>
+
+          {/* 8. Issue Date */}
+          <div>
+            <Label>Issue Date</Label>
+            <input type="date" className="input h-11 w-full"
+              value={formData.issue_date}
+              onChange={e => setFormData({ ...formData, issue_date: e.target.value })} />
+          </div>
+
+          {/* 9. Last Pay Date */}
+          <div className="col-span-2">
+            <Label>Last Pay Date</Label>
+            <input type="date" className="input h-11 w-full"
+              value={formData.last_pay_date}
+              min={formData.issue_date || undefined}
+              onChange={e => setFormData({ ...formData, last_pay_date: e.target.value })} />
+          </div>
+
           <div className="flex items-center justify-end gap-3 col-span-2 mt-2 pt-3 border-t" style={{ borderColor: "var(--glass-border)" }}>
             <GlobalButton variant="cancel" type="button" onClick={() => setShowCreate(false)}>
               {t("cancel")}

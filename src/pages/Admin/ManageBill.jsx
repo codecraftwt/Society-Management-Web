@@ -16,6 +16,17 @@ import GlobalModal from "../../components/common/GlobalModal";
 import { isCommitteeMember } from "../../utils/permissions";
 
 /* ── helpers ── */
+export const BILL_CATEGORIES = [
+  { value: "ELECTRICITY", label: "⚡ Electricity", defaultTitle: "Electricity Bill" },
+  { value: "WATER", label: "💧 Water", defaultTitle: "Water Charges" },
+  { value: "GAS", label: "🔥 Gas", defaultTitle: "Piped Gas Bill" },
+  { value: "PARKING", label: "🚗 Parking", defaultTitle: "Parking Fee" },
+  { value: "SECURITY", label: "🛡️ Security", defaultTitle: "Security Charges" },
+  { value: "AMENITIES", label: "🏊 Amenities", defaultTitle: "Amenity Maintenance" },
+  { value: "DONATION", label: "🤝 Donation", defaultTitle: "Society Donation" },
+  { value: "OTHER", label: "📝 Other", defaultTitle: "" },
+];
+
 const getTodayISO = () => {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -166,8 +177,16 @@ export default function ManageBills() {
   const [creating, setCreating] = useState(false);
   const [formSocietyId, setFormSocietyId] = useState("");
   const [formData, setFormData] = useState({
-    bill_type: "INDIVIDUAL", flat_id: "", title: "", amount: "", billing_month: getCurrentBillingMonth(),
-    issue_date: getTodayISO(), last_pay_date: "",
+    flat_type: "INDIVIDUAL",
+    bill_type: "INDIVIDUAL",
+    bill_category: "ELECTRICITY",
+    other_bill_type: "",
+    flat_id: "",
+    title: "Electricity Bill",
+    amount: "",
+    billing_month: getCurrentBillingMonth(),
+    issue_date: getTodayISO(),
+    last_pay_date: "",
   });
 
   /* ── Delete & Confirm ── */
@@ -364,6 +383,19 @@ export default function ManageBills() {
 
   const handlePageChange = (p) => loadBills(p, debSearch, filterStatus);
 
+  const handleCategoryChange = (cat) => {
+    const found = BILL_CATEGORIES.find(c => c.value === cat);
+    setFormData(prev => {
+      const isCustomTitle = prev.title && !BILL_CATEGORIES.some(c => c.defaultTitle === prev.title);
+      return {
+        ...prev,
+        bill_category: cat,
+        other_bill_type: cat === "OTHER" ? prev.other_bill_type : "",
+        title: isCustomTitle ? prev.title : (found?.defaultTitle || ""),
+      };
+    });
+  };
+
   /* ── Create ── */
   const handleCreateBill = async (e) => {
     if (e) e.preventDefault();
@@ -371,16 +403,34 @@ export default function ManageBills() {
       setCreating(true);
       const activeSocId = filterSocietyId || formSocietyId;
       const headers = (isSuperAdmin && activeSocId) ? { "x-society-id": activeSocId } : {};
-      const res = await API.post("/bills", formData, { headers });
+      const payload = {
+        ...formData,
+        bill_type: formData.flat_type,
+        flat_type: formData.flat_type,
+      };
+      const res = await API.post("/bills", payload, { headers });
       setCreatedBill({
-        type: formData.bill_type,
+        type: formData.flat_type,
+        category: formData.bill_category,
+        otherType: formData.other_bill_type,
         title: formData.title,
         amount: formData.amount,
         flatId: formData.flat_id,
         societyId: activeSocId,
         total: res.data?.total,
       });
-      setFormData({ bill_type: "INDIVIDUAL", flat_id: "", title: "", amount: "", billing_month: getCurrentBillingMonth(), issue_date: getTodayISO(), last_pay_date: "" });
+      setFormData({
+        flat_type: "INDIVIDUAL",
+        bill_type: "INDIVIDUAL",
+        bill_category: "ELECTRICITY",
+        other_bill_type: "",
+        flat_id: "",
+        title: "Electricity Bill",
+        amount: "",
+        billing_month: getCurrentBillingMonth(),
+        issue_date: getTodayISO(),
+        last_pay_date: "",
+      });
       setFormSocietyId("");
       setShowCreate(false);
       loadBills(1, debSearch, filterStatus);
@@ -599,56 +649,106 @@ export default function ManageBills() {
               </Select>
             </div>
           )}
+
+          {/* 1. Flat Type */}
           <div>
-            <Label>{t("billTypeLabel")}</Label>
+            <Label>Flat Type</Label>
             <Select className="input h-10 w-full"
-              value={formData.bill_type}
-              onChange={e => setFormData({ ...formData, bill_type: e.target.value, flat_id: "" })}>
-              <option value="INDIVIDUAL">{t("billTypeIndividual")}</option>
-              <option value="ALL">{t("billTypeAll")}</option>
+              value={formData.flat_type}
+              onChange={e => setFormData({ ...formData, flat_type: e.target.value, bill_type: e.target.value, flat_id: "" })}>
+              <option value="INDIVIDUAL">Individual Flat</option>
+              <option value="ALL">All Flats</option>
             </Select>
           </div>
-          {formData.bill_type === "INDIVIDUAL" ? (
+
+          {/* 2. Flat Picker (if individual) */}
+          {formData.flat_type === "INDIVIDUAL" ? (
             <div>
-              <Label>{t("billSelectFlat")}</Label>
+              <Label>{t("billSelectFlat") || "Select Flat"}</Label>
               <Select className="input h-10 w-full" required
                 value={formData.flat_id}
                 onChange={e => setFormData({ ...formData, flat_id: e.target.value })}>
-                <option value="">{t("billChooseFlat")}</option>
+                <option value="">{t("billChooseFlat") || "Choose Flat"}</option>
                 {flats.map(f => (
                   <option key={f.id} value={f.id}>
-                    {f.flat_number} ({f.Block?.name}) – {f.User?.name || t("billNoResident")}
+                    {f.flat_number} ({f.Block?.name}) – {f.User?.name || t("billNoResident") || "No Resident"}
                   </option>
                 ))}
               </Select>
             </div>
           ) : null}
+
+          {/* 3. Billing Type (Category) */}
+          <div className={formData.flat_type === "ALL" ? "sm:col-span-1" : ""}>
+            <Label>Billing Type</Label>
+            <Select className="input h-10 w-full"
+              value={formData.bill_category}
+              onChange={e => handleCategoryChange(e.target.value)}>
+              {BILL_CATEGORIES.map(c => (
+                <option key={c.value} value={c.value}>{c.label}</option>
+              ))}
+            </Select>
+          </div>
+
+          {/* 4. Conditional Other Specification */}
+          {formData.bill_category === "OTHER" && (
+            <div className="sm:col-span-2">
+              <Label>Specify Bill Type / What is this for? *</Label>
+              <input
+                className="input h-10 w-full"
+                placeholder="e.g. Clubhouse Event, Festival Contribution, Garbage Levy"
+                value={formData.other_bill_type}
+                required
+                onChange={e => setFormData({
+                  ...formData,
+                  other_bill_type: e.target.value,
+                  title: formData.title === "Other" || !formData.title ? e.target.value : formData.title,
+                })}
+              />
+            </div>
+          )}
+
+          {/* 5. Bill Title */}
           <div>
-            <Label>{t("billTitleLabel")}</Label>
-            <input className="input h-10 w-full" placeholder={t("billTitlePlaceholder")}
+            <Label>{t("billTitleLabel") || "Bill Title"}</Label>
+            <input className="input h-10 w-full" placeholder={t("billTitlePlaceholder") || "Enter bill title"}
               value={formData.title} required
               onChange={e => setFormData({ ...formData, title: e.target.value })} />
           </div>
+
+          {/* 6. Amount */}
           <div>
-            <Label>{t("billAmountLabel")}</Label>
+            <Label>{t("billAmountLabel") || "Amount (₹)"}</Label>
             <input type="number" className="input h-10 w-full" placeholder="0"
               value={formData.amount} required
               onChange={e => setFormData({ ...formData, amount: e.target.value })} />
           </div>
+
+          {/* 7. Billing Month */}
+          <div>
+            <Label>Billing Month</Label>
+            <input type="month" className="input h-10 w-full"
+              value={formData.billing_month}
+              onChange={e => setFormData({ ...formData, billing_month: e.target.value })} />
+          </div>
+
+          {/* 8. Issue Date */}
           <div>
             <Label>Issue Date</Label>
             <input type="date" className="input h-10 w-full"
               value={formData.issue_date}
               onChange={e => setFormData({ ...formData, issue_date: e.target.value })} />
           </div>
-          <div>
+
+          {/* 9. Last Pay Date */}
+          <div className="sm:col-span-2">
             <Label>Last Pay Date</Label>
             <input type="date" className="input h-10 w-full"
               value={formData.last_pay_date}
               min={formData.issue_date || undefined}
               onChange={e => setFormData({ ...formData, last_pay_date: e.target.value })} />
             <p style={{ fontSize: 10, color: "var(--text-secondary)", opacity: 0.7, marginTop: 4 }}>
-              Leave blank to auto-set 30 days from today
+              Leave blank to auto-set 30 days from issue date
             </p>
           </div>
         </form>
@@ -674,12 +774,19 @@ export default function ManageBills() {
                 <strong style={{ color: "var(--text-primary)" }}>{createdBill.title}</strong>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: "var(--text-secondary)" }}>
+                <span>Billing Category</span>
+                <strong style={{ color: "var(--accent)" }}>
+                  {BILL_CATEGORIES.find(c => c.value === createdBill.category)?.label || createdBill.category || "General"}
+                  {createdBill.otherType ? ` (${createdBill.otherType})` : ""}
+                </strong>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: "var(--text-secondary)" }}>
                 <span>Amount</span>
                 <strong style={{ color: "var(--accent)" }}>₹{Number(createdBill.amount || 0).toLocaleString("en-IN")}</strong>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: "var(--text-secondary)" }}>
-                <span>Bill Type</span>
-                <strong style={{ color: "var(--text-primary)" }}>{createdBill.type === "ALL" ? "All Flats" : "Individual"}</strong>
+                <span>Flat Type</span>
+                <strong style={{ color: "var(--text-primary)" }}>{createdBill.type === "ALL" ? "All Flats" : "Individual Flat"}</strong>
               </div>
               {createdBill.type === "ALL" ? (
                 <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: "var(--text-secondary)" }}>
@@ -908,7 +1015,7 @@ export default function ManageBills() {
                     boxShadow: isSelected ? "0 0 16px rgba(99,102,241,0.25)" : undefined,
                   }}
                 >
-                  <div style={{ height: 3, background: b.status === "PAID" ? "linear-gradient(90deg,#34d399,#059669)" : "linear-gradient(90deg,#4BCBEB,var(--accent))" }} />
+                  <div style={{ height: 3, background: b.status === "PAID" ? "linear-gradient(90deg,#34d399,#059669)" : "linear-gradient(90deg,#60A5FA,#2563EB)" }} />
                   <div className="bill-card__body">
                     {/* Select Row */}
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, paddingBottom: 6, borderBottom: "1px solid var(--glass-border)" }}>
@@ -1015,7 +1122,7 @@ export default function ManageBills() {
                     )}
                     <td>
                       <div className="flex items-center gap-3">
-                        <div style={{ width: 3, height: 32, borderRadius: 99, flexShrink: 0, background: b.status === "PAID" ? "linear-gradient(180deg,#34d399,#059669)" : "linear-gradient(180deg,#4BCBEB,var(--accent))" }} />
+                        <div style={{ width: 3, height: 32, borderRadius: 99, flexShrink: 0, background: b.status === "PAID" ? "linear-gradient(180deg,#34d399,#059669)" : "linear-gradient(180deg,#60A5FA,#2563EB)" }} />
                         <span className="font-semibold text-sm" style={{ color: "var(--text-primary)" }}>{b.title}</span>
                       </div>
                     </td>
@@ -1298,4 +1405,4 @@ export default function ManageBills() {
         )}
     </div>
   );
-}
+}

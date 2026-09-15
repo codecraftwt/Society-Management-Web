@@ -11,7 +11,7 @@ import {
   MdVerified,
   MdBuild,
 } from "react-icons/md";
-import { FaBuilding, FaUsers, FaUserShield, FaParking } from "react-icons/fa";
+import { FaBuilding, FaUsers, FaUserShield, FaParking, FaShieldAlt } from "react-icons/fa";
 import ThemeToggle from "../../components/common/ThemeToggle";
 import LanguageSelector from "../../components/common/LanguageSelector";
 import { LanguageProvider, useLang } from "../../context/LanguageContext";
@@ -112,6 +112,12 @@ function SuperAdminLayoutInner() {
       path: `${base}/reports`,
       icon: MdReportProblem,
       group: "REPORTS",
+    },
+    {
+      label: "Role Permissions",
+      path: `${base}/role-permissions`,
+      icon: FaShieldAlt,
+      group: "SYSTEM CONFIG",
     },
   ];
 

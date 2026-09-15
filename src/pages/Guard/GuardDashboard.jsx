@@ -1,8 +1,6 @@
-
 import { useEffect, useState } from "react";
 import API from "../../services/api";
 import { useLang } from "../../context/LanguageContext";
-import GuardEmergencyPanel from "../../components/guard/GuardEmergencyPanel";
 
 function Stat({ title, value, tone }) {
   return (
@@ -63,50 +61,40 @@ export default function GuardDashboard() {
   }, []);
 
   return (
-    <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
-
-      <div className="xl:col-span-3 space-y-4">
-
-        <div className="gd-welcome-card">
-          <div className="gd-welcome-bar" />
-          <div className="gd-welcome-inner">
-            <h1 className="gd-welcome-title">
-              {t("gdWelcome")}, {profile?.name || t("gdGuard")} 👮
-            </h1>
-            <p className="gd-welcome-society">{profile?.Society?.name}</p>
-            <p className="gd-welcome-time">{dateTime.toLocaleString("en-IN")}</p>
-          </div>
+    <div className="max-w-6xl mx-auto space-y-6">
+      <div className="gd-welcome-card">
+        <div className="gd-welcome-bar" />
+        <div className="gd-welcome-inner">
+          <h1 className="gd-welcome-title">
+            {t("gdWelcome")}, {profile?.name || t("gdGuard")} 👮
+          </h1>
+          <p className="gd-welcome-society">{profile?.Society?.name}</p>
+          <p className="gd-welcome-time">{dateTime.toLocaleString("en-IN")}</p>
         </div>
-
-        <div className="gd-shift-card">
-          <p className="gd-shift-label">{t("gdDutySchedule")}</p>
-          {shift ? (
-            <>
-              <h2 className="gd-shift-type">{shift.shift_type}</h2>
-              <p className="gd-shift-time">
-                {formatTime(shift.start_time)} → {formatTime(shift.end_time)}
-              </p>
-              <p className="gd-shift-dates">
-                {formatDate(shift.start_date)} → {formatDate(shift.end_date)}
-              </p>
-            </>
-          ) : (
-            <span className="gd-no-shift">{t("gdNoShift")}</span>
-          )}
-        </div>
-
-        <div className="grid sm:grid-cols-3 gap-4">
-          <Stat title={t("gdStatToday")}  value={stats.today}  tone="today" />
-          <Stat title={t("gdStatInside")} value={stats.inside} tone="inside" />
-          <Stat title={t("gdStatExited")} value={stats.exited} tone="exited" />
-        </div>
-
       </div>
 
-      <div>
-        <GuardEmergencyPanel onSent={loadStats} />
+      <div className="gd-shift-card">
+        <p className="gd-shift-label">{t("gdDutySchedule")}</p>
+        {shift ? (
+          <>
+            <h2 className="gd-shift-type">{shift.shift_type}</h2>
+            <p className="gd-shift-time">
+              {formatTime(shift.start_time)} → {formatTime(shift.end_time)}
+            </p>
+            <p className="gd-shift-dates">
+              {formatDate(shift.start_date)} → {formatDate(shift.end_date)}
+            </p>
+          </>
+        ) : (
+          <span className="gd-no-shift">{t("gdNoShift")}</span>
+        )}
       </div>
 
+      <div className="grid sm:grid-cols-3 gap-4">
+        <Stat title={t("gdStatToday")}  value={stats.today}  />
+        <Stat title={t("gdStatInside")} value={stats.inside} />
+        <Stat title={t("gdStatExited")} value={stats.exited} />
+      </div>
     </div>
   );
 }

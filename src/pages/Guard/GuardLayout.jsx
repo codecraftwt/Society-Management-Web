@@ -171,18 +171,21 @@ function GuardLayoutInner() {
           title={t("guardDashboardTitle")}
           subtitle={t("guardDashboardSubtitle")}
           actions={
-            alerts.length > 0 && (
-              <button
-                onClick={() => setShowEmergency(true)}
-                className="relative flex items-center justify-center w-9 h-9 rounded-xl bg-red-600 hover:bg-red-700 shadow-md shadow-red-500/30 animate-pulse transition"
-                title={t("adminActiveEmergencies")}
-              >
-                <MdWarning size={18} className="text-white" />
-                <span className="header-sos-count absolute -top-1 -right-1 bg-white text-red-600 text-[10px] font-bold min-w-4.5 h-4.5 flex items-center justify-center rounded-full leading-none px-1">
+            <button
+              onClick={() => setShowEmergency(true)}
+              className={`relative flex items-center justify-center h-9 px-3 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs gap-1.5 shadow-md shadow-red-500/30 transition ${
+                alerts.length > 0 ? "animate-pulse ring-2 ring-red-400" : ""
+              }`}
+              title="Emergency & SOS Center"
+            >
+              <MdWarning size={17} className="text-white" />
+              <span>SOS</span>
+              {alerts.length > 0 && (
+                <span className="bg-white text-red-600 text-[10px] font-extrabold min-w-4.5 h-4.5 flex items-center justify-center rounded-full leading-none px-1">
                   {alerts.length}
                 </span>
-              </button>
-            )
+              )}
+            </button>
           }
           onLogout={() => setShowLogoutConfirm(true)}
         />
@@ -240,6 +243,7 @@ function GuardLayoutInner() {
         alerts={alerts}
         isOpen={showEmergency}
         onClose={() => setShowEmergency(false)}
+        onRefresh={loadEmergencies}
       />
     </div>
   );
