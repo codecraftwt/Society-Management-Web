@@ -4,7 +4,7 @@ import { Outlet, useNavigate } from "react-router-dom";
 import API from "../../services/api";
 import { LanguageProvider, useLang } from "../../context/LanguageContext";
 import LanguageSelector from "../../components/common/LanguageSelector";
-import { FaUsers, FaUserShield, FaParking, FaShieldAlt } from "react-icons/fa";
+import { FaUsers, FaUserShield, FaParking } from "react-icons/fa";
 import {
   MdApartment,
   MdCampaign,
@@ -16,10 +16,12 @@ import {
   MdWarning,
   MdVerified,
   MdBuild,
+  MdEmergency,
 } from "react-icons/md";
 import NotificationBell from "../../components/common/NotificationBell";
 import ThemeToggle from "../../components/common/ThemeToggle";
 import AdminEmergencyModal from "../../components/admin/AdminEmergencyModal";
+import SOSModal from "../../components/emergency/SOSModal";
 import { AuthContext } from "../../context/AuthContext";
 import { useSidebar } from "../../context/SidebarContext";
 import Sidebar from "../../components/common/Sidebar";
@@ -48,13 +50,22 @@ function AdminLayoutInner() {
 
   const [alerts, setAlerts] = useState([]);
   const [showEmergency, setShowEmergency] = useState(false);
+  const [showSOS, setShowSOS] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [rsOpen, setRsOpen] = useState(false);
 
-  const { user, switchRole } = useContext(AuthContext);
+  const { user, switchRole, refreshPermissions } = useContext(AuthContext);
 
   const base = "/admin";
   const isCommittee = isCommitteeMember(user);
+
+  useEffect(() => {
+    const handlePermChange = () => {
+      if (refreshPermissions) refreshPermissions();
+    };
+    window.addEventListener("permissions_updated", handlePermChange);
+    return () => window.removeEventListener("permissions_updated", handlePermChange);
+  }, [refreshPermissions]);
 
   /* Menu definitions with non-breaking grouping metadata */
   const menu = [
@@ -155,7 +166,7 @@ function AdminLayoutInner() {
       path: `${base}/maintenance`,
       icon: MdBuild,
       group: "FINANCE & BILLS",
-      module: "manage_bills",
+      module: "maintenance",
     },
     {
       label: t("adminMenuAmenities"),
@@ -177,13 +188,6 @@ function AdminLayoutInner() {
       icon: MdVerified,
       group: "SERVICES & REPORTS",
       module: "society_documents",
-    },
-    {
-      label: "Role Permissions",
-      path: `${base}/role-permissions`,
-      icon: FaShieldAlt,
-      group: "SERVICES & REPORTS",
-      module: "settings",
     },
   ];
 
@@ -372,6 +376,18 @@ function AdminLayoutInner() {
                 </div>
               )}
 
+              {/* SOS button — admin & committee can raise a society-wide SOS */}
+              {hasPermission(user, "emergency", "trigger") && (
+                <button
+                  onClick={() => setShowSOS(true)}
+                  className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 shadow-md shadow-red-500/30 transition px-3 h-9 text-white text-xs font-bold"
+                  title="Raise an SOS alert to the whole society"
+                >
+                  <MdEmergency size={15} />
+                  <span>SOS</span>
+                </button>
+              )}
+
               {/* Emergency alert */}
               {alerts.length > 0 && (
                 <button
@@ -451,6 +467,17 @@ function AdminLayoutInner() {
         isOpen={showEmergency}
         onClose={() => setShowEmergency(false)}
         refresh={loadEmergencies}
+      />
+
+      {/* SOS MODAL */}
+      <SOSModal
+        key={String(showSOS)}
+        isOpen={showSOS}
+        onClose={() => setShowSOS(false)}
+        onRefresh={loadEmergencies}
+        alerts={alerts}
+        senderLabel="SOS"
+        modalTitle="🚨 Society SOS Center"
       />
     </div>
   );

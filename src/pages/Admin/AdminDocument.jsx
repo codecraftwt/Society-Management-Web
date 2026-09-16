@@ -1,8 +1,9 @@
 
 import React, { useState, useEffect, useRef, useCallback, useContext } from "react";
 import { useLang } from "../../context/LanguageContext";
-import { AuthContext } from "../../context/AuthContext";
-import { isCommitteeMember } from "../../utils/permissions";
+import { useAuthContext } from "../../context/AuthContext";
+import { useCustomAlert } from "../../context/CustomAlertContext";
+import { isCommitteeMember, hasPermission } from "../../utils/permissions";
 import {
   MdOutlineAdminPanelSettings,
   MdCloudUpload, MdDescription, MdDelete,
@@ -163,7 +164,8 @@ function DeleteModal({ doc, loading, onConfirm, onCancel, t }) {
 ═══════════════════════════════════════════ */
 export default function AdminDocument() {
   const { t }   = useLang();
-  const { user } = useContext(AuthContext);
+  const { user } = useAuthContext();
+  const { showUnauthorized } = useCustomAlert();
   const isCommittee = isCommitteeMember(user);
   const fileRef = useRef();
 
@@ -194,6 +196,22 @@ export default function AdminDocument() {
   /* ── Delete ── */
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting,     setDeleting]     = useState(false);
+
+  const handleToggleUpload = () => {
+    if (!uploadOpen && !hasPermission(user, "society_documents", "upload")) {
+      showUnauthorized("You do not have permission to upload society documents.");
+      return;
+    }
+    setUploadOpen(o => !o);
+  };
+
+  const handleOpenDelete = (doc) => {
+    if (!hasPermission(user, "society_documents", "delete")) {
+      showUnauthorized("You do not have permission to delete society documents.");
+      return;
+    }
+    setDeleteTarget(doc);
+  };
 
   /* ── Toast ── */
   const [toast, setToast] = useState(null);
@@ -264,6 +282,10 @@ export default function AdminDocument() {
   ──────────────────────────────────── */
   const handleUpload = async e => {
     e.preventDefault();
+    if (!hasPermission(user, "society_documents", "upload")) {
+      showUnauthorized("You do not have permission to upload society documents.");
+      return;
+    }
     if (!form.title.trim()) { showToast(t("adDocErrTitle"), "error"); return; }
     if (!file)               { showToast(t("adDocErrFile"),  "error"); return; }
     try {
@@ -288,23 +310,24 @@ export default function AdminDocument() {
   /* ────────────────────────────────────
      DELETE
   ──────────────────────────────────── */
-  /* ────────────────────────────────────
-   DELETE
-──────────────────────────────────── */
-const handleDelete = async () => {
-  try {
-    setDeleting(true);
-    // ✅ FIX: Add ?hard=true to permanently delete the file
-    await API.delete(`/documents/admin/${deleteTarget.id}?hard=true`);
-    showToast(`"${deleteTarget.title}" ${t("adDocDeleteSuccess")}`);
-    setDeleteTarget(null);
-    // go back one page if this was last item on page
-    const newPage = docs.length === 1 && page > 1 ? page - 1 : page;
-    fetchDocuments(newPage, debSearch, activeCat);
-  } catch (err) {
-    showToast(err.response?.data?.message || t("adDocDeleteFail"), "error");
-  } finally { setDeleting(false); }
-};
+  const handleDelete = async () => {
+    if (!hasPermission(user, "society_documents", "delete")) {
+      showUnauthorized("You do not have permission to delete society documents.");
+      return;
+    }
+    try {
+      setDeleting(true);
+      // ✅ FIX: Add ?hard=true to permanently delete the file
+      await API.delete(`/documents/admin/${deleteTarget.id}?hard=true`);
+      showToast(`"${deleteTarget.title}" ${t("adDocDeleteSuccess")}`);
+      setDeleteTarget(null);
+      // go back one page if this was last item on page
+      const newPage = docs.length === 1 && page > 1 ? page - 1 : page;
+      fetchDocuments(newPage, debSearch, activeCat);
+    } catch (err) {
+      showToast(err.response?.data?.message || t("adDocDeleteFail"), "error");
+    } finally { setDeleting(false); }
+  };
 
   const onDrop = e => {
     e.preventDefault(); setDragOver(false);
@@ -342,7 +365,7 @@ const handleDelete = async () => {
           {!isCommittee && (
             <button
               className={`ad-upload-toggle-btn${uploadOpen ? " ad-upload-toggle-btn--open" : ""}`}
-              onClick={() => setUploadOpen(o => !o)}
+              onClick={handleToggleUpload}
             >
               <span className="ad-upload-toggle-icon">
                 {uploadOpen ? <MdClose size={17} /> : <MdAdd size={17} />}
@@ -526,7 +549,7 @@ const handleDelete = async () => {
           <>
             <div className="ad-card-grid">
               {docs.map((doc) => (
-                <DocCard key={doc.id} doc={doc} t={t} onDelete={setDeleteTarget} isCommittee={isCommittee} />
+                <DocCard key={doc.id} doc={doc} t={t} onDelete={handleOpenDelete} isCommittee={isCommittee} />
               ))}
             </div>
 

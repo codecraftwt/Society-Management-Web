@@ -15,7 +15,8 @@ import {
 import { toast } from "react-toastify";
 import Select from "../../components/common/Select";
 import GlobalButton from "../../components/common/GlobalButton";
-import { isCommitteeMember } from "../../utils/permissions";
+import { isCommitteeMember, hasPermission } from "../../utils/permissions";
+import { useCustomAlert } from "../../context/CustomAlertContext";
 
 /* ─────────────────────────────────────────
    HELPERS
@@ -2213,6 +2214,7 @@ export default function Resident() {
   const [flatDetailModal, setFlatDetailModal] = useState(null);
 
   const { user } = useContext(AuthContext);
+  const { showUnauthorized, showError } = useCustomAlert();
   const isSuperAdmin = user?.activeRole === "SUPER_ADMIN";
   const canManageResidents = !isCommitteeMember(user);
   const [societiesList, setSocietiesList] = useState([]);
@@ -2361,32 +2363,84 @@ export default function Resident() {
     [filterSocietyId, filterBlockId, filterFloorId, filterFlatId, isSuperAdmin],
   );
 
+  const handleOpenAddResident = () => {
+    if (!showForm && !hasPermission(user, "resident", "create")) {
+      showUnauthorized("You do not have permission to add residents.");
+      return;
+    }
+    const next = !showForm;
+    setShowForm(next);
+    if (next) setFormSocietyId(filterSocietyId);
+    setConfirmId(null);
+    setAssignModal(null);
+    if (showForm) resetForm();
+  };
+
+  const handleOpenAssignModal = (resident) => {
+    if (!hasPermission(user, "property", "edit")) {
+      showUnauthorized("You do not have permission to assign units.");
+      return;
+    }
+    setAssignModal({ id: resident.id, name: resident.name, society_id: resident.society_id });
+  };
+
   const promoteCommittee = async (userId) => {
+    if (!hasPermission(user, "resident", "promote")) {
+      showUnauthorized("You do not have permission to promote committee members.");
+      setCommitteeConfirm(null);
+      return;
+    }
     try {
       await API.post("/users/committee/promote", { userId });
       setCommitteeConfirm(null);
       loadResidents(page, debouncedSearch);
       toast.success("Promoted to committee member");
-    } catch (err) { toast.error(err.response?.data?.message || "Failed to promote"); }
+    } catch (err) {
+      if (err.response?.status === 403) {
+        showUnauthorized(err.response?.data?.message || "Operation restricted");
+      } else {
+        toast.error(err.response?.data?.message || "Failed to promote");
+      }
+    }
   };
 
   const removeCommittee = async (userId) => {
+    if (!hasPermission(user, "resident", "promote")) {
+      showUnauthorized("You do not have permission to manage committee members.");
+      setCommitteeConfirm(null);
+      return;
+    }
     try {
       await API.post("/users/committee/remove", { userId });
       setCommitteeConfirm(null);
       loadResidents(page, debouncedSearch);
       toast.success("Removed from committee");
-    } catch (err) { toast.error(err.response?.data?.message || "Failed to remove"); }
+    } catch (err) {
+      if (err.response?.status === 403) {
+        showUnauthorized(err.response?.data?.message || "Operation restricted");
+      } else {
+        toast.error(err.response?.data?.message || "Failed to remove");
+      }
+    }
   };
 
   const deactivateAccountant = async (userId) => {
+    if (!hasPermission(user, "accountant", "toggle_status")) {
+      showUnauthorized("You do not have permission to change accountant status.");
+      setAccountantConfirm(null);
+      return;
+    }
     try {
       await API.patch(`/accountant/${userId}/status`, { status: "INACTIVE" });
       setAccountantConfirm(null);
       loadResidents(page, debouncedSearch);
       toast.success("Accountant role deactivated successfully");
     } catch (err) {
-      toast.error(err.response?.data?.message || "Failed to deactivate accountant");
+      if (err.response?.status === 403) {
+        showUnauthorized(err.response?.data?.message || "Operation restricted");
+      } else {
+        toast.error(err.response?.data?.message || "Failed to deactivate accountant");
+      }
     }
   };
 
@@ -2409,6 +2463,10 @@ export default function Resident() {
   const handlePageChange = (p) => loadResidents(p, debouncedSearch);
 
   const handleEdit = (resident) => {
+    if (!hasPermission(user, "resident", "edit")) {
+      showUnauthorized("You do not have permission to edit resident details.");
+      return;
+    }
     setFormData({ name: resident.name, email: resident.email, password: "", phone: resident.phone || "", resident_type: resident.resident_type || "OWNER", flat_assignments: [], vehicle_count: resident.vehicle_count ?? 0, occupant_count: resident.occupant_count ?? 1, emergency_contact: { name: resident.emergency_contact?.name || "", phone: resident.emergency_contact?.phone || "" } });
     setEditCurrentFlats(resident.flats || []);
     setEditFlatData(EMPTY_EDIT_FLAT);
@@ -2564,13 +2622,22 @@ export default function Resident() {
   };
 
   const handleDelete = async (id) => {
+    if (!hasPermission(user, "resident", "delete")) {
+      showUnauthorized("You do not have permission to delete residents.");
+      setConfirmId(null);
+      return;
+    }
     try {
       await API.delete(`/users/resident/${id}`);
       setConfirmId(null);
       loadResidents(page, debouncedSearch);
       toast.success("Resident deleted successfully");
     } catch (err) {
-      toast.error(err.response?.data?.message || t("residentDeleteFail"));
+      if (err.response?.status === 403) {
+        showUnauthorized(err.response?.data?.message || "Operation restricted");
+      } else {
+        toast.error(err.response?.data?.message || t("residentDeleteFail"));
+      }
       setConfirmId(null);
     }
   };
@@ -2702,14 +2769,7 @@ export default function Resident() {
             icon={showForm ? MdClose : MdPersonAdd}
             className="w-full sm:w-auto justify-center shrink-0"
             style={{ fontWeight: 700 }}
-            onClick={() => {
-              const next = !showForm;
-              setShowForm(next);
-              if (next) setFormSocietyId(filterSocietyId);
-              setConfirmId(null);
-              setAssignModal(null);
-              if (showForm) resetForm();
-            }}
+            onClick={handleOpenAddResident}
           >
             {showForm ? t("cancel") : t("residentAddBtn")}
           </GlobalButton>
@@ -3122,7 +3182,7 @@ export default function Resident() {
                             ) : (
                               <ResidentActionMenu
                                 t={t}
-                                onAssignFlat={() => setAssignModal({ id: r.id, name: r.name, society_id: r.society_id })}
+                                onAssignFlat={() => handleOpenAssignModal(r)}
                                 onEdit={() => handleEdit(r)}
                                 isCommittee={!!r.roles?.includes("COMMITTEE_MEMBER")}
                                 isAccountant={!!r.roles?.includes("ACCOUNTANT")}
@@ -3131,7 +3191,13 @@ export default function Resident() {
                                 onPromote={() => setCommitteeConfirm({ type: "promote", id: r.id, name: r.name })}
                                 onRemoveCommittee={() => setCommitteeConfirm({ type: "remove", id: r.id, name: r.name })}
                                 onDeactivateAccountant={() => setAccountantConfirm({ id: r.id, name: r.name })}
-                                onDelete={() => setConfirmId(r.id)}
+                                onDelete={() => {
+                                  if (!hasPermission(user, "resident", "delete")) {
+                                    showUnauthorized("You do not have permission to delete residents.");
+                                    return;
+                                  }
+                                  setConfirmId(r.id);
+                                }}
                               />
                             )}
                           </div>
@@ -3174,7 +3240,7 @@ export default function Resident() {
                         ) : (
                           <ResidentActionMenu
                             t={t}
-                            onAssignFlat={() => setAssignModal({ id: r.id, name: r.name, society_id: r.society_id })}
+                            onAssignFlat={() => handleOpenAssignModal(r)}
                             onEdit={() => handleEdit(r)}
                             isCommittee={!!r.roles?.includes("COMMITTEE_MEMBER")}
                             isAccountant={!!r.roles?.includes("ACCOUNTANT")}
@@ -3183,7 +3249,13 @@ export default function Resident() {
                             onPromote={() => setCommitteeConfirm({ type: "promote", id: r.id, name: r.name })}
                             onRemoveCommittee={() => setCommitteeConfirm({ type: "remove", id: r.id, name: r.name })}
                             onDeactivateAccountant={() => setAccountantConfirm({ id: r.id, name: r.name })}
-                            onDelete={() => setConfirmId(r.id)}
+                            onDelete={() => {
+                              if (!hasPermission(user, "resident", "delete")) {
+                                showUnauthorized("You do not have permission to delete residents.");
+                                return;
+                              }
+                              setConfirmId(r.id);
+                            }}
                           />
                         )}
                       </div>

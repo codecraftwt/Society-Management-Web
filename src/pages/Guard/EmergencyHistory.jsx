@@ -49,7 +49,9 @@ export default function EmergencyHistory() {
       if (!q) return true;
       const raised = a.source === "RESIDENT"
         ? (a.Resident?.name || t("ehResident") || "Resident")
-        : (t("ehGuard") || "Guard");
+        : a.source === "GUARD"
+        ? (a.Guard?.name || t("ehGuard") || "Guard")
+        : (a.Admin?.name || "Staff");
       const flat = a.source === "RESIDENT" && a.Flat
         ? `${a.Flat?.Block?.name || ""} ${a.Flat?.flat_number || ""}`
         : "";
@@ -66,11 +68,16 @@ export default function EmergencyHistory() {
     setPage(1);
   };
 
-  const raisedBy = (a) => (
-    a.source === "RESIDENT"
-      ? a.Resident?.name || t("ehResident")
-      : t("ehGuard")
-  );
+  const sourceLabel = (a) => {
+    if (a.source === "RESIDENT") return a.Resident?.name || t("ehResident") || "Resident";
+    if (a.source === "GUARD") return a.Guard?.name || t("ehGuard") || "Guard";
+    if (a.source === "ADMIN") return a.Admin?.name || "Society Admin";
+    if (a.source === "COMMITTEE") return a.Admin?.name || "Committee Member";
+    if (a.source === "SUPER_ADMIN") return a.Admin?.name || "Super Admin";
+    return "Staff";
+  };
+
+  const raisedBy = (a) => sourceLabel(a);
 
   const flatLabel = (a) => (
     a.source === "RESIDENT" && a.Flat

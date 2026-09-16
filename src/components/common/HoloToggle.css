@@ -1,0 +1,84 @@
+/* ==========================================================================
+   MODERN SLEEK GLASS-TOGGLE SWITCH (Ultra-Clean & Stylish)
+   ========================================================================== */
+
+.modern-toggle-wrapper {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+}
+
+.modern-toggle-btn {
+  position: relative;
+  width: 58px;
+  height: 30px;
+  border-radius: 999px;
+  cursor: pointer;
+  outline: none;
+  border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.15));
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(8px);
+  padding: 2px;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  align-items: center;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.4), 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.modern-toggle-btn:hover:not(:disabled) {
+  border-color: rgba(99, 102, 241, 0.4);
+  transform: translateY(-1px);
+}
+
+.modern-toggle-btn.is-active {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  border-color: rgba(52, 211, 153, 0.5);
+  box-shadow: 0 0 16px -2px rgba(16, 185, 129, 0.45), inset 0 1px 2px rgba(255, 255, 255, 0.3);
+}
+
+.modern-toggle-thumb {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+  transform: translateX(0);
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), background 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modern-toggle-btn.is-active .modern-toggle-thumb {
+  transform: translateX(28px);
+  background: #ffffff;
+}
+
+.modern-toggle-thumb-inner {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #cbd5e1;
+  transition: background 0.3s ease;
+}
+
+.modern-toggle-btn.is-active .modern-toggle-thumb-inner {
+  background: #10b981;
+}
+
+.modern-toggle-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  margin-left: 8px;
+  min-width: 32px;
+}
+
+.modern-toggle-label.on {
+  color: #10b981;
+}
+
+.modern-toggle-label.off {
+  color: #94a3b8;
+}

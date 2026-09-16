@@ -6,6 +6,8 @@ import API from "../../services/api";
 import { AuthContext } from "../../context/AuthContext";
 import { useLang } from "../../context/LanguageContext";
 import { getSocket } from "../../services/socket";
+import { hasPermission } from "../../utils/permissions";
+import { useCustomAlert } from "../../context/CustomAlertContext";
 import {
   MdReportProblem, MdSearch, MdClose, MdOutlineInbox,
   MdImage, MdOpenInNew, MdPerson, MdApartment,
@@ -187,7 +189,10 @@ function ChatPanel({ complaintId, currentUser, onIncomingMessage }) {
   const pickFile = (e) => {
     const f = e.target.files?.[0];
     if (!f) return;
-    if (f.size > 10 * 1024 * 1024) { alert("Max file size is 10 MB"); return; }
+    if (f.size > 10 * 1024 * 1024) {
+      if (typeof window !== "undefined") window.alert?.("Max file size is 10 MB");
+      return;
+    }
     setAttachment(f);
     setAttachPrev(f.type.startsWith("image/") ? URL.createObjectURL(f) : null);
     e.target.value = "";
@@ -732,6 +737,8 @@ export default function CommitteeComplaints() {
     };
   }, [complaints]);
 
+  const { showUnauthorized, showError } = useCustomAlert();
+
   const markRead = useCallback(async (complaintId) => {
     setUnreadMap(m => ({ ...m, [complaintId]: 0 }));
     try { await API.put(`/complaints/${complaintId}/read`); }
@@ -739,12 +746,22 @@ export default function CommitteeComplaints() {
   }, []);
 
   const updateStatus = async (id, status) => {
+    if (!hasPermission(authUser, "complaints", "update_status")) {
+      showUnauthorized("You do not have permission to update complaint status.");
+      return;
+    }
     try {
       setUpdatingId(id);
       await API.put(`/complaints/${id}`, { status });
       setComplaints(prev => prev.map(c => c.id === id ? { ...c, status } : c));
       setSelected(prev => prev?.id === id ? { ...prev, status } : prev);
-    } catch (e) { console.error(e); }
+    } catch (e) {
+      if (e.response?.status === 403) {
+        showUnauthorized(e.response?.data?.message || "Operation restricted");
+      } else {
+        showError(e.response?.data?.message || "Failed to update status");
+      }
+    }
     finally { setUpdatingId(null); }
   };
 

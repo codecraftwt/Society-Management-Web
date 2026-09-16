@@ -14,7 +14,8 @@ import GlobalModal from "../../components/common/GlobalModal";
 import GlobalTable from "../../components/common/GlobalTable";
 import GlobalBadge from "../../components/common/GlobalBadge";
 import GlobalConfirmDialog from "../../components/common/GlobalConfirmDialog";
-import { isCommitteeMember } from "../../utils/permissions";
+import { isCommitteeMember, hasPermission } from "../../utils/permissions";
+import { useCustomAlert } from "../../context/CustomAlertContext";
 
 function ShiftBadge({ type, t }) {
   const SHIFT_CFG = {
@@ -61,6 +62,7 @@ function SectionLabel({ children }) {
 export default function Guard() {
   const { t } = useLang();
   const { user } = useContext(AuthContext);
+  const { showUnauthorized, showError } = useCustomAlert();
   const activeRole = user?.activeRole ?? user?.role;
   const isSuperAdmin = activeRole === "SUPER_ADMIN";
   const isCommittee = isCommitteeMember(user);
@@ -148,7 +150,21 @@ export default function Guard() {
     fetchGuards();
   }, [isSuperAdmin, filterSocietyId]);
 
+  const handleOpenAddModal = () => {
+    if (!hasPermission(user, "guard", "create")) {
+      showUnauthorized("You do not have permission to add guards.");
+      return;
+    }
+    setEditingId(null);
+    setFormData({ name: "", email: "", password: "", society_id: filterSocietyId === "ALL" ? "" : filterSocietyId });
+    setShowGuardModal(true);
+  };
+
   const handleEdit = (g) => {
+    if (!hasPermission(user, "guard", "edit")) {
+      showUnauthorized("You do not have permission to edit guard details.");
+      return;
+    }
     setEditingId(g.id);
     setFormData({
       name: g.name,
@@ -161,6 +177,11 @@ export default function Guard() {
 
   const handleSubmit = async (e) => {
     if (e) e.preventDefault();
+    const reqAction = editingId ? "edit" : "create";
+    if (!hasPermission(user, "guard", reqAction)) {
+      showUnauthorized(`You do not have permission to ${reqAction} guards.`);
+      return;
+    }
     if (!formData.name || !formData.email || (!editingId && !formData.password)) return;
 
     try {
@@ -186,27 +207,53 @@ export default function Guard() {
       setFormData({ name: "", email: "", password: "", society_id: "" });
       fetchGuards();
     } catch (err) {
-      alert(err.response?.data?.message || "Operation failed");
+      if (err.response?.status === 403) {
+        showUnauthorized(err.response?.data?.message || "Operation restricted");
+      } else {
+        showError(err.response?.data?.message || "Operation failed");
+      }
     } finally {
       setSubmitLoading(false);
     }
   };
 
+  const handleOpenDelete = (g) => {
+    if (!hasPermission(user, "guard", "delete")) {
+      showUnauthorized("You do not have permission to delete guards.");
+      return;
+    }
+    setDeleteConfirm({ isOpen: true, id: g.id, societyId: g.society_id, loading: false });
+  };
+
   const handleDeleteConfirm = async () => {
     if (!deleteConfirm.id) return;
+    if (!hasPermission(user, "guard", "delete")) {
+      showUnauthorized("You do not have permission to delete guards.");
+      setDeleteConfirm({ isOpen: false, id: null, societyId: null, loading: false });
+      return;
+    }
     try {
       setDeleteConfirm(p => ({ ...p, loading: true }));
       await API.delete(`/guards/${deleteConfirm.id}`);
       setDeleteConfirm({ isOpen: false, id: null, societyId: null, loading: false });
       fetchGuards();
     } catch (err) {
-      alert(err.response?.data?.message || "Failed to delete guard");
+      if (err.response?.status === 403) {
+        showUnauthorized(err.response?.data?.message || "Operation restricted");
+      } else {
+        showError(err.response?.data?.message || "Failed to delete guard");
+      }
       setDeleteConfirm(p => ({ ...p, loading: false }));
     }
   };
 
   /* ── SHIFTS ── */
   const openShiftModal = (guard, shift = null) => {
+    if (!hasPermission(user, "guard", "edit_shift")) {
+      showUnauthorized("You do not have permission to manage guard shifts.");
+      return;
+    }
+    setSelectedGuard(guard);
     setSelectedGuard(guard);
     setShiftError("");
     if (shift) {
@@ -407,7 +454,7 @@ export default function Guard() {
                 variant="delete"
                 size="sm"
                 icon={MdDelete}
-                onClick={() => setDeleteConfirm({ isOpen: true, id: g.id, societyId: g.society_id, loading: false })}
+                onClick={() => handleOpenDelete(g)}
               />
             )}
           </div>
@@ -457,11 +504,7 @@ export default function Guard() {
               variant="add"
               icon={MdAdd}
               borderDraw
-              onClick={() => {
-                setEditingId(null);
-                setFormData({ name: "", email: "", password: "", society_id: filterSocietyId === "ALL" ? "" : filterSocietyId });
-                setShowGuardModal(true);
-              }}
+              onClick={handleOpenAddModal}
             >
               {t("guardAddBtn") || "Add Guard"}
             </GlobalButton>
@@ -482,11 +525,7 @@ export default function Guard() {
               variant="add"
               icon={MdAdd}
               borderDraw
-              onClick={() => {
-                setEditingId(null);
-                setFormData({ name: "", email: "", password: "", society_id: filterSocietyId === "ALL" ? "" : filterSocietyId });
-                setShowGuardModal(true);
-              }}
+              onClick={handleOpenAddModal}
             >
               {t("guardAddBtn") || "Add Guard"}
             </GlobalButton>

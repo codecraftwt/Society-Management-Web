@@ -30,7 +30,8 @@ import GlobalButton from "../../components/common/GlobalButton";
 import GlobalModal from "../../components/common/GlobalModal";
 import GlobalTable from "../../components/common/GlobalTable";
 import GlobalConfirmDialog from "../../components/common/GlobalConfirmDialog";
-import { isCommitteeMember } from "../../utils/permissions";
+import { isCommitteeMember, hasPermission } from "../../utils/permissions";
+import { useCustomAlert } from "../../context/CustomAlertContext";
 
 function useDebounce(value, delay = 500) {
   const [d, setD] = useState(value);
@@ -222,7 +223,7 @@ export default function Notice() {
       setEditingId(null);
       loadNotices(1, debSearch);
     } catch (err) {
-      alert(err.response?.data?.message || "Failed to publish notice");
+      showError(err.response?.data?.message || "Failed to publish notice");
     } finally {
       setSubmitting(false);
     }
@@ -238,7 +239,7 @@ export default function Notice() {
       setTotalAll((prev) => Math.max(0, prev - 1));
       setDeleteConfirm({ isOpen: false, id: null, societyId: null, loading: false });
     } catch (err) {
-      alert(err.response?.data?.message || "Failed to delete notice");
+      showError(err.response?.data?.message || "Failed to delete notice");
       setDeleteConfirm(p => ({ ...p, loading: false }));
     }
   };

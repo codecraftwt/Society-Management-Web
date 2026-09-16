@@ -18,14 +18,17 @@ import "./light.css";
 */
 
 import { SidebarProvider } from "./context/SidebarContext";
+import { CustomAlertProvider } from "./context/CustomAlertContext";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <ThemeProvider>
     <AuthProvider>
       <SidebarProvider>
-        <BrowserRouter>
-          <App />
-        </BrowserRouter>
+        <CustomAlertProvider>
+          <BrowserRouter>
+            <App />
+          </BrowserRouter>
+        </CustomAlertProvider>
       </SidebarProvider>
     </AuthProvider>
   </ThemeProvider>

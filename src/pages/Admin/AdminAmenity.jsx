@@ -4,13 +4,14 @@ import { createPortal } from "react-dom";
 import API from "../../services/api";
 import { useLang } from "../../context/LanguageContext";
 import { AuthContext } from "../../context/AuthContext";
-import { isCommitteeMember } from "../../utils/permissions";
+import { isCommitteeMember, hasPermission } from "../../utils/permissions";
+import { useCustomAlert } from "../../context/CustomAlertContext";
 import {
   MdAdd, MdClose, MdSearch, MdOutlineInbox,
   MdCheckCircle, MdCancel, MdToggleOn, MdToggleOff,
   MdAccessTime, MdPeople, MdEventAvailable,
   MdGridView, MdCalendarMonth, MdWarning, MdBlock,
-  MdPayment,
+  MdPayment, MdEdit,
 } from "react-icons/md";
 import Select from "../../components/common/Select";
 import SlidingTabs from "../../components/common/SlidingTabs";
@@ -45,6 +46,8 @@ const PALETTES = [
   { iconBg: "rgba(244,63,94,0.15)", iconBorder: "rgba(244,63,94,0.28)", strip: "#fb7185", stripEnd: "#be123c", glow: "rgba(244,63,94,0.20)" },
   { iconBg: "rgba(91,141,239,0.15)", iconBorder: "rgba(91,141,239,0.28)", strip: "#94B5F5", stripEnd: "#3E60A3", glow: "rgba(91,141,239,0.20)" },
 ];
+
+const isPaidAmenity = (a) => (a?.type || "").toUpperCase() === "PAID";
 
 function StatusBadge({ status, t }) {
   const cfg = {
@@ -203,12 +206,14 @@ export default function AdminAmenity() {
   const isMobile = useIsMobile();
   const { t } = useLang();
   const { user } = useContext(AuthContext);
+  const { showUnauthorized, showWarning, showError } = useCustomAlert();
   const canEdit  = !isCommitteeMember(user);
 
   const [amenities, setAmenities] = useState([]);
   const [bookings, setBookings] = useState([]);
   const [groupedBookings, setGroupedBookings] = useState([]);
   const [showForm, setShowForm] = useState(false);
+  const [editingAmenity, setEditingAmenity] = useState(null);
   const [activeTab, setActiveTab] = useState("AMENITIES");
   const [searchAmenity, setSearchAmenity] = useState("");
   const [amenityStatusFilter, setAmenityStatusFilter] = useState("ALL");
@@ -218,6 +223,7 @@ export default function AdminAmenity() {
   const [togglingId, setTogglingId] = useState(null);
   const [approvingId, setApprovingId] = useState(null);
   const [rejectingId, setRejectingId] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
   const [disableModalAmenity, setDisableModalAmenity] = useState(null);
 
   const [form, setForm] = useState({
@@ -257,27 +263,99 @@ export default function AdminAmenity() {
     }
   };
 
-  const createAmenity = async () => {
+  const handleToggleAddForm = () => {
+    if (!showForm && !hasPermission(user, "amenities", "create")) {
+      showUnauthorized("You do not have permission to add amenities.");
+      return;
+    }
+    setEditingAmenity(null);
+    setForm({ name: "", type: "FREE", booking_type: "SLOT", rate_per_hour: 0, opening_time: "", closing_time: "", capacity: 1, requires_approval: false });
+    setShowForm(p => !p);
+  };
+
+  const handleOpenEditForm = (amenity) => {
+    if (!hasPermission(user, "amenities", "edit")) {
+      showUnauthorized("You do not have permission to edit amenities.");
+      return;
+    }
+    setEditingAmenity(amenity);
+    setForm({
+      name: amenity.name || "",
+      type: (amenity.type || "FREE").toUpperCase(),
+      booking_type: amenity.booking_type || "SLOT",
+      rate_per_hour: Number(amenity.rate_per_hour) || 0,
+      opening_time: amenity.opening_time ? String(amenity.opening_time).slice(0, 5) : "",
+      closing_time: amenity.closing_time ? String(amenity.closing_time).slice(0, 5) : "",
+      capacity: Number(amenity.capacity) || 1,
+      requires_approval: !!amenity.requires_approval,
+    });
+    setShowForm(true);
+  };
+
+  const submitAmenity = async () => {
+    const canWrite = editingAmenity ? "edit" : "create";
+    if (!hasPermission(user, "amenities", canWrite)) {
+      showUnauthorized(`You do not have permission to ${canWrite} amenities.`);
+      return;
+    }
+    setSubmitting(true);
     try {
-      if (!form.name.trim()) { alert(t("amenErrName")); return; }
-      if (!form.capacity || form.capacity <= 0) { alert(t("amenErrCapacity")); return; }
-      if (form.type === "PAID" && (!form.rate_per_hour || form.rate_per_hour <= 0)) { alert(t("amenErrRate")); return; }
-      if (form.booking_type === "SLOT" && (!form.opening_time || !form.closing_time)) { alert(t("amenErrTime")); return; }
-      await API.post("/admin/amenities", form);
+      if (!form.name.trim()) { showWarning(t("amenErrName")); setSubmitting(false); return; }
+      if (!form.capacity || form.capacity <= 0) { showWarning(t("amenErrCapacity")); setSubmitting(false); return; }
+      if (form.type === "PAID" && (!form.rate_per_hour || form.rate_per_hour <= 0)) { showWarning(t("amenErrRate")); setSubmitting(false); return; }
+      if (form.booking_type === "SLOT" && (!form.opening_time || !form.closing_time)) { showWarning(t("amenErrTime")); setSubmitting(false); return; }
+      const payload = {
+        name: form.name.trim(),
+        type: form.type,
+        booking_type: form.booking_type,
+        rate_per_hour: form.type === "PAID" ? Number(form.rate_per_hour) : 0,
+        opening_time: form.opening_time || null,
+        closing_time: form.closing_time || null,
+        capacity: Number(form.capacity),
+        requires_approval: form.requires_approval,
+      };
+      if (editingAmenity) {
+        await API.put(`/admin/amenities/${editingAmenity.id}`, payload);
+      } else {
+        await API.post("/admin/amenities", payload);
+      }
       loadAmenities();
       setShowForm(false);
+      setEditingAmenity(null);
       setForm({ name: "", type: "FREE", booking_type: "SLOT", rate_per_hour: 0, opening_time: "", closing_time: "", capacity: 1, requires_approval: false });
-    } catch (e) { console.error(e); }
+    } catch (e) {
+      if (e.response?.status === 403) {
+        showUnauthorized(e.response?.data?.message || "Operation restricted");
+      } else {
+        showError(e.response?.data?.message || (editingAmenity ? "Failed to update amenity" : "Failed to create amenity"));
+      }
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const handleReEnable = async (id) => {
+    if (!hasPermission(user, "amenities", "edit")) {
+      showUnauthorized("You do not have permission to toggle amenities.");
+      return;
+    }
     setTogglingId(id);
     try { await API.patch(`/admin/amenities/${id}/toggle`); await loadAmenities(); }
-    catch (e) { console.error(e); }
+    catch (e) {
+      if (e.response?.status === 403) {
+        showUnauthorized(e.response?.data?.message || "Operation restricted");
+      } else {
+        showError(e.response?.data?.message || "Failed to toggle amenity status");
+      }
+    }
     finally { setTogglingId(null); }
   };
 
   const approveBooking = async (b) => {
+    if (!hasPermission(user, "amenities", "manage_bookings")) {
+      showUnauthorized("You do not have permission to manage bookings.");
+      return;
+    }
     const id = b.booking_ids?.[0] ?? b.id;
     setApprovingId(id);
     try {
@@ -285,11 +363,21 @@ export default function AdminAmenity() {
         b.booking_ids?.length ? { booking_ids: b.booking_ids } : undefined
       );
       await loadBookings();
+    } catch (e) {
+      if (e.response?.status === 403) {
+        showUnauthorized(e.response?.data?.message || "Operation restricted");
+      } else {
+        showError(e.response?.data?.message || "Failed to approve booking");
+      }
     }
     finally { setApprovingId(null); }
   };
 
   const rejectBooking = async (b) => {
+    if (!hasPermission(user, "amenities", "manage_bookings")) {
+      showUnauthorized("You do not have permission to manage bookings.");
+      return;
+    }
     const id = b.booking_ids?.[0] ?? b.id;
     setRejectingId(id);
     try {
@@ -297,18 +385,40 @@ export default function AdminAmenity() {
         b.booking_ids?.length ? { booking_ids: b.booking_ids } : undefined
       );
       await loadBookings();
+    } catch (e) {
+      if (e.response?.status === 403) {
+        showUnauthorized(e.response?.data?.message || "Operation restricted");
+      } else {
+        showError(e.response?.data?.message || "Failed to reject booking");
+      }
     }
     finally { setRejectingId(null); }
   };
 
+  const handleOpenDisableModal = (amenity) => {
+    if (!hasPermission(user, "amenities", "delete")) {
+      showUnauthorized("You do not have permission to disable amenities.");
+      return;
+    }
+    setDisableModalAmenity(amenity);
+  };
+
   const handleDisableConfirm = async (payload) => {
+    if (!hasPermission(user, "amenities", "delete")) {
+      showUnauthorized("You do not have permission to disable amenities.");
+      setDisableModalAmenity(null);
+      return;
+    }
     try {
       await API.patch(`/admin/amenities/${disableModalAmenity.id}/disable`, payload);
       await loadAmenities();
       await loadBookings(); // refresh — PAYMENT_PENDING rows may now be CANCELLED
     } catch (e) {
-      console.error(e);
-      alert("Could not disable amenity. Please try again.");
+      if (e.response?.status === 403) {
+        showUnauthorized(e.response?.data?.message || "Operation restricted");
+      } else {
+        showError(e.response?.data?.message || "Could not disable amenity. Please try again.");
+      }
     } finally {
       setDisableModalAmenity(null);
     }
@@ -318,7 +428,7 @@ export default function AdminAmenity() {
     amenities.filter(a =>
       a.name.toLowerCase().includes(searchAmenity.toLowerCase()) &&
       (amenityStatusFilter === "ALL" || (amenityStatusFilter === "ACTIVE" ? !!a.is_active : !a.is_active)) &&
-      (amenityPricingFilter === "ALL" || a.type === amenityPricingFilter)
+      (amenityPricingFilter === "ALL" || (isPaidAmenity(a) ? "PAID" : "FREE") === amenityPricingFilter)
     ),
     [amenities, searchAmenity, amenityStatusFilter, amenityPricingFilter]
   );
@@ -395,7 +505,7 @@ export default function AdminAmenity() {
           <p style={{ fontSize: 12, color: "var(--text-secondary)", marginTop: 3 }}>{t("amenSubtitle")}</p>
         </div>
         {activeTab === "AMENITIES" && canEdit && (
-          <button onClick={() => setShowForm(p => !p)} className="sa-add-btn sa-add-pill sa-btn-primary" style={{ flexShrink: 0 }}>
+          <button onClick={handleToggleAddForm} className="sa-add-btn sa-add-pill sa-btn-primary" style={{ flexShrink: 0 }}>
             <span className="sa-pill-blob sa-pill-blob1" />
             <span className="sa-pill-inner">
               {showForm ? <MdClose size={15} /> : <MdAdd size={15} />}
@@ -423,9 +533,9 @@ export default function AdminAmenity() {
           {canEdit && showForm && (
             <div className="animate-scaleIn" style={{ background: "var(--card-bg)", border: "1.5px solid var(--glass-border)", borderRadius: 20, padding: isMobile ? "18px 16px" : "24px 28px" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
-                <div style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(107,70,193,0.12)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 17 }}>✨</div>
+                <div style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(107,70,193,0.12)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 17 }}>{editingAmenity ? "✏️" : "✨"}</div>
                 <div>
-                  <div style={{ fontWeight: 700, fontSize: 14, color: "var(--text-primary)" }}>{t("amenFormTitle")}</div>
+                  <div style={{ fontWeight: 700, fontSize: 14, color: "var(--text-primary)" }}>{editingAmenity ? t("amenFormEditTitle") : t("amenFormTitle")}</div>
                   <div style={{ fontSize: 12, color: "var(--text-secondary)", marginTop: 2 }}>{t("amenFormSub")}</div>
                 </div>
               </div>
@@ -450,10 +560,10 @@ export default function AdminAmenity() {
                 </div>
               </div>
               <div style={{ marginTop: 18, paddingTop: 16, borderTop: "1px solid var(--glass-border)", display: "flex", gap: 10, flexWrap: "wrap" }}>
-                <button onClick={createAmenity} className="btn-primary" style={{ borderRadius: 12, padding: "10px 22px", fontSize: 13, fontWeight: 600, display: "flex", alignItems: "center", gap: 7, flex: isMobile ? 1 : "unset" }}>
-                  <MdAdd size={16} /> {t("amenCreateBtn")}
+                <button onClick={submitAmenity} disabled={submitting} className="btn-primary" style={{ borderRadius: 12, padding: "10px 22px", fontSize: 13, fontWeight: 600, display: "flex", alignItems: "center", gap: 7, flex: isMobile ? 1 : "unset" }}>
+                  {submitting ? <Spinner cls="h-3 w-3" /> : <MdAdd size={16} />} {editingAmenity ? t("save") : t("amenCreateBtn")}
                 </button>
-                <button onClick={() => setShowForm(false)} className="btn-muted" style={{ borderRadius: 12, padding: "10px 18px", fontSize: 13, flex: isMobile ? 1 : "unset" }}>{t("cancel")}</button>
+                <button onClick={() => { setShowForm(false); setEditingAmenity(null); }} className="btn-muted" style={{ borderRadius: 12, padding: "10px 18px", fontSize: 13, flex: isMobile ? 1 : "unset" }}>{t("cancel")}</button>
               </div>
             </div>
           )}
@@ -516,8 +626,8 @@ export default function AdminAmenity() {
                         </div>
                       )}
                       <div style={{ background: "var(--chip-bg)", border: "1px solid var(--chip-border)", borderRadius: 12, padding: "10px 12px", display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 12 }}>
-                        <span style={{ background: a.type === "PAID" ? "var(--badge-paid-bg)" : "var(--badge-free-bg)", color: a.type === "PAID" ? "var(--badge-paid-color)" : "var(--badge-free-color)", border: `1px solid ${a.type === "PAID" ? "var(--badge-paid-border)" : "var(--badge-free-border)"}`, padding: "3px 10px", borderRadius: 999, fontSize: 11, fontWeight: 700 }}>
-                          {a.type === "PAID" ? `₹${a.rate_per_hour}/hr` : t("amenFreeAccess")}
+                        <span style={{ background: isPaidAmenity(a) ? "var(--badge-paid-bg)" : "var(--badge-free-bg)", color: isPaidAmenity(a) ? "var(--badge-paid-color)" : "var(--badge-free-color)", border: `1px solid ${isPaidAmenity(a) ? "var(--badge-paid-border)" : "var(--badge-free-border)"}`, padding: "3px 10px", borderRadius: 999, fontSize: 11, fontWeight: 700 }}>
+                          {isPaidAmenity(a) ? `₹${a.rate_per_hour}/hr` : t("amenFreeAccess")}
                         </span>
                         <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, color: "var(--text-secondary)" }}>
                           <MdPeople size={13} style={{ color: pal.strip }} /> {a.capacity} {t("amenCapLabel")}
@@ -533,15 +643,22 @@ export default function AdminAmenity() {
                           <MdEventAvailable size={13} /> {t("amenRequiresApproval")}
                         </div>
                       )}
-                      {canEdit && (active ? (
-                        <button onClick={() => setDisableModalAmenity(a)} style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 7, borderRadius: 12, padding: "11px 0", fontSize: 13, fontWeight: 700, cursor: "pointer", background: "var(--reject-bg)", color: "var(--reject-color)", border: "1.5px solid var(--reject-border)" }}>
-                          <MdToggleOff size={17} /> Disable amenity
-                        </button>
-                      ) : (
-                        <button onClick={() => handleReEnable(a.id)} disabled={togglingId === a.id} style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 7, borderRadius: 12, padding: "11px 0", fontSize: 13, fontWeight: 700, cursor: togglingId === a.id ? "not-allowed" : "pointer", background: pal.iconBg, color: pal.strip, border: `1.5px solid ${pal.iconBorder}` }}>
-                          {togglingId === a.id ? <Spinner /> : <><MdToggleOn size={17} /> Re-enable amenity</>}
-                        </button>
-                      ))}
+                      {canEdit && (
+                        <div style={{ display: "flex", gap: 8 }}>
+                          {active ? (
+                            <button onClick={() => handleOpenDisableModal(a)} style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 7, borderRadius: 12, padding: "11px 0", fontSize: 13, fontWeight: 700, cursor: "pointer", background: "var(--reject-bg)", color: "var(--reject-color)", border: "1.5px solid var(--reject-border)" }}>
+                              <MdToggleOff size={17} /> {t("amenDisableBtn")}
+                            </button>
+                          ) : (
+                            <button onClick={() => handleReEnable(a.id)} disabled={togglingId === a.id} style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 7, borderRadius: 12, padding: "11px 0", fontSize: 13, fontWeight: 700, cursor: togglingId === a.id ? "not-allowed" : "pointer", background: pal.iconBg, color: pal.strip, border: `1.5px solid ${pal.iconBorder}` }}>
+                              {togglingId === a.id ? <Spinner /> : <><MdToggleOn size={17} /> {t("amenReenableBtn")}</>}
+                            </button>
+                          )}
+                          <button onClick={() => handleOpenEditForm(a)} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, borderRadius: 12, padding: "11px 14px", fontSize: 13, fontWeight: 700, cursor: "pointer", background: "var(--card-inner-bg)", color: "var(--text-primary)", border: "1.5px solid var(--glass-border)" }}>
+                            <MdEdit size={16} /> {t("amenEditBtn")}
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 );

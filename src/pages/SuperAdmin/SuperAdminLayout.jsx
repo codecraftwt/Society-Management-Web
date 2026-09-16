@@ -10,8 +10,9 @@ import {
   MdAccountBalance,
   MdVerified,
   MdBuild,
+  MdEmergency,
 } from "react-icons/md";
-import { FaBuilding, FaUsers, FaUserShield, FaParking, FaShieldAlt } from "react-icons/fa";
+import { FaBuilding, FaUsers, FaUserShield, FaParking } from "react-icons/fa";
 import ThemeToggle from "../../components/common/ThemeToggle";
 import LanguageSelector from "../../components/common/LanguageSelector";
 import { LanguageProvider, useLang } from "../../context/LanguageContext";
@@ -21,6 +22,7 @@ import AppHeader from "../../components/common/AppHeader";
 import API from "../../services/api";
 import Select from "../../components/common/Select";
 import GlobalButton from "../../components/common/GlobalButton";
+import SOSModal from "../../components/emergency/SOSModal";
 import { useRoleTheme } from "../../context/ThemeContext";
 import "./SuperAdmin.css";
 
@@ -31,6 +33,7 @@ function SuperAdminLayoutInner() {
   useRoleTheme();
 
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [showSOS, setShowSOS] = useState(false);
 
   // --- Global Society Filter State ---
   const [societies, setSocieties] = useState([]);
@@ -113,12 +116,6 @@ function SuperAdminLayoutInner() {
       icon: MdReportProblem,
       group: "REPORTS",
     },
-    {
-      label: "Role Permissions",
-      path: `${base}/role-permissions`,
-      icon: FaShieldAlt,
-      group: "SYSTEM CONFIG",
-    },
   ];
 
   // Fetch Societies for Dropdown
@@ -145,6 +142,14 @@ function SuperAdminLayoutInner() {
   // Extra drawer control for mobile
   const mobileSocietyFilter = (
     <div className="mb-2">
+      <button
+        onClick={() => setShowSOS(true)}
+        className="w-full mb-2 flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 text-white py-2.5 text-xs font-bold shadow-md shadow-red-500/30"
+        title="Raise an SOS alert to any society"
+      >
+        <MdEmergency size={15} />
+        Raise SOS to a Society
+      </button>
       <p
         style={{
           fontSize: "10px",
@@ -209,33 +214,44 @@ function SuperAdminLayoutInner() {
           title={t("saDashboardTitle") || "Global Overview"}
           showNotificationBell={false}
           actions={
-            <div className="hidden md:block min-w-0 max-w-45 lg:max-w-55 shrink">
-              <Select
-                value={selectedSocietyId}
-                onChange={handleSocietyChange}
-                style={{
-                  padding: "6px 14px",
-                  borderRadius: "10px",
-                  border: "1px solid var(--glass-border)",
-                  background: "var(--card-inner-bg)",
-                  color: "var(--text-primary)",
-                  fontSize: "13px",
-                  fontWeight: "600",
-                  outline: "none",
-                  cursor: "pointer",
-                  maxWidth: "200px",
-                }}
+            <>
+              <button
+                onClick={() => setShowSOS(true)}
+                className="hidden sm:flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 shadow-md shadow-red-500/30 transition px-3 h-9 text-white text-xs font-bold"
+                title="Raise an SOS alert to any society"
               >
-                <option value="ALL">
-                  {t("allSocietiesGlobal") || "All Societies (Global)"}
-                </option>
-                {societies.map((soc) => (
-                  <option key={soc.id} value={soc.id}>
-                    {soc.name}
+                <MdEmergency size={15} />
+                <span>SOS</span>
+              </button>
+
+              <div className="hidden md:block min-w-0 max-w-45 lg:max-w-55 shrink">
+                <Select
+                  value={selectedSocietyId}
+                  onChange={handleSocietyChange}
+                  style={{
+                    padding: "6px 14px",
+                    borderRadius: "10px",
+                    border: "1px solid var(--glass-border)",
+                    background: "var(--card-inner-bg)",
+                    color: "var(--text-primary)",
+                    fontSize: "13px",
+                    fontWeight: "600",
+                    outline: "none",
+                    cursor: "pointer",
+                    maxWidth: "200px",
+                  }}
+                >
+                  <option value="ALL">
+                    {t("allSocietiesGlobal") || "All Societies (Global)"}
                   </option>
-                ))}
-              </Select>
-            </div>
+                  {societies.map((soc) => (
+                    <option key={soc.id} value={soc.id}>
+                      {soc.name}
+                    </option>
+                  ))}
+                </Select>
+              </div>
+            </>
           }
           onLogout={() => setShowLogoutConfirm(true)}
           settingsPath={`${base}/settings`}
@@ -289,6 +305,20 @@ function SuperAdminLayoutInner() {
           </div>,
           document.body
         )}
+
+        {/* SOS MODAL — Super Admin picks the target society */}
+        <SOSModal
+          key={String(showSOS)}
+          isOpen={showSOS}
+          onClose={() => setShowSOS(false)}
+          requireSociety
+          withAlerts={false}
+          societies={societies}
+          defaultSocietyId={selectedSocietyId !== "ALL" ? String(selectedSocietyId) : ""}
+          senderLabel="SOS"
+          modalTitle="🚨 Super Admin SOS — Broadcast to a Society"
+          successMessage="🚨 SOS alert sent to the selected society!"
+        />
     </div>
   );
 }

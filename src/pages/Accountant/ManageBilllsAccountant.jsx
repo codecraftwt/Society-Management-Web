@@ -1,8 +1,11 @@
 
-import { useEffect, useState, useCallback, useMemo, useRef } from "react";
+import { useEffect, useState, useCallback, useMemo, useRef, useContext } from "react";
 import { createPortal } from "react-dom";
 import API from "../../services/api";
+import { AuthContext } from "../../context/AuthContext";
 import { useLang } from "../../context/LanguageContext";
+import { hasPermission } from "../../utils/permissions";
+import { useCustomAlert } from "../../context/CustomAlertContext";
 import {
   MdAdd, MdClose, MdSearch, MdDelete,
   MdOutlineInbox, MdReceiptLong,
@@ -259,6 +262,8 @@ const LIMIT = 10;
 export default function ManageBillsAccountant() {
   const isMobile = useIsMobile();
   const { t } = useLang();
+  const { user } = useContext(AuthContext);
+  const { showUnauthorized, showError } = useCustomAlert();
 
   /* ── List state ── */
   const [bills, setBills] = useState([]);
@@ -362,8 +367,20 @@ export default function ManageBillsAccountant() {
   const handlePageChange = (p) => loadBills(p, debSearch, filterStatus);
 
   /* ── Create ── */
+  const handleOpenCreate = () => {
+    if (!showCreate && !hasPermission(user, "manage_bills", "create")) {
+      showUnauthorized("You do not have permission to create bills.");
+      return;
+    }
+    setShowCreate(p => !p);
+  };
+
   const handleCreateBill = async (e) => {
     e.preventDefault();
+    if (!hasPermission(user, "manage_bills", "create")) {
+      showUnauthorized("You do not have permission to create bills.");
+      return;
+    }
     try {
       setCreating(true);
       const payload = {
@@ -386,27 +403,54 @@ export default function ManageBillsAccountant() {
       });
       setShowCreate(false);
       loadBills(1, debSearch, filterStatus);
-    } catch (e) { console.error(e); }
+    } catch (e) {
+      if (e.response?.status === 403) {
+        showUnauthorized(e.response?.data?.message || "Operation restricted");
+      } else {
+        showError(e.response?.data?.message || "Failed to create bill");
+      }
+    }
     finally { setCreating(false); }
   };
 
   /* ── Delete & Confirm ── */
   const handleDeleteBill = async (id) => {
+    if (!hasPermission(user, "manage_bills", "delete")) {
+      showUnauthorized("You do not have permission to delete bills.");
+      setConfirmDeleteId(null);
+      return;
+    }
     try {
       setDeletingId(id);
       await API.delete(`/bills/${id}`);
       const newPage = bills.length === 1 && page > 1 ? page - 1 : page;
       loadBills(newPage, debSearch, filterStatus);
-    } catch (e) { alert(e.response?.data?.message || t("billDeleteFailed")); }
+    } catch (e) {
+      if (e.response?.status === 403) {
+        showUnauthorized(e.response?.data?.message || "Operation restricted");
+      } else {
+        showError(e.response?.data?.message || t("billDeleteFailed"));
+      }
+    }
     finally { setDeletingId(null); setConfirmDeleteId(null); }
   };
 
   const handleConfirmPayment = async (id) => {
+    if (!hasPermission(user, "manage_bills", "edit")) {
+      showUnauthorized("You do not have permission to confirm bill payments.");
+      return;
+    }
     setConfirmingId(id);
     try {
       await API.put(`/bills/confirm/${id}`);
       loadBills(page, debSearch, filterStatus);
-    } catch (e) { alert(e.response?.data?.message || "Failed to confirm payment"); }
+    } catch (e) {
+      if (e.response?.status === 403) {
+        showUnauthorized(e.response?.data?.message || "Operation restricted");
+      } else {
+        showError(e.response?.data?.message || "Failed to confirm payment");
+      }
+    }
     finally { setConfirmingId(null); }
   };
 
@@ -480,7 +524,7 @@ export default function ManageBillsAccountant() {
           icon={showCreate ? MdClose : MdAdd}
           borderDraw
           className="w-full sm:w-auto justify-center shrink-0"
-          onClick={() => setShowCreate(p => !p)}
+          onClick={handleOpenCreate}
         >
           {showCreate ? t("cancel") : t("billCreate")}
         </GlobalButton>

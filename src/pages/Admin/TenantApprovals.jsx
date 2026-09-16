@@ -2,6 +2,9 @@ import { useState, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
 import API from "../../services/api";
 import { toast } from "react-toastify";
+import { useAuthContext } from "../../context/AuthContext";
+import { useCustomAlert } from "../../context/CustomAlertContext";
+import { hasPermission } from "../../utils/permissions";
 import {
   MdCheck, MdClose, MdBadge, MdCreditCard, MdAccessTime,
   MdOpenInNew, MdWarning, MdSearch, MdFilterList,
@@ -359,6 +362,8 @@ function Row({ label, value, chip, icon, children }) {
    MAIN COMPONENT
 ───────────────────────────────────────────── */
 export default function TenantApprovals() {
+  const { user } = useAuthContext();
+  const { showUnauthorized } = useCustomAlert();
   const [residents, setResidents]       = useState([]);
   const [loading, setLoading]           = useState(true);
 
@@ -453,6 +458,10 @@ export default function TenantApprovals() {
 
   /* ── Actions ── */
   const handleApprove = async (id) => {
+    if (!hasPermission(user, "tenant_management", "approve")) {
+      showUnauthorized("You do not have permission to approve tenant applications.");
+      return;
+    }
     try {
       await API.put(`/admin/approve-resident/${id}`);
       toast.success("Tenant approved!");
@@ -463,7 +472,19 @@ export default function TenantApprovals() {
     }
   };
 
+  const handleOpenReject = (id) => {
+    if (!hasPermission(user, "tenant_management", "reject")) {
+      showUnauthorized("You do not have permission to reject tenant applications.");
+      return;
+    }
+    setRejectModal({ open: true, userId: id });
+  };
+
   const handleRejectSubmit = async (reason) => {
+    if (!hasPermission(user, "tenant_management", "reject")) {
+      showUnauthorized("You do not have permission to reject tenant applications.");
+      return;
+    }
     setRejectLoading(true);
     try {
       await API.put(`/admin/reject-resident/${rejectModal.userId}`, { reason });
@@ -656,7 +677,7 @@ export default function TenantApprovals() {
                       <MdVisibility size={14} /> View
                     </button>
                     <button
-                      onClick={() => setRejectModal({ open: true, userId: r.id })}
+                      onClick={() => handleOpenReject(r.id)}
                       className="flex-1 flex items-center justify-center gap-1.5 h-11 rounded-xl bg-red-500/10 text-red-400 border border-red-500/20 text-xs font-bold hover:bg-red-500/20 transition"
                     >
                       <MdClose size={14} /> Reject
@@ -777,7 +798,7 @@ export default function TenantApprovals() {
                       </button>
                       <button
                         title="Reject"
-                        onClick={() => setRejectModal({ open: true, userId: r.id })}
+                        onClick={() => handleOpenReject(r.id)}
                         className="w-8 h-8 rounded-lg bg-red-500/8 text-red-400/60 hover:text-red-400 hover:bg-red-500/15 border border-red-500/10 flex items-center justify-center transition"
                       >
                         <MdClose size={14} />
@@ -815,7 +836,7 @@ export default function TenantApprovals() {
         resident={drawerResident}
         onClose={() => setDrawer(null)}
         onApprove={handleApprove}
-        onReject={(id) => { setRejectModal({ open: true, userId: id }); }}
+        onReject={handleOpenReject}
         onViewDoc={setSelectedDoc}
       />
 

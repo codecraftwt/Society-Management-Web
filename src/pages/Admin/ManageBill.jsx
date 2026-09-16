@@ -13,7 +13,8 @@ import {
 import Select from "../../components/common/Select";
 import GlobalButton from "../../components/common/GlobalButton";
 import GlobalModal from "../../components/common/GlobalModal";
-import { isCommitteeMember } from "../../utils/permissions";
+import { isCommitteeMember, hasPermission } from "../../utils/permissions";
+import { useCustomAlert } from "../../context/CustomAlertContext";
 
 /* ── helpers ── */
 export const BILL_CATEGORIES = [
@@ -83,7 +84,7 @@ function Pagination({ page, totalPages, onPageChange }) {
         <MdChevronLeft size={14} /> Prev
       </button>
       {pages.map((p, i) =>
-        p === "..." ? <span key={`e${i}`} className="pagination-ellipsis">…</span> : (
+        p === "..." ? <span key={`e${i}`} className="pagination-ellipsis">{"…"}</span> : (
           <button key={p} onClick={() => onPageChange(p)}
             className={`pagination-page ${p === page ? "pagination-page--active" : ""}`}>{p}</button>
         )
@@ -109,12 +110,28 @@ function BillStatus({ status, t }) {
 }
 
 /* ── Delete & Confirm controls ── */
-function RowActions({ bill, confirmDeleteId, setConfirmDeleteId, handleDeleteBill, deletingId, handleConfirmPayment, confirmingId, t, canEdit = true }) {
+function RowActions({ bill, confirmDeleteId, setConfirmDeleteId, handleDeleteBill, deletingId, handleConfirmPayment, confirmingId, t, canEdit = true, authUser, showUnauthorized }) {
+  const onTriggerConfirmPayment = (id) => {
+    if (!hasPermission(authUser, "manage_bills", "edit")) {
+      showUnauthorized("You do not have permission to confirm bill payments.");
+      return;
+    }
+    handleConfirmPayment(id);
+  };
+
+  const onTriggerDelete = (id) => {
+    if (!hasPermission(authUser, "manage_bills", "delete")) {
+      showUnauthorized("You do not have permission to delete bills.");
+      return;
+    }
+    setConfirmDeleteId(id);
+  };
+
   return (
     <div className="flex items-center gap-2 flex-wrap">
       {canEdit && bill.status === "PENDING_VERIFICATION" && (
         <button
-          onClick={() => handleConfirmPayment(bill.id)}
+          onClick={() => onTriggerConfirmPayment(bill.id)}
           disabled={confirmingId === bill.id}
           className="px-3 py-1.5 rounded-lg text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-500 transition-colors flex items-center gap-1 shadow-sm shrink-0"
           title="Confirm resident payment and send Web/Mobile notification"
@@ -132,7 +149,7 @@ function RowActions({ bill, confirmDeleteId, setConfirmDeleteId, handleDeleteBil
           <button className="btn-cancel-sm" onClick={() => setConfirmDeleteId(null)}>{t("cancel")}</button>
         </div>
       ) : (
-        <button className="btn-delete" onClick={() => setConfirmDeleteId(bill.id)}>
+        <button className="btn-delete" onClick={() => onTriggerDelete(bill.id)}>
           <MdDelete size={13} /> {t("billDelete")}
         </button>
       )}
@@ -153,6 +170,7 @@ export default function ManageBills() {
   const isMobile = useIsMobile();
   const { t } = useLang();
   const { user: authUser } = useContext(AuthContext);
+  const { showUnauthorized, showError, showSuccess } = useCustomAlert();
   const isCommittee = isCommitteeMember(authUser);
 
   /* ── List state ── */
@@ -396,9 +414,22 @@ export default function ManageBills() {
     });
   };
 
+  const handleOpenCreateModal = () => {
+    if (!hasPermission(authUser, "manage_bills", "create")) {
+      showUnauthorized("You do not have permission to create bills.");
+      return;
+    }
+    setFormSocietyId(filterSocietyId || "");
+    setShowCreate(true);
+  };
+
   /* ── Create ── */
   const handleCreateBill = async (e) => {
     if (e) e.preventDefault();
+    if (!hasPermission(authUser, "manage_bills", "create")) {
+      showUnauthorized("You do not have permission to create bills.");
+      return;
+    }
     try {
       setCreating(true);
       const activeSocId = filterSocietyId || formSocietyId;
@@ -434,12 +465,22 @@ export default function ManageBills() {
       setFormSocietyId("");
       setShowCreate(false);
       loadBills(1, debSearch, filterStatus);
-    } catch (e) { console.error(e); }
+    } catch (e) {
+      if (e.response?.status === 403) {
+        showUnauthorized(e.response?.data?.message || "Operation restricted");
+      } else {
+        showError(e.response?.data?.message || "Failed to create bill");
+      }
+    }
     finally { setCreating(false); }
   };
 
   /* ── Delete & Confirm ── */
   const handleDeleteBill = async (id) => {
+    if (!hasPermission(authUser, "manage_bills", "delete")) {
+      showUnauthorized("You do not have permission to delete bills.");
+      return;
+    }
     try {
       setDeletingId(id);
       const bill = bills.find(b => b.id === id);
@@ -454,7 +495,11 @@ export default function ManageBills() {
       loadBills(newPage, debSearch, filterStatus);
       setFeedbackBanner({ type: "success", message: "Bill deleted successfully." });
     } catch (e) {
-      alert(e.response?.data?.message || t("billDeleteFailed"));
+      if (e.response?.status === 403) {
+        showUnauthorized(e.response?.data?.message || "Operation restricted");
+      } else {
+        showError(e.response?.data?.message || t("billDeleteFailed"));
+      }
     } finally {
       setDeletingId(null);
       setConfirmDeleteId(null);
@@ -462,6 +507,10 @@ export default function ManageBills() {
   };
 
   const handleConfirmPayment = async (id) => {
+    if (!hasPermission(authUser, "manage_bills", "edit")) {
+      showUnauthorized("You do not have permission to confirm bill payments.");
+      return;
+    }
     setConfirmingId(id);
     try {
       const bill = bills.find(b => b.id === id);
@@ -474,7 +523,11 @@ export default function ManageBills() {
       loadBills(page, debSearch, filterStatus);
       setFeedbackBanner({ type: "success", message: "Payment confirmed successfully." });
     } catch (e) {
-      alert(e.response?.data?.message || "Failed to confirm payment");
+      if (e.response?.status === 403) {
+        showUnauthorized(e.response?.data?.message || "Operation restricted");
+      } else {
+        showError(e.response?.data?.message || "Failed to confirm payment");
+      }
     } finally {
       setConfirmingId(null);
     }
@@ -482,6 +535,11 @@ export default function ManageBills() {
 
   /* ── Bulk Actions ── */
   const handleBulkApprove = async () => {
+    if (!hasPermission(authUser, "manage_bills", "edit")) {
+      showUnauthorized("You do not have permission to confirm bill payments.");
+      setShowBulkApproveModal(false);
+      return;
+    }
     if (selectedApprovable.length === 0) return;
     try {
       setBulkApproving(true);
@@ -496,16 +554,25 @@ export default function ManageBills() {
       clearSelection();
       loadBills(page, debSearch, filterStatus);
     } catch (err) {
-      setFeedbackBanner({
-        type: "error",
-        message: err.response?.data?.message || "Failed to approve selected bills.",
-      });
+      if (err.response?.status === 403) {
+        showUnauthorized(err.response?.data?.message || "Operation restricted");
+      } else {
+        setFeedbackBanner({
+          type: "error",
+          message: err.response?.data?.message || "Failed to approve selected bills.",
+        });
+      }
     } finally {
       setBulkApproving(false);
     }
   };
 
   const handleBulkDelete = async () => {
+    if (!hasPermission(authUser, "manage_bills", "delete")) {
+      showUnauthorized("You do not have permission to delete bills.");
+      setShowBulkDeleteModal(false);
+      return;
+    }
     if (selectedDeletable.length === 0) return;
     try {
       setBulkDeleting(true);
@@ -590,10 +657,7 @@ export default function ManageBills() {
             size="md"
             borderDraw
             icon={MdAdd}
-            onClick={() => {
-              setFormSocietyId(filterSocietyId || "");
-              setShowCreate(true);
-            }}
+            onClick={handleOpenCreateModal}
             fullWidth={false}
             style={{ flexShrink: 0, whiteSpace: "nowrap" }}
           >
@@ -671,7 +735,7 @@ export default function ManageBills() {
                 <option value="">{t("billChooseFlat") || "Choose Flat"}</option>
                 {flats.map(f => (
                   <option key={f.id} value={f.id}>
-                    {f.flat_number} ({f.Block?.name}) – {f.User?.name || t("billNoResident") || "No Resident"}
+                    {f.flat_number} ({f.Block?.name}){" – "}{f.User?.name || t("billNoResident") || "No Resident"}
                   </option>
                 ))}
               </Select>
@@ -983,7 +1047,7 @@ export default function ManageBills() {
           <div className="flex flex-col items-center gap-3 py-20 text-secondary animate-fadeIn">
             <MdOutlineInbox size={48} className="opacity-20" />
             <p className="text-sm">{t("billEmpty")}</p>
-            <button className="btn-primary mt-1" style={{ borderRadius: 10 }} onClick={() => setShowCreate(true)}>
+            <button className="btn-primary mt-1" style={{ borderRadius: 10 }} onClick={handleOpenCreateModal}>
               <MdAdd size={15} />{t("billCreateFirst")}
             </button>
           </div>
@@ -1045,7 +1109,7 @@ export default function ManageBills() {
                     <div className="grid grid-cols-2 gap-3">
                       <div>
                         <p className="text-xs text-secondary mb-1">{t("billFlatCol")}</p>
-                        <span className="flat-chip">{b.Flat?.flat_number || "—"} · {b.Flat?.Block?.name || "—"}</span>
+                        <span className="flat-chip">{b.Flat?.flat_number || "—"}{" · "}{b.Flat?.Block?.name || "—"}</span>
                         {isSuperAdmin && (
                           <div style={{ marginTop: 4, fontSize: 10, fontWeight: 700, color: "var(--accent)" }}>
                             🏢 {b.Flat?.Block?.Society?.name || "—"}
@@ -1057,7 +1121,7 @@ export default function ManageBills() {
                         <p className="text-xs font-semibold" style={{ color: "var(--text-primary)" }}>{b.Flat?.User?.name || "NA"}</p>
                       </div>
                     </div>
-                    <RowActions bill={b} confirmDeleteId={confirmDeleteId} setConfirmDeleteId={setConfirmDeleteId} handleDeleteBill={handleDeleteBill} deletingId={deletingId} handleConfirmPayment={handleConfirmPayment} confirmingId={confirmingId} t={t} canEdit={!isCommittee} />
+                    <RowActions bill={b} confirmDeleteId={confirmDeleteId} setConfirmDeleteId={setConfirmDeleteId} handleDeleteBill={handleDeleteBill} deletingId={deletingId} handleConfirmPayment={handleConfirmPayment} confirmingId={confirmingId} t={t} canEdit={!isCommittee} authUser={authUser} showUnauthorized={showUnauthorized} />
                   </div>
                 </div>
               );
@@ -1126,13 +1190,13 @@ export default function ManageBills() {
                         <span className="font-semibold text-sm" style={{ color: "var(--text-primary)" }}>{b.title}</span>
                       </div>
                     </td>
-                    <td><span className="flat-chip">{b.Flat?.flat_number || "—"}<span style={{ opacity: 0.55 }}> · {b.Flat?.Block?.name || "—"}</span></span></td>
+                    <td><span className="flat-chip">{b.Flat?.flat_number || "—"}<span style={{ opacity: 0.55 }}>{" · "}{b.Flat?.Block?.name || "—"}</span></span></td>
                     <td><span className="text-sm text-secondary">{b.Flat?.User?.name || "—"}</span></td>
                     <td><span className="info-chip">{b.billing_month}</span></td>
                     <td><span className="bill-table-amount">₹{Number(b.amount).toLocaleString("en-IN")}</span></td>
                     <td><BillStatus status={b.status} t={t} /></td>
                     <td onClick={e => e.stopPropagation()}>
-                      <RowActions bill={b} confirmDeleteId={confirmDeleteId} setConfirmDeleteId={setConfirmDeleteId} handleDeleteBill={handleDeleteBill} deletingId={deletingId} handleConfirmPayment={handleConfirmPayment} confirmingId={confirmingId} t={t} canEdit={!isCommittee} />
+                      <RowActions bill={b} confirmDeleteId={confirmDeleteId} setConfirmDeleteId={setConfirmDeleteId} handleDeleteBill={handleDeleteBill} deletingId={deletingId} handleConfirmPayment={handleConfirmPayment} confirmingId={confirmingId} t={t} canEdit={!isCommittee} authUser={authUser} showUnauthorized={showUnauthorized} />
                     </td>
                   </tr>
                 );
@@ -1147,7 +1211,7 @@ export default function ManageBills() {
             <span className="text-xs text-secondary">
               {t("billShowing")}{" "}
               <strong style={{ color: "var(--text-primary)" }}>
-                {(page - 1) * LIMIT + 1}–{Math.min(page * LIMIT, totalItems)}
+                {(page - 1) * LIMIT + 1}{"–"}{Math.min(page * LIMIT, totalItems)}
               </strong>{" "}
               {t("billOf")}{" "}
               <strong style={{ color: "var(--text-primary)" }}>{totalItems}</strong>{" "}

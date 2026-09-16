@@ -3,8 +3,9 @@ import { useEffect, useState, useCallback, useMemo, useRef, useContext } from "r
 import { createPortal } from "react-dom";
 import API from "../../services/api";
 import { useLang } from "../../context/LanguageContext";
-import { AuthContext } from "../../context/AuthContext";
-import { isCommitteeMember } from "../../utils/permissions";
+import { useAuthContext } from "../../context/AuthContext";
+import { useCustomAlert } from "../../context/CustomAlertContext";
+import { isCommitteeMember, hasPermission } from "../../utils/permissions";
 import {
   MdAdd, MdDelete, MdClose, MdEdit,
   MdDirectionsCar, MdTwoWheeler,
@@ -102,6 +103,8 @@ function ReqBadge({ status }) {
    Resident Entry Panel  (no lookup — shows all unassigned vehicles)
 ═══════════════════════════════════════════ */
 function ResidentEntryPanel({ slots, onCreated, t }) {
+  const { user } = useAuthContext();
+  const { showUnauthorized } = useCustomAlert();
   const [vehicles, setVehicles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -137,6 +140,10 @@ function ResidentEntryPanel({ slots, onCreated, t }) {
   }, [successMsg]);
 
   const handleCreate = async (vehicle) => {
+    if (!hasPermission(user, "parking_slots", "allocate")) {
+      showUnauthorized("You do not have permission to assign parking slots.");
+      return;
+    }
     const slot = selectedSlot[vehicle.vehicle_id];
     if (!slot) return;
     setSubmitting(vehicle.vehicle_id);
@@ -167,6 +174,10 @@ function ResidentEntryPanel({ slots, onCreated, t }) {
 
   /* ── Reject: cancel pending request + delete the vehicle ── */
   const handleReject = async (vehicle) => {
+    if (!hasPermission(user, "parking_slots", "allocate")) {
+      showUnauthorized("You do not have permission to reject parking requests.");
+      return;
+    }
     setRejecting(vehicle.vehicle_id);
     setSubmitError(prev => ({ ...prev, [vehicle.vehicle_id]: "" }));
     try {
@@ -445,6 +456,8 @@ function ResidentEntryPanel({ slots, onCreated, t }) {
    and never create a ParkingRequest, so they never appear here.
 ═══════════════════════════════════════════ */
 function ResidentRequestsPanel({ allSlots, onSlotAssigned }) {
+  const { user } = useAuthContext();
+  const { showUnauthorized } = useCustomAlert();
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filterTab, setFilterTab] = useState("PENDING");
@@ -473,6 +486,10 @@ function ResidentRequestsPanel({ allSlots, onSlotAssigned }) {
   }, [successMsg]);
 
   const handleAssign = async (reqId) => {
+    if (!hasPermission(user, "parking_slots", "allocate")) {
+      showUnauthorized("You do not have permission to assign parking slots.");
+      return;
+    }
     const slot = selectedSlot[reqId];
     if (!slot) return;
     setAssigning(reqId);
@@ -492,6 +509,10 @@ function ResidentRequestsPanel({ allSlots, onSlotAssigned }) {
   };
 
   const handleReject = async (reqId) => {
+    if (!hasPermission(user, "parking_slots", "allocate")) {
+      showUnauthorized("You do not have permission to reject parking requests.");
+      return;
+    }
     setRejecting(reqId);
     setErrorMsg("");
     try {
@@ -746,7 +767,8 @@ const LIMIT = 10;
 ═══════════════════════════════════════════ */
 export default function AssignParkingSlot() {
   const { t } = useLang();
-  const { user } = useContext(AuthContext);
+  const { user } = useAuthContext();
+  const { showUnauthorized } = useCustomAlert();
   const isCommittee = isCommitteeMember(user);
 
   const [mainTab, setMainTab] = useState("slots");
@@ -778,6 +800,131 @@ export default function AssignParkingSlot() {
   const [editForm, setEditForm] = useState({ slot_number: "", parking_floor: "", vehicle_type: "CAR", parking_type: "DEFAULT" });
   const [editSubmitting, setEditSubmitting] = useState(false);
   const [editError, setEditError] = useState("");
+
+  const handleOpenCreate = () => {
+    if (!hasPermission(user, "parking_slots", "create_slot")) {
+      showUnauthorized("You do not have permission to create parking slots.");
+      return;
+    }
+    setShowForm(true);
+    setConfirmDel(null);
+  };
+
+  const openDelConfirm = (slot) => {
+    if (!hasPermission(user, "parking_slots", "delete_slot")) {
+      showUnauthorized("You do not have permission to delete parking slots.");
+      return;
+    }
+    setConfirmDel(slot);
+  };
+
+  const openReleaseConfirm = (slot) => {
+    if (!hasPermission(user, "parking_slots", "release")) {
+      showUnauthorized("You do not have permission to release parking slots.");
+      return;
+    }
+    setReleaseConfirm(slot);
+  };
+
+  /* ────────────────────────────
+     CREATE SLOTS
+  ──────────────────────────── */
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!hasPermission(user, "parking_slots", "create_slot")) {
+      showUnauthorized("You do not have permission to create parking slots.");
+      return;
+    }
+    setSubmitting(true);
+    try {
+      await API.post("/parking-slots", form);
+      setForm({ prefix: "", start_number: "", count: "", vehicle_type: "CAR", parking_floor: "P1" });
+      setShowForm(false);
+      loadSlots(1, vehicleFilter, debouncedSearch, statusFilter);
+      loadAllSlots();
+      loadPendingResidentCount();
+    } catch (e) { console.error(e); }
+    finally { setSubmitting(false); }
+  };
+
+  /* ────────────────────────────
+     DELETE SLOT
+  ──────────────────────────── */
+  const deleteSlot = async (id) => {
+    if (!hasPermission(user, "parking_slots", "delete_slot")) {
+      showUnauthorized("You do not have permission to delete parking slots.");
+      return;
+    }
+    setDeleting(id);
+    try {
+      await API.delete(`/parking-slots/${id}`);
+      setConfirmDel(null);
+      const newPage = slots.length === 1 && page > 1 ? page - 1 : page;
+      loadSlots(newPage, vehicleFilter, debouncedSearch, statusFilter);
+      loadAllSlots();
+      loadOwnerSlots();
+    } catch (e) { console.error(e); }
+    finally { setDeleting(null); }
+  };
+
+  /* ────────────────────────────
+     EDIT SLOT
+  ──────────────────────────── */
+  const openEdit = (slot) => {
+    if (!hasPermission(user, "parking_slots", "edit_slot")) {
+      showUnauthorized("You do not have permission to edit parking slots.");
+      return;
+    }
+    setEditSlot(slot);
+    setEditForm({
+      slot_number: slot.slot_number || "",
+      parking_floor: slot.parking_floor || "",
+      vehicle_type: slot.vehicle_type || "CAR",
+      parking_type: slot.parking_type || "DEFAULT",
+    });
+    setEditError("");
+  };
+
+  const handleEditSubmit = async (e) => {
+    e.preventDefault();
+    if (!editSlot) return;
+    if (!hasPermission(user, "parking_slots", "edit_slot")) {
+      showUnauthorized("You do not have permission to edit parking slots.");
+      return;
+    }
+    setEditSubmitting(true);
+    setEditError("");
+    try {
+      await API.put(`/parking-slots/${editSlot.id}`, editForm);
+      setEditSlot(null);
+      refreshAll();
+    } catch (err) {
+      setEditError(err?.response?.data?.message || "Failed to update parking slot");
+    } finally {
+      setEditSubmitting(false);
+    }
+  };
+
+  /* ────────────────────────────
+     RELEASE SLOT (REVOKE)
+  ──────────────────────────── */
+  const handleReleaseSlot = async (slot) => {
+    if (!slot) return;
+    if (!hasPermission(user, "parking_slots", "release")) {
+      showUnauthorized("You do not have permission to release parking slots.");
+      return;
+    }
+    setReleasing(slot.id);
+    try {
+      await API.post("/parking-slots/revoke", { slot_id: slot.id });
+      setReleaseConfirm(null);
+      refreshAll();
+    } catch (err) {
+      console.error("Failed to release slot:", err);
+    } finally {
+      setReleasing(null);
+    }
+  };
 
   const searchInputRef = useRef(null);
 
@@ -930,86 +1077,6 @@ export default function AssignParkingSlot() {
     loadOwnerSlots();
   };
 
-  /* ────────────────────────────
-     CREATE SLOTS
-  ──────────────────────────── */
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setSubmitting(true);
-    try {
-      await API.post("/parking-slots", form);
-      setForm({ prefix: "", start_number: "", count: "", vehicle_type: "CAR", parking_floor: "P1" });
-      setShowForm(false);
-      loadSlots(1, vehicleFilter, debouncedSearch, statusFilter);
-      loadAllSlots();
-      loadPendingResidentCount();
-    } catch (e) { console.error(e); }
-    finally { setSubmitting(false); }
-  };
-
-  /* ────────────────────────────
-     DELETE SLOT
-  ──────────────────────────── */
-  const deleteSlot = async (id) => {
-    setDeleting(id);
-    try {
-      await API.delete(`/parking-slots/${id}`);
-      setConfirmDel(null);
-      const newPage = slots.length === 1 && page > 1 ? page - 1 : page;
-      loadSlots(newPage, vehicleFilter, debouncedSearch, statusFilter);
-      loadAllSlots();
-      loadOwnerSlots();
-    } catch (e) { console.error(e); }
-    finally { setDeleting(null); }
-  };
-
-  /* ────────────────────────────
-     EDIT SLOT
-  ──────────────────────────── */
-  const openEdit = (slot) => {
-    setEditSlot(slot);
-    setEditForm({
-      slot_number: slot.slot_number || "",
-      parking_floor: slot.parking_floor || "",
-      vehicle_type: slot.vehicle_type || "CAR",
-      parking_type: slot.parking_type || "DEFAULT",
-    });
-    setEditError("");
-  };
-
-  const handleEditSubmit = async (e) => {
-    e.preventDefault();
-    if (!editSlot) return;
-    setEditSubmitting(true);
-    setEditError("");
-    try {
-      await API.put(`/parking-slots/${editSlot.id}`, editForm);
-      setEditSlot(null);
-      refreshAll();
-    } catch (err) {
-      setEditError(err?.response?.data?.message || "Failed to update parking slot");
-    } finally {
-      setEditSubmitting(false);
-    }
-  };
-
-  /* ────────────────────────────
-     RELEASE SLOT (REVOKE)
-  ──────────────────────────── */
-  const handleReleaseSlot = async (slot) => {
-    if (!slot) return;
-    setReleasing(slot.id);
-    try {
-      await API.post("/parking-slots/revoke", { slot_id: slot.id });
-      setReleaseConfirm(null);
-      refreshAll();
-    } catch (err) {
-      console.error("Failed to release slot:", err);
-    } finally {
-      setReleasing(null);
-    }
-  };
-
   const filterTabs = [
     { key: "ALL", label: t("parkTabAll") || "All", icon: <FaParking size={12} />, count: stats.total },
     { key: "CAR", label: t("parkTabCars") || "Cars", icon: <MdDirectionsCar size={14} />, count: stats.cars },
@@ -1088,7 +1155,7 @@ export default function AssignParkingSlot() {
             variant="add"
             borderDraw
             className="w-full sm:w-auto justify-center shrink-0"
-            onClick={() => { setShowForm(true); setConfirmDel(null); }}
+            onClick={handleOpenCreate}
           >
             {t("parkCreateBtn") || "Create Slots"}
           </GlobalButton>
@@ -1295,7 +1362,7 @@ export default function AssignParkingSlot() {
                             variant="warning"
                             size="xs"
                             icon={MdPersonRemove}
-                            onClick={() => setReleaseConfirm(s)}
+                            onClick={() => openReleaseConfirm(s)}
                             title="Release Slot (Unlink resident/vehicle)"
                             style={{ flex: 1 }}
                           >
@@ -1519,7 +1586,7 @@ export default function AssignParkingSlot() {
                               variant="warning"
                               size="xs"
                               icon={MdPersonRemove}
-                              onClick={() => setReleaseConfirm(slot)}
+                              onClick={() => openReleaseConfirm(slot)}
                               title="Release Slot (Unlink resident/vehicle)"
                               style={{ flex: 1 }}
                             >
@@ -1530,7 +1597,7 @@ export default function AssignParkingSlot() {
                             <GlobalButton
                               variant="delete"
                               size="xs"
-                              onClick={() => setConfirmDel(slot)}
+                              onClick={() => openDelConfirm(slot)}
                               title="Delete Slot"
                               style={{ flex: 1 }}
                             >

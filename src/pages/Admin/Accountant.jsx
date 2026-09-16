@@ -15,7 +15,8 @@ import GlobalModal from "../../components/common/GlobalModal";
 import GlobalTable from "../../components/common/GlobalTable";
 import GlobalBadge from "../../components/common/GlobalBadge";
 import GlobalConfirmDialog from "../../components/common/GlobalConfirmDialog";
-import { isCommitteeMember } from "../../utils/permissions";
+import { isCommitteeMember, hasPermission } from "../../utils/permissions";
+import { useCustomAlert } from "../../context/CustomAlertContext";
 import { toast } from "react-toastify";
 
 function SectionLabel({ children }) {
@@ -93,6 +94,7 @@ const formatDate = (dateStr) => {
 export default function Accountant() {
   const { t } = useLang();
   const { user } = useContext(AuthContext);
+  const { showUnauthorized } = useCustomAlert();
 
   const activeRole = user?.activeRole ?? user?.role;
   const isSuperAdmin = activeRole === "SUPER_ADMIN";
@@ -209,6 +211,10 @@ export default function Accountant() {
   };
 
   const handleOpenOriginModal = () => {
+    if (!hasPermission(user, "accountant", "create") && !hasPermission(user, "accountant", "appoint")) {
+      showUnauthorized("You do not have permission to add or appoint an accountant.");
+      return;
+    }
     const defaultSocId = (isSuperAdmin ? (filterSocietyId === "ALL" ? "" : filterSocietyId) : (user?.society_id || ""));
     setResidentSocietyId(defaultSocId || "");
     setFormData({
@@ -222,11 +228,19 @@ export default function Accountant() {
   const handleChooseOrigin = (type) => {
     setShowOriginModal(false);
     if (type === "society") {
+      if (!hasPermission(user, "accountant", "appoint")) {
+        showUnauthorized("You do not have permission to appoint a resident as accountant.");
+        return;
+      }
       const defaultSocId = residentSocietyId || (isSuperAdmin ? (filterSocietyId === "ALL" ? "" : filterSocietyId) : (user?.society_id || ""));
       setResidentSocietyId(defaultSocId || "");
       fetchEligibleResidents(defaultSocId);
       setShowResidentModal(true);
     } else {
+      if (!hasPermission(user, "accountant", "create")) {
+        showUnauthorized("You do not have permission to create an external accountant.");
+        return;
+      }
       setShowExternalModal(true);
     }
   };
@@ -234,6 +248,10 @@ export default function Accountant() {
   // Appoint Resident Handler
   const handleAppointResident = async (e) => {
     if (e) e.preventDefault();
+    if (!hasPermission(user, "accountant", "appoint")) {
+      showUnauthorized("You do not have permission to appoint a resident as accountant.");
+      return;
+    }
     if (!selectedResidentId) {
       toast.error("Please select a resident to appoint");
       return;
@@ -266,6 +284,10 @@ export default function Accountant() {
   // Create External Accountant Handler
   const handleCreateExternal = async (e) => {
     if (e) e.preventDefault();
+    if (!hasPermission(user, "accountant", "create")) {
+      showUnauthorized("You do not have permission to create an external accountant.");
+      return;
+    }
     if (!formData.name || !formData.email || !formData.password) return;
 
     if (formData.phone && !isValidIndianPhone(formData.phone)) {
@@ -302,6 +324,10 @@ export default function Accountant() {
   // Update Accountant Handler
   const handleUpdate = async (e) => {
     if (e) e.preventDefault();
+    if (!hasPermission(user, "accountant", "edit")) {
+      showUnauthorized("You do not have permission to edit accountant details.");
+      return;
+    }
     if (formData.phone && !isValidIndianPhone(formData.phone)) {
       setPhoneError("Enter a valid 10-digit mobile number");
       return;
@@ -327,6 +353,10 @@ export default function Accountant() {
   };
 
   const openEditModal = (acc) => {
+    if (!hasPermission(user, "accountant", "edit")) {
+      showUnauthorized("You do not have permission to edit accountant details.");
+      return;
+    }
     setEditTarget(acc);
     setFormData({
       name: acc.name || "",
@@ -339,8 +369,20 @@ export default function Accountant() {
     setShowEditModal(true);
   };
 
+  const openStatusConfirm = (item, action) => {
+    if (!hasPermission(user, "accountant", "toggle_status")) {
+      showUnauthorized("You do not have permission to modify accountant status.");
+      return;
+    }
+    setStatusConfirm({ isOpen: true, item, action, loading: false });
+  };
+
   // Status Toggle (Disable / Make Inactive / Activate) Handler
   const handleToggleStatusConfirm = async () => {
+    if (!hasPermission(user, "accountant", "toggle_status")) {
+      showUnauthorized("You do not have permission to modify accountant status.");
+      return;
+    }
     const target = statusConfirm.item;
     if (!target) return;
     const targetId = target.assignment_id || target.user_id || target.id;
@@ -487,7 +529,7 @@ export default function Accountant() {
           {acc.status === "ACTIVE" ? (
             <button
               type="button"
-              onClick={() => setStatusConfirm({ isOpen: true, item: acc, action: "deactivate", loading: false })}
+              onClick={() => openStatusConfirm(acc, "deactivate")}
               className="sa-btn"
               style={{
                 background: "rgba(239,68,68,0.12)",
@@ -510,7 +552,7 @@ export default function Accountant() {
           ) : (
             <button
               type="button"
-              onClick={() => setStatusConfirm({ isOpen: true, item: acc, action: "activate", loading: false })}
+              onClick={() => openStatusConfirm(acc, "activate")}
               className="sa-btn"
               style={{
                 background: "rgba(34,197,94,0.12)",

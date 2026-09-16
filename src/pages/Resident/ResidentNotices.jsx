@@ -11,6 +11,7 @@ import {
 import PdfViewer from "../../components/common/PdfViewer";
 import GlobalModal from "../../components/common/GlobalModal";
 import GlobalButton from "../../components/common/GlobalButton";
+import { useCustomAlert } from "../../context/CustomAlertContext";
 
 function useDebounce(value, delay = 500) {
   const [debounced, setDebounced] = useState(value);
@@ -420,7 +421,7 @@ export default function ResidentNotices() {
                     </p>
                     <p className="text-[11px] opacity-80 mt-0.5">
                       {selectedNotice.acknowledgement_status === "ACKNOWLEDGED"
-                        ? `Acknowledged on ${fmtDate(selectedNotice.acknowledged_at)}`
+                        ? `Acknowledged on ${formatDate(selectedNotice.acknowledged_at)}`
                         : "Please read carefully and click 'Mark as Read' below to confirm."}
                     </p>
                   </div>

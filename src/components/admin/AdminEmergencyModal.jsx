@@ -2,6 +2,20 @@
 import { createPortal } from "react-dom";
 import API from "../../services/api";
 
+const SOURCE_LABEL = {
+  GUARD: "Security Guard",
+  RESIDENT: "Resident",
+  ADMIN: "Society Admin",
+  COMMITTEE: "Committee Member",
+  SUPER_ADMIN: "Super Admin",
+};
+
+function sourceName(a) {
+  if (a.source === "RESIDENT") return a.Resident?.name || "Resident";
+  if (a.source === "GUARD") return a.Guard?.name || "Security Guard";
+  return a.Admin?.name || SOURCE_LABEL[a.source] || "Staff";
+}
+
 export default function AdminEmergencyModal({
   alerts,
   isOpen,
@@ -93,9 +107,7 @@ export default function AdminEmergencyModal({
                 {/* SOURCE */}
                 <p className="text-xs text-secondary">
                   Raised By:{" "}
-                  {a.source === "RESIDENT"
-                    ? a.Resident?.name || "Resident"
-                    : "Guard"}
+                  {sourceName(a)}
                 </p>
 
                 {/* FLAT */}

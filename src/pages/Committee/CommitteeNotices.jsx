@@ -19,6 +19,8 @@ import {
 } from "react-icons/md";
 import { BASE_URL } from "../../config/apiConfig";
 import PdfViewer from "../../components/common/PdfViewer";
+import { hasPermission } from "../../utils/permissions";
+import { useCustomAlert } from "../../context/CustomAlertContext";
 
 function useDebounce(value, delay = 500) {
   const [d, setD] = useState(value);
@@ -195,10 +197,22 @@ export default function CommitteeNotices() {
     return () => { socket.off("notice_created", onNoticeCreated); };
   }, []);
 
-  const handlePage = (p) => loadNotices(p, debSearch);
+  const { showUnauthorized, showWarning, showError } = useCustomAlert();
+
+  const handleToggleForm = () => {
+    if (!showForm && !hasPermission(user, "notice", "create")) {
+      showUnauthorized("You do not have permission to publish notices.");
+      return;
+    }
+    setShowForm(p => !p);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!hasPermission(user, "notice", "create")) {
+      showUnauthorized("You do not have permission to publish notices.");
+      return;
+    }
     setSubmitting(true);
     try {
       const fd = new FormData();
@@ -215,7 +229,11 @@ export default function CommitteeNotices() {
       // regardless of whether the socket event fires in time
       await loadNotices(1, debSearch);
     } catch (err) {
-      console.error(err);
+      if (err.response?.status === 403) {
+        showUnauthorized(err.response?.data?.message || "Operation restricted");
+      } else {
+        showError(err.response?.data?.message || "Failed to publish notice");
+      }
     } finally {
       setSubmitting(false);
     }
@@ -291,7 +309,7 @@ export default function CommitteeNotices() {
         </div>
         {canPost && (
           <button
-            onClick={() => setShowForm((p) => !p)}
+            onClick={handleToggleForm}
             className="btn-primary flex items-center gap-2 w-full sm:w-auto justify-center shrink-0"
           >
             {showForm ? <><MdClose size={16} />{t("cancel")}</> : <><MdAdd size={17} />{t("noticeAddBtn")}</>}
@@ -404,7 +422,7 @@ export default function CommitteeNotices() {
                       if (selected) {
                         const validTypes = ["application/pdf", "image/jpeg", "image/png", "image/webp", "image/gif", "image/svg+xml"];
                         if (!validTypes.includes(selected.type) && !selected.type.startsWith("image/")) {
-                          alert("Invalid file type. Please select a PDF or Image file (JPG, PNG, WEBP, GIF, SVG).");
+                          showWarning("Invalid file type. Please select a PDF or Image file (JPG, PNG, WEBP, GIF, SVG).");
                           e.target.value = "";
                           return;
                         }

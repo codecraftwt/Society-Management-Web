@@ -1,6 +1,9 @@
 
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useEffect, useState, useCallback, useMemo, useContext } from "react";
 import API from "../../services/api";
+import { AuthContext } from "../../context/AuthContext";
+import { hasPermission } from "../../utils/permissions";
+import { useCustomAlert } from "../../context/CustomAlertContext";
 import {
   MdReceiptLong,
   MdSearch,
@@ -130,6 +133,8 @@ const LIMIT = 10;
 ══════════════════════════════════════ */
 export default function CommitteeManageBills() {
   const isMobile = useIsMobile();
+  const { user } = useContext(AuthContext);
+  const { showUnauthorized, showError } = useCustomAlert();
 
   /* ── List state ── */
   const [bills, setBills] = useState([]);
@@ -197,12 +202,20 @@ export default function CommitteeManageBills() {
   const [confirmingId, setConfirmingId] = useState(null);
 
   const handleConfirmPayment = async (id) => {
+    if (!hasPermission(user, "manage_bills", "edit")) {
+      showUnauthorized("You do not have permission to confirm bill payments.");
+      return;
+    }
     setConfirmingId(id);
     try {
       await API.put(`/bills/confirm/${id}`);
       loadBills(page, debSearch, filterStatus);
     } catch (e) {
-      alert(e.response?.data?.message || "Failed to confirm payment");
+      if (e.response?.status === 403) {
+        showUnauthorized(e.response?.data?.message || "Operation restricted");
+      } else {
+        showError(e.response?.data?.message || "Failed to confirm payment");
+      }
     } finally {
       setConfirmingId(null);
     }

@@ -1,54 +1,156 @@
 import { Outlet, useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useState, useContext,useEffect } from "react";
 import { createPortal } from "react-dom";
 import {
   MdDashboard,
   MdAccountBalance,
-  MdReceipt,
   MdBarChart,
+  MdCampaign,
+  MdVerified,
+  MdBuild,
+  MdApartment,
+  MdReportProblem,
 } from "react-icons/md";
+import { FaUsers, FaUserShield, FaParking } from "react-icons/fa";
 import { LanguageProvider, useLang } from "../../context/LanguageContext";
 import Sidebar from "../../components/common/Sidebar";
 import AppHeader from "../../components/common/AppHeader";
 import { useRoleTheme } from "../../context/ThemeContext";
+import { AuthContext } from "../../context/AuthContext";
+import { hasPermission } from "../../utils/permissions";
 
 import RoleSwitcher from "../../components/RoleSwitcher";
 
 function AccountantLayoutInner() {
   const navigate = useNavigate();
   const { t } = useLang();
+  const { user, refreshPermissions } = useContext(AuthContext);
   useRoleTheme();
 
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   const base = "/accountant";
 
+  useEffect(() => {
+    const handlePermChange = () => {
+      if (refreshPermissions) refreshPermissions();
+    };
+    window.addEventListener("permissions_updated", handlePermChange);
+    return () => window.removeEventListener("permissions_updated", handlePermChange);
+  }, [refreshPermissions]);
+
   const menu = [
     {
-      label: t("accountantMenuDashboard"),
+      label: t("accountantMenuDashboard") || "Dashboard",
       path: `${base}`,
       icon: MdDashboard,
       group: "OVERVIEW",
+      module: "dashboard",
     },
     {
-      label: t("accountantMenuManageBills"),
+      label: t("accountantMenuManageBills") || "Manage Bills",
       path: `${base}/manage-bills`,
       icon: MdAccountBalance,
       group: "FINANCE & BILLING",
+      module: "manage_bills",
     },
     {
-      label: t("accountantMenuPayments"),
-      path: `${base}/payments`,
-      icon: MdReceipt,
+      label: "Maintenance Management",
+      path: `${base}/maintenance`,
+      icon: MdBuild,
       group: "FINANCE & BILLING",
+      module: "maintenance",
     },
     {
-      label: t("accountantMenuReports"),
+      label: t("accountantMenuReports") || "Reports",
       path: `${base}/reports`,
       icon: MdBarChart,
       group: "FINANCE & BILLING",
+      module: "reports",
+    },
+    {
+      label: t("adminMenuParking") || "Parking Management",
+      path: `${base}/parking-slots`,
+      icon: FaParking,
+      group: "COMMUNITY & PROPERTY",
+      module: "parking_slots",
+    },
+    {
+      label: t("adminManageProperty") || "Properties & Flats",
+      path: `${base}/property`,
+      icon: MdApartment,
+      group: "COMMUNITY & PROPERTY",
+      module: "property",
+    },
+    {
+      label: t("adminMenuResidents") || "Residents & Directory",
+      path: `${base}/resident`,
+      icon: FaUsers,
+      group: "COMMUNITY & PROPERTY",
+      module: "resident",
+    },
+    {
+      label: "Flat History",
+      path: `${base}/flat-history`,
+      icon: MdVerified,
+      group: "COMMUNITY & PROPERTY",
+      module: "flat_history",
+    },
+    {
+      label: "Tenant Management",
+      path: `${base}/tenant-management`,
+      icon: FaUsers,
+      group: "COMMUNITY & PROPERTY",
+      module: "tenant_management",
+    },
+    {
+      label: t("adminMenuGuards") || "Security Guards",
+      path: `${base}/guard`,
+      icon: FaUserShield,
+      group: "SECURITY & LOGS",
+      module: "guard",
+    },
+    {
+      label: t("adminMenuVisitorLogs") || "Visitor Logs",
+      path: `${base}/visitor-logs`,
+      icon: MdCampaign,
+      group: "SECURITY & LOGS",
+      module: "visitor_logs",
+    },
+    {
+      label: t("adminMenuNotices") || "Notices & Circulars",
+      path: `${base}/notice`,
+      icon: MdCampaign,
+      group: "COMMUNICATION",
+      module: "notice",
+    },
+    {
+      label: t("adminMenuComplaints") || "Complaints",
+      path: `${base}/complaints`,
+      icon: MdReportProblem,
+      group: "COMMUNICATION",
+      module: "complaints",
+    },
+    {
+      label: t("adminMenuDocument") || "Documents & Files",
+      path: `${base}/society_documents`,
+      icon: MdVerified,
+      group: "SERVICES & RECORDS",
+      module: "society_documents",
+    },
+    {
+      label: t("adminMenuAmenities") || "Amenities",
+      path: `${base}/amenities`,
+      icon: MdBuild,
+      group: "SERVICES & RECORDS",
+      module: "amenities",
     },
   ];
+
+  const visibleMenu = menu.filter((item) => {
+    if (!item.module) return true;
+    return hasPermission(user, item.module);
+  });
 
   const confirmLogout = () => {
     localStorage.clear();
@@ -62,7 +164,7 @@ function AccountantLayoutInner() {
     >
       {/* ── REUSABLE SIDEBAR ── */}
       <Sidebar
-        menu={menu}
+        menu={visibleMenu}
         brandTitle={
           <>
             {t("accountantPanelLabel") || "Accountant"}<span className="text-accent">{t("panelSuffix") || " Panel"}</span>

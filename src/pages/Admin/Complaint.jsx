@@ -4,7 +4,8 @@ import API from "../../services/api";
 import { AuthContext } from "../../context/AuthContext";
 import { useLang } from "../../context/LanguageContext";
 import { getSocket } from "../../services/socket";
-import { isCommitteeMember } from "../../utils/permissions";
+import { isCommitteeMember, hasPermission } from "../../utils/permissions";
+import { useCustomAlert } from "../../context/CustomAlertContext";
 import {
   MdReportProblem, MdSearch, MdClose, MdOutlineInbox,
   MdImage, MdOpenInNew, MdPerson, MdApartment, MdDoorFront, MdStairs,
@@ -235,7 +236,7 @@ function ChatPanel({ complaintId, societyId, currentUser, onIncomingMessage }) {
   const pickFile = (e) => {
     const f = e.target.files?.[0];
     if (!f) return;
-    if (f.size > 10 * 1024 * 1024) { alert("Max file size is 10 MB"); return; }
+    if (f.size > 10 * 1024 * 1024) { toast.warning("Max file size is 10 MB"); return; }
     setAttachment(f);
     setAttachPrev(f.type.startsWith("image/") ? URL.createObjectURL(f) : null);
     e.target.value = "";
@@ -797,6 +798,7 @@ export default function Complaint() {
   const isMobile           = useIsMobile();
   const { t }              = useLang();
   const { user: authUser } = useContext(AuthContext);
+  const { showUnauthorized, showError } = useCustomAlert();
 
   const [complaints,    setComplaints]    = useState([]);
   const [loading,       setLoading]       = useState(false);
@@ -1096,6 +1098,10 @@ export default function Complaint() {
   }, []);
 
   const updateStatus = async (id, status) => {
+    if (!hasPermission(authUser, "complaints", "update_status")) {
+      showUnauthorized("You do not have permission to update complaint status.");
+      return;
+    }
     try {
       setUpdatingId(id);
       // Determine society context for the complaint
@@ -1106,8 +1112,11 @@ export default function Complaint() {
       setComplaints(prev => prev.map(c => c.id === id ? { ...c, status } : c));
       setSelected(prev => prev?.id === id ? { ...prev, status } : prev);
     } catch (e) {
-      console.error(e);
-      toast.error(e.response?.data?.message || "Failed to update status");
+      if (e.response?.status === 403) {
+        showUnauthorized(e.response?.data?.message || "Operation restricted");
+      } else {
+        toast.error(e.response?.data?.message || "Failed to update status");
+      }
     }
     finally { setUpdatingId(null); }
   };

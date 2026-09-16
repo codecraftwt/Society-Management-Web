@@ -1,5 +1,5 @@
 import { lazy, Suspense } from "react";
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import SeoHead from "./seo/SeoHead";
@@ -23,6 +23,7 @@ import CookiePolicy from "./pages/legal/CookiePolicy";
 /* === PROTECTED ROUTE === */
 import ProtectedRoute from "./components/protectedRoute";
 import PublicRoute from "./components/PublicRoute";
+import PermissionRoute from "./components/common/PermissionRoute";
 
 /* === SUPER ADMIN === */
 import SuperAdminDashboard from "./pages/SuperAdmin/SuperAdminDashboard";
@@ -183,7 +184,6 @@ function App() {
             <Route path="reports/visitors" element={<SuperAdminVisitorReport />} />
             <Route path="reports/complaints" element={<SuperAdminComplaintReport />} />
             <Route path="reports/financial" element={<SuperAdminFinancialReport />} />
-            {/* Add any other Admin routes you wish to expose to Super Admin */}
           </Route>
         </Route>
 
@@ -191,33 +191,61 @@ function App() {
         <Route element={<ProtectedRoute roles={["SOCIETY_ADMIN", "COMMITTEE_MEMBER", "ADMIN"]} />}>
           <Route path="/admin" element={<AdminLayout />}>
             <Route index element={<AdminDashboard />} />
-            <Route path="resident" element={<Resident />} />
-            <Route path="assign-flat" element={<AssignFlat />} />
-            <Route path="settings" element={<AdminSetting />} />
-            <Route path="role-permissions" element={<RolePermissions />} />
-            <Route path="property" element={<ManageProperty />} />
-            <Route path="parking-slots" element={<AssignParkingSlot />} />
-            <Route path="guard" element={<Guard />} />
-            <Route path="notice" element={<Notice />} />
-            <Route path="complaints" element={<Complaint />} />
-            <Route path="accountant" element={<Accountant />} />
-            <Route path="manage-bills" element={<ManageBill />} />
-            <Route path="maintenance" element={<MaintenancePage />} />
-            <Route path="visitor-logs" element={<VisitorLogs />} />
-            <Route path="reports" element={<Reports />} />
-            <Route path="reports/complaints" element={<ComplaintReport />} />
-            <Route path="reports/visitors" element={<VisitorReport />} />
-            <Route path="reports/financial" element={<FinancialReport />} />
-            <Route path="amenities" element={<AdminAmenity />} />
-            <Route path="society_documents" element={<AdminDocument />} />
-            <Route path="flat-history" element={<FlatHistory />} />
-            <Route path="tenant-management" element={<TenantManagement />} />
+            <Route element={<PermissionRoute module="resident" />}>
+              <Route path="resident" element={<Resident />} />
+              <Route path="assign-flat" element={<AssignFlat />} />
+            </Route>
+            <Route element={<PermissionRoute module="settings" />}>
+              <Route path="settings" element={<AdminSetting />} />
+              <Route path="role-permissions" element={<RolePermissions />} />
+            </Route>
+            <Route element={<PermissionRoute module="property" />}>
+              <Route path="property" element={<ManageProperty />} />
+            </Route>
+            <Route element={<PermissionRoute module="parking_slots" />}>
+              <Route path="parking-slots" element={<AssignParkingSlot />} />
+            </Route>
+            <Route element={<PermissionRoute module="guard" />}>
+              <Route path="guard" element={<Guard />} />
+            </Route>
+            <Route element={<PermissionRoute module="notice" />}>
+              <Route path="notice" element={<Notice />} />
+            </Route>
+            <Route element={<PermissionRoute module="complaints" />}>
+              <Route path="complaints" element={<Complaint />} />
+            </Route>
+            <Route element={<PermissionRoute module="accountant" />}>
+              <Route path="accountant" element={<Accountant />} />
+            </Route>
+            <Route element={<PermissionRoute module="manage_bills" />}>
+              <Route path="manage-bills" element={<ManageBill />} />
+            </Route>
+            <Route element={<PermissionRoute module="maintenance" />}>
+              <Route path="maintenance" element={<MaintenancePage />} />
+            </Route>
+            <Route element={<PermissionRoute module="visitor_logs" />}>
+              <Route path="visitor-logs" element={<VisitorLogs />} />
+            </Route>
+            <Route element={<PermissionRoute module="reports" />}>
+              <Route path="reports" element={<Reports />} />
+              <Route path="reports/complaints" element={<ComplaintReport />} />
+              <Route path="reports/visitors" element={<VisitorReport />} />
+              <Route path="reports/financial" element={<FinancialReport />} />
+            </Route>
+            <Route element={<PermissionRoute module="amenities" />}>
+              <Route path="amenities" element={<AdminAmenity />} />
+            </Route>
+            <Route element={<PermissionRoute module="society_documents" />}>
+              <Route path="society_documents" element={<AdminDocument />} />
+            </Route>
+            <Route element={<PermissionRoute module="flat_history" />}>
+              <Route path="flat-history" element={<FlatHistory />} />
+            </Route>
+            <Route element={<PermissionRoute module="tenant_management" />}>
+              <Route path="tenant-management" element={<TenantManagement />} />
+            </Route>
           </Route>
         </Route>
-
-        {/* === COMMITTEE MEMBER ONLY (LIMITED ACCESS) === */}
-        {/* Committee Members land on /admin (AdminLayout + shared admin components).
-             Permissions filtering is handled by AdminLayout / per-page role gating. */}
 
         {/* === RESIDENT (Full Access) === */}
         <Route element={<ProtectedRoute roles={["RESIDENT"]} />}>
@@ -294,12 +322,57 @@ function App() {
         <Route element={<ProtectedRoute roles={["ACCOUNTANT"]} />}>
           <Route path="/accountant" element={<AccountantLayout />}>
             <Route index element={<AccountDashboard />} />
-            <Route path="manage-bills" element={<ManageBillsAccountant />} />
-            <Route path="payments" element={<PaymentsAccountant />} />
-            <Route path="reports" element={<AccountantReports />} />
-            <Route path="reports/financial" element={<FinancialReport />} />
+            <Route element={<PermissionRoute module="manage_bills" />}>
+              <Route path="manage-bills" element={<ManageBillsAccountant />} />
+            </Route>
+            <Route element={<PermissionRoute module="maintenance" />}>
+              <Route path="maintenance" element={<MaintenancePage />} />
+            </Route>
+            <Route element={<PermissionRoute module="reports" />}>
+              <Route path="reports" element={<AccountantReports />} />
+              <Route path="reports/financial" element={<FinancialReport />} />
+            </Route>
+            <Route element={<PermissionRoute module="society_documents" />}>
+              <Route path="society_documents" element={<AdminDocument />} />
+            </Route>
+            <Route element={<PermissionRoute module="notice" />}>
+              <Route path="notice" element={<Notice />} />
+            </Route>
+            <Route element={<PermissionRoute module="amenities" />}>
+              <Route path="amenities" element={<AdminAmenity />} />
+            </Route>
+            <Route element={<PermissionRoute module="parking_slots" />}>
+              <Route path="parking-slots" element={<AssignParkingSlot />} />
+            </Route>
+            <Route element={<PermissionRoute module="property" />}>
+              <Route path="property" element={<ManageProperty />} />
+            </Route>
+            <Route element={<PermissionRoute module="resident" />}>
+              <Route path="resident" element={<Resident />} />
+            </Route>
+            <Route element={<PermissionRoute module="flat_history" />}>
+              <Route path="flat-history" element={<FlatHistory />} />
+            </Route>
+            <Route element={<PermissionRoute module="tenant_management" />}>
+              <Route path="tenant-management" element={<TenantManagement />} />
+            </Route>
+            <Route element={<PermissionRoute module="guard" />}>
+              <Route path="guard" element={<Guard />} />
+            </Route>
+            <Route element={<PermissionRoute module="visitor_logs" />}>
+              <Route path="visitor-logs" element={<VisitorLogs />} />
+            </Route>
+            <Route element={<PermissionRoute module="complaints" />}>
+              <Route path="complaints" element={<Complaint />} />
+            </Route>
+            <Route element={<PermissionRoute module="settings" />}>
+              <Route path="settings" element={<AdminSetting />} />
+            </Route>
           </Route>
         </Route>
+
+        {/* === FALLBACK NOT FOUND ROUTE === */}
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       </Suspense>
     </>

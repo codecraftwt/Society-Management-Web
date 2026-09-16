@@ -1289,9 +1289,9 @@ export default function ResidentComplaints() {
             <div className="ad-page-icon"><MdReportProblem size={22} /></div>
             <div>
               <h2 className="page-title">{t("compTitle")}</h2>
-              <p className="page-subtitle">
+              <div className="page-subtitle">
                 {initialLoad ? <SkeletonBlock width={60} height={12} /> : `${counts.ALL} ${t("compCount")}`}
-              </p>
+              </div>
             </div>
           </div>
           <button onClick={() => hasEligibleFlat && setShowForm(p => !p)} disabled={!hasEligibleFlat || initialLoad}
