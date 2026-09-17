@@ -5,7 +5,7 @@ import { moveOutResident } from "../../services/flatService";
 import GlobalModal from "../../components/common/GlobalModal";
 import { useLang } from "../../context/LanguageContext";
 import { AuthContext } from "../../context/AuthContext";
-import { isCommitteeMember } from "../../utils/permissions";
+import { isCommitteeMember, hasPermission } from "../../utils/permissions";
 
 /* ─────────────────────────────────────────────────────────────
    UTILITY – normalise ANY API response shape into a plain array
@@ -430,7 +430,7 @@ const ParkingTab = ({ parking, t }) => {
 const FlatHistory = () => {
   const { t } = useLang();
   const { user } = useContext(AuthContext);
-  const canMoveOut = !isCommitteeMember(user);
+  const canMoveOut = hasPermission(user, "flat_history", "move_out") || hasPermission(user, "flat_history", "view");
 
   const [flats,        setFlats]        = useState([]);
   const [selectedFlat, setSelectedFlat] = useState(null);

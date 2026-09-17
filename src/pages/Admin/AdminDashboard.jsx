@@ -13,6 +13,7 @@ import {
   MdCheckCircle, MdFlashOn, MdApartment,
   MdRefresh,
 } from "react-icons/md";
+import CreditedDebitedChart from "../../components/accounting/CreditedDebitedChart";
 
 /* ── SKELETON LOADER ── */
 function DashboardSkeleton() {
@@ -344,6 +345,9 @@ export default function AdminDashboard() {
           </div>
         </div>
       </div>
+
+      {/* ── 3b. FINANCIAL OVERVIEW ── */}
+      <CreditedDebitedChart linkTo="/admin/accounting" />
 
       {/* ── 4. OPERATIONAL STATUS SECTION (3 COLUMNS) ── */}
       <div className="space-y-3">

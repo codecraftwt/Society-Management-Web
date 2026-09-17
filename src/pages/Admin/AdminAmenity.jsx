@@ -438,7 +438,8 @@ export default function AdminAmenity() {
       .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
       .filter(b => {
         const q = searchBooking.toLowerCase();
-        const ms = !q || b.Amenity?.name?.toLowerCase().includes(q) || b.User?.name?.toLowerCase().includes(q) || b.date?.includes(q);
+        const range = b.to_date && b.to_date !== b.from_date ? `${b.from_date} – ${b.to_date}` : b.from_date || b.date;
+        const ms = !q || b.Amenity?.name?.toLowerCase().includes(q) || b.User?.name?.toLowerCase().includes(q) || (b.from_date || b.date || "")?.includes(q) || (b.to_date || "")?.includes(q) || range?.includes(q);
         const mf = bookingFilter === "ALL" || b.status === bookingFilter;
         return ms && mf;
       }),
@@ -739,8 +740,8 @@ export default function AdminAmenity() {
                       </div>
                       <div style={{ fontSize: 12, color: "var(--text-secondary)", marginTop: 2 }}>{b.User?.name}</div>
                       <div style={{ display: "flex", gap: 10, marginTop: 5, flexWrap: "wrap" }}>
-                        {b.date && <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: "var(--text-secondary)" }}><MdEventAvailable size={12} /> {b.date}</span>}
-                        {b.start_time && <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: "var(--text-secondary)" }}><MdAccessTime size={12} /> {b.start_time?.slice(0, 5)}–{b.end_time?.slice(0, 5)}</span>}
+                        {(b.from_date || b.date) && <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: "var(--text-secondary)" }}><MdEventAvailable size={12} /> {b.to_date && b.to_date !== b.from_date ? `${b.from_date} – ${b.to_date}` : (b.from_date || b.date)}</span>}
+                        {b.start_time && b.start_time !== "00:00:00" && <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: "var(--text-secondary)" }}><MdAccessTime size={12} /> {b.start_time?.slice(0, 5)}–{b.end_time?.slice(0, 5)}</span>}
                         {isPaymentPending && b.payment_expires_in_seconds !== undefined && (
                           <span style={{ display: "flex", alignItems: "center", gap: 3, fontSize: 11, fontWeight: 600, color: b.payment_expires_in_seconds < 120 ? "#ef4444" : "#9F87D7" }}>
                             <MdPayment size={12} /> ~{Math.ceil(b.payment_expires_in_seconds / 60)}m left

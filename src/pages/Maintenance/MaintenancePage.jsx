@@ -15,7 +15,7 @@ import Select from "../../components/common/Select";
 import GlobalButton from "../../components/common/GlobalButton";
 import GlobalModal from "../../components/common/GlobalModal";
 import SlidingTabs from "../../components/common/SlidingTabs";
-import { isCommitteeMember } from "../../utils/permissions";
+import { isCommitteeMember, hasPermission } from "../../utils/permissions";
 import "../Admin/Admin.css";
 
 /* ── helpers ── */
@@ -1537,7 +1537,7 @@ export default function MaintenancePage() {
   const { user } = useContext(AuthContext);
   const activeRole = user?.activeRole ?? user?.role;
   const isSuperAdmin = activeRole === "SUPER_ADMIN";
-  const canEdit = !isCommitteeMember(user);
+  const canEdit = hasPermission(user, "maintenance", "edit") || hasPermission(user, "maintenance", "create") || hasPermission(user, "maintenance", "view");
 
   const [configs, setConfigs] = useState([]);
   const [loading, setLoading] = useState(true);

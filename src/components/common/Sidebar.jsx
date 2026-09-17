@@ -59,12 +59,19 @@ export default function Sidebar({
   brandSubtitle = "Control Panel",
   base = "",
   drawerExtra = null,
+  defaultOpenGroups = [],
 }) {
   const location = useLocation();
   const { collapsed, toggleCollapsed, mobileOpen, closeMobile } = useSidebar();
   const { user } = useContext(AuthContext);
 
-  const [expandedGroups, setExpandedGroups] = useState({});
+  const [expandedGroups, setExpandedGroups] = useState(() => {
+    const init = {};
+    (defaultOpenGroups || []).forEach((g) => {
+      init[g] = true;
+    });
+    return init;
+  });
   const [activeFlyoutItem, setActiveFlyoutItem] = useState(null);
   const flyoutRef = useRef(null);
 

@@ -43,6 +43,44 @@ html.light.role-theme input.mc-date {
 }
 
 /* --------------------------------------------------------------------------
+   Universal Select & Option Dropdown Styling (Fix light mode contrast)
+   -------------------------------------------------------------------------- */
+html.role-theme select {
+  background-color: var(--card-inner-bg);
+  border-color: var(--glass-border);
+  color: var(--text-primary);
+}
+html.role-theme select option,
+html.role-theme option {
+  background-color: var(--card-bg, #1e222d);
+  color: var(--text-primary, #ffffff);
+}
+html.light.role-theme select,
+html.light.role-theme select.input,
+html.light.role-theme .admin-root select {
+  background-color: #ffffff !important;
+  border-color: rgba(0, 0, 0, 0.15) !important;
+  color: #0f172a !important;
+}
+html.light.role-theme select option,
+html.light.role-theme option {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+}
+html.role-theme:not(.light) select,
+html.role-theme:not(.light) select.input,
+html.role-theme:not(.light) .admin-root select {
+  background-color: #1e222d !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  color: #f1f5f9 !important;
+}
+html.role-theme:not(.light) select option,
+html.role-theme:not(.light) option {
+  background-color: #1e222d !important;
+  color: #f1f5f9 !important;
+}
+
+/* --------------------------------------------------------------------------
    Layout utilities
    -------------------------------------------------------------------------- */
 html.role-theme .admin-root .bg-white\/3,
@@ -159,22 +197,43 @@ html.role-theme:not(.light) .ad-kpi {
 html.role-theme:not(.light) .ad-kpi::after {
   background: rgba(255, 255, 255, 0.04);
 }
-html.role-theme:not(.light) .ad-kpi--residents { border-color: rgba(var(--acct-purple-rgb), 0.4) !important; }
-html.role-theme:not(.light) .ad-kpi--guards { border-color: rgba(var(--acct-green-rgb), 0.35) !important; }
-html.role-theme:not(.light) .ad-kpi--complaints { border-color: rgba(var(--acct-cyan-rgb), 0.35) !important; }
-html.role-theme:not(.light) .ad-kpi--flats { border-color: rgba(var(--acct-violet-rgb), 0.4) !important; }
+html.role-theme:not(.light) .ad-kpi--residents,
+html.role-theme:not(.light) .ad-kpi--balance,
+html.role-theme:not(.light) .ad-kpi--amenity { border-color: rgba(var(--acct-purple-rgb), 0.4) !important; }
+html.role-theme:not(.light) .ad-kpi--guards,
+html.role-theme:not(.light) .ad-kpi--income,
+html.role-theme:not(.light) .ad-kpi--maintenance { border-color: rgba(var(--acct-green-rgb), 0.35) !important; }
+html.role-theme:not(.light) .ad-kpi--complaints,
+html.role-theme:not(.light) .ad-kpi--opening,
+html.role-theme:not(.light) .ad-kpi--bills { border-color: rgba(var(--acct-cyan-rgb), 0.35) !important; }
+html.role-theme:not(.light) .ad-kpi--flats,
+html.role-theme:not(.light) .ad-kpi--expense { border-color: rgba(239, 68, 68, 0.4) !important; }
 
 html.role-theme:not(.light) .ad-kpi-val { color: #ffffff; }
-html.role-theme:not(.light) .ad-kpi--residents .ad-kpi-label { color: var(--acct-purple); }
-html.role-theme:not(.light) .ad-kpi--guards .ad-kpi-label { color: var(--acct-teal); }
-html.role-theme:not(.light) .ad-kpi--complaints .ad-kpi-label { color: var(--acct-cyan); }
+html.role-theme:not(.light) .ad-kpi--residents .ad-kpi-label,
+html.role-theme:not(.light) .ad-kpi--balance .ad-kpi-label,
+html.role-theme:not(.light) .ad-kpi--amenity .ad-kpi-label { color: var(--acct-purple); }
+html.role-theme:not(.light) .ad-kpi--guards .ad-kpi-label,
+html.role-theme:not(.light) .ad-kpi--income .ad-kpi-label,
+html.role-theme:not(.light) .ad-kpi--maintenance .ad-kpi-label { color: var(--acct-teal); }
+html.role-theme:not(.light) .ad-kpi--complaints .ad-kpi-label,
+html.role-theme:not(.light) .ad-kpi--opening .ad-kpi-label,
+html.role-theme:not(.light) .ad-kpi--bills .ad-kpi-label { color: var(--acct-cyan); }
 html.role-theme:not(.light) .ad-kpi--flats .ad-kpi-label { color: var(--acct-violet); }
+html.role-theme:not(.light) .ad-kpi--expense .ad-kpi-label { color: #f87171; }
 html.role-theme:not(.light) .ad-kpi-desc { color: var(--text-secondary); }
 
-html.light.role-theme .ad-kpi--residents { background: var(--stat-purple-bg); border: none; }
-html.light.role-theme .ad-kpi--guards { background: var(--stat-green-bg); border: none; }
-html.light.role-theme .ad-kpi--complaints { background: var(--stat-blue-bg); border: none; }
-html.light.role-theme .ad-kpi--flats { background: var(--stat-red-bg); border: none; }
+html.light.role-theme .ad-kpi--residents,
+html.light.role-theme .ad-kpi--balance,
+html.light.role-theme .ad-kpi--amenity { background: var(--stat-purple-bg); border: none; }
+html.light.role-theme .ad-kpi--guards,
+html.light.role-theme .ad-kpi--income,
+html.light.role-theme .ad-kpi--maintenance { background: var(--stat-green-bg); border: none; }
+html.light.role-theme .ad-kpi--complaints,
+html.light.role-theme .ad-kpi--opening,
+html.light.role-theme .ad-kpi--bills { background: var(--stat-blue-bg); border: none; }
+html.light.role-theme .ad-kpi--flats,
+html.light.role-theme .ad-kpi--expense { background: var(--stat-red-bg); border: none; }
 
 html.light.role-theme .ad-kpi-val,
 html.light.role-theme .ad-kpi-label,

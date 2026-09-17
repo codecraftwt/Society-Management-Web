@@ -38,13 +38,17 @@ import {
   MdOutlineLocalPolice,
   MdOutlineBadge,
   MdOutlineEditOff,
+  MdPayments,
+  MdAttachMoney,
+  MdListAlt,
+  MdHistory,
 } from "react-icons/md";
 import "./Admin.css";
 
 const MODULE_GROUPS = {
   "Overview & Administration": ["dashboard", "settings"],
   "Community & Property": ["resident", "property", "parking_slots", "flat_history", "tenant_management"],
-  "Finance & Operations": ["manage_bills", "maintenance", "accountant", "amenities"],
+  "Finance & Operations": ["manage_bills", "payments", "expenses", "general_ledger", "financial_audit_log", "maintenance", "accounting", "accountant", "amenities"],
   "Communication & Support": ["notice", "complaints", "emergency"],
   "Security & Logs": ["guard", "visitor_logs"],
   "Reports & Documents": ["reports", "society_documents"],
@@ -63,6 +67,11 @@ const MODULE_META = {
   complaints: { label: "Complaints & Helpdesk", icon: MdReportProblem, desc: "Track, discuss, and update maintenance issue tickets" },
   accountant: { label: "Accountant Roles", icon: MdAccountBalance, desc: "Appoint and manage assigned society accountants" },
   manage_bills: { label: "Manage Bills & Invoices", icon: MdOutlineReceiptLong, desc: "Create, distribute, and collect utility & maintenance dues" },
+  payments: { label: "Payments", icon: MdPayments, desc: "View and confirm resident & online payments against bills" },
+  expenses: { label: "Expenses", icon: MdAttachMoney, desc: "Record, edit, and void society money-out expenses" },
+  general_ledger: { label: "Cash Book Ledger", icon: MdListAlt, desc: "View the running cash book of credits (income) and debits (money-out)" },
+  financial_audit_log: { label: "Financial Audit Log", icon: MdHistory, desc: "View the trail of opening balance, expense, and payment records" },
+  accounting: { label: "Account Management", icon: MdOutlineReceiptLong, desc: "Financial overview, balance KPIs, and share of income by source" },
   maintenance: { label: "Maintenance Management", icon: MdBuild, desc: "Configure recurring maintenance schedules, rates, and dues" },
   amenities: { label: "Amenities & Facilities", icon: MdBuild, desc: "Configure facilities and manage member slot bookings" },
   reports: { label: "Analytics & Reports", icon: MdOutlineFolderShared, desc: "Generate and export financial, visitor, and complaint reports" },
@@ -253,7 +262,7 @@ export default function RolePermissions() {
                 : `"${meta.label}" disabled for ${roleMeta.label}`
             );
             setInitialSectionStates((prev) => ({ ...prev, [moduleKey]: willEnable }));
-            
+
             // Sync local AuthContext permissions immediately if modifying user's role
             if (refreshPermissions) {
               await refreshPermissions();
@@ -466,11 +475,11 @@ export default function RolePermissions() {
                   style={
                     active
                       ? {
-                          background: `${role.color}22`,
-                          color: role.color,
-                          borderColor: `${role.color}66`,
-                          boxShadow: `0 6px 18px -8px ${role.color}`,
-                        }
+                        background: `${role.color}22`,
+                        color: role.color,
+                        borderColor: `${role.color}66`,
+                        boxShadow: `0 6px 18px -8px ${role.color}`,
+                      }
                       : undefined
                   }
                 >
@@ -886,7 +895,7 @@ export default function RolePermissions() {
               <span className="rp-summary-val">
                 {selectedSocietyId
                   ? societies.find((s) => String(s.id) === String(selectedSocietyId))?.name ||
-                    `#${selectedSocietyId}`
+                  `#${selectedSocietyId}`
                   : "—"}
               </span>
             </div>
@@ -1129,11 +1138,10 @@ export default function RolePermissions() {
                           background: isActive
                             ? `${selectedRoleMeta?.color || "var(--accent)"}26`
                             : "var(--card-bg)",
-                          border: `1px solid ${
-                            isActive
-                              ? selectedRoleMeta?.color || "var(--accent)"
-                              : "var(--glass-border)"
-                          }`,
+                          border: `1px solid ${isActive
+                            ? selectedRoleMeta?.color || "var(--accent)"
+                            : "var(--glass-border)"
+                            }`,
                           color: isActive
                             ? selectedRoleMeta?.color || "var(--accent)"
                             : "var(--text-primary)",

@@ -231,11 +231,44 @@
       String(date.getMonth() + 1).padStart(2, "0") + "-" +
       String(date.getDate()).padStart(2, "0");
 
-    const formatBookingDate = (date, start_time, end_time) => {
-      if (!start_time || start_time === "00:00:00") return date;
-      const start = start_time.slice(0, 5);
-      const end = end_time && end_time !== "23:59:59" ? ` – ${end_time.slice(0, 5)}` : "";
-      return `${date} · ${start}${end}`;
+    const bookingDates = (b) => {
+      const from = b?.from_date || b?.date;
+      const to = b?.to_date;
+      if (to && to !== from) return `${from} – ${to}`;
+      return String(from || "");
+    };
+
+    const formatBookingDate = (b) => {
+      if (!b) return "";
+      const from = b.from_date || b.date;
+      const to = b.to_date;
+      const dateRange = bookingDates(b);
+      if (Array.isArray(b.slots) && b.slots.length) {
+        const days = new Set(b.slots.map((s) => s.date)).size;
+        if (days > 1) {
+          const times = [...new Set(b.slots.map((s) => s.start_time?.slice(0, 5)))].sort();
+          return `${dateRange} · ${b.slots.length} slots · ${times[0]}${times.length > 1 ? `–${times[times.length - 1]}` : ""}`;
+        }
+        const s0 = b.slots[b.slots.length - 1];
+        const start = (b.slots[0]?.start_time || "").slice(0, 5);
+        const end = s0?.end_time && s0.end_time !== "23:59:59" ? ` – ${s0.end_time.slice(0, 5)}` : "";
+        return `${from} · ${start}${end}`;
+      }
+      if (b.start_time && b.start_time !== "00:00:00") {
+        const start = b.start_time.slice(0, 5);
+        const end = b.end_time && b.end_time !== "23:59:59" ? ` – ${b.end_time.slice(0, 5)}` : "";
+        return `${from} · ${start}${end}`;
+      }
+      return dateRange;
+    };
+
+    const bookingAmount = (b) => {
+      const rate = Number(b?.Amenity?.rate_per_hour) || 0;
+      if (!rate) return 0;
+      const units = Array.isArray(b?.slots) && b.slots.length
+        ? b.slots.length
+        : (b?.slot_count || b?.date_count || 1);
+      return rate * units;
     };
 
     useEffect(() => {
@@ -286,15 +319,16 @@
     const clearAllFilters    = () => { setStatusFilter("ALL"); setAmenityFilter("ALL"); setBookingSearch(""); };
 
     /* ── Availability ── */
-    useEffect(() => {
-      if (selectedAmenity && selectedDate) loadAvailability(selectedAmenity.id, selectedDate);
-    }, [selectedDate]);
-
-    const loadAvailability = async (id, date) => {
+    const loadAvailability = async (id) => {
+      if (!rangeDates.length) return;
       setSlotsLoading(true);
       setSlots([]);
       try {
-        const res = await API.get(`/amenities/${id}/availability?date=${formatDateLocal(date)}`);
+        const from = formatDateLocal(rangeDates[0]);
+        const to = formatDateLocal(rangeDates[rangeDates.length - 1]);
+        const res = from === to
+          ? await API.get(`/amenities/${id}/availability?date=${from}`)
+          : await API.get(`/amenities/${id}/availability?from_date=${from}&to_date=${to}`);
         setSlots(res.data.data || []);
       } catch (err) {
         console.error(err);
@@ -324,13 +358,15 @@
     };
 
     const filterFutureSlots = (slot) => {
-      if (!selectedDate) return true;
-      const now      = new Date();
-      const selected = new Date(selectedDate);
-      if (selected.toDateString() !== now.toDateString()) return true;
+      if (!slot) return true;
+      const now = new Date();
+      const todayStr = now.getFullYear() + "-" +
+        String(now.getMonth() + 1).padStart(2, "0") + "-" +
+        String(now.getDate()).padStart(2, "0");
+      if (slot.date !== todayStr) return true;
       if (!slot.start_time) return true;
       const [h, m] = slot.start_time.split(":");
-      const slotTime = new Date(selected);
+      const slotTime = new Date();
       slotTime.setHours(h); slotTime.setMinutes(m); slotTime.setSeconds(0);
       return slotTime > now;
     };
@@ -420,12 +456,13 @@
       return "ra-day-mid";
     };
 
-    /* ── Toggle slot in/out of multi-selection ── */
+    /* ── Toggle slot in/out of multi-selection (matched by date + start time) ── */
     const toggleSlot = (slot) => {
       setSelectedSlots((prev) => {
-        const exists = prev.some((sel) => sel.start_time === slot.start_time);
+        const key = (s) => `${s.date}|${s.start_time}`;
+        const exists = prev.some((sel) => key(sel) === key(slot));
         return exists
-          ? prev.filter((sel) => sel.start_time !== slot.start_time)
+          ? prev.filter((sel) => key(sel) !== key(slot))
           : [...prev, slot];
       });
     };
@@ -447,9 +484,15 @@
         h = h % 12; if (h === 0) h = 12;
         return `${h}:${m} ${ap}`;
       };
-      const label = mins % 60 === 0
-        ? `${mins / 60} hr${mins / 60 === 1 ? "" : "s"}`
-        : `${Math.floor(mins / 60)}h ${mins % 60}m`;
+      const days = new Set(selectedSlots.map((s) => s.date)).size;
+      let label;
+      if (days > 1) {
+        label = `${selectedSlots.length} ${selectedSlots.length === 1 ? "slot" : "slots"} · ${days} ${days === 1 ? "day" : "days"}`;
+      } else {
+        label = mins % 60 === 0
+          ? `${mins / 60} hr${mins / 60 === 1 ? "" : "s"}`
+          : `${Math.floor(mins / 60)}h ${mins % 60}m`;
+      }
       return { start: fmt(s), end: fmt(e), label };
     })();
 
@@ -460,24 +503,30 @@
     ══════════════════════════════════════════════════ */
     const bookSlot = async () => {
       if (bookingLoading) return;
-      const bookings = selectedAmenity.booking_type === "FULL_DAY"
-        ? rangeDates.map((d) => ({ date: formatDateLocal(d) }))
-        : selectedSlots.map((s) => ({ date: formatDateLocal(selectedDate), startTime: s.start_time }));
+      const isFullDay = selectedAmenity.booking_type === "FULL_DAY";
+      const from = rangeDates.length ? formatDateLocal(rangeDates[0]) : null;
+      const to   = rangeDates.length ? formatDateLocal(rangeDates[rangeDates.length - 1]) : null;
 
-      if (bookings.length === 0) {
+      if (!from || (!isFullDay && selectedSlots.length === 0)) {
         setBookingError(t("amenSelectAtLeastOne", "Select at least one slot or date."));
         return;
       }
+
+      const payload = isFullDay
+        ? { amenityId: selectedAmenity.id, from_date: from, to_date: to }
+        : {
+            amenityId: selectedAmenity.id,
+            from_date: from,
+            to_date:   to,
+            slots:     selectedSlots.map((s) => ({ date: s.date, start_time: s.start_time })),
+          };
 
       setBookingLoading(true);
       setBookingError("");
       setPaymentStatus(null);
 
       try {
-        const res = await API.post("/amenities/book", {
-          amenityId: selectedAmenity.id,
-          bookings,
-        });
+        const res = await API.post("/amenities/book", payload);
 
         if (!res.data.requiresPayment) {
           setShowSlotsModal(false);
@@ -634,7 +683,7 @@
               {tearLine}
               <div style={{ background: "rgba(255,255,255,0.05)", borderRadius: "10px", padding: "10px 12px", display: "grid", gridTemplateColumns: "1fr 1fr", rowGap: "7px", fontSize: "12px", textAlign: "left", marginBottom: "10px" }}>
                 <span style={gridLabelStyle}>Amenity</span><span style={gridValueStyle}>{selectedBooking.Amenity?.name}</span>
-                <span style={gridLabelStyle}>Date</span><span style={gridValueStyle}>{selectedBooking.date}</span>
+                <span style={gridLabelStyle}>Date</span><span style={gridValueStyle}>{bookingDates(selectedBooking)}</span>
                 <span style={gridLabelStyle}>Booking #</span><span style={gridValueStyle}>#{selectedBooking.id}</span>
                 <span style={gridLabelStyle}>Status</span><span style={{ textAlign: "right", color: "#eab308", fontWeight: "700", fontSize: "11px" }}>Pending Approval</span>
               </div>
@@ -660,7 +709,7 @@
               {tearLine}
               <div style={{ background: "rgba(255,255,255,0.05)", borderRadius: "10px", padding: "10px 12px", display: "grid", gridTemplateColumns: "1fr 1fr", rowGap: "7px", fontSize: "12px", textAlign: "left", marginBottom: "10px" }}>
                 <span style={gridLabelStyle}>Amenity</span><span style={gridValueStyle}>{selectedBooking.Amenity?.name}</span>
-                <span style={gridLabelStyle}>Date</span><span style={gridValueStyle}>{selectedBooking.date}</span>
+                <span style={gridLabelStyle}>Date</span><span style={gridValueStyle}>{bookingDates(selectedBooking)}</span>
                 <span style={gridLabelStyle}>Booking #</span><span style={gridValueStyle}>#{selectedBooking.id}</span>
               </div>
             </div>
@@ -685,11 +734,11 @@
             </div>
             <h3 style={{ marginTop: "8px", fontSize: "14px", fontWeight: "600" }}>{user?.name}</h3>
             <div style={{ marginTop: "10px", background: "rgba(255,255,255,0.06)", borderRadius: "10px", padding: "9px 12px", display: "grid", gridTemplateColumns: "1fr 1fr", rowGap: "6px", fontSize: "12px", textAlign: "left" }}>
-              <span style={gridLabelStyle}>Date</span><span style={gridValueStyle}>{selectedBooking.date}</span>
+              <span style={gridLabelStyle}>Date</span><span style={gridValueStyle}>{bookingDates(selectedBooking)}</span>
               <span style={gridLabelStyle}>Booking #</span><span style={gridValueStyle}>#{selectedBooking.id}</span>
               <span style={gridLabelStyle}>Status</span><span style={{ textAlign: "right", color: "#22c55e", fontWeight: "700" }}>Confirmed</span>
               <span style={gridLabelStyle}>Amenity</span><span style={gridValueStyle}>{selectedBooking.Amenity?.name}</span>
-              <span style={gridLabelStyle}>Amount</span><span style={gridValueStyle}>₹{selectedBooking.Amenity?.rate_per_hour || 0}</span>
+              <span style={gridLabelStyle}>Amount</span><span style={gridValueStyle}>₹{bookingAmount(selectedBooking)}</span>
             </div>
             <div style={{ marginTop: "8px", fontSize: "9px", color: "var(--text-muted)", letterSpacing: "0.1em" }}>{t("amenPassScanNote")}</div>
           </div>
@@ -949,7 +998,7 @@
                     <span className="ra-booking-dot" style={{ background: dotColor }} />
                     <div>
                       <p className="ra-booking-name">{b.Amenity?.name}</p>
-                      <p className="ra-booking-date">{formatBookingDate(b.date, b.start_time, b.end_time)}</p>
+                      <p className="ra-booking-date">{formatBookingDate(b)}</p>
                       {isPaymentPending && (
                         <PaymentCountdown expiresAt={b.payment_expires_at} />
                       )}
@@ -1216,27 +1265,52 @@
                       </>
                     )
                   ) : (
-                    /* SLOT type — single calendar, then choose time slots */
-                    <div className="ra-booking-grid ra-booking-grid--single">
-                      <div className="ra-calendar-section">
-                        <p className="ra-modal-label">{t("amenSelectDate")}</p>
-                        <div className="ra-inline-calendar">
-                          <DatePicker
-                            selected={selectedDate}
-                            onChange={(d) => {
-                              setSelectedDate(d);
+                    /* SLOT type — pick a 1–7 day range, then choose time slots per day */
+                    bookingStep === "date" ? (
+                      <>
+                        <div className="ra-booking-grid ra-booking-grid--single">
+                          <div className="ra-calendar-section">
+                            <p className="ra-modal-label">{t("amenSelectDatesHint", "Pick 1–7 days · tap more dates to extend the period")}</p>
+                            <div className="ra-inline-calendar">
+                              <DatePicker
+                                selected={rangeEnd ? undefined : rangeStart || undefined}
+                                onChange={handleRangeDay}
+                                minDate={new Date()}
+                                dayClassName={rangeDayClassName}
+                                inline
+                              />
+                            </div>
+
+                            {rangeDates.length > 0 && (
+                              <div className="ra-step-dates">
+                                {rangeDates.map((d, i) => (
+                                  <span key={i} className="ra-step-date-chip">
+                                    {d.toLocaleDateString("en-US", { day: "numeric", month: "short" })}
+                                  </span>
+                                ))}
+                                <button type="button" className="ra-step-clear" onClick={clearRange}>
+                                  <MdClose size={13} /> {t("amenClear", "Clear")}
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="ra-step-actions">
+                          <button type="button" className="ra-next-btn" disabled={rangeDates.length === 0}
+                            onClick={() => {
                               setSelectedSlots([]);
                               setShowDateModal(false);
                               setShowSlotsModal(true);
                               setBookingError("");
                               setPaymentStatus(null);
-                            }}
-                            minDate={new Date()}
-                            inline
-                          />
+                              loadAvailability(selectedAmenity.id);
+                            }}>
+                            {t("amenNext", "Next")} ›
+                          </button>
                         </div>
-                      </div>
-                    </div>
+                      </>
+                    ) : null
                   )}
                 </>
               )}
@@ -1250,9 +1324,7 @@
         {showSlotsModal && selectedAmenity && (
           <Modal isOpen={showSlotsModal}
             onClose={() => { setShowSlotsModal(false); setPaymentStatus(null); setBookingError(""); setSlots([]); setSelectedSlots([]); resetRange(); }}
-            title={selectedAmenity.booking_type === "FULL_DAY"
-              ? `${selectedAmenity.name} · ${rangeDates.length} ${rangeDates.length === 1 ? t("amenDay", "day") : t("amenDays", "days")}`
-              : `${selectedAmenity.name} · ${new Date(selectedDate).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}`}>
+            title={`${selectedAmenity.name} · ${rangeDates.length} ${rangeDates.length === 1 ? t("amenDay", "day") : t("amenDays", "days")}`}>
             <div className="ra-modal-inner">
 
               {paymentStatus === "processing" && (
@@ -1346,25 +1418,45 @@
                 </>
               ) : !paymentStatus ? (
                 <>
-                  <p className="ra-modal-label">{t("amenAvailableSlots")}</p>
+                  <p className="ra-modal-label">{t("amenAvailableSlots")} · {rangeDates.length} {rangeDates.length === 1 ? t("amenDay", "day") : t("amenDays", "days")}</p>
                   {slotsLoading ? (
                     <div className="ra-loading">
                       <span className="ra-spinner" /><span>{t("amenCheckingAvailability")}</span>
                     </div>
                   ) : (
                     <>
-                      <div className="ra-slots-grid">
-                        {slots.filter(filterFutureSlots).map((s, i) => {
-                          const isSelected = selectedSlots.some((sel) => sel.start_time === s.start_time);
-                          const bookable = s.available;
+                      <div className="ra-slots-day-scroll">
+                        {rangeDates.map((d) => {
+                          const dateKey = formatDateLocal(d);
+                          const dateSlots = slots
+                            .filter((s) => s.date === dateKey)
+                            .filter(filterFutureSlots);
+                          const picked = dateSlots.filter((s) =>
+                            selectedSlots.some((sel) => sel.date === dateKey && sel.start_time === s.start_time)
+                          ).length;
+                          if (dateSlots.length === 0) return null;
                           return (
-                            <button key={i} disabled={!bookable || bookingLoading}
-                              onClick={() => toggleSlot(s)}
-                              className={`ra-slot ${bookable ? (isSelected ? "ra-slot--selected" : "ra-slot--available") : "ra-slot--taken"}`}>
-                              <span className="ra-slot-time">{s.start_time}</span>
-                              {!bookable && <span className="ra-slot-taken-label">{t("amenSlotBooked")}</span>}
-                              {bookable && isSelected && <span className="ra-slot-check">✓</span>}
-                            </button>
+                            <div key={dateKey} className="ra-slot-day-group">
+                              <div className="ra-slot-day-label">
+                                <span>{d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}</span>
+                                {picked > 0 && <span className="ra-slot-day-picked">{picked} selected</span>}
+                              </div>
+                              <div className="ra-slots-grid">
+                                {dateSlots.map((s, i) => {
+                                  const isSelected = selectedSlots.some((sel) => sel.date === dateKey && sel.start_time === s.start_time);
+                                  const bookable = s.available;
+                                  return (
+                                    <button key={i} disabled={!bookable || bookingLoading}
+                                      onClick={() => toggleSlot(s)}
+                                      className={`ra-slot ${bookable ? (isSelected ? "ra-slot--selected" : "ra-slot--available") : "ra-slot--taken"}`}>
+                                      <span className="ra-slot-time">{s.start_time}</span>
+                                      {!bookable && <span className="ra-slot-taken-label">{t("amenSlotBooked")}</span>}
+                                      {bookable && isSelected && <span className="ra-slot-check">✓</span>}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </div>
                           );
                         })}
                       </div>

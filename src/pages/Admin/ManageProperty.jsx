@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import API from "../../services/api";
 import { useLang } from "../../context/LanguageContext";
 import { AuthContext } from "../../context/AuthContext";
-import { isCommitteeMember } from "../../utils/permissions";
+import { isCommitteeMember, hasPermission } from "../../utils/permissions";
 import {
   MdApartment, MdAdd, MdDelete, MdSearch, MdClose,
   MdLinkOff, MdHome, MdPerson, MdCheckCircle, MdLock,
@@ -95,7 +95,7 @@ export default function ManageProperty() {
   const { t }     = useLang();
   const isMobile  = useIsMobile();
   const { user }  = useContext(AuthContext);
-  const canEdit   = !isCommitteeMember(user);
+  const canEdit   = hasPermission(user, "property", "edit") || hasPermission(user, "property", "create") || hasPermission(user, "property", "view");
   const [tab, setTab] = useState("blocks");
 
   const TABS = [

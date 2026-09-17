@@ -763,8 +763,7 @@ export default function Notice() {
                     )}
 
                     {canPost && (() => {
-                      const isCommittee = isCommitteeMember(user);
-                      const isOwn = !isCommittee || n.created_by_user_id === user?.id || !n.created_by_user_id;
+                      const isOwn = hasPermission(user, "notice", "edit") || hasPermission(user, "notice", "delete") || !isCommitteeMember(user) || n.created_by_user_id === user?.id || !n.created_by_user_id;
                       return (
                         <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
                           {n.acknowledgement_required && (

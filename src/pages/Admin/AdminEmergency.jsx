@@ -1,0 +1,1005 @@
+import { useState, useEffect, useContext, useMemo, useCallback } from "react";
+import API from "../../services/api";
+import { AuthContext } from "../../context/AuthContext";
+import { useCustomAlert } from "../../context/CustomAlertContext";
+import { hasPermission } from "../../utils/permissions";
+import { toast } from "react-toastify";
+import { useLang } from "../../context/LanguageContext";
+import Select from "../../components/common/Select";
+import GlobalModal from "../../components/common/GlobalModal";
+import SOSModal from "../../components/emergency/SOSModal";
+import {
+  MdSecurity,
+  MdWarning,
+  MdLocalFireDepartment,
+  MdLocalHospital,
+  MdHelp,
+  MdCheckCircle,
+  MdSearch,
+  MdRefresh,
+  MdDeleteOutline,
+  MdEdit,
+  MdVisibility,
+  MdPeople,
+  MdDoneAll,
+  MdHourglassEmpty,
+  MdApartment,
+  MdAccessTime,
+  MdLocationOn,
+  MdFilterList,
+  MdClose,
+  MdCalendarToday,
+} from "react-icons/md";
+import { FaUserShield, FaExclamationTriangle } from "react-icons/fa";
+import "./Admin.css";
+
+const EMERGENCY_TYPES = [
+  { key: "ALL", label: "All Types" },
+  { key: "SECURITY", label: "Security / Intruder", icon: MdSecurity, color: "#ef4444", bg: "rgba(239,68,68,0.12)", border: "rgba(239,68,68,0.3)" },
+  { key: "FIRE", label: "Fire Alert", icon: MdLocalFireDepartment, color: "#f97316", bg: "rgba(249,115,22,0.12)", border: "rgba(249,115,22,0.3)" },
+  { key: "MEDICAL", label: "Medical Emergency", icon: MdLocalHospital, color: "#3b82f6", bg: "rgba(59,130,246,0.12)", border: "rgba(59,130,246,0.3)" },
+  { key: "LIFT_STUCK", label: "Lift Stuck", icon: MdWarning, color: "#8b5cf6", bg: "rgba(139,92,246,0.12)", border: "rgba(139,92,246,0.3)" },
+  { key: "ANIMAL", label: "Animal Menace", icon: MdHelp, color: "#06b6d4", bg: "rgba(6,182,212,0.12)", border: "rgba(6,182,212,0.3)" },
+  { key: "OTHER", label: "Other Emergency", icon: MdHelp, color: "#ec4899", bg: "rgba(236,72,153,0.12)", border: "rgba(236,72,153,0.3)" },
+];
+
+const TYPE_MAP = Object.fromEntries(EMERGENCY_TYPES.filter(t => t.key !== "ALL").map(t => [t.key, t]));
+
+export default function AdminEmergency() {
+  const { user } = useContext(AuthContext);
+  const { showAlert } = useCustomAlert();
+  const { t } = useLang();
+
+  const isSuperAdmin = user?.role === "SUPER_ADMIN" || user?.activeRole === "SUPER_ADMIN";
+
+  // Permissions check
+  const canView = hasPermission(user, "emergency", "view");
+  const canTrigger = hasPermission(user, "emergency", "trigger") || ["SUPER_ADMIN", "ADMIN", "SOCIETY_ADMIN"].includes(user?.role) || ["SUPER_ADMIN", "ADMIN", "SOCIETY_ADMIN"].includes(user?.activeRole);
+  const canResolve = hasPermission(user, "emergency", "resolve");
+  const canEdit = hasPermission(user, "emergency", "edit");
+  const canDelete = hasPermission(user, "emergency", "delete");
+  const canViewHistory = hasPermission(user, "emergency", "view_history") || canView;
+
+  // State
+  const [alerts, setAlerts] = useState([]);
+  const [societies, setSocieties] = useState([]);
+  const [selectedSocietyId, setSelectedSocietyId] = useState(isSuperAdmin ? "" : user?.society_id || "");
+  const [loading, setLoading] = useState(true);
+  const [isSOSModalOpen, setIsSOSModalOpen] = useState(false);
+
+  // Filters
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("ALL"); // ALL | ACTIVE | RESOLVED
+  const [typeFilter, setTypeFilter] = useState("ALL");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+
+  // History Modal State
+  const [historyModal, setHistoryModal] = useState({
+    isOpen: false,
+    alert: null,
+    loading: false,
+    data: null,
+    search: "",
+    statusFilter: "ALL", // ALL | READ | UNREAD
+  });
+
+  // Resolve Modal State
+  const [resolveModal, setResolveModal] = useState({
+    isOpen: false,
+    alert: null,
+    notes: "",
+    loading: false,
+  });
+
+  // Edit Modal State
+  const [editModal, setEditModal] = useState({
+    isOpen: false,
+    alert: null,
+    type: "MEDICAL",
+    message: "",
+    other_reason: "",
+    resolution_notes: "",
+    loading: false,
+  });
+
+  // Fetch societies for Super Admin
+  useEffect(() => {
+    if (isSuperAdmin) {
+      API.get("/societies")
+        .then((res) => {
+          setSocieties(Array.isArray(res.data) ? res.data : res.data.data || []);
+        })
+        .catch((err) => console.error("Error fetching societies:", err));
+    }
+  }, [isSuperAdmin]);
+
+  // Fetch alerts
+  const fetchAlerts = useCallback(async () => {
+    try {
+      setLoading(true);
+      const params = new URLSearchParams();
+      if (isSuperAdmin && selectedSocietyId) {
+        params.append("society_id", selectedSocietyId);
+      }
+      if (statusFilter !== "ALL") params.append("status", statusFilter);
+      if (typeFilter !== "ALL") params.append("type", typeFilter);
+      if (startDate) params.append("startDate", startDate);
+      if (endDate) params.append("endDate", endDate);
+      if (search.trim()) params.append("search", search.trim());
+
+      const res = await API.get(`/emergency?${params.toString()}`);
+      setAlerts(Array.isArray(res.data) ? res.data : []);
+    } catch (err) {
+      console.error("Failed to load emergency alerts:", err);
+      toast.error("Failed to load emergency alerts");
+    } finally {
+      setLoading(false);
+    }
+  }, [isSuperAdmin, selectedSocietyId, statusFilter, typeFilter, startDate, endDate, search]);
+
+  useEffect(() => {
+    fetchAlerts();
+  }, [fetchAlerts]);
+
+  // Summary Metrics
+  const metrics = useMemo(() => {
+    const total = alerts.length;
+    const active = alerts.filter((a) => a.status === "ACTIVE").length;
+    const resolved = alerts.filter((a) => a.status === "RESOLVED").length;
+    let totalAcks = 0;
+    alerts.forEach((a) => {
+      totalAcks += Array.isArray(a.acknowledgements) ? a.acknowledgements.length : 0;
+    });
+    return { total, active, resolved, totalAcks };
+  }, [alerts]);
+
+  // Open Acknowledgements History
+  const openHistoryModal = async (alertItem) => {
+    setHistoryModal({
+      isOpen: true,
+      alert: alertItem,
+      loading: true,
+      data: null,
+      search: "",
+      statusFilter: "ALL",
+    });
+
+    try {
+      const res = await API.get(`/emergency/${alertItem.id}/acknowledgements`);
+      setHistoryModal((prev) => ({
+        ...prev,
+        loading: false,
+        data: res.data,
+      }));
+    } catch (err) {
+      console.error("Failed to fetch SOS acknowledgement history:", err);
+      toast.error("Failed to load read history");
+      setHistoryModal((prev) => ({ ...prev, loading: false }));
+    }
+  };
+
+  // Filter Acknowledgements inside modal
+  const fetchModalHistory = async (alertId, querySearch, queryStatus) => {
+    try {
+      const params = new URLSearchParams();
+      if (querySearch) params.append("search", querySearch);
+      if (queryStatus && queryStatus !== "ALL") params.append("status", queryStatus);
+
+      const res = await API.get(`/emergency/${alertId}/acknowledgements?${params.toString()}`);
+      setHistoryModal((prev) => ({
+        ...prev,
+        data: res.data,
+      }));
+    } catch (err) {
+      console.error("Error filtering history:", err);
+    }
+  };
+
+  // Handle Mark Resolved
+  const handleConfirmResolve = async () => {
+    if (!resolveModal.alert) return;
+    try {
+      setResolveModal((prev) => ({ ...prev, loading: true }));
+      await API.patch(`/emergency/${resolveModal.alert.id}/resolve`, {
+        resolution_notes: resolveModal.notes.trim() || undefined,
+      });
+      toast.success("Emergency marked as resolved ✅");
+      setResolveModal({ isOpen: false, alert: null, notes: "", loading: false });
+      fetchAlerts();
+    } catch (err) {
+      console.error("Failed to resolve emergency:", err);
+      toast.error(err?.response?.data?.message || "Failed to resolve emergency");
+      setResolveModal((prev) => ({ ...prev, loading: false }));
+    }
+  };
+
+  // Handle Edit Submit
+  const handleConfirmEdit = async () => {
+    if (!editModal.alert) return;
+    if (editModal.type === "OTHER" && !editModal.other_reason?.trim()) {
+      toast.error("Please specify a reason for selecting Other");
+      return;
+    }
+
+    try {
+      setEditModal((prev) => ({ ...prev, loading: true }));
+      await API.put(`/emergency/${editModal.alert.id}`, {
+        type: editModal.type,
+        message: editModal.message,
+        other_reason: editModal.other_reason,
+        resolution_notes: editModal.resolution_notes,
+      });
+      toast.success("Emergency alert updated successfully");
+      setEditModal({ isOpen: false, alert: null, type: "MEDICAL", message: "", other_reason: "", resolution_notes: "", loading: false });
+      fetchAlerts();
+    } catch (err) {
+      console.error("Failed to update emergency:", err);
+      toast.error(err?.response?.data?.message || "Failed to update alert");
+      setEditModal((prev) => ({ ...prev, loading: false }));
+    }
+  };
+
+  // Handle Delete with CustomAlertModal
+  const handleDelete = (alertItem) => {
+    showAlert({
+      title: "Delete Emergency Alert?",
+      message: `Are you sure you want to delete this ${alertItem.type} SOS alert permanently? This action cannot be undone.`,
+      type: "danger",
+      confirmText: "Delete",
+      cancelText: "Cancel",
+      onConfirm: async () => {
+        try {
+          await API.delete(`/emergency/${alertItem.id}`);
+          toast.success("Emergency alert deleted");
+          fetchAlerts();
+        } catch (err) {
+          console.error("Failed to delete emergency:", err);
+          toast.error(err?.response?.data?.message || "Failed to delete emergency alert");
+        }
+      },
+    });
+  };
+
+  if (!canView) {
+    return (
+      <div className="admin-page p-6 text-center">
+        <div className="bg-red-500/10 border border-red-500/30 p-8 rounded-2xl max-w-md mx-auto">
+          <FaExclamationTriangle size={48} className="text-red-500 mx-auto mb-4" />
+          <h2 className="text-xl font-bold mb-2">Access Denied</h2>
+          <p className="text-secondary text-sm">
+            You do not have permission to view SOS Emergency Management. Please contact your society administrator.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="admin-page admin-root animate-fadeIn space-y-6 max-w-400 mx-auto pb-8">
+      {/* ── 1. DASHBOARD HERO HEADER ── */}
+      <div className="bg-card border border-glass-border rounded-2xl p-6 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm">
+        <div className="space-y-1 min-w-0">
+          <div className="flex items-center gap-3 flex-wrap">
+            <div className="w-10 h-10 rounded-xl bg-red-500/10 border border-red-500/30 flex items-center justify-center text-red-500 shrink-0">
+              <MdSecurity size={24} />
+            </div>
+            <div>
+              <h1 className="text-xl md:text-2xl font-bold text-primary tracking-tight">
+                SOS Emergency Management
+              </h1>
+              <p className="text-xs md:text-sm text-secondary truncate">
+                Monitor live society emergencies, view user acknowledgement history, and manage resolution records
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+          {canTrigger && (
+            <button
+              type="button"
+              onClick={() => setIsSOSModalOpen(true)}
+              className="btn bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white flex items-center gap-2 text-xs font-black px-4 py-2.5 rounded-xl shadow-lg shadow-red-600/30 transition-all active:scale-95 cursor-pointer"
+            >
+              <FaExclamationTriangle size={15} className="animate-pulse" />
+              <span>Broadcast SOS</span>
+            </button>
+          )}
+
+          <button
+            type="button"
+            onClick={fetchAlerts}
+            className="btn btn-secondary flex items-center gap-1.5 text-xs font-bold px-3 py-2.5"
+          >
+            <MdRefresh size={18} className={loading ? "animate-spin" : ""} /> Refresh
+          </button>
+        </div>
+      </div>
+
+      {/* ── 2. KEY METRICS KPI CARDS (DASHBOARD THEME) ── */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        <div className="ad-kpi ad-kpi--residents">
+          <span className="ad-kpi-val">{metrics.total}</span>
+          <span className="ad-kpi-label">Total SOS Alerts</span>
+          <span className="ad-kpi-desc">All emergencies recorded</span>
+        </div>
+
+        <div className="ad-kpi ad-kpi--complaints">
+          <span className="ad-kpi-val">{metrics.active}</span>
+          <span className="ad-kpi-label">Active SOS</span>
+          <span className="ad-kpi-desc">
+            {metrics.active > 0 ? "Requires immediate attention" : "No active emergencies"}
+          </span>
+        </div>
+
+        <div className="ad-kpi ad-kpi--guards">
+          <span className="ad-kpi-val">{metrics.resolved}</span>
+          <span className="ad-kpi-label">Resolved</span>
+          <span className="ad-kpi-desc">Handled emergencies</span>
+        </div>
+
+        <div className="ad-kpi ad-kpi--flats">
+          <span className="ad-kpi-val">{metrics.totalAcks}</span>
+          <span className="ad-kpi-label">Total Acknowledgements</span>
+          <span className="ad-kpi-desc">Confirmed reads by recipients</span>
+        </div>
+      </div>
+
+      {/* ── 3. FILTER TOOLBAR ── */}
+      <div className="bg-card border border-glass-border rounded-2xl p-4 space-y-3 shadow-sm">
+        <div className="flex flex-wrap items-center gap-3 justify-between">
+          {/* Search Box */}
+          <div className="relative flex-1 min-w-[240px]">
+            <MdSearch size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-secondary pointer-events-none" />
+            <input
+              type="text"
+              placeholder="Search by resident name, flat number, SOS type, message..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="input w-full pl-9 h-10 text-xs rounded-xl"
+            />
+          </div>
+
+          {/* Super Admin Society Filter */}
+          {isSuperAdmin && (
+            <div className="min-w-[200px]">
+              <Select
+                value={selectedSocietyId}
+                onChange={(e) => setSelectedSocietyId(e.target.value)}
+                className="input h-10 text-xs rounded-xl w-full"
+              >
+                <option value="">All Societies</option>
+                {societies.map((soc) => (
+                  <option key={soc.id} value={soc.id}>
+                    {soc.name} (#{soc.id})
+                  </option>
+                ))}
+              </Select>
+            </div>
+          )}
+
+          {/* Type Filter */}
+          <div className="min-w-[160px]">
+            <Select
+              value={typeFilter}
+              onChange={(e) => setTypeFilter(e.target.value)}
+              className="input h-10 text-xs rounded-xl w-full"
+            >
+              {EMERGENCY_TYPES.map((t) => (
+                <option key={t.key} value={t.key}>
+                  {t.label}
+                </option>
+              ))}
+            </Select>
+          </div>
+
+          {/* Status Tabs */}
+          <div className="flex items-center gap-1 p-1 bg-black/10 dark:bg-white/5 rounded-xl border border-glass">
+            {[
+              { key: "ALL", label: "All" },
+              { key: "ACTIVE", label: "Active" },
+              { key: "RESOLVED", label: "Resolved" },
+            ].map(({ key, label }) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setStatusFilter(key)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${
+                  statusFilter === key
+                    ? "bg-red-600 text-white shadow-sm"
+                    : "text-secondary hover:text-primary"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Date Filters Row */}
+        <div className="flex flex-wrap items-center gap-3 pt-2 border-t border-glass text-xs">
+          <div className="flex items-center gap-2">
+            <span className="text-secondary font-semibold flex items-center gap-1">
+              <MdCalendarToday size={14} /> From:
+            </span>
+            <input
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              className="input h-8 text-xs rounded-lg px-2"
+            />
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span className="text-secondary font-semibold flex items-center gap-1">
+              <MdCalendarToday size={14} /> To:
+            </span>
+            <input
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              className="input h-8 text-xs rounded-lg px-2"
+            />
+          </div>
+
+          {(startDate || endDate || search || typeFilter !== "ALL" || statusFilter !== "ALL" || (isSuperAdmin && selectedSocietyId)) && (
+            <button
+              type="button"
+              onClick={() => {
+                setSearch("");
+                setStatusFilter("ALL");
+                setTypeFilter("ALL");
+                setStartDate("");
+                setEndDate("");
+                if (isSuperAdmin) setSelectedSocietyId("");
+              }}
+              className="text-red-400 hover:text-red-300 font-bold ml-auto flex items-center gap-1"
+            >
+              <MdClose size={14} /> Clear Filters
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* ── ALERTS CARDS GRID ── */}
+      {loading ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          {[1, 2, 3, 4, 5, 6].map((n) => (
+            <div key={n} className="p-5 rounded-2xl border border-glass bg-card animate-pulse space-y-4">
+              <div className="h-6 bg-white/10 rounded-lg w-1/3" />
+              <div className="h-16 bg-white/5 rounded-xl" />
+              <div className="h-8 bg-white/10 rounded-lg" />
+            </div>
+          ))}
+        </div>
+      ) : alerts.length === 0 ? (
+        <div className="p-12 rounded-2xl border border-glass bg-card text-center space-y-4">
+          <div className="w-16 h-16 rounded-full bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-500 mx-auto">
+            <MdCheckCircle size={32} />
+          </div>
+          <div className="space-y-1">
+            <h3 className="text-lg font-bold" style={{ color: "var(--text-primary)" }}>
+              No Emergency Alerts Found
+            </h3>
+            <p className="text-xs text-secondary max-w-sm mx-auto">
+              {search || statusFilter !== "ALL" || typeFilter !== "ALL"
+                ? "No SOS records match your active filter criteria. Try adjusting the search filters."
+                : "There are currently no active or recorded emergency SOS alerts in the database."}
+            </p>
+          </div>
+          {canTrigger && (
+            <div className="pt-2">
+              <button
+                type="button"
+                onClick={() => setIsSOSModalOpen(true)}
+                className="btn bg-red-600 hover:bg-red-700 text-white text-xs font-bold px-4 py-2 rounded-xl inline-flex items-center gap-2 shadow-md shadow-red-600/20 cursor-pointer"
+              >
+                <FaExclamationTriangle size={14} className="animate-pulse" />
+                <span>Trigger Emergency SOS</span>
+              </button>
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          {alerts.map((alert) => {
+            const typeMeta = TYPE_MAP[alert.type] || TYPE_MAP.OTHER || {
+              label: alert.type,
+              icon: MdWarning,
+              color: "#ef4444",
+              bg: "rgba(239,68,68,0.12)",
+              border: "rgba(239,68,68,0.3)",
+            };
+            const Icon = typeMeta.icon || MdWarning;
+            const isResolved = alert.status === "RESOLVED";
+            const ackCount = Array.isArray(alert.acknowledgements) ? alert.acknowledgements.length : 0;
+
+            const senderName =
+              alert.Resident?.name ||
+              alert.Guard?.name ||
+              alert.Admin?.name ||
+              (alert.source === "GUARD" ? "Security Guard" : alert.source === "RESIDENT" ? "Resident" : "Staff");
+
+            const flatStr = alert.Flat
+              ? `${alert.Flat.Block?.name ? `Block ${alert.Flat.Block.name} · ` : ""}Flat ${alert.Flat.flat_number}`
+              : alert.source === "GUARD"
+              ? "Security Gate"
+              : "Society Premises";
+
+            return (
+              <div
+                key={alert.id}
+                className={`bg-card border border-glass-border rounded-2xl p-5 flex flex-col justify-between space-y-4 shadow-sm transition-all duration-200 hover:shadow-lg ${
+                  !isResolved ? "ring-1 ring-red-500/40" : "hover:border-blue-500/30"
+                }`}
+              >
+                {/* Card Top: Type Badge & Status */}
+                <div className="space-y-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div
+                      className="px-3 py-1.5 rounded-xl border flex items-center gap-2"
+                      style={{ background: typeMeta.bg, borderColor: typeMeta.border }}
+                    >
+                      <Icon size={18} style={{ color: typeMeta.color }} />
+                      <span className="text-xs font-black tracking-wide" style={{ color: typeMeta.color }}>
+                        {typeMeta.label}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-1.5">
+                      {isSuperAdmin && alert.Society && (
+                        <span className="px-2 py-0.5 rounded-lg text-[10px] font-bold bg-card-inner-bg text-secondary border border-glass-border">
+                          {alert.Society.name}
+                        </span>
+                      )}
+                      <span
+                        className={`px-2.5 py-1 rounded-xl text-[11px] font-black uppercase tracking-wider flex items-center gap-1 ${
+                          isResolved
+                            ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30"
+                            : "bg-red-600 text-white shadow-sm shadow-red-500/30 animate-pulse"
+                        }`}
+                      >
+                        {isResolved ? <MdCheckCircle size={13} /> : <MdWarning size={13} />}
+                        {alert.status}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Sender & Flat Info */}
+                  <div className="flex items-center justify-between gap-2 pt-1 border-b border-glass-border pb-2.5">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-full bg-red-500/15 border border-red-500/30 flex items-center justify-center text-red-400 font-bold text-xs">
+                        {senderName.charAt(0).toUpperCase()}
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold leading-tight" style={{ color: "var(--text-primary)" }}>
+                          {senderName}
+                        </p>
+                        <p className="text-[10px] text-secondary">
+                          Source: <span className="font-semibold text-primary">{alert.source}</span>
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="text-right">
+                      <p className="text-xs font-bold flex items-center gap-1 text-primary justify-end">
+                        <MdLocationOn size={13} className="text-red-400" /> {flatStr}
+                      </p>
+                      <p className="text-[10px] text-secondary flex items-center gap-1 justify-end">
+                        <MdAccessTime size={11} /> {new Date(alert.created_at).toLocaleString()}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Emergency Message */}
+                  <div className="p-3.5 rounded-xl bg-card-inner-bg border border-glass-border space-y-1">
+                    <p className="text-xs text-secondary font-semibold uppercase tracking-wider text-[10px]">
+                      Emergency Details
+                    </p>
+                    <p className="text-xs font-semibold leading-relaxed" style={{ color: "var(--text-primary)" }}>
+                      {alert.message || "Emergency assistance requested."}
+                    </p>
+
+                    {alert.other_reason && (
+                      <div className="mt-2 pt-2 border-t border-glass-border flex items-center gap-1.5 text-xs text-pink-400">
+                        <span className="font-bold">Reason:</span> {alert.other_reason}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Resolution Notes (if resolved) */}
+                  {isResolved && (
+                    <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs space-y-1">
+                      <div className="flex items-center justify-between text-emerald-400 font-bold text-[11px]">
+                        <span>Resolved by: {alert.Resolver?.name || "Staff"}</span>
+                        <span>{alert.resolved_at ? new Date(alert.resolved_at).toLocaleTimeString() : ""}</span>
+                      </div>
+                      {alert.resolution_notes && (
+                        <p className="text-secondary text-[11px] leading-tight">
+                          Note: {alert.resolution_notes}
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Card Actions Footer */}
+                <div className="space-y-2 pt-2.5 border-t border-glass-border">
+                  {/* Read / Acknowledgement history trigger */}
+                  <button
+                    type="button"
+                    onClick={() => openHistoryModal(alert)}
+                    className="w-full py-2 px-3 rounded-xl bg-card-inner-bg hover:bg-card-inner-bg/80 border border-glass-border text-xs font-bold text-secondary hover:text-primary transition flex items-center justify-between"
+                  >
+                    <span className="flex items-center gap-1.5">
+                      <MdVisibility size={16} className="text-indigo-400" /> Read Acknowledgements
+                    </span>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-indigo-500/20 text-indigo-400 border border-indigo-500/30">
+                      {ackCount} Acknowledged
+                    </span>
+                  </button>
+
+                  <div className="flex items-center gap-2">
+                    {/* Mark as Resolved button */}
+                    {!isResolved && canResolve && (
+                      <button
+                        type="button"
+                        onClick={() => setResolveModal({ isOpen: true, alert, notes: "", loading: false })}
+                        className="flex-1 py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition flex items-center justify-center gap-1 shadow-sm"
+                      >
+                        <MdCheckCircle size={15} /> Mark Resolved
+                      </button>
+                    )}
+
+                    {/* Edit button */}
+                    {canEdit && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setEditModal({
+                            isOpen: true,
+                            alert,
+                            type: alert.type || "MEDICAL",
+                            message: alert.message || "",
+                            other_reason: alert.other_reason || "",
+                            resolution_notes: alert.resolution_notes || "",
+                            loading: false,
+                          })
+                        }
+                        className="btn btn-secondary p-2 rounded-xl text-secondary hover:text-primary"
+                        title="Edit SOS Details"
+                      >
+                        <MdEdit size={16} />
+                      </button>
+                    )}
+
+                    {/* Delete button */}
+                    {canDelete && (
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteAlert(alert)}
+                        className="btn btn-secondary p-2 rounded-xl text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                        title="Delete SOS Alert"
+                      >
+                        <MdDeleteOutline size={16} />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* ── ACKNOWLEDGEMENT / READ HISTORY MODAL ── */}
+      {historyModal.isOpen && (
+        <GlobalModal
+          isOpen={historyModal.isOpen}
+          onClose={() => setHistoryModal({ isOpen: false, alert: null, loading: false, data: null, search: "", statusFilter: "ALL" })}
+          title="SOS Read & Acknowledgement History"
+          subtitle={`Tracking user view & read receipt for ${historyModal.alert?.type || "Emergency"} Alert`}
+          icon={MdDoneAll}
+          size="xl"
+        >
+          <div className="space-y-4">
+            {/* Summary Row */}
+            <div className="grid grid-cols-3 gap-3">
+              <div className="p-3 rounded-xl bg-indigo-500/10 border border-indigo-500/30 flex items-center gap-3">
+                <MdPeople size={24} className="text-indigo-400" />
+                <div>
+                  <p className="text-[10px] uppercase font-bold text-secondary">Total Recipients</p>
+                  <p className="text-xl font-black" style={{ color: "var(--text-primary)" }}>
+                    {historyModal.data?.summary?.total ?? 0}
+                  </p>
+                </div>
+              </div>
+
+              <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center gap-3">
+                <MdDoneAll size={24} className="text-emerald-400" />
+                <div>
+                  <p className="text-[10px] uppercase font-bold text-secondary">Marked As Read</p>
+                  <p className="text-xl font-black text-emerald-400">
+                    {historyModal.data?.summary?.read ?? 0}
+                  </p>
+                </div>
+              </div>
+
+              <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center gap-3">
+                <MdHourglassEmpty size={24} className="text-amber-400" />
+                <div>
+                  <p className="text-[10px] uppercase font-bold text-secondary">Unread</p>
+                  <p className="text-xl font-black text-amber-400">
+                    {historyModal.data?.summary?.unread ?? 0}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Filter Toolbar */}
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="relative flex-1 min-w-[200px]">
+                <MdSearch size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-secondary pointer-events-none" />
+                <input
+                  type="text"
+                  placeholder="Search recipient name or email..."
+                  value={historyModal.search}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setHistoryModal((prev) => ({ ...prev, search: val }));
+                    fetchModalHistory(historyModal.alert.id, val, historyModal.statusFilter);
+                  }}
+                  className="input w-full pl-8 h-9 text-xs rounded-xl"
+                />
+              </div>
+
+              <div className="flex items-center gap-1 p-1 bg-black/10 dark:bg-white/5 rounded-xl border border-glass">
+                {[
+                  { key: "ALL", label: "All" },
+                  { key: "READ", label: "Read" },
+                  { key: "UNREAD", label: "Unread" },
+                ].map(({ key, label }) => (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => {
+                      setHistoryModal((prev) => ({ ...prev, statusFilter: key }));
+                      fetchModalHistory(historyModal.alert.id, historyModal.search, key);
+                    }}
+                    className={`px-3 py-1 rounded-lg text-xs font-bold transition ${
+                      historyModal.statusFilter === key
+                        ? "bg-red-600 text-white"
+                        : "text-secondary hover:text-primary"
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Recipient Table */}
+            <div className="border border-glass rounded-xl overflow-hidden max-h-[360px] overflow-y-auto">
+              {historyModal.loading ? (
+                <div className="p-8 text-center text-secondary text-xs">Loading acknowledgement list...</div>
+              ) : !historyModal.data?.recipients || historyModal.data.recipients.length === 0 ? (
+                <div className="p-8 text-center text-secondary text-xs">No recipient records found</div>
+              ) : (
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-black/20 dark:bg-white/5 uppercase text-[10px] text-secondary font-bold sticky top-0 backdrop-blur-md">
+                    <tr>
+                      <th className="p-3">Resident / Member</th>
+                      <th className="p-3">Flat / Unit</th>
+                      <th className="p-3">Role</th>
+                      <th className="p-3">Status</th>
+                      <th className="p-3">Read At</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-glass">
+                    {historyModal.data.recipients.map((rec) => {
+                      const isRead = rec.status === "READ";
+                      return (
+                        <tr key={rec.user_id} className="hover:bg-white/5 transition">
+                          <td className="p-3">
+                            <p className="font-bold" style={{ color: "var(--text-primary)" }}>{rec.name}</p>
+                            <p className="text-[10px] text-secondary">{rec.email || rec.phone || ""}</p>
+                          </td>
+                          <td className="p-3 font-semibold">
+                            {rec.flat_number !== "—" ? `${rec.block_name ? `${rec.block_name}-` : ""}${rec.flat_number}` : "—"}
+                          </td>
+                          <td className="p-3">
+                            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-white/5 text-secondary border border-glass">
+                              {rec.role}
+                            </span>
+                          </td>
+                          <td className="p-3">
+                            <span
+                              className={`px-2 py-0.5 rounded text-[10px] font-extrabold ${
+                                isRead
+                                  ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
+                                  : "bg-amber-500/20 text-amber-400 border border-amber-500/30"
+                              }`}
+                            >
+                              {isRead ? "Read" : "Unread"}
+                            </span>
+                          </td>
+                          <td className="p-3 text-secondary">
+                            {rec.read_at ? new Date(rec.read_at).toLocaleTimeString() : "—"}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          </div>
+        </GlobalModal>
+      )}
+
+      {/* ── RESOLVE MODAL ── */}
+      {resolveModal.isOpen && (
+        <GlobalModal
+          isOpen={resolveModal.isOpen}
+          onClose={() => setResolveModal({ isOpen: false, alert: null, notes: "", loading: false })}
+          title="Mark SOS as Resolved"
+          subtitle={`Resolve ${resolveModal.alert?.type || "Emergency"} alert`}
+          icon={MdCheckCircle}
+          size="md"
+        >
+          <div className="space-y-4">
+            <p className="text-xs text-secondary">
+              Marking this emergency as resolved will notify the resident and committee members, and terminate active alert broadcasts.
+            </p>
+
+            <div>
+              <label className="block text-xs font-semibold text-secondary uppercase tracking-wider mb-1">
+                Resolution Notes (Optional)
+              </label>
+              <textarea
+                rows={4}
+                style={{ minHeight: "100px", fontSize: "13px", lineHeight: "1.5" }}
+                placeholder="e.g. Security attended the flat, ambulance arrived, patient safely transferred."
+                value={resolveModal.notes}
+                onChange={(e) => setResolveModal((prev) => ({ ...prev, notes: e.target.value }))}
+                className="input w-full rounded-xl p-3.5 resize-y"
+              />
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setResolveModal({ isOpen: false, alert: null, notes: "", loading: false })}
+                className="btn btn-secondary text-xs px-4 py-2"
+                disabled={resolveModal.loading}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmResolve}
+                disabled={resolveModal.loading}
+                className="btn bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-5 py-2 font-bold flex items-center gap-1.5 shadow-sm"
+              >
+                <MdCheckCircle size={16} />
+                {resolveModal.loading ? "Resolving..." : "Confirm Resolution"}
+              </button>
+            </div>
+          </div>
+        </GlobalModal>
+      )}
+
+      {/* ── EDIT MODAL ── */}
+      {editModal.isOpen && (
+        <GlobalModal
+          isOpen={editModal.isOpen}
+          onClose={() => setEditModal({ isOpen: false, alert: null, type: "MEDICAL", message: "", other_reason: "", resolution_notes: "", loading: false })}
+          title="Edit Emergency Alert"
+          subtitle="Update details for this SOS record"
+          icon={MdEdit}
+          size="md"
+        >
+          <div className="space-y-4">
+            <div>
+              <label className="block text-xs font-semibold text-secondary uppercase tracking-wider mb-1">
+                Emergency Type
+              </label>
+              <Select
+                value={editModal.type}
+                onChange={(e) => setEditModal((prev) => ({ ...prev, type: e.target.value }))}
+                className="input w-full text-xs rounded-xl h-10"
+              >
+                {EMERGENCY_TYPES.filter((t) => t.key !== "ALL").map((t) => (
+                  <option key={t.key} value={t.key}>
+                    {t.label}
+                  </option>
+                ))}
+              </Select>
+            </div>
+
+            {editModal.type === "OTHER" && (
+              <div>
+                <label className="block text-xs font-semibold text-pink-400 uppercase tracking-wider mb-1">
+                  Reason for Other <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  rows={2}
+                  style={{ minHeight: "70px", fontSize: "13px", lineHeight: "1.5" }}
+                  placeholder="Specify reason for Other..."
+                  value={editModal.other_reason}
+                  onChange={(e) => setEditModal((prev) => ({ ...prev, other_reason: e.target.value }))}
+                  className="input w-full rounded-xl p-3 resize-y border-pink-500/40"
+                />
+              </div>
+            )}
+
+            <div>
+              <label className="block text-xs font-semibold text-secondary uppercase tracking-wider mb-1">
+                Message / Description
+              </label>
+              <textarea
+                rows={4}
+                style={{ minHeight: "110px", fontSize: "13px", lineHeight: "1.5" }}
+                placeholder="Describe the emergency details..."
+                value={editModal.message}
+                onChange={(e) => setEditModal((prev) => ({ ...prev, message: e.target.value }))}
+                className="input w-full rounded-xl p-3.5 resize-y"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-secondary uppercase tracking-wider mb-1">
+                Resolution Notes (Optional)
+              </label>
+              <textarea
+                rows={3}
+                style={{ minHeight: "85px", fontSize: "13px", lineHeight: "1.5" }}
+                placeholder="Notes if already handled..."
+                value={editModal.resolution_notes}
+                onChange={(e) => setEditModal((prev) => ({ ...prev, resolution_notes: e.target.value }))}
+                className="input w-full rounded-xl p-3 resize-y"
+              />
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setEditModal({ isOpen: false, alert: null, type: "MEDICAL", message: "", other_reason: "", resolution_notes: "", loading: false })}
+                className="btn btn-secondary text-xs px-4 py-2"
+                disabled={editModal.loading}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmEdit}
+                disabled={editModal.loading}
+                className="btn bg-red-600 hover:bg-red-700 text-white text-xs px-5 py-2 font-bold shadow-sm"
+              >
+                {editModal.loading ? "Saving..." : "Save Changes"}
+              </button>
+            </div>
+          </div>
+        </GlobalModal>
+      )}
+
+      {/* ── SOS TRIGGER / BROADCAST MODAL ── */}
+      {isSOSModalOpen && (
+        <SOSModal
+          key={String(isSOSModalOpen)}
+          isOpen={isSOSModalOpen}
+          onClose={() => setIsSOSModalOpen(false)}
+          onRefresh={fetchAlerts}
+          societies={societies}
+          defaultSocietyId={selectedSocietyId || user?.society_id || ""}
+          requireSociety={isSuperAdmin && !selectedSocietyId}
+          withAlerts={false}
+          senderLabel="Admin"
+          modalTitle="🚨 Broadcast Emergency SOS"
+          successMessage="🚨 Emergency SOS broadcasted successfully to all residents!"
+        />
+      )}
+    </div>
+  );
+}

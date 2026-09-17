@@ -11,6 +11,7 @@ import {
   MdReceiptLong,
 } from "react-icons/md";
 import { useLang } from "../../context/LanguageContext";
+import CreditedDebitedChart from "../../components/accounting/CreditedDebitedChart";
 
 const toArray = (data) => {
   if (Array.isArray(data)) return data;
@@ -237,6 +238,9 @@ export default function AccountDashboard() {
           </div>
         </div>
       </div>
+
+      {/* === CREDITED vs DEBITED CHART === */}
+      <CreditedDebitedChart linkTo="/accountant/accounting" />
     </div>
   );
 }

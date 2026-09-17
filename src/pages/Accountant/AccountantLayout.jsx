@@ -10,6 +10,11 @@ import {
   MdBuild,
   MdApartment,
   MdReportProblem,
+  MdReceiptLong,
+  MdPayments,
+  MdAttachMoney,
+  MdListAlt,
+  MdHistory,
 } from "react-icons/md";
 import { FaUsers, FaUserShield, FaParking } from "react-icons/fa";
 import { LanguageProvider, useLang } from "../../context/LanguageContext";
@@ -48,6 +53,13 @@ function AccountantLayoutInner() {
       module: "dashboard",
     },
     {
+      label: "Account Management",
+      path: `${base}/accounting`,
+      icon: MdReceiptLong,
+      group: "FINANCE & BILLING",
+      module: "accounting",
+    },
+    {
       label: t("accountantMenuManageBills") || "Manage Bills",
       path: `${base}/manage-bills`,
       icon: MdAccountBalance,
@@ -55,11 +67,18 @@ function AccountantLayoutInner() {
       module: "manage_bills",
     },
     {
-      label: "Maintenance Management",
+      label: "Maintenance",
       path: `${base}/maintenance`,
       icon: MdBuild,
       group: "FINANCE & BILLING",
       module: "maintenance",
+    },
+    {
+      label: "Payments",
+      path: `${base}/payments`,
+      icon: MdPayments,
+      group: "FINANCE & BILLING",
+      module: "payments",
     },
     {
       label: t("accountantMenuReports") || "Reports",
@@ -173,6 +192,7 @@ function AccountantLayoutInner() {
         brandSubtitle="Finance View"
         base={base}
         drawerExtra={<RoleSwitcher />}
+        defaultOpenGroups={["FINANCE & BILLING"]}
       />
 
       {/* ── MAIN CONTENT ── */}

@@ -11,6 +11,12 @@ import {
   MdVerified,
   MdBuild,
   MdEmergency,
+  MdSecurity,
+  MdReceiptLong,
+  MdPayments,
+  MdAttachMoney,
+  MdListAlt,
+  MdHistory,
 } from "react-icons/md";
 import { FaBuilding, FaUsers, FaUserShield, FaParking } from "react-icons/fa";
 import ThemeToggle from "../../components/common/ThemeToggle";
@@ -87,9 +93,21 @@ function SuperAdminLayoutInner() {
       group: "OPERATIONS & SECURITY",
     },
     {
-      label: t("saMenuAccountant") || "Accountant/Finances",
+      label: "SOS Management",
+      path: `${base}/emergency`,
+      icon: MdSecurity,
+      group: "OPERATIONS & SECURITY",
+    },
+    {
+      label: t("saMenuAccountant") || "Accountant",
       path: `${base}/accountant`,
       icon: MdAccountBalance,
+      group: "FINANCE & ASSETS",
+    },
+    {
+      label: "Account Management",
+      path: `${base}/accounting`,
+      icon: MdReceiptLong,
       group: "FINANCE & ASSETS",
     },
     {
@@ -99,9 +117,15 @@ function SuperAdminLayoutInner() {
       group: "FINANCE & ASSETS",
     },
     {
-      label: t("saMenuMaintenance") || "Maintenance Management",
+      label: t("saMenuMaintenance") || "Maintenance",
       path: `${base}/maintenance`,
       icon: MdBuild,
+      group: "FINANCE & ASSETS",
+    },
+    {
+      label: "Payments",
+      path: `${base}/payments`,
+      icon: MdPayments,
       group: "FINANCE & ASSETS",
     },
     {
@@ -206,6 +230,7 @@ function SuperAdminLayoutInner() {
         brandSubtitle="Super Admin Panel"
         base={base}
         drawerExtra={mobileSocietyFilter}
+        defaultOpenGroups={["FINANCE & ASSETS"]}
       />
 
       {/* ── MAIN CONTENT ── */}

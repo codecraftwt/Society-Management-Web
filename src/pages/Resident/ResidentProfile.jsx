@@ -4,6 +4,7 @@ import API from "../../services/api";
 import { useLang } from "../../context/LanguageContext";
 import { MdDashboard, MdWarning, MdSend } from "react-icons/md";
 import { toast } from "react-toastify";
+import SOSModal from "../../components/emergency/SOSModal";
 
 function SkeletonBlock({ width = "100%", height = 16, radius = 8, style = {} }) {
   return (
@@ -60,8 +61,7 @@ export default function ResidentProfile() {
   const [profile, setProfile] = useState(null);
   const [flatInfo, setFlatInfo] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [sendingSOS, setSendingSOS] = useState(false);
-  const [sosMessage, setSosMessage] = useState("");
+  const [isSOSOpen, setIsSOSOpen] = useState(false);
 
   useEffect(() => {
     loadAll();
@@ -86,23 +86,6 @@ export default function ResidentProfile() {
     }
   };
 
-  const handleSOS = async () => {
-    if (!sosMessage.trim()) {
-      toast.error("Please enter emergency message");
-      return;
-    }
-    try {
-      setSendingSOS(true);
-      await API.post("/emergency", { type: "RESIDENT_SOS", message: sosMessage });
-      toast.success(t("sosSentSuccess"));
-      setSosMessage("");
-    } catch (error) {
-      toast.error(error?.response?.data?.message || t("sosFailed"));
-    } finally {
-      setSendingSOS(false);
-    }
-  };
-
   if (loading) return <ProfileSkeleton />;
 
   if (!profile) {
@@ -123,7 +106,7 @@ export default function ResidentProfile() {
   const societyName = profile.Society?.name || "—";
 
   return (
-    <div className="ge-root rp-dash animate-fadeIn">
+    <div className="ge-root rp-dash animate-fadeIn space-y-6">
       <div className="ge-er">
         <div className="ge-er-left">
           <div className="ad-page-icon">
@@ -165,51 +148,43 @@ export default function ResidentProfile() {
         )}
       </div>
 
-      <div className="rp-sos">
-        <div className="rp-sos-head">
-          <div className="rp-sos-icon">
-            <MdWarning size={22} />
+      {/* ── UNIFIED EMERGENCY SOS HERO BANNER ── */}
+      <div className="rp-sos flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-6 rounded-2xl border border-red-500/30 bg-gradient-to-r from-red-500/10 via-rose-500/5 to-transparent shadow-sm">
+        <div className="flex items-center gap-3.5">
+          <div className="w-12 h-12 rounded-2xl bg-red-600 flex items-center justify-center text-white shadow-lg shadow-red-500/30 shrink-0">
+            <MdWarning size={26} className="animate-pulse" />
           </div>
           <div>
-            <h2 className="rp-sos-title">{t("sosTitle")}</h2>
-            <p className="rp-sos-sub">{t("sosSubtitle")}</p>
+            <h2 className="text-base font-bold text-primary tracking-tight">
+              {t("sosTitle") || "Emergency SOS Broadcast"}
+            </h2>
+            <p className="text-xs text-secondary max-w-md">
+              {t("sosSubtitle") || "Select emergency type, provide optional notes, and alert security and society members immediately."}
+            </p>
           </div>
         </div>
 
-        <label className="rp-sos-label" htmlFor="resident-sos-message">
-          {t("sosMessageLabel")}
-        </label>
-        <textarea
-          id="resident-sos-message"
-          rows={3}
-          placeholder={t("sosPlaceholder")}
-          value={sosMessage}
-          onChange={(e) => setSosMessage(e.target.value)}
-          className="rp-sos-input"
-        />
-
         <button
           type="button"
-          onClick={handleSOS}
-          disabled={sendingSOS}
-          className="rp-sos-btn"
+          onClick={() => setIsSOSOpen(true)}
+          className="btn bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white font-black text-xs px-5 py-3 rounded-xl shadow-lg shadow-red-600/30 flex items-center gap-2 transition active:scale-95 shrink-0 cursor-pointer"
         >
-          {sendingSOS ? (
-            <>
-              <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
-              </svg>
-              {t("sosSending")}
-            </>
-          ) : (
-            <>
-              <MdSend size={16} />
-              {t("sosSendBtn")}
-            </>
-          )}
+          <MdSend size={16} />
+          <span>Raise Emergency SOS</span>
         </button>
       </div>
+
+      {/* ── UNIFIED SOS MODAL ── */}
+      {isSOSOpen && (
+        <SOSModal
+          key={String(isSOSOpen)}
+          isOpen={isSOSOpen}
+          onClose={() => setIsSOSOpen(false)}
+          senderLabel="Resident"
+          modalTitle="🚨 Resident Emergency SOS"
+          successMessage="🚨 Emergency SOS broadcasted successfully to security and society!"
+        />
+      )}
     </div>
   );
 }

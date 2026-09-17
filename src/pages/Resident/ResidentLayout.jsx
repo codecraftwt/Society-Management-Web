@@ -23,8 +23,10 @@ import {
   MdOutlineCardGiftcard,
   MdHome,
   MdRefresh,
+  MdEmergency,
 } from "react-icons/md";
 import ResidentEmergencyModal from "../../components/resident/ResidentEmergencyModal";
+import SOSModal from "../../components/emergency/SOSModal";
 import { useSidebar } from "../../context/SidebarContext";
 import Sidebar from "../../components/common/Sidebar";
 import AppHeader from "../../components/common/AppHeader";
@@ -61,6 +63,7 @@ function ResidentLayoutInner() {
 
   const [alerts, setAlerts] = useState([]);
   const [showEmergency, setShowEmergency] = useState(false);
+  const [showSOS, setShowSOS] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [rsOpen, setRsOpen] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
@@ -386,6 +389,16 @@ function ResidentLayoutInner() {
                 <MdRefresh size={18} />
               </button>
               <RoleSwitcher />
+              {/* SOS button */}
+              <button
+                onClick={() => setShowSOS(true)}
+                className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 shadow-md shadow-red-500/30 transition px-3 h-9 text-white text-xs font-bold cursor-pointer"
+                title="Raise an SOS alert to the whole society"
+              >
+                <MdEmergency size={15} />
+                <span>SOS</span>
+              </button>
+
               {alerts.length > 0 && (
                 <button
                   onClick={() => setShowEmergency(true)}
@@ -461,6 +474,17 @@ function ResidentLayoutInner() {
         alerts={alerts}
         isOpen={showEmergency}
         onClose={() => setShowEmergency(false)}
+      />
+
+      {/* SOS MODAL */}
+      <SOSModal
+        key={String(showSOS)}
+        isOpen={showSOS}
+        onClose={() => setShowSOS(false)}
+        onRefresh={loadEmergencies}
+        alerts={alerts}
+        senderLabel="Resident"
+        modalTitle="🚨 Resident Emergency SOS"
       />
     </div>
   );

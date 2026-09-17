@@ -1,0 +1,2137 @@
+import { useEffect, useState, useContext } from "react";
+import { createPortal } from "react-dom";
+import { toast } from "react-toastify";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from "recharts";
+import {
+  MdOutlineReceiptLong,
+  MdAccountBalance,
+  MdArrowUpward,
+  MdArrowDownward,
+  MdSavings,
+  MdRefresh,
+  MdEdit,
+  MdDelete,
+  MdAdd,
+  MdReportProblem,
+  MdChevronLeft,
+  MdChevronRight,
+  MdViewList,
+  MdSearch,
+  MdFilterList,
+  MdHistoryEdu,
+  MdCheckCircle,
+  MdClose,
+  MdPayments,
+  MdCalendarToday,
+  MdPerson,
+  MdDescription,
+  MdOutlineAccountBalanceWallet,
+  MdDownload,
+  MdPictureAsPdf,
+  MdTableChart,
+} from "react-icons/md";
+import { AuthContext } from "../../context/AuthContext";
+import { hasPermission, isAdmin } from "../../utils/permissions";
+import SlidingTabs from "../../components/common/SlidingTabs";
+import { exportToPDF } from "../../utils/exportPDF";
+import { exportToExcel } from "../../utils/exportExcel";
+import {
+  getBalance,
+  getLedger,
+  getChartData,
+  getExpenses,
+  createExpense,
+  updateExpense,
+  voidExpense,
+  setOpeningBalance,
+  getAuditLogs,
+} from "../../services/accountingService";
+
+const CURRENCY = (v) =>
+  new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 2 }).format(Number(v) || 0);
+
+const TODAY = () => new Date().toISOString().slice(0, 10);
+
+const inputStyle = {
+  background: "var(--card-inner-bg)",
+  border: "1px solid var(--glass-border)",
+  color: "var(--text-primary)",
+  borderRadius: "12px",
+  padding: "10px 14px",
+  fontSize: "14px",
+  width: "100%",
+  outline: "none",
+};
+
+const SOURCES = ["", "BILL", "MAINTENANCE", "AMENITY", "EXPENSE", "ADJUSTMENT"];
+const MODES = ["CASH", "UPI", "BANK_TRANSFER", "CHEQUE"];
+
+/* ── SKELETON ── */
+function AccountingSkeleton() {
+  return (
+    <div className="space-y-6 w-full min-w-0 animate-pulse">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        {[1, 2, 3, 4].map((i) => (
+          <div key={i} className="bg-card/40 border border-glass-border rounded-2xl p-5 space-y-4">
+            <div className="h-4 w-24 bg-white/10 rounded" />
+            <div className="h-8 w-20 bg-white/15 rounded-lg" />
+          </div>
+        ))}
+      </div>
+      <div className="bg-card/40 border border-glass-border rounded-2xl p-6 h-80">
+        <div className="h-5 w-44 bg-white/10 rounded mb-6" />
+        <div className="h-60 w-full bg-white/5 rounded-xl" />
+      </div>
+    </div>
+  );
+}
+
+function Field({ label, required, icon: Icon, children }) {
+  return (
+    <label className="block space-y-1.5">
+      <span className="text-xs font-semibold uppercase tracking-wider text-secondary flex items-center gap-1.5">
+        {Icon && <Icon size={14} className="text-accent" />}
+        {label} {required && <span className="text-red-500">*</span>}
+      </span>
+      {children}
+    </label>
+  );
+}
+
+function Modal({ title, icon: Icon = MdOutlineReceiptLong, maxWidth = "max-w-xl", onClose, children }) {
+  return createPortal(
+    <div
+      className="fixed inset-0 flex items-start justify-center overflow-y-auto py-8 px-4 animate-fadeIn"
+      style={{ background: "var(--overlay-bg)", backdropFilter: "blur(6px)", zIndex: 1200 }}
+      onClick={onClose}
+    >
+      <div
+        className={`w-full ${maxWidth} rounded-2xl animate-scaleIn my-auto`}
+        style={{
+          background: "var(--modal-bg)",
+          border: "1.5px solid var(--glass-border)",
+          boxShadow: "var(--shadow-glass)",
+          backdropFilter: "var(--blur)",
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between px-6 py-4 border-b border-glass-border">
+          <h3 className="text-base font-bold text-primary flex items-center gap-2">
+            <span className="w-8 h-8 rounded-xl bg-accent/15 text-accent flex items-center justify-center">
+              <Icon size={18} />
+            </span>
+            {title}
+          </h3>
+          <button
+            onClick={onClose}
+            className="w-8 h-8 rounded-xl bg-card-inner-bg hover:bg-white/10 text-secondary hover:text-primary flex items-center justify-center transition-colors"
+          >
+            <MdClose size={18} />
+          </button>
+        </div>
+        <div className="p-6 space-y-5">{children}</div>
+      </div>
+    </div>,
+    document.body
+  );
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   MAIN PAGE
+════════════════════════════════════════════════════════════════════════ */
+export default function Accounting({ initialTab = "overview" }) {
+  const { user } = useContext(AuthContext);
+  const isDeleteAllowed = isAdmin(user) || hasPermission(user, "accounting", "delete");
+  const isManageOpening = isAdmin(user) || hasPermission(user, "accounting", "manage_opening_balance");
+
+  const [tab, setTab] = useState(initialTab || "overview");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [balance, setBalance] = useState(null);
+  const [chart, setChart] = useState(null);
+  const [year, setYear] = useState(new Date().getFullYear());
+
+  const load = async () => {
+    try {
+      setLoading(true);
+      setError("");
+      const [bal, ch] = await Promise.all([getBalance(), getChartData({ year })]);
+      setBalance(bal);
+      setChart(ch);
+    } catch (err) {
+      console.error("Failed to load accounting data", err);
+      setError("Failed to load accounting data. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    load();
+  }, [year]);
+
+  if (loading) return <AccountingSkeleton />;
+
+  if (error) {
+    return (
+      <div className="bg-red-500/10 border border-red-500/30 rounded-2xl p-6 text-red-500 flex flex-col sm:flex-row items-center justify-between gap-4 max-w-2xl mx-auto my-8">
+        <div className="flex items-center gap-3">
+          <MdReportProblem size={24} className="shrink-0" />
+          <p className="font-medium text-sm">{error}</p>
+        </div>
+        <button onClick={load} className="btn-primary flex items-center gap-2 px-4 py-2 text-xs font-semibold shrink-0">
+          <MdRefresh size={16} /> Retry
+        </button>
+      </div>
+    );
+  }
+
+  const b = balance || {};
+  const months = chart?.months || [];
+
+  const kpis = [
+    {
+      label: "Opening Balance",
+      value: CURRENCY(b.opening_balance),
+      sub: b.opening_balance_effective_date ? `Effective ${b.opening_balance_effective_date}` : "Not yet set",
+      icon: MdSavings,
+      kpiClass: "ad-kpi ad-kpi--opening",
+    },
+    {
+      label: "Total Income",
+      value: CURRENCY(b.total_income ?? b.total_credit),
+      sub: `Bills ${CURRENCY(b.bill_income)} · Maint ${CURRENCY(b.maintenance_income)} · Amenities ${CURRENCY(b.amenity_income)}`,
+      icon: MdArrowUpward,
+      kpiClass: "ad-kpi ad-kpi--income",
+    },
+    {
+      label: "Total Expenses",
+      value: CURRENCY(b.total_expenses ?? b.total_debit),
+      sub: b.void_reversals ? `Includes ${CURRENCY(b.void_reversals)} void reversals` : "Money out this period",
+      icon: MdArrowDownward,
+      kpiClass: "ad-kpi ad-kpi--expense",
+    },
+    {
+      label: "Current Balance",
+      value: CURRENCY(b.current_balance),
+      sub: `${b.society_name || "Society"} — running cash position`,
+      icon: MdAccountBalance,
+      kpiClass: "ad-kpi ad-kpi--balance",
+    },
+  ];
+
+  const allTabs = [
+    { id: "overview", label: "Overview", icon: MdAccountBalance },
+    { id: "ledger", label: "Cash Book Ledger", module: "general_ledger", icon: MdOutlineReceiptLong },
+    { id: "expenses", label: "Expense Tracking", module: "expenses", icon: MdPayments },
+    { id: "audit", label: "Financial Audit Log", module: "financial_audit_log", icon: MdHistoryEdu },
+    { id: "opening", label: "Opening Balance", icon: MdSavings },
+  ];
+  const tabs = allTabs.filter((t) => !t.module || isAdmin(user) || hasPermission(user, t.module, "view"));
+  const activeTab = tabs.some((t) => t.id === tab) ? tab : "overview";
+
+  const slidingTabItems = tabs.map((t) => ({
+    id: t.id,
+    label: t.label,
+    icon: t.icon ? <t.icon size={16} /> : null,
+  }));
+
+  return (
+    <div className="space-y-6 w-full min-w-0 max-w-400 mx-auto pb-8">
+      {/* Header */}
+      <div className="bg-card border border-glass-border rounded-2xl p-6 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm">
+        <div>
+          <h1 className="text-xl md:text-2xl font-bold text-primary tracking-tight flex items-center gap-2.5">
+            <span className="w-9 h-9 rounded-xl bg-accent/15 text-accent flex items-center justify-center">
+              <MdOutlineReceiptLong size={22} />
+            </span>
+            Account & Cash Management
+          </h1>
+          <p className="text-xs md:text-sm text-secondary mt-1">
+            Financial summary, double-entry cash book, expenses, audit log, and opening balance for {b.society_name || "your society"}.
+          </p>
+        </div>
+        <div className="flex items-center gap-3 shrink-0">
+          <select
+            aria-label="Chart year"
+            style={inputStyle}
+            className="!w-auto !py-2 font-semibold"
+            value={year}
+            onChange={(e) => setYear(Number(e.target.value))}
+          >
+            {[new Date().getFullYear() - 2, new Date().getFullYear() - 1, new Date().getFullYear(), new Date().getFullYear() + 1].map(
+              (y) => (
+                <option key={y} value={y}>
+                  Year {y}
+                </option>
+              )
+            )}
+          </select>
+          <button onClick={load} className="btn-primary flex items-center gap-2 px-4 py-2 text-xs font-semibold shadow-sm">
+            <MdRefresh size={16} /> Refresh
+          </button>
+        </div>
+      </div>
+
+      {/* Animated Sliding Tabs (Matching Parking Slots) */}
+      <div className="overflow-x-auto pb-1">
+        <SlidingTabs
+          items={slidingTabItems}
+          value={activeTab}
+          onChange={setTab}
+        />
+      </div>
+
+      {/* ═══════════ OVERVIEW ═══════════ */}
+      {activeTab === "overview" && (
+        <OverviewTab kpis={kpis} b={b} months={months} year={year} onOpenTab={setTab} />
+      )}
+
+      {/* ═══════════ LEDGER (CASH BOOK) ═══════════ */}
+      {activeTab === "ledger" && (
+        <LedgerTab b={b} onNeedsBalance={load} onResetTab={() => setTab("overview")} />
+      )}
+
+      {/* ═══════════ EXPENSES ═══════════ */}
+      {activeTab === "expenses" && (
+        <ExpensesTab isDeleteAllowed={isDeleteAllowed} />
+      )}
+
+      {/* ═══════════ OPENING BALANCE ═══════════ */}
+      {activeTab === "opening" && (
+        <OpeningTab b={b} isManageOpening={isManageOpening} onChanged={load} />
+      )}
+
+      {/* ═══════════ FINANCIAL AUDIT LOG ═══════════ */}
+      {activeTab === "audit" && <AuditLogTab societyName={b.society_name} />}
+    </div>
+  );
+}
+
+/* ── OVERVIEW TAB ─────────────────────────────────────────────────────────── */
+function OverviewTab({ kpis, b, months, year, onOpenTab }) {
+  const chartData = months.map((m) => ({
+    name: m.label,
+    credited: m.credited,
+    debited: m.debited,
+  }));
+
+  return (
+    <div className="space-y-6">
+      {/* ── Dashboard-Style KPI Tiles ── */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        {kpis.map((k) => (
+          <div key={k.label} className={k.kpiClass}>
+            <span className="ad-kpi-val">{k.value}</span>
+            <span className="ad-kpi-label">{k.label}</span>
+            <span className="ad-kpi-desc">{k.sub}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* Income breakdown with dashboard-style KPI cards */}
+      <div className="bg-card border border-glass-border rounded-2xl p-6 shadow-sm">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="text-base font-bold text-primary">Revenue & Income Inflow</h2>
+            <p className="text-xs text-secondary">Categorized breakdown of all money credited to society accounts</p>
+          </div>
+          <span className="text-xs font-bold text-emerald-500 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20">
+            Total {CURRENCY(b.total_income ?? b.total_credit)}
+          </span>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+          {[
+            {
+              label: "Utility & Flat Bills",
+              value: CURRENCY(b.bill_income),
+              desc: "Water, electricity, diesel & common utility bills",
+              kpiClass: "ad-kpi ad-kpi--bills",
+            },
+            {
+              label: "Maintenance Fees",
+              value: CURRENCY(b.maintenance_income),
+              desc: "Monthly society maintenance collections",
+              kpiClass: "ad-kpi ad-kpi--maintenance",
+            },
+            {
+              label: "Amenity Bookings",
+              value: CURRENCY(b.amenity_income),
+              desc: "Clubhouse, hall & sports amenities",
+              kpiClass: "ad-kpi ad-kpi--amenity",
+            },
+          ].map((it) => (
+            <div key={it.label} className={it.kpiClass}>
+              <span className="ad-kpi-val">{it.value}</span>
+              <span className="ad-kpi-label">{it.label}</span>
+              <span className="ad-kpi-desc">{it.desc}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Chart */}
+      <div className="bg-card border border-glass-border rounded-2xl p-6 shadow-sm">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
+          <div>
+            <h2 className="text-base font-bold text-primary">Credited vs Debited Cash Flow</h2>
+            <p className="text-xs text-secondary">Monthly money-in (bills, maintenance, amenities) vs money-out (expenses) — {year}</p>
+          </div>
+          <button onClick={() => onOpenTab("ledger")} className="btn-primary flex items-center gap-1.5 text-xs font-semibold px-4 py-2">
+            <MdViewList size={16} /> Open Cash Book Ledger
+          </button>
+        </div>
+        <div className="w-full h-72 min-h-0">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={chartData} barCategoryGap={8}>
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--glass-border)" vertical={false} />
+              <XAxis
+                dataKey="name"
+                tick={{ fontSize: 11, fill: "var(--text-secondary)" }}
+                axisLine={{ stroke: "var(--glass-border)" }}
+                tickLine={false}
+              />
+              <YAxis
+                tick={{ fontSize: 11, fill: "var(--text-secondary)" }}
+                axisLine={{ stroke: "var(--glass-border)" }}
+                tickLine={false}
+              />
+              <Tooltip
+                formatter={(v, name) => [CURRENCY(v), name === "credited" ? "Credited (In)" : "Debited (Out)"]}
+                cursor={{ fill: "rgba(255,255,255,0.03)" }}
+                contentStyle={{
+                  background: "var(--card-bg)",
+                  borderColor: "var(--glass-border)",
+                  borderRadius: "12px",
+                  color: "var(--text-primary)",
+                  fontSize: "12px",
+                  fontWeight: "600",
+                }}
+              />
+              <Legend wrapperStyle={{ fontSize: "12px" }} />
+              <Bar dataKey="credited" name="Credited (In)" fill="#10b981" radius={[6, 6, 0, 0]} />
+              <Bar dataKey="debited" name="Debited (Out)" fill="#f43f5e" radius={[6, 6, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── DETAIL COMPONENT FOR MODALS (2 or 3 in one row) ─────────────────────── */
+function DetailItem({ label, value, tone }) {
+  return (
+    <div className="bg-card-inner-bg border border-glass-border/70 rounded-xl p-3 flex flex-col justify-between">
+      <span className="text-[11px] font-semibold uppercase tracking-wider text-secondary">{label}</span>
+      <span
+        className={`text-sm font-bold mt-1 break-words ${
+          tone === "green"
+            ? "text-emerald-500"
+            : tone === "red"
+            ? "text-rose-500"
+            : tone === "blue"
+            ? "text-blue-500"
+            : "text-primary"
+        }`}
+      >
+        {value === null || value === undefined || value === "" ? <span className="text-secondary font-normal">—</span> : value}
+      </span>
+    </div>
+  );
+}
+
+function LedgerDetailsModal({ row, onClose }) {
+  const d = row.detail || {};
+  const isCredit = row.type === "CREDIT";
+  const billLink = (row.source === "BILL" || row.source === "MAINTENANCE") && d.title;
+  const amenity = row.source === "AMENITY" && d.amenity_name;
+  const expense = row.source === "EXPENSE";
+
+  const items = [];
+  if (isCredit && billLink) {
+    items.push({ label: "Paid By", value: d.payer_name });
+    items.push({ label: "Flat Number", value: d.flat_number });
+    items.push({ label: "Bill Title", value: d.title });
+    items.push({ label: "Bill Type", value: d.bill_type });
+    items.push({ label: "Billing Month", value: d.billing_month });
+    items.push({ label: "Due Date", value: d.due_date });
+  } else if (isCredit && amenity) {
+    items.push({ label: "Booked By", value: d.booker_name });
+    items.push({ label: "Amenity Name", value: d.amenity_name });
+    items.push({ label: "Booked Date", value: d.booked_date });
+  } else if (expense) {
+    items.push({ label: "Paid To", value: d.pay_to });
+    items.push({ label: "Expense Reason", value: d.reason });
+    items.push({ label: "Payment Mode", value: d.payment_mode });
+    items.push({ label: "Payment Date", value: d.payment_date });
+  }
+
+  items.push({
+    label: isCredit ? "Credit Amount" : "Debit Amount",
+    value: CURRENCY(row.amount),
+    tone: isCredit ? "green" : "red",
+  });
+  items.push({ label: "Running Balance", value: CURRENCY(row.running_balance), tone: "blue" });
+  items.push({ label: "Entry Date", value: row.entry_date ? String(row.entry_date).slice(0, 10) : null });
+  items.push({ label: "Status", value: row.status === "REVERSED" ? "Reversed" : "Active" });
+  items.push({ label: "Sourced By", value: row.created_by_role || "System" });
+  if (row.reversal_of_id) items.push({ label: "Reversal Of ID", value: `#${row.reversal_of_id}` });
+
+  return (
+    <Modal
+      title={isCredit ? "Cash Book Entry — Credit (Money In)" : "Cash Book Entry — Debit (Money Out)"}
+      icon={isCredit ? MdArrowUpward : MdArrowDownward}
+      maxWidth="max-w-2xl"
+      onClose={onClose}
+    >
+      <div className="flex items-center justify-between gap-3 p-3 bg-card-inner-bg border border-glass-border rounded-xl">
+        <div className="flex items-center gap-2">
+          <span
+            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold ${
+              isCredit ? "bg-emerald-500/15 text-emerald-500 border border-emerald-500/30" : "bg-rose-500/15 text-rose-500 border border-rose-500/30"
+            }`}
+          >
+            {isCredit ? "+ CREDIT (IN)" : "− DEBIT (OUT)"}
+          </span>
+          <span className="text-xs font-bold text-primary bg-card px-2.5 py-1 rounded-lg border border-glass-border">
+            {row.source}
+          </span>
+        </div>
+        <span className="text-xs text-secondary font-mono">Entry #{row.id ?? "—"}</span>
+      </div>
+
+      {row.description && (
+        <div className="p-3 bg-card-inner-bg border border-glass-border rounded-xl">
+          <div className="text-[11px] font-semibold uppercase text-secondary">Particulars / Description</div>
+          <div className="text-sm font-medium text-primary mt-0.5">{row.description}</div>
+        </div>
+      )}
+
+      {/* 2 or 3 details per row */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        {items.map((it) => (
+          <DetailItem key={it.label} label={it.label} value={it.value} tone={it.tone} />
+        ))}
+      </div>
+
+      {row.status === "REVERSED" && (
+        <p className="text-xs text-amber-500 bg-amber-500/10 border border-amber-500/20 rounded-xl p-3">
+          ⚠️ This entry was reversed. Its financial impact has been refunded and the running cash balance reflects the adjustment.
+        </p>
+      )}
+
+      <div className="flex justify-end pt-2">
+        <button onClick={onClose} className="btn-soft px-5 py-2 text-xs font-semibold">
+          Close Details
+        </button>
+      </div>
+    </Modal>
+  );
+}
+
+/* ── LEDGER FILTER POPUP MODAL ─────────────────────────────────────────────── */
+function LedgerFilterModal({ filters, onApply, onClose }) {
+  const [draft, setDraft] = useState({
+    type: filters.type || "",
+    source: filters.source || "",
+    from: filters.from || "",
+    to: filters.to || "",
+    search: filters.search || "",
+  });
+
+  const setPreset = (preset) => {
+    const now = new Date();
+    if (preset === "ALL") {
+      setDraft((d) => ({ ...d, from: "", to: "" }));
+    } else if (preset === "TODAY") {
+      const today = now.toISOString().slice(0, 10);
+      setDraft((d) => ({ ...d, from: today, to: today }));
+    } else if (preset === "MONTH") {
+      const start = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
+      const end = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().slice(0, 10);
+      setDraft((d) => ({ ...d, from: start, to: end }));
+    } else if (preset === "LAST_MONTH") {
+      const start = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString().slice(0, 10);
+      const end = new Date(now.getFullYear(), now.getMonth(), 0).toISOString().slice(0, 10);
+      setDraft((d) => ({ ...d, from: start, to: end }));
+    } else if (preset === "YEAR") {
+      const start = new Date(now.getFullYear(), 0, 1).toISOString().slice(0, 10);
+      const end = new Date(now.getFullYear(), 11, 31).toISOString().slice(0, 10);
+      setDraft((d) => ({ ...d, from: start, to: end }));
+    }
+  };
+
+  const handleApply = (e) => {
+    e.preventDefault();
+    onApply(draft);
+    onClose();
+  };
+
+  const handleClear = () => {
+    const empty = { type: "", source: "", from: "", to: "", search: "" };
+    setDraft(empty);
+    onApply(empty);
+    onClose();
+  };
+
+  return (
+    <Modal title="Filter Cash Book Ledger" icon={MdFilterList} maxWidth="max-w-xl" onClose={onClose}>
+      <form onSubmit={handleApply} className="space-y-4">
+        {/* Quick Date Range Presets */}
+        <div>
+          <span className="text-xs font-semibold uppercase tracking-wider text-secondary block mb-2">
+            Quick Date Presets
+          </span>
+          <div className="flex flex-wrap gap-2">
+            {[
+              { id: "ALL", label: "All Time" },
+              { id: "TODAY", label: "Today" },
+              { id: "MONTH", label: "This Month" },
+              { id: "LAST_MONTH", label: "Last Month" },
+              { id: "YEAR", label: "This Year" },
+            ].map((p) => (
+              <button
+                key={p.id}
+                type="button"
+                onClick={() => setPreset(p.id)}
+                className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-card-inner-bg border border-glass-border hover:border-accent hover:text-accent transition-colors"
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Transaction Type & Source Category (2 columns) */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <Field label="Transaction Direction" icon={MdOutlineReceiptLong}>
+            <select
+              style={inputStyle}
+              value={draft.type}
+              onChange={(e) => setDraft({ ...draft, type: e.target.value })}
+            >
+              <option value="">All Transactions (In & Out)</option>
+              <option value="CREDIT">+ Credits Only (Money In)</option>
+              <option value="DEBIT">− Debits Only (Money Out)</option>
+            </select>
+          </Field>
+
+          <Field label="Category / Source" icon={MdOutlineAccountBalanceWallet}>
+            <select
+              style={inputStyle}
+              value={draft.source}
+              onChange={(e) => setDraft({ ...draft, source: e.target.value })}
+            >
+              <option value="">All Sources & Categories</option>
+              {SOURCES.filter(Boolean).map((s) => (
+                <option key={s} value={s}>
+                  {s}
+                </option>
+              ))}
+            </select>
+          </Field>
+        </div>
+
+        {/* Date From & Date To (2 columns) */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <Field label="From Date" icon={MdCalendarToday}>
+            <input
+              type="date"
+              style={inputStyle}
+              value={draft.from}
+              onChange={(e) => setDraft({ ...draft, from: e.target.value })}
+            />
+          </Field>
+
+          <Field label="To Date" icon={MdCalendarToday}>
+            <input
+              type="date"
+              style={inputStyle}
+              value={draft.to}
+              onChange={(e) => setDraft({ ...draft, to: e.target.value })}
+            />
+          </Field>
+        </div>
+
+        {/* Search / Particulars */}
+        <Field label="Search Description / Particulars" icon={MdSearch}>
+          <input
+            style={inputStyle}
+            placeholder="e.g. Electricity, Maintenance, Clubhouse, Lift..."
+            value={draft.search}
+            onChange={(e) => setDraft({ ...draft, search: e.target.value })}
+          />
+        </Field>
+
+        {/* Footer Actions */}
+        <div className="flex items-center justify-between pt-3 border-t border-glass-border">
+          <button
+            type="button"
+            onClick={handleClear}
+            className="btn-soft px-4 py-2.5 text-xs font-semibold text-rose-500 hover:bg-rose-500/10"
+          >
+            Clear All
+          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="btn-soft px-4 py-2.5 text-xs font-semibold"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="btn-primary px-6 py-2.5 text-xs font-bold shadow-md"
+            >
+              Apply Filters
+            </button>
+          </div>
+        </div>
+      </form>
+    </Modal>
+  );
+}
+
+/* ── CASH BOOK LEDGER TAB ─────────────────────────────────────────────────── */
+function LedgerTab({ b, onNeedsBalance }) {
+  const [rows, setRows] = useState([]);
+  const [pagination, setPagination] = useState({});
+  const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState("");
+  const [filters, setFilters] = useState({ page: 1, limit: 20, type: "", source: "", from: "", to: "", search: "" });
+  const [selected, setSelected] = useState(null);
+  const [showFilterModal, setShowFilterModal] = useState(false);
+
+  const load = async (params) => {
+    try {
+      setLoading(true);
+      setErr("");
+      const res = await getLedger(params);
+      setRows(res.data || []);
+      setPagination(res.pagination || {});
+    } catch (e) {
+      console.error("Failed to load ledger", e);
+      setErr("Failed to load the cash book ledger.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    load(filters);
+  }, [filters.page]);
+
+  const applyFilters = (next = {}) => {
+    const merged = { ...filters, ...next };
+    if (
+      next.from !== undefined ||
+      next.to !== undefined ||
+      next.type !== undefined ||
+      next.source !== undefined ||
+      next.search !== undefined
+    ) {
+      merged.page = 1;
+    }
+    setFilters(merged);
+    load(merged);
+  };
+
+  const activeFilterCount = [
+    filters.type,
+    filters.source,
+    filters.from,
+    filters.to,
+    filters.search,
+  ].filter(Boolean).length;
+
+  if (loading && rows.length === 0) {
+    return (
+      <div className="bg-card border border-glass-border rounded-2xl p-6 space-y-5 animate-pulse">
+        <div className="h-10 bg-white/5 rounded-xl" />
+        <div className="space-y-3">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <div key={i} className="h-12 bg-white/5 rounded-lg" />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (err && rows.length === 0) {
+    return (
+      <div className="bg-red-500/10 border border-red-500/30 rounded-2xl p-6 text-red-500 flex items-center justify-between gap-4 max-w-2xl mx-auto my-8">
+        <p className="font-medium text-sm">{err}</p>
+        <button onClick={() => applyFilters()} className="btn-primary px-4 py-2 text-xs font-semibold">
+          Retry
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* ── Cash Book Dashboard KPI Cards ── */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        <div className="ad-kpi ad-kpi--balance">
+          <span className="ad-kpi-val">{CURRENCY(b?.current_balance)}</span>
+          <span className="ad-kpi-label">Net Live Balance</span>
+          <span className="ad-kpi-desc">Current available society cash position</span>
+        </div>
+        <div className="ad-kpi ad-kpi--income">
+          <span className="ad-kpi-val">{CURRENCY(b?.total_income ?? b?.total_credit)}</span>
+          <span className="ad-kpi-label">Total Inflows (Credits)</span>
+          <span className="ad-kpi-desc">Bills, maintenance & amenity collections</span>
+        </div>
+        <div className="ad-kpi ad-kpi--expense">
+          <span className="ad-kpi-val">{CURRENCY(b?.total_expenses ?? b?.total_debit)}</span>
+          <span className="ad-kpi-label">Total Outflows (Debits)</span>
+          <span className="ad-kpi-desc">Operational disbursements & expenses</span>
+        </div>
+        <div className="ad-kpi ad-kpi--opening">
+          <span className="ad-kpi-val">{CURRENCY(b?.opening_balance)}</span>
+          <span className="ad-kpi-label">Opening Balance</span>
+          <span className="ad-kpi-desc">
+            {b?.opening_balance_effective_date ? `Effective ${b.opening_balance_effective_date}` : "Initial starting reserve"}
+          </span>
+        </div>
+      </div>
+
+      {/* ── Main Ledger Card ── */}
+      <div className="bg-card border border-glass-border rounded-2xl p-6 shadow-sm space-y-5">
+        {/* Header & Filter Button */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2 border-b border-glass-border">
+          <div>
+            <h2 className="text-base font-bold text-primary flex items-center gap-2">
+              <MdOutlineReceiptLong className="text-accent" size={20} />
+              Cash Book Ledger (General Ledger)
+            </h2>
+            <p className="text-xs text-secondary mt-0.5">
+              Real-time chronological record of all society cash inflows, collections, and expense disbursements.
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setShowFilterModal(true)}
+              className="btn-soft flex items-center gap-2 px-4 py-2.5 text-xs font-bold border border-glass-border hover:border-accent"
+            >
+              <MdFilterList size={16} className="text-accent" />
+              <span>Filters</span>
+              {activeFilterCount > 0 && (
+                <span className="px-2 py-0.5 rounded-full bg-accent text-white text-[10px] font-bold">
+                  {activeFilterCount}
+                </span>
+              )}
+            </button>
+            {activeFilterCount > 0 && (
+              <button
+                onClick={() => applyFilters({ type: "", source: "", from: "", to: "", search: "" })}
+                className="text-xs font-semibold text-rose-500 hover:underline px-2 py-1"
+              >
+                Reset
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Active Filter Chips */}
+        {activeFilterCount > 0 && (
+          <div className="flex flex-wrap items-center gap-2 p-3 bg-card-inner-bg border border-glass-border rounded-xl">
+            <span className="text-xs text-secondary font-semibold mr-1">Active:</span>
+            {filters.type && (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold bg-accent/15 text-accent border border-accent/25">
+                Type: {filters.type === "CREDIT" ? "Credits (+)" : "Debits (−)"}
+                <button onClick={() => applyFilters({ type: "" })} className="hover:opacity-75">
+                  <MdClose size={14} />
+                </button>
+              </span>
+            )}
+            {filters.source && (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold bg-accent/15 text-accent border border-accent/25">
+                Source: {filters.source}
+                <button onClick={() => applyFilters({ source: "" })} className="hover:opacity-75">
+                  <MdClose size={14} />
+                </button>
+              </span>
+            )}
+            {(filters.from || filters.to) && (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold bg-accent/15 text-accent border border-accent/25">
+                Date: {filters.from || "Any"} to {filters.to || "Now"}
+                <button onClick={() => applyFilters({ from: "", to: "" })} className="hover:opacity-75">
+                  <MdClose size={14} />
+                </button>
+              </span>
+            )}
+            {filters.search && (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold bg-accent/15 text-accent border border-accent/25">
+                Keyword: "{filters.search}"
+                <button onClick={() => applyFilters({ search: "" })} className="hover:opacity-75">
+                  <MdClose size={14} />
+                </button>
+              </span>
+            )}
+          </div>
+        )}
+
+        {/* Table — Clean, no vertical scrollbar */}
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-left text-xs uppercase tracking-wider text-secondary border-b border-glass-border">
+                <th className="py-3.5 pr-4 font-bold">Date</th>
+                <th className="py-3.5 pr-4 font-bold">Type</th>
+                <th className="py-3.5 pr-4 font-bold">Category</th>
+                <th className="py-3.5 pr-4 font-bold">Description / Particulars</th>
+                <th className="py-3.5 pr-4 font-bold text-right">Amount</th>
+                <th className="py-3.5 pr-4 font-bold text-right">Running Balance</th>
+                <th className="py-3.5 font-bold text-right">Details</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r) => {
+                const openingRow = r.source === "OPENING" || r.opening;
+                const isCredit = r.type === "CREDIT";
+                return (
+                  <tr
+                    key={r.id ?? "opening"}
+                    className="border-b border-glass-border/60 hover:bg-card-inner-bg/60 transition-colors last:border-0"
+                  >
+                    <td className="py-3.5 pr-4 text-secondary whitespace-nowrap font-medium text-xs">
+                      {openingRow ? "—" : (r.entry_date || "").slice(0, 10)}
+                    </td>
+                    <td className="py-3.5 pr-4 whitespace-nowrap">
+                      <span
+                        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-extrabold ${
+                          isCredit
+                            ? "bg-emerald-500/15 text-emerald-500 border border-emerald-500/30"
+                            : "bg-rose-500/15 text-rose-500 border border-rose-500/30"
+                        }`}
+                      >
+                        {isCredit ? <MdArrowUpward size={13} /> : <MdArrowDownward size={13} />}
+                        {isCredit ? "+ CREDIT" : "− DEBIT"}
+                      </span>
+                    </td>
+                    <td className="py-3.5 pr-4 font-bold text-primary text-xs">
+                      <span className="px-2 py-0.5 rounded-md bg-card-inner-bg border border-glass-border">
+                        {r.source}
+                      </span>
+                    </td>
+                    <td className="py-3.5 pr-4 text-secondary max-w-72 truncate font-medium" title={r.description}>
+                      {r.description || "—"}
+                    </td>
+                    <td
+                      className={`py-3.5 pr-4 text-right font-extrabold whitespace-nowrap ${
+                        isCredit ? "text-emerald-500" : "text-rose-500"
+                      } ${openingRow ? "text-secondary" : ""}`}
+                    >
+                      {openingRow ? CURRENCY(r.amount) : `${isCredit ? "+" : "−"}${CURRENCY(r.amount)}`}
+                    </td>
+                    <td className="py-3.5 pr-4 text-right font-bold text-primary whitespace-nowrap">
+                      {CURRENCY(r.running_balance)}
+                    </td>
+                    <td className="py-3.5 text-right whitespace-nowrap">
+                      <button
+                        onClick={() => setSelected(r)}
+                        className="p-2 rounded-xl bg-accent/10 text-accent border border-accent/20 hover:bg-accent hover:text-white transition-all"
+                        title="View entry details"
+                      >
+                        <MdViewList size={16} />
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+              {rows.length === 0 && (
+                <tr>
+                  <td colSpan={7} className="py-12 text-center text-secondary text-sm">
+                    No cash book ledger entries match the selected filters.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Pagination */}
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-glass-border">
+          <p className="text-xs text-secondary font-medium">
+            Page {pagination.currentPage || 1} of {pagination.totalPages || 1} · {pagination.totalItems || 0} total ledger entries
+          </p>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => applyFilters({ page: Math.max(1, (pagination.currentPage || 1) - 1) })}
+              disabled={(pagination.currentPage || 1) <= 1}
+              className="btn-soft px-3.5 py-1.5 text-xs font-semibold disabled:opacity-40 flex items-center gap-1"
+            >
+              <MdChevronLeft size={16} /> Prev
+            </button>
+            <button
+              onClick={() => applyFilters({ page: (pagination.currentPage || 1) + 1 })}
+              disabled={(pagination.currentPage || 1) >= (pagination.totalPages || 1)}
+              className="btn-soft px-3.5 py-1.5 text-xs font-semibold disabled:opacity-40 flex items-center gap-1"
+            >
+              Next <MdChevronRight size={16} />
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {showFilterModal && (
+        <LedgerFilterModal
+          filters={filters}
+          onApply={applyFilters}
+          onClose={() => setShowFilterModal(false)}
+        />
+      )}
+
+      {selected && <LedgerDetailsModal row={selected} onClose={() => setSelected(null)} />}
+    </div>
+  );
+}
+
+/* ── EXPENSES TAB ─────────────────────────────────────────────────────────── */
+function ExpensesTab({ isDeleteAllowed }) {
+  const [rows, setRows] = useState([]);
+  const [totals, setTotals] = useState(null);
+  const [pagination, setPagination] = useState({});
+  const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState("");
+  const [page, setPage] = useState(1);
+  const [search, setSearch] = useState("");
+  const [showForm, setShowForm] = useState(null);
+  const [showVoid, setShowVoid] = useState(null);
+  const [saving, setSaving] = useState(false);
+
+  const load = async (p = page, q = "") => {
+    try {
+      setLoading(true);
+      setErr("");
+      const params = { page: p, limit: 20 };
+      if (q) params.search = q;
+      const res = await getExpenses(params);
+      setRows(res.data || []);
+      setTotals(res.totals || null);
+      setPagination(res.pagination || {});
+    } catch (e) {
+      console.error("Failed to load expenses", e);
+      setErr("Failed to load expenses.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    load();
+  }, []);
+
+  const goPage = (p) => {
+    setPage(p);
+    load(p, search);
+  };
+
+  const submitExpense = async (payload, id) => {
+    try {
+      setSaving(true);
+      if (id) await updateExpense(id, payload);
+      else await createExpense(payload);
+      toast.success(id ? "Expense updated successfully." : "Expense recorded and ledger debited.");
+      setShowForm(null);
+      load(page, search);
+    } catch (e) {
+      toast.error(e.response?.data?.message || "Failed to save expense.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const confirmVoid = async () => {
+    if (!showVoid) return;
+    try {
+      setSaving(true);
+      await voidExpense(showVoid.id, showVoid.reason);
+      toast.success("Expense voided and ledger reversal posted.");
+      setShowVoid(null);
+      load(page, search);
+    } catch (e) {
+      toast.error(e.response?.data?.message || "Failed to void expense.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading && rows.length === 0) {
+    return (
+      <div className="bg-card border border-glass-border rounded-2xl p-6 space-y-5 animate-pulse">
+        <div className="h-10 bg-white/5 rounded-xl" />
+        <div className="space-y-3">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="h-12 bg-white/5 rounded-lg" />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (err && rows.length === 0) {
+    return (
+      <div className="bg-red-500/10 border border-red-500/30 rounded-2xl p-6 text-red-500 flex items-center justify-between gap-4 max-w-2xl mx-auto my-8">
+        <p className="font-medium text-sm">{err}</p>
+        <button onClick={() => load()} className="btn-primary px-4 py-2 text-xs font-semibold">
+          Retry
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Expense Metric Highlights using dashboard-style KPI cards */}
+      {totals && (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+          <div className="ad-kpi ad-kpi--bills">
+            <span className="ad-kpi-val">{CURRENCY(totals.grand_total)}</span>
+            <span className="ad-kpi-label">Total Recorded Amount</span>
+            <span className="ad-kpi-desc">Across all active & voided records</span>
+          </div>
+          <div className="ad-kpi ad-kpi--expense">
+            <span className="ad-kpi-val">{CURRENCY(totals.posted_total)}</span>
+            <span className="ad-kpi-label">Active Debited Outflow</span>
+            <span className="ad-kpi-desc">Currently deducted from cash balance</span>
+          </div>
+          <div className="ad-kpi ad-kpi--opening">
+            <span className="ad-kpi-val">{totals.void_count || 0}</span>
+            <span className="ad-kpi-label">Voided Records</span>
+            <span className="ad-kpi-desc">Audited ledger reversals posted</span>
+          </div>
+        </div>
+      )}
+
+      {/* Main Expenses Card */}
+      <div className="bg-card border border-glass-border rounded-2xl p-6 shadow-sm space-y-6">
+        {/* Header & Action */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2 border-b border-glass-border">
+          <div>
+            <h2 className="text-base font-bold text-primary flex items-center gap-2">
+              <MdPayments className="text-accent" size={20} />
+              Expense Tracking & Management
+            </h2>
+            <p className="text-xs text-secondary mt-0.5">
+              Record maintenance bills, vendor payments, and operational expenses. Each entry posts a verified DEBIT.
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="relative">
+              <MdSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 text-secondary" size={18} />
+              <input
+                placeholder="Search payee or reason…"
+                style={inputStyle}
+                className="!pl-10 !w-60 !py-2"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && (setPage(1), load(1, search))}
+              />
+            </div>
+            <button
+              onClick={() => setShowForm({})}
+              className="btn-primary flex items-center gap-2 px-5 py-2.5 text-xs font-bold shadow-md shrink-0"
+            >
+              <MdAdd size={18} /> Record New Expense
+            </button>
+          </div>
+        </div>
+
+        {/* Expenses Table — Clean, no vertical scrollbar */}
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-left text-xs uppercase tracking-wider text-secondary border-b border-glass-border">
+                <th className="py-3.5 pr-4 font-bold">Payment Date</th>
+                <th className="py-3.5 pr-4 font-bold">Paid To (Payee)</th>
+                <th className="py-3.5 pr-4 font-bold">Reason / Particulars</th>
+                <th className="py-3.5 pr-4 font-bold">Mode</th>
+                <th className="py-3.5 pr-4 font-bold text-right">Amount</th>
+                <th className="py-3.5 font-bold text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((e) => (
+                <tr key={e.id} className="border-b border-glass-border/60 hover:bg-card-inner-bg/60 transition-colors last:border-0">
+                  <td className="py-3.5 pr-4 text-secondary whitespace-nowrap text-xs font-medium">
+                    {(e.payment_date || "").slice(0, 10)}
+                  </td>
+                  <td className="py-3.5 pr-4 font-bold text-primary text-xs whitespace-nowrap">{e.pay_to}</td>
+                  <td className="py-3.5 pr-4 text-secondary max-w-64 truncate font-medium text-xs" title={e.reason}>
+                    {e.reason}
+                  </td>
+                  <td className="py-3.5 pr-4 text-xs font-semibold text-secondary whitespace-nowrap">
+                    <span className="px-2 py-0.5 rounded-md bg-card-inner-bg border border-glass-border">
+                      {e.payment_mode}
+                    </span>
+                  </td>
+                  <td className={`py-3.5 pr-4 text-right font-extrabold whitespace-nowrap ${e.status === "VOID" ? "text-secondary line-through" : "text-rose-500"}`}>
+                    −{CURRENCY(e.amount)}
+                  </td>
+                  <td className="py-3.5 text-right whitespace-nowrap">
+                    {e.status !== "VOID" && (
+                      <div className="flex items-center justify-end gap-1.5">
+                        <button
+                          onClick={() => setShowForm(e)}
+                          className="p-1.5 rounded-lg bg-card-inner-bg text-secondary hover:text-primary hover:border-accent border border-glass-border transition-colors"
+                          title="Edit expense"
+                        >
+                          <MdEdit size={16} />
+                        </button>
+                        {isDeleteAllowed && (
+                          <button
+                            onClick={() => setShowVoid({ id: e.id, amount: e.amount, reason: "" })}
+                            className="p-1.5 rounded-lg bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white border border-rose-500/20 transition-colors"
+                            title="Void & Reverse expense"
+                          >
+                            <MdDelete size={16} />
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </td>
+                </tr>
+              ))}
+              {rows.length === 0 && (
+                <tr>
+                  <td colSpan={6} className="py-12 text-center text-secondary text-sm">
+                    No expense records found. Click "+ Record New Expense" to create one.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Pagination */}
+        {pagination.totalPages > 1 && (
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-glass-border">
+            <p className="text-xs text-secondary font-medium">
+              Page {pagination.currentPage || 1} of {pagination.totalPages || 1} · {pagination.totalItems || 0} total expenses
+            </p>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => goPage(Math.max(1, (pagination.currentPage || 1) - 1))}
+                disabled={(pagination.currentPage || 1) <= 1}
+                className="btn-soft px-3.5 py-1.5 text-xs font-semibold disabled:opacity-40 flex items-center gap-1"
+              >
+                <MdChevronLeft size={16} /> Prev
+              </button>
+              <button
+                onClick={() => goPage((pagination.currentPage || 1) + 1)}
+                disabled={(pagination.currentPage || 1) >= (pagination.totalPages || 1)}
+                className="btn-soft px-3.5 py-1.5 text-xs font-semibold disabled:opacity-40 flex items-center gap-1"
+              >
+                Next <MdChevronRight size={16} />
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {showForm && (
+        <ExpenseForm
+          expense={showForm.id ? showForm : null}
+          saving={saving}
+          onClose={() => setShowForm(null)}
+          onSubmit={(data) => submitExpense(data, showForm.id)}
+        />
+      )}
+
+      {showVoid && (
+        <Modal title="Void & Reverse Expense" icon={MdDelete} maxWidth="max-w-lg" onClose={() => setShowVoid(null)}>
+          <div className="p-4 bg-rose-500/10 border border-rose-500/20 rounded-xl space-y-2">
+            <p className="text-sm font-bold text-rose-500 flex items-center gap-1.5">
+              <MdReportProblem size={18} /> Confirm Expense Reversal
+            </p>
+            <p className="text-xs text-secondary">
+              Voiding will immediately cancel this expense and credit back{" "}
+              <span className="font-bold text-primary">{CURRENCY(showVoid.amount)}</span> to the cash book balance with an
+              audited ledger entry.
+            </p>
+          </div>
+
+          <Field label="Void Reason / Notes (Optional)" icon={MdDescription}>
+            <textarea
+              rows={2}
+              style={{ ...inputStyle, resize: "none" }}
+              placeholder="e.g. Duplicate entry or vendor cancelled invoice"
+              value={showVoid.reason}
+              onChange={(e) => setShowVoid({ ...showVoid, reason: e.target.value })}
+            />
+          </Field>
+
+          <div className="flex justify-end gap-3 pt-2">
+            <button onClick={() => setShowVoid(null)} className="btn-soft px-4 py-2 text-xs font-semibold">
+              Cancel
+            </button>
+            <button
+              onClick={confirmVoid}
+              disabled={saving}
+              className="btn-danger px-5 py-2 text-xs font-bold disabled:opacity-50 flex items-center gap-1.5"
+            >
+              {saving ? "Voiding…" : "Yes, Void Expense"}
+            </button>
+          </div>
+        </Modal>
+      )}
+    </div>
+  );
+}
+
+/* ── STYLISH EXPENSE CREATE / EDIT FORM MODAL (2-3 DETAILS PER ROW) ────────── */
+function ExpenseForm({ expense, saving, onClose, onSubmit }) {
+  const [form, setForm] = useState({
+    pay_to: expense?.pay_to || "",
+    reason: expense?.reason || "",
+    amount: expense?.amount !== undefined ? String(expense.amount) : "",
+    payment_date: expense?.payment_date ? String(expense.payment_date).slice(0, 10) : TODAY(),
+    payment_mode: expense?.payment_mode || "CASH",
+  });
+
+  const set = (k) => (e) => setForm({ ...form, [k]: e.target.value });
+
+  const submit = (e) => {
+    e.preventDefault();
+    if (!form.pay_to.trim() || !form.reason.trim() || !Number(form.amount) || Number(form.amount) <= 0) {
+      toast.error("Payee, reason, and a valid positive amount are required.");
+      return;
+    }
+    onSubmit({ ...form, amount: Number(form.amount), payment_mode: form.payment_mode });
+  };
+
+  return (
+    <Modal
+      title={expense ? "Edit Expense Details" : "Record Society Expense"}
+      icon={MdPayments}
+      maxWidth="max-w-2xl"
+      onClose={onClose}
+    >
+      <form onSubmit={submit} className="space-y-5">
+        {/* Info Banner */}
+        <div className="p-3.5 bg-accent/10 border border-accent/20 rounded-xl text-xs text-primary flex items-center gap-2">
+          <MdCheckCircle className="text-accent shrink-0" size={18} />
+          <span>Recorded expenses automatically update the Cash Book and are deducted from current balance.</span>
+        </div>
+
+        {/* 2 or 3 inputs in one row */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <Field label="Paid To (Payee / Vendor)" required icon={MdPerson}>
+            <input
+              style={inputStyle}
+              placeholder="e.g. ABC Electrician / City Water Supply"
+              value={form.pay_to}
+              onChange={set("pay_to")}
+              autoFocus
+            />
+          </Field>
+          <Field label="Payment Date" required icon={MdCalendarToday}>
+            <input
+              type="date"
+              style={inputStyle}
+              value={form.payment_date}
+              onChange={set("payment_date")}
+            />
+          </Field>
+        </div>
+
+        {/* Reason / Particulars */}
+        <Field label="Reason / Particulars Description" required icon={MdDescription}>
+          <input
+            style={inputStyle}
+            placeholder="e.g. Lift maintenance service charges for March"
+            value={form.reason}
+            onChange={set("reason")}
+          />
+        </Field>
+
+        {/* Amount and Payment Mode */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <Field label="Expense Amount (₹)" required icon={MdOutlineAccountBalanceWallet}>
+            <div className="relative">
+              <span className="absolute left-3.5 top-1/2 -translate-y-1/2 font-bold text-accent">₹</span>
+              <input
+                type="number"
+                min="0.01"
+                step="0.01"
+                style={inputStyle}
+                className="!pl-8 font-bold text-base"
+                placeholder="0.00"
+                value={form.amount}
+                onChange={set("amount")}
+              />
+            </div>
+          </Field>
+          <Field label="Payment Mode" required icon={MdPayments}>
+            <select style={inputStyle} value={form.payment_mode} onChange={set("payment_mode")}>
+              {MODES.map((m) => (
+                <option key={m} value={m}>
+                  {m === "BANK_TRANSFER" ? "Bank Transfer (NEFT/RTGS/IMPS)" : m}
+                </option>
+              ))}
+            </select>
+          </Field>
+        </div>
+
+        {/* Footer Actions */}
+        <div className="flex justify-end gap-3 pt-3 border-t border-glass-border">
+          <button type="button" onClick={onClose} className="btn-soft px-5 py-2.5 text-xs font-semibold">
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={saving}
+            className="btn-primary flex items-center gap-2 px-6 py-2.5 text-xs font-bold shadow-md disabled:opacity-50"
+          >
+            {saving ? "Processing…" : expense ? "Save Changes" : "Record Expense"}
+          </button>
+        </div>
+      </form>
+    </Modal>
+  );
+}
+
+/* ── OPENING BALANCE TAB ─────────────────────────────────────────────────── */
+function OpeningTab({ b, isManageOpening, onChanged }) {
+  const [showForm, setShowForm] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState({
+    amount: b.opening_balance ? String(b.opening_balance) : "",
+    effective_date: TODAY(),
+    reason: "",
+  });
+
+  const submit = async (e) => {
+    e.preventDefault();
+    if (!form.reason.trim()) {
+      toast.error("A reason is required for opening balance adjustments.");
+      return;
+    }
+    if (!Number.isFinite(Number(form.amount)) || Number(form.amount) < 0) {
+      toast.error("Opening balance must be a non-negative number.");
+      return;
+    }
+    try {
+      setSaving(true);
+      await setOpeningBalance({
+        amount: Number(form.amount),
+        effective_date: form.effective_date,
+        reason: form.reason,
+      });
+      toast.success(b.opening_balance ? "Opening balance adjusted and audited." : "Opening balance recorded.");
+      setShowForm(false);
+      onChanged();
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to set opening balance.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Main Opening Balance Container */}
+      <div className="bg-card border border-glass-border rounded-2xl p-6 shadow-sm space-y-6">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2 border-b border-glass-border">
+          <div>
+            <h2 className="text-base font-bold text-primary flex items-center gap-2">
+              <MdSavings className="text-accent" size={20} />
+              Society Opening Balance Setup
+            </h2>
+            <p className="text-xs text-secondary mt-0.5">
+              Initial funds carried over before system tracking. Any later correction is logged in the Financial Audit Book.
+            </p>
+          </div>
+          {isManageOpening && (
+            <button
+              onClick={() => setShowForm(true)}
+              className="btn-primary flex items-center gap-2 px-5 py-2.5 text-xs font-bold shadow-md self-start"
+            >
+              <MdEdit size={16} /> {b.opening_balance ? "Adjust Opening Balance" : "Set Opening Balance"}
+            </button>
+          )}
+        </div>
+
+        {/* ── KPI Cards for Opening Balance (Inside the card) ── */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+          <div className="ad-kpi ad-kpi--opening">
+            <span className="ad-kpi-val">{CURRENCY(b.opening_balance)}</span>
+            <span className="ad-kpi-label">Current Opening Balance</span>
+            <span className="ad-kpi-desc">Initial carry-over baseline reserve</span>
+          </div>
+          <div className="ad-kpi ad-kpi--balance">
+            <span className="ad-kpi-val">{b.opening_balance_effective_date || "Not set"}</span>
+            <span className="ad-kpi-label">Effective Date</span>
+            <span className="ad-kpi-desc">Date of opening funds carry-over</span>
+          </div>
+          <div className="ad-kpi ad-kpi--income">
+            <span className="ad-kpi-val">{b.opening_balance ? "Configured" : "Pending Setup"}</span>
+            <span className="ad-kpi-label">Setup Status</span>
+            <span className="ad-kpi-desc">
+              {b.opening_balance_set_at ? new Date(b.opening_balance_set_at).toLocaleDateString() : "No record yet"}
+            </span>
+          </div>
+        </div>
+
+        {!isManageOpening && (
+          <p className="text-xs text-secondary bg-card-inner-bg border border-glass-border rounded-xl p-4">
+            Only a Society Admin or authorized Accountant can set or adjust the opening balance.
+          </p>
+        )}
+      </div>
+
+      {showForm && (
+        <Modal
+          title={b.opening_balance ? "Adjust Opening Balance" : "Set Opening Balance"}
+          icon={MdSavings}
+          maxWidth="max-w-xl"
+          onClose={() => setShowForm(false)}
+        >
+          <form onSubmit={submit} className="space-y-4">
+            <p className="text-xs text-secondary">
+              Adjustments are permanently recorded in the Financial Audit Log with the previous value and your reason.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Field label="Opening Balance (₹)" required icon={MdOutlineAccountBalanceWallet}>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  style={inputStyle}
+                  placeholder="0.00"
+                  value={form.amount}
+                  onChange={(e) => setForm({ ...form, amount: e.target.value })}
+                  autoFocus
+                />
+              </Field>
+              <Field label="Effective Date" required icon={MdCalendarToday}>
+                <input
+                  type="date"
+                  style={inputStyle}
+                  value={form.effective_date}
+                  onChange={(e) => setForm({ ...form, effective_date: e.target.value })}
+                />
+              </Field>
+            </div>
+            <Field label="Reason for Setting / Adjustment" required icon={MdDescription}>
+              <textarea
+                rows={2}
+                style={{ ...inputStyle, resize: "none" }}
+                placeholder="e.g. Initial funds transferred from bank ledger audit"
+                value={form.reason}
+                onChange={(e) => setForm({ ...form, reason: e.target.value })}
+              />
+            </Field>
+            <div className="flex justify-end gap-3 pt-3 border-t border-glass-border">
+              <button type="button" onClick={() => setShowForm(false)} className="btn-soft px-5 py-2.5 text-xs font-semibold">
+                Cancel
+              </button>
+              <button type="submit" disabled={saving} className="btn-primary px-6 py-2.5 text-xs font-bold disabled:opacity-50">
+                {saving ? "Saving…" : b.opening_balance ? "Adjust & Audit" : "Set Opening Balance"}
+              </button>
+            </div>
+          </form>
+        </Modal>
+      )}
+    </div>
+  );
+}
+
+/* ── FINANCIAL AUDIT LOG TAB (REAL AUDIT BOOK STYLING) ─────────────────────── */
+const ACTION_TONES = {
+  OPENING_BALANCE_SET: "blue",
+  OPENING_BALANCE_ADJUST: "purple",
+  EXPENSE_CREATE: "green",
+  EXPENSE_UPDATE: "amber",
+  EXPENSE_VOID: "red",
+  PAYMENT_REVERSED: "orange",
+  MANUAL_ADJUSTMENT: "gray",
+};
+
+const ACTION_LABELS = {
+  OPENING_BALANCE_SET: "Opening Balance Set",
+  OPENING_BALANCE_ADJUST: "Opening Balance Adjusted",
+  EXPENSE_CREATE: "Created Expense",
+  EXPENSE_UPDATE: "Edited Expense",
+  EXPENSE_VOID: "Voided Expense",
+  PAYMENT_REVERSED: "Payment Reversed",
+  MANUAL_ADJUSTMENT: "Manual Adjustment",
+};
+
+const isOpeningAction = (a) => a === "OPENING_BALANCE_SET" || a === "OPENING_BALANCE_ADJUST";
+
+const fmtWhen = (d) => {
+  if (!d) return "—";
+  const dt = new Date(d);
+  return dt.toLocaleString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
+
+const AUDIT_FIELD_LABELS = {
+  amount: "Amount",
+  opening_balance: "Opening Balance",
+  prev_balance: "Previous Balance",
+  running_balance: "Running Balance",
+  effective_date: "Effective Date",
+  entry_date: "Entry Date",
+  payment_date: "Payment Date",
+  created_at: "Created Date",
+  updated_at: "Updated Date",
+  paid_at: "Paid Date",
+  voided_at: "Voided Date",
+  pay_to: "Paid To (Payee)",
+  reason: "Audit Reason",
+  record_reason: "Reason",
+  status: "Status",
+  payment_mode: "Payment Mode",
+  method: "Payment Mode",
+  paid_by: "Paid By",
+  recording_user_id: "Recorded By ID",
+  description: "Description",
+  source: "Category",
+  bill_id: "Bill Ref ID",
+  amenity_id: "Amenity ID",
+  society_id: "Society",
+  resident_id: "Resident ID",
+  payer_user_id: "Payer ID",
+  user_id: "User ID",
+  name: "Name",
+  transaction_ref: "Transaction Ref",
+  id: "Record ID",
+  reversal_of_id: "Reversal Of ID",
+  type: "Transaction Type",
+  void_reason: "Void Reason",
+  voided_by: "Voided By",
+};
+
+const CURRENCY_FIELDS = ["amount", "opening_balance", "prev_balance", "new_balance", "running_balance", "balance", "total", "fee", "discount"];
+const DATE_FIELDS = ["effective_date", "entry_date", "payment_date", "created_at", "updated_at", "voided_at", "paid_at", "issue_date", "due_date"];
+
+const fmtAuditValue = (v, key) => {
+  if (v === null || v === undefined || v === "") return "";
+  const k = String(key || "").toLowerCase();
+  if (CURRENCY_FIELDS.includes(k)) return CURRENCY(v);
+  if (DATE_FIELDS.includes(k)) {
+    const dt = new Date(v);
+    if (!isNaN(dt.getTime())) return dt.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+  }
+  if (k === "status") return v === "POSTED" ? "Recorded" : v === "VOID" ? "Voided" : v;
+  if (typeof v === "boolean") return v ? "Yes" : "No";
+  return String(v);
+};
+
+/* Format meaningful audit reason / description */
+const getMeaningfulAuditReason = (row) => {
+  const oldV = row.old_value || {};
+  const newV = row.new_value || {};
+  const amt = newV.amount !== undefined ? CURRENCY(newV.amount) : oldV.amount !== undefined ? CURRENCY(oldV.amount) : "";
+  const payee = newV.pay_to || oldV.pay_to || "";
+
+  if (row.reason && row.reason !== "System verified financial operation" && !row.reason.startsWith("System verified")) {
+    return row.reason;
+  }
+
+  if (row.action === "EXPENSE_CREATE") {
+    return `Expense of ${amt || "funds"} recorded for ${payee || "vendor"} (debited from cash balance)`;
+  }
+  if (row.action === "EXPENSE_VOID") {
+    return `Expense of ${amt || "funds"} for ${payee || "vendor"} voided (reversed and credited back)`;
+  }
+  if (row.action === "EXPENSE_UPDATE") {
+    return `Expense particulars or amount updated for ${payee || "vendor"}`;
+  }
+  if (row.action === "OPENING_BALANCE_SET") {
+    return `Initial society starting cash reserve configured as ${amt || "configured amount"}`;
+  }
+  if (row.action === "OPENING_BALANCE_ADJUST") {
+    return `Opening cash balance reserve adjusted to ${amt || "new amount"}`;
+  }
+  if (row.action === "PAYMENT_REVERSED") {
+    return `Payment collection of ${amt || "funds"} reversed in ledger`;
+  }
+  if (row.action === "MANUAL_ADJUSTMENT") {
+    return `Manual journal entry adjustment posted to ledger`;
+  }
+  return `Financial record verified and audited`;
+};
+
+/* Format single key change highlight for table column */
+const getAuditHighlight = (row) => {
+  const oldV = row.old_value || {};
+  const newV = row.new_value || {};
+
+  if (isOpeningAction(row.action)) {
+    const oldAmt = oldV.amount !== undefined ? CURRENCY(oldV.amount) : null;
+    const newAmt = newV.amount !== undefined ? CURRENCY(newV.amount) : null;
+    if (oldAmt && newAmt) return `${oldAmt} → ${newAmt}`;
+    if (newAmt) return `Balance: ${newAmt}`;
+  }
+
+  if (row.action === "EXPENSE_CREATE") {
+    const amt = newV.amount !== undefined ? CURRENCY(newV.amount) : null;
+    const payee = newV.pay_to ? `${newV.pay_to}` : null;
+    return [payee, amt].filter(Boolean).join(" · ") || "New expense recorded";
+  }
+
+  if (row.action === "EXPENSE_VOID") {
+    const amt = oldV.amount !== undefined ? CURRENCY(oldV.amount) : null;
+    return `Voided ${amt || ""}`;
+  }
+
+  if (row.action === "EXPENSE_UPDATE") {
+    if (oldV.amount !== undefined && newV.amount !== undefined && oldV.amount !== newV.amount) {
+      return `Amount: ${CURRENCY(oldV.amount)} → ${CURRENCY(newV.amount)}`;
+    }
+    if (oldV.pay_to !== undefined && newV.pay_to !== undefined && oldV.pay_to !== newV.pay_to) {
+      return `Payee: ${oldV.pay_to} → ${newV.pay_to}`;
+    }
+    return "Details updated";
+  }
+
+  return getMeaningfulAuditReason(row);
+};
+
+const prettyAuditList = (v, societyName = "") => {
+  if (v === null || v === undefined || v === "" || typeof v !== "object" || Array.isArray(v)) return [];
+
+  // Check date similarity
+  const createdAtStr = v.created_at ? String(v.created_at).slice(0, 10) : null;
+  const paymentDateStr = v.payment_date ? String(v.payment_date).slice(0, 10) : null;
+  const entryDateStr = v.entry_date ? String(v.entry_date).slice(0, 10) : null;
+  const samePaymentDate = paymentDateStr && createdAtStr && paymentDateStr === createdAtStr;
+  const sameEntryDate = entryDateStr && createdAtStr && entryDateStr === createdAtStr;
+
+  return Object.entries(v)
+    .map(([k, val]) => {
+      const keyLower = String(k).toLowerCase();
+
+      // Rule: Do not show the Status "Recorded" / "POSTED"
+      if (keyLower === "status") {
+        const strVal = String(val).toUpperCase();
+        if (strVal === "POSTED" || strVal === "RECORDED" || strVal === "ACTIVE") return null;
+      }
+
+      // Rule: Date logic - if created_at and payment_date are the same, skip created_at and keep only payment_date
+      if (keyLower === "created_at" && (samePaymentDate || sameEntryDate)) {
+        return null;
+      }
+
+      // Rule: Society ID -> name of the society
+      if (keyLower === "society_id") {
+        if (societyName) {
+          return { key: k, label: "Society", value: societyName };
+        }
+        return null;
+      }
+
+      // Skip internal IDs
+      if (["recording_user_id", "payer_user_id", "user_id", "resident_id", "society_id"].includes(keyLower)) {
+        return null;
+      }
+
+      const fv = fmtAuditValue(val, k);
+      if (fv === "") return null;
+      return {
+        key: k,
+        label: AUDIT_FIELD_LABELS[k] || k.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
+        value: fv,
+      };
+    })
+    .filter(Boolean);
+};
+
+/* ── AUDIT DETAILS POPUP (2 or 3 in one row) ────────────────────────────── */
+function AuditDetailsModal({ row, societyName, onClose }) {
+  const before = prettyAuditList(row.old_value, societyName);
+  const after = prettyAuditList(row.new_value, societyName);
+  const tone = ACTION_TONES[row.action] || "gray";
+  const showBefore = before && before.length > 0;
+  const showAfter = after && after.length > 0;
+
+  const performerName =
+    row.performed_by_name ||
+    row.performer_name ||
+    row.created_by_name ||
+    row.user_name ||
+    row.performed_by_role ||
+    "Society Admin";
+
+  const meaningfulReason = getMeaningfulAuditReason(row);
+
+  return (
+    <Modal title="Financial Audit Record Details" icon={MdHistoryEdu} maxWidth="max-w-3xl" onClose={onClose}>
+      {/* Action Header Card */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 bg-card-inner-bg border border-glass-border rounded-xl">
+        <div className="flex items-center gap-2.5">
+          <span
+            className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1 text-xs font-bold uppercase tracking-wider ${
+              tone === "green"
+                ? "bg-emerald-500/15 text-emerald-500 border border-emerald-500/30"
+                : tone === "red"
+                ? "bg-rose-500/15 text-rose-500 border border-rose-500/30"
+                : tone === "amber"
+                ? "bg-amber-500/15 text-amber-600 border border-amber-500/30"
+                : tone === "purple"
+                ? "bg-purple-500/15 text-purple-500 border border-purple-500/30"
+                : tone === "blue"
+                ? "bg-blue-500/15 text-blue-500 border border-blue-500/30"
+                : "bg-gray-500/15 text-gray-400 border border-gray-500/30"
+            }`}
+          >
+            {ACTION_LABELS[row.action] || row.action}
+          </span>
+          <span className="text-xs font-semibold text-secondary">
+            Audit Entry #{row.id}
+          </span>
+        </div>
+        <span className="text-xs text-secondary font-mono">
+          {fmtWhen(row.performed_at)}
+        </span>
+      </div>
+
+      {/* Overview Metadata: 2 or 3 in one row */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        <DetailItem label="Timestamp" value={fmtWhen(row.performed_at)} />
+        <DetailItem label="Created By / Performed By" value={performerName} />
+        {societyName && <DetailItem label="Society" value={societyName} />}
+      </div>
+
+      {/* Meaningful Audit Reason Box */}
+      <div className="p-3.5 bg-card-inner-bg border border-glass-border rounded-xl">
+        <div className="text-[11px] font-semibold uppercase tracking-wider text-secondary">Audit Event Summary</div>
+        <div className="text-sm font-semibold text-primary mt-1">{meaningfulReason}</div>
+      </div>
+
+      {/* Before / After Comparison in 2 or 3 column grids */}
+      {showBefore && (
+        <div className="space-y-2">
+          <h4 className="text-xs font-bold uppercase tracking-wider text-rose-500 flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-rose-500" />
+            Previous State (Before Modification)
+          </h4>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {before.map((f) => (
+              <DetailItem key={"before_" + f.key} label={f.label} value={f.value} />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {showAfter && (
+        <div className="space-y-2">
+          <h4 className="text-xs font-bold uppercase tracking-wider text-emerald-500 flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-emerald-500" />
+            Updated State (After Modification)
+          </h4>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {after.map((f) => (
+              <DetailItem key={"after_" + f.key} label={f.label} value={f.value} tone="green" />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {!showBefore && !showAfter && (
+        <p className="text-xs text-secondary bg-card-inner-bg border border-glass-border rounded-xl p-4">
+          No additional parameter modifications associated with this audit entry.
+        </p>
+      )}
+
+      <div className="flex justify-end pt-2 border-t border-glass-border">
+        <button onClick={onClose} className="btn-soft px-5 py-2 text-xs font-semibold">
+          Close Audit Record
+        </button>
+      </div>
+    </Modal>
+  );
+}
+
+function AuditLogTab({ societyName }) {
+  const [rows, setRows] = useState([]);
+  const [pagination, setPagination] = useState({});
+  const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState("");
+  const [page, setPage] = useState(1);
+  const [selected, setSelected] = useState(null);
+  const [showExportMenu, setShowExportMenu] = useState(false);
+
+  const load = async (p = 1) => {
+    try {
+      setLoading(true);
+      setErr("");
+      const res = await getAuditLogs({ page: p, limit: 20 });
+      setRows(res.data || []);
+      setPagination(res.pagination || {});
+    } catch (e) {
+      console.error("Failed to load financial audit log", e);
+      setErr("Failed to load the financial audit log. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    load();
+  }, []);
+
+  const handleDownloadPDF = () => {
+    if (!rows || rows.length === 0) {
+      toast.info("No audit records to export.");
+      return;
+    }
+    const columns = ["Timestamp", "Action", "Performed By", "Audit Reason", "Highlights"];
+    const tableData = rows.map((r) => [
+      fmtWhen(r.performed_at),
+      ACTION_LABELS[r.action] || r.action,
+      r.performed_by_name || r.performer_name || r.performed_by_role || "Admin",
+      getMeaningfulAuditReason(r),
+      getAuditHighlight(r),
+    ]);
+    exportToPDF({
+      title: `${societyName ? societyName + " — " : ""}Financial Audit Logbook`,
+      columns,
+      rows: tableData,
+      fileName: `Financial_Audit_Log_${new Date().toISOString().slice(0, 10)}`,
+    });
+    toast.success("Financial Audit Log downloaded as PDF.");
+    setShowExportMenu(false);
+  };
+
+  const handleDownloadCSV = () => {
+    if (!rows || rows.length === 0) {
+      toast.info("No audit records to export.");
+      return;
+    }
+    const data = rows.map((r) => ({
+      "Timestamp": fmtWhen(r.performed_at),
+      "Action": ACTION_LABELS[r.action] || r.action,
+      "Performed By": r.performed_by_name || r.performer_name || r.performed_by_role || "Admin",
+      "Audit Reason": getMeaningfulAuditReason(r),
+      "Change Highlights": getAuditHighlight(r),
+    }));
+    exportToExcel({
+      data,
+      fileName: `Financial_Audit_Log_${new Date().toISOString().slice(0, 10)}`,
+      sheetName: "AuditLog",
+    });
+    toast.success("Financial Audit Log exported successfully.");
+    setShowExportMenu(false);
+  };
+
+  const pageBtn = (p) => (
+    <button
+      key={p}
+      onClick={() => {
+        setPage(p);
+        load(p);
+      }}
+      disabled={p === page}
+      className={`w-8 h-8 rounded-lg text-xs font-bold transition-colors ${
+        p === page ? "bg-accent text-white" : "bg-card-inner-bg border border-glass-border text-secondary hover:text-primary"
+      }`}
+    >
+      {p}
+    </button>
+  );
+
+  if (err) {
+    return (
+      <div className="bg-red-500/10 border border-red-500/30 rounded-2xl p-6 text-red-500 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="flex items-center gap-3 text-sm font-medium">{err}</div>
+        <button onClick={() => load(page)} className="btn-primary flex items-center gap-2 px-4 py-2 text-xs font-semibold shrink-0">
+          <MdRefresh size={16} /> Retry
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-card border border-glass-border rounded-2xl shadow-sm p-6 space-y-6">
+      {/* Official Audit Book Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2 border-b border-glass-border">
+        <div>
+          <h2 className="text-base font-bold text-primary flex items-center gap-2">
+            <MdHistoryEdu className="text-accent" size={20} />
+            Official Financial Audit Logbook
+          </h2>
+          <p className="text-xs text-secondary mt-0.5">
+            Immutable, append-only audit trail recording opening balances, expense modifications, and financial adjustments.
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          {/* Download Dropdown */}
+          <div className="relative">
+            <button
+              onClick={() => setShowExportMenu(!showExportMenu)}
+              className="btn-soft flex items-center gap-2 px-4 py-2 text-xs font-bold border border-glass-border hover:border-accent"
+            >
+              <MdDownload size={16} className="text-accent" />
+              <span>Download Logbook</span>
+            </button>
+            {showExportMenu && (
+              <div
+                className="absolute right-0 top-full mt-2 w-48 rounded-xl bg-card border border-glass-border shadow-xl p-1.5 z-50 animate-scaleIn"
+                style={{ background: "var(--modal-bg)", backdropFilter: "blur(16px)" }}
+              >
+                <button
+                  onClick={handleDownloadPDF}
+                  className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold text-primary hover:bg-card-inner-bg transition-colors"
+                >
+                  <MdPictureAsPdf size={16} className="text-rose-500" />
+                  <span>Download PDF (.pdf)</span>
+                </button>
+                <button
+                  onClick={handleDownloadCSV}
+                  className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold text-primary hover:bg-card-inner-bg transition-colors"
+                >
+                  <MdTableChart size={16} className="text-emerald-500" />
+                  <span>Download CSV (.xlsx)</span>
+                </button>
+              </div>
+            )}
+          </div>
+
+          <button onClick={() => load(page)} className="btn-soft flex items-center gap-1.5 px-4 py-2 text-xs font-semibold">
+            <MdRefresh size={16} /> Refresh Log
+          </button>
+        </div>
+      </div>
+
+      {/* Audit Table — Entity column removed, no vertical scrollbars */}
+      <div className="overflow-x-auto">
+        <table className="w-full text-left text-sm">
+          <thead>
+            <tr className="border-b border-glass-border text-xs uppercase tracking-wider text-secondary">
+              <th className="py-3.5 pr-4 font-bold">Timestamp</th>
+              <th className="py-3.5 pr-4 font-bold">Action / Event</th>
+              <th className="py-3.5 pr-4 font-bold">Performed By</th>
+              <th className="py-3.5 pr-4 font-bold">Reason / Notes</th>
+              <th className="py-3.5 pr-4 font-bold">Change Highlights</th>
+              <th className="py-3.5 font-bold text-right">Details</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.length === 0 && (
+              <tr>
+                <td colSpan={6} className="py-12 text-center text-secondary text-sm">
+                  {loading ? "Loading audit records…" : "No financial audit records logged yet."}
+                </td>
+              </tr>
+            )}
+            {rows.map((r) => {
+              const tone = ACTION_TONES[r.action] || "gray";
+              const performer = r.performed_by_name || r.performer_name || r.performed_by_role || "Society Admin";
+              return (
+                <tr
+                  key={r.id}
+                  className={`border-b border-glass-border/60 hover:bg-card-inner-bg/60 transition-colors ${
+                    isOpeningAction(r.action) ? "bg-blue-500/5" : ""
+                  }`}
+                >
+                  <td className="py-3.5 pr-4 text-secondary whitespace-nowrap text-xs font-medium">
+                    {fmtWhen(r.performed_at)}
+                  </td>
+                  <td className="py-3.5 pr-4 whitespace-nowrap">
+                    <span
+                      className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-extrabold uppercase tracking-wide ${
+                        tone === "green"
+                          ? "bg-emerald-500/15 text-emerald-500 border border-emerald-500/30"
+                          : tone === "red"
+                          ? "bg-rose-500/15 text-rose-500 border border-rose-500/30"
+                          : tone === "amber"
+                          ? "bg-amber-500/15 text-amber-600 border border-amber-500/30"
+                          : tone === "purple"
+                          ? "bg-purple-500/15 text-purple-500 border border-purple-500/30"
+                          : tone === "blue"
+                          ? "bg-blue-500/15 text-blue-500 border border-blue-500/30"
+                          : "bg-gray-500/15 text-gray-400 border border-gray-500/30"
+                      }`}
+                    >
+                      {ACTION_LABELS[r.action] || r.action}
+                    </span>
+                  </td>
+                  <td className="py-3.5 pr-4 text-primary font-bold text-xs whitespace-nowrap">
+                    <span className="px-2 py-0.5 rounded-md bg-card-inner-bg border border-glass-border">
+                      {performer}
+                    </span>
+                  </td>
+                  <td className="py-3.5 pr-4 text-secondary max-w-60 truncate font-medium text-xs" title={getMeaningfulAuditReason(r)}>
+                    {getMeaningfulAuditReason(r)}
+                  </td>
+                  <td className="py-3.5 pr-4 text-primary font-bold text-xs max-w-72 truncate">
+                    {getAuditHighlight(r)}
+                  </td>
+                  <td className="py-3.5 text-right whitespace-nowrap">
+                    <button
+                      onClick={() => setSelected(r)}
+                      className="p-2 rounded-xl bg-accent/10 text-accent border border-accent/20 hover:bg-accent hover:text-white transition-all"
+                      title="View full audit record"
+                    >
+                      <MdViewList size={16} />
+                    </button>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      {pagination.totalPages > 1 && (
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-glass-border">
+          <span className="text-xs text-secondary font-medium">
+            Page {pagination.currentPage} of {pagination.totalPages} · {pagination.totalItems} total audit records
+          </span>
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={() => {
+                const p = Math.max(1, page - 1);
+                setPage(p);
+                load(p);
+              }}
+              disabled={page <= 1}
+              className="btn-soft w-8 h-8 flex items-center justify-center text-sm disabled:opacity-40"
+            >
+              <MdChevronLeft size={16} />
+            </button>
+            {Array.from({ length: pagination.totalPages }, (_, i) => pageBtn(i + 1)).slice(
+              Math.max(0, Math.min(page - 1, pagination.totalPages - 5)),
+              Math.max(5, Math.min(page + 4, pagination.totalPages))
+            )}
+            <button
+              onClick={() => {
+                const p = Math.min(pagination.totalPages, page + 1);
+                setPage(p);
+                load(p);
+              }}
+              disabled={page >= pagination.totalPages}
+              className="btn-soft w-8 h-8 flex items-center justify-center text-sm disabled:opacity-40"
+            >
+              <MdChevronRight size={16} />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {selected && <AuditDetailsModal row={selected} societyName={societyName} onClose={() => setSelected(null)} />}
+    </div>
+  );
+}

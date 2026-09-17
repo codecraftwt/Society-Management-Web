@@ -62,6 +62,7 @@ import AdminSetting from "./pages/Admin/AdminSetting";
 import FlatHistory from "./pages/Admin/FlatHistory";
 import MaintenancePage from "./pages/Maintenance/MaintenancePage";
 import RolePermissions from "./pages/Admin/RolePermissions";
+import AdminEmergency from "./pages/Admin/AdminEmergency";
 
 /* === COMMITTEE MEMBER (LIMITED ACCESS) === */
 /* Committee Members reuse the SOCIETY_ADMIN panel (/admin → AdminLayout + shared
@@ -117,6 +118,8 @@ import AccountDashboard from "./pages/Accountant/AccountantDashboard";
 import AccountantReports from "./pages/Accountant/AccountantReports";
 import Floors from "./pages/SuperAdmin/Floors.jsx";
 import TenantManagement from "./pages/Admin/TenantManagement.jsx";
+import Accounting from "./pages/Admin/Accounting";
+import Payments from "./pages/Admin/Payments";
 
 
 function App() {
@@ -176,9 +179,15 @@ function App() {
             <Route path="visitor-logs" element={<VisitorLogs />} />
             <Route path="accountant" element={<Accountant />} />
             <Route path="manage-bills" element={<ManageBill />} />
+            <Route path="payments" element={<Payments />} />
+            <Route path="accounting" element={<Accounting />} />
+            <Route path="expenses" element={<Accounting initialTab="expenses" />} />
+            <Route path="general-ledger" element={<Accounting initialTab="ledger" />} />
+            <Route path="financial-audit-log" element={<Accounting initialTab="audit" />} />
             <Route path="maintenance" element={<MaintenancePage />} />
             <Route path="parking" element={<SuperAdminParking />} />
             <Route path="role-permissions" element={<RolePermissions />} />
+            <Route path="emergency" element={<AdminEmergency />} />
             <Route path="reports" element={<SystemReports />} />
             <Route path="settings" element={<AdminSetting />} />
             <Route path="reports/visitors" element={<SuperAdminVisitorReport />} />
@@ -197,7 +206,7 @@ function App() {
             </Route>
             <Route element={<PermissionRoute module="settings" />}>
               <Route path="settings" element={<AdminSetting />} />
-              <Route path="role-permissions" element={<RolePermissions />} />
+<Route path="role-permissions" element={<RolePermissions />} />
             </Route>
             <Route element={<PermissionRoute module="property" />}>
               <Route path="property" element={<ManageProperty />} />
@@ -214,11 +223,29 @@ function App() {
             <Route element={<PermissionRoute module="complaints" />}>
               <Route path="complaints" element={<Complaint />} />
             </Route>
+            <Route element={<PermissionRoute module="emergency" />}>
+              <Route path="emergency" element={<AdminEmergency />} />
+            </Route>
             <Route element={<PermissionRoute module="accountant" />}>
               <Route path="accountant" element={<Accountant />} />
             </Route>
             <Route element={<PermissionRoute module="manage_bills" />}>
               <Route path="manage-bills" element={<ManageBill />} />
+            </Route>
+            <Route element={<PermissionRoute module="payments" />}>
+              <Route path="payments" element={<Payments />} />
+            </Route>
+            <Route element={<PermissionRoute module="accounting" />}>
+              <Route path="accounting" element={<Accounting />} />
+            </Route>
+            <Route element={<PermissionRoute module="expenses" />}>
+              <Route path="expenses" element={<Accounting initialTab="expenses" />} />
+            </Route>
+            <Route element={<PermissionRoute module="general_ledger" />}>
+              <Route path="general-ledger" element={<Accounting initialTab="ledger" />} />
+            </Route>
+            <Route element={<PermissionRoute module="financial_audit_log" />}>
+              <Route path="financial-audit-log" element={<Accounting initialTab="audit" />} />
             </Route>
             <Route element={<PermissionRoute module="maintenance" />}>
               <Route path="maintenance" element={<MaintenancePage />} />
@@ -324,6 +351,21 @@ function App() {
             <Route index element={<AccountDashboard />} />
             <Route element={<PermissionRoute module="manage_bills" />}>
               <Route path="manage-bills" element={<ManageBillsAccountant />} />
+            </Route>
+            <Route element={<PermissionRoute module="payments" />}>
+              <Route path="payments" element={<Payments />} />
+            </Route>
+            <Route element={<PermissionRoute module="accounting" />}>
+              <Route path="accounting" element={<Accounting />} />
+            </Route>
+            <Route element={<PermissionRoute module="expenses" />}>
+              <Route path="expenses" element={<Accounting initialTab="expenses" />} />
+            </Route>
+            <Route element={<PermissionRoute module="general_ledger" />}>
+              <Route path="general-ledger" element={<Accounting initialTab="ledger" />} />
+            </Route>
+            <Route element={<PermissionRoute module="financial_audit_log" />}>
+              <Route path="financial-audit-log" element={<Accounting initialTab="audit" />} />
             </Route>
             <Route element={<PermissionRoute module="maintenance" />}>
               <Route path="maintenance" element={<MaintenancePage />} />

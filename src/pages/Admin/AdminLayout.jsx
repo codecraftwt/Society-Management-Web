@@ -17,6 +17,12 @@ import {
   MdVerified,
   MdBuild,
   MdEmergency,
+  MdSecurity,
+  MdReceiptLong,
+  MdPayments,
+  MdAttachMoney,
+  MdListAlt,
+  MdHistory,
 } from "react-icons/md";
 import NotificationBell from "../../components/common/NotificationBell";
 import ThemeToggle from "../../components/common/ThemeToggle";
@@ -148,25 +154,46 @@ function AdminLayoutInner() {
       module: "complaints",
     },
     {
-      label: t("adminMenuAccountant"),
+      label: "SOS Management",
+      path: `${base}/emergency`,
+      icon: MdSecurity,
+      group: "COMMUNICATION",
+      module: "emergency",
+    },
+    {
+      label: t("adminMenuAccountant") || "Accountant",
       path: `${base}/accountant`,
       icon: MdAccountBalance,
       group: "FINANCE & BILLS",
       module: "accountant",
     },
     {
-      label: t("adminMenuManageBills"),
+      label: "Account Management",
+      path: `${base}/accounting`,
+      icon: MdReceiptLong,
+      group: "FINANCE & BILLS",
+      module: "accounting",
+    },
+    {
+      label: t("adminMenuManageBills") || "Manage Bills",
       path: `${base}/manage-bills`,
       icon: MdAccountBalance,
       group: "FINANCE & BILLS",
       module: "manage_bills",
     },
     {
-      label: "Maintenance Management",
+      label: "Maintenance",
       path: `${base}/maintenance`,
       icon: MdBuild,
       group: "FINANCE & BILLS",
       module: "maintenance",
+    },
+    {
+      label: "Payments",
+      path: `${base}/payments`,
+      icon: MdPayments,
+      group: "FINANCE & BILLS",
+      module: "payments",
     },
     {
       label: t("adminMenuAmenities"),
@@ -302,6 +329,7 @@ function AdminLayoutInner() {
         brandSubtitle={isCommittee ? (user?.committee_position || user?.designation || "Committee Member") : "Society Admin"}
         base={base}
         drawerExtra={mobileRoleSwitcher}
+        defaultOpenGroups={["FINANCE & BILLS"]}
       />
 
       {/* ── MAIN CONTENT ── */}

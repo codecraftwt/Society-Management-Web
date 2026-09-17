@@ -113,7 +113,8 @@ export default function MyEmergency() {
   const [sending,     setSending]     = useState(false);
   const [isMobile,    setIsMobile]    = useState(window.innerWidth < 768);
 
-  const [form, setForm] = useState({ type: "FIRE", message: "" });
+  const [form, setForm] = useState({ type: "FIRE", message: "", other_reason: "" });
+  const [modalStage, setModalStage] = useState("FORM"); // 'FORM' | 'CONFIRM'
 
   const [myFlats,        setMyFlats]        = useState([]);
   const [selectedFlatId, setSelectedFlatId] = useState("");
@@ -203,18 +204,40 @@ export default function MyEmergency() {
 
   useEffect(() => { load(true); }, [load]);
 
-  const handleSend = async () => {
-    if (sending) return;
-
+  const handleProceedConfirm = () => {
     if (isOwner && myFlats.length > 1 && !selectedFlatId) {
       toast.error("Please select a unit for this emergency.");
       return;
     }
 
+    if (form.type === "OTHER" && !form.other_reason?.trim()) {
+      toast.error("Please provide a reason for selecting Other.");
+      return;
+    }
+
+    setModalStage("CONFIRM");
+  };
+
+  const handleSend = async () => {
+    if (sending) return;
+
     try {
       setSending(true);
 
-      const payload = { type: form.type, message: form.message };
+      const finalMsg = form.message?.trim()
+        ? form.message.trim()
+        : form.type === "OTHER"
+        ? `Other Emergency: ${form.other_reason?.trim()}`
+        : `${form.type} Emergency reported`;
+
+      const payload = {
+        type: form.type,
+        message: finalMsg,
+      };
+
+      if (form.type === "OTHER") {
+        payload.other_reason = form.other_reason?.trim();
+      }
 
       if (isOwner && selectedFlatId) {
         payload.flat_id = selectedFlatId;
@@ -223,12 +246,14 @@ export default function MyEmergency() {
       await API.post("/emergency", payload);
       toast.success(t("emergencySentSuccess"));
       setShowModal(false);
-      setForm({ type: "FIRE", message: "" });
+      setModalStage("FORM");
+      setForm({ type: "FIRE", message: "", other_reason: "" });
 
       if (isOwner && myFlats.length > 1) setSelectedFlatId("");
 
       load(false);
-    } catch {
+    } catch (err) {
+      console.error("Emergency send fail:", err);
       toast.error(t("emergencySentFail"));
     } finally {
       setSending(false);
@@ -569,64 +594,142 @@ export default function MyEmergency() {
               </div>
 
               <div style={{ padding: "20px 22px", display: "flex", flexDirection: "column", gap: 16 }}>
-                {!checkingFlat && renderFlatSection()}
+                {modalStage === "FORM" ? (
+                  <>
+                    {!checkingFlat && renderFlatSection()}
 
-                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                  <label style={{ fontSize: 11, fontWeight: 600, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.06em" }}>
-                    {t("emergencyTypeLabel")}
-                  </label>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-                    {TYPES.map(({ key, label }) => {
-                      const m = TYPE_META[key];
-                      const isSelected = form.type === key;
-                      return (
-                        <button
-                          key={key}
-                          type="button"
-                          className="me-type-btn"
-                          onClick={() => setForm((f) => ({ ...f, type: key }))}
-                          style={{
-                            borderColor: isSelected ? m.border : "var(--glass-border)",
-                            background: isSelected ? m.bg : "var(--card-inner-bg)",
-                          }}
-                        >
-                          <m.icon size={16} style={{ color: m.color, flexShrink: 0 }} />
-                          <span style={{ fontSize: 13, fontWeight: isSelected ? 700 : 500, color: isSelected ? m.color : "var(--text-secondary)" }}>
-                            {label}
-                          </span>
-                        </button>
-                      );
-                    })}
+                    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                      <label style={{ fontSize: 11, fontWeight: 600, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                        {t("emergencyTypeLabel")} <span style={{ color: "#ef4444" }}>*</span>
+                      </label>
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                        {TYPES.map(({ key, label }) => {
+                          const m = TYPE_META[key];
+                          const isSelected = form.type === key;
+                          return (
+                            <button
+                              key={key}
+                              type="button"
+                              className="me-type-btn"
+                              onClick={() => setForm((f) => ({ ...f, type: key }))}
+                              style={{
+                                borderColor: isSelected ? m.border : "var(--glass-border)",
+                                background: isSelected ? m.bg : "var(--card-inner-bg)",
+                              }}
+                            >
+                              <m.icon size={16} style={{ color: m.color, flexShrink: 0 }} />
+                              <span style={{ fontSize: 13, fontWeight: isSelected ? 700 : 500, color: isSelected ? m.color : "var(--text-secondary)" }}>
+                                {label}
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {form.type === "OTHER" && (
+                      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                        <label style={{ fontSize: 11, fontWeight: 600, color: "#ec4899", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                          Specify Reason for Other <span style={{ color: "#ef4444" }}>*</span>
+                        </label>
+                        <textarea
+                          rows={3}
+                          className="input"
+                          placeholder="e.g. Gas leak, Elevator problem, Water pipe burst, Electrical failure..."
+                          value={form.other_reason}
+                          onChange={(e) => setForm((f) => ({ ...f, other_reason: e.target.value }))}
+                          style={{ minHeight: 85, fontSize: 13, padding: "10px 12px", borderRadius: 10, borderColor: "rgba(236,72,153,0.4)", resize: "vertical", lineHeight: 1.5 }}
+                        />
+                      </div>
+                    )}
+
+                    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                      <label style={{ fontSize: 11, fontWeight: 600, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                        {t("emergencyMsgLabel")} (Optional)
+                      </label>
+                      <textarea
+                        className="input"
+                        rows={5}
+                        placeholder={t("emergencyMsgPlaceholder") || "Provide additional details (e.g. Exact location, flat number, injured persons, immediate assistance needed)..."}
+                        value={form.message}
+                        onChange={(e) => setForm((f) => ({ ...f, message: e.target.value }))}
+                        style={{ minHeight: 130, resize: "vertical", fontSize: 13.5, padding: "12px 14px", borderRadius: 10, lineHeight: 1.6 }}
+                      />
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={handleProceedConfirm}
+                      disabled={sending || (isOwner && myFlats.length > 1 && !selectedFlatId)}
+                      className="btn-danger flex items-center justify-center gap-2"
+                      style={{ width: "100%", height: 46 }}
+                    >
+                      <MdSend size={18} /> Review & Continue
+                    </button>
+                  </>
+                ) : (
+                  /* ── CONFIRMATION STAGE ── */
+                  <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                    <div style={{ padding: 14, borderRadius: 12, background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", textAlign: "center" }}>
+                      <p style={{ margin: 0, fontSize: 15, fontWeight: 800, color: "#ef4444" }}>
+                        Confirm Emergency SOS
+                      </p>
+                      <p style={{ margin: "4px 0 0", fontSize: 12, color: "var(--text-secondary)" }}>
+                        Are you sure you want to broadcast this emergency alert?
+                      </p>
+                    </div>
+
+                    <div style={{ background: "var(--card-inner-bg)", padding: 12, borderRadius: 10, border: "1px solid var(--glass-border)", fontSize: 12, display: "flex", flexDirection: "column", gap: 8 }}>
+                      <div style={{ display: "flex", justifyContent: "space-between" }}>
+                        <span style={{ color: "var(--text-secondary)" }}>Emergency Type:</span>
+                        <strong style={{ color: "var(--text-primary)" }}>{form.type}</strong>
+                      </div>
+
+                      {form.type === "OTHER" && form.other_reason && (
+                        <div style={{ display: "flex", justifyContent: "space-between" }}>
+                          <span style={{ color: "var(--text-secondary)" }}>Reason:</span>
+                          <strong style={{ color: "#ec4899" }}>{form.other_reason}</strong>
+                        </div>
+                      )}
+
+                      {form.message && (
+                        <div>
+                          <span style={{ color: "var(--text-secondary)", display: "block", marginBottom: 2 }}>Notes:</span>
+                          <p style={{ margin: 0, color: "var(--text-primary)", fontStyle: "italic" }}>"{form.message}"</p>
+                        </div>
+                      )}
+                    </div>
+
+                    <p style={{ margin: 0, fontSize: 11, color: "#f87171", textAlign: "center", fontWeight: 600 }}>
+                      ⚠️ On-duty security guards and society members will be alerted immediately.
+                    </p>
+
+                    <div style={{ display: "flex", gap: 10, marginTop: 4 }}>
+                      <button
+                        type="button"
+                        onClick={() => setModalStage("FORM")}
+                        disabled={sending}
+                        className="btn-secondary"
+                        style={{ flex: 1, height: 44, borderRadius: 10, fontWeight: 600 }}
+                      >
+                        Back
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleSend}
+                        disabled={sending}
+                        className="btn-danger flex items-center justify-center gap-2"
+                        style={{ flex: 1, height: 44, borderRadius: 10, fontWeight: 800 }}
+                      >
+                        {sending ? (
+                          <><Spinner size={16} /> {t("emergencySending")}</>
+                        ) : (
+                          <><MdSend size={18} /> Confirm & Send SOS</>
+                        )}
+                      </button>
+                    </div>
                   </div>
-                </div>
-
-                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                  <label style={{ fontSize: 11, fontWeight: 600, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.06em" }}>
-                    {t("emergencyMsgLabel")}
-                  </label>
-                  <textarea
-                    className="input"
-                    rows={3}
-                    placeholder={t("emergencyMsgPlaceholder")}
-                    value={form.message}
-                    onChange={(e) => setForm((f) => ({ ...f, message: e.target.value }))}
-                    style={{ resize: "none", fontSize: 13, padding: "10px 12px" }}
-                  />
-                </div>
-
-                <button
-                  type="button"
-                  onClick={handleSend}
-                  disabled={sending || (isOwner && myFlats.length > 1 && !selectedFlatId)}
-                  className="btn-danger flex items-center justify-center gap-2"
-                  style={{ width: "100%", height: 46 }}
-                >
-                  {sending ? (
-                    <><Spinner size={16} /> {t("emergencySending")}</>
-                  ) : (
-                    <><MdSend size={18} /> {t("emergencySendBtn")}</>
-                  )}
-                </button>
+                )}
               </div>
             </div>
           </div>
