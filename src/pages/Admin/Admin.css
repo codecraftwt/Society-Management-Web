@@ -35,11 +35,70 @@ html.role-theme .mc-field:focus {
   border-color: var(--accent);
   box-shadow: 0 0 0 3px var(--accent-soft);
 }
-html.role-theme input.mc-date {
+html.role-theme input.mc-date,
+html.role-theme input[type="date"] {
   color-scheme: dark;
+  background-color: var(--card-inner-bg, rgba(255, 255, 255, 0.05));
+  border: 1.5px solid var(--glass-border, rgba(255, 255, 255, 0.12));
+  color: var(--text-primary, #ffffff);
+  border-radius: 12px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
-html.light.role-theme input.mc-date {
+
+html.light.role-theme input.mc-date,
+html.light.role-theme input[type="date"] {
   color-scheme: light;
+  background-color: #ffffff;
+  border-color: rgba(0, 0, 0, 0.15);
+  color: #0f172a;
+}
+
+html.role-theme input.mc-date:focus,
+html.role-theme input[type="date"]:focus {
+  outline: none;
+  border-color: var(--accent, #818cf8);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25);
+}
+
+/* Default standard single calendar icon on the right */
+html.role-theme input[type="date"]::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 0.7;
+  filter: invert(1);
+  padding: 2px;
+  transition: opacity 0.2s;
+}
+html.role-theme input[type="date"]::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+}
+
+html.light.role-theme input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: none;
+  opacity: 0.6;
+}
+html.light.role-theme input[type="date"]::-webkit-calendar-picker-indicator:hover {
+  opacity: 0.95;
+}
+
+/* For inputs with custom left icon, stretch indicator invisibly so only left icon is visible */
+html.role-theme input[type="date"].pl-9::-webkit-calendar-picker-indicator,
+html.role-theme input[type="date"].pl-10::-webkit-calendar-picker-indicator,
+html.role-theme input.mc-date::-webkit-calendar-picker-indicator {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+  background: transparent;
+  color: transparent;
 }
 
 /* --------------------------------------------------------------------------

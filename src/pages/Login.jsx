@@ -303,6 +303,16 @@ function Login() {
   const [tempToken, setTempToken] = useState(null);
   const [panelPrompt, setPanelPrompt] = useState(null);
 
+  // Panel chooser helpers — committee members & accountants who live in the
+  // society also get the Resident panel (mirrors the mobile app).
+  const promptUser = panelPrompt?.user;
+  const promptRoles = Array.isArray(promptUser?.roles) && promptUser.roles.length
+    ? promptUser.roles
+    : [promptUser?.role].filter(Boolean);
+  const promptHasCommittee = promptRoles.includes("COMMITTEE_MEMBER") || promptRoles.includes("COMMITTEE") || promptUser?.role === "COMMITTEE_MEMBER" || promptUser?.role === "COMMITTEE";
+  const promptHasAccountant = promptRoles.includes("ACCOUNTANT") || promptUser?.role === "ACCOUNTANT";
+  const promptHasResident = true;
+
   const ROUTE_MAP = {
     SUPER_ADMIN: "/superadmin",
     SOCIETY_ADMIN: "/admin",
@@ -336,17 +346,22 @@ function Login() {
   };
 
   const handleVerified = (user, token) => {
-    login(user, token);
+    const roles = Array.isArray(user.roles) && user.roles.length ? user.roles : [user.role].filter(Boolean);
+    const isCommittee = roles.includes("COMMITTEE_MEMBER") || roles.includes("COMMITTEE") || user.role === "COMMITTEE_MEMBER" || user.role === "COMMITTEE";
+    const isAccountant = roles.includes("ACCOUNTANT") || user.role === "ACCOUNTANT";
 
-    const roles = user.roles || [user.role];
-    const isResident = roles.includes("RESIDENT");
-    const isCommittee = roles.includes("COMMITTEE_MEMBER");
-    const isAccountant = roles.includes("ACCOUNTANT");
-
-    if (isResident && (isCommittee || isAccountant)) {
-      setPanelPrompt(user);
+    // Multi-panel users (committee member / accountant) must pick a
+    // panel from a popup first (same as mobile). Login is deferred so PublicRoute does not
+    // redirect away before the popup is shown. Also close the OTP modal so it
+    // does not sit on top of the panel chooser.
+    if (isCommittee || isAccountant) {
+      setStep("credentials");
+      setTempToken(null);
+      setPanelPrompt({ user, token });
       return;
     }
+
+    login(user, token);
 
     if (user.activeRole === "SUPER_ADMIN") {
       localStorage.setItem("superadmin_society_filter", "ALL");
@@ -357,19 +372,33 @@ function Login() {
   };
 
   const enterPanel = async (panelRole) => {
+    if (!panelPrompt) return;
+    const { user, token } = panelPrompt;
+    login(user, token);
+
     if (panelRole === "SUPER_ADMIN") {
       localStorage.setItem("superadmin_society_filter", "ALL");
     }
+
     setPanelPrompt(null);
-    if (panelRole !== panelPrompt?.activeRole) {
+    if (panelRole !== user.activeRole) {
       try {
         await switchRole(panelRole);
       } catch (err) {
         console.error(err);
         toast.error(err.response?.data?.message || "Failed to switch panel");
+        return;
       }
     }
     navigate(ROUTE_MAP[panelRole] || "/", { replace: true });
+  };
+
+  const dismissPanelPrompt = () => {
+    if (!panelPrompt) return;
+    const { user, token } = panelPrompt;
+    login(user, token);
+    setPanelPrompt(null);
+    navigate(ROUTE_MAP[user.activeRole] || "/", { replace: true });
   };
 
   const handleCancelOtp = () => {
@@ -427,7 +456,7 @@ function Login() {
             style={{
               position: "fixed",
               inset: 0,
-              zIndex: 1500,
+              zIndex: 10000,
               background: "rgba(0,0,0,0.65)",
               backdropFilter: "blur(8px)",
               display: "flex",
@@ -435,7 +464,7 @@ function Login() {
               justifyContent: "center",
               padding: 16,
             }}
-            onClick={() => setPanelPrompt(null)}
+            onClick={() => dismissPanelPrompt()}
           >
             <div
               className="animate-scaleIn"
@@ -445,126 +474,60 @@ function Login() {
                 borderRadius: 22,
                 maxWidth: 440,
                 width: "100%",
-                padding: "28px 26px",
+                padding: "24px 24px",
                 boxShadow: "0 25px 60px -12px rgba(0,0,0,0.5)",
                 color: "var(--text-primary)",
               }}
               onClick={(e) => e.stopPropagation()}
             >
-              <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 6 }}>
-                <div
+              <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, marginBottom: 14 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  <div
+                    style={{
+                      width: 44,
+                      height: 44,
+                      borderRadius: 14,
+                      background: "var(--accent-soft, rgba(37,99,235,0.12))",
+                      color: "var(--accent)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      flexShrink: 0,
+                    }}
+                  >
+                    <MdGroups size={24} />
+                  </div>
+                  <div>
+                    <h3 style={{ fontSize: 17, fontWeight: 800, margin: 0, color: "var(--text-primary)" }}>Select Panel</h3>
+                    <p style={{ fontSize: 12, margin: "2px 0 0", color: "var(--text-secondary)" }}>
+                      Choose your workspace to continue
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => dismissPanelPrompt()}
                   style={{
-                    width: 48,
-                    height: 48,
-                    borderRadius: 16,
-                    background: "rgba(37,99,235,0.12)",
-                    color: "var(--accent)",
+                    width: 30,
+                    height: 30,
+                    borderRadius: 8,
+                    border: "1px solid var(--glass-border)",
+                    background: "var(--card-inner-bg)",
+                    color: "var(--text-secondary)",
+                    cursor: "pointer",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
                     flexShrink: 0,
                   }}
+                  title="Close and continue"
                 >
-                  <MdGroups size={26} />
-                </div>
-                <div>
-                  <h3 style={{ fontSize: 18, fontWeight: 800, margin: 0 }}>Select Panel</h3>
-                  <p style={{ fontSize: 12, margin: "4px 0 0", color: "var(--text-secondary)" }}>
-                    Hi {panelPrompt.name} — choose a panel to continue
-                  </p>
-                </div>
+                  ✕
+                </button>
               </div>
 
-              <p style={{ fontSize: 13, color: "var(--text-secondary)", marginBottom: 18, lineHeight: 1.55 }}>
-                Which panel would you like to open?
-              </p>
-
-              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                {(panelPrompt.roles || [panelPrompt.role]).includes("RESIDENT") && (
-                  <button
-                    type="button"
-                    onClick={() => enterPanel("RESIDENT")}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 14,
-                      padding: "14px 16px",
-                      borderRadius: 16,
-                      background: "var(--card-inner-bg, #f5f6fa)",
-                      border: "1px solid var(--glass-border)",
-                      cursor: "pointer",
-                      transition: "all 0.2s",
-                      textAlign: "left",
-                    }}
-                    className="login-panel-option"
-                  >
-                    <div
-                      style={{
-                        width: 40,
-                        height: 40,
-                        minWidth: 40,
-                        borderRadius: 12,
-                        background: "rgba(37,99,235,0.12)",
-                        color: "var(--accent)",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                      }}
-                    >
-                      <MdHome size={20} />
-                    </div>
-                    <div style={{ minWidth: 0 }}>
-                      <p style={{ fontSize: 14, fontWeight: 800, margin: 0 }}>Resident Panel</p>
-                      <p style={{ fontSize: 11, margin: "2px 0 0", color: "var(--text-secondary)" }}>
-                        Bills, complaints, visitors & daily services
-                      </p>
-                    </div>
-                  </button>
-                )}
-
-                {(panelPrompt.roles || [panelPrompt.role]).includes("COMMITTEE_MEMBER") && (
-                  <button
-                    type="button"
-                    onClick={() => enterPanel("COMMITTEE_MEMBER")}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 14,
-                      padding: "14px 16px",
-                      borderRadius: 16,
-                      background: "var(--card-inner-bg, #f5f6fa)",
-                      border: "1px solid var(--glass-border)",
-                      cursor: "pointer",
-                      transition: "all 0.2s",
-                      textAlign: "left",
-                    }}
-                    className="login-panel-option"
-                  >
-                    <div
-                      style={{
-                        width: 40,
-                        height: 40,
-                        minWidth: 40,
-                        borderRadius: 12,
-                        background: "rgba(139,92,246,0.12)",
-                        color: "#8b5cf6",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                      }}
-                    >
-                      <MdGroups size={20} />
-                    </div>
-                    <div style={{ minWidth: 0 }}>
-                      <p style={{ fontSize: 14, fontWeight: 800, margin: 0 }}>Committee Panel</p>
-                      <p style={{ fontSize: 11, margin: "2px 0 0", color: "var(--text-secondary)" }}>
-                        Manage notices, complaints & society operations
-                      </p>
-                    </div>
-                  </button>
-                )}
-
-                {(panelPrompt.roles || [panelPrompt.role]).includes("ACCOUNTANT") && (
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                {promptHasAccountant && (
                   <button
                     type="button"
                     onClick={() => enterPanel("ACCOUNTANT")}
@@ -584,9 +547,9 @@ function Login() {
                   >
                     <div
                       style={{
-                        width: 40,
-                        height: 40,
-                        minWidth: 40,
+                        width: 42,
+                        height: 42,
+                        minWidth: 42,
                         borderRadius: 12,
                         background: "rgba(16,185,129,0.12)",
                         color: "#10b981",
@@ -595,12 +558,96 @@ function Login() {
                         justifyContent: "center",
                       }}
                     >
-                      <MdAccountBalance size={20} />
+                      <MdAccountBalance size={22} />
                     </div>
-                    <div style={{ minWidth: 0 }}>
-                      <p style={{ fontSize: 14, fontWeight: 800, margin: 0 }}>Accountant Panel</p>
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                      <p style={{ fontSize: 14, fontWeight: 800, margin: 0, color: "var(--text-primary)" }}>Accountant Panel</p>
                       <p style={{ fontSize: 11, margin: "2px 0 0", color: "var(--text-secondary)" }}>
-                        Manage bills, payments & society finance
+                        Manage bills, payments, expenses & society finance
+                      </p>
+                    </div>
+                  </button>
+                )}
+
+                {promptHasCommittee && (
+                  <button
+                    type="button"
+                    onClick={() => enterPanel("COMMITTEE_MEMBER")}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 14,
+                      padding: "14px 16px",
+                      borderRadius: 16,
+                      background: "var(--card-inner-bg, #f5f6fa)",
+                      border: "1px solid var(--glass-border)",
+                      cursor: "pointer",
+                      transition: "all 0.2s",
+                      textAlign: "left",
+                    }}
+                    className="login-panel-option"
+                  >
+                    <div
+                      style={{
+                        width: 42,
+                        height: 42,
+                        minWidth: 42,
+                        borderRadius: 12,
+                        background: "rgba(139,92,246,0.12)",
+                        color: "#8b5cf6",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <MdGroups size={22} />
+                    </div>
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                      <p style={{ fontSize: 14, fontWeight: 800, margin: 0, color: "var(--text-primary)" }}>Committee Panel</p>
+                      <p style={{ fontSize: 11, margin: "2px 0 0", color: "var(--text-secondary)" }}>
+                        Manage notices, complaints & society operations
+                      </p>
+                    </div>
+                  </button>
+                )}
+
+                {promptHasResident && (
+                  <button
+                    type="button"
+                    onClick={() => enterPanel("RESIDENT")}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 14,
+                      padding: "14px 16px",
+                      borderRadius: 16,
+                      background: "var(--card-inner-bg, #f5f6fa)",
+                      border: "1px solid var(--glass-border)",
+                      cursor: "pointer",
+                      transition: "all 0.2s",
+                      textAlign: "left",
+                    }}
+                    className="login-panel-option"
+                  >
+                    <div
+                      style={{
+                        width: 42,
+                        height: 42,
+                        minWidth: 42,
+                        borderRadius: 12,
+                        background: "rgba(37,99,235,0.12)",
+                        color: "var(--accent)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <MdHome size={22} />
+                    </div>
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                      <p style={{ fontSize: 14, fontWeight: 800, margin: 0, color: "var(--text-primary)" }}>Resident Panel</p>
+                      <p style={{ fontSize: 11, margin: "2px 0 0", color: "var(--text-secondary)" }}>
+                        Bills, complaints, visitors & daily services
                       </p>
                     </div>
                   </button>

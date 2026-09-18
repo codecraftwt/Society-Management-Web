@@ -4,13 +4,12 @@ import API from "../../services/api";
 import { AuthContext } from "../../context/AuthContext";
 import { toast } from "react-toastify";
 import { hasPermission } from "../../utils/permissions";
+import SlidingTabs from "../../components/common/SlidingTabs";
+import ExpandableSearch from "../../components/common/ExpandableSearch";
 import HoloToggle from "../../components/common/HoloToggle";
 import {
   FaShieldAlt,
   FaUserTie,
-  FaUserShield,
-  FaUsers,
-  FaHome,
   FaCalculator,
   FaSave,
   FaSearch,
@@ -56,36 +55,52 @@ const MODULE_GROUPS = {
 
 const MODULE_META = {
   dashboard: { label: "Dashboard", icon: MdDashboard, desc: "Society overview, KPI summary metrics, and quick statistics" },
-  resident: { label: "Residents & Directory", icon: MdApartment, desc: "Resident profiles, flat mapping, and directory access" },
-  property: { label: "Properties & Flats", icon: MdApartment, desc: "Society blocks, floors, and unit layouts" },
+  resident: { label: "Residents", icon: MdApartment, desc: "Resident profiles, flat mapping, and directory access" },
+  property: { label: "Manage Property", icon: MdApartment, desc: "Society blocks, floors, and unit layouts" },
   parking_slots: { label: "Parking Management", icon: MdOutlineDirectionsCar, desc: "Allocate, inspect, and manage vehicle parking assignments and slots" },
   flat_history: { label: "Flat History", icon: MdOutlineHistory, desc: "Historical occupancy, tenancy, and ownership records" },
-  tenant_management: { label: "Tenant Approvals", icon: MdOutlinePersonAdd, desc: "Review, approve, and manage tenant move-in applications" },
-  guard: { label: "Guards & Security Staff", icon: MdOutlineLocalPolice, desc: "Guard accounts, daily rosters, and shift schedules" },
-  visitor_logs: { label: "Visitor Records", icon: MdOutlineBadge, desc: "Gate check-ins, deliveries, guest activity, and entries" },
-  notice: { label: "Notices & Circulars", icon: MdCampaign, desc: "Broadcast, draft, view, and publish society-wide circulars" },
-  complaints: { label: "Complaints & Helpdesk", icon: MdReportProblem, desc: "Track, discuss, and update maintenance issue tickets" },
-  accountant: { label: "Accountant Roles", icon: MdAccountBalance, desc: "Appoint and manage assigned society accountants" },
-  manage_bills: { label: "Manage Bills & Invoices", icon: MdOutlineReceiptLong, desc: "Create, distribute, and collect utility & maintenance dues" },
+  tenant_management: { label: "Tenant Management", icon: MdOutlinePersonAdd, desc: "Review, approve, and manage tenant move-in applications" },
+  guard: { label: "Guards", icon: MdOutlineLocalPolice, desc: "Guard accounts, daily rosters, and shift schedules" },
+  visitor_logs: { label: "Visitor Logs", icon: MdOutlineBadge, desc: "Gate check-ins, deliveries, guest activity, and entries" },
+  notice: { label: "Notices", icon: MdCampaign, desc: "Broadcast, draft, view, and publish society-wide circulars" },
+  complaints: { label: "Complaints", icon: MdReportProblem, desc: "Track, discuss, and update maintenance issue tickets" },
+  accountant: { label: "Accountant", icon: MdAccountBalance, desc: "Appoint and manage assigned society accountants" },
+  manage_bills: { label: "Manage Bills", icon: MdOutlineReceiptLong, desc: "Create, distribute, and collect utility & maintenance dues" },
   payments: { label: "Payments", icon: MdPayments, desc: "View and confirm resident & online payments against bills" },
   expenses: { label: "Expenses", icon: MdAttachMoney, desc: "Record, edit, and void society money-out expenses" },
   general_ledger: { label: "Cash Book Ledger", icon: MdListAlt, desc: "View the running cash book of credits (income) and debits (money-out)" },
   financial_audit_log: { label: "Financial Audit Log", icon: MdHistory, desc: "View the trail of opening balance, expense, and payment records" },
   accounting: { label: "Account Management", icon: MdOutlineReceiptLong, desc: "Financial overview, balance KPIs, and share of income by source" },
-  maintenance: { label: "Maintenance Management", icon: MdBuild, desc: "Configure recurring maintenance schedules, rates, and dues" },
-  amenities: { label: "Amenities & Facilities", icon: MdBuild, desc: "Configure facilities and manage member slot bookings" },
-  reports: { label: "Analytics & Reports", icon: MdOutlineFolderShared, desc: "Generate and export financial, visitor, and complaint reports" },
-  society_documents: { label: "Documents & Files", icon: MdVerified, desc: "Official bylaws, certificates, circulars, and society records" },
-  emergency: { label: "Emergency & SOS", icon: MdSecurity, desc: "Broadcast SOS alerts and resolve active society emergencies" },
+  maintenance: { label: "Maintenance", icon: MdBuild, desc: "Configure recurring maintenance schedules, rates, and dues" },
+  amenities: { label: "Amenities", icon: MdBuild, desc: "Configure facilities and manage member slot bookings" },
+  reports: { label: "Reports", icon: MdOutlineFolderShared, desc: "Generate and export financial, visitor, and complaint reports" },
+  society_documents: { label: "Document", icon: MdVerified, desc: "Official bylaws, certificates, circulars, and society records" },
+  emergency: { label: "SOS Management", icon: MdSecurity, desc: "Broadcast SOS alerts and resolve active society emergencies" },
   settings: { label: "General Settings", icon: MdSettings, desc: "Configure society preferences and notification defaults" },
 };
 
 const ROLE_TABS = [
-  { key: "COMMITTEE_MEMBER", label: "Committee Member", icon: FaUserTie, color: "#818cf8" },
-  { key: "ACCOUNTANT", label: "Accountant", icon: FaCalculator, color: "#34d399" },
-  { key: "GUARD", label: "Guard", icon: FaUserShield, color: "#38bdf8" },
-  { key: "RESIDENT", label: "Resident", icon: FaUsers, color: "#2dd4bf" },
-  { key: "TENANT", label: "Tenant", icon: FaHome, color: "#e879f9" },
+  { key: "COMMITTEE_MEMBER", label: "Committee Member", icon: FaUserTie, color: "var(--accent, #a05aff)" },
+  { key: "ACCOUNTANT", label: "Accountant", icon: FaCalculator, color: "var(--accent, #a05aff)" },
+];
+
+const ROLE_TAB_ITEMS = [
+  {
+    id: "COMMITTEE_MEMBER",
+    label: "Committee Member",
+    icon: <FaUserTie size={14} className="mr-1" />,
+  },
+  {
+    id: "ACCOUNTANT",
+    label: "Accountant",
+    icon: <FaCalculator size={14} className="mr-1" />,
+  },
+];
+
+const STATUS_FILTER_ITEMS = [
+  { id: "ALL", label: "All" },
+  { id: "ENABLED", label: "Granted" },
+  { id: "DISABLED", label: "Denied" },
 ];
 
 const deepCopy = (obj) => JSON.parse(JSON.stringify(obj));
@@ -391,11 +406,6 @@ export default function RolePermissions() {
   const startIdx = filteredModulesList.length === 0 ? 0 : (safeCurrentPage - 1) * itemsPerPage + 1;
   const endIdx = Math.min(safeCurrentPage * itemsPerPage, filteredModulesList.length);
 
-  const totalEnabled = useMemo(
-    () => Object.values(sectionStates).filter(Boolean).length,
-    [sectionStates]
-  );
-
   const filteredSocieties = useMemo(() => {
     if (!societySearch.trim()) return societies;
     const q = societySearch.toLowerCase();
@@ -412,12 +422,12 @@ export default function RolePermissions() {
           <div
             className="rp-header-icon"
             style={{
-              background: `linear-gradient(135deg, ${selectedRoleMeta?.color || "#6366f1"}33, ${selectedRoleMeta?.color || "#6366f1"}11)`,
-              borderColor: `${selectedRoleMeta?.color || "#6366f1"}55`,
-              color: selectedRoleMeta?.color || "#6366f1",
+              background: "linear-gradient(135deg, rgba(160, 90, 255, 0.22), rgba(160, 90, 255, 0.08))",
+              borderColor: "rgba(160, 90, 255, 0.35)",
+              color: "var(--accent, #a05aff)",
             }}
           >
-            {selectedRoleMeta?.icon ? <selectedRoleMeta.icon size={22} /> : <FaShieldAlt size={22} />}
+            <FaShieldAlt size={22} />
           </div>
           <div className="rp-header-titles">
             <h2 className="rp-header-title">Role & Section Permissions</h2>
@@ -431,12 +441,13 @@ export default function RolePermissions() {
           <span
             className="rp-role-badge"
             style={{
-              background: `${selectedRoleMeta?.color || "#6366f1"}1a`,
-              borderColor: `${selectedRoleMeta?.color || "#6366f1"}44`,
+              background: "rgba(160, 90, 255, 0.12)",
+              borderColor: "rgba(160, 90, 255, 0.3)",
+              color: "var(--accent, #a05aff)",
             }}
           >
-            <span className="rp-role-ic" style={{ background: selectedRoleMeta?.color || "#6366f1" }}>
-              {selectedRoleMeta?.icon ? <selectedRoleMeta.icon size={12} /> : null}
+            <span className="rp-role-ic" style={{ background: "var(--accent, #a05aff)" }}>
+              {selectedRoleMeta?.icon ? <selectedRoleMeta.icon size={12} /> : <FaShieldAlt size={12} />}
             </span>
             <span>{selectedRoleMeta?.label || selectedRole}</span>
           </span>
@@ -459,40 +470,36 @@ export default function RolePermissions() {
         </div>
       )}
 
-      {/* ── CONTROLS: ROLE TABS & TARGET SOCIETY ── */}
-      <div className="rp-controls">
-        <div className="rp-controls-row">
-          {/* Role tabs */}
-          <div className="rp-role-tabs">
-            {ROLE_TABS.map((role) => {
-              const active = selectedRole === role.key;
-              return (
-                <button
-                  key={role.key}
-                  type="button"
-                  onClick={() => setSelectedRole(role.key)}
-                  className={`rp-role-tab${active ? " active" : ""}`}
-                  style={
-                    active
-                      ? {
-                        background: `${role.color}22`,
-                        color: role.color,
-                        borderColor: `${role.color}66`,
-                        boxShadow: `0 6px 18px -8px ${role.color}`,
-                      }
-                      : undefined
-                  }
-                >
-                  <role.icon size={14} />
-                  <span>{role.label}</span>
-                </button>
-              );
-            })}
-          </div>
+      {/* ── CONTROLS TOOLBAR ── */}
+      <div
+        className="rp-controls-bar"
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          flexWrap: "wrap",
+          gap: "12px",
+          padding: "12px 16px",
+          borderRadius: "18px",
+          background: "var(--card-bg)",
+          border: "1px solid var(--glass-border)",
+          boxShadow: "var(--shadow-sm)",
+        }}
+      >
+        {/* Left: Role Switcher SlidingTabs */}
+        <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
+          <SlidingTabs
+            items={ROLE_TAB_ITEMS}
+            value={selectedRole}
+            onChange={setSelectedRole}
+          />
+        </div>
 
-          {/* Theme-compatible Custom Society target dropdown (Super Admin) */}
+        {/* Right: Society Select (Super Admin), Category Dropdown, Status Filters, Expandable Search */}
+        <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap", marginLeft: "auto" }}>
+          {/* Target Society Dropdown (Super Admin) */}
           {isSuperAdmin && (
-            <div ref={societyRef} style={{ position: "relative", minWidth: "260px" }}>
+            <div ref={societyRef} style={{ position: "relative", minWidth: "200px" }}>
               <button
                 type="button"
                 onClick={() => canEdit && setSocietyOpen((prev) => !prev)}
@@ -501,31 +508,34 @@ export default function RolePermissions() {
                   width: "100%",
                   display: "flex",
                   alignItems: "center",
-                  gap: "12px",
-                  padding: "8px 14px",
-                  borderRadius: "14px",
-                  border: `1.5px solid ${societyOpen ? (selectedRoleMeta?.color || "var(--accent)") : "var(--glass-border)"}`,
+                  gap: "10px",
+                  padding: "6px 12px",
+                  borderRadius: "12px",
+                  border: `1.5px solid ${societyOpen ? "var(--accent, #a05aff)" : "var(--glass-border)"}`,
                   background: "var(--card-inner-bg)",
                   color: "var(--text-primary)",
                   cursor: canEdit ? "pointer" : "not-allowed",
                   transition: "all 0.22s cubic-bezier(0.4, 0, 0.2, 1)",
-                  boxShadow: societyOpen
-                    ? "0 6px 22px -4px rgba(99, 102, 241, 0.28)"
-                    : "0 4px 16px -4px rgba(0, 0, 0, 0.15)",
                 }}
               >
                 <div
                   className="rp-society-icon-box"
                   style={{
-                    background: `${selectedRoleMeta?.color || "var(--accent)"}22`,
-                    color: selectedRoleMeta?.color || "var(--accent)",
+                    width: "28px",
+                    height: "28px",
+                    background: "rgba(160, 90, 255, 0.15)",
+                    color: "var(--accent, #a05aff)",
+                    borderRadius: "8px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
                   }}
                 >
-                  <FaBuilding size={14} />
+                  <FaBuilding size={12} />
                 </div>
                 <div className="rp-society-info" style={{ textAlign: "left" }}>
-                  <span className="rp-society-tag">Target Society</span>
-                  <span className="rp-society-display-name">
+                  <span className="rp-society-tag" style={{ fontSize: "9px" }}>Target Society</span>
+                  <span className="rp-society-display-name" style={{ fontSize: "12px" }}>
                     {selectedSocietyId
                       ? societies.find((s) => String(s.id) === String(selectedSocietyId))?.name || "Select Society"
                       : "Choose a Society..."}
@@ -533,8 +543,8 @@ export default function RolePermissions() {
                 </div>
                 <div className="rp-society-arrow-box">
                   <svg
-                    width="14"
-                    height="14"
+                    width="12"
+                    height="12"
                     viewBox="0 0 20 20"
                     fill="currentColor"
                     style={{
@@ -556,7 +566,7 @@ export default function RolePermissions() {
                     top: "calc(100% + 6px)",
                     right: 0,
                     left: 0,
-                    minWidth: "280px",
+                    minWidth: "260px",
                     maxHeight: "320px",
                     background: "var(--card-bg, #1e293b)",
                     border: "1.5px solid var(--glass-border)",
@@ -643,27 +653,17 @@ export default function RolePermissions() {
                               padding: "8px 10px",
                               borderRadius: "10px",
                               border: "none",
-                              background: isSelected ? `${selectedRoleMeta?.color || "var(--accent)"}1c` : "transparent",
-                              color: isSelected ? (selectedRoleMeta?.color || "var(--accent)") : "var(--text-primary)",
+                              background: isSelected ? "rgba(160, 90, 255, 0.16)" : "transparent",
+                              color: isSelected ? "var(--accent, #a05aff)" : "var(--text-primary)",
                               fontSize: "12px",
                               fontWeight: isSelected ? "700" : "600",
                               cursor: "pointer",
                               textAlign: "left",
                               transition: "all 0.15s ease",
                             }}
-                            onMouseEnter={(e) => {
-                              if (!isSelected) {
-                                e.currentTarget.style.background = "var(--card-inner-bg)";
-                              }
-                            }}
-                            onMouseLeave={(e) => {
-                              if (!isSelected) {
-                                e.currentTarget.style.background = "transparent";
-                              }
-                            }}
                           >
                             <div style={{ display: "flex", alignItems: "center", gap: "8px", minWidth: 0 }}>
-                              <FaBuilding size={13} style={{ opacity: isSelected ? 1 : 0.65, flexShrink: 0, color: isSelected ? (selectedRoleMeta?.color || "var(--accent)") : "inherit" }} />
+                              <FaBuilding size={13} style={{ opacity: isSelected ? 1 : 0.65, flexShrink: 0, color: isSelected ? "var(--accent, #a05aff)" : "inherit" }} />
                               <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                                 {soc.name}
                               </span>
@@ -692,215 +692,148 @@ export default function RolePermissions() {
               )}
             </div>
           )}
-        </div>
 
-        {/* Search & filter strip */}
-        <div className="rp-search-strip">
-          <div className="rp-search" style={{ position: "relative" }}>
-            <FaSearch className="rp-search-ic" size={13} />
-            <input
-              type="text"
-              placeholder="Search section name, category, or description..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="rp-search-input"
-              disabled={loading}
-            />
-            {searchQuery && (
-              <button
-                type="button"
-                onClick={() => setSearchQuery("")}
-                className="rp-search-clear"
-                title="Clear search"
+          {/* Theme-compatible Custom Category Dropdown */}
+          <div ref={categoryRef} style={{ position: "relative" }}>
+            <button
+              type="button"
+              onClick={() => setCategoryOpen((prev) => !prev)}
+              className="rp-category-btn"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "8px",
+                padding: "8px 14px",
+                borderRadius: "44px",
+                border: `1px solid ${categoryOpen ? "var(--accent, #a05aff)" : "var(--glass-border)"}`,
+                background: "var(--card-inner-bg)",
+                color: selectedGroup !== "ALL" ? "var(--accent, #a05aff)" : "var(--text-primary)",
+                fontSize: "12px",
+                fontWeight: "600",
+                cursor: "pointer",
+                transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
+                boxShadow: categoryOpen ? "0 4px 16px -2px rgba(160, 90, 255, 0.2)" : "0 2px 6px rgba(0, 0, 0, 0.04)",
+              }}
+            >
+              <FaLayerGroup size={12} style={{ color: "var(--accent, #a05aff)" }} />
+              <span>{selectedGroup === "ALL" ? "All Categories" : selectedGroup}</span>
+              <svg
+                width="12"
+                height="12"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+                style={{
+                  marginLeft: "2px",
+                  color: "var(--text-secondary)",
+                  transform: categoryOpen ? "rotate(180deg)" : "rotate(0deg)",
+                  transition: "transform 0.2s ease",
+                }}
               >
-                ✕
-              </button>
+                <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+              </svg>
+            </button>
+
+            {categoryOpen && (
+              <div
+                className="animate-scaleIn"
+                style={{
+                  position: "absolute",
+                  top: "calc(100% + 6px)",
+                  right: 0,
+                  minWidth: "230px",
+                  background: "var(--card-bg, #1e293b)",
+                  border: "1.5px solid var(--glass-border)",
+                  borderRadius: "14px",
+                  padding: "6px",
+                  boxShadow: "0 16px 36px -8px rgba(0, 0, 0, 0.45)",
+                  zIndex: 100,
+                  backdropFilter: "blur(12px)",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "2px",
+                }}
+              >
+                <div
+                  style={{
+                    padding: "6px 10px 4px 10px",
+                    fontSize: "10px",
+                    fontWeight: "800",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.06em",
+                    color: "var(--text-muted)",
+                  }}
+                >
+                  Filter Category
+                </div>
+
+                {[
+                  { key: "ALL", label: "All Categories", icon: FaLayerGroup },
+                  { key: "Overview & Administration", label: "Overview & Administration", icon: MdDashboard },
+                  { key: "Community & Property", label: "Community & Property", icon: MdApartment },
+                  { key: "Finance & Operations", label: "Finance & Operations", icon: MdOutlineReceiptLong },
+                  { key: "Communication & Support", label: "Communication & Support", icon: MdCampaign },
+                  { key: "Security & Logs", label: "Security & Logs", icon: MdOutlineLocalPolice },
+                  { key: "Reports & Documents", label: "Reports & Documents", icon: MdOutlineFolderShared },
+                ].map((cat) => {
+                  const isSelected = selectedGroup === cat.key;
+                  const IconComp = cat.icon;
+                  return (
+                    <button
+                      key={cat.key}
+                      type="button"
+                      onClick={() => {
+                        setSelectedGroup(cat.key);
+                        setCategoryOpen(false);
+                      }}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        width: "100%",
+                        padding: "8px 10px",
+                        borderRadius: "10px",
+                        border: "none",
+                        background: isSelected ? "rgba(160, 90, 255, 0.16)" : "transparent",
+                        color: isSelected ? "var(--accent, #a05aff)" : "var(--text-primary)",
+                        fontSize: "12px",
+                        fontWeight: isSelected ? "700" : "600",
+                        cursor: "pointer",
+                        textAlign: "left",
+                        transition: "all 0.15s ease",
+                      }}
+                    >
+                      <div style={{ display: "flex", alignItems: "center", gap: "8px", minWidth: 0 }}>
+                        <IconComp size={14} style={{ opacity: isSelected ? 1 : 0.65, flexShrink: 0 }} />
+                        <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          {cat.label}
+                        </span>
+                      </div>
+                      {isSelected && (
+                        <FaCheck size={11} style={{ flexShrink: 0, marginLeft: "6px" }} />
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
             )}
           </div>
 
-          <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
-            {/* Theme-compatible Custom Category Dropdown */}
-            <div ref={categoryRef} style={{ position: "relative" }}>
-              <button
-                type="button"
-                onClick={() => setCategoryOpen((prev) => !prev)}
-                className="rp-category-btn"
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "8px",
-                  padding: "8px 14px",
-                  borderRadius: "12px",
-                  border: `1.5px solid ${categoryOpen ? (selectedRoleMeta?.color || "var(--accent)") : "var(--glass-border)"}`,
-                  background: "var(--card-inner-bg)",
-                  color: "var(--text-primary)",
-                  fontSize: "12px",
-                  fontWeight: "700",
-                  cursor: "pointer",
-                  transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
-                  boxShadow: categoryOpen ? "0 4px 16px -2px rgba(99, 102, 241, 0.2)" : "0 2px 6px rgba(0, 0, 0, 0.04)",
-                }}
-              >
-                <FaLayerGroup size={12} style={{ color: selectedRoleMeta?.color || "var(--accent)" }} />
-                <span>{selectedGroup === "ALL" ? "All Categories" : selectedGroup}</span>
-                <svg
-                  width="12"
-                  height="12"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                  style={{
-                    marginLeft: "2px",
-                    color: "var(--text-secondary)",
-                    transform: categoryOpen ? "rotate(180deg)" : "rotate(0deg)",
-                    transition: "transform 0.2s ease",
-                  }}
-                >
-                  <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
-                </svg>
-              </button>
+          {/* Status Filters SlidingTabs */}
+          <SlidingTabs
+            items={STATUS_FILTER_ITEMS}
+            value={filterMode}
+            onChange={setFilterMode}
+          />
 
-              {categoryOpen && (
-                <div
-                  className="animate-scaleIn"
-                  style={{
-                    position: "absolute",
-                    top: "calc(100% + 6px)",
-                    right: 0,
-                    minWidth: "230px",
-                    background: "var(--card-bg, #1e293b)",
-                    border: "1.5px solid var(--glass-border)",
-                    borderRadius: "14px",
-                    padding: "6px",
-                    boxShadow: "0 16px 36px -8px rgba(0, 0, 0, 0.45)",
-                    zIndex: 100,
-                    backdropFilter: "blur(12px)",
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "2px",
-                  }}
-                >
-                  <div
-                    style={{
-                      padding: "6px 10px 4px 10px",
-                      fontSize: "10px",
-                      fontWeight: "800",
-                      textTransform: "uppercase",
-                      letterSpacing: "0.06em",
-                      color: "var(--text-muted)",
-                    }}
-                  >
-                    Filter Category
-                  </div>
-
-                  {[
-                    { key: "ALL", label: "All Categories", icon: FaLayerGroup },
-                    { key: "Overview & Administration", label: "Overview & Administration", icon: MdDashboard },
-                    { key: "Community & Property", label: "Community & Property", icon: MdApartment },
-                    { key: "Finance & Operations", label: "Finance & Operations", icon: MdOutlineReceiptLong },
-                    { key: "Communication & Support", label: "Communication & Support", icon: MdCampaign },
-                    { key: "Security & Logs", label: "Security & Logs", icon: MdOutlineLocalPolice },
-                    { key: "Reports & Documents", label: "Reports & Documents", icon: MdOutlineFolderShared },
-                  ].map((cat) => {
-                    const isSelected = selectedGroup === cat.key;
-                    const IconComp = cat.icon;
-                    return (
-                      <button
-                        key={cat.key}
-                        type="button"
-                        onClick={() => {
-                          setSelectedGroup(cat.key);
-                          setCategoryOpen(false);
-                        }}
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "space-between",
-                          width: "100%",
-                          padding: "8px 10px",
-                          borderRadius: "10px",
-                          border: "none",
-                          background: isSelected ? `${selectedRoleMeta?.color || "var(--accent)"}1c` : "transparent",
-                          color: isSelected ? (selectedRoleMeta?.color || "var(--accent)") : "var(--text-primary)",
-                          fontSize: "12px",
-                          fontWeight: isSelected ? "700" : "600",
-                          cursor: "pointer",
-                          textAlign: "left",
-                          transition: "all 0.15s ease",
-                        }}
-                        onMouseEnter={(e) => {
-                          if (!isSelected) {
-                            e.currentTarget.style.background = "var(--card-inner-bg)";
-                          }
-                        }}
-                        onMouseLeave={(e) => {
-                          if (!isSelected) {
-                            e.currentTarget.style.background = "transparent";
-                          }
-                        }}
-                      >
-                        <div style={{ display: "flex", alignItems: "center", gap: "8px", minWidth: 0 }}>
-                          <IconComp size={14} style={{ opacity: isSelected ? 1 : 0.65, flexShrink: 0 }} />
-                          <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                            {cat.label}
-                          </span>
-                        </div>
-                        {isSelected && (
-                          <FaCheck size={11} style={{ flexShrink: 0, marginLeft: "6px" }} />
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-
-            <div className="rp-filters">
-              {[
-                { id: "ALL", label: "All" },
-                { id: "ENABLED", label: "Granted" },
-                { id: "DISABLED", label: "Denied" },
-              ].map((mode) => (
-                <button
-                  key={mode.id}
-                  type="button"
-                  onClick={() => setFilterMode(mode.id)}
-                  className={`rp-filter-btn${filterMode === mode.id ? " active" : ""}`}
-                >
-                  {mode.label}
-                </button>
-              ))}
-            </div>
-          </div>
+          {/* Expandable Open/Closed Search */}
+          <ExpandableSearch
+            placeholder="Search sections..."
+            value={searchQuery}
+            onChange={setSearchQuery}
+            onClear={() => setSearchQuery("")}
+            maxWidth={260}
+          />
         </div>
-      </div>
-
-      {/* ── SUMMARY STRIP ── */}
-      <div className="rp-summary">
-        <div className="rp-summary-item">
-          <span className="rp-summary-key">Enabled Sections</span>
-          <span className="rp-summary-val" style={{ color: selectedRoleMeta?.color }}>
-            {totalEnabled} / {flatModuleList.length}
-          </span>
-        </div>
-        <div className="rp-summary-divider" />
-        <div className="rp-summary-item">
-          <span className="rp-summary-key">Target Role</span>
-          <span className="rp-summary-val">{selectedRoleMeta?.label || selectedRole}</span>
-        </div>
-        {isSuperAdmin && (
-          <>
-            <div className="rp-summary-divider" />
-            <div className="rp-summary-item">
-              <span className="rp-summary-key">Society</span>
-              <span className="rp-summary-val">
-                {selectedSocietyId
-                  ? societies.find((s) => String(s.id) === String(selectedSocietyId))?.name ||
-                  `#${selectedSocietyId}`
-                  : "—"}
-              </span>
-            </div>
-          </>
-        )}
       </div>
 
       {/* ── PERMISSIONS TABLE ── */}
@@ -930,7 +863,7 @@ export default function RolePermissions() {
             borderRadius: "18px",
             overflow: "hidden",
             boxShadow: "0 8px 30px rgba(0, 0, 0, 0.12)",
-            marginTop: "1.5rem",
+            marginTop: "0.5rem",
           }}
         >
           <div className="overflow-x-auto">
@@ -1055,7 +988,7 @@ export default function RolePermissions() {
                               background: isEnabled ? "#10b981" : "#64748b",
                             }}
                           />
-                          {isEnabled ? "Access Granted" : "Access Denied"}
+                          {isEnabled ? "Granted" : "Denied"}
                         </span>
                       </td>
 

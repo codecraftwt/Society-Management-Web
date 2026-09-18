@@ -11,6 +11,7 @@ import {
   MdOutlineInbox, MdReceiptLong,
   MdCheckCircle, MdSchedule, MdPayments,
   MdChevronLeft, MdChevronRight, MdCalendarMonth,
+  MdVisibility, MdHome, MdInfo,
 } from "react-icons/md";
 import GlobalButton from "../../components/common/GlobalButton";
 import GlobalModal from "../../components/common/GlobalModal";
@@ -18,7 +19,21 @@ import GlobalConfirmDialog from "../../components/common/GlobalConfirmDialog";
 import GlobalBadge from "../../components/common/GlobalBadge";
 import Select from "../../components/common/Select";
 import SlidingTabs from "../../components/common/SlidingTabs";
+import ExpandableSearch from "../../components/common/ExpandableSearch";
 import { BILL_CATEGORIES } from "../Admin/ManageBill";
+
+export const BILL_TYPE_FILTERS = [
+  { value: "ALL", label: "All Bill Types" },
+  { value: "MAINTENANCE", label: "🛠️ Maintenance" },
+  { value: "ELECTRICITY", label: "⚡ Electricity" },
+  { value: "WATER", label: "💧 Water" },
+  { value: "GAS", label: "🔥 Gas" },
+  { value: "PARKING", label: "🚗 Parking" },
+  { value: "SECURITY", label: "🛡️ Security" },
+  { value: "AMENITIES", label: "🏊 Amenities" },
+  { value: "DONATION", label: "🤝 Donation" },
+  { value: "OTHER", label: "📝 Other" },
+];
 
 /* ── helpers ── */
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -217,12 +232,20 @@ function BillStatus({ status, t }) {
   return <GlobalBadge variant="warning" icon={MdSchedule}>{t("billPending") || "Pending"}</GlobalBadge>;
 }
 
-/* ── Delete & Confirm controls ── */
-function RowActions({ bill, onDeleteClick, handleConfirmPayment, confirmingId, t }) {
-  if (bill.status === "PAID") return <span className="text-xs text-secondary opacity-30">—</span>;
-
+/* ── Delete, Details & Confirm controls ── */
+function RowActions({ bill, onDetailsClick, onDeleteClick, handleConfirmPayment, confirmingId, t }) {
   return (
     <div className="flex items-center gap-2 flex-wrap">
+      <GlobalButton
+        variant="view"
+        size="sm"
+        icon={MdVisibility}
+        onClick={() => onDetailsClick(bill)}
+        title="View Bill & Payment Details"
+      >
+        Details
+      </GlobalButton>
+
       {bill.status === "PENDING_VERIFICATION" && (
         <GlobalButton
           variant="primary"
@@ -232,17 +255,20 @@ function RowActions({ bill, onDeleteClick, handleConfirmPayment, confirmingId, t
           onClick={() => handleConfirmPayment(bill.id)}
           title="Confirm resident payment and send Web/Mobile notification"
         >
-          {confirmingId === bill.id ? "Confirming..." : "Confirm Payment"}
+          {confirmingId === bill.id ? "Confirming..." : "Confirm"}
         </GlobalButton>
       )}
-      <GlobalButton
-        variant="delete"
-        size="sm"
-        icon={MdDelete}
-        onClick={() => onDeleteClick(bill.id)}
-      >
-        {t("billDelete") || "Delete"}
-      </GlobalButton>
+
+      {bill.status !== "PAID" && (
+        <GlobalButton
+          variant="delete"
+          size="sm"
+          icon={MdDelete}
+          onClick={() => onDeleteClick(bill.id)}
+        >
+          {t("billDelete") || "Delete"}
+        </GlobalButton>
+      )}
     </div>
   );
 }
@@ -279,6 +305,8 @@ export default function ManageBillsAccountant() {
   /* ── Search & filter ── */
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("ALL");
+  const [filterType, setFilterType] = useState("ALL");
+  const [viewBill, setViewBill] = useState(null);
   const debSearch = useDebounce(search, 500);
 
   /* ── Create form ── */
@@ -319,13 +347,14 @@ export default function ManageBillsAccountant() {
   /* ────────────────────────────────────
      LOAD BILLS — backend paginated
   ──────────────────────────────────── */
-  const loadBills = useCallback(async (pg, q, filter, isInit = false) => {
+  const loadBills = useCallback(async (pg, q, filter, type, isInit = false) => {
     isInit ? setInitialLoad(true) : setFetching(true);
     try {
       const params = new URLSearchParams({
         page: pg,
         limit: LIMIT,
         filter,
+        ...(type && type !== "ALL" ? { type } : {}),
         ...(q ? { search: q } : {}),
       });
       const res = await API.get(`/bills/society?${params}`);
@@ -349,22 +378,28 @@ export default function ManageBillsAccountant() {
   };
 
   /* ── Initial load ── */
-  useEffect(() => { loadBills(1, "", "ALL", true); }, [loadBills]);
+  useEffect(() => { loadBills(1, "", "ALL", "ALL", true); }, [loadBills]);
   useEffect(() => { loadFlats(); }, []);
 
   /* ── Re-fetch on search change ── */
   useEffect(() => {
     if (initialLoad) return;
-    loadBills(1, debSearch, filterStatus);
+    loadBills(1, debSearch, filterStatus, filterType);
   }, [debSearch]);
 
-  /* ── Re-fetch on filter change ── */
+  /* ── Re-fetch on status filter change ── */
   const handleFilterChange = (f) => {
     setFilterStatus(f);
-    loadBills(1, debSearch, f);
+    loadBills(1, debSearch, f, filterType);
   };
 
-  const handlePageChange = (p) => loadBills(p, debSearch, filterStatus);
+  /* ── Re-fetch on type filter change ── */
+  const handleTypeChange = (tVal) => {
+    setFilterType(tVal);
+    loadBills(1, debSearch, filterStatus, tVal);
+  };
+
+  const handlePageChange = (p) => loadBills(p, debSearch, filterStatus, filterType);
 
   /* ── Create ── */
   const handleOpenCreate = () => {
@@ -642,31 +677,39 @@ export default function ManageBillsAccountant() {
               onChange={e => setFormData({ ...formData, amount: e.target.value })} />
           </div>
 
-          {/* 7. Month */}
+          {/* Issue Date */}
           <div>
-            <Label>{t("billMonthLabel") || "Billing Month"}</Label>
-            <BillingMonthPicker
-              value={formData.billing_month}
-              onChange={(month) => setFormData({ ...formData, billing_month: month })}
-              required
-            />
+            <Label>Issue Date *</Label>
+            <div className="relative flex items-center mt-1">
+              <input type="date" className="input h-11 w-full px-3"
+                value={formData.issue_date}
+                required
+                onChange={e => {
+                  const dateVal = e.target.value;
+                  let computedMonth = formData.billing_month;
+                  if (dateVal) {
+                    try {
+                      const [yr, mo] = dateVal.split("-");
+                      const d = new Date(parseInt(yr, 10), parseInt(mo, 10) - 1, 1);
+                      computedMonth = d.toLocaleString("en-US", { month: "long", year: "numeric" });
+                    } catch {
+                      computedMonth = formData.billing_month;
+                    }
+                  }
+                  setFormData({ ...formData, issue_date: dateVal, billing_month: computedMonth });
+                }} />
+            </div>
           </div>
 
-          {/* 8. Issue Date */}
+          {/* Due Date (Last Pay Date) */}
           <div>
-            <Label>Issue Date</Label>
-            <input type="date" className="input h-11 w-full"
-              value={formData.issue_date}
-              onChange={e => setFormData({ ...formData, issue_date: e.target.value })} />
-          </div>
-
-          {/* 9. Last Pay Date */}
-          <div className="col-span-2">
-            <Label>Last Pay Date</Label>
-            <input type="date" className="input h-11 w-full"
-              value={formData.last_pay_date}
-              min={formData.issue_date || undefined}
-              onChange={e => setFormData({ ...formData, last_pay_date: e.target.value })} />
+            <Label>Due Date (Last Pay Date)</Label>
+            <div className="relative flex items-center mt-1">
+              <input type="date" className="input h-11 w-full px-3"
+                value={formData.last_pay_date}
+                min={formData.issue_date || undefined}
+                onChange={e => setFormData({ ...formData, last_pay_date: e.target.value })} />
+            </div>
           </div>
 
           <div className="flex items-center justify-end gap-3 col-span-2 mt-2 pt-3 border-t" style={{ borderColor: "var(--glass-border)" }}>
@@ -685,35 +728,35 @@ export default function ManageBillsAccountant() {
 
         {/* Toolbar */}
         <div className="mb-bills-toolbar">
-          <div className="mb-bills-toolbar__top">
+          <div className="mb-bills-toolbar__top flex flex-col md:flex-row md:items-center justify-between gap-3">
             <span className="mb-bills-toolbar__title">
               {t("billSocietyBills")}
               {!initialLoad && (
                 <span className="mb-bills-toolbar__count">
                   — {totalItems} {filterStatus !== "ALL" ? filterStatus.toLowerCase() : ""} {t("billCount")}
+                  {filterType !== "ALL" ? ` · ${filterType}` : ""}
                   {search ? ` matching "${search}"` : ""}
                 </span>
               )}
             </span>
 
-            <div className="search-input-wrap mb-bills-toolbar__search">
-              <MdSearch size={15} className="search-input-icon" />
-              <input
-                key="accountant-manage-bills-search"
-                className="input h-10 w-full pl-10 pr-8"
+            <div className="flex items-center gap-2.5 flex-wrap sm:flex-nowrap">
+              <Select
+                className="input h-10 text-xs font-semibold"
+                style={{ minWidth: 155 }}
+                value={filterType}
+                onChange={e => handleTypeChange(e.target.value)}
+              >
+                {BILL_TYPE_FILTERS.map(tf => (
+                  <option key={tf.value} value={tf.value}>{tf.label}</option>
+                ))}
+              </Select>
+
+              <ExpandableSearch
                 placeholder={t("billSearch")}
                 value={search}
-                onChange={e => setSearch(e.target.value)}
+                onChange={setSearch}
               />
-              {fetching && !initialLoad ? (
-                <div style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)" }}>
-                  <Spinner size={13} />
-                </div>
-              ) : search ? (
-                <button className="search-input-clear" onClick={() => setSearch("")}>
-                  <MdClose size={13} />
-                </button>
-              ) : null}
             </div>
           </div>
 
@@ -753,7 +796,7 @@ export default function ManageBillsAccountant() {
             <MdSearch size={36} className="opacity-20" />
             <p className="text-sm">{t("billNoMatch")}</p>
             <button className="text-xs font-semibold text-accent hover:underline"
-              onClick={() => { setSearch(""); handleFilterChange("ALL"); }}>
+              onClick={() => { setSearch(""); handleFilterChange("ALL"); handleTypeChange("ALL"); }}>
               {t("billClearFilters")}
             </button>
           </div>
@@ -787,7 +830,14 @@ export default function ManageBillsAccountant() {
                       <p className="text-xs font-semibold" style={{ color: "var(--text-primary)" }}>{b.Flat?.User?.name || "NA"}</p>
                     </div>
                   </div>
-                  <RowActions bill={b} onDeleteClick={setConfirmDeleteId} handleConfirmPayment={handleConfirmPayment} confirmingId={confirmingId} t={t} />
+                  <RowActions
+                    bill={b}
+                    onDetailsClick={setViewBill}
+                    onDeleteClick={setConfirmDeleteId}
+                    handleConfirmPayment={handleConfirmPayment}
+                    confirmingId={confirmingId}
+                    t={t}
+                  />
                 </div>
               </div>
             ))}
@@ -816,7 +866,10 @@ export default function ManageBillsAccountant() {
                   <td>
                     <div className="flex items-center gap-3">
                       <div style={{ width: 3, height: 32, borderRadius: 99, flexShrink: 0, background: b.status === "PAID" ? "linear-gradient(180deg, var(--success), var(--accent))" : "linear-gradient(180deg, var(--warning), var(--danger))" }} />
-                      <span className="font-semibold text-sm" style={{ color: "var(--text-primary)" }}>{b.title}</span>
+                      <div>
+                        <span className="font-semibold text-sm block" style={{ color: "var(--text-primary)" }}>{b.title}</span>
+                        {b.other_bill_type && <span className="text-[10px] text-secondary font-medium block mt-0.5">{b.other_bill_type}</span>}
+                      </div>
                     </div>
                   </td>
                   <td><span className="flat-chip">{b.Flat?.flat_number || "—"}{b.Flat?.Block?.name ? <span style={{ opacity: 0.55 }}> · {b.Flat.Block.name}</span> : null}</span></td>
@@ -825,7 +878,14 @@ export default function ManageBillsAccountant() {
                   <td><span className="bill-table-amount">₹{Number(b.amount).toLocaleString("en-IN")}</span></td>
                   <td><BillStatus status={b.status} t={t} /></td>
                   <td onClick={e => e.stopPropagation()}>
-                    <RowActions bill={b} onDeleteClick={setConfirmDeleteId} handleConfirmPayment={handleConfirmPayment} confirmingId={confirmingId} t={t} />
+                    <RowActions
+                      bill={b}
+                      onDetailsClick={setViewBill}
+                      onDeleteClick={setConfirmDeleteId}
+                      handleConfirmPayment={handleConfirmPayment}
+                      confirmingId={confirmingId}
+                      t={t}
+                    />
                   </td>
                 </tr>
               ))}
@@ -849,6 +909,188 @@ export default function ManageBillsAccountant() {
           </div>
         )}
       </div>
+
+      {/* ── BILL & PAYMENT DETAILS MODAL ── */}
+      <GlobalModal
+        isOpen={Boolean(viewBill)}
+        onClose={() => setViewBill(null)}
+        title="Bill & Payment Details"
+        subtitle={viewBill?.title}
+        icon={MdReceiptLong}
+        maxWidth="max-w-2xl"
+      >
+        {viewBill && (() => {
+          const payment = viewBill.Payments?.[0];
+          const isPaid = viewBill.status === "PAID";
+          const isAwaiting = viewBill.status === "PENDING_VERIFICATION";
+          const payerName = payment?.resident?.name || viewBill.Flat?.User?.name || "Resident";
+          const payerPhone = payment?.resident?.phone || viewBill.Flat?.User?.phone;
+          const payerEmail = payment?.resident?.email || viewBill.Flat?.User?.email;
+          const purposeLabel = viewBill.type === "MAINTENANCE"
+            ? "Society Maintenance Fee"
+            : (viewBill.bill_category === "OTHER" ? (viewBill.other_bill_type || "Other Expense") : (viewBill.bill_category || "Utility Bill"));
+
+          return (
+            <div className="space-y-4">
+              {/* Top Banner with Amount & Status */}
+              <div
+                className="p-4 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                style={{
+                  background: "var(--card-inner-bg, rgba(255,255,255,0.04))",
+                  borderColor: "var(--glass-border)",
+                }}
+              >
+                <div>
+                  <span className="text-[11px] font-bold text-secondary uppercase tracking-wider block mb-1">Total Bill Amount</span>
+                  <p className="text-2xl sm:text-3xl font-bold text-accent" style={{ letterSpacing: "-0.02em" }}>
+                    ₹{Number(viewBill.amount).toLocaleString("en-IN")}
+                  </p>
+                  <p className="text-xs text-secondary mt-1">Month: <strong style={{ color: "var(--text-primary)" }}>{viewBill.billing_month}</strong></p>
+                </div>
+                <div className="flex flex-col items-start sm:items-end gap-1.5">
+                  <span className="text-[11px] font-bold text-secondary uppercase tracking-wider">Status</span>
+                  <BillStatus status={viewBill.status} t={t} />
+                </div>
+              </div>
+
+              {/* Grid: Bill Information */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {/* Flat & Resident Details */}
+                <div className="p-3.5 rounded-xl border" style={{ background: "var(--card-inner-bg)", borderColor: "var(--glass-border)" }}>
+                  <p className="text-xs font-bold text-secondary uppercase tracking-wider mb-2.5 flex items-center gap-1.5">
+                    <MdHome size={15} /> Unit & Resident
+                  </p>
+                  <div className="space-y-1.5 text-xs">
+                    <div className="flex justify-between">
+                      <span className="text-secondary">Flat Unit:</span>
+                      <span className="font-semibold" style={{ color: "var(--text-primary)" }}>
+                        {viewBill.Flat?.flat_number || "—"} {viewBill.Flat?.Block?.name ? `(${viewBill.Flat.Block.name})` : ""}
+                      </span>
+                    </div>
+                    {viewBill.Flat?.Floor?.floor_number !== undefined && (
+                      <div className="flex justify-between">
+                        <span className="text-secondary">Floor:</span>
+                        <span className="font-semibold" style={{ color: "var(--text-primary)" }}>Floor {viewBill.Flat.Floor.floor_number}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between">
+                      <span className="text-secondary">Resident:</span>
+                      <span className="font-semibold" style={{ color: "var(--text-primary)" }}>{viewBill.Flat?.User?.name || "Unassigned"}</span>
+                    </div>
+                    {viewBill.Flat?.User?.phone && (
+                      <div className="flex justify-between">
+                        <span className="text-secondary">Contact:</span>
+                        <span className="font-semibold" style={{ color: "var(--text-primary)" }}>{viewBill.Flat.User.phone}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Purpose & Schedule Details */}
+                <div className="p-3.5 rounded-xl border" style={{ background: "var(--card-inner-bg)", borderColor: "var(--glass-border)" }}>
+                  <p className="text-xs font-bold text-secondary uppercase tracking-wider mb-2.5 flex items-center gap-1.5">
+                    <MdReceiptLong size={15} /> Purpose & Dates
+                  </p>
+                  <div className="space-y-1.5 text-xs">
+                    <div className="flex justify-between">
+                      <span className="text-secondary">Bill Type:</span>
+                      <span className="font-semibold text-accent">{purposeLabel}</span>
+                    </div>
+                    {viewBill.other_bill_type && (
+                      <div className="flex justify-between">
+                        <span className="text-secondary">Specified For:</span>
+                        <span className="font-semibold" style={{ color: "var(--text-primary)" }}>{viewBill.other_bill_type}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between">
+                      <span className="text-secondary">Issue Date:</span>
+                      <span className="font-semibold" style={{ color: "var(--text-primary)" }}>
+                        {viewBill.issue_date ? new Date(viewBill.issue_date).toLocaleDateString("en-IN") : "—"}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-secondary">Due Date:</span>
+                      <span className="font-semibold" style={{ color: "var(--text-primary)" }}>
+                        {viewBill.due_date || viewBill.last_pay_date ? new Date(viewBill.due_date || viewBill.last_pay_date).toLocaleDateString("en-IN") : "—"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Payment Receipt / Verification Breakdown */}
+              <div className="p-4 rounded-xl border" style={{ background: "var(--card-inner-bg)", borderColor: "var(--glass-border)" }}>
+                <p className="text-xs font-bold text-secondary uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                  <MdPayments size={16} /> Payment Breakdown & Who Paid
+                </p>
+
+                {isPaid || isAwaiting || payment ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                    <div className="space-y-2">
+                      <div>
+                        <span className="text-secondary block">Paid By Resident</span>
+                        <span className="font-bold text-sm" style={{ color: "var(--text-primary)" }}>{payerName}</span>
+                        {(payerPhone || payerEmail) && (
+                          <span className="text-[11px] text-secondary block mt-0.5">{[payerPhone, payerEmail].filter(Boolean).join(" · ")}</span>
+                        )}
+                      </div>
+                      <div>
+                        <span className="text-secondary block">Purpose Paid For</span>
+                        <span className="font-semibold text-accent">{purposeLabel}</span>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <div className="flex justify-between">
+                        <span className="text-secondary">Payment Method:</span>
+                        <span className="font-semibold" style={{ color: "var(--text-primary)" }}>{payment?.payment_mode || "Online / UPI Demo"}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-secondary">Amount Paid:</span>
+                        <span className="font-bold text-green-400">₹{Number(payment?.amount || viewBill.amount).toLocaleString("en-IN")}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-secondary">Payment Timestamp:</span>
+                        <span className="font-semibold" style={{ color: "var(--text-primary)" }}>
+                          {payment?.payment_date ? new Date(payment.payment_date).toLocaleString("en-IN") : "Confirmed"}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="py-4 text-center text-xs text-secondary">
+                    <p className="font-semibold mb-1">⏳ Payment Pending</p>
+                    <p className="opacity-80">Resident has not submitted payment for this bill yet.</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Modal Footer Actions */}
+              <div className="flex items-center justify-end gap-2.5 pt-2 border-t" style={{ borderColor: "var(--glass-border)" }}>
+                {isAwaiting && (
+                  <GlobalButton
+                    variant="primary"
+                    icon={MdCheckCircle}
+                    loading={confirmingId === viewBill.id}
+                    onClick={async () => {
+                      await handleConfirmPayment(viewBill.id);
+                      setViewBill(null);
+                    }}
+                  >
+                    Confirm Payment
+                  </GlobalButton>
+                )}
+                <GlobalButton
+                  variant="cancel"
+                  onClick={() => setViewBill(null)}
+                >
+                  Close
+                </GlobalButton>
+              </div>
+            </div>
+          );
+        })()}
+      </GlobalModal>
 
       {/* ── DELETE CONFIRM DIALOG ── */}
       <GlobalConfirmDialog

@@ -466,6 +466,39 @@ html.role-theme .rd-skeleton {
   background: var(--card-inner-bg) !important;
 }
 
+/* Documents — search toolbar alignment */
+.rd-root .ge-toolbar {
+  align-items: center;
+}
+.rd-root .ge-toolbar .ge-search-wrap {
+  flex: 1 1 220px;
+  max-width: 100%;
+  min-width: 200px;
+}
+@media (min-width: 768px) {
+  .rd-root .ge-toolbar .ge-search-wrap {
+    max-width: 340px;
+  }
+  .rd-root .ge-toolbar .gp-filter-tabs.sliding-tabs {
+    margin-left: auto;
+  }
+}
+@media (max-width: 767px) {
+  .rd-root .ge-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .rd-root .ge-toolbar .ge-search-wrap {
+    min-width: unset;
+  }
+  .rd-root .ge-toolbar .gp-filter-tabs.sliding-tabs {
+    display: flex;
+    width: 100%;
+    max-width: 100%;
+    align-self: stretch;
+  }
+}
+
 /* --------------------------------------------------------------------------
    Settings
    -------------------------------------------------------------------------- */

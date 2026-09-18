@@ -15,6 +15,7 @@ import Select from "../../components/common/Select";
 import GlobalButton from "../../components/common/GlobalButton";
 import GlobalModal from "../../components/common/GlobalModal";
 import SlidingTabs from "../../components/common/SlidingTabs";
+import HoloToggle from "../../components/common/HoloToggle";
 import { isCommitteeMember, hasPermission } from "../../utils/permissions";
 import "../Admin/Admin.css";
 
@@ -394,44 +395,13 @@ function ConfigForm({ initial, onClose, onSaved, isSuperAdmin = false, societies
             style={{ height: 44, fontSize: 13, fontWeight: 600, borderColor: "var(--input-border)", borderRadius: 10, background: "var(--input-bg)" }}
           />
         </div>
-        <div style={{ display: "flex", alignItems: "center", paddingBottom: 4 }}>
+        <div style={{ display: "flex", alignItems: "center", minHeight: 44, paddingBottom: 4 }}>
           <label
             className="flex items-center gap-2.5 cursor-pointer select-none"
             role="switch"
             aria-checked={isActive}
           >
-            <button
-              type="button"
-              onClick={() => setIsActive(!isActive)}
-              role="switch"
-              aria-checked={!!isActive}
-              style={{
-                width: 40,
-                height: 22,
-                borderRadius: 999,
-                padding: 0,
-                border: "none",
-                cursor: "pointer",
-                position: "relative",
-                background: isActive ? "var(--accent)" : "var(--text-tertiary)",
-                transition: "background 0.2s ease",
-                flexShrink: 0,
-              }}
-            >
-              <span
-                style={{
-                  position: "absolute",
-                  top: 3,
-                  left: isActive ? 21 : 3,
-                  width: 16,
-                  height: 16,
-                  borderRadius: 999,
-                  background: "#fff",
-                  boxShadow: "0 1px 2px rgba(0,0,0,0.25)",
-                  transition: "left 0.2s ease",
-                }}
-              />
-            </button>
+            <HoloToggle checked={!!isActive} onChange={setIsActive} showLabel={false} />
             <span className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>Active</span>
           </label>
         </div>
@@ -478,30 +448,39 @@ function GenerateModal({ configs, onClose, onGenerated }) {
   const billingMonth = currentMonthLabel();
   const [issueDate, setIssueDate] = useState(() => new Date().toISOString().split("T")[0]);
   const [dueDate, setDueDate] = useState(getDefaultDueDate());
-  const [selected, setSelected] = useState(() =>
-    configs.filter((c) => c.is_active).map((c) => c.id)
-  );
+  const [selectedRateId, setSelectedRateId] = useState(() => {
+    const activeFirst = configs.find((c) => c.is_active);
+    return activeFirst ? activeFirst.id : "";
+  });
   const [generating, setGenerating] = useState(false);
   const [preview, setPreview] = useState(null);
   const [previewLoading, setPreviewLoading] = useState(true);
   const [searchResident, setSearchResident] = useState("");
 
-  const toggle = (id) =>
-    setSelected((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]));
+  const derivedBillingMonth = useMemo(() => {
+    if (!issueDate) return currentMonthLabel();
+    try {
+      const [year, month] = issueDate.split("-");
+      const d = new Date(parseInt(year, 10), parseInt(month, 10) - 1, 1);
+      return d.toLocaleString("en-US", { month: "long", year: "numeric" });
+    } catch {
+      return currentMonthLabel();
+    }
+  }, [issueDate]);
 
-  // Live preview fetch whenever billing month, selected rates, or due date change
+  // Live preview fetch whenever billing month, selected rate, or due date change
   useEffect(() => {
     let active = true;
     const fetchPreview = async () => {
-      if (!billingMonth.trim()) {
+      if (!selectedRateId) {
         setPreview(null);
         return;
       }
       setPreviewLoading(true);
       try {
         const res = await maintenanceService.previewMaintenanceBills({
-          billing_month: billingMonth.trim(),
-          rate_ids: selected,
+          billing_month: derivedBillingMonth,
+          rate_ids: [selectedRateId],
           issue_date: issueDate,
           last_pay_date: dueDate,
         });
@@ -518,15 +497,18 @@ function GenerateModal({ configs, onClose, onGenerated }) {
       active = false;
       clearTimeout(timer);
     };
-  }, [billingMonth, selected, dueDate, issueDate]);
+  }, [derivedBillingMonth, selectedRateId, dueDate, issueDate]);
 
   const handleGenerate = async () => {
-    if (!billingMonth.trim()) return;
+    if (!selectedRateId) {
+      toast.error("Please select a maintenance bill type before generating bills.");
+      return;
+    }
     setGenerating(true);
     try {
       const res = await maintenanceService.generateMaintenanceBills({
-        billing_month: billingMonth.trim(),
-        rate_ids: selected,
+        billing_month: derivedBillingMonth,
+        rate_ids: [selectedRateId],
         issue_date: issueDate,
         last_pay_date: dueDate,
       });
@@ -621,60 +603,66 @@ function GenerateModal({ configs, onClose, onGenerated }) {
               <Label>Issue Date *</Label>
               <input
                 type="date"
-                className={`${inputCls} mc-date`}
-                style={{ borderColor: "var(--glass-border)", color: "var(--text-primary)" }}
+                className="w-full h-10 px-3 rounded-xl border border-[var(--glass-border)] bg-[var(--card-inner-bg)] text-[var(--text-primary)] font-semibold text-xs focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 transition-all cursor-pointer"
                 value={issueDate}
                 onChange={(e) => setIssueDate(e.target.value)}
                 required
               />
-              <span className="text-[11px] text-secondary mt-1 block">Bill issue date (defaults to today)</span>
+              <span className="text-[11px] text-secondary mt-1.5 block">Bill issue date (defaults to today)</span>
             </div>
             <div>
               <Label>Due Date (Last Date to Pay) *</Label>
               <input
                 type="date"
-                className={`${inputCls} mc-date`}
-                style={{ borderColor: "var(--glass-border)", color: "var(--text-primary)" }}
+                className="w-full h-10 px-3 rounded-xl border border-[var(--glass-border)] bg-[var(--card-inner-bg)] text-[var(--text-primary)] font-semibold text-xs focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/30 transition-all cursor-pointer"
                 value={dueDate}
                 min={issueDate || new Date().toISOString().split("T")[0]}
                 onChange={(e) => setDueDate(e.target.value)}
                 required
               />
-              <span className="text-[11px] text-emerald-400 mt-1 block">Residents can pay without late penalty until this date</span>
+              <span className="text-[11px] text-emerald-400 mt-1.5 block">Residents can pay without late penalty until this date</span>
             </div>
           </div>
 
-          {/* Rate Configurations to Apply */}
+          {/* Rate Configurations to Apply (Single Selection) */}
           <div>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
-              <Label>Configurations to Apply</Label>
-              <span className="text-xs text-secondary">{selected.length} of {billable.length} selected</span>
+              <Label>Select Maintenance Bill Type *</Label>
+              <span className="text-xs text-indigo-400 font-semibold">Select 1 Bill Type</span>
             </div>
-            <div className="flex flex-wrap gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
               {billable.map((c) => {
-                const isSel = selected.includes(c.id);
+                const isSel = String(selectedRateId) === String(c.id);
                 return (
                   <label
                     key={c.id}
-                    className="flex items-center gap-2.5 rounded-xl border px-3 py-2 cursor-pointer transition-all"
+                    className="flex items-center gap-3 rounded-xl border p-3 cursor-pointer transition-all"
                     style={{
-                      borderColor: isSel ? "rgba(59,130,246,0.5)" : "var(--glass-border)",
-                      background: isSel ? "rgba(59,130,246,0.12)" : "var(--card-inner-bg)",
+                      borderColor: isSel ? "rgba(99,102,241,0.6)" : "var(--glass-border)",
+                      background: isSel ? "rgba(99,102,241,0.14)" : "var(--card-inner-bg)",
+                      boxShadow: isSel ? "0 4px 14px -2px rgba(99,102,241,0.25)" : "none",
                     }}
                   >
                     <input
-                      type="checkbox"
+                      type="radio"
+                      name="maintenance_rate_select"
                       checked={isSel}
-                      onChange={() => toggle(c.id)}
-                      className="accent-indigo-500 rounded"
+                      onChange={() => setSelectedRateId(c.id)}
+                      className="accent-indigo-500 w-4 h-4 cursor-pointer"
                     />
-                    <TypeChip type={c.maintenance_type} />
-                    <span className="text-xs font-bold" style={{ color: "var(--text-primary)" }}>
-                      {c.name || c.maintenance_type}
-                      {c.maintenance_type === "FLAT" && <span className="text-secondary font-medium"> ({c.flat_type})</span>}
-                    </span>
-                    <span className="text-xs font-extrabold text-emerald-400">
-                      {c.maintenance_type === "SQ_FEET" ? `₹${c.rate_per_sqft}` : formatMoney(c.amount)}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <TypeChip type={c.maintenance_type} />
+                        <span className="text-xs font-bold truncate" style={{ color: "var(--text-primary)" }}>
+                          {c.name || c.maintenance_type}
+                        </span>
+                      </div>
+                      {c.maintenance_type === "FLAT" && c.flat_type && (
+                        <span className="text-[11px] text-secondary block font-medium">Flat Type: {c.flat_type}</span>
+                      )}
+                    </div>
+                    <span className="text-xs font-extrabold text-emerald-400 flex-shrink-0">
+                      {c.maintenance_type === "SQ_FEET" ? `₹${c.rate_per_sqft}/sq.ft` : formatMoney(c.amount)}
                     </span>
                   </label>
                 );
@@ -1079,137 +1067,129 @@ function BillsTab({ billingMonth, setBillingMonth, onView, configs = [] }) {
 
   return (
     <div className="flex flex-col gap-4">
-      {/* Proportional Unified Filter Toolbar */}
-      <div className="flex flex-wrap items-end gap-3">
-        {/* Month Dropdown */}
-        <div className="flex flex-col gap-1.5 min-w-35 flex-1 sm:flex-none">
-          <span className="text-[11px] font-bold text-secondary uppercase tracking-wider">Month</span>
-          <Select
-            options={monthOptions}
-            value={mode === "month" ? monthIdx : -1}
-            onChange={onChangeMonth}
-            disabled={mode === "custom"}
-            style={{
-              height: 42,
-              borderRadius: 10,
-              fontSize: 13,
-              fontWeight: 600,
-              background: "var(--input-bg)",
-              borderColor: "var(--input-border)",
-            }}
-            className={mode === "custom" ? "opacity-40 pointer-events-none" : "w-full sm:w-36"}
+      {/* Modern Compact Filter Toolbar */}
+      <div
+        className="p-3 sm:p-4 rounded-2xl border flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3.5"
+        style={{
+          background: "var(--card-bg, rgba(15, 23, 42, 0.6))",
+          borderColor: "var(--glass-border, rgba(255, 255, 255, 0.1))",
+          backdropFilter: "blur(16px)",
+          WebkitBackdropFilter: "blur(16px)",
+        }}
+      >
+        {/* Status Sliding Tabs */}
+        <div className="overflow-x-auto pb-1 md:pb-0 scrollbar-none flex-shrink-0">
+          <SlidingTabs
+            items={[
+              { id: "", label: "All Bills" },
+              { id: "PENDING", label: "Pending" },
+              { id: "PAID", label: "Paid" },
+              { id: "PENDING_VERIFICATION", label: "Awaiting" },
+            ]}
+            value={status}
+            onChange={setStatus}
           />
         </div>
 
-        {/* Year Dropdown */}
-        <div className="flex flex-col gap-1.5 min-w-25 flex-1 sm:flex-none">
-          <span className="text-[11px] font-bold text-secondary uppercase tracking-wider">Year</span>
-          <Select
-            options={yearOptions}
-            value={mode === "month" ? year : -1}
-            onChange={onChangeYear}
-            disabled={mode === "custom"}
+        {/* Compact Filters & Controls */}
+        <div className="flex flex-wrap items-center gap-2.5 md:justify-end flex-1">
+          {/* Month & Year inline selector */}
+          <div
+            className="flex items-center gap-1.5 border rounded-xl px-2.5 py-1"
             style={{
-              height: 42,
-              borderRadius: 10,
-              fontSize: 13,
-              fontWeight: 600,
-              background: "var(--input-bg)",
-              borderColor: "var(--input-border)",
+              background: "var(--card-inner-bg, rgba(255,255,255,0.04))",
+              borderColor: "var(--glass-border)",
+              height: 36,
             }}
-            className={mode === "custom" ? "opacity-40 pointer-events-none" : "w-full sm:w-28"}
-          />
-        </div>
+          >
+            <select
+              value={monthIdx}
+              onChange={onChangeMonth}
+              disabled={mode === "custom"}
+              className={`bg-transparent text-xs font-semibold outline-none cursor-pointer ${mode === "custom" ? "opacity-40" : ""}`}
+              style={{ color: "var(--text-primary)" }}
+            >
+              {monthOptions.map((m) => (
+                <option key={m.value} value={m.value} style={{ background: "var(--card-bg, #0f172a)", color: "var(--text-primary, #ffffff)" }}>
+                  {m.label}
+                </option>
+              ))}
+            </select>
+            <span className="text-secondary opacity-40 text-xs">/</span>
+            <select
+              value={year}
+              onChange={onChangeYear}
+              disabled={mode === "custom"}
+              className={`bg-transparent text-xs font-semibold outline-none cursor-pointer ${mode === "custom" ? "opacity-40" : ""}`}
+              style={{ color: "var(--text-primary)" }}
+            >
+              {yearOptions.map((y) => (
+                <option key={y.value} value={y.value} style={{ background: "var(--card-bg, #0f172a)", color: "var(--text-primary, #ffffff)" }}>
+                  {y.label}
+                </option>
+              ))}
+            </select>
+          </div>
 
-        {/* Custom Period Button */}
-        <div className="flex flex-col gap-1.5 min-w-42.5 flex-1 sm:flex-none">
-          <span className="text-[11px] font-bold text-secondary uppercase tracking-wider">Period Mode</span>
+          {/* Custom Period Button */}
           <button
             type="button"
             onClick={() => setCustomOpen(true)}
-            className="inline-flex items-center justify-center gap-2 px-3.5 rounded-[10px] text-xs sm:text-sm font-bold border transition-all cursor-pointer select-none"
+            className="inline-flex items-center gap-1.5 px-3 rounded-xl text-xs font-bold border transition-all cursor-pointer select-none"
             style={{
-              height: 42,
-              background: mode === "custom" ? "var(--accent-soft)" : "var(--input-bg)",
-              borderColor: mode === "custom" ? "var(--accent)" : "var(--input-border)",
-              color: mode === "custom" ? "var(--accent)" : "var(--text-primary)",
-              boxShadow: mode === "custom" ? "0 0 0 1px var(--accent)" : "none",
+              height: 36,
+              background: mode === "custom" ? "var(--accent-soft, rgba(99,102,241,0.18))" : "var(--card-inner-bg, rgba(255,255,255,0.04))",
+              borderColor: mode === "custom" ? "var(--accent, #818cf8)" : "var(--glass-border)",
+              color: mode === "custom" ? "var(--accent, #818cf8)" : "var(--text-secondary)",
             }}
           >
-            <MdCalendarToday size={15} style={{ color: mode === "custom" ? "var(--accent)" : "var(--text-secondary)", flexShrink: 0 }} />
-            <span className="truncate max-w-55">
-              {mode === "custom" ? `Custom: ${customPeriodLabel}` : "Custom Period (Dates)"}
+            <MdCalendarToday size={14} style={{ color: mode === "custom" ? "var(--accent, #818cf8)" : "var(--text-secondary)" }} />
+            <span className="truncate max-w-45">
+              {mode === "custom" ? customPeriodLabel : "Custom Period"}
             </span>
           </button>
-        </div>
 
-        {/* Type Dropdown */}
-        <div className="flex flex-col gap-1.5 min-w-38.75 flex-1 sm:flex-none">
-          <span className="text-[11px] font-bold text-secondary uppercase tracking-wider">Type</span>
-          <Select
-            options={typeOptions}
-            value={typeFilter}
-            onChange={(e) => setTypeFilter(e.target.value)}
-            style={{
-              height: 42,
-              borderRadius: 10,
-              fontSize: 13,
-              fontWeight: 600,
-              background: "var(--input-bg)",
-              borderColor: "var(--input-border)",
-            }}
-            className="w-full sm:w-48"
-          />
-        </div>
+          {/* Type Dropdown */}
+          <div style={{ minWidth: 140 }}>
+            <Select
+              options={typeOptions}
+              value={typeFilter}
+              onChange={(e) => setTypeFilter(e.target.value)}
+              style={{
+                height: 36,
+                borderRadius: 11,
+                fontSize: 12,
+                fontWeight: 600,
+                background: "var(--card-inner-bg, rgba(255,255,255,0.04))",
+                borderColor: "var(--glass-border)",
+              }}
+              className="w-full"
+            />
+          </div>
 
-        {/* Status Dropdown */}
-        <div className="flex flex-col gap-1.5 min-w-36.25 flex-1 sm:flex-none">
-          <span className="text-[11px] font-bold text-secondary uppercase tracking-wider">Status</span>
-          <Select
-            options={[
-              { value: "", label: "All statuses" },
-              { value: "PENDING", label: "Pending" },
-              { value: "PAID", label: "Paid" },
-              { value: "PENDING_VERIFICATION", label: "Awaiting" },
-            ]}
-            value={status}
-            onChange={(e) => setStatus(e.target.value)}
-            style={{
-              height: 42,
-              borderRadius: 10,
-              fontSize: 13,
-              fontWeight: 600,
-              background: "var(--input-bg)",
-              borderColor: "var(--input-border)",
-            }}
-            className="w-full sm:w-40"
-          />
-        </div>
-
-        {/* Refresh Button */}
-        <div className="flex flex-col gap-1.5 sm:ml-auto">
-          <span className="text-[11px] font-bold text-transparent uppercase tracking-wider hidden sm:block">&nbsp;</span>
+          {/* Refresh Button */}
           <button
             type="button"
             onClick={load}
-            className="inline-flex items-center justify-center gap-2 px-4 rounded-[10px] text-xs sm:text-sm font-bold border transition-all cursor-pointer shrink-0"
+            title="Refresh bills"
+            className="inline-flex items-center justify-center rounded-xl border transition-all cursor-pointer shrink-0"
             style={{
-              height: 42,
-              background: "var(--card-inner-bg)",
+              width: 36,
+              height: 36,
+              background: "var(--card-inner-bg, rgba(255,255,255,0.04))",
               borderColor: "var(--glass-border)",
               color: "var(--text-primary)",
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.background = "var(--hover-bg)";
-              e.currentTarget.style.borderColor = "var(--accent-light)";
+              e.currentTarget.style.background = "var(--hover-bg, rgba(255,255,255,0.08))";
+              e.currentTarget.style.borderColor = "var(--accent-light, #818cf8)";
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.background = "var(--card-inner-bg)";
+              e.currentTarget.style.background = "var(--card-inner-bg, rgba(255,255,255,0.04))";
               e.currentTarget.style.borderColor = "var(--glass-border)";
             }}
           >
             <MdRefresh size={16} className={loading ? "animate-spin text-accent" : "text-secondary"} />
-            <span>Refresh</span>
           </button>
         </div>
       </div>
@@ -1605,24 +1585,47 @@ export default function MaintenancePage() {
   };
 
   const activeCount = configs.filter((c) => c.is_active).length;
-  const sqftCount = configs.filter((c) => c.maintenance_type === "SQ_FEET").length;
 
   return (
     <div className="flex flex-col gap-4">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <h1 className="text-lg font-extrabold" style={{ color: "var(--text-primary)" }}>Maintenance Management</h1>
-          <p className="text-sm text-secondary">Configure rates, generate bills and track them.</p>
+      {/* ── UNIFIED HEADER BAR ── */}
+      <div
+        className="ad-page-header flex flex-col xl:flex-row items-start xl:items-center justify-between gap-4 p-4 sm:p-5 rounded-2xl border mb-2"
+        style={{
+          background: "var(--card-bg, rgba(15, 23, 42, 0.6))",
+          borderColor: "var(--glass-border, rgba(255, 255, 255, 0.1))",
+          backdropFilter: "blur(16px)",
+          WebkitBackdropFilter: "blur(16px)",
+        }}
+      >
+        <div className="flex items-center gap-3">
+          <div
+            className="w-10 h-10 rounded-xl flex items-center justify-center text-accent shrink-0"
+            style={{
+              background: "var(--accent-soft, rgba(99,102,241,0.18))",
+              border: "1px solid var(--accent-light, #818cf8)",
+            }}
+          >
+            <MdBuild size={22} />
+          </div>
+          <div>
+            <h1 className="text-lg sm:text-xl font-bold tracking-tight text-primary flex items-center gap-2" style={{ letterSpacing: "-0.02em", margin: 0 }}>
+              Maintenance Management
+            </h1>
+            <p className="text-xs text-secondary mt-0.5 hidden sm:block">
+              Configure rates, generate bills and track them.
+            </p>
+          </div>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
+
+        <div className="flex items-center gap-2.5 flex-nowrap shrink-0 overflow-x-auto max-w-full pb-1" style={{ scrollbarWidth: "none" }}>
           {canEdit && (
             <GlobalButton
               variant="add"
               icon={MdAdd}
               borderDraw
               onClick={openAdd}
-              className="w-full sm:w-auto justify-center shrink-0"
+              className="shrink-0"
               style={{ fontWeight: 700 }}
             >
               New Configuration
@@ -1669,21 +1672,6 @@ export default function MaintenancePage() {
       )}
 
       {!(isSuperAdmin && !societyId) && (<>
-      {/* Compact stat strip */}
-      <div className="flex flex-wrap items-center gap-2 text-xs" style={{ color: "var(--text-secondary)" }}>
-        <span className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1 font-bold" style={{ background: "var(--card-bg)", borderColor: "var(--glass-border)", color: "var(--text-primary)" }}>
-          <MdTune size={13} className="text-indigo-500" /> {configs.length} configurations
-        </span>
-        <span className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1 font-bold" style={{ background: "var(--card-bg)", borderColor: "var(--glass-border)", color: "var(--text-primary)" }}>
-          <MdCheckCircle size={13} className="text-emerald-500" /> {activeCount} active
-        </span>
-        {sqftCount > 0 && (
-          <span className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1 font-bold" style={{ background: "var(--card-bg)", borderColor: "var(--glass-border)", color: "var(--text-primary)" }}>
-            <MdDashboard size={13} className="text-amber-500" /> {sqftCount} per-sq.ft
-          </span>
-        )}
-      </div>
-
       <SlidingTabs
         value={tab}
         onChange={setTab}

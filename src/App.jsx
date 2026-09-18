@@ -136,6 +136,7 @@ function App() {
         toastClassName="custom-toast"
         bodyClassName="custom-toast-body"
         progressClassName="custom-toast-progress"
+        style={{ zIndex: 11000 }}
       />
 
       <Suspense fallback={<div className="flex items-center justify-center h-screen">Loading...</div>}>
@@ -406,6 +407,9 @@ function App() {
             </Route>
             <Route element={<PermissionRoute module="complaints" />}>
               <Route path="complaints" element={<Complaint />} />
+            </Route>
+            <Route element={<PermissionRoute module="emergency" />}>
+              <Route path="emergency" element={<AdminEmergency />} />
             </Route>
             <Route element={<PermissionRoute module="settings" />}>
               <Route path="settings" element={<AdminSetting />} />

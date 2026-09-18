@@ -16,6 +16,8 @@ import {
 import { toast } from "react-toastify";
 import Select from "../../components/common/Select";
 import SlidingTabs from "../../components/common/SlidingTabs";
+import ExpandableSearch from "../../components/common/ExpandableSearch";
+import GlobalButton from "../../components/common/GlobalButton";
 import "./Admin.css";
 
 /* ── helpers ── */
@@ -97,6 +99,9 @@ export default function ManageProperty() {
   const { user }  = useContext(AuthContext);
   const canEdit   = hasPermission(user, "property", "edit") || hasPermission(user, "property", "create") || hasPermission(user, "property", "view");
   const [tab, setTab] = useState("blocks");
+  const [search, setSearch] = useState("");
+  const [showBlockForm, setShowBlockForm] = useState(false);
+  const [showAssignForm, setShowAssignForm] = useState(false);
 
   const TABS = [
     { key: "blocks",  label: t("mpTabBlocks") || "Blocks & Floors",  icon: MdGridView   },
@@ -104,35 +109,104 @@ export default function ManageProperty() {
     { key: "assign",  label: t("mpTabAssign") || "Assign Units",     icon: MdLinkOff    },
   ];
 
+  const handleTabChange = (newTab) => {
+    setTab(newTab);
+    setSearch("");
+  };
+
   return (
     <div className="space-y-5 animate-fadeIn">
-      {/* ── Page header ── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      {/* ── Page header: Unified Single Row ── */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <div className="ad-page-icon">
             <MdHome size={22} />
           </div>
           <div>
             <h2 className="text-lg font-semibold" style={{ letterSpacing: "-0.02em" }}>{t("mpTitle") || "Manage Property"}</h2>
-            <p className="text-secondary text-xs mt-0.5">{t("mpSubtitle") || "Manage blocks, properties, and assignments"}</p>
+            <p className="text-secondary text-xs mt-0.5">Blocks · Flats · Assignments</p>
           </div>
+        </div>
+
+        <div className="flex items-center gap-2.5 flex-wrap">
+          <SlidingTabs
+            value={tab}
+            onChange={handleTabChange}
+            items={TABS.map(({ key, label, icon: Icon }) => ({
+              id: key,
+              label,
+              icon: <Icon size={16} />,
+            }))}
+          />
+
+          <ExpandableSearch
+            value={search}
+            onChange={setSearch}
+            placeholder={
+              tab === "blocks"
+                ? "Search blocks/phases..."
+                : tab === "flats"
+                ? "Search property..."
+                : "Search assignments..."
+            }
+          />
+
+          {canEdit && tab === "blocks" && (
+            <GlobalButton
+              variant={showBlockForm ? "secondary" : "add"}
+              onClick={() => setShowBlockForm((p) => !p)}
+              icon={showBlockForm ? MdClose : MdAdd}
+              size="md"
+            >
+              {showBlockForm ? (t("cancel") || "Cancel") : (t("createBlock") || "Create Block")}
+            </GlobalButton>
+          )}
+
+          {canEdit && tab === "assign" && (
+            <GlobalButton
+              variant={showAssignForm ? "secondary" : "add"}
+              onClick={() => setShowAssignForm((p) => !p)}
+              icon={showAssignForm ? MdClose : MdAdd}
+              size="md"
+            >
+              {showAssignForm ? (t("cancel") || "Cancel") : "Assign Unit"}
+            </GlobalButton>
+          )}
         </div>
       </div>
 
-      <SlidingTabs
-        value={tab}
-        onChange={setTab}
-        items={TABS.map(({ key, label, icon: Icon }) => ({
-          id: key,
-          label,
-          icon: <Icon size={16} />,
-        }))}
-      />
-
       {/* ── Tab panels ── */}
-      {tab === "blocks"  && <BlocksTab  isMobile={isMobile} t={t} canEdit={canEdit} />}
-      {tab === "flats"   && <FlatsTab   isMobile={isMobile} t={t} canEdit={canEdit} />}
-      {tab === "assign"  && <AssignTab  isMobile={isMobile} t={t} canEdit={canEdit} />}
+      {tab === "blocks"  && (
+        <BlocksTab
+          isMobile={isMobile}
+          t={t}
+          canEdit={canEdit}
+          search={search}
+          setSearch={setSearch}
+          showForm={showBlockForm}
+          setShowForm={setShowBlockForm}
+        />
+      )}
+      {tab === "flats"   && (
+        <FlatsTab
+          isMobile={isMobile}
+          t={t}
+          canEdit={canEdit}
+          search={search}
+          setSearch={setSearch}
+        />
+      )}
+      {tab === "assign"  && (
+        <AssignTab
+          isMobile={isMobile}
+          t={t}
+          canEdit={canEdit}
+          search={search}
+          setSearch={setSearch}
+          showForm={showAssignForm}
+          setShowForm={setShowAssignForm}
+        />
+      )}
     </div>
   );
 }
@@ -1081,7 +1155,15 @@ function AreaAssignModal({
 /* ══════════════════════════════════════════════
   TAB 1 — BLOCKS
 ══════════════════════════════════════════════ */
-function BlocksTab({ isMobile, t, canEdit = true }) {
+function BlocksTab({
+  isMobile,
+  t,
+  canEdit = true,
+  search: externalSearch,
+  setSearch: setExternalSearch,
+  showForm: externalShowForm,
+  setShowForm: setExternalShowForm,
+}) {
   const [blocks,        setBlocks]        = useState([]);
   const [loading,       setLoading]       = useState(true);
   const [name,          setName]          = useState("");
@@ -1091,10 +1173,16 @@ function BlocksTab({ isMobile, t, canEdit = true }) {
   const [totalHouses,   setTotalHouses]   = useState("");
   const [commonArea,    setCommonArea]    = useState("");
   const [submitting,    setSubmitting]    = useState(false);
-  const [showForm,      setShowForm]      = useState(false);
+  const [localShowForm, setLocalShowForm] = useState(false);
+  const showForm = externalShowForm !== undefined ? externalShowForm : localShowForm;
+  const setShowForm = setExternalShowForm !== undefined ? setExternalShowForm : setLocalShowForm;
+
   const [confirmId,     setConfirmId]     = useState(null);
   const [deletingId,    setDeletingId]    = useState(null);
-  const [search,        setSearch]        = useState("");
+  const [localSearch,   setLocalSearch]   = useState("");
+  const search = externalSearch !== undefined ? externalSearch : localSearch;
+  const setSearch = setExternalSearch !== undefined ? setExternalSearch : setLocalSearch;
+
   const [error,         setError]         = useState("");
   const [selectedBlock, setSelectedBlock] = useState(null);
   const [areaAssignFlats, setAreaAssignFlats] = useState(null);
@@ -1213,24 +1301,6 @@ function BlocksTab({ isMobile, t, canEdit = true }) {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-      {/* top action bar */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10 }}>
-        <div>
-          <h2 style={{ fontSize: 18, fontWeight: 800, color: "var(--text-primary)", margin: 0, letterSpacing: "-0.02em" }}>{t("mpBlocks") || "Property Phases"}</h2>
-          <p style={{ fontSize: 12, color: "var(--text-secondary)", margin: "3px 0 0" }}>Create apartment towers, wings, or independent row house layouts.</p>
-        </div>
-
-        {canEdit && (
-          <button onClick={() => setShowForm(p => !p)} className="sa-add-btn sa-add-pill sa-btn-primary">
-            <span className="sa-pill-blob sa-pill-blob1" />
-            <span className="sa-pill-inner">
-              {showForm ? <MdClose size={16} /> : <MdAdd size={16} />}
-              <span>{showForm ? t("mpCancel") || "Cancel" : t("mpAddBlock") || "Add Phase"}</span>
-            </span>
-          </button>
-        )}
-      </div>
-
       {error && (
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "var(--stat-red-bg)", border: "1px solid var(--stat-red-border)", borderRadius: 12, padding: "10px 14px", fontSize: 13, color: "var(--stat-red-color)" }}>
           {error}
@@ -1584,17 +1654,6 @@ function BlocksTab({ isMobile, t, canEdit = true }) {
 
       {/* blocks list */}
       <div className="data-table-wrap">
-        <div style={{ padding: "12px 16px", borderBottom: "1px solid var(--glass-border)", display: "flex", alignItems: "center", gap: 10 }}>
-          <div style={{ position: "relative", flex: 1, maxWidth: 280 }}>
-            <MdSearch size={14} style={{ position: "absolute", left: 11, top: "50%", transform: "translateY(-50%)", color: "var(--text-secondary)", pointerEvents: "none" }} />
-            <input className="input search-input" style={{ paddingLeft: 32, height: 36, fontSize: 13 }} placeholder={t("mpSearchBlocks") || "Search blocks/phases..."} value={search} onChange={e => setSearch(e.target.value)} />
-            {search && <button onClick={() => setSearch("")} style={{ position: "absolute", right: 9, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "var(--text-secondary)", display: "flex" }}><MdClose size={13} /></button>}
-          </div>
-          <span style={{ fontSize: 12, color: "var(--text-secondary)", whiteSpace: "nowrap" }}>
-            {filtered.length} {t("mpBlock") || "Phase"}{filtered.length !== 1 ? "s" : ""}
-          </span>
-        </div>
-
         {loading ? (
           <div style={{ display: "flex", justifyContent: "center", padding: "50px 0" }}><Spinner /></div>
         ) : filtered.length === 0 ? (
@@ -1668,7 +1727,7 @@ function BlocksTab({ isMobile, t, canEdit = true }) {
             <table className="data-table">
               <thead>
                 <tr>
-                  <th style={{ width: 48 }}>#</th>
+                  <th style={{ width: 64 }}>Sr. No.</th>
                   <th>{t("mpBlockName") || "Phase / Block"}</th>
                   <th>Type</th>
                   <th style={{ textAlign: "right" }}>{t("mpActions") || "Actions"}</th>
@@ -1699,7 +1758,7 @@ function BlocksTab({ isMobile, t, canEdit = true }) {
                           <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 8 }}>
                             <button
                               onClick={() => setSelectedBlock(selectedBlock?.id === b.id ? null : b)}
-                              style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "5px 12px", borderRadius: 8, fontSize: 12, fontWeight: 600, background: "rgba(91,141,239,0.10)", color: "var(--stat-blue-color,#B9CFF8)", border: "1px solid rgba(91,141,239,0.22)", cursor: "pointer" }}
+                              style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "5px 12px", borderRadius: 8, fontSize: 12, fontWeight: 600, background: "rgba(107,70,193,0.12)", color: "var(--accent, #6B46C1)", border: "1px solid rgba(107,70,193,0.25)", cursor: "pointer" }}
                             >
                               {isRowHouse ? <MdHomeWork size={13} /> : <MdLayers size={13} />}
                               {selectedBlock?.id === b.id ? "Hide" : (isRowHouse ? "Houses" : "Floors")}
@@ -2071,10 +2130,19 @@ function InlineFlats({ floorId, blockId, isMobile, t, onOpenAreaModal, blockName
 /* ══════════════════════════════════════════════
   TAB 2 — ALL FLATS
 ══════════════════════════════════════════════ */
-function FlatsTab({ isMobile, t, canEdit = true }) {
+function FlatsTab({
+  isMobile,
+  t,
+  canEdit = true,
+  search: externalSearch,
+  setSearch: setExternalSearch,
+}) {
   const [flats,        setFlats]        = useState([]);
   const [loading,      setLoading]      = useState(true);
-  const [search,       setSearch]       = useState("");
+  const [localSearch,  setLocalSearch]  = useState("");
+  const search = externalSearch !== undefined ? externalSearch : localSearch;
+  const setSearch = setExternalSearch !== undefined ? setExternalSearch : setLocalSearch;
+
   const [filterStatus, setFilterStatus] = useState("ALL");
   const [confirmId,    setConfirmId]    = useState(null);
   const [deletingId,   setDeletingId]   = useState(null);
@@ -2146,16 +2214,8 @@ function FlatsTab({ isMobile, t, canEdit = true }) {
       )}
 
       <div className="data-table-wrap">
-        <div style={{ padding: "12px 14px", borderBottom: "1px solid var(--glass-border)", display: "flex", flexDirection: "column", gap: 10 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <div style={{ position: "relative", flex: 1, maxWidth: 300 }}>
-              <MdSearch size={14} style={{ position: "absolute", left: 11, top: "50%", transform: "translateY(-50%)", color: "var(--text-secondary)", pointerEvents: "none" }} />
-              <input className="input search-input" style={{ paddingLeft: 32, height: 36, fontSize: 13 }} placeholder={t("mpSearchFlatBlock") || "Search property..."} value={search} onChange={e => setSearch(e.target.value)} />
-              {search && <button onClick={() => setSearch("")} style={{ position: "absolute", right: 9, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "var(--text-secondary)", display: "flex" }}><MdClose size={13} /></button>}
-            </div>
-            <span style={{ fontSize: 12, color: "var(--text-secondary)", whiteSpace: "nowrap" }}>{filtered.length} Units</span>
-          </div>
-          <div style={{ display: "flex", gap: 4, background: "var(--card-inner-bg)", border: "1px solid var(--glass-border)", borderRadius: 10, padding: 4 }}>
+        <div style={{ padding: "12px 14px", borderBottom: "1px solid var(--glass-border)", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
+          <div style={{ display: "flex", gap: 4, background: "var(--card-inner-bg)", border: "1px solid var(--glass-border)", borderRadius: 10, padding: 4, flex: 1 }}>
             {FILTER_TABS.map(tab => {
               const on = filterStatus === tab.key;
               return (
@@ -2219,7 +2279,7 @@ function FlatsTab({ isMobile, t, canEdit = true }) {
             <table className="data-table">
               <thead>
                 <tr>
-                  <th style={{ width: 48 }}>#</th>
+                  <th style={{ width: 64 }}>Sr. No.</th>
                   <th>Unit</th>
                   <th>Location</th>
                   <th>{t("mpStatus") || "Status"}</th>
@@ -2292,7 +2352,13 @@ function FlatsTab({ isMobile, t, canEdit = true }) {
 ══════════════════════════════════════════════ */
 const LIMIT = 10;
 
-function AssignTab({ isMobile, t, canEdit = true }) {
+function AssignTab({
+  isMobile,
+  t,
+  canEdit = true,
+  search: externalSearch,
+  setSearch: setExternalSearch,
+}) {
   const [showForm,   setShowForm]   = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [flats,      setFlats]      = useState([]);
@@ -2308,7 +2374,9 @@ function AssignTab({ isMobile, t, canEdit = true }) {
   const [page,       setPage]       = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
-  const [search,     setSearch]     = useState("");
+  const [localSearch, setLocalSearch] = useState("");
+  const search = externalSearch !== undefined ? externalSearch : localSearch;
+  const setSearch = setExternalSearch !== undefined ? setExternalSearch : setLocalSearch;
   const dSearch                     = useDebounce(search, 450);
   const [confirmId,  setConfirmId]  = useState(null);
 
@@ -2367,21 +2435,6 @@ function AssignTab({ isMobile, t, canEdit = true }) {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10 }}>
-        <p style={{ margin: 0, fontSize: 13, color: "var(--text-secondary)" }}>
-          {initLoad ? "—" : totalAll} Units {t("mpCurrentlyAssigned") || "currently assigned"}
-        </p>
-        {canEdit && (
-          <button onClick={() => setShowForm(p => !p)} className="sa-add-btn sa-add-pill sa-btn-primary">
-            <span className="sa-pill-blob sa-pill-blob1" />
-            <span className="sa-pill-inner">
-              {showForm ? <MdClose size={17} /> : <MdAdd size={17} />}
-              <span>{showForm ? (t("mpCloseForm") || "Close") : "Assign Unit"}</span>
-            </span>
-          </button>
-        )}
-      </div>
-
       {canEdit && showForm && (
         <div className="bg-card animate-scaleIn" style={{ padding: "20px 22px", borderRadius: 18, maxWidth: 520 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
@@ -2426,21 +2479,6 @@ function AssignTab({ isMobile, t, canEdit = true }) {
       )}
 
       <div className="data-table-wrap">
-        <div style={{ padding: "12px 14px", borderBottom: "1px solid var(--glass-border)", display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-          <p style={{ margin: 0, fontSize: 12, color: "var(--text-secondary)", flex: 1, minWidth: 120 }}>
-            {initLoad ? "—" : `${totalItems} ${t("mpAssigned") || "assigned"}`}
-            {search && ` matching "${search}"`}
-          </p>
-          <div style={{ position: "relative", width: isMobile ? "100%" : 240 }}>
-            <MdSearch size={14} style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: "var(--text-secondary)", pointerEvents: "none" }} />
-            <input className="input search-input" style={{ paddingLeft: 30, paddingRight: search ? 30 : 10, height: 36, fontSize: 13, width: "100%" }} placeholder={t("mpSearchResidentFlat") || "Search resident or unit..."} value={search} onChange={e => setSearch(e.target.value)} />
-            <div style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", display: "flex" }}>
-              {fetching ? <Spinner size={13} /> : search ? (
-                <button onClick={() => setSearch("")} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-secondary)", display: "flex" }}><MdClose size={13} /></button>
-              ) : null}
-            </div>
-          </div>
-        </div>
 
         {initLoad ? (
           <div style={{ display: "flex", justifyContent: "center", padding: "50px 0" }}><Spinner /></div>
@@ -2498,7 +2536,7 @@ function AssignTab({ isMobile, t, canEdit = true }) {
           <table className="data-table">
             <thead>
               <tr>
-                <th style={{ width: 48 }}>#</th>
+                <th style={{ width: 64 }}>Sr. No.</th>
                 <th>Unit</th>
                 <th>{t("mpResident") || "Resident"}</th>
                 <th style={{ textAlign: "right" }}>{t("mpAction") || "Action"}</th>

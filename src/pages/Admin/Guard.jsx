@@ -65,7 +65,11 @@ export default function Guard() {
   const { showUnauthorized, showError } = useCustomAlert();
   const activeRole = user?.activeRole ?? user?.role;
   const isSuperAdmin = activeRole === "SUPER_ADMIN";
-  const isCommittee = isCommitteeMember(user);
+  
+  const canCreateGuard = hasPermission(user, "guard", "create");
+  const canEditGuard = hasPermission(user, "guard", "edit");
+  const canDeleteGuard = hasPermission(user, "guard", "delete");
+  const canShiftGuard = hasPermission(user, "guard", "edit_shift");
 
   const [guards, setGuards] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -254,14 +258,15 @@ export default function Guard() {
       return;
     }
     setSelectedGuard(guard);
-    setSelectedGuard(guard);
     setShiftError("");
-    if (shift) {
-      setEditingShiftId(shift.id);
+    const shifts = guardShifts[guard.id] || [];
+    const targetShift = shift || (shifts.length > 0 ? shifts[0] : null);
+    if (targetShift) {
+      setEditingShiftId(targetShift.id);
       setShiftForm({
-        shift_type: shift.shift_type,
-        start_date: shift.start_date,
-        end_date: shift.end_date,
+        shift_type: targetShift.shift_type,
+        start_date: targetShift.start_date,
+        end_date: targetShift.end_date,
       });
     } else {
       setEditingShiftId(null);
@@ -429,7 +434,7 @@ export default function Guard() {
         const shifts = guardShifts[g.id] || [];
         return (
           <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
-            {!isCommittee && (
+            {canEditGuard && (
               <GlobalButton
                 variant="edit"
                 size="sm"
@@ -440,16 +445,18 @@ export default function Guard() {
                 Edit
               </GlobalButton>
             )}
-            <GlobalButton
-              variant="secondary"
-              size="sm"
-              icon={MdEdit}
-              onClick={() => openShiftModal(g, shifts[0] || null)}
-              title={shifts.length > 0 ? "Edit shift" : "Schedule a shift"}
-            >
-              Shift
-            </GlobalButton>
-            {!isCommittee && (
+            {canShiftGuard && (
+              <GlobalButton
+                variant="secondary"
+                size="sm"
+                icon={MdSchedule}
+                onClick={() => openShiftModal(g)}
+                title={t("guardEditShift") || "Edit Guard Shift"}
+              >
+                {t("guardColShift") || "Shift"}
+              </GlobalButton>
+            )}
+            {canDeleteGuard && (
               <GlobalButton
                 variant="delete"
                 size="sm"
@@ -499,7 +506,7 @@ export default function Guard() {
             </Select>
           )}
 
-          {!isCommittee && (
+          {canCreateGuard && (
             <GlobalButton
               variant="add"
               icon={MdAdd}
@@ -520,7 +527,7 @@ export default function Guard() {
         emptyMessage={t("guardEmpty") || "No security guards registered yet."}
         emptyIcon={MdSecurity}
         emptyAction={
-          !isCommittee ? (
+          canCreateGuard ? (
             <GlobalButton
               variant="add"
               icon={MdAdd}
@@ -635,7 +642,7 @@ export default function Guard() {
         icon={MdSchedule}
         size="md"
         showFooter
-        submitLabel={editingShiftId ? "Edit Shift" : "Add Shift"}
+        submitLabel={editingShiftId ? "Update Shift" : "Assign Shift"}
         cancelLabel={t("cancel") || "Cancel"}
         onSubmit={handleShiftSubmit}
         submitLoading={submitLoading}
@@ -643,21 +650,72 @@ export default function Guard() {
         submitIcon={editingShiftId ? MdEdit : MdAdd}
       >
         <form onSubmit={handleShiftSubmit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-          {editingShiftId && (
-            <div style={{ display: "flex", justifyContent: "flex-start" }}>
-              <GlobalButton
-                variant="add"
-                size="sm"
-                icon={MdAdd}
-                onClick={() => {
-                  setEditingShiftId(null);
-                  setShiftForm({ shift_type: "", start_date: "", end_date: "" });
-                  setShiftError("");
-                }}
-                title="Clear the form and schedule a new shift"
-              >
-                Create New
-              </GlobalButton>
+          {/* Shift Selection Toggle Options */}
+          {selectedGuard && (guardShifts[selectedGuard.id] || []).length > 0 && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 8, paddingBottom: 10, borderBottom: "1px solid var(--divider, rgba(255,255,255,0.08))" }}>
+              <SectionLabel>Assigned Shifts ({guardShifts[selectedGuard.id].length})</SectionLabel>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+                {guardShifts[selectedGuard.id].map((s) => {
+                  const isSelected = editingShiftId === s.id;
+                  return (
+                    <button
+                      key={s.id}
+                      type="button"
+                      onClick={() => {
+                        setEditingShiftId(s.id);
+                        setShiftForm({
+                          shift_type: s.shift_type,
+                          start_date: s.start_date,
+                          end_date: s.end_date,
+                        });
+                        setShiftError("");
+                      }}
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 8,
+                        padding: "6px 12px",
+                        borderRadius: 10,
+                        cursor: "pointer",
+                        transition: "all 0.18s ease",
+                        background: isSelected ? "rgba(107,70,193,0.2)" : "var(--card-inner-bg)",
+                        border: isSelected ? "1.5px solid var(--accent, #6B46C1)" : "1px solid var(--glass-border)",
+                        color: isSelected ? "var(--text-primary)" : "var(--text-secondary)",
+                        boxShadow: isSelected ? "0 2px 10px rgba(107,70,193,0.3)" : "none",
+                      }}
+                    >
+                      <ShiftBadge type={s.shift_type} t={t} />
+                      <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.01em" }}>
+                        {s.start_date} → {s.end_date}
+                      </span>
+                    </button>
+                  );
+                })}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditingShiftId(null);
+                    setShiftForm({ shift_type: "", start_date: "", end_date: "" });
+                    setShiftError("");
+                  }}
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 6,
+                    padding: "6px 12px",
+                    borderRadius: 10,
+                    cursor: "pointer",
+                    transition: "all 0.18s ease",
+                    background: editingShiftId === null ? "rgba(16,185,129,0.15)" : "var(--card-inner-bg)",
+                    border: editingShiftId === null ? "1.5px solid #10b981" : "1px dashed var(--glass-border)",
+                    color: editingShiftId === null ? "#34d399" : "var(--text-secondary)",
+                    fontWeight: 700,
+                    fontSize: 11,
+                  }}
+                >
+                  <MdAdd size={14} /> New Shift
+                </button>
+              </div>
             </div>
           )}
 

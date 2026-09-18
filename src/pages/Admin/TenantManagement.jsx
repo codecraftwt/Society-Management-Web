@@ -6,9 +6,40 @@ import {
   MdCheck, MdClose, MdBadge, MdCreditCard, MdAccessTime,
   MdOpenInNew, MdWarning, MdSearch, MdFilterList,
   MdPerson, MdHome, MdCalendarToday, MdDirectionsCar,
-  MdGroup, MdRefresh, MdVisibility, MdPeople
+  MdGroup, MdRefresh, MdVisibility, MdPeople,
+  MdChevronLeft, MdChevronRight
 } from "react-icons/md";
 import Select from "../../components/common/Select";
+import ExpandableSearch from "../../components/common/ExpandableSearch";
+
+/* ── Pagination helper ── */
+function Pagination({ page, totalPages, onChange }) {
+  if (totalPages <= 1) return null;
+  const pages = Array.from({ length: totalPages }, (_, i) => i + 1)
+    .filter((p) => p === 1 || p === totalPages || Math.abs(p - page) <= 1)
+    .reduce((acc, p, idx, arr) => {
+      if (idx > 0 && p - arr[idx - 1] > 1) acc.push("...");
+      acc.push(p);
+      return acc;
+    }, []);
+  return (
+    <div className="pagination-wrap">
+      <button onClick={() => onChange(page - 1)} disabled={page === 1} className="pagination-btn">
+        <MdChevronLeft size={15} /> Prev
+      </button>
+      {pages.map((p, idx) =>
+        p === "..." ? (
+          <span key={`e-${idx}`} className="pagination-ellipsis">…</span>
+        ) : (
+          <button key={p} onClick={() => onChange(p)} className={`pagination-page ${p === page ? "pagination-page--active" : ""}`}>{p}</button>
+        )
+      )}
+      <button onClick={() => onChange(page + 1)} disabled={page === totalPages} className="pagination-btn">
+        Next <MdChevronRight size={15} />
+      </button>
+    </div>
+  );
+}
 
 /* ─────────────────────────────────────────────
    HELPERS
@@ -336,6 +367,17 @@ export default function TenantManagement() {
     });
   }, [tenants, activeTab, search, filterBlock]);
 
+  /* ── 10 records per page ── */
+  const [page, setPage] = useState(1);
+  const totalPages = Math.ceil(filtered.length / 10);
+  const pagedTenants = useMemo(() => {
+    return filtered.slice((page - 1) * 10, page * 10);
+  }, [filtered, page]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [activeTab, search, filterBlock]);
+
   /* ── Tab counts ── */
   const tabCounts = useMemo(() => {
     const counts = { ALL: tenants.length };
@@ -386,9 +428,8 @@ export default function TenantManagement() {
 
   return (
     <div className="space-y-5 animate-fadeIn">
-
-      {/* ── Page Header ── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      {/* ── Page Header: Unified Single Row ── */}
+      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <div className="ad-page-icon">
             <MdPeople size={22} />
@@ -398,48 +439,39 @@ export default function TenantManagement() {
             <p className="text-secondary text-xs mt-0.5">View and manage all tenants across your society</p>
           </div>
         </div>
-        <button
-          onClick={() => load()}
-          className="flex items-center gap-2 text-xs font-bold px-3 py-2 rounded-xl transition w-full sm:w-auto justify-center shrink-0"
-          style={{ color: "var(--text-secondary)", background: "var(--card-inner-bg)", border: "1px solid var(--glass-border)" }}
-        >
-          <MdRefresh size={15} /> Refresh
-        </button>
-      </div>
 
-      {/* ── Filters Bar ── */}
-      <div className="flex flex-wrap gap-3 items-center">
-        <FilterSelect
-          icon={<MdFilterList size={13} />}
-          value={activeTab}
-          onChange={setActiveTab}
-          options={STATUS_TABS.map(tab => ({
-            value: tab.key,
-            label: `${tab.label} (${tabCounts[tab.key] || 0})`,
-          }))}
-        />
-        <div className="relative flex-1 min-w-48">
-          <MdSearch size={16} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: "var(--text-secondary)" }} />
-          <input
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            className="search-input"
-            placeholder="Search name, email, flat…"
-            style={{
-              background: "var(--card-inner-bg)",
-              border: "1px solid var(--glass-border)",
-              color: "var(--text-primary)", padding: "9px 12px 9px 34px",
-              borderRadius: "12px", outline: "none",
-              width: "100%", fontSize: "13px",
-            }}
+        <div className="flex items-center gap-2.5 flex-wrap">
+          <FilterSelect
+            icon={<MdFilterList size={13} />}
+            value={activeTab}
+            onChange={setActiveTab}
+            options={STATUS_TABS.map(tab => ({
+              value: tab.key,
+              label: `${tab.label} (${tabCounts[tab.key] || 0})`,
+            }))}
           />
+
+          <FilterSelect
+            icon={<MdHome size={13} />}
+            value={filterBlock}
+            onChange={setFilterBlock}
+            options={[{ value: "ALL", label: "All Blocks" }, ...blocks.map(b => ({ value: b, label: `Block ${b}` }))]}
+          />
+
+          <ExpandableSearch
+            value={search}
+            onChange={setSearch}
+            placeholder="Search name, email, flat…"
+          />
+
+          <button
+            onClick={() => load()}
+            className="flex items-center gap-2 text-xs font-bold px-3 py-2 rounded-xl transition justify-center shrink-0"
+            style={{ height: 42, minHeight: 42, color: "var(--text-secondary)", background: "var(--card-inner-bg)", border: "1px solid var(--glass-border)" }}
+          >
+            <MdRefresh size={16} /> Refresh
+          </button>
         </div>
-        <FilterSelect
-          icon={<MdHome size={13} />}
-          value={filterBlock}
-          onChange={setFilterBlock}
-          options={[{ value: "ALL", label: "All Blocks" }, ...blocks.map(b => ({ value: b, label: `Block ${b}` }))]}
-        />
       </div>
 
       {/* ── Table ── */}
@@ -452,10 +484,10 @@ export default function TenantManagement() {
           </p>
         </div>
       ) : (
-        <>
+        <div key={page} className="animate-slide-page">
           {/* ── Mobile Cards ── */}
           <div className="md:hidden flex flex-col gap-3">
-            {filtered.map((t, i) => (
+            {pagedTenants.map((t, i) => (
               <div
                 key={t.tenant_id}
                 className="animate-fadeIn rounded-2xl overflow-hidden cursor-pointer"
@@ -530,14 +562,14 @@ export default function TenantManagement() {
             </div>
 
             <div className="divide-y" style={{ borderColor: "var(--divider)" }}>
-              {filtered.map((t, i) => (
+              {pagedTenants.map((t, i) => (
                 <div
                   key={t.tenant_id}
                   className="grid items-center px-4 py-3 hover:bg-white/2 transition group cursor-pointer"
                   style={{
                     gridTemplateColumns: "2fr 1.2fr 1fr 1fr 1fr 1fr auto",
                     gap: "12px",
-                    borderBottom: i < filtered.length - 1 ? "1px solid var(--divider)" : "none",
+                    borderBottom: i < pagedTenants.length - 1 ? "1px solid var(--divider)" : "none",
                     background: i % 2 === 0 ? "var(--card-inner-bg)" : "transparent",
                   }}
                   onClick={() => setDetailTenant(t)}
@@ -602,13 +634,23 @@ export default function TenantManagement() {
             <div className="px-4 py-2.5 flex justify-between items-center"
               style={{ background: "var(--card-inner-bg)", borderTop: "1px solid var(--divider)" }}>
               <p className="text-[11px] font-medium" style={{ color: "var(--text-secondary)" }}>
-                Showing <span className="font-bold" style={{ color: "var(--text-primary)" }}>{filtered.length}</span> of{" "}
-                <span className="font-bold" style={{ color: "var(--text-primary)" }}>{tenants.length}</span> tenants
+                Showing <span className="font-bold" style={{ color: "var(--text-primary)" }}>{pagedTenants.length}</span> of{" "}
+                <span className="font-bold" style={{ color: "var(--text-primary)" }}>{filtered.length}</span> tenants
               </p>
               <p className="text-[11px]" style={{ color: "var(--text-secondary)" }}>Click any row to view full details</p>
             </div>
           </div>
-        </>
+
+          {/* 10-record Pagination Footer */}
+          {totalPages > 1 && (
+            <div className="flex flex-col sm:flex-row justify-between items-center px-4 py-3 mt-4 border-t border-glass gap-3">
+              <span className="text-xs text-secondary">
+                Page <strong>{page}</strong> of <strong>{totalPages}</strong> ({filtered.length} total tenants)
+              </span>
+              <Pagination page={page} totalPages={totalPages} onChange={setPage} />
+            </div>
+          )}
+        </div>
       )}
 
       {/* ── Modals ── */}
@@ -636,7 +678,7 @@ export default function TenantManagement() {
 function FilterSelect({ icon, value, onChange, options }) {
   return (
     <div className="relative flex items-center">
-      <span className="absolute left-3 pointer-events-none" style={{ color: "var(--text-secondary)" }}>{icon}</span>
+      <span className="absolute left-3 pointer-events-none z-10" style={{ color: "var(--text-secondary)" }}>{icon}</span>
       <Select
         value={value}
         onChange={e => onChange(e.target.value)}
@@ -644,17 +686,16 @@ function FilterSelect({ icon, value, onChange, options }) {
           background: "var(--card-inner-bg)",
           border: "1px solid var(--glass-border)",
           color: value === "ALL" ? "var(--text-secondary)" : "var(--text-primary)",
-          padding: "9px 32px 9px 28px",
+          padding: "9px 12px 9px 30px",
           borderRadius: "12px", outline: "none",
           fontSize: "12px", fontWeight: "700",
-          appearance: "none", cursor: "pointer",
+          cursor: "pointer",
         }}
       >
         {options.map(o => (
           <option key={o.value} value={o.value} style={{ background: "var(--card-bg)", color: "var(--text-primary)" }}>{o.label}</option>
         ))}
       </Select>
-      <span className="absolute right-2 pointer-events-none" style={{ fontSize: 10, color: "var(--text-secondary)" }}>▾</span>
     </div>
   );
 }

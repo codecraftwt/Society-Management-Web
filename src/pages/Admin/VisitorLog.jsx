@@ -8,9 +8,12 @@ import API from "../../services/api";
 import { useLang } from "../../context/LanguageContext";
 import { AuthContext } from "../../context/AuthContext";
 import Select from "../../components/common/Select";
+import SlidingTabs from "../../components/common/SlidingTabs";
+import ExpandableSearch from "../../components/common/ExpandableSearch";
 import GlobalTable from "../../components/common/GlobalTable";
 import GlobalBadge from "../../components/common/GlobalBadge";
 import GlobalButton from "../../components/common/GlobalButton";
+import "./Admin.css";
 
 /* ── Debounce ── */
 function useDebounce(value, delay = 500) {
@@ -71,6 +74,7 @@ export default function VisitorLog() {
 
   /* ── Search & filter ── */
   const [search, setSearch] = useState("");
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [filter, setFilter] = useState("ALL");
   const debSearch = useDebounce(search, 500);
 
@@ -209,19 +213,27 @@ export default function VisitorLog() {
     }
   };
 
+  const getCleanLabel = (key, fallback) => {
+    const raw = t(key);
+    if (!raw || raw === key || raw.toLowerCase().includes("filter") || raw.toLowerCase().includes("vifilter")) {
+      return fallback;
+    }
+    return raw;
+  };
+
   const filterTabs = [
-    { key: "ALL", label: t("vlFilterAll"), count: counts.ALL },
-    { key: "IN",  label: t("vlFilterIn"),  count: counts.IN  },
-    { key: "OUT", label: t("vlFilterOut"), count: counts.OUT },
+    { id: "ALL", label: getCleanLabel("vlFilterAll", getCleanLabel("vlTabAll", "All")), badge: counts.ALL || 0 },
+    { id: "IN",  label: getCleanLabel("vlFilterIn", getCleanLabel("vlTabInside", "Currently In")), badge: counts.IN || 0 },
+    { id: "OUT", label: getCleanLabel("vlFilterOut", getCleanLabel("vlTabExited", "Checked Out")), badge: counts.OUT || 0 },
   ];
 
   const columns = [
     {
       key: "idx",
-      header: "#",
-      width: 50,
+      header: t("srNo") || "Sr. No.",
+      width: 65,
       render: (_, idx) => (
-        <span style={{ color: "var(--text-tertiary)", fontSize: "0.8rem" }}>
+        <span style={{ color: "var(--text-tertiary)", fontSize: "0.82rem", fontWeight: 500 }}>
           {(page - 1) * LIMIT + idx + 1}
         </span>
       ),
@@ -326,112 +338,98 @@ export default function VisitorLog() {
 
   return (
     <div className="space-y-5 animate-fadeIn">
-      {/* ── HEADER ── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight" style={{ color: "var(--text-primary)" }}>{t("vlTitle")}</h1>
-          <p className="text-xs text-secondary mt-0.5">
-            {totalItems} {t("vlSubtitle")}
-          </p>
-        </div>
-      </div>
-
-      {/* ── TOOLBAR / SEARCH & FILTERS ── */}
-      <div className="bg-card p-4 rounded-xl border border-white/5 space-y-4">
-        <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
-          {/* Search bar */}
-          <div className="relative flex-1">
-            <MdSearch size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-secondary" />
-            <input
-              type="text"
-              placeholder={t("vlSearchPlaceholder")}
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="input search-input w-full pl-10 pr-4 h-10 text-sm bg-white/5 border-white/10"
-            />
+      {/* ── Page Header: Unified Single Row with Sliding Tabs, Unit Filters & Search ── */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="ad-page-icon">
+            <MdOutlineInbox size={22} />
           </div>
-
-          {/* Unit dropdowns */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 md:pb-0">
-            <span className="text-xs font-bold text-secondary uppercase tracking-wider flex items-center gap-1 shrink-0 mr-1">
-              <MdFilterList size={14} /> Filters:
-            </span>
-
-            {isSuperAdmin && (
-              <Select
-                className="input h-9 text-xs min-w-30 bg-white/5 border-white/10"
-                value={filterSocietyId}
-                onChange={e => setFilterSocietyId(e.target.value)}
-              >
-                <option value="">{t("allSocieties")}</option>
-                {societiesList.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-              </Select>
-            )}
-
-            <Select
-              className="input h-9 text-xs min-w-25 bg-white/5 border-white/10"
-              value={filterBlockId}
-              onChange={e => setFilterBlockId(e.target.value)}
-            >
-              <option value="">{t("allBlocks")}</option>
-              {blocks.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
-            </Select>
-
-            <Select
-              className="input h-9 text-xs min-w-25 bg-white/5 border-white/10"
-              value={filterFloorId}
-              onChange={e => setFilterFloorId(e.target.value)}
-              disabled={!filterBlockId}
-            >
-              <option value="">{t("allFloors")}</option>
-              {floors.map(f => <option key={f.id} value={f.id}>{f.floor_number}</option>)}
-            </Select>
-
-            <Select
-              className="input h-9 text-xs min-w-25 bg-white/5 border-white/10"
-              value={filterFlatId}
-              onChange={e => setFilterFlatId(e.target.value)}
-              disabled={!filterFloorId}
-            >
-              <option value="">{t("allFlats")}</option>
-              {flats.map(f => <option key={f.id} value={f.id}>{f.flat_number}</option>)}
-            </Select>
+          <div>
+            <h2 className="text-lg font-semibold" style={{ letterSpacing: "-0.02em" }}>
+              {t("vlTitle") || "Visitor Logs"}
+            </h2>
+            <p className="text-secondary text-xs mt-0.5">
+              {totalItems} {t("vlSubtitle") || "Total visitor records"}
+            </p>
           </div>
         </div>
 
-        {/* Status Tabs */}
-        <div className="flex items-center justify-between border-t border-white/5 pt-4">
-          <div className="sa-segment">
-            {filterTabs.map((tab) => (
-              <button
-                key={tab.key}
-                onClick={() => handleFilterChange(tab.key)}
-                className={filter === tab.key ? "sa-segment-active" : ""}
-              >
-                {tab.label} ({tab.count})
-              </button>
-            ))}
-          </div>
-          {fetching && (
-            <span className="text-xs text-accent font-semibold animate-pulse">
-              Syncing…
-            </span>
+        {/* Action Controls Toolbar */}
+        <div className="flex items-center gap-2.5 flex-nowrap shrink-0 overflow-x-auto max-w-full pb-1">
+          {/* Status Toggle Sliding Tabs */}
+          <SlidingTabs
+            value={filter}
+            onChange={handleFilterChange}
+            items={isSearchOpen ? filterTabs.filter((t) => t.id === filter) : filterTabs}
+          />
+
+          {/* Unit Filters Dropdowns */}
+          {isSuperAdmin && (
+            <Select
+              className="input h-10 text-xs min-w-30 bg-white/5 border-white/10"
+              value={filterSocietyId}
+              onChange={e => { setFilterSocietyId(e.target.value); setPage(1); }}
+            >
+              <option value="">{t("allSocieties") || "All Societies"}</option>
+              {societiesList.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+            </Select>
           )}
+
+          <Select
+            className="input h-10 text-xs min-w-28 bg-white/5 border-white/10"
+            value={filterBlockId}
+            onChange={e => { setFilterBlockId(e.target.value); setPage(1); }}
+          >
+            <option value="">{t("allBlocks") || "All Blocks"}</option>
+            {blocks.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+          </Select>
+
+          <Select
+            className="input h-10 text-xs min-w-28 bg-white/5 border-white/10"
+            value={filterFloorId}
+            onChange={e => { setFilterFloorId(e.target.value); setPage(1); }}
+            disabled={!filterBlockId}
+          >
+            <option value="">{t("allFloors") || "All Floors"}</option>
+            {floors.map(f => <option key={f.id} value={f.id}>{f.floor_number}</option>)}
+          </Select>
+
+          <Select
+            className="input h-10 text-xs min-w-28 bg-white/5 border-white/10"
+            value={filterFlatId}
+            onChange={e => { setFilterFlatId(e.target.value); setPage(1); }}
+            disabled={!filterFloorId}
+          >
+            <option value="">{t("allFlats") || "All Flats"}</option>
+            {flats.map(f => <option key={f.id} value={f.id}>{f.flat_number}</option>)}
+          </Select>
+
+          {/* Expandable Animated Search Slider */}
+          <ExpandableSearch
+            value={search}
+            onChange={(val) => { setSearch(val); setPage(1); }}
+            placeholder={t("vlSearch") || "Search visitors, flat, purpose…"}
+            fetching={fetching}
+            isOpen={isSearchOpen}
+            onOpenChange={setIsSearchOpen}
+          />
         </div>
       </div>
 
-      {/* ── GLOBAL TABLE ── */}
-      <GlobalTable
-        columns={columns}
-        data={logs}
-        loading={initialLoad}
-        emptyMessage={counts.ALL === 0 ? (t("vlEmpty") || "No visitor logs yet") : (t("vlNoMatch") || "No matching visitor logs")}
-        emptyIcon={MdOutlineInbox}
-        page={page}
-        totalPages={totalPages}
-        totalItems={totalItems}
-        onPageChange={handlePageChange}
-      />
+      {/* ── GLOBAL TABLE WITH ANIMATION ── */}
+      <div key={`${filter}-${page}`} className="animate-slide-page">
+        <GlobalTable
+          columns={columns}
+          data={logs}
+          loading={initialLoad}
+          emptyMessage={counts.ALL === 0 ? (t("vlEmpty") || "No visitor logs yet") : (t("vlNoMatch") || "No matching visitor logs")}
+          emptyIcon={MdOutlineInbox}
+          page={page}
+          totalPages={totalPages}
+          totalItems={totalItems}
+          onPageChange={handlePageChange}
+        />
+      </div>
     </div>
   );
 }

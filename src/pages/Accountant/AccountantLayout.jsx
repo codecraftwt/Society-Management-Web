@@ -1,6 +1,7 @@
 import { Outlet, useNavigate } from "react-router-dom";
-import { useState, useContext,useEffect } from "react";
+import { useState, useContext, useEffect } from "react";
 import { createPortal } from "react-dom";
+import API from "../../services/api";
 import {
   MdDashboard,
   MdAccountBalance,
@@ -15,11 +16,16 @@ import {
   MdAttachMoney,
   MdListAlt,
   MdHistory,
+  MdEmergency,
+  MdWarning,
+  MdSecurity,
 } from "react-icons/md";
 import { FaUsers, FaUserShield, FaParking } from "react-icons/fa";
 import { LanguageProvider, useLang } from "../../context/LanguageContext";
 import Sidebar from "../../components/common/Sidebar";
 import AppHeader from "../../components/common/AppHeader";
+import AdminEmergencyModal from "../../components/admin/AdminEmergencyModal";
+import SOSModal from "../../components/emergency/SOSModal";
 import { useRoleTheme } from "../../context/ThemeContext";
 import { AuthContext } from "../../context/AuthContext";
 import { hasPermission } from "../../utils/permissions";
@@ -32,6 +38,9 @@ function AccountantLayoutInner() {
   const { user, refreshPermissions } = useContext(AuthContext);
   useRoleTheme();
 
+  const [alerts, setAlerts] = useState([]);
+  const [showEmergency, setShowEmergency] = useState(false);
+  const [showSOS, setShowSOS] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   const base = "/accountant";
@@ -44,48 +53,43 @@ function AccountantLayoutInner() {
     return () => window.removeEventListener("permissions_updated", handlePermChange);
   }, [refreshPermissions]);
 
+  /* Emergency polling */
+  const loadEmergencies = async () => {
+    try {
+      const res = await API.get("/emergency/active");
+      setAlerts(res.data || []);
+    } catch (err) {
+      console.error("Emergency fetch failed", err);
+    }
+  };
+
+  useEffect(() => {
+    loadEmergencies();
+    const interval = setInterval(loadEmergencies, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
   const menu = [
     {
-      label: t("accountantMenuDashboard") || "Dashboard",
+      label: t("adminMenuDashboard") || "Dashboard",
       path: `${base}`,
       icon: MdDashboard,
       group: "OVERVIEW",
       module: "dashboard",
     },
     {
-      label: "Account Management",
-      path: `${base}/accounting`,
-      icon: MdReceiptLong,
-      group: "FINANCE & BILLING",
-      module: "accounting",
+      label: t("adminMenuResidents") || "Residents Directory",
+      path: `${base}/resident`,
+      icon: FaUsers,
+      group: "COMMUNITY & PROPERTY",
+      module: "resident",
     },
     {
-      label: t("accountantMenuManageBills") || "Manage Bills",
-      path: `${base}/manage-bills`,
-      icon: MdAccountBalance,
-      group: "FINANCE & BILLING",
-      module: "manage_bills",
-    },
-    {
-      label: "Maintenance",
-      path: `${base}/maintenance`,
-      icon: MdBuild,
-      group: "FINANCE & BILLING",
-      module: "maintenance",
-    },
-    {
-      label: "Payments",
-      path: `${base}/payments`,
-      icon: MdPayments,
-      group: "FINANCE & BILLING",
-      module: "payments",
-    },
-    {
-      label: t("accountantMenuReports") || "Reports",
-      path: `${base}/reports`,
-      icon: MdBarChart,
-      group: "FINANCE & BILLING",
-      module: "reports",
+      label: t("adminManageProperty") || "Property & Blocks",
+      path: `${base}/property`,
+      icon: MdApartment,
+      group: "COMMUNITY & PROPERTY",
+      module: "property",
     },
     {
       label: t("adminMenuParking") || "Parking Management",
@@ -95,20 +99,6 @@ function AccountantLayoutInner() {
       module: "parking_slots",
     },
     {
-      label: t("adminManageProperty") || "Properties & Flats",
-      path: `${base}/property`,
-      icon: MdApartment,
-      group: "COMMUNITY & PROPERTY",
-      module: "property",
-    },
-    {
-      label: t("adminMenuResidents") || "Residents & Directory",
-      path: `${base}/resident`,
-      icon: FaUsers,
-      group: "COMMUNITY & PROPERTY",
-      module: "resident",
-    },
-    {
       label: "Flat History",
       path: `${base}/flat-history`,
       icon: MdVerified,
@@ -116,7 +106,7 @@ function AccountantLayoutInner() {
       module: "flat_history",
     },
     {
-      label: "Tenant Management",
+      label: "Tenant Approvals",
       path: `${base}/tenant-management`,
       icon: FaUsers,
       group: "COMMUNITY & PROPERTY",
@@ -137,32 +127,74 @@ function AccountantLayoutInner() {
       module: "visitor_logs",
     },
     {
-      label: t("adminMenuNotices") || "Notices & Circulars",
+      label: t("adminMenuNotices") || "Society Notices",
       path: `${base}/notice`,
       icon: MdCampaign,
       group: "COMMUNICATION",
       module: "notice",
     },
     {
-      label: t("adminMenuComplaints") || "Complaints",
+      label: t("adminMenuComplaints") || "Complaints & Tickets",
       path: `${base}/complaints`,
       icon: MdReportProblem,
       group: "COMMUNICATION",
       module: "complaints",
     },
     {
-      label: t("adminMenuDocument") || "Documents & Files",
-      path: `${base}/society_documents`,
-      icon: MdVerified,
-      group: "SERVICES & RECORDS",
-      module: "society_documents",
+      label: "SOS",
+      path: `${base}/emergency`,
+      icon: MdSecurity,
+      group: "COMMUNICATION",
+      module: "emergency",
     },
     {
-      label: t("adminMenuAmenities") || "Amenities",
-      path: `${base}/amenities`,
+      label: "Account & Cash",
+      path: `${base}/accounting`,
+      icon: MdReceiptLong,
+      group: "FINANCE & BILLS",
+      module: "accounting",
+    },
+    {
+      label: t("adminMenuManageBills") || "Billing & Invoices",
+      path: `${base}/manage-bills`,
+      icon: MdAccountBalance,
+      group: "FINANCE & BILLS",
+      module: "manage_bills",
+    },
+    {
+      label: "Maintenance Setup",
+      path: `${base}/maintenance`,
       icon: MdBuild,
-      group: "SERVICES & RECORDS",
+      group: "FINANCE & BILLS",
+      module: "maintenance",
+    },
+    {
+      label: "Payments & Collections",
+      path: `${base}/payments`,
+      icon: MdPayments,
+      group: "FINANCE & BILLS",
+      module: "payments",
+    },
+    {
+      label: t("adminMenuAmenities") || "Clubhouse & Amenities",
+      path: `${base}/amenities`,
+      icon: MdVerified,
+      group: "SERVICES & REPORTS",
       module: "amenities",
+    },
+    {
+      label: t("adminMenuReports") || "Society Reports",
+      path: `${base}/reports`,
+      icon: MdReportProblem,
+      group: "SERVICES & REPORTS",
+      module: "reports",
+    },
+    {
+      label: t("adminMenuDocument") || "Society Documents",
+      path: `${base}/society_documents`,
+      icon: MdVerified,
+      group: "SERVICES & REPORTS",
+      module: "society_documents",
     },
   ];
 
@@ -192,14 +224,44 @@ function AccountantLayoutInner() {
         brandSubtitle="Finance View"
         base={base}
         drawerExtra={<RoleSwitcher />}
-        defaultOpenGroups={["FINANCE & BILLING"]}
+        defaultOpenGroups={["FINANCE & BILLS"]}
       />
 
       {/* ── MAIN CONTENT ── */}
       <div className="main-content-layout min-w-0">
         <AppHeader
           title={t("accountantDashboardTitle")}
-          actions={<RoleSwitcher />}
+          actions={
+            <div className="flex items-center gap-2">
+              <RoleSwitcher />
+
+              {/* SOS button — accountant can raise a society-wide SOS */}
+              {hasPermission(user, "emergency", "trigger") && (
+                <button
+                  onClick={() => setShowSOS(true)}
+                  className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 shadow-md shadow-red-500/30 transition px-3 h-9 text-white text-xs font-bold cursor-pointer"
+                  title="Raise an SOS alert to the whole society"
+                >
+                  <MdEmergency size={15} />
+                  <span>SOS</span>
+                </button>
+              )}
+
+              {/* Emergency alert */}
+              {alerts.length > 0 && (
+                <button
+                  onClick={() => setShowEmergency(true)}
+                  className="relative flex items-center justify-center w-9 h-9 rounded-xl bg-red-600 hover:bg-red-700 shadow-md shadow-red-500/30 animate-pulse transition cursor-pointer"
+                  title={t("adminActiveEmergencies") || "Active Emergencies"}
+                >
+                  <MdWarning size={18} className="text-white" />
+                  <span className="header-sos-count absolute -top-1 -right-1 bg-white text-red-600 text-[10px] font-bold min-w-4.5 h-4.5 flex items-center justify-center rounded-full leading-none px-1">
+                    {alerts.length}
+                  </span>
+                </button>
+              )}
+            </div>
+          }
           onLogout={() => setShowLogoutConfirm(true)}
         />
 
@@ -251,6 +313,25 @@ function AccountantLayoutInner() {
           </div>,
           document.body
         )}
+
+      {/* EMERGENCY MODAL */}
+      <AdminEmergencyModal
+        alerts={alerts}
+        isOpen={showEmergency}
+        onClose={() => setShowEmergency(false)}
+        refresh={loadEmergencies}
+      />
+
+      {/* SOS MODAL */}
+      <SOSModal
+        key={String(showSOS)}
+        isOpen={showSOS}
+        onClose={() => setShowSOS(false)}
+        onRefresh={loadEmergencies}
+        alerts={alerts}
+        senderLabel="SOS"
+        modalTitle="🚨 Society SOS Center"
+      />
     </div>
   );
 }

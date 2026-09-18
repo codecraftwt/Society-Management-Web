@@ -2,8 +2,10 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useLang } from "../../context/LanguageContext";
 import SlidingTabs from "../../components/common/SlidingTabs";
+import ExpandableSearch from "../../components/common/ExpandableSearch";
+import GlobalModal from "../../components/common/GlobalModal";
 import {
-  MdDescription, MdDownload, MdOpenInNew,
+  MdDescription, MdDownload, MdVisibility,
   MdSearch,
   MdGavel, MdGroups, MdDirectionsCar,
   MdBarChart, MdSecurity,
@@ -66,7 +68,7 @@ function SkeletonCard() {
 }
 
 /* ── Document card ── */
-function DocCard({ doc, index, t, categoryLabel }) {
+function DocCard({ doc, index, t, categoryLabel, onOpen }) {
   const Icon = ICON_MAP[doc.category] || MdDescription;
   const c    = COLOR_MAP[doc.category] || COLOR_MAP["Legal"];
 
@@ -105,17 +107,17 @@ function DocCard({ doc, index, t, categoryLabel }) {
             {doc.file_size_formatted || "—"}
           </span>
           <div className="rd-actions">
-            <a
-              href={fileUrl}
-              target="_blank"
-              rel="noopener noreferrer"
+            <button
+              type="button"
+              onClick={() => onOpen(doc)}
               className="rd-btn rd-btn-view"
               title={t("docView")}
             >
-              <MdOpenInNew size={15} />
+              <MdVisibility size={15} />
               <span>{t("docView")}</span>
-            </a>
+            </button>
             <button
+              type="button"
               className="rd-btn rd-btn-download"
               title={t("docDownload")}
               onClick={async () => {
@@ -213,6 +215,7 @@ export default function ResidentDocument() {
   const [page,       setPage]       = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
+  const [viewDoc,    setViewDoc]    = useState(null);
 
   /* Maps backend category string → translated display label */
   const categoryLabel = (cat) => {
@@ -295,27 +298,11 @@ export default function ResidentDocument() {
       </div>
 
       <div className="ge-toolbar">
-        <div className="ge-search-wrap">
-          <MdSearch className="ge-search-icon" size={17} />
-          <input
-            className="ge-search-input"
-            placeholder={t("docSearch")}
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-          {fetching ? (
-            <div className="ge-search-action">
-              <svg className="animate-spin" style={{ width: 13, height: 13 }} viewBox="0 0 24 24" fill="none">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
-              </svg>
-            </div>
-          ) : search ? (
-            <button type="button" className="ge-search-clear" onClick={() => setSearch("")} title={t("cancel")}>
-              <MdClose size={13} />
-            </button>
-          ) : null}
-        </div>
+        <ExpandableSearch
+          placeholder={t("docSearch")}
+          value={search}
+          onChange={setSearch}
+        />
 
         <SlidingTabs
           className="gp-filter-tabs"
@@ -370,6 +357,7 @@ export default function ResidentDocument() {
                 index={i}
                 t={t}
                 categoryLabel={categoryLabel}
+                onOpen={setViewDoc}
               />
             ))}
           </div>
@@ -392,6 +380,28 @@ export default function ResidentDocument() {
       {!initialLoad && !error && counts.All === 0 && (
         <p className="rd-footer-note">{t("docFooter")}</p>
       )}
+
+      {/* ── VIEW MODAL ── */}
+      <GlobalModal
+        isOpen={!!viewDoc}
+        onClose={() => setViewDoc(null)}
+        title={viewDoc?.title || "Document"}
+        subtitle={viewDoc?.file_name}
+        icon={MdDescription}
+        size="lg"
+      >
+        <div style={{ height: "70vh", width: "100%", borderRadius: 12, overflow: "hidden", background: "#fff" }}>
+          {viewDoc && (
+            <iframe
+              src={viewDoc.file_url?.startsWith("http") ? viewDoc.file_url : `${BASE_URL}/${viewDoc.file_url}`}
+              title={viewDoc.title}
+              width="100%"
+              height="100%"
+              style={{ border: "none" }}
+            />
+          )}
+        </div>
+      </GlobalModal>
 
     </div>
   );

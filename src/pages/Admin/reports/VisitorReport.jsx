@@ -120,30 +120,13 @@ function FilterSheet({ show, onClose, isMobile, statusFilter, setStatusFilter, f
     </div>
   );
 
-  if (!isMobile) {
-    if (!show) return null;
-    return (
-      <div style={{ position: "relative" }}>
-        <div className="animate-fadeIn" style={{ position: "absolute", right: 0, top: 8, zIndex: 40, minWidth: 400, maxWidth: "min(92vw, 460px)", background: "var(--card-inner-bg, rgba(11,19,41,0.95))", border: "1px solid var(--glass-border)", borderRadius: 16, boxShadow: "0 18px 50px rgba(0,0,0,0.45)", backdropFilter: "blur(10px)", overflow: "hidden" }}>
-          <div style={{ padding: "12px 16px", borderBottom: "1px solid var(--glass-border)", display: "flex", alignItems: "center", gap: 8 }}>
-            <MdFilterList size={15} style={{ color: "var(--accent,#6B46C1)" }} />
-            <span style={{ fontSize: 13, fontWeight: 700, color: "var(--text-primary)", flex: 1 }}>{labels.filtersTitle}</span>
-            {applied && <button onClick={onClear} style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, fontWeight: 700, color: "var(--accent,#6B46C1)", background: "none", border: "none", cursor: "pointer" }}><MdClose size={13} /> {labels.clearFilters}</button>}
-            <button onClick={onClose} style={{ width: 26, height: 26, borderRadius: 8, background: "var(--card-bg,rgba(255,255,255,0.06))", border: "1px solid var(--glass-border)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "var(--text-secondary)" }}><MdClose size={14} /></button>
-          </div>
-          {formBody}
-        </div>
-      </div>
-    );
-  }
-
   if (!show) return null;
   return createPortal(
-    <div style={{ position: "fixed", inset: 0, zIndex: 9999, display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
+    <div style={{ position: "fixed", inset: 0, zIndex: 9999, display: "flex", flexDirection: "column", justifyContent: isMobile ? "flex-end" : "center", alignItems: "center", padding: isMobile ? 0 : 20 }}>
       <div onClick={onClose} style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.55)", backdropFilter: "blur(4px)" }} />
-      <div style={{ position: "relative", zIndex: 1, background: "var(--modal-bg,var(--card-bg,#2E2A36))", borderTop: "1.5px solid var(--glass-border)", borderRadius: "20px 20px 0 0", boxShadow: "0 -8px 40px rgba(0,0,0,0.45)", maxHeight: "88vh", overflowY: "auto" }}>
-        <div style={{ display: "flex", justifyContent: "center", padding: "10px 0 6px" }}><div style={{ width: 36, height: 4, borderRadius: 99, background: "var(--glass-border)" }} /></div>
-        <div style={{ padding: "8px 18px 14px", display: "flex", alignItems: "center", gap: 8, borderBottom: "1px solid var(--glass-border)" }}>
+      <div style={{ position: "relative", zIndex: 1, width: "100%", maxWidth: isMobile ? "100%" : 460, background: "var(--modal-bg,var(--card-bg,#2E2A36))", border: "1.5px solid var(--glass-border)", borderRadius: isMobile ? "20px 20px 0 0" : "18px", boxShadow: "0 20px 50px rgba(0,0,0,0.45)", maxHeight: isMobile ? "88vh" : "90vh", overflowY: "auto" }}>
+        {isMobile && <div style={{ display: "flex", justifyContent: "center", padding: "10px 0 6px" }}><div style={{ width: 36, height: 4, borderRadius: 99, background: "var(--glass-border)" }} /></div>}
+        <div style={{ padding: "12px 18px", display: "flex", alignItems: "center", gap: 8, borderBottom: "1px solid var(--glass-border)" }}>
           <MdFilterList size={16} style={{ color: "var(--accent,#6B46C1)" }} />
           <span style={{ fontSize: 14, fontWeight: 700, color: "var(--text-primary)", flex: 1 }}>{labels.filtersTitle}</span>
           {applied && <button onClick={() => { onClear(); onClose(); }} style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, fontWeight: 700, color: "var(--accent,#6B46C1)", background: "none", border: "none", cursor: "pointer" }}><MdClose size={13} /> {labels.clear}</button>}

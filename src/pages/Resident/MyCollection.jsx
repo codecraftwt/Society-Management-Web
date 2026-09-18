@@ -21,6 +21,7 @@ import {
 } from "react-icons/md";
 import Modal from "../../components/Modal";
 import SlidingTabs from "../../components/common/SlidingTabs";
+import ExpandableSearch from "../../components/common/ExpandableSearch";
 import { toast } from "react-toastify";
 import Select from "../../components/common/Select";
 import { QRCodeCanvas } from "qrcode.react";
@@ -497,25 +498,11 @@ export default function MyCollection() {
 
       {!loading && (parcels.length > 0 || search || tab !== "ALL") && (
         <div className="ge-toolbar">
-          <div className="ge-search-wrap">
-            <MdSearch className="ge-search-icon" size={17} />
-            <input
-              className="ge-search-input"
-              placeholder={t("gcSearch") || "Search courier..."}
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-            {search ? (
-              <button
-                type="button"
-                onClick={() => setSearch("")}
-                className="ge-search-clear"
-                aria-label="Clear search"
-              >
-                <MdClose size={13} />
-              </button>
-            ) : null}
-          </div>
+          <ExpandableSearch
+            placeholder={t("gcSearch") || "Search courier..."}
+            value={search}
+            onChange={setSearch}
+          />
 
           <SlidingTabs
             className="gp-filter-tabs"

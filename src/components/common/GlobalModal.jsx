@@ -88,7 +88,7 @@ export default function GlobalModal({
           display: "flex",
           flexDirection: "column",
           borderRadius: 20,
-          background: "var(--card-bg, #0f172a)",
+          background: "var(--modal-bg, var(--card-bg, #0f172a))",
           border: "1.5px solid var(--glass-border, rgba(255, 255, 255, 0.12))",
           boxShadow: "0 24px 64px rgba(0, 0, 0, 0.5), 0 0 20px rgba(37, 99, 235, 0.15)",
           overflow: "hidden",
@@ -97,7 +97,7 @@ export default function GlobalModal({
         }}
       >
         {/* Header */}
-        <div className="sa-modal-er" style={{ flexShrink: 0 }}>
+        <div className="sa-modal-header sa-modal-er" style={{ flexShrink: 0 }}>
           {Icon && (
             <div className="sa-modal-icon">
               {typeof Icon === "function" ? <Icon size={20} /> : Icon}

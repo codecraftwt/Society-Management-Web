@@ -19,6 +19,8 @@ import API from "../../services/api";
 import { BASE_URL } from "../../config/apiConfig";
 import Select from "../../components/common/Select";
 import GlobalButton from "../../components/common/GlobalButton";
+import ExpandableSearch from "../../components/common/ExpandableSearch";
+import GlobalModal from "../../components/common/GlobalModal";
 
 
 /* ── Constants ── */
@@ -87,28 +89,64 @@ function DocCard({ doc, t, onDelete, isCommittee }) {
   const formatDate = d => !d ? "—" : new Date(d).toLocaleDateString("en-US", { month: "short", year: "numeric" });
   const fileUrl    = doc => doc.file_url?.startsWith("http") ? doc.file_url : `${BASE_URL}/${doc.file_url}`;
   return (
-    <div className="ad-mobile-card animate-fadeIn">
-      <div className="ad-mc-top">
-        <div className="ad-mc-left">
-          <div className={`ad-row-icon ad-icon-${color}`}><Icon size={16} /></div>
-          <div>
-            <p className="ad-doc-name" title={doc.title}>{doc.title}</p>
-            <p className="ad-doc-file" title={doc.file_name}>{doc.file_name}</p>
+    <div className="rounded-2xl border p-4 sm:p-5 flex flex-col justify-between" style={{
+      background: "var(--card-bg, rgba(15, 23, 42, 0.6))",
+      borderColor: "var(--glass-border, rgba(255, 255, 255, 0.1))",
+      backdropFilter: "blur(16px)",
+      WebkitBackdropFilter: "blur(16px)",
+      minHeight: 160
+    }}>
+      <div className="flex items-start justify-between gap-3 mb-4">
+        <div className="flex items-start gap-3 min-w-0">
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{
+            background: "var(--card-inner-bg, rgba(255,255,255,0.04))",
+            border: "1px solid var(--glass-border)",
+            color: `var(--stat-${color}-color, #818cf8)`
+          }}>
+            <Icon size={20} />
+          </div>
+          <div className="min-w-0 flex-1">
+            <h3 className="text-sm font-bold text-primary truncate" style={{ letterSpacing: "-0.01em", color: "var(--text-primary)" }} title={doc.title}>
+              {doc.title}
+            </h3>
+            <p className="text-xs text-secondary truncate mt-0.5" title={doc.file_name}>{doc.file_name}</p>
           </div>
         </div>
-        <span className={`ad-cat-badge ad-badge-${color}`}>{catLabel(doc.category)}</span>
+        <span className={`px-2 py-1 rounded-md text-[10px] font-bold shrink-0 border`} style={{
+          background: `var(--stat-${color}-bg, rgba(255,255,255,0.05))`,
+          color: `var(--stat-${color}-color, #fff)`,
+          borderColor: `var(--stat-${color}-border, rgba(255,255,255,0.1))`
+        }}>
+          {catLabel(doc.category)}
+        </span>
       </div>
-      <div className="ad-mc-meta">
-        <span className="ad-size-chip"><MdInsertDriveFile size={11} />{doc.file_size_formatted || "—"}</span>
-        <span className="ad-size-chip">{formatDate(doc.created_at)}</span>
+
+      <div className="flex items-center gap-3 text-[11px] font-medium text-secondary mb-4">
+        <span className="flex items-center gap-1.5"><MdInsertDriveFile size={12} /> {doc.file_size_formatted || "—"}</span>
+        <span>•</span>
+        <span>{formatDate(doc.created_at)}</span>
       </div>
-      <div className="ad-mc-actions">
-        <a href={fileUrl(doc)} target="_blank" rel="noopener noreferrer"
-          className="ad-btn ad-btn-view ad-btn-flex">
+
+      <div className="flex items-center gap-2 mt-auto">
+        <button
+          onClick={() => onOpen(doc)}
+          className="flex-1 h-9 rounded-xl text-xs font-bold border flex items-center justify-center gap-1.5 transition-all"
+          style={{ background: "var(--card-inner-bg)", borderColor: "var(--glass-border)", color: "var(--text-primary)" }}
+          onMouseEnter={e => { e.currentTarget.style.background = "var(--hover-bg, rgba(255,255,255,0.08))"; e.currentTarget.style.borderColor = "var(--accent-light, #818cf8)"; }}
+          onMouseLeave={e => { e.currentTarget.style.background = "var(--card-inner-bg)"; e.currentTarget.style.borderColor = "var(--glass-border)"; }}
+        >
           <MdVisibility size={14} /> {t("docView")}
-        </a>
+        </button>
         {!isCommittee && (
-          <GlobalButton variant="delete" size="sm" icon={MdDelete} onClick={() => onDelete(doc)} />
+          <button
+            onClick={() => onDelete(doc)}
+            className="w-9 h-9 rounded-xl border flex items-center justify-center transition-all shrink-0"
+            style={{ background: "var(--card-inner-bg)", borderColor: "var(--glass-border)", color: "var(--stat-red-color, #ef4444)" }}
+            onMouseEnter={e => { e.currentTarget.style.background = "var(--stat-red-bg, rgba(239,68,68,0.15))"; e.currentTarget.style.borderColor = "var(--stat-red-border, rgba(239,68,68,0.3))"; }}
+            onMouseLeave={e => { e.currentTarget.style.background = "var(--card-inner-bg)"; e.currentTarget.style.borderColor = "var(--glass-border)"; }}
+          >
+            <MdDelete size={14} />
+          </button>
         )}
       </div>
     </div>
@@ -192,6 +230,7 @@ export default function AdminDocument() {
   const [file,       setFile]       = useState(null);
   const [form,       setForm]       = useState({ title: "", category: "Legal", desc: "" });
   const [uploadOpen, setUploadOpen] = useState(false);
+  const [viewDoc,    setViewDoc]    = useState(null);
 
   /* ── Delete ── */
   const [deleteTarget, setDeleteTarget] = useState(null);
@@ -349,31 +388,49 @@ export default function AdminDocument() {
         </div>
       )}
 
-      {/* ── HEADER ── */}
-      <div className="ad-er">
-        <div className="ad-er-left">
-          <div className="ad-er-icon-wrap"><MdOutlineAdminPanelSettings size={22} /></div>
+      {/* ── UNIFIED HEADER BAR ── */}
+      <div
+        className="ad-page-header flex flex-col xl:flex-row items-start xl:items-center justify-between gap-4 p-4 sm:p-5 rounded-2xl border mb-2"
+        style={{
+          background: "var(--card-bg, rgba(15, 23, 42, 0.6))",
+          borderColor: "var(--glass-border, rgba(255, 255, 255, 0.1))",
+          backdropFilter: "blur(16px)",
+          WebkitBackdropFilter: "blur(16px)",
+        }}
+      >
+        <div className="flex items-center gap-3">
+          <div
+            className="w-10 h-10 rounded-xl flex items-center justify-center text-accent shrink-0"
+            style={{
+              background: "var(--accent-soft, rgba(99,102,241,0.18))",
+              border: "1px solid var(--accent-light, #818cf8)",
+            }}
+          >
+            <MdDescription size={22} />
+          </div>
           <div>
-            <h1 className="ad-page-title">{t("adDocTitle")}</h1>
-            <p className="ad-page-subtitle">{t("adDocSubtitle")}</p>
+            <h1 className="text-lg sm:text-xl font-bold tracking-tight text-primary flex items-center gap-2" style={{ letterSpacing: "-0.02em", margin: 0 }}>
+              {t("adDocTitle") || "Society Documents"}
+            </h1>
+            <p className="text-xs text-secondary mt-0.5 hidden sm:block">
+              {t("adDocSubtitle") || "Manage legal and administrative documents"}
+            </p>
           </div>
         </div>
-        <div className="ad-er-right">
-          <span className="ad-count-badge">
-            <MdDescription size={13} /> {initialLoad ? "…" : counts.All} {t("adDocBadgeCount")}
-          </span>
+
+        <div className="flex items-center gap-2.5 flex-nowrap shrink-0 overflow-x-auto max-w-full pb-1" style={{ scrollbarWidth: "none" }}>
+          <ExpandableSearch placeholder={t("adDocSearch")} value={search} onChange={setSearch} />
           {!isCommittee && (
-            <button
-              className={`ad-upload-toggle-btn${uploadOpen ? " ad-upload-toggle-btn--open" : ""}`}
+            <GlobalButton
+              variant="add"
+              icon={uploadOpen ? MdClose : MdAdd}
+              borderDraw
               onClick={handleToggleUpload}
+              className="shrink-0"
+              style={{ fontWeight: 700 }}
             >
-              <span className="ad-upload-toggle-icon">
-                {uploadOpen ? <MdClose size={17} /> : <MdAdd size={17} />}
-              </span>
-              <span className="ad-upload-toggle-label">
-                {uploadOpen ? t("cancel") : t("adDocUploadBtn")}
-              </span>
-            </button>
+              {uploadOpen ? t("cancel") : t("adDocUploadBtn")}
+            </GlobalButton>
           )}
         </div>
       </div>
@@ -480,21 +537,7 @@ export default function AdminDocument() {
         {/* Toolbar */}
         <div className="ad-toolbar">
           <div className="ad-search-row">
-            <div className="ad-search-wrap">
-              <MdSearch size={17} className="ad-search-icon" />
-              <input
-                key="admin-doc-search"
-                className="ad-search-input"
-                placeholder={t("adDocSearch")}
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-              />
-              <div style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", display: "flex" }}>
-                {fetching && !initialLoad ? <Spinner small /> : search
-                  ? <button className="ad-search-clear" style={{ position: "static", transform: "none" }} onClick={() => setSearch("")}><MdClose size={13} /></button>
-                  : null}
-              </div>
-            </div>
+            {/* Expanded search moved to header */}
           </div>
           <div className="ad-filter-row-bar">
             <MdFilterList size={15} className="ad-filter-icon" />
@@ -549,7 +592,7 @@ export default function AdminDocument() {
           <>
             <div className="ad-card-grid">
               {docs.map((doc) => (
-                <DocCard key={doc.id} doc={doc} t={t} onDelete={handleOpenDelete} isCommittee={isCommittee} />
+                <DocCard key={doc.id} doc={doc} t={t} onDelete={handleOpenDelete} onOpen={setViewDoc} isCommittee={isCommittee} />
               ))}
             </div>
 
@@ -574,6 +617,28 @@ export default function AdminDocument() {
         onCancel={() => !deleting && setDeleteTarget(null)}
         t={t}
       />
+
+      {/* ── VIEW MODAL ── */}
+      <GlobalModal
+        isOpen={!!viewDoc}
+        onClose={() => setViewDoc(null)}
+        title={viewDoc?.title || "Document"}
+        subtitle={viewDoc?.file_name}
+        icon={MdDescription}
+        size="lg"
+      >
+        <div style={{ height: "70vh", width: "100%", borderRadius: 12, overflow: "hidden", background: "#fff" }}>
+          {viewDoc && (
+            <iframe
+              src={viewDoc.file_url?.startsWith("http") ? viewDoc.file_url : `${BASE_URL}/${viewDoc.file_url}`}
+              title={viewDoc.title}
+              width="100%"
+              height="100%"
+              style={{ border: "none" }}
+            />
+          )}
+        </div>
+      </GlobalModal>
     </div>
   );
 }

@@ -7,14 +7,16 @@ import { AuthContext } from "../../context/AuthContext";
 import { isCommitteeMember, hasPermission } from "../../utils/permissions";
 import { useCustomAlert } from "../../context/CustomAlertContext";
 import {
-  MdAdd, MdClose, MdSearch, MdOutlineInbox,
+  MdAdd, MdClose, MdOutlineInbox,
   MdCheckCircle, MdCancel, MdToggleOn, MdToggleOff,
   MdAccessTime, MdPeople, MdEventAvailable,
   MdGridView, MdCalendarMonth, MdWarning, MdBlock,
-  MdPayment, MdEdit,
+  MdPayment, MdEdit, MdFilterAlt, MdCheck, MdExpandMore,
 } from "react-icons/md";
 import Select from "../../components/common/Select";
 import SlidingTabs from "../../components/common/SlidingTabs";
+import ExpandableSearch from "../../components/common/ExpandableSearch";
+import GlobalButton from "../../components/common/GlobalButton";
 
 function Spinner({ cls = "h-4 w-4" }) {
   return (
@@ -68,6 +70,22 @@ function StatusBadge({ status, t }) {
   );
 }
 
+function FilterRow({ label, active, onClick }) {
+  const [hov, setHov] = useState(false);
+  return (
+    <button type="button" onClick={onClick} onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}
+      style={{
+        display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%",
+        padding: "8px 10px", borderRadius: 10, border: "none", cursor: "pointer",
+        background: active ? "var(--accent-soft, rgba(99,102,241,0.16))" : hov ? "var(--card-inner-bg, rgba(255,255,255,0.06))" : "transparent",
+        color: "var(--text-primary)", fontSize: 13, fontWeight: active ? 700 : 500,
+      }}>
+      <span>{label}</span>
+      {active && <MdCheck size={15} style={{ color: "var(--accent)" }} />}
+    </button>
+  );
+}
+
 function useIsMobile() {
   const [mobile, setMobile] = useState(() => window.innerWidth < 640);
   useEffect(() => {
@@ -105,8 +123,10 @@ function DisableModal({ amenity, onClose, onConfirm, isMobile }) {
   );
 
   return createPortal(
-    <div style={{ position: "fixed", inset: 0, zIndex: 9999, background: "rgba(0,0,0,0.55)", display: "flex", alignItems: "center", justifyContent: "center", padding: "20px" }}
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+    <div
+      style={{ position: "fixed", inset: 0, zIndex: 9999, background: "rgba(0,0,0,0.55)", display: "flex", alignItems: "center", justifyContent: "center", padding: "20px" }}
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
       <div style={{ width: "100%", maxWidth: 440, background: "var(--card-bg)", border: "1.5px solid var(--glass-border)", borderRadius: 20, overflow: "hidden", boxShadow: "0 24px 64px rgba(0,0,0,0.3)" }}>
 
         <div style={{ padding: "18px 20px 14px", borderBottom: "1px solid var(--glass-border)", display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
@@ -163,8 +183,12 @@ function DisableModal({ amenity, onClose, onConfirm, isMobile }) {
               <div style={{ fontSize: 12, fontWeight: 600, color: "var(--text-primary)" }}>Notify residents</div>
               <div style={{ fontSize: 10, color: "var(--text-secondary)", marginTop: 1 }}>Send a push notification about this closure</div>
             </div>
-            <div onClick={() => setNotifyResidents(p => !p)} style={{ width: 38, height: 22, borderRadius: 99, position: "relative", cursor: "pointer", background: notifyResidents ? "linear-gradient(90deg,#4C76C9,#5A3BA2)" : "var(--glass-border)", transition: "background 0.2s", flexShrink: 0 }}>
-              <div style={{ position: "absolute", top: 3, width: 16, height: 16, borderRadius: "50%", background: "#fff", boxShadow: "0 1px 4px rgba(0,0,0,0.25)", left: notifyResidents ? 19 : 3, transition: "left 0.2s" }} />
+            {/* Toggle with smooth animation */}
+            <div
+              onClick={() => setNotifyResidents(p => !p)}
+              style={{ width: 40, height: 22, borderRadius: 99, position: "relative", cursor: "pointer", background: notifyResidents ? "var(--accent, #6366f1)" : "var(--glass-border)", transition: "background 0.25s ease", flexShrink: 0, boxShadow: notifyResidents ? "0 0 0 3px var(--accent-soft)" : "none" }}
+            >
+              <div style={{ position: "absolute", top: 3, width: 16, height: 16, borderRadius: "50%", background: "#fff", boxShadow: "0 1px 4px rgba(0,0,0,0.25)", left: notifyResidents ? 21 : 3, transition: "left 0.25s ease" }} />
             </div>
           </div>
 
@@ -184,7 +208,7 @@ function DisableModal({ amenity, onClose, onConfirm, isMobile }) {
         </div>
       </div>
     </div>
-  );
+  , document.body);
 }
 
 function ReasonBanner({ amenity }) {
@@ -216,10 +240,14 @@ export default function AdminAmenity() {
   const [editingAmenity, setEditingAmenity] = useState(null);
   const [activeTab, setActiveTab] = useState("AMENITIES");
   const [searchAmenity, setSearchAmenity] = useState("");
+  const [isAmenSearchOpen, setIsAmenSearchOpen] = useState(false);
   const [amenityStatusFilter, setAmenityStatusFilter] = useState("ALL");
   const [amenityPricingFilter, setAmenityPricingFilter] = useState("ALL");
   const [searchBooking, setSearchBooking] = useState("");
+  const [isBookingSearchOpen, setIsBookingSearchOpen] = useState(false);
   const [bookingFilter, setBookingFilter] = useState("ALL");
+  const [amenFilterOpen, setAmenFilterOpen] = useState(false);
+  const [amenFilterPos, setAmenFilterPos] = useState(null);
   const [togglingId, setTogglingId] = useState(null);
   const [approvingId, setApprovingId] = useState(null);
   const [rejectingId, setRejectingId] = useState(null);
@@ -272,6 +300,15 @@ export default function AdminAmenity() {
     setForm({ name: "", type: "FREE", booking_type: "SLOT", rate_per_hour: 0, opening_time: "", closing_time: "", capacity: 1, requires_approval: false });
     setShowForm(p => !p);
   };
+
+  const handleToggleAmenFilter = (e) => {
+    if (amenFilterOpen) { setAmenFilterOpen(false); return; }
+    const r = e.currentTarget.getBoundingClientRect();
+    setAmenFilterPos({ top: r.bottom + 6, left: Math.max(8, Math.min(r.left, window.innerWidth - 276)) });
+    setAmenFilterOpen(true);
+  };
+
+  const activeFilterCount = (amenityStatusFilter !== "ALL" ? 1 : 0) + (amenityPricingFilter !== "ALL" ? 1 : 0);
 
   const handleOpenEditForm = (amenity) => {
     if (!hasPermission(user, "amenities", "edit")) {
@@ -464,6 +501,18 @@ export default function AdminAmenity() {
     { key: "BOOKINGS", label: t("amenTabBookings"), Icon: MdCalendarMonth, count: bStats.total, alert: bStats.pending },
   ];
 
+  const STATUS_FILTER_OPTIONS = [
+    { value: "ALL", label: t("amenFilterStatusAll") },
+    { value: "ACTIVE", label: t("amenFilterStatusActive") },
+    { value: "DISABLED", label: t("amenFilterStatusDisabled") },
+  ];
+
+  const PRICING_FILTER_OPTIONS = [
+    { value: "ALL", label: t("amenFilterPricingAll") },
+    { value: "FREE", label: t("amenFreeAccess") },
+    { value: "PAID", label: t("amenPaid") },
+  ];
+
   const BFILTERS = [
     { k: "ALL", label: "All", ac: "#5A3BA2" },
     { k: "PAYMENT_PENDING", label: "Awaiting Payment", ac: "#5A3BA2" },
@@ -500,21 +549,118 @@ export default function AdminAmenity() {
       )}
 
       {/* HEADER */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
-        <div style={{ minWidth: 0 }}>
-          <h2 style={{ fontSize: isMobile ? 17 : 20, fontWeight: 700, color: "var(--text-primary)", letterSpacing: "-0.03em", margin: 0 }}>{t("amenTitle")}</h2>
-          <p style={{ fontSize: 12, color: "var(--text-secondary)", marginTop: 3 }}>{t("amenSubtitle")}</p>
+      <div className="ad-page-header flex flex-col md:flex-row items-start md:items-center justify-between gap-4 p-4 sm:p-5 rounded-2xl border"
+        style={{
+          background: "var(--card-bg, rgba(15, 23, 42, 0.6))",
+          borderColor: "var(--glass-border, rgba(255, 255, 255, 0.1))",
+          backdropFilter: "blur(16px)",
+          WebkitBackdropFilter: "blur(16px)",
+        }}>
+        <div className="flex items-center gap-3">
+          <div
+            className="w-10 h-10 rounded-xl flex items-center justify-center text-accent shrink-0"
+            style={{
+              background: "var(--accent-soft, rgba(99,102,241,0.18))",
+              border: "1px solid var(--accent-light, #818cf8)",
+            }}
+          >
+            <MdGridView size={22} />
+          </div>
+          <div style={{ minWidth: 0 }}>
+            <h1 className="text-lg sm:text-xl font-bold tracking-tight text-primary flex items-center gap-2">
+              {t("amenTitle")}
+              <span
+                className="text-xs font-semibold px-2 py-0.5 rounded-full"
+                style={{
+                  background: "var(--accent-soft, rgba(99,102,241,0.18))",
+                  color: "var(--accent, #818cf8)",
+                }}
+              >
+                {activeTab === "AMENITIES" ? amenities.length : bStats.total}
+              </span>
+            </h1>
+            <p className="text-xs text-secondary hidden sm:block" style={{ marginTop: 2 }}>{t("amenSubtitle")}</p>
+          </div>
         </div>
-        {activeTab === "AMENITIES" && canEdit && (
-          <button onClick={handleToggleAddForm} className="sa-add-btn sa-add-pill sa-btn-primary" style={{ flexShrink: 0 }}>
-            <span className="sa-pill-blob sa-pill-blob1" />
-            <span className="sa-pill-inner">
-              {showForm ? <MdClose size={15} /> : <MdAdd size={15} />}
-              <span>{showForm ? t("cancel") : t("amenNewBtn")}</span>
-            </span>
-          </button>
-        )}
+
+        <div className="flex items-center gap-2.5 flex-nowrap shrink-0 overflow-x-auto max-w-full pb-1" style={{ scrollbarWidth: "none" }}>
+          {activeTab === "AMENITIES" ? (
+            <>
+              <ExpandableSearch
+                value={searchAmenity}
+                onChange={(val) => setSearchAmenity(val)}
+                placeholder={t("amenSearchPlaceholder")}
+                isOpen={isAmenSearchOpen}
+                onOpenChange={setIsAmenSearchOpen}
+              />
+              <button onClick={handleToggleAmenFilter} aria-label="Amenity filters"
+                style={{
+                  height: 38, flexShrink: 0, display: "inline-flex", alignItems: "center", gap: 6,
+                  padding: "0 14px", borderRadius: 12, cursor: "pointer", whiteSpace: "nowrap",
+                  fontSize: 12.5, fontWeight: 600, color: "var(--text-primary)",
+                  border: activeFilterCount ? "1.5px solid var(--accent-light, #818cf8)" : "1.5px solid var(--glass-border)",
+                  background: activeFilterCount ? "var(--accent-soft, rgba(99,102,241,0.18))" : "var(--card-inner-bg, rgba(255,255,255,0.06))",
+                  transition: "all 0.15s",
+                }}>
+                <MdFilterAlt size={15} style={{ color: "var(--accent)" }} />
+                <span>Filters</span>
+                {activeFilterCount > 0 && (
+                  <span style={{ minWidth: 17, height: 17, padding: "0 4px", borderRadius: 999, background: "var(--accent)", color: "#fff", fontSize: 10, fontWeight: 800, display: "inline-flex", alignItems: "center", justifyContent: "center" }}>{activeFilterCount}</span>
+                )}
+                <MdExpandMore size={14} style={{ opacity: 0.65 }} />
+              </button>
+              {canEdit && (
+                <GlobalButton
+                  variant="add"
+                  icon={showForm ? MdClose : MdAdd}
+                  borderDraw
+                  onClick={handleToggleAddForm}
+                  className="shrink-0"
+                  style={{ fontWeight: 700, height: 38, whiteSpace: "nowrap" }}
+                >
+                  {showForm ? t("cancel") : t("amenNewBtn")}
+                </GlobalButton>
+              )}
+            </>
+          ) : (
+            <ExpandableSearch
+              value={searchBooking}
+              onChange={(val) => setSearchBooking(val)}
+              placeholder={t("amenBookingSearch")}
+              isOpen={isBookingSearchOpen}
+              onOpenChange={setIsBookingSearchOpen}
+            />
+          )}
+        </div>
       </div>
+
+      {amenFilterOpen && amenFilterPos && createPortal(
+        <>
+          <div style={{ position: "fixed", inset: 0, zIndex: 9998 }} onClick={() => setAmenFilterOpen(false)} />
+          <div className="animate-scaleIn" style={{ position: "fixed", zIndex: 9999, top: amenFilterPos.top, left: amenFilterPos.left, width: 268, background: "var(--card-bg)", borderRadius: 16, border: "1.5px solid var(--glass-border)", boxShadow: "0 20px 52px rgba(0,0,0,0.35)", padding: "10px", transformOrigin: "top left" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "6px 10px 0" }}>
+              <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text-secondary)" }}>Filters</span>
+              {activeFilterCount > 0 && (
+                <button onClick={() => { setAmenityStatusFilter("ALL"); setAmenityPricingFilter("ALL"); }}
+                  style={{ background: "none", border: "none", cursor: "pointer", fontSize: 10.5, fontWeight: 700, color: "var(--accent)", padding: 0 }}>
+                  Clear all
+                </button>
+              )}
+            </div>
+
+            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text-secondary)", margin: "12px 10px 4px" }}>Status</div>
+            {STATUS_FILTER_OPTIONS.map(o => (
+              <FilterRow key={o.value} active={amenityStatusFilter === o.value} onClick={() => setAmenityStatusFilter(o.value)} label={o.label} />
+            ))}
+
+            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text-secondary)", margin: "12px 10px 4px" }}>Pricing</div>
+            {PRICING_FILTER_OPTIONS.map(o => (
+              <FilterRow key={o.value} active={amenityPricingFilter === o.value} onClick={() => setAmenityPricingFilter(o.value)} label={o.label} />
+            ))}
+          </div>
+        </>,
+        document.body
+      )}
 
       <SlidingTabs
         value={activeTab}
@@ -531,61 +677,6 @@ export default function AdminAmenity() {
       {/* ════════════ AMENITIES ════════════ */}
       {activeTab === "AMENITIES" && (
         <>
-          {canEdit && showForm && (
-            <div className="animate-scaleIn" style={{ background: "var(--card-bg)", border: "1.5px solid var(--glass-border)", borderRadius: 20, padding: isMobile ? "18px 16px" : "24px 28px" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
-                <div style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(107,70,193,0.12)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 17 }}>{editingAmenity ? "✏️" : "✨"}</div>
-                <div>
-                  <div style={{ fontWeight: 700, fontSize: 14, color: "var(--text-primary)" }}>{editingAmenity ? t("amenFormEditTitle") : t("amenFormTitle")}</div>
-                  <div style={{ fontSize: 12, color: "var(--text-secondary)", marginTop: 2 }}>{t("amenFormSub")}</div>
-                </div>
-              </div>
-              <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 12 }}>
-                <div><Label>{t("amenFieldName")}</Label><input style={inputStyle} placeholder={t("amenFieldNamePlaceholder")} value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} /></div>
-                <div><Label>{t("amenFieldBookingType")}</Label><Select style={inputStyle} value={form.booking_type} onChange={e => setForm({ ...form, booking_type: e.target.value })}><option value="SLOT">{t("amenSlotBased")}</option><option value="FULL_DAY">{t("amenFullDay")}</option></Select></div>
-                <div><Label>{t("amenFieldPricing")}</Label><Select style={inputStyle} value={form.type} onChange={e => setForm({ ...form, type: e.target.value })}><option value="FREE">{t("amenFreeAccess")}</option><option value="PAID">{t("amenPaid")}</option></Select></div>
-                {form.type === "PAID" && <div><Label>{t("amenFieldRate")}</Label><input type="number" style={inputStyle} placeholder="0" value={form.rate_per_hour} onChange={e => setForm({ ...form, rate_per_hour: e.target.value })} /></div>}
-                <div><Label>{t("amenFieldCapacity")}</Label><input type="number" style={inputStyle} placeholder="1" value={form.capacity} onChange={e => setForm({ ...form, capacity: e.target.value })} /></div>
-                {form.booking_type === "SLOT" && <>
-                  <div><Label>{t("amenFieldOpenTime")}</Label><input type="time" style={inputStyle} value={form.opening_time} onChange={e => setForm({ ...form, opening_time: e.target.value })} /></div>
-                  <div><Label>{t("amenFieldCloseTime")}</Label><input type="time" style={inputStyle} value={form.closing_time} onChange={e => setForm({ ...form, closing_time: e.target.value })} /></div>
-                </>}
-                <div onClick={() => setForm({ ...form, requires_approval: !form.requires_approval })} style={{ display: "flex", alignItems: "center", gap: 12, minHeight: 48, padding: "0 14px", borderRadius: 12, cursor: "pointer", background: "var(--card-inner-bg)", border: "1.5px solid var(--glass-border)" }}>
-                  <div style={{ width: 38, height: 22, borderRadius: 99, position: "relative", flexShrink: 0, background: form.requires_approval ? "linear-gradient(90deg,#4C76C9,#5A3BA2)" : "var(--card-inner-border,#C3BFCC)", transition: "background 0.2s" }}>
-                    <div style={{ position: "absolute", top: 3, width: 16, height: 16, borderRadius: "50%", background: "#fff", boxShadow: "0 1px 4px rgba(0,0,0,0.25)", left: form.requires_approval ? 19 : 3, transition: "left 0.2s" }} />
-                  </div>
-                  <div>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)" }}>{t("amenRequiresApproval")}</div>
-                    <div style={{ fontSize: 11, color: "var(--text-secondary)", marginTop: 1 }}>{t("amenRequiresApprovalSub")}</div>
-                  </div>
-                </div>
-              </div>
-              <div style={{ marginTop: 18, paddingTop: 16, borderTop: "1px solid var(--glass-border)", display: "flex", gap: 10, flexWrap: "wrap" }}>
-                <button onClick={submitAmenity} disabled={submitting} className="btn-primary" style={{ borderRadius: 12, padding: "10px 22px", fontSize: 13, fontWeight: 600, display: "flex", alignItems: "center", gap: 7, flex: isMobile ? 1 : "unset" }}>
-                  {submitting ? <Spinner cls="h-3 w-3" /> : <MdAdd size={16} />} {editingAmenity ? t("save") : t("amenCreateBtn")}
-                </button>
-                <button onClick={() => { setShowForm(false); setEditingAmenity(null); }} className="btn-muted" style={{ borderRadius: 12, padding: "10px 18px", fontSize: 13, flex: isMobile ? 1 : "unset" }}>{t("cancel")}</button>
-              </div>
-            </div>
-          )}
-
-          <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", gap: 12, alignItems: "stretch" }}>
-            <div style={{ position: "relative", flex: 1, minWidth: 0 }}>
-              <MdSearch size={15} style={{ position: "absolute", left: 13, top: "50%", transform: "translateY(-50%)", color: "var(--text-secondary)", pointerEvents: "none" }} />
-              <input className="search-input" style={{ ...inputStyle, paddingLeft: 38, paddingRight: searchAmenity ? 34 : 14 }} placeholder={t("amenSearchPlaceholder")} value={searchAmenity} onChange={e => setSearchAmenity(e.target.value)} />
-              {searchAmenity && <button onClick={() => setSearchAmenity("")} style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "var(--text-secondary)" }}><MdClose size={14} /></button>}
-            </div>
-            <select style={{ ...inputStyle, flex: isMobile ? "1" : "0 0 auto", width: isMobile ? "100%" : "auto", cursor: "pointer" }} value={amenityStatusFilter} onChange={e => setAmenityStatusFilter(e.target.value)}>
-              <option value="ALL">{t("amenFilterStatusAll")}</option>
-              <option value="ACTIVE">{t("amenFilterStatusActive")}</option>
-              <option value="DISABLED">{t("amenFilterStatusDisabled")}</option>
-            </select>
-            <select style={{ ...inputStyle, flex: isMobile ? "1" : "0 0 auto", width: isMobile ? "100%" : "auto", cursor: "pointer" }} value={amenityPricingFilter} onChange={e => setAmenityPricingFilter(e.target.value)}>
-              <option value="ALL">{t("amenFilterPricingAll")}</option>
-              <option value="FREE">{t("amenFreeAccess")}</option>
-              <option value="PAID">{t("amenPaid")}</option>
-            </select>
-          </div>
 
           {filteredAmenities.length === 0 ? (
             <div style={{ background: "var(--card-inner-bg)", border: "1.5px dashed var(--glass-border)", borderRadius: 18, padding: "50px 20px", textAlign: "center" }}>
@@ -672,13 +763,6 @@ export default function AdminAmenity() {
       {/* ════════════ BOOKINGS ════════════ */}
       {activeTab === "BOOKINGS" && (
         <>
-          {/* Search */}
-          <div style={{ position: "relative", width: "100%" }}>
-            <MdSearch size={15} style={{ position: "absolute", left: 13, top: "50%", transform: "translateY(-50%)", color: "var(--text-secondary)", pointerEvents: "none" }} />
-            <input className="search-input" style={{ ...inputStyle, paddingLeft: 38, paddingRight: searchBooking ? 34 : 14 }} placeholder={t("amenBookingSearch")} value={searchBooking} onChange={e => setSearchBooking(e.target.value)} />
-            {searchBooking && <button onClick={() => setSearchBooking("")} style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "var(--text-secondary)" }}><MdClose size={13} /></button>}
-          </div>
-
           {/* Filter pills */}
           <div style={{ overflowX: "auto", paddingBottom: 2 }}>
             <div style={{ display: "inline-flex", padding: 5, gap: 4, background: "var(--card-inner-bg)", border: "1.5px solid var(--glass-border)", borderRadius: 14, minWidth: isMobile ? "100%" : "auto" }}>
@@ -780,6 +864,94 @@ export default function AdminAmenity() {
             })}
           </div>
         </>
+      )}
+
+      {/* ════════════ FORM MODAL PORTAL ════════════ */}
+      {canEdit && showForm && createPortal(
+        <div
+          onClick={(e) => { if (e.target === e.currentTarget) { setShowForm(false); setEditingAmenity(null); } }}
+          style={{
+            position: "fixed", inset: 0, zIndex: 1100,
+            background: "rgba(0,0,0,0.6)",
+            backdropFilter: "blur(8px)",
+            WebkitBackdropFilter: "blur(8px)",
+            display: "flex", alignItems: "center", justifyContent: "center", padding: 16,
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="animate-scaleIn"
+            style={{
+              width: "100%", maxWidth: 640,
+              background: "var(--card-bg)",
+              border: "1px solid var(--glass-border)",
+              borderRadius: 20,
+              maxHeight: "90vh",
+              display: "flex", flexDirection: "column",
+              boxShadow: "0 18px 50px rgba(0,0,0,0.5)",
+            }}
+          >
+            {/* Modal Header */}
+            <div style={{ padding: "20px 24px 0", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <div style={{ width: 38, height: 38, borderRadius: 10, background: "var(--accent-soft, rgba(99,102,241,0.18))", border: "1px solid var(--accent-light, #818cf8)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>
+                  {editingAmenity ? "✏️" : "✨"}
+                </div>
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: 15, color: "var(--text-primary)" }}>{editingAmenity ? t("amenFormEditTitle") : t("amenFormTitle")}</div>
+                  <div style={{ fontSize: 12, color: "var(--text-secondary)", marginTop: 2 }}>{t("amenFormSub")}</div>
+                </div>
+              </div>
+              <button
+                onClick={() => { setShowForm(false); setEditingAmenity(null); }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = "var(--accent-soft)"; e.currentTarget.style.color = "var(--accent)"; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = "var(--card-inner-bg)"; e.currentTarget.style.color = "var(--text-secondary)"; }}
+                style={{ width: 32, height: 32, borderRadius: 8, border: "1px solid var(--glass-border)", background: "var(--card-inner-bg)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-secondary)", transition: "all 0.15s", flexShrink: 0 }}
+              >
+                <MdClose size={16} />
+              </button>
+            </div>
+
+            <div style={{ height: 1, background: "var(--glass-border)", margin: "16px 0 0", flexShrink: 0 }} />
+
+            {/* Modal Body */}
+            <div style={{ padding: "20px 24px 24px", overflowY: "auto", flex: 1 }}>
+              <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 14 }}>
+                <div><Label>{t("amenFieldName")}</Label><input style={inputStyle} placeholder={t("amenFieldNamePlaceholder")} value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} /></div>
+                <div><Label>{t("amenFieldBookingType")}</Label><Select style={inputStyle} value={form.booking_type} onChange={e => setForm({ ...form, booking_type: e.target.value })}><option value="SLOT">{t("amenSlotBased")}</option><option value="FULL_DAY">{t("amenFullDay")}</option></Select></div>
+                <div><Label>{t("amenFieldPricing")}</Label><Select style={inputStyle} value={form.type} onChange={e => setForm({ ...form, type: e.target.value })}><option value="FREE">{t("amenFreeAccess")}</option><option value="PAID">{t("amenPaid")}</option></Select></div>
+                {form.type === "PAID" && <div><Label>{t("amenFieldRate")}</Label><input type="number" style={inputStyle} placeholder="0" value={form.rate_per_hour} onChange={e => setForm({ ...form, rate_per_hour: e.target.value })} /></div>}
+                <div><Label>{t("amenFieldCapacity")}</Label><input type="number" style={inputStyle} placeholder="1" value={form.capacity} onChange={e => setForm({ ...form, capacity: e.target.value })} /></div>
+                {form.booking_type === "SLOT" && <>
+                  <div><Label>{t("amenFieldOpenTime")}</Label><input type="time" style={inputStyle} value={form.opening_time} onChange={e => setForm({ ...form, opening_time: e.target.value })} /></div>
+                  <div><Label>{t("amenFieldCloseTime")}</Label><input type="time" style={inputStyle} value={form.closing_time} onChange={e => setForm({ ...form, closing_time: e.target.value })} /></div>
+                </>}
+                {/* Requires Approval toggle */}
+                <div
+                  onClick={() => setForm({ ...form, requires_approval: !form.requires_approval })}
+                  style={{ display: "flex", alignItems: "center", gap: 12, minHeight: 48, padding: "0 14px", borderRadius: 12, cursor: "pointer", background: "var(--card-inner-bg)", border: "1.5px solid var(--glass-border)", gridColumn: isMobile ? "1" : "span 2" }}
+                >
+                  {/* toggle track */}
+                  <div style={{ width: 40, height: 22, borderRadius: 99, position: "relative", flexShrink: 0, background: form.requires_approval ? "var(--accent, #6366f1)" : "var(--glass-border)", transition: "background 0.25s ease", boxShadow: form.requires_approval ? "0 0 0 3px var(--accent-soft)" : "none" }}>
+                    <div style={{ position: "absolute", top: 3, width: 16, height: 16, borderRadius: "50%", background: "#fff", boxShadow: "0 1px 4px rgba(0,0,0,0.25)", left: form.requires_approval ? 21 : 3, transition: "left 0.25s ease" }} />
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)" }}>{t("amenRequiresApproval")}</div>
+                    <div style={{ fontSize: 11, color: "var(--text-secondary)", marginTop: 1 }}>{t("amenRequiresApprovalSub")}</div>
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ marginTop: 20, paddingTop: 16, borderTop: "1px solid var(--glass-border)", display: "flex", gap: 10, flexWrap: "wrap", justifyContent: "flex-end" }}>
+                <button onClick={() => { setShowForm(false); setEditingAmenity(null); }} className="btn-muted" style={{ borderRadius: 12, padding: "10px 18px", fontSize: 13 }}>{t("cancel")}</button>
+                <button onClick={submitAmenity} disabled={submitting} className="btn-primary" style={{ borderRadius: 12, padding: "10px 22px", fontSize: 13, fontWeight: 600, display: "flex", alignItems: "center", gap: 7 }}>
+                  {submitting ? <Spinner cls="h-3 w-3" /> : <MdAdd size={16} />} {editingAmenity ? t("save") : t("amenCreateBtn")}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>,
+        document.body
       )}
     </div>
   );

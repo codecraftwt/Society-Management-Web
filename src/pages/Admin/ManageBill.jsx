@@ -13,6 +13,8 @@ import {
 import Select from "../../components/common/Select";
 import GlobalButton from "../../components/common/GlobalButton";
 import GlobalModal from "../../components/common/GlobalModal";
+import SlidingTabs from "../../components/common/SlidingTabs";
+import ExpandableSearch from "../../components/common/ExpandableSearch";
 import { isCommitteeMember, hasPermission } from "../../utils/permissions";
 import { useCustomAlert } from "../../context/CustomAlertContext";
 
@@ -186,6 +188,7 @@ export default function ManageBills() {
 
   /* ── Search & filter ── */
   const [search, setSearch] = useState("");
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [filterStatus, setFilterStatus] = useState("ALL");
   const debSearch = useDebounce(search, 500);
 
@@ -642,48 +645,68 @@ export default function ManageBills() {
         </div>
       )}
 
-      {/* ── HEADER ── */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-          <div className="er-icon er-icon--amenity"><MdReceiptLong size={22} /></div>
+      {/* ── Page Header: Unified Single Row with Sliding Tabs, Society Filter, Bulk Actions & Search ── */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 mb-5">
+        <div className="flex items-center gap-3">
+          <div className="ad-page-icon">
+            <MdReceiptLong size={22} />
+          </div>
           <div>
-            <h2 className="page-title" style={{ fontSize: isMobile ? 17 : 20 }}>{t("billsTitle")}</h2>
-            <p className="page-subtitle">{t("billsSubtitle")}</p>
+            <h2 className="text-lg font-semibold" style={{ letterSpacing: "-0.02em", margin: 0 }}>
+              {t("billsTitle") || "Bills Management"}
+            </h2>
+            <p className="text-secondary text-xs mt-0.5">
+              {totalItems} {filterStatus !== "ALL" ? filterStatus.toLowerCase() : ""} {t("billCount") || "bills recorded"}
+            </p>
           </div>
         </div>
-        {!isCommittee && (
-          <GlobalButton
-            variant="add"
-            size="md"
-            borderDraw
-            icon={MdAdd}
-            onClick={handleOpenCreateModal}
-            fullWidth={false}
-            style={{ flexShrink: 0, whiteSpace: "nowrap" }}
-          >
-            {t("billCreate")}
-          </GlobalButton>
-        )}
-      </div>
 
-      {/* ── SUPER ADMIN FILTER ── */}
-      {isSuperAdmin && (
-        <div style={{ marginBottom: 20, display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, background: "var(--card-inner-bg)", padding: "4px 12px", borderRadius: 12, border: "1px solid var(--glass-border)" }}>
-            <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase" }}>Society Filter</span>
-            <Select className="input" style={{ width: 220, border: "none", background: "none", fontWeight: 700, color: "var(--accent)" }}
-              value={filterSocietyId} onChange={(e) => setFilterSocietyId(e.target.value)}>
+        {/* Action Controls Toolbar */}
+        <div className="flex items-center gap-2.5 flex-nowrap shrink-0 overflow-x-auto max-w-full pb-1">
+          {/* Status Toggle Sliding Tabs */}
+          <SlidingTabs
+            value={filterStatus}
+            onChange={handleFilterChange}
+            items={isSearchOpen ? TABS.filter(t => t.key === filterStatus).map(t => ({ id: t.key, label: t.label, badge: t.count })) : TABS.map(t => ({ id: t.key, label: t.label, badge: t.count }))}
+          />
+
+          {/* Expandable Animated Search Slider */}
+          <ExpandableSearch
+            value={search}
+            onChange={(val) => { setSearch(val); setPage(1); }}
+            placeholder={t("billSearch") || "Search bills, flats, categories…"}
+            fetching={fetching}
+            isOpen={isSearchOpen}
+            onOpenChange={setIsSearchOpen}
+          />
+
+          {/* Super Admin Society Filter */}
+          {isSuperAdmin && (
+            <Select
+              className="input h-10 text-xs min-w-36 bg-white/5 border-white/10"
+              value={filterSocietyId}
+              onChange={(e) => { setFilterSocietyId(e.target.value); setPage(1); }}
+            >
               <option value="">🌍 All Societies</option>
               {societiesList.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
             </Select>
-          </div>
-          {!filterSocietyId && (
-            <span style={{ fontSize: 11, color: "var(--stat-purple-color)", fontWeight: 600, background: "var(--card-inner-bg)", padding: "6px 12px", borderRadius: 10 }}>
-              💡 Select a society to enable bill creation
-            </span>
+          )}
+
+          {/* Create Bill Button */}
+          {!isCommittee && (
+            <GlobalButton
+              variant="add"
+              icon={MdAdd}
+              borderDraw
+              onClick={handleOpenCreateModal}
+              className="shrink-0"
+              style={{ fontWeight: 700, height: 42 }}
+            >
+              {t("billCreate")}
+            </GlobalButton>
           )}
         </div>
-      )}
+      </div>
 
       {/* ── CREATE BILL MODAL ── */}
       <GlobalModal
@@ -788,29 +811,40 @@ export default function ManageBills() {
               onChange={e => setFormData({ ...formData, amount: e.target.value })} />
           </div>
 
-          {/* 7. Billing Month */}
+          {/* Issue Date */}
           <div>
-            <Label>Billing Month</Label>
-            <input type="month" className="input h-10 w-full"
-              value={formData.billing_month}
-              onChange={e => setFormData({ ...formData, billing_month: e.target.value })} />
+            <Label>Issue Date *</Label>
+            <div className="relative flex items-center mt-1">
+              <input type="date" className="input h-10 w-full px-3"
+                value={formData.issue_date}
+                required
+                onChange={e => {
+                  const dateVal = e.target.value;
+                  let computedMonth = formData.billing_month;
+                  if (dateVal) {
+                    try {
+                      const [yr, mo] = dateVal.split("-");
+                      const d = new Date(parseInt(yr, 10), parseInt(mo, 10) - 1, 1);
+                      computedMonth = d.toLocaleString("en-US", { month: "long", year: "numeric" });
+                    } catch {
+                      computedMonth = formData.billing_month;
+                    }
+                  }
+                  setFormData({ ...formData, issue_date: dateVal, billing_month: computedMonth });
+                }} />
+            </div>
+            <span className="text-[10px] text-secondary mt-1 block">Bill issue date (defaults to today)</span>
           </div>
 
-          {/* 8. Issue Date */}
+          {/* Due Date (Last Pay Date) */}
           <div>
-            <Label>Issue Date</Label>
-            <input type="date" className="input h-10 w-full"
-              value={formData.issue_date}
-              onChange={e => setFormData({ ...formData, issue_date: e.target.value })} />
-          </div>
-
-          {/* 9. Last Pay Date */}
-          <div className="sm:col-span-2">
-            <Label>Last Pay Date</Label>
-            <input type="date" className="input h-10 w-full"
-              value={formData.last_pay_date}
-              min={formData.issue_date || undefined}
-              onChange={e => setFormData({ ...formData, last_pay_date: e.target.value })} />
+            <Label>Due Date (Last Pay Date)</Label>
+            <div className="relative flex items-center mt-1">
+              <input type="date" className="input h-10 w-full px-3"
+                value={formData.last_pay_date}
+                min={formData.issue_date || undefined}
+                onChange={e => setFormData({ ...formData, last_pay_date: e.target.value })} />
+            </div>
             <p style={{ fontSize: 10, color: "var(--text-secondary)", opacity: 0.7, marginTop: 4 }}>
               Leave blank to auto-set 30 days from issue date
             </p>
@@ -882,42 +916,41 @@ export default function ManageBills() {
       <div className="data-table-wrap">
 
         {/* Toolbar */}
-        <div style={{ padding: "14px 18px", borderBottom: "1px solid var(--glass-border)", display: "flex", flexDirection: "column", gap: 11 }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
-            <span className="text-sm font-bold" style={{ color: "var(--text-primary)", flexShrink: 0 }}>
-              {t("billSocietyBills")}
-              {!initialLoad && (
-                <span className="text-xs font-normal text-secondary ml-2">
-                  — {totalItems} {filterStatus !== "ALL" ? filterStatus.toLowerCase() : ""} {t("billCount")}
-                  {search ? ` matching "${search}"` : ""}
+        <div style={{ padding: "14px 18px", borderBottom: "1px solid var(--glass-border)", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+          <span className="text-sm font-bold" style={{ color: "var(--text-primary)", flexShrink: 0 }}>
+            {t("billSocietyBills")}
+            {!initialLoad && (
+              <span className="text-xs font-normal text-secondary ml-2">
+                — {totalItems} {filterStatus !== "ALL" ? filterStatus.toLowerCase() : ""} {t("billCount")}
+                {search ? ` matching "${search}"` : ""}
+              </span>
+            )}
+          </span>
+
+          {/* Right side: Bulk Actions (Approve & Delete) */}
+          <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", justifyContent: "flex-end" }}>
+            {selectedCount > 0 && (
+              <div className="animate-fadeIn" style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                {/* Badge showing selected count & total */}
+                <span
+                  style={{
+                    fontSize: 12,
+                    fontWeight: 700,
+                    background: "var(--accent-soft, rgba(99,102,241,0.18))",
+                    color: "var(--accent, #818cf8)",
+                    padding: "6px 12px",
+                    borderRadius: 10,
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 5,
+                  }}
+                >
+                  <MdCheckCircle size={14} /> {selectedCount} Selected
+                  <span style={{ opacity: 0.75, fontWeight: 800 }}>• ₹{selectedTotalAmount.toLocaleString("en-IN")}</span>
                 </span>
-              )}
-            </span>
 
-            {/* Right side: Bulk Actions (Approve & Delete) & Search */}
-            <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", justifyContent: "flex-end" }}>
-              {selectedCount > 0 && (
-                <div className="animate-fadeIn" style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                  {/* Badge showing selected count & total */}
-                  <span
-                    style={{
-                      fontSize: 12,
-                      fontWeight: 700,
-                      background: "var(--accent-soft, rgba(99,102,241,0.18))",
-                      color: "var(--accent, #818cf8)",
-                      padding: "6px 12px",
-                      borderRadius: 10,
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: 5,
-                    }}
-                  >
-                    <MdCheckCircle size={14} /> {selectedCount} Selected
-                    <span style={{ opacity: 0.75, fontWeight: 800 }}>• ₹{selectedTotalAmount.toLocaleString("en-IN")}</span>
-                  </span>
-
-                  {!isCommittee && (
-                    <>
+                {!isCommittee && (
+                  <>
                   {/* Bulk Approve Button */}
                   <button
                     type="button"
@@ -969,72 +1002,36 @@ export default function ManageBills() {
                     <span>Delete ({selectedDeletable.length})</span>
                   </button>
                   </>
-                  )}
+                )}
 
-                  {/* Clear Selection */}
-                  <button
-                    type="button"
-                    onClick={clearSelection}
-                    title="Deselect all"
-                    style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      width: 32,
-                      height: 32,
-                      borderRadius: 10,
-                      background: "var(--card-inner-bg, rgba(255,255,255,0.06))",
-                      border: "1px solid var(--glass-border)",
-                      color: "var(--text-secondary)",
-                      cursor: "pointer",
-                      transition: "all 0.2s",
-                    }}
-                  >
-                    <MdClose size={16} />
-                  </button>
-                </div>
-              )}
-
-              {/* Search — right aligned */}
-              <div className="search-input-wrap" style={{ maxWidth: 220, width: "100%" }}>
-                <MdSearch size={15} className="search-input-icon" />
-                <input
-                  key="manage-bills-search"
-                  className="input h-10 w-full pl-10 pr-8"
-                  placeholder={t("billSearch")}
-                  value={search}
-                  onChange={e => setSearch(e.target.value)}
-                />
-                {fetching && !initialLoad ? (
-                  <div style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)" }}>
-                    <Spinner size={13} />
-                  </div>
-                ) : search ? (
-                  <button className="search-input-clear" onClick={() => setSearch("")}>
-                    <MdClose size={13} />
-                  </button>
-                ) : null}
-              </div>
-            </div>
-          </div>
-
-
-          {/* Filter tabs */}
-          <div className="filter-strip" style={{ width: "100%" }}>
-            {TABS.map(({ key, label, ac, count }) => {
-              const on = filterStatus === key;
-              return (
-                <button key={key}
-                  className={`filter-pill ${on ? `filter-pill--active-${ac}` : ""}`}
-                  style={{ flex: 1, justifyContent: "center", display: "flex" }}
-                  onClick={() => handleFilterChange(key)}>
-                  {label}
-                  <span className="filter-pill__count">{count}</span>
+                {/* Clear Selection */}
+                <button
+                  type="button"
+                  onClick={clearSelection}
+                  title="Deselect all"
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    width: 32,
+                    height: 32,
+                    borderRadius: 10,
+                    background: "var(--card-inner-bg, rgba(255,255,255,0.06))",
+                    border: "1px solid var(--glass-border)",
+                    color: "var(--text-secondary)",
+                    cursor: "pointer",
+                    transition: "all 0.2s",
+                  }}
+                >
+                  <MdClose size={16} />
                 </button>
-              );
-            })}
+              </div>
+            )}
           </div>
         </div>
+
+
+
 
         {/* ── States ── */}
         {initialLoad && (

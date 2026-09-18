@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useContext } from "react";
+import { useState, useEffect, useCallback, useContext, useMemo } from "react";
 import API from "../../services/api";
 import socket from "../../services/socket";
 import { AuthContext } from "../../context/AuthContext";
@@ -25,6 +25,7 @@ import {
 
 import { BASE_URL } from "../../config/apiConfig";
 import Select from "../../components/common/Select";
+import ExpandableSearch from "../../components/common/ExpandableSearch";
 import PdfViewer from "../../components/common/PdfViewer";
 import GlobalButton from "../../components/common/GlobalButton";
 import GlobalModal from "../../components/common/GlobalModal";
@@ -105,6 +106,7 @@ export default function Notice() {
   // Viewers
   const [lightbox, setLightbox] = useState(null);
   const [filePreview, setFilePreview] = useState(null);
+  const [readMoreNotice, setReadMoreNotice] = useState(null);
 
   // Delete Confirm Dialog state
   const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, id: null, societyId: null, loading: false });
@@ -179,6 +181,17 @@ export default function Notice() {
       socket.off("noticeCreated");
     };
   }, []);
+
+  const displayedNotices = useMemo(() => {
+    if (!search.trim()) return notices;
+    const q = search.toLowerCase().trim();
+    return notices.filter((n) => {
+      const matchTitle = n.title ? n.title.toLowerCase().includes(q) : false;
+      const matchDesc = n.description ? n.description.toLowerCase().includes(q) : false;
+      const matchAuthor = n.created_by_name ? n.created_by_name.toLowerCase().includes(q) : false;
+      return matchTitle || matchDesc || matchAuthor;
+    });
+  }, [notices, search]);
 
   const handleEdit = (n) => {
     setEditingId(n.id);
@@ -305,7 +318,7 @@ export default function Notice() {
     });
   };
 
-  const canPost = activeRole === "SUPER_ADMIN" || activeRole === "SOCIETY_ADMIN" || activeRole === "COMMITTEE_MEMBER";
+  const canPost = hasPermission(user, "notice", "create") || hasPermission(user, "notice", "view");
 
   // History Table Columns
   const historyColumns = [
@@ -411,36 +424,15 @@ export default function Notice() {
 
         {/* Action Bar */}
         <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-          {/* Compact Search Bar */}
-          <div style={{ position: "relative", width: "200px" }}>
-            <MdSearch
-              size={18}
-              style={{
-                position: "absolute",
-                left: 11,
-                top: "50%",
-                transform: "translateY(-50%)",
-                color: "var(--text-secondary)",
-                pointerEvents: "none",
-                zIndex: 2,
-              }}
-            />
-            <input
-              type="text"
-              placeholder="Search notices..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="input search-input"
-              style={{
-                width: "100%",
-                paddingLeft: "36px",
-                paddingRight: "12px",
-                height: "40px",
-                fontSize: "13px",
-                borderRadius: "10px",
-              }}
-            />
-          </div>
+          {/* Expandable Search */}
+          <ExpandableSearch
+            value={search}
+            onChange={(val) => {
+              setSearch(val);
+              setPage(1);
+            }}
+            placeholder="Search notices..."
+          />
 
           {/* Super Admin Society Filter */}
           {isSuperAdmin && (
@@ -518,7 +510,7 @@ export default function Notice() {
             </div>
           ))}
         </div>
-      ) : notices.length === 0 ? (
+      ) : displayedNotices.length === 0 ? (
         /* Empty State */
         <div
           style={{
@@ -580,7 +572,7 @@ export default function Notice() {
         <>
           {/* Responsive Card Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {notices.map((n) => {
+            {displayedNotices.map((n) => {
               const socName =
                 n.Society?.name ||
                 societiesList.find((s) => String(s.id) === String(n.society_id))?.name;
@@ -707,65 +699,97 @@ export default function Notice() {
                       </div>
                     </div>
 
-                    {/* Notice Description */}
-                    <p
-                      style={{
-                        fontSize: "0.85rem",
-                        color: "var(--text-secondary)",
-                        lineHeight: 1.55,
-                        margin: 0,
-                        whiteSpace: "pre-line",
-                        display: "-webkit-box",
-                        WebkitLineClamp: 4,
-                        WebkitBoxOrient: "vertical",
-                        overflow: "hidden",
-                      }}
-                    >
-                      {n.description}
-                    </p>
+                    {/* Notice Description with Read More */}
+                    <div style={{ marginTop: 2 }}>
+                      {n.description && n.description.length > 120 ? (
+                        <p
+                          style={{
+                            fontSize: "0.85rem",
+                            color: "var(--text-secondary)",
+                            lineHeight: 1.55,
+                            margin: 0,
+                            whiteSpace: "pre-line",
+                          }}
+                        >
+                          {n.description.slice(0, 115)}...
+                          <button
+                            type="button"
+                            onClick={() => setReadMoreNotice(n)}
+                            style={{
+                              color: "var(--accent, #a855f7)",
+                              background: "none",
+                              border: "none",
+                              padding: 0,
+                              fontWeight: 700,
+                              cursor: "pointer",
+                              marginLeft: 6,
+                              fontSize: "0.82rem",
+                              display: "inline-block",
+                            }}
+                          >
+                            Read More →
+                          </button>
+                        </p>
+                      ) : (
+                        <p
+                          style={{
+                            fontSize: "0.85rem",
+                            color: "var(--text-secondary)",
+                            lineHeight: 1.55,
+                            margin: 0,
+                            whiteSpace: "pre-line",
+                          }}
+                        >
+                          {n.description}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Attachment badge placed ABOVE the footer action divider line */}
+                    {n.file_url && (
+                      <div style={{ marginTop: 10 }}>
+                        <button
+                          type="button"
+                          onClick={() => handleFileView(n.file_url)}
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: 6,
+                            fontSize: "0.78rem",
+                            fontWeight: 600,
+                            color: "var(--accent, #a855f7)",
+                            background: "rgba(168, 85, 247, 0.12)",
+                            border: "1px solid rgba(168, 85, 247, 0.28)",
+                            padding: "4px 10px",
+                            borderRadius: 8,
+                            cursor: "pointer",
+                            transition: "all 0.15s ease",
+                          }}
+                        >
+                          <MdAttachFile size={14} />
+                          <span>Attachment</span>
+                          <MdOutlineOpenInNew size={12} style={{ opacity: 0.8 }} />
+                        </button>
+                      </div>
+                    )}
                   </div>
 
-                  {/* Card Footer: Attachment View & Actions */}
+                  {/* Card Footer: Aligned Action Buttons */}
                   <div
                     style={{
                       display: "flex",
                       alignItems: "center",
-                      justifyContent: "space-between",
+                      justifyContent: "flex-end",
                       paddingTop: 12,
                       borderTop: "1px solid var(--divider, rgba(255, 255, 255, 0.06))",
                       gap: 8,
+                      marginTop: "auto",
                     }}
                   >
-                    {n.file_url ? (
-                      <button
-                        type="button"
-                        onClick={() => handleFileView(n.file_url)}
-                        style={{
-                          display: "inline-flex",
-                          alignItems: "center",
-                          gap: 6,
-                          fontSize: "0.78rem",
-                          fontWeight: 600,
-                          color: "var(--accent, #3b82f6)",
-                          background: "rgba(160, 90, 255, 0.1)",
-                          border: "1px solid rgba(160, 90, 255, 0.25)",
-                          padding: "5px 11px",
-                          borderRadius: 8,
-                          cursor: "pointer",
-                          transition: "all 0.15s ease",
-                        }}
-                      >
-                        <MdOutlineOpenInNew size={14} />
-                        <span>Attachment</span>
-                      </button>
-                    ) : (
-                      <div />
-                    )}
-
                     {canPost && (() => {
                       const isOwn = hasPermission(user, "notice", "edit") || hasPermission(user, "notice", "delete") || !isCommitteeMember(user) || n.created_by_user_id === user?.id || !n.created_by_user_id;
                       return (
-                        <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", marginLeft: "auto" }}>
                           {n.acknowledgement_required && (
                             <GlobalButton
                               variant="secondary"
@@ -1152,6 +1176,103 @@ export default function Notice() {
           ) : (
             <img src={filePreview.fullUrl} alt={filePreview.name} style={{ width: "100%", borderRadius: 12 }} />
           )}
+        </GlobalModal>
+      )}
+
+      {/* ── NOTICE READ MORE DETAIL MODAL ── */}
+      {readMoreNotice && (
+        <GlobalModal
+          isOpen={true}
+          onClose={() => setReadMoreNotice(null)}
+          title={readMoreNotice.title}
+          subtitle={`Published ${fmtDate(readMoreNotice.created_at)}${readMoreNotice.created_by_name ? ` • By ${readMoreNotice.created_by_name}` : ""}`}
+          icon={MdCampaign}
+          size="md"
+        >
+          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            {/* Meta Tags */}
+            <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+              {readMoreNotice.created_by_name && (
+                <span
+                  style={{
+                    fontSize: "0.75rem",
+                    fontWeight: 600,
+                    padding: "3px 9px",
+                    borderRadius: 6,
+                    background: "rgba(59, 130, 246, 0.12)",
+                    color: "#60a5fa",
+                    border: "1px solid rgba(59, 130, 246, 0.25)",
+                  }}
+                >
+                  By: {readMoreNotice.created_by_name} ({readMoreNotice.created_by_role === "COMMITTEE_MEMBER" ? "Committee" : "Admin"})
+                </span>
+              )}
+              {readMoreNotice.acknowledgement_required && (
+                <span
+                  style={{
+                    fontSize: "0.75rem",
+                    fontWeight: 700,
+                    padding: "3px 9px",
+                    borderRadius: 6,
+                    background: "rgba(16, 185, 129, 0.12)",
+                    color: "#10b981",
+                    border: "1px solid rgba(16, 185, 129, 0.25)",
+                  }}
+                >
+                  ACK REQUIRED
+                </span>
+              )}
+            </div>
+
+            {/* Description Body */}
+            <div
+              style={{
+                background: "var(--card-inner-bg)",
+                border: "1px solid var(--glass-border)",
+                borderRadius: 12,
+                padding: "16px",
+                fontSize: "0.92rem",
+                lineHeight: 1.65,
+                color: "var(--text-primary)",
+                whiteSpace: "pre-wrap",
+                wordBreak: "break-word",
+                maxHeight: "50vh",
+                overflowY: "auto",
+              }}
+            >
+              {readMoreNotice.description}
+            </div>
+
+            {/* Attachment Button if available */}
+            {readMoreNotice.file_url && (
+              <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleFileView(readMoreNotice.file_url);
+                  }}
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 6,
+                    fontSize: "0.82rem",
+                    fontWeight: 600,
+                    color: "var(--accent, #a855f7)",
+                    background: "rgba(168, 85, 247, 0.12)",
+                    border: "1px solid rgba(168, 85, 247, 0.28)",
+                    padding: "6px 14px",
+                    borderRadius: 8,
+                    cursor: "pointer",
+                    transition: "all 0.15s ease",
+                  }}
+                >
+                  <MdAttachFile size={16} />
+                  <span>View Attached Document</span>
+                  <MdOutlineOpenInNew size={14} />
+                </button>
+              </div>
+            )}
+          </div>
         </GlobalModal>
       )}
 

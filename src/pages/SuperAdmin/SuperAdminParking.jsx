@@ -879,9 +879,9 @@ export default function SuperAdminParking() {
         <div className="flex items-center gap-3">
           {/* Sectional Society Filter */}
           <div className="relative min-w-48">
-            <MdBusiness size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-secondary pointer-events-none" />
+            <MdBusiness size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-secondary pointer-events-none z-10" />
             <Select
-              className="input h-10 w-full pl-9 pr-8 text-xs font-bold appearance-none bg-card"
+              className="input h-10 w-full pl-9 text-xs font-bold bg-card"
               value={selectedSocietyId}
               onChange={handleSocietyChange}
               style={{ border: "1.5px solid var(--accent-alpha,rgba(107,70,193,0.25))" }}>
@@ -890,9 +890,6 @@ export default function SuperAdminParking() {
                 <option key={s.id} value={s.id}>{s.name}</option>
               ))}
             </Select>
-            <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-secondary">
-              <svg width="10" height="6" viewBox="0 0 10 6" fill="none"><path d="M1 1L5 5L9 1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
-            </div>
           </div>
 
           {mainTab === "slots" && selectedSocietyId !== "ALL" && (

@@ -271,8 +271,7 @@ export default function CommitteeNotices() {
     });
   };
 
-  const activeRole = user?.activeRole ?? user?.role;
-  const canPost = activeRole === "SOCIETY_ADMIN" || activeRole === "COMMITTEE_MEMBER";
+  const canPost = hasPermission(user, "notice", "create") || hasPermission(user, "notice", "view");
 
   const TH = {
     fontSize: 10, fontWeight: 700, color: "var(--text-secondary)",

@@ -1,19 +1,31 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo, useContext } from "react";
+import { createPortal } from "react-dom";
 import API from "../../services/api";
 import { useLang } from "../../context/LanguageContext";
+import { AuthContext } from "../../context/AuthContext";
 import {
   MdAdd, MdSearch, MdClose, MdHome, MdPerson,
   MdChevronLeft, MdChevronRight, MdLinkOff,
   MdApartment, MdLayers, MdBusiness, MdHomeWork,
   MdCheckCircle, MdArrowForward,
-  MdArrowBack, MdMeetingRoom,
+  MdArrowBack, MdMeetingRoom, MdDirectionsCar, MdPhone,
 } from "react-icons/md";
 import Select from "../../components/common/Select";
 import GlobalButton from "../../components/common/GlobalButton";
+import ExpandableSearch from "../../components/common/ExpandableSearch";
 
 /* ─────────────────────────────────────────
    HELPERS
 ───────────────────────────────────────── */
+function getSocietyId() {
+  try {
+    const token = localStorage.getItem("token");
+    if (!token) return null;
+    const payload = JSON.parse(atob(token.split(".")[1]));
+    return payload.society_id;
+  } catch { return null; }
+}
+
 function useDebounce(value, delay = 500) {
   const [debounced, setDebounced] = useState(value);
   useEffect(() => {
@@ -111,7 +123,7 @@ const LIMIT = 10;
 
 function StepIndicator({ step, total, labels }) {
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 0, marginBottom: 24 }}>
+    <div style={{ display: "flex", alignItems: "flex-start", gap: 0, marginBottom: 20 }}>
       {labels.map((label, i) => {
         const num = i + 1;
         const done = step > num;
@@ -119,25 +131,32 @@ function StepIndicator({ step, total, labels }) {
         return (
           <div key={i} style={{ display: "flex", alignItems: "center", flex: i < total - 1 ? 1 : "none" }}>
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
-              <div style={{
-                width: 32, height: 32, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: 13, fontWeight: 700, transition: "all 0.3s",
-                background: done ? "#34d399" : active ? "#5B8DEF" : "var(--card-inner-bg, rgba(255,255,255,0.06))",
-                border: `2px solid ${done ? "#34d399" : active ? "#5B8DEF" : "rgba(255,255,255,0.1)"}`,
-                color: done || active ? "#fff" : "var(--text-secondary)",
-              }}>
-                {done ? <MdCheckCircle size={16} /> : num}
+              <div
+                className={!done && !active ? "res-step-circle-inactive" : ""}
+                style={{
+                  width: 30, height: 30, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: 12, fontWeight: 800, transition: "all 0.3s",
+                  background: done ? "#34d399" : active ? "linear-gradient(135deg, var(--accent, #6B46C1), #8b5cf6)" : "var(--card-inner-bg, rgba(148, 163, 184, 0.15))",
+                  border: `2px solid ${done ? "#34d399" : active ? "var(--accent, #6B46C1)" : "var(--glass-border, rgba(148, 163, 184, 0.35))"}`,
+                  color: done || active ? "#fff" : "var(--text-secondary)",
+                  boxShadow: active ? "0 4px 12px rgba(107,70,193,0.35)" : "none",
+                }}
+              >
+                {done ? <MdCheckCircle size={15} /> : num}
               </div>
-              <span style={{ fontSize: 10, fontWeight: 600, color: active ? "#5B8DEF" : done ? "#34d399" : "var(--text-secondary)", whiteSpace: "nowrap" }}>
+              <span style={{ fontSize: 10, fontWeight: 700, color: active ? "var(--accent, #9F87D7)" : done ? "#34d399" : "var(--text-secondary)", whiteSpace: "nowrap", textTransform: "uppercase", letterSpacing: "0.04em" }}>
                 {label}
               </span>
             </div>
             {i < total - 1 && (
-              <div style={{
-                flex: 1, height: 2, margin: "0 6px", marginBottom: 18,
-                background: done ? "#34d399" : "rgba(255,255,255,0.08)",
-                transition: "all 0.3s",
-              }} />
+              <div
+                className={!done ? "res-step-line" : ""}
+                style={{
+                  flex: 1, height: 3, margin: "0 6px", marginBottom: 16,
+                  background: done ? "#34d399" : "var(--divider, rgba(148, 163, 184, 0.35))",
+                  transition: "all 0.3s", borderRadius: 999
+                }}
+              />
             )}
           </div>
         );
@@ -517,83 +536,107 @@ function AssignWizard({ onClose, onSuccess }) {
 
       {/* ── STEP (last): Resident Selection ── */}
       {step === residentStep && (
-        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
 
-          <div style={{ background: "rgba(91,141,239,0.06)", border: "1px solid rgba(91,141,239,0.18)", borderRadius: 12, padding: "12px 16px", marginBottom: 4 }}>
-            <p style={{ fontSize: 11, fontWeight: 700, color: "#94B5F5", textTransform: "uppercase", letterSpacing: "0.05em", margin: "0 0 8px" }}>Selected Unit</p>
-            <SummaryRow label="Type" value={isApartment ? "Apartment" : "Row House"} icon={isApartment ? <MdApartment size={14} /> : <MdHomeWork size={14} />} />
-            <SummaryRow label="Block" value={`Block ${selectedBlock?.name}`} icon={<MdBusiness size={14} />} />
-            {isApartment && <SummaryRow label="Floor" value={`Floor ${selectedFloor?.number}`} icon={<MdLayers size={14} />} />}
-            <SummaryRow label={isApartment ? "Flat" : "House"} value={selectedFlat?.flat_number} icon={<MdHome size={14} />} />
-            {isApartment && <SummaryRow label="BHK" value={flatType} icon={<MdMeetingRoom size={14} />} />}
+          <div style={{ background: "rgba(160,90,255,0.06)", border: "1px solid rgba(160,90,255,0.2)", borderRadius: 14, padding: "14px 16px" }}>
+            <p style={{ fontSize: 11, fontWeight: 800, color: "var(--accent, #9F87D7)", textTransform: "uppercase", letterSpacing: "0.06em", margin: "0 0 8px" }}>Selected Property Unit</p>
+            <SummaryRow label="Property Type" value={isApartment ? "Apartment" : "Row House / Villa"} icon={isApartment ? <MdApartment size={15} color="var(--accent)" /> : <MdHomeWork size={15} color="#10b981" />} />
+            <SummaryRow label="Phase / Block" value={`Block ${selectedBlock?.name}`} icon={<MdBusiness size={15} />} />
+            {isApartment && <SummaryRow label="Floor" value={`Floor ${selectedFloor?.number}`} icon={<MdLayers size={15} />} />}
+            <SummaryRow label={isApartment ? "Flat Number" : "House Number"} value={selectedFlat?.flat_number} icon={<MdHome size={15} />} />
+            {isApartment && <SummaryRow label="Configuration" value={flatType} icon={<MdMeetingRoom size={15} />} />}
           </div>
 
-          {/* ✅ STATIC OWNER ROLE - NO TOGGLE */}
           <div>
-            <p style={{ fontSize: 12, fontWeight: 600, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8 }}>
-              Assignment Role
+            <p style={{ fontSize: 12, fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8 }}>
+              Select Resident to Assign *
             </p>
-            <div style={{ padding: "10px 12px", borderRadius: 10, background: "rgba(16,185,129,0.12)", border: "2px solid rgba(16,185,129,0.25)", display: "flex", alignItems: "center", gap: 10 }}>
-              <div style={{ fontSize: 18 }}>🏠</div>
-              <div>
-                <div style={{ fontSize: 13, fontWeight: 700, color: "#34d399" }}>Owner</div>
-                <div style={{ fontSize: 11, color: "var(--text-secondary)" }}>Admins exclusively assign Owners to properties. Owners can later assign Tenants via their app.</div>
-              </div>
-            </div>
-          </div>
-
-          <div>
-            <p style={{ fontSize: 12, fontWeight: 600, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8 }}>Select Resident</p>
             <div style={{ position: "relative", marginBottom: 8 }}>
-              <MdSearch size={14} style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: "var(--text-secondary)", pointerEvents: "none" }} />
-              <input className="input search-input w-full" style={{ paddingLeft: 32 }} placeholder="Search by name..." value={residentSearch} onChange={e => setResidentSearch(e.target.value)} />
+              <MdSearch size={16} style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "var(--text-secondary)", pointerEvents: "none" }} />
+              <input
+                className="input search-input w-full"
+                style={{ paddingLeft: 36, height: 40, borderRadius: 10, fontSize: 13 }}
+                placeholder="Search resident by name or email…"
+                value={residentSearch}
+                onChange={e => setResidentSearch(e.target.value)}
+              />
+              {residentSearch && (
+                <button
+                  type="button"
+                  onClick={() => setResidentSearch("")}
+                  style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "var(--text-secondary)" }}
+                >
+                  <MdClose size={14} />
+                </button>
+              )}
             </div>
 
-            <div style={{ maxHeight: 220, overflowY: "auto", display: "flex", flexDirection: "column", gap: 6 }}>
+            <div style={{ maxHeight: 210, overflowY: "auto", display: "flex", flexDirection: "column", gap: 6, paddingRight: 2 }}>
               {filteredResidents.length === 0 ? (
-                <p style={{ fontSize: 13, color: "var(--text-secondary)", textAlign: "center", padding: "20px 0" }}>No residents found.</p>
+                <p style={{ fontSize: 13, color: "var(--text-secondary)", textAlign: "center", padding: "24px 0" }}>No matching residents found.</p>
               ) : filteredResidents.map(r => {
                 const isSelected = String(residentId) === String(r.id);
                 return (
                   <button
-                    key={r.id} type="button" onClick={() => setResidentId(r.id)}
+                    key={r.id}
+                    type="button"
+                    onClick={() => setResidentId(r.id)}
                     style={{
-                      display: "flex", alignItems: "center", gap: 10, padding: "10px 12px",
-                      borderRadius: 10, cursor: "pointer", transition: "all 0.16s", outline: "none", textAlign: "left",
-                      background: isSelected ? "rgba(91,141,239,0.10)" : "var(--card-inner-bg, rgba(255,255,255,0.04))",
-                      border: `2px solid ${isSelected ? "#5B8DEF" : "rgba(255,255,255,0.08)"}`,
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 12,
+                      padding: "10px 14px",
+                      borderRadius: 12,
+                      cursor: "pointer",
+                      transition: "all 0.16s ease",
+                      outline: "none",
+                      textAlign: "left",
+                      background: isSelected ? "rgba(160,90,255,0.12)" : "var(--card-inner-bg, rgba(255,255,255,0.04))",
+                      border: `1.5px solid ${isSelected ? "var(--accent, #a05aff)" : "var(--glass-border, rgba(255,255,255,0.08))"}`,
                     }}
                   >
                     <div style={{
                       width: 36, height: 36, borderRadius: "50%", flexShrink: 0,
-                      background: isSelected ? "rgba(91,141,239,0.2)" : "rgba(107,70,193,0.12)",
+                      background: isSelected ? "linear-gradient(135deg, var(--accent, #6B46C1), #8b5cf6)" : "rgba(160,90,255,0.14)",
                       display: "flex", alignItems: "center", justifyContent: "center",
-                      fontSize: 14, fontWeight: 700, color: isSelected ? "#94B5F5" : "#9F87D7",
+                      fontSize: 13, fontWeight: 800, color: "#fff",
                     }}>
                       {r.name?.charAt(0)?.toUpperCase()}
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: isSelected ? "#94B5F5" : "var(--text-primary)" }}>{r.name}</p>
-                      {r.phone && <p style={{ margin: 0, fontSize: 11, color: "var(--text-secondary)" }}>{r.phone}</p>}
+                      <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: isSelected ? "var(--accent, #a05aff)" : "var(--text-primary)" }}>{r.name}</p>
+                      <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 2, flexWrap: "wrap" }}>
+                        {r.email && <span style={{ fontSize: 11, color: "var(--text-secondary)" }}>{r.email}</span>}
+                        {r.phone && <span style={{ fontSize: 11, color: "var(--text-secondary)", display: "flex", alignItems: "center", gap: 3 }}><MdPhone size={11} /> {r.phone}</span>}
+                      </div>
                     </div>
-                    {isSelected && <MdCheckCircle size={18} style={{ color: "#5B8DEF", flexShrink: 0 }} />}
+                    <div style={{
+                      width: 20, height: 20, borderRadius: "50%", flexShrink: 0,
+                      background: isSelected ? "var(--accent, #a05aff)" : "transparent",
+                      border: `2px solid ${isSelected ? "var(--accent, #a05aff)" : "var(--glass-border, rgba(255,255,255,0.2))"}`,
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                    }}>
+                      {isSelected && <MdCheck size={13} color="#fff" />}
+                    </div>
                   </button>
                 );
               })}
             </div>
           </div>
           
-          <div style={{ marginTop: 12 }}>
-            <p style={{ fontSize: 12, fontWeight: 600, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8 }}>Assign Parking Slot (Optional)</p>
+          <div>
+            <p style={{ fontSize: 12, fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8 }}>
+              Link Parking Slot (Optional)
+            </p>
             <Select
               value={parkingSlotId}
               onChange={(e) => setParkingSlotId(e.target.value)}
               className="input w-full h-11 text-sm bg-card"
-              style={{ borderRadius: 10, border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.03)", color: "var(--text-primary)", padding: "0 14px" }}
+              style={{ borderRadius: 12, border: "1px solid var(--glass-border)", padding: "0 14px", fontSize: 13 }}
             >
-              <option value="">-- No Parking --</option>
+              <option value="">-- No Parking Slot --</option>
               {availableSlots.map(s => (
-                <option key={s.id} value={s.id} style={{ background: "var(--bg-default)", color: "var(--text-primary)" }}>
+                <option key={s.id} value={s.id}>
                   {s.parking_floor ? `Floor ${s.parking_floor} - ` : ""}{s.slot_number} ({s.vehicle_type})
                 </option>
               ))}
@@ -603,19 +646,19 @@ function AssignWizard({ onClose, onSuccess }) {
       )}
 
       {/* Buttons */}
-      <div style={{ display: "flex", gap: 8, marginTop: 24 }}>
+      <div style={{ display: "flex", gap: 10, marginTop: 24 }}>
         {step > 1 && (
-          <button type="button" onClick={goBack} className="btn-muted" style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <button type="button" onClick={goBack} className="btn-muted" style={{ display: "flex", alignItems: "center", gap: 6, padding: "10px 18px", borderRadius: 12, fontWeight: 600 }}>
             <MdArrowBack size={16} /> Back
           </button>
         )}
         <div style={{ flex: 1 }} />
         {step < residentStep ? (
-          <button type="button" onClick={goNext} disabled={!canGoNext()} className="btn-primary" style={{ display: "flex", alignItems: "center", gap: 6, opacity: canGoNext() ? 1 : 0.45 }}>
+          <button type="button" onClick={goNext} disabled={!canGoNext()} className="btn-primary" style={{ display: "flex", alignItems: "center", gap: 6, padding: "10px 20px", borderRadius: 12, fontWeight: 700, opacity: canGoNext() ? 1 : 0.45 }}>
             Next <MdArrowForward size={16} />
           </button>
         ) : (
-          <button type="button" onClick={handleSubmit} disabled={submitting || !residentId} className="btn-primary" style={{ display: "flex", alignItems: "center", gap: 6, opacity: (submitting || !residentId) ? 0.65 : 1 }}>
+          <button type="button" onClick={handleSubmit} disabled={submitting || !residentId} className="btn-primary" style={{ display: "flex", alignItems: "center", gap: 6, padding: "10px 22px", borderRadius: 12, fontWeight: 700, opacity: (submitting || !residentId) ? 0.65 : 1 }}>
             {submitting ? <><Spinner small /> Assigning…</> : <><MdCheckCircle size={16} /> Confirm Assignment</>}
           </button>
         )}
@@ -626,28 +669,56 @@ function AssignWizard({ onClose, onSuccess }) {
 
 export default function AssignFlat() {
   const { t } = useLang();
+  const { user } = useContext(AuthContext);
 
   const [showForm,     setShowForm]     = useState(false);
-  const [assigned,     setAssigned]     = useState([]);
+  const [allAssigned,   setAllAssigned]   = useState([]);
   const [totalAll,     setTotalAll]     = useState(0);
   const [initialLoad,  setInitialLoad]  = useState(true);
   const [fetching,     setFetching]     = useState(false);
   const [page,         setPage]         = useState(1);
-  const [totalPages,   setTotalPages]   = useState(1);
-  const [totalItems,   setTotalItems]   = useState(0);
   const [search,       setSearch]       = useState("");
-  const debouncedSearch                 = useDebounce(search, 500);
+  const debouncedSearch                 = useDebounce(search, 400);
   const [confirmId,    setConfirmId]    = useState(null);
-  const [filterType,   setFilterType]   = useState("ALL");
 
-  const loadAssigned = useCallback(async (pageNum, currentSearch, currentFilter, isInitial = false) => {
+  /* ── Filter Dropdown States ── */
+  const [filterBlockId,      setFilterBlockId]      = useState("");
+  const [filterFloorId,      setFilterFloorId]      = useState("");
+  const [filterResidentType, setFilterResidentType] = useState("ALL");
+  const [filterPropertyType, setFilterPropertyType] = useState("ALL");
+
+  /* ── Dynamic Options ── */
+  const [blocksList, setBlocksList] = useState([]);
+  const [floorsList, setFloorsList] = useState([]);
+
+  // Load society blocks
+  useEffect(() => {
+    const socId = user?.society_id || getSocietyId();
+    if (socId) {
+      API.get(`/blocks/${socId}`)
+        .then(res => setBlocksList(res.data || []))
+        .catch(() => setBlocksList([]));
+    }
+  }, [user]);
+
+  // Load floors when block changes
+  useEffect(() => {
+    if (filterBlockId) {
+      API.get(`/floors/${filterBlockId}`)
+        .then(res => setFloorsList(res.data || []))
+        .catch(() => setFloorsList([]));
+    } else {
+      setFloorsList([]);
+      setFilterFloorId("");
+    }
+  }, [filterBlockId]);
+
+  /* ── Load all assigned flats for high-speed client-side multi-dimensional filtering ── */
+  const loadAssigned = useCallback(async (isInitial = false) => {
     if (isInitial) setInitialLoad(true);
     else setFetching(true);
     try {
-      const params = new URLSearchParams({ page: pageNum, limit: LIMIT });
-      if (currentSearch) params.set("search", currentSearch);
-      if (currentFilter && currentFilter !== "ALL") params.set("filter_type", currentFilter);
-      const res = await API.get(`/flats/assigned?${params}`);
+      const res = await API.get("/flats/assigned?limit=1000");
       const rawAssigned = Array.isArray(res.data)
         ? res.data
         : Array.isArray(res.data?.data)
@@ -655,11 +726,8 @@ export default function AssignFlat() {
         : Array.isArray(res.data?.assigned)
         ? res.data.assigned
         : [];
-      setAssigned(rawAssigned);
-      setTotalAll(res.data.totalAll ?? res.data.pagination?.totalItems ?? 0);
-      setTotalPages(res.data.pagination?.totalPages ?? 1);
-      setTotalItems(res.data.pagination?.totalItems ?? 0);
-      setPage(pageNum);
+      setAllAssigned(rawAssigned);
+      setTotalAll(res.data.totalAll ?? res.data.pagination?.totalItems ?? rawAssigned.length);
     } catch (err) {
       console.error("Failed to load assigned flats", err);
     } finally {
@@ -668,17 +736,67 @@ export default function AssignFlat() {
     }
   }, []);
 
-  useEffect(() => { loadAssigned(1, "", "ALL", true); }, [loadAssigned]);
-  useEffect(() => { if (!initialLoad) loadAssigned(1, debouncedSearch, filterType); }, [debouncedSearch, filterType, initialLoad, loadAssigned]);
+  useEffect(() => {
+    loadAssigned(true);
+  }, [loadAssigned]);
 
-  const handlePageChange = (p) => loadAssigned(p, debouncedSearch, filterType);
+  /* ── Multi-filter matching ── */
+  const filteredAssigned = useMemo(() => {
+    return allAssigned.filter(flat => {
+      const isRH = flatIsRowHouse(flat);
+      const blockId = flat.Block?.id || flat.Floor?.Block?.id;
+      const blockName = flatBlockName(flat) || "";
+      const floorNum = flatFloorNumber(flat);
+      const floorId = flat.floor_id || flat.Floor?.id;
+      const resType = flat.User?.resident_type;
+      const resName = flat.User?.name || "";
+      const resPhone = flat.User?.phone || "";
+      const flatNo = flat.flat_number?.toString() || "";
+
+      // 1. Block Filter
+      if (filterBlockId && String(blockId) !== String(filterBlockId)) return false;
+
+      // 2. Floor Filter
+      if (filterFloorId) {
+        if (isRH) return false;
+        if (String(floorId) !== String(filterFloorId) && String(floorNum) !== String(filterFloorId)) return false;
+      }
+
+      // 3. Resident / Occupant Type Filter
+      if (filterResidentType !== "ALL" && resType !== filterResidentType) return false;
+
+      // 4. Property Type Filter
+      if (filterPropertyType === "FLAT" && isRH) return false;
+      if (filterPropertyType === "ROW_HOUSE" && !isRH) return false;
+
+      // 5. Search Text Filter
+      if (debouncedSearch) {
+        const q = debouncedSearch.toLowerCase().trim();
+        const matchFlat = flatNo.toLowerCase().includes(q);
+        const matchBlock = blockName.toLowerCase().includes(q);
+        const matchRes = resName.toLowerCase().includes(q);
+        const matchPhone = resPhone.toLowerCase().includes(q);
+        if (!matchFlat && !matchBlock && !matchRes && !matchPhone) return false;
+      }
+
+      return true;
+    });
+  }, [allAssigned, filterBlockId, filterFloorId, filterResidentType, filterPropertyType, debouncedSearch]);
+
+  const totalItems = filteredAssigned.length;
+  const totalPages = Math.ceil(totalItems / LIMIT) || 1;
+  const paginatedAssigned = filteredAssigned.slice((page - 1) * LIMIT, page * LIMIT);
+
+  const handlePageChange = (p) => {
+    setPage(p);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   const handleUnassign = async (id) => {
     try {
       await API.put(`/flats/unassign/${id}`);
       setConfirmId(null);
-      const newPage = assigned.length === 1 && page > 1 ? page - 1 : page;
-      loadAssigned(newPage, debouncedSearch, filterType);
+      loadAssigned(false);
     } catch (err) {
       console.error("Failed to unassign flat", err);
       setConfirmId(null);
@@ -687,87 +805,165 @@ export default function AssignFlat() {
 
   const handleSuccess = () => {
     setShowForm(false);
-    loadAssigned(1, debouncedSearch, filterType);
+    loadAssigned(false);
   };
 
   return (
     <div className="space-y-5 animate-fadeIn">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      {/* ── Page Header Single-Row Layout with All Filters Aligned ── */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <div className="ad-page-icon">
             <MdHome size={22} />
           </div>
           <div>
-            <h2 className="text-lg font-semibold" style={{ letterSpacing: "-0.02em" }}>{t("afTitle") || "Assign Flat"}</h2>
+            <h2 className="text-lg font-semibold" style={{ letterSpacing: "-0.02em" }}>
+              {t("afTitle") || "Assign Flat"}
+            </h2>
             <p className="text-secondary text-xs mt-0.5">
-              {initialLoad ? "—" : totalAll} {t("afAssignedFlats")?.toLowerCase() || "assigned flats"}
+              {initialLoad ? "—" : totalItems} {t("afAssignedFlats")?.toLowerCase() || "assigned properties"}
             </p>
           </div>
         </div>
-        <GlobalButton
-          variant="add"
-          borderDraw
-          icon={showForm ? MdClose : MdAdd}
-          className="w-full sm:w-auto justify-center shrink-0"
-          onClick={() => { setShowForm(p => !p); setConfirmId(null); }}
-        >
-          {showForm ? (t("cancel") || "Cancel") : (t("afAssignBtn") || "Assign Unit")}
-        </GlobalButton>
+
+        {/* Filters and Controls Toolbar */}
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* Block Filter */}
+          <Select
+            className="input h-10 text-xs min-w-28 bg-white/5 border-white/10"
+            value={filterBlockId}
+            onChange={e => { setFilterBlockId(e.target.value); setFilterFloorId(""); setPage(1); }}
+          >
+            <option value="">All Blocks</option>
+            {blocksList.map(b => (
+              <option key={b.id} value={b.id}>Block {b.name}</option>
+            ))}
+          </Select>
+
+          {/* Floor Filter */}
+          <Select
+            className="input h-10 text-xs min-w-28 bg-white/5 border-white/10"
+            value={filterFloorId}
+            onChange={e => { setFilterFloorId(e.target.value); setPage(1); }}
+            disabled={!filterBlockId || filterPropertyType === "ROW_HOUSE"}
+          >
+            <option value="">All Floors</option>
+            {floorsList.map(f => (
+              <option key={f.id} value={f.id}>Floor {f.floor_number}</option>
+            ))}
+          </Select>
+
+          {/* Occupant Type (Owner / Tenant) */}
+          <Select
+            className="input h-10 text-xs min-w-28 bg-white/5 border-white/10"
+            value={filterResidentType}
+            onChange={e => { setFilterResidentType(e.target.value); setPage(1); }}
+          >
+            <option value="ALL">All Occupants</option>
+            <option value="OWNER">Owner</option>
+            <option value="TENANT">Tenant</option>
+          </Select>
+
+          {/* Property Type (Flat / Row House) */}
+          <Select
+            className="input h-10 text-xs min-w-32 bg-white/5 border-white/10"
+            value={filterPropertyType}
+            onChange={e => { setFilterPropertyType(e.target.value); setPage(1); }}
+          >
+            <option value="ALL">All Types</option>
+            <option value="FLAT">🏢 Flat / Apartment</option>
+            <option value="ROW_HOUSE">🏡 Row House / Villa</option>
+          </Select>
+
+          {/* Expandable Search */}
+          <ExpandableSearch
+            value={search}
+            onChange={val => { setSearch(val); setPage(1); }}
+            placeholder="Search flat, block, resident…"
+            onClear={() => setSearch("")}
+            fetching={fetching}
+          />
+
+          {/* Assign Unit Button */}
+          <GlobalButton
+            variant="add"
+            borderDraw
+            icon={MdAdd}
+            className="shrink-0"
+            style={{ height: 42 }}
+            onClick={() => { setShowForm(true); setConfirmId(null); }}
+          >
+            {t("afAssignBtn") || "Assign Unit"}
+          </GlobalButton>
+        </div>
       </div>
 
-      {showForm && <AssignWizard onClose={() => setShowForm(false)} onSuccess={handleSuccess} />}
-
-      <div className="bg-card rounded-2xl overflow-hidden">
-        <div style={{ borderBottom: "1px solid var(--divider)", padding: "14px 20px" }}>
-          <div style={{ display: "flex", alignItems: "center", justifyItems: "space-between", gap: 12, flexWrap: "wrap" }}>
-            <p className="text-xs text-secondary" style={{ flexShrink: 0 }}>
-              {initialLoad ? "—" : `${totalItems} assigned`}
-              {search && !initialLoad && ` matching "${search}"`}
-            </p>
-            <div style={{ position: "relative", maxWidth: 260, width: "100%" }}>
-              <MdSearch size={14} style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: "var(--text-secondary)", pointerEvents: "none" }} />
-              <input className="input search-input h-9 text-xs w-full" style={{ paddingLeft: 30 }}
-                placeholder="Search flat or resident…" value={search} onChange={(e) => setSearch(e.target.value)} />
-              {fetching && <span style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)" }}><Spinner small /></span>}
-              {!fetching && search && (
-                <button onClick={() => setSearch("")} style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "var(--text-secondary)", display: "flex" }}>
-                  <MdClose size={13} />
-                </button>
-              )}
-            </div>
+      {/* ── Modal Popup Overlay for Assign Wizard ── */}
+      {showForm && createPortal(
+        <div
+          onClick={(e) => { if (e.target === e.currentTarget) setShowForm(false); }}
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 9999,
+            background: "rgba(0,0,0,0.72)",
+            backdropFilter: "blur(8px)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "16px",
+            overflowY: "auto",
+          }}
+        >
+          <div onClick={(e) => e.stopPropagation()} style={{ width: "100%", maxWidth: 580, maxHeight: "92vh", overflowY: "auto" }}>
+            <AssignWizard onClose={() => setShowForm(false)} onSuccess={handleSuccess} />
           </div>
-        </div>
+        </div>,
+        document.body
+      )}
 
+      {/* ── Table Container ── */}
+      <div className="bg-card rounded-2xl overflow-hidden">
         {initialLoad && (
           <div className="flex flex-col items-center gap-3 py-14 text-secondary">
             <Spinner /><p className="text-sm">Loading…</p>
           </div>
         )}
 
-        {!initialLoad && totalAll === 0 && filterType === "ALL" && !search && (
+        {!initialLoad && totalAll === 0 && (
           <div className="flex flex-col items-center gap-3 py-14 text-secondary">
             <MdHome size={40} className="opacity-20" />
             <p className="text-sm">{t("afNoFlats") || "No flats assigned yet."}</p>
           </div>
         )}
 
-        {!initialLoad && (totalAll === 0 || assigned.length === 0) && (filterType !== "ALL" || !!search) && !fetching && (
+        {!initialLoad && totalAll > 0 && paginatedAssigned.length === 0 && (
           <div className="flex flex-col items-center gap-2 py-14 text-secondary">
             <MdSearch size={36} className="opacity-20" />
-            <p className="text-sm">No flats match your filter.</p>
-            <button onClick={() => { setSearch(""); setFilterType("ALL"); }} style={{ fontSize: 12, color: "#94B5F5", background: "none", border: "none", cursor: "pointer" }}>
-              Clear filters
+            <p className="text-sm">No flats match your filter criteria.</p>
+            <button
+              onClick={() => {
+                setSearch("");
+                setFilterBlockId("");
+                setFilterFloorId("");
+                setFilterResidentType("ALL");
+                setFilterPropertyType("ALL");
+                setPage(1);
+              }}
+              style={{ fontSize: 12, color: "#94B5F5", background: "none", border: "none", cursor: "pointer" }}
+            >
+              Reset all filters
             </button>
           </div>
         )}
 
-        {!initialLoad && assigned.length > 0 && (
-          <>
+        {!initialLoad && paginatedAssigned.length > 0 && (
+          <div key={`${page}-${filterBlockId}-${filterFloorId}-${filterResidentType}-${filterPropertyType}`} className="animate-slide-page">
             <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr style={{ background: "var(--card-inner-bg)", borderBottom: "1px solid var(--divider)" }}>
-                    <th className="text-left px-5 py-3 text-xs font-semibold text-secondary uppercase tracking-wider">#</th>
+                    <th className="text-left px-5 py-3 text-xs font-semibold text-secondary uppercase tracking-wider">Sr. No.</th>
                     <th className="text-left px-5 py-3 text-xs font-semibold text-secondary uppercase tracking-wider">Unit</th>
                     <th className="text-left px-5 py-3 text-xs font-semibold text-secondary uppercase tracking-wider">Resident</th>
                     <th className="text-left px-5 py-3 text-xs font-semibold text-secondary uppercase tracking-wider">Type</th>
@@ -775,7 +971,7 @@ export default function AssignFlat() {
                   </tr>
                 </thead>
                 <tbody>
-                  {assigned.map((flat, idx) => {
+                  {paginatedAssigned.map((flat, idx) => {
                     const isRH  = flatIsRowHouse(flat);
                     const block = flatBlockName(flat);
                     const floor = flatFloorNumber(flat);
@@ -838,7 +1034,7 @@ export default function AssignFlat() {
             </div>
 
             <div className="md:hidden divide-y" style={{ borderColor: "var(--divider)" }}>
-              {assigned.map(flat => {
+              {paginatedAssigned.map(flat => {
                 const isRH  = flatIsRowHouse(flat);
                 const block = flatBlockName(flat);
                 const floor = flatFloorNumber(flat);
@@ -885,10 +1081,10 @@ export default function AssignFlat() {
             </div>
 
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, padding: "14px 20px", borderTop: "1px solid var(--divider)" }}>
-              <p className="text-xs text-secondary">Showing {assigned.length} of {totalItems}</p>
+              <p className="text-xs text-secondary">Showing {paginatedAssigned.length} of {totalItems}</p>
               <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} />
             </div>
-          </>
+          </div>
         )}
       </div>
     </div>

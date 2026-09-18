@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { QRCodeSVG } from "qrcode.react";
 import API from "../../services/api";
-import { IoArrowBackOutline, IoCopyOutline, IoCheckmarkOutline } from "react-icons/io5";
+import { IoArrowBackOutline, IoCopyOutline, IoCheckmarkOutline, IoShieldCheckmarkOutline } from "react-icons/io5";
+import { MdReceiptLong, MdQrCodeScanner } from "react-icons/md";
 
 export default function PaymentMethods() {
   const navigate = useNavigate();
@@ -74,100 +75,143 @@ export default function PaymentMethods() {
     }
   };
 
+  const displayAmount = amount || upiData?.amount;
+
   return (
-    <div className="p-6 max-w-xl mx-auto space-y-6">
-
-      <button
-        className="bg-card flex justify-center items-center gap-2 text-sm font-medium h-10 w-12"
-        onClick={() => navigate(-1)}
-      >
-        <IoArrowBackOutline style={{ fontSize: "20px" }} />
-      </button>
-
-      {/* Bill Summary */}
-      <div className="bg-card p-6 space-y-3">
-        <h2 className="text-lg font-semibold">Make Payment</h2>
-
-        <div className="text-center space-y-1">
-          <p className="text-secondary text-sm">Total Payable</p>
-          <p className="text-3xl font-bold text-accent">₹{amount}</p>
-          <p className="text-sm text-secondary">{title}</p>
+    <div className="py-4 px-3 max-w-md mx-auto space-y-4 animate-fadeIn">
+      {/* Header bar */}
+      <div className="flex items-center justify-between gap-3">
+        <button
+          className="flex items-center justify-center w-9 h-9 rounded-xl border transition-all cursor-pointer"
+          style={{
+            background: "var(--card-inner-bg)",
+            borderColor: "var(--glass-border)",
+            color: "var(--text-primary)",
+          }}
+          onClick={() => navigate(-1)}
+          aria-label="Go back"
+        >
+          <IoArrowBackOutline size={18} />
+        </button>
+        <div className="text-center flex-1 pr-9">
+          <h2 className="text-base font-bold tracking-tight text-primary">Pay Bill</h2>
         </div>
       </div>
 
       {loading ? (
-        <div className="bg-card p-8 text-center space-y-3">
-          <div className="animate-spin w-8 h-8 border-2 border-accent border-t-transparent rounded-full mx-auto" />
-          <p className="text-sm text-secondary">Loading payment details...</p>
+        <div className="p-8 text-center space-y-3 rounded-2xl border"
+          style={{ background: "var(--card-bg)", borderColor: "var(--glass-border)" }}>
+          <div className="animate-spin w-7 h-7 border-2 border-accent border-t-transparent rounded-full mx-auto" />
+          <p className="text-xs text-secondary">Generating secure QR code...</p>
         </div>
       ) : error ? (
-        <div className="bg-card p-8 text-center space-y-3">
-          <p className="text-sm text-red-400">{error}</p>
-          <button onClick={fetchUpiData} className="btn-primary text-sm">
+        <div className="p-6 text-center space-y-3 rounded-2xl border"
+          style={{ background: "var(--card-bg)", borderColor: "var(--glass-border)" }}>
+          <p className="text-xs text-red-400 font-semibold">{error}</p>
+          <button onClick={fetchUpiData} className="btn-primary text-xs px-4 py-2 mx-auto">
             Retry
           </button>
         </div>
       ) : (
-        <>
-          {/* QR Code Section */}
-          <div className="bg-card p-6 space-y-5">
-            <h3 className="font-semibold">Scan QR Code to Pay</h3>
-
-            <div className="flex flex-col items-center gap-4">
-              <p className="text-2xl font-bold text-green-400">
-                ₹{parseFloat(upiData?.amount ?? amount).toLocaleString()}
-              </p>
-
-              <div className="bg-white p-4 rounded-2xl shadow-lg">
-                {upiData?.upiLink ? (
-                  <QRCodeSVG value={upiData.upiLink} size={180} bgColor="#ffffff" fgColor="#1a1a2e" />
-                ) : (
-                  <div className="w-[180px] h-[180px] flex items-center justify-center text-gray-400 text-xs">
-                    QR unavailable
-                  </div>
-                )}
+        /* Unified compact payment card */
+        <div
+          className="rounded-2xl p-5 border space-y-4 shadow-xl"
+          style={{
+            background: "var(--card-bg)",
+            borderColor: "var(--glass-border)",
+          }}
+        >
+          {/* Bill Info & Amount Banner */}
+          <div
+            className="flex items-center justify-between p-3.5 rounded-xl border"
+            style={{
+              background: "var(--card-inner-bg)",
+              borderColor: "var(--glass-border)",
+            }}
+          >
+            <div className="flex items-center gap-2.5 min-w-0 pr-2">
+              <div
+                className="w-9 h-9 rounded-lg flex items-center justify-center text-accent shrink-0"
+                style={{ background: "var(--accent-soft)" }}
+              >
+                <MdReceiptLong size={18} />
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs font-semibold text-primary truncate">
+                  {title || "Maintenance Bill"}
+                </p>
+                <p className="text-[10px] text-secondary">Total Payable</p>
               </div>
             </div>
-
-            {/* Divider */}
-            <div className="flex items-center gap-3">
-              <div className="flex-1 h-px bg-white/10" />
-              <span className="text-xs text-secondary">or pay via UPI ID</span>
-              <div className="flex-1 h-px bg-white/10" />
+            <div className="text-right shrink-0">
+              <p className="text-lg font-bold text-accent">
+                ₹{Number(displayAmount || 0).toLocaleString("en-IN")}
+              </p>
             </div>
+          </div>
 
-            {/* UPI ID + Copy */}
-            <div className="flex items-center justify-center gap-3 p-3 rounded-xl border border-white/10 bg-white/5">
-              <span className="font-mono font-semibold text-sm">
-                {upiData?.upiId || "society@upi"}
-              </span>
-              <button
-                onClick={handleCopyUpiId}
-                className="btn-muted flex items-center gap-1 px-3 py-1.5 text-xs font-semibold"
-              >
-                {copied ? <IoCheckmarkOutline size={13} /> : <IoCopyOutline size={13} />}
-                {copied ? "Copied" : "Copy"}
-              </button>
+          {/* QR Code Container */}
+          <div className="flex flex-col items-center justify-center p-3 rounded-xl bg-white/5 border border-white/8">
+            <div className="bg-white p-2.5 rounded-xl shadow-md">
+              {upiData?.upiLink ? (
+                <QRCodeSVG value={upiData.upiLink} size={148} bgColor="#ffffff" fgColor="#0f172a" />
+              ) : (
+                <div className="w-[148px] h-[148px] flex items-center justify-center text-gray-400 text-xs">
+                  QR unavailable
+                </div>
+              )}
             </div>
-
-            {/* I have paid button */}
-            <button
-              onClick={handleConfirm}
-              disabled={confirming}
-              className="btn-primary w-full justify-center"
-            >
-              {confirming ? "Confirming..." : "I have paid"}
-            </button>
-            <p className="text-center text-xs text-secondary">
-              After payment, tap the button above to confirm.
+            <p className="text-[11px] font-semibold text-secondary mt-2 flex items-center gap-1">
+              <MdQrCodeScanner size={13} className="text-accent" /> Scan with GPay, PhonePe, Paytm or BHIM
             </p>
           </div>
-        </>
-      )}
 
-      <p className="text-center text-xs text-secondary">
-        100% Secure Payment
-      </p>
+          {/* UPI ID copy pill */}
+          <div
+            className="flex items-center justify-between gap-2 px-3 py-2 rounded-xl border"
+            style={{
+              background: "var(--card-inner-bg)",
+              borderColor: "var(--glass-border)",
+            }}
+          >
+            <div className="min-w-0 flex-1">
+              <p className="text-[10px] text-secondary uppercase font-bold tracking-wider">UPI ID</p>
+              <p className="font-mono font-bold text-xs text-primary truncate">
+                {upiData?.upiId || "society@upi"}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={handleCopyUpiId}
+              className="flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-lg border transition-all cursor-pointer shrink-0"
+              style={{
+                background: copied ? "rgba(34,197,94,0.15)" : "var(--hover-bg)",
+                borderColor: copied ? "#22c55e" : "var(--glass-border)",
+                color: copied ? "#22c55e" : "var(--text-primary)",
+              }}
+            >
+              {copied ? <IoCheckmarkOutline size={13} /> : <IoCopyOutline size={13} />}
+              <span>{copied ? "Copied" : "Copy"}</span>
+            </button>
+          </div>
+
+          {/* Confirm Button */}
+          <button
+            type="button"
+            onClick={handleConfirm}
+            disabled={confirming}
+            className="btn-primary w-full justify-center h-10 text-xs font-bold rounded-xl shadow-md"
+          >
+            {confirming ? "Verifying Payment..." : "I Have Completed Payment"}
+          </button>
+
+          {/* Trust badge */}
+          <div className="flex items-center justify-center gap-1.5 text-[11px] text-secondary pt-1">
+            <IoShieldCheckmarkOutline size={14} className="text-green-400" />
+            <span>100% Secure & Verified Payment</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -6,6 +6,8 @@ import { hasPermission } from "../../utils/permissions";
 import { toast } from "react-toastify";
 import { useLang } from "../../context/LanguageContext";
 import Select from "../../components/common/Select";
+import SlidingTabs from "../../components/common/SlidingTabs";
+import ExpandableSearch from "../../components/common/ExpandableSearch";
 import GlobalModal from "../../components/common/GlobalModal";
 import SOSModal from "../../components/emergency/SOSModal";
 import {
@@ -276,33 +278,94 @@ export default function AdminEmergency() {
   }
 
   return (
-    <div className="admin-page admin-root animate-fadeIn space-y-6 max-w-400 mx-auto pb-8">
-      {/* ── 1. DASHBOARD HERO HEADER ── */}
-      <div className="bg-card border border-glass-border rounded-2xl p-6 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm">
-        <div className="space-y-1 min-w-0">
-          <div className="flex items-center gap-3 flex-wrap">
-            <div className="w-10 h-10 rounded-xl bg-red-500/10 border border-red-500/30 flex items-center justify-center text-red-500 shrink-0">
-              <MdSecurity size={24} />
-            </div>
-            <div>
-              <h1 className="text-xl md:text-2xl font-bold text-primary tracking-tight">
-                SOS Emergency Management
-              </h1>
-              <p className="text-xs md:text-sm text-secondary truncate">
-                Monitor live society emergencies, view user acknowledgement history, and manage resolution records
-              </p>
-            </div>
+    <div className="admin-page admin-root animate-fadeIn space-y-5 max-w-400 mx-auto pb-8">
+      {/* ── 1. UNIFIED PAGE HEADER ── */}
+      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div
+            style={{
+              width: 44,
+              height: 44,
+              borderRadius: 13,
+              flexShrink: 0,
+              background: "linear-gradient(135deg, rgba(239,68,68,0.2), rgba(244,63,94,0.12))",
+              border: "1.5px solid rgba(239,68,68,0.3)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              boxShadow: "0 4px 14px rgba(239,68,68,0.2)",
+              color: "#ef4444",
+            }}
+          >
+            <MdSecurity size={24} />
+          </div>
+          <div>
+            <h1 className="text-lg font-semibold" style={{ letterSpacing: "-0.02em", margin: 0 }}>
+              SOS Emergency
+            </h1>
+            <p className="text-secondary text-xs mt-0.5">
+              Monitor live emergencies, acknowledgements & resolutions
+            </p>
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+        <div className="flex items-center gap-2.5 flex-nowrap shrink-0 overflow-x-auto max-w-full pb-1" style={{ scrollbarWidth: "none" }}>
+          {/* Status Sliding Tabs */}
+          <SlidingTabs
+            value={statusFilter}
+            onChange={(val) => setStatusFilter(val)}
+            items={[
+              { id: "ALL", label: "All", badge: metrics.total },
+              { id: "ACTIVE", label: "Active", badge: metrics.active },
+              { id: "RESOLVED", label: "Resolved", badge: metrics.resolved },
+            ]}
+          />
+
+          {/* Expandable Search */}
+          <ExpandableSearch
+            value={search}
+            onChange={setSearch}
+            placeholder="Search SOS alerts..."
+          />
+
+          {/* Type Filter */}
+          <Select
+            value={typeFilter}
+            onChange={(e) => setTypeFilter(e.target.value)}
+            style={{ height: 42, minHeight: 42, fontSize: 13, borderRadius: 12, minWidth: 150 }}
+          >
+            {EMERGENCY_TYPES.map((t) => (
+              <option key={t.key} value={t.key}>
+                {t.label}
+              </option>
+            ))}
+          </Select>
+
+          {/* Super Admin Society Filter */}
+          {isSuperAdmin && (
+            <Select
+              value={selectedSocietyId}
+              onChange={(e) => setSelectedSocietyId(e.target.value)}
+              style={{ height: 42, minHeight: 42, fontSize: 13, borderRadius: 12, minWidth: 160 }}
+            >
+              <option value="">All Societies</option>
+              {societies.map((soc) => (
+                <option key={soc.id} value={soc.id}>
+                  {soc.name}
+                </option>
+              ))}
+            </Select>
+          )}
+
+          {/* Broadcast SOS Action Button */}
           {canTrigger && (
             <button
               type="button"
               onClick={() => setIsSOSModalOpen(true)}
-              className="btn bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white flex items-center gap-2 text-xs font-black px-4 py-2.5 rounded-xl shadow-lg shadow-red-600/30 transition-all active:scale-95 cursor-pointer"
+              className="btn bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white flex items-center gap-2 text-xs font-bold px-4 py-2.5 rounded-xl shadow-md shadow-red-600/30 transition-all cursor-pointer"
+              style={{ height: 42, minHeight: 42 }}
             >
-              <FaExclamationTriangle size={15} className="animate-pulse" />
+              <FaExclamationTriangle size={14} className="animate-pulse" />
               <span>Broadcast SOS</span>
             </button>
           )}
@@ -310,15 +373,16 @@ export default function AdminEmergency() {
           <button
             type="button"
             onClick={fetchAlerts}
-            className="btn btn-secondary flex items-center gap-1.5 text-xs font-bold px-3 py-2.5"
+            className="btn btn-secondary flex items-center gap-1.5 text-xs font-bold px-3 py-2.5 rounded-xl"
+            style={{ height: 42, minHeight: 42 }}
           >
-            <MdRefresh size={18} className={loading ? "animate-spin" : ""} /> Refresh
+            <MdRefresh size={18} className={loading ? "animate-spin" : ""} />
           </button>
         </div>
       </div>
 
-      {/* ── 2. KEY METRICS KPI CARDS (DASHBOARD THEME) ── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+      {/* ── 2. KEY METRICS KPI CARDS ── */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="ad-kpi ad-kpi--residents">
           <span className="ad-kpi-val">{metrics.total}</span>
           <span className="ad-kpi-label">Total SOS Alerts</span>
@@ -342,123 +406,7 @@ export default function AdminEmergency() {
         <div className="ad-kpi ad-kpi--flats">
           <span className="ad-kpi-val">{metrics.totalAcks}</span>
           <span className="ad-kpi-label">Total Acknowledgements</span>
-          <span className="ad-kpi-desc">Confirmed reads by recipients</span>
-        </div>
-      </div>
-
-      {/* ── 3. FILTER TOOLBAR ── */}
-      <div className="bg-card border border-glass-border rounded-2xl p-4 space-y-3 shadow-sm">
-        <div className="flex flex-wrap items-center gap-3 justify-between">
-          {/* Search Box */}
-          <div className="relative flex-1 min-w-[240px]">
-            <MdSearch size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-secondary pointer-events-none" />
-            <input
-              type="text"
-              placeholder="Search by resident name, flat number, SOS type, message..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="input w-full pl-9 h-10 text-xs rounded-xl"
-            />
-          </div>
-
-          {/* Super Admin Society Filter */}
-          {isSuperAdmin && (
-            <div className="min-w-[200px]">
-              <Select
-                value={selectedSocietyId}
-                onChange={(e) => setSelectedSocietyId(e.target.value)}
-                className="input h-10 text-xs rounded-xl w-full"
-              >
-                <option value="">All Societies</option>
-                {societies.map((soc) => (
-                  <option key={soc.id} value={soc.id}>
-                    {soc.name} (#{soc.id})
-                  </option>
-                ))}
-              </Select>
-            </div>
-          )}
-
-          {/* Type Filter */}
-          <div className="min-w-[160px]">
-            <Select
-              value={typeFilter}
-              onChange={(e) => setTypeFilter(e.target.value)}
-              className="input h-10 text-xs rounded-xl w-full"
-            >
-              {EMERGENCY_TYPES.map((t) => (
-                <option key={t.key} value={t.key}>
-                  {t.label}
-                </option>
-              ))}
-            </Select>
-          </div>
-
-          {/* Status Tabs */}
-          <div className="flex items-center gap-1 p-1 bg-black/10 dark:bg-white/5 rounded-xl border border-glass">
-            {[
-              { key: "ALL", label: "All" },
-              { key: "ACTIVE", label: "Active" },
-              { key: "RESOLVED", label: "Resolved" },
-            ].map(({ key, label }) => (
-              <button
-                key={key}
-                type="button"
-                onClick={() => setStatusFilter(key)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${
-                  statusFilter === key
-                    ? "bg-red-600 text-white shadow-sm"
-                    : "text-secondary hover:text-primary"
-                }`}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Date Filters Row */}
-        <div className="flex flex-wrap items-center gap-3 pt-2 border-t border-glass text-xs">
-          <div className="flex items-center gap-2">
-            <span className="text-secondary font-semibold flex items-center gap-1">
-              <MdCalendarToday size={14} /> From:
-            </span>
-            <input
-              type="date"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              className="input h-8 text-xs rounded-lg px-2"
-            />
-          </div>
-
-          <div className="flex items-center gap-2">
-            <span className="text-secondary font-semibold flex items-center gap-1">
-              <MdCalendarToday size={14} /> To:
-            </span>
-            <input
-              type="date"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              className="input h-8 text-xs rounded-lg px-2"
-            />
-          </div>
-
-          {(startDate || endDate || search || typeFilter !== "ALL" || statusFilter !== "ALL" || (isSuperAdmin && selectedSocietyId)) && (
-            <button
-              type="button"
-              onClick={() => {
-                setSearch("");
-                setStatusFilter("ALL");
-                setTypeFilter("ALL");
-                setStartDate("");
-                setEndDate("");
-                if (isSuperAdmin) setSelectedSocietyId("");
-              }}
-              className="text-red-400 hover:text-red-300 font-bold ml-auto flex items-center gap-1"
-            >
-              <MdClose size={14} /> Clear Filters
-            </button>
-          )}
+          <span className="ad-kpi-desc">Confirmed recipient reads</span>
         </div>
       </div>
 
@@ -502,7 +450,7 @@ export default function AdminEmergency() {
           )}
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
           {alerts.map((alert) => {
             const typeMeta = TYPE_MAP[alert.type] || TYPE_MAP.OTHER || {
               label: alert.type,
@@ -530,18 +478,22 @@ export default function AdminEmergency() {
             return (
               <div
                 key={alert.id}
-                className={`bg-card border border-glass-border rounded-2xl p-5 flex flex-col justify-between space-y-4 shadow-sm transition-all duration-200 hover:shadow-lg ${
-                  !isResolved ? "ring-1 ring-red-500/40" : "hover:border-blue-500/30"
+                className={`rounded-2xl p-5 flex flex-col justify-between gap-4 transition-all duration-200 hover:shadow-lg ${
+                  !isResolved ? "ring-1 ring-red-500/40" : "hover:border-purple-500/30"
                 }`}
+                style={{
+                  background: "var(--card-bg)",
+                  border: "1px solid var(--glass-border)",
+                }}
               >
                 {/* Card Top: Type Badge & Status */}
-                <div className="space-y-3">
-                  <div className="flex items-start justify-between gap-2">
+                <div className="space-y-3.5">
+                  <div className="flex items-center justify-between gap-2">
                     <div
                       className="px-3 py-1.5 rounded-xl border flex items-center gap-2"
                       style={{ background: typeMeta.bg, borderColor: typeMeta.border }}
                     >
-                      <Icon size={18} style={{ color: typeMeta.color }} />
+                      <Icon size={17} style={{ color: typeMeta.color }} />
                       <span className="text-xs font-black tracking-wide" style={{ color: typeMeta.color }}>
                         {typeMeta.label}
                       </span>
@@ -554,7 +506,7 @@ export default function AdminEmergency() {
                         </span>
                       )}
                       <span
-                        className={`px-2.5 py-1 rounded-xl text-[11px] font-black uppercase tracking-wider flex items-center gap-1 ${
+                        className={`px-2.5 py-1 rounded-xl text-[10.5px] font-black uppercase tracking-wider flex items-center gap-1 ${
                           isResolved
                             ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30"
                             : "bg-red-600 text-white shadow-sm shadow-red-500/30 animate-pulse"
@@ -566,14 +518,17 @@ export default function AdminEmergency() {
                     </div>
                   </div>
 
-                  {/* Sender & Flat Info */}
-                  <div className="flex items-center justify-between gap-2 pt-1 border-b border-glass-border pb-2.5">
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-full bg-red-500/15 border border-red-500/30 flex items-center justify-center text-red-400 font-bold text-xs">
+                  {/* Sender & Flat Info Row */}
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div
+                        className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs shrink-0"
+                        style={{ background: isResolved ? "rgba(34,197,94,0.15)" : "rgba(239,68,68,0.15)", color: isResolved ? "#22c55e" : "#ef4444" }}
+                      >
                         {senderName.charAt(0).toUpperCase()}
                       </div>
-                      <div>
-                        <p className="text-xs font-bold leading-tight" style={{ color: "var(--text-primary)" }}>
+                      <div className="min-w-0">
+                        <p className="text-xs font-bold leading-tight truncate" style={{ color: "var(--text-primary)" }}>
                           {senderName}
                         </p>
                         <p className="text-[10px] text-secondary">
@@ -582,8 +537,8 @@ export default function AdminEmergency() {
                       </div>
                     </div>
 
-                    <div className="text-right">
-                      <p className="text-xs font-bold flex items-center gap-1 text-primary justify-end">
+                    <div className="text-right shrink-0">
+                      <p className="text-xs font-semibold flex items-center gap-1 text-primary justify-end">
                         <MdLocationOn size={13} className="text-red-400" /> {flatStr}
                       </p>
                       <p className="text-[10px] text-secondary flex items-center gap-1 justify-end">
@@ -592,31 +547,43 @@ export default function AdminEmergency() {
                     </div>
                   </div>
 
-                  {/* Emergency Message */}
-                  <div className="p-3.5 rounded-xl bg-card-inner-bg border border-glass-border space-y-1">
-                    <p className="text-xs text-secondary font-semibold uppercase tracking-wider text-[10px]">
-                      Emergency Details
-                    </p>
-                    <p className="text-xs font-semibold leading-relaxed" style={{ color: "var(--text-primary)" }}>
+                  {/* Emergency Message Block */}
+                  <div
+                    style={{
+                      padding: "12px 14px",
+                      borderRadius: "12px",
+                      background: "var(--card-inner-bg)",
+                      border: "1px solid var(--glass-border)",
+                    }}
+                  >
+                    <p className="text-xs leading-relaxed" style={{ color: "var(--text-primary)", fontWeight: 500, margin: 0 }}>
                       {alert.message || "Emergency assistance requested."}
                     </p>
 
                     {alert.other_reason && (
-                      <div className="mt-2 pt-2 border-t border-glass-border flex items-center gap-1.5 text-xs text-pink-400">
-                        <span className="font-bold">Reason:</span> {alert.other_reason}
+                      <div className="mt-2 pt-2 border-t border-glass flex items-center gap-1.5 text-xs text-pink-400 font-semibold">
+                        <span>Reason: {alert.other_reason}</span>
                       </div>
                     )}
                   </div>
 
                   {/* Resolution Notes (if resolved) */}
                   {isResolved && (
-                    <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs space-y-1">
+                    <div
+                      style={{
+                        padding: "10px 12px",
+                        borderRadius: "12px",
+                        background: "rgba(34, 197, 94, 0.08)",
+                        border: "1px solid rgba(34, 197, 94, 0.2)",
+                        fontSize: "11.5px",
+                      }}
+                    >
                       <div className="flex items-center justify-between text-emerald-400 font-bold text-[11px]">
                         <span>Resolved by: {alert.Resolver?.name || "Staff"}</span>
                         <span>{alert.resolved_at ? new Date(alert.resolved_at).toLocaleTimeString() : ""}</span>
                       </div>
                       {alert.resolution_notes && (
-                        <p className="text-secondary text-[11px] leading-tight">
+                        <p className="text-secondary text-[11px] leading-tight mt-1" style={{ margin: "4px 0 0" }}>
                           Note: {alert.resolution_notes}
                         </p>
                       )}
@@ -625,18 +592,49 @@ export default function AdminEmergency() {
                 </div>
 
                 {/* Card Actions Footer */}
-                <div className="space-y-2 pt-2.5 border-t border-glass-border">
-                  {/* Read / Acknowledgement history trigger */}
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    gap: 8,
+                    paddingTop: 12,
+                    borderTop: "1px solid var(--glass-border)",
+                    marginTop: "auto",
+                  }}
+                >
+                  {/* Read Acknowledgements */}
                   <button
                     type="button"
                     onClick={() => openHistoryModal(alert)}
-                    className="w-full py-2 px-3 rounded-xl bg-card-inner-bg hover:bg-card-inner-bg/80 border border-glass-border text-xs font-bold text-secondary hover:text-primary transition flex items-center justify-between"
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 6,
+                      padding: "6px 11px",
+                      borderRadius: 10,
+                      background: "var(--card-inner-bg)",
+                      border: "1px solid var(--glass-border)",
+                      color: "var(--text-secondary)",
+                      fontSize: "11.5px",
+                      fontWeight: 600,
+                      cursor: "pointer",
+                      transition: "all 0.15s ease",
+                    }}
                   >
-                    <span className="flex items-center gap-1.5">
-                      <MdVisibility size={16} className="text-indigo-400" /> Read Acknowledgements
-                    </span>
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-indigo-500/20 text-indigo-400 border border-indigo-500/30">
-                      {ackCount} Acknowledged
+                    <MdVisibility size={14} style={{ color: "var(--accent)" }} />
+                    <span>Acks</span>
+                    <span
+                      style={{
+                        fontSize: "10px",
+                        fontWeight: 800,
+                        padding: "1px 6px",
+                        borderRadius: 999,
+                        background: "rgba(107, 70, 193, 0.15)",
+                        color: "var(--accent)",
+                      }}
+                    >
+                      {ackCount}
                     </span>
                   </button>
 
@@ -646,9 +644,9 @@ export default function AdminEmergency() {
                       <button
                         type="button"
                         onClick={() => setResolveModal({ isOpen: true, alert, notes: "", loading: false })}
-                        className="flex-1 py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition flex items-center justify-center gap-1 shadow-sm"
+                        className="py-1.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition flex items-center justify-center gap-1 shadow-sm cursor-pointer"
                       >
-                        <MdCheckCircle size={15} /> Mark Resolved
+                        <MdCheckCircle size={14} /> Resolve
                       </button>
                     )}
 
@@ -667,10 +665,11 @@ export default function AdminEmergency() {
                             loading: false,
                           })
                         }
-                        className="btn btn-secondary p-2 rounded-xl text-secondary hover:text-primary"
+                        className="p-2 rounded-xl text-secondary hover:text-primary transition"
+                        style={{ background: "var(--card-inner-bg)", border: "1px solid var(--glass-border)", cursor: "pointer" }}
                         title="Edit SOS Details"
                       >
-                        <MdEdit size={16} />
+                        <MdEdit size={14} />
                       </button>
                     )}
 
@@ -678,11 +677,12 @@ export default function AdminEmergency() {
                     {canDelete && (
                       <button
                         type="button"
-                        onClick={() => handleDeleteAlert(alert)}
-                        className="btn btn-secondary p-2 rounded-xl text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                        onClick={() => handleDeleteClick(alert)}
+                        className="p-2 rounded-xl text-red-400 hover:text-red-300 hover:bg-red-500/10 transition"
+                        style={{ background: "var(--card-inner-bg)", border: "1px solid var(--glass-border)", cursor: "pointer" }}
                         title="Delete SOS Alert"
                       >
-                        <MdDeleteOutline size={16} />
+                        <MdDeleteOutline size={14} />
                       </button>
                     )}
                   </div>
@@ -705,89 +705,153 @@ export default function AdminEmergency() {
         >
           <div className="space-y-4">
             {/* Summary Row */}
-            <div className="grid grid-cols-3 gap-3">
-              <div className="p-3 rounded-xl bg-indigo-500/10 border border-indigo-500/30 flex items-center gap-3">
-                <MdPeople size={24} className="text-indigo-400" />
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div
+                className="p-3.5 rounded-2xl flex items-center gap-3.5 transition"
+                style={{
+                  background: "linear-gradient(135deg, rgba(160, 90, 255, 0.12), rgba(160, 90, 255, 0.04))",
+                  border: "1px solid rgba(160, 90, 255, 0.25)",
+                  boxShadow: "0 2px 10px rgba(160, 90, 255, 0.08)",
+                }}
+              >
+                <div
+                  style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: 12,
+                    background: "rgba(160, 90, 255, 0.18)",
+                    color: "var(--accent, #a05aff)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    flexShrink: 0,
+                  }}
+                >
+                  <MdPeople size={22} />
+                </div>
                 <div>
-                  <p className="text-[10px] uppercase font-bold text-secondary">Total Recipients</p>
-                  <p className="text-xl font-black" style={{ color: "var(--text-primary)" }}>
+                  <p className="text-[10px] uppercase font-bold tracking-wider text-secondary">Total Recipients</p>
+                  <p className="text-xl font-black" style={{ color: "var(--text-primary)", lineHeight: 1.2 }}>
                     {historyModal.data?.summary?.total ?? 0}
                   </p>
                 </div>
               </div>
 
-              <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center gap-3">
-                <MdDoneAll size={24} className="text-emerald-400" />
+              <div
+                className="p-3.5 rounded-2xl flex items-center gap-3.5 transition"
+                style={{
+                  background: "linear-gradient(135deg, rgba(16, 185, 129, 0.12), rgba(16, 185, 129, 0.04))",
+                  border: "1px solid rgba(16, 185, 129, 0.25)",
+                  boxShadow: "0 2px 10px rgba(16, 185, 129, 0.08)",
+                }}
+              >
+                <div
+                  style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: 12,
+                    background: "rgba(16, 185, 129, 0.18)",
+                    color: "#10b981",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    flexShrink: 0,
+                  }}
+                >
+                  <MdDoneAll size={22} />
+                </div>
                 <div>
-                  <p className="text-[10px] uppercase font-bold text-secondary">Marked As Read</p>
-                  <p className="text-xl font-black text-emerald-400">
+                  <p className="text-[10px] uppercase font-bold tracking-wider text-secondary">Marked As Read</p>
+                  <p className="text-xl font-black text-emerald-400" style={{ lineHeight: 1.2 }}>
                     {historyModal.data?.summary?.read ?? 0}
                   </p>
                 </div>
               </div>
 
-              <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center gap-3">
-                <MdHourglassEmpty size={24} className="text-amber-400" />
+              <div
+                className="p-3.5 rounded-2xl flex items-center gap-3.5 transition"
+                style={{
+                  background: "linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(245, 158, 11, 0.04))",
+                  border: "1px solid rgba(245, 158, 11, 0.25)",
+                  boxShadow: "0 2px 10px rgba(245, 158, 11, 0.08)",
+                }}
+              >
+                <div
+                  style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: 12,
+                    background: "rgba(245, 158, 11, 0.18)",
+                    color: "#f59e0b",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    flexShrink: 0,
+                  }}
+                >
+                  <MdHourglassEmpty size={22} />
+                </div>
                 <div>
-                  <p className="text-[10px] uppercase font-bold text-secondary">Unread</p>
-                  <p className="text-xl font-black text-amber-400">
+                  <p className="text-[10px] uppercase font-bold tracking-wider text-secondary">Unread</p>
+                  <p className="text-xl font-black text-amber-400" style={{ lineHeight: 1.2 }}>
                     {historyModal.data?.summary?.unread ?? 0}
                   </p>
                 </div>
               </div>
             </div>
 
-            {/* Modal Filter Toolbar */}
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <div className="relative flex-1 min-w-[200px]">
-                <MdSearch size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-secondary pointer-events-none" />
-                <input
-                  type="text"
-                  placeholder="Search recipient name or email..."
-                  value={historyModal.search}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    setHistoryModal((prev) => ({ ...prev, search: val }));
-                    fetchModalHistory(historyModal.alert.id, val, historyModal.statusFilter);
-                  }}
-                  className="input w-full pl-8 h-9 text-xs rounded-xl"
-                />
-              </div>
+            {/* Modal Filter Toolbar: Unified Single Row */}
+            <div className="flex items-center justify-between gap-3 pt-1">
+              <SlidingTabs
+                value={historyModal.statusFilter}
+                onChange={(val) => {
+                  setHistoryModal((prev) => ({ ...prev, statusFilter: val }));
+                  fetchModalHistory(historyModal.alert.id, historyModal.search, val);
+                }}
+                items={[
+                  { id: "ALL", label: "All", badge: historyModal.data?.summary?.total ?? 0 },
+                  { id: "READ", label: "Read", badge: historyModal.data?.summary?.read ?? 0 },
+                  { id: "UNREAD", label: "Unread", badge: historyModal.data?.summary?.unread ?? 0 },
+                ]}
+              />
 
-              <div className="flex items-center gap-1 p-1 bg-black/10 dark:bg-white/5 rounded-xl border border-glass">
-                {[
-                  { key: "ALL", label: "All" },
-                  { key: "READ", label: "Read" },
-                  { key: "UNREAD", label: "Unread" },
-                ].map(({ key, label }) => (
-                  <button
-                    key={key}
-                    type="button"
-                    onClick={() => {
-                      setHistoryModal((prev) => ({ ...prev, statusFilter: key }));
-                      fetchModalHistory(historyModal.alert.id, historyModal.search, key);
-                    }}
-                    className={`px-3 py-1 rounded-lg text-xs font-bold transition ${
-                      historyModal.statusFilter === key
-                        ? "bg-red-600 text-white"
-                        : "text-secondary hover:text-primary"
-                    }`}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
+              <ExpandableSearch
+                value={historyModal.search}
+                onChange={(val) => {
+                  setHistoryModal((prev) => ({ ...prev, search: val }));
+                  fetchModalHistory(historyModal.alert.id, val, historyModal.statusFilter);
+                }}
+                placeholder="Search recipient name, flat..."
+              />
             </div>
 
             {/* Recipient Table */}
-            <div className="border border-glass rounded-xl overflow-hidden max-h-[360px] overflow-y-auto">
+            <div
+              style={{
+                border: "1px solid var(--glass-border)",
+                borderRadius: "14px",
+                overflow: "hidden",
+                maxHeight: "360px",
+                overflowY: "auto",
+                background: "var(--card-inner-bg)",
+              }}
+            >
               {historyModal.loading ? (
                 <div className="p-8 text-center text-secondary text-xs">Loading acknowledgement list...</div>
               ) : !historyModal.data?.recipients || historyModal.data.recipients.length === 0 ? (
                 <div className="p-8 text-center text-secondary text-xs">No recipient records found</div>
               ) : (
                 <table className="w-full text-left text-xs">
-                  <thead className="bg-black/20 dark:bg-white/5 uppercase text-[10px] text-secondary font-bold sticky top-0 backdrop-blur-md">
+                  <thead
+                    style={{
+                      background: "var(--card-bg)",
+                      borderBottom: "1px solid var(--glass-border)",
+                      position: "sticky",
+                      top: 0,
+                      zIndex: 10,
+                    }}
+                    className="uppercase text-[10px] text-secondary font-bold"
+                  >
                     <tr>
                       <th className="p-3">Resident / Member</th>
                       <th className="p-3">Flat / Unit</th>
@@ -802,30 +866,47 @@ export default function AdminEmergency() {
                       return (
                         <tr key={rec.user_id} className="hover:bg-white/5 transition">
                           <td className="p-3">
-                            <p className="font-bold" style={{ color: "var(--text-primary)" }}>{rec.name}</p>
-                            <p className="text-[10px] text-secondary">{rec.email || rec.phone || ""}</p>
+                            <p className="font-bold" style={{ color: "var(--text-primary)", margin: 0 }}>{rec.name}</p>
+                            <p className="text-[10px] text-secondary mt-0.5" style={{ margin: 0 }}>{rec.email || rec.phone || ""}</p>
                           </td>
                           <td className="p-3 font-semibold">
                             {rec.flat_number !== "—" ? `${rec.block_name ? `${rec.block_name}-` : ""}${rec.flat_number}` : "—"}
                           </td>
                           <td className="p-3">
-                            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-white/5 text-secondary border border-glass">
+                            <span
+                              style={{
+                                padding: "2px 8px",
+                                borderRadius: "6px",
+                                fontSize: "10px",
+                                fontWeight: 600,
+                                background: "rgba(255, 255, 255, 0.05)",
+                                border: "1px solid var(--glass-border)",
+                                color: "var(--text-secondary)",
+                              }}
+                            >
                               {rec.role}
                             </span>
                           </td>
                           <td className="p-3">
                             <span
-                              className={`px-2 py-0.5 rounded text-[10px] font-extrabold ${
-                                isRead
-                                  ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
-                                  : "bg-amber-500/20 text-amber-400 border border-amber-500/30"
-                              }`}
+                              style={{
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: "4px",
+                                padding: "3px 9px",
+                                borderRadius: "999px",
+                                fontSize: "10px",
+                                fontWeight: 700,
+                                background: isRead ? "rgba(16, 185, 129, 0.15)" : "rgba(245, 158, 11, 0.15)",
+                                color: isRead ? "#10b981" : "#f59e0b",
+                                border: `1px solid ${isRead ? "rgba(16, 185, 129, 0.3)" : "rgba(245, 158, 11, 0.3)"}`,
+                              }}
                             >
-                              {isRead ? "Read" : "Unread"}
+                              {isRead ? "✓ Read" : "⏳ Unread"}
                             </span>
                           </td>
                           <td className="p-3 text-secondary">
-                            {rec.read_at ? new Date(rec.read_at).toLocaleTimeString() : "—"}
+                            {rec.read_at ? new Date(rec.read_at).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : "—"}
                           </td>
                         </tr>
                       );

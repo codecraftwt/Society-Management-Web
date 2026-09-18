@@ -1591,11 +1591,10 @@ export default function ResidentComplaints() {
               </div>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-              <MdCalendarToday size={15} style={{ color: "var(--text-secondary)", flexShrink: 0 }} />
-              <input type="date" className="complaint-date-input" style={{ flex: 1, minWidth: 120 }}
+              <input type="date" className="input" style={{ flex: 1, minWidth: 130, height: 38 }}
                 value={dateFrom} max={dateTo || undefined} onChange={e => setDateFrom(e.target.value)} />
               <span style={{ fontSize: 12, color: "var(--text-secondary)", flexShrink: 0 }}>{t("compDateTo")}</span>
-              <input type="date" className="complaint-date-input" style={{ flex: 1, minWidth: 120 }}
+              <input type="date" className="input" style={{ flex: 1, minWidth: 130, height: 38 }}
                 value={dateTo} min={dateFrom || undefined} onChange={e => setDateTo(e.target.value)} />
               {hasDateFilter && (
                 <button onClick={clearDateFilter} style={{ width: 32, height: 32, borderRadius: "50%", flexShrink: 0,

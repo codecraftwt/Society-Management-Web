@@ -1,4 +1,4 @@
-import { useEffect, useState, useContext } from "react";
+import { useEffect, useState, useContext, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { toast } from "react-toastify";
 import {
@@ -13,10 +13,16 @@ import {
   MdReceipt,
   MdDescription,
   MdAccountBalanceWallet,
+  MdBusiness,
 } from "react-icons/md";
 import { AuthContext } from "../../context/AuthContext";
 import { hasPermission, isAdmin } from "../../utils/permissions";
+import API from "../../services/api";
 import { getPaymentsList, confirmBillPayment } from "../../services/accountingService";
+import SlidingTabs from "../../components/common/SlidingTabs";
+import ExpandableSearch from "../../components/common/ExpandableSearch";
+import Select from "../../components/common/Select";
+import "./Admin.css";
 
 const CURRENCY = (v) =>
   new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 2 }).format(Number(v) || 0);
@@ -51,6 +57,13 @@ const resolveFlatNumber = (row) => {
     (row.booking?.flat_id ? `Flat #${row.booking.flat_id}` : "—")
   );
 };
+
+const SOURCE_TABS = [
+  { id: "", label: "All Sources" },
+  { id: "BILL", label: "Bills" },
+  { id: "MAINTENANCE", label: "Maintenance" },
+  { id: "AMENITY", label: "Amenities" },
+];
 
 function DetailCard({ label, value, icon: Icon }) {
   return (
@@ -99,23 +112,23 @@ function PaymentDetailsModal({ row, onClose }) {
   return createPortal(
     <div
       className="fixed inset-0 flex items-center justify-center overflow-y-auto p-4 sm:p-6 animate-fadeIn"
-      style={{ background: "var(--overlay-bg)", backdropFilter: "blur(8px)", zIndex: 1200 }}
+      style={{ background: "rgba(0,0,0,0.65)", backdropFilter: "blur(8px)", zIndex: 1200 }}
       onClick={onClose}
     >
       <div
         className="w-full max-w-2xl rounded-2xl animate-scaleIn overflow-hidden"
         style={{
-          background: "var(--modal-bg)",
-          border: "1.5px solid var(--glass-border)",
-          boxShadow: "var(--shadow-glass)",
-          backdropFilter: "var(--blur)",
+          background: "var(--card-bg, #0f172a)",
+          border: "1px solid var(--glass-border)",
+          boxShadow: "0 24px 80px rgba(0,0,0,0.5), 0 0 20px rgba(160,90,255,0.15)",
+          backdropFilter: "blur(20px)",
         }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Modal Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-glass-border">
+        <div className="flex items-center justify-between px-6 py-4 border-b" style={{ borderColor: "var(--glass-border)" }}>
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-accent/10 border border-accent/20 flex items-center justify-center text-accent">
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: "var(--accent-soft, rgba(99,102,241,0.18))", color: "var(--accent, #818cf8)", border: "1px solid var(--accent-light, #818cf8)" }}>
               <MdOutlinePayments size={20} />
             </div>
             <div>
@@ -125,7 +138,8 @@ function PaymentDetailsModal({ row, onClose }) {
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-lg flex items-center justify-center text-secondary hover:text-primary hover:bg-card-inner-bg transition-colors text-lg"
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-secondary hover:text-primary transition-colors text-lg"
+            style={{ background: "var(--card-inner-bg)" }}
           >
             ✕
           </button>
@@ -210,21 +224,10 @@ function PaymentDetailsModal({ row, onClose }) {
   );
 }
 
-const inputStyle = {
-  background: "var(--card-inner-bg)",
-  border: "1px solid var(--glass-border)",
-  color: "var(--text-primary)",
-  borderRadius: "12px",
-  padding: "10px 14px",
-  fontSize: "14px",
-  width: "100%",
-  outline: "none",
-};
-
 function PaymentsSkeleton() {
   return (
     <div className="space-y-6 w-full min-w-0 animate-pulse">
-      <div className="h-24 bg-card/40 border border-glass-border rounded-2xl" />
+      <div className="h-20 bg-card/40 border border-glass-border rounded-2xl" />
       <div className="h-72 bg-card/40 border border-glass-border rounded-2xl" />
     </div>
   );
@@ -244,6 +247,7 @@ function EmptyState({ onReset }) {
 
 export default function Payments() {
   const { user } = useContext(AuthContext);
+  const isSuperAdmin = user?.role === "SUPER_ADMIN" || user?.activeRole === "SUPER_ADMIN";
   const canConfirm = isAdmin(user) || hasPermission(user, "payments", "confirm");
 
   const [rows, setRows] = useState([]);
@@ -254,8 +258,29 @@ export default function Payments() {
   const [source, setSource] = useState("");
   const [confirming, setConfirming] = useState(null);
   const [selected, setSelected] = useState(null);
+  const [search, setSearch] = useState("");
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+
+  /* ── SuperAdmin society gate ── */
+  const [societies, setSocieties] = useState([]);
+  const [societyId, setSocietyId] = useState(
+    () => localStorage.getItem("superadmin_society_filter") || ""
+  );
+
+  useEffect(() => {
+    if (!isSuperAdmin) return;
+    API.get("/societies")
+      .then((r) => setSocieties(r.data || []))
+      .catch(() => setSocieties([]));
+  }, [isSuperAdmin]);
 
   const load = async (p = page, src = source) => {
+    if (isSuperAdmin && (!societyId || societyId === "ALL")) {
+      setLoading(false);
+      setRows([]);
+      setPagination({});
+      return;
+    }
     try {
       setLoading(true);
       setErr("");
@@ -272,8 +297,15 @@ export default function Payments() {
     }
   };
 
+  const handleSocietyChange = (e) => {
+    const val = e.target.value;
+    setSocietyId(val);
+    localStorage.setItem("superadmin_society_filter", val);
+    setPage(1);
+    load(1, source);
+  };
+
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     load(1, source);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [source]);
@@ -302,6 +334,32 @@ export default function Payments() {
     }
   };
 
+  const filteredRows = useMemo(() => {
+    if (!search.trim()) return rows;
+    const q = search.toLowerCase();
+    return rows.filter((r) => {
+      const resName = resolveResidentName(r).toLowerCase();
+      const flatNum = resolveFlatNumber(r).toLowerCase();
+      const desc = (
+        r.Bill?.title ||
+        amenityDescription(r.booking) ||
+        (r.source === "MAINTENANCE" ? `maintenance #${r.bill_id || ""}` : "")
+      ).toLowerCase();
+      const mode = (r.payment_mode || "").toLowerCase();
+      const amt = String(r.amount || "");
+      const src = (r.source || "").toLowerCase();
+
+      return (
+        resName.includes(q) ||
+        flatNum.includes(q) ||
+        desc.includes(q) ||
+        mode.includes(q) ||
+        amt.includes(q) ||
+        src.includes(q)
+      );
+    });
+  }, [rows, search]);
+
   if (loading && rows.length === 0) return <PaymentsSkeleton />;
 
   const pageSize = pagination.limit || 20;
@@ -309,21 +367,127 @@ export default function Payments() {
 
   return (
     <div className="space-y-6 w-full min-w-0 max-w-1200 mx-auto pb-8">
-      {/* Page Header */}
-      <div className="bg-card border border-glass-border rounded-2xl p-6 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm">
-        <div>
-          <h1 className="text-xl md:text-2xl font-bold text-primary tracking-tight flex items-center gap-2">
-            <MdOutlinePayments className="text-accent" /> Payments & Collections
-          </h1>
-          <p className="text-xs md:text-sm text-secondary">
-            Revenue inflow from bills, maintenance, and amenities. Verified collections automatically update cash book balances.
-          </p>
+      {/* ── UNIFIED HEADER BAR ── */}
+      <div
+        className="ad-page-header flex flex-col md:flex-row items-start md:items-center justify-between gap-4 p-4 sm:p-5 rounded-2xl border"
+        style={{
+          background: "var(--card-bg, rgba(15, 23, 42, 0.6))",
+          borderColor: "var(--glass-border, rgba(255, 255, 255, 0.1))",
+          backdropFilter: "blur(16px)",
+          WebkitBackdropFilter: "blur(16px)",
+        }}
+      >
+        <div className="flex items-center gap-3">
+          <div
+            className="w-10 h-10 rounded-xl flex items-center justify-center text-accent shrink-0"
+            style={{
+              background: "var(--accent-soft, rgba(99,102,241,0.18))",
+              border: "1px solid var(--accent-light, #818cf8)",
+            }}
+          >
+            <MdOutlinePayments size={22} />
+          </div>
+          <div>
+            <h1 className="text-lg sm:text-xl font-bold tracking-tight text-primary flex items-center gap-2">
+              Payments & Collections
+              <span
+                className="text-xs font-semibold px-2 py-0.5 rounded-full"
+                style={{
+                  background: "var(--accent-soft, rgba(99,102,241,0.18))",
+                  color: "var(--accent, #818cf8)",
+                }}
+              >
+                {pagination.totalItems ?? rows.length}
+              </span>
+            </h1>
+            <p className="text-xs text-secondary hidden sm:block">
+              Revenue inflow from bills, maintenance, and amenities. Verified collections automatically update cash book.
+            </p>
+          </div>
         </div>
-        <button onClick={() => load(page)} className="btn-primary flex items-center gap-2 px-4 py-2 text-xs font-semibold shrink-0">
-          <MdRefresh size={16} /> Refresh
-        </button>
+
+        {/* Action Controls Toolbar */}
+        <div className="flex items-center gap-2.5 flex-nowrap shrink-0 overflow-x-auto max-w-full pb-1">
+          {/* Source Sliding Tabs */}
+          <SlidingTabs
+            value={source}
+            onChange={(val) => { setSource(val); setPage(1); }}
+            items={isSearchOpen ? SOURCE_TABS.filter((t) => t.id === source) : SOURCE_TABS}
+          />
+
+          {/* Expandable Animated Search Slider */}
+          <ExpandableSearch
+            value={search}
+            onChange={(val) => setSearch(val)}
+            placeholder="Search resident, flat, bill, mode…"
+            fetching={loading}
+            isOpen={isSearchOpen}
+            onOpenChange={setIsSearchOpen}
+          />
+
+          {/* Refresh Button */}
+          <button
+            onClick={() => load(page)}
+            title="Refresh payments"
+            className="inline-flex items-center justify-center rounded-xl border transition-all cursor-pointer shrink-0"
+            style={{
+              width: 38,
+              height: 38,
+              background: "var(--card-inner-bg, rgba(255,255,255,0.04))",
+              borderColor: "var(--glass-border)",
+              color: "var(--text-primary)",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = "var(--hover-bg, rgba(255,255,255,0.08))";
+              e.currentTarget.style.borderColor = "var(--accent-light, #818cf8)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "var(--card-inner-bg, rgba(255,255,255,0.04))";
+              e.currentTarget.style.borderColor = "var(--glass-border)";
+            }}
+          >
+            <MdRefresh size={18} className={loading ? "animate-spin text-accent" : "text-secondary"} />
+          </button>
+        </div>
       </div>
 
+      {/* SuperAdmin: must select a society first */}
+      {isSuperAdmin && (
+        <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap", background: "var(--card-inner-bg)", padding: "8px 14px", borderRadius: 14, border: "1px solid var(--glass-border)" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, flex: 1, minWidth: 220 }}>
+            <MdBusiness size={18} style={{ color: "var(--accent)" }} />
+            <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase", whiteSpace: "nowrap" }}>Select Society</span>
+            <Select
+              value={societyId}
+              onChange={handleSocietyChange}
+              style={{ height: 38, fontSize: 13, fontWeight: 700, flex: 1, border: "1.5px solid var(--accent-alpha,rgba(107,70,193,0.25))" }}
+            >
+              <option value="">— Choose a Society —</option>
+              {societies.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+            </Select>
+          </div>
+          {(!societyId || societyId === "ALL") ? (
+            <span style={{ fontSize: 12, color: "var(--stat-amber-color)", fontWeight: 700 }}>
+              💡 Select a society to view its payments
+            </span>
+          ) : (
+            <span style={{ fontSize: 12, color: "var(--stat-green-color)", fontWeight: 700 }}>
+              ✓ Working on: {societies.find((s) => String(s.id) === String(societyId))?.name || ""}
+            </span>
+          )}
+        </div>
+      )}
+
+      {isSuperAdmin && (!societyId || societyId === "ALL") && (
+        <div className="rounded-xl border p-8 flex flex-col items-center gap-3 text-center"
+          style={{ background: "var(--card-bg)", borderColor: "var(--glass-border)" }}>
+          <MdBusiness size={36} className="opacity-30" />
+          <p className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>Select a society to continue</p>
+          <p className="text-xs text-secondary">Payment collections and confirmations need a society context.</p>
+        </div>
+      )}
+
+      {!isSuperAdmin || (societyId && societyId !== "ALL") ? (<>
       {err && (
         <div className="bg-red-500/10 border border-red-500/30 rounded-2xl p-5 text-red-500 flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-sm font-medium">{err}</p>
@@ -334,31 +498,31 @@ export default function Payments() {
       )}
 
       {/* Main Table Card */}
-      <div className="bg-card border border-glass-border rounded-2xl shadow-sm overflow-hidden">
-        <div className="p-6 pb-4 flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <select
-              aria-label="Payment source"
-              style={inputStyle}
-              className="!w-auto"
-              value={source}
-              onChange={(e) => { setSource(e.target.value); setPage(1); }}
-            >
-              <option value="">All payment sources</option>
-              {["BILL", "MAINTENANCE", "AMENITY"].map((s) => (
-                <option key={s} value={s}>{s}</option>
-              ))}
-            </select>
-          </div>
-          <span className="text-xs text-secondary font-medium">
-            Showing {rows.length} records · Page {currentPage} of {pagination.totalPages || 1}
+      <div
+        className="data-table-wrap rounded-2xl border overflow-hidden"
+        style={{
+          background: "var(--card-bg, rgba(15, 23, 42, 0.6))",
+          borderColor: "var(--glass-border, rgba(255, 255, 255, 0.1))",
+          backdropFilter: "blur(16px)",
+          WebkitBackdropFilter: "blur(16px)",
+        }}
+      >
+        <div className="px-5 py-3.5 border-b flex items-center justify-between gap-3" style={{ borderColor: "var(--glass-border)" }}>
+          <span className="text-xs sm:text-sm font-bold text-primary">
+            {source ? `${source} Collections` : "All Collections"}
+            <span className="text-xs font-normal text-secondary ml-2">
+              — Showing {filteredRows.length} {search ? `matching "${search}"` : "records"}
+            </span>
+          </span>
+          <span className="text-xs text-secondary font-medium hidden sm:inline-block">
+            Page {currentPage} of {pagination.totalPages || 1}
           </span>
         </div>
 
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
             <thead>
-              <tr className="border-b border-glass-border text-xs uppercase tracking-wider text-secondary">
+              <tr className="border-b text-xs uppercase tracking-wider text-secondary" style={{ borderColor: "var(--glass-border)" }}>
                 <th className="px-4 py-3 font-semibold text-center w-16">Sr. No.</th>
                 <th className="px-4 py-3 font-semibold">Payment Date</th>
                 <th className="px-4 py-3 font-semibold">Source</th>
@@ -370,14 +534,14 @@ export default function Payments() {
               </tr>
             </thead>
             <tbody>
-              {rows.length === 0 && (
+              {filteredRows.length === 0 && (
                 <tr>
                   <td colSpan={8}>
-                    <EmptyState onReset={() => { setSource(""); load(1, ""); setPage(1); }} />
+                    <EmptyState onReset={() => { setSource(""); setSearch(""); load(1, ""); setPage(1); }} />
                   </td>
                 </tr>
               )}
-              {rows.map((r, index) => {
+              {filteredRows.map((r, index) => {
                 const srNo = (currentPage - 1) * pageSize + index + 1;
                 const residentName = resolveResidentName(r);
                 const flatNum = resolveFlatNumber(r);
@@ -391,8 +555,8 @@ export default function Payments() {
                 const confirmable = canConfirm && r.bill_id && r.status !== "SUCCESS";
 
                 return (
-                  <tr key={r.id} className="border-b border-glass-border/60 hover:bg-card-inner-bg/50 transition-colors">
-                    {/* Serial Number starting from 1, 2, 3... */}
+                  <tr key={r.id} className="border-b hover:bg-card-inner-bg/50 transition-colors" style={{ borderColor: "var(--glass-border)" }}>
+                    {/* Serial Number */}
                     <td className="px-4 py-3 text-secondary text-center font-bold text-xs">{srNo}</td>
                     <td className="px-4 py-3 text-secondary whitespace-nowrap text-xs">{fmtDate(r.payment_date)}</td>
                     <td className="px-4 py-3">
@@ -438,7 +602,11 @@ export default function Payments() {
                         )}
                         <button
                           onClick={() => setSelected(r)}
-                          className="p-1.5 rounded-lg bg-accent/10 text-accent border border-accent/20 hover:bg-accent hover:text-white transition-colors"
+                          className="p-1.5 rounded-lg text-accent transition-colors"
+                          style={{
+                            background: "var(--accent-soft, rgba(99,102,241,0.18))",
+                            border: "1px solid var(--accent-light, #818cf8)",
+                          }}
                           title="View complete payment details"
                         >
                           <MdOutlineInfo size={16} />
@@ -453,7 +621,7 @@ export default function Payments() {
         </div>
 
         {pagination.totalPages > 1 && (
-          <div className="flex flex-wrap items-center justify-between gap-3 px-6 py-4 border-t border-glass-border">
+          <div className="flex flex-wrap items-center justify-between gap-3 px-6 py-4 border-t" style={{ borderColor: "var(--glass-border)" }}>
             <span className="text-xs text-secondary font-medium">
               Page {currentPage} of {pagination.totalPages} · {pagination.totalItems} total payments
             </span>
@@ -481,6 +649,7 @@ export default function Payments() {
       </div>
 
       {selected && <PaymentDetailsModal row={selected} onClose={() => setSelected(null)} />}
+      </>): null}
     </div>
   );
 }

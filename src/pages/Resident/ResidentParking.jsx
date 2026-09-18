@@ -8,6 +8,7 @@ import {
   MdChevronLeft, MdChevronRight, MdLocalParking,
 } from "react-icons/md";
 import Select from "../../components/common/Select";
+import Modal from "../../components/Modal";
 
 /* ── Debounce hook — keeps input focused ── */
 function useDebounce(value, delay = 500) {
@@ -253,77 +254,110 @@ useEffect(() => {
         </div>
       )}
 
-      {/* ── ERROR ── */}
-      {errorMessage && (
-        <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4 text-sm text-red-400 flex items-center justify-between">
-          <span>{errorMessage}</span>
-          <button onClick={() => setErrorMessage("")} className="ml-3 opacity-60 hover:opacity-100">
-            <MdClose size={16} />
-          </button>
-        </div>
-      )}
-
-      {/* ── FORM ── */}
-      {showForm && hasFlat && (
-        <div className="bg-card p-5 max-w-3xl animate-scaleIn">
-          <h3 className="font-semibold mb-4">{t("parkFormTitle")}</h3>
-          <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {/* ── REQUEST FORM MODAL ── */}
+      <Modal
+        isOpen={showForm && hasFlat}
+        onClose={() => { setShowForm(false); setErrorMessage(""); }}
+        title={t("parkFormTitle")}
+        icon={MdLocalParking}
+        size="md"
+      >
+        {errorMessage && (
+          <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 text-sm text-red-400 flex items-center justify-between">
+            <span>{errorMessage}</span>
+            <button type="button" onClick={() => setErrorMessage("")} className="ml-3 opacity-60 hover:opacity-100">
+              <MdClose size={16} />
+            </button>
+          </div>
+        )}
+        <form onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-[11px] font-bold uppercase tracking-wider text-secondary mb-1.5">
+              {t("parkGuestName") || "Guest Name"} <span className="text-red-400">*</span>
+            </label>
             <input
-              className="input h-12"
-              placeholder={t("parkGuestName")}
+              className="input h-11 w-full"
+              placeholder="e.g. John Doe"
               value={form.guest_name}
               onChange={(e) => setForm({ ...form, guest_name: e.target.value })}
               required
             />
+          </div>
+
+          <div>
+            <label className="block text-[11px] font-bold uppercase tracking-wider text-secondary mb-1.5">
+              {t("parkVehicleNumber") || "Vehicle Number"} <span className="text-red-400">*</span>
+            </label>
             <input
-              className="input h-12"
-              placeholder={t("parkVehicleNumber")}
+              className="input h-11 w-full"
+              placeholder="e.g. MH12AB1234"
               value={form.vehicle_number}
               onChange={(e) => setForm({ ...form, vehicle_number: e.target.value })}
               required
             />
+          </div>
+
+          <div>
+            <label className="block text-[11px] font-bold uppercase tracking-wider text-secondary mb-1.5">
+              {t("parkVehicleType") || "Vehicle Type"} <span className="text-red-400">*</span>
+            </label>
             <Select
-              className="input h-12"
+              className="input h-11 w-full"
               value={form.vehicle_type}
               onChange={(e) => setForm({ ...form, vehicle_type: e.target.value })}
             >
-              <option value="CAR">{t("parkCar")}</option>
-              <option value="BIKE">{t("parkBike")}</option>
+              <option value="CAR">{t("parkCar") || "Car (4 Wheeler)"}</option>
+              <option value="BIKE">{t("parkBike") || "Bike (2 Wheeler)"}</option>
             </Select>
+          </div>
+
+          <div>
+            <label className="block text-[11px] font-bold uppercase tracking-wider text-secondary mb-1.5">
+              {t("parkArrival") || "Expected Arrival"} <span className="text-red-400">*</span>
+            </label>
             <input
               type="datetime-local"
-              className="input h-12"
+              className="input h-11 w-full"
               value={form.expected_arrival}
               onChange={(e) => setForm({ ...form, expected_arrival: e.target.value })}
               required
             />
+          </div>
+
+          <div className="sm:col-span-2">
+            <label className="block text-[11px] font-bold uppercase tracking-wider text-secondary mb-1.5">
+              {t("parkDuration") || "Duration (Hours)"}
+            </label>
             <input
               type="number"
-              className="input h-12 md:col-span-2"
-              placeholder={t("parkDuration")}
+              min="1"
+              max="168"
+              className="input h-11 w-full"
+              placeholder="e.g. 24"
               value={form.duration_hours}
               onChange={(e) => setForm({ ...form, duration_hours: e.target.value })}
             />
-            <div className="md:col-span-2 flex gap-3 pt-2">
-              <button type="submit" className="btn-primary h-11" disabled={submitLoading}>
-                {submitLoading
-                  ? <span className="flex items-center gap-2"><Spinner size={14} /> {t("compSubmitting")}</span>
-                  : t("compSubmitBtn")}
-              </button>
-              <button
-                type="button"
-                onClick={() => { setShowForm(false); setErrorMessage(""); }}
-                className="h-11 px-4 rounded-xl bg-white/10 text-sm hover:bg-white/15 transition"
-              >
-                {t("cancel")}
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
+          </div>
+
+          <div className="sm:col-span-2 flex gap-3 pt-1">
+            <button type="submit" className="btn-primary h-11 flex-1 justify-center" disabled={submitLoading}>
+              {submitLoading
+                ? <span className="flex items-center gap-2"><Spinner size={14} /> {t("compSubmitting")}</span>
+                : t("compSubmitBtn")}
+            </button>
+            <button
+              type="button"
+              onClick={() => { setShowForm(false); setErrorMessage(""); }}
+              className="h-11 px-4 rounded-xl bg-white/10 text-sm hover:bg-white/15 transition cursor-pointer"
+            >
+              {t("cancel")}
+            </button>
+          </div>
+        </form>
+      </Modal>
 
       {/* ── REQUEST LIST ── */}
-      <div className="bg-card p-4 sm:p-5">
+      <div className="bg-card rounded-2xl p-4 sm:p-5 border border-white/8">
 
         {/* Toolbar — search + filter */}
         {!initialLoad && (

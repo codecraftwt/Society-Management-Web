@@ -37,6 +37,7 @@ export default function GlobalButton({
       case "add":
       case "create":
       case "submit":
+      case "apply":
         return "primary";
       case "success":
       case "edit":
@@ -60,6 +61,10 @@ export default function GlobalButton({
       case "close":
       case "ghost":
       case "muted":
+      case "soft":
+      case "outline":
+      case "clear":
+      case "reset":
         return "secondary";
       case "info":
       case "view":

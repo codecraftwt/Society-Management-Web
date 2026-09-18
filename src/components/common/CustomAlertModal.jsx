@@ -131,11 +131,11 @@ export default function CustomAlertModal({ config, onClose }) {
         style={{
           width: "100%",
           maxWidth: "420px",
-          backgroundColor: "var(--bg-surface, #FFFFFF)",
+          backgroundColor: "var(--modal-bg, var(--card-bg, #FFFFFF))",
           color: "var(--text-primary, #0F172A)",
           borderRadius: "20px",
           padding: "24px",
-          border: "1px solid var(--border-color, rgba(226, 232, 240, 0.8))",
+          border: "1.5px solid var(--glass-border, rgba(226, 232, 240, 0.8))",
           boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.1)",
           animation: "customAlertSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards",
           position: "relative",

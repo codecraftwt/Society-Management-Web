@@ -856,7 +856,7 @@ export default function TenantApprovals() {
 function FilterSelect({ icon, value, onChange, options }) {
   return (
     <div className="relative flex items-center">
-      <span className="absolute left-3 pointer-events-none" style={{ color: "var(--text-secondary)" }}>{icon}</span>
+      <span className="absolute left-3 pointer-events-none z-10" style={{ color: "var(--text-secondary)" }}>{icon}</span>
       <Select
         value={value}
         onChange={e => onChange(e.target.value)}
@@ -864,17 +864,16 @@ function FilterSelect({ icon, value, onChange, options }) {
           background: "var(--card-inner-bg)",
           border: "1px solid var(--glass-border)",
           color: value === "ALL" ? "var(--text-secondary)" : "var(--text-primary)",
-          padding: "9px 32px 9px 28px",
+          padding: "9px 12px 9px 30px",
           borderRadius: "12px", outline: "none",
           fontSize: "12px", fontWeight: "700",
-          appearance: "none", cursor: "pointer",
+          cursor: "pointer",
         }}
       >
         {options.map(o => (
           <option key={o.value} value={o.value} style={{ background: "var(--card-bg)", color: "var(--text-primary)" }}>{o.label}</option>
         ))}
       </Select>
-      <span className="absolute right-2 pointer-events-none" style={{ fontSize: 10, color: "var(--text-secondary)" }}>▾</span>
     </div>
   );
 }

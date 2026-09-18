@@ -93,7 +93,7 @@ function SuperAdminLayoutInner() {
       group: "OPERATIONS & SECURITY",
     },
     {
-      label: "SOS Management",
+      label: "SOS",
       path: `${base}/emergency`,
       icon: MdSecurity,
       group: "OPERATIONS & SECURITY",

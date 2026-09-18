@@ -6,8 +6,10 @@ import { useNavigate } from "react-router-dom";
 import API from "../../services/api";
 import { useLang } from "../../context/LanguageContext";
 import { AuthContext } from "../../context/AuthContext";
+import ExpandableSearch from "../../components/common/ExpandableSearch";
+import SlidingTabs from "../../components/common/SlidingTabs";
 import {
-  MdReceiptLong, MdPerson, MdEmail, MdBusiness,
+  MdReceiptLong, MdPerson, MdEmail, MdPhone, MdBusiness,
   MdOutlineInbox, MdCheckCircle, MdSchedule,
   MdSearch, MdClose, MdArrowForward,
   MdChevronLeft, MdChevronRight,
@@ -208,7 +210,12 @@ export default function ResidentBills() {
 
   useEffect(() => {
     API.get("/users/accountant")
-      .then((r) => setAccountant(r.data))
+      .then((r) => {
+        const data = Array.isArray(r.data)
+          ? (r.data.find((a) => a.status === "ACTIVE") || r.data[0] || null)
+          : r.data;
+        setAccountant(data);
+      })
       .catch(console.error)
       .finally(() => setLoadingAcct(false));
   }, []);
@@ -255,16 +262,17 @@ export default function ResidentBills() {
     { label: t("resBillDue"),      val: `₹${counts.due.toLocaleString("en-IN")}`, icon: "💸", color: "red" },
   ];
 
-  const FILTERS = [
-    { key: "ALL",     label: t("billTabAll"),     ac: "indigo", count: counts.total   },
-    { key: "PAID",    label: t("billTabPaid"),    ac: "green",  count: counts.paid    },
-    { key: "PENDING", label: t("billTabPending"), ac: "amber",  count: counts.pending },
+  const slidingFilterItems = [
+    { id: "ALL",     label: t("billTabAll"),     count: counts.total   },
+    { id: "PAID",    label: t("billTabPaid"),    count: counts.paid    },
+    { id: "PENDING", label: t("billTabPending"), count: counts.pending },
   ];
 
   const ACCT_ROWS = accountant ? [
-    { Icon: MdPerson,   label: t("profileTileFullName"), val: accountant.name        },
-    { Icon: MdEmail,    label: t("email"),               val: accountant.email       },
-    { Icon: MdBusiness, label: t("profileTileSociety"),  val: accountant.societyName },
+    { Icon: MdPerson,   label: "Full Name", val: accountant.name || "—" },
+    { Icon: MdEmail,    label: "Email",     val: accountant.email || "—" },
+    { Icon: MdPhone,    label: "Phone",     val: accountant.phone || "—" },
+    { Icon: MdBusiness, label: "Society",   val: accountant.societyName || accountant.society?.name || "—" },
   ] : [];
 
   const isEmpty    = !initialLoad && counts.total === 0;
@@ -332,47 +340,32 @@ export default function ResidentBills() {
       {/* ── Table card ── */}
       <div className="data-table-wrap">
 
-        {/* Toolbar — always visible, filter counts show 0 during skeleton */}
-        <div className="flex flex-col gap-3 p-4"
+        {/* Toolbar — with SlidingTabs and ExpandableSearch */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4"
           style={{ borderBottom: "1px solid var(--glass-border)" }}>
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2 shrink-0">
-              <MdReceiptLong size={15} style={{ color: "var(--accent)" }} />
-              <span className="font-bold text-sm" style={{ color: "var(--text-primary)" }}>
-                {t("billSocietyBills")}
-              </span>
-            </div>
-            <div className="relative flex-1">
-              <MdSearch size={14}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-secondary pointer-events-none" />
-              <input
-                key="bill-search-input"
-                className="input search-input w-full h-9 pl-8 pr-8 text-xs"
-                placeholder={t("billSearch")}
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                disabled={initialLoad}
-              />
-              <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center">
-                {fetching ? <Spinner small /> : search ? (
-                  <button onClick={() => setSearch("")}
-                    className="text-secondary hover:opacity-80 transition-colors">
-                    <MdClose size={13} />
-                  </button>
-                ) : null}
-              </div>
-            </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <MdReceiptLong size={16} style={{ color: "var(--accent)" }} />
+            <span className="font-bold text-sm" style={{ color: "var(--text-primary)" }}>
+              {t("billSocietyBills")}
+            </span>
           </div>
 
-          <div className="filter-strip w-full">
-            {FILTERS.map(({ key, label, ac, count }) => (
-              <button key={key}
-                className={`filter-pill flex-1 justify-center ${filter === key ? `filter-pill--active-${ac}` : ""}`}
-                onClick={() => handleFilterChange(key)}
-                disabled={initialLoad}>
-                {label} <span className="filter-pill__count">{count}</span>
-              </button>
-            ))}
+          <div className="flex items-center justify-between sm:justify-end gap-3 flex-1 flex-wrap sm:flex-nowrap">
+            <div className="overflow-x-auto max-w-full pb-0.5" style={{ scrollbarWidth: "none" }}>
+              <SlidingTabs
+                items={slidingFilterItems}
+                value={filter}
+                onChange={handleFilterChange}
+              />
+            </div>
+
+            <div className="shrink-0 ml-auto sm:ml-0">
+              <ExpandableSearch
+                placeholder={t("billSearch") || "Search bills..."}
+                value={search}
+                onChange={setSearch}
+              />
+            </div>
           </div>
         </div>
 

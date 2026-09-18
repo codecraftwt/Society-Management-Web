@@ -6,6 +6,9 @@ import GlobalModal from "../../components/common/GlobalModal";
 import { useLang } from "../../context/LanguageContext";
 import { AuthContext } from "../../context/AuthContext";
 import { isCommitteeMember, hasPermission } from "../../utils/permissions";
+import { MdApartment, MdChevronLeft, MdChevronRight } from "react-icons/md";
+import SlidingTabs from "../../components/common/SlidingTabs";
+import ExpandableSearch from "../../components/common/ExpandableSearch";
 
 /* ─────────────────────────────────────────────────────────────
    UTILITY – normalise ANY API response shape into a plain array
@@ -19,6 +22,35 @@ const toArr = (res) => {
   }
   return [];
 };
+
+/* ── Pagination helper ── */
+function Pagination({ page, totalPages, onPageChange }) {
+  if (totalPages <= 1) return null;
+  const pages = Array.from({ length: totalPages }, (_, i) => i + 1)
+    .filter((p) => p === 1 || p === totalPages || Math.abs(p - page) <= 1)
+    .reduce((acc, p, idx, arr) => {
+      if (idx > 0 && p - arr[idx - 1] > 1) acc.push("...");
+      acc.push(p);
+      return acc;
+    }, []);
+  return (
+    <div className="pagination-wrap">
+      <button onClick={() => onPageChange(page - 1)} disabled={page === 1} className="pagination-btn">
+        <MdChevronLeft size={15} /> Prev
+      </button>
+      {pages.map((p, idx) =>
+        p === "..." ? (
+          <span key={`e-${idx}`} className="pagination-ellipsis">…</span>
+        ) : (
+          <button key={p} onClick={() => onPageChange(p)} className={`pagination-page ${p === page ? "pagination-page--active" : ""}`}>{p}</button>
+        )
+      )}
+      <button onClick={() => onPageChange(page + 1)} disabled={page === totalPages} className="pagination-btn">
+        Next <MdChevronRight size={15} />
+      </button>
+    </div>
+  );
+}
 
 /* ─────────────────────────────────────────────────────────────
    SPINNER
@@ -645,6 +677,18 @@ const FlatHistory = () => {
     );
   }, [allBlockGroups, activeBlock, searchTrim]);
 
+  /* ── 10 records per page for flats in active block ── */
+  const [flatPage, setFlatPage] = useState(1);
+  const flatTotalPages = Math.ceil(activeBlockFlats.length / 10);
+  const pagedFlats = useMemo(() => {
+    return activeBlockFlats.slice((flatPage - 1) * 10, flatPage * 10);
+  }, [activeBlockFlats, flatPage]);
+
+  // Reset page when active block changes
+  useEffect(() => {
+    setFlatPage(1);
+  }, [activeBlock, searchTrim]);
+
   /* ── Navigation between blocks (Slider control) ── */
   const currentBlockIdx = blockNames.indexOf(activeBlock);
 
@@ -727,204 +771,140 @@ const FlatHistory = () => {
   };
 
   return (
-    <div className="fh-root animate-fadeIn">
-      {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+    <div className="fh-root space-y-5 animate-fadeIn">
+      {/* ── Page Header: Unified Single Row ── */}
+      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <div className="ad-page-icon">🏢</div>
+          <div className="ad-page-icon">
+            <MdApartment size={20} />
+          </div>
           <div>
             <h1 className="text-lg font-semibold" style={{ letterSpacing: "-0.02em", margin: 0 }}>{t("fhTitle") || "Flat Directory"}</h1>
             <p className="text-secondary text-xs mt-0.5">{t("fhSubtitle") || "Manage and view complete flat history"}</p>
           </div>
         </div>
-        <div className="fh-flats-badge">
-          <span>{flats.length} {t("fhFlats") || "Flats"}</span>
-        </div>
-      </div>
 
-      {/* Modern SaaS Search Bar */}
-      <div className="fh-search-bar">
-        <span className="fh-search-icon">🔍</span>
-        <input
-          ref={searchInputRef}
-          className="fh-search-input"
-          placeholder={t("fhSearchPlaceholder") || "Search flats, blocks, or residents..."}
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
-        <div className="fh-search-right-actions">
-          {search ? (
-            <button
-              type="button"
-              className="fh-search-clear"
-              onClick={() => setSearch("")}
-              title="Clear search"
-            >
-              ✕
-            </button>
-          ) : (
-            <span className="fh-kbd">Ctrl K</span>
+        <div className="flex items-center gap-2.5 flex-wrap">
+          {blockNames.length > 1 && (
+            <SlidingTabs
+              value={activeBlock}
+              onChange={(bName) => { setActiveBlock(bName); setFlatPage(1); }}
+              items={blockNames.map((bName) => ({
+                id: bName,
+                label: bName,
+                badge: matchCountsByBlock[bName] !== undefined ? matchCountsByBlock[bName] : allBlockGroups[bName]?.flats?.length,
+              }))}
+            />
           )}
-        </div>
-      </div>
 
-      {/* Block Quick Selector Strip */}
-      {blockNames.length > 1 && (
-        <div className="fh-block-selector-row">
-          <div className="fh-block-pills-scroll">
-            {blockNames.map((bName) => {
-              const bData = allBlockGroups[bName];
-              const isAct = bName === activeBlock;
-              const matchCnt = matchCountsByBlock[bName];
-              return (
-                <button
-                  key={bName}
-                  type="button"
-                  className={`fh-block-select-pill ${isAct ? "fh-block-select-pill--active" : ""}`}
-                  onClick={() => handleSelectBlock(bName)}
-                >
-                  <span>🏢 {bName}</span>
-                  <span className="fh-block-pill-count">
-                    {matchCnt !== undefined ? `${matchCnt} match` : `${bData?.flats?.length || 0}`}
-                  </span>
-                </button>
-              );
-            })}
+          <ExpandableSearch
+            value={search}
+            onChange={(val) => { setSearch(val); setFlatPage(1); }}
+            placeholder={t("fhSearchPlaceholder") || "Search flats or residents..."}
+          />
+
+          <div className="fh-flats-badge" style={{ height: 42, minHeight: 42, display: "flex", alignItems: "center" }}>
+            <span>{flats.length} {t("fhFlats") || "Flats"}</span>
           </div>
         </div>
-      )}
+      </div>
 
       {/* Block Section & Flats Container */}
       <div className="fh-block-section-wrap">
         {activeBlock && allBlockGroups[activeBlock] ? (
           <div className="fh-block-content" key={activeBlock}>
-            {/* Compact Block Summary Bar */}
-            <div className="fh-block-summary-bar">
-              <div className="fh-block-summary-left">
-                <span className="fh-block-summary-name">🏢 Block {activeBlock.replace(/^Block\s*/i, "")}</span>
-                <span className="fh-block-summary-stat">
-                  <strong>{allBlockGroups[activeBlock].flats.length}</strong> Flats
-                </span>
-                <span className="fh-status-chip fh-status-chip--occ">
-                  <span className="fh-chip-dot fh-chip-dot--green" />
-                  <strong>{allBlockGroups[activeBlock].occupiedCount}</strong> Occupied
-                </span>
-                <span className="fh-status-chip fh-status-chip--vac">
-                  <span className="fh-chip-dot fh-chip-dot--gray" />
-                  <strong>{allBlockGroups[activeBlock].vacantCount}</strong> Vacant
-                </span>
-              </div>
-
-              {/* Prev / Next Pagination Control */}
-              <div className="fh-block-summary-nav">
-                <button
-                  type="button"
-                  className="fh-block-nav-arrow"
-                  onClick={handlePrevBlock}
-                  disabled={currentBlockIdx <= 0}
-                  title="Previous Block"
-                >
-                  ‹
-                </button>
-                <span className="fh-block-pagination-label">
-                  {currentBlockIdx + 1} / {blockNames.length}
-                </span>
-                <button
-                  type="button"
-                  className="fh-block-nav-arrow"
-                  onClick={handleNextBlock}
-                  disabled={currentBlockIdx >= blockNames.length - 1}
-                  title="Next Block"
-                >
-                  ›
-                </button>
-              </div>
-            </div>
-
-            {/* Flats Grid for this block */}
+            {/* Flats Grid for this block with slide page transition */}
             {activeBlockFlats.length === 0 ? (
               <Empty icon="🔍" text={t("fhNoFlatsFound")} sub={t("fhNoFlatsSub")} />
             ) : (
-              <div className="fh-flat-grid">
-                {activeBlockFlats.map((flat) => {
-                  const occ = !!flat.resident_id;
-                  const isSelected = selectedFlat?.id === flat.id;
-                  const residentName =
-                    flat.User?.name ||
-                    flat.user?.name ||
-                    flat.resident_name ||
-                    (occ ? "Occupied Resident" : null);
+              <div key={flatPage} className="animate-slide-page">
+                <div className="fh-flat-grid">
+                  {pagedFlats.map((flat) => {
+                    const occ = !!flat.resident_id;
+                    const isSelected = selectedFlat?.id === flat.id;
+                    const residentName =
+                      flat.User?.name ||
+                      flat.user?.name ||
+                      flat.resident_name ||
+                      (occ ? "Occupied Resident" : null);
 
-                  return (
-                    <div
-                      key={flat.id}
-                      className={`fh-flat-card ${isSelected ? "fh-flat-card--selected" : ""}`}
-                      onClick={() => fetchFlatDetails(flat)}
-                    >
-                      {/* Top row: Flat number, BHK/type pill, and Status */}
-                      <div className="fh-card-header-row">
-                        <div className="fh-card-header-left">
-                          <div className={`fh-card-avatar ${occ ? "fh-card-avatar--occ" : "fh-card-avatar--vac"}`}>
-                            <span>{occ ? "👥" : "🏢"}</span>
-                          </div>
-                          <div className="fh-card-title-group">
-                            <div className="fh-card-number-row">
-                              <h3 className="fh-card-number">{t("fhFlat")} {flat.flat_number}</h3>
-                              {flat.flat_type && (
-                                <span className="fh-card-type-tag">{flat.flat_type}</span>
-                              )}
+                    return (
+                      <div
+                        key={flat.id}
+                        className={`fh-flat-card ${isSelected ? "fh-flat-card--selected" : ""}`}
+                        onClick={() => fetchFlatDetails(flat)}
+                      >
+                        {/* Top row: Flat number, BHK/type pill, and Status */}
+                        <div className="fh-card-header-row">
+                          <div className="fh-card-header-left">
+                            <div className={`fh-card-avatar ${occ ? "fh-card-avatar--occ" : "fh-card-avatar--vac"}`}>
+                              <span>{occ ? "👥" : "🏢"}</span>
                             </div>
-                            <span className="fh-card-meta-line">
-                              {flat.Floor?.floor_number != null
-                                ? `Floor ${flat.Floor.floor_number}`
-                                : `Block ${activeBlock.replace(/^Block\s*/i, "")}`}
-                              {flat.area_sqft ? ` · ${flat.area_sqft} sq.ft` : ""}
+                            <div className="fh-card-title-group">
+                              <div className="fh-card-number-row">
+                                <h3 className="fh-card-number">{(t("fhFlat") || "Flat")} {flat.flat_number}</h3>
+                                {flat.flat_type && (
+                                  <span className="fh-card-type-tag">{flat.flat_type}</span>
+                                )}
+                              </div>
+                              <span className="fh-card-meta-line">
+                                {flat.Floor?.floor_number != null
+                                  ? `Floor ${flat.Floor.floor_number}`
+                                  : `Block ${activeBlock.replace(/^Block\s*/i, "")}`}
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="fh-card-header-right">
+                            <span className={`fh-card-status-badge ${occ ? "fh-card-status-badge--occ" : "fh-card-status-badge--vac"}`}>
+                              <span className={`fh-status-dot ${occ ? "fh-status-dot--green" : "fh-status-dot--gray"}`} />
+                              {occ ? (t("fhOccupied") || "Occupied") : (t("fhVacant") || "Vacant")}
                             </span>
                           </div>
                         </div>
 
-                        {/* Status Badge */}
-                        <span className={`fh-card-status-badge ${occ ? "fh-card-status-badge--occ" : "fh-card-status-badge--vac"}`}>
-                          <span className={`fh-status-indicator-dot ${occ ? "fh-status-indicator-dot--occ" : ""}`} />
-                          {occ ? t("fhOccupied") : t("fhVacant")}
-                        </span>
-                      </div>
+                        {/* Middle row: Resident details or Vacant prompt */}
+                        <div className="fh-card-body">
+                          {occ ? (
+                            <div className="fh-card-resident-strip">
+                              <span className="fh-resident-icon">👤</span>
+                              <span className="fh-resident-text truncate">
+                                {residentName}
+                              </span>
+                            </div>
+                          ) : (
+                            <div className="fh-card-vacant-strip">
+                              <span className="fh-vacant-dot" />
+                              <span className="fh-vacant-text">{t("fhAvailableForAssignment") || "Available for assignment"}</span>
+                            </div>
+                          )}
+                        </div>
 
-                      {/* Middle row: Useful Info instead of empty space */}
-                      <div className="fh-card-middle-content">
-                        {occ ? (
-                          <div className="fh-card-info-item">
-                            <span className="fh-card-info-label">Resident</span>
-                            <span className="fh-card-info-value" title={residentName}>
-                              {residentName}
-                            </span>
-                          </div>
-                        ) : (
-                          <div className="fh-card-info-item">
-                            <span className="fh-card-info-label">Status</span>
-                            <span className="fh-card-info-value fh-card-info-value--vacant">
-                              Available Unit
-                            </span>
-                          </div>
-                        )}
+                        {/* Bottom row: Quick action / View history teaser */}
+                        <div className="fh-card-footer">
+                          <span className="fh-card-action-link">
+                            {t("fhViewHistory") || "View History"} →
+                          </span>
+                        </div>
                       </div>
+                    );
+                  })}
+                </div>
 
-                      {/* Subtle divider */}
-                      <div className="fh-card-divider" />
-
-                      {/* Bottom row: Action View */}
-                      <div className="fh-card-footer-action">
-                        <span className="fh-card-footer-text">View Flat History</span>
-                        <span className="fh-card-footer-arrow">→</span>
-                      </div>
-                    </div>
-                  );
-                })}
+                {/* 10-record Pagination Footer */}
+                {flatTotalPages > 1 && (
+                  <div className="flex flex-col sm:flex-row justify-between items-center px-3 pt-4 mt-4 border-t border-glass gap-3">
+                    <span className="text-xs text-secondary">
+                      Showing <strong>{pagedFlats.length}</strong> of <strong>{activeBlockFlats.length}</strong> flats in {activeBlock}
+                    </span>
+                    <Pagination page={flatPage} totalPages={flatTotalPages} onPageChange={setFlatPage} />
+                  </div>
+                )}
               </div>
             )}
           </div>
         ) : (
-          <Empty icon="🏠" text={t("fhNoFlatsFound")} sub={t("fhNoFlatsSub")} />
+          <Empty icon="🏢" text={t("fhNoFlatsFound")} sub={t("fhNoFlatsSub")} />
         )}
       </div>
 

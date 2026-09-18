@@ -60,10 +60,8 @@ export default function ResidentPreApproval() {
 
 
 
-  const [gatePass,     setGatePass]     = useState(null);
   const [flatAssigned, setFlatAssigned] = useState(true);
   const [submitting,   setSubmitting]   = useState(false);
-  const [copied,       setCopied]       = useState(false);
   const [myPasses,     setMyPasses]     = useState([]);
   const [copiedId,     setCopiedId]     = useState(null);
   const [myFlats,      setMyFlats]      = useState([]);
@@ -72,7 +70,6 @@ export default function ResidentPreApproval() {
   const [istDate,      setIstDate]      = useState("");
   const [viewPass,     setViewPass]     = useState(null);
   const [showForm,     setShowForm]     = useState(false);
-  const gatePassQrRef  = useRef(null);
   const viewPassQrRef  = useRef(null);
 
   const eligibleFlats = myFlats.filter(item => {
@@ -190,12 +187,19 @@ export default function ResidentPreApproval() {
       valid_date: form.valid_date, // YYYY-MM-DD
     };
 
-    console.log("PAYLOAD:", payload);
-
     const res = await API.post("/preapproval", payload);
 
-    setGatePass(res.data.GatePass);
+    const newPass = res.data.preApproval || {
+      otp: res.data.GatePass,
+      visitor_name: form.visitor_name,
+      mobile: form.mobile,
+      vehicle_number: form.vehicle_number,
+      purpose: form.purpose,
+      valid_date: form.valid_date,
+    };
+
     setShowForm(false);
+    setViewPass(newPass);
 
     setForm({
       visitor_name: "",
@@ -212,24 +216,6 @@ export default function ResidentPreApproval() {
     setSubmitting(false);
   }
 };
-
-  const handleCopy = async () => {
-    if (!gatePass) return;
-    try {
-      await navigator.clipboard.writeText(gatePass);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      const ta = document.createElement("textarea");
-      ta.value = gatePass;
-      document.body.appendChild(ta);
-      ta.select();
-      document.execCommand("copy");
-      document.body.removeChild(ta);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    }
-  };
 
   const handleCopyPass = async (otp, id) => {
     try {
@@ -285,12 +271,6 @@ export default function ResidentPreApproval() {
     doc.save(`${name}.pdf`);
   };
 
-  const downloadBannerPNG = () => downloadQRPNG(gatePassQrRef.current, `Gate_Pass_${gatePass || "QR"}`);
-  const downloadBannerPDF = () => downloadQRPDF(gatePassQrRef.current, `Gate_Pass_${gatePass || "QR"}`, {
-    title: t("preapTitle"),
-    code: gatePass || "",
-    meta: [t("preapPassGenerated")],
-  });
   const downloadViewPNG = () => downloadQRPNG(viewPassQrRef.current, `Gate_Pass_${viewPass?.otp || "QR"}`);
   const downloadViewPDF = () => downloadQRPDF(viewPassQrRef.current, `Gate_Pass_${viewPass?.otp || "QR"}`, {
     title: t("preapTitle"),
@@ -307,8 +287,8 @@ export default function ResidentPreApproval() {
           <MdPersonAdd size={22} />
         </div>
         <div>
-          <h2 className="text-lg font-semibold">{t("preapTitle")}</h2>
-          <p className="text-secondary text-xs mt-0.5">{t("preapSubtitle")}</p>
+          <h2 className="page-title">{t("preapTitle")}</h2>
+          <p className="page-subtitle">{t("preapSubtitle")}</p>
         </div>
       </div>
 
@@ -344,67 +324,6 @@ export default function ResidentPreApproval() {
         <div className="flex items-start gap-3 bg-blue-500/10 border border-blue-500/25 rounded-xl p-4 animate-scaleIn">
           <MdWarning size={18} className="text-blue-400 shrink-0 mt-0.5" />
           <p className="text-sm text-blue-400/90 leading-relaxed">Owners cannot pre-approve visitors for rented units.</p>
-        </div>
-      )}
-
-      {/* ── GATE PASS RESULT ── */}
-      {gatePass && hasEligibleFlat && (
-        <div
-          className="relative overflow-hidden rounded-2xl p-5 animate-scaleIn"
-          style={{
-            background: "linear-gradient(135deg, rgba(34,197,94,0.12) 0%, rgba(16,185,129,0.08) 100%)",
-            border: "1px solid rgba(34,197,94,0.3)",
-          }}
-        >
-          <div
-            className="absolute top-0 left-0 right-0 h-0.5 rounded-t-2xl"
-            style={{ background: "linear-gradient(90deg, #22c55e, #10b981, transparent)" }}
-          />
-
-          <div className="flex items-center gap-2 mb-3">
-            <MdCheckCircle size={18} className="text-green-400" />
-            <p className="text-sm font-semibold text-green-400">{t("preapPassGenerated")}</p>
-          </div>
-
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <p className="text-[10px] text-secondary uppercase tracking-wider mb-1">{t("preapPassCode")}</p>
-              <p className="text-3xl font-bold tracking-[0.25em] text-green-300">{gatePass}</p>
-            </div>
-            <div className="flex flex-col items-center gap-1">
-              <div className="bg-white rounded-xl p-1.5 flex items-center justify-center">
-                <QRCodeCanvas ref={gatePassQrRef} value={gatePass} size={128} />
-              </div>
-              <p className="text-[10px] text-secondary">QR</p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2 mt-4 flex-wrap">
-            <button
-              onClick={handleCopy}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all duration-200 ${
-                copied
-                  ? "bg-green-500/20 text-green-400 border-green-500/30"
-                  : "bg-white/8 text-secondary border-white/10 hover:bg-white/12 hover:opacity-90"
-              }`}
-            >
-              {copied ? <MdCheckCircle size={13} /> : <MdContentCopy size={13} />}
-              {copied ? t("preapCopied") : t("preapCopyCode")}
-            </button>
-            <button
-              onClick={downloadBannerPNG}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all duration-200 bg-white/8 text-secondary border-white/10 hover:bg-white/12 hover:opacity-90"
-            >
-              <MdDownload size={13} /> {t("docDownload")} PNG
-            </button>
-            <button
-              onClick={downloadBannerPDF}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all duration-200 bg-white/8 text-secondary border-white/10 hover:bg-white/12 hover:opacity-90"
-            >
-              <MdPictureAsPdf size={13} /> {t("docDownload")} PDF
-            </button>
-            <p className="text-[11px] text-secondary/60 w-full sm:w-auto">{t("preapShareHint")}</p>
-          </div>
         </div>
       )}
 
@@ -522,17 +441,27 @@ export default function ResidentPreApproval() {
             </div>
           </div>
 
-          {/* Submit */}
-          <button
-            type="submit"
-            disabled={submitting || !hasEligibleFlat}
-            className="btn-primary w-full justify-center py-2.5 mt-1 disabled:opacity-60 disabled:cursor-not-allowed"
-          >
-            {submitting
-              ? <><Spinner /> {t("preapGenerating")}</>
-              : <><MdQrCode size={17} /> {t("preapGenerateBtn")}</>
-            }
-          </button>
+          {/* Submit & Cancel */}
+          <div className="flex items-center gap-2 pt-2">
+            <button
+              type="button"
+              onClick={() => setShowForm(false)}
+              disabled={submitting}
+              className="px-4 py-2.5 rounded-xl text-xs font-semibold border border-white/10 bg-white/5 hover:bg-white/10 text-secondary transition flex-1 text-center"
+            >
+              {t("cancel") || "Cancel"}
+            </button>
+            <button
+              type="submit"
+              disabled={submitting || !hasEligibleFlat}
+              className="btn-primary flex-1 justify-center py-2.5 disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              {submitting
+                ? <><Spinner /> {t("preapGenerating")}</>
+                : <><MdQrCode size={17} /> {t("preapGenerateBtn")}</>
+              }
+            </button>
+          </div>
         </form>
       </Modal>
 
@@ -713,6 +642,15 @@ export default function ResidentPreApproval() {
                   <MdPictureAsPdf size={14} /> {t("docDownload")} PDF
                 </button>
               </div>
+
+              {/* Close button */}
+              <button
+                type="button"
+                onClick={() => setViewPass(null)}
+                className="w-full py-2 rounded-xl text-xs font-semibold border border-white/10 bg-white/5 hover:bg-white/10 text-secondary transition text-center"
+              >
+                {t("cancel") || "Close"}
+              </button>
             </div>
           );
         })()}

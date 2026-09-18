@@ -1789,3 +1789,804 @@ html.role-theme .bill-month-picker__required {
     justify-content: center;
   }
 }
+
+/* ==========================================================================
+   MASTER DESIGN UNIFICATION — ADMIN DASHBOARD SYSTEM EXTENSION
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. BUTTONS STANDARDIZATION
+   -------------------------------------------------------------------------- */
+html.role-theme .btn-primary,
+html.role-theme button.btn-primary,
+html.role-theme .btn-submit {
+  height: 40px;
+  min-height: 40px;
+  padding: 0 20px;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--accent) !important;
+  color: #ffffff !important;
+  border: 1px solid transparent !important;
+  box-shadow: 0 4px 14px rgba(var(--acct-purple-rgb), 0.32) !important;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  text-decoration: none;
+  box-sizing: border-box;
+}
+html.role-theme .btn-primary:hover:not(:disabled),
+html.role-theme button.btn-primary:hover:not(:disabled) {
+  background: var(--accent-dark) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(var(--acct-purple-rgb), 0.42) !important;
+}
+html.role-theme .btn-primary:active:not(:disabled),
+html.role-theme button.btn-primary:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+html.role-theme .btn-success,
+html.role-theme button.btn-success,
+html.role-theme .btn-save,
+html.role-theme .btn-approve {
+  height: 40px;
+  min-height: 40px;
+  padding: 0 20px;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--success) !important;
+  color: #ffffff !important;
+  border: 1px solid transparent !important;
+  box-shadow: 0 4px 14px rgba(27, 207, 180, 0.28) !important;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-sizing: border-box;
+}
+html.role-theme .btn-success:hover:not(:disabled),
+html.role-theme button.btn-success:hover:not(:disabled) {
+  background: #17b39c !important;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(27, 207, 180, 0.38) !important;
+}
+
+html.role-theme .btn-danger,
+html.role-theme button.btn-danger,
+html.role-theme .btn-delete,
+html.role-theme .btn-reject {
+  height: 40px;
+  min-height: 40px;
+  padding: 0 20px;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: #ab2e3c !important;
+  color: #ffffff !important;
+  border: 1px solid transparent !important;
+  box-shadow: 0 4px 14px rgba(171, 46, 60, 0.28) !important;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-sizing: border-box;
+}
+html.role-theme .btn-danger:hover:not(:disabled),
+html.role-theme button.btn-danger:hover:not(:disabled) {
+  background: #8e232f !important;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(171, 46, 60, 0.38) !important;
+}
+
+html.role-theme .btn-secondary,
+html.role-theme button.btn-secondary,
+html.role-theme .btn-cancel,
+html.role-theme .btn-back,
+html.role-theme .btn-close,
+html.role-theme .btn-muted,
+html.role-theme .btn-soft {
+  height: 40px;
+  min-height: 40px;
+  padding: 0 18px;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--card-inner-bg) !important;
+  color: var(--text-secondary) !important;
+  border: 1px solid var(--glass-border) !important;
+  box-shadow: none !important;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-sizing: border-box;
+}
+html.role-theme .btn-secondary:hover:not(:disabled),
+html.role-theme button.btn-secondary:hover:not(:disabled),
+html.role-theme .btn-cancel:hover:not(:disabled),
+html.role-theme .btn-muted:hover:not(:disabled),
+html.role-theme .btn-soft:hover:not(:disabled) {
+  background: var(--card-inner-bg-hover) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--glass-border) !important;
+  transform: translateY(-1px);
+}
+
+html.role-theme .btn-sm,
+html.role-theme button.btn-sm {
+  height: 34px !important;
+  min-height: 34px !important;
+  padding: 0 14px !important;
+  font-size: 0.78rem !important;
+  gap: 6px !important;
+}
+
+html.role-theme .btn-xs,
+html.role-theme button.btn-xs {
+  height: 28px !important;
+  min-height: 28px !important;
+  padding: 0 10px !important;
+  font-size: 0.72rem !important;
+  gap: 4px !important;
+}
+
+html.role-theme .btn-lg,
+html.role-theme button.btn-lg {
+  height: 46px !important;
+  min-height: 46px !important;
+  padding: 0 26px !important;
+  font-size: 0.92rem !important;
+  gap: 10px !important;
+}
+
+/* --------------------------------------------------------------------------
+   2. INPUTS & FORM CONTROLS STANDARDIZATION
+   -------------------------------------------------------------------------- */
+html.role-theme input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]):not([type="file"]),
+html.role-theme .input,
+html.role-theme .mc-field,
+html.role-theme select {
+  height: 40px;
+  min-height: 40px;
+  border-radius: 12px;
+  padding: 8px 14px;
+  font-size: 13.5px;
+  color: var(--text-primary);
+  background-color: var(--input-bg, #2a2d36);
+  border: 1.5px solid var(--input-border, rgba(255, 255, 255, 0.12));
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+
+html.light.role-theme input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]):not([type="file"]),
+html.light.role-theme .input,
+html.light.role-theme .mc-field,
+html.light.role-theme select {
+  background-color: #ffffff !important;
+  border-color: rgba(0, 0, 0, 0.15) !important;
+  color: #0f172a !important;
+}
+
+html.role-theme input:focus,
+html.role-theme .input:focus,
+html.role-theme .mc-field:focus,
+html.role-theme select:focus,
+html.role-theme textarea:focus {
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 3px var(--accent-soft) !important;
+  outline: none !important;
+}
+
+html.role-theme textarea {
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-size: 13.5px;
+  color: var(--text-primary);
+  background-color: var(--input-bg, #2a2d36);
+  border: 1.5px solid var(--input-border, rgba(255, 255, 255, 0.12));
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+html.light.role-theme textarea {
+  background-color: #ffffff !important;
+  border-color: rgba(0, 0, 0, 0.15) !important;
+  color: #0f172a !important;
+}
+
+/* --------------------------------------------------------------------------
+   3. DATE PICKER & SINGLE CALENDAR ICON RESOLUTION
+   -------------------------------------------------------------------------- */
+html.role-theme input[type="date"],
+html.role-theme input.mc-date {
+  color-scheme: dark;
+  height: 40px;
+  min-height: 40px;
+  border-radius: 12px;
+  padding: 8px 14px;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--text-primary);
+  background-color: var(--input-bg, #2a2d36);
+  border: 1.5px solid var(--input-border, rgba(255, 255, 255, 0.12));
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+
+html.light.role-theme input[type="date"],
+html.light.role-theme input.mc-date {
+  color-scheme: light;
+  background-color: #ffffff !important;
+  border-color: rgba(0, 0, 0, 0.15) !important;
+  color: #0f172a !important;
+}
+
+/* Default standard single calendar icon on the right */
+html.role-theme input[type="date"]::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 0.7;
+  filter: invert(1);
+  padding: 2px;
+  transition: opacity 0.2s;
+}
+html.role-theme input[type="date"]::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+}
+
+html.light.role-theme input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: none;
+  opacity: 0.6;
+}
+html.light.role-theme input[type="date"]::-webkit-calendar-picker-indicator:hover {
+  opacity: 0.95;
+}
+
+/* When the input has a custom icon on the left (pl-9, pl-10, mc-date),
+   stretch the native indicator invisibly over the entire input.
+   This guarantees: EXACTLY ONE calendar icon is visible (the left one),
+   and clicking anywhere triggers the datepicker. */
+html.role-theme input[type="date"].pl-9::-webkit-calendar-picker-indicator,
+html.role-theme input[type="date"].pl-10::-webkit-calendar-picker-indicator,
+html.role-theme input.mc-date.pl-9::-webkit-calendar-picker-indicator,
+html.role-theme input.mc-date.pl-10::-webkit-calendar-picker-indicator {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+  background: transparent;
+  color: transparent;
+}
+
+/* --------------------------------------------------------------------------
+   4. DROPDOWNS & SELECTS — HIGH CONTRAST IN BOTH THEMES
+   -------------------------------------------------------------------------- */
+html.role-theme select {
+  background-color: var(--card-inner-bg);
+  border-color: var(--glass-border);
+  color: var(--text-primary);
+}
+html.role-theme select option,
+html.role-theme option {
+  background-color: var(--card-bg, #1e222d);
+  color: var(--text-primary, #ffffff);
+}
+html.light.role-theme select,
+html.light.role-theme select.input {
+  background-color: #ffffff !important;
+  border-color: rgba(0, 0, 0, 0.15) !important;
+  color: #0f172a !important;
+}
+html.light.role-theme select option,
+html.light.role-theme option {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+}
+html.role-theme:not(.light) select,
+html.role-theme:not(.light) select.input {
+  background-color: #22252e !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  color: #f1f5f9 !important;
+}
+html.role-theme:not(.light) select option,
+html.role-theme:not(.light) option {
+  background-color: #1e222d !important;
+  color: #f1f5f9 !important;
+}
+
+/* --------------------------------------------------------------------------
+   5. MODALS — ONE CONSISTENT MASTER STYLE
+   -------------------------------------------------------------------------- */
+@keyframes adminModalPopIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.92) translateY(16px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+html.role-theme .sa-modal,
+html.role-theme .admin-modal,
+html.role-theme .modal-container,
+html.role-theme .global-modal-container {
+  background: var(--modal-bg, var(--card-bg, #22252e)) !important;
+  border: 1.5px solid var(--glass-border) !important;
+  border-radius: 20px !important;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.5), 0 0 20px rgba(var(--acct-purple-rgb), 0.12) !important;
+  animation: adminModalPopIn 0.26s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  overflow: hidden;
+}
+
+html.light.role-theme .sa-modal,
+html.light.role-theme .admin-modal,
+html.light.role-theme .modal-container,
+html.light.role-theme .global-modal-container {
+  background: #ffffff !important;
+  border-color: rgba(var(--acct-purple-rgb), 0.14) !important;
+  box-shadow: 0 20px 50px rgba(160, 90, 255, 0.12) !important;
+}
+
+html.role-theme .sa-modal-header,
+html.role-theme .sa-modal-er {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 22px 24px 18px;
+  border-bottom: 1px solid var(--glass-border);
+  position: relative;
+}
+
+html.role-theme .sa-modal-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+}
+
+html.role-theme .sa-modal-subtitle {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+
+html.role-theme .sa-modal-close {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--card-inner-bg);
+  border: 1px solid var(--glass-border);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+html.role-theme .sa-modal-close:hover {
+  color: var(--text-primary);
+  background: var(--card-inner-bg-hover);
+}
+
+html.role-theme .sa-modal-body {
+  padding: 20px 24px;
+  overflow-y: auto;
+}
+
+html.role-theme .sa-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 16px 24px;
+  border-top: 1px solid var(--glass-border);
+  background: var(--card-inner-bg);
+}
+
+/* --------------------------------------------------------------------------
+   6. CARDS & KPI CARDS — ADMIN DASHBOARD AESTHETIC
+   -------------------------------------------------------------------------- */
+html.role-theme .ad-kpi,
+html.role-theme .sa-kpi-card,
+html.role-theme .gd-stat-card,
+html.role-theme .stat-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 16px;
+  padding: 20px 22px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-shadow: var(--shadow-sm);
+  transition: all 0.2s ease;
+}
+
+html.role-theme:not(.light) .ad-kpi,
+html.role-theme:not(.light) .sa-kpi-card,
+html.role-theme:not(.light) .gd-stat-card,
+html.role-theme:not(.light) .stat-card {
+  background: #22252e !important;
+  border: 2px solid var(--glass-border) !important;
+}
+
+html.role-theme:not(.light) .ad-kpi::after,
+html.role-theme:not(.light) .sa-kpi-card::after,
+html.role-theme:not(.light) .gd-stat-card::after,
+html.role-theme:not(.light) .stat-card::after {
+  content: "";
+  display: block;
+  position: absolute;
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  right: -20px;
+  top: -20px;
+  background: rgba(255, 255, 255, 0.04);
+  pointer-events: none;
+}
+
+html.role-theme .ad-kpi-val,
+html.role-theme .sa-kpi-value,
+html.role-theme .gd-stat-val,
+html.role-theme .stat-card__val {
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 1;
+}
+
+html.role-theme .ad-kpi-label,
+html.role-theme .sa-kpi-label,
+html.role-theme .gd-stat-title,
+html.role-theme .stat-card__label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+html.role-theme .ad-kpi-desc,
+html.role-theme .sa-kpi-desc {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+/* Light mode KPI cards get rich gradient treatments matching Admin Dashboard */
+html.light.role-theme .ad-kpi--residents,
+html.light.role-theme .ad-kpi--balance,
+html.light.role-theme .ad-kpi--amenity,
+html.light.role-theme .stat-card--purple {
+  background: var(--stat-purple-bg) !important;
+  border: none !important;
+}
+html.light.role-theme .ad-kpi--guards,
+html.light.role-theme .ad-kpi--income,
+html.light.role-theme .ad-kpi--maintenance,
+html.light.role-theme .stat-card--green {
+  background: var(--stat-green-bg) !important;
+  border: none !important;
+}
+html.light.role-theme .ad-kpi--complaints,
+html.light.role-theme .ad-kpi--opening,
+html.light.role-theme .ad-kpi--bills,
+html.light.role-theme .stat-card--blue {
+  background: var(--stat-blue-bg) !important;
+  border: none !important;
+}
+html.light.role-theme .ad-kpi--flats,
+html.light.role-theme .ad-kpi--expense,
+html.light.role-theme .stat-card--red {
+  background: var(--stat-red-bg) !important;
+  border: none !important;
+}
+html.light.role-theme .stat-card--amber {
+  background: var(--stat-amber-bg) !important;
+  border: none !important;
+}
+
+html.light.role-theme .ad-kpi-val,
+html.light.role-theme .ad-kpi-label,
+html.light.role-theme .ad-kpi-desc,
+html.light.role-theme .stat-card__val,
+html.light.role-theme .stat-card__label {
+  color: #ffffff !important;
+}
+
+/* --------------------------------------------------------------------------
+   7. TABLES STANDARDIZATION
+   -------------------------------------------------------------------------- */
+html.role-theme .global-table-container,
+html.role-theme .data-table-wrap {
+  border-radius: 16px;
+  border: 1px solid var(--glass-border);
+  background: var(--card-bg);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+
+html.role-theme .global-table-th,
+html.role-theme .data-table th {
+  background: var(--card-inner-bg);
+  color: var(--text-tertiary) !important;
+  font-size: 0.74rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 13px 18px;
+  border-bottom: 1px solid var(--glass-border);
+}
+
+html.role-theme .global-table-td,
+html.role-theme .data-table td {
+  padding: 13px 18px;
+  color: var(--text-primary) !important;
+  border-bottom: 1px solid var(--glass-border);
+  font-size: 0.875rem;
+}
+
+html.role-theme .global-table-row:hover td,
+html.role-theme .data-table tbody tr:hover td {
+  background: var(--row-hover) !important;
+}
+
+/* ==========================================================================
+   RESIDENT PAGE ENHANCEMENTS (Searchbar & Step Indicator)
+   ========================================================================== */
+.res-search-wrap {
+  position: relative;
+  flex: 1 1 240px;
+  min-width: 200px;
+  max-width: 360px;
+  display: flex;
+  align-items: center;
+}
+
+.res-search-input {
+  width: 100%;
+  height: 42px;
+  padding-left: 38px;
+  padding-right: 34px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 500;
+  background: var(--card-inner-bg, rgba(255, 255, 255, 0.05));
+  border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.12));
+  color: var(--text-primary);
+  outline: none;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.res-search-input:focus {
+  border-color: var(--accent, #a05aff);
+  box-shadow: 0 0 0 3px rgba(160, 90, 255, 0.2), 0 4px 14px rgba(160, 90, 255, 0.1);
+  background: var(--card-bg, #ffffff);
+}
+
+.res-search-icon {
+  position: absolute;
+  left: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  color: var(--text-tertiary);
+  transition: color 0.2s ease;
+}
+
+.res-search-wrap:focus-within .res-search-icon {
+  color: var(--accent, #a05aff);
+}
+
+.res-search-clear {
+  position: absolute;
+  right: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: rgba(148, 163, 184, 0.18);
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.res-search-clear:hover {
+  background: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+  transform: scale(1.08);
+}
+
+/* Step indicator enhancements for light & dark themes */
+.res-step-circle-inactive {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border: 2px solid rgba(255, 255, 255, 0.2) !important;
+  color: var(--text-secondary) !important;
+}
+
+html.light .res-step-circle-inactive {
+  background: #f1eafb !important;
+  border: 2px solid rgba(160, 90, 255, 0.35) !important;
+  color: #6b46c1 !important;
+}
+
+.res-step-line {
+  background: rgba(255, 255, 255, 0.18) !important;
+}
+
+html.light .res-step-line {
+  background: rgba(160, 90, 255, 0.35) !important;
+}
+
+/* ==========================================================================
+   ANIMATED SLIDER EXPANDABLE SEARCH BAR
+   ========================================================================== */
+.sa-search-slider-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+  transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.sa-search-slider-box--closed {
+  width: 42px;
+}
+
+.sa-search-slider-box--open {
+  width: 260px;
+}
+
+@media (max-width: 640px) {
+  .sa-search-slider-box--open {
+    width: 100%;
+    min-width: 200px;
+  }
+}
+
+.sa-search-trigger-btn {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: var(--card-inner-bg, rgba(255, 255, 255, 0.06));
+  border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.12));
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.sa-search-trigger-btn:hover {
+  color: var(--accent, #a05aff);
+  border-color: var(--accent, #a05aff);
+  background: rgba(160, 90, 255, 0.1);
+  transform: translateY(-1px);
+}
+
+.sa-search-slide-input-wrap {
+  position: relative;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  animation: saSearchExpand 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes saSearchExpand {
+  from {
+    opacity: 0;
+    transform: scaleX(0.85);
+  }
+  to {
+    opacity: 1;
+    transform: scaleX(1);
+  }
+}
+
+.sa-search-slide-input {
+  width: 100%;
+  height: 42px;
+  padding-left: 14px;
+  padding-right: 44px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 500;
+  background: var(--card-inner-bg, rgba(255, 255, 255, 0.06));
+  border: 1px solid var(--accent, #a05aff);
+  box-shadow: 0 0 0 3px rgba(160, 90, 255, 0.18), 0 4px 12px rgba(160, 90, 255, 0.1);
+  color: var(--text-primary);
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.sa-search-slide-close {
+  position: absolute;
+  right: 10px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: rgba(148, 163, 184, 0.18);
+  border: none;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  z-index: 2;
+}
+
+.sa-search-slide-close:hover {
+  background: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+  transform: scale(1.08);
+}
+
+/* ==========================================================================
+   SLIDER PAGINATION ANIMATION
+   ========================================================================== */
+.animate-slide-page {
+  animation: saSlidePage 0.26s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes saSlidePage {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ==========================================================================
+   DECENT PARKING SLOT CARDS
+   ========================================================================== */
+.ps-decent-card {
+  background: var(--card-bg, #111827);
+  border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.1));
+  border-radius: 14px;
+  padding: 14px 16px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+.ps-decent-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(160, 90, 255, 0.35);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.1);
+}
+
+.ps-decent-card--expanded {
+  border-color: var(--accent, #a05aff);
+  box-shadow: 0 0 0 2px rgba(160, 90, 255, 0.2), 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+

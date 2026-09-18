@@ -70,8 +70,8 @@ export default function ResidentReports() {
           <MdBarChart size={22} />
         </div>
         <div>
-          <h2 className="text-lg font-semibold">{t("rrTitle")}</h2>
-          <p className="text-secondary text-xs mt-0.5">{t("rrSubtitle")}</p>
+          <h2 className="page-title">{t("rrTitle")}</h2>
+          <p className="page-subtitle">{t("rrSubtitle")}</p>
         </div>
       </div>
 

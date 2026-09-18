@@ -15391,11 +15391,21 @@ select.input {
   border-color: var(--input-border);
 }
 select option {
-  background-color: #1B1B22;
-  color: var(--text-primary);
+  background-color: var(--card-bg, #1B1B22);
+  color: var(--text-primary, #ffffff);
+}
+html.light select option,
+html.light option {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+}
+html:not(.light) select option,
+html:not(.light) option {
+  background-color: #1B1B22 !important;
+  color: #f1f5f9 !important;
 }
 select option:checked {
-  background-color: #3B82F6;
+  background-color: var(--accent, #3B82F6);
   color: #fff;
 }
 
@@ -17678,9 +17688,9 @@ html.light .global-btn-draw rect {
   padding-bottom: 4px;
 }
 
-/* ── Admin documents: navy pill upload button ── */
+/* ── Admin documents: purple accent pill upload button ── */
 .ad-upload-toggle-btn {
-  background: linear-gradient(135deg, #1d4ed8, #0f2b6b) !important;
+  background: linear-gradient(135deg, #7c3aed, #5b21b6) !important;
   border-radius: 999px !important;
   padding: 10px 20px !important;
   display: inline-flex;
@@ -17691,14 +17701,14 @@ html.light .global-btn-draw rect {
   font-size: 13px;
   font-weight: 700;
   color: #ffffff;
-  box-shadow: 0 4px 16px rgba(29, 78, 216, 0.45);
+  box-shadow: 0 4px 16px rgba(109, 40, 217, 0.45);
   transition: all 0.2s ease;
   position: relative;
   overflow: hidden;
 }
 .ad-upload-toggle-btn:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(29, 78, 216, 0.55);
+  box-shadow: 0 8px 24px rgba(109, 40, 217, 0.55);
 }
 .ad-upload-toggle-btn:active:not(:disabled) {
   transform: translateY(0);

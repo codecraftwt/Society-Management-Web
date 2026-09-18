@@ -73,7 +73,9 @@ export default function Select({
     ? null
     : {
         width: "100%",
-        padding: "0.65rem 0.8rem",
+        height: "40px",
+        minHeight: "40px",
+        padding: "0 0.85rem",
         borderRadius: 12,
         background: "var(--input-bg)",
         border: "1px solid var(--input-border)",

@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import API from "../../../services/api";
 import { exportToExcel } from "../../../utils/exportExcel";
@@ -61,55 +62,66 @@ function StatusBadge({ status }) {
 
 const fmtINR = n => `₹${Number(n).toLocaleString("en-IN")}`;
 
-function FilterBar({ status, setStatus, fromDate, setFromDate, toDate, setToDate, onApply, onClear, applied, isMobile }) {
-  return (
-    <div className="data-table-wrap rpt-filter-bar animate-fadeIn">
-      <div className="rpt-filter-row">
-        <span className="rpt-filter-label">
-          <MdFilterList size={15} />
-          Filters
-        </span>
-        <div className="rpt-filter-field rpt-filter-field--status">
-          <Select
-            className="input"
-            value={status}
-            onChange={e => setStatus(e.target.value)}
-            rootStyle={{ width: "100%" }}
-            style={{ width: "100%", boxSizing: "border-box" }}
-          >
-            <option value="">All Status</option>
-            <option value="PAID">Paid</option>
-            <option value="PENDING">Pending</option>
-          </Select>
+function FilterSheet({ show, onClose, isMobile, status, setStatus, fromDate, setFromDate, toDate, setToDate, onApply, onClear, applied }) {
+  if (!show) return null;
+
+  return createPortal(
+    <div style={{ position: "fixed", inset: 0, zIndex: 9999, display: "flex", flexDirection: "column", justifyContent: isMobile ? "flex-end" : "center", alignItems: "center", padding: isMobile ? 0 : 20 }}>
+      <div onClick={onClose} style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.55)", backdropFilter: "blur(4px)" }} />
+      <div style={{ position: "relative", zIndex: 1, width: "100%", maxWidth: isMobile ? "100%" : 460, background: "var(--modal-bg,var(--card-bg,#2E2A36))", border: "1.5px solid var(--glass-border)", borderRadius: isMobile ? "20px 20px 0 0" : "18px", boxShadow: "0 20px 50px rgba(0,0,0,0.45)", maxHeight: isMobile ? "88vh" : "90vh", overflowY: "auto" }}>
+        {isMobile && <div style={{ display: "flex", justifyContent: "center", padding: "10px 0 6px" }}><div style={{ width: 36, height: 4, borderRadius: 99, background: "var(--glass-border)" }} /></div>}
+        <div style={{ padding: "12px 18px", display: "flex", alignItems: "center", gap: 8, borderBottom: "1px solid var(--glass-border)" }}>
+          <MdFilterList size={16} style={{ color: "var(--accent,#6B46C1)" }} />
+          <span style={{ fontSize: 14, fontWeight: 700, color: "var(--text-primary)", flex: 1 }}>Filter Financial Report</span>
+          {applied && <button onClick={() => { onClear(); onClose(); }} style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, fontWeight: 700, color: "var(--accent,#6B46C1)", background: "none", border: "none", cursor: "pointer" }}><MdClose size={13} /> Clear</button>}
+          <button onClick={onClose} style={{ width: 28, height: 28, borderRadius: 8, background: "var(--card-inner-bg,rgba(255,255,255,0.06))", border: "1px solid var(--glass-border)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "var(--text-secondary)" }}><MdClose size={15} /></button>
         </div>
-        <CustomDatePicker
-          className="rpt-filter-date"
-          value={fromDate}
-          placeholder="From date"
-          onChange={(iso) => {
-            setFromDate(iso);
-            if (toDate && iso > toDate) setToDate("");
-          }}
-        />
-        <CustomDatePicker
-          className="rpt-filter-date"
-          value={toDate}
-          placeholder="To date"
-          min={fromDate}
-          onChange={setToDate}
-        />
-        <div className="rpt-filter-actions">
-          <button type="button" onClick={onApply} className="btn-primary">
-            {isMobile ? "Apply" : "Apply Filter"}
-          </button>
-          {applied && (
-            <button type="button" onClick={onClear} className="btn-muted">
-              <MdClose size={14} /> Clear
-            </button>
-          )}
+        <div style={{ padding: "16px 18px", display: "flex", flexDirection: "column", gap: 14 }}>
+          <div>
+            <label style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--text-secondary)", display: "block", marginBottom: 6 }}>Status</label>
+            <Select
+              className="input"
+              value={status}
+              onChange={e => setStatus(e.target.value)}
+              rootStyle={{ width: "100%" }}
+              style={{ width: "100%", boxSizing: "border-box" }}
+            >
+              <option value="">All Status</option>
+              <option value="PAID">Paid</option>
+              <option value="PENDING">Pending</option>
+            </Select>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+            <div>
+              <label style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--text-secondary)", display: "block", marginBottom: 6 }}>From Date</label>
+              <input
+                type="date"
+                className="input"
+                value={fromDate}
+                onChange={e => setFromDate(e.target.value)}
+                style={{ width: "100%", boxSizing: "border-box" }}
+              />
+            </div>
+            <div>
+              <label style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--text-secondary)", display: "block", marginBottom: 6 }}>To Date</label>
+              <input
+                type="date"
+                className="input"
+                value={toDate}
+                onChange={e => setToDate(e.target.value)}
+                style={{ width: "100%", boxSizing: "border-box" }}
+              />
+            </div>
+          </div>
+          <div style={{ display: "flex", gap: 10 }}>
+            {applied && <button onClick={() => { onClear(); onClose?.(); }} className="btn-muted" style={{ flex: 1, justifyContent: "center" }}>Clear</button>}
+            <button onClick={onApply} className="btn-primary" style={{ flex: applied ? 1 : undefined, width: applied ? undefined : "100%", justifyContent: "center" }}>Apply Filter</button>
+          </div>
+          {isMobile && <div style={{ height: "max(env(safe-area-inset-bottom),8px)" }} />}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
@@ -131,6 +143,7 @@ export default function FinancialReport() {
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
   const [applied, setApplied] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
 
   const [pendingStatus, setPendingStatus] = useState("");
   const [pendingFrom, setPendingFrom] = useState("");
@@ -158,6 +171,7 @@ export default function FinancialReport() {
   const applyFilter = () => {
     setStatus(pendingStatus); setFromDate(pendingFrom); setToDate(pendingTo);
     setApplied(!!(pendingStatus || (pendingFrom && pendingTo)));
+    setShowFilters(false);
     fetchBills(1, pendingStatus, pendingFrom, pendingTo);
   };
 
@@ -180,23 +194,22 @@ export default function FinancialReport() {
 
   const handleExcelExport = async () => {
     const all = await fetchAllForExport();
-    exportToExcel({ fileName: "Financial_Report", sheetName: "Finance", data: all.map((b, i) => ({ "Sr No": i + 1, Resident: b.Flat?.User?.name || "-", Flat: b.Flat?.flat_number || "-", Block: b.Flat?.Block?.name || "-", "Bill Type": b.title || "-", Amount: b.amount, Status: b.status })) });
+    exportToExcel({ fileName: "Financial_Report", sheetName: "Bills", data: all.map((b, i) => ({ "Sr No": i + 1, "Bill Title": b.title, "Bill Type": b.bill_type, "Flat": b.Flat?.flat_number || "-", "Resident": b.Flat?.User?.name || "-", "Amount": b.amount, "Status": b.status, "Due Date": formatDate(b.due_date), "Paid Date": b.paid_date ? formatDate(b.paid_date) : "-" })) });
   };
   const handlePDFExport = async () => {
     const all = await fetchAllForExport();
-    exportToPDF({ title: "Financial Report", fileName: "Financial_Report", columns: ["#", "Resident", "Flat", "Block", "Bill Type", "Amount", "Status"], rows: all.map((b, i) => [i + 1, b.Flat?.User?.name || "-", b.Flat?.flat_number || "-", b.Flat?.Block?.name || "-", b.title || "-", fmtINR(b.amount), b.status]) });
+    exportToPDF({ title: "Financial Report", fileName: "Financial_Report", columns: ["Sr No", "Bill Title", "Type", "Flat", "Amount", "Status", "Due Date"], rows: all.map((b, i) => [i + 1, b.title, b.bill_type, b.Flat?.flat_number || "-", fmtINR(b.amount), b.status, formatDate(b.due_date)]) });
   };
 
   const statCards = [
-    { label: "Total Bills", val: counts.total, color: "purple" },
-    { label: "Paid", val: counts.paid, color: "green" },
-    { label: "Pending", val: counts.pending, color: "amber" },
-    { label: "Collected", val: fmtINR(counts.collected), color: "green" },
-    { label: "Due", val: fmtINR(counts.due), color: "amber" },
+    { label: "Total Collected", val: fmtINR(counts.collected), color: "green" },
+    { label: "Total Due", val: fmtINR(counts.due), color: "amber" },
+    { label: "Paid Bills", val: counts.paid, color: "green" },
+    { label: "Pending Bills", val: counts.pending, color: "purple" },
   ];
 
   return (
-    <div className="page-root fin-rpt-page animate-fadeIn">
+    <div className="page-root animate-fadeIn fin-rpt-root">
 
       {/* ── HEADER ── */}
       <div className="fin-rpt-header">
@@ -215,6 +228,27 @@ export default function FinancialReport() {
         <div className="fin-rpt-header__actions">
           <button type="button" onClick={handleExcelExport} className="btn-export"><MdTableChart size={14} /> Excel</button>
           <button type="button" onClick={handlePDFExport} className="btn-export"><MdPictureAsPdf size={14} /> PDF</button>
+          <button
+            type="button"
+            onClick={() => setShowFilters(true)}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              padding: "7px 13px",
+              borderRadius: 10,
+              fontSize: 12,
+              fontWeight: 700,
+              background: applied ? "rgba(107,70,193,0.15)" : "var(--card-inner-bg,rgba(255,255,255,0.06))",
+              color: applied ? "#9F87D7" : "var(--text-secondary)",
+              border: applied ? "1px solid rgba(107,70,193,0.35)" : "1px solid var(--glass-border)",
+              cursor: "pointer",
+              position: "relative",
+              whiteSpace: "nowrap"
+            }}
+          >
+            <MdFilterList size={14} /> Filters{applied && <span style={{ position: "absolute", top: -3, right: -3, width: 8, height: 8, borderRadius: "50%", background: "#6B46C1", boxShadow: "0 0 6px rgba(107,70,193,0.6)" }} />}
+          </button>
         </div>
       </div>
 
@@ -232,7 +266,9 @@ export default function FinancialReport() {
         </div>
       )}
 
-      <FilterBar
+      <FilterSheet
+        show={showFilters}
+        onClose={() => setShowFilters(false)}
         isMobile={isMobile}
         status={pendingStatus} setStatus={setPendingStatus}
         fromDate={pendingFrom} setFromDate={setPendingFrom}

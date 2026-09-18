@@ -18,6 +18,7 @@ import { FaParking } from "react-icons/fa";
 import Select from "../../components/common/Select";
 import GlobalButton from "../../components/common/GlobalButton";
 import SlidingTabs from "../../components/common/SlidingTabs";
+import ExpandableSearch from "../../components/common/ExpandableSearch";
 
 /* ── Debounce hook ── */
 function useDebounce(value, delay = 500) {
@@ -760,7 +761,7 @@ function ResidentRequestsPanel({ allSlots, onSlotAssigned }) {
   );
 }
 
-const LIMIT = 10;
+const LIMIT = 12;
 
 /* ═══════════════════════════════════════════
    Main
@@ -772,6 +773,7 @@ export default function AssignParkingSlot() {
   const isCommittee = isCommitteeMember(user);
 
   const [mainTab, setMainTab] = useState("slots");
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   /* Slots list */
   const [slots, setSlots] = useState([]);
@@ -789,6 +791,9 @@ export default function AssignParkingSlot() {
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 500);
+
+  /* Detail Slot Modal */
+  const [detailSlot, setDetailSlot] = useState(null);
 
   /* Create form */
   const [showForm, setShowForm] = useState(false);
@@ -972,6 +977,9 @@ export default function AssignParkingSlot() {
   const [releaseConfirm, setReleaseConfirm] = useState(null);
   const [releasing, setReleasing] = useState(null);
 
+  /* Expandable Card state */
+  const [expandedSlotId, setExpandedSlotId] = useState(null);
+
   /* All slots for sub-panel pickers */
   const [allSlots, setAllSlots] = useState([]);
   const [flats, setFlats] = useState([]);
@@ -1131,47 +1139,57 @@ export default function AssignParkingSlot() {
   ──────────────────────────── */
   return (
     <div className="space-y-5 animate-fadeIn">
-
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      {/* ── Page Header: Unified Single Row ── */}
+      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <div className="ad-page-icon">
             <FaParking size={20} />
           </div>
           <div>
-            <div className="flex items-center gap-2.5 flex-wrap">
-              <h2 className="text-lg font-semibold" style={{ letterSpacing: "-0.02em" }}>{t("parkTitle") || "Parking Management"}</h2>
-              {!initialLoad && stats.total > 0 && (
-                <span className="ps-badge-pill">
-                  {stats.total} {t("parkSlotCount") || "Slots"}
-                </span>
-              )}
-            </div>
-            <p className="text-secondary text-xs mt-0.5">{t("parkSubtitle") || "Manage society parking spaces, allocations, and requests"}</p>
+            <h2 className="text-lg font-semibold" style={{ letterSpacing: "-0.02em" }}>{t("parkTitle") || "Parking Management"}</h2>
+            <p className="text-secondary text-xs mt-0.5">Slots · Owners · Vehicles · Requests</p>
           </div>
         </div>
-        {!isCommittee && mainTab === "slots" && (
-          <GlobalButton
-            variant="add"
-            borderDraw
-            className="w-full sm:w-auto justify-center shrink-0"
-            onClick={handleOpenCreate}
-          >
-            {t("parkCreateBtn") || "Create Slots"}
-          </GlobalButton>
-        )}
-      </div>
 
-      <SlidingTabs
-        value={mainTab}
-        onChange={(key) => { setMainTab(key); setShowForm(false); }}
-        items={mainTabs.map((tab) => ({
-          id: tab.key,
-          label: tab.label,
-          icon: tab.icon,
-          badge: tab.key === "resident-requests" && pendingResidentCount > 0 ? pendingResidentCount : undefined,
-        }))}
-      />
+        <div className="flex items-center gap-2.5 flex-nowrap shrink-0 overflow-x-auto max-w-full">
+          <SlidingTabs
+            value={mainTab}
+            onChange={(key) => { setMainTab(key); setShowForm(false); }}
+            items={(isSearchOpen ? mainTabs.filter(tab => tab.key === mainTab) : mainTabs).map((tab) => ({
+              id: tab.key,
+              label: tab.label,
+              icon: tab.icon,
+              badge: tab.key === "resident-requests" && pendingResidentCount > 0 ? pendingResidentCount : undefined,
+            }))}
+          />
+
+          <ExpandableSearch
+            value={mainTab === "ownership" ? ownerSearch : search}
+            onChange={mainTab === "ownership" ? setOwnerSearch : setSearch}
+            isOpen={isSearchOpen}
+            onOpenChange={setIsSearchOpen}
+            maxWidth={220}
+            placeholder={
+              mainTab === "ownership"
+                ? "Search owner, flat, slot..."
+                : mainTab === "resident-entry"
+                ? "Search resident vehicles..."
+                : "Search slot number, level..."
+            }
+          />
+
+          {!isCommittee && mainTab === "slots" && (
+            <GlobalButton
+              variant="add"
+              className="justify-center shrink-0 whitespace-nowrap"
+              style={{ height: 42, minHeight: 42 }}
+              onClick={handleOpenCreate}
+            >
+              {t("parkCreateBtn") || "Create Slots"}
+            </GlobalButton>
+          )}
+        </div>
+      </div>
 
       {/* TAB: RESIDENT ENTRY */}
       {mainTab === "resident-entry" && (
@@ -1406,50 +1424,29 @@ export default function AssignParkingSlot() {
       {mainTab === "slots" && (
         <>
           {/* Main Slots Container */}
-          <div className="ps-slots-container">
-            {/* Filter and Search Bar */}
-            <div className="ps-filter-bar">
-              <div className="ps-filter-tabs">
-                <MdFilterList size={16} className="text-secondary shrink-0" />
-                {filterTabs.map(tab => (
-                  <button
-                    key={tab.key}
-                    onClick={() => handleFilterChange(tab.key)}
-                    className={`ps-filter-tab ${activeFilter === tab.key ? "ps-filter-tab--active" : ""}`}
-                  >
-                    {tab.icon}
-                    <span>{tab.label}</span>
-                    <span className="ps-filter-count">{tab.count}</span>
-                  </button>
-                ))}
+          <div className="ps-slots-container space-y-4">
+            {/* Filter and Count Bar */}
+            <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-xl bg-card border border-glass">
+              <div className="flex items-center gap-2.5">
+                <span className="text-xs font-semibold text-secondary">Filter:</span>
+                <Select
+                  value={activeFilter}
+                  onChange={(e) => handleFilterChange(e.target.value)}
+                  style={{ height: 36, minWidth: 160, fontSize: 13, borderRadius: 8 }}
+                >
+                  <option value="ALL">All Slots ({stats.total})</option>
+                  <option value="CAR">Cars Only ({stats.cars})</option>
+                  <option value="BIKE">Bikes Only ({stats.bikes})</option>
+                  <option value="AVAILABLE">Available ({stats.available})</option>
+                  <option value="OCCUPIED">Occupied ({stats.occupied || (stats.total - stats.available)})</option>
+                </Select>
               </div>
 
-              <div className="ps-search-box-wrap">
-                {!initialLoad && (
-                  <span className="ps-total-indicator">
-                    {totalItems} {t("parkSlotCount") || "Slots"}
-                  </span>
-                )}
-                <div className="ps-search-input-wrapper">
-                  <MdSearch size={15} className="ps-search-icon" />
-                  <input
-                    ref={searchInputRef}
-                    className="ps-search-input"
-                    placeholder={`${t("parkColSlot") || "Search slot, level"}... (Ctrl+K)`}
-                    value={search}
-                    onChange={e => setSearch(e.target.value)}
-                  />
-                  <div className="ps-search-actions">
-                    {fetching ? (
-                      <Spinner small />
-                    ) : search ? (
-                      <button onClick={() => setSearch("")} className="ps-search-clear" title="Clear">
-                        <MdClose size={14} />
-                      </button>
-                    ) : null}
-                  </div>
-                </div>
-              </div>
+              {!initialLoad && (
+                <span className="text-xs text-secondary font-medium">
+                  Showing <strong>{slots.length}</strong> of <strong>{totalItems}</strong> slots
+                </span>
+              )}
             </div>
 
             {/* Loading state */}
@@ -1484,7 +1481,7 @@ export default function AssignParkingSlot() {
                 <div className="ps-empty-icon">
                   <MdSearch size={40} />
                 </div>
-                <h4>{search ? `No slots match "${search}"` : "No slots found for this type"}</h4>
+                <h4>{search ? `No slots match "${search}"` : "No slots found for this filter"}</h4>
                 <p>Try adjusting your search criteria or vehicle type filter.</p>
                 <button
                   type="button"
@@ -1496,31 +1493,52 @@ export default function AssignParkingSlot() {
               </div>
             )}
 
-            {/* Card Grid */}
+            {/* Card Grid with slide page transition */}
             {!initialLoad && slots.length > 0 && (
-              <>
+              <div key={page} className="animate-slide-page">
                 <div className="ps-card-grid">
-                  {slots.map((slot, i) => {
+                  {slots.map((slot) => {
                     const isCar = slot.vehicle_type === "CAR";
                     const isAvail = slot.status === "AVAILABLE";
                     return (
                       <div
                         key={slot.id}
-                        className={`ps-slot-card ${isAvail ? "ps-slot-card--available" : "ps-slot-card--occupied"}`}
-                        style={{ animationDelay: `${i * 20}ms` }}
+                        onClick={() => setDetailSlot(slot)}
+                        className="ps-decent-card cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg group"
+                        style={{
+                          background: "var(--card-bg, #1a1a24)",
+                          border: "1px solid var(--glass-border, rgba(255,255,255,0.08))",
+                          borderRadius: 14,
+                          padding: "14px 16px",
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: 12,
+                          boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
+                        }}
                       >
-                        {/* Top Card Bar */}
-                        <div className="ps-card-top">
-                          <div className="ps-card-left-header">
-                            <div className={`ps-type-icon ${isCar ? "ps-type-icon--car" : "ps-type-icon--bike"}`}>
-                              {isCar ? <MdDirectionsCar size={15} /> : <MdTwoWheeler size={15} />}
+                        {/* Top Card Bar: Slot Number, Vehicle Type, Status */}
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2.5">
+                            <div
+                              style={{
+                                width: 36,
+                                height: 36,
+                                borderRadius: 10,
+                                background: isCar ? "rgba(59,130,246,0.12)" : "rgba(16,185,129,0.12)",
+                                color: isCar ? "#3b82f6" : "#10b981",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                flexShrink: 0
+                              }}
+                            >
+                              {isCar ? <MdDirectionsCar size={19} /> : <MdTwoWheeler size={19} />}
                             </div>
                             <div>
-                              <div className="ps-slot-number-row">
-                                <span className="ps-slot-label">Slot</span>
-                                <h4 className="ps-slot-number">{slot.slot_number}</h4>
-                              </div>
-                              <span className="ps-slot-meta">
+                              <h4 className="font-bold text-sm text-primary m-0 group-hover:text-accent transition-colors">
+                                {slot.slot_number}
+                              </h4>
+                              <span className="text-[11px] text-secondary">
                                 {slot.parking_floor ? `Floor ${slot.parking_floor}` : "Ground"} · {isCar ? "Car" : "Bike"}
                               </span>
                             </div>
@@ -1528,81 +1546,27 @@ export default function AssignParkingSlot() {
                           <StatusBadge status={slot.status} t={t} />
                         </div>
 
-                        {/* Middle Allocation Details */}
-                        <div className="ps-card-middle">
+                        {/* Compact Card Middle: Resident or Vacant info */}
+                        <div className="pt-2 text-xs border-t border-glass flex items-center justify-between min-h-[26px]">
                           {isAvail ? (
-                            <div className="ps-avail-bay">
-                              <span className="ps-avail-dot" />
-                              <span className="ps-avail-bay-text">Bay empty & ready for allocation</span>
-                            </div>
+                            <span className="text-secondary text-[11px] flex items-center gap-1.5">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block" />
+                              Unallocated · Available
+                            </span>
                           ) : (
-                            <div className="ps-occupied-details">
-                              {slot.resident || slot.flat_number ? (
-                                <div className="ps-resident-info">
-                                  <div className="ps-resident-name-row">
-                                    {slot.flat_number && (
-                                      <span className="ps-flat-badge">
-                                        Flat {slot.flat_number}
-                                      </span>
-                                    )}
-                                    <span className="ps-resident-name">
-                                      {slot.resident?.name || "Resident"}
-                                    </span>
-                                  </div>
-                                  {slot.vehicle?.vehicle_number && (
-                                    <div className="ps-vehicle-tag">
-                                      <span className="ps-vehicle-plate">{slot.vehicle.vehicle_number}</span>
-                                      {slot.vehicle.vehicle_name && (
-                                        <span className="ps-vehicle-model">({slot.vehicle.vehicle_name})</span>
-                                      )}
-                                    </div>
-                                  )}
-                                </div>
-                              ) : (
-                                <div className="ps-no-resident-tag">
-                                  <span>Occupied (Allocated)</span>
-                                </div>
+                            <div className="flex items-center gap-2 truncate">
+                              <div className="w-5 h-5 rounded-full bg-primary/10 text-accent font-bold text-[10px] flex items-center justify-center shrink-0">
+                                {slot.resident?.name?.charAt(0)?.toUpperCase() || "R"}
+                              </div>
+                              <span className="font-semibold text-primary truncate text-xs">
+                                {slot.resident?.name || "Occupied"}
+                              </span>
+                              {slot.flat_number && (
+                                <span className="text-[10px] px-1.5 py-0.5 rounded bg-white/5 text-secondary border border-white/10 shrink-0">
+                                  Flat {slot.flat_number}
+                                </span>
                               )}
                             </div>
-                          )}
-                        </div>
-
-                        {/* Bottom Actions Footer */}
-                        <div className="ps-card-footer ps-card-actions">
-                          {!isCommittee && (
-                            <GlobalButton
-                              variant="edit"
-                              size="xs"
-                              icon={MdEdit}
-                              onClick={() => openEdit(slot)}
-                              title="Edit Slot"
-                              style={{ flex: 1 }}
-                            >
-                              Edit
-                            </GlobalButton>
-                          )}
-                          {!isAvail && (
-                            <GlobalButton
-                              variant="warning"
-                              size="xs"
-                              icon={MdPersonRemove}
-                              onClick={() => openReleaseConfirm(slot)}
-                              title="Release Slot (Unlink resident/vehicle)"
-                              style={{ flex: 1 }}
-                            >
-                              Release
-                            </GlobalButton>
-                          )}
-                          {!isCommittee && (
-                            <GlobalButton
-                              variant="delete"
-                              size="xs"
-                              onClick={() => openDelConfirm(slot)}
-                              title="Delete Slot"
-                              style={{ flex: 1 }}
-                            >
-                              Delete
-                            </GlobalButton>
                           )}
                         </div>
                       </div>
@@ -1611,14 +1575,202 @@ export default function AssignParkingSlot() {
                 </div>
 
                 {/* Pagination Footer */}
-                <div className="ps-pagination-container">
+                <div className="ps-pagination-container mt-4">
                   <p className="ps-pagination-info">
                     {t("billShowing") || "Showing"} <strong>{slots.length}</strong> {t("billOf") || "of"} <strong>{totalItems}</strong> {t("parkSlotCount") || "Slots"}
                   </p>
                   <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} />
                 </div>
-              </>
+              </div>
             )}
+
+            {/* Slot Details Modal Popup */}
+            {detailSlot &&
+              createPortal(
+                <div
+                  className="fh-modal-overlay"
+                  onClick={() => setDetailSlot(null)}
+                  style={{
+                    position: "fixed",
+                    inset: 0,
+                    zIndex: 1300,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    padding: "16px",
+                    overflowY: "auto",
+                    background: "rgba(0,0,0,0.72)",
+                    backdropFilter: "blur(8px)",
+                  }}
+                >
+                  <div
+                    className="fh-modal-box animate-scaleIn"
+                    onClick={(e) => e.stopPropagation()}
+                    style={{
+                      width: "100%",
+                      maxWidth: 480,
+                      background: "var(--card-bg, #1e1e2d)",
+                      border: "1px solid var(--glass-border, rgba(255,255,255,0.12))",
+                      borderRadius: 20,
+                      padding: 24,
+                      boxShadow: "0 20px 50px rgba(0,0,0,0.4)",
+                    }}
+                  >
+                    {/* Header */}
+                    <div className="flex items-center justify-between pb-4 border-b border-glass">
+                      <div className="flex items-center gap-3">
+                        <div
+                          style={{
+                            width: 44,
+                            height: 44,
+                            borderRadius: 12,
+                            background: detailSlot.vehicle_type === "CAR" ? "rgba(59,130,246,0.15)" : "rgba(16,185,129,0.15)",
+                            color: detailSlot.vehicle_type === "CAR" ? "#3b82f6" : "#10b981",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                          }}
+                        >
+                          {detailSlot.vehicle_type === "CAR" ? <MdDirectionsCar size={24} /> : <MdTwoWheeler size={24} />}
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <h3 className="text-lg font-bold text-primary m-0">Slot {detailSlot.slot_number}</h3>
+                            <StatusBadge status={detailSlot.status} t={t} />
+                          </div>
+                          <p className="text-xs text-secondary mt-0.5 m-0">
+                            {detailSlot.parking_floor ? `Floor ${detailSlot.parking_floor}` : "Ground Floor"} · {detailSlot.vehicle_type === "CAR" ? "Four Wheeler (Car)" : "Two Wheeler (Bike)"}
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => setDetailSlot(null)}
+                        className="w-8 h-8 rounded-lg flex items-center justify-center text-secondary hover:text-primary bg-white/5 border border-white/10"
+                      >
+                        <MdClose size={18} />
+                      </button>
+                    </div>
+
+                    {/* Content Details */}
+                    <div className="py-4 space-y-3.5 text-sm">
+                      {detailSlot.status === "AVAILABLE" ? (
+                        <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-center space-y-1">
+                          <span className="text-2xl">🚗</span>
+                          <p className="font-semibold text-emerald-400 m-0">Slot is Available</p>
+                          <p className="text-xs text-secondary m-0">This parking slot is currently unallocated and ready for assignment to residents.</p>
+                        </div>
+                      ) : (
+                        <div className="space-y-3">
+                          {/* Resident Info */}
+                          <div className="p-3.5 rounded-xl bg-white/5 border border-white/10 space-y-2">
+                            <span className="text-[11px] font-bold text-secondary uppercase tracking-wider block">Assigned Resident</span>
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-full bg-accent/20 text-accent font-bold text-sm flex items-center justify-center shrink-0">
+                                {detailSlot.resident?.name?.charAt(0)?.toUpperCase() || "?"}
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <p className="font-bold text-primary m-0 truncate">{detailSlot.resident?.name || "Occupied"}</p>
+                                {detailSlot.resident?.email && <p className="text-xs text-secondary m-0 truncate">{detailSlot.resident.email}</p>}
+                                {detailSlot.resident?.phone && <p className="text-xs text-secondary m-0">{detailSlot.resident.phone}</p>}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Flat & Vehicle Info */}
+                          <div className="grid grid-cols-2 gap-2.5">
+                            <div className="p-3 rounded-xl bg-white/5 border border-white/10">
+                              <span className="text-[10px] font-bold text-secondary uppercase tracking-wider block">Assigned Unit</span>
+                              <p className="font-semibold text-primary text-sm mt-1 m-0">
+                                {detailSlot.flat_number ? `Flat ${detailSlot.flat_number}` : "—"}
+                              </p>
+                            </div>
+                            <div className="p-3 rounded-xl bg-white/5 border border-white/10">
+                              <span className="text-[10px] font-bold text-secondary uppercase tracking-wider block">Allocation Type</span>
+                              <p className="font-semibold text-primary text-sm mt-1 m-0">
+                                {detailSlot.parking_type || "DEFAULT"}
+                              </p>
+                            </div>
+                          </div>
+
+                          {detailSlot.vehicle?.vehicle_number && (
+                            <div className="p-3 rounded-xl bg-white/5 border border-white/10">
+                              <span className="text-[10px] font-bold text-secondary uppercase tracking-wider block">Registered Vehicle</span>
+                              <div className="flex items-center justify-between mt-1">
+                                <span className="font-bold text-primary font-mono text-sm tracking-wide">
+                                  {detailSlot.vehicle.vehicle_number}
+                                </span>
+                                {detailSlot.vehicle.vehicle_name && (
+                                  <span className="text-xs text-secondary">
+                                    {detailSlot.vehicle.vehicle_name}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Modal Actions Footer */}
+                    <div className="flex items-center gap-2 pt-3 border-t border-glass">
+                      {!isCommittee && (
+                        <GlobalButton
+                          variant="edit"
+                          icon={MdEdit}
+                          onClick={() => {
+                            const s = detailSlot;
+                            setDetailSlot(null);
+                            openEdit(s);
+                          }}
+                          style={{ flex: 1, justifyContent: "center", height: 40 }}
+                        >
+                          Edit Slot
+                        </GlobalButton>
+                      )}
+
+                      {detailSlot.status !== "AVAILABLE" && (
+                        <GlobalButton
+                          variant="warning"
+                          icon={MdPersonRemove}
+                          onClick={() => {
+                            const s = detailSlot;
+                            setDetailSlot(null);
+                            openReleaseConfirm(s);
+                          }}
+                          style={{ flex: 1, justifyContent: "center", height: 40 }}
+                        >
+                          Release Slot
+                        </GlobalButton>
+                      )}
+
+                      {!isCommittee && (
+                        <GlobalButton
+                          variant="delete"
+                          icon={MdDelete}
+                          onClick={() => {
+                            const s = detailSlot;
+                            setDetailSlot(null);
+                            openDelConfirm(s);
+                          }}
+                          style={{ flex: 1, justifyContent: "center", height: 40 }}
+                        >
+                          Delete
+                        </GlobalButton>
+                      )}
+
+                      <button
+                        type="button"
+                        className="btn-ghost"
+                        style={{ padding: "0 18px", height: 40, borderRadius: 10, fontSize: 13, fontWeight: 700 }}
+                        onClick={() => setDetailSlot(null)}
+                      >
+                        Close
+                      </button>
+                    </div>
+                  </div>
+                </div>,
+                document.body
+              )}
           </div>
         </>
       )}

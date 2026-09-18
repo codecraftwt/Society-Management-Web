@@ -8,6 +8,7 @@ import {
 import { useLang } from "../../context/LanguageContext";
 import API from "../../services/api";
 import SlidingTabs from "../../components/common/SlidingTabs";
+import ExpandableSearch from "../../components/common/ExpandableSearch";
 
 function PortalModal({ children }) {
   if (typeof document === "undefined") return null;
@@ -281,20 +282,11 @@ export default function MyHouseHold() {
         </div>
 
         <div className="ge-toolbar">
-          <div className="ge-search-wrap">
-            <MdSearch className="ge-search-icon" size={17} />
-            <input
-              className="ge-search-input"
-              placeholder={t("hhFieldNamePlaceholder")}
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-            {search ? (
-              <button type="button" onClick={() => setSearch("")} className="ge-search-clear" aria-label="Clear search">
-                <MdClose size={13} />
-              </button>
-            ) : null}
-          </div>
+          <ExpandableSearch
+            placeholder={t("hhFieldNamePlaceholder") || "Search members..."}
+            value={search}
+            onChange={setSearch}
+          />
 
           <SlidingTabs
             className="ge-filter-tabs"

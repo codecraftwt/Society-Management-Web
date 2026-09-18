@@ -24,13 +24,13 @@ export default function GlobalBadge({
   let currentVariant = variant;
   if (status) {
     const s = String(status).toLowerCase().trim();
-    if (["active", "resolved", "in", "paid", "approved", "completed", "occupied", "success"].includes(s)) {
+    if (["active", "resolved", "in", "paid", "approved", "completed", "occupied", "available", "success", "confirmed", "activated"].includes(s)) {
       currentVariant = "success";
-    } else if (["pending", "open", "medium", "partial", "warning", "upcoming"].includes(s)) {
+    } else if (["pending", "open", "medium", "partial", "warning", "upcoming", "in_review", "under_review"].includes(s)) {
       currentVariant = "warning";
-    } else if (["overdue", "rejected", "out", "inactive", "suspended", "critical", "danger", "unpaid", "expired"].includes(s)) {
+    } else if (["overdue", "rejected", "out", "inactive", "suspended", "critical", "danger", "unpaid", "expired", "cancelled", "emergency", "deactivated", "failed"].includes(s)) {
       currentVariant = "danger";
-    } else if (["in_progress", "in progress", "reviewing", "assigned", "processing", "info"].includes(s)) {
+    } else if (["in_progress", "in progress", "reviewing", "assigned", "processing", "info", "vacant"].includes(s)) {
       currentVariant = "info";
     } else {
       currentVariant = "neutral";

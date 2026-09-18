@@ -15,6 +15,7 @@ import {
 import { toast } from "react-toastify";
 import Select from "../../components/common/Select";
 import GlobalButton from "../../components/common/GlobalButton";
+import ExpandableSearch from "../../components/common/ExpandableSearch";
 import { isCommitteeMember, hasPermission } from "../../utils/permissions";
 import { useCustomAlert } from "../../context/CustomAlertContext";
 
@@ -287,13 +288,53 @@ function StepIndicator({ step, total, labels }) {
         return (
           <div key={i} style={{ display: "flex", alignItems: "center", flex: i < total - 1 ? 1 : "none" }}>
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
-              <div style={{ width: 28, height: 28, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 800, transition: "all 0.3s", background: done ? "#34d399" : active ? "linear-gradient(135deg,#6B46C1,#6B46C1)" : "rgba(255,255,255,0.07)", border: `2px solid ${done ? "#34d399" : active ? "#6B46C1" : "rgba(255,255,255,0.12)"}`, color: done || active ? "#fff" : "var(--text-secondary)", boxShadow: active ? "0 4px 12px rgba(107,70,193,0.35)" : "none" }}>
+              <div
+                className={!done && !active ? "res-step-circle-inactive" : ""}
+                style={{
+                  width: 28,
+                  height: 28,
+                  borderRadius: "50%",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: 11,
+                  fontWeight: 800,
+                  transition: "all 0.3s",
+                  background: done ? "#34d399" : active ? "linear-gradient(135deg, var(--accent, #6B46C1), #8b5cf6)" : "var(--card-inner-bg, rgba(148, 163, 184, 0.15))",
+                  border: `2px solid ${done ? "#34d399" : active ? "var(--accent, #6B46C1)" : "var(--glass-border, rgba(148, 163, 184, 0.35))"}`,
+                  color: done || active ? "#fff" : "var(--text-secondary)",
+                  boxShadow: active ? "0 4px 12px rgba(107,70,193,0.35)" : "none",
+                }}
+              >
                 {done ? <MdCheckCircle size={14} /> : num}
               </div>
-              <span style={{ fontSize: 9, fontWeight: 700, color: active ? "#9F87D7" : done ? "#34d399" : "var(--text-secondary)", whiteSpace: "nowrap", textTransform: "uppercase", letterSpacing: "0.05em" }}>{label}</span>
+              <span
+                style={{
+                  fontSize: 9,
+                  fontWeight: 700,
+                  color: active ? "var(--accent, #9F87D7)" : done ? "#34d399" : "var(--text-secondary)",
+                  whiteSpace: "nowrap",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.05em",
+                }}
+              >
+                {label}
+              </span>
             </div>
             {i < total - 1 && (
-              <div style={{ flex: 1, height: 2, margin: "0 6px", marginBottom: 16, background: done ? "#34d399" : "rgba(255,255,255,0.08)", transition: "all 0.3s", borderRadius: 999 }} />
+              <div
+                className={!done ? "res-step-line" : ""}
+                style={{
+                  flex: 1,
+                  height: 3,
+                  margin: "0 6px",
+                  marginBottom: 16,
+                  background: done ? "#34d399" : "var(--glass-border, rgba(107, 70, 193, 0.35))",
+                  border: "0.5px solid rgba(107, 70, 193, 0.2)",
+                  transition: "all 0.3s",
+                  borderRadius: 999,
+                }}
+              />
             )}
           </div>
         );
@@ -2153,7 +2194,7 @@ function EditFlatSection({ allUnassignedFlats, availableSlots, currentFlats, cur
 /* ─────────────────────────────────────────
    CONSTANTS
 ───────────────────────────────────────── */
-const LIMIT = 10;
+const LIMIT = 50;
 
 const EMPTY_FORM = {
   name: "", email: "", password: "", phone: "",
@@ -2225,6 +2266,7 @@ export default function Resident() {
   const [filterBlockId, setFilterBlockId] = useState("");
   const [filterFloorId, setFilterFloorId] = useState("");
   const [filterFlatId, setFilterFlatId] = useState("");
+  const [filterRole, setFilterRole] = useState("");
   const [allSocietyFlats, setAllSocietyFlats] = useState([]);
   const [formSocietyId, setFormSocietyId] = useState("");
 
@@ -2338,6 +2380,7 @@ export default function Resident() {
           ...(filterBlockId ? { block_id: filterBlockId } : {}),
           ...(filterFloorId ? { floor_id: filterFloorId } : {}),
           ...(filterFlatId ? { flat_id: filterFlatId } : {}),
+          ...(filterRole ? { role: filterRole } : {}),
         });
         const headers = (isSuperAdmin && filterSocietyId) ? { "x-society-id": filterSocietyId } : {};
         const res = await API.get(`/users/resident?${params}`, { headers });
@@ -2360,8 +2403,38 @@ export default function Resident() {
         setFetching(false);
       }
     },
-    [filterSocietyId, filterBlockId, filterFloorId, filterFlatId, isSuperAdmin],
+    [filterSocietyId, filterBlockId, filterFloorId, filterFlatId, filterRole, isSuperAdmin],
   );
+
+  const displayedResidents = useMemo(() => {
+    if (!filterRole) return residents;
+    return residents.filter((r) => {
+      const roles = Array.isArray(r.roles)
+        ? r.roles
+        : typeof r.roles === "string"
+        ? [r.roles]
+        : [];
+
+      const residentType = (r.resident_type || "").toUpperCase();
+
+      switch (filterRole) {
+        case "COMMITTEE_MEMBER":
+          return roles.includes("COMMITTEE_MEMBER");
+        case "ACCOUNTANT":
+          return roles.includes("ACCOUNTANT");
+        case "ADMIN":
+          return roles.includes("ADMIN") || roles.includes("SUPER_ADMIN");
+        case "SOCIETY_ADMIN":
+          return roles.includes("SOCIETY_ADMIN");
+        case "RESIDENT":
+          return residentType === "OWNER" || roles.includes("RESIDENT") || (residentType !== "TENANT" && !roles.includes("TENANT"));
+        case "TENANT":
+          return residentType === "TENANT" || roles.includes("TENANT");
+        default:
+          return true;
+      }
+    });
+  }, [residents, filterRole]);
 
   const handleOpenAddResident = () => {
     if (!showForm && !hasPermission(user, "resident", "create")) {
@@ -2444,12 +2517,13 @@ export default function Resident() {
     }
   };
 
-  const hasActiveFilters = Boolean(filterBlockId || filterFloorId || filterFlatId || (isSuperAdmin && filterSocietyId) || search);
+  const hasActiveFilters = Boolean(filterBlockId || filterFloorId || filterFlatId || filterRole || (isSuperAdmin && filterSocietyId) || search);
 
   const handleClearFilters = () => {
     setFilterBlockId("");
     setFilterFloorId("");
     setFilterFlatId("");
+    setFilterRole("");
     if (isSuperAdmin) {
       setFilterSocietyId("");
       localStorage.setItem("superadmin_society_filter", "ALL");
@@ -2458,7 +2532,7 @@ export default function Resident() {
   };
 
   useEffect(() => { loadResidents(1, "", true); }, [loadResidents]);
-  useEffect(() => { if (initialLoad) return; loadResidents(1, debouncedSearch); }, [debouncedSearch, filterSocietyId, filterBlockId, filterFloorId, filterFlatId, initialLoad, loadResidents]);
+  useEffect(() => { if (initialLoad) return; loadResidents(1, debouncedSearch); }, [debouncedSearch, filterSocietyId, filterBlockId, filterFloorId, filterFlatId, filterRole, initialLoad, loadResidents]);
 
   const handlePageChange = (p) => loadResidents(p, debouncedSearch);
 
@@ -2867,15 +2941,6 @@ export default function Resident() {
                         </Field>
                       )}
                     </div>
-
-                    <SectionDivider icon={MdPerson} label="Resident Role" />
-                    <div style={{ padding: "12px 14px", borderRadius: 12, background: "rgba(16,185,129,0.08)", border: "1.5px solid rgba(16,185,129,0.22)", display: "flex", alignItems: "center", gap: 10 }}>
-                      <div style={{ width: 32, height: 32, borderRadius: 9, background: "rgba(16,185,129,0.15)", display: "flex", alignItems: "center", justifyContent: "center" }}>🏠</div>
-                      <div>
-                        <div style={{ fontSize: 13, fontWeight: 700, color: "#34d399" }}>Owner Account</div>
-                        <div style={{ fontSize: 11, color: "var(--text-secondary)" }}>Admins register Owner accounts. Owners register Tenants directly via the Resident Mobile App.</div>
-                      </div>
-                    </div>
                   </div>
                 )}
 
@@ -3020,34 +3085,76 @@ export default function Resident() {
       {/* Table */}
       <div className="bg-card rounded-2xl overflow-hidden">
 
-        {/* Cascading Filter Bar */}
-        <div style={{ display: "flex", gap: 10, padding: "16px 20px", borderBottom: "1px solid var(--divider)", flexWrap: "wrap", background: "rgba(0,0,0,0.02)" }}>
+        {/* Cascading Filter & Search Bar */}
+        <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "14px 20px", borderBottom: "1px solid var(--divider)", flexWrap: "wrap", background: "rgba(0,0,0,0.02)" }}>
+          {/* Animated Slider Expandable Search Bar */}
+          <ExpandableSearch
+            value={search}
+            onChange={setSearch}
+            placeholder={t("colSearchPlaceholder") || "Search name, email, phone…"}
+          />
+
+          {/* Role Filter */}
+          <Select
+            className="input"
+            style={{ flex: 1, minWidth: 150, height: 42, padding: "8px 12px", borderRadius: 12, fontSize: 13 }}
+            value={filterRole}
+            onChange={(e) => setFilterRole(e.target.value)}
+          >
+            <option value="">{t("allRoles") || "All Roles"}</option>
+            <option value="COMMITTEE_MEMBER">Committee Member</option>
+            <option value="ACCOUNTANT">Accountant</option>
+            <option value="ADMIN">Admin</option>
+            <option value="SOCIETY_ADMIN">Society Admin</option>
+            <option value="RESIDENT">Resident</option>
+            <option value="TENANT">Tenant</option>
+          </Select>
+
           {isSuperAdmin && (
-            <Select className="input" style={{ flex: 1, minWidth: 140, padding: "8px 12px" }}
-              value={filterSocietyId} onChange={(e) => {
+            <Select
+              className="input"
+              style={{ flex: 1, minWidth: 140, height: 42, padding: "8px 12px", borderRadius: 12, fontSize: 13 }}
+              value={filterSocietyId}
+              onChange={(e) => {
                 const val = e.target.value;
                 setFilterSocietyId(val);
                 localStorage.setItem("superadmin_society_filter", val || "ALL");
-              }}>
+              }}
+            >
               <option value="">{t("allSocieties") || "All Societies"}</option>
               {societiesList.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
             </Select>
           )}
-          <Select className="input" style={{ flex: 1, minWidth: 140, padding: "8px 12px" }}
-            value={filterBlockId} onChange={(e) => { setFilterBlockId(e.target.value); setFilterFloorId(""); setFilterFlatId(""); }}
-            disabled={!blocksList.length}>
+
+          <Select
+            className="input"
+            style={{ flex: 1, minWidth: 130, height: 42, padding: "8px 12px", borderRadius: 12, fontSize: 13 }}
+            value={filterBlockId}
+            onChange={(e) => { setFilterBlockId(e.target.value); setFilterFloorId(""); setFilterFlatId(""); }}
+            disabled={!blocksList.length}
+          >
             <option value="">{t("allBlocks") || "All Blocks"}</option>
             {blocksList.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
           </Select>
-          <Select className="input" style={{ flex: 1, minWidth: 140, padding: "8px 12px" }}
-            value={filterFloorId} onChange={(e) => { setFilterFloorId(e.target.value); setFilterFlatId(""); }}
-            disabled={!filterBlockId || !floorsList.length}>
+
+          <Select
+            className="input"
+            style={{ flex: 1, minWidth: 130, height: 42, padding: "8px 12px", borderRadius: 12, fontSize: 13 }}
+            value={filterFloorId}
+            onChange={(e) => { setFilterFloorId(e.target.value); setFilterFlatId(""); }}
+            disabled={!filterBlockId || !floorsList.length}
+          >
             <option value="">{t("allFloors") || "All Floors"}</option>
             {floorsList.map(f => <option key={f.id} value={f.id}>Floor {f.number}</option>)}
           </Select>
-          <Select className="input" style={{ flex: 1, minWidth: 140, padding: "8px 12px" }}
-            value={filterFlatId} onChange={(e) => setFilterFlatId(e.target.value)}
-            disabled={!filterBlockId || !flatsList.length}>
+
+          <Select
+            className="input"
+            style={{ flex: 1, minWidth: 130, height: 42, padding: "8px 12px", borderRadius: 12, fontSize: 13 }}
+            value={filterFlatId}
+            onChange={(e) => setFilterFlatId(e.target.value)}
+            disabled={!filterBlockId || !flatsList.length}
+          >
             <option value="">{t("allUnits") || "All Units"}</option>
             {flatsList.map(f => <option key={f.id} value={f.id}>{f.flat_number}</option>)}
           </Select>
@@ -3056,29 +3163,49 @@ export default function Resident() {
             <button
               type="button"
               onClick={handleClearFilters}
-              style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "8px 14px", borderRadius: 8, background: "rgba(239, 68, 68, 0.10)", border: "1px solid rgba(239, 68, 68, 0.22)", color: "#f87171", fontSize: 12, fontWeight: 700, cursor: "pointer", transition: "all 0.15s" }}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 5,
+                height: 42,
+                padding: "0 14px",
+                borderRadius: 12,
+                background: "rgba(239, 68, 68, 0.10)",
+                border: "1px solid rgba(239, 68, 68, 0.22)",
+                color: "#f87171",
+                fontSize: 12,
+                fontWeight: 700,
+                cursor: "pointer",
+                transition: "all 0.15s ease",
+                whiteSpace: "nowrap",
+              }}
               onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(239, 68, 68, 0.18)")}
               onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(239, 68, 68, 0.10)")}
               title="Clear all active filters"
             >
-              <MdClose size={14} /> {t("colClearFilter") || "Clear Filter"}
+              <MdClose size={15} /> {t("colClearFilter") || "Clear Filter"}
             </button>
           )}
         </div>
 
-        {/* Toolbar */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "16px 20px", borderBottom: "1px solid var(--divider)", flexWrap: "wrap" }}>
-          <p className="text-xs text-secondary shrink-0">
-            {initialLoad ? "—" : `${totalItems} ${t("residentTitle")?.toLowerCase()}`}
-            {search && !initialLoad && ` matching "${search}"`}
-          </p>
-          <div className="relative" style={{ maxWidth: 260, width: "100%" }}>
-            <MdSearch size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-secondary pointer-events-none" />
-            <input className="input search-input h-9 text-xs w-full" style={{ paddingLeft: 32, borderRadius: 10 }} placeholder={t("colSearchPlaceholder") || "Search name or email…"} value={search} onChange={(e) => setSearch(e.target.value)} />
-            <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center">
-              {fetching ? <Spinner small /> : search ? <button onClick={() => setSearch("")} className="text-secondary"><MdClose size={13} /></button> : null}
-            </div>
+        {/* Sub-bar with count and active filter indicators */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "10px 20px", borderBottom: "1px solid var(--divider)", fontSize: 12, color: "var(--text-secondary)", background: "rgba(0,0,0,0.01)", flexWrap: "wrap" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+            <span>
+              {initialLoad ? "—" : `${displayedResidents.length} ${t("residentTitle")?.toLowerCase() || "residents"}`}
+              {search && !initialLoad && ` matching "${search}"`}
+            </span>
+            {filterRole && (
+              <span style={{ fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 999, background: "rgba(160,90,255,0.14)", color: "var(--accent, #9F87D7)", border: "1px solid rgba(160,90,255,0.25)" }}>
+                Role: {filterRole.replace(/_/g, " ")}
+              </span>
+            )}
           </div>
+          {fetching && (
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 11, color: "var(--accent)" }}>
+              <Spinner small /> Updating…
+            </span>
+          )}
         </div>
 
         {initialLoad && (
@@ -3094,7 +3221,7 @@ export default function Resident() {
           </div>
         )}
 
-        {!initialLoad && totalAll > 0 && residents.length === 0 && !fetching && (
+        {!initialLoad && totalAll > 0 && displayedResidents.length === 0 && !fetching && (
           <div className="flex flex-col items-center gap-2 py-16 text-secondary">
             <MdSearch size={32} className="opacity-20" />
             <p className="text-sm">No residents match your search / filter.</p>
@@ -3104,7 +3231,7 @@ export default function Resident() {
           </div>
         )}
 
-        {!initialLoad && residents.length > 0 && (
+        {!initialLoad && displayedResidents.length > 0 && (
           <div key={page} className="animate-slide-page">
             {/* Desktop Table */}
             <div className="hidden md:block overflow-x-auto">
@@ -3125,7 +3252,7 @@ export default function Resident() {
                   </tr>
                 </thead>
                 <tbody>
-                  {residents.map((r, idx) => (
+                  {displayedResidents.map((r, idx) => (
                     <tr key={r.id} style={{ borderBottom: "1px solid var(--divider)", verticalAlign: "top", background: "transparent" }}>
                       <td style={{ padding: "14px 16px", fontSize: 12, color: "var(--text-secondary)", fontWeight: 600, width: 40 }}>{(page - 1) * LIMIT + idx + 1}</td>
                       <td style={{ padding: "14px 16px", minWidth: 160 }}>
@@ -3210,7 +3337,7 @@ export default function Resident() {
             </div>
 
             <div className="md:hidden">
-              {residents.map((r) => (
+              {displayedResidents.map((r) => (
                 <div key={r.id} className="animate-fadeIn" style={{ padding: "14px 16px", borderBottom: "1px solid var(--divider)" }}>
                   <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
                     <div style={{ flex: 1, minWidth: 0 }}>
@@ -3266,7 +3393,7 @@ export default function Resident() {
             </div>
 
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10, padding: "16px 20px", borderTop: "1px solid var(--divider)" }}>
-              <p className="text-xs text-secondary">{t("colShowing") || "Showing"} {residents.length} {t("colOf") || "of"} {totalItems}</p>
+              <p className="text-xs text-secondary">{t("colShowing") || "Showing"} {displayedResidents.length} {t("colOf") || "of"} {totalItems}</p>
               <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} />
             </div>
           </div>

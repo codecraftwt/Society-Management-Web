@@ -917,11 +917,10 @@ export default function CommitteeComplaints() {
             {/* Date filter — desktop only */}
             {!isMobile && (
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <MdCalendarToday size={13} style={{ color: "var(--text-secondary)", flexShrink: 0 }} />
-                <input type="date" className="complaint-date-input" style={{ width: 140 }}
+                <input type="date" className="input" style={{ width: 140, height: 38 }}
                   value={dateFrom} max={dateTo || undefined} onChange={e => setDateFrom(e.target.value)} />
                 <span style={{ fontSize: 12, color: "var(--text-secondary)" }}>{t ? t("compDateTo") : "to"}</span>
-                <input type="date" className="complaint-date-input" style={{ width: 140 }}
+                <input type="date" className="input" style={{ width: 140, height: 38 }}
                   value={dateTo} min={dateFrom || undefined} onChange={e => setDateTo(e.target.value)} />
                 {hasDateFilter && (
                   <button onClick={clearDate} style={{ width: 30, height: 30, borderRadius: 8,

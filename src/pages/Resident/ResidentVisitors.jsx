@@ -305,7 +305,7 @@ export default function ResidentVisitors() {
       </div>
 
       {/* ── CONTENT ── */}
-      <div className="bg-card p-4 sm:p-5">
+      <div className="bg-card rounded-2xl p-4 sm:p-5 border border-white/8">
 
         {initialLoad ? (
           <div className="flex flex-col items-center gap-3 py-14 text-secondary">
