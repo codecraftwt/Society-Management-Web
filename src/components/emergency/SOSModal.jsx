@@ -171,7 +171,7 @@ export default function SOSModal({
   const currentTypeObj = EMERGENCY_TYPES.find((t) => t.type === selectedType) || EMERGENCY_TYPES[0];
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={modalTitle}>
+    <Modal isOpen={isOpen} onClose={onClose} title={modalTitle} warnUnsavedChanges={false}>
       <div className="space-y-4">
         {/* TAB BUTTONS */}
         <div className="flex gap-2 p-1 bg-black/10 dark:bg-white/5 rounded-xl border border-glass">

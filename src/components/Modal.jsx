@@ -22,6 +22,8 @@ export default function Modal({
   className,
   style,
   bodyStyle,
+  warnUnsavedChanges = true,
+  disableUnsavedWarning = false,
 }) {
   return (
     <GlobalModal
@@ -44,6 +46,8 @@ export default function Modal({
       className={className}
       style={style}
       bodyStyle={bodyStyle}
+      warnUnsavedChanges={warnUnsavedChanges}
+      disableUnsavedWarning={disableUnsavedWarning}
     >
       {children}
     </GlobalModal>

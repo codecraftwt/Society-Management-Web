@@ -702,6 +702,7 @@ export default function AdminEmergency() {
           subtitle={`Tracking user view & read receipt for ${historyModal.alert?.type || "Emergency"} Alert`}
           icon={MdDoneAll}
           size="xl"
+          warnUnsavedChanges={false}
         >
           <div className="space-y-4">
             {/* Summary Row */}

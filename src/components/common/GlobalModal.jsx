@@ -37,8 +37,12 @@ export default function GlobalModal({
   className = "",
   style = {},
   bodyStyle = {},
+  warnUnsavedChanges = true,
+  disableUnsavedWarning = false,
 }) {
   if (!isOpen) return null;
+
+  const shouldWarn = warnUnsavedChanges && !disableUnsavedWarning;
 
   /* ModalShell remounts on every open, so its state (including the
      unsaved-changes flag) always starts clean. */
@@ -62,6 +66,7 @@ export default function GlobalModal({
       className={className}
       style={style}
       bodyStyle={bodyStyle}
+      warnUnsavedChanges={shouldWarn}
     >
       {children}
     </ModalShell>
@@ -88,6 +93,7 @@ function ModalShell({
   className,
   style,
   bodyStyle,
+  warnUnsavedChanges = true,
 }) {
   const dialogRef = useRef(null);
   const dirtyRef = useRef(false);
@@ -95,29 +101,27 @@ function ModalShell({
 
   /* ── Track if the form inside has unsaved edits ── */
   useEffect(() => {
+    if (!warnUnsavedChanges) return;
     const root = dialogRef.current;
     if (!root) return;
 
-    const markDirty = () => { dirtyRef.current = true; };
-    const markBodyClick = (e) => {
-      const t = e.target;
-      if (!t || !t.closest) return;
-      if (!t.closest(".sa-modal-body")) return;
-      if (t.closest("button, a, [role='button'], select, input, textarea, label")) {
+    const markDirty = (e) => {
+      const t = e?.target;
+      if (!t) return;
+      const tag = (t.tagName || "").toLowerCase();
+      if (tag === "input" || tag === "textarea" || tag === "select") {
         dirtyRef.current = true;
       }
     };
 
     root.addEventListener("input", markDirty, true);
     root.addEventListener("change", markDirty, true);
-    root.addEventListener("click", markBodyClick, true);
 
     return () => {
       root.removeEventListener("input", markDirty, true);
       root.removeEventListener("change", markDirty, true);
-      root.removeEventListener("click", markBodyClick, true);
     };
-  }, []);
+  }, [warnUnsavedChanges]);
 
   const handleDiscard = useCallback(() => {
     dirtyRef.current = false;
@@ -126,20 +130,20 @@ function ModalShell({
   }, [onClose]);
 
   const requestClose = useCallback(() => {
-    if (dirtyRef.current) {
+    if (warnUnsavedChanges && dirtyRef.current) {
       setShowDiscardConfirm(true);
       return;
     }
     onClose?.();
-  }, [onClose]);
+  }, [onClose, warnUnsavedChanges]);
 
   const requestCancel = useCallback(() => {
-    if (dirtyRef.current) {
+    if (warnUnsavedChanges && dirtyRef.current) {
       setShowDiscardConfirm(true);
       return;
     }
     (onCancel || onClose)?.();
-  }, [onCancel, onClose]);
+  }, [onCancel, onClose, warnUnsavedChanges]);
 
   useEffect(() => {
     const handleKeyDown = (e) => {
