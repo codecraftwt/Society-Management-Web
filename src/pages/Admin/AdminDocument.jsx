@@ -26,6 +26,11 @@ import GlobalModal from "../../components/common/GlobalModal";
 
 import Pagination from "../../components/common/Pagination";
 
+const ALL_CATS  = ["All", "Legal", "Meetings", "Guidelines", "Finance", "Security"];
+const FORM_CATS = ["Legal", "Meetings", "Guidelines", "Finance", "Security"];
+const ICON_MAP  = { Legal: MdGavel, Meetings: MdGroups, Guidelines: MdDirectionsCar, Finance: MdBarChart, Security: MdSecurity };
+const COLOR_MAP = { Legal: "purple", Meetings: "blue", Guidelines: "amber", Finance: "red", Security: "green" };
+
 /* ── Document card ── */
 function DocCard({ doc, t, onDelete, isCommittee }) {
   const Icon  = ICON_MAP[doc.category] || MdDescription;
@@ -148,6 +153,15 @@ function DeleteModal({ doc, loading, onConfirm, onCancel, t }) {
 /* ═══════════════════════════════════════════
    Main
 ═══════════════════════════════════════════ */
+function useDebounce(value, delay = 500) {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    const t = setTimeout(() => setDebounced(value), delay);
+    return () => clearTimeout(t);
+  }, [value, delay]);
+  return debounced;
+}
+
 export default function AdminDocument() {
   const { t }   = useLang();
   const { user } = useAuthContext();

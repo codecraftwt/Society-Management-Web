@@ -100,6 +100,43 @@ export const BILL_CATEGORIES = [
   { value: "OTHER", label: "📝 Other", defaultTitle: "Other" },
 ];
 
+function Spinner({ size = 16 }) {
+  return (
+    <svg style={{ width: size, height: size, flexShrink: 0 }} viewBox="0 0 24 24" fill="none" className="animate-spin">
+      <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" style={{ opacity: 0.25 }} />
+      <path fill="currentColor" style={{ opacity: 0.75 }} d="M4 12a8 8 0 018-8v8z" />
+    </svg>
+  );
+}
+
+function useDebounce(v, d = 450) {
+  const [dv, setDv] = useState(v);
+  useEffect(() => {
+    const t = setTimeout(() => setDv(v), d);
+    return () => clearTimeout(t);
+  }, [v, d]);
+  return dv;
+}
+
+function useIsMobile() {
+  const [m, setM] = useState(() => window.innerWidth < 768);
+  useEffect(() => {
+    const fn = () => setM(window.innerWidth < 768);
+    window.addEventListener("resize", fn);
+    return () => window.removeEventListener("resize", fn);
+  }, []);
+  return m;
+}
+
+function getTodayISO() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+function getCurrentBillingMonth() {
+  return new Date().toLocaleString("en-US", { month: "long", year: "numeric" });
+}
+
 /* ══════════════════════════════════════
    MAIN
 ══════════════════════════════════════ */

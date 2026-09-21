@@ -56,6 +56,25 @@ function ReqBadge({ status }) {
   );
 }
 
+function useDebounce(value, delay = 500) {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    const t = setTimeout(() => setDebounced(value), delay);
+    return () => clearTimeout(t);
+  }, [value, delay]);
+  return debounced;
+}
+
+function Spinner({ small = false }) {
+  const s = small ? 13 : 20;
+  return (
+    <svg style={{ width: s, height: s, flexShrink: 0 }} className="animate-spin" viewBox="0 0 24 24" fill="none">
+      <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" className="opacity-25" />
+      <path fill="currentColor" className="opacity-75" d="M4 12a8 8 0 018-8v8z" />
+    </svg>
+  );
+}
+
 /* ═══════════════════════════════════════════
    Resident Entry Panel
 ═══════════════════════════════════════════ */

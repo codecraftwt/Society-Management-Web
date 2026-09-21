@@ -49,6 +49,17 @@ const Pill = ({ status, t }) => (
   </span>
 );
 
+const toArr = (res) => {
+  const data = res?.data !== undefined ? res.data : res;
+  if (Array.isArray(data)) return data;
+  if (data && typeof data === "object") {
+    for (const key of ["data", "flats", "items", "results", "records", "bills", "parcels", "visitors", "complaints", "parking", "slots"]) {
+      if (Array.isArray(data[key])) return data[key];
+    }
+  }
+  return [];
+};
+
 /* ─────────────────────────────────────────────────────────────
    TAB: RESIDENTS
 ────────────────────────────────────────────────────────────── */

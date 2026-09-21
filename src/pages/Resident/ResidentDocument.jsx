@@ -16,6 +16,15 @@ import API from "../../services/api";
 import { BASE_URL } from "../../config/apiConfig";
 import Pagination from "../../components/common/Pagination";
 
+function useDebounce(value, delay = 500) {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    const t = setTimeout(() => setDebounced(value), delay);
+    return () => clearTimeout(t);
+  }, [value, delay]);
+  return debounced;
+}
+
 /* ═══════════════════════════════════════════
    Main
 ═══════════════════════════════════════════ */
