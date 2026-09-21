@@ -25,6 +25,124 @@ function useDebounce(value, delay = 500) {
   return debounced;
 }
 
+const CATEGORY_KEYS = ["All", "Legal", "Meetings", "Guidelines", "Finance", "Security"];
+
+const ICON_MAP = {
+  Legal:      MdGavel,
+  Meetings:   MdGroups,
+  Guidelines: MdDirectionsCar,
+  Finance:    MdBarChart,
+  Security:   MdSecurity,
+};
+
+const COLOR_MAP = {
+  Legal:      { icon: "rd-icon-purple", badge: "rd-badge-purple", glow: "rd-glow-purple" },
+  Meetings:   { icon: "rd-icon-cyan",   badge: "rd-badge-cyan",   glow: "rd-glow-cyan"   },
+  Guidelines: { icon: "rd-icon-amber",  badge: "rd-badge-amber",  glow: "rd-glow-amber"  },
+  Finance:    { icon: "rd-icon-red",    badge: "rd-badge-red",    glow: "rd-glow-red"    },
+  Security:   { icon: "rd-icon-green",  badge: "rd-badge-green",  glow: "rd-glow-green"  },
+};
+
+function SkeletonCard() {
+  return (
+    <div className="rd-doc-card rd-skeleton-card">
+      <div className="rd-card-accent rd-skeleton-bar" />
+      <div className="rd-card-inner">
+        <div className="rd-card-top">
+          <div className="rd-skeleton rd-skeleton-icon" />
+          <div className="rd-skeleton rd-skeleton-badge" />
+        </div>
+        <div className="rd-card-body" style={{ gap: 8 }}>
+          <div className="rd-skeleton rd-skeleton-title" />
+          <div className="rd-skeleton rd-skeleton-desc" />
+          <div className="rd-skeleton rd-skeleton-desc rd-skeleton-desc--short" />
+        </div>
+        <div className="rd-card-footer">
+          <div className="rd-skeleton rd-skeleton-chip" />
+          <div className="rd-skeleton rd-skeleton-btn" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DocCard({ doc, index, t, categoryLabel, onOpen }) {
+  const Icon = ICON_MAP[doc.category] || MdDescription;
+  const c    = COLOR_MAP[doc.category] || COLOR_MAP["Legal"];
+
+  const formatDate = (dateStr) => {
+    if (!dateStr) return "";
+    return new Date(dateStr).toLocaleDateString("en-US", { month: "short", year: "numeric" });
+  };
+
+  const fileUrl = doc.file_url?.startsWith("http")
+    ? doc.file_url
+    : `${BASE_URL}/${doc.file_url}`;
+
+  return (
+    <div className="rd-doc-card" style={{ animationDelay: `${index * 60}ms` }}>
+      <div className={`rd-card-accent ${c.glow}`} />
+      <div className="rd-card-inner">
+
+        <div className="rd-card-top">
+          <div className={`rd-icon-wrap ${c.icon}`}>
+            <Icon size={22} />
+          </div>
+          <div className="rd-card-meta">
+            <span className={`rd-category-badge ${c.badge}`}>{categoryLabel(doc.category)}</span>
+            <span className="rd-date-chip">{formatDate(doc.created_at)}</span>
+          </div>
+        </div>
+
+        <div className="rd-card-body">
+          <h3 className="rd-doc-title">{doc.title}</h3>
+          <p className="rd-doc-desc">{doc.description || `${categoryLabel(doc.category)} ${t("docDocument")}`}</p>
+        </div>
+
+        <div className="rd-card-footer">
+          <span className="rd-size-chip">
+            <MdDescription size={12} />
+            {doc.file_size_formatted || "—"}
+          </span>
+          <div className="rd-actions">
+            <button
+              type="button"
+              onClick={() => onOpen(doc)}
+              className="rd-btn rd-btn-view"
+              title={t("docView")}
+            >
+              <MdVisibility size={15} />
+              <span>{t("docView")}</span>
+            </button>
+            <button
+              type="button"
+              className="rd-btn rd-btn-download"
+              title={t("docDownload")}
+              onClick={async () => {
+                try {
+                  const res  = await fetch(fileUrl);
+                  const blob = await res.blob();
+                  const url  = window.URL.createObjectURL(blob);
+                  const a    = document.createElement("a");
+                  a.href     = url;
+                  a.download = doc.file_name || doc.title;
+                  document.body.appendChild(a);
+                  a.click();
+                  a.remove();
+                  window.URL.revokeObjectURL(url);
+                } catch { /* silent fail */ }
+              }}
+            >
+              <MdDownload size={15} />
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  );
+}
+
 /* ═══════════════════════════════════════════
    Main
 ═══════════════════════════════════════════ */

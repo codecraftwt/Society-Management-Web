@@ -37,6 +37,16 @@ function useDebounce(value, delay = 400) {
   return d;
 }
 
+function Spinner({ small = false, size }) {
+  const s = size ?? (small ? 13 : 20);
+  return (
+    <svg style={{ width: s, height: s, flexShrink: 0 }} className="animate-spin" viewBox="0 0 24 24" fill="none">
+      <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" className="opacity-25" />
+      <path fill="currentColor" className="opacity-75" d="M4 12a8 8 0 018-8v8z" />
+    </svg>
+  );
+}
+
 const EMPTY_COUNTS = { EXPECTED: 0, AT_GATE: 0, COLLECTED: 0, CANCELLED: 0, ALL: 0 };
 
 export default function GuardCollection() {
@@ -482,14 +492,14 @@ const [totalPages, setTotalPages] = useState(1);
                       <div className="pt-2 pb-1">
                         <div className="flex items-center justify-between relative px-2">
                           {/* Background Connector Line */}
-                          <div className="absolute left-6 right-6 top-[11px] h-[3px] bg-glass-border rounded-full z-0 overflow-hidden">
+                          <div className="absolute left-6 right-6 top-2.75 h-0.75 bg-glass-border rounded-full z-0 overflow-hidden">
                             <div
                               className={`h-full transition-all duration-500 rounded-full ${
                                 progressStep === 1
-                                  ? "w-0 bg-gradient-to-r from-amber-400 to-amber-500"
+                                  ? "w-0 bg-linear-to-r from-amber-400 to-amber-500"
                                   : progressStep === 2
-                                  ? "w-1/2 bg-gradient-to-r from-amber-400 via-cyan-400 to-blue-500 shadow-sm shadow-cyan-400/50"
-                                  : "w-full bg-gradient-to-r from-amber-400 via-cyan-400 to-emerald-500 shadow-sm shadow-emerald-400/50"
+                                  ? "w-1/2 bg-linear-to-r from-amber-400 via-cyan-400 to-blue-500 shadow-sm shadow-cyan-400/50"
+                                  : "w-full bg-linear-to-r from-amber-400 via-cyan-400 to-emerald-500 shadow-sm shadow-emerald-400/50"
                               }`}
                             />
                           </div>
@@ -554,7 +564,7 @@ const [totalPages, setTotalPages] = useState(1);
                       <button
                         onClick={() => markArrived(p.id)}
                         disabled={processingId === p.id || actionTimeoutRef.current[p.id]}
-                        className="w-full justify-center py-2.5 text-xs font-semibold rounded-xl flex items-center gap-2 shadow-sm bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white border-none transition-all shadow-amber-500/10 active:scale-[0.99]"
+                        className="w-full justify-center py-2.5 text-xs font-semibold rounded-xl flex items-center gap-2 shadow-sm bg-linear-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white border-none transition-all shadow-amber-500/10 active:scale-[0.99]"
                       >
                         {processingId === p.id ? (
                           <><Spinner size={14} /> <span>Marking Arrived...</span></>
@@ -570,7 +580,7 @@ const [totalPages, setTotalPages] = useState(1);
                           setCollectModalParcel(p);
                           setModalOtp("");
                         }}
-                        className="w-full justify-center py-2.5 text-xs font-semibold rounded-xl flex items-center gap-2 shadow-sm bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white border-none transition-all shadow-cyan-500/20 active:scale-[0.99]"
+                        className="w-full justify-center py-2.5 text-xs font-semibold rounded-xl flex items-center gap-2 shadow-sm bg-linear-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white border-none transition-all shadow-cyan-500/20 active:scale-[0.99]"
                       >
                         <MdVerified size={16} />
                         <span>{t("gcVerifyCollect") || "Verify Resident OTP & Collect"}</span>
@@ -640,13 +650,13 @@ const [totalPages, setTotalPages] = useState(1);
             className="space-y-4 pt-1"
           >
             {/* ── Holographic Handover Ticket / Pass ── */}
-            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-card-inner-bg via-card-inner-bg/90 to-card-inner-bg/60 border border-glass-border p-4 shadow-lg backdrop-blur-md">
+            <div className="relative overflow-hidden rounded-2xl bg-linear-to-br from-card-inner-bg via-card-inner-bg/90 to-card-inner-bg/60 border border-glass-border p-4 shadow-lg backdrop-blur-md">
               {/* Subtle top ambient glow */}
               <div className="absolute -top-10 left-1/2 -translate-x-1/2 w-48 h-10 bg-cyan-500/20 blur-xl pointer-events-none rounded-full" />
 
               <div className="flex items-center justify-between gap-3 pb-3 border-b border-glass-border/40">
                 <div className="flex items-center gap-2.5 min-w-0">
-                  <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-cyan-500/20 to-blue-500/20 border border-cyan-500/30 text-cyan-400 flex items-center justify-center shrink-0 shadow-sm">
+                  <div className="w-9 h-9 rounded-xl bg-linear-to-tr from-cyan-500/20 to-blue-500/20 border border-cyan-500/30 text-cyan-400 flex items-center justify-center shrink-0 shadow-sm">
                     <MdLocalShipping size={19} />
                   </div>
                   <div className="min-w-0">
@@ -710,7 +720,7 @@ const [totalPages, setTotalPages] = useState(1);
 
               {/* 4 Segmented Display Pods Container with Click-to-Focus */}
               <div
-                className="relative max-w-[300px] mx-auto py-1 cursor-text select-none"
+                className="relative max-w-75 mx-auto py-1 cursor-text select-none"
                 onClick={() => otpInputRef.current?.focus()}
               >
                 <div className="flex items-center justify-center gap-2.5 sm:gap-3 pointer-events-none">
@@ -798,7 +808,7 @@ const [totalPages, setTotalPages] = useState(1);
               <button
                 type="submit"
                 disabled={Boolean(collectingId) || modalOtp.length !== 4}
-                className="flex-2 justify-center py-3 text-xs font-bold disabled:opacity-40 disabled:cursor-not-allowed bg-gradient-to-r from-cyan-600 via-blue-600 to-indigo-600 hover:from-cyan-500 hover:via-blue-500 hover:to-indigo-500 text-white border-none shadow-lg shadow-cyan-600/25 flex items-center gap-2 rounded-xl transition-all active:scale-[0.99] cursor-pointer"
+                className="flex-2 justify-center py-3 text-xs font-bold disabled:opacity-40 disabled:cursor-not-allowed bg-linear-to-r from-cyan-600 via-blue-600 to-indigo-600 hover:from-cyan-500 hover:via-blue-500 hover:to-indigo-500 text-white border-none shadow-lg shadow-cyan-600/25 flex items-center gap-2 rounded-xl transition-all active:scale-[0.99] cursor-pointer"
               >
                 {collectingId ? (
                   <>

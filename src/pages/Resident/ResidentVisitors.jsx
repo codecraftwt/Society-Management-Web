@@ -15,6 +15,94 @@ import GlobalBadge from "../../components/common/GlobalBadge";
 
 import Pagination from "../../components/common/Pagination";
 
+function useDebounce(value, delay = 500) {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    const t = setTimeout(() => setDebounced(value), delay);
+    return () => clearTimeout(t);
+  }, [value, delay]);
+  return debounced;
+}
+
+function Spinner({ small = false, size }) {
+  const s = size ?? (small ? 13 : 20);
+  return (
+    <svg style={{ width: s, height: s, flexShrink: 0 }} className="animate-spin" viewBox="0 0 24 24" fill="none">
+      <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" className="opacity-25" />
+      <path fill="currentColor" className="opacity-75" d="M4 12a8 8 0 018-8v8z" />
+    </svg>
+  );
+}
+
+const formatDate = (d) => {
+  if (!d) return "—";
+  return new Date(d).toLocaleString("en-IN", {
+    day: "2-digit", month: "short", year: "numeric",
+    hour: "2-digit", minute: "2-digit",
+  });
+};
+
+const timeAgoRaw = (d) => {
+  if (!d) return null;
+  const diff = Date.now() - new Date(d).getTime();
+  const m   = Math.floor(diff / 60000);
+  const h   = Math.floor(diff / 3600000);
+  const day = Math.floor(diff / 86400000);
+  if (m < 1)   return { key: "timeJustNow", val: 0   };
+  if (m < 60)  return { key: "timeMinsAgo", val: m   };
+  if (h < 24)  return { key: "timeHoursAgo",val: h   };
+  if (day < 7) return { key: "timeDaysAgo", val: day };
+  return { key: "formatted", val: d };
+};
+
+const calcDuration = (entry, exit) => {
+  if (!entry || !exit) return null;
+  const diff = new Date(exit) - new Date(entry);
+  const m = Math.floor(diff / 60000);
+  const h = Math.floor(m / 60);
+  if (h > 0) return `${h}h ${m % 60}m`;
+  return `${m}m`;
+};
+
+const getPurposeConfig = (purpose) => {
+  const p = (purpose || "GUEST").toUpperCase();
+  switch (p) {
+    case "DELIVERY":
+      return { label: "Delivery", icon: MdLocalShipping, color: "text-amber-400", bg: "bg-amber-500/15 border-amber-500/30", dot: "bg-amber-400" };
+    case "CAB":
+      return { label: "Cab", icon: MdLocalTaxi, color: "text-emerald-400", bg: "bg-emerald-500/15 border-emerald-500/30", dot: "bg-emerald-400" };
+    case "SERVICE":
+      return { label: "Service", icon: MdBuild, color: "text-purple-400", bg: "bg-purple-500/15 border-purple-500/30", dot: "bg-purple-400" };
+    default:
+      return { label: "Guest", icon: MdPerson, color: "text-blue-400", bg: "bg-blue-500/15 border-blue-500/30", dot: "bg-blue-400" };
+  }
+};
+
+function Avatar({ name = "", size = "w-8 h-8", textSize = "text-xs" }) {
+  const initials = name.trim().split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase() || "?";
+  const hue = [...name].reduce((acc, c) => acc + c.charCodeAt(0), 0) % 360;
+  return (
+    <div
+      className={`${size} rounded-full flex items-center justify-center ${textSize} font-bold text-white shrink-0`}
+      style={{ background: `hsl(${hue},50%,36%)` }}
+    >
+      {initials}
+    </div>
+  );
+}
+
+function StatusBadge({ exitTime, t }) {
+  return exitTime ? (
+    <GlobalBadge variant="danger">
+      {t("rvLeft") || "Left"}
+    </GlobalBadge>
+  ) : (
+    <GlobalBadge variant="success">
+      {t("rvInside") || "Inside"}
+    </GlobalBadge>
+  );
+}
+
 /* ═══════════════════════════════════════════
    Main
 ═══════════════════════════════════════════ */

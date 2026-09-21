@@ -4,7 +4,6 @@ import API from "../../services/api";
 import { useLang } from "../../context/LanguageContext";
 import {
   MdDashboard,
-  MdWarning,
   MdSend,
   MdCampaign,
   MdCleaningServices,
@@ -14,7 +13,6 @@ import {
   MdInventory2,
   MdApartment,
   MdCheckCircle,
-  MdClose,
   MdChevronRight,
   MdArrowForward,
   MdPerson,
@@ -74,8 +72,6 @@ export default function ResidentProfile() {
   const [profile, setProfile] = useState(null);
   const [flats, setFlats] = useState([]);
   const [selectedFlatId, setSelectedFlatId] = useState(null);
-  const [activeAlerts, setActiveAlerts] = useState([]);
-  const [dismissedAlerts, setDismissedAlerts] = useState([]);
   const [pendingBills, setPendingBills] = useState([]);
   const [latestNotices, setLatestNotices] = useState([]);
   const [visitors, setVisitors] = useState([]);
@@ -106,7 +102,6 @@ export default function ResidentProfile() {
       const [
         profileRes,
         flatsRes,
-        alertsRes,
         billsRes,
         noticesRes,
         visitorsRes,
@@ -115,7 +110,6 @@ export default function ResidentProfile() {
       ] = await Promise.allSettled([
         API.get("/users/me"),
         API.get("/users/get-flat"),
-        API.get("/emergency/active"),
         API.get("/bills/resident?status=PENDING&limit=5"),
         API.get("/notices?limit=5"),
         API.get("/visitors/resident?limit=6"),
@@ -125,17 +119,12 @@ export default function ResidentProfile() {
 
       if (profileRes.status === "fulfilled") setProfile(profileRes.value.data);
 
-      let userFlats = [];
       if (flatsRes.status === "fulfilled") {
-        userFlats = Array.isArray(flatsRes.value.data) ? flatsRes.value.data : [];
+        const userFlats = Array.isArray(flatsRes.value.data) ? flatsRes.value.data : [];
         setFlats(userFlats);
         if (userFlats.length > 0 && !selectedFlatId) {
           setSelectedFlatId(userFlats[0].flat_id || userFlats[0].id);
         }
-      }
-
-      if (alertsRes.status === "fulfilled") {
-        setActiveAlerts(Array.isArray(alertsRes.value.data) ? alertsRes.value.data : []);
       }
 
       if (billsRes.status === "fulfilled") {
@@ -316,63 +305,12 @@ export default function ResidentProfile() {
 
   if (loading) return <DashboardSkeleton />;
 
-  const visibleAlerts = activeAlerts.filter((a) => !dismissedAlerts.includes(a.id));
   const societyName = profile?.Society?.name || currentFlat?.society_name || "Society Living Hub";
 
   return (
     <div className="ge-root rp-dash space-y-6 animate-fadeIn pb-14">
-      {/* ── 1. ACTIVE LIVE EMERGENCY BANNER ── */}
-      {visibleAlerts.length > 0 && (
-        <div className="space-y-2.5">
-          {visibleAlerts.map((alert) => (
-            <div
-              key={alert.id}
-              onClick={() => navigate(`${base}/emergency`)}
-              className="group relative overflow-hidden rounded-2xl p-4 sm:p-5 border border-red-500/40 bg-gradient-to-r from-red-600/20 via-rose-600/15 to-transparent shadow-xl shadow-red-600/15 cursor-pointer transition-all hover:border-red-400 hover:shadow-red-600/25 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
-            >
-              <div className="flex items-start sm:items-center gap-3.5 min-w-0">
-                <div className="w-11 h-11 rounded-2xl bg-red-600 text-white flex items-center justify-center shrink-0 shadow-lg shadow-red-600/40 animate-pulse">
-                  <MdWarning size={24} />
-                </div>
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-xs font-black uppercase tracking-wider text-red-400">
-                      🚨 {alert.type} Emergency Broadcast
-                    </span>
-                    <span className="px-2 py-0.5 rounded-full text-[9.5px] font-black uppercase bg-red-500 text-white animate-pulse">
-                      Live
-                    </span>
-                  </div>
-                  <p className="text-xs sm:text-sm font-bold text-primary mt-0.5 truncate max-w-2xl">
-                    {alert.message || "Active emergency reported within the society. Security and admins are on standby."}
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2.5 self-end sm:self-center shrink-0">
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setDismissedAlerts((prev) => [...prev, alert.id]);
-                  }}
-                  className="p-1.5 rounded-lg text-secondary hover:text-primary hover:bg-white/10 transition text-xs"
-                  title="Dismiss banner"
-                >
-                  <MdClose size={16} />
-                </button>
-                <div className="flex items-center gap-1 text-xs font-black text-red-400 group-hover:translate-x-1 transition-transform">
-                  <span>View Details</span>
-                  <MdChevronRight size={18} />
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* ── 2. HERO GREETING & PROPERTY IDENTITY BANNER ── */}
-      <div className="relative overflow-hidden rounded-3xl border border-glass-border bg-gradient-to-br from-card-inner-bg via-card to-card p-6 sm:p-7 shadow-sm">
+      {/* ── HERO GREETING & PROPERTY IDENTITY BANNER ── */}
+      <div className="relative overflow-hidden rounded-3xl border border-glass-border bg-linear-to-br from-card-inner-bg via-card to-card p-6 sm:p-7 shadow-sm">
         {/* Ambient Gradient Glow Blobs */}
         <div className="absolute -top-14 -right-14 w-56 h-56 rounded-full bg-accent/15 blur-3xl pointer-events-none" />
         <div className="absolute -bottom-14 -left-14 w-56 h-56 rounded-full bg-cyan-500/10 blur-3xl pointer-events-none" />
@@ -503,7 +441,7 @@ export default function ResidentProfile() {
               <div
                 key={card.id}
                 onClick={card.onClick}
-                className={`group relative overflow-hidden rounded-3xl p-5 sm:p-6 border ${card.borderColor} bg-gradient-to-br ${card.glowColor} to-card flex flex-col justify-between gap-5 transition-all duration-300 hover:-translate-y-2 hover:shadow-xl cursor-pointer`}
+                className={`group relative overflow-hidden rounded-3xl p-5 sm:p-6 border ${card.borderColor} bg-linear-to-br ${card.glowColor} to-card flex flex-col justify-between gap-5 transition-all duration-300 hover:-translate-y-2 hover:shadow-xl cursor-pointer`}
                 style={{ background: "var(--card-bg)" }}
               >
                 {/* Top Row: Floating 3D Icon Pod + Status Badge */}
@@ -576,7 +514,7 @@ export default function ResidentProfile() {
             <button
               type="button"
               onClick={() => navigate(`${base}/my-household`)}
-              className="py-2.5 px-5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 shadow-md shadow-teal-600/25 transition active:scale-95 cursor-pointer shrink-0 flex items-center gap-2"
+              className="py-2.5 px-5 rounded-xl text-xs font-bold text-white bg-linear-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 shadow-md shadow-teal-600/25 transition active:scale-95 cursor-pointer shrink-0 flex items-center gap-2"
             >
               <MdAdd size={17} />
               <span>Add Staff Member</span>
@@ -904,7 +842,7 @@ export default function ResidentProfile() {
               <button
                 type="submit"
                 disabled={preApprovalModal.submitting}
-                className="flex-2 py-2.5 px-4 rounded-xl font-bold text-xs sm:text-sm text-white bg-gradient-to-r from-accent via-purple-600 to-indigo-600 hover:from-accent-light hover:to-indigo-500 shadow-md shadow-accent/25 transition active:scale-95 disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2"
+                className="flex-2 py-2.5 px-4 rounded-xl font-bold text-xs sm:text-sm text-white bg-linear-to-r from-accent via-purple-600 to-indigo-600 hover:from-accent-light hover:to-indigo-500 shadow-md shadow-accent/25 transition active:scale-95 disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2"
               >
                 {preApprovalModal.submitting ? "Approving..." : `✓ Authorize ${preApprovalModal.purpose} Entry`}
               </button>
