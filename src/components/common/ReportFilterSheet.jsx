@@ -1,8 +1,10 @@
 
 
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { MdFilterList, MdClose } from "react-icons/md";
 import Select from "./Select";
+import ConfirmDiscard from "./ConfirmDiscard";
 
 export default function ReportFilterSheet({
   /* visibility */
@@ -29,6 +31,16 @@ export default function ReportFilterSheet({
     clearFilters = "Clear filters",
   } = labels;
 
+  /* Unsaved-changes guard */
+  const [confirmDiscard, setConfirmDiscard] = useState(false);
+  const dirtyRef = useRef(false);
+  useEffect(() => { if (show) dirtyRef.current = false; }, [show]);
+  const markDirty = () => { dirtyRef.current = true; };
+  const requestClose = () => {
+    if (dirtyRef.current) setConfirmDiscard(true);
+    else onClose();
+  };
+
   const formBody = (
     <div style={{ padding: "16px 18px", display: "flex", flexDirection: "column", gap: 14 }}>
 
@@ -44,7 +56,7 @@ export default function ReportFilterSheet({
         <Select
           className="input"
           value={statusValue}
-          onChange={e => onStatusChange(e.target.value)}
+          onChange={e => { markDirty(); onStatusChange(e.target.value); }}
           style={{ width: "100%", boxSizing: "border-box" }}
         >
           <option value="">{allStatus}</option>
@@ -95,6 +107,7 @@ export default function ReportFilterSheet({
                 }
                 onFromDateChange(start);
                 onToDateChange(end);
+                markDirty();
               }}
               style={{
                 padding: "4px 10px",
@@ -130,7 +143,7 @@ export default function ReportFilterSheet({
             </label>
             <input
               type="date" className="input" value={val}
-              onChange={e => onChange(e.target.value)}
+              onChange={e => { markDirty(); onChange(e.target.value); }}
               style={{ width: "100%", boxSizing: "border-box" }}
             />
           </div>
@@ -170,6 +183,7 @@ export default function ReportFilterSheet({
   if (!show) return null;
 
   return createPortal(
+    <>
     <div style={{
       position: "fixed", inset: 0, zIndex: 9999,
       display: "flex", flexDirection: "column",
@@ -186,7 +200,7 @@ export default function ReportFilterSheet({
         .rfs-sheet-desktop { animation: rfsScaleIn 0.2s cubic-bezier(0.16,1,0.3,1) forwards; }
       `}</style>
 
-      <div className="rfs-backdrop" onClick={onClose} style={{
+      <div className="rfs-backdrop" onClick={requestClose} style={{
         position: "absolute", inset: 0,
         background: "rgba(0,0,0,0.6)", backdropFilter: "blur(5px)",
       }} />
@@ -228,7 +242,7 @@ export default function ReportFilterSheet({
               <MdClose size={13} /> {clearBtn}
             </button>
           )}
-          <button onClick={onClose} style={{
+          <button onClick={requestClose} style={{
             width: 28, height: 28, borderRadius: 8, flexShrink: 0,
             background: "var(--card-inner-bg, rgba(255,255,255,0.06))",
             border: "1px solid var(--glass-border)",
@@ -241,7 +255,13 @@ export default function ReportFilterSheet({
 
         {formBody}
       </div>
-    </div>,
+      </div>
+      <ConfirmDiscard
+        open={confirmDiscard}
+        onKeep={() => setConfirmDiscard(false)}
+        onDiscard={() => { setConfirmDiscard(false); onClose(); }}
+      />
+    </>,
     document.body
   );
 }

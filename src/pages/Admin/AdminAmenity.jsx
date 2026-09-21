@@ -7,6 +7,8 @@ import { AuthContext } from "../../context/AuthContext";
 import { isCommitteeMember, hasPermission } from "../../utils/permissions";
 import { getTitleError, getPositiveAmountError, getNumberError } from "../../utils/validators";
 import { useCustomAlert } from "../../context/CustomAlertContext";
+import useUnsavedDirty from "../../hooks/useUnsavedDirty";
+import ConfirmDiscard from "../../components/common/ConfirmDiscard";
 import {
   MdAdd, MdClose, MdOutlineInbox,
   MdCheckCircle, MdCancel, MdToggleOn, MdToggleOff,
@@ -239,6 +241,14 @@ export default function AdminAmenity() {
   const [groupedBookings, setGroupedBookings] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [editingAmenity, setEditingAmenity] = useState(null);
+
+  /* Unsaved-changes guard */
+  const [confirmDiscard, setConfirmDiscard] = useState(false);
+  const dirtyRef = useUnsavedDirty(showForm && canEdit);
+  const requestCloseForm = () => {
+    if (dirtyRef.current) setConfirmDiscard(true);
+    else { setShowForm(false); setEditingAmenity(null); }
+  };
   const [activeTab, setActiveTab] = useState("AMENITIES");
   const [searchAmenity, setSearchAmenity] = useState("");
   const [isAmenSearchOpen, setIsAmenSearchOpen] = useState(false);
@@ -875,7 +885,7 @@ export default function AdminAmenity() {
       {/* ════════════ FORM MODAL PORTAL ════════════ */}
       {canEdit && showForm && createPortal(
         <div
-          onClick={(e) => { if (e.target === e.currentTarget) { setShowForm(false); setEditingAmenity(null); } }}
+          onClick={requestCloseForm}
           style={{
             position: "fixed", inset: 0, zIndex: 1100,
             background: "rgba(0,0,0,0.6)",
@@ -909,7 +919,7 @@ export default function AdminAmenity() {
                 </div>
               </div>
               <button
-                onClick={() => { setShowForm(false); setEditingAmenity(null); }}
+                onClick={requestCloseForm}
                 onMouseEnter={(e) => { e.currentTarget.style.background = "var(--accent-soft)"; e.currentTarget.style.color = "var(--accent)"; }}
                 onMouseLeave={(e) => { e.currentTarget.style.background = "var(--card-inner-bg)"; e.currentTarget.style.color = "var(--text-secondary)"; }}
                 style={{ width: 32, height: 32, borderRadius: 8, border: "1px solid var(--glass-border)", background: "var(--card-inner-bg)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-secondary)", transition: "all 0.15s", flexShrink: 0 }}
@@ -934,7 +944,7 @@ export default function AdminAmenity() {
                 </>}
                 {/* Requires Approval toggle */}
                 <div
-                  onClick={() => setForm({ ...form, requires_approval: !form.requires_approval })}
+                  onClick={() => { setForm({ ...form, requires_approval: !form.requires_approval }); dirtyRef.current = true; }}
                   style={{ display: "flex", alignItems: "center", gap: 12, minHeight: 48, padding: "0 14px", borderRadius: 12, cursor: "pointer", background: "var(--card-inner-bg)", border: "1.5px solid var(--glass-border)", gridColumn: isMobile ? "1" : "span 2" }}
                 >
                   {/* toggle track */}
@@ -949,7 +959,7 @@ export default function AdminAmenity() {
               </div>
 
               <div style={{ marginTop: 20, paddingTop: 16, borderTop: "1px solid var(--glass-border)", display: "flex", gap: 10, flexWrap: "wrap", justifyContent: "flex-end" }}>
-                <button onClick={() => { setShowForm(false); setEditingAmenity(null); }} className="btn-muted" style={{ borderRadius: 12, padding: "10px 18px", fontSize: 13 }}>{t("cancel")}</button>
+                <button onClick={requestCloseForm} className="btn-muted" style={{ borderRadius: 12, padding: "10px 18px", fontSize: 13 }}>{t("cancel")}</button>
                 <button onClick={submitAmenity} disabled={submitting} className="btn-primary" style={{ borderRadius: 12, padding: "10px 22px", fontSize: 13, fontWeight: 600, display: "flex", alignItems: "center", gap: 7 }}>
                   {submitting ? <Spinner cls="h-3 w-3" /> : <MdAdd size={16} />} {editingAmenity ? t("save") : t("amenCreateBtn")}
                 </button>
@@ -959,6 +969,13 @@ export default function AdminAmenity() {
         </div>,
         document.body
       )}
+
+      {/* Unsaved-changes discard confirm */}
+      <ConfirmDiscard
+        open={confirmDiscard}
+        onKeep={() => setConfirmDiscard(false)}
+        onDiscard={() => { setConfirmDiscard(false); setShowForm(false); setEditingAmenity(null); }}
+      />
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useMemo } from "react";
+import React, { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import API from "../../../services/api";
@@ -12,6 +12,7 @@ import {
   MdArrowBack, MdChevronLeft, MdChevronRight, MdCalendarToday,
 } from "react-icons/md";
 import Select from "../../../components/common/Select";
+import ConfirmDiscard from "../../../components/common/ConfirmDiscard";
 
 function useIsMobile() {
   const [m, setM] = useState(() => typeof window !== "undefined" && window.innerWidth < 768);
@@ -62,13 +63,23 @@ function StatusBadge({ status, t }) {
 const formatDate = d => { if (!d) return "—"; const dt = new Date(d); return isNaN(dt) ? "—" : dt.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }); };
 
 function FilterSheet({ show, onClose, isMobile, status, setStatus, fromDate, setFromDate, toDate, setToDate, onApply, onClear, applied, labels }) {
+  /* Unsaved-changes guard */
+  const [confirmDiscard, setConfirmDiscard] = useState(false);
+  const dirtyRef = useRef(false);
+  useEffect(() => { dirtyRef.current = false; }, [show]);
+  const markDirty = () => { dirtyRef.current = true; };
+  const requestClose = () => {
+    if (dirtyRef.current) setConfirmDiscard(true);
+    else onClose();
+  };
+
   if (!show) return null;
 
   const formBody = (
     <div style={{ padding: "18px 20px", display: "flex", flexDirection: "column", gap: 14 }}>
       <div>
         <label style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--text-secondary)", display: "block", marginBottom: 6 }}>{labels.statusLabel}</label>
-        <Select className="input" value={status} onChange={e => setStatus(e.target.value)} style={{ width: "100%", boxSizing: "border-box" }}>
+        <Select className="input" value={status} onChange={e => { markDirty(); setStatus(e.target.value); }} style={{ width: "100%", boxSizing: "border-box" }}>
           <option value="">{labels.allStatus}</option>
           <option value="OPEN">{labels.open}</option>
           <option value="IN_PROGRESS">{labels.inProgress}</option>
@@ -130,7 +141,7 @@ function FilterSheet({ show, onClose, isMobile, status, setStatus, fromDate, set
         {[{ label: labels.fromDate, val: fromDate, set: setFromDate }, { label: labels.toDate, val: toDate, set: setToDate }].map(({ label, val, set }) => (
           <div key={label}>
             <label style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--text-secondary)", display: "block", marginBottom: 6 }}>{label}</label>
-            <input type="date" className="input" value={val} onChange={e => set(e.target.value)} style={{ width: "100%", boxSizing: "border-box" }} />
+            <input type="date" className="input" value={val} onChange={e => { markDirty(); set(e.target.value); }} style={{ width: "100%", boxSizing: "border-box" }} />
           </div>
         ))}
       </div>
@@ -143,6 +154,7 @@ function FilterSheet({ show, onClose, isMobile, status, setStatus, fromDate, set
   );
 
   return createPortal(
+    <>
     <div
       style={{
         position: "fixed",
@@ -155,7 +167,7 @@ function FilterSheet({ show, onClose, isMobile, status, setStatus, fromDate, set
         justifyContent: "center",
         padding: isMobile ? 0 : 16,
       }}
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      onClick={(e) => { if (e.target === e.currentTarget) requestClose(); }}
     >
       <div
         className="animate-scaleIn"
@@ -176,12 +188,18 @@ function FilterSheet({ show, onClose, isMobile, status, setStatus, fromDate, set
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             {applied && <button onClick={() => { onClear(); onClose(); }} style={{ fontSize: 11, fontWeight: 700, color: "var(--accent)", background: "none", border: "none", cursor: "pointer" }}>{labels.clear}</button>}
-            <button onClick={onClose} style={{ width: 28, height: 28, borderRadius: 8, background: "var(--card-inner-bg)", border: "1px solid var(--glass-border)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "var(--text-secondary)" }}>✕</button>
+            <button onClick={requestClose} style={{ width: 28, height: 28, borderRadius: 8, background: "var(--card-inner-bg)", border: "1px solid var(--glass-border)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "var(--text-secondary)" }}>✕</button>
           </div>
         </div>
         {formBody}
       </div>
-    </div>,
+      </div>
+      <ConfirmDiscard
+        open={confirmDiscard}
+        onKeep={() => setConfirmDiscard(false)}
+        onDiscard={() => { setConfirmDiscard(false); onClose(); }}
+      />
+    </>,
     document.body
   );
 }

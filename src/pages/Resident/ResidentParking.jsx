@@ -7,10 +7,14 @@ import {
   MdAdd, MdOutlineInbox, MdSearch,
   MdDirectionsCar, MdTwoWheeler,
   MdChevronLeft, MdChevronRight, MdLocalParking,
+  MdCheckCircle, MdInfo, MdClose, MdSend,
 } from "react-icons/md";
 import Select from "../../components/common/Select";
 import Modal from "../../components/Modal";
-import { getTitleError, getVehicleNumberError, getRequiredDateError } from "../../utils/validators";
+import FieldError from "../../components/common/FieldError";
+import ConfirmDiscard from "../../components/common/ConfirmDiscard";
+import useUnsavedDirty from "../../hooks/useUnsavedDirty";
+import { getTitleError, getVehicleNumberError, getRequiredDateError, getSelectError } from "../../utils/validators";
 
 /* ── Debounce hook — keeps input focused ── */
 function useDebounce(value, delay = 500) {
@@ -91,15 +95,28 @@ export default function ResidentParking() {
   const [showForm,     setShowForm]     = useState(false);
   const [hasFlat,      setHasFlat]      = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
   const [submitLoading,setSubmitLoading]= useState(false);
+
+  // self vs guest creation (mirrors mobile AddVehicle screen)
+  const [mode, setMode] = useState("guest"); // "self" | "guest"
 
   const [form, setForm] = useState({
     guest_name:       "",
+    vehicle_name:     "",
     vehicle_number:   "",
     vehicle_type:     "CAR",
     expected_arrival: "",
     duration_hours:   24,
+    flat_id:          "",
   });
+
+  // self-mode parking context (allocated slots + flats from /parking-slots/my-slots)
+  const [allocatedSlots, setAllocatedSlots] = useState([]);
+  const [myFlats, setMyFlats] = useState([]);
+  const [slotsLoading,   setSlotsLoading]   = useState(true);
+  const [registeredVehicles, setRegisteredVehicles] = useState([]);
+  const [selectedSlotId, setSelectedSlotId] = useState(null); // null = request new extra slot
 
   // ── Requests data ── ✅ FIX: Added COMPLETED to counts
   const [requests,   setRequests]   = useState([]);
@@ -129,6 +146,42 @@ useEffect(() => {
     .catch(() => setHasFlat(false));
 }, []);
 
+  /* ── Load self-mode parking context (allocated slots, flats, vehicles) ── */
+  const loadParkingContext = useCallback(async () => {
+    try {
+      const [slotsRes, vehsRes] = await Promise.all([
+        API.get("/parking-slots/my-slots"),
+        API.get("/vehicles/my"),
+      ]);
+      const slots = slotsRes.data?.slots || [];
+      const flats = slotsRes.data?.flats || [];
+      setAllocatedSlots(slots);
+      setMyFlats(flats);
+      setRegisteredVehicles(vehsRes.data || []);
+      if (flats.length === 1) {
+        setForm((f) => ({ ...f, flat_id: String(flats[0].id) }));
+      }
+    } catch (e) { console.error(e); }
+    finally { setSlotsLoading(false); }
+  }, []);
+
+  // Auto-dismiss success banner
+  useEffect(() => {
+    if (!successMessage) return;
+    const timer = setTimeout(() => setSuccessMessage(""), 4500);
+    return () => clearTimeout(timer);
+  }, [successMessage]);
+
+  /* ── Self-mode derived slot state ── */
+  const availableSlots = allocatedSlots.filter((slot) => {
+    if (String(slot.flat_id) !== String(form.flat_id)) return false;
+    if (slot.vehicle_type !== form.vehicle_type) return false;
+    return true;
+  });
+  const isSlotOccupied = (slot) =>
+    registeredVehicles.some((v) => v.parking_slot_id === slot.id);
+  const hasAnyFreeSlot = availableSlots.some((s) => !isSlotOccupied(s));
+
   /* ── Fetch requests ── */
   const fetchData = useCallback(async (
     pageNum, currentFilter, currentSearch, isInitial = false
@@ -141,6 +194,7 @@ useEffect(() => {
         page:   pageNum,
         limit:  LIMIT,
         filter: currentFilter,
+        parking_type: "ALL",   // show guest (VISITOR) + resident extra-slot requests
         ...(currentSearch ? { search: currentSearch } : {}),
       });
 
@@ -162,7 +216,8 @@ useEffect(() => {
   // ── First load ──
   useEffect(() => {
     fetchData(1, "ALL", "", true);
-  }, [fetchData]);
+    loadParkingContext();
+  }, [fetchData, loadParkingContext]);
 
   // ── Re-fetch on search/filter change ──
   useEffect(() => {
@@ -175,15 +230,13 @@ useEffect(() => {
   const handlePageChange = (newPage) =>
     fetchData(newPage, filter, debouncedSearch);
 
-  /* ── Submit new request ── */
-  const handleSubmit = async (e) => {
+  /* ── Submit new guest parking request ── */
+  const handleGuestSubmit = async (e) => {
     e.preventDefault();
     setErrorMessage("");
 
-    if (form.guest_name.trim()) {
-      const guestErr = getTitleError(form.guest_name, "Guest name");
-      if (guestErr) { setErrorMessage(guestErr); return; }
-    }
+    const guestErr = getTitleError(form.guest_name, "Guest name");
+    if (guestErr) { setErrorMessage(guestErr); return; }
 
     const vehicleErr = getVehicleNumberError(form.vehicle_number, "Vehicle number");
     if (vehicleErr) { setErrorMessage(vehicleErr); return; }
@@ -191,12 +244,24 @@ useEffect(() => {
     const arrivalErr = getRequiredDateError(form.expected_arrival, "Arrival date");
     if (arrivalErr) { setErrorMessage(arrivalErr); return; }
 
+    if (myFlats.length > 1 && !form.flat_id) {
+      setErrorMessage("Please select which flat this guest belongs to.");
+      return;
+    }
+
     setSubmitLoading(true);
     try {
-      await API.post("/parking", form);
-      setForm({ guest_name: "", vehicle_number: "", vehicle_type: "CAR", expected_arrival: "", duration_hours: 24 });
+      await API.post("/parking", {
+        guest_name:        form.guest_name.trim(),
+        vehicle_number:    form.vehicle_number.toUpperCase(),
+        vehicle_type:      form.vehicle_type,
+        expected_arrival:  form.expected_arrival,
+        duration_hours:    Number(form.duration_hours) || 24,
+        flat_id:           form.flat_id ? Number(form.flat_id) : undefined,
+      });
+      resetForm();
+      setSuccessMessage(t("parkGuestSuccess") || "Guest parking requested successfully!");
       setShowForm(false);
-      // reload page 1
       fetchData(1, filter, debouncedSearch);
     } catch (err) {
       const message = err.response?.data?.message;
@@ -209,6 +274,80 @@ useEffect(() => {
     } finally {
       setSubmitLoading(false);
     }
+  };
+
+  /* ── Submit self vehicle + link/request slot (mirrors mobile `handleSelfSubmit`) ── */
+  const handleSelfSubmit = async (e) => {
+    e.preventDefault();
+    setErrorMessage("");
+
+    const nameErr = getTitleError(form.vehicle_name, "Vehicle name");
+    if (nameErr) { setErrorMessage(nameErr); return; }
+
+    const vehicleErr = getVehicleNumberError(form.vehicle_number, "Vehicle number");
+    if (vehicleErr) { setErrorMessage(vehicleErr); return; }
+
+    if (myFlats.length > 1 && !form.flat_id) {
+      setErrorMessage("Please select which flat this vehicle belongs to.");
+      return;
+    }
+
+    if (availableSlots.length > 0 && selectedSlotId === null && hasAnyFreeSlot) {
+      setErrorMessage("Please select a parking slot, or choose 'Request New Extra Slot' to ask the admin.");
+      return;
+    }
+
+    const slotIdToLink = selectedSlotId; // number → link now; null → admin assigns later
+
+    setSubmitLoading(true);
+    try {
+      const res = await API.post("/vehicles", {
+        vehicle_name:    form.vehicle_name.trim(),
+        vehicle_number:  form.vehicle_number.toUpperCase(),
+        vehicle_type:    form.vehicle_type,
+        flat_id:         form.flat_id ? Number(form.flat_id) : undefined,
+        parking_slot_id: slotIdToLink ?? undefined,
+      });
+
+      const linkedSlot = slotIdToLink !== null
+        ? availableSlots.find((s) => s.id === slotIdToLink)
+        : null;
+      let successMsg;
+      if (slotIdToLink !== null) {
+        successMsg = `Vehicle added and linked to slot ${linkedSlot?.slot_number ?? slotIdToLink}!`;
+      } else if (res.data?.free_slot) {
+        successMsg = `Vehicle added! Free slot ${res.data.free_slot} is available — select it to link.`;
+      } else if (res.data?.request_id) {
+        successMsg = "Vehicle added! A parking slot request has been sent to the admin.";
+      } else {
+        successMsg = "Vehicle added! Note: no slot request could be created — please contact admin.";
+      }
+      resetForm();
+      loadParkingContext();
+      setShowForm(false);
+      setSuccessMessage(successMsg);
+
+      fetchData(1, filter, debouncedSearch);
+    } catch (err) {
+      setErrorMessage(err?.response?.data?.message || "Failed to add vehicle. Please try again.");
+    } finally {
+      setSubmitLoading(false);
+    }
+  };
+
+  const resetForm = () => {
+    setForm({
+      guest_name:       "",
+      vehicle_name:     "",
+      vehicle_number:   "",
+      vehicle_type:     "CAR",
+      expected_arrival: "",
+      duration_hours:   24,
+      flat_id:          myFlats.length === 1 ? String(myFlats[0].id) : "",
+    });
+    setSelectedSlotId(null);
+    setErrorMessage("");
+    setSuccessMessage("");
   };
 
   /* ── Helpers ── ✅ FIX: Added COMPLETED status */
@@ -261,6 +400,16 @@ useEffect(() => {
         )}
       </div>
 
+      {/* ── SUCCESS TOAST (shown after form auto-closes) ── */}
+      {successMessage && (
+        <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-3 text-sm text-green-400 flex items-center justify-between">
+          <span className="flex items-center gap-2"><MdCheckCircle size={16} /> {successMessage}</span>
+          <button type="button" onClick={() => setSuccessMessage("")} className="ml-3 opacity-60 hover:opacity-100">
+            <MdClose size={16} />
+          </button>
+        </div>
+      )}
+
       {/* ── NO FLAT WARNING ── */}
       {!hasFlat && (
         <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4 text-sm text-yellow-400">
@@ -268,12 +417,12 @@ useEffect(() => {
         </div>
       )}
 
-      {/* ── REQUEST FORM MODAL ── */}
+      {/* ── REQUEST FORM MODAL (Self / Guest — mirrors mobile AddVehicle) ── */}
       <Modal
         isOpen={showForm && hasFlat}
-        onClose={() => { setShowForm(false); setErrorMessage(""); }}
-        title={t("parkFormTitle")}
-        icon={MdLocalParking}
+        onClose={() => { setShowForm(false); resetForm(); }}
+        title={mode === "self" ? t("parkSelfTitle") || "Add My Vehicle" : t("parkFormTitle")}
+        icon={mode === "self" ? MdDirectionsCar : MdLocalParking}
         size="md"
       >
         {errorMessage && (
@@ -284,19 +433,65 @@ useEffect(() => {
             </button>
           </div>
         )}
-        <form onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-[11px] font-bold uppercase tracking-wider text-secondary mb-1.5">
-              {t("parkGuestName") || "Guest Name"} <span className="text-red-400">*</span>
-            </label>
-            <input
-              className="input h-11 w-full"
-              placeholder="e.g. John Doe"
-              value={form.guest_name}
-              onChange={(e) => setForm({ ...form, guest_name: e.target.value })}
-              required
-            />
+        {successMessage && (
+          <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-3 text-sm text-green-400 flex items-center justify-between">
+            <span className="flex items-center gap-2"><MdCheckCircle size={16} /> {successMessage}</span>
+            <button type="button" onClick={() => setSuccessMessage("")} className="ml-3 opacity-60 hover:opacity-100">
+              <MdClose size={16} />
+            </button>
           </div>
+        )}
+
+        {/* Mode toggle — For Self / For Guest */}
+        <div className="flex rounded-xl bg-white/5 border border-white/8 p-1 mb-4">
+          <button
+            type="button"
+            onClick={() => { setMode("self"); setErrorMessage(""); }}
+            className={`flex-1 h-10 rounded-lg flex items-center justify-center gap-2 text-sm font-bold transition cursor-pointer ${
+              mode === "self" ? "bg-accent text-white" : "text-secondary hover:bg-white/5"
+            }`}
+          >
+            <MdDirectionsCar size={16} /> {t("parkModeSelf") || "For Self"}
+          </button>
+          <button
+            type="button"
+            onClick={() => { setMode("guest"); setErrorMessage(""); }}
+            className={`flex-1 h-10 rounded-lg flex items-center justify-center gap-2 text-sm font-bold transition cursor-pointer ${
+              mode === "guest" ? "bg-accent text-white" : "text-secondary hover:bg-white/5"
+            }`}
+          >
+            <MdLocalParking size={16} /> {t("parkModeGuest") || "For Guest"}
+          </button>
+        </div>
+
+        <form onSubmit={mode === "self" ? handleSelfSubmit : handleGuestSubmit} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {mode === "self" ? (
+            <div>
+              <label className="block text-[11px] font-bold uppercase tracking-wider text-secondary mb-1.5">
+                {t("parkSelfName") || "Vehicle Name"} <span className="text-red-400">*</span>
+              </label>
+              <input
+                className="input h-11 w-full"
+                placeholder="e.g. My Swift"
+                value={form.vehicle_name}
+                onChange={(e) => setForm({ ...form, vehicle_name: e.target.value })}
+                required
+              />
+            </div>
+          ) : (
+            <div>
+              <label className="block text-[11px] font-bold uppercase tracking-wider text-secondary mb-1.5">
+                {t("parkGuestName") || "Guest Name"} <span className="text-red-400">*</span>
+              </label>
+              <input
+                className="input h-11 w-full"
+                placeholder="e.g. John Doe"
+                value={form.guest_name}
+                onChange={(e) => setForm({ ...form, guest_name: e.target.value })}
+                required
+              />
+            </div>
+          )}
 
           <div>
             <label className="block text-[11px] font-bold uppercase tracking-wider text-secondary mb-1.5">
@@ -306,7 +501,8 @@ useEffect(() => {
               className="input h-11 w-full"
               placeholder="e.g. MH12AB1234"
               value={form.vehicle_number}
-              onChange={(e) => setForm({ ...form, vehicle_number: e.target.value })}
+              onChange={(e) => setForm({ ...form, vehicle_number: e.target.value.toUpperCase() })}
+              style={{ textTransform: "uppercase", letterSpacing: "0.05em" }}
               required
             />
           </div>
@@ -318,50 +514,229 @@ useEffect(() => {
             <Select
               className="input h-11 w-full"
               value={form.vehicle_type}
-              onChange={(e) => setForm({ ...form, vehicle_type: e.target.value })}
+              onChange={(e) => { setSelectedSlotId(null); setForm({ ...form, vehicle_type: e.target.value }); }}
             >
               <option value="CAR">{t("parkCar") || "Car (4 Wheeler)"}</option>
               <option value="BIKE">{t("parkBike") || "Bike (2 Wheeler)"}</option>
             </Select>
           </div>
 
-          <div>
-            <label className="block text-[11px] font-bold uppercase tracking-wider text-secondary mb-1.5">
-              {t("parkArrival") || "Expected Arrival"} <span className="text-red-400">*</span>
-            </label>
-            <input
-              type="datetime-local"
-              className="input h-11 w-full"
-              value={form.expected_arrival}
-              onChange={(e) => setForm({ ...form, expected_arrival: e.target.value })}
-              required
-            />
-          </div>
+          {myFlats.length > 1 && (
+            <div className="sm:col-span-2">
+              <label className="block text-[11px] font-bold uppercase tracking-wider text-secondary mb-1.5">
+                {t("parkWhichFlat") || "Which Flat?"} <span className="text-red-400">*</span>
+              </label>
+              {slotsLoading ? (
+                <div className="flex items-center gap-2 text-sm text-secondary py-2">
+                  <Spinner size={13} /> {t("parkLoading")}
+                </div>
+              ) : (
+                <Select
+                  className="input h-11 w-full"
+                  value={form.flat_id}
+                  onChange={(e) => { setSelectedSlotId(null); setForm({ ...form, flat_id: e.target.value }); }}
+                >
+                  <option value="">{t("parkSelectFlat") || "Select flat…"}</option>
+                  {myFlats.map((f) => (
+                    <option key={f.id} value={String(f.id)}>
+                      Flat {f.flat_number}{f.floor_id != null ? ` — Floor ${f.floor_id}` : ""}
+                    </option>
+                  ))}
+                </Select>
+              )}
+            </div>
+          )}
 
-          <div className="sm:col-span-2">
-            <label className="block text-[11px] font-bold uppercase tracking-wider text-secondary mb-1.5">
-              {t("parkDuration") || "Duration (Hours)"}
-            </label>
-            <input
-              type="number"
-              min="1"
-              max="168"
-              className="input h-11 w-full"
-              placeholder="e.g. 24"
-              value={form.duration_hours}
-              onChange={(e) => setForm({ ...form, duration_hours: e.target.value })}
-            />
-          </div>
+          {mode === "guest" ? (
+            <>
+              <div>
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-secondary mb-1.5">
+                  {t("parkArrival") || "Expected Arrival"} <span className="text-red-400">*</span>
+                </label>
+                <input
+                  type="datetime-local"
+                  className="input h-11 w-full"
+                  value={form.expected_arrival}
+                  onChange={(e) => setForm({ ...form, expected_arrival: e.target.value })}
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-secondary mb-1.5">
+                  {t("parkDuration") || "Duration (Hours)"}
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  max="168"
+                  className="input h-11 w-full"
+                  placeholder="e.g. 24"
+                  value={form.duration_hours}
+                  onChange={(e) => setForm({ ...form, duration_hours: e.target.value })}
+                />
+              </div>
+            </>
+          ) : (
+            /* ── SELF MODE: SLOT PICKER ── */
+            <div className="sm:col-span-2">
+              {slotsLoading ? (
+                <div className="flex items-center gap-2 text-sm text-secondary py-2">
+                  <Spinner size={13} /> {t("parkLoading")}
+                </div>
+              ) : availableSlots.length === 0 ? (
+                <div className="bg-white/5 border border-white/8 rounded-lg p-4 text-sm">
+                  <p className="flex items-center gap-2 font-bold" style={{ color: "var(--accent)" }}>
+                    <MdInfo size={16} /> No {form.vehicle_type} slot pre-assigned to your flat
+                  </p>
+                  <p className="text-secondary mt-1.5 leading-relaxed">
+                    This vehicle will be registered as <strong>Extra</strong> and a slot request will be sent to the admin automatically. They'll assign an available slot.
+                  </p>
+                </div>
+              ) : (
+                <>
+                  <label className="block text-[11px] font-bold uppercase tracking-wider text-secondary mb-1.5">
+                    {t("parkSelfSlotTitle") || "Select Parking Slot"}
+                  </label>
+                  <div className="flex flex-col gap-2">
+                    {availableSlots.map((slot) => {
+                      const occupied = isSlotOccupied(slot);
+                      const selected = selectedSlotId === slot.id;
+                      return (
+                        <button
+                          type="button"
+                          key={slot.id}
+                          disabled={occupied}
+                          onClick={() => !occupied && setSelectedSlotId(slot.id)}
+                          className="w-full rounded-xl px-4 py-3 flex items-center justify-between gap-3 text-left transition cursor-pointer disabled:cursor-not-allowed"
+                          style={{
+                            border: `2px solid ${selected ? "var(--accent)" : "var(--glass-border)"}`,
+                            background: selected ? "var(--accent-soft)" : "var(--card-inner-bg)",
+                            opacity: occupied ? 0.55 : 1,
+                          }}
+                        >
+                          <div className="flex items-center gap-3">
+                            <span
+                              className="w-5 h-5 rounded-full border-2 shrink-0 flex items-center justify-center"
+                              style={{
+                                borderColor: selected ? "var(--accent)" : "var(--glass-border)",
+                                background: selected ? "var(--accent)" : "transparent",
+                              }}
+                            >
+                              {selected && <span className="w-2 h-2 rounded-full bg-white" />}
+                            </span>
+                            <span>
+                              <span className="block font-bold text-sm" style={{ color: occupied ? "var(--text-secondary)" : "var(--text-primary)", fontFamily: "monospace", letterSpacing: "0.04em" }}>
+                                {slot.slot_number}
+                              </span>
+                              {slot.parking_floor != null && (
+                                <span className="block text-[11px] text-secondary font-semibold mt-0.5">Level {slot.parking_floor}</span>
+                              )}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2 shrink-0">
+                            <span
+                              className="px-2.5 py-1 text-[10px] font-bold rounded-full"
+                              style={{
+                                background: slot.parking_type === "DEFAULT" ? "var(--approve-bg)" : "var(--approval-bg)",
+                                color: slot.parking_type === "DEFAULT" ? "var(--approve-color)" : "var(--approval-color)",
+                                border: `1px solid ${slot.parking_type === "DEFAULT" ? "var(--approve-border)" : "var(--approval-border)"}`,
+                              }}
+                            >
+                              {slot.parking_type === "DEFAULT" ? "Default" : "Extra"}
+                            </span>
+                            <span
+                              className="px-2.5 py-1 text-[10px] font-bold rounded-full"
+                              style={{
+                                background: occupied ? "var(--reject-bg)" : "var(--approve-bg)",
+                                color: occupied ? "var(--reject-color)" : "var(--approve-color)",
+                                border: `1px solid ${occupied ? "var(--reject-border)" : "var(--approve-border)"}`,
+                              }}
+                            >
+                              {occupied ? "Occupied" : "Available"}
+                            </span>
+                          </div>
+                        </button>
+                      );
+                    })}
+
+                    <span className="flex items-center gap-3 text-[11px] text-secondary font-semibold">
+                      <span className="flex-1 h-px bg-white/10" /> or <span className="flex-1 h-px bg-white/10" />
+                    </span>
+
+                    <button
+                      type="button"
+                      onClick={() => setSelectedSlotId(null)}
+                      className="w-full rounded-xl px-4 py-3 flex items-center justify-between gap-3 text-left transition cursor-pointer"
+                      style={{
+                        border: `2px solid ${selectedSlotId === null ? "var(--accent)" : "var(--glass-border)"}`,
+                        background: selectedSlotId === null ? "var(--approval-bg)" : "var(--card-inner-bg)",
+                        opacity: selectedSlotId === null ? 1 : 1,
+                      }}
+                    >
+                      <div className="flex items-center gap-3">
+                        <span
+                          className="w-5 h-5 rounded-full border-2 shrink-0 flex items-center justify-center"
+                          style={{
+                            borderColor: selectedSlotId === null ? "var(--accent)" : "var(--glass-border)",
+                            background: selectedSlotId === null ? "var(--accent)" : "transparent",
+                          }}
+                        >
+                          {selectedSlotId === null && <span className="w-2 h-2 rounded-full bg-white" />}
+                        </span>
+                        <span>
+                          <span className="block font-bold text-sm" style={{ color: "var(--text-primary)" }}>
+                            Request New Extra Slot
+                          </span>
+                          <span className="block text-[11px] text-secondary font-medium mt-0.5">
+                            Skip all pre-assigned slots and ask the admin to allocate a new one.
+                          </span>
+                        </span>
+                      </div>
+                      <span
+                        className="px-2.5 py-1 text-[10px] font-bold rounded-full"
+                        style={{
+                          background: "var(--approval-bg)", color: "var(--approval-color)",
+                          border: "1px solid var(--approval-border)",
+                        }}
+                      >
+                        Admin assigns
+                      </span>
+                    </button>
+
+                    {selectedSlotId !== null && (
+                      <div className="rounded-lg p-3 text-xs flex items-center gap-2" style={{ background: "var(--accent-soft)", color: "var(--accent)" }}>
+                        <MdCheckCircle size={13} />
+                        Slot {availableSlots.find((s) => s.id === selectedSlotId)?.slot_number} will be linked to this vehicle immediately — no admin action needed.
+                      </div>
+                    )}
+                    {selectedSlotId === null && (
+                      <div className="rounded-lg p-3 text-xs flex items-center gap-2 bg-white/5 border border-white/8 text-secondary">
+                        <MdInfo size={13} />
+                        {hasAnyFreeSlot
+                          ? "Free slots are available above. A new extra slot request will still go to your admin if you proceed."
+                          : "All your assigned slots are occupied. A new extra slot request will be sent to the admin."}
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
+          )}
 
           <div className="sm:col-span-2 flex gap-3 pt-1">
             <button type="submit" className="btn-primary h-11 flex-1 justify-center" disabled={submitLoading}>
               {submitLoading
                 ? <span className="flex items-center gap-2"><Spinner size={14} /> {t("compSubmitting")}</span>
-                : t("compSubmitBtn")}
+                : mode === "self"
+                  ? (selectedSlotId !== null
+                      ? <><MdDirectionsCar size={16} /> {"Add Vehicle & Link Slot"}</>
+                      : <><MdSend size={16} /> {"Add Vehicle & Request Slot"}</>)
+                  : <><MdSend size={16} /> {t("compSubmitBtn")}</>}
             </button>
             <button
               type="button"
-              onClick={() => { setShowForm(false); setErrorMessage(""); }}
+              onClick={() => { setShowForm(false); resetForm(); }}
               className="h-11 px-4 rounded-xl bg-white/10 text-sm hover:bg-white/15 transition cursor-pointer"
             >
               {t("cancel")}

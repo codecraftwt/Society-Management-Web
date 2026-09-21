@@ -177,15 +177,15 @@ export default function GuestEntry() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     const nameErr = getTitleError(form.visitor_name, "Visitor name");
-    if (nameErr) { toast.error(nameErr); return; }
+    if (nameErr) { setFieldErrors(p => ({ ...p, visitor_name: nameErr })); toast.error(nameErr); return; }
     const mobileErr = getMobileError(form.mobile);
-    if (mobileErr) { toast.error(mobileErr); return; }
+    if (mobileErr) { setFieldErrors(p => ({ ...p, mobile: mobileErr })); toast.error(mobileErr); return; }
     const vehicleErr = form.vehicle_number ? getVehicleNumberError(form.vehicle_number) : null;
-    if (vehicleErr) { toast.error(vehicleErr); return; }
+    if (vehicleErr) { setFieldErrors(p => ({ ...p, vehicle_number: vehicleErr })); toast.error(vehicleErr); return; }
     try {
       // If vehicle is entered, a slot must be selected
       if (form.vehicle_number && !selectedSlot) {
-        alert(t("geErrSelectSlot"));
+        toast.error(t("geErrSelectSlot") || "Please select a parking slot for this vehicle");
         return;
       }
 

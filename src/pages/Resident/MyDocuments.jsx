@@ -4,6 +4,8 @@ import { MdFolderOpen, MdClose, MdAdd, MdSearch } from "react-icons/md";
 import SlidingTabs from "../../components/common/SlidingTabs";
 import ExpandableSearch from "../../components/common/ExpandableSearch";
 import axios from "axios";
+import useUnsavedDirty from "../../hooks/useUnsavedDirty";
+import ConfirmDiscard from "../../components/common/ConfirmDiscard";
 
 const API = import.meta.env.VITE_API_URL || "";
 const getToken = () => localStorage.getItem("token");
@@ -148,23 +150,35 @@ function UploadModal({ docType, existingDoc, onClose, onSuccess }) {
   const inputRef = useRef();
   const isEdit = !!existingDoc;
 
-  const handleBackdrop = (e) => { if (e.target === e.currentTarget) onClose(); };
+  /* unsaved-changes guard */
+  const [confirmDiscard, setConfirmDiscard] = useState(false);
+  const dirtyRef = useUnsavedDirty(true);
+  const requestClose = () => {
+    if (dirtyRef.current) setConfirmDiscard(true);
+    else onClose();
+  };
+
+  const handleBackdrop = (e) => { if (e.target === e.currentTarget) requestClose(); };
 
   useEffect(() => {
-    const h = (e) => { if (e.key === "Escape") onClose(); };
+    const h = (e) => {
+      if (e.key !== "Escape") return;
+      if (dirtyRef.current) setConfirmDiscard(true);
+      else onClose();
+    };
     window.addEventListener("keydown", h);
     document.body.style.overflow = "hidden";
     return () => {
       window.removeEventListener("keydown", h);
       document.body.style.overflow = "";
     };
-  }, [onClose]);
+  }, [onClose, dirtyRef]);
 
   const handleDrop = (e) => {
     e.preventDefault();
     setDragOver(false);
     const f = e.dataTransfer.files?.[0];
-    if (f) setFile(f);
+    if (f) { setFile(f); dirtyRef.current = true; }
   };
 
   const handleSubmit = async () => {
@@ -234,7 +248,7 @@ function UploadModal({ docType, existingDoc, onClose, onSuccess }) {
               </p>
             </div>
           </div>
-          <button type="button" onClick={onClose} className="hh-close-btn">
+          <button type="button" onClick={requestClose} className="hh-close-btn">
             <MdClose size={16} />
           </button>
         </div>
@@ -260,7 +274,7 @@ function UploadModal({ docType, existingDoc, onClose, onSuccess }) {
               type="file"
               accept="image/jpeg,image/png,image/webp,application/pdf"
               style={{ display: "none" }}
-              onChange={(e) => { if (e.target.files?.[0]) setFile(e.target.files[0]); }}
+              onChange={(e) => { if (e.target.files?.[0]) { setFile(e.target.files[0]); dirtyRef.current = true; } }}
             />
             {!file ? (
               <div className="ad-dz-empty">
@@ -289,7 +303,7 @@ function UploadModal({ docType, existingDoc, onClose, onSuccess }) {
           <div style={{ display: "flex", gap: "10px", marginTop: "16px" }}>
             <button
               type="button"
-              onClick={onClose}
+              onClick={requestClose}
               className="hh-btn-cancel"
               style={{ flex: 1, padding: "0.65rem", borderRadius: "10px", fontSize: "13px", fontWeight: 600, cursor: "pointer" }}
             >
@@ -325,6 +339,12 @@ function UploadModal({ docType, existingDoc, onClose, onSuccess }) {
           </div>
         </div>
       </div>
+
+      <ConfirmDiscard
+        open={confirmDiscard}
+        onKeep={() => setConfirmDiscard(false)}
+        onDiscard={() => { setConfirmDiscard(false); onClose(); }}
+      />
     </div>,
     document.body
   );

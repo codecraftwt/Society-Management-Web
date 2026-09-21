@@ -12,6 +12,8 @@ import { AuthContext } from "../../context/AuthContext";
 import Select from "../../components/common/Select";
 import SlidingTabs from "../../components/common/SlidingTabs";
 import ExpandableSearch from "../../components/common/ExpandableSearch";
+import useUnsavedDirty from "../../hooks/useUnsavedDirty";
+import ConfirmDiscard from "../../components/common/ConfirmDiscard";
 
 /* ── Type meta ── */
 const TYPE_META = {
@@ -120,6 +122,14 @@ export default function MyEmergency() {
   const [myFlats,        setMyFlats]        = useState([]);
   const [selectedFlatId, setSelectedFlatId] = useState("");
   const [checkingFlat,   setCheckingFlat]   = useState(true);
+
+  /* unsaved-changes guard */
+  const [confirmDiscard, setConfirmDiscard] = useState(false);
+  const dirtyRef = useUnsavedDirty(showModal);
+  const requestCloseModal = () => {
+    if (dirtyRef.current) setConfirmDiscard(true);
+    else setShowModal(false);
+  };
 
   const isOwner = authUser?.resident_type === "OWNER";
   const hasFlat = myFlats.length > 0;
@@ -559,7 +569,7 @@ export default function MyEmergency() {
       {showModal && (
         <PortalModal>
           <div
-            onClick={() => !sending && setShowModal(false)}
+            onClick={() => !sending && requestCloseModal()}
             className="hh-overlay"
           >
             <div
@@ -582,7 +592,7 @@ export default function MyEmergency() {
                 </div>
                 <button
                   type="button"
-                  onClick={() => !sending && setShowModal(false)}
+                  onClick={() => !sending && requestCloseModal()}
                   className="hh-close-btn"
                 >
                   <MdClose size={16} />
@@ -731,6 +741,12 @@ export default function MyEmergency() {
           </div>
         </PortalModal>
       )}
+
+      <ConfirmDiscard
+        open={confirmDiscard}
+        onKeep={() => setConfirmDiscard(false)}
+        onDiscard={() => { setConfirmDiscard(false); setShowModal(false); }}
+      />
     </div>
   );
 }

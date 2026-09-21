@@ -18,6 +18,7 @@ import Select from "../../components/common/Select";
 import SlidingTabs from "../../components/common/SlidingTabs";
 import ExpandableSearch from "../../components/common/ExpandableSearch";
 import GlobalButton from "../../components/common/GlobalButton";
+import { getTitleError, getNumberError, getPositiveAmountError } from "../../utils/validators";
 import "./Admin.css";
 
 /* ── helpers ── */
@@ -1219,14 +1220,23 @@ function BlocksTab({
     e.preventDefault();
     let payload = { name, society_id: getSocietyId(), property_type: propertyType };
 
+    const nameError = getTitleError(name, "Phase / Block name");
+    if (nameError) return setError(nameError);
+
     if (propertyType === "ROW_HOUSE") {
-      if (!name || !totalHouses) return setError(t("mpFillAllFields") || "Fill all fields");
+      const housesError = getNumberError(totalHouses, "Total houses", { min: 1, allowZero: false, allowDecimal: false });
+      if (housesError) return setError(housesError);
       payload.flats_per_floor = Number(totalHouses);
-      if (areaStrategy !== "SEPARATE" && commonArea && !isNaN(Number(commonArea))) {
+      if (areaStrategy !== "SEPARATE") {
+        const areaError = getPositiveAmountError(commonArea, "Built-up area");
+        if (areaError) return setError(areaError);
         payload.area_sqft = Number(commonArea);
       }
     } else {
-      if (!name || !floorCount || !flatsPerFloor) return setError(t("mpFillAllFields") || "Fill all fields");
+      const floorCountError = getNumberError(floorCount, "No. of floors", { min: 1, allowZero: false, allowDecimal: false });
+      if (floorCountError) return setError(floorCountError);
+      const flatsPerFloorError = getNumberError(flatsPerFloor, "Units per floor", { min: 1, allowZero: false, allowDecimal: false });
+      if (flatsPerFloorError) return setError(flatsPerFloorError);
       payload.floor_count     = Number(floorCount);
       payload.flats_per_floor = Number(flatsPerFloor);
     }

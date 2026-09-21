@@ -7,6 +7,7 @@ import { getSocket } from "../../services/socket";
 import SlidingTabs from "../../components/common/SlidingTabs";
 import ExpandableSearch from "../../components/common/ExpandableSearch";
 import DateRangeFilter from "../../components/common/DateRangeFilter";
+import FieldError from "../../components/common/FieldError";
 import { getTitleError, getDescriptionError } from "../../utils/validators";
 import {
   MdAdd, MdFilterList, MdOutlineInbox, MdSearch,
@@ -17,6 +18,8 @@ import {
   MdCheckCircle, MdSchedule, MdPending,
 } from "react-icons/md";
 import Select from "../../components/common/Select";
+import useUnsavedDirty from "../../hooks/useUnsavedDirty";
+import ConfirmDiscard from "../../components/common/ConfirmDiscard";
 
 function useDebounce(value, delay = 500) {
   const [debounced, setDebounced] = useState(value);
@@ -1197,6 +1200,19 @@ export default function ResidentComplaints() {
     clearPhoto();
   };
 
+  /* unsaved-changes guard & field errors */
+  const [fieldErrors, setFieldErrors] = useState({});
+  const [confirmDiscard, setConfirmDiscard] = useState(false);
+  const dirtyRef = useUnsavedDirty(showForm && hasEligibleFlat);
+  const requestCloseForm = () => {
+    if (dirtyRef.current) setConfirmDiscard(true);
+    else closeForm();
+  };
+  const requestCloseFormWithCamera = () => {
+    if (dirtyRef.current) setConfirmDiscard(true);
+    else { closeForm(); closeCamera(); }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!hasFlat) return;
@@ -1346,7 +1362,7 @@ export default function ResidentComplaints() {
         {/* ── Create Complaint Modal — rendered via portal so fixed positioning works ── */}
         {showForm && hasEligibleFlat && createPortal(
           <div
-            onClick={closeForm}
+            onClick={requestCloseForm}
             style={{
               position: "fixed",
               inset: 0,
@@ -1397,7 +1413,7 @@ export default function ResidentComplaints() {
                   {t("compFormTitle")}
                 </h2>
                 <button
-                  onClick={closeForm}
+                  onClick={requestCloseForm}
                   style={{
                     width: "32px",
                     height: "32px",
@@ -1469,9 +1485,15 @@ export default function ResidentComplaints() {
 
                 {/* Title */}
                 <div>
-                  <input className="input" style={{ height: 46 }} placeholder={t("compTitlePlaceholder")}
+                  <input className={`input ${fieldErrors.title ? "border-red-500" : ""}`} style={{ height: 46 }} placeholder={t("compTitlePlaceholder")}
                     value={formData.title} maxLength={100}
-                    onChange={e => setFormData({ ...formData, title: e.target.value })} required />
+                    onChange={e => {
+                      setFormData({ ...formData, title: e.target.value });
+                      if (fieldErrors.title) setFieldErrors(p => ({ ...p, title: getTitleError(e.target.value, "Complaint title") }));
+                    }}
+                    onBlur={e => setFieldErrors(p => ({ ...p, title: getTitleError(e.target.value, "Complaint title") }))}
+                    required />
+                  <FieldError error={fieldErrors.title} />
                   <p style={{ fontSize: 11, color: "var(--text-secondary)", marginTop: 4, textAlign: "right" }}>
                     {formData.title.length}/100
                   </p>
@@ -1479,10 +1501,17 @@ export default function ResidentComplaints() {
 
                 {/* Description */}
                 <div>
-                  <textarea className="input" style={{ resize: "none", minHeight: 90 }} rows={4}
+                  <textarea className={`input ${fieldErrors.description ? "border-red-500" : ""}`} style={{ resize: "none", minHeight: 90 }} rows={4}
                     placeholder={t("compDescPlaceholder")} value={formData.description}
-                    onChange={e => { if (e.target.value.length <= MAX_DESC) setFormData({ ...formData, description: e.target.value }); }}
+                    onChange={e => {
+                      if (e.target.value.length <= MAX_DESC) {
+                        setFormData({ ...formData, description: e.target.value });
+                        if (fieldErrors.description) setFieldErrors(p => ({ ...p, description: getDescriptionError(e.target.value, "Description", 300) }));
+                      }
+                    }}
+                    onBlur={e => setFieldErrors(p => ({ ...p, description: getDescriptionError(e.target.value, "Description", 300) }))}
                     required />
+                  <FieldError error={fieldErrors.description} />
                   <p style={{ fontSize: 11, marginTop: 4, textAlign: "right",
                     color: formData.description.length >= MAX_DESC ? "var(--stat-red-color)" : "var(--text-secondary)" }}>
                     {formData.description.length}/{MAX_DESC}
@@ -1545,7 +1574,7 @@ export default function ResidentComplaints() {
                       ? <span style={{ display: "flex", alignItems: "center", gap: 8 }}><Spinner small /> {t("compSubmitting")}</span>
                       : t("compSubmitBtn")}
                   </button>
-                  <button type="button" onClick={() => { closeForm(); closeCamera(); }}
+                  <button type="button" onClick={requestCloseFormWithCamera}
                     style={{ height: 42, padding: "0 16px", borderRadius: 999, background: "var(--card-inner-bg)",
                       border: "1px solid var(--glass-border)", color: "var(--text-secondary)", fontSize: 13, cursor: "pointer" }}>
                     {t("cancel")}
@@ -1556,6 +1585,12 @@ export default function ResidentComplaints() {
           </div>,
           document.body
         )}
+
+        <ConfirmDiscard
+          open={confirmDiscard}
+          onKeep={() => setConfirmDiscard(false)}
+          onDiscard={() => { setConfirmDiscard(false); closeForm(); closeCamera(); }}
+        />
 
         {showCamera && (
           <CameraPortal cameraError={cameraError} cameraReady={cameraReady} cameraMode={cameraMode} videoRef={videoRef}

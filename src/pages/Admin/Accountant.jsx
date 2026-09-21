@@ -517,71 +517,75 @@ export default function Accountant() {
         )
       ),
     },
-    ...(isCommittee ? [] : [{
+    ...((hasPermission(user, "accountant", "edit") || hasPermission(user, "accountant", "toggle_status")) ? [{
       key: "actions",
       header: "Actions",
       align: "right",
       render: (acc) => (
         <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, alignItems: "center" }}>
-          <GlobalButton
-            variant="edit"
-            size="sm"
-            icon={MdEdit}
-            onClick={() => openEditModal(acc)}
-          >
-            {t("acctEdit") || "Edit"}
-          </GlobalButton>
+          {hasPermission(user, "accountant", "edit") && (
+            <GlobalButton
+              variant="edit"
+              size="sm"
+              icon={MdEdit}
+              onClick={() => openEditModal(acc)}
+            >
+              {t("acctEdit") || "Edit"}
+            </GlobalButton>
+          )}
 
-          {acc.status === "ACTIVE" ? (
-            <button
-              type="button"
-              onClick={() => openStatusConfirm(acc, "deactivate")}
-              className="sa-btn"
-              style={{
-                background: "rgba(239,68,68,0.12)",
-                color: "#f87171",
-                border: "1px solid rgba(239,68,68,0.28)",
-                fontSize: 12,
-                fontWeight: 700,
-                padding: "6px 12px",
-                borderRadius: 8,
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 5,
-                cursor: "pointer",
-              }}
-              title="Make accountant inactive"
-            >
-              <MdBlock size={14} />
-              <span>Disable</span>
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={() => openStatusConfirm(acc, "activate")}
-              className="sa-btn"
-              style={{
-                background: "rgba(34,197,94,0.12)",
-                color: "#4ade80",
-                border: "1px solid rgba(34,197,94,0.28)",
-                fontSize: 12,
-                fontWeight: 700,
-                padding: "6px 12px",
-                borderRadius: 8,
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 5,
-                cursor: "pointer",
-              }}
-              title="Re-activate accountant"
-            >
-              <MdCheckCircle size={14} />
-              <span>Activate</span>
-            </button>
+          {hasPermission(user, "accountant", "toggle_status") && (
+            acc.status === "ACTIVE" ? (
+              <button
+                type="button"
+                onClick={() => openStatusConfirm(acc, "deactivate")}
+                className="sa-btn"
+                style={{
+                  background: "rgba(239,68,68,0.12)",
+                  color: "#f87171",
+                  border: "1px solid rgba(239,68,68,0.28)",
+                  fontSize: 12,
+                  fontWeight: 700,
+                  padding: "6px 12px",
+                  borderRadius: 8,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 5,
+                  cursor: "pointer",
+                }}
+                title="Make accountant inactive"
+              >
+                <MdBlock size={14} />
+                <span>Disable</span>
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => openStatusConfirm(acc, "activate")}
+                className="sa-btn"
+                style={{
+                  background: "rgba(34,197,94,0.12)",
+                  color: "#4ade80",
+                  border: "1px solid rgba(34,197,94,0.28)",
+                  fontSize: 12,
+                  fontWeight: 700,
+                  padding: "6px 12px",
+                  borderRadius: 8,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 5,
+                  cursor: "pointer",
+                }}
+                title="Re-activate accountant"
+              >
+                <MdCheckCircle size={14} />
+                <span>Activate</span>
+              </button>
+            )
           )}
         </div>
       ),
-    }]),
+    }] : []),
   ];
 
   return (
@@ -621,7 +625,7 @@ export default function Accountant() {
             </div>
           )}
 
-          {!isCommittee && (
+          {(hasPermission(user, "accountant", "create") || hasPermission(user, "accountant", "appoint")) && (
             <GlobalButton
               variant="add"
               icon={MdAdd}
@@ -642,7 +646,7 @@ export default function Accountant() {
         emptyMessage="No accountants registered in this society."
         emptyIcon={MdPerson}
         emptyAction={
-          !isCommittee ? (
+          (hasPermission(user, "accountant", "create") || hasPermission(user, "accountant", "appoint")) ? (
             <GlobalButton
               variant="add"
               icon={MdAdd}

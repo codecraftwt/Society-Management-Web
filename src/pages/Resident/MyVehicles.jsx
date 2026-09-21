@@ -3,6 +3,8 @@ import { createPortal } from "react-dom";
 import API from "../../services/api";
 import { useLang } from "../../context/LanguageContext";
 import ExpandableSearch from "../../components/common/ExpandableSearch";
+import useUnsavedDirty from "../../hooks/useUnsavedDirty";
+import ConfirmDiscard from "../../components/common/ConfirmDiscard";
 import {
   MdAdd, MdDelete, MdDirectionsCarFilled,
   MdTwoWheeler, MdClose, MdCheckCircle,
@@ -285,6 +287,10 @@ export default function MyVehicles() {
     flat_id:        "",
   });
 
+  /* unsaved-changes guard */
+  const [confirmDiscard, setConfirmDiscard] = useState(false);
+  const dirtyRef = useUnsavedDirty(showForm);
+
   /* ────────────────────────────
      LOADERS
   ──────────────────────────── */
@@ -485,6 +491,11 @@ export default function MyVehicles() {
     });
   };
 
+  const requestClose = () => {
+    if (dirtyRef.current) setConfirmDiscard(true);
+    else resetForm();
+  };
+
   const pendingCount = parkingRequests.filter(r => r.status === "PENDING").length;
   const q = search.trim().toLowerCase();
   const includesQ = (...vals) => !q || vals.some((v) => String(v || "").toLowerCase().includes(q));
@@ -600,7 +611,7 @@ export default function MyVehicles() {
         <div
           className="fixed inset-0 flex items-center justify-center p-4 animate-fadeIn"
           style={{ background: "var(--overlay-bg, rgba(0,0,0,0.72))", backdropFilter: "blur(8px)", zIndex: 9999 }}
-          onClick={resetForm}
+          onClick={requestClose}
         >
           <div
             className="rounded-3xl w-full max-w-2xl overflow-hidden animate-scaleIn border border-glass-border shadow-2xl flex flex-col max-h-[90vh]"
@@ -627,7 +638,7 @@ export default function MyVehicles() {
               </div>
               <button
                 type="button"
-                onClick={resetForm}
+                onClick={requestClose}
                 className="p-2 rounded-xl text-secondary hover:text-primary hover:bg-white/10 transition cursor-pointer"
                 title="Close"
               >
@@ -867,7 +878,7 @@ export default function MyVehicles() {
 
               {/* Modal Footer */}
               <div className="p-4 sm:p-5 border-t border-glass-border flex justify-end gap-3 bg-[var(--card-bg)] shrink-0">
-                <button type="button" onClick={resetForm} className="btn-muted">
+                <button type="button" onClick={requestClose} className="btn-muted">
                   {t("cancel") || "Cancel"}
                 </button>
                 <button type="submit" className="btn-primary flex items-center gap-2" disabled={submitLoading}>
@@ -885,6 +896,12 @@ export default function MyVehicles() {
         </div>,
         document.body
       )}
+
+      <ConfirmDiscard
+        open={confirmDiscard}
+        onKeep={() => setConfirmDiscard(false)}
+        onDiscard={() => { setConfirmDiscard(false); resetForm(); }}
+      />
 
           {/* VEHICLE LIST */}
           <div className="bg-card p-5 rounded-xl">

@@ -4,7 +4,7 @@ import { useLang } from "../../context/LanguageContext";
 import API from "../../services/api";
 import Select from "../../components/common/Select";
 import { MdPersonAdd, MdArrowBack, MdPerson, MdEmail, MdLock } from "react-icons/md";
-import GlobalButton from "../../components/common/GlobalButton";
+import { toast } from "react-toastify";
 import { getTitleError, getEmailError, getRequiredError } from "../../utils/validators";
 
 const PW_RULES = [
@@ -62,11 +62,11 @@ export default function CreateSocietyAdmin() {
         password: form.password,
         society_id: Number(form.society_id),
       });
-      alert(t("csaCreatedSuccess"));
+      toast.success(t("csaCreatedSuccess") || "Society Admin created successfully!");
       navigate("/superadmin/societies");
     } catch (err) {
       console.error(err);
-      alert("Failed to create society admin");
+      toast.error(err.response?.data?.message || "Failed to create society admin");
     } finally {
       setLoading(false);
     }

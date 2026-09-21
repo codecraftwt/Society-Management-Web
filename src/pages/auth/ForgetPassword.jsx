@@ -1,6 +1,7 @@
 import { useState } from "react";
 import API from "../../services/api";
 import { Link } from "react-router-dom";
+import { getEmailError } from "../../utils/validators";
 
 export default function ForgetPassword() {
   const [email, setEmail] = useState("");
@@ -11,9 +12,13 @@ export default function ForgetPassword() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    setLoading(true);
     setMessage("");
     setError("");
+
+    const emailError = getEmailError(email);
+    if (emailError) return setError(emailError);
+
+    setLoading(true);
 
     try {
       const res = await API.post("/users/forgot-password", {

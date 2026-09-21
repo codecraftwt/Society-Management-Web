@@ -90,13 +90,21 @@ const en = {
   parkLoading:         "Loading requests...",
   parkEmpty:           "No parking requests yet.",
   parkSpot:            "Spot",
-  parkColGuest:        "Guest",
+  parkColGuest:        "Name",
   parkColVehicle:      "Vehicle",
   parkColSpot:         "Spot",
   parkStatusApproved:  "Approved",
   parkStatusRejected:  "Rejected",
   parkStatusPending:   "Pending",
   parkStatusCompleted: "Completed", // or your preferred translation
+  parkGuestSuccess:    "Guest parking requested successfully!",
+  parkModeSelf:        "For Self",
+  parkModeGuest:       "For Guest",
+  parkSelfTitle:       "Add My Vehicle",
+  parkSelfName:        "Vehicle Name",
+  parkWhichFlat:       "Which Flat?",
+  parkSelectFlat:      "Select flat…",
+  parkSelfSlotTitle:   "Select Parking Slot",
 
   // Resident Pre-Approval
   preapTitle:                  "Visitor Pre-Approval",

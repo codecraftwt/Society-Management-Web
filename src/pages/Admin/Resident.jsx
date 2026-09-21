@@ -16,8 +16,10 @@ import { toast } from "react-toastify";
 import Select from "../../components/common/Select";
 import GlobalButton from "../../components/common/GlobalButton";
 import ExpandableSearch from "../../components/common/ExpandableSearch";
-import { isCommitteeMember, hasPermission } from "../../utils/permissions";
+import { hasPermission } from "../../utils/permissions";
 import { getTitleError, getEmailError, getMobileError } from "../../utils/validators";
+import useUnsavedDirty from "../../hooks/useUnsavedDirty";
+import ConfirmDiscard from "../../components/common/ConfirmDiscard";
 import { useCustomAlert } from "../../context/CustomAlertContext";
 
 /* ─────────────────────────────────────────
@@ -2258,7 +2260,10 @@ export default function Resident() {
   const { user } = useContext(AuthContext);
   const { showUnauthorized, showError } = useCustomAlert();
   const isSuperAdmin = user?.activeRole === "SUPER_ADMIN";
-  const canManageResidents = !isCommitteeMember(user);
+  const canManageResidents =
+    hasPermission(user, "resident", "create") ||
+    hasPermission(user, "resident", "edit") ||
+    hasPermission(user, "resident", "delete");
   const [societiesList, setSocietiesList] = useState([]);
   const [filterSocietyId, setFilterSocietyId] = useState(() => {
     const saved = localStorage.getItem("superadmin_society_filter");
@@ -2366,6 +2371,14 @@ export default function Resident() {
     setEditCurrentFlats([]);
     setFormSocietyId("");
     setFormStep(1);
+  };
+
+  /* Unsaved-changes guard */
+  const [confirmDiscard, setConfirmDiscard] = useState(false);
+  const dirtyRef = useUnsavedDirty(showForm || !!editingId);
+  const requestCloseForm = () => {
+    if (dirtyRef.current) setConfirmDiscard(true);
+    else { setShowForm(false); resetForm(); }
   };
 
   const loadResidents = useCallback(
@@ -2868,7 +2881,7 @@ export default function Resident() {
       {/* Add / Edit Resident Modal Popup */}
       {(showForm || editingId) && createPortal(
         <div
-          onClick={(e) => { if (e.target === e.currentTarget) { setShowForm(false); resetForm(); } }}
+          onClick={requestCloseForm}
           style={{ position: "fixed", inset: 0, zIndex: 1100, background: "rgba(0,0,0,0.65)", backdropFilter: "blur(8px)", display: "flex", alignItems: "center", justifyContent: "center", padding: "16px" }}
         >
           <div
@@ -2892,7 +2905,7 @@ export default function Resident() {
                 </div>
               </div>
               <button
-                onClick={() => { setShowForm(false); resetForm(); }}
+                onClick={requestCloseForm}
                 style={{ width: 34, height: 34, borderRadius: 10, border: "1px solid var(--glass-border, rgba(255,255,255,0.12))", background: "var(--card-inner-bg, rgba(255,255,255,0.06))", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-secondary)" }}
               >
                 <MdClose size={17} />
@@ -3060,7 +3073,7 @@ export default function Resident() {
                       <MdArrowBack size={15} /> Back
                     </button>
                   )}
-                  <button type="button" onClick={() => { setShowForm(false); resetForm(); }} className="sa-btn sa-btn-ghost">
+                  <button type="button" onClick={requestCloseForm} className="sa-btn sa-btn-ghost">
                     {t("cancel")}
                   </button>
                   <div style={{ flex: 1 }} />
@@ -3096,6 +3109,13 @@ export default function Resident() {
         </div>,
         document.body
       )}
+
+      {/* Unsaved-changes discard confirm */}
+      <ConfirmDiscard
+        open={confirmDiscard}
+        onKeep={() => setConfirmDiscard(false)}
+        onDiscard={() => { setConfirmDiscard(false); setShowForm(false); resetForm(); }}
+      />
 
       {/* Table */}
       <div className="bg-card rounded-2xl overflow-hidden">

@@ -113,7 +113,7 @@ function BillStatus({ status, t }) {
 }
 
 /* ── Delete & Confirm controls ── */
-function RowActions({ bill, confirmDeleteId, setConfirmDeleteId, handleDeleteBill, deletingId, handleConfirmPayment, confirmingId, t, canEdit = true, authUser, showUnauthorized }) {
+function RowActions({ bill, confirmDeleteId, setConfirmDeleteId, handleDeleteBill, deletingId, handleConfirmPayment, confirmingId, t, canEdit = true, canDelete = true, authUser, showUnauthorized }) {
   const onTriggerConfirmPayment = (id) => {
     if (!hasPermission(authUser, "manage_bills", "edit")) {
       showUnauthorized("You do not have permission to confirm bill payments.");
@@ -143,18 +143,20 @@ function RowActions({ bill, confirmDeleteId, setConfirmDeleteId, handleDeleteBil
         </button>
       )}
 
-      {canEdit && confirmDeleteId === bill.id ? (
-        <div className="flex items-center gap-2 animate-fadeIn">
-          <span className="text-xs text-secondary">{t("billSure")}</span>
-          <button className="btn-delete-confirm" onClick={() => handleDeleteBill(bill.id)} disabled={deletingId === bill.id}>
-            {deletingId === bill.id ? <Spinner /> : t("billYesDelete")}
+      {canDelete && (
+        confirmDeleteId === bill.id ? (
+          <div className="flex items-center gap-2 animate-fadeIn">
+            <span className="text-xs text-secondary">{t("billSure")}</span>
+            <button className="btn-delete-confirm" onClick={() => handleDeleteBill(bill.id)} disabled={deletingId === bill.id}>
+              {deletingId === bill.id ? <Spinner /> : t("billYesDelete")}
+            </button>
+            <button className="btn-cancel-sm" onClick={() => setConfirmDeleteId(null)}>{t("cancel")}</button>
+          </div>
+        ) : (
+          <button className="btn-delete" onClick={() => onTriggerDelete(bill.id)}>
+            <MdDelete size={13} /> {t("billDelete")}
           </button>
-          <button className="btn-cancel-sm" onClick={() => setConfirmDeleteId(null)}>{t("cancel")}</button>
-        </div>
-      ) : (
-        <button className="btn-delete" onClick={() => onTriggerDelete(bill.id)}>
-          <MdDelete size={13} /> {t("billDelete")}
-        </button>
+        )
       )}
     </div>
   );
@@ -701,7 +703,7 @@ export default function ManageBills() {
           )}
 
           {/* Create Bill Button */}
-          {!isCommittee && (
+          {hasPermission(authUser, "manage_bills", "create") && (
             <GlobalButton
               variant="add"
               icon={MdAdd}
@@ -957,9 +959,8 @@ export default function ManageBills() {
                   <span style={{ opacity: 0.75, fontWeight: 800 }}>• ₹{selectedTotalAmount.toLocaleString("en-IN")}</span>
                 </span>
 
-                {!isCommittee && (
-                  <>
-                  {/* Bulk Approve Button */}
+                {hasPermission(authUser, "manage_bills", "edit") && (
+                  /* Bulk Approve Button */
                   <button
                     type="button"
                     onClick={() => setShowBulkApproveModal(true)}
@@ -984,8 +985,10 @@ export default function ManageBills() {
                     <MdCheckCircle size={15} />
                     <span>Approve ({selectedApprovable.length})</span>
                   </button>
+                )}
 
-                  {/* Bulk Delete Button */}
+                {hasPermission(authUser, "manage_bills", "delete") && (
+                  /* Bulk Delete Button */
                   <button
                     type="button"
                     onClick={() => setShowBulkDeleteModal(true)}
@@ -1009,7 +1012,6 @@ export default function ManageBills() {
                     <MdDelete size={15} />
                     <span>Delete ({selectedDeletable.length})</span>
                   </button>
-                  </>
                 )}
 
                 {/* Clear Selection */}
@@ -1126,7 +1128,7 @@ export default function ManageBills() {
                         <p className="text-xs font-semibold" style={{ color: "var(--text-primary)" }}>{b.Flat?.User?.name || "NA"}</p>
                       </div>
                     </div>
-                    <RowActions bill={b} confirmDeleteId={confirmDeleteId} setConfirmDeleteId={setConfirmDeleteId} handleDeleteBill={handleDeleteBill} deletingId={deletingId} handleConfirmPayment={handleConfirmPayment} confirmingId={confirmingId} t={t} canEdit={!isCommittee} authUser={authUser} showUnauthorized={showUnauthorized} />
+                    <RowActions bill={b} confirmDeleteId={confirmDeleteId} setConfirmDeleteId={setConfirmDeleteId} handleDeleteBill={handleDeleteBill} deletingId={deletingId} handleConfirmPayment={handleConfirmPayment} confirmingId={confirmingId} t={t} canEdit={hasPermission(authUser, "manage_bills", "edit")} canDelete={hasPermission(authUser, "manage_bills", "delete")} authUser={authUser} showUnauthorized={showUnauthorized} />
                   </div>
                 </div>
               );
@@ -1201,7 +1203,7 @@ export default function ManageBills() {
                     <td><span className="bill-table-amount">₹{Number(b.amount).toLocaleString("en-IN")}</span></td>
                     <td><BillStatus status={b.status} t={t} /></td>
                     <td onClick={e => e.stopPropagation()}>
-                      <RowActions bill={b} confirmDeleteId={confirmDeleteId} setConfirmDeleteId={setConfirmDeleteId} handleDeleteBill={handleDeleteBill} deletingId={deletingId} handleConfirmPayment={handleConfirmPayment} confirmingId={confirmingId} t={t} canEdit={!isCommittee} authUser={authUser} showUnauthorized={showUnauthorized} />
+                      <RowActions bill={b} confirmDeleteId={confirmDeleteId} setConfirmDeleteId={setConfirmDeleteId} handleDeleteBill={handleDeleteBill} deletingId={deletingId} handleConfirmPayment={handleConfirmPayment} confirmingId={confirmingId} t={t} canEdit={hasPermission(authUser, "manage_bills", "edit")} canDelete={hasPermission(authUser, "manage_bills", "delete")} authUser={authUser} showUnauthorized={showUnauthorized} />
                     </td>
                   </tr>
                 );

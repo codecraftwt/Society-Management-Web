@@ -10,6 +10,8 @@ import API from "../../services/api";
 import { getTitleError, getMobileError, getEmailError } from "../../utils/validators";
 import SlidingTabs from "../../components/common/SlidingTabs";
 import ExpandableSearch from "../../components/common/ExpandableSearch";
+import useUnsavedDirty from "../../hooks/useUnsavedDirty";
+import ConfirmDiscard from "../../components/common/ConfirmDiscard";
 
 function PortalModal({ children }) {
   if (typeof document === "undefined") return null;
@@ -64,6 +66,14 @@ function EditModal({ member, onClose, onSaved, t }) {
   const [saving, setSaving] = useState(false);
   const [error,  setError]  = useState(null);
 
+  /* unsaved-changes guard */
+  const [confirmDiscard, setConfirmDiscard] = useState(false);
+  const dirtyRef = useUnsavedDirty(true);
+  const requestClose = () => {
+    if (dirtyRef.current) setConfirmDiscard(true);
+    else onClose();
+  };
+
   const handleSave = async (e) => {
     e.preventDefault();
     const phoneErr = getMobileError(phone, "Phone number");
@@ -84,7 +94,7 @@ function EditModal({ member, onClose, onSaved, t }) {
 
   return (
     <PortalModal>
-      <div onClick={(e) => { if (e.target === e.currentTarget) onClose(); }} className="hh-overlay">
+      <div onClick={(e) => { if (e.target === e.currentTarget) requestClose(); }} className="hh-overlay">
         <div className="bg-card animate-scaleIn hh-edit-box">
           <div className="hh-edit-er">
             <div className="hh-edit-er-left">
@@ -96,7 +106,7 @@ function EditModal({ member, onClose, onSaved, t }) {
                 <p className="hh-edit-sub">{member.name}</p>
               </div>
             </div>
-            <button type="button" onClick={onClose} className="hh-close-btn">
+            <button type="button" onClick={requestClose} className="hh-close-btn">
               <MdClose size={14} />
             </button>
           </div>
@@ -129,6 +139,12 @@ function EditModal({ member, onClose, onSaved, t }) {
           </form>
         </div>
       </div>
+
+      <ConfirmDiscard
+        open={confirmDiscard}
+        onKeep={() => setConfirmDiscard(false)}
+        onDiscard={() => { setConfirmDiscard(false); onClose(); }}
+      />
     </PortalModal>
   );
 }
@@ -149,6 +165,10 @@ export default function MyHouseHold() {
   const [formData, setFormData] = useState({
     name: "", phone: "", email: "", relation: "", work: "",
   });
+
+  /* unsaved-changes guard */
+  const [confirmDiscard, setConfirmDiscard] = useState(false);
+  const dirtyRef = useUnsavedDirty(showModal);
 
   useEffect(() => { checkFlat(); loadHousehold(); }, []);
 
@@ -188,6 +208,11 @@ export default function MyHouseHold() {
     } catch (err) {
       console.error("Add member failed:", err.response?.data?.message || err.message);
     }
+  };
+
+  const closeAddModal = () => {
+    if (dirtyRef.current) setConfirmDiscard(true);
+    else setShowModal(false);
   };
 
   const handleMemberSaved = (updated) => {
@@ -340,11 +365,11 @@ export default function MyHouseHold() {
       {/* ── ADD MODAL ── */}
       {showModal && flatAssigned && (
         <PortalModal>
-          <div onClick={(e) => { if (e.target === e.currentTarget) setShowModal(false); }} className="hh-overlay">
+          <div onClick={(e) => { if (e.target === e.currentTarget) closeAddModal(); }} className="hh-overlay">
             <div className="bg-card animate-scaleIn hh-add-box">
               <ModalContent activeTab={activeTab} formData={formData}
                 setFormData={setFormData} handleAdd={handleAdd}
-                setShowModal={setShowModal} t={t} />
+                setShowModal={closeAddModal} t={t} />
             </div>
           </div>
         </PortalModal>
@@ -372,6 +397,12 @@ export default function MyHouseHold() {
           t={t}
         />
       )}
+
+      <ConfirmDiscard
+        open={confirmDiscard}
+        onKeep={() => setConfirmDiscard(false)}
+        onDiscard={() => { setConfirmDiscard(false); setShowModal(false); }}
+      />
     </>
   );
 }

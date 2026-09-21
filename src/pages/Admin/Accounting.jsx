@@ -50,6 +50,8 @@ import API from "../../services/api";
 import SlidingTabs from "../../components/common/SlidingTabs";
 import ExpandableSearch from "../../components/common/ExpandableSearch";
 import Select from "../../components/common/Select";
+import useUnsavedDirty from "../../hooks/useUnsavedDirty";
+import ConfirmDiscard from "../../components/common/ConfirmDiscard";
 import { exportToPDF } from "../../utils/exportPDF";
 import { exportToExcel } from "../../utils/exportExcel";
 import { getTitleError, getPositiveAmountError, getDescriptionError, getRequiredDateError } from "../../utils/validators";
@@ -117,11 +119,18 @@ function Field({ label, required, icon: Icon, children }) {
 }
 
 function Modal({ title, icon: Icon = MdOutlineReceiptLong, maxWidth = "max-w-xl", onClose, children }) {
+  const [confirmDiscard, setConfirmDiscard] = useState(false);
+  const dirtyRef = useUnsavedDirty(true);
+  const requestClose = () => {
+    if (dirtyRef.current) setConfirmDiscard(true);
+    else onClose();
+  };
   return createPortal(
+    <>
     <div
       className="fixed inset-0 flex items-start justify-center overflow-y-auto py-8 px-4 animate-fadeIn"
       style={{ background: "var(--overlay-bg)", backdropFilter: "blur(6px)", zIndex: 1200 }}
-      onClick={onClose}
+      onClick={requestClose}
     >
       <div
         className={`w-full ${maxWidth} rounded-2xl animate-scaleIn my-auto`}
@@ -141,7 +150,7 @@ function Modal({ title, icon: Icon = MdOutlineReceiptLong, maxWidth = "max-w-xl"
             {title}
           </h3>
           <button
-            onClick={onClose}
+            onClick={requestClose}
             className="w-8 h-8 rounded-xl bg-card-inner-bg hover:bg-white/10 text-secondary hover:text-primary flex items-center justify-center transition-colors"
           >
             <MdClose size={18} />
@@ -149,7 +158,13 @@ function Modal({ title, icon: Icon = MdOutlineReceiptLong, maxWidth = "max-w-xl"
         </div>
         <div className="p-6 space-y-5">{children}</div>
       </div>
-    </div>,
+      </div>
+      <ConfirmDiscard
+        open={confirmDiscard}
+        onKeep={() => setConfirmDiscard(false)}
+        onDiscard={() => { setConfirmDiscard(false); onClose(); }}
+      />
+    </>,
     document.body
   );
 }
@@ -2160,8 +2175,20 @@ const fmtWhen = (d) => {
   });
 };
 
+const ROLE_LABELS = {
+  COMMITTEE_MEMBER: "Committee Member",
+  SOCIETY_ADMIN: "Society Admin",
+  SUPER_ADMIN: "Super Admin",
+  ADMIN: "Admin",
+  ACCOUNTANT: "Accountant",
+  RESIDENT: "Resident",
+  GUARD: "Guard",
+  FAMILY_MEMBER: "Family Member",
+};
+
 const AUDIT_FIELD_LABELS = {
   amount: "Amount",
+  new_balance: "New Balance",
   opening_balance: "Opening Balance",
   prev_balance: "Previous Balance",
   running_balance: "Running Balance",
@@ -2179,6 +2206,7 @@ const AUDIT_FIELD_LABELS = {
   payment_mode: "Payment Mode",
   method: "Payment Mode",
   paid_by: "Paid By",
+  created_by: "Created By",
   recording_user_id: "Recorded By ID",
   description: "Description",
   source: "Category",
@@ -2200,7 +2228,7 @@ const AUDIT_FIELD_LABELS = {
 const CURRENCY_FIELDS = ["amount", "opening_balance", "prev_balance", "new_balance", "running_balance", "balance", "total", "fee", "discount"];
 const DATE_FIELDS = ["effective_date", "entry_date", "payment_date", "created_at", "updated_at", "voided_at", "paid_at", "issue_date", "due_date"];
 
-const fmtAuditValue = (v, key) => {
+const fmtAuditValue = (v, key, fallbackName = "") => {
   if (v === null || v === undefined || v === "") return "";
   const k = String(key || "").toLowerCase();
   if (CURRENCY_FIELDS.includes(k)) return CURRENCY(v);
@@ -2210,6 +2238,21 @@ const fmtAuditValue = (v, key) => {
   }
   if (k === "status") return v === "POSTED" ? "Recorded" : v === "VOID" ? "Voided" : v;
   if (typeof v === "boolean") return v ? "Yes" : "No";
+
+  // Role conversion (e.g. COMMITTEE_MEMBER -> Committee Member)
+  const roleKey = String(v).toUpperCase();
+  if (["paid_by", "role", "performed_by_role", "payer_role"].includes(k) || ROLE_LABELS[roleKey]) {
+    if (ROLE_LABELS[roleKey]) return ROLE_LABELS[roleKey];
+    return String(v).replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+  }
+
+  // ID to Name conversion (e.g. created_by: 9 -> fallbackName e.g. "Amit Sharma")
+  if (["created_by", "created_by_user_id", "recording_user_id", "user_id"].includes(k)) {
+    if (fallbackName && (typeof v === "number" || !isNaN(Number(v)))) {
+      return fallbackName;
+    }
+  }
+
   return String(v);
 };
 
@@ -2284,7 +2327,7 @@ const getAuditHighlight = (row) => {
   return getMeaningfulAuditReason(row);
 };
 
-const prettyAuditList = (v, societyName = "") => {
+const prettyAuditList = (v, societyName = "", performerName = "") => {
   if (v === null || v === undefined || v === "" || typeof v !== "object" || Array.isArray(v)) return [];
 
   // Check date similarity
@@ -2318,11 +2361,11 @@ const prettyAuditList = (v, societyName = "") => {
       }
 
       // Skip internal IDs
-      if (["recording_user_id", "payer_user_id", "user_id", "resident_id", "society_id"].includes(keyLower)) {
+      if (["recording_user_id", "payer_user_id", "resident_id"].includes(keyLower)) {
         return null;
       }
 
-      const fv = fmtAuditValue(val, k);
+      const fv = fmtAuditValue(val, k, performerName);
       if (fv === "") return null;
       return {
         key: k,
@@ -2335,19 +2378,18 @@ const prettyAuditList = (v, societyName = "") => {
 
 /* ── AUDIT DETAILS POPUP (MODERN, CLEAN AUDIT RECORD MODAL) ─────────────── */
 function AuditDetailsModal({ row, societyName, onClose }) {
-  const before = prettyAuditList(row.old_value, societyName);
-  const after = prettyAuditList(row.new_value, societyName);
-  const tone = ACTION_TONES[row.action] || "gray";
-  const showBefore = before && before.length > 0;
-  const showAfter = after && after.length > 0;
-
   const performerName =
     row.performed_by_name ||
     row.performer_name ||
     row.created_by_name ||
     row.user_name ||
-    row.performed_by_role ||
-    "Society Admin";
+    (row.performed_by_role ? (ROLE_LABELS[row.performed_by_role] || row.performed_by_role) : "Society Admin");
+
+  const before = prettyAuditList(row.old_value, societyName, performerName);
+  const after = prettyAuditList(row.new_value, societyName, performerName);
+  const tone = ACTION_TONES[row.action] || "gray";
+  const showBefore = before && before.length > 0;
+  const showAfter = after && after.length > 0;
 
   const meaningfulReason = getMeaningfulAuditReason(row);
 

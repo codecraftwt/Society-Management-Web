@@ -90,13 +90,21 @@ const hi = {
   parkLoading:         "अनुरोध लोड हो रहे हैं...",
   parkEmpty:           "अभी तक कोई पार्किंग अनुरोध नहीं।",
   parkSpot:            "स्पॉट",
-  parkColGuest:        "अतिथि",
+  parkColGuest:        "नाम",
   parkColVehicle:      "वाहन",
   parkColSpot:         "स्पॉट",
   parkStatusApproved:  "स्वीकृत",
   parkStatusRejected:  "अस्वीकृत",
   parkStatusPending:   "लंबित",
   parkStatusCompleted:   "पूरा हुआ", // or your preferred translation
+  parkGuestSuccess:    "अतिथि पार्किंग अनुरोध सफलतापूर्वक भेजा गया!",
+  parkModeSelf:        "स्वयं के लिए",
+  parkModeGuest:       "अतिथि के लिए",
+  parkSelfTitle:       "मेरा वाहन जोड़ें",
+  parkSelfName:        "वाहन का नाम",
+  parkWhichFlat:       "कौन सा फ्लैट?",
+  parkSelectFlat:      "फ्लैट चुनें…",
+  parkSelfSlotTitle:   "पार्किंग स्लॉट चुनें",
 
   // Resident Pre-Approval
   preapTitle:                  "विज़िटर पूर्व-अनुमोदन",

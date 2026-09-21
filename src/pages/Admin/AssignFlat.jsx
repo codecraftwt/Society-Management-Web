@@ -13,6 +13,7 @@ import {
 import Select from "../../components/common/Select";
 import GlobalButton from "../../components/common/GlobalButton";
 import ExpandableSearch from "../../components/common/ExpandableSearch";
+import { getRequiredError } from "../../utils/validators";
 
 /* ─────────────────────────────────────────
    HELPERS
@@ -345,7 +346,9 @@ function AssignWizard({ onClose, onSuccess }) {
 
   const handleSubmit = async () => {
     setFormError("");
-    if (!selectedFlatId || !residentId) {
+    const unitError = getRequiredError(selectedFlatId, "Unit");
+    const residentError = getRequiredError(residentId, "Resident");
+    if (unitError || residentError) {
       setFormError("Please select both a unit and a resident.");
       return;
     }

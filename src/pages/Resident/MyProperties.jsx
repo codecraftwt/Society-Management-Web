@@ -8,6 +8,9 @@ import {
 import { toast } from "react-toastify";
 import { AuthContext } from "../../context/AuthContext";
 import GlobalButton from "../../components/common/GlobalButton";
+import useUnsavedDirty from "../../hooks/useUnsavedDirty";
+import ConfirmDiscard from "../../components/common/ConfirmDiscard";
+import { getNameError, getEmailError, getMobileError, getRequiredDateError, getDateRangeError, getPasswordError } from "../../utils/validators";
 
 /* ─────────────────────────────────────────────
    Document Upload Field
@@ -66,6 +69,14 @@ export default function MyProperties() {
   });
   const [aadharFile, setAadharFile] = useState(null);
   const [panFile, setPanFile]       = useState(null);
+
+  // Unsaved-changes guard
+  const [confirmDiscard, setConfirmDiscard] = useState(false);
+  const dirtyRef = useUnsavedDirty(showForm);
+  const requestCloseAddTenant = () => {
+    if (dirtyRef.current) setConfirmDiscard(true);
+    else setShowForm(false);
+  };
 
   // View Tenant Modal
   const [viewTenantData, setViewTenantData] = useState(null);
@@ -126,6 +137,28 @@ export default function MyProperties() {
   ───────────────────────────────────────── */
   const handleAddTenant = async (e) => {
     e.preventDefault();
+
+    const nameError = getNameError(formData.name, "Full name");
+    if (nameError) return toast.error(nameError);
+
+    const emailError = getEmailError(formData.email);
+    if (emailError) return toast.error(emailError);
+
+    const phoneError = getMobileError(formData.phone);
+    if (phoneError) return toast.error(phoneError);
+
+    const passwordError = getPasswordError(formData.password, "Temp password");
+    if (passwordError) return toast.error(passwordError);
+
+    const moveInError = getRequiredDateError(formData.move_in_date, "Lease start date");
+    if (moveInError) return toast.error(moveInError);
+
+    const moveOutError = getRequiredDateError(formData.move_out_date, "Lease end date");
+    if (moveOutError) return toast.error(moveOutError);
+
+    const rangeError = getDateRangeError(formData.move_in_date, formData.move_out_date, "Lease start date", "Lease end date");
+    if (rangeError) return toast.error(rangeError);
+
     if (!aadharFile || !panFile)
       return toast.error("Please upload both Aadhar and PAN documents.");
 
@@ -364,7 +397,7 @@ export default function MyProperties() {
         <div
           className="fixed inset-0 flex items-center justify-center p-4 animate-fadeIn"
           style={{ background: "rgba(0,0,0,0.8)", backdropFilter: "blur(5px)", zIndex: 9999 }}
-          onClick={() => setShowForm(false)}
+          onClick={requestCloseAddTenant}
         >
           <div
             className="rounded-2xl w-full max-w-2xl max-h-[85vh] overflow-y-auto shadow-2xl animate-scaleIn"
@@ -376,7 +409,7 @@ export default function MyProperties() {
               style={{ background: "var(--card-bg, #1e1e2d)", borderColor: "var(--divider, rgba(255,255,255,0.1))" }}
             >
               <h3 className="text-lg font-bold" style={{ color: "var(--text-primary, #fff)" }}>Add Tenant Details</h3>
-              <button type="button" onClick={() => setShowForm(false)} className="text-secondary hover:opacity-80 transition">
+              <button type="button" onClick={requestCloseAddTenant} className="text-secondary hover:opacity-80 transition">
                 <MdClose size={22} />
               </button>
             </div>
@@ -427,6 +460,12 @@ export default function MyProperties() {
         </div>,
         document.body
       )}
+
+      <ConfirmDiscard
+        open={confirmDiscard}
+        onKeep={() => setConfirmDiscard(false)}
+        onDiscard={() => { setConfirmDiscard(false); setShowForm(false); }}
+      />
 
       {/* ── VIEW TENANT MODAL ── */}
       {viewTenantData && createPortal(

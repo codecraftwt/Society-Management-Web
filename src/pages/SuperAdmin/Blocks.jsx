@@ -5,6 +5,8 @@ import API from "../../services/api";
 import { MdDelete, MdLayers, MdHomeWork, MdArrowBack, MdAdd } from "react-icons/md";
 import { FaBuilding } from "react-icons/fa";
 import Select from "../../components/common/Select";
+import { toast } from "react-toastify";
+import FieldError from "../../components/common/FieldError";
 import { getTitleError, getNumberError } from "../../utils/validators";
 import GlobalButton from "../../components/common/GlobalButton";
 import GlobalTable from "../../components/common/GlobalTable";
@@ -63,24 +65,30 @@ export default function Blocks() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setFieldErrors({});
     const nameErr = getTitleError(name, "Block/Tower name");
-    if (nameErr) { alert(nameErr); return; }
+    if (nameErr) { toast.error(nameErr); setFieldErrors(p => ({ ...p, name: nameErr })); return; }
     const floorErr = getNumberError(floorCount, "No. of Floors", { min: 1, allowZero: false });
-    if (floorErr) { alert(floorErr); return; }
+    if (floorErr) { toast.error(floorErr); setFieldErrors(p => ({ ...p, floorCount: floorErr })); return; }
     const flatsPerFloorErr = getNumberError(flatsPerFloor, "Flats per Floor", { min: 1, allowZero: false });
-    if (flatsPerFloorErr) { alert(flatsPerFloorErr); return; }
-    await API.post("/blocks", {
-      name: name.trim(),
-      society_id: societyId,
-      floor_count: Number(floorCount),
-      flats_per_floor: Number(flatsPerFloor),
-      property_type: propertyType
-    });
-    setName("");
-    setFloorCount("");
-    setFlatsPerFloor("");
-    setPropertyType("Apartments");
-    loadBlocks();
+    if (flatsPerFloorErr) { toast.error(flatsPerFloorErr); setFieldErrors(p => ({ ...p, flatsPerFloor: flatsPerFloorErr })); return; }
+    try {
+      await API.post("/blocks", {
+        name: name.trim(),
+        society_id: societyId,
+        floor_count: Number(floorCount),
+        flats_per_floor: Number(flatsPerFloor),
+        property_type: propertyType
+      });
+      toast.success("Block created successfully!");
+      setName("");
+      setFloorCount("");
+      setFlatsPerFloor("");
+      setPropertyType("Apartments");
+      loadBlocks();
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to create block");
+    }
   };
 
   const handleDeleteConfirm = async () => {

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import API from "../../services/api";
+import { getPasswordError } from "../../utils/validators";
 
 export default function ResetPassword() {
   const { token } = useParams();
@@ -22,8 +23,9 @@ export default function ResetPassword() {
       return setError("Passwords do not match");
     }
 
-    if (password.length < 6) {
-      return setError("Password must be at least 6 characters");
+    const passwordError = getPasswordError(password);
+    if (passwordError) {
+      return setError(passwordError);
     }
 
     try {

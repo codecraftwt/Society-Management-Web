@@ -682,34 +682,33 @@ export default function GuardParking() {
 
   const handleAssign = async (id) => {
     const slot = selectedSlot[id];
-    if (!slot) { alert(t("gpErrSelectSlot")); return; }
+    if (!slot) { toast.error(t("gpErrSelectSlot") || "Please select a slot"); return; }
     try {
       await API.put(`/parking/${id}/assign`, { assigned_spot: slot });
       setSelectedSlot({ ...selectedSlot, [id]: "" });
-      // ✅ Socket will handle the UI update — no need to reload here
-      // But reload slots since one was just assigned
+      toast.success("Parking slot assigned successfully!");
       loadSlots();
     } catch (err) {
-      alert(err?.response?.data?.message || "Failed to assign slot");
+      toast.error(err?.response?.data?.message || "Failed to assign slot");
     }
   };
 
   const handleReject = async (id) => {
     try {
       await API.put(`/parking/${id}/reject`);
-      // ✅ Socket will handle the UI update
+      toast.info("Request rejected");
     } catch (err) {
-      alert(err?.response?.data?.message || "Failed to reject");
+      toast.error(err?.response?.data?.message || "Failed to reject");
     }
   };
 
   const handleExit = async (id) => {
     try {
       await API.put(`/parking/${id}/exit`);
-      // ✅ Socket will handle the UI update
+      toast.success("Exit recorded successfully!");
       loadSlots();
     } catch (err) {
-      alert(err?.response?.data?.message || "Failed to mark exit");
+      toast.error(err?.response?.data?.message || "Failed to mark exit");
     }
   };
 

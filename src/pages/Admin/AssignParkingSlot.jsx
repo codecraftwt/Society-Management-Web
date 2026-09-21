@@ -20,6 +20,8 @@ import GlobalButton from "../../components/common/GlobalButton";
 import SlidingTabs from "../../components/common/SlidingTabs";
 import ExpandableSearch from "../../components/common/ExpandableSearch";
 import { getRequiredError, getTitleError, getNumberError } from "../../utils/validators";
+import useUnsavedDirty from "../../hooks/useUnsavedDirty";
+import ConfirmDiscard from "../../components/common/ConfirmDiscard";
 
 /* ── Debounce hook ── */
 function useDebounce(value, delay = 500) {
@@ -805,6 +807,18 @@ export default function AssignParkingSlot() {
   const [editSlot, setEditSlot] = useState(null);
   const [editForm, setEditForm] = useState({ slot_number: "", parking_floor: "", vehicle_type: "CAR", parking_type: "DEFAULT" });
   const [editSubmitting, setEditSubmitting] = useState(false);
+
+  /* Unsaved-changes guard (create + edit slot forms) */
+  const [confirmDiscard, setConfirmDiscard] = useState(false);
+  const dirtyRef = useUnsavedDirty(showForm || !!editSlot);
+  const requestCloseForm = () => {
+    if (dirtyRef.current) setConfirmDiscard(true);
+    else setShowForm(false);
+  };
+  const requestCloseEdit = () => {
+    if (dirtyRef.current) setConfirmDiscard(true);
+    else setEditSlot(null);
+  };
   const [editError, setEditError] = useState("");
 
   const handleOpenCreate = () => {
@@ -1817,20 +1831,20 @@ export default function AssignParkingSlot() {
       {/* Flat History Style Pop-up Modal: Create Slots */}
       {showForm &&
         createPortal(
-          <div
-            className="fh-modal-overlay"
-            onClick={() => setShowForm(false)}
-            style={{
-              position: "fixed",
-              inset: 0,
-              zIndex: 1300,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              padding: "16px",
-              overflowY: "auto",
-            }}
-          >
+<div
+          className="fh-modal-overlay"
+          onClick={requestCloseForm}
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 1300,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "16px",
+            overflowY: "auto",
+          }}
+        >
             <div
               className="fh-modal-box"
               style={{
@@ -1889,7 +1903,7 @@ export default function AssignParkingSlot() {
                   <button
                     type="button"
                     className="fh-modal-close-btn"
-                    onClick={() => setShowForm(false)}
+                    onClick={requestCloseForm}
                     title="Close Popup (Esc)"
                   >
                     <MdClose size={16} />
@@ -2045,7 +2059,7 @@ export default function AssignParkingSlot() {
                   <button
                     type="button"
                     className="fh-confirm-btn--cancel"
-                    onClick={() => setShowForm(false)}
+                    onClick={requestCloseForm}
                   >
                     {t("cancel") || "Cancel"}
                   </button>
@@ -2140,7 +2154,7 @@ export default function AssignParkingSlot() {
         createPortal(
           <div
             className="fh-modal-overlay"
-            onClick={() => setEditSlot(null)}
+            onClick={requestCloseEdit}
             style={{
               position: "fixed",
               inset: 0,
@@ -2210,7 +2224,7 @@ export default function AssignParkingSlot() {
                   <button
                     type="button"
                     className="fh-modal-close-btn"
-                    onClick={() => setEditSlot(null)}
+                    onClick={requestCloseEdit}
                     title="Close Popup (Esc)"
                   >
                     <MdClose size={16} />
@@ -2388,7 +2402,7 @@ export default function AssignParkingSlot() {
                   <button
                     type="button"
                     className="fh-confirm-btn--cancel"
-                    onClick={() => setEditSlot(null)}
+                    onClick={requestCloseEdit}
                   >
                     {t("cancel") || "Cancel"}
                   </button>
@@ -2490,6 +2504,13 @@ export default function AssignParkingSlot() {
           </div>,
           document.body
         )}
+
+      {/* Unsaved-changes discard confirm */}
+      <ConfirmDiscard
+        open={confirmDiscard}
+        onKeep={() => setConfirmDiscard(false)}
+        onDiscard={() => { setConfirmDiscard(false); if (editSlot) setEditSlot(null); else setShowForm(false); }}
+      />
     </div>
   );
 }

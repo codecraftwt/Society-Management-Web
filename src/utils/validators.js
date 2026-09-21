@@ -149,6 +149,21 @@ export const getNonNegativeNumberError = (value, label = 'Amount') => {
 };
 
 /**
+ * Password validation (mirrors the mobile app). Requires at least 8 characters
+ * with at least one uppercase letter, one lowercase letter and one number.
+ * Use for: temp passwords, reset/new passwords.
+ */
+export const getPasswordError = (value, label = 'Password') => {
+  if (isEmpty(value)) return `${label} is required.`;
+  const v = String(value);
+  if (v.length < 8) return `${label} must be at least 8 characters.`;
+  if (!/[A-Z]/.test(v)) return `${label} must contain at least one uppercase letter.`;
+  if (!/[a-z]/.test(v)) return `${label} must contain at least one lowercase letter.`;
+  if (!/\d/.test(v)) return `${label} must contain at least one number.`;
+  return null;
+};
+
+/**
  * Description / long-text validation.
  * @param {number} maxLength - optional maximum length
  */
@@ -162,15 +177,27 @@ export const getDescriptionError = (value, label = 'Description', maxLength = 10
 };
 
 const parseISODate = (value) => {
-  if (typeof value !== 'string' || !value) return null;
-  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value.trim());
+  if (value instanceof Date) return isNaN(value.getTime()) ? null : value;
+  if (typeof value !== 'string' && typeof value !== 'number') return null;
+  if (!value) return null;
+
+  const str = String(value).trim();
+  if (!str) return null;
+
+  // Standard JS Date constructor handles ISO 8601 (YYYY-MM-DDTHH:mm:ss.sssZ, datetime-local, RFC2822, etc.)
+  const d = new Date(str);
+  if (!isNaN(d.getTime())) return d;
+
+  // Regex fallback for YYYY-MM-DD or YYYY-MM-DD HH:mm:ss
+  const m = /^(\d{4})-(\d{2})-(\d{2})(?:[T ](\d{2}):(\d{2})(?::(\d{2}))?)?$/.exec(str);
   if (!m) return null;
-  const [, y, mo, d] = m;
-  const date = new Date(Date.UTC(Number(y), Number(mo) - 1, Number(d)));
+  const [, y, mo, day, hh = 0, mm = 0, ss = 0] = m;
+  if (Number(hh) > 23 || Number(mm) > 59 || Number(ss) > 59) return null;
+  const date = new Date(Date.UTC(Number(y), Number(mo) - 1, Number(day), Number(hh), Number(mm), Number(ss)));
   if (
     date.getUTCFullYear() !== Number(y) ||
     date.getUTCMonth() !== Number(mo) - 1 ||
-    date.getUTCDate() !== Number(d)
+    date.getUTCDate() !== Number(day)
   ) {
     return null;
   }
@@ -225,9 +252,54 @@ export const getNotPastDateError = (value, label = 'Date') => {
  */
 export const getVehicleNumberError = (value, label = 'Vehicle number') => {
   if (isEmpty(value)) return `${label} is required.`;
-  const v = value.trim().toUpperCase().replace(/\s/g, '');
+  const v = String(value).trim().toUpperCase().replace(/\s/g, '');
   if (!/^[A-Z]{2}\d{2}[A-Z]{1,2}\d{4}$/.test(v)) {
-    return `Please enter a valid Indian ${label.toLowerCase()}.`;
+    return `Please enter a valid Indian ${label.toLowerCase()} (e.g. MH12AB1234).`;
+  }
+  return null;
+};
+
+/**
+ * Select/dropdown validation. Rejects empty strings, null, undefined,
+ * or default placeholder options like "-- Select --" or "select".
+ */
+export const getSelectError = (value, label = 'Selection') => {
+  if (isEmpty(value)) return `${label} is required.`;
+  const v = String(value).trim();
+  if (
+    v === '' ||
+    /^--(.*)--$/.test(v) ||
+    v.toLowerCase() === 'select' ||
+    v.toLowerCase().startsWith('select ')
+  ) {
+    return `Please select a valid ${label.toLowerCase()}.`;
+  }
+  return null;
+};
+
+/**
+ * File upload validation (presence, size limit, mime/extension).
+ */
+export const getFileError = (
+  file,
+  label = 'File',
+  { required = false, maxSizeMB = 10, allowedExtensions = [] } = {}
+) => {
+  if (required && !file) return `${label} is required.`;
+  if (!file) return null;
+
+  if (maxSizeMB && file.size > maxSizeMB * 1024 * 1024) {
+    return `${label} size exceeds maximum limit of ${maxSizeMB} MB.`;
+  }
+
+  if (allowedExtensions && allowedExtensions.length > 0) {
+    const ext = file.name ? file.name.split('.').pop().toLowerCase() : '';
+    const isAllowed = allowedExtensions.some(
+      (e) => e.toLowerCase().replace('.', '') === ext
+    );
+    if (!isAllowed) {
+      return `${label} type must be one of: ${allowedExtensions.join(', ')}`;
+    }
   }
   return null;
 };
@@ -269,6 +341,7 @@ export const validators = {
   getNameError,
   getEmailError,
   getMobileError,
+  getPasswordError,
   getNumberError,
   getPositiveAmountError,
   getNonNegativeNumberError,
@@ -278,6 +351,8 @@ export const validators = {
   getDateRangeError,
   getNotPastDateError,
   getVehicleNumberError,
+  getSelectError,
+  getFileError,
   validateForm,
   hasErrors,
 };

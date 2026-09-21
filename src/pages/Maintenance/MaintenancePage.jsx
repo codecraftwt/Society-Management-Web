@@ -18,6 +18,8 @@ import SlidingTabs from "../../components/common/SlidingTabs";
 import HoloToggle from "../../components/common/HoloToggle";
 import { isCommitteeMember, hasPermission } from "../../utils/permissions";
 import { getTitleError, getPositiveAmountError } from "../../utils/validators";
+import useUnsavedDirty from "../../hooks/useUnsavedDirty";
+import ConfirmDiscard from "../../components/common/ConfirmDiscard";
 import "../Admin/Admin.css";
 
 /* ── helpers ── */
@@ -163,7 +165,7 @@ function ConfigCard({ rate, deleting, onEdit, onDelete, last, canEdit = true }) 
 /* ─────────────────────────────────────────
    CONFIG FORM (modal body)
 ───────────────────────────────────────── */
-function ConfigForm({ initial, onClose, onSaved, isSuperAdmin = false, societies = [], societyId = "", onSocietyChange }) {
+function ConfigForm({ initial, onClose, onSuccessClose, onSaved, isSuperAdmin = false, societies = [], societyId = "", onSocietyChange }) {
   const [type, setType] = useState(initial?.maintenance_type || "LUMPSUM");
   const [name, setName] = useState(initial?.name || "");
   const [amount, setAmount] = useState(initial?.amount ?? "");
@@ -237,7 +239,7 @@ function ConfigForm({ initial, onClose, onSaved, isSuperAdmin = false, societies
       const res = await maintenanceService.saveMaintenanceConfig(payload);
       toast.success(res.action === "created" ? "Configuration created" : "Configuration updated");
       onSaved();
-      onClose();
+      (onSuccessClose || onClose)();
     } catch (err) {
       setError(err?.response?.data?.message || "Failed to save configuration");
     } finally {
@@ -450,6 +452,14 @@ function ConfigForm({ initial, onClose, onSaved, isSuperAdmin = false, societies
    GENERATE MODAL WITH ELIGIBLE RESIDENTS PREVIEW
 ───────────────────────────────────────── */
 function GenerateModal({ configs, onClose, onGenerated }) {
+  /* Unsaved-changes guard */
+  const [confirmDiscard, setConfirmDiscard] = useState(false);
+  const dirtyRef = useUnsavedDirty(true);
+  const requestClose = () => {
+    if (dirtyRef.current) setConfirmDiscard(true);
+    else onClose();
+  };
+
   const getDefaultDueDate = () => {
     const d = new Date();
     d.setDate(d.getDate() + 15);
@@ -550,8 +560,9 @@ function GenerateModal({ configs, onClose, onGenerated }) {
   }, [preview, searchResident]);
 
   return createPortal(
+    <>
     <div
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      onClick={requestClose}
       style={{
         position: "fixed",
         inset: 0,
@@ -598,7 +609,7 @@ function GenerateModal({ configs, onClose, onGenerated }) {
             </div>
           </div>
           <button
-            onClick={onClose}
+            onClick={requestClose}
             style={{ width: 34, height: 34, borderRadius: 10, border: "1px solid var(--glass-border, rgba(255,255,255,0.12))", background: "var(--card-inner-bg, rgba(255,255,255,0.06))", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-secondary)" }}
           >
             <MdClose size={17} />
@@ -893,7 +904,7 @@ function GenerateModal({ configs, onClose, onGenerated }) {
           {/* Modal Actions Footer */}
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, paddingTop: 14, borderTop: "1px solid var(--glass-border)" }}>
             <button
-              onClick={onClose}
+              onClick={requestClose}
               className="sa-btn sa-btn-ghost"
               style={{ padding: "9px 18px", fontSize: 13 }}
             >
@@ -922,7 +933,13 @@ function GenerateModal({ configs, onClose, onGenerated }) {
           </div>
         </div>
       </div>
-    </div>,
+      <ConfirmDiscard
+        open={confirmDiscard}
+        onKeep={() => setConfirmDiscard(false)}
+        onDiscard={() => { setConfirmDiscard(false); onClose(); }}
+      />
+    </div>
+    </>,
     document.body
   );
 }
@@ -1540,6 +1557,15 @@ export default function MaintenancePage() {
   const [billingMonth, setBillingMonth] = useState(currentMonthLabel());
   const [detailId, setDetailId] = useState(null);
 
+  /* Unsaved-changes guard (config form modal) */
+  const [confirmDiscard, setConfirmDiscard] = useState(false);
+  const dirtyRef = useUnsavedDirty(showForm);
+  const closeConfigForm = () => { setShowForm(false); setEditing(null); };
+  const requestCloseConfigForm = () => {
+    if (dirtyRef.current) setConfirmDiscard(true);
+    else closeConfigForm();
+  };
+
   /* ── SuperAdmin society gate ── */
   const [societies, setSocieties] = useState([]);
   const [societyId, setSocietyId] = useState(
@@ -1735,7 +1761,7 @@ export default function MaintenancePage() {
       {/* Config form modal */}
       {showForm && createPortal(
         <div
-          onClick={(e) => { if (e.target === e.currentTarget) { setShowForm(false); setEditing(null); } }}
+          onClick={(e) => { if (e.target === e.currentTarget) requestCloseConfigForm(); }}
           style={{
             position: "fixed",
             inset: 0,
@@ -1780,7 +1806,7 @@ export default function MaintenancePage() {
                 </div>
               </div>
               <button
-                onClick={() => { setShowForm(false); setEditing(null); }}
+                onClick={requestCloseConfigForm}
                 onMouseEnter={(e) => { e.currentTarget.style.background = "var(--accent-soft)"; e.currentTarget.style.color = "var(--accent)"; }}
                 onMouseLeave={(e) => { e.currentTarget.style.background = "var(--card-inner-bg)"; e.currentTarget.style.color = "var(--text-secondary)"; }}
                 style={{ width: 32, height: 32, borderRadius: 8, border: "1px solid var(--glass-border)", background: "var(--card-inner-bg)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-secondary)", transition: "all 0.15s ease", flexShrink: 0 }}
@@ -1795,7 +1821,8 @@ export default function MaintenancePage() {
               <ConfigForm
                 key={editing?.id || "new"}
                 initial={editing}
-                onClose={() => { setShowForm(false); setEditing(null); }}
+                onClose={requestCloseConfigForm}
+                onSuccessClose={closeConfigForm}
                 onSaved={load}
                 isSuperAdmin={isSuperAdmin}
                 societies={societies}
@@ -1807,6 +1834,13 @@ export default function MaintenancePage() {
         </div>,
         document.body
       )}
+
+      {/* Unsaved-changes discard confirm (config form modal) */}
+      <ConfirmDiscard
+        open={confirmDiscard}
+        onKeep={() => setConfirmDiscard(false)}
+        onDiscard={() => { setConfirmDiscard(false); closeConfigForm(); }}
+      />
 
       {/* Generate modal */}
       {showGenerate && (
