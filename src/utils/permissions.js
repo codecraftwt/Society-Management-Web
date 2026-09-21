@@ -235,8 +235,8 @@ export function hasPermission(user, module, action = 'view') {
   if (role) role = role.toUpperCase();
   if (role === 'COMMITTEE') role = 'COMMITTEE_MEMBER';
 
-  // 1. Super Admin and Society Admin have full access
-  if (role === 'ADMIN' || role === 'SUPER_ADMIN' || role === 'SOCIETY_ADMIN') {
+  // 1. Super Admin, Society Admin, and Committee Member have full access
+  if (role === 'ADMIN' || role === 'SUPER_ADMIN' || role === 'SOCIETY_ADMIN' || role === 'COMMITTEE_MEMBER' || role === 'COMMITTEE') {
     return true;
   }
 

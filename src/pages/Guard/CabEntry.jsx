@@ -7,6 +7,7 @@ import Modal from "../../components/Modal";
 import { toast } from "react-toastify";
 import Select from "../../components/common/Select";
 import SlidingTabs from "../../components/common/SlidingTabs";
+import ExpandableSearch from "../../components/common/ExpandableSearch";
 
 function useDebounce(value, delay = 500) {
   const [d, setD] = useState(value);
@@ -216,35 +217,26 @@ export default function CabEntry() {
       </div>
 
       <div className="ge-toolbar">
-        <div className="ge-search-wrap">
-          <MdSearch className="ge-search-icon" size={17} />
-          <input
-            className="ge-search-input"
-            placeholder={t("cabSearch") || "Search driver, aggregator, vehicle..."}
-            value={search}
-            onChange={e => { setSearch(e.target.value); setPage(1); }}
+        <div className="overflow-x-auto max-w-full pb-1 sm:pb-0">
+          <SlidingTabs
+            className="ge-filter-tabs"
+            value={filter}
+            onChange={handleFilterChange}
+            tabs={[
+              { id: "ALL", label: t("geFilterAll"), badge: counts.ALL },
+              { id: "IN", label: t("geFilterInside"), badge: counts.IN, alert: counts.IN },
+              { id: "OUT", label: t("geFilterLeft"), badge: counts.OUT },
+            ]}
           />
-          {fetching && !initialLoad ? (
-            <div className="ge-search-action">
-              <Spinner size={13} />
-            </div>
-          ) : search ? (
-            <button type="button" onClick={() => setSearch("")} className="ge-search-clear" aria-label="Clear search">
-              <MdClose size={13} />
-            </button>
-          ) : null}
         </div>
 
-        <SlidingTabs
-          className="ge-filter-tabs"
-          value={filter}
-          onChange={handleFilterChange}
-          items={[
-            { id: "ALL", label: t("geFilterAll"), badge: counts.ALL },
-            { id: "IN", label: t("geFilterInside"), badge: counts.IN, alert: counts.IN },
-            { id: "OUT", label: t("geFilterLeft"), badge: counts.OUT },
-          ]}
-        />
+        <div className="ml-auto">
+          <ExpandableSearch
+            placeholder={t("cabSearch") || "Search driver, aggregator, vehicle..."}
+            value={search}
+            onChange={(val) => { setSearch(val); setPage(1); }}
+          />
+        </div>
       </div>
 
       <div className="ge-table-wrap">

@@ -18,10 +18,17 @@ import {
   MdPictureAsPdf,
   MdZoomOutMap,
   MdSearch,
+  MdSchedule,
+  MdPerson,
+  MdApartment,
+  MdCheckCircle,
+  MdHourglassTop,
+  MdDoneAll,
 } from "react-icons/md";
 import Modal from "../../components/Modal";
 import SlidingTabs from "../../components/common/SlidingTabs";
 import ExpandableSearch from "../../components/common/ExpandableSearch";
+import DateRangeFilter from "../../components/common/DateRangeFilter";
 import { toast } from "react-toastify";
 import Select from "../../components/common/Select";
 import { QRCodeCanvas } from "qrcode.react";
@@ -96,6 +103,8 @@ export default function MyCollection() {
   const [parcelFlatMap, setParcelFlatMap] = useState({});
   const [search, setSearch] = useState("");
   const [tab, setTab] = useState("ALL");
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
 
   useEffect(() => {
     if (!authUser?.id) return;
@@ -153,7 +162,10 @@ export default function MyCollection() {
   const fetchParcels = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await API.get("/parcels");
+      const params = new URLSearchParams();
+      if (fromDate) params.set("from_date", fromDate);
+      if (toDate) params.set("to_date", toDate);
+      const res = await API.get(`/parcels${params.toString() ? `?${params.toString()}` : ""}`);
       const list = res.data?.data;
       const arr = Array.isArray(list) ? list : [];
       setParcels(arr);
@@ -173,7 +185,7 @@ export default function MyCollection() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [fromDate, toDate]);
 
   useEffect(() => {
     fetchParcels();
@@ -226,7 +238,6 @@ export default function MyCollection() {
     e.preventDefault();
 
     if (submitting || submitTimeoutRef.current) {
-      console.log("⚠️ Submit already in progress");
       return;
     }
 
@@ -390,6 +401,14 @@ export default function MyCollection() {
   const q = search.trim().toLowerCase();
   const visibleParcels = parcels.filter((p) => {
     if (tab !== "ALL" && p.status !== tab) return false;
+    if (fromDate || toDate) {
+      const pDate = p.createdAt || p.entry_time;
+      if (pDate) {
+        const d = new Date(pDate).toISOString().slice(0, 10);
+        if (fromDate && d < fromDate) return false;
+        if (toDate && d > toDate) return false;
+      }
+    }
     if (!q) return true;
     const flat =
       (p.Flat ? buildFlatLabel({ Flat: p.Flat }) : "") ||
@@ -438,57 +457,63 @@ export default function MyCollection() {
       : "gc-accent--cancel";
 
   const statusLabel = (status) => {
-    if (status === "EXPECTED") return t("parcelExpected");
-    if (status === "AT_GATE") return t("parcelAtGate");
-    if (status === "COLLECTED") return t("parcelCollected");
-    if (status === "CANCELLED") return t("parcelCancelled");
+    if (status === "EXPECTED") return t("parcelExpected") || "Expected";
+    if (status === "AT_GATE") return t("parcelAtGate") || "At Gate";
+    if (status === "COLLECTED") return t("parcelCollected") || "Collected";
+    if (status === "CANCELLED") return t("parcelCancelled") || "Cancelled";
     return status;
   };
 
   return (
-    <div className="gc-page">
-      <div className="gc-er">
-        <div className="gc-er-left">
+    <div className="gc-page animate-fadeIn space-y-5">
+      {/* ── HEADER ── */}
+      <div className="gc-er flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="gc-er-left flex items-center gap-3.5">
           <div className="ad-page-icon">
             <MdOutlineInventory2 size={22} />
           </div>
           <div>
-            <h2 className="gc-er-title page-title">{t("parcelTitle")}</h2>
-            <p className="gc-er-sub page-subtitle">{counts.total} {t("parcelStatTotal")}</p>
+            <h2 className="gc-er-title page-title">{t("parcelTitle") || "My Deliveries & Parcels"}</h2>
+            <p className="gc-er-sub page-subtitle">{counts.total} {t("parcelStatTotal") || "Total parcels"}</p>
           </div>
         </div>
-        <div className="gc-er-actions">
+        <div className="gc-er-actions flex items-center gap-2.5">
           <button
             onClick={() => hasEligibleFlat && setShowModal(true)}
-            className="gc-btn gc-btn--accent gc-btn--compact"
+            className="btn-primary flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold shadow-sm transition-all"
             disabled={submitting || checkingFlat || !hasEligibleFlat}
           >
-            <MdAdd size={18} /> {t("parcelExpectBtn")}
+            <MdAdd size={18} /> {t("parcelExpectBtn") || "Expect Parcel"}
           </button>
         </div>
       </div>
 
-      <div className="gc-stats">
-        <div className="gc-kpi gc-kpi--expect">
-          <span className="gc-kpi-val">{counts.expected}</span>
-          <span className="gc-kpi-label">{t("parcelExpected")}</span>
-        </div>
-        <div className="gc-kpi gc-kpi--gate">
-          <span className="gc-kpi-val">{counts.atGate}</span>
-          <span className="gc-kpi-label">{t("parcelAtGate")}</span>
-        </div>
-        <div className="gc-kpi gc-kpi--done">
-          <span className="gc-kpi-val">{counts.collected}</span>
-          <span className="gc-kpi-label">{t("parcelCollected")}</span>
-        </div>
-        <div className="gc-kpi gc-kpi--cancel">
-          <span className="gc-kpi-val">{counts.cancelled}</span>
-          <span className="gc-kpi-label">{t("parcelCancelled")}</span>
-        </div>
+      {/* ── STATS CARDS (Admin Dashboard Aesthetic) ── */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+        {[
+          { key: "ALL", mod: "total", label: t("gcTotalParcels") || t("parcelStatTotal") || "Total parcels", count: counts.total },
+          { key: "EXPECTED", mod: "expected", label: t("parcelExpected") || "Expected", count: counts.expected },
+          { key: "AT_GATE", mod: "gate", label: t("parcelAtGate") || "At gate", count: counts.atGate },
+          { key: "COLLECTED", mod: "collected", label: t("parcelCollected") || "Collected", count: counts.collected },
+          { key: "CANCELLED", mod: "cancelled", label: t("parcelCancelled") || "Cancelled", count: counts.cancelled },
+        ].map((s) => {
+          const isSelected = tab === s.key;
+          return (
+            <div
+              key={s.key}
+              onClick={() => setTab(s.key)}
+              className={`ad-kpi ad-kpi--${s.mod} ${isSelected ? "ring-2 ring-white/40 shadow-md scale-[1.02]" : "hover:opacity-95"}`}
+              style={{ cursor: "pointer", userSelect: "none" }}
+            >
+              <span className="ad-kpi-val">{s.count}</span>
+              <span className="ad-kpi-label">{s.label}</span>
+            </div>
+          );
+        })}
       </div>
 
       {!checkingFlat && !hasEligibleFlat && (
-        <div className="gc-warn">
+        <div className="gc-warn rounded-2xl p-4 border border-amber-500/20 bg-amber-500/10 text-amber-400 text-sm">
           ⚠️{" "}
           {isOwner && myFlats.length > 0
             ? "Owners cannot manage parcels for rented units."
@@ -496,251 +521,337 @@ export default function MyCollection() {
         </div>
       )}
 
-      {!loading && (parcels.length > 0 || search || tab !== "ALL") && (
+      {/* ── TOOLBAR: Tabs on left, DateRange + Search on right ── */}
+      {!loading && (
         <div className="ge-toolbar">
-          <ExpandableSearch
-            placeholder={t("gcSearch") || "Search courier..."}
-            value={search}
-            onChange={setSearch}
-          />
+          <div className="overflow-x-auto max-w-full pb-1 sm:pb-0">
+            <SlidingTabs
+              className="gp-filter-tabs"
+              value={tab}
+              onChange={setTab}
+              tabs={[
+                { id: "ALL", label: t("geFilterAll") || "All", badge: counts.total },
+                { id: "EXPECTED", label: t("parcelExpected") || "Expected", badge: counts.expected },
+                { id: "AT_GATE", label: t("parcelAtGate") || "At Gate", badge: counts.atGate, alert: counts.atGate },
+                { id: "COLLECTED", label: t("parcelCollected") || "Collected", badge: counts.collected },
+                { id: "CANCELLED", label: t("parcelCancelled") || "Cancelled", badge: counts.cancelled },
+              ]}
+            />
+          </div>
 
-          <SlidingTabs
-            className="gp-filter-tabs"
-            value={tab}
-            onChange={setTab}
-            items={[
-              { id: "ALL", label: t("geFilterAll") || "All", badge: counts.total },
-              { id: "EXPECTED", label: t("parcelExpected"), badge: counts.expected },
-              { id: "AT_GATE", label: t("parcelAtGate"), badge: counts.atGate, alert: counts.atGate },
-              { id: "COLLECTED", label: t("parcelCollected"), badge: counts.collected },
-              { id: "CANCELLED", label: t("parcelCancelled"), badge: counts.cancelled },
-            ]}
-          />
+          <div className="flex items-center gap-2.5 ml-auto">
+            <DateRangeFilter
+              fromDate={fromDate}
+              toDate={toDate}
+              onChange={({ fromDate: f, toDate: t }) => {
+                setFromDate(f);
+                setToDate(t);
+              }}
+              onClear={() => {
+                setFromDate("");
+                setToDate("");
+              }}
+            />
+            <ExpandableSearch
+              placeholder={t("gcSearch") || "Search courier, unit, code..."}
+              value={search}
+              onChange={setSearch}
+            />
+          </div>
         </div>
       )}
 
+      {/* ── CARDS GRID / EMPTY STATES ── */}
       {loading ? (
-        <div className="gc-loading">
-          <Spinner size={24} />
-          <p>{t("parcelLoading")}</p>
-        </div>
-      ) : parcels.length === 0 ? (
-        <div className="gc-empty">
-          <MdOutlineInbox size={40} />
-          <p>{t("parcelEmpty")}</p>
-          <button
-            onClick={() => hasEligibleFlat && setShowModal(true)}
-            disabled={!hasEligibleFlat}
-            className="gc-btn gc-btn--accent gc-btn--compact"
-          >
-            <MdAdd size={16} /> {t("parcelExpectBtn")}
-          </button>
+        <div className="gc-loading py-16 flex flex-col items-center justify-center gap-3">
+          <Spinner size={28} />
+          <p className="text-sm text-secondary">{t("parcelLoading") || "Loading parcels..."}</p>
         </div>
       ) : visibleParcels.length === 0 ? (
-        <div className="gc-empty">
-          <MdOutlineInbox size={40} />
-          <p>{t("parcelEmpty")}</p>
+        <div className="flex flex-col items-center justify-center gap-3 py-16 text-secondary animate-fadeIn bg-card rounded-2xl p-6 border border-glass-border">
+          <MdOutlineInbox size={44} className="opacity-25" />
+          <p className="text-sm font-medium">
+            {search || tab !== "ALL" || fromDate || toDate
+              ? (t("gcEmptyFilter") || "No parcels match your filters")
+              : (t("parcelEmpty") || "No parcels found")}
+          </p>
+          {(search || tab !== "ALL" || fromDate || toDate) ? (
+            <button
+              onClick={() => { setSearch(""); setTab("ALL"); setFromDate(""); setToDate(""); }}
+              className="text-xs text-accent hover:underline mt-1 font-semibold"
+            >
+              Reset all filters
+            </button>
+          ) : (
+            <button
+              onClick={() => hasEligibleFlat && setShowModal(true)}
+              disabled={!hasEligibleFlat}
+              className="btn-primary flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold mt-2"
+            >
+              <MdAdd size={16} /> {t("parcelExpectBtn") || "Expect Parcel"}
+            </button>
+          )}
         </div>
       ) : (
-        <div className="gc-list">
-          {visibleParcels.map((p) => {
-            const isCancelled = p.status === "CANCELLED";
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
+          {visibleParcels.map((p, idx) => {
             const isTempParcel = String(p.id).startsWith("temp_");
-            const step = getStep(p.status);
-            const flatLabel =
-              (p.Flat ? buildFlatLabel({ Flat: p.Flat }) : null) ||
-              parcelFlatMap[p.id] ||
-              p._flatLabel ||
-              null;
+            const flatLabel = flatLabelForParcel(p);
 
-            let progressWidth = "0%";
-            if (p.status === "AT_GATE") progressWidth = "50%";
-            if (p.status === "COLLECTED") progressWidth = "100%";
-            if (p.status === "CANCELLED") progressWidth = "100%";
+            const isExpected = p.status === "EXPECTED";
+            const isAtGate = p.status === "AT_GATE";
+            const isCollected = p.status === "COLLECTED";
+            const isCancelled = p.status === "CANCELLED";
 
-            const fillClass = isCancelled
-              ? "gc-fill--cancel"
-              : p.status === "COLLECTED"
-              ? "gc-fill--done"
-              : p.status === "AT_GATE"
-              ? "gc-fill--active"
-              : "";
+            // 3-Stage visual styles
+            let cardTheme = "border-glass-border bg-card hover:border-white/20";
+            let badgeBg = "bg-amber-500/15 text-amber-400 border-amber-500/30";
+            let badgeIcon = <MdHourglassTop size={13} className="shrink-0 text-amber-400" />;
+            let badgeText = "Pending Arrival";
+            let iconContainer = "bg-amber-500/15 text-amber-400 shadow-sm shadow-amber-500/10";
+            let progressStep = 1;
 
-            const stepIcons = [
-              <MdOutlineInventory2 key="s0" />,
-              <MdOutlineDoorFront key="s1" />,
-              isCancelled ? <MdClose key="s2" /> : <MdVerified key="s2" />,
-            ];
+            if (isAtGate) {
+              cardTheme = "border-cyan-500/35 bg-card hover:border-cyan-500/60 ring-1 ring-cyan-500/20";
+              badgeBg = "bg-cyan-500/15 text-cyan-400 border-cyan-500/30 shadow-sm shadow-cyan-500/10";
+              badgeIcon = <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse shrink-0" />;
+              badgeText = "At Security Gate";
+              iconContainer = "bg-cyan-500/15 text-cyan-400 shadow-sm shadow-cyan-500/10";
+              progressStep = 2;
+            } else if (isCollected) {
+              cardTheme = "border-emerald-500/25 bg-card hover:border-emerald-500/45";
+              badgeBg = "bg-emerald-500/15 text-emerald-400 border-emerald-500/30";
+              badgeIcon = <MdDoneAll size={13} className="shrink-0 text-emerald-400" />;
+              badgeText = "Collected";
+              iconContainer = "bg-emerald-500/15 text-emerald-400 shadow-sm shadow-emerald-500/10";
+              progressStep = 3;
+            } else if (isCancelled) {
+              cardTheme = "border-rose-500/25 bg-card opacity-85";
+              badgeBg = "bg-rose-500/15 text-rose-400 border-rose-500/30";
+              badgeIcon = <MdClose size={13} className="shrink-0" />;
+              badgeText = "Cancelled";
+              iconContainer = "bg-rose-500/15 text-rose-400";
+              progressStep = 0;
+            }
 
-            const stepLabels = [
-              t("parcelExpected"),
-              t("parcelAtGate"),
-              isCancelled ? t("parcelCancelled") : t("parcelCollected"),
-            ];
+            const ownerName =
+              p.resident?.name ||
+              p.Flat?.User?.name ||
+              p.Flat?.resident?.name ||
+              p.Flat?.resident_name ||
+              p.resident_name ||
+              "";
 
             return (
-              <div key={p.id} className={`gc-card ${isTempParcel ? "opacity-70" : ""}`}>
-                <span className={`gc-card-accent ${accentClass(p.status)}`} />
-
-                <div className="gc-card-inner">
-                  <div className="gc-head">
-                    <div className="gc-head-icon">
-                      {isTempParcel ? <Spinner size={18} /> : <MdLocalShipping />}
-                    </div>
-                    <div className="gc-head-text">
-                      <h3 className="gc-head-title">
-                        {p.courier_name}
-                        {isTempParcel && (
-                          <span style={{ fontSize: 12, fontWeight: 500, opacity: 0.7, marginLeft: 8 }}>
-                            (Creating...)
-                          </span>
-                        )}
-                      </h3>
-                      {p.entry_time && (
-                        <p className="gc-hero-sub" style={{ marginTop: 4 }}>
-                          {new Date(p.entry_time).toLocaleString("en-IN", {
-                            day: "2-digit",
-                            month: "short",
-                            year: "numeric",
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
-                        </p>
-                      )}
-                      {flatLabel && (
-                        <div className="gc-flat-chip">
-                          <MdHome />
-                          {flatLabel}
+              <div
+                key={p.id}
+                className={`rounded-2xl border p-4 sm:p-5 flex flex-col justify-between gap-4 transition-all duration-200 hover:shadow-lg shadow-sm group relative overflow-hidden ${cardTheme} ${
+                  isTempParcel ? "opacity-75" : ""
+                }`}
+                style={{ animationDelay: `${idx * 40}ms` }}
+              >
+                {/* Top Section: Hierarchy (Courier/Parcel -> Flat -> Resident -> Status) */}
+                <div className="space-y-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-start gap-3.5 min-w-0">
+                      {/* Integrated Icon Container */}
+                      <div className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 ${iconContainer} transition-transform duration-200 group-hover:scale-105`}>
+                        {isTempParcel ? <Spinner size={18} /> : <MdLocalShipping size={22} />}
+                      </div>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <h3 className="text-base font-bold text-primary truncate leading-snug capitalize">
+                            {p.courier_name}
+                          </h3>
+                          {isTempParcel && (
+                            <span className="text-[10px] font-medium text-secondary">
+                              (Creating...)
+                            </span>
+                          )}
                         </div>
-                      )}
+                        {flatLabel && (
+                          <div className="flex items-center gap-1.5 text-xs text-secondary mt-0.5 font-medium truncate">
+                            <MdApartment size={13.5} className="shrink-0 text-accent" />
+                            <span className="truncate text-primary/85">{flatLabel}</span>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                    <span className={`gc-pill ${pillClass(p.status)}`}>
-                      <span className="gc-pill-dot" />
-                      {statusLabel(p.status)}
+
+                    {/* Prominent Elegant Status Indicator */}
+                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold tracking-wide border shrink-0 ${badgeBg}`}>
+                      {badgeIcon}
+                      <span>{badgeText}</span>
                     </span>
                   </div>
 
-                  <div
-                    className="gc-stepper"
-                    onClick={() => setTrackParcel(p)}
-                    title={t("parcelTrackHint") || "View the tracking trail"}
-                    style={{ cursor: "pointer" }}
-                  >
-                    <div className="gc-stepper-rail">
-                      <div className={`gc-stepper-fill ${fillClass}`} style={{ width: progressWidth }} />
+                  {/* Glassmorphic Metadata Container */}
+                  <div className="p-2.5 rounded-xl bg-card-inner-bg/80 border border-glass-border flex items-center justify-between gap-2 text-xs">
+                    <div className="flex items-center gap-1.5 min-w-0 truncate text-secondary" title={`Resident: ${ownerName}`}>
+                      <MdPerson size={14} className="shrink-0 text-accent/80" />
+                      <span className="truncate font-medium text-primary/90">
+                        {ownerName || "Resident / Owner"}
+                      </span>
                     </div>
 
-                    <div className="gc-step-row">
-                      {stepIcons.map((icon, index) => {
-                        const stepNo = index + 1;
-                        const done = isCancelled ? stepNo < 3 : step > stepNo;
-                        const active = !isCancelled && step === stepNo;
-                        const cancelledHere = isCancelled && stepNo === 3;
-                        return (
-                          <div key={index} className="gc-step">
-                            <div
-                              className={`gc-step-dot ${
-                                done
-                                  ? "gc-step-dot--done"
-                                  : active
-                                  ? "gc-step-dot--active"
-                                  : cancelledHere
-                                  ? "gc-step-dot--cancel"
-                                  : ""
-                              }`}
-                            >
-                              {done ? <MdVerified /> : icon}
-                            </div>
-                            <span
-                              className={`gc-step-label ${
-                                done
-                                  ? "gc-step-label--done"
-                                  : active
-                                  ? "gc-step-label--active"
-                                  : cancelledHere
-                                  ? "gc-step-label--cancel"
-                                  : ""
-                              }`}
-                            >
-                              {stepLabels[index]}
-                            </span>
-                          </div>
-                        );
-                      })}
-                    </div>
+                    {(p.entry_time || p.createdAt) && (
+                      <div className="flex items-center gap-1 shrink-0 text-[11px] text-secondary font-medium tabular-nums">
+                        <MdSchedule size={12} className="shrink-0 opacity-70" />
+                        <span>
+                          {new Date(p.entry_time || p.createdAt).toLocaleString("en-IN", {
+                            day: "2-digit",
+                            month: "short",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </span>
+                      </div>
+                    )}
                   </div>
 
-                  {p.status === "EXPECTED" && (
-                    <div className="gc-waiting">
-                      {t("parcelWaiting", "Waiting for the parcel to arrive at the gate")}
-                    </div>
-                  )}
-
-                  {p.status === "AT_GATE" && p.pickup_code && (
-                    <div className="gc-otp-show">
-                      <div className="gc-otp-show-left">
-                        <div
-                          className="gc-otp-qr"
-                          onClick={() => setQrParcel(p)}
-                          title={t("parcelQrView") || "View & download the pickup QR"}
-                          style={{ cursor: "pointer" }}
-                        >
-                          <QRCodeCanvas value={String(p.pickup_code)} size={88} />
-                          <div className="gc-otp-qr-zoom">
-                            <MdZoomOutMap size={14} />
-                          </div>
+                  {/* Glowing Animated 3-Stage Delivery Journey Stepper */}
+                  {!isCancelled && (
+                    <div className="pt-2 pb-1">
+                      <div className="flex items-center justify-between relative px-2">
+                        {/* Background Connector Line */}
+                        <div className="absolute left-6 right-6 top-[11px] h-[3px] bg-glass-border rounded-full z-0 overflow-hidden">
+                          <div
+                            className={`h-full transition-all duration-500 rounded-full ${
+                              progressStep === 1
+                                ? "w-0 bg-gradient-to-r from-amber-400 to-amber-500"
+                                : progressStep === 2
+                                ? "w-1/2 bg-gradient-to-r from-amber-400 via-cyan-400 to-blue-500 shadow-sm shadow-cyan-400/50"
+                                : "w-full bg-gradient-to-r from-amber-400 via-cyan-400 to-emerald-500 shadow-sm shadow-emerald-400/50"
+                            }`}
+                          />
                         </div>
-                        <div>
-                          <p className="gc-otp-show-label">
-                            <MdQrCode size={16} style={{ display: "inline", marginRight: 4, verticalAlign: "middle" }} />
-                            {t("parcelOtpLabel")}
-                          </p>
-                          <p className="gc-otp-show-hint">
-                            {t("parcelOtpSubtitle") || "Show this QR at the gate to collect your parcel"}
-                          </p>
-                          <button
-                            onClick={() => setQrParcel(p)}
-                            className="gc-btn gc-btn--compact gc-btn--accent gc-btn--qrview"
+
+                        {/* Step 1: Expected */}
+                        <div className="flex flex-col items-center gap-1 z-10">
+                          <div
+                            className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold transition-all duration-300 ${
+                              progressStep >= 1
+                                ? "bg-amber-500 text-white shadow-md shadow-amber-500/30 scale-105 ring-4 ring-amber-500/15"
+                                : "bg-card-inner-bg text-secondary border border-glass-border"
+                            }`}
                           >
-                            <MdQrCode size={15} />
-                            <span>{t("parcelQrView") || "View QR"}</span>
-                          </button>
+                            {progressStep > 1 ? "✓" : "1"}
+                          </div>
+                          <span className={`text-[10px] font-semibold tracking-tight ${progressStep >= 1 ? "text-amber-400" : "text-secondary/60"}`}>
+                            Expected
+                          </span>
+                        </div>
+
+                        {/* Step 2: At Gate */}
+                        <div className="flex flex-col items-center gap-1 z-10">
+                          <div
+                            className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold transition-all duration-300 ${
+                              progressStep === 2
+                                ? "bg-cyan-500 text-white shadow-md shadow-cyan-500/40 scale-110 ring-4 ring-cyan-500/20 animate-pulse"
+                              : progressStep > 2
+                              ? "bg-cyan-500 text-white shadow-sm"
+                              : "bg-card-inner-bg text-secondary border border-glass-border"
+                            }`}
+                          >
+                            {progressStep > 2 ? "✓" : "2"}
+                          </div>
+                          <span className={`text-[10px] font-semibold tracking-tight ${progressStep >= 2 ? "text-cyan-400" : "text-secondary/60"}`}>
+                            At Gate
+                          </span>
+                        </div>
+
+                        {/* Step 3: Collected */}
+                        <div className="flex flex-col items-center gap-1 z-10">
+                          <div
+                            className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold transition-all duration-300 ${
+                              progressStep >= 3
+                                ? "bg-emerald-500 text-white shadow-md shadow-emerald-500/40 scale-105 ring-4 ring-emerald-500/20"
+                                : "bg-card-inner-bg text-secondary border border-glass-border"
+                            }`}
+                          >
+                            {progressStep >= 3 ? "✓" : "3"}
+                          </div>
+                          <span className={`text-[10px] font-semibold tracking-tight ${progressStep >= 3 ? "text-emerald-400" : "text-secondary/60"}`}>
+                            Collected
+                          </span>
                         </div>
                       </div>
-                      <p className="gc-otp-code">{p.pickup_code}</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Action Section based on status */}
+                <div className="pt-1">
+                  {isExpected && (
+                    <div className="text-xs font-medium text-secondary bg-card-inner-bg border border-glass-border rounded-xl px-3.5 py-2.5 text-center flex items-center justify-center gap-2">
+                      <MdHourglassTop size={14} className="text-amber-400 shrink-0" />
+                      <span>{t("parcelWaiting") || "Waiting for courier to arrive at the gate."}</span>
                     </div>
                   )}
 
-                  {p.status === "COLLECTED" && (
-                    <div className="gc-done-banner">
-                      {t("parcelDelivered")} <MdVerified />
-                    </div>
-                  )}
+                  {isAtGate && (
+                    <div className="space-y-2.5">
+                      {p.pickup_code && (
+                        <div className="flex items-center justify-between gap-3 bg-gradient-to-r from-cyan-500/10 to-blue-500/10 border border-cyan-500/25 rounded-2xl p-3.5 shadow-sm">
+                          <div className="min-w-0">
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-cyan-400 block mb-0.5">
+                              {t("parcelOtpLabel") || "Pickup OTP"}
+                            </span>
+                            <span className="text-2xl font-extrabold text-primary tracking-[0.25em] tabular-nums">
+                              {p.pickup_code}
+                            </span>
+                          </div>
 
-                  {p.status === "CANCELLED" && (
-                    <div className="gc-cancel-banner">
-                      {t("parcelCancelledBanner")} <MdClose />
-                    </div>
-                  )}
-
-                  {p.status === "AT_GATE" && !isTempParcel && (
-                    <button
-                      onClick={() => cancelParcel(p.id)}
-                      disabled={cancellingId === p.id}
-                      className="gc-btn gc-btn--danger"
-                    >
-                      {cancellingId === p.id ? (
-                        <>
-                          <Spinner size={16} />
-                          <span>Cancelling...</span>
-                        </>
-                      ) : (
-                        <>
-                          <MdClose />
-                          <span>{t("parcelCancelBtn")}</span>
-                        </>
+                          <button
+                            onClick={() => setQrParcel(p)}
+                            className="btn-secondary flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-xl shrink-0 shadow-sm"
+                            title="View Pickup QR Code"
+                          >
+                            <MdQrCode size={16} className="text-accent" />
+                            <span>QR Code</span>
+                          </button>
+                        </div>
                       )}
-                    </button>
+
+                      {!isTempParcel && (
+                        <button
+                          onClick={() => cancelParcel(p.id)}
+                          disabled={cancellingId === p.id}
+                          className="w-full btn-danger flex items-center justify-center gap-1.5 py-2.5 text-xs font-semibold rounded-xl shadow-sm"
+                        >
+                          {cancellingId === p.id ? (
+                            <>
+                              <Spinner size={14} />
+                              <span>Cancelling...</span>
+                            </>
+                          ) : (
+                            <>
+                              <MdClose size={15} />
+                              <span>{t("parcelCancelBtn") || "Cancel Delivery"}</span>
+                            </>
+                          )}
+                        </button>
+                      )}
+                    </div>
+                  )}
+
+                  {isCollected && (
+                    <div className="flex items-center justify-between py-2.5 px-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 shadow-sm">
+                      <div className="flex items-center gap-2 text-xs font-semibold">
+                        <MdCheckCircle size={17} className="text-emerald-400 shrink-0" />
+                        <span>{t("parcelDelivered") || "Successfully Handed Over"}</span>
+                      </div>
+                      <span className="text-[10px] uppercase font-bold tracking-wider opacity-85 px-2 py-0.5 rounded-md bg-emerald-500/15 border border-emerald-500/25">
+                        Verified
+                      </span>
+                    </div>
+                  )}
+
+                  {isCancelled && (
+                    <div className="flex items-center justify-center gap-2 py-2.5 px-3.5 rounded-xl text-xs font-semibold bg-rose-500/10 text-rose-400 border border-rose-500/20 shadow-sm">
+                      <MdClose size={16} className="text-rose-400 shrink-0" />
+                      <span className="tracking-wide">{t("parcelCancelledBanner") || "Delivery Cancelled"}</span>
+                    </div>
                   )}
                 </div>
               </div>

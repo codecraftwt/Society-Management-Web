@@ -168,6 +168,12 @@ function ResidentLayoutInner() {
       icon: MdVerified,
       group: "SERVICES & PROFILE",
     },
+    {
+      label: t("menuDirectory") || "Directory",
+      path: `${base}/directory`,
+      icon: MdPeople,
+      group: "SERVICES & PROFILE",
+    },
   ];
 
   const familyMenu = [
@@ -202,6 +208,12 @@ function ResidentLayoutInner() {
     {
       label: t("menuVisitors"),
       path: `${base}/visitors`,
+      icon: MdPeople,
+      group: "ACTIVITY & NOTICES",
+    },
+    {
+      label: t("menuDirectory") || "Directory",
+      path: `${base}/directory`,
       icon: MdPeople,
       group: "ACTIVITY & NOTICES",
     },

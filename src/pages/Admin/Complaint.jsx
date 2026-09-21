@@ -19,6 +19,7 @@ import { toast } from "react-toastify";
 import Select from "../../components/common/Select";
 import SlidingTabs from "../../components/common/SlidingTabs";
 import ExpandableSearch from "../../components/common/ExpandableSearch";
+import DateRangeFilter from "../../components/common/DateRangeFilter";
 import styles from "./Complaint.module.css";
 import { exportToPDF } from "../../utils/exportPDF";
 
@@ -1477,6 +1478,23 @@ export default function Complaint() {
             placeholder={t("compSearchPh") || "Search complaints..."}
             isOpen={isSearchOpen}
             onOpenChange={setIsSearchOpen}
+          />
+
+          {/* Date Range Filter */}
+          <DateRangeFilter
+            fromDate={dateFrom}
+            toDate={dateTo}
+            onChange={({ from, to }) => {
+              setDateFrom(from);
+              setDateTo(to);
+              setPage(1);
+            }}
+            onClear={() => {
+              setDateFrom("");
+              setDateTo("");
+              setPage(1);
+            }}
+            placeholder={t("compDate") || "Date Range"}
           />
 
           {/* Super Admin Society Filter */}

@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback, useContext } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 import API from "../../services/api";
 import { useLang } from "../../context/LanguageContext";
 import { AuthContext } from "../../context/AuthContext";
@@ -13,6 +14,7 @@ import {
   MdOutlineInbox, MdCheckCircle, MdSchedule,
   MdSearch, MdClose, MdArrowForward,
   MdChevronLeft, MdChevronRight,
+  MdContentCopy, MdLocationCity, MdAccountBalance,
 } from "react-icons/md";
 
 function useDebounce(value, delay = 500) {
@@ -190,7 +192,7 @@ export default function ResidentBills() {
     }
   }, [user, navigate]);
 
-  const [accountant,  setAccountant]  = useState(null);
+  const [accountants,  setAccountants]  = useState([]);
   const [loadingAcct, setLoadingAcct] = useState(true);
   const [showAccountant, setShowAccountant] = useState(false);
 
@@ -212,13 +214,19 @@ export default function ResidentBills() {
     API.get("/users/accountant")
       .then((r) => {
         const data = Array.isArray(r.data)
-          ? (r.data.find((a) => a.status === "ACTIVE") || r.data[0] || null)
-          : r.data;
-        setAccountant(data);
+          ? r.data
+          : r.data ? [r.data] : [];
+        setAccountants(data);
       })
       .catch(console.error)
       .finally(() => setLoadingAcct(false));
   }, []);
+
+  const copyToClipboard = (text, label) => {
+    if (!text) return;
+    navigator.clipboard.writeText(text);
+    toast.success(`${label} copied to clipboard!`);
+  };
 
   const loadBills = useCallback(async (pageNum, currentFilter, currentSearch, isInitial = false) => {
     if (isInitial) setInitialLoad(true);
@@ -268,13 +276,6 @@ export default function ResidentBills() {
     { id: "PENDING", label: t("billTabPending"), count: counts.pending },
   ];
 
-  const ACCT_ROWS = accountant ? [
-    { Icon: MdPerson,   label: "Full Name", val: accountant.name || "—" },
-    { Icon: MdEmail,    label: "Email",     val: accountant.email || "—" },
-    { Icon: MdPhone,    label: "Phone",     val: accountant.phone || "—" },
-    { Icon: MdBusiness, label: "Society",   val: accountant.societyName || accountant.society?.name || "—" },
-  ] : [];
-
   const isEmpty    = !initialLoad && counts.total === 0;
   const noMatch    = !initialLoad && counts.total > 0 && bills.length === 0 && !fetching;
   const hasResults = !initialLoad && bills.length > 0;
@@ -293,28 +294,45 @@ export default function ResidentBills() {
         </div>
       </div>
 
-      {/* ── Accountant contact ── */}
-      <div className="flex items-center justify-between gap-3 rounded-xl p-4"
-        style={{ background: "var(--card-inner-bg)", border: "1px solid var(--glass-border)" }}>
-        <div className="flex items-center gap-3 min-w-0">
-          <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-            style={{ background: "var(--accent-soft)", color: "var(--accent)" }}>
-            <MdPerson size={20} />
+      {/* ── Accountant & Financial Desk Banner ── */}
+      <div
+        className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-2xl p-4 sm:p-5 border border-glass-border shadow-sm transition-all"
+        style={{ background: "var(--card-inner-bg)" }}
+      >
+        <div className="flex items-center gap-3.5 min-w-0">
+          <div
+            className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-inner"
+            style={{ background: "var(--accent-soft)", color: "var(--accent)" }}
+          >
+            <MdAccountBalance size={24} />
           </div>
           <div className="min-w-0">
-            <p className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>
-              {t("resBillAccountant")}
-            </p>
-            <p className="text-xs text-secondary truncate">
-              {t("resBillAccountantNone") || "Contact your society accountant for bill enquiries"}
+            <div className="flex items-center gap-2 flex-wrap">
+              <p className="text-sm font-black tracking-tight" style={{ color: "var(--text-primary)" }}>
+                {t("resBillAccountant") || "Society Accounts & Billing Desk"}
+              </p>
+              {accountants.length > 0 && (
+                <span className="px-2 py-0.5 rounded-full text-[10.5px] font-black bg-accent/15 text-accent border border-accent/25">
+                  {accountants.length} {accountants.length === 1 ? "Contact" : "Contacts"}
+                </span>
+              )}
+            </div>
+            <p className="text-xs text-secondary truncate mt-0.5">
+              {accountants.length > 0
+                ? `${accountants.length} society accountant${accountants.length > 1 ? "s" : ""} available for dues verification & queries`
+                : t("resBillAccountantNone") || "Contact your society accountant for bill enquiries"}
             </p>
           </div>
         </div>
+
         <button
+          type="button"
           onClick={() => setShowAccountant(true)}
-          className="btn-primary flex items-center gap-2 shrink-0"
-          style={{ borderRadius: 999, padding: "9px 16px", fontSize: 12 }}>
-          {t("resBillViewAcctInfo") || "View Accountant"} <MdArrowForward size={14} />
+          className="btn-primary flex items-center justify-center gap-2 shrink-0 self-stretch sm:self-auto cursor-pointer"
+          style={{ borderRadius: 14, padding: "10px 18px", fontSize: 12.5 }}
+        >
+          <span>{t("resBillViewAcctInfo") || "View All Accountants"}</span>
+          <MdArrowForward size={15} />
         </button>
       </div>
 
@@ -587,50 +605,181 @@ export default function ResidentBills() {
         )}
       </div>
 
-      {/* ── Accountant info modal ── */}
+      {/* ── All Society Accountants Modal ── */}
       {showAccountant && createPortal(
         <div
           className="fixed inset-0 flex items-center justify-center p-4 animate-fadeIn"
-          style={{ background: "var(--overlay-bg, rgba(0,0,0,0.7))", backdropFilter: "blur(6px)", zIndex: 9999 }}
+          style={{ background: "var(--overlay-bg, rgba(0,0,0,0.7))", backdropFilter: "blur(8px)", zIndex: 9999 }}
           onClick={() => setShowAccountant(false)}
         >
           <div
-            className="rounded-2xl w-full max-w-md animate-scaleIn"
-            style={{ background: "var(--card-bg)", border: "1px solid var(--glass-border)", boxShadow: "var(--shadow-glass)" }}
+            className="rounded-3xl w-full max-w-2xl overflow-hidden animate-scaleIn border border-glass-border shadow-2xl flex flex-col max-h-[88vh]"
+            style={{ background: "var(--card-bg)" }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex justify-between items-center p-5 border-b" style={{ borderColor: "var(--divider)" }}>
-              <h3 className="text-lg font-bold" style={{ color: "var(--text-primary)" }}>{t("resBillAccountant")}</h3>
-              <button type="button" onClick={() => setShowAccountant(false)}
-                className="text-secondary hover:opacity-80 transition">
+            {/* Modal Header */}
+            <div className="flex justify-between items-start p-5 sm:p-6 border-b border-glass-border">
+              <div className="flex items-center gap-3">
+                <div
+                  className="w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 shadow-sm"
+                  style={{ background: "var(--accent-soft)", color: "var(--accent)" }}
+                >
+                  <MdAccountBalance size={22} />
+                </div>
+                <div>
+                  <h3 className="text-lg font-black tracking-tight" style={{ color: "var(--text-primary)" }}>
+                    {t("resBillAccountant") || "Society Accountants & Contacts"}
+                  </h3>
+                  <p className="text-xs text-secondary mt-0.5">
+                    Assigned financial desk officers for maintenance verification, queries & offline payments
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowAccountant(false)}
+                className="p-2 rounded-xl text-secondary hover:text-primary hover:bg-white/10 transition cursor-pointer"
+                title="Close"
+              >
                 <MdClose size={22} />
               </button>
             </div>
-            <div className="p-5">
+
+            {/* Modal Content */}
+            <div className="p-5 sm:p-6 overflow-y-auto space-y-4">
               {loadingAcct ? (
                 <AccountantSkeleton />
-              ) : !accountant ? (
-                <p className="text-sm text-secondary">{t("resBillAccountantNone")}</p>
+              ) : accountants.length === 0 ? (
+                <div className="py-12 flex flex-col items-center justify-center text-center space-y-2">
+                  <div className="w-14 h-14 rounded-2xl bg-card-inner-bg flex items-center justify-center text-secondary">
+                    <MdPerson size={28} />
+                  </div>
+                  <p className="text-sm font-bold text-primary">No Accountants Assigned</p>
+                  <p className="text-xs text-secondary max-w-xs">
+                    No accountant is currently mapped to your society. Please contact the society administrator.
+                  </p>
+                </div>
               ) : (
-                <div className="flex flex-col gap-3">
-                  {ACCT_ROWS.map(({ Icon, label, val }) => (
-                    <div key={label} className="flex items-center gap-3 rounded-xl p-3"
-                      style={{ background: "var(--card-inner-bg)" }}>
-                      <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0"
-                        style={{ background: "var(--accent-soft)" }}>
-                        <Icon size={18} style={{ color: "var(--accent)" }} />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {accountants.map((acc, idx) => {
+                    const isActive = acc.status === "ACTIVE" || !acc.status;
+                    const initial = (acc.name || "A").charAt(0).toUpperCase();
+
+                    return (
+                      <div
+                        key={acc.id || acc.assignment_id || idx}
+                        className="rounded-2xl p-4 border border-glass-border shadow-sm flex flex-col justify-between transition-all hover:border-accent/40"
+                        style={{ background: "var(--card-inner-bg)" }}
+                      >
+                        {/* Top: Avatar & Name & Badges */}
+                        <div className="flex items-start gap-3">
+                          <div
+                            className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 font-black text-white text-base shadow-sm"
+                            style={{ background: "linear-gradient(135deg, #6366F1, #8B5CF6)" }}
+                          >
+                            {initial}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center justify-between gap-1">
+                              <h4 className="text-sm font-bold truncate" style={{ color: "var(--text-primary)" }}>
+                                {acc.name}
+                              </h4>
+                              <span
+                                className={`px-2 py-0.5 rounded-full text-[10px] font-black shrink-0 ${
+                                  isActive
+                                    ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30"
+                                    : "bg-rose-500/15 text-rose-400 border border-rose-500/30"
+                                }`}
+                              >
+                                {isActive ? "Active" : "Inactive"}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2 flex-wrap mt-1">
+                              <span className="px-2 py-0.5 rounded-md text-[10.5px] font-bold bg-accent/10 text-accent">
+                                Accountant
+                              </span>
+                              {acc.societyName && (
+                                <span className="inline-flex items-center gap-1 text-[11px] text-secondary truncate max-w-[130px]">
+                                  <MdLocationCity size={12} className="shrink-0" />
+                                  <span className="truncate">{acc.societyName}</span>
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Divider */}
+                        <div className="my-3 border-t border-glass-border opacity-70" />
+
+                        {/* Contact details with Copy & Direct Links */}
+                        <div className="space-y-2 text-xs">
+                          {/* Phone */}
+                          <div className="flex items-center justify-between gap-2 p-2 rounded-xl bg-card border border-glass-border">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <MdPhone size={15} className="text-emerald-400 shrink-0" />
+                              <a
+                                href={acc.phone ? `tel:${acc.phone}` : undefined}
+                                className="font-semibold truncate text-primary hover:text-accent transition"
+                              >
+                                {acc.phone || "No phone provided"}
+                              </a>
+                            </div>
+                            {acc.phone && (
+                              <button
+                                type="button"
+                                onClick={() => copyToClipboard(acc.phone, "Phone number")}
+                                className="p-1 rounded-lg text-secondary hover:text-primary hover:bg-white/10 transition cursor-pointer shrink-0"
+                                title="Copy phone"
+                              >
+                                <MdContentCopy size={13} />
+                              </button>
+                            )}
+                          </div>
+
+                          {/* Email */}
+                          <div className="flex items-center justify-between gap-2 p-2 rounded-xl bg-card border border-glass-border">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <MdEmail size={15} className="text-indigo-400 shrink-0" />
+                              <a
+                                href={acc.email && acc.email !== "—" ? `mailto:${acc.email}` : undefined}
+                                className="font-semibold truncate text-primary hover:text-accent transition"
+                              >
+                                {acc.email || "No email provided"}
+                              </a>
+                            </div>
+                            {acc.email && acc.email !== "—" && (
+                              <button
+                                type="button"
+                                onClick={() => copyToClipboard(acc.email, "Email")}
+                                className="p-1 rounded-lg text-secondary hover:text-primary hover:bg-white/10 transition cursor-pointer shrink-0"
+                                title="Copy email"
+                              >
+                                <MdContentCopy size={13} />
+                              </button>
+                            )}
+                          </div>
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-secondary uppercase tracking-wider" style={{ fontSize: 10 }}>{label}</p>
-                        <p className="font-semibold text-sm" style={{ color: "var(--text-primary)" }}>{val}</p>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
+
+            {/* Modal Footer */}
+            <div className="p-4 border-t border-glass-border flex justify-end">
+              <button
+                type="button"
+                onClick={() => setShowAccountant(false)}
+                className="btn-primary cursor-pointer"
+                style={{ borderRadius: 12, padding: "8px 20px", fontSize: 13 }}
+              >
+                Done
+              </button>
+            </div>
           </div>
-        </div>, document.body
+        </div>,
+        document.body
       )}
     </div>
   );

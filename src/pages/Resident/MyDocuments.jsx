@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { createPortal } from "react-dom";
-import { MdFolderOpen, MdSearch, MdClose, MdAdd } from "react-icons/md";
+import { MdFolderOpen, MdClose, MdAdd, MdSearch } from "react-icons/md";
 import SlidingTabs from "../../components/common/SlidingTabs";
+import ExpandableSearch from "../../components/common/ExpandableSearch";
 import axios from "axios";
 
 const API = import.meta.env.VITE_API_URL || "";
@@ -637,31 +638,26 @@ export default function MyDocuments() {
       </div>
 
       <div className="ge-toolbar">
-        <div className="ge-search-wrap">
-          <MdSearch className="ge-search-icon" size={17} />
-          <input
-            className="ge-search-input"
-            placeholder="Search Aadhaar, PAN…"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
+        <div className="overflow-x-auto max-w-full pb-1 sm:pb-0">
+          <SlidingTabs
+            className="ge-filter-tabs"
+            value={tab}
+            onChange={setTab}
+            tabs={[
+              { id: "ALL", label: "All", badge: totalDocs },
+              { id: "UPLOADED", label: "Uploaded", badge: uploadedCount },
+              { id: "PENDING", label: "Pending", badge: pendingCount, alert: pendingCount },
+            ]}
           />
-          {search ? (
-            <button type="button" onClick={() => setSearch("")} className="ge-search-clear" aria-label="Clear search">
-              <MdClose size={13} />
-            </button>
-          ) : null}
         </div>
 
-        <SlidingTabs
-          className="ge-filter-tabs"
-          value={tab}
-          onChange={setTab}
-          items={[
-            { id: "ALL", label: "All", badge: totalDocs },
-            { id: "UPLOADED", label: "Uploaded", badge: uploadedCount },
-            { id: "PENDING", label: "Pending", badge: pendingCount, alert: pendingCount },
-          ]}
-        />
+        <div className="ml-auto">
+          <ExpandableSearch
+            placeholder="Search Aadhaar, PAN…"
+            value={search}
+            onChange={setSearch}
+          />
+        </div>
       </div>
 
       {loading && (

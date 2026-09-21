@@ -2,8 +2,9 @@ import { useEffect, useState, useCallback } from "react";
 import API from "../../services/api";
 import { useLang } from "../../context/LanguageContext";
 import SlidingTabs from "../../components/common/SlidingTabs";
+import ExpandableSearch from "../../components/common/ExpandableSearch";
 import {
-  MdAdd, MdSearch, MdClose, MdOutlineInbox,
+  MdAdd, MdOutlineInbox, MdSearch,
   MdDirectionsCar, MdTwoWheeler,
   MdChevronLeft, MdChevronRight, MdLocalParking,
 } from "react-icons/md";
@@ -362,24 +363,11 @@ useEffect(() => {
         {/* Toolbar — search + filter */}
         {!initialLoad && (
           <div className="ge-toolbar mb-4">
-            <div className="ge-search-wrap">
-              <MdSearch className="ge-search-icon" size={17} />
-              <input
-                className="ge-search-input"
-                placeholder={t("visSearch") || "Search guest, vehicle…"}
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
-              {fetching ? (
-                <div className="ge-search-action">
-                  <Spinner small />
-                </div>
-              ) : search ? (
-                <button type="button" onClick={() => setSearch("")} className="ge-search-clear" aria-label="Clear search">
-                  <MdClose size={13} />
-                </button>
-              ) : null}
-            </div>
+            <ExpandableSearch
+              placeholder={t("visSearch") || "Search guest, vehicle…"}
+              value={search}
+              onChange={setSearch}
+            />
 
             <SlidingTabs
               className="gp-filter-tabs"

@@ -11,6 +11,7 @@ import { useLang } from "../../context/LanguageContext";
 import { AuthContext } from "../../context/AuthContext";
 import Select from "../../components/common/Select";
 import SlidingTabs from "../../components/common/SlidingTabs";
+import ExpandableSearch from "../../components/common/ExpandableSearch";
 
 /* ── Type meta ── */
 const TYPE_META = {
@@ -404,31 +405,26 @@ export default function MyEmergency() {
       </div>
 
       <div className="ge-toolbar">
-        <div className="ge-search-wrap">
-          <MdSearch className="ge-search-icon" size={17} />
-          <input
-            className="ge-search-input"
-            placeholder="Search type, message or unit…"
-            value={search}
-            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+        <div className="overflow-x-auto max-w-full pb-1 sm:pb-0">
+          <SlidingTabs
+            className="ge-filter-tabs"
+            value={activeTab}
+            onChange={handleTabChange}
+            tabs={[
+              { id: "ALL", label: "All", badge: counts.ALL },
+              { id: "ACTIVE", label: t("emergencyActive"), badge: counts.ACTIVE, alert: counts.ACTIVE },
+              { id: "RESOLVED", label: t("emergencyResolved"), badge: counts.RESOLVED },
+            ]}
           />
-          {search ? (
-            <button type="button" onClick={() => { setSearch(""); setPage(1); }} className="ge-search-clear" aria-label="Clear search">
-              <MdClose size={13} />
-            </button>
-          ) : null}
         </div>
 
-        <SlidingTabs
-          className="ge-filter-tabs"
-          value={activeTab}
-          onChange={handleTabChange}
-          items={[
-            { id: "ALL", label: "All", badge: counts.ALL },
-            { id: "ACTIVE", label: t("emergencyActive"), badge: counts.ACTIVE, alert: counts.ACTIVE },
-            { id: "RESOLVED", label: t("emergencyResolved"), badge: counts.RESOLVED },
-          ]}
-        />
+        <div className="ml-auto">
+          <ExpandableSearch
+            placeholder="Search type, message or unit…"
+            value={search}
+            onChange={(val) => { setSearch(val); setPage(1); }}
+          />
+        </div>
       </div>
 
       {initialLoad ? (

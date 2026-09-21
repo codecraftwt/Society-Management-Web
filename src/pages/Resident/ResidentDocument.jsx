@@ -298,22 +298,26 @@ export default function ResidentDocument() {
       </div>
 
       <div className="ge-toolbar">
-        <ExpandableSearch
-          placeholder={t("docSearch")}
-          value={search}
-          onChange={setSearch}
-        />
+        <div className="overflow-x-auto max-w-full pb-1 sm:pb-0">
+          <SlidingTabs
+            className="gp-filter-tabs"
+            value={activeCategory}
+            onChange={handleCategoryChange}
+            tabs={CATEGORY_KEYS.map((cat) => ({
+              id: cat,
+              label: categoryLabel(cat),
+              badge: counts[cat] ?? 0,
+            }))}
+          />
+        </div>
 
-        <SlidingTabs
-          className="gp-filter-tabs"
-          value={activeCategory}
-          onChange={handleCategoryChange}
-          items={CATEGORY_KEYS.map((cat) => ({
-            id: cat,
-            label: categoryLabel(cat),
-            badge: counts[cat] ?? 0,
-          }))}
-        />
+        <div className="ml-auto">
+          <ExpandableSearch
+            placeholder={t("docSearch")}
+            value={search}
+            onChange={setSearch}
+          />
+        </div>
       </div>
 
       {/* ── ERROR STATE ── */}

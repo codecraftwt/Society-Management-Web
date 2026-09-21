@@ -282,21 +282,25 @@ export default function MyHouseHold() {
         </div>
 
         <div className="ge-toolbar">
-          <ExpandableSearch
-            placeholder={t("hhFieldNamePlaceholder") || "Search members..."}
-            value={search}
-            onChange={setSearch}
-          />
+          <div className="overflow-x-auto max-w-full pb-1 sm:pb-0">
+            <SlidingTabs
+              className="ge-filter-tabs"
+              value={activeTab}
+              onChange={setActiveTab}
+              tabs={[
+                { id: "family", label: t("hhTabFamily"), icon: <MdFamilyRestroom size={15} />, badge: familyMembers.length },
+                { id: "help",   label: t("hhTabHelp"),   icon: <MdWork size={15} />,           badge: helpMembers.length },
+              ]}
+            />
+          </div>
 
-          <SlidingTabs
-            className="ge-filter-tabs"
-            value={activeTab}
-            onChange={setActiveTab}
-            items={[
-              { id: "family", label: t("hhTabFamily"), icon: <MdFamilyRestroom size={15} />, badge: familyMembers.length },
-              { id: "help",   label: t("hhTabHelp"),   icon: <MdWork size={15} />,           badge: helpMembers.length },
-            ]}
-          />
+          <div className="ml-auto">
+            <ExpandableSearch
+              placeholder={t("hhFieldNamePlaceholder") || "Search members..."}
+              value={search}
+              onChange={setSearch}
+            />
+          </div>
         </div>
 
         {flatAssigned && (

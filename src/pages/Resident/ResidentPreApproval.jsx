@@ -1,12 +1,16 @@
-import { useEffect, useState, useContext, useRef } from "react";
+import { useEffect, useState, useContext, useRef, useMemo } from "react";
 import API from "../../services/api";
 import { AuthContext } from "../../context/AuthContext";
 import { useLang } from "../../context/LanguageContext";
+import SlidingTabs from "../../components/common/SlidingTabs";
+import ExpandableSearch from "../../components/common/ExpandableSearch";
+import DateRangeFilter from "../../components/common/DateRangeFilter";
 import {
   MdPersonAdd, MdPhone, MdDirectionsCar,
   MdCalendarToday, MdQrCode, MdWarning,
   MdCheckCircle, MdContentCopy, MdPerson,
   MdVisibility, MdDownload, MdPictureAsPdf,
+  MdSearch, MdOutlineInbox,
 } from "react-icons/md";
 import { QRCodeCanvas } from "qrcode.react";
 import Modal from "../../components/Modal";
@@ -58,11 +62,13 @@ export default function ResidentPreApproval() {
   const { user: authUser } = useContext(AuthContext);
   const isOwner = authUser?.resident_type === "OWNER";
 
-
-
   const [flatAssigned, setFlatAssigned] = useState(true);
   const [submitting,   setSubmitting]   = useState(false);
   const [myPasses,     setMyPasses]     = useState([]);
+  const [search,       setSearch]       = useState("");
+  const [filterPurpose, setFilterPurpose] = useState("ALL");
+  const [dateFrom,     setDateFrom]     = useState("");
+  const [dateTo,       setDateTo]       = useState("");
   const [copiedId,     setCopiedId]     = useState(null);
   const [myFlats,      setMyFlats]      = useState([]);
   const [selectedFlatId, setSelectedFlatId] = useState("");
@@ -71,6 +77,45 @@ export default function ResidentPreApproval() {
   const [viewPass,     setViewPass]     = useState(null);
   const [showForm,     setShowForm]     = useState(false);
   const viewPassQrRef  = useRef(null);
+
+  const clearFilters = () => {
+    setSearch("");
+    setFilterPurpose("ALL");
+    setDateFrom("");
+    setDateTo("");
+  };
+
+  const hasActiveFilters = Boolean(search.trim() || filterPurpose !== "ALL" || dateFrom || dateTo);
+
+  const filteredPasses = useMemo(() => {
+    return myPasses.filter((p) => {
+      if (filterPurpose !== "ALL" && p.purpose !== filterPurpose) return false;
+
+      const pDate = p.valid_date ? p.valid_date.split("T")[0] : null;
+      if (dateFrom && pDate && pDate < dateFrom) return false;
+      if (dateTo && pDate && pDate > dateTo) return false;
+
+      if (search.trim()) {
+        const q = search.toLowerCase();
+        const match =
+          p.visitor_name?.toLowerCase().includes(q) ||
+          p.mobile?.toLowerCase().includes(q) ||
+          p.vehicle_number?.toLowerCase().includes(q) ||
+          p.otp?.toLowerCase().includes(q) ||
+          p.purpose?.toLowerCase().includes(q);
+        if (!match) return false;
+      }
+      return true;
+    });
+  }, [myPasses, filterPurpose, dateFrom, dateTo, search]);
+
+  const todayIST = getTodayIST();
+  const counts = useMemo(() => {
+    const total = myPasses.length;
+    const today = myPasses.filter(p => p.valid_date?.startsWith(todayIST)).length;
+    const active = myPasses.filter(p => !p.valid_date || p.valid_date >= todayIST).length;
+    return { total, today, active };
+  }, [myPasses, todayIST]);
 
   const eligibleFlats = myFlats.filter(item => {
     const flatObj = item.Flat || item;
@@ -282,25 +327,42 @@ export default function ResidentPreApproval() {
     <div className="space-y-5 animate-fadeIn">
 
       {/* ── HEADER ── */}
-      <div className="flex items-center gap-3">
-        <div className="ad-page-icon">
-          <MdPersonAdd size={22} />
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div className="flex items-center gap-3">
+          <div className="ad-page-icon">
+            <MdPersonAdd size={22} />
+          </div>
+          <div>
+            <h2 className="page-title">{t("preapTitle")}</h2>
+            <p className="page-subtitle">{counts.total} Passes Recorded</p>
+          </div>
         </div>
-        <div>
-          <h2 className="page-title">{t("preapTitle")}</h2>
-          <p className="page-subtitle">{t("preapSubtitle")}</p>
-        </div>
+
+        {hasEligibleFlat && (
+          <button
+            onClick={() => setShowForm(true)}
+            className="btn-primary justify-center px-5 py-2.5 text-sm font-semibold"
+          >
+            <MdQrCode size={18} /> {t("preapGenerateBtn")}
+          </button>
+        )}
       </div>
 
-      {/* ── GENERATE NEW PASS (primary action) ── */}
-      {hasEligibleFlat && (
-        <button
-          onClick={() => setShowForm(true)}
-          className="btn-primary w-full sm:w-auto justify-center px-6 py-3 text-sm font-semibold"
-        >
-          <MdQrCode size={18} /> {t("preapGenerateBtn")}
-        </button>
-      )}
+      {/* ── STATS CARDS ── */}
+      <div className="ge-stats">
+        <div className="complaint-stat-card complaint-stat-total">
+          <span className="complaint-stat-val">{counts.total}</span>
+          <span className="complaint-stat-label">Total Passes</span>
+        </div>
+        <div className="complaint-stat-card complaint-stat-inprogress">
+          <span className="complaint-stat-val">{counts.today}</span>
+          <span className="complaint-stat-label">Valid Today</span>
+        </div>
+        <div className="complaint-stat-card complaint-stat-resolved">
+          <span className="complaint-stat-val">{counts.active}</span>
+          <span className="complaint-stat-label">Active Passes</span>
+        </div>
+      </div>
 
       {/* ── LIVE IST CLOCK ── */}
       <div className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl bg-white/5 border border-white/10 text-sm">
@@ -465,110 +527,163 @@ export default function ResidentPreApproval() {
         </form>
       </Modal>
 
-      {/* ── ACTIVE PASSES ── */}
+      {/* ── TOOLBAR (Purpose Tabs + Date Range Filter + Expandable Search) ── */}
       {myPasses.length > 0 && (
-        <div className="bg-card p-4 sm:p-5 rounded-2xl space-y-4 animate-fadeIn">
-
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-green-400 shrink-0" />
-              <p className="text-xs font-semibold text-secondary uppercase tracking-wider">
-                Active Gate Passes
-              </p>
-            </div>
-            <span className="text-xs px-2 py-0.5 rounded-lg bg-white/8 border border-white/10 text-secondary">
-              {myPasses.length}
-            </span>
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div className="overflow-x-auto max-w-full pb-1 sm:pb-0">
+            <SlidingTabs
+              tabs={[
+                { id: "ALL", label: t("compTabAll") || "All" },
+                { id: "GUEST", label: t("preapPurposeGuest") || "Guest" },
+                { id: "DELIVERY", label: t("preapPurposeDelivery") || "Delivery" },
+                { id: "CAB", label: t("preapPurposeCab") || "Cab" },
+                { id: "SERVICE", label: t("preapPurposeService") || "Service" },
+                { id: "MAINTENANCE", label: t("preapPurposeMaintenance") || "Maintenance" },
+                { id: "OTHER", label: t("preapPurposeOther") || "Other" },
+              ]}
+              value={filterPurpose}
+              onChange={setFilterPurpose}
+            />
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-2">
-            {myPasses.map((pass, idx) => {
-              const pc = PURPOSE_COLORS[pass.purpose] || PURPOSE_COLORS.OTHER;
-              const isCopied = copiedId === pass.id;
+          <div className="flex items-center gap-2.5 flex-wrap sm:flex-nowrap justify-between sm:justify-end ml-auto sm:ml-0">
+            <DateRangeFilter
+              fromDate={dateFrom}
+              toDate={dateTo}
+              onChange={({ from, to }) => {
+                setDateFrom(from);
+                setDateTo(to);
+              }}
+              onClear={() => {
+                setDateFrom("");
+                setDateTo("");
+              }}
+              placeholder="Valid Date"
+            />
 
-              return (
-                <div
-                  key={pass.id}
-                  className="rounded-xl overflow-hidden border border-white/10 bg-white/5 animate-fadeIn"
-                  style={{ animationDelay: `${idx * 60}ms` }}
-                >
-                  {/* color bar */}
-                  <div className="h-0.5" style={{ background: pc.text }} />
+            <ExpandableSearch
+              placeholder="Search gate passes…"
+              value={search}
+              onChange={setSearch}
+            />
+          </div>
+        </div>
+      )}
 
-                  <div className="p-3.5 flex flex-col gap-2.5">
+      {/* ── PASSES LIST / EMPTY STATES ── */}
+      {myPasses.length === 0 ? (
+        <div className="flex flex-col items-center justify-center gap-3 py-16 text-secondary animate-fadeIn bg-card rounded-2xl p-6 border border-white/10">
+          <MdOutlineInbox size={48} className="opacity-20" />
+          <p className="text-sm">No pre-approved gate passes generated yet</p>
+          {hasEligibleFlat && (
+            <button onClick={() => setShowForm(true)} className="btn-primary mt-1">
+              <MdQrCode size={16} /> {t("preapGenerateBtn")}
+            </button>
+          )}
+        </div>
+      ) : filteredPasses.length === 0 ? (
+        <div className="flex flex-col items-center justify-center gap-2 py-14 text-secondary animate-fadeIn bg-card rounded-2xl p-6 border border-white/10">
+          <MdSearch size={36} className="opacity-25" />
+          <p className="text-sm">No gate passes match your filters</p>
+          <button
+            onClick={clearFilters}
+            className="text-xs text-accent hover:underline mt-1"
+            style={{ background: "none", border: "none", cursor: "pointer" }}
+          >
+            {t("billClearFilters") || "Clear all filters"}
+          </button>
+        </div>
+      ) : (
+        <div className="grid gap-3 sm:grid-cols-2">
+          {filteredPasses.map((pass, idx) => {
+            const pc = PURPOSE_COLORS[pass.purpose] || PURPOSE_COLORS.OTHER;
+            const isCopied = copiedId === pass.id;
+            const isExpired = pass.valid_date && pass.valid_date < todayIST;
 
-                    {/* top row */}
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex items-center gap-2.5">
-                        <div
-                          className="w-8 h-8 rounded-lg flex items-center justify-center text-base shrink-0"
-                          style={{ background: pc.bg, border: `1px solid ${pc.border}` }}
+            return (
+              <div
+                key={pass.id}
+                className="rounded-xl overflow-hidden border border-white/10 bg-white/5 animate-fadeIn"
+                style={{ animationDelay: `${idx * 50}ms` }}
+              >
+                {/* color bar */}
+                <div className="h-0.5" style={{ background: pc.text }} />
+
+                <div className="p-3.5 flex flex-col gap-2.5">
+                  {/* top row */}
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center gap-2.5">
+                      <div
+                        className="w-8 h-8 rounded-lg flex items-center justify-center text-base shrink-0"
+                        style={{ background: pc.bg, border: `1px solid ${pc.border}` }}
+                      >
+                        {PURPOSE_ICONS[pass.purpose] || "🔖"}
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold leading-tight" style={{ color: "var(--text-primary)" }}>{pass.visitor_name}</p>
+                        <span
+                          className="text-[10px] px-1.5 py-0.5 rounded-md mt-0.5 inline-block"
+                          style={{ background: pc.bg, border: `1px solid ${pc.border}`, color: pc.text }}
                         >
-                          {PURPOSE_ICONS[pass.purpose] || "🔖"}
-                        </div>
-                        <div>
-                          <p className="text-sm font-semibold leading-tight" style={{ color: "var(--text-primary)" }}>{pass.visitor_name}</p>
-                          <span
-                            className="text-[10px] px-1.5 py-0.5 rounded-md mt-0.5 inline-block"
-                            style={{ background: pc.bg, border: `1px solid ${pc.border}`, color: pc.text }}
-                          >
-                            {purposeLabels[pass.purpose] || pass.purpose}
-                          </span>
-                        </div>
-                      </div>
-                      <span className="text-[10px] px-2 py-0.5 rounded bg-green-500/20 text-green-400 shrink-0">
-                        Active
-                      </span>
-                    </div>
-
-                    {/* OTP code + QR */}
-                    <div className="flex items-center justify-between gap-3">
-                      <p className="text-2xl font-bold tracking-[0.2em] text-green-300 tabular-nums">
-                        {pass.otp}
-                      </p>
-                      <div className="bg-white rounded-lg p-1 shrink-0">
-                        <QRCodeCanvas value={pass.otp} size={40} />
-                      </div>
-                    </div>
-
-                    {/* meta chips */}
-                    <div className="flex flex-wrap gap-1.5">
-                      {pass.vehicle_number && (
-                        <span className="flex items-center gap-1 text-[11px] text-secondary px-2 py-0.5 rounded-md bg-white/5 border border-white/10">
-                          <MdDirectionsCar size={11} /> {pass.vehicle_number}
+                          {purposeLabels[pass.purpose] || pass.purpose}
                         </span>
-                      )}
+                      </div>
+                    </div>
+                    <span className={`text-[10px] px-2 py-0.5 rounded shrink-0 font-medium ${
+                      isExpired
+                        ? "bg-red-500/20 text-red-400"
+                        : "bg-green-500/20 text-green-400"
+                    }`}>
+                      {isExpired ? "Expired" : "Active"}
+                    </span>
+                  </div>
+
+                  {/* OTP code + QR */}
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-2xl font-bold tracking-[0.2em] text-green-300 tabular-nums">
+                      {pass.otp}
+                    </p>
+                    <div className="bg-white rounded-lg p-1 shrink-0">
+                      <QRCodeCanvas value={pass.otp} size={40} />
+                    </div>
+                  </div>
+
+                  {/* meta chips */}
+                  <div className="flex flex-wrap gap-1.5">
+                    {pass.vehicle_number && (
                       <span className="flex items-center gap-1 text-[11px] text-secondary px-2 py-0.5 rounded-md bg-white/5 border border-white/10">
-                        <MdCalendarToday size={10} /> Valid till {formatDateIST(pass.valid_date)}
+                        <MdDirectionsCar size={11} /> {pass.vehicle_number}
                       </span>
-                    </div>
+                    )}
+                    <span className="flex items-center gap-1 text-[11px] text-secondary px-2 py-0.5 rounded-md bg-white/5 border border-white/10">
+                      <MdCalendarToday size={10} /> Valid till {formatDateIST(pass.valid_date)}
+                    </span>
+                  </div>
 
-                    {/* action buttons */}
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => setViewPass(pass)}
-                        className="flex items-center justify-center gap-1.5 flex-1 py-1.5 rounded-lg text-xs font-medium border transition-all duration-200 bg-blue-500/10 text-blue-400 border-blue-500/25 hover:bg-blue-500/20"
-                      >
-                        <MdVisibility size={13} /> View Pass
-                      </button>
-                      <button
-                        onClick={() => handleCopyPass(pass.otp, pass.id)}
-                        className={`flex items-center justify-center gap-1.5 flex-1 py-1.5 rounded-lg text-xs font-medium border transition-all duration-200 ${
-                          isCopied
-                            ? "bg-green-500/20 text-green-400 border-green-500/30"
-                            : "bg-white/8 text-secondary border-white/10 hover:bg-white/12 hover:opacity-90"
-                        }`}
-                      >
-                        {isCopied ? <MdCheckCircle size={13} /> : <MdContentCopy size={13} />}
-                        {isCopied ? "Copied!" : "Copy Code"}
-                      </button>
-                    </div>
-
+                  {/* action buttons */}
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setViewPass(pass)}
+                      className="flex items-center justify-center gap-1.5 flex-1 py-1.5 rounded-lg text-xs font-medium border transition-all duration-200 bg-blue-500/10 text-blue-400 border-blue-500/25 hover:bg-blue-500/20"
+                    >
+                      <MdVisibility size={13} /> View Pass
+                    </button>
+                    <button
+                      onClick={() => handleCopyPass(pass.otp, pass.id)}
+                      className={`flex items-center justify-center gap-1.5 flex-1 py-1.5 rounded-lg text-xs font-medium border transition-all duration-200 ${
+                        isCopied
+                          ? "bg-green-500/20 text-green-400 border-green-500/30"
+                          : "bg-white/8 text-secondary border-white/10 hover:bg-white/12 hover:opacity-90"
+                      }`}
+                    >
+                      {isCopied ? <MdCheckCircle size={13} /> : <MdContentCopy size={13} />}
+                      {isCopied ? "Copied!" : "Copy Code"}
+                    </button>
                   </div>
                 </div>
-              );
-            })}
-          </div>
+              </div>
+            );
+          })}
         </div>
       )}
 

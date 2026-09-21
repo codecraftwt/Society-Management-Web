@@ -11,6 +11,8 @@ import {
   MdCheckCircle,
   MdSend,
   MdEmergency,
+  MdLocationOn,
+  MdClear,
 } from "react-icons/md";
 
 const EMERGENCY_TYPES = [
@@ -191,24 +193,46 @@ export default function GuardEmergencyModal({
               </div>
             </div>
 
-            <div>
-              <label className="block text-xs font-semibold text-secondary uppercase tracking-wider mb-1">
-                Emergency Notes / Location Details (Optional)
-              </label>
-              <textarea
-                rows={2}
-                placeholder="e.g. Suspicious person near Gate 2 / Fire near clubhouse / Medical aid requested"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                className="input w-full resize-none text-sm"
-              />
+            {/* ── Emergency Notes & Location Details Section ── */}
+            <div className="space-y-2.5 p-4 rounded-2xl bg-card-inner-bg/70 border border-glass-border/70 shadow-inner">
+              <div className="flex items-center justify-between">
+                <label className="flex items-center gap-1.5 text-xs font-bold text-primary">
+                  <MdLocationOn className="text-rose-500" size={16} />
+                  <span>Emergency Notes & Location Details</span>
+                </label>
+                <span className="text-[10px] font-semibold text-secondary uppercase tracking-wider px-2 py-0.5 rounded-md bg-white/5 border border-glass-border/40">
+                  Optional
+                </span>
+              </div>
+
+              {/* Modern Spacious Textarea */}
+              <div className="relative pt-0.5">
+                <textarea
+                  rows={4}
+                  style={{ minHeight: "120px" }}
+                  placeholder="Describe the situation or exact location (e.g. Near Gate 2, Clubhouse lawn, Basement parking, Block A lobby)..."
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  className="input w-full resize-y text-xs sm:text-sm bg-card-inner-bg/90 border-glass-border focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20 rounded-xl p-3.5 leading-relaxed transition"
+                />
+                {description && (
+                  <button
+                    type="button"
+                    onClick={() => setDescription("")}
+                    className="absolute right-3 bottom-3.5 inline-flex items-center gap-0.5 px-2 py-0.5 rounded text-[10px] font-bold text-secondary hover:text-rose-400 bg-white/10 hover:bg-white/20 transition cursor-pointer"
+                  >
+                    <MdClear size={12} /> Clear
+                  </button>
+                )}
+              </div>
             </div>
 
+            {/* Broadcast CTA Button */}
             <button
               type="button"
               onClick={handleSendEmergency}
               disabled={loading}
-              className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-red-500/30 transition disabled:opacity-50"
+              className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-red-600 via-rose-600 to-red-700 hover:from-red-500 hover:to-rose-600 text-white font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg shadow-red-600/30 transition-all active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
             >
               <MdSend size={18} />
               {loading ? "Broadcasting SOS..." : "🚨 Broadcast Gate SOS to Society"}

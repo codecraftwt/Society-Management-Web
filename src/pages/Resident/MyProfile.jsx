@@ -113,7 +113,7 @@ export default function ResidentDashboard() {
 
   const handleEmergencyClick = () => {
     if (!hasFlat) {
-      toast.warning(t("rdEmergencyNoFlat"));
+      toast.warning("No flat assigned to trigger emergency alert");
       return;
     }
     navigate(`${base}/emergency`);
@@ -122,16 +122,16 @@ export default function ResidentDashboard() {
   const manageCards = isFamily
     ? []
     : [
-        { id: "household", icon: <MdFamilyRestroom />, label: t("rdCardHousehold"), tone: "accent", onClick: () => navigate(`${base}/my-household`) },
-        { id: "vehicles", icon: <MdDirectionsCarFilled />, label: t("rdCardVehicles"), tone: "accent", onClick: () => navigate(`${base}/my-vehicles`) },
-        { id: "emergency", icon: <MdReportProblem />, label: t("rdCardEmergency"), tone: "danger", onClick: handleEmergencyClick },
-        { id: "settings", icon: <MdSettings />, label: t("rdCardSettings"), tone: "muted", onClick: () => navigate(`${base}/settings`) },
-        { id: "docs", icon: <MdDocumentScanner />, label: t("rdCardMyDocs"), tone: "muted", onClick: () => navigate(`${base}/my-documents`) },
+        { id: "household", icon: <MdFamilyRestroom />, label: "Household", tone: "accent", onClick: () => navigate(`${base}/my-household`) },
+        { id: "vehicles", icon: <MdDirectionsCarFilled />, label: "Vehicles", tone: "accent", onClick: () => navigate(`${base}/my-vehicles`) },
+        { id: "emergency", icon: <MdReportProblem />, label: "Emergency", tone: "danger", onClick: handleEmergencyClick },
+        { id: "settings", icon: <MdSettings />, label: "Settings", tone: "muted", onClick: () => navigate(`${base}/settings`) },
+        { id: "docs", icon: <MdDocumentScanner />, label: "Documents", tone: "muted", onClick: () => navigate(`${base}/my-documents`) },
       ];
 
   const flatLabel = hasFlat
-    ? `${t("rdBlock")} ${flatInfo?.block_name || "—"}, ${t("rdFlat")} ${flatInfo?.flat_number || "—"}`
-    : t("rdFlatNotAssigned");
+    ? `Block ${flatInfo?.block_name || "—"}, Flat ${flatInfo?.flat_number || "—"}`
+    : "Flat Not Assigned";
 
   return (
     <div className="ge-root mp-page animate-fadeIn">
@@ -141,7 +141,7 @@ export default function ResidentDashboard() {
             <MdPerson size={22} />
           </div>
           <div>
-            <h2 className="page-title">{t("menuMyProfile")}</h2>
+            <h2 className="page-title">My Profile</h2>
             <p className="page-subtitle">{flatLabel}</p>
           </div>
         </div>
@@ -152,14 +152,14 @@ export default function ResidentDashboard() {
         <div className="ms-hero-body">
           <Avatar name={profile?.name} />
           <div className="ms-hero-info">
-            <h2 className="ms-hero-name">{profile?.name || t("rdResident")}</h2>
+            <h2 className="ms-hero-name">{profile?.name || "Resident"}</h2>
             {profile?.email && <p className="ms-hero-email">{profile.email}</p>}
             <div className="ms-hero-badges">
               <span className="ms-badge ms-badge--blue">
-                <MdShield size={11} /> {t("rdRoleBadge")}
+                <MdShield size={11} /> {profile?.resident_type || "Resident"}
               </span>
               <span className="ms-badge ms-badge--green">
-                <MdCheckCircle size={11} /> {t("active")}
+                <MdCheckCircle size={11} /> Active
               </span>
               <span className={`ms-badge ${hasFlat ? "ms-badge--muted" : "ms-badge--warn"}`}>
                 <MdHome size={11} /> {flatLabel}
@@ -172,21 +172,21 @@ export default function ResidentDashboard() {
       <div className="ge-stats">
         <div className="complaint-stat-card complaint-stat-total">
           <span className="complaint-stat-val">{stats.members}</span>
-          <span className="complaint-stat-label">{t("rdStatHousehold")}</span>
+          <span className="complaint-stat-label">Household</span>
         </div>
         <div className="complaint-stat-card complaint-stat-inprogress">
           <span className="complaint-stat-val">{stats.vehicles}</span>
-          <span className="complaint-stat-label">{t("rdStatVehicles")}</span>
+          <span className="complaint-stat-label">Vehicles</span>
         </div>
         <div className="complaint-stat-card complaint-stat-resolved">
           <span className="complaint-stat-val">{stats.visitors}</span>
-          <span className="complaint-stat-label">{t("rdStatVisitors")}</span>
+          <span className="complaint-stat-label">Active Visitors</span>
         </div>
       </div>
 
       {manageCards.length > 0 && (
         <div className="bg-card mp-manage">
-          <p className="mp-manage-heading">{t("rdManageLabel")}</p>
+          <p className="mp-manage-heading">Quick Management</p>
           <div className="mp-manage-grid">
             {manageCards.map((card) => (
               <ManageCard

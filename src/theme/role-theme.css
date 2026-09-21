@@ -2272,7 +2272,53 @@ html.role-theme .sa-kpi-desc {
   color: var(--text-secondary);
 }
 
+/* Dark mode border colors and label colors for ad-kpi */
+html.role-theme:not(.light) .ad-kpi--total,
+html.role-theme:not(.light) .ad-kpi--residents,
+html.role-theme:not(.light) .ad-kpi--balance,
+html.role-theme:not(.light) .ad-kpi--amenity { border-color: rgba(var(--acct-purple-rgb), 0.4) !important; }
+
+html.role-theme:not(.light) .ad-kpi--expected,
+html.role-theme:not(.light) .ad-kpi--complaints,
+html.role-theme:not(.light) .ad-kpi--opening,
+html.role-theme:not(.light) .ad-kpi--bills { border-color: rgba(var(--acct-cyan-rgb), 0.35) !important; }
+
+html.role-theme:not(.light) .ad-kpi--gate { border-color: rgba(var(--acct-yellow-rgb), 0.4) !important; }
+
+html.role-theme:not(.light) .ad-kpi--collected,
+html.role-theme:not(.light) .ad-kpi--guards,
+html.role-theme:not(.light) .ad-kpi--income,
+html.role-theme:not(.light) .ad-kpi--maintenance { border-color: rgba(var(--acct-green-rgb), 0.35) !important; }
+
+html.role-theme:not(.light) .ad-kpi--cancelled,
+html.role-theme:not(.light) .ad-kpi--flats,
+html.role-theme:not(.light) .ad-kpi--expense { border-color: rgba(239, 68, 68, 0.4) !important; }
+
+html.role-theme:not(.light) .ad-kpi-val { color: #ffffff !important; }
+
+html.role-theme:not(.light) .ad-kpi--total .ad-kpi-label,
+html.role-theme:not(.light) .ad-kpi--residents .ad-kpi-label,
+html.role-theme:not(.light) .ad-kpi--balance .ad-kpi-label,
+html.role-theme:not(.light) .ad-kpi--amenity .ad-kpi-label { color: var(--acct-purple) !important; }
+
+html.role-theme:not(.light) .ad-kpi--expected .ad-kpi-label,
+html.role-theme:not(.light) .ad-kpi--complaints .ad-kpi-label,
+html.role-theme:not(.light) .ad-kpi--opening .ad-kpi-label,
+html.role-theme:not(.light) .ad-kpi--bills .ad-kpi-label { color: var(--acct-cyan) !important; }
+
+html.role-theme:not(.light) .ad-kpi--gate .ad-kpi-label { color: var(--acct-yellow) !important; }
+
+html.role-theme:not(.light) .ad-kpi--collected .ad-kpi-label,
+html.role-theme:not(.light) .ad-kpi--guards .ad-kpi-label,
+html.role-theme:not(.light) .ad-kpi--income .ad-kpi-label,
+html.role-theme:not(.light) .ad-kpi--maintenance .ad-kpi-label { color: var(--acct-teal) !important; }
+
+html.role-theme:not(.light) .ad-kpi--cancelled .ad-kpi-label,
+html.role-theme:not(.light) .ad-kpi--flats .ad-kpi-label,
+html.role-theme:not(.light) .ad-kpi--expense .ad-kpi-label { color: #f87171 !important; }
+
 /* Light mode KPI cards get rich gradient treatments matching Admin Dashboard */
+html.light.role-theme .ad-kpi--total,
 html.light.role-theme .ad-kpi--residents,
 html.light.role-theme .ad-kpi--balance,
 html.light.role-theme .ad-kpi--amenity,
@@ -2280,13 +2326,7 @@ html.light.role-theme .stat-card--purple {
   background: var(--stat-purple-bg) !important;
   border: none !important;
 }
-html.light.role-theme .ad-kpi--guards,
-html.light.role-theme .ad-kpi--income,
-html.light.role-theme .ad-kpi--maintenance,
-html.light.role-theme .stat-card--green {
-  background: var(--stat-green-bg) !important;
-  border: none !important;
-}
+html.light.role-theme .ad-kpi--expected,
 html.light.role-theme .ad-kpi--complaints,
 html.light.role-theme .ad-kpi--opening,
 html.light.role-theme .ad-kpi--bills,
@@ -2294,14 +2334,24 @@ html.light.role-theme .stat-card--blue {
   background: var(--stat-blue-bg) !important;
   border: none !important;
 }
+html.light.role-theme .ad-kpi--gate,
+html.light.role-theme .stat-card--amber {
+  background: var(--stat-amber-bg) !important;
+  border: none !important;
+}
+html.light.role-theme .ad-kpi--collected,
+html.light.role-theme .ad-kpi--guards,
+html.light.role-theme .ad-kpi--income,
+html.light.role-theme .ad-kpi--maintenance,
+html.light.role-theme .stat-card--green {
+  background: var(--stat-green-bg) !important;
+  border: none !important;
+}
+html.light.role-theme .ad-kpi--cancelled,
 html.light.role-theme .ad-kpi--flats,
 html.light.role-theme .ad-kpi--expense,
 html.light.role-theme .stat-card--red {
   background: var(--stat-red-bg) !important;
-  border: none !important;
-}
-html.light.role-theme .stat-card--amber {
-  background: var(--stat-amber-bg) !important;
   border: none !important;
 }
 

@@ -9,6 +9,7 @@ import GlobalTable from "../../components/common/GlobalTable";
 import GlobalBadge from "../../components/common/GlobalBadge";
 import GlobalButton from "../../components/common/GlobalButton";
 import SlidingTabs from "../../components/common/SlidingTabs";
+import ExpandableSearch from "../../components/common/ExpandableSearch";
 
 const LIMIT = 10;
 
@@ -42,6 +43,45 @@ export default function EmergencyHistory() {
     RESOLVED: alerts.filter((a) => a.status === "RESOLVED").length,
   }), [alerts]);
 
+  const resolveLocationLabel = (a) => {
+    if (a.Flat) {
+      const b = a.Flat.Floor?.Block?.name || a.Flat.Block?.name || "";
+      const fn = a.Flat.flat_number || "";
+      if (b && fn) return `🏢 Block ${b} · Flat ${fn}`;
+      if (fn) return `🏢 Flat ${fn}`;
+    }
+
+    if (a.source === "RESIDENT") {
+      const b = a.Resident?.FlatMemberships?.[0]?.Flat?.Block?.name;
+      const fn = a.Resident?.FlatMemberships?.[0]?.Flat?.flat_number;
+      if (b && fn) return `🏢 Block ${b} · Flat ${fn}`;
+      if (fn) return `🏢 Flat ${fn}`;
+      return "🏠 Resident Unit";
+    }
+
+    if (a.source === "GUARD") {
+      return "🛡️ Security Gate";
+    }
+
+    if (a.source === "ADMIN") {
+      return "🏛️ Admin Office";
+    }
+
+    if (a.source === "COMMITTEE") {
+      return "📋 Committee Office";
+    }
+
+    if (a.source === "SUPER_ADMIN") {
+      return "🌐 System HQ";
+    }
+
+    if (a.other_reason) {
+      return `📍 ${a.other_reason}`;
+    }
+
+    return "📍 Society Campus";
+  };
+
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     return alerts.filter((a) => {
@@ -52,10 +92,8 @@ export default function EmergencyHistory() {
         : a.source === "GUARD"
         ? (a.Guard?.name || t("ehGuard") || "Guard")
         : (a.Admin?.name || "Staff");
-      const flat = a.source === "RESIDENT" && a.Flat
-        ? `${a.Flat?.Block?.name || ""} ${a.Flat?.flat_number || ""}`
-        : "";
-      return [a.type, a.message, a.status, raised, flat].join(" ").toLowerCase().includes(q);
+      const loc = resolveLocationLabel(a);
+      return [a.type, a.message, a.status, raised, loc, a.other_reason].filter(Boolean).join(" ").toLowerCase().includes(q);
     });
   }, [alerts, search, tab, t]);
 
@@ -78,12 +116,6 @@ export default function EmergencyHistory() {
   };
 
   const raisedBy = (a) => sourceLabel(a);
-
-  const flatLabel = (a) => (
-    a.source === "RESIDENT" && a.Flat
-      ? `${a.Flat?.Block?.name || ""}-${a.Flat?.flat_number}`
-      : "—"
-  );
 
   const resolveAlert = async (id) => {
     try {
@@ -125,10 +157,12 @@ export default function EmergencyHistory() {
       render: (a) => raisedBy(a),
     },
     {
-      key: "flat",
-      header: t("geColFlat"),
+      key: "location",
+      header: t("geColFlat") || "Location / Unit",
       render: (a) => (
-        <span style={{ color: "var(--text-secondary)" }}>{flatLabel(a)}</span>
+        <span style={{ color: "var(--text-secondary)", fontWeight: 600, fontSize: "0.82rem" }}>
+          {resolveLocationLabel(a)}
+        </span>
       ),
     },
     {
@@ -197,32 +231,27 @@ export default function EmergencyHistory() {
       </div>
 
       <div className="ge-toolbar">
-        <div className="ge-search-wrap">
-          <MdSearch className="ge-search-icon" size={17} />
-          <input
-            className="ge-search-input"
-            placeholder={t("ehSearch") || "Search type, message, name..."}
-            value={search}
-            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+        <div className="overflow-x-auto max-w-full pb-1 sm:pb-0">
+          <SlidingTabs
+            className="ge-filter-tabs"
+            value={tab}
+            onChange={handleTabChange}
+            tabs={filterTabs.map(({ key, label, count, alert }) => ({
+              id: key,
+              label,
+              badge: count,
+              alert,
+            }))}
           />
-          {search ? (
-            <button type="button" onClick={() => setSearch("")} className="ge-search-clear" aria-label="Clear search">
-              <MdClose size={13} />
-            </button>
-          ) : null}
         </div>
 
-        <SlidingTabs
-          className="ge-filter-tabs"
-          value={tab}
-          onChange={handleTabChange}
-          items={filterTabs.map(({ key, label, count, alert }) => ({
-            id: key,
-            label,
-            badge: count,
-            alert,
-          }))}
-        />
+        <div className="ml-auto">
+          <ExpandableSearch
+            placeholder={t("ehSearch") || "Search type, message, name..."}
+            value={search}
+            onChange={(val) => { setSearch(val); setPage(1); }}
+          />
+        </div>
       </div>
 
       <GlobalTable

@@ -8,6 +8,7 @@ import {
   MdHelpOutline,
   MdInfo,
   MdClose,
+  MdShield,
 } from "react-icons/md";
 import { ALERT_TYPES } from "../../context/CustomAlertContext";
 
@@ -38,58 +39,72 @@ export default function CustomAlertModal({ config, onClose }) {
   // Variant Styling Configs
   const variantMap = {
     [ALERT_TYPES.UNAUTHORIZED]: {
-      icon: <MdVpnLock size={32} color="#EF4444" />,
-      badgeBg: "rgba(239, 68, 68, 0.15)",
-      badgeBorder: "rgba(239, 68, 68, 0.3)",
-      badgeShadow: "rgba(239, 68, 68, 0.25)",
+      icon: <MdVpnLock size={32} className="text-rose-400" />,
+      tag: "ACCESS RESTRICTED",
+      tagColor: "text-rose-400 bg-rose-500/10 border-rose-500/25",
+      glowColor: "rgba(244, 63, 94, 0.25)",
+      badgeBg: "linear-gradient(135deg, rgba(244,63,94,0.2) 0%, rgba(225,29,72,0.08) 100%)",
+      badgeBorder: "rgba(244, 63, 94, 0.35)",
       headerTitle: title || "Permission Restricted",
-      btnBg: "#EF4444",
-      btnHover: "#DC2626",
+      btnGradient: "from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 shadow-rose-600/25",
+      btnBg: "#e11d48",
     },
     [ALERT_TYPES.CONFIRM]: {
-      icon: <MdHelpOutline size={32} color="#7C3AED" />,
-      badgeBg: "rgba(124, 58, 237, 0.15)",
-      badgeBorder: "rgba(124, 58, 237, 0.3)",
-      badgeShadow: "rgba(124, 58, 237, 0.25)",
+      icon: <MdHelpOutline size={32} className="text-indigo-400" />,
+      tag: "CONFIRMATION REQUIRED",
+      tagColor: "text-indigo-400 bg-indigo-500/10 border-indigo-500/25",
+      glowColor: "rgba(99, 102, 241, 0.25)",
+      badgeBg: "linear-gradient(135deg, rgba(99,102,241,0.2) 0%, rgba(79,70,229,0.08) 100%)",
+      badgeBorder: "rgba(99, 102, 241, 0.35)",
       headerTitle: title || "Confirm Action",
-      btnBg: confirmStyle === "danger" ? "#EF4444" : "#7C3AED",
-      btnHover: confirmStyle === "danger" ? "#DC2626" : "#6D28D9",
+      btnGradient: confirmStyle === "danger"
+        ? "from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 shadow-rose-600/25"
+        : "from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 shadow-indigo-600/25",
+      btnBg: confirmStyle === "danger" ? "#e11d48" : "#4f46e5",
     },
     [ALERT_TYPES.SUCCESS]: {
-      icon: <MdCheckCircle size={32} color="#10B981" />,
-      badgeBg: "rgba(16, 185, 129, 0.15)",
-      badgeBorder: "rgba(16, 185, 129, 0.3)",
-      badgeShadow: "rgba(16, 185, 129, 0.25)",
-      headerTitle: title || "Success",
-      btnBg: "#10B981",
-      btnHover: "#059669",
+      icon: <MdCheckCircle size={32} className="text-emerald-400" />,
+      tag: "SUCCESS",
+      tagColor: "text-emerald-400 bg-emerald-500/10 border-emerald-500/25",
+      glowColor: "rgba(16, 185, 129, 0.25)",
+      badgeBg: "linear-gradient(135deg, rgba(16,185,129,0.2) 0%, rgba(5,150,105,0.08) 100%)",
+      badgeBorder: "rgba(16, 185, 129, 0.35)",
+      headerTitle: title || "Operation Successful",
+      btnGradient: "from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 shadow-emerald-600/25",
+      btnBg: "#059669",
     },
     [ALERT_TYPES.ERROR]: {
-      icon: <MdErrorOutline size={32} color="#EF4444" />,
-      badgeBg: "rgba(239, 68, 68, 0.15)",
-      badgeBorder: "rgba(239, 68, 68, 0.3)",
-      badgeShadow: "rgba(239, 68, 68, 0.25)",
+      icon: <MdErrorOutline size={32} className="text-rose-400" />,
+      tag: "ACTION FAILED",
+      tagColor: "text-rose-400 bg-rose-500/10 border-rose-500/25",
+      glowColor: "rgba(244, 63, 94, 0.25)",
+      badgeBg: "linear-gradient(135deg, rgba(244,63,94,0.2) 0%, rgba(225,29,72,0.08) 100%)",
+      badgeBorder: "rgba(244, 63, 94, 0.35)",
       headerTitle: title || "Action Error",
-      btnBg: "#EF4444",
-      btnHover: "#DC2626",
+      btnGradient: "from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 shadow-rose-600/25",
+      btnBg: "#e11d48",
     },
     [ALERT_TYPES.WARNING]: {
-      icon: <MdWarning size={32} color="#F59E0B" />,
-      badgeBg: "rgba(245, 158, 11, 0.15)",
-      badgeBorder: "rgba(245, 158, 11, 0.3)",
-      badgeShadow: "rgba(245, 158, 11, 0.25)",
+      icon: <MdWarning size={32} className="text-amber-400" />,
+      tag: "ATTENTION",
+      tagColor: "text-amber-400 bg-amber-500/10 border-amber-500/25",
+      glowColor: "rgba(245, 158, 11, 0.25)",
+      badgeBg: "linear-gradient(135deg, rgba(245,158,11,0.2) 0%, rgba(217,119,6,0.08) 100%)",
+      badgeBorder: "rgba(245, 158, 11, 0.35)",
       headerTitle: title || "Attention",
-      btnBg: "#F59E0B",
-      btnHover: "#D97706",
+      btnGradient: "from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 shadow-amber-600/25",
+      btnBg: "#d97706",
     },
     [ALERT_TYPES.INFO]: {
-      icon: <MdInfo size={32} color="#2563EB" />,
-      badgeBg: "rgba(37, 99, 235, 0.15)",
-      badgeBorder: "rgba(37, 99, 235, 0.3)",
-      badgeShadow: "rgba(37, 99, 235, 0.25)",
+      icon: <MdInfo size={32} className="text-cyan-400" />,
+      tag: "SYSTEM NOTICE",
+      tagColor: "text-cyan-400 bg-cyan-500/10 border-cyan-500/25",
+      glowColor: "rgba(6, 182, 212, 0.25)",
+      badgeBg: "linear-gradient(135deg, rgba(6,182,212,0.2) 0%, rgba(14,165,233,0.08) 100%)",
+      badgeBorder: "rgba(6, 182, 212, 0.35)",
       headerTitle: title || "Notice",
-      btnBg: "#2563EB",
-      btnHover: "#1D4ED8",
+      btnGradient: "from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 shadow-cyan-600/25",
+      btnBg: "#0284c7",
     },
   };
 
@@ -104,10 +119,11 @@ export default function CustomAlertModal({ config, onClose }) {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        backgroundColor: "rgba(15, 23, 42, 0.65)",
-        backdropFilter: "blur(6px)",
+        backgroundColor: "rgba(0, 0, 0, 0.72)",
+        backdropFilter: "blur(10px)",
+        WebkitBackdropFilter: "blur(10px)",
         padding: "16px",
-        animation: "customAlertFadeIn 0.25s ease-out forwards",
+        animation: "customAlertFadeIn 0.24s cubic-bezier(0.16, 1, 0.3, 1) forwards",
       }}
       onClick={handleCancel}
     >
@@ -117,80 +133,91 @@ export default function CustomAlertModal({ config, onClose }) {
           to { opacity: 1; }
         }
         @keyframes customAlertSlideUp {
-          from { opacity: 0; transform: scale(0.92) translateY(12px); }
+          from { opacity: 0; transform: scale(0.90) translateY(16px); }
           to { opacity: 1; transform: scale(1) translateY(0); }
-        }
-        @keyframes customAlertPulse {
-          0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(124, 58, 237, 0.4); }
-          70% { transform: scale(1.05); box-shadow: 0 0 0 12px rgba(124, 58, 237, 0); }
-          100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(124, 58, 237, 0); }
         }
       `}</style>
 
       <div
         style={{
           width: "100%",
-          maxWidth: "420px",
-          backgroundColor: "var(--modal-bg, var(--card-bg, #FFFFFF))",
-          color: "var(--text-primary, #0F172A)",
-          borderRadius: "20px",
-          padding: "24px",
-          border: "1.5px solid var(--glass-border, rgba(226, 232, 240, 0.8))",
-          boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.1)",
-          animation: "customAlertSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards",
+          maxWidth: "430px",
+          backgroundColor: "var(--modal-bg, var(--card-bg, #0f172a))",
+          color: "var(--text-primary, #ffffff)",
+          borderRadius: "24px",
+          padding: "26px 24px 22px",
+          border: "1.5px solid var(--glass-border, rgba(255, 255, 255, 0.12))",
+          boxShadow: `0 24px 60px -12px rgba(0, 0, 0, 0.65), 0 0 30px ${currentVariant.glowColor}`,
+          animation: "customAlertSlideUp 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards",
           position: "relative",
+          overflow: "hidden",
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Close Icon Top Right */}
+        {/* Subtle top illuminated gradient flare */}
+        <div
+          style={{
+            position: "absolute",
+            top: 0,
+            left: "15%",
+            right: "15%",
+            height: "2px",
+            background: `linear-gradient(90deg, transparent, ${currentVariant.glowColor.replace("0.25", "0.9")}, transparent)`,
+          }}
+        />
+
+        {/* Close button top right */}
         <button
           onClick={handleCancel}
           style={{
             position: "absolute",
             top: "16px",
             right: "16px",
-            background: "transparent",
-            border: "none",
-            color: "var(--text-tertiary, #94A3B8)",
+            background: "rgba(255, 255, 255, 0.05)",
+            border: "1px solid var(--glass-border, rgba(255, 255, 255, 0.1))",
+            color: "var(--text-secondary, #94a3b8)",
             cursor: "pointer",
-            padding: "4px",
-            borderRadius: "8px",
+            padding: "6px",
+            borderRadius: "10px",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             transition: "all 0.2s ease",
           }}
-          onMouseEnter={(e) => (e.currentTarget.style.color = "var(--text-primary, #0F172A)")}
-          onMouseLeave={(e) => (e.currentTarget.style.color = "var(--text-tertiary, #94A3B8)")}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.color = "var(--text-primary, #ffffff)";
+            e.currentTarget.style.backgroundColor = "rgba(255, 255, 255, 0.12)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.color = "var(--text-secondary, #94a3b8)";
+            e.currentTarget.style.backgroundColor = "rgba(255, 255, 255, 0.05)";
+          }}
         >
-          <MdClose size={20} />
+          <MdClose size={18} />
         </button>
 
         {/* Aura Badge Icon Header */}
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            textAlign: "center",
-          }}
-        >
+        <div className="flex flex-col items-center text-center">
           <div
             style={{
-              width: "64px",
-              height: "64px",
-              borderRadius: "50%",
-              backgroundColor: currentVariant.badgeBg,
+              width: "68px",
+              height: "68px",
+              borderRadius: "22px",
+              background: currentVariant.badgeBg,
               border: `1.5px solid ${currentVariant.badgeBorder}`,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               marginBottom: "16px",
-              boxShadow: `0 0 20px ${currentVariant.badgeShadow}`,
+              boxShadow: `0 0 24px ${currentVariant.glowColor}`,
             }}
           >
             {currentVariant.icon}
           </div>
+
+          <span className={`text-[10px] font-extrabold uppercase tracking-widest px-2.5 py-0.5 rounded-full border mb-2 ${currentVariant.tagColor}`}>
+            {currentVariant.tag}
+          </span>
 
           <h3
             style={{
@@ -198,49 +225,46 @@ export default function CustomAlertModal({ config, onClose }) {
               fontSize: "20px",
               fontWeight: "800",
               letterSpacing: "-0.02em",
-              color: "var(--text-primary, #0F172A)",
+              color: "var(--text-primary)",
             }}
           >
             {currentVariant.headerTitle}
           </h3>
 
-          <p
-            style={{
-              margin: "0 0 24px 0",
-              fontSize: "14px",
-              lineHeight: "1.5",
-              color: "var(--text-secondary, #475569)",
-              fontWeight: "500",
-            }}
-          >
-            {message}
-          </p>
+          <div className="w-full p-3.5 my-2.5 rounded-xl bg-card-inner-bg/60 border border-glass-border/60">
+            <p
+              style={{
+                margin: 0,
+                fontSize: "13px",
+                lineHeight: "1.55",
+                color: "var(--text-secondary)",
+                fontWeight: "500",
+              }}
+            >
+              {message}
+            </p>
+          </div>
         </div>
 
         {/* Action Buttons Row */}
-        <div
-          style={{
-            display: "flex",
-            gap: "12px",
-            justifyContent: "flex-end",
-            width: "100%",
-          }}
-        >
+        <div className="flex items-center gap-2.5 pt-3">
           {type === ALERT_TYPES.CONFIRM && (
             <button
               onClick={handleCancel}
               style={{
                 flex: 1,
-                padding: "10px 16px",
-                borderRadius: "12px",
-                fontSize: "14px",
+                padding: "11px 16px",
+                borderRadius: "14px",
+                fontSize: "13px",
                 fontWeight: "700",
-                border: "1px solid var(--border-color, #CBD5E1)",
-                backgroundColor: "transparent",
-                color: "var(--text-secondary, #475569)",
+                border: "1px solid var(--glass-border)",
+                backgroundColor: "var(--card-inner-bg)",
+                color: "var(--text-secondary)",
                 cursor: "pointer",
                 transition: "all 0.2s ease",
               }}
+              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.08)")}
+              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "var(--card-inner-bg)")}
             >
               {cancelText}
             </button>
@@ -248,21 +272,7 @@ export default function CustomAlertModal({ config, onClose }) {
 
           <button
             onClick={handleConfirm}
-            style={{
-              flex: 1,
-              padding: "11px 16px",
-              borderRadius: "12px",
-              fontSize: "14px",
-              fontWeight: "700",
-              border: "none",
-              backgroundColor: currentVariant.btnBg,
-              color: "#FFFFFF",
-              cursor: "pointer",
-              boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
-              transition: "all 0.2s ease",
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = currentVariant.btnHover)}
-            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = currentVariant.btnBg)}
+            className={`flex-1 py-2.5 sm:py-3 px-4 rounded-xl text-xs sm:text-sm font-bold text-white bg-gradient-to-r ${currentVariant.btnGradient} shadow-lg transition-all active:scale-[0.98] cursor-pointer border-none flex items-center justify-center`}
           >
             {confirmText}
           </button>

@@ -12,6 +12,9 @@ import {
 } from "react-icons/md";
 import Select from "../../components/common/Select";
 import SlidingTabs from "../../components/common/SlidingTabs";
+import ExpandableSearch from "../../components/common/ExpandableSearch";
+import Modal from "../../components/Modal";
+import { toast } from "react-toastify";
 
 function useIsMobile() {
   const [m, setM] = useState(() => typeof window !== "undefined" && window.innerWidth < 768);
@@ -226,9 +229,9 @@ function RequestCard({ r, slots, selectedSlot, setSelectedSlot, onAssign, onReje
 
 
 /* ═══════════════════════════════════════════════════
-   RESIDENT VEHICLE ENTRY PANEL
+   RESIDENT VEHICLE ENTRY MODAL
 ═══════════════════════════════════════════════════ */
-function ResidentEntryPanel({ slots, onCreated, t }) {
+function ResidentEntryModal({ isOpen, onClose, slots, onCreated, t }) {
   const [vehicleNumber, setVehicleNumber] = useState("");
   const [lookupResult,  setLookupResult]  = useState(null);
   const [lookupError,   setLookupError]   = useState("");
@@ -238,7 +241,7 @@ function ResidentEntryPanel({ slots, onCreated, t }) {
   const [submitError,   setSubmitError]   = useState("");
 
   const availableSlots = lookupResult
-    ? slots.filter(s => s.status === "AVAILABLE" && s.vehicle_type === lookupResult.vehicle_type)
+    ? slots.filter((s) => s.status === "AVAILABLE" && s.vehicle_type === lookupResult.vehicle_type)
     : [];
 
   const handleLookup = async () => {
@@ -252,14 +255,17 @@ function ResidentEntryPanel({ slots, onCreated, t }) {
       const res = await API.get(`/parking/lookup-vehicle?vehicle_number=${vehicleNumber.trim().toUpperCase()}`);
       setLookupResult(res.data);
     } catch (err) {
-      setLookupError(err?.response?.data?.message || "Vehicle not found");
+      setLookupError(err?.response?.data?.message || "Vehicle not registered in this society");
     } finally {
       setLookupLoading(false);
     }
   };
 
   const handleCreate = async () => {
-    if (!selectedSlot) { setSubmitError("Please select a parking slot"); return; }
+    if (!selectedSlot) {
+      setSubmitError("Please select an available parking slot");
+      return;
+    }
     setSubmitLoading(true);
     setSubmitError("");
     try {
@@ -271,121 +277,237 @@ function ResidentEntryPanel({ slots, onCreated, t }) {
         flat_id:        lookupResult.flat_id,
         assigned_spot:  selectedSlot,
       });
+      toast.success(`🚗 Vehicle ${lookupResult.vehicle_number} assigned to slot ${selectedSlot}`);
       setVehicleNumber("");
       setLookupResult(null);
       setSelectedSlot("");
+      onClose();
       onCreated();
     } catch (err) {
-      setSubmitError(err?.response?.data?.message || "Failed to create entry");
+      setSubmitError(err?.response?.data?.message || "Failed to create resident parking entry");
     } finally {
       setSubmitLoading(false);
     }
   };
 
+  const handleModalClose = () => {
+    if (!submitLoading) {
+      setVehicleNumber("");
+      setLookupResult(null);
+      setLookupError("");
+      setSelectedSlot("");
+      setSubmitError("");
+      onClose();
+    }
+  };
+
   return (
-    <div className="gp-resident-panel" style={{
-      background: "var(--card-bg)",
-      border: "1.5px solid var(--glass-border)",
-      borderRadius: 16,
-      padding: 20,
-      display: "flex",
-      flexDirection: "column",
-      gap: 16,
-    }}>
-      <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-        <span style={{ fontSize:20 }}>🏠</span>
-        <div>
-          <p style={{ margin:0, fontWeight:800, fontSize:14, color:"var(--text-primary)" }}>Resident Vehicle Entry</p>
-          <p style={{ margin:0, fontSize:12, color:"var(--text-secondary)" }}>Look up a registered vehicle and assign a slot directly</p>
-        </div>
-      </div>
-
-      <div style={{ display:"flex", gap:10, flexWrap:"wrap", alignItems:"center" }}>
-        <div className="ge-search-wrap gp-lookup-search">
-          <MdDirectionsCar className="ge-search-icon" size={17} />
-          <input
-            className="ge-search-input"
-            style={{ fontWeight: 600, textTransform: "uppercase" }}
-            placeholder="Enter vehicle number (e.g. TN01AB1234)"
-            value={vehicleNumber}
-            onChange={e => { setVehicleNumber(e.target.value.toUpperCase()); setLookupResult(null); setLookupError(""); }}
-            onKeyDown={e => e.key === "Enter" && handleLookup()}
-          />
-        </div>
-        <button
-          onClick={handleLookup}
-          disabled={lookupLoading || !vehicleNumber.trim()}
-          className="btn-primary shrink-0"
-          style={{ display:"flex", alignItems:"center", gap:7, height:42, padding:"0 18px", fontSize:13, fontWeight:700, opacity: (!vehicleNumber.trim() || lookupLoading) ? 0.5 : 1 }}
-        >
-          {lookupLoading ? <Spinner size={14} /> : <MdPersonSearch size={16} />}
-          Lookup
-        </button>
-      </div>
-
-      {lookupError && (
-        <div style={{ display:"flex", alignItems:"center", gap:8, padding:"10px 14px", borderRadius:10, background:"rgba(248,113,113,0.10)", border:"1px solid rgba(248,113,113,0.28)", color:"#f87171", fontSize:13, fontWeight:600 }}>
-          <MdWarning size={15} /> {lookupError}
-        </div>
-      )}
-
-      {lookupResult && (
-        <div style={{ display:"flex", flexDirection:"column", gap:14, padding:16, borderRadius:14, background:"rgba(74,222,128,0.05)", border:"1px solid rgba(74,222,128,0.20)" }}>
-          <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(160px,1fr))", gap:12 }}>
-            {[
-              { label:"Vehicle",  value: lookupResult.vehicle_name || lookupResult.vehicle_number },
-              { label:"Number",   value: lookupResult.vehicle_number },
-              { label:"Type",     value: lookupResult.vehicle_type },
-              { label:"Resident", value: lookupResult.resident_name },
-              { label:"Flat",     value: lookupResult.flat_number },
-            ].map(({ label, value }) => (
-              <div key={label} style={{ display:"flex", flexDirection:"column", gap:3 }}>
-                <span style={{ fontSize:10, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.06em", color:"var(--text-secondary)" }}>{label}</span>
-                <span style={{ fontSize:13, fontWeight:700, color:"var(--text-primary)" }}>{value}</span>
-              </div>
-            ))}
-          </div>
-
-          <div>
-            <label className="gp-select-label">
-              Assign Parking Slot
-              {availableSlots.length === 0 && (
-                <span className="gp-no-slots-hint"><MdWarning size={12} /> No slots available for {lookupResult.vehicle_type}</span>
-              )}
-            </label>
-            <div style={{ position:"relative" }}>
-              <MdLocalParking size={15} style={{ position:"absolute", left:12, top:"50%", transform:"translateY(-50%)", color:"var(--text-secondary)", pointerEvents:"none" }} />
-              <Select
-                className="input gp-slot-select"
-                value={selectedSlot}
-                onChange={e => setSelectedSlot(e.target.value)}
-                disabled={availableSlots.length === 0}
+    <Modal
+      isOpen={isOpen}
+      onClose={handleModalClose}
+      title="Resident Vehicle Lookup & Entry"
+      subtitle="Search registered vehicles by license plate and assign a parking slot"
+      icon={MdDirectionsCar}
+      size="md"
+    >
+      <div className="space-y-4 pt-1">
+        <style>{`
+          html.role-theme input.gp-modal-input,
+          html.role-theme input.gp-modal-input:focus,
+          html.role-theme input.gp-modal-input:focus-visible,
+          html.role-theme input.gp-modal-input:active {
+            border: none !important;
+            border-color: transparent !important;
+            box-shadow: none !important;
+            outline: none !important;
+            background: transparent !important;
+          }
+        `}</style>
+        {/* Search Bar */}
+        <div className="flex flex-col sm:flex-row gap-2.5 items-stretch sm:items-center">
+          <div className="flex items-center rounded-xl bg-card-inner-bg border border-glass-border focus-within:border-cyan-500 focus-within:ring-2 focus-within:ring-cyan-500/25 transition-all flex-1 px-3.5 py-1 gap-2.5 shadow-inner">
+            <div className="text-cyan-400 shrink-0 flex items-center justify-center pointer-events-none">
+              <MdDirectionsCar size={20} />
+            </div>
+            <input
+              type="text"
+              className="gp-modal-input w-full py-2 text-sm sm:text-base font-extrabold uppercase font-mono tracking-wider text-primary placeholder:text-secondary/50 bg-transparent border-0 outline-none ring-0"
+              style={{
+                background: "transparent",
+                border: "none",
+                borderColor: "transparent",
+                outline: "none",
+                boxShadow: "none",
+                padding: "4px 0",
+              }}
+              placeholder="Enter license plate (e.g. TN01AB1234)"
+              value={vehicleNumber}
+              onChange={(e) => {
+                setVehicleNumber(e.target.value.toUpperCase());
+                setLookupResult(null);
+                setLookupError("");
+              }}
+              onKeyDown={(e) => e.key === "Enter" && handleLookup()}
+              autoFocus
+            />
+            {vehicleNumber && (
+              <button
+                type="button"
+                onClick={() => {
+                  setVehicleNumber("");
+                  setLookupResult(null);
+                  setLookupError("");
+                }}
+                className="text-secondary/60 hover:text-primary transition-colors text-xs font-bold px-1 py-1 rounded cursor-pointer shrink-0"
+                title="Clear"
               >
-                <option value="">Select a slot</option>
-                {availableSlots.map(slot => (
-                  <option key={slot.id} value={slot.slot_number}>{slot.slot_number}</option>
-                ))}
-              </Select>
-            </div>
+                ✕
+              </button>
+            )}
           </div>
-
-          {submitError && (
-            <div style={{ display:"flex", alignItems:"center", gap:8, padding:"10px 14px", borderRadius:10, background:"rgba(248,113,113,0.10)", border:"1px solid rgba(248,113,113,0.28)", color:"#f87171", fontSize:13, fontWeight:600 }}>
-              <MdWarning size={15} /> {submitError}
-            </div>
-          )}
 
           <button
-            onClick={handleCreate}
-            disabled={submitLoading || !selectedSlot}
-            className="btn-primary w-full py-2.5 text-[13px] font-bold disabled:opacity-50"
+            type="button"
+            onClick={handleLookup}
+            disabled={lookupLoading || !vehicleNumber.trim()}
+            className="py-2.5 px-5 rounded-xl font-bold text-xs sm:text-sm text-white bg-gradient-to-r from-cyan-600 via-blue-600 to-indigo-600 hover:from-cyan-500 hover:to-indigo-500 shadow-md shadow-cyan-600/25 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer shrink-0"
           >
-            {submitLoading ? <Spinner size={15} /> : <MdAdd size={16} />}
-            {submitLoading ? "Creating entry..." : "Create Resident Parking Entry"}
+            {lookupLoading ? <Spinner size={15} /> : <MdPersonSearch size={18} />}
+            <span>{lookupLoading ? "Searching..." : "Lookup"}</span>
           </button>
         </div>
-      )}
-    </div>
+
+        {/* Error Message */}
+        {lookupError && (
+          <div className="flex items-center gap-2.5 p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs font-semibold animate-in fade-in">
+            <MdWarning size={16} className="shrink-0" />
+            <span>{lookupError}</span>
+          </div>
+        )}
+
+        {/* Vehicle Found HUD Result Card */}
+        {lookupResult && (
+          <div className="rounded-2xl bg-gradient-to-br from-cyan-500/10 via-card-inner-bg to-card-inner-bg border border-cyan-500/25 p-4 space-y-3.5 animate-in fade-in zoom-in-95">
+            {/* Card Top Title Row */}
+            <div className="flex items-center justify-between gap-3 pb-2.5 border-b border-glass-border/40">
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="px-2.5 py-1 rounded-lg bg-cyan-500/20 text-cyan-300 font-mono font-black text-sm border border-cyan-500/30 shrink-0">
+                  {lookupResult.vehicle_number}
+                </span>
+                <span className="text-xs font-bold text-primary capitalize truncate">
+                  {lookupResult.vehicle_name || "Resident Vehicle"}
+                </span>
+              </div>
+
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 shrink-0">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> Verified
+              </span>
+            </div>
+
+            {/* Details 4-Column Grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs">
+              <div className="p-2.5 rounded-xl bg-card-inner-bg/60 border border-glass-border/40">
+                <span className="text-[10px] font-bold text-secondary uppercase tracking-wider block">
+                  Vehicle Type
+                </span>
+                <span className="font-extrabold text-primary mt-0.5 block capitalize">
+                  {lookupResult.vehicle_type === "CAR" ? "🚗 Car / SUV" : lookupResult.vehicle_type === "BIKE" ? "🏍️ Bike" : lookupResult.vehicle_type}
+                </span>
+              </div>
+
+              <div className="p-2.5 rounded-xl bg-card-inner-bg/60 border border-glass-border/40">
+                <span className="text-[10px] font-bold text-secondary uppercase tracking-wider block">
+                  Resident Owner
+                </span>
+                <span className="font-bold text-primary mt-0.5 block truncate">
+                  {lookupResult.resident_name || "Resident"}
+                </span>
+              </div>
+
+              <div className="p-2.5 rounded-xl bg-card-inner-bg/60 border border-glass-border/40">
+                <span className="text-[10px] font-bold text-secondary uppercase tracking-wider block">
+                  Destination Unit
+                </span>
+                <span className="font-bold text-accent mt-0.5 block truncate">
+                  Flat {lookupResult.flat_number || "—"}
+                </span>
+              </div>
+
+              <div className="p-2.5 rounded-xl bg-card-inner-bg/60 border border-glass-border/40">
+                <span className="text-[10px] font-bold text-secondary uppercase tracking-wider block">
+                  Available Slots
+                </span>
+                <span className="font-extrabold text-emerald-400 mt-0.5 block">
+                  {availableSlots.length} available
+                </span>
+              </div>
+            </div>
+
+            {/* Slot Selection & Authorization CTA */}
+            <div className="space-y-2.5 pt-1">
+              <label className="block text-xs font-bold text-primary">
+                Assign Parking Spot <span className="text-cyan-400">*</span>
+              </label>
+
+              <div>
+                <Select
+                  className="w-full text-xs sm:text-sm font-bold bg-card-inner-bg border-glass-border rounded-xl cursor-pointer"
+                  icon={<MdLocalParking size={18} className="text-cyan-400" />}
+                  value={selectedSlot}
+                  onChange={(e) => setSelectedSlot(e.target.value)}
+                  disabled={availableSlots.length === 0}
+                >
+                  <option value="">
+                    {availableSlots.length === 0
+                      ? `No available slots for ${lookupResult.vehicle_type}`
+                      : `-- Select an available ${lookupResult.vehicle_type} slot --`}
+                  </option>
+                  {availableSlots.map((slot) => (
+                    <option key={slot.id} value={slot.slot_number}>
+                      Slot {slot.slot_number} (Available)
+                    </option>
+                  ))}
+                </Select>
+              </div>
+
+              {submitError && (
+                <div className="flex items-center gap-2 p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs font-semibold">
+                  <MdWarning size={15} /> {submitError}
+                </div>
+              )}
+
+              <div className="flex items-center gap-2.5 pt-2">
+                <button
+                  type="button"
+                  onClick={handleModalClose}
+                  className="flex-1 py-2.5 px-4 rounded-xl text-xs font-semibold border border-glass-border bg-card-inner-bg hover:bg-white/10 text-secondary transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCreate}
+                  disabled={submitLoading || !selectedSlot}
+                  className="flex-2 py-2.5 px-4 rounded-xl font-bold text-xs sm:text-sm text-white bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 hover:from-emerald-500 hover:to-cyan-500 shadow-lg shadow-emerald-600/25 transition-all active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  {submitLoading ? (
+                    <>
+                      <Spinner size={16} />
+                      <span>Authorizing Entry...</span>
+                    </>
+                  ) : (
+                    <>
+                      <MdCheckCircle size={18} />
+                      <span>Authorize & Assign Slot</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </Modal>
   );
 }
 
@@ -407,6 +529,7 @@ export default function GuardParking() {
   const [fetching,     setFetching]     = useState(false);
   const [refreshing,   setRefreshing]   = useState(false);
   const [selectedSlot, setSelectedSlot] = useState({});
+  const [showResidentModal, setShowResidentModal] = useState(false);
 
   const [page,       setPage]       = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -716,10 +839,19 @@ export default function GuardParking() {
               <p className="gp-er-sub">{counts.ALL} {t("gpSubtitle")}</p>
             </div>
           </div>
-          <button onClick={handleRefresh} className={`gp-refresh-btn ${refreshing ? "spinning" : ""}`}>
-            <MdRefresh size={15} />
-            {refreshing ? t("gpRefreshing") : t("gpRefresh")}
-          </button>
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <button
+              onClick={() => setShowResidentModal(true)}
+              className="flex items-center gap-2 py-2 px-3.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-cyan-600 via-blue-600 to-indigo-600 hover:from-cyan-500 hover:to-blue-500 shadow-md shadow-cyan-600/20 transition-all active:scale-95 cursor-pointer shrink-0"
+            >
+              <MdDirectionsCar size={16} />
+              <span>+ Resident Vehicle Entry</span>
+            </button>
+            <button onClick={handleRefresh} className={`gp-refresh-btn ${refreshing ? "spinning" : ""}`}>
+              <MdRefresh size={15} />
+              {refreshing ? t("gpRefreshing") : t("gpRefresh")}
+            </button>
+          </div>
         </div>
 
         {/* ── VIEW MODE SWITCHER ── */}
@@ -733,17 +865,17 @@ export default function GuardParking() {
           ]}
         />
 
-        {/* ── RESIDENT ENTRY PANEL ── */}
-        {viewMode === "resident" && (
-          <ResidentEntryPanel
-            slots={slots}
-            onCreated={() => {
-              loadRequests(1, "", "ALL", "resident", false, true);
-              loadSlots();
-            }}
-            t={t}
-          />
-        )}
+        {/* ── RESIDENT ENTRY MODAL POPUP ── */}
+        <ResidentEntryModal
+          isOpen={showResidentModal}
+          onClose={() => setShowResidentModal(false)}
+          slots={slots}
+          onCreated={() => {
+            loadRequests(1, "", "ALL", viewMode, false, true);
+            loadSlots();
+          }}
+          t={t}
+        />
 
         {/* ── STAT CARDS ── */}
         {!initialLoad && counts.ALL > 0 && (
@@ -760,35 +892,26 @@ export default function GuardParking() {
         {/* ── SEARCH + TABS ── */}
         {!initialLoad && (
             <div className="ge-toolbar">
-              <div className="ge-search-wrap">
-                <MdSearch className="ge-search-icon" size={17} />
-                <input
-                  className="ge-search-input"
-                  placeholder={t("gpSearchPlaceholder") || "Search guest, vehicle..."}
-                  value={search}
-                  onChange={e => setSearch(e.target.value)}
+              <div className="overflow-x-auto max-w-full pb-1 sm:pb-0">
+                <SlidingTabs
+                  className="gp-filter-tabs"
+                  value={activeTab}
+                  onChange={handleTabChange}
+                  tabs={tabs.map(({ key, label, count }) => ({
+                    id: key,
+                    label,
+                    badge: count,
+                  }))}
                 />
-                {fetching && !initialLoad ? (
-                  <div className="ge-search-action">
-                    <Spinner size={13} />
-                  </div>
-                ) : search ? (
-                  <button type="button" onClick={() => setSearch("")} className="ge-search-clear" aria-label="Clear search">
-                    <MdClose size={13} />
-                  </button>
-                ) : null}
               </div>
 
-              <SlidingTabs
-                className="gp-filter-tabs"
-                value={activeTab}
-                onChange={handleTabChange}
-                items={tabs.map(({ key, label, count }) => ({
-                  id: key,
-                  label,
-                  badge: count,
-                }))}
-              />
+              <div className="ml-auto">
+                <ExpandableSearch
+                  placeholder={t("gpSearchPlaceholder") || "Search guest, vehicle..."}
+                  value={search}
+                  onChange={setSearch}
+                />
+              </div>
             </div>
         )}
 

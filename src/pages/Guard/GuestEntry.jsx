@@ -7,6 +7,7 @@ import Modal from "../../components/Modal";
 import { toast } from "react-toastify";
 import Select from "../../components/common/Select";
 import SlidingTabs from "../../components/common/SlidingTabs";
+import ExpandableSearch from "../../components/common/ExpandableSearch";
 
 function useDebounce(value, delay = 500) {
   const [d, setD] = useState(value);
@@ -258,35 +259,26 @@ export default function GuestEntry() {
 
       {/* ── SEARCH + FILTER ── */}
       <div className="ge-toolbar">
-        <div className="ge-search-wrap">
-          <MdSearch className="ge-search-icon" size={17} />
-          <input
-            className="ge-search-input"
-            placeholder={t("geSearch")}
-            value={search}
-            onChange={e => setSearch(e.target.value)}
+        <div className="overflow-x-auto max-w-full pb-1 sm:pb-0">
+          <SlidingTabs
+            className="ge-filter-tabs"
+            value={filter}
+            onChange={handleFilterChange}
+            tabs={filterTabs.map(({ key, label, count }) => ({
+              id: key,
+              label,
+              badge: count,
+            }))}
           />
-          {fetching && !initialLoad ? (
-            <div className="ge-search-action">
-              <Spinner size={13} />
-            </div>
-          ) : search ? (
-            <button type="button" onClick={() => setSearch("")} className="ge-search-clear" aria-label="Clear search">
-              <MdClose size={13} />
-            </button>
-          ) : null}
         </div>
 
-        <SlidingTabs
-          className="ge-filter-tabs"
-          value={filter}
-          onChange={handleFilterChange}
-          items={filterTabs.map(({ key, label, count }) => ({
-            id: key,
-            label,
-            badge: count,
-          }))}
-        />
+        <div className="ml-auto">
+          <ExpandableSearch
+            placeholder={t("geSearch") || "Search visitors..."}
+            value={search}
+            onChange={setSearch}
+          />
+        </div>
       </div>
 
       {/* ── DESKTOP TABLE ── */}

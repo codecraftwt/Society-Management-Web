@@ -8,6 +8,7 @@ import {
 import { FaWhatsapp, FaAmbulance } from "react-icons/fa";
 import API from "../../services/api";
 import SlidingTabs from "../../components/common/SlidingTabs";
+import ExpandableSearch from "../../components/common/ExpandableSearch";
 
 /* ── Static data ── */
 const emergencyContacts = [
@@ -226,19 +227,12 @@ export default function GuardHelpContacts() {
       {activeTab === "faq" && (
         <div className="gh-tab-content">
 
-          <div className="ge-search-wrap" style={{ marginBottom: "0.85rem" }}>
-            <MdSearch className="ge-search-icon" size={17} />
-            <input
-              className="ge-search-input"
+          <div className="flex items-center justify-end mb-3">
+            <ExpandableSearch
               placeholder="Search FAQs…"
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={setSearch}
             />
-            {search ? (
-              <button type="button" onClick={() => setSearch("")} className="ge-search-clear" aria-label="Clear search">
-                <MdClose size={13} />
-              </button>
-            ) : null}
           </div>
 
           {filteredFaqs.length === 0 ? (

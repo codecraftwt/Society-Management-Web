@@ -14,6 +14,8 @@ import {
   MdEmergency,
   MdArrowBack,
   MdArrowForward,
+  MdLocationOn,
+  MdClear,
 } from "react-icons/md";
 
 const EMERGENCY_TYPES = [
@@ -286,18 +288,38 @@ export default function SOSModal({
                   </div>
                 )}
 
-                <div>
-                  <label className="block text-xs font-semibold text-secondary uppercase tracking-wider mb-1.5">
-                    Emergency Notes / Location Details (Optional)
-                  </label>
-                  <textarea
-                    rows={5}
-                    style={{ minHeight: "130px", fontSize: "13.5px", lineHeight: "1.6" }}
-                    placeholder="Provide additional details to help security and neighbors respond faster (e.g. Exact location, flat number, injured persons, immediate assistance needed)..."
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    className="input w-full rounded-xl p-3.5 leading-relaxed resize-y border border-glass-border focus:border-red-500"
-                  />
+                {/* ── Emergency Notes & Location Details Section ── */}
+                <div className="space-y-2.5 p-4 rounded-2xl bg-card-inner-bg/70 border border-glass-border/70 shadow-inner">
+                  <div className="flex items-center justify-between">
+                    <label className="flex items-center gap-1.5 text-xs font-bold text-primary">
+                      <MdLocationOn className="text-rose-500" size={16} />
+                      <span>Emergency Notes & Location Details</span>
+                    </label>
+                    <span className="text-[10px] font-semibold text-secondary uppercase tracking-wider px-2 py-0.5 rounded-md bg-white/5 border border-glass-border/40">
+                      Optional
+                    </span>
+                  </div>
+
+                  {/* Modern Spacious Textarea */}
+                  <div className="relative pt-0.5">
+                    <textarea
+                      rows={5}
+                      style={{ minHeight: "135px" }}
+                      placeholder="Provide additional details to help security and neighbors respond faster (e.g. Exact location, flat number, injured persons, immediate assistance needed)..."
+                      value={description}
+                      onChange={(e) => setDescription(e.target.value)}
+                      className="input w-full resize-y text-xs sm:text-sm bg-card-inner-bg/90 border-glass-border focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20 rounded-xl p-3.5 leading-relaxed transition"
+                    />
+                    {description && (
+                      <button
+                        type="button"
+                        onClick={() => setDescription("")}
+                        className="absolute right-3 bottom-3.5 inline-flex items-center gap-0.5 px-2 py-0.5 rounded text-[10px] font-bold text-secondary hover:text-rose-400 bg-white/10 hover:bg-white/20 transition cursor-pointer"
+                      >
+                        <MdClear size={12} /> Clear
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 <button

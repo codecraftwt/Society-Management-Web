@@ -4,8 +4,11 @@ import API from "../../services/api";
 import { AuthContext } from "../../context/AuthContext";
 import { useLang } from "../../context/LanguageContext";
 import { getSocket } from "../../services/socket";
+import SlidingTabs from "../../components/common/SlidingTabs";
+import ExpandableSearch from "../../components/common/ExpandableSearch";
+import DateRangeFilter from "../../components/common/DateRangeFilter";
 import {
-  MdAdd, MdSearch, MdFilterList, MdOutlineInbox,
+  MdAdd, MdFilterList, MdOutlineInbox, MdSearch,
   MdClose, MdCameraAlt, MdPhotoLibrary, MdDelete,
   MdFlipCameraAndroid, MdCalendarToday,
   MdChevronLeft, MdChevronRight,
@@ -1574,56 +1577,39 @@ export default function ResidentComplaints() {
         }
 
         {!initialLoad && counts.ALL > 0 && (
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            <div style={{ position: "relative" }}>
-              <MdSearch size={17} style={{ position: "absolute", left: 12, top: "50%",
-                transform: "translateY(-50%)", color: "var(--text-secondary)", pointerEvents: "none" }} />
-              <input className="input search-input"
-                style={{ paddingLeft: 38, paddingRight: fetching || search ? 38 : 12, height: 42 }}
-                placeholder={t("compSearch")} value={search} onChange={e => setSearch(e.target.value)} />
-              <div style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", display: "flex", alignItems: "center" }}>
-                {fetching ? <Spinner small /> : search ? (
-                  <button onClick={() => setSearch("")} style={{ background: "none", border: "none",
-                    cursor: "pointer", color: "var(--text-secondary)", display: "flex", alignItems: "center" }}>
-                    <MdClose size={15} />
-                  </button>
-                ) : null}
-              </div>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+            {/* Left: Filter Tabs */}
+            <div className="overflow-x-auto max-w-full pb-0.5" style={{ scrollbarWidth: "none" }}>
+              <SlidingTabs
+                items={[
+                  { id: "ALL", label: t("compTabAll") || "All", badge: counts.ALL },
+                  { id: "PENDING", label: t("compStatusPending") || "Pending", badge: counts.PENDING, alert: counts.PENDING },
+                  { id: "IN_PROGRESS", label: t("compTabInProgress") || "In Progress", badge: counts.IN_PROGRESS },
+                  { id: "RESOLVED", label: t("compStatusResolved") || "Resolved", badge: counts.RESOLVED },
+                ]}
+                value={filterStatus}
+                onChange={handleFilterChange}
+              />
             </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-              <input type="date" className="input" style={{ flex: 1, minWidth: 130, height: 38 }}
-                value={dateFrom} max={dateTo || undefined} onChange={e => setDateFrom(e.target.value)} />
-              <span style={{ fontSize: 12, color: "var(--text-secondary)", flexShrink: 0 }}>{t("compDateTo")}</span>
-              <input type="date" className="input" style={{ flex: 1, minWidth: 130, height: 38 }}
-                value={dateTo} min={dateFrom || undefined} onChange={e => setDateTo(e.target.value)} />
-              {hasDateFilter && (
-                <button onClick={clearDateFilter} style={{ width: 32, height: 32, borderRadius: "50%", flexShrink: 0,
-                  background: "var(--card-inner-bg)", border: "1px solid var(--glass-border)",
-                  color: "var(--text-secondary)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
-                  <MdClose size={14} />
-                </button>
-              )}
-            </div>
-            <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
-              <MdFilterList size={18} style={{ color: "var(--text-secondary)" }} />
-              {filterTabs.map(tab => (
-                <button key={tab.key} onClick={() => handleFilterChange(tab.key)}
-                  className={`complaint-filter-pill ${pillVariant[tab.key]} ${filterStatus === tab.key ? "active" : ""}`}>
-                  {tab.label}<span className="complaint-filter-pill-count">{tab.count}</span>
-                </button>
-              ))}
-              {hasDateFilter && (
-                <span style={{ display: "flex", alignItems: "center", gap: 5, padding: "6px 12px",
-                  borderRadius: 999, fontSize: 11, fontWeight: 600, background: "var(--stat-purple-bg)",
-                  color: "var(--stat-purple-color)", border: "1px solid var(--stat-purple-border)" }}>
-                  <MdCalendarToday size={11} />
-                  {dateFrom ? formatDate(dateFrom) : t("compDateStart")} — {dateTo ? formatDate(dateTo) : t("compDateEnd")}
-                  <button onClick={clearDateFilter} style={{ background: "none", border: "none", cursor: "pointer",
-                    color: "inherit", display: "flex", alignItems: "center", marginLeft: 2, padding: 0 }}>
-                    <MdClose size={11} />
-                  </button>
-                </span>
-              )}
+
+            {/* Right: Date Range Filter + Expandable Search aligned in one row */}
+            <div className="flex items-center gap-2.5 flex-wrap sm:flex-nowrap justify-between sm:justify-end ml-auto sm:ml-0">
+              <DateRangeFilter
+                fromDate={dateFrom}
+                toDate={dateTo}
+                onChange={({ from, to }) => {
+                  setDateFrom(from);
+                  setDateTo(to);
+                }}
+                onClear={clearDateFilter}
+                placeholder={t("compDate") || "Date Range"}
+              />
+
+              <ExpandableSearch
+                placeholder={t("compSearch") || "Search complaints..."}
+                value={search}
+                onChange={setSearch}
+              />
             </div>
           </div>
         )}

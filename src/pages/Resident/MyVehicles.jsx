@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import API from "../../services/api";
 import { useLang } from "../../context/LanguageContext";
+import ExpandableSearch from "../../components/common/ExpandableSearch";
 import {
   MdAdd, MdDelete, MdDirectionsCarFilled,
   MdTwoWheeler, MdClose, MdCheckCircle,
@@ -560,31 +561,26 @@ export default function MyVehicles() {
       )}
 
       <div className="ge-toolbar">
-        <div className="ge-search-wrap">
-          <MdSearch className="ge-search-icon" size={17} />
-          <input
-            className="ge-search-input"
-            placeholder="Search vehicles, slots or requests…"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
+        <div className="overflow-x-auto max-w-full pb-1 sm:pb-0">
+          <SlidingTabs
+            className="ge-filter-tabs"
+            value={activeTab}
+            onChange={setActiveTab}
+            tabs={[
+              { id: "vehicles", label: t("vehTitle"), icon: <MdDirectionsCarFilled size={15} />, badge: vehicles.length },
+              { id: "slots", label: "Parking Slots", icon: <MdLocalParking size={15} />, badge: allocatedSlots.length },
+              { id: "requests", label: "Slot Requests", icon: <FaParking size={14} />, badge: parkingRequests.length, alert: pendingCount },
+            ]}
           />
-          {search ? (
-            <button type="button" onClick={() => setSearch("")} className="ge-search-clear" aria-label="Clear search">
-              <MdClose size={13} />
-            </button>
-          ) : null}
         </div>
 
-        <SlidingTabs
-          className="ge-filter-tabs"
-          value={activeTab}
-          onChange={setActiveTab}
-          items={[
-            { id: "vehicles", label: t("vehTitle"), icon: <MdDirectionsCarFilled size={15} />, badge: vehicles.length },
-            { id: "slots", label: "Parking Slots", icon: <MdLocalParking size={15} />, badge: allocatedSlots.length },
-            { id: "requests", label: "Slot Requests", icon: <FaParking size={14} />, badge: parkingRequests.length, alert: pendingCount },
-          ]}
-        />
+        <div className="ml-auto">
+          <ExpandableSearch
+            placeholder="Search vehicles, slots or requests…"
+            value={search}
+            onChange={setSearch}
+          />
+        </div>
       </div>
 
       {/* FEEDBACK */}

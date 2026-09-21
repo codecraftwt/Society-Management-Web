@@ -6,11 +6,11 @@
   import "react-datepicker/dist/react-datepicker.css";
   import Modal from "../../components/Modal";
   import SlidingTabs from "../../components/common/SlidingTabs";
+  import ExpandableSearch from "../../components/common/ExpandableSearch";
   import { QRCodeCanvas } from "qrcode.react";
   import html2canvas from "html2canvas";
   import { FaDownload, FaShareAlt, FaTimes, FaLock, FaBan } from "react-icons/fa";
   import {
-    MdSearch, MdClose,
     MdChevronLeft, MdChevronRight, MdWarning, MdBlock,
     MdPayment, MdRefresh, MdTimer, MdContentCopy, MdCheck, MdDateRange,
     MdPool,
@@ -878,29 +878,11 @@
 
             {!initialLoad && (
               <div className="ge-toolbar">
-                <div className="ge-search-wrap">
-                  <MdSearch className="ge-search-icon" size={17} />
-                  <input
-                    className="ge-search-input"
-                    placeholder="Search by amenity…"
-                    value={bookingSearch}
-                    onChange={(e) => setBookingSearch(e.target.value)}
-                  />
-                  {fetching ? (
-                    <div className="ge-search-action">
-                      <Spinner small />
-                    </div>
-                  ) : bookingSearch ? (
-                    <button
-                      type="button"
-                      onClick={() => setBookingSearch("")}
-                      className="ge-search-clear"
-                      aria-label="Clear search"
-                    >
-                      <MdClose size={13} />
-                    </button>
-                  ) : null}
-                </div>
+                <ExpandableSearch
+                  placeholder={t("amenitySearch") || "Search by amenity…"}
+                  value={bookingSearch}
+                  onChange={setBookingSearch}
+                />
               </div>
             )}
 

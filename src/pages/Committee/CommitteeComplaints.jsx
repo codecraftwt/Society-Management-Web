@@ -8,6 +8,7 @@ import { useLang } from "../../context/LanguageContext";
 import { getSocket } from "../../services/socket";
 import { hasPermission } from "../../utils/permissions";
 import { useCustomAlert } from "../../context/CustomAlertContext";
+import DateRangeFilter from "../../components/common/DateRangeFilter";
 import {
   MdReportProblem, MdSearch, MdClose, MdOutlineInbox,
   MdImage, MdOpenInNew, MdPerson, MdApartment,
@@ -914,38 +915,17 @@ export default function CommitteeComplaints() {
               })}
             </div>
 
-            {/* Date filter — desktop only */}
-            {!isMobile && (
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <input type="date" className="input" style={{ width: 140, height: 38 }}
-                  value={dateFrom} max={dateTo || undefined} onChange={e => setDateFrom(e.target.value)} />
-                <span style={{ fontSize: 12, color: "var(--text-secondary)" }}>{t ? t("compDateTo") : "to"}</span>
-                <input type="date" className="input" style={{ width: 140, height: 38 }}
-                  value={dateTo} min={dateFrom || undefined} onChange={e => setDateTo(e.target.value)} />
-                {hasDateFilter && (
-                  <button onClick={clearDate} style={{ width: 30, height: 30, borderRadius: 8,
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    background: "var(--card-inner-bg)", border: "1px solid var(--glass-border)",
-                    cursor: "pointer", color: "var(--text-secondary)" }}>
-                    <MdClose size={13} />
-                  </button>
-                )}
-              </div>
-            )}
-
-            {/* Active date filter chip */}
-            {hasDateFilter && (
-              <div>
-                <span className="status-pill status-pill--inprogress">
-                  <MdCalendarToday size={11} />
-                  {dateFrom ? formatDate(dateFrom) : "Start"} → {dateTo ? formatDate(dateTo) : "End"}
-                  <button onClick={clearDate} style={{ background: "none", border: "none", cursor: "pointer",
-                    color: "inherit", display: "flex", alignItems: "center", marginLeft: 2, padding: 0 }}>
-                    <MdClose size={11} />
-                  </button>
-                </span>
-              </div>
-            )}
+            {/* Date filter */}
+            <DateRangeFilter
+              fromDate={dateFrom}
+              toDate={dateTo}
+              onChange={({ from, to }) => {
+                setDateFrom(from);
+                setDateTo(to);
+              }}
+              onClear={clearDate}
+              placeholder={t ? t("compDate") || "Date Range" : "Date Range"}
+            />
           </div>
 
           {/* Body */}

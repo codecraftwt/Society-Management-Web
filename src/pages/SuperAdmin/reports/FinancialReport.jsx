@@ -104,6 +104,57 @@ function FilterSheet({
             </Select>
           </div>
 
+          <div>
+            <label style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--text-secondary)", display: "block", marginBottom: 6 }}>Quick Date Presets</label>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+              {[
+                { id: "ALL", label: "All Time" },
+                { id: "TODAY", label: "Today" },
+                { id: "LAST_7_DAYS", label: "Last 7 Days" },
+                { id: "THIS_MONTH", label: "This Month" },
+                { id: "LAST_MONTH", label: "Last Month" },
+              ].map((p) => (
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => {
+                    const now = new Date();
+                    let start = "";
+                    let end = "";
+                    if (p.id === "TODAY") {
+                      start = now.toISOString().slice(0, 10);
+                      end = start;
+                    } else if (p.id === "LAST_7_DAYS") {
+                      const prev = new Date(now);
+                      prev.setDate(now.getDate() - 6);
+                      start = prev.toISOString().slice(0, 10);
+                      end = now.toISOString().slice(0, 10);
+                    } else if (p.id === "THIS_MONTH") {
+                      start = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
+                      end = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().slice(0, 10);
+                    } else if (p.id === "LAST_MONTH") {
+                      start = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString().slice(0, 10);
+                      end = new Date(now.getFullYear(), now.getMonth(), 0).toISOString().slice(0, 10);
+                    }
+                    setFromDate(start);
+                    setToDate(end);
+                  }}
+                  style={{
+                    padding: "4px 10px",
+                    borderRadius: 8,
+                    fontSize: 11,
+                    fontWeight: 600,
+                    background: "var(--card-inner-bg)",
+                    border: "1px solid var(--glass-border)",
+                    color: "var(--text-secondary)",
+                    cursor: "pointer",
+                  }}
+                >
+                  {p.label}
+                </button>
+              ))}
+            </div>
+          </div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
             {[{ label: labels.fromDate, val: fromDate, set: setFromDate }, { label: labels.toDate, val: toDate, set: setToDate }].map(({ label, val, set }) => (
               <div key={label}>

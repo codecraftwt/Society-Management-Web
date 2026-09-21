@@ -64,11 +64,6 @@ import MaintenancePage from "./pages/Maintenance/MaintenancePage";
 import RolePermissions from "./pages/Admin/RolePermissions";
 import AdminEmergency from "./pages/Admin/AdminEmergency";
 
-/* === COMMITTEE MEMBER (LIMITED ACCESS) === */
-/* Committee Members reuse the SOCIETY_ADMIN panel (/admin → AdminLayout + shared
-   admin components). Separate Committee pages are retired. */
-
-
 /* === RESIDENT === */
 import ResidentLayout from "./pages/Resident/ResidentLayout";
 import ResidentProfile from "./pages/Resident/ResidentProfile";
@@ -94,7 +89,7 @@ import ResidentFinanceReport from "./pages/Resident/reports/ResidentFinanceRepor
 import ResidentDocument from "./pages/Resident/ResidentDocument";
 import MyDocument from "./pages/Resident/MyDocuments";
 import MyProperties from "./pages/Resident/MyProperties";
-
+import ResidentDirectory from "./pages/Resident/ResidentDirectory";
 
 /* === GUARD === */
 import GuardLayout from "./pages/Guard/GuardLayout";
@@ -178,63 +173,45 @@ function App() {
             <Route path="notice" element={<Notice />} />
             <Route path="guard" element={<Guard />} />
             <Route path="visitor-logs" element={<VisitorLogs />} />
-            <Route path="accountant" element={<Accountant />} />
-            <Route path="manage-bills" element={<ManageBill />} />
-            <Route path="payments" element={<Payments />} />
-            <Route path="accounting" element={<Accounting />} />
-            <Route path="expenses" element={<Accounting initialTab="expenses" />} />
-            <Route path="general-ledger" element={<Accounting initialTab="ledger" />} />
-            <Route path="financial-audit-log" element={<Accounting initialTab="audit" />} />
-            <Route path="maintenance" element={<MaintenancePage />} />
-            <Route path="parking" element={<SuperAdminParking />} />
-            <Route path="role-permissions" element={<RolePermissions />} />
-            <Route path="emergency" element={<AdminEmergency />} />
-            <Route path="reports" element={<SystemReports />} />
+            <Route path="reports" element={<Reports />} />
+            <Route path="amenities" element={<AdminAmenity />} />
+            <Route path="society_documents" element={<AdminDocument />} />
+            <Route path="assign-flat" element={<AssignFlat />} />
+            <Route path="assign-parking-slot" element={<AssignParkingSlot />} />
             <Route path="settings" element={<AdminSetting />} />
-            <Route path="reports/visitors" element={<SuperAdminVisitorReport />} />
-            <Route path="reports/complaints" element={<SuperAdminComplaintReport />} />
-            <Route path="reports/financial" element={<SuperAdminFinancialReport />} />
+            <Route path="flat-history" element={<FlatHistory />} />
+            <Route path="role-permissions" element={<RolePermissions />} />
+            <Route path="reports/complaints" element={<ComplaintReport />} />
+            <Route path="reports/visitors" element={<VisitorReport />} />
+            <Route path="reports/financial" element={<FinancialReport />} />
+            <Route path="superadmin-reports" element={<SystemReports />} />
+            <Route path="parking" element={<SuperAdminParking />} />
+            <Route path="accounting" element={<Accounting />} />
+            <Route path="accountant" element={<Accountant />} />
+            <Route path="payments" element={<Payments />} />
+            <Route path="manage-bills" element={<ManageBill />} />
+            <Route path="tenant-management" element={<TenantManagement />} />
+            <Route
+              path="superadmin-reports/visitor-report"
+              element={<SuperAdminVisitorReport />}
+            />
+            <Route
+              path="superadmin-reports/complaint-report"
+              element={<SuperAdminComplaintReport />}
+            />
+            <Route
+              path="superadmin-reports/finance-report"
+              element={<SuperAdminFinancialReport />}
+            />
           </Route>
         </Route>
 
-        {/* === SOCIETY ADMIN & COMMITTEE MEMBER (ADMIN PANEL) === */}
-        <Route element={<ProtectedRoute roles={["SOCIETY_ADMIN", "COMMITTEE_MEMBER", "ADMIN"]} />}>
+        {/* === SOCIETY ADMIN & COMMITTEE MEMBER === */}
+        <Route element={<ProtectedRoute roles={["SOCIETY_ADMIN", "COMMITTEE_MEMBER"]} />}>
           <Route path="/admin" element={<AdminLayout />}>
             <Route index element={<AdminDashboard />} />
-            <Route element={<PermissionRoute module="resident" />}>
-              <Route path="resident" element={<Resident />} />
-              <Route path="assign-flat" element={<AssignFlat />} />
-            </Route>
-            <Route element={<PermissionRoute module="settings" />}>
-              <Route path="settings" element={<AdminSetting />} />
-<Route path="role-permissions" element={<RolePermissions />} />
-            </Route>
-            <Route element={<PermissionRoute module="property" />}>
-              <Route path="property" element={<ManageProperty />} />
-            </Route>
-            <Route element={<PermissionRoute module="parking_slots" />}>
-              <Route path="parking-slots" element={<AssignParkingSlot />} />
-            </Route>
-            <Route element={<PermissionRoute module="guard" />}>
-              <Route path="guard" element={<Guard />} />
-            </Route>
-            <Route element={<PermissionRoute module="notice" />}>
-              <Route path="notice" element={<Notice />} />
-            </Route>
-            <Route element={<PermissionRoute module="complaints" />}>
-              <Route path="complaints" element={<Complaint />} />
-            </Route>
-            <Route element={<PermissionRoute module="emergency" />}>
-              <Route path="emergency" element={<AdminEmergency />} />
-            </Route>
-            <Route element={<PermissionRoute module="accountant" />}>
-              <Route path="accountant" element={<Accountant />} />
-            </Route>
-            <Route element={<PermissionRoute module="manage_bills" />}>
-              <Route path="manage-bills" element={<ManageBill />} />
-            </Route>
-            <Route element={<PermissionRoute module="payments" />}>
-              <Route path="payments" element={<Payments />} />
+            <Route element={<PermissionRoute module="role_permissions" />}>
+              <Route path="role-permissions" element={<RolePermissions />} />
             </Route>
             <Route element={<PermissionRoute module="accounting" />}>
               <Route path="accounting" element={<Accounting />} />
@@ -248,11 +225,47 @@ function App() {
             <Route element={<PermissionRoute module="financial_audit_log" />}>
               <Route path="financial-audit-log" element={<Accounting initialTab="audit" />} />
             </Route>
+            <Route element={<PermissionRoute module="emergency" />}>
+              <Route path="emergency" element={<AdminEmergency />} />
+            </Route>
             <Route element={<PermissionRoute module="maintenance" />}>
               <Route path="maintenance" element={<MaintenancePage />} />
             </Route>
+            <Route element={<PermissionRoute module="property" />}>
+              <Route path="property" element={<ManageProperty />} />
+            </Route>
+            <Route element={<PermissionRoute module="assign_flat" />}>
+              <Route path="assign-flat" element={<AssignFlat />} />
+            </Route>
+            <Route element={<PermissionRoute module="parking_slots" />}>
+              <Route path="parking-slots" element={<AssignParkingSlot />} />
+            </Route>
+            <Route element={<PermissionRoute module="resident" />}>
+              <Route path="resident" element={<Resident />} />
+            </Route>
+            <Route element={<PermissionRoute module="guard" />}>
+              <Route path="guard" element={<Guard />} />
+            </Route>
+            <Route element={<PermissionRoute module="notice" />}>
+              <Route path="notice" element={<Notice />} />
+            </Route>
+            <Route element={<PermissionRoute module="complaints" />}>
+              <Route path="complaints" element={<Complaint />} />
+            </Route>
+            <Route element={<PermissionRoute module="accountant" />}>
+              <Route path="accountant" element={<Accountant />} />
+            </Route>
+            <Route element={<PermissionRoute module="manage_bills" />}>
+              <Route path="manage-bills" element={<ManageBill />} />
+            </Route>
+            <Route element={<PermissionRoute module="payments" />}>
+              <Route path="payments" element={<Payments />} />
+            </Route>
             <Route element={<PermissionRoute module="visitor_logs" />}>
               <Route path="visitor-logs" element={<VisitorLogs />} />
+            </Route>
+            <Route element={<PermissionRoute module="settings" />}>
+              <Route path="settings" element={<AdminSetting />} />
             </Route>
             <Route element={<PermissionRoute module="reports" />}>
               <Route path="reports" element={<Reports />} />
@@ -295,6 +308,7 @@ function App() {
             <Route path="emergency" element={<MyEmergency />} />
             <Route path="parking" element={<ResidentParking />} />
             <Route path="amenities" element={<ResidentAmenity />} />
+            <Route path="directory" element={<ResidentDirectory />} />
             <Route path="payment" element={<PaymentMethods />} />
             <Route path="payment-receipt" element={<PaymentReceipt />} />
             <Route path="my-properties" element={<MyProperties />} />
@@ -326,6 +340,7 @@ function App() {
             <Route path="visitors" element={<ResidentVisitors />} />
             <Route path="preapproval" element={<ResidentPreApproval />} />
             <Route path="amenities" element={<ResidentAmenity />} />
+            <Route path="directory" element={<ResidentDirectory />} />
           </Route>
         </Route>
 

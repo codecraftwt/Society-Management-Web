@@ -3,8 +3,9 @@ import { createPortal } from "react-dom";
 import API from "../../services/api";
 import socket from "../../services/socket";
 import { useLang } from "../../context/LanguageContext";
+import ExpandableSearch from "../../components/common/ExpandableSearch";
 import {
-  MdSearch, MdRefresh, MdChevronLeft, MdChevronRight,
+  MdRefresh, MdChevronLeft, MdChevronRight,
   MdCampaign, MdAccessTime, MdAttachFile, MdOpenInNew, MdClose,
   MdCheckCircle, MdWarning, MdDoneAll
 } from "react-icons/md";
@@ -279,16 +280,11 @@ export default function ResidentNotices() {
         </div>
 
         {/* Search */}
-        <div className="ge-search-wrap" style={{ width: "100%", maxWidth: 280 }}>
-          <MdSearch className="ge-search-icon" size={17} />
-          <input
-            type="text"
-            placeholder={t("noticesSearch") || "Search notices..."}
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="ge-search-input"
-          />
-        </div>
+        <ExpandableSearch
+          placeholder={t("noticesSearch") || "Search notices..."}
+          value={search}
+          onChange={setSearch}
+        />
       </div>
 
       {/* ── CARDS GRID VIEW ── */}
