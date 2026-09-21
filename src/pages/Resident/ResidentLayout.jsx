@@ -4,7 +4,7 @@ import { Outlet, useNavigate } from "react-router-dom";
 import { AuthContext } from "../../context/AuthContext";
 import { LanguageProvider, useLang } from "../../context/LanguageContext";
 import API from "../../services/api";
-import { FaParking } from "react-icons/fa";
+import { FaParking, FaCar } from "react-icons/fa";
 import NotificationBell from "../../components/common/NotificationBell";
 import ThemeToggle from "../../components/common/ThemeToggle";
 import LanguageSelector from "../../components/common/LanguageSelector";
@@ -142,6 +142,12 @@ function ResidentLayoutInner() {
       label: t("menuParking"),
       path: `${base}/parking`,
       icon: FaParking,
+      group: "ACTIVITY & VISITORS",
+    },
+    {
+      label: t("menuMyVehicles") || "My Vehicles",
+      path: `${base}/my-vehicles`,
+      icon: FaCar,
       group: "ACTIVITY & VISITORS",
     },
     {

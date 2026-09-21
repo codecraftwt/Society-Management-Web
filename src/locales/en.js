@@ -933,7 +933,7 @@ const en = {
   blockLabel:            "Block",
 
   // Parking Slots (Admin)
-  parkTitle:                 "Parking Slots",
+  parkManagementTitle:         "Parking Slots",
   parkSubtitle:              "Manage society parking slots",
   parkCreateBtn:             "Create Slots",
   parkCloseBtn:              "Close",
@@ -1373,6 +1373,7 @@ const en = {
   menuAmenities:    "Amenities",
   menuPreApproval:  "Pre Approval",
   menuParking:      "Parking",
+  menuMyVehicles:   "My Vehicles",
   menuDocuments:    "Document Access",
 
   // English (en)

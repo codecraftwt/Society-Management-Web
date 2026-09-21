@@ -18,6 +18,7 @@ import GlobalBadge from "../../components/common/GlobalBadge";
 import GlobalConfirmDialog from "../../components/common/GlobalConfirmDialog";
 import GlobalModal from "../../components/common/GlobalModal";
 import SlidingTabs from "../../components/common/SlidingTabs";
+import { getRequiredError, getTitleError, getNumberError } from "../../utils/validators";
 
 /* ── Debounce hook ── */
 function useDebounce(value, delay = 500) {
@@ -790,6 +791,19 @@ export default function SuperAdminParking() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (selectedSocietyId === "ALL") return;
+
+    const floorErr = getRequiredError(form.parking_floor, "Floor / Level");
+    if (floorErr) { alert(floorErr); return; }
+
+    const prefixErr = getTitleError(form.prefix, "Prefix");
+    if (prefixErr) { alert(prefixErr); return; }
+
+    const startErr = getNumberError(form.start_number, "Start number", { min: 1, allowZero: false });
+    if (startErr) { alert(startErr); return; }
+
+    const countErr = getNumberError(form.count, "Count", { min: 1, allowZero: false });
+    if (countErr) { alert(countErr); return; }
+
     setSubmitting(true);
     try {
       await API.post("/parking-slots", form);

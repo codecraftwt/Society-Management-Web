@@ -16,6 +16,7 @@ import GlobalTable from "../../components/common/GlobalTable";
 import GlobalBadge from "../../components/common/GlobalBadge";
 import GlobalConfirmDialog from "../../components/common/GlobalConfirmDialog";
 import { isCommitteeMember, hasPermission } from "../../utils/permissions";
+import { getTitleError, getEmailError, getMobileError } from "../../utils/validators";
 import { useCustomAlert } from "../../context/CustomAlertContext";
 import { toast } from "react-toastify";
 
@@ -29,9 +30,6 @@ function SectionLabel({ children }) {
     </p>
   );
 }
-
-/* ── Indian phone validator ── */
-const isValidIndianPhone = (val) => /^[6-9]\d{9}$/.test(val.replace(/\s/g, ""));
 
 /* ── Phone input with +91 prefix ── */
 function PhoneInput({ value, onChange, required = false, disabled = false }) {
@@ -290,9 +288,13 @@ export default function Accountant() {
     }
     if (!formData.name || !formData.email || !formData.password) return;
 
-    if (formData.phone && !isValidIndianPhone(formData.phone)) {
-      setPhoneError("Enter a valid 10-digit mobile number");
-      return;
+    const nameErr = getTitleError(formData.name, "Name");
+    if (nameErr) { toast.error(nameErr); return; }
+    const emailErr = getEmailError(formData.email);
+    if (emailErr) { toast.error(emailErr); return; }
+    if (formData.phone) {
+      const phoneErr = getMobileError(formData.phone);
+      if (phoneErr) { setPhoneError(phoneErr); return; }
     }
 
     const targetSocId = isSuperAdmin ? formData.society_id : user?.society_id;
@@ -305,6 +307,8 @@ export default function Accountant() {
       setSubmitLoading(true);
       await API.post("/accountant", {
         ...formData,
+        name: formData.name.trim(),
+        email: formData.email.trim(),
         phone: formData.phone.trim() || undefined,
         society_id: targetSocId,
       });
@@ -328,16 +332,18 @@ export default function Accountant() {
       showUnauthorized("You do not have permission to edit accountant details.");
       return;
     }
-    if (formData.phone && !isValidIndianPhone(formData.phone)) {
-      setPhoneError("Enter a valid 10-digit mobile number");
-      return;
+    const nameErr = getTitleError(formData.name, "Name");
+    if (nameErr) { toast.error(nameErr); return; }
+    if (formData.phone) {
+      const phoneErr = getMobileError(formData.phone);
+      if (phoneErr) { setPhoneError(phoneErr); return; }
     }
 
     try {
       setSubmitLoading(true);
       const targetId = editTarget?.user_id || editTarget?.id;
       await API.put(`/accountant/${targetId}`, {
-        name: formData.name,
+        name: formData.name.trim(),
         phone: formData.phone.trim() || undefined,
       });
 

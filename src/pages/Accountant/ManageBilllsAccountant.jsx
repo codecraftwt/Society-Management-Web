@@ -5,6 +5,7 @@ import API from "../../services/api";
 import { AuthContext } from "../../context/AuthContext";
 import { useLang } from "../../context/LanguageContext";
 import { hasPermission } from "../../utils/permissions";
+import { getTitleError, getPositiveAmountError, getDateRangeError } from "../../utils/validators";
 import { useCustomAlert } from "../../context/CustomAlertContext";
 import {
   MdAdd, MdClose, MdSearch, MdDelete,
@@ -416,10 +417,17 @@ export default function ManageBillsAccountant() {
       showUnauthorized("You do not have permission to create bills.");
       return;
     }
+    const titleErr = getTitleError(formData.title, "Bill title");
+    if (titleErr) { showError(titleErr); return; }
+    const amountErr = getPositiveAmountError(formData.amount, "Amount");
+    if (amountErr) { showError(amountErr); return; }
+    const rangeErr = getDateRangeError(formData.issue_date, formData.last_pay_date, "Issue date", "Due date");
+    if (rangeErr) { showError(rangeErr); return; }
     try {
       setCreating(true);
       const payload = {
         ...formData,
+        title: formData.title.trim(),
         bill_type: formData.flat_type,
         flat_type: formData.flat_type,
       };

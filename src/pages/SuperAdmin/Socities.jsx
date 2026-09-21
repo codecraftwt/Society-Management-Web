@@ -8,6 +8,7 @@ import {
 } from "react-icons/md";
 import { FaBuilding, FaUserShield } from "react-icons/fa";
 import Select from "../../components/common/Select";
+import { getTitleError, getRequiredError, getEmailError } from "../../utils/validators";
 import SocietyActionMenu from "../../components/super-admin/SocietyActionMenu";
 import GlobalButton from "../../components/common/GlobalButton";
 import GlobalModal from "../../components/common/GlobalModal";
@@ -68,10 +69,13 @@ export default function Societies() {
 
   const addSociety = async (e) => {
     if (e) e.preventDefault();
-    if (!name || !address) return;
+    const nameErr = getTitleError(name, "Society name");
+    if (nameErr) { showToast(nameErr, "error"); return; }
+    const addressErr = getRequiredError(address, "Address");
+    if (addressErr) { showToast(addressErr, "error"); return; }
     try {
       setAddLoading(true);
-      const res = await API.post("/societies", { name, address, property_type: propertyType });
+      const res = await API.post("/societies", { name: name.trim(), address: address.trim(), property_type: propertyType });
       setSocieties((p) => [...p, { ...res.data, societyAdmins: null }]);
       setName(""); setAddress(""); setPropertyType("Apartments"); setShowAddForm(false);
       showToast(t("saToastSocietyCreated"));
@@ -97,10 +101,14 @@ export default function Societies() {
   };
 
   const saveAdmin = async () => {
+    const nameErr = getTitleError(adminName, "Admin name");
+    if (nameErr) { showToast(nameErr, "error"); return; }
+    const emailErr = getEmailError(adminEmail);
+    if (emailErr) { showToast(emailErr, "error"); return; }
     try {
       setSaveLoading(true);
       await API.post(`/users/societies/${selectedSocietyId}/admin`, {
-        name: adminName, email: adminEmail, password: DEFAULT_PASSWORD,
+        name: adminName.trim(), email: adminEmail.trim(), password: DEFAULT_PASSWORD,
       });
       loadSocieties();
       setShowModal(false); setAdminName(""); setAdminEmail(""); setIsEditMode(false);
@@ -223,7 +231,7 @@ export default function Societies() {
         cancelLabel={t("cancel")}
         onSubmit={addSociety}
         submitLoading={addLoading}
-        submitDisabled={addLoading || !name || !address}
+        submitDisabled={addLoading || Boolean(getTitleError(name, "Society name")) || Boolean(getRequiredError(address, "Address"))}
         submitIcon={MdAdd}
       >
         <form onSubmit={addSociety} style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))", gap: "12px" }}>
@@ -360,7 +368,7 @@ export default function Societies() {
         cancelLabel={t("cancel")}
         onSubmit={saveAdmin}
         submitLoading={saveLoading}
-        submitDisabled={saveLoading || !adminName || !adminEmail}
+        submitDisabled={saveLoading || Boolean(getTitleError(adminName, "Admin name")) || Boolean(getEmailError(adminEmail))}
       >
         <div className="sa-modal-body" style={{ padding: 0 }}>
           <div className="sa-input-group">

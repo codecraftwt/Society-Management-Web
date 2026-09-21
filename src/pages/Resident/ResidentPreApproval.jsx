@@ -16,6 +16,7 @@ import { QRCodeCanvas } from "qrcode.react";
 import Modal from "../../components/Modal";
 import Select from "../../components/common/Select";
 import { jsPDF } from "jspdf";
+import { getTitleError, getMobileError, getVehicleNumberError } from "../../utils/validators";
 
 /* ── IST date helpers ── */
 const getTodayIST = () =>
@@ -210,12 +211,18 @@ export default function ResidentPreApproval() {
   if (!hasEligibleFlat) return;
 
   // ✅ simple validation
-  if (
-    !form.visitor_name ||
-    !form.mobile ||
-    !form.valid_date ||
-    !form.purpose
-  ) {
+  const nameErr = getTitleError(form.visitor_name, "Visitor name");
+  if (nameErr) { alert(nameErr); return; }
+
+  const mobileErr = getMobileError(form.mobile, "Mobile number");
+  if (mobileErr) { alert(mobileErr); return; }
+
+  if (form.vehicle_number) {
+    const vehicleErr = getVehicleNumberError(form.vehicle_number);
+    if (vehicleErr) { alert(vehicleErr); return; }
+  }
+
+  if (!form.valid_date || !form.purpose) {
     alert("Please fill all required fields");
     return;
   }
@@ -225,9 +232,9 @@ export default function ResidentPreApproval() {
 
     const payload = {
       flat_id: selectedFlatId,
-      visitor_name: form.visitor_name,
-      mobile: form.mobile,
-      vehicle_number: form.vehicle_number,
+      visitor_name: form.visitor_name.trim(),
+      mobile: form.mobile.trim(),
+      vehicle_number: form.vehicle_number.trim(),
       purpose: form.purpose,
       valid_date: form.valid_date, // YYYY-MM-DD
     };

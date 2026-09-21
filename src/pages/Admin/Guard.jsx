@@ -15,6 +15,7 @@ import GlobalTable from "../../components/common/GlobalTable";
 import GlobalBadge from "../../components/common/GlobalBadge";
 import GlobalConfirmDialog from "../../components/common/GlobalConfirmDialog";
 import { isCommitteeMember, hasPermission } from "../../utils/permissions";
+import { getTitleError, getEmailError } from "../../utils/validators";
 import { useCustomAlert } from "../../context/CustomAlertContext";
 
 function ShiftBadge({ type, t }) {
@@ -186,21 +187,28 @@ export default function Guard() {
       showUnauthorized(`You do not have permission to ${reqAction} guards.`);
       return;
     }
-    if (!formData.name || !formData.email || (!editingId && !formData.password)) return;
+    const nameErr = getTitleError(formData.name, "Guard name");
+    if (nameErr) { showError(nameErr); return; }
+    const emailErr = getEmailError(formData.email);
+    if (emailErr) { showError(emailErr); return; }
+    if (!editingId) {
+      if (!formData.password) { showError("Password is required for new guards."); return; }
+      if (formData.password.length < 6) { showError("Password must be at least 6 characters."); return; }
+    }
 
     try {
       setSubmitLoading(true);
       if (editingId) {
         await API.put(`/guards/${editingId}`, {
-          name: formData.name,
-          email: formData.email,
+          name: formData.name.trim(),
+          email: formData.email.trim(),
           ...(formData.password ? { password: formData.password } : {}),
           ...(isSuperAdmin && formData.society_id ? { society_id: formData.society_id } : {}),
         });
       } else {
         const payload = {
-          name: formData.name,
-          email: formData.email,
+          name: formData.name.trim(),
+          email: formData.email.trim(),
           password: formData.password,
           society_id: isSuperAdmin ? (formData.society_id || filterSocietyId) : user?.society_id,
         };
@@ -553,7 +561,7 @@ export default function Guard() {
         cancelLabel={t("cancel") || "Cancel"}
         onSubmit={handleSubmit}
         submitLoading={submitLoading}
-        submitDisabled={submitLoading || !formData.name || !formData.email || (!editingId && !formData.password)}
+        submitDisabled={submitLoading || Boolean(getTitleError(formData.name, "Guard name")) || Boolean(getEmailError(formData.email)) || (!editingId && (!formData.password || formData.password.length < 6))}
         submitIcon={editingId ? MdEdit : MdAdd}
         submitVariant={editingId ? "edit" : "primary"}
       >

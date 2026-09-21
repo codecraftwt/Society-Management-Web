@@ -31,6 +31,7 @@ import {
 import { toast } from "react-toastify";
 import SOSModal from "../../components/emergency/SOSModal";
 import Modal from "../../components/Modal";
+import { getTitleError, getMobileError, getVehicleNumberError } from "../../utils/validators";
 
 function SkeletonBlock({ width = "100%", height = 16, radius = 8, style = {} }) {
   return (
@@ -214,9 +215,17 @@ export default function ResidentProfile() {
   // Handle Quick Pre-Approval Submit
   const handleCreatePreApproval = async (e) => {
     e?.preventDefault();
-    if (!preApprovalModal.visitorName.trim()) {
-      toast.error("Please provide visitor / service name");
-      return;
+    const nameErr = getTitleError(preApprovalModal.visitorName, "Visitor name");
+    if (nameErr) { toast.error(nameErr); return; }
+
+    if (preApprovalModal.visitorPhone.trim()) {
+      const phoneErr = getMobileError(preApprovalModal.visitorPhone, "Phone");
+      if (phoneErr) { toast.error(phoneErr); return; }
+    }
+
+    if (preApprovalModal.vehicleNumber.trim()) {
+      const vehicleErr = getVehicleNumberError(preApprovalModal.vehicleNumber);
+      if (vehicleErr) { toast.error(vehicleErr); return; }
     }
 
     setPreApprovalModal((p) => ({ ...p, submitting: true }));

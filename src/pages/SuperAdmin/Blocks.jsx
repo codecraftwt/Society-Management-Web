@@ -5,6 +5,7 @@ import API from "../../services/api";
 import { MdDelete, MdLayers, MdHomeWork, MdArrowBack, MdAdd } from "react-icons/md";
 import { FaBuilding } from "react-icons/fa";
 import Select from "../../components/common/Select";
+import { getTitleError, getNumberError } from "../../utils/validators";
 import GlobalButton from "../../components/common/GlobalButton";
 import GlobalTable from "../../components/common/GlobalTable";
 import GlobalBadge from "../../components/common/GlobalBadge";
@@ -62,12 +63,14 @@ export default function Blocks() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!name || !floorCount || !flatsPerFloor) {
-      alert(t("blkErrFillAll") || "Please fill all fields");
-      return;
-    }
+    const nameErr = getTitleError(name, "Block/Tower name");
+    if (nameErr) { alert(nameErr); return; }
+    const floorErr = getNumberError(floorCount, "No. of Floors", { min: 1, allowZero: false });
+    if (floorErr) { alert(floorErr); return; }
+    const flatsPerFloorErr = getNumberError(flatsPerFloor, "Flats per Floor", { min: 1, allowZero: false });
+    if (flatsPerFloorErr) { alert(flatsPerFloorErr); return; }
     await API.post("/blocks", {
-      name,
+      name: name.trim(),
       society_id: societyId,
       floor_count: Number(floorCount),
       flats_per_floor: Number(flatsPerFloor),

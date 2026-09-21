@@ -11,6 +11,7 @@ import GlobalModal from "../../components/common/GlobalModal";
 import GlobalTable from "../../components/common/GlobalTable";
 import GlobalBadge from "../../components/common/GlobalBadge";
 import GlobalConfirmDialog from "../../components/common/GlobalConfirmDialog";
+import { getRequiredError, getPositiveAmountError } from "../../utils/validators";
 
 export default function Flats() {
   const { blockId, floorId } = useParams();
@@ -80,9 +81,11 @@ export default function Flats() {
   };
 
   const handleAddFlat = async () => {
-    if (!newFlatData.flat_number) {
-      setAddError("Flat number is required");
-      return;
+    const flatNumErr = getRequiredError(newFlatData.flat_number, "Flat number");
+    if (flatNumErr) { setAddError(flatNumErr); return; }
+    if (newFlatData.area_sqft) {
+      const areaErr = getPositiveAmountError(newFlatData.area_sqft, "Area (sq.ft)");
+      if (areaErr) { setAddError(areaErr); return; }
     }
     const effectiveBlockId = resolvedBlockId;
     if (!effectiveBlockId) {
@@ -94,6 +97,7 @@ export default function Flats() {
     try {
       await API.post(`/flats`, {
         ...newFlatData,
+        flat_number: newFlatData.flat_number.trim(),
         block_id: effectiveBlockId,
         ...(floorId && { floor_id: floorId }),
         resident_id: null,
@@ -369,7 +373,7 @@ export default function Flats() {
         cancelLabel="Cancel"
         onSubmit={handleAddFlat}
         submitLoading={adding}
-        submitDisabled={adding || !newFlatData.flat_number}
+        submitDisabled={adding || Boolean(getRequiredError(newFlatData.flat_number, "Flat number"))}
         submitIcon={MdAdd}
       >
         <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>

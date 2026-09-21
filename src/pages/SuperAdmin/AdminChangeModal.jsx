@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useLang } from "../../context/LanguageContext";
 import { MdPersonAdd, MdEdit } from "react-icons/md";
+import { getTitleError } from "../../utils/validators";
 import GlobalModal from "../../components/common/GlobalModal";
 
 const AdminChangeModal = ({ onClose, onSubmit, existingAdmin }) => {
@@ -13,7 +14,7 @@ const AdminChangeModal = ({ onClose, onSubmit, existingAdmin }) => {
   }, [existingAdmin, isEdit]);
 
   const submit = () => {
-    if (!String(name || "").trim()) return;
+    if (getTitleError(name, "Admin name")) return;
     onSubmit(name.trim());
   };
 
@@ -33,7 +34,7 @@ const AdminChangeModal = ({ onClose, onSubmit, existingAdmin }) => {
       submitLabel={isEdit ? t("amUpdateBtn") || "Update Admin" : t("amAddBtn") || "Add Admin"}
       cancelLabel={t("cancel") || "Cancel"}
       onSubmit={submit}
-      submitDisabled={!String(name || "").trim()}
+      submitDisabled={Boolean(getTitleError(name, "Admin name"))}
       submitIcon={isEdit ? MdEdit : MdPersonAdd}
       submitVariant={isEdit ? "edit" : "primary"}
     >

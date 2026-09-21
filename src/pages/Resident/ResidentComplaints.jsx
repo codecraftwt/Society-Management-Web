@@ -7,6 +7,7 @@ import { getSocket } from "../../services/socket";
 import SlidingTabs from "../../components/common/SlidingTabs";
 import ExpandableSearch from "../../components/common/ExpandableSearch";
 import DateRangeFilter from "../../components/common/DateRangeFilter";
+import { getTitleError, getDescriptionError } from "../../utils/validators";
 import {
   MdAdd, MdFilterList, MdOutlineInbox, MdSearch,
   MdClose, MdCameraAlt, MdPhotoLibrary, MdDelete,
@@ -1205,6 +1206,12 @@ export default function ResidentComplaints() {
       return;
     }
 
+    const titleErr = getTitleError(formData.title, "Complaint title");
+    if (titleErr) { setErrorMsg(titleErr); return; }
+
+    const descErr = getDescriptionError(formData.description, "Description", 300);
+    if (descErr) { setErrorMsg(descErr); return; }
+
     try {
       setSubmitLoading(true);
       const form = new FormData();
@@ -1227,7 +1234,7 @@ export default function ResidentComplaints() {
       loadComplaints(1, filterStatus, debouncedSearch, debouncedDateFrom, debouncedDateTo);
     } catch (err) {
       console.error("Submit error:", err);
-      setErrorMsg(t("compSubmitFail"));
+      setErrorMsg(err.response?.data?.message || t("compSubmitFail"));
     } finally { setSubmitLoading(false); }
   };
 

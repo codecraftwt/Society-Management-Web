@@ -16,6 +16,7 @@ import GlobalModal from "../../components/common/GlobalModal";
 import SlidingTabs from "../../components/common/SlidingTabs";
 import ExpandableSearch from "../../components/common/ExpandableSearch";
 import { isCommitteeMember, hasPermission } from "../../utils/permissions";
+import { getTitleError, getPositiveAmountError, getDateRangeError } from "../../utils/validators";
 import { useCustomAlert } from "../../context/CustomAlertContext";
 
 /* ── helpers ── */
@@ -433,12 +434,19 @@ export default function ManageBills() {
       showUnauthorized("You do not have permission to create bills.");
       return;
     }
+    const titleErr = getTitleError(formData.title, "Bill title");
+    if (titleErr) { showError(titleErr); return; }
+    const amountErr = getPositiveAmountError(formData.amount, "Amount");
+    if (amountErr) { showError(amountErr); return; }
+    const rangeErr = getDateRangeError(formData.issue_date, formData.last_pay_date, "Issue date", "Due date");
+    if (rangeErr) { showError(rangeErr); return; }
     try {
       setCreating(true);
       const activeSocId = filterSocietyId || formSocietyId;
       const headers = (isSuperAdmin && activeSocId) ? { "x-society-id": activeSocId } : {};
       const payload = {
         ...formData,
+        title: formData.title.trim(),
         bill_type: formData.flat_type,
         flat_type: formData.flat_type,
       };
@@ -721,7 +729,7 @@ export default function ManageBills() {
         cancelLabel={t("cancel")}
         onSubmit={handleCreateBill}
         submitLoading={creating}
-        submitDisabled={creating || (isSuperAdmin && !filterSocietyId && !formSocietyId) || !formData.title || !formData.amount}
+        submitDisabled={creating || (isSuperAdmin && !filterSocietyId && !formSocietyId) || Boolean(getTitleError(formData.title, "Bill title")) || Boolean(getPositiveAmountError(formData.amount, "Amount")) || Boolean(getDateRangeError(formData.issue_date, formData.last_pay_date, "Issue date", "Due date"))}
         submitIcon={MdCheckCircle}
       >
         <form onSubmit={handleCreateBill} className="grid grid-cols-1 sm:grid-cols-2 gap-4">

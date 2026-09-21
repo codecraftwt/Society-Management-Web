@@ -17,6 +17,7 @@ import GlobalModal from "../../components/common/GlobalModal";
 import SlidingTabs from "../../components/common/SlidingTabs";
 import HoloToggle from "../../components/common/HoloToggle";
 import { isCommitteeMember, hasPermission } from "../../utils/permissions";
+import { getTitleError, getPositiveAmountError } from "../../utils/validators";
 import "../Admin/Admin.css";
 
 /* ── helpers ── */
@@ -206,6 +207,16 @@ function ConfigForm({ initial, onClose, onSaved, isSuperAdmin = false, societies
       setError("Select a society to continue");
       return;
     }
+
+    if (name.trim()) {
+      const nameErr = getTitleError(name, "Maintenance name");
+      if (nameErr) { setError(nameErr); return; }
+    }
+
+    const amountValue = type === "SQ_FEET" ? ratePerSqft : amount;
+    const amountErr = getPositiveAmountError(amountValue, type === "SQ_FEET" ? "Rate per sq.ft" : "Amount");
+    if (amountErr) { setError(amountErr); return; }
+
     const payload = {
       maintenance_type: type,
       name,

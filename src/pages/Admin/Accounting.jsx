@@ -52,6 +52,7 @@ import ExpandableSearch from "../../components/common/ExpandableSearch";
 import Select from "../../components/common/Select";
 import { exportToPDF } from "../../utils/exportPDF";
 import { exportToExcel } from "../../utils/exportExcel";
+import { getTitleError, getPositiveAmountError, getDescriptionError, getRequiredDateError } from "../../utils/validators";
 import {
   getBalance,
   getLedger,
@@ -1871,10 +1872,19 @@ function ExpenseForm({ expense, saving, onClose, onSubmit }) {
 
   const submit = (e) => {
     e.preventDefault();
-    if (!form.pay_to.trim() || !form.reason.trim() || !Number(form.amount) || Number(form.amount) <= 0) {
-      toast.error("Payee, reason, and a valid positive amount are required.");
-      return;
-    }
+
+    const payeeErr = getTitleError(form.pay_to, "Payee");
+    if (payeeErr) { toast.error(payeeErr); return; }
+
+    const dateErr = getRequiredDateError(form.payment_date, "Payment date");
+    if (dateErr) { toast.error(dateErr); return; }
+
+    const reasonErr = getDescriptionError(form.reason, "Reason / Particulars description");
+    if (reasonErr) { toast.error(reasonErr); return; }
+
+    const amountErr = getPositiveAmountError(form.amount, "Expense amount");
+    if (amountErr) { toast.error(amountErr); return; }
+
     onSubmit({ ...form, amount: Number(form.amount), payment_mode: form.payment_mode });
   };
 

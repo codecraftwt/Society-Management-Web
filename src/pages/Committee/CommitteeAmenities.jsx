@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import API from "../../services/api";
 import { MdBookOnline, MdAdd, MdDelete, MdClose, MdFitnessCenter } from "react-icons/md";
+import { getTitleError, getPositiveAmountError } from "../../utils/validators";
+import { useCustomAlert } from "../../context/CustomAlertContext";
 import GlobalButton from "../../components/common/GlobalButton";
 import GlobalModal from "../../components/common/GlobalModal";
 import GlobalConfirmDialog from "../../components/common/GlobalConfirmDialog";
@@ -19,6 +21,7 @@ const toArray = (data) => {
 };
 
 export default function CommitteeAmenities() {
+  const { showError } = useCustomAlert();
   const [amenities, setAmenities] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -43,10 +46,15 @@ export default function CommitteeAmenities() {
 
   const handleSubmit = async (e) => {
     e?.preventDefault();
-    if (!form.name.trim()) return;
+    const nameErr = getTitleError(form.name, "Amenity name");
+    if (nameErr) { showError(nameErr); return; }
+    if (form.isPaid) {
+      const priceErr = getPositiveAmountError(form.pricePerHour, "Rate per hour");
+      if (priceErr) { showError(priceErr); return; }
+    }
     setSubmitting(true);
     try {
-      await API.post("/amenities", form);
+      await API.post("/amenities", { ...form, name: form.name.trim() });
       setShowForm(false);
       setForm({ name: "", type: "GYM", isPaid: false, pricePerHour: "", description: "" });
       load();

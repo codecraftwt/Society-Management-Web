@@ -17,6 +17,7 @@ import Select from "../../components/common/Select";
 import GlobalButton from "../../components/common/GlobalButton";
 import ExpandableSearch from "../../components/common/ExpandableSearch";
 import { isCommitteeMember, hasPermission } from "../../utils/permissions";
+import { getTitleError, getEmailError, getMobileError } from "../../utils/validators";
 import { useCustomAlert } from "../../context/CustomAlertContext";
 
 /* ─────────────────────────────────────────
@@ -2559,13 +2560,14 @@ export default function Resident() {
         return;
       }
       if (!formData.name?.trim()) {
-        setFormError("Full Name is required.");
+        const nameErr = getTitleError(formData.name, "Full name");
+        setFormError(nameErr);
         return;
       }
-      if (!formData.email?.trim()) {
-        setFormError("Email address is required.");
-        return;
-      }
+      const emailErr = getEmailError(formData.email);
+      if (emailErr) { setFormError(emailErr); return; }
+      const phoneErr = formData.phone ? getMobileError(formData.phone, "Phone") : null;
+      if (phoneErr) { setFormError(phoneErr); return; }
       if (!editingId && !formData.password) {
         setFormError("Password is required for new accounts.");
         return;
@@ -2580,6 +2582,12 @@ export default function Resident() {
       if (ecFilled && (!ec.name?.trim() || !ec.phone?.trim())) {
         setFormError("Emergency contact requires both a name and phone.");
         return;
+      }
+      if (ecFilled) {
+        const ecNameErr = getTitleError(ec.name, "Emergency contact name");
+        if (ecNameErr) { setFormError(ecNameErr); return; }
+        const ecPhoneErr = getMobileError(ec.phone, "Emergency contact phone");
+        if (ecPhoneErr) { setFormError(ecPhoneErr); return; }
       }
       if (!editingId && (!aadharFile || !panFile)) {
         setFormError("Both Aadhar and PAN documents are required.");
@@ -2605,7 +2613,14 @@ export default function Resident() {
       setFormError("Emergency contact requires both a name and phone.");
       return;
     }
-
+    if (ecFilled) {
+      const ecNameErr = getTitleError(ec.name, "Emergency contact name");
+      if (ecNameErr) { setFormError(ecNameErr); return; }
+      const ecPhoneErr = getMobileError(ec.phone, "Emergency contact phone");
+      if (ecPhoneErr) { setFormError(ecPhoneErr); return; }
+    }
+    const phoneErr = formData.phone ? getMobileError(formData.phone, "Phone") : null;
+    if (phoneErr) { setFormError(phoneErr); return; }
     if (!editingId) {
       const completedAssignments = formData.flat_assignments.filter(a => a.flat_id);
       if (completedAssignments.length === 0) {
@@ -2620,7 +2635,7 @@ export default function Resident() {
 
       if (editingId) {
         const payload = {
-          name: formData.name,
+          name: formData.name.trim(),
           phone: formData.phone || undefined,
           resident_type: formData.resident_type,
           vehicle_count: formData.vehicle_count,
@@ -2655,8 +2670,8 @@ export default function Resident() {
           }));
 
         const residentRes = await API.post("/users/resident", {
-          name: formData.name,
-          email: formData.email,
+          name: formData.name.trim(),
+          email: formData.email.trim(),
           password: formData.password,
           phone: formData.phone || undefined,
           resident_type: "OWNER",

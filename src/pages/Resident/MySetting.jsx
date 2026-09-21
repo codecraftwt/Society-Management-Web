@@ -3,6 +3,7 @@ import API from "../../services/api";
 import { AuthContext } from "../../context/AuthContext";
 import { useLang } from "../../context/LanguageContext"; // ← NEW
 import LanguageSelector from "../../components/common/LanguageSelector"; // ← NEW
+import { getTitleError, getMobileError } from "../../utils/validators";
 import SlidingTabs from "../../components/common/SlidingTabs";
 import {
   MdPerson,
@@ -228,20 +229,29 @@ export default function MySetting() {
     e.preventDefault();
     setError("");
 
-    if (
-      formData.newPassword &&
-      formData.newPassword !== formData.confirmPassword
-    ) {
-      setError(t("passwordMismatch"));
-      return;
+    const nameErr = getTitleError(formData.name, "Name");
+    if (nameErr) { setError(nameErr); return; }
+    if (formData.phone) {
+      const phoneErr = getMobileError(formData.phone, "Phone");
+      if (phoneErr) { setError(phoneErr); return; }
+    }
+    if (formData.newPassword) {
+      if (formData.newPassword.length < 8) {
+        setError("New password must be at least 8 characters.");
+        return;
+      }
+      if (formData.newPassword !== formData.confirmPassword) {
+        setError(t("passwordMismatch"));
+        return;
+      }
     }
 
     try {
       setSaving(true);
 
       const res = await API.put("/users/me", {
-        name: formData.name,
-        phone: formData.phone || "",
+        name: formData.name.trim(),
+        phone: formData.phone.trim() || "",
         password: formData.newPassword || undefined,
         currentPassword: formData.currentPassword || undefined,
       });

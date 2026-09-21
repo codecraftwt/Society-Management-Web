@@ -20,6 +20,7 @@ import {
 import { BASE_URL } from "../../config/apiConfig";
 import PdfViewer from "../../components/common/PdfViewer";
 import { hasPermission } from "../../utils/permissions";
+import { getTitleError, getDescriptionError } from "../../utils/validators";
 import { useCustomAlert } from "../../context/CustomAlertContext";
 
 function useDebounce(value, delay = 500) {
@@ -213,11 +214,15 @@ export default function CommitteeNotices() {
       showUnauthorized("You do not have permission to publish notices.");
       return;
     }
+    const titleErr = getTitleError(form.title, "Title");
+    if (titleErr) { showError(titleErr); return; }
+    const descErr = getDescriptionError(form.description, "Description");
+    if (descErr) { showError(descErr); return; }
     setSubmitting(true);
     try {
       const fd = new FormData();
-      fd.append("title", form.title);
-      fd.append("description", form.description);
+      fd.append("title", form.title.trim());
+      fd.append("description", form.description.trim());
       if (file) fd.append("file", file);
       await API.post("/notices", fd, {
         headers: { "Content-Type": "multipart/form-data" },

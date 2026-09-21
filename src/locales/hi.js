@@ -914,7 +914,7 @@ const hi = {
   blockLabel:            "ब्लॉक",
 
   // Parking Slots (Admin)
-  parkTitle:                 "पार्किंग स्लॉट",
+  parkManagementTitle:         "पार्किंग स्लॉट",
   parkSubtitle:              "सोसाइटी पार्किंग स्लॉट प्रबंधित करें",
   parkCreateBtn:             "स्लॉट बनाएं",
   parkCloseBtn:              "बंद करें",
@@ -1352,6 +1352,7 @@ const hi = {
   menuAmenities:    "सुविधाएँ",
   menuPreApproval:  "पूर्व अनुमोदन",
   menuParking:      "पार्किंग",
+  menuMyVehicles:   "मेरे वाहन",
   menuDocuments:    "दस्तावेज़ एक्सेस",
 
   // Hindi (hi)

@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
+import { createPortal } from "react-dom";
 import API from "../../services/api";
 import { useLang } from "../../context/LanguageContext";
 import ExpandableSearch from "../../components/common/ExpandableSearch";
@@ -403,8 +404,9 @@ export default function MyVehicles() {
       // Backend must:
       //   • if parking_slot_id is a number → save it on the vehicle row
       //     and set ParkingSlot.status = "ASSIGNED"
-      //   • if parking_slot_id is null     → leave vehicle unlinked
-      await API.post("/vehicles", {
+      //   • if parking_slot_id is null     → leave vehicle unlinked and
+      //     auto-create a RESIDENT request (response carries request_id)
+      const vehicleRes = await API.post("/vehicles", {
         vehicle_name:    form.vehicle_name,
         vehicle_number:  form.vehicle_number.toUpperCase(),
         vehicle_type:    form.vehicle_type,
@@ -413,32 +415,23 @@ export default function MyVehicles() {
         // REMOVED: link_to_assigned_slot, parking_type  (old fields — do not send)
       });
 
-      // ── Branch purely on what the FRONTEND decided ────────────────────────
-      // Do NOT rely on vehicleRes.data.slot_linked — backend may not return that flag.
+      // ── Branch purely on what the FRONTEND decided + backend signals ───────
       if (slotIdToLink !== null) {
         // Resident chose a specific slot → it is linked immediately, no admin request.
         const linkedSlot = availableSlots.find(s => s.id === slotIdToLink);
         setSuccessMsg(
           `Vehicle added and linked to slot ${linkedSlot?.slot_number ?? slotIdToLink}!`
         );
+      } else if (vehicleRes.data?.free_slot) {
+        // Backend found an unlinked free pre-assigned slot — surface it.
+        setSuccessMsg(
+          `Vehicle added! Free slot ${vehicleRes.data.free_slot} is available — select it to link.`
+        );
+      } else if (vehicleRes.data?.request_id) {
+        // Backend auto-created (or found) the RESIDENT slot request.
+        setSuccessMsg("Vehicle added! A parking slot request has been sent to the admin.");
       } else {
-        // Resident chose "Request New Extra Slot" (or no slots assigned at all) →
-        // create the admin request now.
-        try {
-          await API.post("/parking/request-resident-slot", {
-            vehicle_number: form.vehicle_number.toUpperCase(),
-            vehicle_type:   form.vehicle_type,
-            flat_id:        form.flat_id ? Number(form.flat_id) : undefined,
-          });
-          setSuccessMsg("Vehicle added! A parking slot request has been sent to the admin.");
-        } catch (reqErr) {
-          const msg = reqErr?.response?.data?.message || "";
-          if (msg.includes("pending slot request already exists")) {
-            setSuccessMsg("Vehicle added! (A slot request was already pending for this vehicle.)");
-          } else {
-            setSuccessMsg("Vehicle added! Note: slot request could not be sent — please contact admin.");
-          }
-        }
+        setSuccessMsg("Vehicle added! Note: no slot request could be created — please contact admin.");
       }
 
       // Reset form state
@@ -525,10 +518,10 @@ export default function MyVehicles() {
           <button
             type="button"
             className="btn-primary flex items-center gap-2"
-            onClick={() => { setShowForm(p => !p); setErrorMsg(""); }}
+            onClick={() => { setShowForm(true); setErrorMsg(""); }}
           >
-            {showForm ? <MdClose size={18} /> : <MdAdd size={18} />}
-            {showForm ? "Close" : (t("vehAddBtn") || "Add Vehicle")}
+            <MdAdd size={18} />
+            {t("vehAddBtn") || "Add Vehicle"}
           </button>
         )}
       </div>
@@ -602,13 +595,55 @@ export default function MyVehicles() {
       ══════════════════════════════ */}
       {activeTab === "vehicles" && (
         <>
-          {/* ADD VEHICLE FORM */}
-          {showForm && (
-            <div className="bg-card p-5 rounded-2xl max-w-2xl animate-fadeIn">
-              <h3 className="font-semibold mb-4 flex items-center gap-2">
-                <MdAdd size={16} className="text-accent" /> {t("vehFormTitle")}
-              </h3>
-              <form onSubmit={handleSubmit} className="space-y-4">
+      {/* ── ADD VEHICLE POPUP MODAL ── */}
+      {showForm && createPortal(
+        <div
+          className="fixed inset-0 flex items-center justify-center p-4 animate-fadeIn"
+          style={{ background: "var(--overlay-bg, rgba(0,0,0,0.72))", backdropFilter: "blur(8px)", zIndex: 9999 }}
+          onClick={resetForm}
+        >
+          <div
+            className="rounded-3xl w-full max-w-2xl overflow-hidden animate-scaleIn border border-glass-border shadow-2xl flex flex-col max-h-[90vh]"
+            style={{ background: "var(--card-bg)" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="flex justify-between items-center p-5 sm:p-6 border-b border-glass-border shrink-0">
+              <div className="flex items-center gap-3">
+                <div
+                  className="w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 shadow-sm"
+                  style={{ background: "var(--accent-soft)", color: "var(--accent)" }}
+                >
+                  <MdDirectionsCarFilled size={22} />
+                </div>
+                <div>
+                  <h3 className="text-lg font-black tracking-tight" style={{ color: "var(--text-primary)" }}>
+                    {t("vehFormTitle") || "Add New Vehicle"}
+                  </h3>
+                  <p className="text-xs text-secondary mt-0.5">
+                    Register your vehicle and select or request a parking slot
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={resetForm}
+                className="p-2 rounded-xl text-secondary hover:text-primary hover:bg-white/10 transition cursor-pointer"
+                title="Close"
+              >
+                <MdClose size={22} />
+              </button>
+            </div>
+
+            {/* Modal Form */}
+            <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
+              <div className="p-5 sm:p-6 overflow-y-auto space-y-4 flex-1">
+                {errorMsg && (
+                  <div className="mv-banner mv-banner--err">
+                    <span className="mv-banner-row"><MdWarning size={16} /> {errorMsg}</span>
+                    <button type="button" onClick={() => setErrorMsg("")} className="mv-banner-close"><MdClose size={14} /></button>
+                  </div>
+                )}
 
                 {/* Vehicle nickname */}
                 <div>
@@ -828,22 +863,28 @@ export default function MyVehicles() {
                     </div>
                   </div>
                 )}
+              </div>
 
-                <div className="flex gap-3 pt-2">
-                  <button type="submit" className="btn-primary flex items-center gap-2" disabled={submitLoading}>
-                    {submitLoading ? (
-                      <><Spinner size={14} /> Saving...</>
-                    ) : selectedSlotId !== null ? (
-                      <><MdCheckCircle size={14} /> Add Vehicle &amp; Link Slot</>
-                    ) : (
-                      <><MdSend size={14} /> Add Vehicle &amp; Request Slot</>
-                    )}
-                  </button>
-                  <button type="button" onClick={resetForm} className="btn-muted">{t("cancel")}</button>
-                </div>
-              </form>
-            </div>
-          )}
+              {/* Modal Footer */}
+              <div className="p-4 sm:p-5 border-t border-glass-border flex justify-end gap-3 bg-[var(--card-bg)] shrink-0">
+                <button type="button" onClick={resetForm} className="btn-muted">
+                  {t("cancel") || "Cancel"}
+                </button>
+                <button type="submit" className="btn-primary flex items-center gap-2" disabled={submitLoading}>
+                  {submitLoading ? (
+                    <><Spinner size={14} /> Saving...</>
+                  ) : selectedSlotId !== null ? (
+                    <><MdCheckCircle size={14} /> Add Vehicle &amp; Link Slot</>
+                  ) : (
+                    <><MdSend size={14} /> Add Vehicle &amp; Request Slot</>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>,
+        document.body
+      )}
 
           {/* VEHICLE LIST */}
           <div className="bg-card p-5 rounded-xl">

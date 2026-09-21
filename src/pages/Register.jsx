@@ -13,6 +13,7 @@ import {
 import { toast } from "react-toastify";
 import Select from "../components/common/Select";
 import ThemeToggle from "../components/common/ThemeToggle";
+import { getTitleError, getEmailError, getMobileError } from "../utils/validators";
 
 import homeBannerImg from "../assets/Photos/Home/Home.png";
 import "./Register.css";
@@ -82,8 +83,8 @@ function Register() {
 
   const touch = (f) => setTouched((p) => ({ ...p, [f]: true }));
 
-  const isEmail  = (v) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
-  const isMobile = (v) => /^\d{10}$/.test(v);
+  const isEmail  = (v) => getEmailError(v) === null;
+  const isMobile = (v) => getMobileError(v) === null;
   const isPwOk   = (v) => pwStrength(v) === 5;
 
   const inputClass = (field, valid) => {
@@ -93,8 +94,10 @@ function Register() {
 
   const nextStep = () => {
     setTouched({ name: true, email: true, mobile: true, password: true });
-    if (!formData.name || !isEmail(formData.email) ||
-        !isMobile(formData.mobile) || !isPwOk(formData.password)) {
+    if (getTitleError(formData.name, "Full name") ||
+        !isEmail(formData.email) ||
+        !isMobile(formData.mobile) ||
+        !isPwOk(formData.password)) {
       toast.error("Please fix all errors before continuing.");
       return;
     }
@@ -106,8 +109,8 @@ function Register() {
     setLoading(true);
     try {
       const res = await API.post("/auth/register", {
-        name: formData.name,
-        email: formData.email,
+        name: formData.name.trim().replace(/\s+/g, " "),
+        email: formData.email.trim(),
         phone: formData.mobile,
         password: formData.password,
         society_id: Number(formData.society_id),
@@ -195,11 +198,11 @@ function Register() {
                       value={formData.name}
                       onChange={handleChange}
                       onBlur={() => touch("name")}
-                      className={inputClass("name", !!formData.name)}
+                      className={inputClass("name", getTitleError(formData.name, "Full name") === null)}
                     />
                   </div>
-                  {touched.name && !formData.name &&
-                    <span className="reg-err">Full name is required.</span>}
+                  {touched.name && getTitleError(formData.name, "Full name") &&
+                    <span className="reg-err">{getTitleError(formData.name, "Full name")}</span>}
                 </div>
 
                 <div className="reg-field">
@@ -238,8 +241,8 @@ function Register() {
                       />
                     </div>
                   </div>
-                  {touched.mobile && !isMobile(formData.mobile) &&
-                    <span className="reg-err">Enter 10-digit mobile.</span>}
+                  {touched.mobile && getMobileError(formData.mobile, "Mobile number") &&
+                    <span className="reg-err">{getMobileError(formData.mobile, "Mobile number")}</span>}
                 </div>
 
                 <div className="reg-field">

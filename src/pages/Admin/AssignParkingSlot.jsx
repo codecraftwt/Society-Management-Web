@@ -19,6 +19,7 @@ import Select from "../../components/common/Select";
 import GlobalButton from "../../components/common/GlobalButton";
 import SlidingTabs from "../../components/common/SlidingTabs";
 import ExpandableSearch from "../../components/common/ExpandableSearch";
+import { getRequiredError, getTitleError, getNumberError } from "../../utils/validators";
 
 /* ── Debounce hook ── */
 function useDebounce(value, delay = 500) {
@@ -769,7 +770,7 @@ const LIMIT = 12;
 export default function AssignParkingSlot() {
   const { t } = useLang();
   const { user } = useAuthContext();
-  const { showUnauthorized } = useCustomAlert();
+  const { showUnauthorized, showError } = useCustomAlert();
   const isCommittee = isCommitteeMember(user);
 
   const [mainTab, setMainTab] = useState("slots");
@@ -840,6 +841,19 @@ export default function AssignParkingSlot() {
       showUnauthorized("You do not have permission to create parking slots.");
       return;
     }
+
+    const floorErr = getRequiredError(form.parking_floor, "Floor / Level");
+    if (floorErr) { showError(floorErr); return; }
+
+    const prefixErr = getTitleError(form.prefix, "Prefix");
+    if (prefixErr) { showError(prefixErr); return; }
+
+    const startErr = getNumberError(form.start_number, "Start number", { min: 1, allowZero: false });
+    if (startErr) { showError(startErr); return; }
+
+    const countErr = getNumberError(form.count, "Count", { min: 1, allowZero: false });
+    if (countErr) { showError(countErr); return; }
+
     setSubmitting(true);
     try {
       await API.post("/parking-slots", form);
@@ -897,6 +911,13 @@ export default function AssignParkingSlot() {
       showUnauthorized("You do not have permission to edit parking slots.");
       return;
     }
+
+    const slotErr = getRequiredError(editForm.slot_number, "Slot number");
+    if (slotErr) { setEditError(slotErr); return; }
+
+    const floorErr = getRequiredError(editForm.parking_floor, "Floor / Level");
+    if (floorErr) { setEditError(floorErr); return; }
+
     setEditSubmitting(true);
     setEditError("");
     try {
@@ -1103,6 +1124,7 @@ export default function AssignParkingSlot() {
 
   /* ── Slot Ownership: filtered view ── */
   const ownerQ = debouncedOwnerSearch.toLowerCase().trim();
+  const cleanOwnerQ = ownerQ.replace(/[\s\-_]+/g, "");
   const ownerFiltered = ownerSlots.filter(s => {
     if (ownerType !== "ALL" && s.vehicle_type !== ownerType) return false;
     if (ownerStatus === "AVAILABLE" && s.status !== "AVAILABLE") return false;
@@ -1112,9 +1134,21 @@ export default function AssignParkingSlot() {
     if (ownerAlloc === "ALLOCATED" && !s.resident && !s.flat_number) return false;
     if (ownerAlloc === "FREE" && s.status !== "AVAILABLE") return false;
     if (ownerQ) {
-      const hay = [s.slot_number, s.parking_floor, s.flat_number, s.resident?.name, s.resident?.email, s.resident?.phone, s.vehicle?.vehicle_number, s.vehicle?.vehicle_name]
-        .filter(Boolean).join(" ").toLowerCase();
-      if (!hay.includes(ownerQ)) return false;
+      const hay = [
+        s.slot_number,
+        s.parking_floor,
+        s.flat_number,
+        s.resident?.name,
+        s.resident?.email,
+        s.resident?.phone,
+        s.vehicle?.vehicle_number,
+        s.vehicle?.vehicle_name,
+      ].filter(Boolean).join(" ").toLowerCase();
+
+      const cleanHay = hay.replace(/[\s\-_]+/g, "");
+      if (!hay.includes(ownerQ) && (!cleanOwnerQ || !cleanHay.includes(cleanOwnerQ))) {
+        return false;
+      }
     }
     return true;
   });
@@ -1146,7 +1180,7 @@ export default function AssignParkingSlot() {
             <FaParking size={20} />
           </div>
           <div>
-            <h2 className="text-lg font-semibold" style={{ letterSpacing: "-0.02em" }}>{t("parkTitle") || "Parking Management"}</h2>
+            <h2 className="text-lg font-semibold" style={{ letterSpacing: "-0.02em" }}>{t("parkManagementTitle") || "Parking Management"}</h2>
             <p className="text-secondary text-xs mt-0.5">Slots · Owners · Vehicles · Requests</p>
           </div>
         </div>
@@ -1168,13 +1202,13 @@ export default function AssignParkingSlot() {
             onChange={mainTab === "ownership" ? setOwnerSearch : setSearch}
             isOpen={isSearchOpen}
             onOpenChange={setIsSearchOpen}
-            maxWidth={220}
+            maxWidth={240}
             placeholder={
               mainTab === "ownership"
-                ? "Search owner, flat, slot..."
+                ? "Search owner, flat, plate..."
                 : mainTab === "resident-entry"
                 ? "Search resident vehicles..."
-                : "Search slot number, level..."
+                : "Search slot, plate, flat, name..."
             }
           />
 
@@ -1546,7 +1580,7 @@ export default function AssignParkingSlot() {
                           <StatusBadge status={slot.status} t={t} />
                         </div>
 
-                        {/* Compact Card Middle: Resident or Vacant info */}
+                        {/* Compact Card Middle: Resident, Flat & Vehicle info */}
                         <div className="pt-2 text-xs border-t border-glass flex items-center justify-between min-h-[26px]">
                           {isAvail ? (
                             <span className="text-secondary text-[11px] flex items-center gap-1.5">
@@ -1554,7 +1588,7 @@ export default function AssignParkingSlot() {
                               Unallocated · Available
                             </span>
                           ) : (
-                            <div className="flex items-center gap-2 truncate">
+                            <div className="flex items-center gap-1.5 truncate flex-wrap">
                               <div className="w-5 h-5 rounded-full bg-primary/10 text-accent font-bold text-[10px] flex items-center justify-center shrink-0">
                                 {slot.resident?.name?.charAt(0)?.toUpperCase() || "R"}
                               </div>
@@ -1564,6 +1598,11 @@ export default function AssignParkingSlot() {
                               {slot.flat_number && (
                                 <span className="text-[10px] px-1.5 py-0.5 rounded bg-white/5 text-secondary border border-white/10 shrink-0">
                                   Flat {slot.flat_number}
+                                </span>
+                              )}
+                              {slot.vehicle?.vehicle_number && (
+                                <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20 font-mono font-semibold shrink-0">
+                                  {slot.vehicle.vehicle_number}
                                 </span>
                               )}
                             </div>

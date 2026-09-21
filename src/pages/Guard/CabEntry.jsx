@@ -2,6 +2,7 @@
 import { useEffect, useState, useCallback } from "react";
 import API from "../../services/api";
 import { useLang } from "../../context/LanguageContext";
+import { getTitleError, getMobileError, getVehicleNumberError } from "../../utils/validators";
 import { MdAdd, MdSearch, MdClose, MdChevronLeft, MdChevronRight, MdLocalTaxi } from "react-icons/md";
 import Modal from "../../components/Modal";
 import { toast } from "react-toastify";
@@ -155,9 +156,15 @@ export default function CabEntry() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const nameErr = getTitleError(form.driver_name, "Driver name");
+    if (nameErr) { toast.error(nameErr); return; }
+    const mobileErr = getMobileError(form.mobile);
+    if (mobileErr) { toast.error(mobileErr); return; }
+    const vehicleErr = getVehicleNumberError(form.vehicle_number);
+    if (vehicleErr) { toast.error(vehicleErr); return; }
     try {
       await API.post("/visitors", {
-        visitor_name: `${form.aggregator} - ${form.driver_name}`,
+        visitor_name: `${form.aggregator} - ${form.driver_name.trim()}`,
         purpose: "CAB",
         flat_id: Number(form.flat_id),
         mobile: form.mobile,

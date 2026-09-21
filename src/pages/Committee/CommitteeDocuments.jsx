@@ -12,6 +12,7 @@ import {
 } from "react-icons/md";
 import API from "../../services/api";
 import { BASE_URL } from "../../config/apiConfig";
+import { getTitleError } from "../../utils/validators";
 import Select from "../../components/common/Select";
 import GlobalButton from "../../components/common/GlobalButton";
 
@@ -223,8 +224,9 @@ export default function CommitteeDocuments() {
   ──────────────────────────────────── */
   const handleUpload = async e => {
     e.preventDefault();
-    if (!form.title.trim()) { showToast("Please enter a document title.", "error"); return; }
-    if (!file)               { showToast("Please select a file to upload.", "error"); return; }
+    const titleErr = getTitleError(form.title, "Document title");
+    if (titleErr)  { showToast(titleErr, "error"); return; }
+    if (!file)     { showToast("Please select a file to upload.", "error"); return; }
     try {
       setUploading(true);
       const formData = new FormData();

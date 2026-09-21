@@ -32,6 +32,7 @@ import GlobalModal from "../../components/common/GlobalModal";
 import GlobalTable from "../../components/common/GlobalTable";
 import GlobalConfirmDialog from "../../components/common/GlobalConfirmDialog";
 import { isCommitteeMember, hasPermission } from "../../utils/permissions";
+import { getTitleError, getDescriptionError } from "../../utils/validators";
 import { useCustomAlert } from "../../context/CustomAlertContext";
 
 function useDebounce(value, delay = 500) {
@@ -73,6 +74,7 @@ const getPreviewUrl = (fullUrl, fileName = "") => {
 export default function Notice() {
   const { t } = useLang();
   const { user } = useContext(AuthContext);
+  const { showError } = useCustomAlert();
   const activeRole = user?.activeRole ?? user?.role;
   const isSuperAdmin = activeRole === "SUPER_ADMIN";
 
@@ -207,7 +209,11 @@ export default function Notice() {
 
   const handleSubmit = async (e) => {
     if (e) e.preventDefault();
-    if (!form.title.trim() || !form.description.trim()) return;
+    const titleErr = getTitleError(form.title, "Title");
+    if (titleErr) { showError(titleErr); return; }
+    const descErr = getDescriptionError(form.description, "Description");
+    if (descErr) { showError(descErr); return; }
+    if (isSuperAdmin && !form.society_id) { showError("Please select a society."); return; }
 
     setSubmitting(true);
     try {
@@ -914,7 +920,7 @@ export default function Notice() {
         cancelLabel={t("cancel") || "Cancel"}
         onSubmit={handleSubmit}
         submitLoading={submitting}
-        submitDisabled={submitting || !form.title.trim() || !form.description.trim() || (isSuperAdmin && !form.society_id)}
+        submitDisabled={submitting || Boolean(getTitleError(form.title, "Title")) || Boolean(getDescriptionError(form.description, "Description")) || (isSuperAdmin && !form.society_id)}
         submitIcon={editingId ? MdEdit : MdCampaign}
         submitVariant={editingId ? "edit" : "primary"}
       >

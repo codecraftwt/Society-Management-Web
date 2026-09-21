@@ -537,7 +537,7 @@ const FlatHistory = () => {
           API.get(`/parcels`),
           API.get(`/visitors`),
           API.get(`/complaints`),
-          API.get(`/parking/requests?limit=100`),
+          API.get(`/parking?limit=100&flat_id=${flat.id}`),
         ]);
 
       const safeArr = (result) =>

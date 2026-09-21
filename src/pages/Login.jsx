@@ -325,10 +325,16 @@ function Login() {
 
   const handleLogin = async (e) => {
     e.preventDefault();
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail) { toast.error("Please enter your email."); return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+      toast.error("Please enter a valid email address."); return;
+    }
+    if (!password) { toast.error("Please enter your password."); return; }
     setLoginLoading(true);
 
     try {
-      const res = await API.post("/auth/login", { email, password });
+      const res = await API.post("/auth/login", { email: trimmedEmail, password });
 
       if (res.data.tempToken) {
         setTempToken(res.data.tempToken);

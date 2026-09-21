@@ -5,6 +5,7 @@ import API from "../../services/api";
 import { useLang } from "../../context/LanguageContext";
 import { AuthContext } from "../../context/AuthContext";
 import { isCommitteeMember, hasPermission } from "../../utils/permissions";
+import { getTitleError, getPositiveAmountError, getNumberError } from "../../utils/validators";
 import { useCustomAlert } from "../../context/CustomAlertContext";
 import {
   MdAdd, MdClose, MdOutlineInbox,
@@ -337,9 +338,14 @@ export default function AdminAmenity() {
     }
     setSubmitting(true);
     try {
-      if (!form.name.trim()) { showWarning(t("amenErrName")); setSubmitting(false); return; }
-      if (!form.capacity || form.capacity <= 0) { showWarning(t("amenErrCapacity")); setSubmitting(false); return; }
-      if (form.type === "PAID" && (!form.rate_per_hour || form.rate_per_hour <= 0)) { showWarning(t("amenErrRate")); setSubmitting(false); return; }
+      const nameErr = getTitleError(form.name, "Amenity name");
+      if (nameErr) { showWarning(nameErr); setSubmitting(false); return; }
+      const capErr = getNumberError(form.capacity, "Capacity", { min: 1, allowZero: false });
+      if (capErr) { showWarning(capErr); setSubmitting(false); return; }
+      if (form.type === "PAID") {
+        const rateErr = getPositiveAmountError(form.rate_per_hour, "Rate per hour");
+        if (rateErr) { showWarning(rateErr); setSubmitting(false); return; }
+      }
       if (form.booking_type === "SLOT" && (!form.opening_time || !form.closing_time)) { showWarning(t("amenErrTime")); setSubmitting(false); return; }
       const payload = {
         name: form.name.trim(),

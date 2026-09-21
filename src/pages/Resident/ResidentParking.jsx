@@ -10,6 +10,7 @@ import {
 } from "react-icons/md";
 import Select from "../../components/common/Select";
 import Modal from "../../components/Modal";
+import { getTitleError, getVehicleNumberError, getRequiredDateError } from "../../utils/validators";
 
 /* ── Debounce hook — keeps input focused ── */
 function useDebounce(value, delay = 500) {
@@ -178,6 +179,18 @@ useEffect(() => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErrorMessage("");
+
+    if (form.guest_name.trim()) {
+      const guestErr = getTitleError(form.guest_name, "Guest name");
+      if (guestErr) { setErrorMessage(guestErr); return; }
+    }
+
+    const vehicleErr = getVehicleNumberError(form.vehicle_number, "Vehicle number");
+    if (vehicleErr) { setErrorMessage(vehicleErr); return; }
+
+    const arrivalErr = getRequiredDateError(form.expected_arrival, "Arrival date");
+    if (arrivalErr) { setErrorMessage(arrivalErr); return; }
+
     setSubmitLoading(true);
     try {
       await API.post("/parking", form);

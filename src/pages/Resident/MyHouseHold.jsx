@@ -7,6 +7,7 @@ import {
 } from "react-icons/md";
 import { useLang } from "../../context/LanguageContext";
 import API from "../../services/api";
+import { getTitleError, getMobileError, getEmailError } from "../../utils/validators";
 import SlidingTabs from "../../components/common/SlidingTabs";
 import ExpandableSearch from "../../components/common/ExpandableSearch";
 
@@ -65,9 +66,15 @@ function EditModal({ member, onClose, onSaved, t }) {
 
   const handleSave = async (e) => {
     e.preventDefault();
+    const phoneErr = getMobileError(phone, "Phone number");
+    if (phoneErr) { setError(phoneErr); return; }
+    if (email) {
+      const emailErr = getEmailError(email);
+      if (emailErr) { setError(emailErr); return; }
+    }
     setSaving(true); setError(null);
     try {
-      const res = await API.put(`/household/${member.id}`, { email, phone });
+      const res = await API.put(`/household/${member.id}`, { email: email.trim(), phone: phone.trim() });
       onSaved(res.data.data);
       onClose();
     } catch (err) {
@@ -168,11 +175,11 @@ export default function MyHouseHold() {
     if (!flatAssigned) return;
     try {
       await API.post("/household/add", {
-        name:     formData.name,
-        phone:    formData.phone,
-        email:    formData.email || null,
-        relation: activeTab === "family" ? formData.relation : "Daily Help",
-        work:     activeTab === "help"   ? formData.work     : null,
+        name:     formData.name.trim(),
+        phone:    formData.phone.trim(),
+        email:    formData.email.trim() || null,
+        relation: activeTab === "family" ? formData.relation.trim() : "Daily Help",
+        work:     activeTab === "help"   ? formData.work.trim()     : null,
         isAdmin:  false,
       });
       setFormData({ name: "", phone: "", email: "", relation: "", work: "" });
@@ -418,6 +425,20 @@ function MemberRow({ member, isFamily, onDelete, onToggleAdmin, onEdit, t }) {
 /* ── MODAL CONTENT ── */
 function ModalContent({ activeTab, formData, setFormData, handleAdd, setShowModal, t }) {
   const isFamily = activeTab === "family";
+  const [error, setError] = useState(null);
+  const onSubmit = (e) => {
+    e.preventDefault();
+    const nameErr = getTitleError(formData.name, "Name");
+    if (nameErr) { setError(nameErr); return; }
+    const phoneErr = getMobileError(formData.phone, "Phone number");
+    if (phoneErr) { setError(phoneErr); return; }
+    if (formData.email) {
+      const emailErr = getEmailError(formData.email);
+      if (emailErr) { setError(emailErr); return; }
+    }
+    setError(null);
+    handleAdd(e);
+  };
   return (
     <>
       <div className="hh-edit-er">
@@ -439,7 +460,12 @@ function ModalContent({ activeTab, formData, setFormData, handleAdd, setShowModa
         </button>
       </div>
 
-      <form onSubmit={handleAdd} className="hh-form">
+      <form onSubmit={onSubmit} className="hh-form">
+        {error && (
+          <div className="hh-error-box" style={{ marginBottom: "0.75rem" }}>
+            <span style={{ flexShrink: 0 }}>⚠️</span> {error}
+          </div>
+        )}
         <FieldLabel icon={<MdPerson size={11} />} label={t("hhFieldName")} />
         <input className="input" placeholder={t("hhFieldNamePlaceholder")}
           value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} required />

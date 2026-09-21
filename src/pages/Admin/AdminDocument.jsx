@@ -17,6 +17,7 @@ import {
 } from "react-icons/md";
 import API from "../../services/api";
 import { BASE_URL } from "../../config/apiConfig";
+import { getTitleError } from "../../utils/validators";
 import Select from "../../components/common/Select";
 import GlobalButton from "../../components/common/GlobalButton";
 import ExpandableSearch from "../../components/common/ExpandableSearch";
@@ -325,8 +326,9 @@ export default function AdminDocument() {
       showUnauthorized("You do not have permission to upload society documents.");
       return;
     }
-    if (!form.title.trim()) { showToast(t("adDocErrTitle"), "error"); return; }
-    if (!file)               { showToast(t("adDocErrFile"),  "error"); return; }
+    const titleErr = getTitleError(form.title, "Document title");
+    if (titleErr)  { showToast(titleErr, "error"); return; }
+    if (!file)     { showToast(t("adDocErrFile"), "error"); return; }
     try {
       setUploading(true);
       const formData = new FormData();

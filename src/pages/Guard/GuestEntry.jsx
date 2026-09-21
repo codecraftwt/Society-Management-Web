@@ -2,6 +2,7 @@
 import { useEffect, useState, useCallback } from "react";
 import API from "../../services/api";
 import { useLang } from "../../context/LanguageContext";
+import { getTitleError, getMobileError, getVehicleNumberError } from "../../utils/validators";
 import { MdAdd, MdSearch, MdClose, MdChevronLeft, MdChevronRight, MdDirectionsWalk } from "react-icons/md";
 import Modal from "../../components/Modal";
 import { toast } from "react-toastify";
@@ -175,6 +176,12 @@ export default function GuestEntry() {
   /* ── Submit new visitor entry ── */
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const nameErr = getTitleError(form.visitor_name, "Visitor name");
+    if (nameErr) { toast.error(nameErr); return; }
+    const mobileErr = getMobileError(form.mobile);
+    if (mobileErr) { toast.error(mobileErr); return; }
+    const vehicleErr = form.vehicle_number ? getVehicleNumberError(form.vehicle_number) : null;
+    if (vehicleErr) { toast.error(vehicleErr); return; }
     try {
       // If vehicle is entered, a slot must be selected
       if (form.vehicle_number && !selectedSlot) {
@@ -183,7 +190,7 @@ export default function GuestEntry() {
       }
 
       await API.post("/visitors", {
-        visitor_name:   form.visitor_name,
+        visitor_name:   form.visitor_name.trim(),
         purpose:        "GUEST",
         flat_id:        form.flat_id,
         mobile:         form.mobile,
