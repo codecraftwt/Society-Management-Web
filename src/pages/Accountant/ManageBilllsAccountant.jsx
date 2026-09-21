@@ -23,6 +23,8 @@ import SlidingTabs from "../../components/common/SlidingTabs";
 import ExpandableSearch from "../../components/common/ExpandableSearch";
 import { BILL_CATEGORIES } from "../Admin/ManageBill";
 
+import Pagination from "../../components/common/Pagination";
+
 export const BILL_TYPE_FILTERS = [
   { value: "ALL", label: "All Bill Types" },
   { value: "MAINTENANCE", label: "🛠️ Maintenance" },
@@ -35,194 +37,6 @@ export const BILL_TYPE_FILTERS = [
   { value: "DONATION", label: "🤝 Donation" },
   { value: "OTHER", label: "📝 Other" },
 ];
-
-/* ── helpers ── */
-const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-
-const monthToDate = (value) => {
-  if (!value) return null;
-  const [year, month] = String(value).split("-").map(Number);
-  if (!year || !month) return null;
-  return new Date(year, month - 1, 1);
-};
-
-const dateToMonth = (date) => {
-  if (!date) return "";
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
-};
-
-const getCurrentBillingMonth = () => dateToMonth(new Date());
-
-function formatBillingMonth(value) {
-  const date = monthToDate(value);
-  if (!date) return "";
-  return date.toLocaleDateString("en-US", { month: "long", year: "numeric" });
-}
-
-function BillingMonthPicker({ value, onChange, required }) {
-  const wrapRef = useRef(null);
-  const calRef = useRef(null);
-  const [open, setOpen] = useState(false);
-  const [coords, setCoords] = useState(null);
-  const selected = monthToDate(value) || new Date();
-  const [viewYear, setViewYear] = useState(selected.getFullYear());
-
-  const placeCalendar = () => {
-    const rect = wrapRef.current?.getBoundingClientRect();
-    if (!rect) return;
-    const width = Math.max(rect.width, 260);
-    const left = Math.min(rect.left, window.innerWidth - width - 12);
-    const below = rect.bottom + 8;
-    const estimatedHeight = 220;
-    const top = below + estimatedHeight > window.innerHeight - 12
-      ? Math.max(12, rect.top - estimatedHeight - 8)
-      : below;
-    setCoords({ top, left, width });
-  };
-
-  useEffect(() => {
-    if (!open) return undefined;
-    setViewYear((monthToDate(value) || new Date()).getFullYear());
-    placeCalendar();
-    const onDocClick = (e) => {
-      if (wrapRef.current?.contains(e.target) || calRef.current?.contains(e.target)) return;
-      setOpen(false);
-    };
-    const onReposition = () => placeCalendar();
-    document.addEventListener("mousedown", onDocClick);
-    window.addEventListener("resize", onReposition);
-    window.addEventListener("scroll", onReposition, true);
-    return () => {
-      document.removeEventListener("mousedown", onDocClick);
-      window.removeEventListener("resize", onReposition);
-      window.removeEventListener("scroll", onReposition, true);
-    };
-  }, [open, value]);
-
-  const calendar = open && coords ? createPortal(
-    <div
-      ref={calRef}
-      className="bill-month-calendar"
-      role="dialog"
-      aria-label="Choose billing month"
-      style={{ top: coords.top, left: coords.left, width: coords.width }}
-    >
-      <div className="bill-month-calendar__header">
-        <button type="button" className="bill-month-calendar__nav" onClick={() => setViewYear((y) => y - 1)} aria-label="Previous year">
-          <MdChevronLeft size={18} />
-        </button>
-        <span className="bill-month-calendar__year">{viewYear}</span>
-        <button type="button" className="bill-month-calendar__nav" onClick={() => setViewYear((y) => y + 1)} aria-label="Next year">
-          <MdChevronRight size={18} />
-        </button>
-      </div>
-      <div className="bill-month-calendar__grid">
-        {MONTHS.map((label, index) => {
-          const active = value === `${viewYear}-${String(index + 1).padStart(2, "0")}`;
-          return (
-            <button
-              key={label}
-              type="button"
-              className={`bill-month-calendar__month${active ? " is-active" : ""}`}
-              onClick={() => {
-                onChange(`${viewYear}-${String(index + 1).padStart(2, "0")}`);
-                setOpen(false);
-              }}
-            >
-              {label}
-            </button>
-          );
-        })}
-      </div>
-    </div>,
-    document.body
-  ) : null;
-
-  return (
-    <div className="bill-month-picker" ref={wrapRef}>
-      <button
-        type="button"
-        className="input h-11 w-full bill-month-picker__trigger"
-        onClick={() => setOpen((v) => !v)}
-        aria-haspopup="dialog"
-        aria-expanded={open}
-      >
-        <MdCalendarMonth size={18} />
-        <span>{formatBillingMonth(value) || "Select billing month"}</span>
-      </button>
-      {required && (
-        <input type="text" value={value || ""} required readOnly tabIndex={-1} className="bill-month-picker__required" />
-      )}
-      {calendar}
-    </div>
-  );
-}
-
-/* ── Debounce ── */
-function useDebounce(value, delay = 500) {
-  const [d, setD] = useState(value);
-  useEffect(() => {
-    const t = setTimeout(() => setD(value), delay);
-    return () => clearTimeout(t);
-  }, [value, delay]);
-  return d;
-}
-
-/* ── Spinner ── */
-function Spinner({ size = 16 }) {
-  return (
-    <svg style={{ width: size, height: size }} className="animate-spin text-current" viewBox="0 0 24 24" fill="none">
-      <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" className="opacity-25" />
-      <path fill="currentColor" className="opacity-75" d="M4 12a8 8 0 018-8v8z" />
-    </svg>
-  );
-}
-
-/* ── Mobile hook ── */
-function useIsMobile() {
-  const [m, setM] = useState(() => typeof window !== "undefined" && window.innerWidth < 768);
-  useEffect(() => {
-    const fn = () => setM(window.innerWidth < 768);
-    window.addEventListener("resize", fn);
-    return () => window.removeEventListener("resize", fn);
-  }, []);
-  return m;
-}
-
-/* ── Pagination ── */
-function Pagination({ page, totalPages, onPageChange }) {
-  if (totalPages <= 1) return null;
-  const pages = [];
-  for (let i = 1; i <= totalPages; i++) {
-    if (i === 1 || i === totalPages || Math.abs(i - page) <= 1) pages.push(i);
-    else if (pages[pages.length - 1] !== "…") pages.push("…");
-  }
-  return (
-    <div className="pagination-wrap" style={{ marginTop: 0 }}>
-      <button className="pagination-btn" disabled={page === 1} onClick={() => onPageChange(page - 1)}>
-        <MdChevronLeft size={14} />
-      </button>
-      {pages.map((p, idx) =>
-        p === "…" ? (
-          <span key={`e-${idx}`} className="pagination-ellipsis">…</span>
-        ) : (
-          <button
-            key={p}
-            type="button"
-            className={`pagination-page ${p === page ? "pagination-page--active" : ""}`}
-            onClick={() => onPageChange(p)}
-            aria-current={p === page ? "page" : undefined}
-          >
-            {p}
-          </button>
-        )
-      )}
-      <button className="pagination-btn" disabled={page === totalPages} onClick={() => onPageChange(page + 1)}>
-        <MdChevronRight size={14} />
-      </button>
-    </div>
-  );
-}
 
 /* ── Status pill ── */
 function BillStatus({ status, t }) {
@@ -278,7 +92,7 @@ const Label = ({ children }) => (
   <label className="block text-xs font-bold text-secondary uppercase tracking-wider mb-2">{children}</label>
 );
 
-const LIMIT = 10;
+
 
 /* ══════════════════════════════════════
    MAIN — Accountant Manage Bills
@@ -300,7 +114,10 @@ export default function ManageBillsAccountant() {
 
   /* ── Pagination ── */
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const limitRef = useRef(limit);
+  limitRef.current = limit;
+const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
 
   /* ── Search & filter ── */
@@ -353,7 +170,7 @@ export default function ManageBillsAccountant() {
     try {
       const params = new URLSearchParams({
         page: pg,
-        limit: LIMIT,
+        limit: limitRef.current,
         filter,
         ...(type && type !== "ALL" ? { type } : {}),
         ...(q ? { search: q } : {}),
@@ -870,7 +687,7 @@ export default function ManageBillsAccountant() {
             <tbody>
               {bills.map((b, i) => (
                 <tr key={b.id} className="animate-fadeIn" style={{ animationDelay: `${i * 20}ms` }}>
-                  <td><span className="text-xs font-semibold text-secondary">{(page - 1) * LIMIT + i + 1}</span></td>
+                  <td><span className="text-xs font-semibold text-secondary">{(page - 1) * limit + i + 1}</span></td>
                   <td>
                     <div className="flex items-center gap-3">
                       <div style={{ width: 3, height: 32, borderRadius: 99, flexShrink: 0, background: b.status === "PAID" ? "linear-gradient(180deg, var(--success), var(--accent))" : "linear-gradient(180deg, var(--warning), var(--danger))" }} />
@@ -907,13 +724,13 @@ export default function ManageBillsAccountant() {
             <span className="text-xs text-secondary">
               {t("billShowing")}{" "}
               <strong style={{ color: "var(--text-primary)" }}>
-                {(page - 1) * LIMIT + 1}–{Math.min(page * LIMIT, totalItems)}
+                {(page - 1) * limit + 1}–{Math.min(page * limit, totalItems)}
               </strong>{" "}
               {t("billOf")}{" "}
               <strong style={{ color: "var(--text-primary)" }}>{totalItems}</strong>{" "}
               {t("billCount")}
             </span>
-            <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} />
+            <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} pageSize={limit} onPageSizeChange={(s) => { limitRef.current = s; setLimit(s); setPage(1); handlePageChange(1); }} />
           </div>
         )}
       </div>

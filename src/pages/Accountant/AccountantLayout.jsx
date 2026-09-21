@@ -99,14 +99,14 @@ function AccountantLayoutInner() {
       module: "parking_slots",
     },
     {
-      label: "Flat History",
+      label: t("adminMenuFlatHistory"),
       path: `${base}/flat-history`,
       icon: MdVerified,
       group: "COMMUNITY & PROPERTY",
       module: "flat_history",
     },
     {
-      label: "Tenant Approvals",
+      label: t("adminMenuTenantApprovals"),
       path: `${base}/tenant-management`,
       icon: FaUsers,
       group: "COMMUNITY & PROPERTY",
@@ -141,14 +141,14 @@ function AccountantLayoutInner() {
       module: "complaints",
     },
     {
-      label: "SOS",
+      label: t("adminMenuSOS"),
       path: `${base}/emergency`,
       icon: MdSecurity,
       group: "COMMUNICATION",
       module: "emergency",
     },
     {
-      label: "Account & Cash",
+      label: t("adminMenuAccounting"),
       path: `${base}/accounting`,
       icon: MdReceiptLong,
       group: "FINANCE & BILLS",
@@ -162,14 +162,14 @@ function AccountantLayoutInner() {
       module: "manage_bills",
     },
     {
-      label: "Maintenance Setup",
+      label: t("adminMenuMaintenance"),
       path: `${base}/maintenance`,
       icon: MdBuild,
       group: "FINANCE & BILLS",
       module: "maintenance",
     },
     {
-      label: "Payments & Collections",
+      label: t("adminMenuPayments"),
       path: `${base}/payments`,
       icon: MdPayments,
       group: "FINANCE & BILLS",
@@ -221,7 +221,7 @@ function AccountantLayoutInner() {
             {t("accountantPanelLabel") || "Accountant"}<span className="text-accent">{t("panelSuffix") || " Panel"}</span>
           </>
         }
-        brandSubtitle="Finance View"
+        brandSubtitle={t("sbViewAccountant")}
         base={base}
         drawerExtra={<RoleSwitcher />}
         defaultOpenGroups={["FINANCE & BILLS"]}
@@ -239,7 +239,7 @@ function AccountantLayoutInner() {
               {hasPermission(user, "emergency", "trigger") && (
                 <button
                   onClick={() => setShowSOS(true)}
-                  className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 shadow-md shadow-red-500/30 transition px-3 h-9 text-white text-xs font-bold cursor-pointer"
+                  className="flex items-center gap-1.5 rounded-xl bg-linear-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 shadow-md shadow-red-500/30 transition px-3 h-9 text-white text-xs font-bold cursor-pointer"
                   title="Raise an SOS alert to the whole society"
                 >
                   <MdEmergency size={15} />

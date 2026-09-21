@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useContext, useMemo } from "react";
+import { useState, useEffect, useCallback, useContext, useMemo, useRef } from "react";
 import API from "../../services/api";
 import socket from "../../services/socket";
 import { AuthContext } from "../../context/AuthContext";
@@ -13,8 +13,6 @@ import {
   MdSchedule,
   MdEdit,
   MdDelete,
-  MdChevronLeft,
-  MdChevronRight,
   MdCheckCircle,
   MdOutlineArticle,
   MdPeople,
@@ -31,6 +29,7 @@ import GlobalButton from "../../components/common/GlobalButton";
 import GlobalModal from "../../components/common/GlobalModal";
 import GlobalTable from "../../components/common/GlobalTable";
 import GlobalConfirmDialog from "../../components/common/GlobalConfirmDialog";
+import Pagination from "../../components/common/Pagination";
 import { isCommitteeMember, hasPermission } from "../../utils/permissions";
 import { getTitleError, getDescriptionError } from "../../utils/validators";
 import { useCustomAlert } from "../../context/CustomAlertContext";
@@ -55,7 +54,7 @@ const fmtDate = (d) =>
       })
     : "";
 
-const LIMIT = 9;
+
 
 /* ── File helpers ── */
 const isPdfFile = (fileName = "") =>
@@ -82,6 +81,9 @@ export default function Notice() {
   const [initialLoad, setInitialLoad] = useState(true);
   const [fetching, setFetching] = useState(false);
   const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(9);
+  const limitRef = useRef(limit);
+  limitRef.current = limit;
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
   const [totalAll, setTotalAll] = useState(0);
@@ -138,7 +140,7 @@ export default function Notice() {
       const activeSocId = isSuperAdmin ? (filterSocietyId === "ALL" ? "" : filterSocietyId) : user?.society_id;
       const params = new URLSearchParams({
         page: pg,
-        limit: LIMIT,
+        limit: limitRef.current,
         ...(q ? { search: q } : {}),
         ...(activeSocId ? { society_id: activeSocId } : {}),
       });
@@ -155,7 +157,7 @@ export default function Notice() {
 
       setNotices(raw);
       setTotalItems(total);
-      setTotalPages(Math.ceil(total / LIMIT) || 1);
+      setTotalPages(Math.ceil(total / limitRef.current) || 1);
       if (isInit) setTotalAll(total);
     } catch {
       setNotices([]);
@@ -437,7 +439,7 @@ export default function Notice() {
               setSearch(val);
               setPage(1);
             }}
-            placeholder="Search notices..."
+            placeholder={t("noticeSearch")}
           />
 
           {/* Super Admin Society Filter */}
@@ -452,7 +454,7 @@ export default function Notice() {
               }}
               style={{ height: 40, fontSize: 13, minWidth: 190, maxWidth: 220, borderRadius: "10px" }}
             >
-              <option value="ALL">All Societies (Global View)</option>
+              <option value="ALL">{t("allSocietiesGlobalView")}</option>
               {societiesList.map((s) => (
                 <option key={s.id} value={s.id}>
                   {s.name}
@@ -840,70 +842,18 @@ export default function Notice() {
             })}
           </div>
 
-          {/* Pagination Controls */}
-          {totalPages > 1 && (
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                padding: "14px 20px",
-                borderRadius: 14,
-                background: "var(--card-bg, #111827)",
-                border: "1px solid var(--glass-border, rgba(255, 255, 255, 0.08))",
-                fontSize: "0.85rem",
-                color: "var(--text-secondary)",
-                flexWrap: "wrap",
-                gap: 10,
-              }}
-            >
-              <div>
-                Showing Page <strong>{page}</strong> of <strong>{totalPages}</strong> ({totalItems} total notices)
-              </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <button
-                  onClick={() => setPage(page - 1)}
-                  disabled={page <= 1}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 4,
-                    padding: "6px 12px",
-                    borderRadius: 8,
-                    background: "var(--card-inner-bg, rgba(255, 255, 255, 0.05))",
-                    border: "1px solid var(--glass-border, rgba(255, 255, 255, 0.1))",
-                    color: "var(--text-primary)",
-                    fontSize: "0.82rem",
-                    fontWeight: 600,
-                    cursor: page <= 1 ? "not-allowed" : "pointer",
-                    opacity: page <= 1 ? 0.5 : 1,
-                  }}
-                >
-                  <MdChevronLeft size={16} /> Prev
-                </button>
-                <button
-                  onClick={() => setPage(page + 1)}
-                  disabled={page >= totalPages}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 4,
-                    padding: "6px 12px",
-                    borderRadius: 8,
-                    background: "var(--card-inner-bg, rgba(255, 255, 255, 0.05))",
-                    border: "1px solid var(--glass-border, rgba(255, 255, 255, 0.1))",
-                    color: "var(--text-primary)",
-                    fontSize: "0.82rem",
-                    fontWeight: 600,
-                    cursor: page >= totalPages ? "not-allowed" : "pointer",
-                    opacity: page >= totalPages ? 0.5 : 1,
-                  }}
-                >
-                  Next <MdChevronRight size={16} />
-                </button>
-              </div>
-            </div>
-          )}
+          <Pagination
+            page={page}
+            totalPages={totalPages}
+            onPageChange={setPage}
+            pageSize={limit}
+            onPageSizeChange={(s) => {
+              limitRef.current = s;
+              setLimit(s);
+              setPage(1);
+              loadNotices(1, debSearch);
+            }}
+          />
         </>
       )}
 
@@ -1102,7 +1052,7 @@ export default function Notice() {
                 <MdSearch size={18} style={{ position: "absolute", left: 11, top: "50%", transform: "translateY(-50%)", color: "var(--text-secondary)", pointerEvents: "none" }} />
                 <input
                   type="text"
-                  placeholder="Search resident..."
+                  placeholder={t("noticeSearchResident")}
                   value={historyModal.search}
                   onChange={(e) => {
                     const val = e.target.value;

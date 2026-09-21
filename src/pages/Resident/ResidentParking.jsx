@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef} from "react";
 import API from "../../services/api";
 import { useLang } from "../../context/LanguageContext";
 import SlidingTabs from "../../components/common/SlidingTabs";
@@ -16,81 +16,16 @@ import ConfirmDiscard from "../../components/common/ConfirmDiscard";
 import useUnsavedDirty from "../../hooks/useUnsavedDirty";
 import { getTitleError, getVehicleNumberError, getRequiredDateError, getSelectError } from "../../utils/validators";
 
-/* ── Debounce hook — keeps input focused ── */
-function useDebounce(value, delay = 500) {
-  const [debounced, setDebounced] = useState(value);
-  useEffect(() => {
-    const t = setTimeout(() => setDebounced(value), delay);
-    return () => clearTimeout(t);
-  }, [value, delay]);
-  return debounced;
-}
-
-/* ── Spinner ── */
-function Spinner({ size = 20, small = false }) {
-  const s = small ? 13 : size;
-  return (
-    <svg style={{ width: s, height: s }} className="animate-spin" viewBox="0 0 24 24" fill="none">
-      <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" className="opacity-25" />
-      <path fill="currentColor" className="opacity-75" d="M4 12a8 8 0 018-8v8z" />
-    </svg>
-  );
-}
-
-/* ── Pagination ── */
-function Pagination({ page, totalPages, onPageChange }) {
-  if (totalPages <= 1) return null;
-
-  const pages = Array.from({ length: totalPages }, (_, i) => i + 1)
-    .filter((p) => p === 1 || p === totalPages || Math.abs(p - page) <= 1)
-    .reduce((acc, p, idx, arr) => {
-      if (idx > 0 && p - arr[idx - 1] > 1) acc.push("...");
-      acc.push(p);
-      return acc;
-    }, []);
-
-  return (
-    <div className="pagination-wrap">
-      <button
-        onClick={() => onPageChange(page - 1)}
-        disabled={page === 1}
-        className="pagination-btn"
-      >
-        <MdChevronLeft size={15} /> Prev
-      </button>
-
-      {pages.map((p, idx) =>
-        p === "..." ? (
-          <span key={`ellipsis-${idx}`} className="pagination-ellipsis">...</span>
-        ) : (
-          <button
-            key={p}
-            onClick={() => onPageChange(p)}
-            className={`pagination-page ${p === page ? "pagination-page--active" : ""}`}
-          >
-            {p}
-          </button>
-        )
-      )}
-
-      <button
-        onClick={() => onPageChange(page + 1)}
-        disabled={page === totalPages}
-        className="pagination-btn"
-      >
-        Next <MdChevronRight size={15} />
-      </button>
-    </div>
-  );
-}
-
-const LIMIT = 10;
+import Pagination from "../../components/common/Pagination";
 
 /* ═══════════════════════════════════════════
    Main
 ═══════════════════════════════════════════ */
 export default function ResidentParking() {
-  const { t } = useLang();
+  const [limit, setLimit] = useState(10);
+  const limitRef = useRef(limit);
+  limitRef.current = limit;
+const { t } = useLang();
 
   const [showForm,     setShowForm]     = useState(false);
   const [hasFlat,      setHasFlat]      = useState(true);
@@ -192,7 +127,7 @@ useEffect(() => {
     try {
       const params = new URLSearchParams({
         page:   pageNum,
-        limit:  LIMIT,
+        limit: limitRef.current,
         filter: currentFilter,
         parking_type: "ALL",   // show guest (VISITOR) + resident extra-slot requests
         ...(currentSearch ? { search: currentSearch } : {}),
@@ -853,7 +788,7 @@ useEffect(() => {
               ))}
 
               {/* Mobile pagination */}
-              <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} />
+              <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} pageSize={limit} onPageSizeChange={(s) => { limitRef.current = s; setLimit(s); setPage(1); handlePageChange(1); }} />
             </div>
 
             {/* DESKTOP TABLE */}
@@ -903,7 +838,7 @@ useEffect(() => {
                 <p className="text-xs text-secondary text-right">
                   {t("reportShowing") || "Showing"} {requests.length} {t("reportOf") || "of"} {totalItems} {t("parkCount") || "requests"}
                 </p>
-                <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} />
+                <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} pageSize={limit} onPageSizeChange={(s) => { limitRef.current = s; setLimit(s); setPage(1); handlePageChange(1); }} />
               </div>
             </div>
           </>

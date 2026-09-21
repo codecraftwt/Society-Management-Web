@@ -1,5 +1,5 @@
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef} from "react";
 import API from "../../services/api";
 import { useLang } from "../../context/LanguageContext";
 import { getTitleError, getMobileError, getVehicleNumberError } from "../../utils/validators";
@@ -9,6 +9,8 @@ import { toast } from "react-toastify";
 import Select from "../../components/common/Select";
 import SlidingTabs from "../../components/common/SlidingTabs";
 import ExpandableSearch from "../../components/common/ExpandableSearch";
+
+import Pagination from "../../components/common/Pagination";
 
 function useDebounce(value, delay = 500) {
   const [d, setD] = useState(value);
@@ -27,35 +29,6 @@ function Spinner({ size = 16 }) {
     </svg>
   );
 }
-
-function Pagination({ page, totalPages, onPageChange }) {
-  if (totalPages <= 1) return null;
-  const pages = Array.from({ length: totalPages }, (_, i) => i + 1)
-    .filter(p => p === 1 || p === totalPages || Math.abs(p - page) <= 1)
-    .reduce((acc, p, idx, arr) => {
-      if (idx > 0 && p - arr[idx - 1] > 1) acc.push("...");
-      acc.push(p);
-      return acc;
-    }, []);
-  return (
-    <div className="pagination-wrap" style={{ marginTop: 0 }}>
-      <button onClick={() => onPageChange(page - 1)} disabled={page === 1} className="pagination-btn">
-        <MdChevronLeft size={14} /> Prev
-      </button>
-      {pages.map((p, i) =>
-        p === "..." ? <span key={`e${i}`} className="pagination-ellipsis">...</span> : (
-          <button key={p} onClick={() => onPageChange(p)}
-            className={`pagination-page ${p === page ? "pagination-page--active" : ""}`}>{p}</button>
-        )
-      )}
-      <button onClick={() => onPageChange(page + 1)} disabled={page === totalPages} className="pagination-btn">
-        Next <MdChevronRight size={14} />
-      </button>
-    </div>
-  );
-}
-
-const LIMIT = 10;
 
 function resolveFlatLabel(flat) {
   if (!flat) return "NA";
@@ -86,7 +59,10 @@ export default function CabEntry() {
   const [fetching, setFetching] = useState(false);
 
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const limitRef = useRef(limit);
+  limitRef.current = limit;
+const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
 
   const [search, setSearch] = useState("");
@@ -117,7 +93,7 @@ export default function CabEntry() {
     try {
       const params = new URLSearchParams({
         page: pg,
-        limit: LIMIT,
+        limit: limitRef.current,
         filter: f,
         purpose: "CAB",
         ...(q ? { search: q } : {}),
@@ -284,7 +260,7 @@ export default function CabEntry() {
                   const { aggregator, driver } = splitCabName(v.visitor_name);
                   return (
                     <tr key={v.id} className="ge-tbody-row">
-                      <td className="ge-td ge-td--num">{(page - 1) * LIMIT + i + 1}</td>
+                      <td className="ge-td ge-td--num">{(page - 1) * limit + i + 1}</td>
                       <td className="ge-td">
                         {aggregator ? <span className="ge-flat-chip">{aggregator}</span> : "—"}
                       </td>
@@ -320,12 +296,12 @@ export default function CabEntry() {
               <span style={{ fontSize: 12, color: "var(--text-secondary)" }}>
                 Showing{" "}
                 <strong style={{ color: "var(--text-primary)" }}>
-                  {(page - 1) * LIMIT + 1}–{Math.min(page * LIMIT, totalItems)}
+                  {(page - 1) * limit + 1}–{Math.min(page * limit, totalItems)}
                 </strong>{" "}
                 of{" "}
                 <strong style={{ color: "var(--text-primary)" }}>{totalItems}</strong>
               </span>
-              <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} />
+              <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} pageSize={limit} onPageSizeChange={(s) => { limitRef.current = s; setLimit(s); setPage(1); handlePageChange(1); }} />
             </div>
           </>
         )}
@@ -391,7 +367,7 @@ export default function CabEntry() {
             })}
 
             <div style={{ display: "flex", justifyContent: "center", padding: "8px 0 4px" }}>
-              <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} />
+              <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} pageSize={limit} onPageSizeChange={(s) => { limitRef.current = s; setLimit(s); setPage(1); handlePageChange(1); }} />
             </div>
           </>
         )}

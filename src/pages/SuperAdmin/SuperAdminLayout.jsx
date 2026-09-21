@@ -93,7 +93,7 @@ function SuperAdminLayoutInner() {
       group: "OPERATIONS & SECURITY",
     },
     {
-      label: "SOS",
+      label: t("saMenuSOS"),
       path: `${base}/emergency`,
       icon: MdSecurity,
       group: "OPERATIONS & SECURITY",
@@ -105,7 +105,7 @@ function SuperAdminLayoutInner() {
       group: "FINANCE & ASSETS",
     },
     {
-      label: "Account Management",
+      label: t("saMenuAccounting"),
       path: `${base}/accounting`,
       icon: MdReceiptLong,
       group: "FINANCE & ASSETS",
@@ -123,7 +123,7 @@ function SuperAdminLayoutInner() {
       group: "FINANCE & ASSETS",
     },
     {
-      label: "Payments",
+      label: t("saMenuPayments"),
       path: `${base}/payments`,
       icon: MdPayments,
       group: "FINANCE & ASSETS",
@@ -168,7 +168,7 @@ function SuperAdminLayoutInner() {
     <div className="mb-2">
       <button
         onClick={() => setShowSOS(true)}
-        className="w-full mb-2 flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 text-white py-2.5 text-xs font-bold shadow-md shadow-red-500/30"
+        className="w-full mb-2 flex items-center justify-center gap-1.5 rounded-xl bg-linear-to-r from-red-600 to-rose-600 text-white py-2.5 text-xs font-bold shadow-md shadow-red-500/30"
         title="Raise an SOS alert to any society"
       >
         <MdEmergency size={15} />
@@ -227,7 +227,7 @@ function SuperAdminLayoutInner() {
             {t("saBrandName") || "Society"}<span className="text-accent">{t("saBrandSuffix") || "Control"}</span>
           </>
         }
-        brandSubtitle="Super Admin Panel"
+        brandSubtitle={t("sbViewSuperAdmin")}
         base={base}
         drawerExtra={mobileSocietyFilter}
         defaultOpenGroups={["FINANCE & ASSETS"]}
@@ -242,7 +242,7 @@ function SuperAdminLayoutInner() {
             <>
               <button
                 onClick={() => setShowSOS(true)}
-                className="hidden sm:flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 shadow-md shadow-red-500/30 transition px-3 h-9 text-white text-xs font-bold"
+                className="hidden sm:flex items-center gap-1.5 rounded-xl bg-linear-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 shadow-md shadow-red-500/30 transition px-3 h-9 text-white text-xs font-bold"
                 title="Raise an SOS alert to any society"
               >
                 <MdEmergency size={15} />

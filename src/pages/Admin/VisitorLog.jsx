@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useContext } from "react";
+import { useEffect, useState, useCallback, useContext, useRef} from "react";
 import {
   MdSearch, MdPerson,
   MdOutlineInbox, MdAccessTime,
@@ -53,10 +53,13 @@ const formatVisitor = (v) => {
   };
 };
 
-const LIMIT = 10;
+
 
 export default function VisitorLog() {
-  const { t } = useLang();
+  const [limit, setLimit] = useState(10);
+  const limitRef = useRef(limit);
+  limitRef.current = limit;
+const { t } = useLang();
   const { user } = useContext(AuthContext);
   const activeRole = user?.activeRole ?? user?.role;
   const isSuperAdmin = activeRole === "SUPER_ADMIN";
@@ -101,7 +104,7 @@ export default function VisitorLog() {
       const activeSocId = isSuperAdmin ? filterSocietyId : user?.society_id;
       const params = new URLSearchParams({
         page: pg, 
-        limit: LIMIT, 
+        limit: limitRef.current, 
         filter: f, 
         ...(q ? { search: q } : {}),
         ...(activeSocId ? { society_id: activeSocId } : {}),
@@ -122,7 +125,7 @@ export default function VisitorLog() {
 
       setLogs(raw.map(formatVisitor));
       setTotalItems(total);
-      setTotalPages(Math.ceil(total / LIMIT) || 1);
+      setTotalPages(Math.ceil(total / limitRef.current) || 1);
 
       if (res.data?.counts) {
         setCounts(res.data.counts);
@@ -234,7 +237,7 @@ export default function VisitorLog() {
       width: 65,
       render: (_, idx) => (
         <span style={{ color: "var(--text-tertiary)", fontSize: "0.82rem", fontWeight: 500 }}>
-          {(page - 1) * LIMIT + idx + 1}
+          {(page - 1) * limit + idx + 1}
         </span>
       ),
     },
@@ -428,6 +431,9 @@ export default function VisitorLog() {
           totalPages={totalPages}
           totalItems={totalItems}
           onPageChange={handlePageChange}
+        
+          pageSize={limit}
+          onPageSizeChange={(s) => { limitRef.current = s; setLimit(s); setPage(1); loadLogs(1, debSearch, filter); }}
         />
       </div>
     </div>

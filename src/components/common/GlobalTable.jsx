@@ -1,10 +1,7 @@
 import React from "react";
-import {
-  MdChevronLeft,
-  MdChevronRight,
-  MdOutlineInbox,
-} from "react-icons/md";
+import { MdOutlineInbox } from "react-icons/md";
 import GlobalButton from "./GlobalButton";
+import Pagination from "./Pagination";
 
 /**
  * GlobalTable
@@ -23,6 +20,8 @@ import GlobalButton from "./GlobalButton";
  * - totalPages: number
  * - totalItems: number
  * - onPageChange: (newPage) => void
+ * - pageSize: number
+ * - onPageSizeChange: (newSize) => void
  * - onRowClick: (row, index) => void
  * - rowKey: string | ((row, index) => string|number)
  * - compact: boolean
@@ -42,6 +41,8 @@ export default function GlobalTable({
   totalPages = 1,
   totalItems = null,
   onPageChange = null,
+  pageSize = null,
+  onPageSizeChange = null,
   onRowClick = null,
   rowKey = "id",
   compact = false,
@@ -53,19 +54,7 @@ export default function GlobalTable({
     return row[rowKey] ?? index;
   };
 
-  // Pagination page numbers generator
-  const getPageNumbers = () => {
-    if (totalPages <= 1) return [];
-    return Array.from({ length: totalPages }, (_, i) => i + 1)
-      .filter((p) => p === 1 || p === totalPages || Math.abs(p - page) <= 1)
-      .reduce((acc, p, idx, arr) => {
-        if (idx > 0 && p - arr[idx - 1] > 1) acc.push("...");
-        acc.push(p);
-        return acc;
-      }, []);
-  };
-
-  const pageNumbers = getPageNumbers();
+  const showPager = totalPages > 1 || totalItems != null || onPageSizeChange;
 
   return (
     <div
@@ -278,7 +267,7 @@ export default function GlobalTable({
       </div>
 
       {/* Table Footer with Pagination */}
-      {(totalPages > 1 || totalItems != null) && (
+      {showPager && (
         <div
           className="global-table-footer"
           style={{
@@ -292,7 +281,6 @@ export default function GlobalTable({
             background: "var(--card-inner-bg, rgba(255, 255, 255, 0.02))",
           }}
         >
-          {/* Total items info */}
           <div
             style={{
               fontSize: "0.8rem",
@@ -310,102 +298,15 @@ export default function GlobalTable({
             )}
           </div>
 
-          {/* Pagination Controls */}
-          {totalPages > 1 && onPageChange && (
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 6,
-              }}
-            >
-              <button
-                type="button"
-                onClick={() => onPageChange(page - 1)}
-                disabled={page <= 1}
-                className="pagination-btn"
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 4,
-                  padding: "5px 10px",
-                  borderRadius: 8,
-                  fontSize: "0.78rem",
-                  fontWeight: 600,
-                  border: "1px solid var(--glass-border, rgba(255, 255, 255, 0.1))",
-                  background: "var(--card-inner-bg, rgba(255, 255, 255, 0.05))",
-                  color: "var(--text-secondary, #cbd5e1)",
-                  cursor: page <= 1 ? "not-allowed" : "pointer",
-                  opacity: page <= 1 ? 0.4 : 1,
-                  transition: "all 0.15s ease",
-                }}
-              >
-                <MdChevronLeft size={16} /> Prev
-              </button>
-
-              {pageNumbers.map((p, i) =>
-                p === "..." ? (
-                  <span
-                    key={`ellipsis-${i}`}
-                    style={{
-                      padding: "0 4px",
-                      color: "var(--text-tertiary, #94a3b8)",
-                      fontSize: "0.8rem",
-                    }}
-                  >
-                    …
-                  </span>
-                ) : (
-                  <button
-                    key={`page-${p}`}
-                    type="button"
-                    onClick={() => onPageChange(p)}
-                    style={{
-                      width: 28,
-                      height: 28,
-                      display: "inline-flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      borderRadius: 8,
-                      fontSize: "0.78rem",
-                      fontWeight: 600,
-                      border: p === page ? "none" : "1px solid var(--glass-border, rgba(255, 255, 255, 0.1))",
-                      background: p === page ? "var(--accent, #2563eb)" : "var(--card-inner-bg, rgba(255, 255, 255, 0.05))",
-                      color: p === page ? "#ffffff" : "var(--text-secondary, #cbd5e1)",
-                      cursor: "pointer",
-                      boxShadow: p === page ? "0 2px 8px rgba(37, 99, 235, 0.4)" : "none",
-                      transition: "all 0.15s ease",
-                    }}
-                  >
-                    {p}
-                  </button>
-                )
-              )}
-
-              <button
-                type="button"
-                onClick={() => onPageChange(page + 1)}
-                disabled={page >= totalPages}
-                className="pagination-btn"
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 4,
-                  padding: "5px 10px",
-                  borderRadius: 8,
-                  fontSize: "0.78rem",
-                  fontWeight: 600,
-                  border: "1px solid var(--glass-border, rgba(255, 255, 255, 0.1))",
-                  background: "var(--card-inner-bg, rgba(255, 255, 255, 0.05))",
-                  color: "var(--text-secondary, #cbd5e1)",
-                  cursor: page >= totalPages ? "not-allowed" : "pointer",
-                  opacity: page >= totalPages ? 0.4 : 1,
-                  transition: "all 0.15s ease",
-                }}
-              >
-                Next <MdChevronRight size={16} />
-              </button>
-            </div>
+          {(onPageChange || onPageSizeChange) && (
+            <Pagination
+              page={page}
+              totalPages={totalPages}
+              onPageChange={onPageChange}
+              pageSize={pageSize}
+              onPageSizeChange={onPageSizeChange}
+              style={{ marginTop: 0, width: "100%", flex: "1 1 240px" }}
+            />
           )}
         </div>
       )}

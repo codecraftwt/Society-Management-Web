@@ -16,6 +16,8 @@ import ExpandableSearch from "../../components/common/ExpandableSearch";
 import Modal from "../../components/Modal";
 import { toast } from "react-toastify";
 
+import Pagination from "../../components/common/Pagination";
+
 function useIsMobile() {
   const [m, setM] = useState(() => typeof window !== "undefined" && window.innerWidth < 768);
   useEffect(() => {
@@ -42,37 +44,6 @@ function Spinner({ size = 22 }) {
       <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" style={{ opacity: 0.2 }} />
       <path fill="currentColor" style={{ opacity: 0.85 }} d="M4 12a8 8 0 018-8v8z" />
     </svg>
-  );
-}
-
-function Pagination({ page, totalPages, onPageChange }) {
-  if (totalPages <= 1) return null;
-  const pages = Array.from({ length: totalPages }, (_, i) => i + 1)
-    .filter(p => p === 1 || p === totalPages || Math.abs(p - page) <= 1)
-    .reduce((acc, p, idx, arr) => {
-      if (idx > 0 && p - arr[idx - 1] > 1) acc.push("...");
-      acc.push(p);
-      return acc;
-    }, []);
-  return (
-    <div className="pagination-wrap" style={{ marginTop: 0 }}>
-      <button onClick={() => onPageChange(page - 1)} disabled={page === 1} className="pagination-btn">
-        <MdChevronLeft size={14} /> Prev
-      </button>
-      {pages.map((p, i) =>
-        p === "..." ? (
-          <span key={`e${i}`} className="pagination-ellipsis">...</span>
-        ) : (
-          <button key={p} onClick={() => onPageChange(p)}
-            className={`pagination-page ${p === page ? "pagination-page--active" : ""}`}>
-            {p}
-          </button>
-        )
-      )}
-      <button onClick={() => onPageChange(page + 1)} disabled={page === totalPages} className="pagination-btn">
-        Next <MdChevronRight size={14} />
-      </button>
-    </div>
   );
 }
 
@@ -515,10 +486,13 @@ function ResidentEntryModal({ isOpen, onClose, slots, onCreated, t }) {
 /* ═══════════════════════════════════════════════════
    MAIN COMPONENT
 ═══════════════════════════════════════════════════ */
-const LIMIT = 5;
+
 
 export default function GuardParking() {
-  const isMobile = useIsMobile();
+  const [limit, setLimit] = useState(5);
+  const limitRef = useRef(limit);
+  limitRef.current = limit;
+const isMobile = useIsMobile();
   const { t }    = useLang();
 
   const [viewMode,     setViewMode]     = useState("visitor");
@@ -568,7 +542,7 @@ export default function GuardParking() {
     try {
       const params = new URLSearchParams({
         page:         pg,
-        limit:        LIMIT,
+        limit: limitRef.current,
         filter:       f,
         parking_type: mode === "resident" ? "RESIDENT" : "VISITOR",
         ...(q ? { search: q } : {}),
@@ -618,7 +592,7 @@ export default function GuardParking() {
           // Don't add if already exists
           if (prev.find((r) => r.id === newRequest.id)) return prev;
           const updated = [newRequest, ...prev];
-          return updated.slice(0, LIMIT); // keep page size
+          return updated.slice(0, limit); // keep page size
         });
         setCounts((prev) => ({
           ...prev,
@@ -964,10 +938,10 @@ export default function GuardParking() {
             <div className="gp-footer">
               <span className="gp-footer-text">
                 Showing{" "}
-                <strong>{(page - 1) * LIMIT + 1}–{Math.min(page * LIMIT, totalItems)}</strong>{" "}
+                <strong>{(page - 1) * limit + 1}–{Math.min(page * limit, totalItems)}</strong>{" "}
                 of <strong>{totalItems}</strong> requests
               </span>
-              <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} />
+              <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} pageSize={limit} onPageSizeChange={(s) => { limitRef.current = s; setLimit(s); setPage(1); handlePageChange(1); }} />
             </div>
           </>
         )}

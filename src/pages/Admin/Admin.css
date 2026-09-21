@@ -64,6 +64,79 @@ html.role-theme input[type="date"]:focus {
   box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25);
 }
 
+/* Nested inputs inside already-bordered wrappers — don't restyle as a second field */
+html.role-theme input.mp-bare-input,
+html.role-theme input.mp-bare-input:hover,
+html.role-theme input.mp-bare-input:focus {
+  height: 100% !important;
+  min-height: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+  outline: none !important;
+  appearance: none;
+  -moz-appearance: textfield;
+}
+html.role-theme input.mp-bare-input::-webkit-outer-spin-button,
+html.role-theme input.mp-bare-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Compact inline editors that should stay small next to action buttons */
+html.role-theme input.mp-compact-input,
+html.role-theme input.mp-compact-input:hover,
+html.role-theme input.mp-compact-input:focus {
+  height: unset !important;
+  min-height: 0 !important;
+  padding: 2px 6px !important;
+  border-radius: 6px !important;
+  font-size: 11px !important;
+  box-shadow: none !important;
+}
+
+html.role-theme input.mp-search-field,
+html.role-theme input.mp-search-field:hover,
+html.role-theme input.mp-search-field:focus {
+  height: 36px !important;
+  min-height: 36px !important;
+  padding-left: 34px !important;
+  border-radius: 10px !important;
+  font-size: 12px !important;
+}
+
+/* Thin scrollbar inside Create Block / other admin modal bodies */
+html.role-theme .sa-modal-body.modal-scroll-thin,
+html:not(.light) .sa-modal-body.modal-scroll-thin {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.22) transparent;
+}
+html.light.role-theme .sa-modal-body.modal-scroll-thin {
+  scrollbar-color: rgba(15, 23, 42, 0.22) transparent;
+}
+html.role-theme .sa-modal-body.modal-scroll-thin::-webkit-scrollbar,
+html:not(.light) .sa-modal-body.modal-scroll-thin::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+html.role-theme .sa-modal-body.modal-scroll-thin::-webkit-scrollbar-track,
+html:not(.light) .sa-modal-body.modal-scroll-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+html.role-theme .sa-modal-body.modal-scroll-thin::-webkit-scrollbar-thumb,
+html:not(.light) .sa-modal-body.modal-scroll-thin::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.22);
+  border-radius: 999px;
+  border: none;
+  background-clip: padding-box;
+}
+html.light.role-theme .sa-modal-body.modal-scroll-thin::-webkit-scrollbar-thumb {
+  background: rgba(15, 23, 42, 0.22);
+}
+
 /* Default standard single calendar icon on the right */
 html.role-theme input[type="date"]::-webkit-calendar-picker-indicator {
   cursor: pointer;
@@ -247,6 +320,20 @@ html.role-theme .ad-kpi-label {
 
 html.role-theme .ad-kpi-desc {
   font-size: 11px;
+}
+
+@media (max-width: 1023px) {
+  html.role-theme .admin-root .ad-kpi {
+    padding: 14px 12px;
+    min-width: 0;
+  }
+  html.role-theme .admin-root .ad-kpi-val {
+    font-size: 22px;
+  }
+  html.role-theme .admin-root .ad-kpi-label {
+    font-size: 10px;
+    line-height: 1.3;
+  }
 }
 
 html.role-theme:not(.light) .ad-kpi {
@@ -647,4 +734,114 @@ html.role-theme .admin-root .ps-slots-container {
 
 html.role-theme .admin-root .ps-filter-bar {
   border-bottom-color: var(--glass-border) !important;
+}
+
+/* --------------------------------------------------------------------------
+   Manage Property — mobile layout
+   -------------------------------------------------------------------------- */
+.mp-page {
+  min-width: 0;
+}
+.mp-page-head {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+.mp-page-head__title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.mp-page-head__title h2,
+.mp-page-head__title p {
+  overflow-wrap: anywhere;
+}
+.mp-page-head__tools {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+.mp-page-head__tabs {
+  min-width: 0;
+}
+@media (min-width: 1024px) {
+  .mp-page-head {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .mp-page-head__tools {
+    justify-content: flex-end;
+  }
+}
+@media (max-width: 767px) {
+  .mp-page-head__tools {
+    width: 100%;
+  }
+  .mp-page-head__cta {
+    flex: 1 1 auto;
+    min-width: 0;
+    justify-content: center !important;
+  }
+  .mp-page-head__tabs {
+    flex: 1 1 100%;
+    width: 100%;
+    order: 3;
+  }
+  .mp-page-head__tabs .sliding-tabs {
+    width: 100%;
+    max-width: 100%;
+  }
+  .mp-page-head__tabs .sliding-tabs__item {
+    flex: 1;
+    min-width: 0;
+    padding: 7px 8px;
+    font-size: 11px;
+    gap: 4px;
+  }
+  .mp-page-head__tools .sa-search-slider-box--open {
+    flex: 1 1 100%;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  html.role-theme .global-modal-backdrop {
+    padding: max(8px, env(safe-area-inset-top)) 8px max(8px, env(safe-area-inset-bottom)) !important;
+  }
+  html.role-theme .sa-modal.global-modal-container,
+  html.role-theme .mp-area-modal {
+    width: 100% !important;
+    max-width: 100% !important;
+    max-height: min(92dvh, calc(100vh - 16px)) !important;
+    border-radius: 16px !important;
+  }
+  html.role-theme .sa-modal-header {
+    padding: 14px 14px 10px !important;
+    gap: 10px !important;
+  }
+  html.role-theme .sa-modal-body,
+  html.role-theme .sa-modal-body.modal-scroll-thin {
+    padding: 14px !important;
+    scrollbar-gutter: auto;
+  }
+  html.role-theme .sa-modal-footer {
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+    padding: 12px 14px calc(12px + env(safe-area-inset-bottom)) !important;
+  }
+  html.role-theme .sa-modal-footer .global-btn {
+    flex: 1 1 calc(50% - 6px);
+    min-width: 0;
+    justify-content: center !important;
+  }
+
+  .mp-page .data-table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
 }

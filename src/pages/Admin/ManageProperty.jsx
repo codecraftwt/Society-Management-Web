@@ -18,8 +18,11 @@ import Select from "../../components/common/Select";
 import SlidingTabs from "../../components/common/SlidingTabs";
 import ExpandableSearch from "../../components/common/ExpandableSearch";
 import GlobalButton from "../../components/common/GlobalButton";
+import GlobalModal from "../../components/common/GlobalModal";
 import { getTitleError, getNumberError, getPositiveAmountError } from "../../utils/validators";
 import "./Admin.css";
+
+import Pagination from "../../components/common/Pagination";
 
 /* ── helpers ── */
 function Spinner({ size = 16 }) {
@@ -47,32 +50,6 @@ function useIsMobile() {
   return m;
 }
 
-function Pagination({ page, totalPages, onChange }) {
-  if (totalPages <= 1) return null;
-  const pages = Array.from({ length: totalPages }, (_, i) => i + 1)
-    .filter(p => p === 1 || p === totalPages || Math.abs(p - page) <= 1)
-    .reduce((acc, p, i, arr) => {
-      if (i > 0 && p - arr[i - 1] > 1) acc.push("...");
-      acc.push(p); return acc;
-    }, []);
-  return (
-    <div className="pagination-wrap">
-      <button onClick={() => onChange(page - 1)} disabled={page === 1} className="pagination-btn">
-        <MdChevronLeft size={15} /> Prev
-      </button>
-      {pages.map((p, i) => p === "..." ? (
-        <span key={`e${i}`} className="pagination-ellipsis">…</span>
-      ) : (
-        <button key={p} onClick={() => onChange(p)}
-          className={`pagination-page${p === page ? " pagination-page--active" : ""}`}>{p}</button>
-      ))}
-      <button onClick={() => onChange(page + 1)} disabled={page === totalPages} className="pagination-btn">
-        Next <MdChevronRight size={15} />
-      </button>
-    </div>
-  );
-}
-
 /* ── utility: get society_id from JWT or localStorage ── */
 function getSocietyId() {
   try {
@@ -88,6 +65,12 @@ function safeNum(val) {
   if (val == null || val === "") return NaN;
   const n = Number(val);
   return isNaN(n) || !isFinite(n) ? NaN : n;
+}
+
+function propertyTypeLabel(type, t) {
+  if (type === "ROW_HOUSE") return t("mpTypeRowHouse");
+  if (type === "COMMERCIAL") return t("mpTypeCommercial");
+  return t("mpTypeApartment");
 }
 
 /* ══════════════════════════════════════════════
@@ -116,63 +99,69 @@ export default function ManageProperty() {
   };
 
   return (
-    <div className="space-y-5 animate-fadeIn">
-      {/* ── Page header: Unified Single Row ── */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
+    <div className="mp-page space-y-5 animate-fadeIn">
+      <div className="mp-page-head">
+        <div className="mp-page-head__title">
           <div className="ad-page-icon">
             <MdHome size={22} />
           </div>
-          <div>
+          <div style={{ minWidth: 0 }}>
             <h2 className="text-lg font-semibold" style={{ letterSpacing: "-0.02em" }}>{t("mpTitle") || "Manage Property"}</h2>
-            <p className="text-secondary text-xs mt-0.5">Blocks · Flats · Assignments</p>
+            <p className="text-secondary text-xs mt-0.5">{t("mpSubtitle")}</p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2.5 flex-wrap">
-          <SlidingTabs
-            value={tab}
-            onChange={handleTabChange}
-            items={TABS.map(({ key, label, icon: Icon }) => ({
-              id: key,
-              label,
-              icon: <Icon size={16} />,
-            }))}
-          />
+        <div className="mp-page-head__tools">
+          {canEdit && tab === "blocks" && (
+            <GlobalButton
+              variant="add"
+              borderDraw
+              onClick={() => setShowBlockForm(true)}
+              icon={MdAdd}
+              className="mp-page-head__cta shrink-0"
+              style={{ fontWeight: 700 }}
+            >
+              {t("createBlock")}
+            </GlobalButton>
+          )}
+
+          {canEdit && tab === "assign" && (
+            <GlobalButton
+              variant={showAssignForm ? "cancel" : "add"}
+              borderDraw
+              onClick={() => setShowAssignForm((p) => !p)}
+              icon={showAssignForm ? MdClose : MdAdd}
+              className="mp-page-head__cta shrink-0"
+              style={{ fontWeight: 700 }}
+            >
+              {showAssignForm ? t("cancel") : t("mpAssignUnit")}
+            </GlobalButton>
+          )}
 
           <ExpandableSearch
             value={search}
             onChange={setSearch}
             placeholder={
               tab === "blocks"
-                ? "Search blocks/phases..."
+                ? t("mpSearchPhases")
                 : tab === "flats"
-                ? "Search property..."
-                : "Search assignments..."
+                ? t("mpSearchProperty")
+                : t("mpSearchAssignments")
             }
           />
 
-          {canEdit && tab === "blocks" && (
-            <GlobalButton
-              variant={showBlockForm ? "secondary" : "add"}
-              onClick={() => setShowBlockForm((p) => !p)}
-              icon={showBlockForm ? MdClose : MdAdd}
-              size="md"
-            >
-              {showBlockForm ? (t("cancel") || "Cancel") : (t("createBlock") || "Create Block")}
-            </GlobalButton>
-          )}
-
-          {canEdit && tab === "assign" && (
-            <GlobalButton
-              variant={showAssignForm ? "secondary" : "add"}
-              onClick={() => setShowAssignForm((p) => !p)}
-              icon={showAssignForm ? MdClose : MdAdd}
-              size="md"
-            >
-              {showAssignForm ? (t("cancel") || "Cancel") : "Assign Unit"}
-            </GlobalButton>
-          )}
+          <div className="mp-page-head__tabs">
+            <SlidingTabs
+              fullWidth={isMobile}
+              value={tab}
+              onChange={handleTabChange}
+              items={TABS.map(({ key, label, icon: Icon }) => ({
+                id: key,
+                label,
+                icon: <Icon size={16} />,
+              }))}
+            />
+          </div>
         </div>
       </div>
 
@@ -226,6 +215,7 @@ function AreaAssignModal({
   initialMode = "SAME",
   blockName = ""
 }) {
+  const { t } = useLang();
   const [activeMode, setActiveMode] = useState(initialMode || "SAME"); // "SAME" | "SEPARATE"
   const [bulkVal, setBulkVal] = useState("");
   const [emptyFillVal, setEmptyFillVal] = useState("");
@@ -273,7 +263,7 @@ function AreaAssignModal({
   const applyBulk = (valToApply) => {
     const v = valToApply !== undefined ? valToApply : bulkVal;
     if (v === "" || v === null || isNaN(Number(v)) || Number(v) < 0) {
-      toast.error("Please enter a valid positive area (sq.ft)");
+      toast.error(t("mpValidArea"));
       return;
     }
     const str = String(v);
@@ -281,14 +271,14 @@ function AreaAssignModal({
     flats.forEach(f => { updated[f.id] = str; });
     setValues(updated);
     setBulkVal(str);
-    toast.success(`Applied ${str} sq.ft to all ${flats.length} houses!`);
+    toast.success(t("mpAppliedAll", { area: str, n: flats.length }));
   };
 
   // Apply to ONLY empty / unfilled houses (enables using both options together!)
   const applyToEmpty = (valToApply) => {
     const v = valToApply !== undefined ? valToApply : emptyFillVal;
     if (v === "" || v === null || isNaN(Number(v)) || Number(v) < 0) {
-      toast.error("Please enter a valid positive area (sq.ft)");
+      toast.error(t("mpValidArea"));
       return;
     }
     const str = String(v);
@@ -302,21 +292,21 @@ function AreaAssignModal({
       }
     });
     if (count === 0) {
-      toast.info("All houses already have areas configured");
+      toast.info(t("mpAllConfigured"));
       return;
     }
     setValues(updated);
     setEmptyFillVal("");
-    toast.success(`Filled ${count} empty house(s) with ${str} sq.ft!`);
+    toast.success(t("mpFilledEmpty", { count, area: str }));
   };
 
   // Clear all values
   const clearAll = () => {
-    if (!window.confirm("Are you sure you want to reset and clear all house areas?")) return;
+    if (!window.confirm(t("mpConfirmClearAreas"))) return;
     const updated = {};
     flats.forEach(f => { updated[f.id] = ""; });
     setValues(updated);
-    toast.info("Cleared all house areas");
+    toast.info(t("mpClearedAreas"));
   };
 
   // Copy value from previous house in the list
@@ -325,12 +315,12 @@ function AreaAssignModal({
     const prevFlat = flats[flatIndexInFlats - 1];
     const prevVal = values[prevFlat.id];
     if (!prevVal || isNaN(Number(prevVal)) || Number(prevVal) <= 0) {
-      toast.warn(`Previous house #${prevFlat.flat_number} has no area set`);
+      toast.warn(t("mpPrevNoArea", { num: prevFlat.flat_number }));
       return;
     }
     const currFlat = flats[flatIndexInFlats];
     setValues(p => ({ ...p, [currFlat.id]: String(prevVal) }));
-    toast.success(`Copied ${prevVal} sq.ft from #${prevFlat.flat_number}`);
+    toast.success(t("mpCopiedFrom", { area: prevVal, num: prevFlat.flat_number }));
   };
 
   // Fill down from this house to all subsequent houses
@@ -338,7 +328,7 @@ function AreaAssignModal({
     const currFlat = flats[flatIndexInFlats];
     const currVal = values[currFlat.id];
     if (!currVal || isNaN(Number(currVal)) || Number(currVal) <= 0) {
-      toast.warn(`Please set an area for #${currFlat.flat_number} first`);
+      toast.warn(t("mpSetAreaFirst", { num: currFlat.flat_number }));
       return;
     }
     const updated = { ...values };
@@ -348,7 +338,7 @@ function AreaAssignModal({
       count++;
     }
     setValues(updated);
-    toast.success(`Filled down ${currVal} sq.ft to ${count} remaining houses below!`);
+    toast.success(t("mpFilledDown", { area: currVal, count }));
   };
 
   // Keyboard navigation on Enter or Arrows
@@ -373,66 +363,80 @@ function AreaAssignModal({
   return createPortal(
     <div
       onClick={(e) => { if (e.target === e.currentTarget) onSkip(); }}
+      className="global-modal-backdrop"
       style={{
         position: "fixed",
         inset: 0,
         zIndex: 1100,
-        background: "rgba(0, 0, 0, 0.76)",
-        backdropFilter: "blur(12px)",
-        WebkitBackdropFilter: "blur(12px)",
+        background: "rgba(0, 0, 0, 0.68)",
+        backdropFilter: "blur(8px)",
+        WebkitBackdropFilter: "blur(8px)",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        padding: "16px",
+        padding: isMobile ? 8 : 16,
       }}
     >
       <div
         onClick={(e) => e.stopPropagation()}
+        className="sa-modal global-modal-container mp-area-modal"
         style={{
           width: "100%",
-          maxWidth: 920,
-          background: "var(--card-bg, #0f172a)",
-          border: "1px solid rgba(16, 185, 129, 0.35)",
-          borderRadius: 24,
-          maxHeight: "92vh",
+          maxWidth: isMobile ? "100%" : 720,
+          maxHeight: isMobile ? "min(92dvh, calc(100vh - 16px))" : "min(90vh, 820px)",
           display: "flex",
           flexDirection: "column",
-          backdropFilter: "blur(24px)",
-          boxShadow: "0 28px 90px rgba(0, 0, 0, 0.65), 0 0 32px rgba(16, 185, 129, 0.16)",
-          animation: "adminModalPopIn 0.28s cubic-bezier(0.16, 1, 0.3, 1)",
+          borderRadius: isMobile ? 16 : 20,
+          background: "var(--modal-bg, var(--card-bg, #0f172a))",
+          border: "1.5px solid var(--glass-border, rgba(255, 255, 255, 0.12))",
+          boxShadow: "0 24px 64px rgba(0, 0, 0, 0.5), 0 0 20px rgba(var(--acct-purple-rgb), 0.22)",
           overflow: "hidden",
+          animation: "adminModalPopIn 0.28s cubic-bezier(0.16, 1, 0.3, 1)",
         }}
       >
         {/* Header */}
-        <div style={{ padding: "18px 24px", borderBottom: "1px solid var(--glass-border)", display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 14 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-            <div style={{ width: 44, height: 44, borderRadius: 14, background: "linear-gradient(135deg, #10b981, #059669)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 8px 24px rgba(16,185,129,0.38)", flexShrink: 0 }}>
-              <MdHomeWork size={22} color="#fff" />
-            </div>
-            <div>
-              <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                <h3 style={{ fontWeight: 800, fontSize: 17, color: "var(--text-primary)", margin: 0, letterSpacing: "-0.02em" }}>
-                  Assign Built-Up Area to Row Houses
-                </h3>
-                {blockName && (
-                  <span style={{ fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 999, background: "rgba(91,141,239,0.15)", color: "#94B5F5", border: "1px solid rgba(91,141,239,0.3)" }}>
-                    {blockName}
-                  </span>
-                )}
-                <span style={{ fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 999, background: "rgba(16,185,129,0.14)", color: "#34d399", border: "1px solid rgba(16,185,129,0.3)" }}>
-                  {flats.length} Houses
+        <div
+          className="sa-modal-header sa-modal-er"
+          style={{ flexShrink: 0, padding: isMobile ? "16px 16px 14px" : "18px 20px 16px", gap: 12 }}
+        >
+          <div
+            className="sa-modal-icon"
+            style={{
+              width: isMobile ? 36 : 40,
+              height: isMobile ? 36 : 40,
+              borderRadius: 12,
+              background: "linear-gradient(135deg, var(--accent), var(--accent-dark))",
+              boxShadow: "0 6px 16px rgba(var(--acct-purple-rgb),0.32)",
+              color: "#fff",
+              flexShrink: 0,
+            }}
+          >
+            <MdHomeWork size={20} />
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <h3 className="sa-modal-title" style={{ margin: 0, lineHeight: 1.25, overflowWrap: "anywhere" }}>
+              {t("mpAssignAreaTitle")}
+            </h3>
+            <p className="sa-modal-subtitle" style={{ margin: "4px 0 0", lineHeight: 1.45 }}>
+              {t("mpAssignAreaHint")}
+            </p>
+            <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", marginTop: 8 }}>
+              {blockName && (
+                <span style={{ fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 999, background: "rgba(91,141,239,0.15)", color: "#94B5F5", border: "1px solid rgba(91,141,239,0.3)" }}>
+                  {blockName}
                 </span>
-              </div>
-              <p style={{ fontSize: 12, color: "var(--text-secondary)", margin: "3px 0 0" }}>
-                Built-up area (sq.ft) is required for per-sq.ft maintenance billing calculations.
-              </p>
+              )}
+              <span style={{ fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 999, background: "rgba(var(--acct-purple-rgb),0.14)", color: "var(--accent-light)", border: "1px solid rgba(var(--acct-purple-rgb),0.3)" }}>
+                {t("mpHousesN", { n: flats.length })}
+              </span>
             </div>
           </div>
-
           <button
+            type="button"
             onClick={onSkip}
-            style={{ width: 34, height: 34, borderRadius: 10, border: "1px solid var(--glass-border)", background: "var(--card-inner-bg)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-secondary)", flexShrink: 0 }}
-            title="Close"
+            className="sa-modal-close"
+            title={t("close")}
+            style={{ flexShrink: 0 }}
           >
             <MdClose size={18} />
           </button>
@@ -440,23 +444,22 @@ function AreaAssignModal({
 
         {/* Dual Mode Switcher & "Use Both" Guidance Bar */}
         <div style={{
-          padding: "12px 24px",
+          padding: isMobile ? "10px 16px 12px" : "10px 20px 12px",
           borderBottom: "1px solid var(--glass-border)",
           background: "rgba(255, 255, 255, 0.015)",
           display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          flexWrap: "wrap",
-          gap: 12
+          flexDirection: "column",
+          gap: 10,
+          flexShrink: 0,
         }}>
-          {/* Segmented Mode Selector Buttons */}
           <div style={{
-            display: "inline-flex",
+            display: "flex",
             background: "var(--card-inner-bg)",
             padding: 4,
             borderRadius: 12,
             border: "1px solid var(--glass-border)",
-            gap: 4
+            gap: 4,
+            width: "100%",
           }}>
             <button
               type="button"
@@ -464,21 +467,24 @@ function AreaAssignModal({
               style={{
                 display: "flex",
                 alignItems: "center",
-                gap: 7,
-                padding: "8px 16px",
+                justifyContent: "center",
+                gap: 6,
+                padding: isMobile ? "8px 6px" : "8px 14px",
                 borderRadius: 9,
-                fontSize: 12,
+                fontSize: isMobile ? 11 : 12,
                 fontWeight: 700,
-                background: activeMode === "SAME" ? "linear-gradient(135deg, #10b981, #059669)" : "transparent",
+                flex: 1,
+                minWidth: 0,
+                background: activeMode === "SAME" ? "linear-gradient(135deg, var(--accent), var(--accent-dark))" : "transparent",
                 color: activeMode === "SAME" ? "#fff" : "var(--text-secondary)",
                 border: "none",
                 cursor: "pointer",
                 transition: "all 0.18s ease",
-                boxShadow: activeMode === "SAME" ? "0 3px 12px rgba(16,185,129,0.35)" : "none"
+                boxShadow: activeMode === "SAME" ? "0 3px 12px rgba(var(--acct-purple-rgb),0.35)" : "none"
               }}
             >
-              <MdDoneAll size={15} />
-              <span>⚡ Option 1: Make All Same</span>
+              <MdDoneAll size={15} style={{ flexShrink: 0 }} />
+              <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: isMobile ? "normal" : "nowrap", textAlign: "center", lineHeight: 1.25 }}>⚡ {t("mpOptionMakeAllSame")}</span>
             </button>
 
             <button
@@ -487,129 +493,146 @@ function AreaAssignModal({
               style={{
                 display: "flex",
                 alignItems: "center",
-                gap: 7,
-                padding: "8px 16px",
+                justifyContent: "center",
+                gap: 6,
+                padding: isMobile ? "8px 6px" : "8px 14px",
                 borderRadius: 9,
-                fontSize: 12,
+                fontSize: isMobile ? 11 : 12,
                 fontWeight: 700,
-                background: activeMode === "SEPARATE" ? "linear-gradient(135deg, #10b981, #059669)" : "transparent",
+                flex: 1,
+                minWidth: 0,
+                background: activeMode === "SEPARATE" ? "linear-gradient(135deg, var(--accent), var(--accent-dark))" : "transparent",
                 color: activeMode === "SEPARATE" ? "#fff" : "var(--text-secondary)",
                 border: "none",
                 cursor: "pointer",
                 transition: "all 0.18s ease",
-                boxShadow: activeMode === "SEPARATE" ? "0 3px 12px rgba(16,185,129,0.35)" : "none"
+                boxShadow: activeMode === "SEPARATE" ? "0 3px 12px rgba(var(--acct-purple-rgb),0.35)" : "none"
               }}
             >
-              <MdTune size={15} />
-              <span>✍️ Option 2: Separate Filling</span>
+              <MdTune size={15} style={{ flexShrink: 0 }} />
+              <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: isMobile ? "normal" : "nowrap", textAlign: "center", lineHeight: 1.25 }}>✍️ {t("mpOptionSeparate")}</span>
             </button>
           </div>
 
-          {/* "Use Both" Guidance Hint Pill */}
           <div style={{
             display: "flex",
-            alignItems: "center",
+            alignItems: "flex-start",
             gap: 8,
-            padding: "6px 12px",
+            padding: "8px 10px",
             borderRadius: 10,
-            background: "rgba(16,185,129,0.09)",
-            border: "1px solid rgba(16,185,129,0.22)",
+            background: "rgba(var(--acct-purple-rgb),0.09)",
+            border: "1px solid rgba(var(--acct-purple-rgb),0.22)",
             fontSize: 11,
             color: "var(--text-secondary)",
-            maxWidth: 480
+            width: "100%",
+            boxSizing: "border-box",
           }}>
             <span style={{
               padding: "2px 6px",
               borderRadius: 5,
-              background: "#10b981",
+              background: "var(--accent)",
               color: "#fff",
               fontWeight: 800,
               fontSize: 9,
               letterSpacing: "0.04em",
-              whiteSpace: "nowrap"
+              whiteSpace: "nowrap",
+              marginTop: 1,
+              flexShrink: 0,
             }}>
-              USE BOTH
+              {t("mpUseBothBadge")}
             </span>
-            <span style={{ lineHeight: 1.3 }}>
-              Set a uniform base area in Option 1, then switch to Option 2 to tweak corner plots or custom sizes.
+            <span style={{ lineHeight: 1.4, minWidth: 0 }}>
+              {t("mpUseBothGuide")}
             </span>
           </div>
         </div>
 
         {/* Progress & Total Area Summary Strip */}
         <div style={{
-          padding: "10px 24px",
+          padding: isMobile ? "8px 16px" : "8px 20px",
           borderBottom: "1px solid var(--glass-border)",
-          background: "rgba(0, 0, 0, 0.15)",
+          background: "rgba(0, 0, 0, 0.12)",
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
           flexWrap: "wrap",
-          gap: 12
+          gap: 8,
+          flexShrink: 0,
         }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <span style={{ fontSize: 11, fontWeight: 700, color: "var(--text-secondary)" }}>Progress:</span>
-              <span style={{ fontSize: 12, fontWeight: 800, color: configuredCount === flats.length ? "#10b981" : "var(--text-primary)" }}>
-                {configuredCount} / {flats.length} configured ({percent}%)
+          <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", minWidth: 0, flex: 1 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
+              <span style={{ fontSize: 11, fontWeight: 700, color: "var(--text-secondary)" }}>{t("mpProgress")}</span>
+              <span style={{ fontSize: 12, fontWeight: 800, color: configuredCount === flats.length ? "var(--accent)" : "var(--text-primary)" }}>
+                {t("mpConfiguredPct", { configured: configuredCount, total: flats.length, percent })}
               </span>
             </div>
 
-            <div style={{ width: 120, height: 6, borderRadius: 999, background: "rgba(255,255,255,0.08)", overflow: "hidden" }}>
-              <div style={{ width: `${percent}%`, height: "100%", borderRadius: 999, background: "linear-gradient(90deg, #10b981, #34d399)", transition: "width 0.3s ease" }} />
+            <div style={{ width: isMobile ? "100%" : 110, maxWidth: 160, height: 6, borderRadius: 999, background: "rgba(255,255,255,0.08)", overflow: "hidden" }}>
+              <div style={{ width: `${percent}%`, height: "100%", borderRadius: 999, background: "linear-gradient(90deg, var(--accent), var(--accent-light))", transition: "width 0.3s ease" }} />
             </div>
 
             {emptyCount > 0 ? (
               <span style={{ fontSize: 11, color: "var(--stat-amber-color, #fbbf24)", fontWeight: 600 }}>
-                {emptyCount} house{emptyCount !== 1 ? "s" : ""} unset
+                {emptyCount === 1 ? t("mpHouseUnset", { n: emptyCount }) : t("mpHousesUnset", { n: emptyCount })}
               </span>
             ) : (
-              <span style={{ fontSize: 11, color: "#10b981", fontWeight: 700, display: "flex", alignItems: "center", gap: 3 }}>
-                <MdCheck size={12} /> All houses ready
+              <span style={{ fontSize: 11, color: "var(--accent)", fontWeight: 700, display: "flex", alignItems: "center", gap: 3 }}>
+                <MdCheck size={12} /> {t("mpAllHousesReady")}
               </span>
             )}
           </div>
 
           {totalArea > 0 && (
-            <div style={{ padding: "4px 10px", borderRadius: 8, background: "var(--card-inner-bg)", border: "1px solid var(--glass-border)", fontSize: 11, fontWeight: 700, color: "var(--text-primary)" }}>
-              <span style={{ color: "var(--text-secondary)", fontWeight: 500 }}>Total Built-Up: </span>
-              <strong style={{ color: "#10b981" }}>{totalArea.toLocaleString()} sq.ft</strong>
+            <div style={{ padding: "4px 10px", borderRadius: 8, background: "var(--card-inner-bg)", border: "1px solid var(--glass-border)", fontSize: 11, fontWeight: 700, color: "var(--text-primary)", whiteSpace: "nowrap" }}>
+              <span style={{ color: "var(--text-secondary)", fontWeight: 500 }}>{t("mpTotalBuiltUp")} </span>
+              <strong style={{ color: "var(--accent)" }}>{t("mpValueSqft", { n: totalArea.toLocaleString() })}</strong>
             </div>
           )}
         </div>
 
         {/* Scrollable Content Body */}
-        <div style={{ padding: "20px 24px", overflowY: "auto", display: "flex", flexDirection: "column", gap: 16 }}>
+        <div
+          className="sa-modal-body modal-scroll-thin"
+          style={{
+            padding: isMobile ? "14px 16px" : "16px 20px",
+            overflowY: "auto",
+            flex: 1,
+            minHeight: 0,
+            display: "flex",
+            flexDirection: "column",
+            gap: 14,
+          }}
+        >
 
           {/* ══════════════════════════════════════════════
               OPTION 1 VIEW: MAKE ALL SAME
           ══════════════════════════════════════════════ */}
           {activeMode === "SAME" && (
-            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
               {/* Uniform Setting Hero Card */}
               <div style={{
-                background: "linear-gradient(135deg, rgba(16,185,129,0.12) 0%, rgba(5,150,105,0.05) 100%)",
-                border: "1px solid rgba(16,185,129,0.28)",
-                borderRadius: 18,
-                padding: "18px 20px",
+                background: "linear-gradient(135deg, rgba(var(--acct-purple-rgb),0.12) 0%, rgba(var(--acct-purple-rgb),0.05) 100%)",
+                border: "1px solid rgba(var(--acct-purple-rgb),0.28)",
+                borderRadius: 14,
+                padding: isMobile ? "14px" : "16px",
                 display: "flex",
                 flexDirection: "column",
-                gap: 14
+                gap: 12
               }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                    <div style={{ width: 34, height: 34, borderRadius: 10, background: "rgba(16,185,129,0.22)", display: "flex", alignItems: "center", justifyContent: "center", color: "#10b981", flexShrink: 0 }}>
+                    <div style={{ width: 34, height: 34, borderRadius: 10, background: "rgba(var(--acct-purple-rgb),0.22)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--accent)", flexShrink: 0 }}>
                       <MdAutoFixHigh size={18} />
                     </div>
                     <div>
-                      <h4 style={{ margin: 0, fontSize: 14, fontWeight: 800, color: "var(--text-primary)", display: "flex", alignItems: "center", gap: 8 }}>
-                        Set Uniform Area For All {flats.length} Houses
-                        <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 7px", borderRadius: 6, background: "rgba(16,185,129,0.2)", color: "#10b981" }}>
-                          ONE-CLICK FILL
+                      <h4 style={{ margin: 0, fontSize: 14, fontWeight: 800, color: "var(--text-primary)", display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                        {t("mpSetUniformTitle", { n: flats.length })}
+                        <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 7px", borderRadius: 6, background: "rgba(var(--acct-purple-rgb),0.2)", color: "var(--accent)" }}>
+                          {t("mpOneClickFill")}
                         </span>
                       </h4>
                       <p style={{ margin: "3px 0 0", fontSize: 11, color: "var(--text-secondary)" }}>
-                        Pick a standard preset or enter custom built-up sq.ft. All houses in this phase will get this value.
+                        {t("mpSetUniformHint")}
                       </p>
                     </div>
                   </div>
@@ -631,19 +654,19 @@ function AreaAssignModal({
                         alignItems: "center",
                         gap: 5
                       }}
-                      title="Copy the area from House #1 across all houses"
+                      title={t("mpCopyHouse1Title")}
                     >
-                      <MdDoneAll size={14} className="text-emerald-400" />
-                      Copy #{flats[0]?.flat_number} ({firstVal} sq.ft) to All
+                      <MdDoneAll size={14} style={{ color: "var(--accent)" }} />
+                      {t("mpCopyHouseToAll", { num: flats[0]?.flat_number, area: firstVal })}
                     </button>
                   )}
                 </div>
 
                 {/* Presets & Input Bar */}
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                     <span style={{ fontSize: 11, fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                      Common Sizes:
+                      {t("mpCommonSizes")}
                     </span>
                     <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
                       {PRESETS.map(p => (
@@ -656,14 +679,14 @@ function AreaAssignModal({
                             borderRadius: 8,
                             fontSize: 11,
                             fontWeight: 700,
-                            background: Number(bulkVal) === p ? "#10b981" : "var(--card-bg)",
+                            background: Number(bulkVal) === p ? "var(--accent)" : "var(--card-bg)",
                             color: Number(bulkVal) === p ? "#fff" : "var(--text-primary)",
-                            border: Number(bulkVal) === p ? "1px solid #10b981" : "1px solid var(--glass-border)",
+                            border: Number(bulkVal) === p ? "1px solid var(--accent)" : "1px solid var(--glass-border)",
                             cursor: "pointer",
                             transition: "all 0.15s ease",
                           }}
                         >
-                          {p.toLocaleString()} sq.ft
+                          {t("mpValueSqft", { n: p.toLocaleString() })}
                         </button>
                       ))}
                     </div>
@@ -675,23 +698,28 @@ function AreaAssignModal({
                       display: "flex",
                       alignItems: "center",
                       background: "var(--card-bg)",
-                      border: "1px solid rgba(16,185,129,0.35)",
+                      border: "1px solid rgba(var(--acct-purple-rgb),0.35)",
                       borderRadius: 10,
                       padding: "0 10px",
                       height: 38,
-                      boxShadow: "0 2px 8px rgba(0,0,0,0.15)"
+                      minWidth: 0,
+                      overflow: "hidden",
+                      flex: isMobile ? "1 1 100%" : "0 1 auto",
                     }}>
-                      <MdSquareFoot size={16} style={{ color: "#10b981", marginRight: 6 }} />
+                      <MdSquareFoot size={16} style={{ color: "var(--accent)", marginRight: 6, flexShrink: 0 }} />
                       <input
+                        className="mp-bare-input"
                         type="number"
                         min="0"
                         step="0.01"
-                        placeholder="Custom sq.ft..."
+                        placeholder={t("mpCustomSqftPh")}
                         value={bulkVal}
                         onChange={e => setBulkVal(e.target.value)}
                         onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); applyBulk(); } }}
                         style={{
-                          width: 110,
+                          width: isMobile ? "100%" : 110,
+                          minWidth: 0,
+                          flex: 1,
                           border: "none",
                           background: "transparent",
                           color: "var(--text-primary)",
@@ -700,21 +728,18 @@ function AreaAssignModal({
                           outline: "none"
                         }}
                       />
-                      <span style={{ fontSize: 11, color: "var(--text-secondary)", fontWeight: 700 }}>sq.ft</span>
+                      <span style={{ fontSize: 11, color: "var(--text-secondary)", fontWeight: 700, flexShrink: 0 }}>{t("mpSqft")}</span>
                     </div>
 
-                    <button
+                    <GlobalButton
                       type="button"
+                      variant="add"
+                      icon={MdDoneAll}
+                      size="sm"
                       onClick={() => applyBulk()}
-                      className="sa-add-btn sa-add-pill sa-btn-primary"
-                      style={{ fontWeight: 700, height: 38, padding: "0 16px" }}
                     >
-                      <span className="sa-pill-blob sa-pill-blob1" />
-                      <span className="sa-pill-inner" style={{ gap: 6 }}>
-                        <MdDoneAll size={16} />
-                        <span>Apply to All ({flats.length})</span>
-                      </span>
-                    </button>
+                      {t("mpApplyToAll", { n: flats.length })}
+                    </GlobalButton>
 
                     {emptyCount > 0 && configuredCount > 0 && (
                       <button
@@ -724,9 +749,9 @@ function AreaAssignModal({
                           height: 38,
                           padding: "0 14px",
                           borderRadius: 10,
-                          background: "rgba(16,185,129,0.14)",
-                          border: "1px solid rgba(16,185,129,0.3)",
-                          color: "#10b981",
+                          background: "rgba(var(--acct-purple-rgb),0.14)",
+                          border: "1px solid rgba(var(--acct-purple-rgb),0.3)",
+                          color: "var(--accent)",
                           fontSize: 11,
                           fontWeight: 700,
                           cursor: "pointer",
@@ -734,10 +759,10 @@ function AreaAssignModal({
                           alignItems: "center",
                           gap: 6
                         }}
-                        title="Fills only the empty houses, leaving customized houses untouched"
+                        title={t("mpFillEmptyTitle")}
                       >
                         <MdCheckCircleOutline size={15} />
-                        <span>Fill Only {emptyCount} Empty</span>
+                        <span>{t("mpFillOnlyEmpty", { n: emptyCount })}</span>
                       </button>
                     )}
                   </div>
@@ -748,8 +773,8 @@ function AreaAssignModal({
               <div style={{
                 background: "var(--card-inner-bg)",
                 border: "1px solid var(--glass-border)",
-                borderRadius: 16,
-                padding: "16px 18px",
+                borderRadius: 14,
+                padding: isMobile ? "12px" : "14px 16px",
                 display: "flex",
                 flexDirection: "column",
                 gap: 12
@@ -757,10 +782,10 @@ function AreaAssignModal({
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10 }}>
                   <div>
                     <h5 style={{ margin: 0, fontSize: 13, fontWeight: 700, color: "var(--text-primary)" }}>
-                      Live Preview of House Areas ({flats.length} houses)
+                      {t("mpLivePreview", { n: flats.length })}
                     </h5>
                     <p style={{ margin: "2px 0 0", fontSize: 11, color: "var(--text-secondary)" }}>
-                      If some houses differ (such as corner villas or larger plots), switch to Separate Filling to adjust them.
+                      {t("mpLivePreviewHint")}
                     </p>
                   </div>
 
@@ -782,17 +807,14 @@ function AreaAssignModal({
                     }}
                   >
                     <MdTune size={14} />
-                    <span>Customize Specific Houses Separately →</span>
+                    <span>{t("mpCustomizeSeparate")}</span>
                   </button>
                 </div>
 
                 <div style={{
                   display: "grid",
-                  gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : "repeat(auto-fill, minmax(135px, 1fr))",
+                  gridTemplateColumns: isMobile ? "repeat(2, minmax(0, 1fr))" : "repeat(auto-fill, minmax(120px, 1fr))",
                   gap: 8,
-                  maxHeight: 250,
-                  overflowY: "auto",
-                  paddingRight: 4
                 }}>
                   {flats.map(f => {
                     const v = values[f.id];
@@ -802,8 +824,8 @@ function AreaAssignModal({
                         key={f.id}
                         onClick={() => setActiveMode("SEPARATE")}
                         style={{
-                          background: hasArea ? "rgba(16,185,129,0.06)" : "var(--card-bg)",
-                          border: hasArea ? "1px solid rgba(16,185,129,0.25)" : "1px solid var(--glass-border)",
+                          background: hasArea ? "rgba(var(--acct-purple-rgb),0.06)" : "var(--card-bg)",
+                          border: hasArea ? "1px solid rgba(var(--acct-purple-rgb),0.25)" : "1px solid var(--glass-border)",
                           borderRadius: 10,
                           padding: "8px 10px",
                           display: "flex",
@@ -812,20 +834,20 @@ function AreaAssignModal({
                           cursor: "pointer",
                           transition: "all 0.15s ease"
                         }}
-                        title="Click to switch to separate editing for this house"
+                        title={t("mpClickSeparateTitle")}
                       >
                         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                           <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text-primary)" }}>
                             #{f.flat_number}
                           </span>
                           {hasArea ? (
-                            <MdCheck size={12} color="#10b981" />
+                            <MdCheck size={12} color="var(--accent)" />
                           ) : (
-                            <span style={{ fontSize: 9, color: "var(--text-secondary)", opacity: 0.6 }}>Unset</span>
+                            <span style={{ fontSize: 9, color: "var(--text-secondary)", opacity: 0.6 }}>{t("mpUnset")}</span>
                           )}
                         </div>
-                        <span style={{ fontSize: 11, fontWeight: 700, color: hasArea ? "#10b981" : "var(--text-secondary)" }}>
-                          {hasArea ? `${Number(v).toLocaleString()} sq.ft` : "— sq.ft"}
+                        <span style={{ fontSize: 11, fontWeight: 700, color: hasArea ? "var(--accent)" : "var(--text-secondary)" }}>
+                          {hasArea ? t("mpValueSqft", { n: Number(v).toLocaleString() }) : t("mpDashSqft")}
                         </span>
                       </div>
                     );
@@ -845,22 +867,22 @@ function AreaAssignModal({
                 background: "var(--card-inner-bg)",
                 border: "1px solid var(--glass-border)",
                 borderRadius: 14,
-                padding: "12px 16px",
+                padding: isMobile ? "10px 12px" : "12px 14px",
                 display: "flex",
                 alignItems: "center",
-                justifyContent: "space-between",
+                justifyContent: "flex-start",
                 flexWrap: "wrap",
-                gap: 12
+                gap: 10
               }}>
                 {/* Search */}
-                <div style={{ position: "relative", minWidth: 180, flex: 1, maxWidth: 260 }}>
+                <div style={{ position: "relative", minWidth: isMobile ? 0 : 180, flex: "1 1 160px", maxWidth: isMobile ? "100%" : 260 }}>
                   <MdSearch size={15} style={{ position: "absolute", left: 11, top: "50%", transform: "translateY(-50%)", color: "var(--text-secondary)", pointerEvents: "none" }} />
                   <input
-                    className="input search-input"
-                    placeholder="Search house #..."
+                    className="input search-input mp-search-field"
+                    placeholder={t("mpSearchHousePh")}
                     value={search}
                     onChange={e => setSearch(e.target.value)}
-                    style={{ paddingLeft: 34, height: 36, fontSize: 12, borderRadius: 10 }}
+                    style={{ paddingLeft: 34, height: 36, fontSize: 12, borderRadius: 10, width: "100%", boxSizing: "border-box" }}
                   />
                   {search && (
                     <button onClick={() => setSearch("")} style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", color: "var(--text-secondary)", cursor: "pointer" }}>
@@ -870,11 +892,11 @@ function AreaAssignModal({
                 </div>
 
                 {/* Filter Tabs */}
-                <div style={{ display: "inline-flex", background: "var(--card-bg)", padding: 3, borderRadius: 8, border: "1px solid var(--glass-border)", gap: 2 }}>
+                <div style={{ display: "inline-flex", background: "var(--card-bg)", padding: 3, borderRadius: 8, border: "1px solid var(--glass-border)", gap: 2, maxWidth: "100%", overflowX: "auto", scrollbarWidth: "none" }}>
                   {[
-                    { key: "ALL", label: `All (${flats.length})` },
-                    { key: "EMPTY", label: `Empty (${emptyCount})` },
-                    { key: "CONFIGURED", label: `Configured (${configuredCount})` },
+                    { key: "ALL", label: t("mpFilterAllN", { n: flats.length }) },
+                    { key: "EMPTY", label: t("mpFilterEmptyN", { n: emptyCount }) },
+                    { key: "CONFIGURED", label: t("mpFilterConfiguredN", { n: configuredCount }) },
                   ].map(tab => (
                     <button
                       key={tab.key}
@@ -886,7 +908,7 @@ function AreaAssignModal({
                         border: "none",
                         fontSize: 11,
                         fontWeight: filterType === tab.key ? 700 : 500,
-                        background: filterType === tab.key ? "#10b981" : "transparent",
+                        background: filterType === tab.key ? "var(--accent)" : "transparent",
                         color: filterType === tab.key ? "#fff" : "var(--text-secondary)",
                         cursor: "pointer",
                         transition: "all 0.15s ease"
@@ -901,26 +923,27 @@ function AreaAssignModal({
                 {emptyCount > 0 && (
                   <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
                     <span style={{ fontSize: 11, color: "var(--text-secondary)", fontWeight: 600 }}>
-                      Fill {emptyCount} remaining:
+                      {t("mpFillRemaining", { n: emptyCount })}
                     </span>
-                    <div style={{ display: "flex", alignItems: "center", background: "var(--card-bg)", border: "1px solid var(--glass-border)", borderRadius: 8, padding: "0 8px", height: 32 }}>
+                    <div style={{ display: "flex", alignItems: "center", background: "var(--card-bg)", border: "1px solid var(--glass-border)", borderRadius: 8, padding: "0 8px", height: 32, overflow: "hidden" }}>
                       <input
+                        className="mp-bare-input"
                         type="number"
                         min="0"
-                        placeholder="sq.ft"
+                        placeholder={t("mpSqft")}
                         value={emptyFillVal}
                         onChange={e => setEmptyFillVal(e.target.value)}
                         onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); applyToEmpty(); } }}
                         style={{ width: 65, border: "none", background: "transparent", color: "var(--text-primary)", fontSize: 12, fontWeight: 700, outline: "none" }}
                       />
-                      <span style={{ fontSize: 10, color: "var(--text-secondary)" }}>sq.ft</span>
+                      <span style={{ fontSize: 10, color: "var(--text-secondary)" }}>{t("mpSqft")}</span>
                     </div>
                     <button
                       type="button"
                       onClick={() => applyToEmpty()}
-                      style={{ padding: "0 10px", height: 32, borderRadius: 8, background: "#10b981", color: "#fff", border: "none", fontSize: 11, fontWeight: 700, cursor: "pointer" }}
+                      style={{ padding: "0 10px", height: 32, borderRadius: 8, background: "var(--accent)", color: "#fff", border: "none", fontSize: 11, fontWeight: 700, cursor: "pointer" }}
                     >
-                      Apply to Empty
+                      {t("mpApplyToEmpty")}
                     </button>
                   </div>
                 )}
@@ -931,10 +954,10 @@ function AreaAssignModal({
                     type="button"
                     onClick={clearAll}
                     style={{ padding: "5px 10px", borderRadius: 8, background: "rgba(220,38,38,0.08)", border: "1px solid rgba(220,38,38,0.2)", color: "#fca5a5", fontSize: 11, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}
-                    title="Reset all house areas"
+                    title={t("mpResetAreasTitle")}
                   >
                     <MdRefresh size={13} />
-                    Reset
+                    {t("mpReset")}
                   </button>
                 )}
               </div>
@@ -942,16 +965,13 @@ function AreaAssignModal({
               {/* Grid of House Cards for Separate Entry */}
               {filteredFlats.length === 0 ? (
                 <div style={{ textAlign: "center", padding: "40px 20px", color: "var(--text-secondary)", fontSize: 13 }}>
-                  No houses match the current filter or search term.
+                  {t("mpNoHousesMatch")}
                 </div>
               ) : (
                 <div style={{
                   display: "grid",
-                  gridTemplateColumns: isMobile ? "1fr" : "repeat(auto-fill, minmax(240px, 1fr))",
-                  gap: 12,
-                  maxHeight: 390,
-                  overflowY: "auto",
-                  paddingRight: 4
+                  gridTemplateColumns: isMobile ? "1fr" : "repeat(auto-fill, minmax(220px, 1fr))",
+                  gap: 10,
                 }}>
                   {filteredFlats.map((f, idxInFiltered) => {
                     const val = values[f.id] ?? "";
@@ -964,8 +984,8 @@ function AreaAssignModal({
                       <div
                         key={f.id}
                         style={{
-                          background: hasArea ? "rgba(16, 185, 129, 0.05)" : "var(--card-inner-bg)",
-                          border: hasArea ? "1px solid rgba(16, 185, 129, 0.35)" : "1px solid var(--glass-border)",
+                          background: hasArea ? "rgba(var(--acct-purple-rgb), 0.05)" : "var(--card-inner-bg)",
+                          border: hasArea ? "1px solid rgba(var(--acct-purple-rgb), 0.35)" : "1px solid var(--glass-border)",
                           borderRadius: 14,
                           padding: "12px 14px",
                           display: "flex",
@@ -977,28 +997,28 @@ function AreaAssignModal({
                         {/* Card Header: House Number + Status */}
                         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                            <div style={{ width: 28, height: 28, borderRadius: 8, background: hasArea ? "rgba(16,185,129,0.18)" : "rgba(255,255,255,0.06)", display: "flex", alignItems: "center", justifyContent: "center", color: hasArea ? "#10b981" : "var(--text-secondary)" }}>
+                            <div style={{ width: 28, height: 28, borderRadius: 8, background: hasArea ? "rgba(var(--acct-purple-rgb),0.18)" : "rgba(255,255,255,0.06)", display: "flex", alignItems: "center", justifyContent: "center", color: hasArea ? "var(--accent)" : "var(--text-secondary)" }}>
                               <MdOutlineVilla size={16} />
                             </div>
                             <div>
                               <span style={{ fontWeight: 800, fontSize: 14, color: "var(--text-primary)" }}>
-                                House #{f.flat_number}
+                                {t("mpHouseNum", { num: f.flat_number })}
                               </span>
                               {f.resident_id && (
                                 <span style={{ fontSize: 9, marginLeft: 6, padding: "1px 5px", borderRadius: 4, background: "rgba(34,197,94,0.12)", color: "#86efac", fontWeight: 700 }}>
-                                  Occupied
+                                  {t("mpOccupied")}
                                 </span>
                               )}
                             </div>
                           </div>
 
                           {hasArea ? (
-                            <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 7px", borderRadius: 999, background: "rgba(16,185,129,0.16)", color: "#34d399", display: "inline-flex", alignItems: "center", gap: 3 }}>
-                              <MdCheck size={12} /> Ready
+                            <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 7px", borderRadius: 999, background: "rgba(var(--acct-purple-rgb),0.16)", color: "var(--accent-light)", display: "inline-flex", alignItems: "center", gap: 3 }}>
+                              <MdCheck size={12} /> {t("mpReady")}
                             </span>
                           ) : (
                             <span style={{ fontSize: 10, fontWeight: 600, padding: "2px 7px", borderRadius: 999, background: "rgba(255,255,255,0.06)", color: "var(--text-secondary)" }}>
-                              Empty
+                              {t("mpEmpty")}
                             </span>
                           )}
                         </div>
@@ -1008,17 +1028,19 @@ function AreaAssignModal({
                           display: "flex",
                           alignItems: "center",
                           background: "var(--card-bg)",
-                          border: `1px solid ${hasArea ? "rgba(16,185,129,0.3)" : "var(--glass-border)"}`,
+                          border: `1px solid ${hasArea ? "rgba(var(--acct-purple-rgb),0.3)" : "var(--glass-border)"}`,
                           borderRadius: 9,
                           padding: "0 10px",
-                          height: 38
+                          height: 38,
+                          overflow: "hidden",
                         }}>
                           <input
                             ref={el => { inputRefs.current[f.id] = el; }}
+                            className="mp-bare-input"
                             type="number"
                             min="0"
                             step="0.01"
-                            placeholder="Enter area..."
+                            placeholder={t("mpEnterAreaPh")}
                             value={val}
                             onChange={e => setValues(p => ({ ...p, [f.id]: e.target.value }))}
                             onKeyDown={e => handleKeyDown(e, idxInFiltered)}
@@ -1034,7 +1056,7 @@ function AreaAssignModal({
                             }}
                           />
                           <span style={{ fontSize: 11, color: "var(--text-secondary)", fontWeight: 700, marginLeft: 4 }}>
-                            sq.ft
+                            {t("mpSqft")}
                           </span>
                         </div>
 
@@ -1056,14 +1078,14 @@ function AreaAssignModal({
                                 alignItems: "center",
                                 gap: 3
                               }}
-                              title={`Copy ${prevVal} sq.ft from #${prevFlat.flat_number}`}
+                              title={t("mpCopyPrevTitle", { area: prevVal, num: prevFlat.flat_number })}
                             >
                               <MdContentCopy size={11} />
-                              <span>Copy Prev (#{prevFlat.flat_number})</span>
+                              <span>{t("mpCopyPrev", { num: prevFlat.flat_number })}</span>
                             </button>
                           ) : (
                             <span style={{ fontSize: 10, color: "var(--text-secondary)", opacity: 0.5 }}>
-                              {flatIdxInAll === 0 ? "First house" : "No prev area"}
+                              {flatIdxInAll === 0 ? t("mpFirstHouse") : t("mpNoPrevArea")}
                             </span>
                           )}
 
@@ -1077,17 +1099,17 @@ function AreaAssignModal({
                                 padding: "2px 4px",
                                 fontSize: 10,
                                 fontWeight: 700,
-                                color: "#10b981",
+                                color: "var(--accent)",
                                 cursor: "pointer",
                                 display: "flex",
                                 alignItems: "center",
                                 gap: 3,
                                 marginLeft: "auto"
                               }}
-                              title={`Apply ${val} sq.ft to all remaining houses below`}
+                              title={t("mpFillDownTitle", { area: val })}
                             >
                               <MdArrowDownward size={11} />
-                              <span>Fill Down</span>
+                              <span>{t("mpFillDown")}</span>
                             </button>
                           )}
                         </div>
@@ -1098,8 +1120,8 @@ function AreaAssignModal({
               )}
 
               {/* Keyboard navigation tip */}
-              <div style={{ fontSize: 11, color: "var(--text-secondary)", textAlign: "center", padding: "4px 0" }}>
-                💡 <strong>Speed Tip:</strong> Press <kbd style={{ background: "rgba(255,255,255,0.08)", padding: "1px 5px", borderRadius: 4, border: "1px solid var(--glass-border)" }}>Enter</kbd> or <kbd style={{ background: "rgba(255,255,255,0.08)", padding: "1px 5px", borderRadius: 4, border: "1px solid var(--glass-border)" }}>↓</kbd> to quickly jump to the next house.
+              <div style={{ fontSize: 11, color: "var(--text-secondary)", textAlign: "center", padding: "2px 4px 4px", lineHeight: 1.45 }}>
+                💡 <strong>{t("mpSpeedTip")}</strong> {t("mpSpeedTipBody")}
               </div>
             </div>
           )}
@@ -1107,44 +1129,44 @@ function AreaAssignModal({
         </div>
 
         {/* Modal Sticky Footer */}
-        <div style={{
-          padding: "16px 24px",
-          borderTop: "1px solid var(--glass-border)",
-          background: "var(--card-bg)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          flexWrap: "wrap",
-          gap: 12
-        }}>
-          <div style={{ fontSize: 12, color: "var(--text-secondary)", display: "flex", alignItems: "center", gap: 10 }}>
-            <span>Configured: <strong style={{ color: "var(--text-primary)" }}>{configuredCount}</strong> of {flats.length} houses</span>
-            {totalArea > 0 && <span>· Total: <strong style={{ color: "#10b981" }}>{totalArea.toLocaleString()} sq.ft</strong></span>}
+        <div
+          className="sa-modal-footer"
+          style={{
+            flexShrink: 0,
+            padding: isMobile ? "12px 14px calc(12px + env(safe-area-inset-bottom))" : "14px 20px 16px",
+            display: "flex",
+            alignItems: isMobile ? "stretch" : "center",
+            justifyContent: "space-between",
+            flexDirection: isMobile ? "column" : "row",
+            flexWrap: "wrap",
+            gap: 10,
+          }}
+        >
+          <div style={{ fontSize: 12, color: "var(--text-secondary)", display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", minWidth: 0, flex: 1 }}>
+            <span>{t("mpConfiguredOf", { configured: configuredCount, total: flats.length })}</span>
+            {totalArea > 0 && <span>· {t("mpTotalSqft", { area: totalArea.toLocaleString() })}</span>}
           </div>
 
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <button
+          <div style={{ display: "flex", alignItems: "center", gap: 8, width: isMobile ? "100%" : "auto", marginLeft: isMobile ? 0 : "auto" }}>
+            <GlobalButton
               type="button"
+              variant="cancel"
               onClick={onSkip}
-              className="btn-ghost"
-              style={{ padding: "8px 16px", borderRadius: 12, fontSize: 12, fontWeight: 700 }}
+              fullWidth={isMobile}
             >
-              Skip for Now
-            </button>
-
-            <button
+              {t("mpSkipForNow")}
+            </GlobalButton>
+            <GlobalButton
               type="button"
+              variant="add"
+              icon={MdCheck}
+              loading={saving}
+              borderDraw
               onClick={onSave}
-              disabled={saving}
-              className="sa-add-btn sa-add-pill sa-btn-primary"
-              style={{ fontWeight: 700, opacity: saving ? 0.6 : 1 }}
+              fullWidth={isMobile}
             >
-              <span className="sa-pill-blob sa-pill-blob1" />
-              <span className="sa-pill-inner" style={{ gap: 6 }}>
-                {saving ? <Spinner size={15} /> : <MdCheck size={16} />}
-                <span>{saving ? "Saving..." : "Save Built-Up Areas"}</span>
-              </span>
-            </button>
+              {t("mpSaveAreas")}
+            </GlobalButton>
           </div>
         </div>
       </div>
@@ -1217,25 +1239,25 @@ function BlocksTab({
   };
 
   const handleCreate = async (e) => {
-    e.preventDefault();
+    e?.preventDefault?.();
     let payload = { name, society_id: getSocietyId(), property_type: propertyType };
 
-    const nameError = getTitleError(name, "Phase / Block name");
+    const nameError = getTitleError(name, t("mpPhaseNameLabel"));
     if (nameError) return setError(nameError);
 
     if (propertyType === "ROW_HOUSE") {
-      const housesError = getNumberError(totalHouses, "Total houses", { min: 1, allowZero: false, allowDecimal: false });
+      const housesError = getNumberError(totalHouses, t("mpTotalHousesLabel"), { min: 1, allowZero: false, allowDecimal: false });
       if (housesError) return setError(housesError);
       payload.flats_per_floor = Number(totalHouses);
       if (areaStrategy !== "SEPARATE") {
-        const areaError = getPositiveAmountError(commonArea, "Built-up area");
+        const areaError = getPositiveAmountError(commonArea, t("mpBuiltUpAreaLabel"));
         if (areaError) return setError(areaError);
         payload.area_sqft = Number(commonArea);
       }
     } else {
-      const floorCountError = getNumberError(floorCount, "No. of floors", { min: 1, allowZero: false, allowDecimal: false });
+      const floorCountError = getNumberError(floorCount, t("mpFloorCountLabel"), { min: 1, allowZero: false, allowDecimal: false });
       if (floorCountError) return setError(floorCountError);
-      const flatsPerFloorError = getNumberError(flatsPerFloor, "Units per floor", { min: 1, allowZero: false, allowDecimal: false });
+      const flatsPerFloorError = getNumberError(flatsPerFloor, t("mpUnitsPerFloorLabel"), { min: 1, allowZero: false, allowDecimal: false });
       if (flatsPerFloorError) return setError(flatsPerFloorError);
       payload.floor_count     = Number(floorCount);
       payload.flats_per_floor = Number(flatsPerFloor);
@@ -1272,7 +1294,7 @@ function BlocksTab({
       }
 
       loadBlocks();
-    } catch (err) { setError(err.response?.data?.message || "Failed to create block"); }
+    } catch (err) { setError(err.response?.data?.message || t("mpFailedCreateBlock")); }
     finally { setSubmitting(false); }
   };
 
@@ -1284,12 +1306,12 @@ function BlocksTab({
         .map(([id, area_sqft]) => ({ flat_id: Number(id), area_sqft: Number(area_sqft) }));
       if (updates.length === 0) { setAreaAssignFlats(null); return; }
       await API.put("/flats/bulk-update", { flats: updates });
-      toast.success(`Saved built-up areas for ${updates.length} row house(s)!`);
+      toast.success(t("mpSavedRowHouses", { n: updates.length }));
       setAreaAssignFlats(null);
       setAreaAssignValues({});
       setRefreshFlatsKey(k => k + 1);
       loadBlocks();
-    } catch (err) { setError(err?.response?.data?.message || "Failed to save areas"); }
+    } catch (err) { setError(err?.response?.data?.message || t("mpFailedSaveAreas")); }
     finally { setSavingAreas(false); }
   };
 
@@ -1311,58 +1333,56 @@ function BlocksTab({
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-      {error && (
+      {error && !showForm && (
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "var(--stat-red-bg)", border: "1px solid var(--stat-red-border)", borderRadius: 12, padding: "10px 14px", fontSize: 13, color: "var(--stat-red-color)" }}>
           {error}
           <button onClick={() => setError("")} style={{ background: "none", border: "none", cursor: "pointer", color: "inherit", display: "flex" }}><MdClose size={15} /></button>
         </div>
       )}
 
-      {/* create form */}
-      {showForm && (
-        <div className="bg-card animate-scaleIn" style={{ padding: "22px 24px", borderRadius: 20, maxWidth: 860, border: "1px solid var(--glass-border)", boxShadow: "0 12px 40px rgba(0,0,0,0.25)" }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 18 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-              <div style={{ width: 38, height: 38, borderRadius: 12, background: "linear-gradient(135deg, #4f46e5, #7c3aed)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", boxShadow: "0 6px 18px rgba(79,70,229,0.3)" }}>
-                <MdAdd size={20} />
-              </div>
-              <div>
-                <h3 style={{ margin: 0, fontWeight: 800, fontSize: 16, color: "var(--text-primary)", letterSpacing: "-0.01em" }}>
-                  {t("mpCreateNewBlock") || "Create New Property Phase"}
-                </h3>
-                <p style={{ margin: "2px 0 0", fontSize: 12, color: "var(--text-secondary)" }}>
-                  Add a new apartment tower or row house phase to your society layout.
-                </p>
-              </div>
-            </div>
-
-            <button
-              onClick={() => setShowForm(false)}
-              style={{ width: 32, height: 32, borderRadius: 8, border: "1px solid var(--glass-border)", background: "var(--card-inner-bg)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-secondary)" }}
-            >
-              <MdClose size={16} />
-            </button>
+      <GlobalModal
+        isOpen={showForm}
+        onClose={() => { setShowForm(false); setError(""); }}
+        title={t("mpCreateNewBlock")}
+        subtitle={t("mpCreatePhaseHint")}
+        icon={MdAdd}
+        size={isMobile ? "md" : "lg"}
+        showFooter
+        submitLabel={t("mpCreate")}
+        cancelLabel={t("cancel")}
+        onSubmit={handleCreate}
+        submitLoading={submitting}
+        submitDisabled={submitting}
+        submitIcon={MdAdd}
+        submitVariant="add"
+        submitBorderDraw
+        bodyClassName="modal-scroll-thin"
+      >
+        {error && (
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "var(--stat-red-bg)", border: "1px solid var(--stat-red-border)", borderRadius: 12, padding: "10px 14px", fontSize: 13, color: "var(--stat-red-color)", marginBottom: 14 }}>
+            {error}
+            <button type="button" onClick={() => setError("")} style={{ background: "none", border: "none", cursor: "pointer", color: "inherit", display: "flex" }}><MdClose size={15} /></button>
           </div>
-
-          <form onSubmit={handleCreate} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-            <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 14 }}>
+        )}
+        <form onSubmit={handleCreate} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 14 }}>
               <div>
                 <label style={{ fontSize: 11, fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.05em", display: "block", marginBottom: 6 }}>
-                  Phase / Block Name *
+                  {t("mpPhaseName")}
                 </label>
                 <input
                   className="input"
-                  placeholder="e.g. Phase 1, Palm Villas, or Wing A"
+                  placeholder={t("mpPhaseNamePh")}
                   value={name}
                   onChange={e => setName(e.target.value)}
-                  style={{ height: 42, borderRadius: 10, fontSize: 13 }}
+                  style={{ height: 42, borderRadius: 10, fontSize: 13, width: "100%", boxSizing: "border-box" }}
                   required
                 />
               </div>
 
               <div>
                 <label style={{ fontSize: 11, fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.05em", display: "block", marginBottom: 6 }}>
-                  Property Type *
+                  {t("mpPropertyType")}
                 </label>
                 <Select
                   className="input"
@@ -1371,19 +1391,20 @@ function BlocksTab({
                     setPropertyType(e.target.value);
                     setFloorCount(""); setFlatsPerFloor(""); setTotalHouses(""); setCommonArea("");
                   }}
-                  style={{ height: 42, borderRadius: 10, fontSize: 13 }}
+                  rootStyle={{ width: "100%" }}
+                  style={{ height: 42, borderRadius: 10, fontSize: 13, width: "100%" }}
                 >
-                  <option value="APARTMENT">🏢 Apartments / Flats (Multi-Floor Towers)</option>
-                  <option value="ROW_HOUSE">🏡 Row House / Villas (Ground-Level Units)</option>
-                  <option value="COMMERCIAL">🏬 Commercial Complex (Offices / Shops)</option>
+                  <option value="APARTMENT">🏢 {t("mpTypeApartmentFull")}</option>
+                  <option value="ROW_HOUSE">🏡 {t("mpTypeRowHouseFull")}</option>
+                  <option value="COMMERCIAL">🏬 {t("mpTypeCommercialFull")}</option>
                 </Select>
               </div>
             </div>
 
             {propertyType === "ROW_HOUSE" ? (
               <div style={{
-                background: "rgba(16,185,129,0.06)",
-                border: "1px solid rgba(16,185,129,0.25)",
+                background: "rgba(var(--acct-purple-rgb),0.06)",
+                border: "1px solid rgba(var(--acct-purple-rgb),0.25)",
                 borderRadius: 16,
                 padding: "16px 18px",
                 display: "flex",
@@ -1392,15 +1413,15 @@ function BlocksTab({
               }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <div style={{ width: 30, height: 30, borderRadius: 9, background: "rgba(16,185,129,0.2)", display: "flex", alignItems: "center", justifyContent: "center", color: "#10b981" }}>
+                    <div style={{ width: 30, height: 30, borderRadius: 9, background: "rgba(var(--acct-purple-rgb),0.2)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--accent)" }}>
                       <MdHomeWork size={16} />
                     </div>
                     <div>
                       <span style={{ fontSize: 13, fontWeight: 800, color: "var(--text-primary)" }}>
-                        Row House Phase Configuration
+                        {t("mpRowHouseConfig")}
                       </span>
                       <p style={{ margin: "2px 0 0", fontSize: 11, color: "var(--text-secondary)" }}>
-                        Configure total houses and built-up area allocation strategy.
+                        {t("mpRowHouseConfigHint")}
                       </p>
                     </div>
                   </div>
@@ -1409,16 +1430,16 @@ function BlocksTab({
                 {/* Total Houses Input */}
                 <div>
                   <label style={{ fontSize: 11, fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.05em", display: "block", marginBottom: 6 }}>
-                    Total Houses in Phase *
+                    {t("mpTotalHouses")}
                   </label>
                   <input
                     className="input"
                     type="number"
                     min={1}
-                    placeholder="e.g. 20"
+                    placeholder={t("mpTotalHousesPh")}
                     value={totalHouses}
                     onChange={e => setTotalHouses(e.target.value)}
-                    style={{ height: 42, borderRadius: 10, fontSize: 13, background: "var(--card-bg)" }}
+                    style={{ height: 42, borderRadius: 10, fontSize: 13, background: "var(--card-bg)", width: "100%", boxSizing: "border-box" }}
                     required
                   />
                 </div>
@@ -1426,7 +1447,7 @@ function BlocksTab({
                 {/* Strategy Selector (3 Choices: Both, Same, Separate) */}
                 <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                   <label style={{ fontSize: 11, fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                    Area Assignment Strategy:
+                    {t("mpAreaStrategy")}
                   </label>
 
                   <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(3, 1fr)", gap: 10 }}>
@@ -1434,8 +1455,8 @@ function BlocksTab({
                     <div
                       onClick={() => setAreaStrategy("BOTH")}
                       style={{
-                        background: areaStrategy === "BOTH" ? "rgba(16,185,129,0.15)" : "var(--card-bg)",
-                        border: areaStrategy === "BOTH" ? "1.5px solid #10b981" : "1px solid var(--glass-border)",
+                        background: areaStrategy === "BOTH" ? "rgba(var(--acct-purple-rgb),0.15)" : "var(--card-bg)",
+                        border: areaStrategy === "BOTH" ? "1.5px solid var(--accent)" : "1px solid var(--glass-border)",
                         borderRadius: 12,
                         padding: "12px 14px",
                         cursor: "pointer",
@@ -1446,15 +1467,15 @@ function BlocksTab({
                       }}
                     >
                       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                        <span style={{ fontSize: 12, fontWeight: 800, color: areaStrategy === "BOTH" ? "#10b981" : "var(--text-primary)", display: "flex", alignItems: "center", gap: 5 }}>
-                          <MdSpeed size={14} /> 🔄 Use Both
+                        <span style={{ fontSize: 12, fontWeight: 800, color: areaStrategy === "BOTH" ? "var(--accent)" : "var(--text-primary)", display: "flex", alignItems: "center", gap: 5 }}>
+                          <MdSpeed size={14} /> 🔄 {t("mpUseBoth")}
                         </span>
-                        <span style={{ fontSize: 9, fontWeight: 700, padding: "1px 5px", borderRadius: 4, background: "#10b981", color: "#fff" }}>
-                          POPULAR
+                        <span style={{ fontSize: 9, fontWeight: 700, padding: "1px 5px", borderRadius: 4, background: "var(--accent)", color: "#fff" }}>
+                          {t("mpPopular")}
                         </span>
                       </div>
                       <p style={{ margin: 0, fontSize: 11, color: "var(--text-secondary)", lineHeight: 1.3 }}>
-                        Set base area for all houses, then tweak individual corner/custom villas.
+                        {t("mpUseBothHint")}
                       </p>
                     </div>
 
@@ -1462,8 +1483,8 @@ function BlocksTab({
                     <div
                       onClick={() => setAreaStrategy("SAME")}
                       style={{
-                        background: areaStrategy === "SAME" ? "rgba(16,185,129,0.15)" : "var(--card-bg)",
-                        border: areaStrategy === "SAME" ? "1.5px solid #10b981" : "1px solid var(--glass-border)",
+                        background: areaStrategy === "SAME" ? "rgba(var(--acct-purple-rgb),0.15)" : "var(--card-bg)",
+                        border: areaStrategy === "SAME" ? "1.5px solid var(--accent)" : "1px solid var(--glass-border)",
                         borderRadius: 12,
                         padding: "12px 14px",
                         cursor: "pointer",
@@ -1474,12 +1495,12 @@ function BlocksTab({
                       }}
                     >
                       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                        <span style={{ fontSize: 12, fontWeight: 800, color: areaStrategy === "SAME" ? "#10b981" : "var(--text-primary)", display: "flex", alignItems: "center", gap: 5 }}>
-                          <MdDoneAll size={14} /> ⚡ All Same
+                        <span style={{ fontSize: 12, fontWeight: 800, color: areaStrategy === "SAME" ? "var(--accent)" : "var(--text-primary)", display: "flex", alignItems: "center", gap: 5 }}>
+                          <MdDoneAll size={14} /> ⚡ {t("mpAllSame")}
                         </span>
                       </div>
                       <p style={{ margin: 0, fontSize: 11, color: "var(--text-secondary)", lineHeight: 1.3 }}>
-                        Every row house in this phase has the exact same built-up area.
+                        {t("mpAllSameHint")}
                       </p>
                     </div>
 
@@ -1487,8 +1508,8 @@ function BlocksTab({
                     <div
                       onClick={() => setAreaStrategy("SEPARATE")}
                       style={{
-                        background: areaStrategy === "SEPARATE" ? "rgba(16,185,129,0.15)" : "var(--card-bg)",
-                        border: areaStrategy === "SEPARATE" ? "1.5px solid #10b981" : "1px solid var(--glass-border)",
+                        background: areaStrategy === "SEPARATE" ? "rgba(var(--acct-purple-rgb),0.15)" : "var(--card-bg)",
+                        border: areaStrategy === "SEPARATE" ? "1.5px solid var(--accent)" : "1px solid var(--glass-border)",
                         borderRadius: 12,
                         padding: "12px 14px",
                         cursor: "pointer",
@@ -1499,12 +1520,12 @@ function BlocksTab({
                       }}
                     >
                       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                        <span style={{ fontSize: 12, fontWeight: 800, color: areaStrategy === "SEPARATE" ? "#10b981" : "var(--text-primary)", display: "flex", alignItems: "center", gap: 5 }}>
-                          <MdTune size={14} /> ✍️ Separate
+                        <span style={{ fontSize: 12, fontWeight: 800, color: areaStrategy === "SEPARATE" ? "var(--accent)" : "var(--text-primary)", display: "flex", alignItems: "center", gap: 5 }}>
+                          <MdTune size={14} /> ✍️ {t("mpSeparate")}
                         </span>
                       </div>
                       <p style={{ margin: 0, fontSize: 11, color: "var(--text-secondary)", lineHeight: 1.3 }}>
-                        Houses have different sizes. Fill each house individually in the editor.
+                        {t("mpSeparateHint")}
                       </p>
                     </div>
                   </div>
@@ -1523,30 +1544,31 @@ function BlocksTab({
                   }}>
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 6 }}>
                       <label style={{ fontSize: 11, fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                        {areaStrategy === "BOTH" ? "Common Base Area (sq.ft) *" : "Uniform Built-Up Area (sq.ft) *"}
+                        {areaStrategy === "BOTH" ? t("mpCommonBaseArea") : t("mpUniformArea")}
                       </label>
                       <span style={{ fontSize: 11, color: "var(--text-secondary)" }}>
-                        {areaStrategy === "BOTH" ? "Will pre-fill all houses, ready for tweaking" : "Applies to all houses equally"}
+                        {areaStrategy === "BOTH" ? t("mpWillPrefill") : t("mpAppliesEqually")}
                       </span>
                     </div>
 
-                    <div style={{ display: "flex", alignItems: "center", background: "var(--card-inner-bg)", border: "1px solid rgba(16,185,129,0.3)", borderRadius: 10, padding: "0 12px", height: 42 }}>
-                      <MdSquareFoot size={18} style={{ color: "#10b981", marginRight: 8 }} />
+                    <div style={{ display: "flex", alignItems: "center", background: "var(--card-inner-bg)", border: "1px solid rgba(var(--acct-purple-rgb),0.3)", borderRadius: 10, padding: "0 12px", height: 42, overflow: "hidden" }}>
+                      <MdSquareFoot size={18} style={{ color: "var(--accent)", marginRight: 8, flexShrink: 0 }} />
                       <input
+                        className="mp-bare-input"
                         type="number"
                         min={0}
                         step="0.01"
-                        placeholder="e.g. 1500"
+                        placeholder="1500"
                         value={commonArea}
                         onChange={e => setCommonArea(e.target.value)}
-                        style={{ flex: 1, border: "none", background: "transparent", color: "var(--text-primary)", fontSize: 13, fontWeight: 700, outline: "none" }}
+                        style={{ flex: 1, minWidth: 0, border: "none", background: "transparent", color: "var(--text-primary)", fontSize: 13, fontWeight: 700, outline: "none" }}
                       />
-                      <span style={{ fontSize: 11, color: "var(--text-secondary)", fontWeight: 700 }}>sq.ft</span>
+                      <span style={{ fontSize: 11, color: "var(--text-secondary)", fontWeight: 700 }}>{t("mpSqft")}</span>
                     </div>
 
                     {/* Presets */}
                     <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-                      <span style={{ fontSize: 10, color: "var(--text-secondary)", fontWeight: 600 }}>Quick presets:</span>
+                      <span style={{ fontSize: 10, color: "var(--text-secondary)", fontWeight: 600 }}>{t("mpQuickPresets")}</span>
                       {[1000, 1200, 1500, 1800, 2000, 2400].map(val => (
                         <button
                           type="button"
@@ -1557,95 +1579,70 @@ function BlocksTab({
                             borderRadius: 6,
                             fontSize: 10,
                             fontWeight: 700,
-                            background: commonArea === String(val) ? "#10b981" : "var(--card-inner-bg)",
+                            background: commonArea === String(val) ? "var(--accent)" : "var(--card-inner-bg)",
                             color: commonArea === String(val) ? "#fff" : "var(--text-secondary)",
                             border: "1px solid var(--glass-border)",
                             cursor: "pointer"
                           }}
                         >
-                          {val} sq.ft
+                          {t("mpValueSqft", { n: val })}
                         </button>
                       ))}
                     </div>
                   </div>
                 ) : (
                   <div style={{
-                    background: "rgba(91,141,239,0.08)",
-                    border: "1px solid rgba(91,141,239,0.22)",
+                    background: "rgba(var(--acct-purple-rgb),0.08)",
+                    border: "1px solid rgba(var(--acct-purple-rgb),0.22)",
                     borderRadius: 12,
                     padding: "12px 14px",
                     display: "flex",
                     alignItems: "center",
                     gap: 10
                   }}>
-                    <MdTune size={20} color="#94B5F5" />
+                    <MdTune size={20} color="var(--accent)" />
                     <span style={{ fontSize: 12, color: "var(--text-primary)", lineHeight: 1.4 }}>
-                      <strong>Separate Filling Mode selected:</strong> After clicking <em>Create Property Phase</em>, the interactive Separate Filling modal will open immediately so you can enter or copy each house's area with fast keyboard navigation!
+                      {t("mpSeparateModeHint")}
                     </span>
                   </div>
                 )}
               </div>
             ) : (
-              <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 14 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 14 }}>
                 <div>
                   <label style={{ fontSize: 11, fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.05em", display: "block", marginBottom: 6 }}>
-                    No. of Floors *
+                    {t("mpFloorCount")}
                   </label>
                   <input
                     className="input"
                     type="number"
                     min={1}
-                    placeholder="e.g. 5"
+                    placeholder={t("mpFloorCountPh")}
                     value={floorCount}
                     onChange={e => setFloorCount(e.target.value)}
-                    style={{ height: 42, borderRadius: 10, fontSize: 13 }}
+                    style={{ height: 42, borderRadius: 10, fontSize: 13, width: "100%", boxSizing: "border-box" }}
                     required
                   />
                 </div>
                 <div>
                   <label style={{ fontSize: 11, fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.05em", display: "block", marginBottom: 6 }}>
-                    Units per Floor *
+                    {t("mpUnitsPerFloor")}
                   </label>
                   <input
                     className="input"
                     type="number"
                     min={1}
-                    placeholder="e.g. 4"
+                    placeholder={t("mpUnitsPerFloorPh")}
                     value={flatsPerFloor}
                     onChange={e => setFlatsPerFloor(e.target.value)}
-                    style={{ height: 42, borderRadius: 10, fontSize: 13 }}
+                    style={{ height: 42, borderRadius: 10, fontSize: 13, width: "100%", boxSizing: "border-box" }}
                     required
                   />
                 </div>
               </div>
             )}
-
-            <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 10, marginTop: 4 }}>
-              <button
-                type="button"
-                onClick={() => setShowForm(false)}
-                className="btn-ghost"
-                style={{ padding: "9px 18px", borderRadius: 12, fontSize: 13, fontWeight: 700 }}
-              >
-                Cancel
-              </button>
-
-              <button
-                type="submit"
-                disabled={submitting}
-                className="sa-add-btn sa-add-pill sa-btn-primary"
-                style={{ fontWeight: 700, opacity: submitting ? 0.65 : 1 }}
-              >
-                <span className="sa-pill-blob sa-pill-blob1" />
-                <span className="sa-pill-inner" style={{ gap: 6 }}>
-                  {submitting ? <Spinner size={15} /> : <MdAdd size={17} />}
-                  <span>{submitting ? "Creating Phase..." : (t("mpCreate") || "Create Property Phase")}</span>
-                </span>
-              </button>
-            </div>
           </form>
-        </div>
-      )}
+      </GlobalModal>
 
       {/* Area assignment modal popup for row houses */}
       {areaAssignFlats && (
@@ -1683,23 +1680,23 @@ function BlocksTab({
                 <div key={b.id} className="inner-card animate-fadeIn" style={{ borderRadius: 14, overflow: "hidden" }}>
                   <div style={{ height: 3, background: isRowHouse ? "linear-gradient(90deg,#10b981,#34d399)" : "linear-gradient(90deg,#4C76C9,#5A3BA2)" }} />
                   <div style={{ padding: "12px 14px", display: "flex", flexDirection: "column", gap: 10 }}>
-                    <div style={{ display: "flex", alignItems: "center", justifyItems: "space-between" }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 10, flex: 1 }}>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, minWidth: 0 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 10, flex: 1, minWidth: 0 }}>
                         <div style={{ width: 36, height: 36, borderRadius: 10, background: isRowHouse ? "rgba(16,185,129,0.12)" : "rgba(107,70,193,0.12)", border: isRowHouse ? "1px solid rgba(16,185,129,0.22)" : "1px solid rgba(107,70,193,0.22)", display: "flex", alignItems: "center", justifyContent: "center", color: isRowHouse ? "#10b981" : "#9F87D7", flexShrink: 0 }}>
                           {isRowHouse ? <MdHomeWork size={18} /> : <MdGridView size={18} />}
                         </div>
-                        <div>
-                          <p style={{ fontWeight: 700, fontSize: 14, color: "var(--text-primary)", margin: 0 }}>{b.name}</p>
+                        <div style={{ minWidth: 0 }}>
+                          <p style={{ fontWeight: 700, fontSize: 14, color: "var(--text-primary)", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{b.name}</p>
                           <span style={{ fontSize: "10px", fontWeight: "600", padding: "2px 6px", borderRadius: "4px", background: isRowHouse ? "rgba(16,185,129,0.1)" : "rgba(91,141,239,0.1)", color: isRowHouse ? "#10b981" : "#5B8DEF", display: "inline-block", marginTop: 4 }}>
-                            {b.property_type || "APARTMENT"}
+                            {propertyTypeLabel(b.property_type, t)}
                           </span>
                         </div>
                       </div>
                       <button
                         onClick={() => setSelectedBlock(selectedBlock?.id === b.id ? null : b)}
-                        style={{ display: "flex", alignItems: "center", gap: 4, padding: "5px 10px", borderRadius: 8, background: "rgba(91,141,239,0.10)", border: "1px solid rgba(91,141,239,0.22)", color: "#94B5F5", fontSize: 11, fontWeight: 600, cursor: "pointer" }}
+                        style={{ display: "flex", alignItems: "center", gap: 4, padding: "5px 10px", borderRadius: 8, background: "rgba(91,141,239,0.10)", border: "1px solid rgba(91,141,239,0.22)", color: "#94B5F5", fontSize: 11, fontWeight: 600, cursor: "pointer", flexShrink: 0 }}
                       >
-                        {isRowHouse ? "Houses" : "Floors"} <MdArrowForwardIos size={10} style={{ transform: selectedBlock?.id === b.id ? "rotate(90deg)" : "none", transition: "transform 0.2s" }} />
+                        {isRowHouse ? t("mpHouses") : t("mpFloors")} <MdArrowForwardIos size={10} style={{ transform: selectedBlock?.id === b.id ? "rotate(90deg)" : "none", transition: "transform 0.2s" }} />
                       </button>
                     </div>
 
@@ -1737,10 +1734,10 @@ function BlocksTab({
             <table className="data-table">
               <thead>
                 <tr>
-                  <th style={{ width: 64 }}>Sr. No.</th>
-                  <th>{t("mpBlockName") || "Phase / Block"}</th>
-                  <th>Type</th>
-                  <th style={{ textAlign: "right" }}>{t("mpActions") || "Actions"}</th>
+                  <th style={{ width: 64 }}>{t("srNo")}</th>
+                  <th>{t("mpBlockName")}</th>
+                  <th>{t("mpType")}</th>
+                  <th style={{ textAlign: "right" }}>{t("mpActions")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -1761,7 +1758,7 @@ function BlocksTab({
                         </td>
                         <td>
                           <span style={{ fontSize: "11px", fontWeight: "600", padding: "4px 8px", borderRadius: "6px", background: isRowHouse ? "rgba(16,185,129,0.1)" : "rgba(91,141,239,0.1)", color: isRowHouse ? "#10b981" : "#5B8DEF" }}>
-                            {b.property_type || "APARTMENT"}
+                            {propertyTypeLabel(b.property_type, t)}
                           </span>
                         </td>
                         <td style={{ textAlign: "right" }}>
@@ -1771,7 +1768,7 @@ function BlocksTab({
                               style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "5px 12px", borderRadius: 8, fontSize: 12, fontWeight: 600, background: "rgba(107,70,193,0.12)", color: "var(--accent, #6B46C1)", border: "1px solid rgba(107,70,193,0.25)", cursor: "pointer" }}
                             >
                               {isRowHouse ? <MdHomeWork size={13} /> : <MdLayers size={13} />}
-                              {selectedBlock?.id === b.id ? "Hide" : (isRowHouse ? "Houses" : "Floors")}
+                              {selectedBlock?.id === b.id ? t("mpHide") : (isRowHouse ? t("mpHouses") : t("mpFloors"))}
                             </button>
                             {canEdit && (
                               <>
@@ -1809,7 +1806,7 @@ function BlocksTab({
               </tbody>
             </table>
             <div className="table-footer">
-              <span style={{ fontSize: 12, color: "var(--text-secondary)" }}>{filtered.length} {t("mpOf") || "of"} {blocks.length} Phases</span>
+              <span style={{ fontSize: 12, color: "var(--text-secondary)" }}>{t("mpPhasesOf", { n: filtered.length, total: blocks.length })}</span>
             </div>
           </>
         )}
@@ -1829,7 +1826,7 @@ function InlineFloors({ blockId, isMobile, t, canEdit = true }) {
 
   useEffect(() => {
     if (isNaN(safeBlockId) || safeBlockId <= 0) {
-      setError("Missing or invalid block ID");
+      setError(t("mpInvalidBlockId"));
       setLoading(false);
       return;
     }
@@ -1837,18 +1834,18 @@ function InlineFloors({ blockId, isMobile, t, canEdit = true }) {
       .then(r => setFloors(r.data || []))
       .catch(err => {
         console.error("InlineFloors fetch error:", err?.response?.status, err?.response?.data);
-        setError(err?.response?.data?.message || "Failed to load floors");
+        setError(err?.response?.data?.message || t("mpFailedLoadFloors"));
       })
       .finally(() => setLoading(false));
   }, [safeBlockId]);
 
   if (loading) return <div style={{ padding: "14px 0" }}><Spinner size={15} /></div>;
   if (error)   return <p style={{ fontSize: 12, color: "var(--stat-red-color)", padding: "10px 0" }}>{error}</p>;
-  if (!floors.length) return <p style={{ fontSize: 12, color: "var(--text-secondary)", padding: "10px 0" }}>No floors found.</p>;
+  if (!floors.length) return <p style={{ fontSize: 12, color: "var(--text-secondary)", padding: "10px 0" }}>{t("mpNoFloorsFound")}</p>;
 
   return (
     <div style={{ marginTop: 10, padding: 10, background: "rgba(255,255,255,0.02)", borderRadius: 12 }}>
-      <p style={{ fontSize: 12, fontWeight: 600, color: "var(--text-secondary)", marginBottom: 8 }}>Floors in this Block</p>
+      <p style={{ fontSize: 12, fontWeight: 600, color: "var(--text-secondary)", marginBottom: 8 }}>{t("mpFloorsInBlock")}</p>
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
         {floors.map(floor => {
           const floorId    = safeNum(floor.id);
@@ -1861,10 +1858,10 @@ function InlineFloors({ blockId, isMobile, t, canEdit = true }) {
               >
                 <span style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)" }}>
                   <MdLayers size={14} style={{ display: "inline", marginRight: 6, color: "var(--accent)" }} />
-                  Floor {floor.floor_number}
+                  {t("mpFloorN", { n: floor.floor_number })}
                 </span>
                 <span style={{ fontSize: 11, color: "var(--text-secondary)", display: "flex", alignItems: "center", gap: 4 }}>
-                  {isSelected ? "Hide Units" : "View Units"}
+                  {isSelected ? t("mpHideUnits") : t("mpViewUnits")}
                   <MdArrowForwardIos size={10} style={{ transform: isSelected ? "rotate(90deg)" : "none", transition: "transform 0.2s" }} />
                 </span>
               </div>
@@ -1900,7 +1897,7 @@ function InlineFlats({ floorId, blockId, isMobile, t, onOpenAreaModal, blockName
 
     // ✅ Hard stop — never fire the API call with an invalid blockId
     if (isNaN(safeBlockId) || safeBlockId <= 0) {
-      setError("Missing or invalid block ID");
+      setError(t("mpInvalidBlockId"));
       setLoading(false);
       return;
     }
@@ -1939,7 +1936,7 @@ function InlineFlats({ floorId, blockId, isMobile, t, onOpenAreaModal, blockName
     try {
       const numVal = areaValue !== "" ? Number(areaValue) : null;
       if (numVal !== null && (isNaN(numVal) || numVal < 0)) {
-        setError("Area must be a non-negative number");
+        setError(t("mpAreaNonNegative"));
         return;
       }
       await API.put(`/flats/update/${flatId}`, { area_sqft: numVal });
@@ -1947,7 +1944,7 @@ function InlineFlats({ floorId, blockId, isMobile, t, onOpenAreaModal, blockName
       setEditingAreaId(null);
       setAreaValue("");
     } catch (err) {
-      setError(err?.response?.data?.message || "Failed to update area");
+      setError(err?.response?.data?.message || t("mpFailedUpdateArea"));
     } finally {
       setSavingArea(false);
     }
@@ -1956,7 +1953,7 @@ function InlineFlats({ floorId, blockId, isMobile, t, onOpenAreaModal, blockName
   const saveBatchArea = async () => {
     const num = Number(batchAreaVal);
     if (!batchAreaVal || isNaN(num) || num < 0) {
-      toast.error("Please enter a valid positive area in sq.ft");
+      toast.error(t("mpValidPositiveArea"));
       return;
     }
     setSavingBatchArea(true);
@@ -1966,9 +1963,9 @@ function InlineFlats({ floorId, blockId, isMobile, t, onOpenAreaModal, blockName
       setFlats(p => p.map(f => ({ ...f, area_sqft: num })));
       setShowBatchArea(false);
       setBatchAreaVal("");
-      toast.success(`Set ${num} sq.ft for all ${flats.length} houses!`);
+      toast.success(t("mpSetAllHouses", { area: num, n: flats.length }));
     } catch (err) {
-      toast.error(err?.response?.data?.message || "Failed to update areas");
+      toast.error(err?.response?.data?.message || t("mpFailedUpdateAreas"));
     } finally {
       setSavingBatchArea(false);
     }
@@ -1976,7 +1973,7 @@ function InlineFlats({ floorId, blockId, isMobile, t, onOpenAreaModal, blockName
 
   if (loading) return <div style={{ padding: "14px 0", marginLeft: isRowHouseContext ? 0 : 10 }}><Spinner size={15} /></div>;
   if (error)   return <p style={{ fontSize: 12, color: "var(--stat-red-color)", padding: "10px 0", marginLeft: isRowHouseContext ? 0 : 10 }}>{error}</p>;
-  if (!flats.length) return <p style={{ fontSize: 12, color: "var(--text-secondary)", padding: "10px 0", marginLeft: isRowHouseContext ? 0 : 10 }}>No units found.</p>;
+  if (!flats.length) return <p style={{ fontSize: 12, color: "var(--text-secondary)", padding: "10px 0", marginLeft: isRowHouseContext ? 0 : 10 }}>{t("mpNoUnitsFound")}</p>;
 
   return (
     <div style={{
@@ -1993,7 +1990,7 @@ function InlineFlats({ floorId, blockId, isMobile, t, onOpenAreaModal, blockName
             : <MdApartment size={13} style={{ color: "var(--stat-blue-color,#B9CFF8)" }} />
           }
           <span style={{ fontSize: 12, fontWeight: 600, color: "var(--text-secondary)" }}>
-            {flats.length} {isRowHouseContext ? "House" : "Unit"}{flats.length !== 1 ? "s" : ""}
+            {isRowHouseContext ? t("mpHouseCount", { n: flats.length }) : t("mpUnitCount", { n: flats.length })}
           </span>
         </div>
 
@@ -2017,20 +2014,21 @@ function InlineFlats({ floorId, blockId, isMobile, t, onOpenAreaModal, blockName
                   cursor: "pointer",
                   transition: "all 0.15s ease"
                 }}
-                title="Open area manager: Option 1 (Make All Same) & Option 2 (Separate Filling)"
+                title={t("mpManageAreasTitle")}
               >
                 <MdTune size={14} />
-                Manage Areas (Same / Separate)
+                {t("mpManageAreas")}
               </button>
             )}
 
             {showBatchArea ? (
               <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
                 <input
+                  className="mp-compact-input"
                   type="number"
                   min="0"
                   step="0.01"
-                  placeholder="Area sq.ft"
+                  placeholder={t("mpAreaSqftPh")}
                   value={batchAreaVal}
                   onChange={e => setBatchAreaVal(e.target.value)}
                   style={{ width: 85, padding: "2px 6px", borderRadius: 6, border: "1px solid var(--glass-border)", background: "var(--card-bg)", color: "var(--text-primary)", fontSize: 11 }}
@@ -2042,7 +2040,7 @@ function InlineFlats({ floorId, blockId, isMobile, t, onOpenAreaModal, blockName
                   disabled={savingBatchArea}
                   style={{ padding: "2px 8px", borderRadius: 6, fontSize: 11, fontWeight: 700, background: "#10b981", color: "#fff", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 3 }}
                 >
-                  {savingBatchArea ? "..." : "Set All"}
+                  {savingBatchArea ? "..." : t("mpSetAll")}
                 </button>
                 <button
                   onClick={() => setShowBatchArea(false)}
@@ -2055,16 +2053,16 @@ function InlineFlats({ floorId, blockId, isMobile, t, onOpenAreaModal, blockName
               <button
                 onClick={() => setShowBatchArea(true)}
                 style={{ display: "flex", alignItems: "center", gap: 4, padding: "3px 8px", borderRadius: 6, background: "rgba(16,185,129,0.08)", border: "1px solid rgba(16,185,129,0.2)", color: "#10b981", fontSize: 11, fontWeight: 600, cursor: "pointer" }}
-                title="Quick set same area to all houses"
+                title={t("mpQuickSetAllTitle")}
               >
                 <MdDoneAll size={13} />
-                Quick Set All
+                {t("mpQuickSetAll")}
               </button>
             )}
           </div>
         )}
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(auto-fill, minmax(160px,1fr))", gap: 8, padding: 10 }}>
+      <div style={{ display: "grid", gridTemplateColumns: isMobile ? (isRowHouseContext ? "1fr" : "1fr 1fr") : "repeat(auto-fill, minmax(160px,1fr))", gap: 8, padding: 10 }}>
         {flats.map(f => {
           const occupied = !!f.resident_id;
           return (
@@ -2096,33 +2094,34 @@ function InlineFlats({ floorId, blockId, isMobile, t, onOpenAreaModal, blockName
                   {editingAreaId === f.id ? (
                     <div style={{ display: "flex", alignItems: "center", gap: 4, flex: 1 }}>
                       <input
+                        className="mp-compact-input"
                         type="number"
                         min="0"
                         step="0.01"
                         value={areaValue}
                         onChange={e => setAreaValue(e.target.value)}
-                        placeholder="Area"
+                        placeholder={t("mpAreaPh")}
                         autoFocus
-                        style={{ flex: 1, padding: "2px 6px", borderRadius: 4, border: "1px solid var(--glass-border)", background: "var(--card-inner-bg)", color: "var(--text-primary)", fontSize: 11 }}
+                        style={{ flex: 1, minWidth: 0, padding: "2px 6px", borderRadius: 4, border: "1px solid var(--glass-border)", background: "var(--card-inner-bg)", color: "var(--text-primary)", fontSize: 11 }}
                         onKeyDown={e => { if (e.key === "Enter") saveArea(f.id); if (e.key === "Escape") setEditingAreaId(null); }}
                       />
-                      <span style={{ fontSize: 10, color: "var(--text-secondary)", whiteSpace: "nowrap" }}>sq.ft</span>
+                      <span style={{ fontSize: 10, color: "var(--text-secondary)", whiteSpace: "nowrap" }}>{t("mpSqft")}</span>
                       <button onClick={() => saveArea(f.id)} disabled={savingArea} style={{ padding: "1px 6px", borderRadius: 4, fontSize: 10, fontWeight: 700, background: "#10b981", color: "#fff", border: "none", cursor: "pointer" }}>
-                        {savingArea ? "..." : "Save"}
+                        {savingArea ? "..." : t("mpSave")}
                       </button>
                       <button onClick={() => setEditingAreaId(null)} style={{ padding: "1px 4px", borderRadius: 4, fontSize: 10, background: "none", color: "var(--text-secondary)", border: "none", cursor: "pointer" }}>✕</button>
                     </div>
                   ) : (
                     <div style={{ display: "flex", alignItems: "center", gap: 4, flex: 1 }}>
                       <span style={{ fontSize: 10, color: "var(--text-secondary)" }}>
-                        {f.area_sqft ? <span style={{ fontWeight: 600, color: "var(--text-primary)" }}>{f.area_sqft}</span> : <span style={{ opacity: 0.5 }}>No area</span>} sq.ft
+                        {f.area_sqft ? <span style={{ fontWeight: 600, color: "var(--text-primary)" }}>{f.area_sqft}</span> : <span style={{ opacity: 0.5 }}>{t("mpNoArea")}</span>} {t("mpSqft")}
                       </span>
                       {canEdit && (
                         <button
                           onClick={() => { setEditingAreaId(f.id); setAreaValue(f.area_sqft || ""); }}
                           style={{ marginLeft: "auto", padding: "1px 5px", borderRadius: 4, fontSize: 9, fontWeight: 600, background: "rgba(91,141,239,0.10)", border: "1px solid rgba(91,141,239,0.22)", color: "#94B5F5", cursor: "pointer" }}
                         >
-                          Edit
+                          {t("mpEdit")}
                         </button>
                       )}
                     </div>
@@ -2229,7 +2228,7 @@ function FlatsTab({
             {FILTER_TABS.map(tab => {
               const on = filterStatus === tab.key;
               return (
-                <button key={tab.key} onClick={() => setFilterStatus(tab.key)} style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 5, padding: "6px 8px", borderRadius: 7, border: "none", cursor: "pointer", fontSize: 12, fontWeight: on ? 700 : 500, transition: "all 0.18s", background: on ? tab.color : "transparent", color: on ? "#fff" : "var(--text-secondary)", boxShadow: on ? "0 2px 8px rgba(0,0,0,0.22)" : "none" }}>
+                <button key={tab.key} onClick={() => setFilterStatus(tab.key)} style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center", justifyContent: "center", gap: isMobile ? 3 : 5, padding: isMobile ? "6px 4px" : "6px 8px", borderRadius: 7, border: "none", cursor: "pointer", fontSize: isMobile ? 11 : 12, fontWeight: on ? 700 : 500, transition: "all 0.18s", background: on ? tab.color : "transparent", color: on ? "#fff" : "var(--text-secondary)", boxShadow: on ? "0 2px 8px rgba(0,0,0,0.22)" : "none" }}>
                   {tab.label}
                   <span style={{ fontSize: 10, fontWeight: 700, padding: "1px 5px", borderRadius: 999, lineHeight: 1.6, background: on ? "rgba(255,255,255,0.22)" : "var(--glass-border)", color: on ? "#fff" : "var(--text-secondary)" }}>{counts[tab.key]}</span>
                 </button>
@@ -2266,7 +2265,7 @@ function FlatsTab({
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <p style={{ fontWeight: 700, fontSize: 13, color: "var(--text-primary)", margin: 0 }}>{f.flat_number}</p>
                       <p style={{ fontSize: 11, color: "var(--text-secondary)", margin: "1px 0 0" }}>
-                        {f.Floor ? `Fl. ${f.Floor.floor_number} • Blk. ${blockName}` : `Blk. ${blockName}`} · {occ ? (t("mpOccupied") || "Occupied") : (t("mpVacant") || "Vacant")}
+                        {f.Floor ? t("mpFlBlkLine", { n: f.Floor.floor_number, name: blockName }) : t("mpBlkLine", { name: blockName })} · {occ ? t("mpOccupied") : t("mpVacant")}
                       </p>
                     </div>
                     {canEdit && (confirmId === f.id ? (
@@ -2289,11 +2288,11 @@ function FlatsTab({
             <table className="data-table">
               <thead>
                 <tr>
-                  <th style={{ width: 64 }}>Sr. No.</th>
-                  <th>Unit</th>
-                  <th>Location</th>
-                  <th>{t("mpStatus") || "Status"}</th>
-                  <th style={{ textAlign: "right" }}>{t("mpAction") || "Action"}</th>
+                  <th style={{ width: 64 }}>{t("srNo")}</th>
+                  <th>{t("mpUnit")}</th>
+                  <th>{t("mpLocation")}</th>
+                  <th>{t("mpStatus")}</th>
+                  <th style={{ textAlign: "right" }}>{t("mpAction")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -2317,8 +2316,8 @@ function FlatsTab({
                       </td>
                       <td>
                         <div style={{ display: "flex", flexDirection: "column" }}>
-                          <span style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)" }}>Block {blockName}</span>
-                          {!isRowHouse && <span style={{ fontSize: 11, color: "var(--text-secondary)" }}>Floor {f.Floor?.floor_number}</span>}
+                          <span style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)" }}>{t("mpBlockNameLine", { name: blockName })}</span>
+                          {!isRowHouse && <span style={{ fontSize: 11, color: "var(--text-secondary)" }}>{t("mpFloorLine", { n: f.Floor?.floor_number })}</span>}
                         </div>
                       </td>
                       <td>
@@ -2348,7 +2347,7 @@ function FlatsTab({
               </tbody>
             </table>
             <div className="table-footer">
-              <span style={{ fontSize: 12, color: "var(--text-secondary)" }}>{filtered.length} {t("mpOf") || "of"} {flats.length} Units</span>
+              <span style={{ fontSize: 12, color: "var(--text-secondary)" }}>{t("mpUnitsOf", { n: filtered.length, total: flats.length })}</span>
             </div>
           </>
         )}
@@ -2360,7 +2359,7 @@ function FlatsTab({
 /* ══════════════════════════════════════════════
   TAB 3 — ASSIGN FLATS
 ══════════════════════════════════════════════ */
-const LIMIT = 10;
+
 
 function AssignTab({
   isMobile,
@@ -2382,6 +2381,9 @@ function AssignTab({
   const [initLoad,   setInitLoad]   = useState(true);
   const [fetching,   setFetching]   = useState(false);
   const [page,       setPage]       = useState(1);
+  const [limit,      setLimit]      = useState(10);
+  const limitRef = useRef(limit);
+  limitRef.current = limit;
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
   const [localSearch, setLocalSearch] = useState("");
@@ -2404,7 +2406,7 @@ function AssignTab({
   const loadAssigned = useCallback(async (pg, q, init = false) => {
     if (init) setInitLoad(true); else setFetching(true);
     try {
-      const params = new URLSearchParams({ page: pg, limit: LIMIT, ...(q ? { search: q } : {}) });
+      const params = new URLSearchParams({ page: pg, limit: limitRef.current, ...(q ? { search: q } : {}) });
       const res = await API.get(`/flats/assigned?${params}`);
       setAssigned(res.data.data || []);
       setTotalAll(res.data.totalAll ?? res.data.pagination.totalItems);
@@ -2446,7 +2448,7 @@ function AssignTab({
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       {canEdit && showForm && (
-        <div className="bg-card animate-scaleIn" style={{ padding: "20px 22px", borderRadius: 18, maxWidth: 520 }}>
+        <div className="bg-card animate-scaleIn" style={{ padding: isMobile ? "16px 14px" : "20px 22px", borderRadius: 18, maxWidth: 520, width: "100%", boxSizing: "border-box" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
             <div style={{ width: 32, height: 32, borderRadius: 9, background: "rgba(76,118,201,0.12)", border: "1px solid rgba(76,118,201,0.25)", display: "flex", alignItems: "center", justifyContent: "center", color: "#5B8DEF" }}><MdAdd size={17} /></div>
             <div>
@@ -2456,33 +2458,49 @@ function AssignTab({
           </div>
           <form onSubmit={handleAssign} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
             <div>
-              <label style={{ fontSize: 11, fontWeight: 600, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.06em", display: "block", marginBottom: 5 }}>Search Unit</label>
-              <input className="input search-input" style={{ height: 40 }} placeholder="Search e.g. 101 or Phase A" value={flatSearch} onChange={e => setFlatSearch(e.target.value)} />
+              <label style={{ fontSize: 11, fontWeight: 600, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.06em", display: "block", marginBottom: 5 }}>{t("mpSearchUnit")}</label>
+              <input className="input search-input" style={{ height: 40, width: "100%", boxSizing: "border-box" }} placeholder={t("mpSearchUnitPh")} value={flatSearch} onChange={e => setFlatSearch(e.target.value)} />
             </div>
             <div style={{ display: isMobile ? "flex" : "grid", flexDirection: isMobile ? "column" : undefined, gridTemplateColumns: "1fr 1fr", gap: 10 }}>
               <div>
-                <label style={{ fontSize: 11, fontWeight: 600, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.06em", display: "block", marginBottom: 5 }}>Select Unit</label>
-                <Select className="input" style={{ height: 40 }} value={flatId} onChange={e => setFlatId(e.target.value)} required>
-                  <option value="">Choose Unit...</option>
+                <label style={{ fontSize: 11, fontWeight: 600, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.06em", display: "block", marginBottom: 5 }}>{t("mpSelectUnit")}</label>
+                <Select className="input" rootStyle={{ width: "100%" }} style={{ height: 40, width: "100%" }} value={flatId} onChange={e => setFlatId(e.target.value)} required>
+                  <option value="">{t("mpChooseUnit")}</option>
                   {filteredDropdown.map(f => {
-                    const blockName = f.Block?.name || (f.Floor ? f.Floor.Block?.name : "Unknown");
-                    return <option key={f.id} value={f.id}>{f.flat_number} (Blk {blockName})</option>;
+                    const blockName = f.Block?.name || (f.Floor ? f.Floor.Block?.name : t("mpUnknownBlock"));
+                    return <option key={f.id} value={f.id}>{f.flat_number} ({t("mpBlkShort")} {blockName})</option>;
                   })}
                 </Select>
               </div>
               <div>
-                <label style={{ fontSize: 11, fontWeight: 600, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.06em", display: "block", marginBottom: 5 }}>{t("mpSelectResident") || "Select Resident"}</label>
-                <Select className="input" style={{ height: 40 }} value={residentId} onChange={e => setResidentId(e.target.value)} required>
-                  <option value="">{t("mpChooseResident") || "Choose Resident..."}</option>
+                <label style={{ fontSize: 11, fontWeight: 600, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.06em", display: "block", marginBottom: 5 }}>{t("mpSelectResident")}</label>
+                <Select className="input" rootStyle={{ width: "100%" }} style={{ height: 40, width: "100%" }} value={residentId} onChange={e => setResidentId(e.target.value)} required>
+                  <option value="">{t("mpChooseResident")}</option>
                   {residents.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
                 </Select>
               </div>
             </div>
-            <div style={{ display: "flex", gap: 8, paddingTop: 4 }}>
-              <button type="submit" className="btn-primary" disabled={submitting} style={{ flex: 1, justifyContent: "center", opacity: submitting ? 0.65 : 1 }}>
-                {submitting ? <Spinner size={14} /> : (t("mpAssign") || "Assign")}
-              </button>
-              <button type="button" className="btn-muted" onClick={() => setShowForm(false)}>{t("mpCancel") || "Cancel"}</button>
+            <div style={{ display: "flex", gap: 8, paddingTop: 4, flexWrap: "wrap" }}>
+              <GlobalButton
+                type="submit"
+                variant="add"
+                icon={MdAdd}
+                loading={submitting}
+                borderDraw
+                fullWidth={isMobile}
+                style={{ flex: 1, fontWeight: 700 }}
+              >
+                {t("mpAssign")}
+              </GlobalButton>
+              <GlobalButton
+                type="button"
+                variant="cancel"
+                onClick={() => setShowForm(false)}
+                fullWidth={isMobile}
+                style={{ flex: 1 }}
+              >
+                {t("cancel")}
+              </GlobalButton>
             </div>
           </form>
         </div>
@@ -2495,7 +2513,7 @@ function AssignTab({
         ) : totalAll === 0 ? (
           <div style={{ textAlign: "center", padding: "50px 20px" }}>
             <MdHome size={40} style={{ opacity: 0.2, color: "var(--text-secondary)" }} />
-            <p style={{ fontSize: 13, color: "var(--text-secondary)", marginTop: 10 }}>No units assigned yet</p>
+            <p style={{ fontSize: 13, color: "var(--text-secondary)", marginTop: 10 }}>{t("mpNoFlatsAssigned")}</p>
           </div>
         ) : assigned.length === 0 && !fetching ? (
           <div style={{ textAlign: "center", padding: "50px 20px" }}>
@@ -2520,7 +2538,7 @@ function AssignTab({
                     <div style={{ minWidth: 0 }}>
                       <p style={{ fontWeight: 600, fontSize: 13, color: "var(--text-primary)", margin: 0 }}>{flat.flat_number}</p>
                       <p style={{ fontSize: 10, color: "var(--text-secondary)", margin: 0, opacity: 0.8 }}>
-                        {flat.Floor ? `Fl. ${flat.Floor.floor_number} • Blk. ${blockName}` : `Blk. ${blockName}`}
+                        {flat.Floor ? t("mpFlBlkLine", { n: flat.Floor.floor_number, name: blockName }) : t("mpBlkLine", { name: blockName })}
                       </p>
                       <div style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 2 }}>
                         <MdPerson size={11} style={{ color: "var(--text-secondary)", flexShrink: 0 }} />
@@ -2546,10 +2564,10 @@ function AssignTab({
           <table className="data-table">
             <thead>
               <tr>
-                <th style={{ width: 64 }}>Sr. No.</th>
-                <th>Unit</th>
-                <th>{t("mpResident") || "Resident"}</th>
-                <th style={{ textAlign: "right" }}>{t("mpAction") || "Action"}</th>
+                <th style={{ width: 64 }}>{t("srNo")}</th>
+                <th>{t("mpUnit")}</th>
+                <th>{t("mpResident")}</th>
+                <th style={{ textAlign: "right" }}>{t("mpAction")}</th>
               </tr>
             </thead>
             <tbody>
@@ -2558,13 +2576,13 @@ function AssignTab({
                 const blockName  = flat.Block?.name || (flat.Floor ? flat.Floor.Block?.name : "—");
                 return (
                   <tr key={flat.id}>
-                    <td style={{ color: "var(--text-secondary)", fontSize: 12 }}>{(page - 1) * LIMIT + idx + 1}</td>
+                    <td style={{ color: "var(--text-secondary)", fontSize: 12 }}>{(page - 1) * limit + idx + 1}</td>
                     <td>
                       <span style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "4px 10px", borderRadius: 8, fontSize: 13, fontWeight: 600, background: isRowHouse ? "rgba(16,185,129,0.1)" : "rgba(91,141,239,0.10)", color: isRowHouse ? "#10b981" : "#94B5F5", border: isRowHouse ? "1px solid rgba(16,185,129,0.22)" : "1px solid rgba(91,141,239,0.22)" }}>
                         {isRowHouse ? <MdHomeWork size={13} /> : <MdHome size={13} />} {flat.flat_number}
                       </span>
                       <p className="text-xs text-secondary mt-1 ml-1" style={{ opacity: 0.8, fontSize: 11 }}>
-                        {flat.Floor ? `Floor ${flat.Floor.floor_number} • Block ${blockName}` : `Block ${blockName}`}
+                        {flat.Floor ? t("mpFloorBlockLine", { n: flat.Floor.floor_number, name: blockName }) : t("mpBlockOnlyLine", { name: blockName })}
                       </p>
                     </td>
                     <td>
@@ -2598,7 +2616,7 @@ function AssignTab({
         {!initLoad && assigned.length > 0 && (
           <div style={{ borderTop: "1px solid var(--glass-border)", padding: "12px 16px", display: "flex", flexDirection: "column", alignItems: "center", gap: 10 }}>
             <p style={{ margin: 0, fontSize: 12, color: "var(--text-secondary)" }}>{t("mpShowing") || "Showing"} {assigned.length} {t("mpOf") || "of"} {totalItems}</p>
-            <Pagination page={page} totalPages={totalPages} onChange={p => loadAssigned(p, dSearch)} />
+            <Pagination page={page} totalPages={totalPages} onChange={(p) => loadAssigned(p, dSearch)} pageSize={limit} onPageSizeChange={(s) => { limitRef.current = s; setLimit(s); setPage(1); loadAssigned(1, dSearch); }} />
           </div>
         )}
       </div>

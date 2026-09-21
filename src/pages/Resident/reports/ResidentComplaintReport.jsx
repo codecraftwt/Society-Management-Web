@@ -14,6 +14,8 @@ import {
 import Select from "../../../components/common/Select";
 import ConfirmDiscard from "../../../components/common/ConfirmDiscard";
 
+import Pagination from "../../../components/common/Pagination";
+
 function useIsMobile() {
   const [m, setM] = useState(() => typeof window !== "undefined" && window.innerWidth < 768);
   useEffect(() => { const fn = () => setM(window.innerWidth < 768); window.addEventListener("resize", fn); return () => window.removeEventListener("resize", fn); }, []);
@@ -27,22 +29,6 @@ function Spinner({ small = false }) {
       <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" style={{ opacity: 0.25 }} />
       <path fill="currentColor" style={{ opacity: 0.75 }} d="M4 12a8 8 0 018-8v8z" />
     </svg>
-  );
-}
-
-function Pagination({ page, totalPages, onPageChange }) {
-  if (totalPages <= 1) return null;
-  const pages = Array.from({ length: totalPages }, (_, i) => i + 1)
-    .filter(p => p === 1 || p === totalPages || Math.abs(p - page) <= 1)
-    .reduce((acc, p, idx, arr) => { if (idx > 0 && p - arr[idx - 1] > 1) acc.push("..."); acc.push(p); return acc; }, []);
-  return (
-    <div className="pagination-wrap" style={{ marginTop: 0 }}>
-      <button onClick={() => onPageChange(page - 1)} disabled={page === 1} className="pagination-btn"><MdChevronLeft size={14} /> Prev</button>
-      {pages.map((p, i) => p === "..." ? <span key={`e${i}`} className="pagination-ellipsis">…</span> : (
-        <button key={p} onClick={() => onPageChange(p)} className={`pagination-page ${p === page ? "pagination-page--active" : ""}`}>{p}</button>
-      ))}
-      <button onClick={() => onPageChange(page + 1)} disabled={page === totalPages} className="pagination-btn">Next <MdChevronRight size={14} /></button>
-    </div>
   );
 }
 
@@ -204,7 +190,7 @@ function FilterSheet({ show, onClose, isMobile, status, setStatus, fromDate, set
   );
 }
 
-const LIMIT = 15;
+
 
 export default function ResidentComplaintReport() {
   const isMobile = useIsMobile();
@@ -214,6 +200,7 @@ export default function ResidentComplaintReport() {
   const [complaints, setComplaints] = useState([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(15);
   const [totalPages, setTotalPages] = useState(1);
 
   const [status, setStatus] = useState("");
@@ -270,8 +257,8 @@ export default function ResidentComplaintReport() {
     resolved:   filtered.filter(c => c.status === "RESOLVED").length,
   }), [filtered]);
 
-  const pages = Math.max(1, Math.ceil(filtered.length / LIMIT));
-  const pageData = filtered.slice((page - 1) * LIMIT, page * LIMIT);
+  const pages = Math.max(1, Math.ceil(filtered.length / limit));
+  const pageData = filtered.slice((page - 1) * limit, page * limit);
   const handlePageChange = p => { setPage(p); setTotalPages(pages); };
 
   const handleExcel = () => exportToExcel({
@@ -389,7 +376,7 @@ export default function ResidentComplaintReport() {
             <tbody>
               {pageData.map((c, i) => (
                 <tr key={c.id} className="animate-fadeIn" style={{ animationDelay: `${i * 15}ms` }}>
-                  <td><span style={{ fontSize: 12, color: "var(--text-secondary)" }}>{(page - 1) * LIMIT + i + 1}</span></td>
+                  <td><span style={{ fontSize: 12, color: "var(--text-secondary)" }}>{(page - 1) * limit + i + 1}</span></td>
                   <td><span style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)" }}>{c.title || "—"}</span></td>
                   <td><span style={{ fontSize: 12, color: "var(--text-secondary)", maxWidth: 220, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", display: "block" }}>{c.description || "—"}</span></td>
                   <td><span style={{ fontSize: 12, color: "var(--text-secondary)", whiteSpace: "nowrap" }}>{formatDate(c.created_at)}</span></td>
@@ -403,9 +390,9 @@ export default function ResidentComplaintReport() {
         {!loading && filtered.length > 0 && (
           <div className="table-footer" style={{ flexWrap: "wrap", gap: 10 }}>
             <span style={{ fontSize: 12, color: "var(--text-secondary)" }}>
-              {t("reportShowing")} <strong style={{ color: "var(--text-primary)" }}>{(page - 1) * LIMIT + 1}–{Math.min(page * LIMIT, filtered.length)}</strong> {t("reportOf")} <strong style={{ color: "var(--text-primary)" }}>{filtered.length}</strong> {t("rcrComplaintsCount")}
+              {t("reportShowing")} <strong style={{ color: "var(--text-primary)" }}>{(page - 1) * limit + 1}–{Math.min(page * limit, filtered.length)}</strong> {t("reportOf")} <strong style={{ color: "var(--text-primary)" }}>{filtered.length}</strong> {t("rcrComplaintsCount")}
             </span>
-            <Pagination page={page} totalPages={Math.max(1, Math.ceil(filtered.length / LIMIT))} onPageChange={handlePageChange} />
+            <Pagination page={page} totalPages={Math.max(1, Math.ceil(filtered.length / limit))} onPageChange={handlePageChange} pageSize={limit} onPageSizeChange={(s) => { setLimit(s); setPage(1); }} />
           </div>
         )}
       </div>

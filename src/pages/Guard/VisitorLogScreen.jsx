@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef} from "react";
 import API from "../../services/api";
 import { useLang } from "../../context/LanguageContext";
 import {
@@ -31,7 +31,7 @@ function useDebounce(value, delay = 500) {
   return d;
 }
 
-const LIMIT = 10;
+
 
 export default function VisitorLogScreen() {
   const { t } = useLang();
@@ -40,7 +40,10 @@ export default function VisitorLogScreen() {
   const [counts, setCounts] = useState({ ALL: 0, IN: 0, OUT: 0 });
   const [initialLoad, setInitialLoad] = useState(true);
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const limitRef = useRef(limit);
+  limitRef.current = limit;
+const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
   const [search, setSearch] = useState("");
   const [tab, setTab] = useState("ALL");
@@ -51,7 +54,7 @@ export default function VisitorLogScreen() {
     try {
       const params = new URLSearchParams({
         page: pg,
-        limit: LIMIT,
+        limit: limitRef.current,
         filter: f,
         ...(q ? { search: q } : {}),
       });
@@ -131,7 +134,7 @@ export default function VisitorLogScreen() {
       key: "idx",
       header: "#",
       width: 50,
-      render: (_, idx) => <span style={{ color: "var(--text-tertiary)", fontSize: "0.8rem" }}>{(page - 1) * LIMIT + idx + 1}</span>,
+      render: (_, idx) => <span style={{ color: "var(--text-tertiary)", fontSize: "0.8rem" }}>{(page - 1) * limit + idx + 1}</span>,
     },
     {
       key: "visitor",
@@ -358,7 +361,10 @@ export default function VisitorLogScreen() {
         totalPages={totalPages}
         totalItems={totalItems}
         onPageChange={handlePageChange}
-      />
+      
+          pageSize={limit}
+          onPageSizeChange={(s) => { limitRef.current = s; setLimit(s); setPage(1); loadVisitors(1, debSearch, tab); }}
+        />
     </div>
   );
 }

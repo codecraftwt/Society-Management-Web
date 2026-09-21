@@ -11,7 +11,7 @@ import GlobalButton from "../../components/common/GlobalButton";
 import SlidingTabs from "../../components/common/SlidingTabs";
 import ExpandableSearch from "../../components/common/ExpandableSearch";
 
-const LIMIT = 10;
+
 
 export default function EmergencyHistory() {
   const { t } = useLang();
@@ -21,6 +21,7 @@ export default function EmergencyHistory() {
   const [search, setSearch] = useState("");
   const [tab, setTab] = useState("ALL");
   const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
   const [resolvingId, setResolvingId] = useState(null);
 
   const loadAlerts = async () => {
@@ -97,9 +98,9 @@ export default function EmergencyHistory() {
     });
   }, [alerts, search, tab, t]);
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / LIMIT));
+  const totalPages = Math.max(1, Math.ceil(filtered.length / limit));
   const safePage = Math.min(page, totalPages);
-  const pageItems = filtered.slice((safePage - 1) * LIMIT, safePage * LIMIT);
+  const pageItems = filtered.slice((safePage - 1) * limit, safePage * limit);
 
   const handleTabChange = (next) => {
     setTab(next);
@@ -265,7 +266,10 @@ export default function EmergencyHistory() {
         totalItems={filtered.length}
         onPageChange={setPage}
         rowKey="id"
-      />
+      
+          pageSize={limit}
+          onPageSizeChange={(s) => { setLimit(s); setPage(1); }}
+        />
     </div>
   );
 }

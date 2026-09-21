@@ -101,7 +101,7 @@ function GuardLayoutInner() {
       group: "SUPPORT & SETTINGS",
     },
     {
-      label: "Help & Contacts",
+      label: t("guardMenuHelp"),
       path: "/guard/help-contacts",
       icon: MdOutlineContactSupport,
       group: "SUPPORT & SETTINGS",
@@ -161,7 +161,7 @@ function GuardLayoutInner() {
             {t("guardPanelLabel") || "Guard"}<span className="text-accent">{t("panelSuffix") || " Panel"}</span>
           </>
         }
-        brandSubtitle="Security View"
+        brandSubtitle={t("sbViewGuard")}
         base="/guard"
       />
 

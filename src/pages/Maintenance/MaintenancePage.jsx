@@ -428,19 +428,19 @@ function ConfigForm({ initial, onClose, onSuccessClose, onSaved, isSuperAdmin = 
       {error && <p className="text-xs" style={{ color: "var(--danger)" }}>{error}</p>}
 
       <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-4 border-t mt-1" style={{ borderColor: "var(--glass-border)" }}>
-        <button type="button" onClick={onClose} className={btnGhost} style={{ borderColor: "var(--glass-border)", height: 44, borderRadius: 10, padding: "0 20px", minWidth: 110, justifyContent: "center" }}>Cancel</button>
-        <button
+        <GlobalButton type="button" variant="cancel" onClick={onClose}>
+          Cancel
+        </GlobalButton>
+        <GlobalButton
           type="submit"
+          variant="add"
+          icon={MdCheckCircle}
+          loading={saving}
           disabled={saving}
-          className="sa-add-btn sa-add-pill sa-btn-primary"
-          style={{ opacity: saving ? 0.6 : 1, cursor: saving ? "not-allowed" : "pointer", height: 44 }}
+          borderDraw
         >
-          <span className="sa-pill-blob sa-pill-blob1" />
-          <span className="sa-pill-inner">
-            {saving ? <Spinner size={16} /> : <MdAdd size={16} />}
-            <span>{initial?.id ? "Update" : "Save Configuration"}</span>
-          </span>
-        </button>
+          {initial?.id ? "Update" : "Save Configuration"}
+        </GlobalButton>
       </div>
       </>
       )}
@@ -625,7 +625,7 @@ function GenerateModal({ configs, onClose, onGenerated }) {
               <Label>Issue Date *</Label>
               <input
                 type="date"
-                className="w-full h-10 px-3 rounded-xl border border-[var(--glass-border)] bg-[var(--card-inner-bg)] text-[var(--text-primary)] font-semibold text-xs focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 transition-all cursor-pointer"
+                className="w-full h-10 px-3 rounded-xl border border-(--glass-border) bg-(--card-inner-bg) text-(--text-primary) font-semibold text-xs focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 transition-all cursor-pointer"
                 value={issueDate}
                 onChange={(e) => setIssueDate(e.target.value)}
                 required
@@ -636,7 +636,7 @@ function GenerateModal({ configs, onClose, onGenerated }) {
               <Label>Due Date (Last Date to Pay) *</Label>
               <input
                 type="date"
-                className="w-full h-10 px-3 rounded-xl border border-[var(--glass-border)] bg-[var(--card-inner-bg)] text-[var(--text-primary)] font-semibold text-xs focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/30 transition-all cursor-pointer"
+                className="w-full h-10 px-3 rounded-xl border border-(--glass-border) bg-(--card-inner-bg) text-(--text-primary) font-semibold text-xs focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/30 transition-all cursor-pointer"
                 value={dueDate}
                 min={issueDate || new Date().toISOString().split("T")[0]}
                 onChange={(e) => setDueDate(e.target.value)}
@@ -683,7 +683,7 @@ function GenerateModal({ configs, onClose, onGenerated }) {
                         <span className="text-[11px] text-secondary block font-medium">Flat Type: {c.flat_type}</span>
                       )}
                     </div>
-                    <span className="text-xs font-extrabold text-emerald-400 flex-shrink-0">
+                    <span className="text-xs font-extrabold text-emerald-400 shrink-0">
                       {c.maintenance_type === "SQ_FEET" ? `₹${c.rate_per_sqft}/sq.ft` : formatMoney(c.amount)}
                     </span>
                   </label>
@@ -1106,7 +1106,7 @@ function BillsTab({ billingMonth, setBillingMonth, onView, configs = [] }) {
         }}
       >
         {/* Status Sliding Tabs */}
-        <div className="overflow-x-auto pb-1 md:pb-0 scrollbar-none flex-shrink-0">
+        <div className="overflow-x-auto pb-1 md:pb-0 scrollbar-none shrink-0">
           <SlidingTabs
             items={[
               { id: "", label: "All Bills" },

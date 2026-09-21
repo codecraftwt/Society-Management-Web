@@ -1,6 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { MdMenu, MdLogout, MdApartment, MdSettings } from "react-icons/md";
+import { MdMenu, MdClose, MdLogout, MdApartment, MdSettings } from "react-icons/md";
 import ThemeToggle from "./ThemeToggle";
 import LanguageSelector from "./LanguageSelector";
 import NotificationBell from "./NotificationBell";
@@ -18,30 +18,33 @@ export default function AppHeader({
   settingsPath = null,
   onLogout = null,
 }) {
-  const { openMobile } = useSidebar();
+  const { openMobile, closeMobile, mobileOpen } = useSidebar();
   const { t } = useLang();
   const navigate = useNavigate();
 
   return (
     <header
-      className="sticky top-0 z-30 h-14 md:h-16 bg-navbar flex items-center justify-between px-3 md:px-6 shrink-0 border-b border-glass-border backdrop-blur-md transition-colors"
-      aria-label="Main Application Header"
+      className={`sticky top-0 h-14 md:h-16 bg-navbar flex items-center justify-between px-3 md:px-6 shrink-0 border-b border-glass-border backdrop-blur-md transition-colors ${
+        mobileOpen ? "z-60" : "z-30"
+      }`}
+      aria-label={t("appHeader")}
     >
       {/* ── LEFT AREA: HAMBURGER & IDENTITY ── */}
       <div className="flex items-center gap-2.5 md:gap-3.5 min-w-0">
         {/* Mobile Hamburger Button */}
         <button
-          onClick={openMobile}
-          className="md:hidden flex items-center justify-center w-10 h-10 rounded-xl shrink-0 transition-colors hover:bg-white/5 active:scale-95"
+          type="button"
+          onClick={mobileOpen ? closeMobile : openMobile}
+          className="md:hidden relative z-61 flex items-center justify-center w-10 h-10 rounded-xl shrink-0 transition-colors hover:bg-white/5 active:scale-95"
           style={{
             background: "var(--card-inner-bg)",
             border: "1.5px solid var(--glass-border)",
             color: "var(--text-primary)",
           }}
-          aria-label="Open Navigation Menu"
-          title="Open Menu"
+          aria-label={mobileOpen ? t("sbCloseMenu") : t("openMenu")}
+          title={mobileOpen ? t("sbCloseMenu") : t("openMenu")}
         >
-          <MdMenu size={20} />
+          {mobileOpen ? <MdClose size={20} /> : <MdMenu size={20} />}
         </button>
 
         {/* Identity & Context */}
@@ -55,7 +58,7 @@ export default function AppHeader({
 
             {/* Optional Society Name Badge */}
             {societyName && (
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-xs font-medium bg-accent/10 text-accent border border-accent/20 truncate max-w-[220px]">
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-xs font-medium bg-accent/10 text-accent border border-accent/20 truncate max-w-55">
                 <MdApartment size={13} className="shrink-0" />
                 <span className="truncate">{societyName}</span>
               </span>

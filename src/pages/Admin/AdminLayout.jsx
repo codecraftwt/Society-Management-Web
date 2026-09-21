@@ -39,13 +39,13 @@ import { hasPermission, isCommitteeMember } from "../../utils/permissions";
 
 /* Role meta for role-switcher */
 const ROLE_META = {
-  SOCIETY_ADMIN: { label: "Society Admin", icon: "🏢", desc: "Manage your society" },
-  RESIDENT: { label: "Resident", icon: "🏠", desc: "Resident view" },
-  SUPER_ADMIN: { label: "Super Admin", icon: "🛡️", desc: "Platform admin" },
-  ACCOUNTANT: { label: "Accountant", icon: "📊", desc: "Finance & bills" },
-  GUARD: { label: "Guard", icon: "🔐", desc: "Gate & security" },
-  FAMILY_MEMBER: { label: "Family", icon: "👨‍👩‍👧", desc: "Family member" },
-  COMMITTEE_MEMBER: { label: "Committee", icon: "📋", desc: "Committee member" },
+  SOCIETY_ADMIN: { labelKey: "roleSocietyAdmin", icon: "🏢", descKey: "roleSocietyAdminDesc" },
+  RESIDENT: { labelKey: "roleResident", icon: "🏠", descKey: "roleResidentDesc" },
+  SUPER_ADMIN: { labelKey: "roleSuperAdmin", icon: "🛡️", descKey: "roleSuperAdminDesc" },
+  ACCOUNTANT: { labelKey: "roleAccountant", icon: "📊", descKey: "roleAccountantDesc" },
+  GUARD: { labelKey: "roleGuard", icon: "🔐", descKey: "roleGuardDesc" },
+  FAMILY_MEMBER: { labelKey: "roleFamily", icon: "👨‍👩‍👧", descKey: "roleFamilyDesc" },
+  COMMITTEE_MEMBER: { labelKey: "roleCommittee", icon: "📋", descKey: "roleCommitteeDesc" },
 };
 
 function AdminLayoutInner() {
@@ -61,6 +61,12 @@ function AdminLayoutInner() {
   const [rsOpen, setRsOpen] = useState(false);
 
   const { user, switchRole, refreshPermissions } = useContext(AuthContext);
+
+  const roleMeta = (role) => {
+    const m = ROLE_META[role];
+    if (!m) return { label: role, icon: "👤", desc: "" };
+    return { label: t(m.labelKey), icon: m.icon, desc: t(m.descKey) };
+  };
 
   const base = "/admin";
   const isCommittee = isCommitteeMember(user);
@@ -112,14 +118,14 @@ function AdminLayoutInner() {
       module: "parking_slots",
     },
     {
-      label: "Flat History",
+      label: t("adminMenuFlatHistory"),
       path: `${base}/flat-history`,
       icon: MdVerified,
       group: "COMMUNITY & PROPERTY",
       module: "flat_history",
     },
     {
-      label: "Tenant Approvals",
+      label: t("adminMenuTenantApprovals"),
       path: `${base}/tenant-management`,
       icon: FaUsers,
       group: "COMMUNITY & PROPERTY",
@@ -154,7 +160,7 @@ function AdminLayoutInner() {
       module: "complaints",
     },
     {
-      label: "SOS",
+      label: t("adminMenuSOS"),
       path: `${base}/emergency`,
       icon: MdSecurity,
       group: "COMMUNICATION",
@@ -168,7 +174,7 @@ function AdminLayoutInner() {
       module: "accountant",
     },
     {
-      label: "Account & Cash",
+      label: t("adminMenuAccounting"),
       path: `${base}/accounting`,
       icon: MdReceiptLong,
       group: "FINANCE & BILLS",
@@ -182,14 +188,14 @@ function AdminLayoutInner() {
       module: "manage_bills",
     },
     {
-      label: "Maintenance Setup",
+      label: t("adminMenuMaintenance"),
       path: `${base}/maintenance`,
       icon: MdBuild,
       group: "FINANCE & BILLS",
       module: "maintenance",
     },
     {
-      label: "Payments & Collections",
+      label: t("adminMenuPayments"),
       path: `${base}/payments`,
       icon: MdPayments,
       group: "FINANCE & BILLS",
@@ -284,11 +290,11 @@ function AdminLayoutInner() {
           marginBottom: "8px",
         }}
       >
-        Active role
+        {t("activeRole")}
       </p>
       <div className="rs-mobile-bar">
         {user.roles.map((role) => {
-          const meta = ROLE_META[role] ?? { label: role, icon: "👤" };
+          const meta = roleMeta(role);
           const isActive = role === user.activeRole;
           return (
             <button
@@ -318,15 +324,15 @@ function AdminLayoutInner() {
         brandTitle={
           isCommittee ? (
             <>
-              Committee<span className="text-accent"> Panel</span>
+              {t("committeePanel")}<span className="text-accent">{t("panelSuffix")}</span>
             </>
           ) : (
             <>
-              Society<span className="text-accent">{t("panelSuffix") || "Admin"}</span>
+              {t("adminPanelLabel")}<span className="text-accent">{t("panelSuffix")}</span>
             </>
           )
         }
-        brandSubtitle={isCommittee ? (user?.committee_position || user?.designation || "Committee Member") : "Society Admin"}
+        brandSubtitle={isCommittee ? (user?.committee_position || user?.designation || t("sbViewCommittee")) : t("sbViewAdmin")}
         base={base}
         drawerExtra={mobileRoleSwitcher}
         defaultOpenGroups={["FINANCE & BILLS"]}
@@ -335,10 +341,12 @@ function AdminLayoutInner() {
       {/* ── MAIN CONTENT ── */}
       <div className="main-content-layout min-w-0">
         <AppHeader
-          title={isCommittee ? "Committee Member Panel" : t("adminDashboardTitle")}
+          title={isCommittee ? t("committeeDashboardTitle") : t("adminDashboardTitle")}
           subtitle={
             isCommittee
-              ? (user?.name ? `Welcome to Committee Member Panel, ${user.name}` : "Welcome to Committee Member Panel")
+              ? (user?.name
+                  ? t("committeeDashboardWelcome", { name: user.name })
+                  : t("committeeDashboardWelcomeAnon"))
               : t("adminDashboardSubtitle")
           }
           actions={
@@ -349,27 +357,23 @@ function AdminLayoutInner() {
                   <button
                     className={`rs-trigger ${rsOpen ? "open" : ""}`}
                     onClick={() => setRsOpen((o) => !o)}
-                    title="Switch role"
+                    title={t("switchRole")}
                   >
                     <span className="rs-active-dot" />
                     <span className="rs-trigger-label hidden sm:inline">
-                      {ROLE_META[user.activeRole]?.label ?? user.activeRole}
+                      {roleMeta(user.activeRole).label}
                     </span>
                     <span className="rs-trigger-label sm:hidden">
-                      {ROLE_META[user.activeRole]?.icon ?? "👤"}
+                      {roleMeta(user.activeRole).icon}
                     </span>
                     <span className="rs-trigger-arrow">▼</span>
                   </button>
 
                   <div className={`rs-dropdown ${rsOpen ? "open" : ""}`}>
-                    <div className="rs-dropdown-header">Switch role</div>
+                    <div className="rs-dropdown-header">{t("switchRole")}</div>
 
                     {user.roles.map((role) => {
-                      const meta = ROLE_META[role] ?? {
-                        label: role,
-                        icon: "👤",
-                        desc: "",
-                      };
+                      const meta = roleMeta(role);
                       const isActive = role === user.activeRole;
                       return (
                         <div
@@ -408,8 +412,8 @@ function AdminLayoutInner() {
               {hasPermission(user, "emergency", "trigger") && (
                 <button
                   onClick={() => setShowSOS(true)}
-                  className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 shadow-md shadow-red-500/30 transition px-3 h-9 text-white text-xs font-bold"
-                  title="Raise an SOS alert to the whole society"
+                  className="flex items-center gap-1.5 rounded-xl bg-linear-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 shadow-md shadow-red-500/30 transition px-3 h-9 text-white text-xs font-bold"
+                  title={t("raiseSos")}
                 >
                   <MdEmergency size={15} />
                   <span>SOS</span>

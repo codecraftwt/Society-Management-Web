@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useContext } from "react";
+import { useState, useEffect, useCallback, useContext, useRef} from "react";
 import { createPortal } from "react-dom";
 import API from "../../services/api";
 import socket from "../../services/socket";
@@ -23,6 +23,8 @@ import { hasPermission } from "../../utils/permissions";
 import { getTitleError, getDescriptionError } from "../../utils/validators";
 import { useCustomAlert } from "../../context/CustomAlertContext";
 
+import Pagination from "../../components/common/Pagination";
+
 function useDebounce(value, delay = 500) {
   const [d, setD] = useState(value);
   useEffect(() => {
@@ -39,40 +41,6 @@ function Spinner({ small = false }) {
       <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" className="opacity-25" />
       <path fill="currentColor" className="opacity-75" d="M4 12a8 8 0 018-8v8z" />
     </svg>
-  );
-}
-
-function Pagination({ page, totalPages, onPageChange }) {
-  if (totalPages <= 1) return null;
-  const pages = Array.from({ length: totalPages }, (_, i) => i + 1)
-    .filter((p) => p === 1 || p === totalPages || Math.abs(p - page) <= 1)
-    .reduce((acc, p, idx, arr) => {
-      if (idx > 0 && p - arr[idx - 1] > 1) acc.push("...");
-      acc.push(p);
-      return acc;
-    }, []);
-  return (
-    <div className="pagination-wrap" style={{ marginTop: 0 }}>
-      <button onClick={() => onPageChange(page - 1)} disabled={page === 1} className="pagination-btn">
-        <MdChevronLeft size={14} /> Prev
-      </button>
-      {pages.map((p, i) =>
-        p === "..." ? (
-          <span key={`e${i}`} className="pagination-ellipsis">…</span>
-        ) : (
-          <button
-            key={p}
-            onClick={() => onPageChange(p)}
-            className={`pagination-page ${p === page ? "pagination-page--active" : ""}`}
-          >
-            {p}
-          </button>
-        ),
-      )}
-      <button onClick={() => onPageChange(page + 1)} disabled={page === totalPages} className="pagination-btn">
-        Next <MdChevronRight size={14} />
-      </button>
-    </div>
   );
 }
 
@@ -95,7 +63,7 @@ const fmtDate = (d) =>
       })
     : "";
 
-const LIMIT = 10;
+
 
 /* ── File helpers ── */
 const isImageFile = (fileName) =>
@@ -136,6 +104,9 @@ export default function CommitteeNotices() {
   const [initialLoad, setInitialLoad] = useState(true);
   const [fetching, setFetching] = useState(false);
   const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const limitRef = useRef(limit);
+  limitRef.current = limit;
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
   const [search, setSearch] = useState("");
@@ -153,7 +124,7 @@ export default function CommitteeNotices() {
     isInit ? setInitialLoad(true) : setFetching(true);
     try {
       const params = new URLSearchParams({
-        page: pg, limit: LIMIT,
+        page: pg, limit: limitRef.current,
         ...(q ? { search: q } : {}),
       });
       const res = await API.get(`/notices?${params}`);
@@ -727,13 +698,13 @@ export default function CommitteeNotices() {
               <p style={{ fontSize: 12, color: "var(--text-secondary)", margin: 0 }}>
                 Showing{" "}
                 <strong style={{ color: "var(--text-primary)" }}>
-                  {(page - 1) * LIMIT + 1}–{Math.min(page * LIMIT, totalItems)}
+                  {(page - 1) * limit + 1}–{Math.min(page * limit, totalItems)}
                 </strong>{" "}
                 of{" "}
                 <strong style={{ color: "var(--text-primary)" }}>{totalItems}</strong>{" "}
                 notices
               </p>
-              <Pagination page={page} totalPages={totalPages} onPageChange={handlePage} />
+              <Pagination page={page} totalPages={totalPages} onPageChange={(p) => loadNotices(p, debSearch)} pageSize={limit} onPageSizeChange={(s) => { limitRef.current = s; setLimit(s); setPage(1); loadNotices(1, debSearch); }} />
             </div>
           </>
         )}

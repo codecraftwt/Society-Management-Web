@@ -15,6 +15,8 @@ import ExpandableSearch from "../../components/common/ExpandableSearch";
 import useUnsavedDirty from "../../hooks/useUnsavedDirty";
 import ConfirmDiscard from "../../components/common/ConfirmDiscard";
 
+import Pagination from "../../components/common/Pagination";
+
 /* ── Type meta ── */
 const TYPE_META = {
   FIRE:         { icon: MdLocalFireDepartment, color: "var(--reject-color)", bg: "var(--reject-bg)", border: "var(--reject-border)" },
@@ -30,42 +32,11 @@ const fmt = (d) =>
     hour: "2-digit", minute: "2-digit",
   });
 
-const LIMIT = 10;
+
 
 function PortalModal({ children }) {
   if (typeof document === "undefined") return null;
   return createPortal(children, document.body);
-}
-
-function Pagination({ page, totalPages, onPageChange }) {
-  if (totalPages <= 1) return null;
-  const pages = Array.from({ length: totalPages }, (_, i) => i + 1)
-    .filter(p => p === 1 || p === totalPages || Math.abs(p - page) <= 1)
-    .reduce((acc, p, idx, arr) => {
-      if (idx > 0 && p - arr[idx - 1] > 1) acc.push("...");
-      acc.push(p);
-      return acc;
-    }, []);
-  return (
-    <div className="pagination-wrap" style={{ marginTop: 0 }}>
-      <button type="button" onClick={() => onPageChange(page - 1)} disabled={page === 1} className="pagination-btn">
-        <MdChevronLeft size={14} /> Prev
-      </button>
-      {pages.map((p, i) =>
-        p === "..." ? (
-          <span key={`e${i}`} className="pagination-ellipsis">...</span>
-        ) : (
-          <button key={p} type="button" onClick={() => onPageChange(p)}
-            className={`pagination-page ${p === page ? "pagination-page--active" : ""}`}>
-            {p}
-          </button>
-        )
-      )}
-      <button type="button" onClick={() => onPageChange(page + 1)} disabled={page === totalPages} className="pagination-btn">
-        Next <MdChevronRight size={14} />
-      </button>
-    </div>
-  );
 }
 
 function Spinner({ size = 20 }) {
@@ -103,6 +74,7 @@ function buildFlatLabel(item) {
 }
 
 export default function MyEmergency() {
+  const [limit, setLimit] = useState(10);
   const { t }              = useLang();
   const { user: authUser } = useContext(AuthContext);
 
@@ -293,9 +265,9 @@ export default function MyEmergency() {
   }, [alerts, activeTab, q]);
 
   const totalItems = filtered.length;
-  const totalPages = Math.max(1, Math.ceil(totalItems / LIMIT));
+  const totalPages = Math.max(1, Math.ceil(totalItems / limit));
   const safePage = Math.min(page, totalPages);
-  const pageItems = filtered.slice((safePage - 1) * LIMIT, safePage * LIMIT);
+  const pageItems = filtered.slice((safePage - 1) * limit, safePage * limit);
 
   const handleTabChange = (key) => {
     setActiveTab(key);
@@ -496,7 +468,7 @@ export default function MyEmergency() {
             })}
           </div>
           <div style={{ display: "flex", justifyContent: "center", padding: "4px 0" }}>
-            <Pagination page={safePage} totalPages={totalPages} onPageChange={setPage} />
+            <Pagination page={safePage} totalPages={totalPages} onPageChange={setPage} pageSize={limit} onPageSizeChange={(s) => { setLimit(s); setPage(1); }} />
           </div>
         </>
       ) : (
@@ -557,11 +529,11 @@ export default function MyEmergency() {
             <span style={{ fontSize: 12, color: "var(--text-secondary)" }}>
               Showing{" "}
               <strong style={{ color: "var(--text-primary)" }}>
-                {(safePage - 1) * LIMIT + 1}–{Math.min(safePage * LIMIT, totalItems)}
+                {(safePage - 1) * limit + 1}–{Math.min(safePage * limit, totalItems)}
               </strong>{" "}
               of <strong style={{ color: "var(--text-primary)" }}>{totalItems}</strong> alerts
             </span>
-            <Pagination page={safePage} totalPages={totalPages} onPageChange={setPage} />
+            <Pagination page={safePage} totalPages={totalPages} onPageChange={setPage} pageSize={limit} onPageSizeChange={(s) => { setLimit(s); setPage(1); }} />
           </div>
         </div>
       )}

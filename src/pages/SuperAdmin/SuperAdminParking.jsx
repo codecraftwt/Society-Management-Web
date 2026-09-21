@@ -1,5 +1,5 @@
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef} from "react";
 import API from "../../services/api";
 import { useLang } from "../../context/LanguageContext";
 import {
@@ -20,51 +20,7 @@ import GlobalModal from "../../components/common/GlobalModal";
 import SlidingTabs from "../../components/common/SlidingTabs";
 import { getRequiredError, getTitleError, getNumberError } from "../../utils/validators";
 
-/* ── Debounce hook ── */
-function useDebounce(value, delay = 500) {
-  const [debounced, setDebounced] = useState(value);
-  useEffect(() => {
-    const t = setTimeout(() => setDebounced(value), delay);
-    return () => clearTimeout(t);
-  }, [value, delay]);
-  return debounced;
-}
-
-/* ── Spinner ── */
-function Spinner({ small = false }) {
-  const s = small ? 13 : 20;
-  return (
-    <svg style={{ width: s, height: s }} className="animate-spin" viewBox="0 0 24 24" fill="none">
-      <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" className="opacity-25" />
-      <path fill="currentColor" className="opacity-75" d="M4 12a8 8 0 018-8v8z" />
-    </svg>
-  );
-}
-
-/* ── Pagination ── */
-function Pagination({ page, totalPages, onPageChange }) {
-  if (totalPages <= 1) return null;
-  const pages = Array.from({ length: totalPages }, (_, i) => i + 1)
-    .filter((p) => p === 1 || p === totalPages || Math.abs(p - page) <= 1)
-    .reduce((acc, p, idx, arr) => {
-      if (idx > 0 && p - arr[idx - 1] > 1) acc.push("...");
-      acc.push(p);
-      return acc;
-    }, []);
-  return (
-    <div className="pagination-wrap">
-      <button onClick={() => onPageChange(page - 1)} disabled={page === 1} className="pagination-btn">‹ Prev</button>
-      {pages.map((p, idx) =>
-        p === "..." ? (
-          <span key={`e-${idx}`} className="pagination-ellipsis">...</span>
-        ) : (
-          <button key={p} onClick={() => onPageChange(p)} className={`pagination-page ${p === page ? "pagination-page--active" : ""}`}>{p}</button>
-        )
-      )}
-      <button onClick={() => onPageChange(page + 1)} disabled={page === totalPages} className="pagination-btn">Next ›</button>
-    </div>
-  );
-}
+import Pagination from "../../components/common/Pagination";
 
 /* ── Status Badge (slot) ── */
 function StatusBadge({ status, t }) {
@@ -649,7 +605,7 @@ function ResidentRequestsPanel({ allSlots, onSlotAssigned, societyId }) {
   );
 }
 
-const LIMIT = 10;
+
 
 export default function SuperAdminParking() {
   const { t } = useLang();
@@ -672,7 +628,10 @@ export default function SuperAdminParking() {
 
   /* Pagination */
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const limitRef = useRef(limit);
+  limitRef.current = limit;
+const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
 
   /* Filters */
@@ -720,7 +679,7 @@ export default function SuperAdminParking() {
     try {
       const params = new URLSearchParams({
         page: pageNum,
-        limit: LIMIT,
+        limit: limitRef.current,
         ...(vFilter !== "ALL" ? { vehicle_type: vFilter } : {}),
         ...(currentSearch ? { search: currentSearch } : {}),
       });
@@ -1083,7 +1042,7 @@ export default function SuperAdminParking() {
                 </div>
                 <div className="px-6 py-4 border-t border-divider flex flex-col items-center gap-3">
                   <p className="text-xs text-secondary">Showing {slots.length} of {totalItems} slots</p>
-                  <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} />
+                  <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} pageSize={limit} onPageSizeChange={(s) => { limitRef.current = s; setLimit(s); setPage(1); handlePageChange(1); }} />
                 </div>
               </>
             )}

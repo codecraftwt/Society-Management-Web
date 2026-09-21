@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useContext, useMemo } from "react";
+import { useEffect, useState, useCallback, useContext, useMemo, useRef} from "react";
 import { createPortal } from "react-dom";
 import API from "../../services/api";
 import { AuthContext } from "../../context/AuthContext";
@@ -19,85 +19,7 @@ import { isCommitteeMember, hasPermission } from "../../utils/permissions";
 import { getTitleError, getPositiveAmountError, getDateRangeError } from "../../utils/validators";
 import { useCustomAlert } from "../../context/CustomAlertContext";
 
-/* ── helpers ── */
-export const BILL_CATEGORIES = [
-  { value: "ELECTRICITY", label: "⚡ Electricity", defaultTitle: "Electricity Bill" },
-  { value: "WATER", label: "💧 Water", defaultTitle: "Water Charges" },
-  { value: "GAS", label: "🔥 Gas", defaultTitle: "Piped Gas Bill" },
-  { value: "PARKING", label: "🚗 Parking", defaultTitle: "Parking Fee" },
-  { value: "SECURITY", label: "🛡️ Security", defaultTitle: "Security Charges" },
-  { value: "AMENITIES", label: "🏊 Amenities", defaultTitle: "Amenity Maintenance" },
-  { value: "DONATION", label: "🤝 Donation", defaultTitle: "Society Donation" },
-  { value: "OTHER", label: "📝 Other", defaultTitle: "" },
-];
-
-const getTodayISO = () => {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-};
-const getCurrentBillingMonth = () => {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-};
-
-/* ── Debounce ── */
-function useDebounce(value, delay = 500) {
-  const [d, setD] = useState(value);
-  useEffect(() => {
-    const t = setTimeout(() => setD(value), delay);
-    return () => clearTimeout(t);
-  }, [value, delay]);
-  return d;
-}
-
-/* ── Spinner ── */
-function Spinner({ size = 16 }) {
-  return (
-    <svg style={{ width: size, height: size }} className="animate-spin text-current" viewBox="0 0 24 24" fill="none">
-      <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" className="opacity-25" />
-      <path fill="currentColor" className="opacity-75" d="M4 12a8 8 0 018-8v8z" />
-    </svg>
-  );
-}
-
-/* ── Mobile hook ── */
-function useIsMobile() {
-  const [m, setM] = useState(() => typeof window !== "undefined" && window.innerWidth < 768);
-  useEffect(() => {
-    const fn = () => setM(window.innerWidth < 768);
-    window.addEventListener("resize", fn);
-    return () => window.removeEventListener("resize", fn);
-  }, []);
-  return m;
-}
-
-/* ── Pagination ── */
-function Pagination({ page, totalPages, onPageChange }) {
-  if (totalPages <= 1) return null;
-  const pages = Array.from({ length: totalPages }, (_, i) => i + 1)
-    .filter(p => p === 1 || p === totalPages || Math.abs(p - page) <= 1)
-    .reduce((acc, p, idx, arr) => {
-      if (idx > 0 && p - arr[idx - 1] > 1) acc.push("...");
-      acc.push(p);
-      return acc;
-    }, []);
-  return (
-    <div className="pagination-wrap" style={{ marginTop: 0 }}>
-      <button onClick={() => onPageChange(page - 1)} disabled={page === 1} className="pagination-btn">
-        <MdChevronLeft size={14} /> Prev
-      </button>
-      {pages.map((p, i) =>
-        p === "..." ? <span key={`e${i}`} className="pagination-ellipsis">{"…"}</span> : (
-          <button key={p} onClick={() => onPageChange(p)}
-            className={`pagination-page ${p === page ? "pagination-page--active" : ""}`}>{p}</button>
-        )
-      )}
-      <button onClick={() => onPageChange(page + 1)} disabled={page === totalPages} className="pagination-btn">
-        Next <MdChevronRight size={14} />
-      </button>
-    </div>
-  );
-}
+import Pagination from "../../components/common/Pagination";
 
 /* ── Status pill ── */
 function BillStatus({ status, t }) {
@@ -166,7 +88,17 @@ const Label = ({ children }) => (
   <label className="block text-xs font-bold text-secondary uppercase tracking-wider mb-2">{children}</label>
 );
 
-const LIMIT = 10;
+export const BILL_CATEGORIES = [
+  { value: "ELECTRICITY", label: "⚡ Electricity", defaultTitle: "Electricity Bill" },
+  { value: "WATER", label: "💧 Water", defaultTitle: "Water Bill" },
+  { value: "GAS", label: "🔥 Gas", defaultTitle: "Gas Bill" },
+  { value: "PARKING", label: "🚗 Parking", defaultTitle: "Parking Charges" },
+  { value: "SECURITY", label: "🛡️ Security", defaultTitle: "Security Charges" },
+  { value: "AMENITIES", label: "🏊 Amenities", defaultTitle: "Amenity Charges" },
+  { value: "MAINTENANCE", label: "🛠️ Maintenance", defaultTitle: "Maintenance Bill" },
+  { value: "DONATION", label: "🤝 Donation", defaultTitle: "Donation" },
+  { value: "OTHER", label: "📝 Other", defaultTitle: "Other" },
+];
 
 /* ══════════════════════════════════════
    MAIN
@@ -186,7 +118,10 @@ export default function ManageBills() {
 
   /* ── Pagination ── */
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const limitRef = useRef(limit);
+  limitRef.current = limit;
+const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
 
   /* ── Search & filter ── */
@@ -347,7 +282,7 @@ export default function ManageBills() {
     try {
       const params = new URLSearchParams({
         page: pg,
-        limit: LIMIT,
+        limit: limitRef.current,
         filter,
         ...(q ? { search: q } : {}),
       });
@@ -737,11 +672,11 @@ export default function ManageBills() {
         <form onSubmit={handleCreateBill} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {isSuperAdmin && !filterSocietyId && (
             <div className="sm:col-span-2">
-              <Label>Target Society</Label>
+              <Label>{t("billTargetSociety")}</Label>
               <Select className="input h-10 w-full" required
                 value={formSocietyId}
                 onChange={e => handleFormSocietyChange(e.target.value)}>
-                <option value="">Choose Society</option>
+                <option value="">{t("billChooseSociety")}</option>
                 {societiesList.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
               </Select>
             </div>
@@ -749,12 +684,12 @@ export default function ManageBills() {
 
           {/* 1. Flat Type */}
           <div>
-            <Label>Flat Type</Label>
+            <Label>{t("billFlatType")}</Label>
             <Select className="input h-10 w-full"
               value={formData.flat_type}
               onChange={e => setFormData({ ...formData, flat_type: e.target.value, bill_type: e.target.value, flat_id: "" })}>
-              <option value="INDIVIDUAL">Individual Flat</option>
-              <option value="ALL">All Flats</option>
+              <option value="INDIVIDUAL">{t("billTypeIndividual")}</option>
+              <option value="ALL">{t("billTypeAll")}</option>
             </Select>
           </div>
 
@@ -777,12 +712,12 @@ export default function ManageBills() {
 
           {/* 3. Billing Type (Category) */}
           <div className={formData.flat_type === "ALL" ? "sm:col-span-1" : ""}>
-            <Label>Billing Type</Label>
+            <Label>{t("billBillingType")}</Label>
             <Select className="input h-10 w-full"
               value={formData.bill_category}
               onChange={e => handleCategoryChange(e.target.value)}>
               {BILL_CATEGORIES.map(c => (
-                <option key={c.value} value={c.value}>{c.label}</option>
+                <option key={c.value} value={c.value}>{t(`billCat${c.value}`)}</option>
               ))}
             </Select>
           </div>
@@ -790,10 +725,10 @@ export default function ManageBills() {
           {/* 4. Conditional Other Specification */}
           {formData.bill_category === "OTHER" && (
             <div className="sm:col-span-2">
-              <Label>Specify Bill Type / What is this for? *</Label>
+              <Label>{t("billSpecifyType")}</Label>
               <input
                 className="input h-10 w-full"
-                placeholder="e.g. Clubhouse Event, Festival Contribution, Garbage Levy"
+                placeholder={t("billCustomPlaceholder")}
                 value={formData.other_bill_type}
                 required
                 onChange={e => setFormData({
@@ -866,8 +801,8 @@ export default function ManageBills() {
       <GlobalModal
         isOpen={!!createdBill}
         onClose={() => setCreatedBill(null)}
-        title="Bill Created Successfully"
-        subtitle={createdBill?.type === "ALL" ? "Bills generated for all owner-occupied flats" : "Bill generated successfully"}
+        title={t("billGeneratedOk")}
+        subtitle={createdBill?.type === "ALL" ? t("billGeneratedAll") : t("billGeneratedOk")}
         icon={MdCheckCircle}
         size="sm"
         showFooter
@@ -1010,7 +945,7 @@ export default function ManageBills() {
                     }}
                   >
                     <MdDelete size={15} />
-                    <span>Delete ({selectedDeletable.length})</span>
+                    <span>{t("billDeleteCount", { n: selectedDeletable.length })}</span>
                   </button>
                 )}
 
@@ -1183,7 +1118,7 @@ export default function ManageBills() {
                         title={`Select bill #${b.id}`}
                       />
                     </td>
-                    <td><span className="text-xs font-semibold text-secondary">{(page - 1) * LIMIT + i + 1}</span></td>
+                    <td><span className="text-xs font-semibold text-secondary">{(page - 1) * limit + i + 1}</span></td>
                     {isSuperAdmin && (
                       <td>
                         <span style={{ fontSize: 12, fontWeight: 700, color: "var(--accent)" }}>
@@ -1218,13 +1153,13 @@ export default function ManageBills() {
             <span className="text-xs text-secondary">
               {t("billShowing")}{" "}
               <strong style={{ color: "var(--text-primary)" }}>
-                {(page - 1) * LIMIT + 1}{"–"}{Math.min(page * LIMIT, totalItems)}
+                {(page - 1) * limit + 1}{"–"}{Math.min(page * limit, totalItems)}
               </strong>{" "}
               {t("billOf")}{" "}
               <strong style={{ color: "var(--text-primary)" }}>{totalItems}</strong>{" "}
               {t("billCount")}
             </span>
-            <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} />
+            <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} pageSize={limit} onPageSizeChange={(s) => { limitRef.current = s; setLimit(s); setPage(1); handlePageChange(1); }} />
           </div>
         )}
       </div>
@@ -1476,4 +1411,4 @@ export default function ManageBills() {
         )}
     </div>
   );
-}
+}

@@ -11,6 +11,7 @@ import {
   MdUploadFile, MdBadge, MdCreditCard, MdCheck, MdDirectionsCar,
   MdPeople, MdPhone, MdContactPhone, MdEdit, MdArrowBack,
   MdArrowForward, MdLocalParking, MdWarning, MdMoreVert, MdBlock,
+  MdVisibility, MdVisibilityOff,
 } from "react-icons/md";
 import { toast } from "react-toastify";
 import Select from "../../components/common/Select";
@@ -21,6 +22,8 @@ import { getTitleError, getEmailError, getMobileError } from "../../utils/valida
 import useUnsavedDirty from "../../hooks/useUnsavedDirty";
 import ConfirmDiscard from "../../components/common/ConfirmDiscard";
 import { useCustomAlert } from "../../context/CustomAlertContext";
+
+import Pagination from "../../components/common/Pagination";
 
 /* ─────────────────────────────────────────
    HELPERS
@@ -41,36 +44,6 @@ function Spinner({ small = false }) {
       <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" className="opacity-25" />
       <path fill="currentColor" className="opacity-75" d="M4 12a8 8 0 018-8v8z" />
     </svg>
-  );
-}
-
-function Pagination({ page, totalPages, onPageChange }) {
-  if (totalPages <= 1) return null;
-  const pages = Array.from({ length: totalPages }, (_, i) => i + 1)
-    .filter((p) => p === 1 || p === totalPages || Math.abs(p - page) <= 1)
-    .reduce((acc, p, idx, arr) => {
-      if (idx > 0 && p - arr[idx - 1] > 1) acc.push("...");
-      acc.push(p);
-      return acc;
-    }, []);
-  return (
-    <div className="pagination-wrap">
-      <button onClick={() => onPageChange(page - 1)} disabled={page === 1} className="pagination-btn">
-        <MdChevronLeft size={15} /> Prev
-      </button>
-      {pages.map((p, idx) =>
-        p === "..." ? (
-          <span key={`e-${idx}`} className="pagination-ellipsis">...</span>
-        ) : (
-          <button key={p} onClick={() => onPageChange(p)} className={`pagination-page ${p === page ? "pagination-page--active" : ""}`}>
-            {p}
-          </button>
-        )
-      )}
-      <button onClick={() => onPageChange(page + 1)} disabled={page === totalPages} className="pagination-btn">
-        Next  <MdChevronRight size={15} />
-      </button>
-    </div>
   );
 }
 
@@ -101,11 +74,13 @@ const BHK_STYLES = {
 };
 
 function ResidentTypeBadge({ type }) {
+  const { t } = useLang();
   if (!type) return null;
   const s = RESIDENT_TYPE_STYLES[type] || RESIDENT_TYPE_STYLES.OWNER;
+  const label = type === "TENANT" ? t("colTenant") : t("colOwner");
   return (
     <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 11, fontWeight: 700, padding: "3px 9px", borderRadius: 999, background: s.bg, color: s.color, border: `1px solid ${s.border}`, letterSpacing: "0.02em" }}>
-      {s.label}
+      {label}
     </span>
   );
 }
@@ -164,17 +139,17 @@ function ResidentActionMenu({ onAssignFlat, onEdit, isCommittee, isAccountant, i
               {isCommittee ? (
                 <button role="menuitem" className="sa-action-item" onClick={() => act(onRemoveCommittee)}>
                   <MdPerson size={15} />
-                  {t("colRemoveCommittee") || "Remove from Committee"}
+                  {t("resRemoveCommittee")}
                 </button>
               ) : isAccountant ? (
                 <button role="menuitem" className="sa-action-item" onClick={() => act(onDeactivateAccountant)}>
                   <MdBlock size={15} style={{ color: "#f87171" }} />
-                  {t("colDeactivateAccountant") || "Deactivate Accountant"}
+                  {t("resDeactivateAcct")}
                 </button>
               ) : (
                 <button role="menuitem" className="sa-action-item" onClick={() => act(onPromote)}>
                   <MdPersonAdd size={15} />
-                  {t("colCommittee") || "Promote to Committee"}
+                  {t("resAddCommittee")}
                 </button>
               )}
             </>
@@ -235,6 +210,7 @@ function CounterField({ value, onChange, min = 0, max = 99 }) {
 }
 
 function DocumentUploadField({ label, icon: Icon, accept, file, onChange, required }) {
+  const { t } = useLang();
   const inputRef = useRef(null);
   const [dragging, setDragging] = useState(false);
   const preview = file?.type?.startsWith("image/") ? URL.createObjectURL(file) : null;
@@ -257,12 +233,12 @@ function DocumentUploadField({ label, icon: Icon, accept, file, onChange, requir
           {file ? (
             <>
               <p style={{ fontSize: 13, fontWeight: 600, color: "#4ade80", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{file.name}</p>
-              <p style={{ fontSize: 11, color: "var(--text-secondary)", margin: "2px 0 0" }}>{(file.size / 1024).toFixed(1)} KB · Click to replace</p>
+              <p style={{ fontSize: 11, color: "var(--text-secondary)", margin: "2px 0 0" }}>{(file.size / 1024).toFixed(1)} KB · {t("rcaClickReplace")}</p>
             </>
           ) : (
             <>
-              <p style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)", margin: 0 }}>Click or drag to upload</p>
-              <p style={{ fontSize: 11, color: "var(--text-secondary)", margin: "2px 0 0" }}>PDF or Image · Max 2MB</p>
+              <p style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)", margin: 0 }}>{t("rcaClickDrag")}</p>
+              <p style={{ fontSize: 11, color: "var(--text-secondary)", margin: "2px 0 0" }}>{t("rcaPdfOrImage")}</p>
             </>
           )}
         </div>
@@ -562,7 +538,7 @@ function AssignFlatModal({ residentId, residentName, societyId, onClose, onSucce
                 <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                   <p style={{ fontSize: 12, color: "var(--text-secondary)", margin: "0 0 2px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>Select Block</p>
                   {availableBlocks.length === 0 ? (
-                    <div style={{ padding: "20px", textAlign: "center", color: "var(--text-secondary)", fontSize: 13, borderRadius: 12, background: "var(--card-inner-bg, rgba(255,255,255,0.03))", border: "1px dashed var(--glass-border, rgba(255,255,255,0.1))" }}>No available blocks for this property type.</div>
+                    <div style={{ padding: "20px", textAlign: "center", color: "var(--text-secondary)", fontSize: 13, borderRadius: 12, background: "var(--card-inner-bg, rgba(255,255,255,0.03))", border: "1px dashed var(--glass-border, rgba(255,255,255,0.1))" }}>{t("resNoBlocksAvailable")}</div>
                   ) : (
                     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(110px,1fr))", gap: 8 }}>
                       {availableBlocks.map((block) => {
@@ -586,7 +562,7 @@ function AssignFlatModal({ residentId, residentName, societyId, onClose, onSucce
                 <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                   <p style={{ fontSize: 12, color: "var(--text-secondary)", margin: "0 0 2px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>Floor — <span style={{ color: "#4BCBEB" }}>Block {selectedBlock?.name}</span></p>
                   {availableFloors.length === 0 ? (
-                    <div style={{ padding: "20px", textAlign: "center", color: "var(--text-secondary)", fontSize: 13, borderRadius: 12, background: "var(--card-inner-bg, rgba(255,255,255,0.03))", border: "1px dashed var(--glass-border, rgba(255,255,255,0.1))" }}>No floors with vacant flats.</div>
+                    <div style={{ padding: "20px", textAlign: "center", color: "var(--text-secondary)", fontSize: 13, borderRadius: 12, background: "var(--card-inner-bg, rgba(255,255,255,0.03))", border: "1px dashed var(--glass-border, rgba(255,255,255,0.1))" }}>{t("resNoFloorsVacant")}</div>
                   ) : (
                     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(90px,1fr))", gap: 8 }}>
                       {availableFloors.map((floor) => {
@@ -610,7 +586,7 @@ function AssignFlatModal({ residentId, residentName, societyId, onClose, onSucce
                   <div>
                     <p style={{ fontSize: 12, color: "var(--text-secondary)", margin: "0 0 8px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>Select {isApartment ? "Flat" : "House"}</p>
                     {availableFlats.length === 0 ? (
-                      <div style={{ padding: "20px", textAlign: "center", color: "var(--text-secondary)", fontSize: 13, borderRadius: 12, background: "var(--card-inner-bg, rgba(255,255,255,0.03))", border: "1px dashed var(--glass-border, rgba(255,255,255,0.1))" }}>No vacant units available.</div>
+                      <div style={{ padding: "20px", textAlign: "center", color: "var(--text-secondary)", fontSize: 13, borderRadius: 12, background: "var(--card-inner-bg, rgba(255,255,255,0.03))", border: "1px dashed var(--glass-border, rgba(255,255,255,0.1))" }}>{t("resNoUnitsAvailable")}</div>
                     ) : (
                       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(86px,1fr))", gap: 8, maxHeight: 180, overflowY: "auto", paddingRight: 2 }}>
                         {availableFlats.map((flat) => {
@@ -799,6 +775,8 @@ const fieldLabelStyle = {
 };
 
 function ParkingSlotPicker({ flatNumber, isApartment, selectedSlotIds, availableSlots, takenSlotIds, onChange }) {
+  const { t } = useLang();
+  const vehicleLabel = (type) => (type === "CAR" ? t("parkCar") : type === "BIKE" ? t("parkBike") : type);
   const freeSlots = availableSlots.filter(
     (s) => !takenSlotIds.includes(String(s.id)) || selectedSlotIds.includes(String(s.id))
   );
@@ -824,20 +802,20 @@ function ParkingSlotPicker({ flatNumber, isApartment, selectedSlotIds, available
     >
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
         <span style={{ fontSize: 11, fontWeight: 700, color: isApartment ? "#9F87D7" : "#34d399" }}>
-          Flat {flatNumber} — Parking
+          {t("rcaFlatParking", { number: flatNumber })}
         </span>
         <span style={{ fontSize: 10, color: "var(--text-secondary)" }}>
           {selectedSlotIds.length === 0
-            ? "none"
+            ? t("rcaNone")
             : selectedSlotIds.length === 1
-              ? "1 default slot"
-              : `1 default + ${selectedSlotIds.length - 1} extra`}
+              ? t("rcaOneDefaultSlot")
+              : t("rcaOneDefaultPlusN", { count: selectedSlotIds.length - 1 })}
         </span>
       </div>
 
       {freeSlots.length === 0 ? (
         <p style={{ fontSize: 11, color: "var(--text-secondary)", margin: 0, opacity: 0.6 }}>
-          No available parking slots.
+          {t("rcaNoParking")}
         </p>
       ) : (
         <div
@@ -850,7 +828,7 @@ function ParkingSlotPicker({ flatNumber, isApartment, selectedSlotIds, available
           {freeSlots.map((slot) => {
             const isSel = selectedSlotIds.includes(String(slot.id));
             const slotIdx = selectedSlotIds.indexOf(String(slot.id));
-            const badge = slotIdx === 0 ? "DEFAULT" : slotIdx > 0 ? "EXTRA" : null;
+            const badge = slotIdx === 0 ? t("rcaDefault") : slotIdx > 0 ? t("rcaExtra") : null;
 
             return (
               <button
@@ -877,7 +855,7 @@ function ParkingSlotPicker({ flatNumber, isApartment, selectedSlotIds, available
                 </div>
                 {slot.vehicle_type && (
                   <div style={{ fontSize: 8, color: "var(--text-secondary)", marginTop: 1 }}>
-                    {slot.vehicle_type}
+                    {vehicleLabel(slot.vehicle_type)}
                   </div>
                 )}
                 {badge && (
@@ -886,7 +864,7 @@ function ParkingSlotPicker({ flatNumber, isApartment, selectedSlotIds, available
                       fontSize: 8,
                       fontWeight: 800,
                       marginTop: 2,
-                      color: badge === "DEFAULT" ? "#4ade80" : "var(--accent)",
+                      color: slotIdx === 0 ? "#4ade80" : "var(--accent)",
                     }}
                   >
                     {badge}
@@ -922,7 +900,7 @@ function ParkingSlotPicker({ flatNumber, isApartment, selectedSlotIds, available
               >
                 <MdLocalParking size={10} />
                 {slotObj.slot_number}
-                <span style={{ fontWeight: 400, opacity: 0.7 }}>{idx === 0 ? "DEFAULT" : "EXTRA"}</span>
+                <span style={{ fontWeight: 400, opacity: 0.7 }}>{idx === 0 ? t("rcaDefault") : t("rcaExtra")}</span>
                 <button
                   type="button"
                   onClick={() => toggle(slotObj.id)}
@@ -1408,6 +1386,7 @@ function FlatAssignCard({
 }
 
 function MultiFlatAssignSection({ allUnassignedFlats, availableSlots, assignments, onChange }) {
+  const { t } = useLang();
 
   /* The new design stores shared context (propType, blockId, floorId) at the
      section level, and per-flat data (flat_id, flat_type, parking_slots) per
@@ -1538,11 +1517,11 @@ function MultiFlatAssignSection({ allUnassignedFlats, availableSlots, assignment
 
       {/* ── Step 1: Property Type ── */}
       <div>
-        <p style={fieldLabelStyle}>Property Type</p>
+        <p style={fieldLabelStyle}>{t("rcaPropertyType")}</p>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
           {[
-            { value: "APARTMENT", label: "Apartment", sub: "Multi-floor building", icon: MdApartment, color: "#6B46C1", bg: "rgba(107,70,193,0.10)" },
-            { value: "ROW_HOUSE", label: "Row House", sub: "Ground-level villa/house", icon: MdHomeWork, color: "#10b981", bg: "rgba(16,185,129,0.10)" },
+            { value: "APARTMENT", label: t("rcaApartment"), sub: t("rcaApartmentSub"), icon: MdApartment, color: "#6B46C1", bg: "rgba(107,70,193,0.10)" },
+            { value: "ROW_HOUSE", label: t("rcaRowHouse"), sub: t("rcaRowHouseSub"), icon: MdHomeWork, color: "#10b981", bg: "rgba(16,185,129,0.10)" },
           ].map((opt) => {
             const active = propType === opt.value;
             const Icon = opt.icon;
@@ -1596,10 +1575,10 @@ function MultiFlatAssignSection({ allUnassignedFlats, availableSlots, assignment
       {/* ── Step 2: Block ── */}
       {propType && (
         <div>
-          <label style={fieldLabelStyle}>Block</label>
+          <label style={fieldLabelStyle}>{t("rcaBlock")}</label>
           {availableBlocks.length === 0 ? (
             <p style={{ fontSize: 12, color: "var(--text-secondary)", margin: 0 }}>
-              No blocks with vacant {isApartment ? "flats" : "houses"}.
+              {t(isApartment ? "rcaNoBlocksFlats" : "rcaNoBlocksHouses")}
             </p>
           ) : (
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(90px,1fr))", gap: 7 }}>
@@ -1631,7 +1610,7 @@ function MultiFlatAssignSection({ allUnassignedFlats, availableSlots, assignment
                       : <MdHomeWork size={20} style={{ color: active ? "#34d399" : "var(--text-secondary)", display: "block", margin: "0 auto 5px" }} />
                     }
                     <div style={{ fontSize: 12, fontWeight: 700, color: active ? (isApartment ? "#9F87D7" : "#34d399") : "var(--text-primary)" }}>
-                      Block {block.name}
+                      {t("rcaBlockName", { name: block.name })}
                     </div>
                     {active && <MdCheckCircle size={11} style={{ color: isApartment ? "#9F87D7" : "#34d399", marginTop: 3 }} />}
                   </button>
@@ -1645,9 +1624,9 @@ function MultiFlatAssignSection({ allUnassignedFlats, availableSlots, assignment
       {/* ── Step 3: Floor (apartment only) ── */}
       {isApartment && blockId && (
         <div>
-          <label style={fieldLabelStyle}>Floor</label>
+          <label style={fieldLabelStyle}>{t("rcaFloor")}</label>
           {availableFloors.length === 0 ? (
-            <p style={{ fontSize: 12, color: "var(--text-secondary)", margin: 0 }}>No floors with vacant flats.</p>
+            <p style={{ fontSize: 12, color: "var(--text-secondary)", margin: 0 }}>{t("rcaNoFloors")}</p>
           ) : (
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(80px,1fr))", gap: 7 }}>
               {availableFloors.map((floor) => {
@@ -1670,7 +1649,7 @@ function MultiFlatAssignSection({ allUnassignedFlats, availableSlots, assignment
                   >
                     <MdLayers size={18} style={{ color: active ? "#9F87D7" : "var(--text-secondary)", display: "block", margin: "0 auto 4px" }} />
                     <div style={{ fontSize: 12, fontWeight: 700, color: active ? "#9F87D7" : "var(--text-primary)" }}>
-                      Floor {floor.number}
+                      {t("rcaFloorName", { number: floor.number })}
                     </div>
                   </button>
                 );
@@ -1685,9 +1664,9 @@ function MultiFlatAssignSection({ allUnassignedFlats, availableSlots, assignment
         <div>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
             <label style={{ ...fieldLabelStyle, marginBottom: 0 }}>
-              Select {isApartment ? "Flats" : "Houses"}
+              {t(isApartment ? "rcaSelectFlats" : "rcaSelectHouses")}
               <span style={{ fontWeight: 400, textTransform: "none", letterSpacing: 0, fontSize: 10, marginLeft: 6, color: "var(--text-secondary)" }}>
-                (tap to select multiple)
+                {t("rcaTapMultiple")}
               </span>
             </label>
             {completedCount > 0 && (
@@ -1700,13 +1679,13 @@ function MultiFlatAssignSection({ allUnassignedFlats, availableSlots, assignment
                   border: "1px solid rgba(34,197,94,0.22)",
                 }}
               >
-                {completedCount} selected
+                {t("rcaSelectedCount", { count: completedCount })}
               </span>
             )}
           </div>
 
           {availableFlats.length === 0 ? (
-            <p style={{ fontSize: 12, color: "var(--text-secondary)", margin: 0 }}>No vacant units available.</p>
+            <p style={{ fontSize: 12, color: "var(--text-secondary)", margin: 0 }}>{t("rcaNoVacantUnits")}</p>
           ) : (
             <div
               style={{
@@ -1779,7 +1758,7 @@ function MultiFlatAssignSection({ allUnassignedFlats, availableSlots, assignment
       {selectedFlatIds.length > 0 && (
         <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 2 }}>
           <p style={{ ...fieldLabelStyle, marginBottom: 2 }}>
-            Configure selected {selectedFlatIds.length === 1 ? "flat" : `${selectedFlatIds.length} flats`}
+            {selectedFlatIds.length === 1 ? t("rcaConfigureFlat") : t("rcaConfigureFlats", { count: selectedFlatIds.length })}
           </p>
 
           {assignments.filter((a) => a.flat_id).map((assignment, cardIdx) => {
@@ -1821,11 +1800,11 @@ function MultiFlatAssignSection({ allUnassignedFlats, availableSlots, assignment
                       {cardIdx + 1}
                     </div>
                     <span style={{ fontSize: 13, fontWeight: 700, color }}>
-                      {isApartment ? "Flat" : "House"} {flat?.flat_number}
+                      {t(isApartment ? "rcaFlatLabel" : "rcaHouseLabel", { number: flat?.flat_number })}
                     </span>
                     {assignment.parking_slots.length > 0 && (
                       <span style={{ fontSize: 9, fontWeight: 800, padding: "2px 6px", borderRadius: 999, background: "rgba(74,222,128,0.12)", color: "#4ade80", border: "1px solid rgba(74,222,128,0.25)" }}>
-                        {assignment.parking_slots.length === 1 ? "1 default" : `1 default +${assignment.parking_slots.length - 1} extra`}
+                        {assignment.parking_slots.length === 1 ? t("rcaOneDefault") : t("rcaDefaultPlusExtra", { count: assignment.parking_slots.length - 1 })}
                       </span>
                     )}
                   </div>
@@ -1833,7 +1812,7 @@ function MultiFlatAssignSection({ allUnassignedFlats, availableSlots, assignment
                     type="button"
                     onClick={() => toggleFlat(assignment.flat_id)}
                     style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-secondary)", display: "flex", padding: 2 }}
-                    title="Remove this flat"
+                    title={t("rcaRemoveFlat")}
                   >
                     <MdClose size={14} />
                   </button>
@@ -1842,7 +1821,7 @@ function MultiFlatAssignSection({ allUnassignedFlats, availableSlots, assignment
                 {/* BHK selector (apartment only) */}
                 {isApartment && (
                   <div>
-                    <label style={fieldLabelStyle}>Flat Size</label>
+                    <label style={fieldLabelStyle}>{t("rcaFlatSize")}</label>
                     <div style={{ display: "flex", gap: 6 }}>
                       {["1BHK", "2BHK", "3BHK"].map((opt) => {
                         const active = assignment.flat_type === opt;
@@ -1902,7 +1881,7 @@ function MultiFlatAssignSection({ allUnassignedFlats, availableSlots, assignment
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <MdCheckCircle size={14} style={{ color: "#4ade80", flexShrink: 0 }} />
             <span style={{ fontSize: 12, fontWeight: 700, color: "#4ade80" }}>
-              {completedCount} flat{completedCount !== 1 ? "s" : ""} ready to assign
+              {t(completedCount === 1 ? "rcaFlatsReady" : "rcaFlatsReadyPlural", { count: completedCount })}
             </span>
           </div>
           <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
@@ -1913,7 +1892,7 @@ function MultiFlatAssignSection({ allUnassignedFlats, availableSlots, assignment
                 border: "1px solid rgba(74,222,128,0.25)",
               }}
             >
-              🅿️ {defaultSlotCount} default slot{defaultSlotCount !== 1 ? "s" : ""}
+              🅿️ {t(defaultSlotCount === 1 ? "rcaDefaultSlots" : "rcaDefaultSlotsPlural", { count: defaultSlotCount })}
             </span>
             {allUsedSlotIds.length - defaultSlotCount > 0 && (
               <span
@@ -1923,7 +1902,7 @@ function MultiFlatAssignSection({ allUnassignedFlats, availableSlots, assignment
                   border: "1px solid rgba(251,191,36,0.22)",
                 }}
               >
-                +{allUsedSlotIds.length - defaultSlotCount} extra
+                {t("rcaExtraCount", { count: allUsedSlotIds.length - defaultSlotCount })}
               </span>
             )}
           </div>
@@ -1937,6 +1916,7 @@ function MultiFlatAssignSection({ allUnassignedFlats, availableSlots, assignment
    EDIT FLAT SECTION
 ═══════════════════════════════════════════ */
 function EditFlatSection({ allUnassignedFlats, availableSlots, currentFlats, currentSlot, editFlatData, onChange }) {
+  const { t } = useLang();
   const { selectedExistingFlatId, propType, blockId, floorId, flat_id, flat_type, parking_slot_id, revokeParking } = editFlatData;
   const isApartment = propType === "APARTMENT";
   const isMultiFlat = currentFlats && currentFlats.length > 1;
@@ -1999,7 +1979,7 @@ function EditFlatSection({ allUnassignedFlats, availableSlots, currentFlats, cur
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
       {isMultiFlat && (
         <div>
-          <label style={fieldLabelStyle}>Which flat to modify?</label>
+          <label style={fieldLabelStyle}>{t("rcaWhichFlat")}</label>
           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
             {currentFlats.map((flat) => {
               const isSel = String(selectedExistingFlatId) === String(flat.id);
@@ -2011,7 +1991,7 @@ function EditFlatSection({ allUnassignedFlats, availableSlots, currentFlats, cur
                       <MdHome size={15} style={{ color: isSel ? "#9F87D7" : "var(--text-secondary)" }} />
                     </div>
                     <div>
-                      <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: isSel ? "#9F87D7" : "var(--text-primary)" }}>Flat {flat.flat_number}</p>
+                      <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: isSel ? "#9F87D7" : "var(--text-primary)" }}>{t("rcaFlatLabel", { number: flat.flat_number })}</p>
                       {flat.flat_type && <p style={{ margin: "2px 0 0", fontSize: 11, color: "var(--text-secondary)" }}>{flat.flat_type}</p>}
                     </div>
                   </div>
@@ -2020,7 +2000,7 @@ function EditFlatSection({ allUnassignedFlats, availableSlots, currentFlats, cur
               );
             })}
           </div>
-          {!selectedExistingFlatId && <p style={{ fontSize: 11, color: "var(--text-secondary)", marginTop: 6, opacity: 0.7 }}>↑ Select a flat above to modify its assignment or parking</p>}
+          {!selectedExistingFlatId && <p style={{ fontSize: 11, color: "var(--text-secondary)", marginTop: 6, opacity: 0.7 }}>{t("rcaSelectFlatHint")}</p>}
         </div>
       )}
 
@@ -2028,9 +2008,9 @@ function EditFlatSection({ allUnassignedFlats, availableSlots, currentFlats, cur
         <>
           {!isMultiFlat && currentFlats && currentFlats.length > 0 && (
             <div style={{ padding: "10px 14px", borderRadius: 10, background: "rgba(107,70,193,0.07)", border: "1px solid rgba(107,70,193,0.18)", fontSize: 12, color: "var(--text-secondary)" }}>
-              <span style={{ fontWeight: 700, color: "#9F87D7" }}>Currently assigned: </span>
+              <span style={{ fontWeight: 700, color: "#9F87D7" }}>{t("rcaCurrentlyAssigned")} </span>
               {currentFlats.map((f) => f.flat_number).join(", ")}
-              <span style={{ fontSize: 11, display: "block", marginTop: 3, opacity: 0.7 }}>Selecting a new flat below will replace this flat.</span>
+              <span style={{ fontSize: 11, display: "block", marginTop: 3, opacity: 0.7 }}>{t("rcaReplaceHint")}</span>
             </div>
           )}
 
@@ -2038,12 +2018,12 @@ function EditFlatSection({ allUnassignedFlats, availableSlots, currentFlats, cur
             <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", borderRadius: 10, background: "rgba(74,222,128,0.07)", border: "1px solid rgba(74,222,128,0.22)" }}>
               <MdLocalParking size={16} style={{ color: "#4ade80", flexShrink: 0 }} />
               <div style={{ flex: 1 }}>
-                <p style={{ margin: 0, fontSize: 12, fontWeight: 700, color: "#4ade80" }}>Current Slot: {currentSlot.slot_number}</p>
-                <p style={{ margin: "2px 0 0", fontSize: 11, color: "var(--text-secondary)" }}>{currentSlot.vehicle_type}{currentSlot.parking_floor ? ` · Level ${currentSlot.parking_floor}` : ""}</p>
+                <p style={{ margin: 0, fontSize: 12, fontWeight: 700, color: "#4ade80" }}>{t("rcaCurrentSlot", { slot: currentSlot.slot_number })}</p>
+                <p style={{ margin: "2px 0 0", fontSize: 11, color: "var(--text-secondary)" }}>{currentSlot.vehicle_type === "CAR" ? t("parkCar") : currentSlot.vehicle_type === "BIKE" ? t("parkBike") : currentSlot.vehicle_type}{currentSlot.parking_floor ? ` · ${t("rcaLevel", { floor: currentSlot.parking_floor })}` : ""}</p>
               </div>
               <button type="button" onClick={() => set({ revokeParking: true, parking_slot_id: "" })}
                 style={{ display: "flex", alignItems: "center", gap: 5, padding: "6px 11px", borderRadius: 8, cursor: "pointer", background: "rgba(248,113,113,0.10)", border: "1px solid rgba(248,113,113,0.25)", color: "#f87171", fontSize: 11, fontWeight: 700 }}>
-                <MdClose size={12} /> Revoke
+                <MdClose size={12} /> {t("rcaRevoke")}
               </button>
             </div>
           )}
@@ -2051,17 +2031,17 @@ function EditFlatSection({ allUnassignedFlats, availableSlots, currentFlats, cur
           {revokeParking && (
             <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", borderRadius: 10, background: "rgba(248,113,113,0.08)", border: "1px solid rgba(248,113,113,0.25)" }}>
               <MdClose size={14} style={{ color: "#f87171", flexShrink: 0 }} />
-              <span style={{ fontSize: 12, fontWeight: 700, color: "#f87171", flex: 1 }}>Slot will be freed on save</span>
-              <button type="button" onClick={() => set({ revokeParking: false })} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-secondary)", fontSize: 11, fontWeight: 600 }}>Undo</button>
+              <span style={{ fontSize: 12, fontWeight: 700, color: "#f87171", flex: 1 }}>{t("rcaSlotFreed")}</span>
+              <button type="button" onClick={() => set({ revokeParking: false })} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-secondary)", fontSize: 11, fontWeight: 600 }}>{t("rcaUndo")}</button>
             </div>
           )}
 
           <div>
-            <label style={fieldLabelStyle}>Replace with new flat? (optional)</label>
+            <label style={fieldLabelStyle}>{t("rcaReplaceNewFlat")}</label>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
               {[
-                { value: "APARTMENT", label: "Apartment", icon: MdApartment, color: "#6B46C1", bg: "rgba(107,70,193,0.10)" },
-                { value: "ROW_HOUSE", label: "Row House", icon: MdHomeWork, color: "#10b981", bg: "rgba(16,185,129,0.10)" },
+                { value: "APARTMENT", label: t("rcaApartment"), icon: MdApartment, color: "#6B46C1", bg: "rgba(107,70,193,0.10)" },
+                { value: "ROW_HOUSE", label: t("rcaRowHouse"), icon: MdHomeWork, color: "#10b981", bg: "rgba(16,185,129,0.10)" },
               ].map((opt) => {
                 const active = propType === opt.value;
                 const Icon = opt.icon;
@@ -2079,29 +2059,29 @@ function EditFlatSection({ allUnassignedFlats, availableSlots, currentFlats, cur
 
           {propType && (
             <div>
-              <label style={fieldLabelStyle}>Select Block</label>
+              <label style={fieldLabelStyle}>{t("rcaSelectBlock")}</label>
               <Select className="input w-full" value={blockId} onChange={(e) => handleBlock(e.target.value)}>
-                <option value="">— Choose a block —</option>
-                {availableBlocks.map((b) => <option key={b.id} value={b.id}>Block {b.name}</option>)}
+                <option value="">{t("rcaChooseBlock")}</option>
+                {availableBlocks.map((b) => <option key={b.id} value={b.id}>{t("rcaBlockName", { name: b.name })}</option>)}
               </Select>
             </div>
           )}
 
           {isApartment && blockId && (
             <div>
-              <label style={fieldLabelStyle}>Select Floor</label>
+              <label style={fieldLabelStyle}>{t("rcaSelectFloor")}</label>
               <Select className="input w-full" value={floorId} onChange={(e) => handleFloor(e.target.value)}>
-                <option value="">— Choose a floor —</option>
-                {availableFloors.map((f) => <option key={f.id} value={f.id}>Floor {f.number}</option>)}
+                <option value="">{t("rcaChooseFloor")}</option>
+                {availableFloors.map((f) => <option key={f.id} value={f.id}>{t("rcaFloorName", { number: f.number })}</option>)}
               </Select>
             </div>
           )}
 
           {((isApartment && floorId) || (!isApartment && blockId)) && (
             <div>
-              <label style={fieldLabelStyle}>Select {isApartment ? "Flat" : "House"}</label>
+              <label style={fieldLabelStyle}>{t(isApartment ? "rcaSelectFlat" : "rcaSelectHouse")}</label>
               {availableFlats.length === 0 ? (
-                <p style={{ fontSize: 12, color: "var(--text-secondary)", padding: "8px 0", margin: 0 }}>No vacant units in this location.</p>
+                <p style={{ fontSize: 12, color: "var(--text-secondary)", padding: "8px 0", margin: 0 }}>{t("rcaNoVacantLocation")}</p>
               ) : (
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(80px,1fr))", gap: 6, maxHeight: 160, overflowY: "auto" }}>
                   {availableFlats.map((f) => {
@@ -2125,7 +2105,7 @@ function EditFlatSection({ allUnassignedFlats, availableSlots, currentFlats, cur
 
           {isApartment && flat_id && (
             <div>
-              <label style={fieldLabelStyle}>Flat Size (BHK)</label>
+              <label style={fieldLabelStyle}>{t("rcaFlatSizeBhk")}</label>
               <div style={{ display: "flex", gap: 7 }}>
                 {["1BHK", "2BHK", "3BHK"].map((opt) => {
                   const active = flat_type === opt;
@@ -2145,9 +2125,9 @@ function EditFlatSection({ allUnassignedFlats, availableSlots, currentFlats, cur
             <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", borderRadius: 10, background: isApartment ? "rgba(107,70,193,0.08)" : "rgba(16,185,129,0.08)", border: `1px solid ${isApartment ? "rgba(107,70,193,0.20)" : "rgba(16,185,129,0.20)"}` }}>
               {isApartment ? <MdApartment size={17} style={{ color: "#9F87D7", flexShrink: 0 }} /> : <MdHomeWork size={17} style={{ color: "#34d399", flexShrink: 0 }} />}
               <span style={{ fontWeight: 700, fontSize: 13, color: isApartment ? "#9F87D7" : "#34d399" }}>
-                {isApartment ? "Flat" : "House"} {selectedFlatObj.flat_number}
-                {selectedBlock && ` · Block ${selectedBlock.name}`}
-                {isApartment && selectedFloor && ` · Floor ${selectedFloor.number}`}
+                {t(isApartment ? "rcaFlatLabel" : "rcaHouseLabel", { number: selectedFlatObj.flat_number })}
+                {selectedBlock && ` · ${t("rcaBlockName", { name: selectedBlock.name })}`}
+                {isApartment && selectedFloor && ` · ${t("rcaFloorName", { number: selectedFloor.number })}`}
                 {isApartment && flat_type && ` · ${flat_type}`}
               </span>
               <button type="button" onClick={() => set({ flat_id: "", blockId: "", floorId: "", propType: "" })} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-secondary)", display: "flex", marginLeft: "auto" }}>
@@ -2158,9 +2138,9 @@ function EditFlatSection({ allUnassignedFlats, availableSlots, currentFlats, cur
 
           {!revokeParking && (
             <div>
-              <label style={fieldLabelStyle}>{currentSlot ? "Replace Slot" : "Parking Slot"}<span style={{ fontWeight: 400, textTransform: "none", letterSpacing: 0, fontSize: 10 }}> (optional)</span></label>
+              <label style={fieldLabelStyle}>{currentSlot ? t("rcaReplaceSlot") : t("rcaParkingSlot")}<span style={{ fontWeight: 400, textTransform: "none", letterSpacing: 0, fontSize: 10 }}> {t("rcaOptional")}</span></label>
               {availableSlots.length === 0 ? (
-                <p style={{ fontSize: 12, color: "var(--text-secondary)", margin: 0, opacity: 0.7 }}>No available parking slots.</p>
+                <p style={{ fontSize: 12, color: "var(--text-secondary)", margin: 0, opacity: 0.7 }}>{t("rcaNoParking")}</p>
               ) : (
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(80px,1fr))", gap: 6, maxHeight: 140, overflowY: "auto" }}>
                   {availableSlots.map((slot) => {
@@ -2170,7 +2150,7 @@ function EditFlatSection({ allUnassignedFlats, availableSlots, currentFlats, cur
                         style={{ padding: "10px 6px", borderRadius: 9, cursor: "pointer", textAlign: "center", transition: "all 0.16s", outline: "none", fontWeight: 700, fontSize: 11, background: isSel ? "rgba(107,70,193,0.12)" : "rgba(255,255,255,0.04)", border: `2px solid ${isSel ? "#6B46C1" : "rgba(255,255,255,0.08)"}`, color: isSel ? "#C0B0E5" : "var(--text-primary)" }}>
                         <MdLocalParking size={14} style={{ margin: "0 auto 3px", display: "block", color: isSel ? "#C0B0E5" : "var(--text-secondary)" }} />
                         <div>{slot.slot_number}</div>
-                        {slot.vehicle_type && <div style={{ fontSize: 9, color: "var(--text-secondary)", marginTop: 1 }}>{slot.vehicle_type}</div>}
+                        {slot.vehicle_type && <div style={{ fontSize: 9, color: "var(--text-secondary)", marginTop: 1 }}>{slot.vehicle_type === "CAR" ? t("parkCar") : slot.vehicle_type === "BIKE" ? t("parkBike") : slot.vehicle_type}</div>}
                         {isSel && <MdCheckCircle size={11} style={{ color: "#C0B0E5", marginTop: 2 }} />}
                       </button>
                     );
@@ -2180,7 +2160,7 @@ function EditFlatSection({ allUnassignedFlats, availableSlots, currentFlats, cur
               {parking_slot_id && selectedSlotObj && (
                 <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8, padding: "8px 12px", borderRadius: 9, background: "rgba(107,70,193,0.07)", border: "1px solid rgba(107,70,193,0.18)" }}>
                   <MdLocalParking size={15} style={{ color: "#C0B0E5", flexShrink: 0 }} />
-                  <span style={{ fontSize: 12, fontWeight: 600, color: "#C0B0E5", flex: 1 }}>Slot {selectedSlotObj.slot_number}{selectedSlotObj.vehicle_type ? ` · ${selectedSlotObj.vehicle_type}` : ""}</span>
+                  <span style={{ fontSize: 12, fontWeight: 600, color: "#C0B0E5", flex: 1 }}>{t("rcaSlotLabel", { number: selectedSlotObj.slot_number })}{selectedSlotObj.vehicle_type ? ` · ${selectedSlotObj.vehicle_type === "CAR" ? t("parkCar") : selectedSlotObj.vehicle_type === "BIKE" ? t("parkBike") : selectedSlotObj.vehicle_type}` : ""}</span>
                   <button type="button" onClick={() => set({ parking_slot_id: "" })} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-secondary)", display: "flex" }}>
                     <MdClose size={13} />
                   </button>
@@ -2197,7 +2177,7 @@ function EditFlatSection({ allUnassignedFlats, availableSlots, currentFlats, cur
 /* ─────────────────────────────────────────
    CONSTANTS
 ───────────────────────────────────────── */
-const LIMIT = 50;
+
 
 const EMPTY_FORM = {
   name: "", email: "", password: "", phone: "",
@@ -2229,7 +2209,10 @@ export default function Resident() {
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 500);
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
+  const [limit, setLimit] = useState(50);
+  const limitRef = useRef(limit);
+  limitRef.current = limit;
+const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
 
   const [showForm, setShowForm] = useState(false);
@@ -2238,6 +2221,7 @@ export default function Resident() {
   const [formData, setFormData] = useState(EMPTY_FORM);
   const [editingId, setEditingId] = useState(null);
   const [formStep, setFormStep] = useState(1);
+  const [showPassword, setShowPassword] = useState(false);
 
   const [editFlatData, setEditFlatData] = useState(EMPTY_EDIT_FLAT);
   const [editCurrentFlats, setEditCurrentFlats] = useState([]);
@@ -2371,6 +2355,7 @@ export default function Resident() {
     setEditCurrentFlats([]);
     setFormSocietyId("");
     setFormStep(1);
+    setShowPassword(false);
   };
 
   /* Unsaved-changes guard */
@@ -2388,7 +2373,7 @@ export default function Resident() {
       try {
         const params = new URLSearchParams({
           page: pageNum,
-          limit: LIMIT,
+          limit: limitRef.current,
           ...(currentSearch ? { search: currentSearch } : {}),
           ...(filterSocietyId ? { society_id: filterSocietyId } : {}),
           ...(filterBlockId ? { block_id: filterBlockId } : {}),
@@ -2521,7 +2506,7 @@ export default function Resident() {
       await API.patch(`/accountant/${userId}/status`, { status: "INACTIVE" });
       setAccountantConfirm(null);
       loadResidents(page, debouncedSearch);
-      toast.success("Accountant role deactivated successfully");
+      toast.success(t("resAcctDeactivated"));
     } catch (err) {
       if (err.response?.status === 403) {
         showUnauthorized(err.response?.data?.message || "Operation restricted");
@@ -2569,20 +2554,24 @@ export default function Resident() {
     setFormError("");
     if (formStep === 1) {
       if (isSuperAdmin && !formSocietyId) {
-        setFormError("Please select a society.");
+        setFormError(t("rcaErrSelectSociety"));
         return;
       }
       if (!formData.name?.trim()) {
-        const nameErr = getTitleError(formData.name, "Full name");
-        setFormError(nameErr);
+        setFormError(t("rcaErrNameRequired"));
         return;
       }
+      const nameErr = getTitleError(formData.name, "Full name");
+      if (nameErr) { setFormError(t("rcaErrNameInvalid")); return; }
       const emailErr = getEmailError(formData.email);
-      if (emailErr) { setFormError(emailErr); return; }
+      if (emailErr) {
+        setFormError(!formData.email?.trim() ? t("rcaErrEmailRequired") : t("rcaErrEmailInvalid"));
+        return;
+      }
       const phoneErr = formData.phone ? getMobileError(formData.phone, "Phone") : null;
-      if (phoneErr) { setFormError(phoneErr); return; }
+      if (phoneErr) { setFormError(t("rcaErrPhoneInvalid")); return; }
       if (!editingId && !formData.password) {
-        setFormError("Password is required for new accounts.");
+        setFormError(t("rcaErrPassword"));
         return;
       }
       setFormStep(2);
@@ -2593,17 +2582,17 @@ export default function Resident() {
       const ec = formData.emergency_contact;
       const ecFilled = ec.name?.trim() || ec.phone?.trim();
       if (ecFilled && (!ec.name?.trim() || !ec.phone?.trim())) {
-        setFormError("Emergency contact requires both a name and phone.");
+        setFormError(t("rcaErrEmergencyBoth"));
         return;
       }
       if (ecFilled) {
         const ecNameErr = getTitleError(ec.name, "Emergency contact name");
-        if (ecNameErr) { setFormError(ecNameErr); return; }
+        if (ecNameErr) { setFormError(t("rcaErrEcName")); return; }
         const ecPhoneErr = getMobileError(ec.phone, "Emergency contact phone");
-        if (ecPhoneErr) { setFormError(ecPhoneErr); return; }
+        if (ecPhoneErr) { setFormError(t("rcaErrEcPhone")); return; }
       }
       if (!editingId && (!aadharFile || !panFile)) {
-        setFormError("Both Aadhar and PAN documents are required.");
+        setFormError(t("rcaErrKyc"));
         return;
       }
       setFormStep(3);
@@ -2616,28 +2605,28 @@ export default function Resident() {
     setFormError("");
 
     if (!editingId && (!aadharFile || !panFile)) {
-      setFormError("Both Aadhar and PAN documents are required.");
+      setFormError(t("rcaErrKyc"));
       return;
     }
 
     const ec = formData.emergency_contact;
     const ecFilled = ec.name?.trim() || ec.phone?.trim();
     if (ecFilled && (!ec.name?.trim() || !ec.phone?.trim())) {
-      setFormError("Emergency contact requires both a name and phone.");
+      setFormError(t("rcaErrEmergencyBoth"));
       return;
     }
     if (ecFilled) {
       const ecNameErr = getTitleError(ec.name, "Emergency contact name");
-      if (ecNameErr) { setFormError(ecNameErr); return; }
+      if (ecNameErr) { setFormError(t("rcaErrEcName")); return; }
       const ecPhoneErr = getMobileError(ec.phone, "Emergency contact phone");
-      if (ecPhoneErr) { setFormError(ecPhoneErr); return; }
+      if (ecPhoneErr) { setFormError(t("rcaErrEcPhone")); return; }
     }
     const phoneErr = formData.phone ? getMobileError(formData.phone, "Phone") : null;
-    if (phoneErr) { setFormError(phoneErr); return; }
+    if (phoneErr) { setFormError(t("rcaErrPhoneInvalid")); return; }
     if (!editingId) {
       const completedAssignments = formData.flat_assignments.filter(a => a.flat_id);
       if (completedAssignments.length === 0) {
-        setFormError("Please assign at least one flat before creating the resident.");
+        setFormError(t("rcaErrAssignFlat"));
         return;
       }
     }
@@ -2668,7 +2657,7 @@ export default function Resident() {
           if (editFlatData.selectedExistingFlatId) payload.revoke_flat_id = Number(editFlatData.selectedExistingFlatId);
         }
         await API.put(`/users/resident/${editingId}`, payload, { headers });
-        toast.success("Resident updated successfully");
+        toast.success(t("rcaUpdateSuccess"));
       } else {
         const flatAssignments = formData.flat_assignments
           .filter((a) => a.flat_id)
@@ -2708,14 +2697,14 @@ export default function Resident() {
           { headers: { ...headers, "Content-Type": "multipart/form-data" } },
         );
 
-        toast.success("Resident created successfully");
+        toast.success(t("rcaCreateSuccess"));
       }
 
       resetForm();
       setShowForm(false);
       loadResidents(page, debouncedSearch);
     } catch (err) {
-      const msg = err.response?.data?.message || `Failed to ${editingId ? "update" : "create"} resident.`;
+      const msg = err.response?.data?.message || t(editingId ? "rcaUpdateFail" : "rcaCreateFail");
       setFormError(msg);
       toast.error(msg);
     } finally {
@@ -2733,7 +2722,7 @@ export default function Resident() {
       await API.delete(`/users/resident/${id}`);
       setConfirmId(null);
       loadResidents(page, debouncedSearch);
-      toast.success("Resident deleted successfully");
+      toast.success(t("resDeletedOk"));
     } catch (err) {
       if (err.response?.status === 403) {
         showUnauthorized(err.response?.data?.message || "Operation restricted");
@@ -2897,10 +2886,14 @@ export default function Resident() {
                 </div>
                 <div>
                   <h3 style={{ fontWeight: 800, fontSize: 17, color: "var(--text-primary)", margin: 0, letterSpacing: "-0.02em" }}>
-                    {editingId ? "Edit Resident Account" : "Create New Resident Account"}
+                    {editingId ? t("rcaEditTitle") : t("rcaCreateTitle")}
                   </h3>
                   <p style={{ fontSize: 12, color: "#4BCBEB", margin: "2px 0 0", fontWeight: 600 }}>
-                    Step {formStep} of 3 — {formStep === 1 ? "Personal & Account Details" : formStep === 2 ? "Household & KYC Documents" : "Property & Flat Assignment"}
+                    {t("rcaStepOf", {
+                      step: formStep,
+                      total: 3,
+                      label: formStep === 1 ? t("rcaStepPersonal") : formStep === 2 ? t("rcaStepKyc") : t("rcaStepFlat"),
+                    })}
                   </p>
                 </div>
               </div>
@@ -2913,7 +2906,7 @@ export default function Resident() {
             </div>
 
             <div style={{ padding: "16px 24px 0" }}>
-              <StepIndicator step={formStep} total={3} labels={["1. Personal Info", "2. KYC & Family", "3. Flat Assignment"]} />
+              <StepIndicator step={formStep} total={3} labels={[t("rcaTabPersonal"), t("rcaTabKyc"), t("rcaTabFlat")]} />
             </div>
 
             <div style={{ height: 1, background: "var(--glass-border, rgba(255,255,255,0.08))", margin: "16px 0 0" }} />
@@ -2931,7 +2924,7 @@ export default function Resident() {
                 {formStep === 1 && (
                   <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
                     {isSuperAdmin && (
-                      <Field label="Society" required>
+                      <Field label={t("rcaSociety")} required>
                         <Select
                           className="input w-full"
                           value={formSocietyId}
@@ -2939,33 +2932,55 @@ export default function Resident() {
                           disabled={!!editingId}
                           required
                         >
-                          <option value="">— Select Society —</option>
+                          <option value="">{t("rcaSelectSociety")}</option>
                           {societiesList.map((s) => (
                             <option key={s.id} value={s.id}>{s.name}</option>
                           ))}
                         </Select>
                         {editingId && (
                           <p style={{ fontSize: 10, color: "var(--text-secondary)", marginTop: 4 }}>
-                            Society cannot be changed after creation.
+                            {t("rcaSocietyLocked")}
                           </p>
                         )}
                       </Field>
                     )}
 
-                    <SectionDivider icon={MdPerson} label="Personal Information" />
+                    <SectionDivider icon={MdPerson} label={t("personalInfo")} />
                     <Field label={t("residentName")} required>
-                      <input className="input w-full" placeholder="Full name (e.g. Rahul Sharma)" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} required />
+                      <input className="input w-full" placeholder={t("rcaNamePlaceholder")} value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} required />
                     </Field>
                     <Field label={t("residentEmail")} required>
-                      <input className="input w-full" placeholder="email@example.com" type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} required disabled={!!editingId} style={editingId ? { opacity: 0.6, cursor: "not-allowed" } : {}} />
+                      <input className="input w-full" placeholder={t("rcaEmailPlaceholder")} type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} required disabled={!!editingId} style={editingId ? { opacity: 0.6, cursor: "not-allowed" } : {}} />
                     </Field>
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                      <Field label="Phone">
-                        <input className="input w-full" placeholder="10-digit number" type="tel" value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} />
+                      <Field label={t("rcaPhone")}>
+                        <input className="input w-full" placeholder={t("rcaPhonePlaceholder")} type="tel" value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} />
                       </Field>
                       {!editingId && (
                         <Field label={t("residentPassword")} required>
-                          <input className="input w-full" placeholder="Set account password" type="password" value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} required />
+                          <div style={{ position: "relative" }}>
+                            <input
+                              className="input w-full"
+                              placeholder={t("rcaPasswordPlaceholder")}
+                              type={showPassword ? "text" : "password"}
+                              value={formData.password}
+                              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                              required
+                              style={{ paddingRight: 40 }}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setShowPassword((p) => !p)}
+                              aria-label={showPassword ? t("rcaHidePassword") : t("rcaShowPassword")}
+                              style={{
+                                position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)",
+                                background: "none", border: "none", cursor: "pointer",
+                                color: "var(--text-secondary)", display: "flex", alignItems: "center", padding: 0,
+                              }}
+                            >
+                              {showPassword ? <MdVisibilityOff size={17} /> : <MdVisibility size={17} />}
+                            </button>
+                          </div>
                         </Field>
                       )}
                     </div>
@@ -2975,35 +2990,35 @@ export default function Resident() {
                 {/* STEP 2: Household & KYC Details */}
                 {formStep === 2 && (
                   <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-                    <SectionDivider icon={MdPeople} label="Household Details" />
+                    <SectionDivider icon={MdPeople} label={t("rcaHousehold")} />
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                      <Field label="No. of Vehicles">
+                      <Field label={t("rcaVehicleCount")}>
                         <CounterField value={formData.vehicle_count} onChange={(v) => setFormData((f) => ({ ...f, vehicle_count: v }))} min={0} max={99} />
                       </Field>
-                      <Field label="Family Members">
+                      <Field label={t("rcaFamilyMembers")}>
                         <CounterField value={formData.occupant_count} onChange={(v) => setFormData((f) => ({ ...f, occupant_count: v }))} min={1} max={99} />
                       </Field>
                     </div>
 
-                    <SectionDivider icon={MdContactPhone} label="Emergency Contact (Optional)" />
+                    <SectionDivider icon={MdContactPhone} label={t("rcaEmergencyOptional")} />
                     <div style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "10px 12px", background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.15)", borderRadius: 10, marginTop: -4 }}>
                       <MdPhone size={15} style={{ color: "#f87171", flexShrink: 0, marginTop: 1 }} />
-                      <p style={{ fontSize: 11, color: "var(--text-secondary)", margin: 0, lineHeight: 1.5 }}>Both contact name and phone number are required if provided.</p>
+                      <p style={{ fontSize: 11, color: "var(--text-secondary)", margin: 0, lineHeight: 1.5 }}>{t("rcaEmergencyHint")}</p>
                     </div>
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                      <Field label="Contact Name">
-                        <input className="input w-full" placeholder="e.g. Ramesh Sharma" value={formData.emergency_contact.name} onChange={(e) => setFormData((f) => ({ ...f, emergency_contact: { ...f.emergency_contact, name: e.target.value } }))} />
+                      <Field label={t("rcaContactName")}>
+                        <input className="input w-full" placeholder={t("rcaContactNamePh")} value={formData.emergency_contact.name} onChange={(e) => setFormData((f) => ({ ...f, emergency_contact: { ...f.emergency_contact, name: e.target.value } }))} />
                       </Field>
-                      <Field label="Contact Phone">
-                        <input className="input w-full" placeholder="10-digit number" type="tel" value={formData.emergency_contact.phone} onChange={(e) => setFormData((f) => ({ ...f, emergency_contact: { ...f.emergency_contact, phone: e.target.value } }))} />
+                      <Field label={t("rcaContactPhone")}>
+                        <input className="input w-full" placeholder={t("rcaPhonePlaceholder")} type="tel" value={formData.emergency_contact.phone} onChange={(e) => setFormData((f) => ({ ...f, emergency_contact: { ...f.emergency_contact, phone: e.target.value } }))} />
                       </Field>
                     </div>
 
                     {!editingId && (
                       <>
-                        <SectionDivider icon={MdUploadFile} label="KYC Documents" />
-                        <DocumentUploadField label="Aadhar Card" icon={MdBadge} accept="application/pdf,image/*" file={aadharFile} onChange={setAadharFile} required />
-                        <DocumentUploadField label="PAN Card" icon={MdCreditCard} accept="application/pdf,image/*" file={panFile} onChange={setPanFile} required />
+                        <SectionDivider icon={MdUploadFile} label={t("rcaKycDocs")} />
+                        <DocumentUploadField label={t("rcaAadhar")} icon={MdBadge} accept="application/pdf,image/*" file={aadharFile} onChange={setAadharFile} required />
+                        <DocumentUploadField label={t("rcaPan")} icon={MdCreditCard} accept="application/pdf,image/*" file={panFile} onChange={setPanFile} required />
                       </>
                     )}
                   </div>
@@ -3014,24 +3029,24 @@ export default function Resident() {
                   <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
                     {!editingId && (
                       <>
-                        <SectionDivider icon={MdHome} label="Flat Assignment" required />
+                        <SectionDivider icon={MdHome} label={t("rcaFlatAssign")} required />
 
                         {missingFlat && (
                           <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", borderRadius: 10, background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.22)" }}>
                             <MdWarning size={15} style={{ color: "#f87171", flexShrink: 0 }} />
                             <p style={{ fontSize: 12, color: "#f87171", margin: 0, fontWeight: 600 }}>
-                              A flat must be assigned to create a resident. Select the property type below to begin.
+                              {t("rcaMustAssignFlat")}
                             </p>
                           </div>
                         )}
 
                         <p style={{ fontSize: 11, color: "var(--text-secondary)", marginTop: -4, marginBottom: 2 }}>
-                          <span style={{ color: "var(--accent)" }}>Parking slots assigned here go to the flat directly — residents add their vehicles themselves.</span>
+                          <span style={{ color: "var(--accent)" }}>{t("rcaParkingHint")}</span>
                         </p>
 
                         {loadingFlats || loadingSlots ? (
                           <div style={{ display: "flex", alignItems: "center", gap: 8, color: "var(--text-secondary)", fontSize: 13, padding: "10px 0" }}>
-                            <Spinner small /> Loading available units…
+                            <Spinner small /> {t("rcaLoadingUnits")}
                           </div>
                         ) : (
                           <MultiFlatAssignSection
@@ -3046,11 +3061,11 @@ export default function Resident() {
 
                     {editingId && (
                       <>
-                        <SectionDivider icon={MdHome} label="Reassign Flat & Parking (Optional)" />
-                        <p style={{ fontSize: 11, color: "var(--text-secondary)", marginTop: -4, marginBottom: 2 }}>Leave blank to keep the current flat unchanged.</p>
+                        <SectionDivider icon={MdHome} label={t("rcaReassignOptional")} />
+                        <p style={{ fontSize: 11, color: "var(--text-secondary)", marginTop: -4, marginBottom: 2 }}>{t("rcaLeaveBlank")}</p>
                         {loadingFlats || loadingSlots ? (
                           <div style={{ display: "flex", alignItems: "center", gap: 8, color: "var(--text-secondary)", fontSize: 13, padding: "10px 0" }}>
-                            <Spinner small /> Loading available units…
+                            <Spinner small /> {t("rcaLoadingUnits")}
                           </div>
                         ) : (
                           <EditFlatSection
@@ -3070,7 +3085,7 @@ export default function Resident() {
                 <div style={{ display: "flex", gap: 10, paddingTop: 8, borderTop: "1px solid var(--glass-border, rgba(255,255,255,0.08))", marginTop: 8 }}>
                   {formStep > 1 && (
                     <button type="button" onClick={() => { setFormError(""); setFormStep(s => s - 1); }} className="sa-btn sa-btn-ghost">
-                      <MdArrowBack size={15} /> Back
+                      <MdArrowBack size={15} /> {t("rcaBack")}
                     </button>
                   )}
                   <button type="button" onClick={requestCloseForm} className="sa-btn sa-btn-ghost">
@@ -3078,29 +3093,33 @@ export default function Resident() {
                   </button>
                   <div style={{ flex: 1 }} />
                   {formStep < 3 ? (
-                    <button
+                    <GlobalButton
                       type="button"
+                      variant="add"
+                      borderDraw
+                      icon={MdArrowForward}
+                      iconPosition="right"
                       onClick={handleNextStep}
-                      className="btn-primary"
                       style={{ fontWeight: 700 }}
                     >
-                      <span>Next Step</span> <MdArrowForward size={15} />
-                    </button>
+                      {t("rcaNextStep")}
+                    </GlobalButton>
                   ) : (
-                    <button
+                    <GlobalButton
                       type="submit"
+                      variant="add"
+                      borderDraw
+                      icon={(!editingId && missingFlat) ? MdWarning : MdCheckCircle}
+                      loading={submitting}
                       disabled={submitting || (!editingId && missingFlat)}
-                      className="btn-primary"
-                      style={{ opacity: submitting || (!editingId && missingFlat) ? 0.5 : 1, fontWeight: 700, cursor: submitting || (!editingId && missingFlat) ? "not-allowed" : "pointer" }}
+                      style={{ fontWeight: 700 }}
                     >
-                      {submitting ? (
-                        <><Spinner small /> {editingId ? "Updating…" : "Creating…"}</>
-                      ) : (!editingId && missingFlat) ? (
-                        <><MdWarning size={15} /> Assign Flat First</>
-                      ) : (
-                        <><MdCheckCircle size={16} /> <span>{editingId ? "Update Resident" : "Confirm & Save"}</span></>
-                      )}
-                    </button>
+                      {submitting
+                        ? (editingId ? t("updating") : t("rcaCreating"))
+                        : (!editingId && missingFlat)
+                          ? t("rcaAssignFlatFirst")
+                          : (editingId ? t("rcaUpdateResident") : t("rcaConfirmSave"))}
+                    </GlobalButton>
                   )}
                 </div>
               </form>
@@ -3137,12 +3156,12 @@ export default function Resident() {
             onChange={(e) => setFilterRole(e.target.value)}
           >
             <option value="">{t("allRoles") || "All Roles"}</option>
-            <option value="COMMITTEE_MEMBER">Committee Member</option>
-            <option value="ACCOUNTANT">Accountant</option>
-            <option value="ADMIN">Admin</option>
-            <option value="SOCIETY_ADMIN">Society Admin</option>
-            <option value="RESIDENT">Resident</option>
-            <option value="TENANT">Tenant</option>
+            <option value="COMMITTEE_MEMBER">{t("roleCommittee")}</option>
+            <option value="ACCOUNTANT">{t("roleAccountant")}</option>
+            <option value="ADMIN">{t("roleAdmin")}</option>
+            <option value="SOCIETY_ADMIN">{t("roleSocietyAdmin")}</option>
+            <option value="RESIDENT">{t("roleResident")}</option>
+            <option value="TENANT">{t("roleTenant")}</option>
           </Select>
 
           {isSuperAdmin && (
@@ -3180,7 +3199,7 @@ export default function Resident() {
             disabled={!filterBlockId || !floorsList.length}
           >
             <option value="">{t("allFloors") || "All Floors"}</option>
-            {floorsList.map(f => <option key={f.id} value={f.id}>Floor {f.number}</option>)}
+            {floorsList.map(f => <option key={f.id} value={f.id}>{t("afFloorName", { number: f.number })}</option>)}
           </Select>
 
           <Select
@@ -3216,7 +3235,7 @@ export default function Resident() {
               }}
               onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(239, 68, 68, 0.18)")}
               onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(239, 68, 68, 0.10)")}
-              title="Clear all active filters"
+              title={t("clearAllActiveFilters")}
             >
               <MdClose size={15} /> {t("colClearFilter") || "Clear Filter"}
             </button>
@@ -3227,24 +3246,24 @@ export default function Resident() {
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "10px 20px", borderBottom: "1px solid var(--divider)", fontSize: 12, color: "var(--text-secondary)", background: "rgba(0,0,0,0.01)", flexWrap: "wrap" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
             <span>
-              {initialLoad ? "—" : `${displayedResidents.length} ${t("residentTitle")?.toLowerCase() || "residents"}`}
-              {search && !initialLoad && ` matching "${search}"`}
+              {initialLoad ? "—" : `${displayedResidents.length} ${t("residentTitle")}`}
+              {search && !initialLoad && ` ${t("matchingQuoted", { q: search })}`}
             </span>
             {filterRole && (
               <span style={{ fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 999, background: "rgba(160,90,255,0.14)", color: "var(--accent, #9F87D7)", border: "1px solid rgba(160,90,255,0.25)" }}>
-                Role: {filterRole.replace(/_/g, " ")}
+                {t("rolePrefix")} {filterRole.replace(/_/g, " ")}
               </span>
             )}
           </div>
           {fetching && (
             <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 11, color: "var(--accent)" }}>
-              <Spinner small /> Updating…
+              <Spinner small /> {t("updating")}
             </span>
           )}
         </div>
 
         {initialLoad && (
-          <div className="flex flex-col items-center gap-3 py-16 text-secondary"><Spinner /><p className="text-sm">Loading…</p></div>
+          <div className="flex flex-col items-center gap-3 py-16 text-secondary"><Spinner /><p className="text-sm">{t("loading")}</p></div>
         )}
 
         {!initialLoad && totalAll === 0 && (
@@ -3259,9 +3278,9 @@ export default function Resident() {
         {!initialLoad && totalAll > 0 && displayedResidents.length === 0 && !fetching && (
           <div className="flex flex-col items-center gap-2 py-16 text-secondary">
             <MdSearch size={32} className="opacity-20" />
-            <p className="text-sm">No residents match your search / filter.</p>
+            <p className="text-sm">{t("residentNoMatch")}</p>
             <button onClick={handleClearFilters} style={{ fontSize: 12, color: "#9F87D7", background: "none", border: "none", cursor: "pointer", marginTop: 4, fontWeight: 700 }}>
-              Clear all filters
+              {t("residentClearFilters")}
             </button>
           </div>
         )}
@@ -3289,13 +3308,13 @@ export default function Resident() {
                 <tbody>
                   {displayedResidents.map((r, idx) => (
                     <tr key={r.id} style={{ borderBottom: "1px solid var(--divider)", verticalAlign: "top", background: "transparent" }}>
-                      <td style={{ padding: "14px 16px", fontSize: 12, color: "var(--text-secondary)", fontWeight: 600, width: 40 }}>{(page - 1) * LIMIT + idx + 1}</td>
+                      <td style={{ padding: "14px 16px", fontSize: 12, color: "var(--text-secondary)", fontWeight: 600, width: 40 }}>{(page - 1) * limit + idx + 1}</td>
                       <td style={{ padding: "14px 16px", minWidth: 160 }}>
                         <div>
                           <div style={{ fontWeight: 700, fontSize: 13, color: "var(--text-primary)" }}>{r.name}</div>
                           <div style={{ display: "flex", gap: 5, flexWrap: "wrap", marginTop: 3 }}>
                             {r.roles?.includes("COMMITTEE_MEMBER") && <span className="res-committee-badge" style={{ display: "inline-flex" }}>★ {t("colCommittee") || "Committee"}</span>}
-                            {r.roles?.includes("ACCOUNTANT") && <span className="res-accountant-badge" style={{ display: "inline-flex" }}>★ Accountant</span>}
+                            {r.roles?.includes("ACCOUNTANT") && <span className="res-accountant-badge" style={{ display: "inline-flex" }}>★ {t("resAccountantBadge")}</span>}
                           </div>
                         </div>
                       </td>
@@ -3326,7 +3345,7 @@ export default function Resident() {
                             <MdDirectionsCar size={16} style={{ color: "var(--text-secondary)" }} />
                             <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text-primary)" }}>{r.vehicle_count ?? 0}</span>
                           </div>
-                          <div style={{ display: "flex", alignItems: "center", gap: 4, cursor: "pointer" }} title={`Family Members: ${r.occupant_count ?? 1}`}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 4, cursor: "pointer" }} title={`${t("colOccupants")}: ${r.occupant_count ?? 1}`}>
                             <MdPeople size={16} style={{ color: "var(--text-secondary)" }} />
                             <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text-primary)" }}>{r.occupant_count ?? 1}</span>
                           </div>
@@ -3337,8 +3356,8 @@ export default function Resident() {
                           <div style={{ display: "flex", justifyContent: "flex-end" }}>
                             {confirmId === r.id ? (
                               <span className="res-confirm">
-                                <span className="res-confirm-label">{t("billSure") || "Sure?"}</span>
-                                <button onClick={() => handleDelete(r.id)} className="res-confirm-yes">{t("billYesDelete") || "Yes"}</button>
+                                <span className="res-confirm-label">{t("sure")}</span>
+                                <button onClick={() => handleDelete(r.id)} className="res-confirm-yes">{t("yes")}</button>
                                 <button onClick={() => setConfirmId(null)} className="res-confirm-cancel">{t("cancel")}</button>
                               </span>
                             ) : (
@@ -3387,9 +3406,9 @@ export default function Resident() {
                           </span>
                         ))}
                         {r.roles?.includes("COMMITTEE_MEMBER") && <span className="res-committee-badge">★ {t("colCommittee") || "Committee"}</span>}
-                        {r.roles?.includes("ACCOUNTANT") && <span className="res-accountant-badge">★ Accountant</span>}
+                        {r.roles?.includes("ACCOUNTANT") && <span className="res-accountant-badge">★ {t("resAccountantBadge")}</span>}
                         <span style={{ cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 3, fontSize: 10, fontWeight: 600, padding: "2px 7px", borderRadius: 999, background: "rgba(251,191,36,0.10)", color: "var(--accent)", border: "1px solid rgba(251,191,36,0.20)" }} title={`Vehicles: ${r.vehicle_count ?? 0}`}><MdDirectionsCar size={10} /> {r.vehicle_count ?? 0}</span>
-                        <span style={{ cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 3, fontSize: 10, fontWeight: 600, padding: "2px 7px", borderRadius: 999, background: "rgba(52,211,153,0.10)", color: "#34d399", border: "1px solid rgba(52,211,153,0.20)" }} title={`Family Members: ${r.occupant_count ?? 1}`}><MdPeople size={10} /> {r.occupant_count ?? 1}</span>
+                        <span style={{ cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 3, fontSize: 10, fontWeight: 600, padding: "2px 7px", borderRadius: 999, background: "rgba(52,211,153,0.10)", color: "#34d399", border: "1px solid rgba(52,211,153,0.20)" }} title={`${t("colOccupants")}: ${r.occupant_count ?? 1}`}><MdPeople size={10} /> {r.occupant_count ?? 1}</span>
                       </div>
                     </div>
                     {canManageResidents && (
@@ -3429,7 +3448,7 @@ export default function Resident() {
 
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10, padding: "16px 20px", borderTop: "1px solid var(--divider)" }}>
               <p className="text-xs text-secondary">{t("colShowing") || "Showing"} {displayedResidents.length} {t("colOf") || "of"} {totalItems}</p>
-              <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} />
+              <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} pageSize={limit} onPageSizeChange={(s) => { limitRef.current = s; setLimit(s); setPage(1); handlePageChange(1); }} />
             </div>
           </div>
         )}
@@ -3451,16 +3470,14 @@ export default function Resident() {
               </div>
               <div>
                 <p style={{ margin: 0, fontSize: 16, fontWeight: 800, color: "var(--text-primary)", letterSpacing: "-0.02em" }}>
-                  {committeeConfirm.type === "promote" ? "Add to Committee" : "Remove from Committee"}
+                  {committeeConfirm.type === "promote" ? t("resAddCommittee") : t("resRemoveCommittee")}
                 </p>
                 <p style={{ margin: 0, fontSize: 12, color: "var(--text-secondary)" }}>{committeeConfirm.name}</p>
               </div>
             </div>
 
             <p style={{ margin: 0, fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.6 }}>
-              {committeeConfirm.type === "promote"
-                ? "Make this resident a committee member? They will be able to manage society operations."
-                : "Remove this resident from the committee? They will still have resident access."}
+              {committeeConfirm.type === "promote" ? t("resAddCommitteeBody") : t("resRemoveCommitteeBody")}
             </p>
 
             <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 22 }}>
@@ -3474,9 +3491,9 @@ export default function Resident() {
                 style={{ borderRadius: 999, fontWeight: 700 }}
               >
                 {committeeConfirm.type === "promote" ? (
-                  <><MdPersonAdd size={16} /> <span>Add as Committee Member</span></>
+                  <><MdPersonAdd size={16} /> <span>{t("resAddCommitteeBtn")}</span></>
                 ) : (
-                  <><MdPerson size={16} /> <span>Remove Member</span></>
+                  <><MdPerson size={16} /> <span>{t("resRemoveMemberBtn")}</span></>
                 )}
               </button>
             </div>
@@ -3501,14 +3518,14 @@ export default function Resident() {
               </div>
               <div>
                 <p style={{ margin: 0, fontSize: 16, fontWeight: 800, color: "var(--text-primary)", letterSpacing: "-0.02em" }}>
-                  Deactivate Accountant
+                  {t("resDeactivateAcct")}
                 </p>
                 <p style={{ margin: 0, fontSize: 12, color: "var(--text-secondary)" }}>{accountantConfirm.name}</p>
               </div>
             </div>
 
             <p style={{ margin: 0, fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.6 }}>
-              Make this resident inactive as an accountant? They will lose accountant access and permissions, but will retain their full resident profile and unit access.
+              {t("resDeactivateAcctBody")}
             </p>
 
             <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 22 }}>
@@ -3521,7 +3538,7 @@ export default function Resident() {
                 className="btn-danger"
                 style={{ borderRadius: 999, fontWeight: 700 }}
               >
-                <MdBlock size={16} /> <span>Make Inactive</span>
+                <MdBlock size={16} /> <span>{t("resMakeInactive")}</span>
               </button>
             </div>
           </div>

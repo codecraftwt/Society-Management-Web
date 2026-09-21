@@ -23,34 +23,7 @@ import DateRangeFilter from "../../components/common/DateRangeFilter";
 import styles from "./Complaint.module.css";
 import { exportToPDF } from "../../utils/exportPDF";
 
-/* ── Pagination ── */
-function Pagination({ page, totalPages, onPageChange }) {
-  const { t } = useLang();
-  if (totalPages <= 1) return null;
-  const pages = Array.from({ length: totalPages }, (_, i) => i + 1)
-    .filter(p => p === 1 || p === totalPages || Math.abs(p - page) <= 1)
-    .reduce((acc, p, idx, arr) => {
-      if (idx > 0 && p - arr[idx - 1] > 1) acc.push("...");
-      acc.push(p);
-      return acc;
-    }, []);
-  return (
-    <div className="pagination-wrap" style={{ marginTop: 0 }}>
-      <button onClick={() => onPageChange(page - 1)} disabled={page === 1} className="pagination-btn">
-        <MdChevronLeft size={14} /> {t("paginationPrev") || "Prev"}
-      </button>
-      {pages.map((p, i) =>
-        p === "..." ? <span key={`e${i}`} className="pagination-ellipsis">…</span> : (
-          <button key={p} onClick={() => onPageChange(p)}
-            className={`pagination-page ${p === page ? "pagination-page--active" : ""}`}>{p}</button>
-        )
-      )}
-      <button onClick={() => onPageChange(page + 1)} disabled={page === totalPages} className="pagination-btn">
-        {t("paginationNext") || "Next"} <MdChevronRight size={14} />
-      </button>
-    </div>
-  );
-}
+import Pagination from "../../components/common/Pagination";
 
 function Spinner({ small = false }) {
   const s = small ? 14 : 16;
@@ -1000,7 +973,10 @@ function SkeletonRows() {
 
 /* ── Main ────────────────────────────────────────────────────────────────────── */
 export default function Complaint() {
-  const isMobile           = useIsMobile();
+  const [limit, setLimit] = useState(10);
+  const limitRef = useRef(limit);
+  limitRef.current = limit;
+const isMobile           = useIsMobile();
   const { t }              = useLang();
   const { user: authUser } = useContext(AuthContext);
   const { showUnauthorized, showError } = useCustomAlert();
@@ -1053,7 +1029,7 @@ export default function Complaint() {
   const [page,       setPage]       = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
-  const LIMIT = 10;
+  
   const [counts, setCounts] = useState({ ALL: 0, PENDING: 0, IN_PROGRESS: 0, RESOLVED: 0 });
 
   // --- SUPER ADMIN / CASCADING FILTERS ---
@@ -1145,7 +1121,7 @@ export default function Complaint() {
       setLoadError(false);
       const params = {
         page: pg,
-        limit: LIMIT,
+        limit: limitRef.current,
         search: q,
         filter: f,
         block_id: filterBlockId,
@@ -1179,7 +1155,7 @@ export default function Complaint() {
     } finally {
       setLoading(false);
     }
-  }, [filterBlockId, filterFloorId, filterFlatId, filterSocietyId, isSuperAdmin, debSearch, filterStatus, LIMIT]);
+  }, [filterBlockId, filterFloorId, filterFlatId, filterSocietyId, isSuperAdmin, debSearch, filterStatus, limit]);
 
   // Load complaints when any filter or page dependency changes
   useEffect(() => {
@@ -1654,7 +1630,7 @@ export default function Complaint() {
         {!loading && complaints.length > 0 && (
           <div className={styles.footer}>
             <span className={styles.footerMeta}>
-              {t("reportShowing")} <strong>{(page - 1) * LIMIT + 1}–{Math.min(page * LIMIT, totalItems)}</strong>
+              {t("reportShowing")} <strong>{(page - 1) * limit + 1}–{Math.min(page * limit, totalItems)}</strong>
               {t("reportOf")} {totalItems} {t("rcrComplaintsCount")}
               {hasDateFilter && (
                 <span style={{ display: "inline-flex", alignItems: "center", gap: 5, color: "var(--stat-purple-color)", fontWeight: 600, marginLeft: 8 }}>
@@ -1662,7 +1638,7 @@ export default function Complaint() {
                 </span>
               )}
             </span>
-            <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} />
+            <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} pageSize={limit} onPageSizeChange={(s) => { limitRef.current = s; setLimit(s); setPage(1); handlePageChange(1); }} />
           </div>
         )}
       </div>

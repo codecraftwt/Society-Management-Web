@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useEffect, useState, useCallback, useMemo, useRef} from "react";
 import { createPortal } from "react-dom";
 import API from "../../services/api";
 import socket from "../../services/socket";
@@ -14,6 +14,8 @@ import GlobalModal from "../../components/common/GlobalModal";
 import GlobalButton from "../../components/common/GlobalButton";
 import { useCustomAlert } from "../../context/CustomAlertContext";
 
+import Pagination from "../../components/common/Pagination";
+
 function useDebounce(value, delay = 500) {
   const [debounced, setDebounced] = useState(value);
   useEffect(() => {
@@ -23,7 +25,7 @@ function useDebounce(value, delay = 500) {
   return debounced;
 }
 
-const LIMIT = 10;
+
 
 function timeAgoRaw(date) {
   if (!date) return null;
@@ -50,37 +52,6 @@ function formatDate(date) {
   });
 }
 
-function Pagination({ page, totalPages, onPageChange }) {
-  if (totalPages <= 1) return null;
-  const pages = Array.from({ length: totalPages }, (_, i) => i + 1)
-    .filter((p) => p === 1 || p === totalPages || Math.abs(p - page) <= 1)
-    .reduce((acc, p, idx, arr) => {
-      if (idx > 0 && p - arr[idx - 1] > 1) acc.push("...");
-      acc.push(p);
-      return acc;
-    }, []);
-
-  return (
-    <div className="pagination-wrap">
-      <button onClick={() => onPageChange(page - 1)} disabled={page === 1} className="pagination-btn">
-        <MdChevronLeft size={15} /> Prev
-      </button>
-      {pages.map((p, idx) =>
-        p === "..." ? (
-          <span key={`e-${idx}`} className="pagination-ellipsis">...</span>
-        ) : (
-          <button key={p} onClick={() => onPageChange(p)} className={`pagination-page ${p === page ? "pagination-page--active" : ""}`}>
-            {p}
-          </button>
-        )
-      )}
-      <button onClick={() => onPageChange(page + 1)} disabled={page === totalPages} className="pagination-btn">
-        Next <MdChevronRight size={15} />
-      </button>
-    </div>
-  );
-}
-
 export default function ResidentNotices() {
   const { t } = useLang();
 
@@ -95,7 +66,10 @@ export default function ResidentNotices() {
   const debouncedSearch = useDebounce(search, 500);
 
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const limitRef = useRef(limit);
+  limitRef.current = limit;
+const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
 
   const [lightbox, setLightbox] = useState(null);
@@ -118,7 +92,7 @@ export default function ResidentNotices() {
     try {
       const params = new URLSearchParams({
         page: pageNum,
-        limit: LIMIT,
+        limit: limitRef.current,
         ...(currentSearch ? { search: currentSearch } : {}),
       });
       const res = await API.get(`/notices?${params}`);
@@ -379,7 +353,7 @@ export default function ResidentNotices() {
             })}
           </div>
 
-          <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} />
+          <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} pageSize={limit} onPageSizeChange={(s) => { limitRef.current = s; setLimit(s); setPage(1); handlePageChange(1); }} />
         </div>
       )}
 

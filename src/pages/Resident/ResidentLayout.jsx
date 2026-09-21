@@ -91,7 +91,7 @@ function ResidentLayoutInner() {
     ...(user?.resident_type === "OWNER"
       ? [
           {
-            label: "My Properties",
+            label: t("menuMyProperties"),
             path: `${base}/my-properties`,
             icon: MdHome,
             group: "PROPERTY & BILLS",
@@ -175,7 +175,7 @@ function ResidentLayoutInner() {
       group: "SERVICES & PROFILE",
     },
     {
-      label: t("menuDirectory") || "Directory",
+      label: t("menuDirectory"),
       path: `${base}/directory`,
       icon: MdPeople,
       group: "SERVICES & PROFILE",
@@ -218,7 +218,7 @@ function ResidentLayoutInner() {
       group: "ACTIVITY & NOTICES",
     },
     {
-      label: t("menuDirectory") || "Directory",
+      label: t("menuDirectory"),
       path: `${base}/directory`,
       icon: MdPeople,
       group: "ACTIVITY & NOTICES",
@@ -380,7 +380,7 @@ function ResidentLayoutInner() {
             {word1}<span className="text-accent">{word2}</span>
           </>
         }
-        brandSubtitle={user?.society_name || (isFamilyMember ? "Family View" : "Resident View")}
+        brandSubtitle={user?.society_name || (isFamilyMember ? t("sbViewFamily") : t("sbViewResident"))}
         base={base}
         drawerExtra={mobileRoleSwitcher}
       />
@@ -410,7 +410,7 @@ function ResidentLayoutInner() {
               {/* SOS button */}
               <button
                 onClick={() => setShowSOS(true)}
-                className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 shadow-md shadow-red-500/30 transition px-3 h-9 text-white text-xs font-bold cursor-pointer"
+                className="flex items-center gap-1.5 rounded-xl bg-linear-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 shadow-md shadow-red-500/30 transition px-3 h-9 text-white text-xs font-bold cursor-pointer"
                 title="Raise an SOS alert to the whole society"
               >
                 <MdEmergency size={15} />

@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef} from "react";
 import { useLang } from "../../context/LanguageContext";
 import SlidingTabs from "../../components/common/SlidingTabs";
 import ExpandableSearch from "../../components/common/ExpandableSearch";
@@ -14,183 +14,7 @@ import {
 } from "react-icons/md";
 import API from "../../services/api";
 import { BASE_URL } from "../../config/apiConfig";
-/* ── Debounce hook — keeps input focused during search ── */
-function useDebounce(value, delay = 500) {
-  const [debounced, setDebounced] = useState(value);
-  useEffect(() => {
-    const t = setTimeout(() => setDebounced(value), delay);
-    return () => clearTimeout(t);
-  }, [value, delay]);
-  return debounced;
-}
-
-const CATEGORY_KEYS = ["All", "Legal", "Meetings", "Guidelines", "Finance", "Security"];
-const LIMIT = 12; // 12 fits nicely in a 3-col grid
-
-const ICON_MAP = {
-  Legal:      MdGavel,
-  Meetings:   MdGroups,
-  Guidelines: MdDirectionsCar,
-  Finance:    MdBarChart,
-  Security:   MdSecurity,
-};
-
-const COLOR_MAP = {
-  Legal:      { icon: "rd-icon-purple", badge: "rd-badge-purple", glow: "rd-glow-purple" },
-  Meetings:   { icon: "rd-icon-cyan",   badge: "rd-badge-cyan",   glow: "rd-glow-cyan"   },
-  Guidelines: { icon: "rd-icon-amber",  badge: "rd-badge-amber",  glow: "rd-glow-amber"  },
-  Finance:    { icon: "rd-icon-red",    badge: "rd-badge-red",    glow: "rd-glow-red"    },
-  Security:   { icon: "rd-icon-green",  badge: "rd-badge-green",  glow: "rd-glow-green"  },
-};
-
-/* ── Skeleton loader ── */
-function SkeletonCard() {
-  return (
-    <div className="rd-doc-card rd-skeleton-card">
-      <div className="rd-card-accent rd-skeleton-bar" />
-      <div className="rd-card-inner">
-        <div className="rd-card-top">
-          <div className="rd-skeleton rd-skeleton-icon" />
-          <div className="rd-skeleton rd-skeleton-badge" />
-        </div>
-        <div className="rd-card-body" style={{ gap: 8 }}>
-          <div className="rd-skeleton rd-skeleton-title" />
-          <div className="rd-skeleton rd-skeleton-desc" />
-          <div className="rd-skeleton rd-skeleton-desc rd-skeleton-desc--short" />
-        </div>
-        <div className="rd-card-footer">
-          <div className="rd-skeleton rd-skeleton-chip" />
-          <div className="rd-skeleton rd-skeleton-btn" />
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* ── Document card ── */
-function DocCard({ doc, index, t, categoryLabel, onOpen }) {
-  const Icon = ICON_MAP[doc.category] || MdDescription;
-  const c    = COLOR_MAP[doc.category] || COLOR_MAP["Legal"];
-
-  const formatDate = (dateStr) => {
-    if (!dateStr) return "";
-    return new Date(dateStr).toLocaleDateString("en-US", { month: "short", year: "numeric" });
-  };
-
-  const fileUrl = doc.file_url?.startsWith("http")
-    ? doc.file_url
-    : `${BASE_URL}/${doc.file_url}`;
-
-  return (
-    <div className="rd-doc-card" style={{ animationDelay: `${index * 60}ms` }}>
-      <div className={`rd-card-accent ${c.glow}`} />
-      <div className="rd-card-inner">
-
-        <div className="rd-card-top">
-          <div className={`rd-icon-wrap ${c.icon}`}>
-            <Icon size={22} />
-          </div>
-          <div className="rd-card-meta">
-            <span className={`rd-category-badge ${c.badge}`}>{categoryLabel(doc.category)}</span>
-            <span className="rd-date-chip">{formatDate(doc.created_at)}</span>
-          </div>
-        </div>
-
-        <div className="rd-card-body">
-          <h3 className="rd-doc-title">{doc.title}</h3>
-          <p className="rd-doc-desc">{doc.description || `${categoryLabel(doc.category)} ${t("docDocument")}`}</p>
-        </div>
-
-        <div className="rd-card-footer">
-          <span className="rd-size-chip">
-            <MdDescription size={12} />
-            {doc.file_size_formatted || "—"}
-          </span>
-          <div className="rd-actions">
-            <button
-              type="button"
-              onClick={() => onOpen(doc)}
-              className="rd-btn rd-btn-view"
-              title={t("docView")}
-            >
-              <MdVisibility size={15} />
-              <span>{t("docView")}</span>
-            </button>
-            <button
-              type="button"
-              className="rd-btn rd-btn-download"
-              title={t("docDownload")}
-              onClick={async () => {
-                try {
-                  const res  = await fetch(fileUrl);
-                  const blob = await res.blob();
-                  const url  = window.URL.createObjectURL(blob);
-                  const a    = document.createElement("a");
-                  a.href     = url;
-                  a.download = doc.file_name || doc.title;
-                  document.body.appendChild(a);
-                  a.click();
-                  a.remove();
-                  window.URL.revokeObjectURL(url);
-                } catch { /* silent fail */ }
-              }}
-            >
-              <MdDownload size={15} />
-            </button>
-          </div>
-        </div>
-
-      </div>
-    </div>
-  );
-}
-
-/* ── Pagination ── */
-function Pagination({ page, totalPages, onPageChange }) {
-  if (totalPages <= 1) return null;
-
-  const pages = Array.from({ length: totalPages }, (_, i) => i + 1)
-    .filter((p) => p === 1 || p === totalPages || Math.abs(p - page) <= 1)
-    .reduce((acc, p, idx, arr) => {
-      if (idx > 0 && p - arr[idx - 1] > 1) acc.push("...");
-      acc.push(p);
-      return acc;
-    }, []);
-
-  return (
-    <div className="pagination-wrap">
-      <button
-        onClick={() => onPageChange(page - 1)}
-        disabled={page === 1}
-        className="pagination-btn"
-      >
-        <MdChevronLeft size={15} /> Prev
-      </button>
-
-      {pages.map((p, idx) =>
-        p === "..." ? (
-          <span key={`ellipsis-${idx}`} className="pagination-ellipsis">...</span>
-        ) : (
-          <button
-            key={p}
-            onClick={() => onPageChange(p)}
-            className={`pagination-page ${p === page ? "pagination-page--active" : ""}`}
-          >
-            {p}
-          </button>
-        )
-      )}
-
-      <button
-        onClick={() => onPageChange(page + 1)}
-        disabled={page === totalPages}
-        className="pagination-btn"
-      >
-        Next <MdChevronRight size={15} />
-      </button>
-    </div>
-  );
-}
+import Pagination from "../../components/common/Pagination";
 
 /* ═══════════════════════════════════════════
    Main
@@ -213,6 +37,9 @@ export default function ResidentDocument() {
 
   // ── Pagination ──
   const [page,       setPage]       = useState(1);
+  const [limit,      setLimit]      = useState(12);
+  const limitRef = useRef(limit);
+  limitRef.current = limit;
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
   const [viewDoc,    setViewDoc]    = useState(null);
@@ -242,7 +69,7 @@ export default function ResidentDocument() {
     try {
       const params = new URLSearchParams({
         page:     pageNum,
-        limit:    LIMIT,
+        limit: limitRef.current,
         category: currentCategory,
         ...(currentSearch ? { search: currentSearch } : {}),
       });
@@ -371,7 +198,7 @@ export default function ResidentDocument() {
             <p className="rd-footer-note" style={{ marginBottom: 0 }}>
               {t("reportShowing")} {documents.length} {t("reportOf")} {totalItems} {t("docStatTotal").toLowerCase()}
             </p>
-            <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} />
+            <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} pageSize={limit} onPageSizeChange={(s) => { limitRef.current = s; setLimit(s); setPage(1); handlePageChange(1); }} />
           </div>
         </>
       )}

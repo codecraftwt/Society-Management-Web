@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useRef} from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import API from "../../../services/api";
@@ -14,6 +14,9 @@ import {
 import Select from "../../../components/common/Select";
 import CustomDatePicker from "../../../components/common/CustomDatePicker";
 
+import Pagination from "../../../components/common/Pagination";
+import { useLang } from "../../../context/LanguageContext";
+
 function useIsMobile() {
   const [m, setM] = useState(() => typeof window !== "undefined" && window.innerWidth < 768);
   useEffect(() => { const fn = () => setM(window.innerWidth < 768); window.addEventListener("resize", fn); return () => window.removeEventListener("resize", fn); }, []);
@@ -27,22 +30,6 @@ function Spinner({ small = false }) {
       <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" style={{ opacity: 0.25 }} />
       <path fill="currentColor" style={{ opacity: 0.75 }} d="M4 12a8 8 0 018-8v8z" />
     </svg>
-  );
-}
-
-function Pagination({ page, totalPages, onPageChange }) {
-  if (totalPages <= 1) return null;
-  const pages = Array.from({ length: totalPages }, (_, i) => i + 1)
-    .filter(p => p === 1 || p === totalPages || Math.abs(p - page) <= 1)
-    .reduce((acc, p, idx, arr) => { if (idx > 0 && p - arr[idx - 1] > 1) acc.push("..."); acc.push(p); return acc; }, []);
-  return (
-    <div className="pagination-wrap" style={{ marginTop: 0 }}>
-      <button onClick={() => onPageChange(page - 1)} disabled={page === 1} className="pagination-btn"><MdChevronLeft size={14} /> Prev</button>
-      {pages.map((p, i) => p === "..." ? <span key={`e${i}`} className="pagination-ellipsis">…</span> : (
-        <button key={p} onClick={() => onPageChange(p)} className={`pagination-page ${p === page ? "pagination-page--active" : ""}`}>{p}</button>
-      ))}
-      <button onClick={() => onPageChange(page + 1)} disabled={page === totalPages} className="pagination-btn">Next <MdChevronRight size={14} /></button>
-    </div>
   );
 }
 
@@ -63,6 +50,7 @@ function StatusBadge({ status }) {
 const fmtINR = n => `₹${Number(n).toLocaleString("en-IN")}`;
 
 function FilterSheet({ show, onClose, isMobile, status, setStatus, fromDate, setFromDate, toDate, setToDate, onApply, onClear, applied }) {
+  const { t } = useLang();
   if (!show) return null;
 
   return createPortal(
@@ -72,8 +60,8 @@ function FilterSheet({ show, onClose, isMobile, status, setStatus, fromDate, set
         {isMobile && <div style={{ display: "flex", justifyContent: "center", padding: "10px 0 6px" }}><div style={{ width: 36, height: 4, borderRadius: 99, background: "var(--glass-border)" }} /></div>}
         <div style={{ padding: "12px 18px", display: "flex", alignItems: "center", gap: 8, borderBottom: "1px solid var(--glass-border)" }}>
           <MdFilterList size={16} style={{ color: "var(--accent,#6B46C1)" }} />
-          <span style={{ fontSize: 14, fontWeight: 700, color: "var(--text-primary)", flex: 1 }}>Filter Financial Report</span>
-          {applied && <button onClick={() => { onClear(); onClose(); }} style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, fontWeight: 700, color: "var(--accent,#6B46C1)", background: "none", border: "none", cursor: "pointer" }}><MdClose size={13} /> Clear</button>}
+          <span style={{ fontSize: 14, fontWeight: 700, color: "var(--text-primary)", flex: 1 }}>{t("rptFinFilterTitle")}</span>
+          {applied && <button onClick={() => { onClear(); onClose(); }} style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, fontWeight: 700, color: "var(--accent,#6B46C1)", background: "none", border: "none", cursor: "pointer" }}><MdClose size={13} /> {t("rptClear")}</button>}
           <button onClick={onClose} style={{ width: 28, height: 28, borderRadius: 8, background: "var(--card-inner-bg,rgba(255,255,255,0.06))", border: "1px solid var(--glass-border)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "var(--text-secondary)" }}><MdClose size={15} /></button>
         </div>
         <div style={{ padding: "16px 18px", display: "flex", flexDirection: "column", gap: 14 }}>
@@ -86,9 +74,9 @@ function FilterSheet({ show, onClose, isMobile, status, setStatus, fromDate, set
               rootStyle={{ width: "100%" }}
               style={{ width: "100%", boxSizing: "border-box" }}
             >
-              <option value="">All Status</option>
-              <option value="PAID">Paid</option>
-              <option value="PENDING">Pending</option>
+              <option value="">{t("rptAllStatus")}</option>
+              <option value="PAID">{t("billPaid")}</option>
+              <option value="PENDING">{t("billPending")}</option>
             </Select>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
@@ -125,9 +113,10 @@ function FilterSheet({ show, onClose, isMobile, status, setStatus, fromDate, set
   );
 }
 
-const LIMIT = 15;
+
 
 export default function FinancialReport() {
+  const { t } = useLang();
   const isMobile = useIsMobile();
   const navigate = useNavigate();
 
@@ -136,7 +125,10 @@ export default function FinancialReport() {
   const [loading, setLoading] = useState(true);
   const [fetching, setFetching] = useState(false);
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
+  const [limit, setLimit] = useState(15);
+  const limitRef = useRef(limit);
+  limitRef.current = limit;
+const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
 
   const [status, setStatus] = useState("");
@@ -152,7 +144,7 @@ export default function FinancialReport() {
   const fetchBills = useCallback(async (pg, s, fd, td, isInit = false) => {
     isInit ? setLoading(true) : setFetching(true);
     try {
-      const params = new URLSearchParams({ page: pg, limit: LIMIT });
+      const params = new URLSearchParams({ page: pg, limit: limitRef.current });
       if (s) params.set("status", s);
       if (fd && td) { params.set("fromDate", fd); params.set("toDate", td); }
       const res = await API.get(`/reports/financial?${params}`);
@@ -279,17 +271,17 @@ export default function FinancialReport() {
       <div className="data-table-wrap">
         <div className="fin-rpt-table-head">
           <span className="fin-rpt-table-head__title">
-            All Bills
-            {!loading && <span className="fin-rpt-table-head__count">— {totalItems} records{applied ? " (filtered)" : ""}</span>}
+            {t("rptAllBills")}
+            {!loading && <span className="fin-rpt-table-head__count">— {totalItems} {t("rptRecords")}{applied ? ` (${t("rptFiltered").toLowerCase()})` : ""}</span>}
           </span>
           {fetching && <Spinner small />}
-          {applied && !fetching && <span className="fin-rpt-filtered">Filtered</span>}
+          {applied && !fetching && <span className="fin-rpt-filtered">{t("rptFiltered")}</span>}
         </div>
 
         {loading ? (
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10, padding: "60px 20px", color: "var(--text-secondary)" }}><Spinner /><p style={{ fontSize: 13, margin: 0 }}>Loading financial data…</p></div>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10, padding: "60px 20px", color: "var(--text-secondary)" }}><Spinner /><p style={{ fontSize: 13, margin: 0 }}>{t("rptFinLoading")}</p></div>
         ) : bills.length === 0 ? (
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10, padding: "60px 20px", color: "var(--text-secondary)" }}><MdOutlineInbox size={48} style={{ opacity: 0.2 }} /><p style={{ fontSize: 13, margin: 0 }}>No data found for the selected filters.</p>{applied && <button onClick={clearFilter} style={{ fontSize: 12, color: "var(--accent,#6B46C1)", background: "none", border: "none", cursor: "pointer", fontWeight: 600 }}>Clear filters</button>}</div>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10, padding: "60px 20px", color: "var(--text-secondary)" }}><MdOutlineInbox size={48} style={{ opacity: 0.2 }} /><p style={{ fontSize: 13, margin: 0 }}>{t("rptNoData")}</p>{applied && <button onClick={clearFilter} style={{ fontSize: 12, color: "var(--accent,#6B46C1)", background: "none", border: "none", cursor: "pointer", fontWeight: 600 }}>{t("rptClearFilters")}</button>}</div>
         ) : isMobile ? (
           <div style={{ padding: "10px 12px", display: "flex", flexDirection: "column", gap: 10 }}>
             {bills.map((b, i) => {
@@ -320,7 +312,7 @@ export default function FinancialReport() {
             <tbody>
               {bills.map((b, i) => (
                 <tr key={b.id} className="animate-fadeIn" style={{ animationDelay: `${i * 15}ms` }}>
-                  <td><span style={{ fontSize: 12, color: "var(--text-secondary)" }}>{(page - 1) * LIMIT + i + 1}</span></td>
+                  <td><span style={{ fontSize: 12, color: "var(--text-secondary)" }}>{(page - 1) * limit + i + 1}</span></td>
                   <td><span style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)" }}>{b.Flat?.User?.name || "—"}</span></td>
                   <td><span className="info-chip">{b.Flat?.flat_number || "—"}</span></td>
                   <td><span style={{ fontSize: 13, color: "var(--text-secondary)" }}>{b.Flat?.Block?.name || "—"}</span></td>
@@ -336,9 +328,9 @@ export default function FinancialReport() {
         {!loading && bills.length > 0 && (
           <div className="table-footer fin-rpt-footer">
             <span className="fin-rpt-footer__range">
-              Showing <strong style={{ color: "var(--text-primary)" }}>{(page - 1) * LIMIT + 1}–{Math.min(page * LIMIT, totalItems)}</strong> of <strong style={{ color: "var(--text-primary)" }}>{totalItems}</strong> records
+              Showing <strong style={{ color: "var(--text-primary)" }}>{(page - 1) * limit + 1}–{Math.min(page * limit, totalItems)}</strong> of <strong style={{ color: "var(--text-primary)" }}>{totalItems}</strong> records
             </span>
-            <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} />
+            <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} pageSize={limit} onPageSizeChange={(s) => { limitRef.current = s; setLimit(s); setPage(1); handlePageChange(1); }} />
           </div>
         )}
       </div>

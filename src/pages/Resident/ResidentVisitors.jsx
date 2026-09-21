@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useRef} from "react";
 import API from "../../services/api";
 import { useLang } from "../../context/LanguageContext";
 import SlidingTabs from "../../components/common/SlidingTabs";
@@ -13,147 +13,7 @@ import {
 } from "react-icons/md";
 import GlobalBadge from "../../components/common/GlobalBadge";
 
-/* ── Helpers ── */
-const formatDate = (d) => {
-  if (!d) return "—";
-  return new Date(d).toLocaleString("en-IN", {
-    day: "2-digit", month: "short", year: "numeric",
-    hour: "2-digit", minute: "2-digit",
-  });
-};
-
-const timeAgoRaw = (d) => {
-  if (!d) return null;
-  const diff = Date.now() - new Date(d).getTime();
-  const m   = Math.floor(diff / 60000);
-  const h   = Math.floor(diff / 3600000);
-  const day = Math.floor(diff / 86400000);
-  if (m < 1)   return { key: "timeJustNow", val: 0   };
-  if (m < 60)  return { key: "timeMinsAgo", val: m   };
-  if (h < 24)  return { key: "timeHoursAgo",val: h   };
-  if (day < 7) return { key: "timeDaysAgo", val: day };
-  return { key: "formatted", val: d };
-};
-
-const calcDuration = (entry, exit) => {
-  if (!entry || !exit) return null;
-  const diff = new Date(exit) - new Date(entry);
-  const m = Math.floor(diff / 60000);
-  const h = Math.floor(m / 60);
-  if (h > 0) return `${h}h ${m % 60}m`;
-  return `${m}m`;
-};
-
-const getPurposeConfig = (purpose) => {
-  const p = (purpose || "GUEST").toUpperCase();
-  switch (p) {
-    case "DELIVERY":
-      return { label: "Delivery", icon: MdLocalShipping, color: "text-amber-400", bg: "bg-amber-500/15 border-amber-500/30", dot: "bg-amber-400" };
-    case "CAB":
-      return { label: "Cab", icon: MdLocalTaxi, color: "text-emerald-400", bg: "bg-emerald-500/15 border-emerald-500/30", dot: "bg-emerald-400" };
-    case "SERVICE":
-      return { label: "Service", icon: MdBuild, color: "text-purple-400", bg: "bg-purple-500/15 border-purple-500/30", dot: "bg-purple-400" };
-    default:
-      return { label: "Guest", icon: MdPerson, color: "text-blue-400", bg: "bg-blue-500/15 border-blue-500/30", dot: "bg-blue-400" };
-  }
-};
-
-const LIMIT = 10;
-
-/* ── Debounce hook ── */
-function useDebounce(value, delay = 500) {
-  const [debounced, setDebounced] = useState(value);
-  useEffect(() => {
-    const t = setTimeout(() => setDebounced(value), delay);
-    return () => clearTimeout(t);
-  }, [value, delay]);
-  return debounced;
-}
-
-/* ── Spinner ── */
-function Spinner({ small = false }) {
-  const size = small ? "h-3.5 w-3.5" : "h-5 w-5";
-  return (
-    <svg className={`animate-spin ${size} text-accent`} viewBox="0 0 24 24" fill="none">
-      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
-    </svg>
-  );
-}
-
-/* ── Avatar ── */
-function Avatar({ name = "", size = "w-8 h-8", textSize = "text-xs" }) {
-  const initials = name.trim().split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase() || "?";
-  const hue = [...name].reduce((acc, c) => acc + c.charCodeAt(0), 0) % 360;
-  return (
-    <div
-      className={`${size} rounded-full flex items-center justify-center ${textSize} font-bold text-white shrink-0`}
-      style={{ background: `hsl(${hue},50%,36%)` }}
-    >
-      {initials}
-    </div>
-  );
-}
-
-/* ── Status badge ── */
-function StatusBadge({ exitTime, t }) {
-  return exitTime ? (
-    <GlobalBadge variant="danger">
-      {t("rvLeft") || "Left"}
-    </GlobalBadge>
-  ) : (
-    <GlobalBadge variant="success">
-      {t("rvInside") || "Inside"}
-    </GlobalBadge>
-  );
-}
-
-/* ── Pagination ── */
-function Pagination({ page, totalPages, onPageChange }) {
-  if (totalPages <= 1) return null;
-
-  const pages = Array.from({ length: totalPages }, (_, i) => i + 1)
-    .filter((p) => p === 1 || p === totalPages || Math.abs(p - page) <= 1)
-    .reduce((acc, p, idx, arr) => {
-      if (idx > 0 && p - arr[idx - 1] > 1) acc.push("...");
-      acc.push(p);
-      return acc;
-    }, []);
-
-  return (
-    <div className="pagination-wrap">
-      <button
-        onClick={() => onPageChange(page - 1)}
-        disabled={page === 1}
-        className="pagination-btn"
-      >
-        <MdChevronLeft size={15} /> Prev
-      </button>
-
-      {pages.map((p, idx) =>
-        p === "..." ? (
-          <span key={`ellipsis-${idx}`} className="pagination-ellipsis">...</span>
-        ) : (
-          <button
-            key={p}
-            onClick={() => onPageChange(p)}
-            className={`pagination-page ${p === page ? "pagination-page--active" : ""}`}
-          >
-            {p}
-          </button>
-        )
-      )}
-
-      <button
-        onClick={() => onPageChange(page + 1)}
-        disabled={page === totalPages}
-        className="pagination-btn"
-      >
-        Next <MdChevronRight size={15} />
-      </button>
-    </div>
-  );
-}
+import Pagination from "../../components/common/Pagination";
 
 /* ═══════════════════════════════════════════
    Main
@@ -178,6 +38,9 @@ export default function ResidentVisitors() {
 
   // ── Pagination ──
   const [page,       setPage]       = useState(1);
+  const [limit,      setLimit]      = useState(10);
+  const limitRef = useRef(limit);
+  limitRef.current = limit;
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
 
@@ -200,7 +63,7 @@ export default function ResidentVisitors() {
     try {
       const params = new URLSearchParams({
         page: pageNum,
-        limit: LIMIT,
+        limit: limitRef.current,
         filter: currentFilter,
         ...(currentPurpose && currentPurpose !== "ALL" ? { purpose: currentPurpose } : {}),
         ...(currentSearch ? { search: currentSearch } : {}),
@@ -497,7 +360,7 @@ export default function ResidentVisitors() {
               })}
 
               {/* MOBILE PAGINATION */}
-              <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} />
+              <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} pageSize={limit} onPageSizeChange={(s) => { limitRef.current = s; setLimit(s); setPage(1); handlePageChange(1); }} />
             </div>
 
             {/* DESKTOP TABLE */}
@@ -624,7 +487,7 @@ export default function ResidentVisitors() {
                 <p className="text-xs text-secondary">
                   {t("reportShowing")} {visitors.length} {t("reportOf")} {totalItems} {t("rvVisitorsCount")}
                 </p>
-                <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} />
+                <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} pageSize={limit} onPageSizeChange={(s) => { limitRef.current = s; setLimit(s); setPage(1); handlePageChange(1); }} />
               </div>
             </div>
           </>

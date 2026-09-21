@@ -208,23 +208,18 @@ export default function GlobalButton({
           className="global-btn-draw"
           width={box.w}
           height={box.h}
-          style={{
-            position: "absolute",
-            left: 0,
-            top: 0,
-            pointerEvents: "none",
-            overflow: "visible",
-            zIndex: 5,
-          }}
+          viewBox={`0 0 ${box.w} ${box.h}`}
+          preserveAspectRatio="none"
+          aria-hidden="true"
         >
           <rect
-            x="1"
-            y="1"
-            width={box.w - 2}
-            height={box.h - 2}
-            rx={box.h / 2 - 1}
+            x="2"
+            y="2"
+            width={Math.max(box.w - 4, 0)}
+            height={Math.max(box.h - 4, 0)}
+            rx={Math.max((box.h - 4) / 2, 0)}
             fill="none"
-            strokeWidth="2"
+            strokeWidth="1.5"
             style={{ "--sa-bd-p": String(perimeter) }}
           />
         </svg>

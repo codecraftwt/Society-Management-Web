@@ -29,7 +29,7 @@ function DashboardSkeleton() {
       </div>
 
       {/* KPI Cards Skeleton */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
         {[1, 2, 3, 4].map((i) => (
           <div key={i} className="bg-card/40 border border-glass-border rounded-2xl p-5 space-y-4">
             <div className="flex justify-between items-center">
@@ -61,8 +61,16 @@ function DashboardSkeleton() {
   );
 }
 
+const DATE_LOCALES = { en: "en-IN", hi: "hi-IN", mr: "mr-IN" };
+
+const ROLE_NAME_KEYS = {
+  "Society Admin": "dashSocietyAdminName",
+  Admin: "dashAdminName",
+  "Committee Member": "dashCommitteeMember",
+};
+
 export default function AdminDashboard() {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const navigate = useNavigate();
 
   const [stats, setStats] = useState(null);
@@ -84,7 +92,7 @@ export default function AdminDashboard() {
 
   const loadDashboardData = async () => {
     if (!societyId) {
-      setError("Society ID not found. Please log in again.");
+      setError("dashSocietyIdMissing");
       setLoading(false);
       return;
     }
@@ -95,7 +103,7 @@ export default function AdminDashboard() {
       setStats(res.data);
     } catch (err) {
       console.error("Failed to load dashboard data", err);
-      setError("Failed to load dashboard data.");
+      setError("dashLoadError");
     } finally {
       setLoading(false);
     }
@@ -124,12 +132,15 @@ export default function AdminDashboard() {
 
   /* Greeting phrase based on hour */
   const hour = dateTime.getHours();
-  const greeting =
-    hour < 12
-      ? "Good morning"
-      : hour < 17
-      ? "Good afternoon"
-      : "Good evening";
+  const greeting = t(
+    hour < 12 ? "dashGoodMorning" : hour < 17 ? "dashGoodAfternoon" : "dashGoodEvening"
+  );
+  const fallbackNameKey = isCommittee ? "dashCommitteeMember" : "dashAdminName";
+  const rawName = user?.name;
+  const displayName = rawName
+    ? (ROLE_NAME_KEYS[rawName] ? t(ROLE_NAME_KEYS[rawName]) : rawName)
+    : t(fallbackNameKey);
+  const dateLocale = DATE_LOCALES[lang] || "en-IN";
 
   if (loading) {
     return <DashboardSkeleton />;
@@ -140,14 +151,14 @@ export default function AdminDashboard() {
       <div className="bg-red-500/10 border border-red-500/30 rounded-2xl p-6 text-red-500 flex flex-col sm:flex-row items-center justify-between gap-4 max-w-2xl mx-auto my-8">
         <div className="flex items-center gap-3">
           <MdReportProblem size={24} className="shrink-0" />
-          <p className="font-medium text-sm">{error}</p>
+          <p className="font-medium text-sm">{t(error)}</p>
         </div>
         <button
           onClick={loadDashboardData}
           className="btn-primary flex items-center gap-2 px-4 py-2 text-xs font-semibold shrink-0"
         >
           <MdRefresh size={16} />
-          Retry Loading
+          {t("dashRetryLoading")}
         </button>
       </div>
     );
@@ -160,32 +171,34 @@ export default function AdminDashboard() {
         <div className="space-y-1 min-w-0">
           <div className="flex items-center gap-3 flex-wrap">
             <h1 className="text-xl md:text-2xl font-bold text-primary tracking-tight">
-              {greeting}, {isCommittee ? (user?.name || "Committee Member") : (user?.name || "Admin")}
+              {greeting}, {displayName}
             </h1>
             {isCommittee && (
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-blue-500/10 text-blue-400 border border-blue-500/20">
-                ★ {user?.committee_position || user?.designation || "Committee Member"}
+                ★ {user?.committee_position || user?.designation || t("dashCommitteeMember")}
               </span>
             )}
           </div>
           <p className="text-xs md:text-sm text-secondary truncate">
             {isCommittee
-              ? `Operational overview for ${user?.society_name || stats?.societyName || "your society"}`
-              : "Here's a quick operational overview of your society today."}
+              ? t("dashOverviewFor", {
+                  society: user?.society_name || stats?.societyName || t("dashYourSociety"),
+                })
+              : t("dashOverviewToday")}
           </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-3 shrink-0">
           {/* Formatted Date & Time */}
           <div className="text-xs font-medium text-secondary bg-card-inner-bg px-3.5 py-2 rounded-xl border border-glass-border">
-            {dateTime.toLocaleDateString("en-IN", {
+            {dateTime.toLocaleDateString(dateLocale, {
               weekday: "long",
               day: "numeric",
               month: "short",
               year: "numeric",
             })}
             {" · "}
-            {dateTime.toLocaleTimeString("en-IN", {
+            {dateTime.toLocaleTimeString(dateLocale, {
               hour: "2-digit",
               minute: "2-digit",
             })}
@@ -200,17 +213,17 @@ export default function AdminDashboard() {
       </div>
 
       {/* ── 2. KEY METRICS KPI CARDS (4 COLUMNS) ── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
         <div className="ad-kpi ad-kpi--residents">
           <span className="ad-kpi-val">{residents}</span>
           <span className="ad-kpi-label">{t("dashResidents") || "Residents"}</span>
-          <span className="ad-kpi-desc">{t("dashResidentsDesc") || "Active members living in society"}</span>
+          <span className="ad-kpi-desc hidden lg:block">{t("dashResidentsDesc") || "Active members living in society"}</span>
         </div>
 
         <div className="ad-kpi ad-kpi--guards">
           <span className="ad-kpi-val">{guards}</span>
           <span className="ad-kpi-label">{t("dashGuards") || "Guards"}</span>
-          <span className="ad-kpi-desc">{t("dashGuardsDesc") || "On-duty security personnel"}</span>
+          <span className="ad-kpi-desc hidden lg:block">{t("dashGuardsDesc") || "On-duty security personnel"}</span>
         </div>
 
         <div
@@ -220,13 +233,13 @@ export default function AdminDashboard() {
         >
           <span className="ad-kpi-val">{openComplaints}</span>
           <span className="ad-kpi-label">{t("dashOpenComplaints") || "Open Complaints"}</span>
-          <span className="ad-kpi-desc">{isCommittee ? "Pending committee review" : (t("dashComplaintsDesc") || "Requires attention")}</span>
+          <span className="ad-kpi-desc hidden lg:block">{isCommittee ? t("dashCommitteeReview") : t("dashComplaintsDesc")}</span>
         </div>
 
         <div className="ad-kpi ad-kpi--flats">
           <span className="ad-kpi-val">{totalFlats}</span>
           <span className="ad-kpi-label">{t("dashTotalFlats") || "Total Flats"}</span>
-          <span className="ad-kpi-desc">{t("dashTotalFlatsDesc") || "Across all blocks & floors"}</span>
+          <span className="ad-kpi-desc hidden lg:block">{t("dashTotalFlatsDesc") || "Across all blocks & floors"}</span>
         </div>
       </div>
 
@@ -240,7 +253,7 @@ export default function AdminDashboard() {
                 {t("dashDistribution") || "Society Overview"}
               </h2>
               <p className="text-xs text-secondary">
-                Visual breakdown of key society metrics
+                {t("dashDistributionSub")}
               </p>
             </div>
             <div className="flex flex-wrap gap-2 text-xs">
@@ -300,7 +313,7 @@ export default function AdminDashboard() {
               {t("dashComparison") || "Quick Comparison"}
             </h2>
             <p className="text-xs text-secondary">
-              Comparative view across core operational categories
+              {t("dashComparisonSub")}
             </p>
           </div>
 
@@ -333,6 +346,7 @@ export default function AdminDashboard() {
                 />
                 <Bar
                   dataKey="value"
+                  name={t("dashCount")}
                   radius={[8, 8, 0, 0]}
                   barSize={28}
                 >
@@ -352,7 +366,7 @@ export default function AdminDashboard() {
       {/* ── 4. OPERATIONAL STATUS SECTION (3 COLUMNS) ── */}
       <div className="space-y-3">
         <h2 className="text-sm font-bold uppercase tracking-wider text-secondary">
-          Operational Status
+          {t("dashOperationalStatus")}
         </h2>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
@@ -404,7 +418,7 @@ export default function AdminDashboard() {
                 {t("dashSocietyId") || "Society Reference"}
               </div>
               <div className="text-sm font-bold text-primary mt-0.5">
-                ID #{societyId || "N/A"}
+                {t("dashSocietyIdValue", { id: societyId || t("dashNA") })}
               </div>
               <p className="text-xs text-secondary truncate mt-0.5">
                 {t("dashSocietyIdDesc") || "System reference number"}

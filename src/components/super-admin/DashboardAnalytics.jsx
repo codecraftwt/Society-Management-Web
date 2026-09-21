@@ -117,11 +117,11 @@ export default function DashboardAnalytics({ societies, loading, onDataLoaded })
       setLiveError(false);
       const collected = [];
       let page = 1;
-      const LIMIT = 50;
+      
       let total = null;
       let guard = 0;
       while (true) {
-        const res = await API.get("/users/resident", { params: { page, limit: LIMIT } });
+        const res = await API.get("/users/resident", { params: { page, limit: 50 } });
         const body = res.data || {};
         const rows = body.data || [];
         total = body.totalAll ?? total;

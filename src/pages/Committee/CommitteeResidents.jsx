@@ -1,6 +1,8 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef} from "react";
 import API from "../../services/api";
 import { useLang } from "../../context/LanguageContext";
+import Pagination from "../../components/common/Pagination";
+
 import {
   MdSearch,
   MdClose,
@@ -29,42 +31,6 @@ function Spinner({ small = false }) {
   );
 }
 
-function Pagination({ page, totalPages, onPageChange }) {
-  if (totalPages <= 1) return null;
-  const pages = Array.from({ length: totalPages }, (_, i) => i + 1)
-    .filter((p) => p === 1 || p === totalPages || Math.abs(p - page) <= 1)
-    .reduce((acc, p, idx, arr) => {
-      if (idx > 0 && p - arr[idx - 1] > 1) acc.push("...");
-      acc.push(p);
-      return acc;
-    }, []);
-  return (
-    <div className="pagination-wrap">
-      <button onClick={() => onPageChange(page - 1)} disabled={page === 1} className="pagination-btn">
-        <MdChevronLeft size={15} /> Prev
-      </button>
-      {pages.map((p, idx) =>
-        p === "..." ? (
-          <span key={`e-${idx}`} className="pagination-ellipsis">...</span>
-        ) : (
-          <button
-            key={p}
-            onClick={() => onPageChange(p)}
-            className={`pagination-page ${p === page ? "pagination-page--active" : ""}`}
-          >
-            {p}
-          </button>
-        )
-      )}
-      <button onClick={() => onPageChange(page + 1)} disabled={page === totalPages} className="pagination-btn">
-        Next <MdChevronRight size={15} />
-      </button>
-    </div>
-  );
-}
-
-const LIMIT = 10;
-
 export default function CommitteeResidents() {
   const { t } = useLang();
 
@@ -75,7 +41,10 @@ export default function CommitteeResidents() {
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 500);
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const limitRef = useRef(limit);
+  limitRef.current = limit;
+const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
 
   const loadResidents = useCallback(async (pageNum, currentSearch, isInitial = false) => {
@@ -84,7 +53,7 @@ export default function CommitteeResidents() {
     try {
       const params = new URLSearchParams({
         page: pageNum,
-        limit: LIMIT,
+        limit: limitRef.current,
         ...(currentSearch ? { search: currentSearch } : {}),
       });
       const res = await API.get(`/users/resident?${params}`);
@@ -212,7 +181,7 @@ export default function CommitteeResidents() {
                       onMouseEnter={(e) => (e.currentTarget.style.background = "var(--row-hover)")}
                       onMouseLeave={(e) => (e.currentTarget.style.background = "")}
                     >
-                      <td className="px-5 py-3 text-xs text-secondary">{(page - 1) * LIMIT + idx + 1}</td>
+                      <td className="px-5 py-3 text-xs text-secondary">{(page - 1) * limit + idx + 1}</td>
 
                       {/* Name */}
                       <td className="px-5 py-3">
@@ -354,7 +323,7 @@ export default function CommitteeResidents() {
               <p className="text-xs text-secondary">
                 {t("billShowing") || "Showing"} {residents.length} {t("billOf") || "of"} {totalItems}
               </p>
-              <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} />
+              <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} pageSize={limit} onPageSizeChange={(s) => { limitRef.current = s; setLimit(s); setPage(1); handlePageChange(1); }} />
             </div>
           </>
         )}

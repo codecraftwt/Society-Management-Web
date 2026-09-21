@@ -23,51 +23,7 @@ import { getRequiredError, getTitleError, getNumberError } from "../../utils/val
 import useUnsavedDirty from "../../hooks/useUnsavedDirty";
 import ConfirmDiscard from "../../components/common/ConfirmDiscard";
 
-/* ── Debounce hook ── */
-function useDebounce(value, delay = 500) {
-  const [debounced, setDebounced] = useState(value);
-  useEffect(() => {
-    const t = setTimeout(() => setDebounced(value), delay);
-    return () => clearTimeout(t);
-  }, [value, delay]);
-  return debounced;
-}
-
-/* ── Spinner ── */
-function Spinner({ small = false }) {
-  const s = small ? 13 : 20;
-  return (
-    <svg style={{ width: s, height: s }} className="animate-spin" viewBox="0 0 24 24" fill="none">
-      <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" className="opacity-25" />
-      <path fill="currentColor" className="opacity-75" d="M4 12a8 8 0 018-8v8z" />
-    </svg>
-  );
-}
-
-/* ── Pagination ── */
-function Pagination({ page, totalPages, onPageChange }) {
-  if (totalPages <= 1) return null;
-  const pages = Array.from({ length: totalPages }, (_, i) => i + 1)
-    .filter((p) => p === 1 || p === totalPages || Math.abs(p - page) <= 1)
-    .reduce((acc, p, idx, arr) => {
-      if (idx > 0 && p - arr[idx - 1] > 1) acc.push("...");
-      acc.push(p);
-      return acc;
-    }, []);
-  return (
-    <div className="pagination-wrap">
-      <button onClick={() => onPageChange(page - 1)} disabled={page === 1} className="pagination-btn">‹ Prev</button>
-      {pages.map((p, idx) =>
-        p === "..." ? (
-          <span key={`e-${idx}`} className="pagination-ellipsis">...</span>
-        ) : (
-          <button key={p} onClick={() => onPageChange(p)} className={`pagination-page ${p === page ? "pagination-page--active" : ""}`}>{p}</button>
-        )
-      )}
-      <button onClick={() => onPageChange(page + 1)} disabled={page === totalPages} className="pagination-btn">Next ›</button>
-    </div>
-  );
-}
+import Pagination from "../../components/common/Pagination";
 
 /* ── Status Badge (slot) ── */
 function StatusBadge({ status, t }) {
@@ -249,7 +205,7 @@ function ResidentEntryPanel({ slots, onCreated, t }) {
           <input
             className="input search-input h-10 w-full text-sm"
             style={{ paddingLeft: 34 }}
-            placeholder="Search by vehicle number, resident, or flat…"
+            placeholder={t("parkSearchVehicle")}
             value={search}
             onChange={e => setSearch(e.target.value)}
           />
@@ -279,7 +235,7 @@ function ResidentEntryPanel({ slots, onCreated, t }) {
       {loading ? (
         <div className="flex flex-col items-center gap-3 py-14 text-secondary">
           <Spinner />
-          <p className="text-sm">Loading unassigned vehicles…</p>
+          <p className="text-sm">{t("parkUnassignedLoading")}</p>
         </div>
       ) : filtered.length === 0 ? (
         <div className="flex flex-col items-center gap-2 py-16 text-secondary">
@@ -460,6 +416,7 @@ function ResidentEntryPanel({ slots, onCreated, t }) {
    and never create a ParkingRequest, so they never appear here.
 ═══════════════════════════════════════════ */
 function ResidentRequestsPanel({ allSlots, onSlotAssigned }) {
+  const { t } = useLang();
   const { user } = useAuthContext();
   const { showUnauthorized } = useCustomAlert();
   const [requests, setRequests] = useState([]);
@@ -603,7 +560,7 @@ function ResidentRequestsPanel({ allSlots, onSlotAssigned }) {
       {/* Request list */}
       {loading ? (
         <div className="flex flex-col items-center gap-3 py-14 text-secondary">
-          <Spinner /> <p className="text-sm">Loading extra slot requests…</p>
+          <Spinner /> <p className="text-sm">{t("parkExtraLoading")}</p>
         </div>
       ) : filtered.length === 0 ? (
         <div className="flex flex-col items-center gap-2 py-16 text-secondary">
@@ -764,7 +721,7 @@ function ResidentRequestsPanel({ allSlots, onSlotAssigned }) {
   );
 }
 
-const LIMIT = 12;
+
 
 /* ═══════════════════════════════════════════
    Main
@@ -786,7 +743,10 @@ export default function AssignParkingSlot() {
 
   /* Pagination */
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
+  const [limit, setLimit] = useState(12);
+  const limitRef = useRef(limit);
+  limitRef.current = limit;
+const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
 
   /* Filters */
@@ -1056,7 +1016,7 @@ export default function AssignParkingSlot() {
     try {
       const params = new URLSearchParams({
         page: pageNum,
-        limit: LIMIT,
+        limit: limitRef.current,
         ...(vFilter !== "ALL" ? { vehicle_type: vFilter } : {}),
         ...(statusF !== "ALL" ? { status: statusF } : {}),
         ...(currentSearch ? { search: currentSearch } : {}),
@@ -1301,7 +1261,7 @@ export default function AssignParkingSlot() {
                 <input
                   className="input search-input h-10 text-xs w-full"
                   style={{ paddingLeft: 34, paddingRight: 28 }}
-                  placeholder="Search slot, flat, resident, vehicle…"
+                  placeholder={t("parkSearchSlot")}
                   value={ownerSearch}
                   onChange={(e) => setOwnerSearch(e.target.value)}
                 />
@@ -1333,7 +1293,7 @@ export default function AssignParkingSlot() {
               <p className="text-sm">
                 {ownerSlots.length === 0
                   ? t("parkEmpty") || "No parking slots registered"
-                  : "No parking slots match your current filter selection"}
+                  : t("parkNoMatchFilter")}
               </p>
             </div>
           )}
@@ -1414,7 +1374,7 @@ export default function AssignParkingSlot() {
                               </div>
                             ) : (
                               <p className="text-[11px] text-secondary mt-1 italic">
-                                {s.resident ? "No vehicle linked" : "—"}
+                                {s.resident ? t("parkNoVehicleLinked") : "—"}
                               </p>
                             )}
                           </div>
@@ -1476,13 +1436,13 @@ export default function AssignParkingSlot() {
             {/* Filter and Count Bar */}
             <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-xl bg-card border border-glass">
               <div className="flex items-center gap-2.5">
-                <span className="text-xs font-semibold text-secondary">Filter:</span>
+                <span className="text-xs font-semibold text-secondary">{t("parkFilterLabel")}</span>
                 <Select
                   value={activeFilter}
                   onChange={(e) => handleFilterChange(e.target.value)}
                   style={{ height: 36, minWidth: 160, fontSize: 13, borderRadius: 8 }}
                 >
-                  <option value="ALL">All Slots ({stats.total})</option>
+                  <option value="ALL">{t("parkAllSlotsCount", { n: stats.total })}</option>
                   <option value="CAR">Cars Only ({stats.cars})</option>
                   <option value="BIKE">Bikes Only ({stats.bikes})</option>
                   <option value="AVAILABLE">Available ({stats.available})</option>
@@ -1512,7 +1472,7 @@ export default function AssignParkingSlot() {
                   <MdOutlineInbox size={42} />
                 </div>
                 <h4>{t("parkEmpty") || "No parking slots found"}</h4>
-                <p>Create your society parking slots to begin assigning them to residents.</p>
+                <p>{t("parkCreateHint")}</p>
                 <GlobalButton
                   variant="add"
                   onClick={() => setShowForm(true)}
@@ -1595,7 +1555,7 @@ export default function AssignParkingSlot() {
                         </div>
 
                         {/* Compact Card Middle: Resident, Flat & Vehicle info */}
-                        <div className="pt-2 text-xs border-t border-glass flex items-center justify-between min-h-[26px]">
+                        <div className="pt-2 text-xs border-t border-glass flex items-center justify-between min-h-6.5">
                           {isAvail ? (
                             <span className="text-secondary text-[11px] flex items-center gap-1.5">
                               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block" />
@@ -1632,7 +1592,7 @@ export default function AssignParkingSlot() {
                   <p className="ps-pagination-info">
                     {t("billShowing") || "Showing"} <strong>{slots.length}</strong> {t("billOf") || "of"} <strong>{totalItems}</strong> {t("parkSlotCount") || "Slots"}
                   </p>
-                  <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} />
+                  <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} pageSize={limit} onPageSizeChange={(s) => { limitRef.current = s; setLimit(s); setPage(1); handlePageChange(1); }} />
                 </div>
               </div>
             )}
@@ -2111,7 +2071,7 @@ export default function AssignParkingSlot() {
             >
               <div className="fh-confirm-accent" />
               <div className="fh-confirm-icon">⚠️</div>
-              <h3 className="fh-confirm-title">Delete Parking Slot?</h3>
+              <h3 className="fh-confirm-title">{t("parkDeleteConfirmTitle")}</h3>
               <p className="fh-confirm-text">
                 Are you sure you want to delete slot{" "}
                 <strong>

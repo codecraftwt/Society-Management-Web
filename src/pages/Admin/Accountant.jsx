@@ -617,7 +617,7 @@ export default function Accountant() {
                 onChange={handleSocietyChange}
                 style={{ height: 40, fontSize: 13, minWidth: 200 }}
               >
-                <option value="ALL">All Societies (Global View)</option>
+              <option value="ALL">{t("allSocietiesGlobalView")}</option>
                 {societiesList.map((s) => (
                   <option key={s.id} value={s.id}>{s.name}</option>
                 ))}
@@ -792,7 +792,7 @@ export default function Accountant() {
           <div>
             <SectionLabel>Select Resident</SectionLabel>
             {loadingEligible ? (
-              <p style={{ fontSize: 12, color: "var(--text-secondary)", padding: 8 }}>Loading eligible residents…</p>
+              <p style={{ fontSize: 12, color: "var(--text-secondary)", padding: 8 }}>{t("acctEligibleLoading")}</p>
             ) : isSuperAdmin && !residentSocietyId ? (
               <div style={{
                 padding: "12px 14px", borderRadius: 10,

@@ -22,8 +22,6 @@ import {
   MdDelete,
   MdAdd,
   MdReportProblem,
-  MdChevronLeft,
-  MdChevronRight,
   MdViewList,
   MdSearch,
   MdFilterList,
@@ -45,6 +43,7 @@ import {
   MdVisibility,
 } from "react-icons/md";
 import { AuthContext } from "../../context/AuthContext";
+import { useLang } from "../../context/LanguageContext";
 import { hasPermission, isAdmin } from "../../utils/permissions";
 import API from "../../services/api";
 import SlidingTabs from "../../components/common/SlidingTabs";
@@ -52,6 +51,7 @@ import ExpandableSearch from "../../components/common/ExpandableSearch";
 import Select from "../../components/common/Select";
 import useUnsavedDirty from "../../hooks/useUnsavedDirty";
 import ConfirmDiscard from "../../components/common/ConfirmDiscard";
+import Pagination from "../../components/common/Pagination";
 import { exportToPDF } from "../../utils/exportPDF";
 import { exportToExcel } from "../../utils/exportExcel";
 import { getTitleError, getPositiveAmountError, getDescriptionError, getRequiredDateError } from "../../utils/validators";
@@ -71,6 +71,12 @@ const CURRENCY = (v) =>
   new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 2 }).format(Number(v) || 0);
 
 const TODAY = () => new Date().toISOString().slice(0, 10);
+
+const MONTH_KEYS = {
+  Jan: "monthJan", Feb: "monthFeb", Mar: "monthMar", Apr: "monthApr",
+  May: "monthMay", Jun: "monthJun", Jul: "monthJul", Aug: "monthAug",
+  Sep: "monthSep", Oct: "monthOct", Nov: "monthNov", Dec: "monthDec",
+};
 
 const inputStyle = {
   background: "var(--card-inner-bg)",
@@ -460,8 +466,11 @@ export default function Accounting({ initialTab = "overview" }) {
 
 /* ── OVERVIEW TAB ─────────────────────────────────────────────────────────── */
 function OverviewTab({ b, months, year, onOpenTab }) {
+  const { t } = useLang();
+  const creditedInLabel = t("chartCreditedIn");
+  const debitedOutLabel = t("chartDebitedOut");
   const chartData = months.map((m) => ({
-    name: m.label,
+    name: t(MONTH_KEYS[m.label] || m.label),
     credited: m.credited,
     debited: m.debited,
   }));
@@ -710,11 +719,11 @@ function OverviewTab({ b, months, year, onOpenTab }) {
       <div className="bg-card border border-glass-border rounded-2xl p-6 shadow-sm">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
           <div>
-            <h2 className="text-base font-bold text-primary">Credited vs Debited Cash Flow</h2>
-            <p className="text-xs text-secondary">Monthly money-in (bills, maintenance, amenities) vs money-out (expenses) — {year}</p>
+            <h2 className="text-base font-bold text-primary">{t("chartCashFlowTitle")}</h2>
+            <p className="text-xs text-secondary">{t("chartCashFlowSubtitle", { year })}</p>
           </div>
           <button onClick={() => onOpenTab("ledger")} className="btn-primary flex items-center gap-1.5 text-xs font-semibold px-4 py-2">
-            <MdViewList size={16} /> Open Cash Book Ledger
+            <MdViewList size={16} /> {t("chartOpenLedger")}
           </button>
         </div>
         <div className="w-full h-72 min-h-0">
@@ -733,7 +742,7 @@ function OverviewTab({ b, months, year, onOpenTab }) {
                 tickLine={false}
               />
               <Tooltip
-                formatter={(v, name) => [CURRENCY(v), name === "credited" ? "Credited (In)" : "Debited (Out)"]}
+                formatter={(v, name) => [CURRENCY(v), name]}
                 cursor={{ fill: "rgba(255,255,255,0.03)" }}
                 contentStyle={{
                   background: "var(--card-bg)",
@@ -745,8 +754,8 @@ function OverviewTab({ b, months, year, onOpenTab }) {
                 }}
               />
               <Legend wrapperStyle={{ fontSize: "12px" }} />
-              <Bar dataKey="credited" name="Credited (In)" fill="#10b981" radius={[6, 6, 0, 0]} />
-              <Bar dataKey="debited" name="Debited (Out)" fill="#f43f5e" radius={[6, 6, 0, 0]} />
+              <Bar dataKey="credited" name={creditedInLabel} fill="#10b981" radius={[6, 6, 0, 0]} />
+              <Bar dataKey="debited" name={debitedOutLabel} fill="#f43f5e" radius={[6, 6, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -761,7 +770,7 @@ function DetailItem({ label, value, tone }) {
     <div className="bg-card-inner-bg border border-glass-border/70 rounded-xl p-3 flex flex-col justify-between">
       <span className="text-[11px] font-semibold uppercase tracking-wider text-secondary">{label}</span>
       <span
-        className={`text-sm font-bold mt-1 break-words ${
+        className={`text-sm font-bold mt-1 wrap-break-word ${
           tone === "green"
             ? "text-emerald-500"
             : tone === "red"
@@ -868,6 +877,7 @@ function LedgerDetailsModal({ row, onClose }) {
 
 /* ── LEDGER FILTER POPUP MODAL ─────────────────────────────────────────────── */
 function LedgerFilterModal({ filters, onApply, onClose }) {
+  const { t } = useLang();
   const [draft, setDraft] = useState({
     type: filters.type || "",
     source: filters.source || "",
@@ -947,7 +957,7 @@ function LedgerFilterModal({ filters, onApply, onClose }) {
               value={draft.type}
               onChange={(e) => setDraft({ ...draft, type: e.target.value })}
             >
-              <option value="">All Transactions (In & Out)</option>
+              <option value="">{t("accAllTxn")}</option>
               <option value="CREDIT">+ Credits Only (Money In)</option>
               <option value="DEBIT">− Debits Only (Money Out)</option>
             </select>
@@ -959,7 +969,7 @@ function LedgerFilterModal({ filters, onApply, onClose }) {
               value={draft.source}
               onChange={(e) => setDraft({ ...draft, source: e.target.value })}
             >
-              <option value="">All Sources & Categories</option>
+              <option value="">{t("accAllSources")}</option>
               {SOURCES.filter(Boolean).map((s) => (
                 <option key={s} value={s}>
                   {s}
@@ -1023,6 +1033,7 @@ function LedgerFilterModal({ filters, onApply, onClose }) {
 
 /* ── CASH BOOK LEDGER TAB ─────────────────────────────────────────────────── */
 function LedgerTab({ b, onNeedsBalance }) {
+  const { t } = useLang();
   const [rows, setRows] = useState([]);
   const [pagination, setPagination] = useState({});
   const [loading, setLoading] = useState(true);
@@ -1048,7 +1059,7 @@ function LedgerTab({ b, onNeedsBalance }) {
 
   useEffect(() => {
     load(filters);
-  }, [filters.page]);
+  }, [filters.page, filters.limit]);
 
   const [isSearchOpen, setIsSearchOpen] = useState(Boolean(filters.search));
 
@@ -1252,7 +1263,7 @@ function LedgerTab({ b, onNeedsBalance }) {
               }}
             >
               <MdFilterList size={16} className={activeFilterCount > 0 ? "text-accent" : "text-secondary"} />
-              <span>Filters</span>
+              <span>{t("filters")}</span>
               {activeFilterCount > 0 && (
                 <span className="px-1.5 py-0.5 rounded-full bg-accent text-white text-[10px] font-bold">
                   {activeFilterCount}
@@ -1393,22 +1404,13 @@ function LedgerTab({ b, onNeedsBalance }) {
           <p className="text-xs text-secondary font-medium">
             Page {pagination.currentPage || 1} of {pagination.totalPages || 1} · {pagination.totalItems || 0} total ledger entries
           </p>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => applyFilters({ page: Math.max(1, (pagination.currentPage || 1) - 1) })}
-              disabled={(pagination.currentPage || 1) <= 1}
-              className="btn-soft px-3.5 py-1.5 text-xs font-semibold disabled:opacity-40 flex items-center gap-1"
-            >
-              <MdChevronLeft size={16} /> Prev
-            </button>
-            <button
-              onClick={() => applyFilters({ page: (pagination.currentPage || 1) + 1 })}
-              disabled={(pagination.currentPage || 1) >= (pagination.totalPages || 1)}
-              className="btn-soft px-3.5 py-1.5 text-xs font-semibold disabled:opacity-40 flex items-center gap-1"
-            >
-              Next <MdChevronRight size={16} />
-            </button>
-          </div>
+          <Pagination
+            page={pagination.currentPage || 1}
+            totalPages={pagination.totalPages || 1}
+            onPageChange={(p) => applyFilters({ page: p })}
+            pageSize={filters.limit}
+            onPageSizeChange={(s) => applyFilters({ page: 1, limit: s })}
+          />
         </div>
       </div>
 
@@ -1433,6 +1435,7 @@ function ExpensesTab({ isDeleteAllowed }) {
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
   const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(20);
   const [search, setSearch] = useState("");
   const [isSearchOpen, setIsSearchOpen] = useState(Boolean(search));
   const [showForm, setShowForm] = useState(null);
@@ -1448,11 +1451,11 @@ function ExpensesTab({ isDeleteAllowed }) {
     WebkitBackdropFilter: "blur(20px)",
   };
 
-  const load = async (p = page, q = "") => {
+  const load = async (p = page, q = "", size = limit) => {
     try {
       setLoading(true);
       setErr("");
-      const params = { page: p, limit: 20 };
+      const params = { page: p, limit: size };
       if (q) params.search = q;
       const res = await getExpenses(params);
       setRows(res.data || []);
@@ -1739,29 +1742,22 @@ function ExpensesTab({ isDeleteAllowed }) {
         </div>
 
         {/* Pagination */}
-        {pagination.totalPages > 1 && (
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-glass-border">
-            <p className="text-xs text-secondary font-medium">
-              Page {pagination.currentPage || 1} of {pagination.totalPages || 1} · {pagination.totalItems || 0} total expenses
-            </p>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => goPage(Math.max(1, (pagination.currentPage || 1) - 1))}
-                disabled={(pagination.currentPage || 1) <= 1}
-                className="btn-soft px-3.5 py-1.5 text-xs font-semibold disabled:opacity-40 flex items-center gap-1"
-              >
-                <MdChevronLeft size={16} /> Prev
-              </button>
-              <button
-                onClick={() => goPage((pagination.currentPage || 1) + 1)}
-                disabled={(pagination.currentPage || 1) >= (pagination.totalPages || 1)}
-                className="btn-soft px-3.5 py-1.5 text-xs font-semibold disabled:opacity-40 flex items-center gap-1"
-              >
-                Next <MdChevronRight size={16} />
-              </button>
-            </div>
-          </div>
-        )}
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-glass-border">
+          <p className="text-xs text-secondary font-medium">
+            Page {pagination.currentPage || 1} of {pagination.totalPages || 1} · {pagination.totalItems || 0} total expenses
+          </p>
+          <Pagination
+            page={pagination.currentPage || page}
+            totalPages={pagination.totalPages || 1}
+            onPageChange={goPage}
+            pageSize={limit}
+            onPageSizeChange={(s) => {
+              setLimit(s);
+              setPage(1);
+              load(1, search, s);
+            }}
+          />
+        </div>
       </div>
 
       {showForm && (
@@ -1958,7 +1954,7 @@ function ExpenseForm({ expense, saving, onClose, onSubmit }) {
                 min="0.01"
                 step="0.01"
                 style={inputStyle}
-                className="!pl-8 font-bold text-base"
+                className="pl-8! font-bold text-base"
                 placeholder="0.00"
                 value={form.amount}
                 onChange={set("amount")}
@@ -2530,16 +2526,17 @@ function AuditLogTab({ societyName }) {
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
   const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(20);
   const [selected, setSelected] = useState(null);
   const [showExportMenu, setShowExportMenu] = useState(false);
   const [search, setSearch] = useState("");
   const [isSearchOpen, setIsSearchOpen] = useState(false);
 
-  const load = async (p = 1) => {
+  const load = async (p = 1, size = limit) => {
     try {
       setLoading(true);
       setErr("");
-      const res = await getAuditLogs({ page: p, limit: 20 });
+      const res = await getAuditLogs({ page: p, limit: size });
       setRows(res.data || []);
       setPagination(res.pagination || {});
     } catch (e) {
@@ -2613,22 +2610,6 @@ function AuditLogTab({ societyName }) {
     toast.success("Financial Audit Log exported successfully.");
     setShowExportMenu(false);
   };
-
-  const pageBtn = (p) => (
-    <button
-      key={p}
-      onClick={() => {
-        setPage(p);
-        load(p);
-      }}
-      disabled={p === page}
-      className={`w-8 h-8 rounded-lg text-xs font-bold transition-colors ${
-        p === page ? "bg-accent text-white" : "bg-card-inner-bg border border-glass-border text-secondary hover:text-primary"
-      }`}
-    >
-      {p}
-    </button>
-  );
 
   if (err) {
     return (
@@ -2812,41 +2793,25 @@ function AuditLogTab({ societyName }) {
         </table>
       </div>
 
-      {pagination.totalPages > 1 && (
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t" style={{ borderColor: "var(--glass-border)" }}>
-          <span className="text-xs text-secondary font-medium">
-            Page {pagination.currentPage} of {pagination.totalPages} · {pagination.totalItems} total audit records
-          </span>
-          <div className="flex items-center gap-1.5">
-            <button
-              onClick={() => {
-                const p = Math.max(1, page - 1);
-                setPage(p);
-                load(p);
-              }}
-              disabled={page <= 1}
-              className="btn-soft w-8 h-8 flex items-center justify-center text-sm disabled:opacity-40"
-            >
-              <MdChevronLeft size={16} />
-            </button>
-            {Array.from({ length: pagination.totalPages }, (_, i) => pageBtn(i + 1)).slice(
-              Math.max(0, Math.min(page - 1, pagination.totalPages - 5)),
-              Math.max(5, Math.min(page + 4, pagination.totalPages))
-            )}
-            <button
-              onClick={() => {
-                const p = Math.min(pagination.totalPages, page + 1);
-                setPage(p);
-                load(p);
-              }}
-              disabled={page >= pagination.totalPages}
-              className="btn-soft w-8 h-8 flex items-center justify-center text-sm disabled:opacity-40"
-            >
-              <MdChevronRight size={16} />
-            </button>
-          </div>
-        </div>
-      )}
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t" style={{ borderColor: "var(--glass-border)" }}>
+        <span className="text-xs text-secondary font-medium">
+          Page {pagination.currentPage || page} of {pagination.totalPages || 1} · {pagination.totalItems || 0} total audit records
+        </span>
+        <Pagination
+          page={page}
+          totalPages={pagination.totalPages || 1}
+          onPageChange={(p) => {
+            setPage(p);
+            load(p);
+          }}
+          pageSize={limit}
+          onPageSizeChange={(s) => {
+            setLimit(s);
+            setPage(1);
+            load(1, s);
+          }}
+        />
+      </div>
 
       {selected && <AuditDetailsModal row={selected} societyName={societyName} onClose={() => setSelected(null)} />}
     </div>

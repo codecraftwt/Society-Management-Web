@@ -703,14 +703,25 @@ html.role-theme .sidebar-link:hover,
 html.light.role-theme .sidebar-link:hover {
   background: var(--card-inner-bg);
   color: var(--text-primary);
+  transform: none !important;
 }
 
 html.role-theme .sidebar-link.active,
-html.light.role-theme .sidebar-link.active {
-  background: var(--accent);
-  color: #ffffff;
+html.light.role-theme .sidebar-link.active,
+html.role-theme .sidebar-link.active:hover,
+html.light.role-theme .sidebar-link.active:hover {
+  background: var(--accent) !important;
+  background-image: none !important;
+  color: #ffffff !important;
   border-radius: 12px;
-  box-shadow: none;
+  border-color: transparent !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+html.role-theme .sidebar-link.active:hover,
+html.light.role-theme .sidebar-link.active:hover {
+  background: var(--accent-dark) !important;
 }
 
 html.role-theme .sidebar-link.active,
@@ -718,6 +729,25 @@ html.role-theme .sidebar-link.active *,
 html.light.role-theme .sidebar-link.active,
 html.light.role-theme .sidebar-link.active * {
   color: #ffffff !important;
+}
+
+html.role-theme .sidebar-sublink,
+html.light.role-theme .sidebar-sublink {
+  font-size: 11px !important;
+  font-weight: 500;
+  line-height: 1.25;
+}
+
+html.role-theme .sidebar-sublink.active,
+html.light.role-theme .sidebar-sublink.active {
+  font-weight: 600;
+}
+
+@media (max-width: 767px) {
+  html.role-theme .sidebar-sublink,
+  html.light.role-theme .sidebar-sublink {
+    font-size: 13px !important;
+  }
 }
 
 html.role-theme .text-accent,
@@ -954,8 +984,8 @@ html.light.role-theme .sa-btn-warning:hover:not(:disabled) .sa-pill-inner {
 
 html.role-theme .global-btn-draw rect,
 html.light.role-theme .global-btn-draw rect {
-  stroke: var(--accent) !important;
-  filter: drop-shadow(0 0 6px rgba(var(--acct-purple-rgb), 0.55)) !important;
+  stroke: #ffffff !important;
+  filter: none !important;
 }
 
 html.role-theme .btn-muted:hover:not(:disabled),

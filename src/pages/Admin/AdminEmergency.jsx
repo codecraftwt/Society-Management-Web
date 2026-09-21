@@ -325,7 +325,7 @@ export default function AdminEmergency() {
           <ExpandableSearch
             value={search}
             onChange={setSearch}
-            placeholder="Search SOS alerts..."
+            placeholder={t("sosSearch")}
           />
 
           {/* Type Filter */}
@@ -348,7 +348,7 @@ export default function AdminEmergency() {
               onChange={(e) => setSelectedSocietyId(e.target.value)}
               style={{ height: 42, minHeight: 42, fontSize: 13, borderRadius: 12, minWidth: 160 }}
             >
-              <option value="">All Societies</option>
+              <option value="">{t("allSocieties")}</option>
               {societies.map((soc) => (
                 <option key={soc.id} value={soc.id}>
                   {soc.name}
@@ -362,7 +362,7 @@ export default function AdminEmergency() {
             <button
               type="button"
               onClick={() => setIsSOSModalOpen(true)}
-              className="btn bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white flex items-center gap-2 text-xs font-bold px-4 py-2.5 rounded-xl shadow-md shadow-red-600/30 transition-all cursor-pointer"
+              className="btn bg-linear-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white flex items-center gap-2 text-xs font-bold px-4 py-2.5 rounded-xl shadow-md shadow-red-600/30 transition-all cursor-pointer"
               style={{ height: 42, minHeight: 42 }}
             >
               <FaExclamationTriangle size={14} className="animate-pulse" />
@@ -386,7 +386,7 @@ export default function AdminEmergency() {
         <div className="ad-kpi ad-kpi--residents">
           <span className="ad-kpi-val">{metrics.total}</span>
           <span className="ad-kpi-label">Total SOS Alerts</span>
-          <span className="ad-kpi-desc">All emergencies recorded</span>
+          <span className="ad-kpi-desc">{t("sosAllEmergencies")}</span>
         </div>
 
         <div className="ad-kpi ad-kpi--complaints">
@@ -822,7 +822,7 @@ export default function AdminEmergency() {
                   setHistoryModal((prev) => ({ ...prev, search: val }));
                   fetchModalHistory(historyModal.alert.id, val, historyModal.statusFilter);
                 }}
-                placeholder="Search recipient name, flat..."
+                placeholder={t("sosSearchRecipient")}
               />
             </div>
 
@@ -838,9 +838,9 @@ export default function AdminEmergency() {
               }}
             >
               {historyModal.loading ? (
-                <div className="p-8 text-center text-secondary text-xs">Loading acknowledgement list...</div>
+                <div className="p-8 text-center text-secondary text-xs">{t("sosLoadingAck")}</div>
               ) : !historyModal.data?.recipients || historyModal.data.recipients.length === 0 ? (
-                <div className="p-8 text-center text-secondary text-xs">No recipient records found</div>
+                <div className="p-8 text-center text-secondary text-xs">{t("sosNoRecipients")}</div>
               ) : (
                 <table className="w-full text-left text-xs">
                   <thead

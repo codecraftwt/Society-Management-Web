@@ -2,10 +2,12 @@ import { useState, useEffect, useContext, useMemo, useRef } from "react";
 import { createPortal } from "react-dom";
 import API from "../../services/api";
 import { AuthContext } from "../../context/AuthContext";
+import { useLang } from "../../context/LanguageContext";
 import { toast } from "react-toastify";
 import { hasPermission } from "../../utils/permissions";
 import SlidingTabs from "../../components/common/SlidingTabs";
 import ExpandableSearch from "../../components/common/ExpandableSearch";
+import Pagination from "../../components/common/Pagination";
 import HoloToggle from "../../components/common/HoloToggle";
 import {
   FaShieldAlt,
@@ -106,6 +108,7 @@ const STATUS_FILTER_ITEMS = [
 const deepCopy = (obj) => JSON.parse(JSON.stringify(obj));
 
 export default function RolePermissions() {
+  const { t } = useLang();
   const { user, refreshPermissions } = useContext(AuthContext);
   const isSuperAdmin = user?.role === "SUPER_ADMIN" || user?.activeRole === "SUPER_ADMIN";
 
@@ -129,7 +132,7 @@ export default function RolePermissions() {
   const societyRef = useRef(null);
 
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   // Confirmation Modal State
   const [confirmModal, setConfirmModal] = useState({
@@ -603,7 +606,7 @@ export default function RolePermissions() {
                     <div style={{ position: "relative", marginBottom: "4px" }}>
                       <input
                         type="text"
-                        placeholder="Search society..."
+                        placeholder={t("rpSearchSociety")}
                         value={societySearch}
                         onChange={(e) => setSocietySearch(e.target.value)}
                         onClick={(e) => e.stopPropagation()}
@@ -827,7 +830,7 @@ export default function RolePermissions() {
 
           {/* Expandable Open/Closed Search */}
           <ExpandableSearch
-            placeholder="Search sections..."
+            placeholder={t("rpSearchSections")}
             value={searchQuery}
             onChange={setSearchQuery}
             onClear={() => setSearchQuery("")}
@@ -840,18 +843,18 @@ export default function RolePermissions() {
       {isSuperAdmin && !selectedSocietyId ? (
         <div className="rp-empty">
           <FaBuilding size={40} />
-          <h3>Select a society to continue</h3>
+          <h3>{t("paySelectContinue")}</h3>
           <p>Choose a target society from the dropdown above to view and configure section permissions.</p>
         </div>
       ) : loading ? (
         <div className="rp-loading">
           <div className="rp-spinner" />
-          <p>Loading section permissions table...</p>
+          <p>{t("rpLoading")}</p>
         </div>
       ) : filteredModulesList.length === 0 ? (
         <div className="rp-empty">
           <MdSecurity size={40} />
-          <h3>No matching sections found</h3>
+          <h3>{t("rpNoMatch")}</h3>
           <p>Try adjusting your search query or reset the filter mode.</p>
         </div>
       ) : (
@@ -1030,84 +1033,16 @@ export default function RolePermissions() {
                 <strong style={{ color: "var(--text-primary)" }}>{filteredModulesList.length}</strong> sections
               </div>
 
-              {totalPages > 1 && (
-                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                  <button
-                    type="button"
-                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                    disabled={safeCurrentPage === 1}
-                    style={{
-                      padding: "6px 12px",
-                      borderRadius: "8px",
-                      fontSize: "12px",
-                      fontWeight: 600,
-                      background: safeCurrentPage === 1 ? "transparent" : "var(--card-bg)",
-                      border: "1px solid var(--glass-border)",
-                      color: safeCurrentPage === 1 ? "var(--text-muted)" : "var(--text-primary)",
-                      cursor: safeCurrentPage === 1 ? "not-allowed" : "pointer",
-                      opacity: safeCurrentPage === 1 ? 0.4 : 1,
-                      transition: "all 0.2s ease",
-                    }}
-                  >
-                    Previous
-                  </button>
-
-                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => {
-                    const isActive = safeCurrentPage === pageNum;
-                    return (
-                      <button
-                        key={pageNum}
-                        type="button"
-                        onClick={() => setCurrentPage(pageNum)}
-                        style={{
-                          width: "32px",
-                          height: "32px",
-                          borderRadius: "8px",
-                          fontSize: "12px",
-                          fontWeight: 700,
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          background: isActive
-                            ? `${selectedRoleMeta?.color || "var(--accent)"}26`
-                            : "var(--card-bg)",
-                          border: `1px solid ${isActive
-                            ? selectedRoleMeta?.color || "var(--accent)"
-                            : "var(--glass-border)"
-                            }`,
-                          color: isActive
-                            ? selectedRoleMeta?.color || "var(--accent)"
-                            : "var(--text-primary)",
-                          cursor: "pointer",
-                          transition: "all 0.2s ease",
-                        }}
-                      >
-                        {pageNum}
-                      </button>
-                    );
-                  })}
-
-                  <button
-                    type="button"
-                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                    disabled={safeCurrentPage === totalPages}
-                    style={{
-                      padding: "6px 12px",
-                      borderRadius: "8px",
-                      fontSize: "12px",
-                      fontWeight: 600,
-                      background: safeCurrentPage === totalPages ? "transparent" : "var(--card-bg)",
-                      border: "1px solid var(--glass-border)",
-                      color: safeCurrentPage === totalPages ? "var(--text-muted)" : "var(--text-primary)",
-                      cursor: safeCurrentPage === totalPages ? "not-allowed" : "pointer",
-                      opacity: safeCurrentPage === totalPages ? 0.4 : 1,
-                      transition: "all 0.2s ease",
-                    }}
-                  >
-                    Next
-                  </button>
-                </div>
-              )}
+              <Pagination
+                page={safeCurrentPage}
+                totalPages={totalPages}
+                onPageChange={setCurrentPage}
+                pageSize={itemsPerPage}
+                onPageSizeChange={(s) => {
+                  setItemsPerPage(s);
+                  setCurrentPage(1);
+                }}
+              />
             </div>
           )}
         </div>

@@ -12,34 +12,8 @@ import {
 import Select from "../../components/common/Select";
 import ExpandableSearch from "../../components/common/ExpandableSearch";
 
-/* ── Pagination helper ── */
-function Pagination({ page, totalPages, onChange }) {
-  if (totalPages <= 1) return null;
-  const pages = Array.from({ length: totalPages }, (_, i) => i + 1)
-    .filter((p) => p === 1 || p === totalPages || Math.abs(p - page) <= 1)
-    .reduce((acc, p, idx, arr) => {
-      if (idx > 0 && p - arr[idx - 1] > 1) acc.push("...");
-      acc.push(p);
-      return acc;
-    }, []);
-  return (
-    <div className="pagination-wrap">
-      <button onClick={() => onChange(page - 1)} disabled={page === 1} className="pagination-btn">
-        <MdChevronLeft size={15} /> Prev
-      </button>
-      {pages.map((p, idx) =>
-        p === "..." ? (
-          <span key={`e-${idx}`} className="pagination-ellipsis">…</span>
-        ) : (
-          <button key={p} onClick={() => onChange(p)} className={`pagination-page ${p === page ? "pagination-page--active" : ""}`}>{p}</button>
-        )
-      )}
-      <button onClick={() => onChange(page + 1)} disabled={page === totalPages} className="pagination-btn">
-        Next <MdChevronRight size={15} />
-      </button>
-    </div>
-  );
-}
+import Pagination from "../../components/common/Pagination";
+import { useLang } from "../../context/LanguageContext";
 
 /* ─────────────────────────────────────────────
    HELPERS
@@ -73,14 +47,15 @@ function StatusBadge({ label }) {
 }
 
 function LeaseChip({ date }) {
-  if (!date) return <span style={{ color: "var(--text-secondary)", fontStyle: "italic", fontSize: 12 }}>No end date</span>;
+  const { t } = useLang();
+  if (!date) return <span style={{ color: "var(--text-secondary)", fontStyle: "italic", fontSize: 12 }}>{t("noEndDate")}</span>;
   const diff = Math.ceil((new Date(date) - new Date()) / (1000 * 60 * 60 * 24));
   let color = "text-emerald-400 bg-emerald-400/10 border-emerald-400/20";
   if (diff <= 0) color = "text-red-400 bg-red-400/10 border-red-400/20";
   else if (diff <= 30) color = "text-blue-400 bg-blue-400/10 border-blue-400/20";
   return (
     <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md border ${color}`}>
-      {diff <= 0 ? "Expired" : diff <= 30 ? `${diff}d left` : formatDate(date)}
+      {diff <= 0 ? t("expired") : diff <= 30 ? t("daysLeft", { n: diff }) : formatDate(date)}
     </span>
   );
 }
@@ -89,6 +64,7 @@ function LeaseChip({ date }) {
    REJECTION MODAL
 ───────────────────────────────────────────── */
 function RejectModal({ open, onClose, onSubmit, loading }) {
+  const { t } = useLang();
   const [reason, setReason] = useState("");
   useEffect(() => { if (open) setReason(""); }, [open]);
   if (!open) return null;
@@ -118,8 +94,8 @@ function RejectModal({ open, onClose, onSubmit, loading }) {
             <MdWarning size={20} />
           </div>
           <div className="flex-1">
-            <h3 className="font-bold" style={{ color: "var(--text-primary)" }}>Reject Tenant Application</h3>
-            <p className="mt-0.5" style={{ fontSize: 11, color: "var(--text-secondary)" }}>Provide a clear reason — tenant will be notified</p>
+            <h3 className="font-bold" style={{ color: "var(--text-primary)" }}>{t("tmRejectTitle")}</h3>
+            <p className="mt-0.5" style={{ fontSize: 11, color: "var(--text-secondary)" }}>{t("tmRejectSub")}</p>
           </div>
           <button disabled={loading} onClick={onClose} style={{ color: "var(--text-secondary)", cursor: "pointer", background: "none", border: "none", padding: 4 }}>
             <MdClose size={20} />
@@ -128,16 +104,16 @@ function RejectModal({ open, onClose, onSubmit, loading }) {
         <div className="p-5 space-y-4">
           <div className="bg-red-500/5 border border-red-500/15 rounded-xl p-3 flex gap-2 text-sm text-red-400">
             <MdWarning size={16} className="shrink-0 mt-0.5" />
-            <span>The tenant will receive an email with the reason you provide below.</span>
+            <span>{t("tmRejectWarn")}</span>
           </div>
           <div>
             <label className="font-bold uppercase tracking-widest block mb-2" style={{ fontSize: 10, color: "var(--text-secondary)" }}>
-              Reason for Rejection *
+              {t("tmRejectReason")}
             </label>
             <textarea
               value={reason}
               onChange={e => setReason(e.target.value)}
-              placeholder="e.g. Blurred Aadhar card, Incomplete PAN details…"
+              placeholder={t("tmRejectPlaceholder")}
               rows={4}
               disabled={loading}
               style={inputStyle}
@@ -151,14 +127,14 @@ function RejectModal({ open, onClose, onSubmit, loading }) {
             className="flex-1 py-3 rounded-xl font-bold text-sm transition disabled:opacity-40"
             style={{ background: "var(--card-inner-bg)", border: "1px solid var(--glass-border)", color: "var(--text-primary)" }}
           >
-            Cancel
+            {t("cancel")}
           </button>
           <button
             disabled={loading || !reason.trim()}
             onClick={() => onSubmit(reason)}
             className="flex-1 py-3 rounded-xl bg-red-500/10 text-red-400 border border-red-500/20 font-bold text-sm hover:bg-red-500/20 transition disabled:opacity-40 flex items-center justify-center gap-2"
           >
-            {loading ? <><MdAccessTime size={16} className="animate-spin" /> Rejecting…</> : <><MdClose size={16} /> Confirm</>}
+            {loading ? <><MdAccessTime size={16} className="animate-spin" /> {t("tmRejecting")}</> : <><MdClose size={16} /> {t("confirm")}</>}
           </button>
         </div>
       </div>
@@ -171,6 +147,7 @@ function RejectModal({ open, onClose, onSubmit, loading }) {
    DETAIL MODAL (centered, for history view)
 ───────────────────────────────────────────── */
 function DetailModal({ tenant, onClose, onApprove, onReject, isPending }) {
+  const { t } = useLang();
   if (!tenant) return null;
 
   return createPortal(
@@ -202,39 +179,39 @@ function DetailModal({ tenant, onClose, onApprove, onReject, isPending }) {
 
         <div className="p-5 space-y-4">
           {/* Personal */}
-          <Section title="Personal Info" icon={<MdPerson size={14} />}>
-            <Row label="Full Name" value={tenant.tenant_name} />
-            <Row label="Email" value={tenant.tenant_email} />
-            <Row label="Phone" value={tenant.tenant_phone || "—"} />
-            <Row label="Type" value={tenant.resident_type || "TENANT"} chip />
+          <Section title={t("tmPersonalInfo")} icon={<MdPerson size={14} />}>
+            <Row label={t("tmFullName")} value={tenant.tenant_name} />
+            <Row label={t("tmEmail")} value={tenant.tenant_email} />
+            <Row label={t("tmPhone")} value={tenant.tenant_phone || "—"} />
+            <Row label={t("tmType")} value={tenant.resident_type || "TENANT"} chip />
           </Section>
 
           {/* Flat */}
-          <Section title="Flat Assignment" icon={<MdHome size={14} />}>
-            <Row label="Flat No." value={tenant.flat_number ? `Flat ${tenant.flat_number}` : "—"} />
-            <Row label="Block" value={tenant.block_name || "—"} />
-            <Row label="Owner" value={tenant.owner_name || "—"} />
-            <Row label="Occupancy" value={tenant.occupancy_status || "—"} chip />
+          <Section title={t("tmFlatAssignment")} icon={<MdHome size={14} />}>
+            <Row label={t("tmFlatNo")} value={tenant.flat_number ? `${t("afFlat")} ${tenant.flat_number}` : "—"} />
+            <Row label={t("tmBlock")} value={tenant.block_name || "—"} />
+            <Row label={t("tmOwner")} value={tenant.owner_name || "—"} />
+            <Row label={t("tmOccupancy")} value={tenant.occupancy_status || "—"} chip />
           </Section>
 
           {/* Lease */}
-          <Section title="Lease Period" icon={<MdCalendarToday size={14} />}>
-            <Row label="Move-in" value={formatDate(tenant.move_in_date)} />
-            <Row label="Move-out">
+          <Section title={t("tmLeasePeriod")} icon={<MdCalendarToday size={14} />}>
+            <Row label={t("tmMoveIn")} value={formatDate(tenant.move_in_date)} />
+            <Row label={t("tmMoveOut")}>
               <LeaseChip date={tenant.move_out_date} />
             </Row>
           </Section>
 
           {/* Status */}
-          <Section title="Status Details" icon={<MdBadge size={14} />}>
-            <Row label="Approval" value={tenant.approval_status || "—"} chip />
-            <Row label="User Status" value={tenant.user_status || "—"} chip />
-            <Row label="Currently Staying" value={tenant.is_staying ? "Yes" : "No"} />
-            <Row label="Current Membership" value={tenant.is_current ? "Yes" : "No"} />
+          <Section title={t("tmStatusDetails")} icon={<MdBadge size={14} />}>
+            <Row label={t("tmApproval")} value={tenant.approval_status || "—"} chip />
+            <Row label={t("tmUserStatus")} value={tenant.user_status || "—"} chip />
+            <Row label={t("tmCurrentlyStaying")} value={tenant.is_staying ? t("yes") : t("no")} />
+            <Row label={t("tmCurrentMembership")} value={tenant.is_current ? t("yes") : t("no")} />
             {tenant.approved_by_name && (
               <>
-                <Row label="Approved/Action By" value={`${tenant.approved_by_name} (${tenant.approved_by_role ? tenant.approved_by_role.replace('_', ' ') : 'Admin'})`} />
-                <Row label="Action Date" value={formatDate(tenant.approved_at)} />
+                <Row label={t("tmApprovedBy")} value={`${tenant.approved_by_name} (${tenant.approved_by_role ? tenant.approved_by_role.replace('_', ' ') : t("roleAdmin")})`} />
+                <Row label={t("tmActionDate")} value={formatDate(tenant.approved_at)} />
               </>
             )}
           </Section>
@@ -248,13 +225,13 @@ function DetailModal({ tenant, onClose, onApprove, onReject, isPending }) {
               onClick={() => onReject(tenant.tenant_id)}
               className="flex items-center justify-center gap-2 py-3 rounded-xl bg-red-500/10 text-red-400 border border-red-500/20 font-bold text-sm hover:bg-red-500/20 transition"
             >
-              <MdClose size={16} /> Reject
+              <MdClose size={16} /> {t("reject")}
             </button>
             <button
               onClick={() => onApprove(tenant.tenant_id)}
               className="flex items-center justify-center gap-2 py-3 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-bold text-sm hover:bg-emerald-500/20 transition"
             >
-              <MdCheck size={16} /> Approve
+              <MdCheck size={16} /> {t("approve")}
             </button>
           </div>
         )}
@@ -298,19 +275,20 @@ function Row({ label, value, chip, icon, children }) {
    STATUS TABS CONFIG
 ───────────────────────────────────────────── */
 const STATUS_TABS = [
-  { key: "ALL",       label: "All",         color: "var(--text-primary)",    icon: <MdPeople size={14} /> },
-  { key: "PENDING",   label: "Pending",     color: "var(--accent)",               icon: <MdAccessTime size={14} /> },
-  { key: "APPROVED",  label: "Approved",    color: "#22c55e",               icon: <MdCheck size={14} /> },
-  { key: "LIVING",    label: "Living",      color: "#3b82f6",               icon: <MdPerson size={14} /> },
-  { key: "REJECTED",  label: "Rejected",    color: "#ef4444",               icon: <MdClose size={14} /> },
-  { key: "EXPIRED",   label: "Expired",     color: "#a855f7",               icon: <MdCalendarToday size={14} /> },
-  { key: "REMOVED",   label: "Removed",     color: "#ef4444",               icon: <MdClose size={14} /> },
+  { key: "ALL",       labelKey: "tmTabAll",      color: "var(--text-primary)",    icon: <MdPeople size={14} /> },
+  { key: "PENDING",   labelKey: "tmTabPending",  color: "var(--accent)",               icon: <MdAccessTime size={14} /> },
+  { key: "APPROVED",  labelKey: "tmTabApproved", color: "#22c55e",               icon: <MdCheck size={14} /> },
+  { key: "LIVING",    labelKey: "tmTabLiving",   color: "#3b82f6",               icon: <MdPerson size={14} /> },
+  { key: "REJECTED",  labelKey: "tmTabRejected", color: "#ef4444",               icon: <MdClose size={14} /> },
+  { key: "EXPIRED",   labelKey: "tmTabExpired",  color: "#a855f7",               icon: <MdCalendarToday size={14} /> },
+  { key: "REMOVED",   labelKey: "tmTabRemoved",  color: "#ef4444",               icon: <MdClose size={14} /> },
 ];
 
 /* ─────────────────────────────────────────────
    MAIN COMPONENT
 ───────────────────────────────────────────── */
 export default function TenantManagement() {
+  const { t } = useLang();
   const [tenants, setTenants]       = useState([]);
   const [loading, setLoading]       = useState(true);
   const [activeTab, setActiveTab]   = useState("ALL");
@@ -332,7 +310,7 @@ export default function TenantManagement() {
       const payload = res.data;
       setTenants(Array.isArray(payload?.data) ? payload.data : Array.isArray(payload) ? payload : []);
     } catch {
-      toast.error("Failed to load tenant data.");
+      toast.error(t("tmLoadFail"));
     } finally {
       setLoading(false);
     }
@@ -369,10 +347,11 @@ export default function TenantManagement() {
 
   /* ── 10 records per page ── */
   const [page, setPage] = useState(1);
-  const totalPages = Math.ceil(filtered.length / 10);
+  const [limit, setLimit] = useState(10);
+  const totalPages = Math.max(1, Math.ceil(filtered.length / limit));
   const pagedTenants = useMemo(() => {
-    return filtered.slice((page - 1) * 10, page * 10);
-  }, [filtered, page]);
+    return filtered.slice((page - 1) * limit, page * limit);
+  }, [filtered, page, limit]);
 
   useEffect(() => {
     setPage(1);
@@ -393,7 +372,7 @@ export default function TenantManagement() {
   const handleApprove = async (userId) => {
     try {
       await API.put(`/admin/approve-resident/${userId}`);
-      toast.success("Tenant approved!");
+      toast.success(t("tmApproved"));
       setDetailTenant(null);
       load();
     } catch (err) {
@@ -405,7 +384,7 @@ export default function TenantManagement() {
     setRejectLoading(true);
     try {
       await API.put(`/admin/reject-resident/${rejectModal.userId}`, { reason });
-      toast.info("Tenant rejected.");
+      toast.info(t("tmRejected"));
       setRejectModal({ open: false, userId: null });
       setDetailTenant(null);
       load();
@@ -421,7 +400,7 @@ export default function TenantManagement() {
     <div className="flex items-center justify-center p-24">
       <div className="flex flex-col items-center gap-3">
         <div className="w-10 h-10 rounded-full border-2 border-blue-500/30 border-t-blue-400 animate-spin" />
-        <p className="text-xs font-medium tracking-widest uppercase" style={{ color: "var(--text-secondary)" }}>Loading tenants…</p>
+        <p className="text-xs font-medium tracking-widest uppercase" style={{ color: "var(--text-secondary)" }}>{t("tmLoading")}</p>
       </div>
     </div>
   );
@@ -435,8 +414,8 @@ export default function TenantManagement() {
             <MdPeople size={22} />
           </div>
           <div>
-            <h2 className="text-lg font-semibold" style={{ letterSpacing: "-0.02em" }}>Tenant Management</h2>
-            <p className="text-secondary text-xs mt-0.5">View and manage all tenants across your society</p>
+            <h2 className="text-lg font-semibold" style={{ letterSpacing: "-0.02em" }}>{t("tmTitle")}</h2>
+            <p className="text-secondary text-xs mt-0.5">{t("tmSubtitle")}</p>
           </div>
         </div>
 
@@ -447,7 +426,7 @@ export default function TenantManagement() {
             onChange={setActiveTab}
             options={STATUS_TABS.map(tab => ({
               value: tab.key,
-              label: `${tab.label} (${tabCounts[tab.key] || 0})`,
+              label: `${t(tab.labelKey)} (${tabCounts[tab.key] || 0})`,
             }))}
           />
 
@@ -455,13 +434,13 @@ export default function TenantManagement() {
             icon={<MdHome size={13} />}
             value={filterBlock}
             onChange={setFilterBlock}
-            options={[{ value: "ALL", label: "All Blocks" }, ...blocks.map(b => ({ value: b, label: `Block ${b}` }))]}
+            options={[{ value: "ALL", label: t("allBlocks") }, ...blocks.map(b => ({ value: b, label: t("afBlockName", { name: b }) }))]}
           />
 
           <ExpandableSearch
             value={search}
             onChange={setSearch}
-            placeholder="Search name, email, flat…"
+            placeholder={t("tmSearch")}
           />
 
           <button
@@ -469,7 +448,7 @@ export default function TenantManagement() {
             className="flex items-center gap-2 text-xs font-bold px-3 py-2 rounded-xl transition justify-center shrink-0"
             style={{ height: 42, minHeight: 42, color: "var(--text-secondary)", background: "var(--card-inner-bg)", border: "1px solid var(--glass-border)" }}
           >
-            <MdRefresh size={16} /> Refresh
+            <MdRefresh size={16} /> {t("refresh")}
           </button>
         </div>
       </div>
@@ -480,58 +459,58 @@ export default function TenantManagement() {
           style={{ background: "var(--card-inner-bg)", borderRadius: "20px", border: "1px solid var(--glass-border)" }}>
           <MdPeople size={40} className="text-blue-400/40" />
           <p className="text-sm font-semibold" style={{ color: "var(--text-secondary)" }}>
-            {activeTab === "ALL" ? "No tenants found" : `No ${activeTab.toLowerCase()} tenants`}
+            {activeTab === "ALL" ? t("tmEmpty") : t("tmEmptyStatus", { status: t(STATUS_TABS.find(tab => tab.key === activeTab)?.labelKey || "tmTabAll") })}
           </p>
         </div>
       ) : (
         <div key={page} className="animate-slide-page">
           {/* ── Mobile Cards ── */}
           <div className="md:hidden flex flex-col gap-3">
-            {pagedTenants.map((t, i) => (
+            {pagedTenants.map((row, i) => (
               <div
-                key={t.tenant_id}
+                key={row.tenant_id}
                 className="animate-fadeIn rounded-2xl overflow-hidden cursor-pointer"
                 style={{ animationDelay: `${i * 30}ms`, border: "1px solid var(--glass-border)", background: "var(--card-bg)" }}
-                onClick={() => setDetailTenant(t)}
+                onClick={() => setDetailTenant(row)}
               >
                 <div className="p-4 flex items-center gap-3 min-w-0">
                   <div className="w-10 h-10 rounded-xl bg-blue-500/12 text-blue-400 flex items-center justify-center font-black text-base shrink-0">
-                    {t.tenant_name?.charAt(0)}
+                    {row.tenant_name?.charAt(0)}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-bold truncate" style={{ color: "var(--text-primary)" }}>{t.tenant_name}</p>
-                    <p className="truncate" style={{ fontSize: 11, color: "var(--text-secondary)" }}>{t.tenant_email}</p>
+                    <p className="text-sm font-bold truncate" style={{ color: "var(--text-primary)" }}>{row.tenant_name}</p>
+                    <p className="truncate" style={{ fontSize: 11, color: "var(--text-secondary)" }}>{row.tenant_email}</p>
                   </div>
-                  <StatusBadge label={t.status_label} />
+                  <StatusBadge label={row.status_label} />
                 </div>
                 <div className="px-4 pb-1 flex flex-wrap items-center gap-x-4 gap-y-1.5">
                   <span className="text-xs" style={{ color: "var(--text-secondary)" }}>
-                    <span className="font-semibold" style={{ color: "var(--text-primary)" }}>{t.flat_number ? `Flat ${t.flat_number}` : "—"}</span>
-                    {t.block_name && <span> · Block {t.block_name}</span>}
+                    <span className="font-semibold" style={{ color: "var(--text-primary)" }}>{row.flat_number ? `${t("afFlat")} ${row.flat_number}` : "—"}</span>
+                    {row.block_name && <span> · {t("afBlockName", { name: row.block_name })}</span>}
                   </span>
-                  {t.move_in_date && <span className="text-xs" style={{ color: "var(--text-secondary)" }}>In: {formatDate(t.move_in_date)}</span>}
-                  {t.move_out_date && <span className="text-xs" style={{ color: "var(--text-secondary)" }}>Out: {formatDate(t.move_out_date)}</span>}
+                  {row.move_in_date && <span className="text-xs" style={{ color: "var(--text-secondary)" }}>{t("tmMoveIn")}: {formatDate(row.move_in_date)}</span>}
+                  {row.move_out_date && <span className="text-xs" style={{ color: "var(--text-secondary)" }}>{t("tmMoveOut")}: {formatDate(row.move_out_date)}</span>}
                 </div>
-                {t.status_label === "PENDING" && (
+                {row.status_label === "PENDING" && (
                   <div className="p-4 pt-2.5 flex gap-2" onClick={e => e.stopPropagation()}>
                     <button
-                      onClick={() => setDetailTenant(t)}
+                      onClick={() => setDetailTenant(row)}
                       className="flex-1 flex items-center justify-center gap-1.5 h-11 rounded-xl hover:bg-white/10 text-xs font-bold transition"
                       style={{ background: "var(--card-inner-bg)", color: "var(--text-secondary)", border: "1px solid var(--glass-border)" }}
                     >
-                      <MdVisibility size={14} /> View
+                      <MdVisibility size={14} /> {t("view")}
                     </button>
                     <button
-                      onClick={() => setRejectModal({ open: true, userId: t.tenant_id })}
+                      onClick={() => setRejectModal({ open: true, userId: row.tenant_id })}
                       className="flex-1 flex items-center justify-center gap-1.5 h-11 rounded-xl bg-red-500/10 text-red-400 border border-red-500/20 text-xs font-bold hover:bg-red-500/20 transition"
                     >
-                      <MdClose size={14} /> Reject
+                      <MdClose size={14} /> {t("reject")}
                     </button>
                     <button
-                      onClick={() => handleApprove(t.tenant_id)}
+                      onClick={() => handleApprove(row.tenant_id)}
                       className="flex-1 flex items-center justify-center gap-1.5 h-11 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs font-bold hover:bg-emerald-500/20 transition"
                     >
-                      <MdCheck size={14} /> Approve
+                      <MdCheck size={14} /> {t("approve")}
                     </button>
                   </div>
                 )}
@@ -552,19 +531,19 @@ export default function TenantManagement() {
                 gap: "12px",
               }}
             >
-              <span>Tenant</span>
-              <span>Flat / Block</span>
-              <span>Status</span>
-              <span>Move-In</span>
-              <span>Lease End</span>
-              <span>Approval</span>
-              <span>Actions</span>
+              <span>{t("tmColTenant")}</span>
+              <span>{t("tmColFlatBlock")}</span>
+              <span>{t("tmColStatus")}</span>
+              <span>{t("tmColMoveIn")}</span>
+              <span>{t("tmColLeaseEnd")}</span>
+              <span>{t("tmColApproval")}</span>
+              <span>{t("tmColActions")}</span>
             </div>
 
             <div className="divide-y" style={{ borderColor: "var(--divider)" }}>
-              {pagedTenants.map((t, i) => (
+              {pagedTenants.map((row, i) => (
                 <div
-                  key={t.tenant_id}
+                  key={row.tenant_id}
                   className="grid items-center px-4 py-3 hover:bg-white/2 transition group cursor-pointer"
                   style={{
                     gridTemplateColumns: "2fr 1.2fr 1fr 1fr 1fr 1fr auto",
@@ -572,54 +551,54 @@ export default function TenantManagement() {
                     borderBottom: i < pagedTenants.length - 1 ? "1px solid var(--divider)" : "none",
                     background: i % 2 === 0 ? "var(--card-inner-bg)" : "transparent",
                   }}
-                  onClick={() => setDetailTenant(t)}
+                  onClick={() => setDetailTenant(row)}
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <div className="w-8 h-8 rounded-lg bg-blue-500/12 text-blue-400 flex items-center justify-center font-black text-sm shrink-0">
-                      {t.tenant_name?.charAt(0)}
+                      {row.tenant_name?.charAt(0)}
                     </div>
                     <div className="min-w-0">
-                      <p className="text-sm font-bold truncate" style={{ color: "var(--text-primary)" }}>{t.tenant_name}</p>
-                      <p className="truncate" style={{ fontSize: 10, color: "var(--text-secondary)" }}>{t.tenant_email}</p>
+                      <p className="text-sm font-bold truncate" style={{ color: "var(--text-primary)" }}>{row.tenant_name}</p>
+                      <p className="truncate" style={{ fontSize: 10, color: "var(--text-secondary)" }}>{row.tenant_email}</p>
                     </div>
                   </div>
 
                   <div>
                     <p className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
-                      {t.flat_number ? `Flat ${t.flat_number}` : "—"}
+                      {row.flat_number ? `${t("afFlat")} ${row.flat_number}` : "—"}
                     </p>
-                    <p style={{ fontSize: 10, color: "var(--text-secondary)" }}>{t.block_name ? `Block ${t.block_name}` : "—"}</p>
+                    <p style={{ fontSize: 10, color: "var(--text-secondary)" }}>{row.block_name ? t("afBlockName", { name: row.block_name }) : "—"}</p>
                   </div>
 
-                  <StatusBadge label={t.status_label} />
+                  <StatusBadge label={row.status_label} />
 
-                  <p className="text-xs" style={{ color: "var(--text-secondary)" }}>{formatDate(t.move_in_date)}</p>
+                  <p className="text-xs" style={{ color: "var(--text-secondary)" }}>{formatDate(row.move_in_date)}</p>
 
-                  <div><LeaseChip date={t.move_out_date} /></div>
+                  <div><LeaseChip date={row.move_out_date} /></div>
 
-                  <StatusBadge label={t.approval_status || "—"} />
+                  <StatusBadge label={row.approval_status || "—"} />
 
                   <div className="flex items-center gap-1.5" onClick={e => e.stopPropagation()}>
                     <button
-                      title="View Details"
-                      onClick={() => setDetailTenant(t)}
+                      title={t("viewDetails")}
+                      onClick={() => setDetailTenant(row)}
                       className="w-8 h-8 rounded-lg hover:bg-white/10 flex items-center justify-center transition"
                       style={{ background: "var(--card-inner-bg)", color: "var(--text-secondary)", border: "1px solid var(--glass-border)" }}
                     >
                       <MdVisibility size={14} />
                     </button>
-                    {t.status_label === "PENDING" && (
+                    {row.status_label === "PENDING" && (
                       <>
                         <button
-                          title="Reject"
-                          onClick={() => setRejectModal({ open: true, userId: t.tenant_id })}
+                          title={t("reject")}
+                          onClick={() => setRejectModal({ open: true, userId: row.tenant_id })}
                           className="w-8 h-8 rounded-lg bg-red-500/8 text-red-400/60 hover:text-red-400 hover:bg-red-500/15 border border-red-500/10 flex items-center justify-center transition"
                         >
                           <MdClose size={14} />
                         </button>
                         <button
-                          title="Approve"
-                          onClick={() => handleApprove(t.tenant_id)}
+                          title={t("approve")}
+                          onClick={() => handleApprove(row.tenant_id)}
                           className="w-8 h-8 rounded-lg bg-emerald-500/8 text-emerald-400/60 hover:text-emerald-400 hover:bg-emerald-500/15 border border-emerald-500/10 flex items-center justify-center transition"
                         >
                           <MdCheck size={14} />
@@ -634,22 +613,18 @@ export default function TenantManagement() {
             <div className="px-4 py-2.5 flex justify-between items-center"
               style={{ background: "var(--card-inner-bg)", borderTop: "1px solid var(--divider)" }}>
               <p className="text-[11px] font-medium" style={{ color: "var(--text-secondary)" }}>
-                Showing <span className="font-bold" style={{ color: "var(--text-primary)" }}>{pagedTenants.length}</span> of{" "}
-                <span className="font-bold" style={{ color: "var(--text-primary)" }}>{filtered.length}</span> tenants
+                {t("afShowing", { shown: pagedTenants.length, total: filtered.length })}
               </p>
-              <p className="text-[11px]" style={{ color: "var(--text-secondary)" }}>Click any row to view full details</p>
+              <p className="text-[11px]" style={{ color: "var(--text-secondary)" }}>{t("viewDetails")}</p>
             </div>
           </div>
 
-          {/* 10-record Pagination Footer */}
-          {totalPages > 1 && (
-            <div className="flex flex-col sm:flex-row justify-between items-center px-4 py-3 mt-4 border-t border-glass gap-3">
-              <span className="text-xs text-secondary">
-                Page <strong>{page}</strong> of <strong>{totalPages}</strong> ({filtered.length} total tenants)
-              </span>
-              <Pagination page={page} totalPages={totalPages} onChange={setPage} />
-            </div>
-          )}
+          <div className="flex flex-col sm:flex-row justify-between items-center px-4 py-3 mt-4 border-t border-glass gap-3">
+            <span className="text-xs text-secondary">
+              {t("pageOf", { current: page, total: totalPages })} ({filtered.length})
+            </span>
+            <Pagination page={page} totalPages={totalPages} onChange={setPage} pageSize={limit} onPageSizeChange={(s) => { setLimit(s); setPage(1); }} />
+          </div>
         </div>
       )}
 

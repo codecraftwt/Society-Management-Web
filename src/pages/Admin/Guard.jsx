@@ -509,7 +509,7 @@ export default function Guard() {
               }}
               style={{ height: 40, fontSize: 13, minWidth: 200 }}
             >
-              <option value="ALL">All Societies (Global View)</option>
+              <option value="ALL">{t("allSocietiesGlobalView")}</option>
               {societiesList.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
             </Select>
           )}

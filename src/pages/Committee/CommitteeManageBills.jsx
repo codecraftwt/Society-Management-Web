@@ -1,9 +1,11 @@
 
-import { useEffect, useState, useCallback, useMemo, useContext } from "react";
+import { useEffect, useState, useCallback, useMemo, useContext, useRef} from "react";
 import API from "../../services/api";
 import { AuthContext } from "../../context/AuthContext";
 import { hasPermission } from "../../utils/permissions";
 import { useCustomAlert } from "../../context/CustomAlertContext";
+import Pagination from "../../components/common/Pagination";
+
 import {
   MdReceiptLong,
   MdSearch,
@@ -14,96 +16,6 @@ import {
   MdChevronLeft,
   MdChevronRight,
 } from "react-icons/md";
-
-/* ── Debounce ── */
-function useDebounce(value, delay = 500) {
-  const [d, setD] = useState(value);
-  useEffect(() => {
-    const t = setTimeout(() => setD(value), delay);
-    return () => clearTimeout(t);
-  }, [value, delay]);
-  return d;
-}
-
-/* ── Spinner ── */
-function Spinner({ size = 16 }) {
-  return (
-    <svg
-      style={{ width: size, height: size }}
-      className="animate-spin text-current"
-      viewBox="0 0 24 24"
-      fill="none"
-    >
-      <circle
-        cx="12"
-        cy="12"
-        r="10"
-        stroke="currentColor"
-        strokeWidth="4"
-        className="opacity-25"
-      />
-      <path fill="currentColor" className="opacity-75" d="M4 12a8 8 0 018-8v8z" />
-    </svg>
-  );
-}
-
-/* ── Mobile hook ── */
-function useIsMobile() {
-  const [m, setM] = useState(
-    () => typeof window !== "undefined" && window.innerWidth < 768
-  );
-  useEffect(() => {
-    const fn = () => setM(window.innerWidth < 768);
-    window.addEventListener("resize", fn);
-    return () => window.removeEventListener("resize", fn);
-  }, []);
-  return m;
-}
-
-/* ── Pagination ── */
-function Pagination({ page, totalPages, onPageChange }) {
-  if (totalPages <= 1) return null;
-  const pages = Array.from({ length: totalPages }, (_, i) => i + 1)
-    .filter((p) => p === 1 || p === totalPages || Math.abs(p - page) <= 1)
-    .reduce((acc, p, idx, arr) => {
-      if (idx > 0 && p - arr[idx - 1] > 1) acc.push("...");
-      acc.push(p);
-      return acc;
-    }, []);
-  return (
-    <div className="pagination-wrap" style={{ marginTop: 0 }}>
-      <button
-        onClick={() => onPageChange(page - 1)}
-        disabled={page === 1}
-        className="pagination-btn"
-      >
-        <MdChevronLeft size={14} /> Prev
-      </button>
-      {pages.map((p, i) =>
-        p === "..." ? (
-          <span key={`e${i}`} className="pagination-ellipsis">
-            …
-          </span>
-        ) : (
-          <button
-            key={p}
-            onClick={() => onPageChange(p)}
-            className={`pagination-page ${p === page ? "pagination-page--active" : ""}`}
-          >
-            {p}
-          </button>
-        )
-      )}
-      <button
-        onClick={() => onPageChange(page + 1)}
-        disabled={page === totalPages}
-        className="pagination-btn"
-      >
-        Next <MdChevronRight size={14} />
-      </button>
-    </div>
-  );
-}
 
 /* ── Status pill ── */
 function BillStatus({ status }) {
@@ -126,7 +38,7 @@ function BillStatus({ status }) {
   );
 }
 
-const LIMIT = 10;
+
 
 /* ══════════════════════════════════════
    MAIN
@@ -144,7 +56,10 @@ export default function CommitteeManageBills() {
 
   /* ── Pagination ── */
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const limitRef = useRef(limit);
+  limitRef.current = limit;
+const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
 
   /* ── Search & filter ── */
@@ -160,7 +75,7 @@ export default function CommitteeManageBills() {
     try {
       const params = new URLSearchParams({
         page: pg,
-        limit: LIMIT,
+        limit: limitRef.current,
         filter,
         ...(q ? { search: q } : {}),
       });
@@ -551,7 +466,7 @@ export default function CommitteeManageBills() {
                 >
                   <td>
                     <span className="text-xs font-semibold text-secondary">
-                      {(page - 1) * LIMIT + i + 1}
+                      {(page - 1) * limit + i + 1}
                     </span>
                   </td>
                   <td>
@@ -629,8 +544,8 @@ export default function CommitteeManageBills() {
             <span className="text-xs text-secondary">
               Showing{" "}
               <strong style={{ color: "var(--text-primary)" }}>
-                {(page - 1) * LIMIT + 1}–
-                {Math.min(page * LIMIT, totalItems)}
+                {(page - 1) * limit + 1}–
+                {Math.min(page * limit, totalItems)}
               </strong>{" "}
               of{" "}
               <strong style={{ color: "var(--text-primary)" }}>
@@ -642,6 +557,8 @@ export default function CommitteeManageBills() {
               page={page}
               totalPages={totalPages}
               onPageChange={handlePageChange}
+              pageSize={limit}
+              onPageSizeChange={(s) => { limitRef.current = s; setLimit(s); setPage(1); handlePageChange(1); }}
             />
           </div>
         )}

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useRef} from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import API from "../../../services/api";
@@ -13,6 +13,8 @@ import {
   MdArrowBack, MdChevronLeft, MdChevronRight,
 } from "react-icons/md";
 import Select from "../../../components/common/Select";
+
+import Pagination from "../../../components/common/Pagination";
 
 /* ─────────────────────────────────────────────
    Resolve flat label from visitor's Flat object
@@ -55,25 +57,6 @@ function Spinner({ small = false }) {
       <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" style={{ opacity: 0.25 }} />
       <path fill="currentColor" style={{ opacity: 0.75 }} d="M4 12a8 8 0 018-8v8z" />
     </svg>
-  );
-}
-
-function Pagination({ page, totalPages, onPageChange }) {
-  if (totalPages <= 1) return null;
-  const pages = Array.from({ length: totalPages }, (_, i) => i + 1)
-    .filter(p => p === 1 || p === totalPages || Math.abs(p - page) <= 1)
-    .reduce((acc, p, idx, arr) => {
-      if (idx > 0 && p - arr[idx - 1] > 1) acc.push("...");
-      acc.push(p); return acc;
-    }, []);
-  return (
-    <div className="pagination-wrap" style={{ marginTop: 0 }}>
-      <button onClick={() => onPageChange(page - 1)} disabled={page === 1} className="pagination-btn"><MdChevronLeft size={14} /> Prev</button>
-      {pages.map((p, i) => p === "..." ? <span key={`e${i}`} className="pagination-ellipsis">…</span> : (
-        <button key={p} onClick={() => onPageChange(p)} className={`pagination-page ${p === page ? "pagination-page--active" : ""}`}>{p}</button>
-      ))}
-      <button onClick={() => onPageChange(page + 1)} disabled={page === totalPages} className="pagination-btn">Next <MdChevronRight size={14} /></button>
-    </div>
   );
 }
 
@@ -190,7 +173,7 @@ function FilterSheet({ show, onClose, isMobile, statusFilter, setStatusFilter, f
   );
 }
 
-const LIMIT = 15;
+
 
 export default function VisitorReport() {
   const isMobile = useIsMobile();
@@ -202,7 +185,10 @@ export default function VisitorReport() {
   const [loading, setLoading] = useState(true);
   const [fetching, setFetching] = useState(false);
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
+  const [limit, setLimit] = useState(15);
+  const limitRef = useRef(limit);
+  limitRef.current = limit;
+const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
 
   const [statusFilter, setStatusFilter] = useState("");
@@ -218,7 +204,7 @@ export default function VisitorReport() {
   const fetchVisitors = useCallback(async (pg, sf, fd, td, isInit = false) => {
     isInit ? setLoading(true) : setFetching(true);
     try {
-      const params = new URLSearchParams({ page: pg, limit: LIMIT });
+      const params = new URLSearchParams({ page: pg, limit: limitRef.current });
       if (sf) params.set("status", sf);
       if (fd && td) { params.set("fromDate", fd); params.set("toDate", td); }
       const res = await API.get(`/reports/visitors?${params}`);
@@ -390,7 +376,7 @@ export default function VisitorReport() {
             <tbody>
               {visitors.map((v, i) => (
                 <tr key={v.id} className="animate-fadeIn" style={{ animationDelay: `${i * 15}ms` }}>
-                  <td><span style={{ fontSize: 12, color: "var(--text-secondary)" }}>{(page - 1) * LIMIT + i + 1}</span></td>
+                  <td><span style={{ fontSize: 12, color: "var(--text-secondary)" }}>{(page - 1) * limit + i + 1}</span></td>
                   <td><span style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)" }}>{v.visitor_name}</span></td>
                   <td><span style={{ fontSize: 13, color: "var(--text-secondary)" }}>{v.mobile}</span></td>
                   <td><span style={{ fontSize: 13, color: "var(--text-secondary)", maxWidth: 140, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", display: "block" }}>{v.purpose}</span></td>
@@ -410,9 +396,9 @@ export default function VisitorReport() {
         {!loading && visitors.length > 0 && (
           <div className="table-footer" style={{ flexWrap: "wrap", gap: 10 }}>
             <span style={{ fontSize: 12, color: "var(--text-secondary)" }}>
-              {t("billShowing")} <strong style={{ color: "var(--text-primary)" }}>{(page - 1) * LIMIT + 1}–{Math.min(page * LIMIT, totalItems)}</strong> {t("billOf")} <strong style={{ color: "var(--text-primary)" }}>{totalItems}</strong> {t("rptRecords")}
+              {t("billShowing")} <strong style={{ color: "var(--text-primary)" }}>{(page - 1) * limit + 1}–{Math.min(page * limit, totalItems)}</strong> {t("billOf")} <strong style={{ color: "var(--text-primary)" }}>{totalItems}</strong> {t("rptRecords")}
             </span>
-            <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} />
+            <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} pageSize={limit} onPageSizeChange={(s) => { limitRef.current = s; setLimit(s); setPage(1); handlePageChange(1); }} />
           </div>
         )}
       </div>

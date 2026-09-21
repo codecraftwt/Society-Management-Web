@@ -9084,6 +9084,35 @@ display: flex;
     margin-top: 1.25rem;
   }
 
+  .pagination-wrap--bar {
+    width: 100%;
+    justify-content: space-between;
+    flex-wrap: nowrap;
+    gap: 12px;
+  }
+
+  .pagination-size {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  .pagination-pages {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    flex-wrap: nowrap;
+    margin-left: auto;
+  }
+
+  .pagination-size-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-secondary, #726988);
+    white-space: nowrap;
+  }
+
   .pagination-btn {
     display: inline-flex;
     align-items: center;
@@ -17649,19 +17678,30 @@ html:not(.light) .sa-add-btn.sa-add-pill:not([class*="sa-btn-"]) .sa-pill-inner 
 
 /* ────────────────────────────────────────────────
    BORDER DRAW ANIMATION — SVG stroke draws a rounded
-   outline around the pill border on hover (keeps radius).
+   outline inside the pill edge on hover (keeps radius).
    ──────────────────────────────────────────────── */
+.global-btn-draw {
+  position: absolute !important;
+  left: 0 !important;
+  top: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  pointer-events: none !important;
+  overflow: hidden !important;
+  z-index: 5;
+  display: block !important;
+}
 .global-btn-draw rect {
-  stroke: var(--sa-bd-color, #60a5fa);
+  stroke: #ffffff;
   stroke-linecap: round;
   stroke-dasharray: var(--sa-bd-p) var(--sa-bd-p);
   stroke-dashoffset: var(--sa-bd-p);
-  transition: stroke-dashoffset 1s cubic-bezier(0.16, 1, 0.3, 1);
-  filter: drop-shadow(0 0 6px rgba(96, 165, 250, 0.7));
+  transition: stroke-dashoffset 0.85s cubic-bezier(0.16, 1, 0.3, 1);
+  filter: none;
 }
 html.light .global-btn-draw rect {
-  stroke: var(--sa-bd-color, #3b82f6);
-  filter: drop-shadow(0 0 6px rgba(37, 99, 235, 0.6));
+  stroke: #ffffff;
+  filter: none;
 }
 
 .global-btn:hover:not(:disabled) .global-btn-draw rect,

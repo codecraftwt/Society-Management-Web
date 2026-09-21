@@ -4,8 +4,6 @@ import { toast } from "react-toastify";
 import {
   MdOutlinePayments,
   MdRefresh,
-  MdChevronLeft,
-  MdChevronRight,
   MdOutlineInfo,
   MdPerson,
   MdHome,
@@ -16,25 +14,27 @@ import {
   MdBusiness,
 } from "react-icons/md";
 import { AuthContext } from "../../context/AuthContext";
+import { useLang } from "../../context/LanguageContext";
 import { hasPermission, isAdmin } from "../../utils/permissions";
 import API from "../../services/api";
 import { getPaymentsList, confirmBillPayment } from "../../services/accountingService";
 import SlidingTabs from "../../components/common/SlidingTabs";
 import ExpandableSearch from "../../components/common/ExpandableSearch";
+import Pagination from "../../components/common/Pagination";
 import Select from "../../components/common/Select";
 import "./Admin.css";
 
 const CURRENCY = (v) =>
   new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 2 }).format(Number(v) || 0);
 
-const amenityDescription = (booking) => {
+const amenityDescription = (booking, t) => {
   if (!booking) return null;
   const name = booking.Amenity?.name || null;
   const from = booking.from_date || booking.date;
   const range = booking.to_date && booking.to_date !== booking.from_date
     ? `${booking.from_date} – ${booking.to_date}`
     : (from || "");
-  const base = `Amenity booking #${booking.id}`;
+  const base = t ? t("payAmenityBooking", { id: booking.id }) : `Amenity booking #${booking.id}`;
   return [name, range, base].filter(Boolean).join(" · ");
 };
 
@@ -58,11 +58,11 @@ const resolveFlatNumber = (row) => {
   );
 };
 
-const SOURCE_TABS = [
-  { id: "", label: "All Sources" },
-  { id: "BILL", label: "Bills" },
-  { id: "MAINTENANCE", label: "Maintenance" },
-  { id: "AMENITY", label: "Amenities" },
+const SOURCE_TAB_DEFS = [
+  { id: "", key: "payAllSources" },
+  { id: "BILL", key: "payBills" },
+  { id: "MAINTENANCE", key: "payMaintenance" },
+  { id: "AMENITY", key: "payAmenities" },
 ];
 
 function DetailCard({ label, value, icon: Icon }) {
@@ -86,12 +86,13 @@ function DetailCard({ label, value, icon: Icon }) {
 }
 
 function PaymentDetailsModal({ row, onClose }) {
+  const { t } = useLang();
   const residentName = resolveResidentName(row);
   const flatNumber = resolveFlatNumber(row);
   const description =
     row.Bill?.title ||
-    amenityDescription(row.booking) ||
-    (row.source === "MAINTENANCE" ? `Maintenance #${row.bill_id || "—"}` : "—");
+    amenityDescription(row.booking, t) ||
+    (row.source === "MAINTENANCE" ? t("payMaintenanceHash", { id: row.bill_id || "—" }) : "—");
 
   const formattedDate = row.payment_date
     ? new Date(row.payment_date).toLocaleString("en-IN", {
@@ -102,11 +103,11 @@ function PaymentDetailsModal({ row, onClose }) {
 
   const reference =
     row.bill_id
-      ? `Bill #${row.bill_id}`
+      ? t("payBillHash", { id: row.bill_id })
       : row.booking_id
-      ? `Booking #${row.booking_id}`
+      ? t("payBookingHash", { id: row.booking_id })
       : row.booking?.id
-      ? `Booking #${row.booking.id}`
+      ? t("payBookingHash", { id: row.booking.id })
       : "—";
 
   return createPortal(
@@ -132,8 +133,8 @@ function PaymentDetailsModal({ row, onClose }) {
               <MdOutlinePayments size={20} />
             </div>
             <div>
-              <h3 className="text-base font-bold text-primary">Payment Details</h3>
-              <p className="text-xs text-secondary">Verified society revenue collection record</p>
+              <h3 className="text-base font-bold text-primary">{t("payDetailsTitle")}</h3>
+              <p className="text-xs text-secondary">{t("payDetailsSub")}</p>
             </div>
           </div>
           <button
@@ -157,7 +158,7 @@ function PaymentDetailsModal({ row, onClose }) {
           >
             <div>
               <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
-                Total Amount Received
+                {t("payTotalReceived")}
               </span>
               <p className="text-2xl font-extrabold text-emerald-600 dark:text-emerald-400">
                 {CURRENCY(row.amount)}
@@ -176,19 +177,19 @@ function PaymentDetailsModal({ row, onClose }) {
                 {row.source || "BILL"}
               </span>
               <span className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-card-inner-bg border border-glass-border text-secondary">
-                Mode: <strong className="text-primary">{row.payment_mode || "UPI"}</strong>
+                {t("payModeLabel")} <strong className="text-primary">{row.payment_mode || "UPI"}</strong>
               </span>
             </div>
           </div>
 
           {/* 2-3 Column Detail Items */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
-            <DetailCard label="Resident" value={residentName} icon={MdPerson} />
-            <DetailCard label="Flat / Unit" value={flatNumber} icon={MdHome} />
-            <DetailCard label="Payment Date" value={formattedDate} icon={MdCalendarToday} />
-            <DetailCard label="Payment Mode" value={row.payment_mode || "UPI"} icon={MdOutlinePayments} />
-            <DetailCard label="Source" value={row.source || "BILL"} icon={MdAccountBalanceWallet} />
-            <DetailCard label="Reference" value={reference} icon={MdReceipt} />
+            <DetailCard label={t("payResident")} value={residentName} icon={MdPerson} />
+            <DetailCard label={t("payFlatUnit")} value={flatNumber} icon={MdHome} />
+            <DetailCard label={t("payColDate")} value={formattedDate} icon={MdCalendarToday} />
+            <DetailCard label={t("payPaymentMode")} value={row.payment_mode || "UPI"} icon={MdOutlinePayments} />
+            <DetailCard label={t("payColSource")} value={row.source || "BILL"} icon={MdAccountBalanceWallet} />
+            <DetailCard label={t("payReference")} value={reference} icon={MdReceipt} />
           </div>
 
           {/* Description Section */}
@@ -201,9 +202,9 @@ function PaymentDetailsModal({ row, onClose }) {
           >
             <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-secondary">
               <MdDescription size={14} className="text-accent shrink-0" />
-              <span>Description / Particulars</span>
+              <span>{t("payParticulars")}</span>
             </div>
-            <p className="text-xs sm:text-sm font-medium text-primary break-words leading-relaxed">
+            <p className="text-xs sm:text-sm font-medium text-primary wrap-break-word leading-relaxed">
               {description}
             </p>
           </div>
@@ -214,7 +215,7 @@ function PaymentDetailsModal({ row, onClose }) {
               onClick={onClose}
               className="btn-soft px-5 py-2 text-xs font-semibold rounded-xl hover:opacity-90 transition-opacity"
             >
-              Close
+              {t("close")}
             </button>
           </div>
         </div>
@@ -234,18 +235,20 @@ function PaymentsSkeleton() {
 }
 
 function EmptyState({ onReset }) {
+  const { t } = useLang();
   return (
     <div className="px-6 py-14 text-center text-secondary flex flex-col items-center gap-3">
       <MdOutlinePayments size={40} className="opacity-40" />
-      <p className="text-sm font-medium">No payments found in this society.</p>
+      <p className="text-sm font-medium">{t("payEmpty")}</p>
       <button onClick={onReset} className="btn-soft px-4 py-2 text-xs font-semibold">
-        Clear filters
+        {t("billClearFilters")}
       </button>
     </div>
   );
 }
 
 export default function Payments() {
+  const { t } = useLang();
   const { user } = useContext(AuthContext);
   const isSuperAdmin = user?.role === "SUPER_ADMIN" || user?.activeRole === "SUPER_ADMIN";
   const canConfirm = isAdmin(user) || hasPermission(user, "payments", "confirm");
@@ -255,6 +258,7 @@ export default function Payments() {
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
   const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(20);
   const [source, setSource] = useState("");
   const [confirming, setConfirming] = useState(null);
   const [selected, setSelected] = useState(null);
@@ -274,7 +278,7 @@ export default function Payments() {
       .catch(() => setSocieties([]));
   }, [isSuperAdmin]);
 
-  const load = async (p = page, src = source) => {
+  const load = async (p = page, src = source, size = limit) => {
     if (isSuperAdmin && (!societyId || societyId === "ALL")) {
       setLoading(false);
       setRows([]);
@@ -284,14 +288,14 @@ export default function Payments() {
     try {
       setLoading(true);
       setErr("");
-      const params = { page: p, limit: 20 };
+      const params = { page: p, limit: size };
       if (src) params.source = src;
       const res = await getPaymentsList(params);
       setRows(res.data || []);
       setPagination(res.pagination || {});
     } catch (e) {
       console.error("Failed to load payments", e);
-      setErr("Failed to load payments. Please try again.");
+      setErr(t("payLoadFail"));
     } finally {
       setLoading(false);
     }
@@ -315,11 +319,11 @@ export default function Payments() {
     try {
       setConfirming(row.id);
       const res = await confirmBillPayment(row.bill_id);
-      toast.success(res?.message || "Payment confirmed successfully.");
+      toast.success(res?.message || t("payConfirmOk"));
       load(page);
     } catch (e) {
       console.error("Failed to confirm payment", e);
-      toast.error(e?.response?.data?.message || "Failed to confirm payment.");
+      toast.error(e?.response?.data?.message || t("payConfirmFail"));
     } finally {
       setConfirming(null);
     }
@@ -342,8 +346,8 @@ export default function Payments() {
       const flatNum = resolveFlatNumber(r).toLowerCase();
       const desc = (
         r.Bill?.title ||
-        amenityDescription(r.booking) ||
-        (r.source === "MAINTENANCE" ? `maintenance #${r.bill_id || ""}` : "")
+        amenityDescription(r.booking, t) ||
+        (r.source === "MAINTENANCE" ? t("payMaintenanceHash", { id: r.bill_id || "" }) : "")
       ).toLowerCase();
       const mode = (r.payment_mode || "").toLowerCase();
       const amt = String(r.amount || "");
@@ -358,11 +362,13 @@ export default function Payments() {
         src.includes(q)
       );
     });
-  }, [rows, search]);
+  }, [rows, search, t]);
+
+  const SOURCE_TABS = SOURCE_TAB_DEFS.map((tab) => ({ id: tab.id, label: t(tab.key) }));
 
   if (loading && rows.length === 0) return <PaymentsSkeleton />;
 
-  const pageSize = pagination.limit || 20;
+  const pageSize = limit;
   const currentPage = pagination.currentPage || page;
 
   return (
@@ -389,7 +395,7 @@ export default function Payments() {
           </div>
           <div>
             <h1 className="text-lg sm:text-xl font-bold tracking-tight text-primary flex items-center gap-2">
-              Payments & Collections
+              {t("payTitle")}
               <span
                 className="text-xs font-semibold px-2 py-0.5 rounded-full"
                 style={{
@@ -401,7 +407,7 @@ export default function Payments() {
               </span>
             </h1>
             <p className="text-xs text-secondary hidden sm:block">
-              Revenue inflow from bills, maintenance, and amenities. Verified collections automatically update cash book.
+              {t("paySubtitle")}
             </p>
           </div>
         </div>
@@ -412,14 +418,14 @@ export default function Payments() {
           <SlidingTabs
             value={source}
             onChange={(val) => { setSource(val); setPage(1); }}
-            items={isSearchOpen ? SOURCE_TABS.filter((t) => t.id === source) : SOURCE_TABS}
+            items={isSearchOpen ? SOURCE_TABS.filter((tab) => tab.id === source) : SOURCE_TABS}
           />
 
           {/* Expandable Animated Search Slider */}
           <ExpandableSearch
             value={search}
             onChange={(val) => setSearch(val)}
-            placeholder="Search resident, flat, bill, mode…"
+            placeholder={t("paySearch")}
             fetching={loading}
             isOpen={isSearchOpen}
             onOpenChange={setIsSearchOpen}
@@ -428,7 +434,7 @@ export default function Payments() {
           {/* Refresh Button */}
           <button
             onClick={() => load(page)}
-            title="Refresh payments"
+            title={t("payRefreshTitle")}
             className="inline-flex items-center justify-center rounded-xl border transition-all cursor-pointer shrink-0"
             style={{
               width: 38,
@@ -456,23 +462,23 @@ export default function Payments() {
         <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap", background: "var(--card-inner-bg)", padding: "8px 14px", borderRadius: 14, border: "1px solid var(--glass-border)" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10, flex: 1, minWidth: 220 }}>
             <MdBusiness size={18} style={{ color: "var(--accent)" }} />
-            <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase", whiteSpace: "nowrap" }}>Select Society</span>
+            <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase", whiteSpace: "nowrap" }}>{t("selectSociety")}</span>
             <Select
               value={societyId}
               onChange={handleSocietyChange}
               style={{ height: 38, fontSize: 13, fontWeight: 700, flex: 1, border: "1.5px solid var(--accent-alpha,rgba(107,70,193,0.25))" }}
             >
-              <option value="">— Choose a Society —</option>
+              <option value="">{t("chooseSociety")}</option>
               {societies.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
             </Select>
           </div>
           {(!societyId || societyId === "ALL") ? (
             <span style={{ fontSize: 12, color: "var(--stat-amber-color)", fontWeight: 700 }}>
-              💡 Select a society to view its payments
+              💡 {t("paySelectSocietyHint")}
             </span>
           ) : (
             <span style={{ fontSize: 12, color: "var(--stat-green-color)", fontWeight: 700 }}>
-              ✓ Working on: {societies.find((s) => String(s.id) === String(societyId))?.name || ""}
+              ✓ {t("payWorkingOn", { name: societies.find((s) => String(s.id) === String(societyId))?.name || "" })}
             </span>
           )}
         </div>
@@ -482,8 +488,8 @@ export default function Payments() {
         <div className="rounded-xl border p-8 flex flex-col items-center gap-3 text-center"
           style={{ background: "var(--card-bg)", borderColor: "var(--glass-border)" }}>
           <MdBusiness size={36} className="opacity-30" />
-          <p className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>Select a society to continue</p>
-          <p className="text-xs text-secondary">Payment collections and confirmations need a society context.</p>
+          <p className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>{t("paySelectContinue")}</p>
+          <p className="text-xs text-secondary">{t("payNeedSociety")}</p>
         </div>
       )}
 
@@ -492,7 +498,7 @@ export default function Payments() {
         <div className="bg-red-500/10 border border-red-500/30 rounded-2xl p-5 text-red-500 flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-sm font-medium">{err}</p>
           <button onClick={() => load(page)} className="btn-primary px-4 py-2 text-xs font-semibold shrink-0">
-            Retry
+            {t("retry")}
           </button>
         </div>
       )}
@@ -509,13 +515,13 @@ export default function Payments() {
       >
         <div className="px-5 py-3.5 border-b flex items-center justify-between gap-3" style={{ borderColor: "var(--glass-border)" }}>
           <span className="text-xs sm:text-sm font-bold text-primary">
-            {source ? `${source} Collections` : "All Collections"}
+            {source ? t("paySourceCollections", { source }) : t("payAllCollections")}
             <span className="text-xs font-normal text-secondary ml-2">
-              — Showing {filteredRows.length} {search ? `matching "${search}"` : "records"}
+              — {t("payShowing", { n: filteredRows.length })} {search ? t("matchingQuoted", { q: search }) : t("recordsLabel")}
             </span>
           </span>
           <span className="text-xs text-secondary font-medium hidden sm:inline-block">
-            Page {currentPage} of {pagination.totalPages || 1}
+            {t("pageOf", { current: currentPage, total: pagination.totalPages || 1 })}
           </span>
         </div>
 
@@ -523,14 +529,14 @@ export default function Payments() {
           <table className="w-full text-left text-sm">
             <thead>
               <tr className="border-b text-xs uppercase tracking-wider text-secondary" style={{ borderColor: "var(--glass-border)" }}>
-                <th className="px-4 py-3 font-semibold text-center w-16">Sr. No.</th>
-                <th className="px-4 py-3 font-semibold">Payment Date</th>
-                <th className="px-4 py-3 font-semibold">Source</th>
-                <th className="px-4 py-3 font-semibold">Resident / Flat</th>
-                <th className="px-4 py-3 font-semibold">Description</th>
-                <th className="px-4 py-3 font-semibold text-right">Amount</th>
-                <th className="px-4 py-3 font-semibold">Mode</th>
-                <th className="px-4 py-3 font-semibold text-right">Action</th>
+                <th className="px-4 py-3 font-semibold text-center w-16">{t("payColSr")}</th>
+                <th className="px-4 py-3 font-semibold">{t("payColDate")}</th>
+                <th className="px-4 py-3 font-semibold">{t("payColSource")}</th>
+                <th className="px-4 py-3 font-semibold">{t("payColResidentFlat")}</th>
+                <th className="px-4 py-3 font-semibold">{t("payColDesc")}</th>
+                <th className="px-4 py-3 font-semibold text-right">{t("payColAmount")}</th>
+                <th className="px-4 py-3 font-semibold">{t("payColMode")}</th>
+                <th className="px-4 py-3 font-semibold text-right">{t("payColAction")}</th>
               </tr>
             </thead>
             <tbody>
@@ -547,10 +553,10 @@ export default function Payments() {
                 const flatNum = resolveFlatNumber(r);
                 const description = r.Bill
                   ? r.Bill.title
-                  : amenityDescription(r.booking)
-                  ? amenityDescription(r.booking)
+                  :                 amenityDescription(r.booking, t)
+                  ? amenityDescription(r.booking, t)
                   : r.source === "MAINTENANCE"
-                  ? `Maintenance #${r.bill_id || "—"}`
+                  ? t("payMaintenanceHash", { id: r.bill_id || "—" })
                   : "—";
                 const confirmable = canConfirm && r.bill_id && r.status !== "SUCCESS";
 
@@ -574,7 +580,7 @@ export default function Payments() {
                       <div className="flex flex-col">
                         <span className="text-primary font-bold text-xs">{residentName}</span>
                         <span className="text-secondary text-[11px]">
-                          {flatNum !== "—" ? `Flat: ${flatNum}` : "—"}
+                          {flatNum !== "—" ? t("payFlatPrefix", { n: flatNum }) : "—"}
                         </span>
                       </div>
                     </td>
@@ -597,7 +603,7 @@ export default function Payments() {
                             disabled={confirming === r.id}
                             className="btn-primary px-3 py-1.5 text-[11px] font-bold disabled:opacity-50"
                           >
-                            {confirming === r.id ? "Confirming…" : "Confirm"}
+                            {confirming === r.id ? t("confirming") : t("confirm")}
                           </button>
                         )}
                         <button
@@ -607,7 +613,7 @@ export default function Payments() {
                             background: "var(--accent-soft, rgba(99,102,241,0.18))",
                             border: "1px solid var(--accent-light, #818cf8)",
                           }}
-                          title="View complete payment details"
+                          title={t("payViewDetails")}
                         >
                           <MdOutlineInfo size={16} />
                         </button>
@@ -620,30 +626,22 @@ export default function Payments() {
           </table>
         </div>
 
-        {pagination.totalPages > 1 && (
+        {filteredRows.length > 0 && (
           <div className="flex flex-wrap items-center justify-between gap-3 px-6 py-4 border-t" style={{ borderColor: "var(--glass-border)" }}>
             <span className="text-xs text-secondary font-medium">
-              Page {currentPage} of {pagination.totalPages} · {pagination.totalItems} total payments
+              {t("pageOf", { current: currentPage, total: pagination.totalPages || 1 })} · {t("payPageTotal", { n: pagination.totalItems || 0 })}
             </span>
-            <div className="flex items-center gap-1.5">
-              <button
-                onClick={() => { setPage(page - 1); load(page - 1); }}
-                disabled={currentPage <= 1}
-                className="btn-soft px-3 py-1.5 flex items-center justify-center text-xs font-semibold disabled:opacity-40"
-              >
-                <MdChevronLeft size={16} /> Prev
-              </button>
-              <span className="text-xs text-secondary px-2">
-                {currentPage} / {pagination.totalPages}
-              </span>
-              <button
-                onClick={() => { setPage(page + 1); load(page + 1); }}
-                disabled={currentPage >= pagination.totalPages}
-                className="btn-soft px-3 py-1.5 flex items-center justify-center text-xs font-semibold disabled:opacity-40"
-              >
-                Next <MdChevronRight size={16} />
-              </button>
-            </div>
+            <Pagination
+              page={currentPage}
+              totalPages={pagination.totalPages || 1}
+              onPageChange={(p) => { setPage(p); load(p); }}
+              pageSize={limit}
+              onPageSizeChange={(s) => {
+                setLimit(s);
+                setPage(1);
+                load(1, source, s);
+              }}
+            />
           </div>
         )}
       </div>

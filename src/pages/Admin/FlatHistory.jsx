@@ -10,47 +10,7 @@ import { MdApartment, MdChevronLeft, MdChevronRight } from "react-icons/md";
 import SlidingTabs from "../../components/common/SlidingTabs";
 import ExpandableSearch from "../../components/common/ExpandableSearch";
 
-/* ─────────────────────────────────────────────────────────────
-   UTILITY – normalise ANY API response shape into a plain array
-────────────────────────────────────────────────────────────── */
-const toArr = (res) => {
-  const d = res?.data;
-  if (!d) return [];
-  if (Array.isArray(d)) return d;
-  for (const key of ["data","residents","bills","parcels","visitors","complaints","parking","items","results"]) {
-    if (Array.isArray(d[key])) return d[key];
-  }
-  return [];
-};
-
-/* ── Pagination helper ── */
-function Pagination({ page, totalPages, onPageChange }) {
-  if (totalPages <= 1) return null;
-  const pages = Array.from({ length: totalPages }, (_, i) => i + 1)
-    .filter((p) => p === 1 || p === totalPages || Math.abs(p - page) <= 1)
-    .reduce((acc, p, idx, arr) => {
-      if (idx > 0 && p - arr[idx - 1] > 1) acc.push("...");
-      acc.push(p);
-      return acc;
-    }, []);
-  return (
-    <div className="pagination-wrap">
-      <button onClick={() => onPageChange(page - 1)} disabled={page === 1} className="pagination-btn">
-        <MdChevronLeft size={15} /> Prev
-      </button>
-      {pages.map((p, idx) =>
-        p === "..." ? (
-          <span key={`e-${idx}`} className="pagination-ellipsis">…</span>
-        ) : (
-          <button key={p} onClick={() => onPageChange(p)} className={`pagination-page ${p === page ? "pagination-page--active" : ""}`}>{p}</button>
-        )
-      )}
-      <button onClick={() => onPageChange(page + 1)} disabled={page === totalPages} className="pagination-btn">
-        Next <MdChevronRight size={15} />
-      </button>
-    </div>
-  );
-}
+import Pagination from "../../components/common/Pagination";
 
 /* ─────────────────────────────────────────────────────────────
    SPINNER
@@ -679,10 +639,11 @@ const FlatHistory = () => {
 
   /* ── 10 records per page for flats in active block ── */
   const [flatPage, setFlatPage] = useState(1);
-  const flatTotalPages = Math.ceil(activeBlockFlats.length / 10);
+  const [limit, setLimit] = useState(10);
+  const flatTotalPages = Math.max(1, Math.ceil(activeBlockFlats.length / limit));
   const pagedFlats = useMemo(() => {
-    return activeBlockFlats.slice((flatPage - 1) * 10, flatPage * 10);
-  }, [activeBlockFlats, flatPage]);
+    return activeBlockFlats.slice((flatPage - 1) * limit, flatPage * limit);
+  }, [activeBlockFlats, flatPage, limit]);
 
   // Reset page when active block changes
   useEffect(() => {
@@ -891,15 +852,12 @@ const FlatHistory = () => {
                   })}
                 </div>
 
-                {/* 10-record Pagination Footer */}
-                {flatTotalPages > 1 && (
-                  <div className="flex flex-col sm:flex-row justify-between items-center px-3 pt-4 mt-4 border-t border-glass gap-3">
-                    <span className="text-xs text-secondary">
-                      Showing <strong>{pagedFlats.length}</strong> of <strong>{activeBlockFlats.length}</strong> flats in {activeBlock}
-                    </span>
-                    <Pagination page={flatPage} totalPages={flatTotalPages} onPageChange={setFlatPage} />
-                  </div>
-                )}
+                <div className="flex flex-col sm:flex-row justify-between items-center px-3 pt-4 mt-4 border-t border-glass gap-3">
+                  <span className="text-xs text-secondary">
+                    Showing <strong>{pagedFlats.length}</strong> of <strong>{activeBlockFlats.length}</strong> flats in {activeBlock}
+                  </span>
+                  <Pagination page={flatPage} totalPages={flatTotalPages} onPageChange={setFlatPage} pageSize={limit} onPageSizeChange={(s) => { setLimit(s); setFlatPage(1); }} />
+                </div>
               </div>
             )}
           </div>

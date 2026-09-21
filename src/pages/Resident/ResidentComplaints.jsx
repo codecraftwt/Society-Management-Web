@@ -21,6 +21,8 @@ import Select from "../../components/common/Select";
 import useUnsavedDirty from "../../hooks/useUnsavedDirty";
 import ConfirmDiscard from "../../components/common/ConfirmDiscard";
 
+import Pagination from "../../components/common/Pagination";
+
 function useDebounce(value, delay = 500) {
   const [debounced, setDebounced] = useState(value);
   useEffect(() => {
@@ -700,36 +702,6 @@ function ComplaintDrawer({ complaint, onClose, currentUser, t, defaultTab = "det
 }
 
 // ─── Pagination ───────────────────────────────────────────────────────────────
-function Pagination({ page, totalPages, onPageChange }) {
-  if (totalPages <= 1) return null;
-  const pages = Array.from({ length: totalPages }, (_, i) => i + 1)
-    .filter((p) => p === 1 || p === totalPages || Math.abs(p - page) <= 1)
-    .reduce((acc, p, idx, arr) => {
-      if (idx > 0 && p - arr[idx - 1] > 1) acc.push("...");
-      acc.push(p);
-      return acc;
-    }, []);
-  return (
-    <div className="pagination-wrap">
-      <button onClick={() => onPageChange(page - 1)} disabled={page === 1} className="pagination-btn">
-        <MdChevronLeft size={15} /> Prev
-      </button>
-      {pages.map((p, idx) =>
-        p === "..." ? (
-          <span key={`ellipsis-${idx}`} className="pagination-ellipsis">...</span>
-        ) : (
-          <button key={p} onClick={() => onPageChange(p)} className={`pagination-page ${p === page ? "pagination-page--active" : ""}`}>
-            {p}
-          </button>
-        )
-      )}
-      <button onClick={() => onPageChange(page + 1)} disabled={page === totalPages} className="pagination-btn">
-        Next <MdChevronRight size={15} />
-      </button>
-    </div>
-  );
-}
-
 // ─── CameraPortal ─────────────────────────────────────────────────────────────
 function CameraPortal({ cameraError, cameraReady, cameraMode, videoRef, onFlip, onCapture, onClose, onGallery, labels }) {
   useEffect(() => {
@@ -889,11 +861,14 @@ function MobileComplaintCard({ c, unreadMap, confirmDeleteId, deletingId, onOpen
 }
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
-const LIMIT = 10;
+
 const SKELETON_COUNT = 5;
 
 export default function ResidentComplaints() {
-  const { t }              = useLang();
+  const [limit, setLimit] = useState(10);
+  const limitRef = useRef(limit);
+  limitRef.current = limit;
+const { t }              = useLang();
   const { user: authUser } = useContext(AuthContext);
   const isMobile           = useIsMobile();
 
@@ -1118,7 +1093,7 @@ export default function ResidentComplaints() {
     else setFetching(true);
     try {
       const params = new URLSearchParams({
-        page: pageNum, limit: LIMIT, filter: currentFilter,
+        page: pageNum, limit: limitRef.current, filter: currentFilter,
         ...(currentSearch   ? { search:   currentSearch   } : {}),
         ...(currentDateFrom ? { dateFrom: currentDateFrom } : {}),
         ...(currentDateTo   ? { dateTo:   currentDateTo   } : {}),
@@ -1701,7 +1676,7 @@ export default function ResidentComplaints() {
                       />
                     </div>
                   ))}
-                  <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} />
+                  <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} pageSize={limit} onPageSizeChange={(s) => { limitRef.current = s; setLimit(s); setPage(1); handlePageChange(1); }} />
                 </div>
               )}
               {!isMobile && (
@@ -1723,7 +1698,7 @@ export default function ResidentComplaints() {
                       {t("billShowing")} {complaints.length} {t("billOf")} {totalItems} {t("compCount")}
                       {hasDateFilter && <span style={{ marginLeft: 8, color: "var(--stat-purple-color)", fontWeight: 600 }}>· {t("compFilteredByDate")}</span>}
                     </span>
-                    <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} />
+                    <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} pageSize={limit} onPageSizeChange={(s) => { limitRef.current = s; setLimit(s); setPage(1); handlePageChange(1); }} />
                   </div>
                 </>
               )}

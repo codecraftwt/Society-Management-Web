@@ -1,8 +1,10 @@
 import { useState } from "react";
-import Modal from "../Modal";
+import GlobalModal from "../common/GlobalModal";
+import GlobalButton from "../common/GlobalButton";
+import SlidingTabs from "../common/SlidingTabs";
+import Select from "../common/Select";
 import API from "../../services/api";
 import { toast } from "react-toastify";
-import Select from "../common/Select";
 import {
   MdWarning,
   MdLocalFireDepartment,
@@ -23,49 +25,62 @@ const EMERGENCY_TYPES = [
     type: "SECURITY",
     label: "Security / Intruder",
     icon: MdSecurity,
-    color: "#ef4444",
-    bg: "rgba(239,68,68,0.12)",
-    border: "rgba(239,68,68,0.30)",
+    color: "var(--accent)",
+    bg: "var(--accent-soft)",
+    border: "rgba(var(--acct-purple-rgb),0.28)",
+    cssBg: "var(--accent-soft)",
+    cssColor: "var(--accent)",
   },
   {
     type: "FIRE",
     label: "Fire Alert",
     icon: MdLocalFireDepartment,
-    color: "#f97316",
-    bg: "rgba(249,115,22,0.12)",
-    border: "rgba(249,115,22,0.30)",
+    color: "var(--reject-color)",
+    bg: "var(--reject-bg)",
+    border: "var(--reject-border)",
+    cssBg: "var(--reject-bg)",
+    cssColor: "var(--reject-color)",
   },
   {
     type: "MEDICAL",
     label: "Medical Emergency",
     icon: MdLocalHospital,
-    color: "#3b82f6",
-    bg: "rgba(59,130,246,0.12)",
-    border: "rgba(59,130,246,0.30)",
+    color: "var(--acct-cyan)",
+    bg: "rgba(var(--acct-cyan-rgb),0.16)",
+    border: "rgba(var(--acct-cyan-rgb),0.35)",
+    cssBg: "rgba(var(--acct-cyan-rgb),0.16)",
+    cssColor: "var(--acct-cyan)",
   },
   {
     type: "LIFT_STUCK",
     label: "Lift Stuck",
     icon: MdWarning,
-    color: "#8b5cf6",
-    bg: "rgba(139,92,246,0.12)",
-    border: "rgba(139,92,246,0.30)",
+    // Use orange for Lift Stuck
+    color: "#f97316",
+    bg: "rgba(249,115,22,0.12)",
+    border: "rgba(249,115,22,0.35)",
+    cssBg: "rgba(249,115,22,0.12)",
+    cssColor: "#f97316",
   },
   {
     type: "ANIMAL",
     label: "Animal Menace",
     icon: MdHelp,
-    color: "#06b6d4",
-    bg: "rgba(6,182,212,0.12)",
-    border: "rgba(6,182,212,0.30)",
+    color: "var(--approve-color)",
+    bg: "var(--approve-bg)",
+    border: "var(--approve-border)",
+    cssBg: "var(--approve-bg)",
+    cssColor: "var(--approve-color)",
   },
   {
     type: "OTHER",
     label: "Other Emergency",
     icon: MdHelp,
-    color: "#ec4899",
-    bg: "rgba(236,72,153,0.12)",
-    border: "rgba(236,72,153,0.30)",
+    color: "var(--acct-violet)",
+    bg: "rgba(var(--acct-violet-rgb),0.12)",
+    border: "rgba(var(--acct-violet-rgb),0.28)",
+    cssBg: "rgba(var(--acct-violet-rgb),0.12)",
+    cssColor: "var(--acct-violet)",
   },
 ];
 
@@ -83,6 +98,29 @@ function sourceName(alert) {
   return alert.Admin?.name || SOURCE_META[alert.source] || "Staff";
 }
 
+const fieldLabel = {
+  display: "block",
+  fontSize: 11,
+  fontWeight: 700,
+  color: "var(--text-secondary)",
+  letterSpacing: "0.06em",
+  textTransform: "uppercase",
+  marginBottom: 8,
+};
+
+const inputStyle = {
+  minHeight: 96,
+  fontSize: 13,
+  lineHeight: 1.5,
+  borderRadius: 12,
+  padding: "12px 14px",
+  background: "var(--input-bg, var(--card-inner-bg))",
+  border: "1px solid var(--input-border, var(--glass-border))",
+  color: "var(--text-primary)",
+  width: "100%",
+  resize: "vertical",
+};
+
 export default function SOSModal({
   isOpen,
   onClose,
@@ -93,11 +131,11 @@ export default function SOSModal({
   requireSociety = false,
   withAlerts = true,
   senderLabel = "SOS",
-  modalTitle = "🚨 Emergency SOS Center",
+  modalTitle = "Emergency SOS Center",
   successMessage = "🚨 SOS Emergency broadcasted to the society!",
 }) {
-  const [activeTab, setActiveTab] = useState("RAISE"); // 'RAISE' | 'ACTIVE'
-  const [stage, setStage] = useState("FORM"); // 'FORM' | 'CONFIRM'
+  const [activeTab, setActiveTab] = useState("RAISE");
+  const [stage, setStage] = useState("FORM");
   const [selectedType, setSelectedType] = useState("SECURITY");
   const [description, setDescription] = useState("");
   const [otherReason, setOtherReason] = useState("");
@@ -169,55 +207,50 @@ export default function SOSModal({
   };
 
   const currentTypeObj = EMERGENCY_TYPES.find((t) => t.type === selectedType) || EMERGENCY_TYPES[0];
+  const TypeIcon = currentTypeObj.icon;
+  const title = String(modalTitle || "Society SOS Center").replace(/^🚨\s*/, "");
+
+  const tabItems = [
+    { id: "RAISE", label: `Raise ${senderLabel}`, icon: <MdEmergency size={15} /> },
+  ];
+  if (withAlerts) {
+    tabItems.push({
+      id: "ACTIVE",
+      label: "Active Alerts",
+      icon: <MdWarning size={15} />,
+      alert: alerts.length,
+    });
+  }
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={modalTitle} warnUnsavedChanges={false}>
-      <div className="space-y-4">
-        {/* TAB BUTTONS */}
-        <div className="flex gap-2 p-1 bg-black/10 dark:bg-white/5 rounded-xl border border-glass">
-          <button
-            type="button"
-            onClick={() => {
-              setActiveTab("RAISE");
-              setStage("FORM");
-            }}
-            className={`flex-1 py-2 px-3 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 ${
-              activeTab === "RAISE"
-                ? "bg-red-600 text-white shadow-md shadow-red-500/30"
-                : "text-secondary hover:text-primary"
-            }`}
-          >
-            <MdEmergency size={16} /> Raise {senderLabel}
-          </button>
-          {withAlerts && (
-            <button
-              type="button"
-              onClick={() => setActiveTab("ACTIVE")}
-              className={`flex-1 py-2 px-3 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 relative ${
-                activeTab === "ACTIVE"
-                  ? "bg-red-600 text-white shadow-md shadow-red-500/30"
-                  : "text-secondary hover:text-primary"
-              }`}
-            >
-              <MdWarning size={16} /> Active Alerts
-              {alerts.length > 0 && (
-                <span className="ml-1 px-1.5 py-0.2 text-[10px] bg-white text-red-600 rounded-full font-extrabold">
-                  {alerts.length}
-                </span>
-              )}
-            </button>
-          )}
-        </div>
+    <GlobalModal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={title}
+      subtitle="Broadcast an emergency to security, admins, and residents"
+      icon={MdEmergency}
+      size="lg"
+      warnUnsavedChanges={false}
+    >
+      <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+        <SlidingTabs
+          fullWidth
+          value={activeTab}
+          onChange={(id) => {
+            setActiveTab(id);
+            if (id === "RAISE") setStage("FORM");
+          }}
+          items={tabItems}
+        />
 
-        {/* ── 1. RAISE SOS FLOW ── */}
         {activeTab === "RAISE" && (
           <>
             {stage === "FORM" ? (
-              <div className="space-y-4 pt-1">
+              <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
                 {requireSociety && (
                   <div>
-                    <label className="block text-xs font-semibold text-secondary uppercase tracking-wider mb-1.5">
-                      Broadcast to Society <span className="text-red-500">*</span>
+                    <label style={fieldLabel}>
+                      Broadcast to Society <span style={{ color: "var(--danger, #ef4444)" }}>*</span>
                     </label>
                     <Select
                       value={selectedSocietyId}
@@ -238,8 +271,8 @@ export default function SOSModal({
                 )}
 
                 <div>
-                  <label className="block text-xs font-semibold text-secondary uppercase tracking-wider mb-2">
-                    Select Emergency Type <span className="text-red-500">*</span>
+                  <label style={fieldLabel}>
+                    Select Emergency Type <span style={{ color: "var(--danger, #ef4444)" }}>*</span>
                   </label>
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                     {EMERGENCY_TYPES.map((t) => {
@@ -250,18 +283,29 @@ export default function SOSModal({
                           key={t.type}
                           type="button"
                           onClick={() => setSelectedType(t.type)}
-                          style={{
-                            background: isSelected ? t.bg : "var(--card-inner-bg)",
-                            borderColor: isSelected ? t.border : "var(--glass-border)",
+                        style={{
+                            // Use a solid token color when selected to match mobile solid palette.
+                            background: isSelected ? (t.color || "var(--accent)") : (t.bg || "var(--card-inner-bg)"),
+                            border: `1.5px solid ${isSelected ? (t.color || "var(--accent)") : "var(--glass-border)"}`,
+                            borderRadius: 12,
+                            padding: "12px 10px",
+                            display: "flex",
+                            flexDirection: "column",
+                            alignItems: "center",
+                            textAlign: "center",
+                            gap: 8,
+                            cursor: "pointer",
+                            transition: "border-color 0.15s ease, background 0.15s ease, color 0.15s ease",
                           }}
-                          className={`p-3 rounded-xl border flex flex-col items-center text-center gap-1.5 transition ${
-                            isSelected ? "ring-2 ring-red-500" : "hover:border-red-500/40"
-                          }`}
                         >
-                          <Icon size={22} style={{ color: t.color }} />
+                          <Icon size={22} style={{ color: isSelected ? "#fff" : (t.color || "var(--text-primary)") }} />
                           <span
-                            className="text-xs font-bold"
-                            style={{ color: isSelected ? t.color : "var(--text-primary)" }}
+                            style={{
+                              fontSize: 12,
+                              fontWeight: 700,
+                              color: isSelected ? "#fff" : "var(--text-primary)",
+                              lineHeight: 1.25,
+                            }}
                           >
                             {t.label}
                           </span>
@@ -271,50 +315,80 @@ export default function SOSModal({
                   </div>
                 </div>
 
-                {/* Other Reason input (Mandatory if OTHER) */}
                 {selectedType === "OTHER" && (
                   <div>
-                    <label className="block text-xs font-semibold text-pink-400 uppercase tracking-wider mb-1.5">
-                      Specify Reason for Other <span className="text-red-500">*</span>
+                    <label style={{ ...fieldLabel, color: "#ec4899" }}>
+                      Specify Reason for Other <span style={{ color: "var(--danger, #ef4444)" }}>*</span>
                     </label>
                     <textarea
                       rows={3}
-                      style={{ minHeight: "85px", fontSize: "13px", lineHeight: "1.5" }}
                       placeholder="e.g. Gas cylinder leak, Water pipe burst, Stuck in terrace, Electrical short circuit..."
                       value={otherReason}
                       onChange={(e) => setOtherReason(e.target.value)}
-                      className="input w-full rounded-xl p-3 border-pink-500/40 focus:border-pink-500 resize-y"
+                      className="input w-full"
+                      style={{ ...inputStyle, minHeight: 85 }}
                     />
                   </div>
                 )}
 
-                {/* ── Emergency Notes & Location Details Section ── */}
-                <div className="space-y-2.5 p-4 rounded-2xl bg-card-inner-bg/70 border border-glass-border/70 shadow-inner">
-                  <div className="flex items-center justify-between">
-                    <label className="flex items-center gap-1.5 text-xs font-bold text-primary">
-                      <MdLocationOn className="text-rose-500" size={16} />
-                      <span>Emergency Notes & Location Details</span>
+                <div
+                  style={{
+                    padding: 14,
+                    borderRadius: 14,
+                    background: "var(--card-inner-bg)",
+                    border: "1px solid var(--glass-border)",
+                  }}
+                >
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10, gap: 8 }}>
+                    <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 700, color: "var(--text-primary)", margin: 0 }}>
+                      <MdLocationOn size={16} style={{ color: "var(--danger, #ef4444)" }} />
+                      Emergency Notes & Location Details
                     </label>
-                    <span className="text-[10px] font-semibold text-secondary uppercase tracking-wider px-2 py-0.5 rounded-md bg-white/5 border border-glass-border/40">
+                    <span
+                      style={{
+                        fontSize: 10,
+                        fontWeight: 700,
+                        color: "var(--text-secondary)",
+                        letterSpacing: "0.04em",
+                        textTransform: "uppercase",
+                        padding: "3px 8px",
+                        borderRadius: 6,
+                        background: "var(--card-bg)",
+                        border: "1px solid var(--glass-border)",
+                      }}
+                    >
                       Optional
                     </span>
                   </div>
-
-                  {/* Modern Spacious Textarea */}
-                  <div className="relative pt-0.5">
+                  <div style={{ position: "relative" }}>
                     <textarea
                       rows={5}
-                      style={{ minHeight: "135px" }}
-                      placeholder="Provide additional details to help security and neighbors respond faster (e.g. Exact location, flat number, injured persons, immediate assistance needed)..."
+                      placeholder="Provide additional details to help security and neighbors respond faster (e.g. Exact location, flat number, injured persons)..."
                       value={description}
                       onChange={(e) => setDescription(e.target.value)}
-                      className="input w-full resize-y text-xs sm:text-sm bg-card-inner-bg/90 border-glass-border focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20 rounded-xl p-3.5 leading-relaxed transition"
+                      className="input w-full"
+                      style={{ ...inputStyle, minHeight: 120, paddingBottom: description ? 36 : 12 }}
                     />
                     {description && (
                       <button
                         type="button"
                         onClick={() => setDescription("")}
-                        className="absolute right-3 bottom-3.5 inline-flex items-center gap-0.5 px-2 py-0.5 rounded text-[10px] font-bold text-secondary hover:text-rose-400 bg-white/10 hover:bg-white/20 transition cursor-pointer"
+                        style={{
+                          position: "absolute",
+                          right: 10,
+                          bottom: 10,
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: 4,
+                          padding: "4px 8px",
+                          borderRadius: 6,
+                          fontSize: 10,
+                          fontWeight: 700,
+                          color: "var(--text-secondary)",
+                          background: "var(--card-bg)",
+                          border: "1px solid var(--glass-border)",
+                          cursor: "pointer",
+                        }}
                       >
                         <MdClear size={12} /> Clear
                       </button>
@@ -322,139 +396,196 @@ export default function SOSModal({
                   </div>
                 </div>
 
-                <button
+                <GlobalButton
                   type="button"
+                  variant="danger"
+                  icon={MdArrowForward}
+                  iconPosition="right"
                   onClick={handleProceedToConfirm}
-                  className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-red-500/30 transition"
+                  fullWidth
+                  borderDraw
                 >
-                  <span>Review & Continue</span>
-                  <MdArrowForward size={18} />
-                </button>
+                  Review & Continue
+                </GlobalButton>
               </div>
             ) : (
-              /* ── CONFIRMATION STEP ── */
-              <div className="space-y-4 pt-1 animate-fadeIn">
-                <div className="p-4 rounded-2xl bg-red-500/10 border border-red-500/30 space-y-3 text-center">
+              <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                <div
+                  style={{
+                    padding: 18,
+                    borderRadius: 16,
+                    background: "color-mix(in srgb, #ef4444 10%, var(--card-inner-bg))",
+                    border: "1px solid color-mix(in srgb, #ef4444 28%, var(--glass-border))",
+                    textAlign: "center",
+                  }}
+                >
                   <div
-                    className="w-14 h-14 rounded-full mx-auto flex items-center justify-center shadow-lg"
-                    style={{ background: currentTypeObj.color }}
+                    style={{
+                      width: 52,
+                      height: 52,
+                      borderRadius: 14,
+                      margin: "0 auto 12px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      background: currentTypeObj.color,
+                    }}
                   >
-                    <currentTypeObj.icon size={28} className="text-white" />
+                    <TypeIcon size={26} color="#fff" />
                   </div>
+                  <h3 style={{ fontSize: 16, fontWeight: 800, color: "var(--text-primary)", margin: 0, letterSpacing: "-0.02em" }}>
+                    Confirm Emergency SOS
+                  </h3>
+                  <p style={{ fontSize: 12, color: "var(--text-secondary)", margin: "6px 0 0", fontWeight: 500 }}>
+                    Are you sure you want to trigger this emergency alert?
+                  </p>
 
-                  <div>
-                    <h3 className="text-base font-black text-white uppercase tracking-wider">
-                      Confirm Emergency SOS
-                    </h3>
-                    <p className="text-xs text-secondary mt-1">
-                      Are you sure you want to trigger this emergency alert?
-                    </p>
-                  </div>
-
-                  <div className="bg-black/20 dark:bg-white/5 p-3 rounded-xl text-left text-xs space-y-1.5 border border-glass">
-                    <div className="flex justify-between">
-                      <span className="text-secondary font-semibold">Emergency Type:</span>
-                      <span className="font-black text-white">{currentTypeObj.label}</span>
+                  <div
+                    style={{
+                      marginTop: 14,
+                      background: "var(--card-bg)",
+                      border: "1px solid var(--glass-border)",
+                      borderRadius: 12,
+                      padding: 12,
+                      textAlign: "left",
+                      fontSize: 12,
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 8,
+                    }}
+                  >
+                    <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
+                      <span style={{ color: "var(--text-secondary)", fontWeight: 600 }}>Emergency Type</span>
+                      <span style={{ color: "var(--text-primary)", fontWeight: 800 }}>{currentTypeObj.label}</span>
                     </div>
-
                     {selectedType === "OTHER" && otherReason && (
-                      <div className="flex justify-between">
-                        <span className="text-secondary font-semibold">Reason:</span>
-                        <span className="font-bold text-pink-400">{otherReason}</span>
+                      <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
+                        <span style={{ color: "var(--text-secondary)", fontWeight: 600 }}>Reason</span>
+                        <span style={{ color: "#ec4899", fontWeight: 700 }}>{otherReason}</span>
                       </div>
                     )}
-
                     {description.trim() && (
                       <div>
-                        <span className="text-secondary font-semibold block mb-0.5">Notes:</span>
-                        <p className="text-white text-xs font-medium italic">
-                          "{description.trim()}"
+                        <span style={{ color: "var(--text-secondary)", fontWeight: 600, display: "block", marginBottom: 4 }}>Notes</span>
+                        <p style={{ color: "var(--text-primary)", fontWeight: 500, fontStyle: "italic", margin: 0, lineHeight: 1.45 }}>
+                          “{description.trim()}”
                         </p>
                       </div>
                     )}
                   </div>
 
-                  <p className="text-[11px] text-red-400 font-semibold leading-tight">
-                    ⚠️ This will instantly notify on-duty security guards, admins, and neighboring residents.
+                  <p style={{ fontSize: 11, color: "#ef4444", fontWeight: 600, lineHeight: 1.45, margin: "12px 0 0" }}>
+                    This will instantly notify on-duty security, admins, and neighboring residents.
                   </p>
                 </div>
 
-                <div className="flex items-center gap-3">
-                  <button
+                <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                  <GlobalButton
                     type="button"
+                    variant="cancel"
+                    icon={MdArrowBack}
                     onClick={() => setStage("FORM")}
                     disabled={loading}
-                    className="flex-1 py-3 px-4 rounded-xl btn btn-secondary text-xs font-bold flex items-center justify-center gap-1.5"
                   >
-                    <MdArrowBack size={16} /> Back / Edit
-                  </button>
-
-                  <button
+                    Back / Edit
+                  </GlobalButton>
+                  <GlobalButton
                     type="button"
+                    variant="danger"
+                    icon={MdSend}
                     onClick={handleConfirmSend}
+                    loading={loading}
                     disabled={loading}
-                    className="flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white font-black text-xs flex items-center justify-center gap-1.5 shadow-lg shadow-red-500/30 transition disabled:opacity-50"
+                    borderDraw
+                    style={{ flex: 1 }}
                   >
-                    <MdSend size={16} />
-                    {loading ? "Triggering SOS..." : "🚨 Confirm & Send SOS"}
-                  </button>
+                    {loading ? "Triggering SOS..." : "Confirm & Send SOS"}
+                  </GlobalButton>
                 </div>
               </div>
             )}
           </>
         )}
 
-        {/* ── 2. ACTIVE ALERTS LIST ── */}
         {withAlerts && activeTab === "ACTIVE" && (
-          <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-1">
+          <div style={{ display: "flex", flexDirection: "column", gap: 10, maxHeight: "52vh", overflowY: "auto", paddingRight: 2 }}>
             {alerts.length === 0 ? (
-              <div className="text-center py-8 text-secondary text-sm">
-                <MdCheckCircle size={32} className="mx-auto text-emerald-500 mb-2 opacity-80" />
+              <div style={{ textAlign: "center", padding: "36px 12px", color: "var(--text-secondary)", fontSize: 13 }}>
+                <MdCheckCircle size={32} style={{ margin: "0 auto 8px", color: "var(--success, #10b981)", opacity: 0.85, display: "block" }} />
                 No active emergencies in the society.
               </div>
             ) : (
               alerts.map((alert) => (
                 <div
                   key={alert.id}
-                  className="bg-red-500/10 border border-red-500/30 p-4 rounded-xl space-y-2 relative"
+                  style={{
+                    background: "color-mix(in srgb, #ef4444 8%, var(--card-inner-bg))",
+                    border: "1px solid color-mix(in srgb, #ef4444 26%, var(--glass-border))",
+                    borderRadius: 14,
+                    padding: 14,
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 10,
+                  }}
                 >
-                  <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <span className="inline-block px-2 py-0.5 rounded text-[11px] font-bold bg-red-600 text-white">
+                  <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10 }}>
+                    <div style={{ minWidth: 0 }}>
+                      <span
+                        style={{
+                          display: "inline-block",
+                          padding: "3px 8px",
+                          borderRadius: 6,
+                          fontSize: 10,
+                          fontWeight: 800,
+                          letterSpacing: "0.04em",
+                          background: "#ef4444",
+                          color: "#fff",
+                        }}
+                      >
                         {alert.type}
                       </span>
-                      <p className="text-sm font-semibold mt-1" style={{ color: "var(--text-primary)" }}>
+                      <p style={{ fontSize: 13, fontWeight: 700, margin: "8px 0 0", color: "var(--text-primary)", lineHeight: 1.4 }}>
                         {alert.message}
                       </p>
                       {alert.other_reason && (
-                        <p className="text-xs text-pink-400 font-bold mt-0.5">
+                        <p style={{ fontSize: 12, color: "#ec4899", fontWeight: 700, margin: "4px 0 0" }}>
                           Reason: {alert.other_reason}
                         </p>
                       )}
                     </div>
-
-                    <button
+                    <GlobalButton
                       type="button"
+                      variant="success"
+                      size="sm"
+                      icon={MdCheckCircle}
                       onClick={() => handleResolve(alert.id)}
+                      loading={resolvingId === alert.id}
                       disabled={resolvingId === alert.id}
-                      className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition flex items-center gap-1 shadow-sm disabled:opacity-50 whitespace-nowrap"
                     >
-                      <MdCheckCircle size={14} />
                       {resolvingId === alert.id ? "Resolving..." : "Mark Resolved"}
-                    </button>
+                    </GlobalButton>
                   </div>
-
-                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-secondary pt-1 border-t border-red-500/20">
+                  <div
+                    style={{
+                      display: "flex",
+                      flexWrap: "wrap",
+                      gap: "6px 14px",
+                      fontSize: 11,
+                      color: "var(--text-secondary)",
+                      paddingTop: 8,
+                      borderTop: "1px solid var(--glass-border)",
+                    }}
+                  >
                     <span>
-                      <strong>Raised By:</strong> {sourceName(alert)}
+                      <strong style={{ color: "var(--text-primary)" }}>Raised By:</strong> {sourceName(alert)}
                     </span>
                     {alert.source === "RESIDENT" && alert.Flat && (
                       <span>
-                        <strong>Flat:</strong> {alert.Flat?.Block?.name}-{alert.Flat?.flat_number}
+                        <strong style={{ color: "var(--text-primary)" }}>Flat:</strong> {alert.Flat?.Block?.name}-{alert.Flat?.flat_number}
                       </span>
                     )}
                     <span>
-                      <strong>Time:</strong> {new Date(alert.created_at).toLocaleTimeString()}
+                      <strong style={{ color: "var(--text-primary)" }}>Time:</strong> {new Date(alert.created_at).toLocaleTimeString()}
                     </span>
                   </div>
                 </div>
@@ -463,6 +594,6 @@ export default function SOSModal({
           </div>
         )}
       </div>
-    </Modal>
+    </GlobalModal>
   );
 }

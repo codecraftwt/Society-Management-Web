@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useRef} from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import API from "../../../services/api";
@@ -16,6 +16,8 @@ import {
 } from "react-icons/md";
 import Select from "../../../components/common/Select";
 
+import Pagination from "../../../components/common/Pagination";
+
 function useIsMobile() {
   const [m, setM] = useState(() => typeof window !== "undefined" && window.innerWidth < 768);
   useEffect(() => { const fn = () => setM(window.innerWidth < 768); window.addEventListener("resize", fn); return () => window.removeEventListener("resize", fn); }, []);
@@ -29,22 +31,6 @@ function Spinner({ small = false }) {
       <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" style={{ opacity: 0.25 }} />
       <path fill="currentColor" style={{ opacity: 0.75 }} d="M4 12a8 8 0 018-8v8z" />
     </svg>
-  );
-}
-
-function Pagination({ page, totalPages, onPageChange }) {
-  if (totalPages <= 1) return null;
-  const pages = Array.from({ length: totalPages }, (_, i) => i + 1)
-    .filter(p => p === 1 || p === totalPages || Math.abs(p - page) <= 1)
-    .reduce((acc, p, idx, arr) => { if (idx > 0 && p - arr[idx - 1] > 1) acc.push("..."); acc.push(p); return acc; }, []);
-  return (
-    <div className="pagination-wrap" style={{ marginTop: 0 }}>
-      <button onClick={() => onPageChange(page - 1)} disabled={page === 1} className="pagination-btn"><MdChevronLeft size={14} /> Prev</button>
-      {pages.map((p, i) => p === "..." ? <span key={`e${i}`} className="pagination-ellipsis">…</span> : (
-        <button key={p} onClick={() => onPageChange(p)} className={`pagination-page ${p === page ? "pagination-page--active" : ""}`}>{p}</button>
-      ))}
-      <button onClick={() => onPageChange(page + 1)} disabled={page === totalPages} className="pagination-btn">Next <MdChevronRight size={14} /></button>
-    </div>
   );
 }
 
@@ -175,7 +161,7 @@ function FilterSheet({
   );
 }
 
-const LIMIT = 15;
+
 
 export default function SuperAdminComplaintReport() {
   const isMobile = useIsMobile();
@@ -187,7 +173,10 @@ export default function SuperAdminComplaintReport() {
   const [loading, setLoading] = useState(true);
   const [fetching, setFetching] = useState(false);
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
+  const [limit, setLimit] = useState(15);
+  const limitRef = useRef(limit);
+  limitRef.current = limit;
+const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
 
   const [societies, setSocieties] = useState([]);
@@ -222,7 +211,7 @@ export default function SuperAdminComplaintReport() {
   const fetchComplaints = useCallback(async (pg, sid, bid, fdid, flid, s, fd, td, isInit = false) => {
     isInit ? setLoading(true) : setFetching(true);
     try {
-      const params = new URLSearchParams({ page: pg, limit: LIMIT });
+      const params = new URLSearchParams({ page: pg, limit: limitRef.current });
       if (sid && sid !== "ALL") params.set("society_id", sid);
       if (bid) params.set("block_id", bid);
       if (fdid) params.set("floor_id", fdid);
@@ -436,7 +425,7 @@ export default function SuperAdminComplaintReport() {
             <tbody>
               {complaints.map((c, i) => (
                 <tr key={c.id} className="animate-fadeIn" style={{ animationDelay: `${i * 15}ms` }}>
-                  <td><span style={{ fontSize: 12, color: "var(--text-secondary)" }}>{(page - 1) * LIMIT + i + 1}</span></td>
+                  <td><span style={{ fontSize: 12, color: "var(--text-secondary)" }}>{(page - 1) * limit + i + 1}</span></td>
                   <td><span style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)" }}>{c.Flat?.Block?.Society?.name || "—"}</span></td>
                   <td><span style={{ fontSize: 13, color: "var(--text-secondary)" }}>{c.User?.name || "—"}</span></td>
                   <td><span className="info-chip">{`${c.Flat?.Block?.name || "-"} / ${c.Flat?.flat_number || "-"}`}</span></td>
@@ -452,9 +441,9 @@ export default function SuperAdminComplaintReport() {
         {!loading && complaints.length > 0 && (
           <div className="table-footer" style={{ flexWrap: "wrap", gap: 10 }}>
             <span style={{ fontSize: 12, color: "var(--text-secondary)" }}>
-              Showing <strong>{(page - 1) * LIMIT + 1}–{Math.min(page * LIMIT, totalItems)}</strong> of <strong>{totalItems}</strong> records
+              Showing <strong>{(page - 1) * limit + 1}–{Math.min(page * limit, totalItems)}</strong> of <strong>{totalItems}</strong> records
             </span>
-            <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} />
+            <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} pageSize={limit} onPageSizeChange={(s) => { limitRef.current = s; setLimit(s); setPage(1); handlePageChange(1); }} />
           </div>
         )}
       </div>

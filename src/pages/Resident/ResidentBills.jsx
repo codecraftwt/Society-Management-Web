@@ -1,6 +1,6 @@
 
 
-import { useEffect, useState, useCallback, useContext } from "react";
+import { useEffect, useState, useCallback, useContext, useRef} from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
@@ -9,6 +9,8 @@ import { useLang } from "../../context/LanguageContext";
 import { AuthContext } from "../../context/AuthContext";
 import ExpandableSearch from "../../components/common/ExpandableSearch";
 import SlidingTabs from "../../components/common/SlidingTabs";
+import Pagination from "../../components/common/Pagination";
+
 import {
   MdReceiptLong, MdPerson, MdEmail, MdPhone, MdBusiness,
   MdOutlineInbox, MdCheckCircle, MdSchedule,
@@ -54,37 +56,6 @@ function formatBillDate(d) {
   const date = new Date(d);
   if (isNaN(date.getTime())) return "—";
   return date.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
-}
-
-function Pagination({ page, totalPages, onPageChange }) {
-  if (totalPages <= 1) return null;
-  const pages = Array.from({ length: totalPages }, (_, i) => i + 1)
-    .filter((p) => p === 1 || p === totalPages || Math.abs(p - page) <= 1)
-    .reduce((acc, p, idx, arr) => {
-      if (idx > 0 && p - arr[idx - 1] > 1) acc.push("...");
-      acc.push(p);
-      return acc;
-    }, []);
-  return (
-    <div className="pagination-wrap">
-      <button onClick={() => onPageChange(page - 1)} disabled={page === 1} className="pagination-btn">
-        <MdChevronLeft size={15} /> Prev
-      </button>
-      {pages.map((p, idx) =>
-        p === "..." ? (
-          <span key={`ellipsis-${idx}`} className="pagination-ellipsis">...</span>
-        ) : (
-          <button key={p} onClick={() => onPageChange(p)}
-            className={`pagination-page ${p === page ? "pagination-page--active" : ""}`}>
-            {p}
-          </button>
-        )
-      )}
-      <button onClick={() => onPageChange(page + 1)} disabled={page === totalPages} className="pagination-btn">
-        Next <MdChevronRight size={15} />
-      </button>
-    </div>
-  );
 }
 
 /* ─── Skeleton helpers ─── */
@@ -174,14 +145,17 @@ function TableRowSkeleton() {
   );
 }
 
-const LIMIT = 10;
+
 const SKELETON_COUNT = 5;
 
 /* ═══════════════════════════════════════════
    Main
 ═══════════════════════════════════════════ */
 export default function ResidentBills() {
-  const navigate = useNavigate();
+  const [limit, setLimit] = useState(10);
+  const limitRef = useRef(limit);
+  limitRef.current = limit;
+const navigate = useNavigate();
   const { t }    = useLang();
   const { user } = useContext(AuthContext);
 
@@ -234,7 +208,7 @@ export default function ResidentBills() {
     try {
       const params = new URLSearchParams({
         page:   pageNum,
-        limit:  LIMIT,
+        limit: limitRef.current,
         filter: currentFilter,
         ...(currentSearch ? { search: currentSearch } : {}),
       });
@@ -514,7 +488,7 @@ export default function ResidentBills() {
                   </div>
                 </div>
               ))}
-              <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} />
+              <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} pageSize={limit} onPageSizeChange={(s) => { limitRef.current = s; setLimit(s); setPage(1); handlePageChange(1); }} />
             </div>
 
             {/* Desktop table */}
@@ -598,7 +572,7 @@ export default function ResidentBills() {
                     {t("billOf")} {totalItems} {t("billCount")}
                   </span>
                 </div>
-                <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} />
+                <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} pageSize={limit} onPageSizeChange={(s) => { limitRef.current = s; setLimit(s); setPage(1); handlePageChange(1); }} />
               </div>
             </div>
           </>

@@ -34,11 +34,13 @@ export default function GlobalModal({
   submitDisabled = false,
   submitIcon = null,
   submitVariant = "primary",
+  submitBorderDraw = false,
   className = "",
   style = {},
   bodyStyle = {},
   warnUnsavedChanges = true,
   disableUnsavedWarning = false,
+  bodyClassName = "",
 }) {
   if (!isOpen) return null;
 
@@ -63,10 +65,12 @@ export default function GlobalModal({
       submitDisabled={submitDisabled}
       submitIcon={submitIcon}
       submitVariant={submitVariant}
+      submitBorderDraw={submitBorderDraw}
       className={className}
       style={style}
       bodyStyle={bodyStyle}
       warnUnsavedChanges={shouldWarn}
+      bodyClassName={bodyClassName}
     >
       {children}
     </ModalShell>
@@ -90,10 +94,12 @@ function ModalShell({
   submitDisabled,
   submitIcon,
   submitVariant,
+  submitBorderDraw,
   className,
   style,
   bodyStyle,
   warnUnsavedChanges = true,
+  bodyClassName,
 }) {
   const dialogRef = useRef(null);
   const dirtyRef = useRef(false);
@@ -231,7 +237,7 @@ function ModalShell({
 
         {/* Scrollable Body */}
         <div
-          className="sa-modal-body"
+          className={`sa-modal-body ${bodyClassName || ""}`.trim()}
           style={{
             overflowY: "auto",
             flex: 1,
@@ -262,6 +268,7 @@ function ModalShell({
               loading={submitLoading}
               disabled={submitDisabled}
               icon={submitIcon}
+              borderDraw={submitBorderDraw}
             >
               {submitLabel}
             </GlobalButton>

@@ -12,6 +12,7 @@ import {
   MdGroup, MdRefresh, MdVisibility
 } from "react-icons/md";
 import Select from "../../components/common/Select";
+import { useLang } from "../../context/LanguageContext";
 
 /* ─────────────────────────────────────────────
    HELPERS
@@ -362,6 +363,7 @@ function Row({ label, value, chip, icon, children }) {
    MAIN COMPONENT
 ───────────────────────────────────────────── */
 export default function TenantApprovals() {
+  const { t } = useLang();
   const { user } = useAuthContext();
   const { showUnauthorized } = useCustomAlert();
   const [residents, setResidents]       = useState([]);
@@ -522,7 +524,7 @@ export default function TenantApprovals() {
     <div className="flex items-center justify-center p-24">
       <div className="flex flex-col items-center gap-3">
         <div className="w-10 h-10 rounded-full border-2 border-blue-500/30 border-t-blue-400 animate-spin" />
-        <p className="text-xs font-medium tracking-widest uppercase" style={{ color: "var(--text-secondary)" }}>Loading approvals…</p>
+        <p className="text-xs font-medium tracking-widest uppercase" style={{ color: "var(--text-secondary)" }}>{t("taLoading")}</p>
       </div>
     </div>
   );
@@ -533,8 +535,8 @@ export default function TenantApprovals() {
       {/* ── Page Header ── */}
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h2 className="text-2xl font-black tracking-tight" style={{ color: "var(--text-primary)" }}>Tenant Approvals</h2>
-          <p className="text-sm mt-1" style={{ color: "var(--text-secondary)" }}>Review KYC documents and verify new tenant registrations</p>
+          <h2 className="text-2xl font-black tracking-tight" style={{ color: "var(--text-primary)" }}>{t("taTitle")}</h2>
+          <p className="text-sm mt-1" style={{ color: "var(--text-secondary)" }}>{t("taSubtitle")}</p>
         </div>
         <button
           onClick={load}
@@ -569,7 +571,7 @@ export default function TenantApprovals() {
             value={search}
             onChange={e => setSearch(e.target.value)}
             className="search-input"
-            placeholder="Search name, email, flat…"
+            placeholder={t("tmSearch")}
             style={{
               background: "var(--card-inner-bg)",
               border: "1px solid var(--glass-border)",
@@ -614,7 +616,7 @@ export default function TenantApprovals() {
         <div className="flex flex-col items-center justify-center py-20 gap-4"
           style={{ background: "var(--card-inner-bg)", borderRadius: "20px", border: "1px solid var(--glass-border)" }}>
           <MdCheck size={40} className="text-emerald-400/40" />
-          <p className="text-sm font-semibold" style={{ color: "var(--text-secondary)" }}>No pending approvals match your filters</p>
+          <p className="text-sm font-semibold" style={{ color: "var(--text-secondary)" }}>{t("taEmpty")}</p>
         </div>
       ) : (
         <>

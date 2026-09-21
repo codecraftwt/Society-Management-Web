@@ -57,73 +57,73 @@ function CommitteeLayoutInner() {
 
   const menu = [
     {
-      label: "Dashboard",
+      label: t("adminMenuDashboard"),
       path: `${base}`,
       icon: MdDashboard,
       group: "OVERVIEW",
     },
     {
-      label: "Residents Directory",
+      label: t("adminMenuResidents"),
       path: `${base}/residents`,
       icon: FaUsers,
       group: "COMMUNITY & PROPERTY",
     },
     {
-      label: "Security Guards",
+      label: t("adminMenuGuards"),
       path: `${base}/guards`,
       icon: FaUserShield,
       group: "COMMUNITY & PROPERTY",
     },
     {
-      label: "Property & Blocks",
+      label: t("adminManageProperty"),
       path: `${base}/property`,
       icon: MdApartment,
       group: "COMMUNITY & PROPERTY",
     },
     {
-      label: "Visitor Logs",
+      label: t("adminMenuVisitorLogs"),
       path: `${base}/visitor-logs`,
       icon: MdVisibility,
       group: "SECURITY & NOTICES",
     },
     {
-      label: "Society Notices",
+      label: t("adminMenuNotices"),
       path: `${base}/notices`,
       icon: MdCampaign,
       group: "SECURITY & NOTICES",
     },
     {
-      label: "Complaints & Tickets",
+      label: t("adminMenuComplaints"),
       path: `${base}/complaints`,
       icon: MdReportProblem,
       group: "SECURITY & NOTICES",
     },
     {
-      label: "Billing & Invoices",
+      label: t("adminMenuManageBills"),
       path: `${base}/manage-bills`,
       icon: MdDescription,
       group: "FINANCE & BILLS",
     },
     {
-      label: "Maintenance Setup",
+      label: t("adminMenuMaintenance"),
       path: `${base}/maintenance`,
       icon: MdBuild,
       group: "FINANCE & BILLS",
     },
     {
-      label: "Clubhouse & Amenities",
+      label: t("adminMenuAmenities"),
       path: `${base}/amenities`,
       icon: MdBookOnline,
       group: "SERVICES & REPORTS",
     },
     {
-      label: "Society Reports",
+      label: t("adminMenuReports"),
       path: `${base}/reports`,
       icon: MdBarChart,
       group: "SERVICES & REPORTS",
     },
     {
-      label: "Society Documents",
+      label: t("adminMenuDocument"),
       path: `${base}/documents`,
       icon: MdVerified,
       group: "SERVICES & REPORTS",
@@ -222,10 +222,10 @@ function CommitteeLayoutInner() {
         menu={menu}
         brandTitle={
           <>
-            Committee<span className="text-accent"> Panel</span>
+            {t("committeePanel")} <span className="text-accent">{String(t("panelSuffix") || "Panel").trim()}</span>
           </>
         }
-        brandSubtitle="Committee Member"
+        brandSubtitle={t("sbViewCommittee")}
         base={base}
         drawerExtra={mobileRoleSwitcher}
       />

@@ -204,7 +204,7 @@ function DisableModal({ amenity, onClose, onConfirm, isMobile }) {
         </div>
 
         <div style={{ padding: "14px 20px", borderTop: "1px solid var(--glass-border)", display: "flex", gap: 8 }}>
-          <button onClick={onClose} disabled={submitting} style={{ padding: "9px 18px", borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: "pointer", border: "1px solid var(--glass-border)", background: "var(--card-inner-bg)", color: "var(--text-primary)", flexShrink: 0 }}>Cancel</button>
+          <button onClick={onClose} disabled={submitting} style={{ padding: "9px 18px", borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: "pointer", border: "1px solid var(--glass-border)", background: "var(--card-inner-bg)", color: "var(--text-primary)", flexShrink: 0 }}>{t("cancel")}</button>
           <button onClick={handleConfirm} disabled={!isValid || submitting} style={{ flex: 1, padding: "9px 0", borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: isValid && !submitting ? "pointer" : "not-allowed", border: disableType === "PERMANENT" ? "1.5px solid rgba(220,38,38,0.4)" : "1.5px solid rgba(160,90,255,0.4)", background: disableType === "PERMANENT" ? "rgba(220,38,38,0.1)" : "rgba(160,90,255,0.1)", color: disableType === "PERMANENT" ? "#dc2626" : "var(--accent)", opacity: isValid && !submitting ? 1 : 0.5, display: "flex", alignItems: "center", justifyContent: "center", gap: 7 }}>
             {submitting ? <Spinner cls="h-3 w-3" /> : disableType === "PERMANENT" ? "⊘ Disable permanently" : "⊘ Disable temporarily"}
           </button>
@@ -619,7 +619,7 @@ export default function AdminAmenity() {
                   transition: "all 0.15s",
                 }}>
                 <MdFilterAlt size={15} style={{ color: "var(--accent)" }} />
-                <span>Filters</span>
+                <span>{t("filters")}</span>
                 {activeFilterCount > 0 && (
                   <span style={{ minWidth: 17, height: 17, padding: "0 4px", borderRadius: 999, background: "var(--accent)", color: "#fff", fontSize: 10, fontWeight: 800, display: "inline-flex", alignItems: "center", justifyContent: "center" }}>{activeFilterCount}</span>
                 )}
@@ -655,7 +655,7 @@ export default function AdminAmenity() {
           <div style={{ position: "fixed", inset: 0, zIndex: 9998 }} onClick={() => setAmenFilterOpen(false)} />
           <div className="animate-scaleIn" style={{ position: "fixed", zIndex: 9999, top: amenFilterPos.top, left: amenFilterPos.left, width: 268, background: "var(--card-bg)", borderRadius: 16, border: "1.5px solid var(--glass-border)", boxShadow: "0 20px 52px rgba(0,0,0,0.35)", padding: "10px", transformOrigin: "top left" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "6px 10px 0" }}>
-              <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text-secondary)" }}>Filters</span>
+              <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text-secondary)" }}>{t("filters")}</span>
               {activeFilterCount > 0 && (
                 <button onClick={() => { setAmenityStatusFilter("ALL"); setAmenityPricingFilter("ALL"); }}
                   style={{ background: "none", border: "none", cursor: "pointer", fontSize: 10.5, fontWeight: 700, color: "var(--accent)", padding: 0 }}>

@@ -2,14 +2,40 @@ import React, { useState, useEffect, useRef, useContext } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPortal } from "react-dom";
 import {
-  MdChevronLeft,
   MdExpandMore,
   MdClose,
-  MdPerson,
 } from "react-icons/md";
 import { FaBuilding } from "react-icons/fa";
+import {
+  TbLayoutSidebarLeftCollapseFilled,
+  TbLayoutSidebarLeftExpandFilled,
+} from "react-icons/tb";
 import { useSidebar } from "../../context/SidebarContext";
 import { AuthContext } from "../../context/AuthContext";
+import { useLang } from "../../context/LanguageContext";
+
+const GROUP_I18N = {
+  "OVERVIEW": "sbGroupOverview",
+  "PROPERTY & BILLS": "sbGroupPropertyBills",
+  "ACTIVITY & VISITORS": "sbGroupActivityVisitors",
+  "SERVICES & PROFILE": "sbGroupServicesProfile",
+  "ACTIVITY & NOTICES": "sbGroupActivityNotices",
+  "BILLS": "sbGroupBills",
+  "PROFILE": "sbGroupProfile",
+  "GATE OPERATIONS": "sbGroupGateOps",
+  "LOGS & RECORDS": "sbGroupLogs",
+  "SUPPORT & SETTINGS": "sbGroupSupport",
+  "COMMUNITY & PROPERTY": "sbGroupCommunityProperty",
+  "SECURITY & LOGS": "sbGroupSecurityLogs",
+  "COMMUNICATION": "sbGroupCommunication",
+  "FINANCE & BILLS": "sbGroupFinanceBills",
+  "SERVICES & REPORTS": "sbGroupServicesReports",
+  "SECURITY & NOTICES": "sbGroupSecurityNotices",
+  "COMMUNITY & UNITS": "sbGroupCommunityUnits",
+  "OPERATIONS & SECURITY": "sbGroupOpsSecurity",
+  "FINANCE & ASSETS": "sbGroupFinanceAssets",
+  "REPORTS": "sbGroupReports",
+};
 
 /* ── Group items helper ── */
 function groupMenuItems(menu) {
@@ -64,6 +90,8 @@ export default function Sidebar({
   const location = useLocation();
   const { collapsed, toggleCollapsed, mobileOpen, closeMobile } = useSidebar();
   const { user } = useContext(AuthContext);
+  const { t } = useLang();
+  const groupLabel = (name) => t(GROUP_I18N[name] || name);
 
   const [expandedGroups, setExpandedGroups] = useState(() => {
     const init = {};
@@ -135,14 +163,14 @@ export default function Sidebar({
         <div className="flex items-center justify-center mb-6 shrink-0 relative group/tooltip">
           <button
             onClick={toggleCollapsed}
-            className="w-10 h-10 rounded-xl bg-linear-to-br from-blue-600/20 to-indigo-600/10 border border-blue-500/30 flex items-center justify-center text-accent shadow-sm hover:scale-105 transition-all"
-            aria-label="Expand sidebar"
-            title="Expand Sidebar"
+            className="flex items-center justify-center text-accent hover:text-primary transition-colors"
+            aria-label={t("sbExpand")}
+            title={t("sbExpand")}
           >
-            <FaBuilding size={19} />
+            <TbLayoutSidebarLeftExpandFilled size={22} />
           </button>
           <div className="fixed left-20 ml-1.5 z-50 hidden group-hover/tooltip:block bg-card border border-glass-border text-primary text-xs font-semibold px-3 py-1.5 rounded-lg shadow-xl whitespace-nowrap pointer-events-none animate-fadeIn">
-            Expand Sidebar
+            {t("sbExpand")}
           </div>
         </div>
       );
@@ -150,8 +178,8 @@ export default function Sidebar({
 
     // Expanded header: Logo + Title + Subtitle on left, '<' toggle button on right
     return (
-      <div className={`flex items-center justify-between gap-3 px-1 shrink-0 border-b border-glass-border ${isMobileDrawer ? "mb-2 pb-2" : "mb-6 pb-4"}`}>
-        <div className="flex items-center gap-3 min-w-0">
+      <div className={`flex items-center justify-between gap-2 px-1 shrink-0 border-b border-glass-border ${isMobileDrawer ? "mb-2 pb-3" : "mb-6 pb-4"}`}>
+        <div className="flex items-center gap-3 min-w-0 flex-1 overflow-hidden">
           <div className="w-9 h-9 rounded-xl bg-linear-to-br from-blue-600/25 to-indigo-600/15 border border-blue-500/30 flex items-center justify-center text-accent shrink-0 shadow-sm">
             <FaBuilding size={18} />
           </div>
@@ -170,21 +198,29 @@ export default function Sidebar({
         {!isMobileDrawer && (
           <button
             onClick={toggleCollapsed}
-            className="hidden md:flex w-7 h-7 rounded-lg items-center justify-center text-secondary hover:text-primary hover:bg-card-inner-bg border border-glass-border transition-colors shrink-0"
-            aria-label="Collapse sidebar"
-            title="Collapse Sidebar"
+            className="hidden md:flex items-center justify-center text-secondary hover:text-primary transition-colors shrink-0"
+            aria-label={t("sbCollapse")}
+            title={t("sbCollapse")}
           >
-            <MdChevronLeft size={18} />
+            <TbLayoutSidebarLeftCollapseFilled size={20} />
           </button>
         )}
 
         {isMobileDrawer && (
           <button
+            type="button"
             onClick={closeMobile}
-            className="w-8 h-8 rounded-lg flex items-center justify-center text-primary bg-card-inner-bg border border-glass-border shrink-0"
-            aria-label="Close mobile menu"
+            className="flex items-center justify-center w-10 h-10 rounded-xl shrink-0 transition-colors hover:bg-white/5 active:scale-95"
+            style={{
+              background: "var(--card-inner-bg, rgba(255,255,255,0.08))",
+              border: "1.5px solid var(--glass-border, rgba(255,255,255,0.18))",
+              color: "var(--text-primary, #fff)",
+              zIndex: 2,
+            }}
+            aria-label={t("sbCloseMenu")}
+            title={t("sbCloseMenu")}
           >
-            <MdClose size={18} />
+            <MdClose size={20} />
           </button>
         )}
       </div>
@@ -192,7 +228,7 @@ export default function Sidebar({
   };
 
   /* ── Render Navigation Link ── */
-  const renderNavLink = (item, isMobileDrawer = false) => {
+  const renderNavLink = (item, isMobileDrawer = false, isSub = false) => {
     const { label, path, icon: Icon, children } = item;
     const active = isPathActive(location.pathname, path, base);
 
@@ -210,15 +246,12 @@ export default function Sidebar({
                   activeFlyoutItem === label ? null : label
                 )
               }
-              className={`relative flex items-center justify-center w-10 h-10 mx-auto rounded-xl transition-all ${
+              className={`sidebar-link relative flex items-center justify-center w-10 h-10 mx-auto rounded-xl transition-all ${
                 hasActiveChild
-                  ? "bg-accent/15 text-accent border border-accent/30 font-semibold shadow-sm"
+                  ? "active bg-accent text-white font-semibold"
                   : "text-secondary hover:text-primary hover:bg-accent/5"
               }`}
             >
-              {hasActiveChild && (
-                <span className="absolute left-0 top-2 bottom-2 w-1 rounded-r-md bg-linear-to-b from-sky-400 to-blue-600 shadow-[0_0_6px_rgba(37,99,235,0.6)]" />
-              )}
               <Icon size={19} />
             </button>
             <div className="fixed left-20 ml-1.5 z-50 hidden group-hover/tooltip:block bg-card border border-glass-border text-primary text-xs font-semibold px-3 py-1.5 rounded-lg shadow-xl whitespace-nowrap pointer-events-none animate-fadeIn">
@@ -250,14 +283,14 @@ export default function Sidebar({
                           setActiveFlyoutItem(null);
                           closeMobile();
                         }}
-                        className={`flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium transition-all ${
+                        className={`sidebar-link sidebar-sublink flex items-center gap-3 px-3 py-2 rounded-lg text-[11px] font-medium transition-all ${
                           childActive
-                            ? "bg-accent/15 text-accent font-bold border border-accent/25"
+                            ? "active bg-accent text-white font-bold"
                             : "text-secondary hover:text-primary hover:bg-accent/5"
                         }`}
                       >
                         <ChildIcon size={16} />
-                        <span className="truncate">{child.label}</span>
+                        <span className="leading-tight wrap-break-word">{child.label}</span>
                       </Link>
                     );
                   })}
@@ -273,15 +306,12 @@ export default function Sidebar({
           <Link
             to={path}
             onClick={closeMobile}
-            className={`relative flex items-center justify-center w-10 h-10 mx-auto rounded-xl transition-all ${
+            className={`sidebar-link relative flex items-center justify-center w-10 h-10 mx-auto rounded-xl transition-all ${
               active
-                ? "bg-accent/15 text-accent border border-accent/30 font-bold shadow-sm"
+                ? "active bg-accent text-white font-bold"
                 : "text-secondary hover:text-primary hover:bg-accent/5"
             }`}
           >
-            {active && (
-              <span className="absolute left-0 top-2 bottom-2 w-1 rounded-r-md bg-linear-to-b from-sky-400 to-blue-600 shadow-[0_0_6px_rgba(37,99,235,0.6)]" />
-            )}
             <Icon size={19} />
           </Link>
           <div className="fixed left-20 ml-1.5 z-50 hidden group-hover/tooltip:block bg-card border border-glass-border text-primary text-xs font-semibold px-3 py-1.5 rounded-lg shadow-xl whitespace-nowrap pointer-events-none animate-fadeIn">
@@ -297,19 +327,27 @@ export default function Sidebar({
         key={path}
         to={path}
         onClick={closeMobile}
-        className={`relative flex items-center rounded-xl font-medium transition-all duration-150 ${
-          isMobileDrawer ? "gap-3.5 px-3.5 py-3 text-[15px]" : "gap-3 px-3.5 py-2.5 text-xs"
+        className={`sidebar-link relative flex items-center rounded-xl font-medium transition-all duration-150 ${
+          isSub ? "sidebar-sublink" : ""
+        } ${
+          isMobileDrawer
+            ? isSub
+              ? "gap-3 px-3 py-2 text-[13px]"
+              : "gap-3.5 px-3.5 py-3 text-[15px]"
+            : isSub
+              ? "gap-2.5 px-3 py-1.5 text-[11px]"
+              : "gap-3 px-3.5 py-2.5 text-xs"
         } ${
           active
-            ? "bg-accent/12 text-accent font-bold shadow-xs border border-accent/20 translate-x-0.5"
-            : "text-secondary hover:text-primary hover:bg-accent/5 hover:translate-x-0.5"
+            ? "active bg-accent text-white font-semibold"
+            : "text-secondary hover:text-primary hover:bg-accent/5"
         }`}
       >
-        {active && (
-          <span className={`absolute left-0 w-1 rounded-r-md bg-linear-to-b from-sky-400 to-blue-600 shadow-[0_0_8px_rgba(37,99,235,0.5)] ${isMobileDrawer ? "top-2 bottom-2" : "top-1.5 bottom-1.5"}`} />
-        )}
-        <Icon size={isMobileDrawer ? 22 : 18} className={active ? "text-accent" : "text-secondary"} />
-        <span className="truncate">{label}</span>
+        <Icon
+          size={isMobileDrawer ? (isSub ? 18 : 22) : isSub ? 15 : 18}
+          className={active ? "text-white" : "text-secondary"}
+        />
+        <span className="leading-tight wrap-break-word">{label}</span>
       </Link>
     );
   };
@@ -345,7 +383,7 @@ export default function Sidebar({
                   aria-expanded={isGroupOpen}
                   className={`w-full flex items-center justify-between px-3 font-extrabold tracking-wider text-muted uppercase hover:text-primary transition-colors group/head cursor-pointer select-none ${isMobileDrawer ? "py-1.5 text-[12px]" : "py-1.5 text-[11px]"}`}
                 >
-                  <span className="truncate">{groupName}</span>
+                  <span className="leading-tight wrap-break-word normal-case tracking-wide">{groupLabel(groupName)}</span>
                   <MdExpandMore
                     size={14}
                     className={`transition-transform duration-200 ${
@@ -356,8 +394,8 @@ export default function Sidebar({
               )}
 
               {(isDefaultGroup || isGroupOpen) && (
-                <div className={!isDefaultGroup ? `${isMobileDrawer ? "space-y-1" : "space-y-1"} pl-2 border-l border-blue-500/15 ml-3 ${isMobileDrawer ? "my-1" : "my-1"}` : (isMobileDrawer ? "space-y-1" : "space-y-1")}>
-                  {items.map((item) => renderNavLink(item, isMobileDrawer))}
+                <div className={!isDefaultGroup ? `${isMobileDrawer ? "space-y-0.5" : "space-y-0.5"} pl-2 border-l border-blue-500/15 ml-3 ${isMobileDrawer ? "my-1" : "my-1"}` : (isMobileDrawer ? "space-y-1" : "space-y-1")}>
+                  {items.map((item) => renderNavLink(item, isMobileDrawer, !isDefaultGroup))}
                 </div>
               )}
             </div>
@@ -429,11 +467,17 @@ function mobileMenuOpen(mobileOpen, closeMobile, renderBrand, renderNavList, dra
 
   return createPortal(
     <div
-      className="fixed inset-0 z-50 md:hidden bg-black/60 backdrop-blur-sm animate-fadeIn"
+      className="fixed inset-x-0 bottom-0 top-14 z-50 md:hidden bg-black/60 backdrop-blur-sm animate-fadeIn"
       onClick={closeMobile}
     >
       <div
-        className="bg-sidebar w-[min(18rem,86vw)] h-full max-h-dvh p-4 flex flex-col shadow-2xl animate-slide-in"
+        className="relative bg-sidebar w-[min(18rem,86vw)] h-full max-h-dvh flex flex-col shadow-2xl animate-slide-in"
+        style={{
+          paddingTop: 16,
+          paddingRight: 16,
+          paddingBottom: "max(1rem, env(safe-area-inset-bottom))",
+          paddingLeft: 16,
+        }}
         onClick={(e) => e.stopPropagation()}
       >
         {renderBrand(true)}

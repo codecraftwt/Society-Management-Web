@@ -1,3 +1,4 @@
+import Pagination from "../../components/common/Pagination";
   import { useEffect, useState, useRef, useCallback } from "react";
   import { useNavigate } from "react-router-dom";
   import API from "../../services/api";
@@ -16,93 +17,7 @@
     MdPool,
   } from "react-icons/md";
 
-  /* ─── Debounce ─── */
-  function useDebounce(value, delay = 500) {
-    const [debounced, setDebounced] = useState(value);
-    useEffect(() => {
-      const t = setTimeout(() => setDebounced(value), delay);
-      return () => clearTimeout(t);
-    }, [value, delay]);
-    return debounced;
-  }
-
-  /* ─── Spinner ─── */
-  function Spinner({ small = false }) {
-    const s = small ? 13 : 20;
-    return (
-      <svg style={{ width: s, height: s }} className="animate-spin" viewBox="0 0 24 24" fill="none">
-        <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" className="opacity-25" />
-        <path fill="currentColor" className="opacity-75" d="M4 12a8 8 0 018-8v8z" />
-      </svg>
-    );
-  }
-
-  /* ─── Countdown timer for PAYMENT_PENDING bookings ─── */
-  function PaymentCountdown({ expiresAt }) {
-    const [secondsLeft, setSecondsLeft] = useState(() => {
-      if (!expiresAt) return 0;
-      return Math.max(0, Math.round((new Date(expiresAt) - Date.now()) / 1000));
-    });
-
-    useEffect(() => {
-      if (secondsLeft <= 0) return;
-      const id = setInterval(() => setSecondsLeft((s) => Math.max(0, s - 1)), 1000);
-      return () => clearInterval(id);
-    }, [secondsLeft]);
-
-    if (secondsLeft <= 0) return (
-      <span style={{ fontSize: 11, color: "#ef4444", fontWeight: 600, display: "flex", alignItems: "center", gap: 3 }}>
-        <MdTimer size={12} /> Expired
-      </span>
-    );
-
-    const m = String(Math.floor(secondsLeft / 60)).padStart(2, "0");
-    const s = String(secondsLeft % 60).padStart(2, "0");
-    const isUrgent = secondsLeft < 120;
-
-    return (
-      <span style={{
-        fontSize: 11, fontWeight: 700, display: "flex", alignItems: "center", gap: 3,
-        color: isUrgent ? "#ef4444" : "var(--accent)",
-      }}>
-        <MdTimer size={12} /> {m}:{s}
-      </span>
-    );
-  }
-
-  /* ─── Pagination ─── */
-  function Pagination({ page, totalPages, onPageChange }) {
-    if (totalPages <= 1) return null;
-    const pages = Array.from({ length: totalPages }, (_, i) => i + 1)
-      .filter((p) => p === 1 || p === totalPages || Math.abs(p - page) <= 1)
-      .reduce((acc, p, idx, arr) => {
-        if (idx > 0 && p - arr[idx - 1] > 1) acc.push("...");
-        acc.push(p);
-        return acc;
-      }, []);
-    return (
-      <div className="pagination-wrap">
-        <button onClick={() => onPageChange(page - 1)} disabled={page === 1} className="pagination-btn">
-          <MdChevronLeft size={15} /> Prev
-        </button>
-        {pages.map((p, idx) =>
-          p === "..." ? (
-            <span key={`ellipsis-${idx}`} className="pagination-ellipsis">...</span>
-          ) : (
-            <button key={p} onClick={() => onPageChange(p)}
-              className={`pagination-page ${p === page ? "pagination-page--active" : ""}`}>
-              {p}
-            </button>
-          )
-        )}
-        <button onClick={() => onPageChange(page + 1)} disabled={page === totalPages} className="pagination-btn">
-          Next <MdChevronRight size={15} />
-        </button>
-      </div>
-    );
-  }
-
-  const LIMIT = 10;
+    
   const STATUS_OPTIONS = ["ALL", "PAYMENT_PENDING", "PENDING", "APPROVED", "CANCELLED", "REJECTED"];
 
   const STATUS_STYLE = {
@@ -162,7 +77,10 @@
     MAIN COMPONENT
   ══════════════════════════════════════════════════════════ */
   export default function ResidentAmenity() {
-    const navigate = useNavigate();
+    const [limit, setLimit] = useState(10);
+  const limitRef = useRef(limit);
+  limitRef.current = limit;
+const navigate = useNavigate();
     const passRef  = useRef(null);
     const { t }    = useLang();
 
@@ -284,7 +202,7 @@
       try {
         const params = new URLSearchParams({
           page:   pageNum,
-          limit:  LIMIT,
+          limit: limitRef.current,
           filter: sFilter,
           ...(currentSearch                ? { search:      currentSearch } : {}),
           ...(aFilter && aFilter !== "ALL" ? { amenityName: aFilter       } : {}),
@@ -1058,7 +976,7 @@
                 <p className="text-xs text-secondary">
                   Showing {myBookings.length} of {totalItems}
                 </p>
-                <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} />
+                <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} pageSize={limit} onPageSizeChange={(s) => { limitRef.current = s; setLimit(s); setPage(1); handlePageChange(1); }} />
               </div>
             )}
           </div>
