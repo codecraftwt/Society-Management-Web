@@ -842,18 +842,23 @@ export default function Notice() {
             })}
           </div>
 
-          <Pagination
-            page={page}
-            totalPages={totalPages}
-            onPageChange={setPage}
-            pageSize={limit}
-            onPageSizeChange={(s) => {
-              limitRef.current = s;
-              setLimit(s);
-              setPage(1);
-              loadNotices(1, debSearch);
-            }}
-          />
+          <div className="notice-pagination-footer">
+            <span className="notice-pagination-summary">
+              {t("noticeShowingCount", { shown: notices.length, total: totalItems })}
+            </span>
+            <Pagination
+              page={page}
+              totalPages={totalPages}
+              onPageChange={setPage}
+              pageSize={limit}
+              onPageSizeChange={(s) => {
+                limitRef.current = s;
+                setLimit(s);
+                setPage(1);
+                loadNotices(1, debSearch);
+              }}
+            />
+          </div>
         </>
       )}
 
@@ -861,12 +866,12 @@ export default function Notice() {
       <GlobalModal
         isOpen={showNoticeModal}
         onClose={() => setShowNoticeModal(false)}
-        title={editingId ? "Update Notice" : t("noticeCreateTitle") || "Create Notice"}
-        subtitle="Broadcast to all residents instantly"
+        title={editingId ? t("noticeUpdateTitle") : t("noticeCreateTitle")}
+        subtitle={t("noticeModalSubtitle")}
         icon={MdCampaign}
         size="md"
         showFooter
-        submitLabel={editingId ? "Update Notice" : t("noticePublish") || "Publish Notice"}
+        submitLabel={editingId ? t("noticeUpdateTitle") : t("noticePublish")}
         cancelLabel={t("cancel") || "Cancel"}
         onSubmit={handleSubmit}
         submitLoading={submitting}
@@ -877,14 +882,14 @@ export default function Notice() {
         <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
           {isSuperAdmin && (
             <div>
-              <label className="sa-label">Society</label>
+              <label className="sa-label">{t("noticeSociety")}</label>
               <Select
                 className="input"
                 value={form.society_id}
                 required
                 onChange={(e) => setForm({ ...form, society_id: e.target.value })}
               >
-                <option value="">Select Society</option>
+                <option value="">{t("noticeSelectSociety")}</option>
                 {societiesList.map((s) => (
                   <option key={s.id} value={s.id}>
                     {s.name}
@@ -895,7 +900,7 @@ export default function Notice() {
           )}
 
           <div>
-            <label className="sa-label">Notice Title</label>
+            <label className="sa-label">{t("noticeTitleLabel")}</label>
             <input
               className="input"
               placeholder={t("noticeTitlePlaceholder") || "e.g. Water Tank Cleaning Schedule"}
@@ -906,7 +911,7 @@ export default function Notice() {
           </div>
 
           <div>
-            <label className="sa-label">Description / Announcement</label>
+            <label className="sa-label">{t("noticeDescriptionLabel")}</label>
             <textarea
               className="input"
               rows={4}
@@ -937,7 +942,7 @@ export default function Notice() {
           </div>
 
           <div>
-            <label className="sa-label">Attachment (PDF or Image, optional)</label>
+            <label className="sa-label">{t("noticeAttachmentLabel")}</label>
             {file ? (
               <div
                 style={{
@@ -987,7 +992,7 @@ export default function Notice() {
                 }}
               >
                 <MdAttachFile size={16} />
-                <span>Click to attach document (PDF, PNG, JPG, WEBP)</span>
+                <span>{t("noticeAttachHint")}</span>
                 <input
                   type="file"
                   accept="image/*,application/pdf"

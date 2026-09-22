@@ -80,12 +80,12 @@ function RejectModal({ open, onClose, onSubmit, loading }) {
 
   return createPortal(
     <div
-      className="fixed inset-0 flex items-center justify-center p-4"
+      className="tm-modal-overlay fixed inset-0 flex items-center justify-center p-4"
       style={{ background: "rgba(0,0,0,0.88)", backdropFilter: "blur(10px)", zIndex: 10000 }}
       onClick={() => !loading && onClose()}
     >
       <div
-        className="rounded-2xl w-full max-w-md shadow-2xl"
+        className="tm-modal-panel rounded-2xl w-full max-w-md shadow-2xl"
         style={{ background: "var(--card-bg)", border: "1px solid rgba(239,68,68,0.2)" }}
         onClick={e => e.stopPropagation()}
       >
@@ -120,7 +120,7 @@ function RejectModal({ open, onClose, onSubmit, loading }) {
             />
           </div>
         </div>
-        <div className="p-5 flex gap-3" style={{ borderTop: "1px solid var(--divider)" }}>
+        <div className="tm-modal-actions p-5 flex gap-3" style={{ borderTop: "1px solid var(--divider)" }}>
           <button
             disabled={loading}
             onClick={onClose}
@@ -152,17 +152,17 @@ function DetailModal({ tenant, onClose, onApprove, onReject, isPending }) {
 
   return createPortal(
     <div
-      className="fixed inset-0 flex items-center justify-center p-4"
+      className="tm-modal-overlay fixed inset-0 flex items-center justify-center p-4"
       style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(6px)", zIndex: 9998 }}
       onClick={onClose}
     >
       <div
-        className="rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl"
+        className="tm-modal-panel rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl"
         style={{ background: "var(--card-bg)", border: "1px solid var(--glass-border)" }}
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center gap-3 px-5 py-4 sticky top-0 z-10"
+        <div className="tm-detail-header flex items-center gap-3 px-5 py-4 sticky top-0 z-10"
           style={{ background: "var(--card-bg)", borderBottom: "1px solid var(--divider)" }}>
           <div className="w-10 h-10 rounded-xl bg-blue-500/12 text-blue-400 flex items-center justify-center font-black text-lg">
             {tenant.tenant_name?.charAt(0)}
@@ -256,7 +256,7 @@ function Section({ title, icon, children }) {
 
 function Row({ label, value, chip, icon, children }) {
   return (
-    <div className="flex items-center justify-between px-3 py-2.5" style={{ borderBottom: "1px solid var(--divider)" }}>
+    <div className="tm-detail-row flex items-center justify-between px-3 py-2.5" style={{ borderBottom: "1px solid var(--divider)" }}>
       <span className="font-medium" style={{ fontSize: 11, color: "var(--text-secondary)" }}>{label}</span>
       {children ? children : (
         chip ? (
@@ -406,10 +406,10 @@ export default function TenantManagement() {
   );
 
   return (
-    <div className="space-y-5 animate-fadeIn">
+    <div className="tenant-management-page space-y-5 animate-fadeIn">
       {/* ── Page Header: Unified Single Row ── */}
-      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
+      <div className="tm-page-header flex flex-col xl:flex-row xl:items-center justify-between gap-3">
+        <div className="tm-page-title flex items-center gap-3">
           <div className="ad-page-icon">
             <MdPeople size={22} />
           </div>
@@ -419,7 +419,7 @@ export default function TenantManagement() {
           </div>
         </div>
 
-        <div className="flex items-center gap-2.5 flex-wrap">
+        <div className="tm-toolbar flex items-center gap-2.5 flex-wrap">
           <FilterSelect
             icon={<MdFilterList size={13} />}
             value={activeTab}
@@ -438,14 +438,24 @@ export default function TenantManagement() {
           />
 
           <ExpandableSearch
+            className="tm-desktop-search"
             value={search}
             onChange={setSearch}
             placeholder={t("tmSearch")}
           />
 
+          <label className="tm-mobile-search">
+            <MdSearch size={17} />
+            <input
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder={t("tmSearch")}
+            />
+          </label>
+
           <button
             onClick={() => load()}
-            className="flex items-center gap-2 text-xs font-bold px-3 py-2 rounded-xl transition justify-center shrink-0"
+            className="tm-refresh-btn flex items-center gap-2 text-xs font-bold px-3 py-2 rounded-xl transition justify-center shrink-0"
             style={{ height: 42, minHeight: 42, color: "var(--text-secondary)", background: "var(--card-inner-bg)", border: "1px solid var(--glass-border)" }}
           >
             <MdRefresh size={16} /> {t("refresh")}
@@ -465,11 +475,11 @@ export default function TenantManagement() {
       ) : (
         <div key={page} className="animate-slide-page">
           {/* ── Mobile Cards ── */}
-          <div className="md:hidden flex flex-col gap-3">
+          <div className="tm-mobile-list md:hidden flex flex-col gap-3">
             {pagedTenants.map((row, i) => (
               <div
                 key={row.tenant_id}
-                className="animate-fadeIn rounded-2xl overflow-hidden cursor-pointer"
+                className="tm-mobile-card animate-fadeIn rounded-2xl overflow-hidden cursor-pointer"
                 style={{ animationDelay: `${i * 30}ms`, border: "1px solid var(--glass-border)", background: "var(--card-bg)" }}
                 onClick={() => setDetailTenant(row)}
               >
@@ -492,7 +502,7 @@ export default function TenantManagement() {
                   {row.move_out_date && <span className="text-xs" style={{ color: "var(--text-secondary)" }}>{t("tmMoveOut")}: {formatDate(row.move_out_date)}</span>}
                 </div>
                 {row.status_label === "PENDING" && (
-                  <div className="p-4 pt-2.5 flex gap-2" onClick={e => e.stopPropagation()}>
+                  <div className="tm-mobile-actions p-4 pt-2.5 flex gap-2" onClick={e => e.stopPropagation()}>
                     <button
                       onClick={() => setDetailTenant(row)}
                       className="flex-1 flex items-center justify-center gap-1.5 h-11 rounded-xl hover:bg-white/10 text-xs font-bold transition"
@@ -610,18 +620,11 @@ export default function TenantManagement() {
               ))}
             </div>
 
-            <div className="px-4 py-2.5 flex justify-between items-center"
-              style={{ background: "var(--card-inner-bg)", borderTop: "1px solid var(--divider)" }}>
-              <p className="text-[11px] font-medium" style={{ color: "var(--text-secondary)" }}>
-                {t("afShowing", { shown: pagedTenants.length, total: filtered.length })}
-              </p>
-              <p className="text-[11px]" style={{ color: "var(--text-secondary)" }}>{t("viewDetails")}</p>
-            </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row justify-between items-center px-4 py-3 mt-4 border-t border-glass gap-3">
-            <span className="text-xs text-secondary">
-              {t("pageOf", { current: page, total: totalPages })} ({filtered.length})
+          <div className="tm-pagination-footer">
+            <span className="tm-pagination-summary">
+              {t("afShowing", { shown: pagedTenants.length, total: filtered.length })}
             </span>
             <Pagination page={page} totalPages={totalPages} onChange={setPage} pageSize={limit} onPageSizeChange={(s) => { setLimit(s); setPage(1); }} />
           </div>
@@ -652,7 +655,7 @@ export default function TenantManagement() {
 ───────────────────────────────────────────── */
 function FilterSelect({ icon, value, onChange, options }) {
   return (
-    <div className="relative flex items-center">
+    <div className="tm-filter-select relative flex items-center">
       <span className="absolute left-3 pointer-events-none z-10" style={{ color: "var(--text-secondary)" }}>{icon}</span>
       <Select
         value={value}

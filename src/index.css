@@ -17292,16 +17292,16 @@ html.light div[style*="position: fixed"] > div[style*="maxWidth"] {
   border-color: rgba(255, 255, 255, 0.2);
 }
 .ps-vehicle-mode-btn--active-car {
-  background: rgba(59, 130, 246, 0.15) !important;
-  border-color: rgba(59, 130, 246, 0.5) !important;
-  color: #60A5FA !important;
-  box-shadow: 0 0 12px rgba(59, 130, 246, 0.2);
+  background: var(--accent, #8b5cf6) !important;
+  border-color: var(--accent, #8b5cf6) !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 12px rgba(var(--acct-purple-rgb, 139, 92, 246), 0.28);
 }
 .ps-vehicle-mode-btn--active-bike {
-  background: rgba(168, 85, 247, 0.15) !important;
-  border-color: rgba(168, 85, 247, 0.5) !important;
-  color: #C084FC !important;
-  box-shadow: 0 0 12px rgba(168, 85, 247, 0.2);
+  background: var(--accent, #8b5cf6) !important;
+  border-color: var(--accent, #8b5cf6) !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 12px rgba(var(--acct-purple-rgb, 139, 92, 246), 0.28);
 }
 
 /* ==========================================================================
@@ -17727,6 +17727,37 @@ html.light .global-btn-draw rect {
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   gap: 14px;
   padding-bottom: 4px;
+}
+
+/* Admin - Society Documents layout tweaks */
+.ad-root {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+.ad-page-header { gap: 12px; align-items: center; }
+.ad-page-header .ad-list-count { color: var(--text-secondary); font-weight: 600; }
+.ad-list-wrap { padding: 12px 0; }
+.ad-toolbar { display:flex; flex-direction:column; gap:12px; padding: 12px 0; }
+.ad-filter-row-bar { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+.ad-filter-chip { background:var(--card-inner-bg); border:1px solid var(--glass-border); padding:6px 10px; border-radius:10px; font-weight:700; color:var(--text-secondary); display:inline-flex; gap:8px; align-items:center; }
+.ad-filter-chip--active { background:linear-gradient(135deg,var(--accent),#9e58ff); color:#fff; border:1px solid rgba(var(--acct-purple-rgb),0.28); box-shadow:0 6px 18px rgba(var(--acct-purple-rgb),0.08); }
+
+.ad-card-grid .rounded-2xl { min-height: 170px; display:flex; flex-direction:column; }
+.ad-card-grid .text-xs { font-size: 12px; }
+.ad-empty { text-align:center; padding:40px 20px; }
+
+/* Upload panel: responsive bottom-sheet on mobile */
+.ad-upload-panel { transition: transform 0.28s ease; }
+.ad-upload-panel .ad-upload-card { margin: 0 auto; max-width: 980px; }
+@media (max-width: 767px) {
+  .ad-upload-panel .ad-upload-card { border-radius: 18px 18px 0 0; width: 100%; max-width: 100%; box-shadow: 0 -16px 40px rgba(0,0,0,0.45); position: fixed; bottom: 0; left: 0; right: 0; z-index: 2600; }
+  .ad-root .ad-page-header { flex-direction: column; align-items: flex-start; gap: 10px; }
+  .ad-root .ad-page-header .ad-list-count { display:block; }
+  .ad-filter-row-bar { gap: 6px; }
+  .ad-card-grid { gap: 10px; grid-template-columns: 1fr; }
+  .ad-card-grid .rounded-2xl { min-height: 150px; padding: 12px; }
+  .ad-upload-toggle-btn { width: 100%; justify-content: center; }
 }
 
 /* ── Admin documents: purple accent pill upload button ── */

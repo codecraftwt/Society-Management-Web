@@ -121,10 +121,10 @@ export default function AdminDashboard() {
   const totalFlats = stats?.totalFlats ?? 0;
 
   const chartData = [
-    { name: t("dashResidents") || "Residents", value: residents, color: "#a05aff" },
-    { name: t("dashGuards") || "Guards", value: guards, color: "#1bcfb4" },
-    { name: t("dashOpenComplaints") || "Complaints", value: openComplaints, color: "#4bcbeb" },
-    { name: t("dashTotalFlats") || "Total Flats", value: totalFlats, color: "#9e58ff" },
+    { name: t("dashResidents") || "Residents", value: residents, color: "#22d3ee" },
+    { name: t("dashGuards") || "Guards", value: guards, color: "#3b82f6" },
+    { name: t("dashOpenComplaints") || "Complaints", value: openComplaints, color: "#fb7185" },
+    { name: t("dashTotalFlats") || "Total Flats", value: totalFlats, color: "#a78bfa" },
   ];
 
   const { user } = useContext(AuthContext);
@@ -165,7 +165,7 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="space-y-6 w-full min-w-0 max-w-400 mx-auto pb-8">
+    <div className="admin-dash space-y-6 w-full min-w-0 max-w-400 mx-auto pb-8">
       {/* ── 1. DASHBOARD HERO HEADER ── */}
       <div className="bg-card border border-glass-border rounded-2xl p-6 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm">
         <div className="space-y-1 min-w-0">

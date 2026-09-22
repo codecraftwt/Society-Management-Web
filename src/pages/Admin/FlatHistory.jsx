@@ -3,10 +3,13 @@ import API from "../../services/api";
 import { toast } from "react-toastify";
 import { moveOutResident } from "../../services/flatService";
 import GlobalModal from "../../components/common/GlobalModal";
+import GlobalButton from "../../components/common/GlobalButton";
+import GlobalBadge from "../../components/common/GlobalBadge";
+import GlobalConfirmDialog from "../../components/common/GlobalConfirmDialog";
 import { useLang } from "../../context/LanguageContext";
 import { AuthContext } from "../../context/AuthContext";
 import { isCommitteeMember, hasPermission } from "../../utils/permissions";
-import { MdApartment, MdChevronLeft, MdChevronRight } from "react-icons/md";
+import { MdApartment, MdLogout } from "react-icons/md";
 import SlidingTabs from "../../components/common/SlidingTabs";
 import ExpandableSearch from "../../components/common/ExpandableSearch";
 
@@ -36,17 +39,18 @@ const Empty = ({ icon = "📭", text = "No data", sub = "" }) => (
 /* ─────────────────────────────────────────────────────────────
    STATUS PILL helper
 ────────────────────────────────────────────────────────────── */
-const statusCls = (s = "") => {
+const statusVariant = (s = "") => {
   const v = s.toLowerCase().replace(/[^a-z]/g, "");
-  if (["paid","resolved","collected","delivered","completed","approved"].includes(v)) return "fh-status-pill--paid";
-  if (["pending","pendingpayment","atgate","open","rejected"].includes(v))            return "fh-status-pill--pending";
-  return "fh-status-pill--inprogress";
+  if (["paid","resolved","collected","delivered","completed","approved"].includes(v)) return "success";
+  if (["rejected","cancelled","failed"].includes(v)) return "danger";
+  if (["pending","pendingpayment","atgate","open"].includes(v)) return "warning";
+  return "info";
 };
 
 const Pill = ({ status, t }) => (
-  <span className={`fh-status-pill ${statusCls(status)}`}>
+  <GlobalBadge size="sm" variant={statusVariant(status)}>
     {status || t("fhUnknown")}
-  </span>
+  </GlobalBadge>
 );
 
 const toArr = (res) => {
@@ -106,15 +110,15 @@ const ResidentsTab = ({ residents, t, onMoveOut }) => {
 
               {isCurrent && onMoveOut && (
                 <div className="fh-resident-actions">
-                  <button
-                    type="button"
-                    className="fh-move-out-btn"
+                  <GlobalButton
+                    variant="danger"
+                    size="sm"
+                    icon={MdLogout}
                     onClick={() => onMoveOut(r)}
                     title={t("fhMoveOutTitle")}
                   >
-                    <span className="fh-move-out-ico">➜</span>
                     {t("fhMarkLeft")}
-                  </button>
+                  </GlobalButton>
                 </div>
               )}
             </div>
@@ -162,29 +166,15 @@ const BillsTab = ({ bills, t }) => {
       </div>
 
       {/* Filter Toggle Buttons */}
-      <div className="fh-bills-subtoggle-bar">
-        <button
-          type="button"
-          className={`fh-bills-subtoggle-btn ${filter === "all" ? "fh-bills-subtoggle-btn--active" : ""}`}
-          onClick={() => setFilter("all")}
-        >
-          All Bills ({bills.length})
-        </button>
-        <button
-          type="button"
-          className={`fh-bills-subtoggle-btn ${filter === "paid" ? "fh-bills-subtoggle-btn--active" : ""}`}
-          onClick={() => setFilter("paid")}
-        >
-          Paid ({paidBills.length})
-        </button>
-        <button
-          type="button"
-          className={`fh-bills-subtoggle-btn ${filter === "pending" ? "fh-bills-subtoggle-btn--active" : ""}`}
-          onClick={() => setFilter("pending")}
-        >
-          Pending ({pendingBills.length})
-        </button>
-      </div>
+      <SlidingTabs
+        value={filter}
+        onChange={setFilter}
+        items={[
+          { id: "all", label: "All Bills", badge: bills.length },
+          { id: "paid", label: "Paid", badge: paidBills.length },
+          { id: "pending", label: "Pending", badge: pendingBills.length },
+        ]}
+      />
 
       {displayedBills.length === 0 ? (
         <Empty icon="💰" text="No bills in this category" sub="Select a different filter above." />
@@ -743,7 +733,7 @@ const FlatHistory = () => {
   };
 
   return (
-    <div className="fh-root space-y-5 animate-fadeIn">
+    <div className="fh-root flat-history-page space-y-5 animate-fadeIn">
       {/* ── Page Header: Unified Single Row ── */}
       <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3">
         <div className="flex items-center gap-3">
@@ -775,9 +765,9 @@ const FlatHistory = () => {
             placeholder={t("fhSearchPlaceholder") || "Search flats or residents..."}
           />
 
-          <div className="fh-flats-badge" style={{ height: 42, minHeight: 42, display: "flex", alignItems: "center" }}>
-            <span>{flats.length} {t("fhFlats") || "Flats"}</span>
-          </div>
+          <GlobalBadge variant="info" size="lg" icon={MdApartment}>
+            {flats.length} {t("fhFlats") || "Flats"}
+          </GlobalBadge>
         </div>
       </div>
 
@@ -915,24 +905,16 @@ const FlatHistory = () => {
         >
           {/* Section Toggle Buttons */}
           <div className="fh-section-toggle-wrap">
-            <div className="fh-modern-tab-bar">
-              {TABS.map((tab) => {
-                const count = data[tab.id]?.length ?? 0;
-                const isActive = activeTab === tab.id;
-                return (
-                  <button
-                    key={tab.id}
-                    type="button"
-                    className={`fh-modern-tab-btn ${isActive ? "fh-modern-tab-btn--active" : ""}`}
-                    onClick={() => setActiveTab(tab.id)}
-                  >
-                    <span className="fh-tab-btn-icon">{tab.icon}</span>
-                    <span className="fh-tab-btn-label">{tab.label}</span>
-                    <span className="fh-modern-tab-badge">{count}</span>
-                  </button>
-                );
-              })}
-            </div>
+            <SlidingTabs
+              value={activeTab}
+              onChange={setActiveTab}
+              items={TABS.map((tab) => ({
+                id: tab.id,
+                label: tab.label,
+                icon: <span aria-hidden="true">{tab.icon}</span>,
+                badge: data[tab.id]?.length ?? 0,
+              }))}
+            />
           </div>
 
           {/* Active Section — slider-type animation on switch */}
@@ -942,48 +924,25 @@ const FlatHistory = () => {
         </GlobalModal>
       )}
 
-      {/* Move-Out Confirmation Popup (centered, styled like app popups) */}
-      {confirmMoveOut && (
-        <div className="fh-confirm-overlay" onClick={closeMoveOutConfirm}>
-          <div
-            className="fh-confirm-box"
-            onClick={(e) => e.stopPropagation()}
-            role="alertdialog"
-            aria-modal="true"
-          >
-            <div className="fh-confirm-accent" />
-            <div className="fh-confirm-icon">🚪</div>
-            <h3 className="fh-confirm-title">{t("fhMoveOutTitle")}</h3>
-            <p className="fh-confirm-text">
-              {t("fhMoveOutConfirm")} <strong>
-                {confirmMoveOut?.resident?.User?.name ||
-                  confirmMoveOut?.resident?.user?.name ||
-                  confirmMoveOut?.resident?.name ||
-                  t("fhUnknown")}
-              </strong>
-              {confirmMoveOut?.flat ? ` — ${t("fhFlat")} ${confirmMoveOut.flat.flat_number}` : ""}?
-            </p>
-            <div className="fh-confirm-actions">
-              <button
-                type="button"
-                className="fh-confirm-btn--cancel"
-                onClick={closeMoveOutConfirm}
-                disabled={movingOut}
-              >
-                {t("fhCancel")}
-              </button>
-              <button
-                type="button"
-                className="fh-confirm-btn--danger"
-                onClick={doMoveOut}
-                disabled={movingOut}
-              >
-                {movingOut ? t("fhMovingOut") : t("fhConfirmMoveOut")}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <GlobalConfirmDialog
+        isOpen={!!confirmMoveOut}
+        onClose={closeMoveOutConfirm}
+        onConfirm={doMoveOut}
+        title={t("fhMoveOutTitle")}
+        message={confirmMoveOut
+          ? `${t("fhMoveOutConfirm")} ${
+              confirmMoveOut.resident?.User?.name ||
+              confirmMoveOut.resident?.user?.name ||
+              confirmMoveOut.resident?.name ||
+              t("fhUnknown")
+            }${confirmMoveOut.flat ? ` — ${t("fhFlat")} ${confirmMoveOut.flat.flat_number}` : ""}?`
+          : ""}
+        confirmLabel={t("fhConfirmMoveOut")}
+        cancelLabel={t("fhCancel")}
+        variant="danger"
+        icon={MdLogout}
+        loading={movingOut}
+      />
     </div>
   );
 };

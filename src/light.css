@@ -1116,16 +1116,16 @@ html.light {
     border-color: #CBD5E1;
   }
   .ps-vehicle-mode-btn--active-car {
-    background: #EFF6FF !important;
-    border-color: #93C5FD !important;
-    color: #2563EB !important;
-    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.12);
+    background: var(--accent, #8b5cf6) !important;
+    border-color: var(--accent, #8b5cf6) !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 12px rgba(var(--acct-purple-rgb, 139, 92, 246), 0.22);
   }
   .ps-vehicle-mode-btn--active-bike {
-    background: #FAF5FF !important;
-    border-color: #D8B4FE !important;
-    color: #7C3AED !important;
-    box-shadow: 0 2px 8px rgba(124, 58, 237, 0.12);
+    background: var(--accent, #8b5cf6) !important;
+    border-color: var(--accent, #8b5cf6) !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 12px rgba(var(--acct-purple-rgb, 139, 92, 246), 0.22);
   }
 
   /* Global Design System Light Theme Overrides */

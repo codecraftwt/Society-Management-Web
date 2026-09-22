@@ -501,8 +501,8 @@ function ResidentLayoutInner() {
         onClose={() => setShowSOS(false)}
         onRefresh={loadEmergencies}
         alerts={alerts}
-        senderLabel="Resident"
-        modalTitle="🚨 Resident Emergency SOS"
+        senderLabel="sosSenderResident"
+        modalTitle="sosResidentSOSTitle"
       />
     </div>
   );

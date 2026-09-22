@@ -340,9 +340,9 @@ function SuperAdminLayoutInner() {
           withAlerts={false}
           societies={societies}
           defaultSocietyId={selectedSocietyId !== "ALL" ? String(selectedSocietyId) : ""}
-          senderLabel="SOS"
-          modalTitle="🚨 Super Admin SOS — Broadcast to a Society"
-          successMessage="🚨 SOS alert sent to the selected society!"
+          senderLabel="sosSenderSOS"
+          modalTitle="sosSuperAdminSOSTitle"
+          successMessage="sosSuperAdminSuccess"
         />
     </div>
   );

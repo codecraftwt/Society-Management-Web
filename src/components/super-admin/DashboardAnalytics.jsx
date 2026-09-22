@@ -26,17 +26,17 @@ import API from "../../services/api";
 
 // ── Colour palettes ──────────────────────────────────────────────────────────
 const DARK_PALETTE = {
-  text: "#CBD5E1",
+  text: "#E2E8F0",
   textMuted: "#94A3B8",
   grid: "rgba(255,255,255,0.06)",
   tooltip: "#1E293B",
   tooltipBorder: "rgba(255,255,255,0.08)",
-  blue: "#60A5FA",
-  green: "#22C55E",
-  amber: "#3B82F6",
-  violet: "#8B5CF6",
-  sky: "#38BDF8",
+  gold: "#FBBF24",
+  emerald: "#34D399",
   rose: "#F472B6",
+  sky: "#38BDF8",
+  lavender: "#A78BFA",
+  coral: "#FB7185",
 };
 const LIGHT_PALETTE = {
   text: "#374151",
@@ -44,16 +44,16 @@ const LIGHT_PALETTE = {
   grid: "rgba(0,0,0,0.06)",
   tooltip: "#FFFFFF",
   tooltipBorder: "#E5E7EB",
-  blue: "#2563EB",
-  green: "#16A34A",
-  amber: "#2563EB",
-  violet: "#7C3AED",
-  sky: "#0284C7",
+  gold: "#D97706",
+  emerald: "#059669",
   rose: "#DB2777",
+  sky: "#0284C7",
+  lavender: "#7C3AED",
+  coral: "#E11D48",
 };
 
-const DONUT_COLORS_DARK = ["#60A5FA", "#8B5CF6", "#3B82F6", "#22C55E", "#F472B6", "#38BDF8"];
-const DONUT_COLORS_LIGHT = ["#2563EB", "#7C3AED", "#2563EB", "#16A34A", "#DB2777", "#0284C7"];
+const DONUT_COLORS_DARK = ["#FBBF24", "#38BDF8", "#A78BFA", "#34D399", "#F472B6", "#FB7185"];
+const DONUT_COLORS_LIGHT = ["#D97706", "#0284C7", "#7C3AED", "#059669", "#DB2777", "#E11D48"];
 
 // ── Tooltip style ────────────────────────────────────────────────────────────
 function buildTooltipStyle(p) {
@@ -180,9 +180,9 @@ export default function DashboardAnalytics({ societies, loading, onDataLoaded })
       .sort((a, b) => b.residents - a.residents || a.name.localeCompare(b.name));
 
     const compositionData = [
-      { name: "Owners", value: totalOwners, color: p.blue },
-      { name: "Tenants", value: totalTenants, color: p.violet },
-      ...(totalOther > 0 ? [{ name: "Unclassified", value: totalOther, color: p.amber }] : []),
+      { name: "Owners", value: totalOwners, color: p.gold },
+      { name: "Tenants", value: totalTenants, color: p.rose },
+      ...(totalOther > 0 ? [{ name: "Unclassified", value: totalOther, color: p.sky }] : []),
     ];
 
     const totalAssigned = (societies || []).filter((s) => !!s.societyAdmins).length;
@@ -218,7 +218,7 @@ export default function DashboardAnalytics({ societies, loading, onDataLoaded })
       totalAssigned,
       totalUnassigned,
     };
-  }, [societies, residents, p.blue, p.violet, p.amber]);
+  }, [societies, residents, p.gold, p.rose, p.sky]);
 
   // Report live totals to parent KPI cards
   useEffect(() => {
@@ -277,8 +277,8 @@ export default function DashboardAnalytics({ societies, loading, onDataLoaded })
               <XAxis dataKey="name" tick={{ fill: p.textMuted, fontSize: 10 }} tickFormatter={shortName}
                 axisLine={false} tickLine={false} interval={0} angle={-18} textAnchor="end" height={52} />
               <YAxis tick={{ fill: p.textMuted, fontSize: 11 }} axisLine={false} tickLine={false} allowDecimals={false} />
-              <Tooltip contentStyle={ttStyle} cursor={{ fill: "rgba(96,165,250,0.08)" }} />
-              <Bar dataKey="residents" name="Residents" fill={p.blue} radius={[6, 6, 0, 0]} maxBarSize={46}>
+              <Tooltip contentStyle={ttStyle} cursor={{ fill: "rgba(251,191,36,0.10)" }} />
+              <Bar dataKey="residents" name="Residents" fill={p.gold} radius={[6, 6, 0, 0]} maxBarSize={46}>
                 <LabelList dataKey="residents" position="top" style={{ fill: p.text, fontSize: 10, fontWeight: 700 }} />
               </Bar>
             </BarChart>
@@ -333,10 +333,10 @@ export default function DashboardAnalytics({ societies, loading, onDataLoaded })
               <XAxis dataKey="name" tick={{ fill: p.textMuted, fontSize: 10 }} tickFormatter={shortName}
                 axisLine={false} tickLine={false} interval={0} angle={-18} textAnchor="end" height={52} />
               <YAxis tick={{ fill: p.textMuted, fontSize: 11 }} axisLine={false} tickLine={false} allowDecimals={false} />
-              <Tooltip contentStyle={ttStyle} cursor={{ fill: "rgba(139,92,246,0.08)" }} />
+              <Tooltip contentStyle={ttStyle} cursor={{ fill: "rgba(244,114,182,0.10)" }} />
               <Legend wrapperStyle={{ color: p.text, fontSize: 12 }} />
-              <Bar dataKey="owners" name="Owners" stackId="a" fill={p.blue} maxBarSize={44} />
-              <Bar dataKey="tenants" name="Tenants" stackId="a" fill={p.violet} radius={[6, 6, 0, 0]} maxBarSize={44} />
+              <Bar dataKey="owners" name="Owners" stackId="a" fill={p.sky} maxBarSize={44} />
+              <Bar dataKey="tenants" name="Tenants" stackId="a" fill={p.rose} radius={[6, 6, 0, 0]} maxBarSize={44} />
             </BarChart>
           </ResponsiveContainer>
         ) : <NoData message="No resident data yet." />}
@@ -382,8 +382,8 @@ export default function DashboardAnalytics({ societies, loading, onDataLoaded })
               <CartesianGrid stroke={p.grid} strokeDasharray="3 3" horizontal={false} />
               <XAxis type="number" tick={{ fill: p.textMuted, fontSize: 11 }} axisLine={false} tickLine={false} allowDecimals={false} />
               <YAxis type="category" dataKey="name" tick={{ fill: p.textMuted, fontSize: 11 }} axisLine={false} tickLine={false} width={86} />
-              <Tooltip contentStyle={ttStyle} cursor={{ fill: "rgba(139,92,246,0.08)" }} />
-              <Bar dataKey="Residents" name="Residents" fill={p.violet} radius={[0, 6, 6, 0]} maxBarSize={22} />
+              <Tooltip contentStyle={ttStyle} cursor={{ fill: "rgba(52,211,153,0.10)" }} />
+              <Bar dataKey="Residents" name="Residents" fill={p.emerald} radius={[0, 6, 6, 0]} maxBarSize={22} />
             </BarChart>
           </ResponsiveContainer>
         ) : <NoData message="No resident data yet." />}
@@ -406,7 +406,7 @@ export default function DashboardAnalytics({ societies, loading, onDataLoaded })
                     className="sa-top-bar-fill"
                     style={{
                       width: `${topFive[0].residents ? Math.round((s.residents / topFive[0].residents) * 100) : 0}%`,
-                      background: [p.blue, p.violet, p.green, p.amber, p.sky][i],
+                      background: [p.gold, p.rose, p.emerald, p.sky, p.lavender][i],
                     }}
                   />
                 </div>

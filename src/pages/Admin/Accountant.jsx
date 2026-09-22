@@ -7,7 +7,7 @@ import {
   MdCheck, MdAccountBalance,
   MdApartment, MdHome, MdPersonAdd,
   MdCheckCircle, MdBlock, MdInfoOutline,
-  MdArrowForward
+  MdArrowForward, MdVisibility, MdVisibilityOff
 } from "react-icons/md";
 import Select from "../../components/common/Select";
 import GlobalButton from "../../components/common/GlobalButton";
@@ -94,6 +94,11 @@ export default function Accountant() {
   const { user } = useContext(AuthContext);
   const { showUnauthorized } = useCustomAlert();
 
+  const acctSelectedLabel = (name) => (t("acctSelected", { name }) || `Selected: ${name}`);
+  const acctEmailLabel = (email) => (t("acctEmailOnly", { email }) || `Email: ${email}`);
+  const acctPhoneLabel = (phone) => (t("acctPhoneOnly", { phone }) || `Phone: +91 ${phone} | `);
+  const acctFlatLabel = (flat, block) => (t("acctAssignedFlat", { flat, block }) || `Assigned Flat: ${flat}${block ? ` (${block})` : ""}`);
+
   const activeRole = user?.activeRole ?? user?.role;
   const isSuperAdmin = activeRole === "SUPER_ADMIN";
   const isCommittee = isCommitteeMember(user);
@@ -126,6 +131,7 @@ export default function Accountant() {
   const [editTarget, setEditTarget] = useState(null);
   const [phoneError, setPhoneError] = useState("");
   const [submitLoading, setSubmitLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   // Status toggle confirm dialog state (Disable / Activate)
   const [statusConfirm, setStatusConfirm] = useState({
@@ -210,7 +216,7 @@ export default function Accountant() {
 
   const handleOpenOriginModal = () => {
     if (!hasPermission(user, "accountant", "create") && !hasPermission(user, "accountant", "appoint")) {
-      showUnauthorized("You do not have permission to add or appoint an accountant.");
+      showUnauthorized(t("acctUnauthAdd") || "You do not have permission to add or appoint an accountant.");
       return;
     }
     const defaultSocId = (isSuperAdmin ? (filterSocietyId === "ALL" ? "" : filterSocietyId) : (user?.society_id || ""));
@@ -227,7 +233,7 @@ export default function Accountant() {
     setShowOriginModal(false);
     if (type === "society") {
       if (!hasPermission(user, "accountant", "appoint")) {
-        showUnauthorized("You do not have permission to appoint a resident as accountant.");
+        showUnauthorized(t("acctUnauthAppoint") || "You do not have permission to appoint a resident as accountant.");
         return;
       }
       const defaultSocId = residentSocietyId || (isSuperAdmin ? (filterSocietyId === "ALL" ? "" : filterSocietyId) : (user?.society_id || ""));
@@ -236,7 +242,7 @@ export default function Accountant() {
       setShowResidentModal(true);
     } else {
       if (!hasPermission(user, "accountant", "create")) {
-        showUnauthorized("You do not have permission to create an external accountant.");
+        showUnauthorized(t("acctUnauthCreateExt") || "You do not have permission to create an external accountant.");
         return;
       }
       setShowExternalModal(true);
@@ -247,17 +253,17 @@ export default function Accountant() {
   const handleAppointResident = async (e) => {
     if (e) e.preventDefault();
     if (!hasPermission(user, "accountant", "appoint")) {
-      showUnauthorized("You do not have permission to appoint a resident as accountant.");
+      showUnauthorized(t("acctUnauthAppoint") || "You do not have permission to appoint a resident as accountant.");
       return;
     }
     if (!selectedResidentId) {
-      toast.error("Please select a resident to appoint");
+      toast.error(t("acctToastSelectResident") || "Please select a resident to appoint");
       return;
     }
 
     const targetSocId = isSuperAdmin ? residentSocietyId : user?.society_id;
     if (!targetSocId) {
-      toast.error("Please select a society");
+      toast.error(t("acctToastSelectSociety") || "Please select a society");
       return;
     }
 
@@ -268,12 +274,12 @@ export default function Accountant() {
         society_id: targetSocId,
       });
 
-      toast.success("Resident appointed as Accountant successfully!");
+      toast.success(t("acctToastAppointed") || "Resident appointed as Accountant successfully!");
       setShowResidentModal(false);
       setSelectedResidentId("");
       fetchAccountants();
     } catch (err) {
-      toast.error(err.response?.data?.message || "Failed to appoint resident as accountant");
+      toast.error(err.response?.data?.message || (t("acctToastAppointFail") || "Failed to appoint resident as accountant"));
     } finally {
       setSubmitLoading(false);
     }
@@ -283,7 +289,7 @@ export default function Accountant() {
   const handleCreateExternal = async (e) => {
     if (e) e.preventDefault();
     if (!hasPermission(user, "accountant", "create")) {
-      showUnauthorized("You do not have permission to create an external accountant.");
+      showUnauthorized(t("acctUnauthCreateExt") || "You do not have permission to create an external accountant.");
       return;
     }
     if (!formData.name || !formData.email || !formData.password) return;
@@ -299,7 +305,7 @@ export default function Accountant() {
 
     const targetSocId = isSuperAdmin ? formData.society_id : user?.society_id;
     if (isSuperAdmin && !targetSocId) {
-      toast.error("Please select a society");
+      toast.error(t("acctToastSelectSociety") || "Please select a society");
       return;
     }
 
@@ -313,13 +319,13 @@ export default function Accountant() {
         society_id: targetSocId,
       });
 
-      toast.success("External accountant created successfully!");
+      toast.success(t("acctToastCreated") || "External accountant created successfully!");
       setShowExternalModal(false);
       setFormData({ name: "", email: "", password: "Admin@123", phone: "", society_id: "" });
       setPhoneError("");
       fetchAccountants();
     } catch (err) {
-      toast.error(err.response?.data?.message || "Failed to create accountant");
+      toast.error(err.response?.data?.message || (t("acctToastCreateFail") || "Failed to create accountant"));
     } finally {
       setSubmitLoading(false);
     }
@@ -329,7 +335,7 @@ export default function Accountant() {
   const handleUpdate = async (e) => {
     if (e) e.preventDefault();
     if (!hasPermission(user, "accountant", "edit")) {
-      showUnauthorized("You do not have permission to edit accountant details.");
+      showUnauthorized(t("acctUnauthEdit") || "You do not have permission to edit accountant details.");
       return;
     }
     const nameErr = getTitleError(formData.name, "Name");
@@ -347,12 +353,12 @@ export default function Accountant() {
         phone: formData.phone.trim() || undefined,
       });
 
-      toast.success("Accountant details updated successfully!");
+      toast.success(t("acctToastUpdated") || "Accountant details updated successfully!");
       setShowEditModal(false);
       setPhoneError("");
       fetchAccountants();
     } catch (err) {
-      toast.error(err.response?.data?.message || "Failed to update accountant");
+      toast.error(err.response?.data?.message || (t("acctToastUpdateFail") || "Failed to update accountant"));
     } finally {
       setSubmitLoading(false);
     }
@@ -360,7 +366,7 @@ export default function Accountant() {
 
   const openEditModal = (acc) => {
     if (!hasPermission(user, "accountant", "edit")) {
-      showUnauthorized("You do not have permission to edit accountant details.");
+      showUnauthorized(t("acctUnauthEdit") || "You do not have permission to edit accountant details.");
       return;
     }
     setEditTarget(acc);
@@ -377,7 +383,7 @@ export default function Accountant() {
 
   const openStatusConfirm = (item, action) => {
     if (!hasPermission(user, "accountant", "toggle_status")) {
-      showUnauthorized("You do not have permission to modify accountant status.");
+      showUnauthorized(t("acctUnauthStatus") || "You do not have permission to modify accountant status.");
       return;
     }
     setStatusConfirm({ isOpen: true, item, action, loading: false });
@@ -386,7 +392,7 @@ export default function Accountant() {
   // Status Toggle (Disable / Make Inactive / Activate) Handler
   const handleToggleStatusConfirm = async () => {
     if (!hasPermission(user, "accountant", "toggle_status")) {
-      showUnauthorized("You do not have permission to modify accountant status.");
+      showUnauthorized(t("acctUnauthStatus") || "You do not have permission to modify accountant status.");
       return;
     }
     const target = statusConfirm.item;
@@ -399,13 +405,13 @@ export default function Accountant() {
       await API.patch(`/accountant/${targetId}/status`, { status: nextStatus });
       toast.success(
         nextStatus === "INACTIVE"
-          ? "Accountant has been made inactive."
-          : "Accountant activated successfully!"
+          ? (t("acctToastInactivated") || "Accountant has been made inactive.")
+          : (t("acctToastActivated") || "Accountant activated successfully!")
       );
       setStatusConfirm({ isOpen: false, item: null, action: "deactivate", loading: false });
       fetchAccountants();
     } catch (err) {
-      toast.error(err.response?.data?.message || "Failed to update accountant status");
+      toast.error(err.response?.data?.message || (t("acctToastStatusFail") || "Failed to update accountant status"));
       setStatusConfirm(p => ({ ...p, loading: false }));
     }
   };
@@ -421,7 +427,7 @@ export default function Accountant() {
     },
     {
       key: "name",
-      header: "Accountant",
+      header: t("acctColAccountant") || "Accountant",
       render: (acc) => (
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <div style={{
@@ -446,7 +452,7 @@ export default function Accountant() {
     },
     ...(isSuperAdmin && (!filterSocietyId || filterSocietyId === "ALL") ? [{
       key: "society",
-      header: "Society",
+      header: t("acctColSociety") || "Society",
       render: (acc) => (
         <div style={{ display: "flex", alignItems: "center", gap: 6, color: "var(--text-secondary)", fontSize: "0.85rem" }}>
           <MdApartment size={15} style={{ color: "var(--accent)" }} />
@@ -456,7 +462,7 @@ export default function Accountant() {
     }] : []),
     {
       key: "contact",
-      header: "Contact",
+      header: t("acctColContact") || "Contact",
       render: (acc) => (
         <span style={{ color: "var(--text-secondary)", fontSize: "0.85rem" }}>
           {acc.phone ? `+91 ${acc.phone}` : "—"}
@@ -465,7 +471,7 @@ export default function Accountant() {
     },
     {
       key: "from_society",
-      header: "From Society",
+      header: t("acctColFromSociety") || "From Society",
       render: (acc) => (
         acc.from_society ? (
           <span style={{
@@ -474,7 +480,7 @@ export default function Accountant() {
             borderRadius: 999, background: "rgba(59,130,246,0.12)",
             color: "#60a5fa", border: "1px solid rgba(59,130,246,0.28)",
           }}>
-            <MdHome size={13} /> Yes (Resident)
+            <MdHome size={13} /> {t("acctYesResident") || "Yes (Resident)"}
           </span>
         ) : (
           <span style={{
@@ -483,14 +489,14 @@ export default function Accountant() {
             borderRadius: 999, background: "rgba(148,163,184,0.12)",
             color: "var(--text-secondary)", border: "1px solid var(--glass-border)",
           }}>
-            No (External)
+            {t("acctNoExternal") || "No (External)"}
           </span>
         )
       ),
     },
     {
       key: "start_date",
-      header: "Working Since",
+      header: t("acctColWorkingSince") || "Working Since",
       render: (acc) => (
         <span style={{ color: "var(--text-primary)", fontSize: "0.83rem", fontWeight: 500 }}>
           {formatDate(acc.start_date)}
@@ -499,7 +505,7 @@ export default function Accountant() {
     },
     {
       key: "inactive_date",
-      header: "Inactive Since",
+      header: t("acctColInactiveSince") || "Inactive Since",
       render: (acc) => (
         <span style={{ color: acc.inactive_date ? "#f87171" : "var(--text-secondary)", fontSize: "0.83rem", fontWeight: 500 }}>
           {acc.status === "INACTIVE" || acc.inactive_date ? formatDate(acc.inactive_date) : "—"}
@@ -508,18 +514,18 @@ export default function Accountant() {
     },
     {
       key: "status",
-      header: "Status",
+      header: t("acctColStatus") || "Status",
       render: (acc) => (
         acc.status === "ACTIVE" ? (
-          <GlobalBadge variant="success" dot>Active</GlobalBadge>
+          <GlobalBadge variant="success" dot>{t("acctActive") || "Active"}</GlobalBadge>
         ) : (
-          <GlobalBadge variant="danger" dot>Inactive</GlobalBadge>
+          <GlobalBadge variant="danger" dot>{t("acctInactive") || "Inactive"}</GlobalBadge>
         )
       ),
     },
     ...((hasPermission(user, "accountant", "edit") || hasPermission(user, "accountant", "toggle_status")) ? [{
       key: "actions",
-      header: "Actions",
+      header: t("acctColActions") || "Actions",
       align: "right",
       render: (acc) => (
         <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, alignItems: "center" }}>
@@ -553,10 +559,10 @@ export default function Accountant() {
                   gap: 5,
                   cursor: "pointer",
                 }}
-                title="Make accountant inactive"
+                title={t("acctDisableTitle") || "Make accountant inactive"}
               >
                 <MdBlock size={14} />
-                <span>Disable</span>
+                <span>{t("acctDisable") || "Disable"}</span>
               </button>
             ) : (
               <button
@@ -576,10 +582,10 @@ export default function Accountant() {
                   gap: 5,
                   cursor: "pointer",
                 }}
-                title="Re-activate accountant"
+                title={t("acctActivateTitle") || "Re-activate accountant"}
               >
                 <MdCheckCircle size={14} />
-                <span>Activate</span>
+                <span>{t("acctActivate") || "Activate"}</span>
               </button>
             )
           )}
@@ -643,7 +649,7 @@ export default function Accountant() {
         columns={tableColumns}
         data={accountants}
         loading={loading}
-        emptyMessage="No accountants registered in this society."
+        emptyMessage={t("acctEmpty") || "No accountants registered in this society."}
         emptyIcon={MdPerson}
         emptyAction={
           (hasPermission(user, "accountant", "create") || hasPermission(user, "accountant", "appoint")) ? (
@@ -663,15 +669,15 @@ export default function Accountant() {
       <GlobalModal
         isOpen={showOriginModal}
         onClose={() => setShowOriginModal(false)}
-        title="Add Accountant"
-        subtitle="Choose accountant origin"
+        title={t("acctOriginTitle") || "Add Accountant"}
+        subtitle={t("acctOriginSubtitle") || "Choose accountant origin"}
         icon={MdPersonAdd}
         size="md"
         showFooter={false}
       >
         <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
           <p style={{ fontSize: 13, color: "var(--text-secondary)", margin: "0 0 4px", lineHeight: 1.5 }}>
-            Select how you would like to appoint or register this accountant:
+            {t("acctOriginIntro") || "Select how you would like to appoint or register this accountant:"}
           </p>
 
           <div
@@ -699,10 +705,10 @@ export default function Accountant() {
               </div>
               <div>
                 <p style={{ margin: 0, fontSize: 15, fontWeight: 700, color: "var(--text-primary)" }}>
-                  From Society (Resident)
+                  {t("acctOriginFromSociety") || "From Society (Resident)"}
                 </p>
                 <p style={{ margin: "3px 0 0", fontSize: 12, color: "var(--text-secondary)", lineHeight: 1.4 }}>
-                  Appoint an existing society resident. They will gain Accountant access while retaining resident features.
+                  {t("acctOriginFromSocietyDesc") || "Appoint an existing society resident. They will gain Accountant access while retaining resident features."}
                 </p>
               </div>
             </div>
@@ -734,10 +740,10 @@ export default function Accountant() {
               </div>
               <div>
                 <p style={{ margin: 0, fontSize: 15, fontWeight: 700, color: "var(--text-primary)" }}>
-                  Outside of Society
+                  {t("acctOriginExternal") || "Outside of Society"}
                 </p>
                 <p style={{ margin: "3px 0 0", fontSize: 12, color: "var(--text-secondary)", lineHeight: 1.4 }}>
-                  Create a new external accountant account with email and password credentials.
+                  {t("acctOriginExternalDesc") || "Create a new external accountant account with email and password credentials."}
                 </p>
               </div>
             </div>
@@ -753,12 +759,12 @@ export default function Accountant() {
           setShowResidentModal(false);
           setSelectedResidentId("");
         }}
-        title="Appoint Resident as Accountant"
-        subtitle="Select an eligible resident to appoint"
+        title={t("acctAppointTitle") || "Appoint Resident as Accountant"}
+        subtitle={t("acctAppointSubtitle") || "Select an eligible resident to appoint"}
         icon={MdHome}
         size="md"
         showFooter
-        submitLabel="Appoint as Accountant"
+        submitLabel={t("acctAppointSubmit") || "Appoint as Accountant"}
         cancelLabel={t("cancel") || "Cancel"}
         onSubmit={handleAppointResident}
         submitLoading={submitLoading}
@@ -768,7 +774,7 @@ export default function Accountant() {
         <form onSubmit={handleAppointResident} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
           {isSuperAdmin && (
             <div>
-              <SectionLabel>Society</SectionLabel>
+              <SectionLabel>{t("acctSocietyLabel") || "Society"}</SectionLabel>
               <Select
                 className="input"
                 value={residentSocietyId}
@@ -781,7 +787,7 @@ export default function Accountant() {
                   else setEligibleResidents([]);
                 }}
               >
-                <option value="">Select Society</option>
+                <option value="">{t("selectSociety") || "Select Society"}</option>
                 {societiesList.map(s => (
                   <option key={s.id} value={s.id}>{s.name}</option>
                 ))}
@@ -790,7 +796,7 @@ export default function Accountant() {
           )}
 
           <div>
-            <SectionLabel>Select Resident</SectionLabel>
+            <SectionLabel>{t("acctSelectResident") || "Select Resident"}</SectionLabel>
             {loadingEligible ? (
               <p style={{ fontSize: 12, color: "var(--text-secondary)", padding: 8 }}>{t("acctEligibleLoading")}</p>
             ) : isSuperAdmin && !residentSocietyId ? (
@@ -799,7 +805,7 @@ export default function Accountant() {
                 background: "rgba(59,130,246,0.10)", border: "1px solid rgba(59,130,246,0.25)",
                 color: "#60a5fa", fontSize: 12, lineHeight: 1.5,
               }}>
-                Please select a society above to view its eligible residents.
+                {t("acctSelectSocietyFirst") || "Please select a society above to view its eligible residents."}
               </div>
             ) : eligibleResidents.length === 0 ? (
               <div style={{
@@ -807,7 +813,7 @@ export default function Accountant() {
                 background: "rgba(234,179,8,0.10)", border: "1px solid rgba(234,179,8,0.25)",
                 color: "#eab308", fontSize: 12, lineHeight: 1.5,
               }}>
-                No eligible residents found in this society. (Residents who are already Committee Members, Admins, or Accountants are excluded).
+                {t("acctNoEligible") || "No eligible residents found in this society. (Residents who are already Committee Members, Admins, or Accountants are excluded)."}
               </div>
             ) : (
               <Select
@@ -816,10 +822,10 @@ export default function Accountant() {
                 required
                 onChange={(e) => setSelectedResidentId(e.target.value)}
               >
-                <option value="">Choose resident to appoint…</option>
+                <option value="">{t("acctChooseResident") || "Choose resident to appoint…"}</option>
                 {eligibleResidents.map(r => (
                   <option key={r.id} value={r.id}>
-                    {r.name} {r.flat_number ? `(Unit ${r.flat_number}${r.block_name ? ` - ${r.block_name}` : ''})` : ''} — {r.email}
+                    {r.name} {r.flat_number ? `(${t("mpUnit") || "Unit"} ${r.flat_number}${r.block_name ? ` - ${r.block_name}` : ''})` : ''} — {r.email}
                   </option>
                 ))}
               </Select>
@@ -834,14 +840,15 @@ export default function Accountant() {
               display: "flex", flexDirection: "column", gap: 6,
             }}>
               <p style={{ fontSize: 12, fontWeight: 700, color: "var(--text-primary)", margin: 0 }}>
-                Selected: {selectedResidentObj.name}
+                {acctSelectedLabel(selectedResidentObj.name)}
               </p>
               <p style={{ fontSize: 11, color: "var(--text-secondary)", margin: 0 }}>
-                Email: {selectedResidentObj.email} {selectedResidentObj.phone ? `| Phone: +91 ${selectedResidentObj.phone}` : ''}
+                {acctEmailLabel(selectedResidentObj.email)}
+                {selectedResidentObj.phone ? acctPhoneLabel(selectedResidentObj.phone) : ""}
               </p>
               {selectedResidentObj.flat_number && (
                 <p style={{ fontSize: 11, color: "#60a5fa", margin: 0, fontWeight: 600 }}>
-                  Assigned Flat: {selectedResidentObj.flat_number} {selectedResidentObj.block_name ? `(${selectedResidentObj.block_name})` : ''}
+                  {acctFlatLabel(selectedResidentObj.flat_number, selectedResidentObj.block_name)}
                 </p>
               )}
             </div>
@@ -854,7 +861,7 @@ export default function Accountant() {
           }}>
             <MdInfoOutline size={18} style={{ color: "var(--accent)", flexShrink: 0, marginTop: 1 }} />
             <p style={{ fontSize: 12, color: "var(--text-secondary)", margin: 0, lineHeight: 1.5 }}>
-              A resident can only be an <strong>Accountant</strong> or <strong>Committee Member</strong>, not both. They will be able to choose between the Resident Panel and Accountant Panel upon login.
+              {t("acctInfoOnlyAn") || "A resident can only be an"} <strong>{t("acctRole") || "Accountant"}</strong> {t("acctInfoOr") || "or"} <strong>{t("roleCommittee") || "Committee Member"}</strong>{t("acctInfoNotBoth") || ", not both. They will be able to choose between the Resident Panel and Accountant Panel upon login."}
             </p>
           </div>
         </form>
@@ -867,12 +874,12 @@ export default function Accountant() {
           setShowExternalModal(false);
           setPhoneError("");
         }}
-        title="Create External Accountant"
-        subtitle="Accountant credentials and assignment"
+        title={t("acctExternalTitle") || "Create External Accountant"}
+        subtitle={t("acctExternalSubtitle") || "Accountant credentials and assignment"}
         icon={MdPersonAdd}
         size="md"
         showFooter
-        submitLabel="Create Accountant"
+        submitLabel={t("acctExternalSubmit") || "Create Accountant"}
         cancelLabel={t("cancel") || "Cancel"}
         onSubmit={handleCreateExternal}
         submitLoading={submitLoading}
@@ -882,14 +889,14 @@ export default function Accountant() {
         <form onSubmit={handleCreateExternal} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
           {isSuperAdmin && (
             <div>
-              <SectionLabel>Society</SectionLabel>
+              <SectionLabel>{t("acctSocietyLabel") || "Society"}</SectionLabel>
               <Select
                 className="input"
                 value={formData.society_id}
                 required
                 onChange={(e) => setFormData({ ...formData, society_id: e.target.value })}
               >
-                <option value="">Select Society</option>
+                <option value="">{t("selectSociety") || "Select Society"}</option>
                 {societiesList.map(s => (
                   <option key={s.id} value={s.id}>{s.name}</option>
                 ))}
@@ -940,16 +947,32 @@ export default function Accountant() {
 
           <div>
             <SectionLabel>{t("acctPassword") || "Initial Password"}</SectionLabel>
-            <input
-              className="input"
-              type="password"
-              placeholder={t("acctPassword") || "Initial Password"}
-              value={formData.password}
-              required
-              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-            />
+            <div style={{ position: "relative" }}>
+              <input
+                className="input"
+                type={showPassword ? "text" : "password"}
+                placeholder={t("acctPassword") || "Initial Password"}
+                value={formData.password}
+                required
+                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                style={{ paddingRight: 40, width: "100%" }}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(p => !p)}
+                aria-label={showPassword ? t("rcaHidePassword") : t("rcaShowPassword")}
+                title={showPassword ? t("rcaHidePassword") : t("rcaShowPassword")}
+                style={{
+                  position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)",
+                  background: "none", border: "none", cursor: "pointer",
+                  color: "var(--text-secondary)", display: "flex", alignItems: "center", padding: 0,
+                }}
+              >
+                {showPassword ? <MdVisibilityOff size={17} /> : <MdVisibility size={17} />}
+              </button>
+            </div>
             <p style={{ fontSize: 11, color: "var(--text-secondary)", marginTop: 4, opacity: 0.7 }}>
-              Default: Admin@123 (Accountant can change password after login)
+              {t("acctPasswordHint") || "Default: Admin@123 (Accountant can change password after login)"}
             </p>
           </div>
         </form>
@@ -962,8 +985,8 @@ export default function Accountant() {
           setShowEditModal(false);
           setPhoneError("");
         }}
-        title="Edit Accountant"
-        subtitle="Update accountant contact details"
+        title={t("acctEditTitle") || "Edit Accountant"}
+        subtitle={t("acctEditSubtitle") || "Update accountant contact details"}
         icon={MdEdit}
         size="md"
         showFooter
@@ -998,7 +1021,7 @@ export default function Accountant() {
               style={{ opacity: 0.5, cursor: "not-allowed" }}
             />
             <p style={{ fontSize: 11, color: "var(--text-secondary)", opacity: 0.6, marginTop: 4 }}>
-              Email address cannot be modified directly.
+              {t("acctEmailLockHint") || "Email address cannot be modified directly."}
             </p>
           </div>
 
@@ -1025,14 +1048,14 @@ export default function Accountant() {
         isOpen={statusConfirm.isOpen}
         onClose={() => setStatusConfirm({ isOpen: false, item: null, action: "deactivate", loading: false })}
         onConfirm={handleToggleStatusConfirm}
-        title={statusConfirm.action === "deactivate" ? "Make Accountant Inactive" : "Activate Accountant"}
+        title={statusConfirm.action === "deactivate" ? (t("acctConfirmDeactivateTitle") || "Make Accountant Inactive") : (t("acctConfirmActivateTitle") || "Activate Accountant")}
         message={
           statusConfirm.action === "deactivate"
-            ? `Are you sure you want to deactivate ${statusConfirm.item?.name || 'this accountant'}? If this person is a resident, their resident account will remain intact but accountant privileges will be suspended.`
-            : `Are you sure you want to reactivate ${statusConfirm.item?.name || 'this accountant'}? They will regain access to manage society finance.`
+            ? (t("acctConfirmDeactivateMsg", { name: statusConfirm.item?.name || 'this accountant' }) || `Are you sure you want to deactivate ${statusConfirm.item?.name || 'this accountant'}? If this person is a resident, their resident account will remain intact but accountant privileges will be suspended.`)
+            : (t("acctConfirmActivateMsg", { name: statusConfirm.item?.name || 'this accountant' }) || `Are you sure you want to reactivate ${statusConfirm.item?.name || 'this accountant'}? They will regain access to manage society finance.`)
         }
         variant={statusConfirm.action === "deactivate" ? "danger" : "info"}
-        confirmLabel={statusConfirm.action === "deactivate" ? "Yes, Make Inactive" : "Yes, Activate"}
+        confirmLabel={statusConfirm.action === "deactivate" ? (t("acctConfirmDeactivateBtn") || "Yes, Make Inactive") : (t("acctConfirmActivateBtn") || "Yes, Activate")}
         loading={statusConfirm.loading}
       />
     </div>

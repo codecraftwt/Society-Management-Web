@@ -2,6 +2,7 @@ import React from "react";
 import { MdOutlineInbox } from "react-icons/md";
 import GlobalButton from "./GlobalButton";
 import Pagination from "./Pagination";
+import { useLang } from "../../context/LanguageContext";
 
 /**
  * GlobalTable
@@ -49,6 +50,8 @@ export default function GlobalTable({
   className = "",
   style = {},
 }) {
+  const { t } = useLang();
+
   const getRowKey = (row, index) => {
     if (typeof rowKey === "function") return rowKey(row, index);
     return row[rowKey] ?? index;
@@ -289,11 +292,11 @@ export default function GlobalTable({
           >
             {totalItems != null ? (
               <span>
-                Showing <strong>{data.length}</strong> of <strong>{totalItems}</strong> entries
+                {t("tableShowingEntries", { shown: data.length, total: totalItems })}
               </span>
             ) : (
               <span>
-                Page <strong>{page}</strong> of <strong>{totalPages}</strong>
+                {t("tablePageOf", { page, total: totalPages })}
               </span>
             )}
           </div>
@@ -305,7 +308,7 @@ export default function GlobalTable({
               onPageChange={onPageChange}
               pageSize={pageSize}
               onPageSizeChange={onPageSizeChange}
-              style={{ marginTop: 0, width: "100%", flex: "1 1 240px" }}
+              style={{ marginTop: 0, width: "auto", flex: "1 1 320px", justifyContent: "flex-end" }}
             />
           )}
         </div>

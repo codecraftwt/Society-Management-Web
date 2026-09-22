@@ -858,9 +858,9 @@ export default function ResidentProfile() {
           isOpen={isSOSOpen}
           onClose={() => setIsSOSOpen(false)}
           onRefresh={() => loadDashboardData(true)}
-          senderLabel="Resident"
-          modalTitle="🚨 Resident Emergency SOS"
-          successMessage="🚨 Emergency SOS broadcasted successfully to security and society members!"
+          senderLabel="sosSenderResident"
+          modalTitle="sosResidentSOSTitle"
+          successMessage="sosResidentSuccess"
         />
       )}
     </div>

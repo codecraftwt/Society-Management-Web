@@ -5,6 +5,7 @@ import SlidingTabs from "../common/SlidingTabs";
 import Select from "../common/Select";
 import API from "../../services/api";
 import { toast } from "react-toastify";
+import { useLang } from "../../context/LanguageContext";
 import {
   MdWarning,
   MdLocalFireDepartment,
@@ -23,7 +24,7 @@ import {
 const EMERGENCY_TYPES = [
   {
     type: "SECURITY",
-    label: "Security / Intruder",
+    labelKey: "sosTypeSecurity",
     icon: MdSecurity,
     color: "var(--accent)",
     bg: "var(--accent-soft)",
@@ -33,7 +34,7 @@ const EMERGENCY_TYPES = [
   },
   {
     type: "FIRE",
-    label: "Fire Alert",
+    labelKey: "sosTypeFire",
     icon: MdLocalFireDepartment,
     color: "var(--reject-color)",
     bg: "var(--reject-bg)",
@@ -43,7 +44,7 @@ const EMERGENCY_TYPES = [
   },
   {
     type: "MEDICAL",
-    label: "Medical Emergency",
+    labelKey: "sosTypeMedical",
     icon: MdLocalHospital,
     color: "var(--acct-cyan)",
     bg: "rgba(var(--acct-cyan-rgb),0.16)",
@@ -53,7 +54,7 @@ const EMERGENCY_TYPES = [
   },
   {
     type: "LIFT_STUCK",
-    label: "Lift Stuck",
+    labelKey: "sosTypeLiftStuck",
     icon: MdWarning,
     // Use orange for Lift Stuck
     color: "#f97316",
@@ -64,7 +65,7 @@ const EMERGENCY_TYPES = [
   },
   {
     type: "ANIMAL",
-    label: "Animal Menace",
+    labelKey: "sosTypeAnimal",
     icon: MdHelp,
     color: "var(--approve-color)",
     bg: "var(--approve-bg)",
@@ -74,7 +75,7 @@ const EMERGENCY_TYPES = [
   },
   {
     type: "OTHER",
-    label: "Other Emergency",
+    labelKey: "sosTypeOther",
     icon: MdHelp,
     color: "var(--acct-violet)",
     bg: "rgba(var(--acct-violet-rgb),0.12)",
@@ -85,17 +86,17 @@ const EMERGENCY_TYPES = [
 ];
 
 const SOURCE_META = {
-  GUARD: "Security Guard",
-  RESIDENT: "Resident",
-  ADMIN: "Society Admin",
-  COMMITTEE: "Committee Member",
-  SUPER_ADMIN: "Super Admin",
+  GUARD: "sosSourceGuard",
+  RESIDENT: "sosSourceResident",
+  ADMIN: "sosSourceAdmin",
+  COMMITTEE: "sosSourceCommittee",
+  SUPER_ADMIN: "sosSourceSuperAdmin",
 };
 
-function sourceName(alert) {
-  if (alert.source === "RESIDENT") return alert.Resident?.name || "Resident";
-  if (alert.source === "GUARD") return alert.Guard?.name || "Security Guard";
-  return alert.Admin?.name || SOURCE_META[alert.source] || "Staff";
+function sourceName(alert, t) {
+  if (alert.source === "RESIDENT") return alert.Resident?.name || t("sosSourceResident");
+  if (alert.source === "GUARD") return alert.Guard?.name || t("sosSourceGuard");
+  return alert.Admin?.name || t(SOURCE_META[alert.source] || "sosSourceStaff");
 }
 
 const fieldLabel = {
@@ -130,10 +131,11 @@ export default function SOSModal({
   defaultSocietyId = "",
   requireSociety = false,
   withAlerts = true,
-  senderLabel = "SOS",
-  modalTitle = "Emergency SOS Center",
-  successMessage = "🚨 SOS Emergency broadcasted to the society!",
+  senderLabel = "sosSenderSOS",
+  modalTitle = "sosDefaultModalTitle",
+  successMessage = "sosDefaultSuccess",
 }) {
+  const { t } = useLang();
   const [activeTab, setActiveTab] = useState("RAISE");
   const [stage, setStage] = useState("FORM");
   const [selectedType, setSelectedType] = useState("SECURITY");
@@ -145,12 +147,12 @@ export default function SOSModal({
 
   const handleProceedToConfirm = () => {
     if (requireSociety && !selectedSocietyId) {
-      toast.error("Please select the society you want to broadcast the SOS to");
+      toast.error(t("sosSelectSocietyErr"));
       return;
     }
 
     if (selectedType === "OTHER" && !otherReason.trim()) {
-      toast.error("Please provide a reason for selecting Other.");
+      toast.error(t("sosProvideReasonErr"));
       return;
     }
 
@@ -160,11 +162,12 @@ export default function SOSModal({
   const handleConfirmSend = async () => {
     try {
       setLoading(true);
+      const typeLabel = t(EMERGENCY_TYPES.find((et) => et.type === selectedType)?.labelKey || "sosTypeOther");
       const finalMessage = description.trim()
         ? description.trim()
         : selectedType === "OTHER"
-        ? `Other Emergency: ${otherReason.trim()}`
-        : `Urgent ${selectedType} Emergency reported`;
+        ? t("sosOtherEmergencyMsg", { reason: otherReason.trim() })
+        : t("sosUrgentMsg", { type: typeLabel });
 
       const payload = {
         type: selectedType,
@@ -178,7 +181,7 @@ export default function SOSModal({
       if (requireSociety) payload.society_id = selectedSocietyId;
 
       await API.post("/emergency", payload);
-      toast.success(successMessage);
+      toast.success(t(successMessage));
       setDescription("");
       setOtherReason("");
       setStage("FORM");
@@ -186,7 +189,7 @@ export default function SOSModal({
       if (withAlerts) setActiveTab("ACTIVE");
     } catch (err) {
       console.error("Emergency send failed", err);
-      toast.error(err?.response?.data?.message || "Failed to broadcast emergency");
+      toast.error(err?.response?.data?.message || t("sosBroadcastFailed"));
     } finally {
       setLoading(false);
     }
@@ -196,11 +199,11 @@ export default function SOSModal({
     try {
       setResolvingId(alertId);
       await API.patch(`/emergency/${alertId}/resolve`);
-      toast.success("Emergency marked as resolved ✅");
+      toast.success(t("sosToastResolved"));
       if (onRefresh) onRefresh();
     } catch (err) {
       console.error("Resolve failed", err);
-      toast.error("Failed to resolve emergency");
+      toast.error(t("sosToastResolveFailed"));
     } finally {
       setResolvingId(null);
     }
@@ -208,15 +211,15 @@ export default function SOSModal({
 
   const currentTypeObj = EMERGENCY_TYPES.find((t) => t.type === selectedType) || EMERGENCY_TYPES[0];
   const TypeIcon = currentTypeObj.icon;
-  const title = String(modalTitle || "Society SOS Center").replace(/^🚨\s*/, "");
+  const title = String(t(modalTitle) || "Emergency SOS Center").replace(/^\u{1F6A8}\s*/u, "");
 
   const tabItems = [
-    { id: "RAISE", label: `Raise ${senderLabel}`, icon: <MdEmergency size={15} /> },
+    { id: "RAISE", label: t("sosRaiseTab", { sender: t(senderLabel) }), icon: <MdEmergency size={15} /> },
   ];
   if (withAlerts) {
     tabItems.push({
       id: "ACTIVE",
-      label: "Active Alerts",
+      label: t("sosActiveAlertsTab"),
       icon: <MdWarning size={15} />,
       alert: alerts.length,
     });
@@ -227,7 +230,7 @@ export default function SOSModal({
       isOpen={isOpen}
       onClose={onClose}
       title={title}
-      subtitle="Broadcast an emergency to security, admins, and residents"
+      subtitle={t("sosModalSubtitle")}
       icon={MdEmergency}
       size="lg"
       warnUnsavedChanges={false}
@@ -250,7 +253,7 @@ export default function SOSModal({
                 {requireSociety && (
                   <div>
                     <label style={fieldLabel}>
-                      Broadcast to Society <span style={{ color: "var(--danger, #ef4444)" }}>*</span>
+                      {t("sosSelectSocietyLabel")} <span style={{ color: "var(--danger, #ef4444)" }}>*</span>
                     </label>
                     <Select
                       value={selectedSocietyId}
@@ -259,7 +262,7 @@ export default function SOSModal({
                       style={{ height: 42, cursor: "pointer", fontSize: 13 }}
                     >
                       <option value="" disabled>
-                        -- Select target society --
+                        {t("sosSelectTargetSociety")}
                       </option>
                       {societies.map((soc) => (
                         <option key={soc.id} value={soc.id}>
@@ -272,21 +275,21 @@ export default function SOSModal({
 
                 <div>
                   <label style={fieldLabel}>
-                    Select Emergency Type <span style={{ color: "var(--danger, #ef4444)" }}>*</span>
+                    {t("sosSelectTypeLabel")} <span style={{ color: "var(--danger, #ef4444)" }}>*</span>
                   </label>
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                    {EMERGENCY_TYPES.map((t) => {
-                      const Icon = t.icon;
-                      const isSelected = selectedType === t.type;
+                    {EMERGENCY_TYPES.map((et) => {
+                      const Icon = et.icon;
+                      const isSelected = selectedType === et.type;
                       return (
                         <button
-                          key={t.type}
+                          key={et.type}
                           type="button"
-                          onClick={() => setSelectedType(t.type)}
-                        style={{
+                          onClick={() => setSelectedType(et.type)}
+                          style={{
                             // Use a solid token color when selected to match mobile solid palette.
-                            background: isSelected ? (t.color || "var(--accent)") : (t.bg || "var(--card-inner-bg)"),
-                            border: `1.5px solid ${isSelected ? (t.color || "var(--accent)") : "var(--glass-border)"}`,
+                            background: isSelected ? (et.color || "var(--accent)") : (et.bg || "var(--card-inner-bg)"),
+                            border: `1.5px solid ${isSelected ? (et.color || "var(--accent)") : "var(--glass-border)"}`,
                             borderRadius: 12,
                             padding: "12px 10px",
                             display: "flex",
@@ -298,7 +301,7 @@ export default function SOSModal({
                             transition: "border-color 0.15s ease, background 0.15s ease, color 0.15s ease",
                           }}
                         >
-                          <Icon size={22} style={{ color: isSelected ? "#fff" : (t.color || "var(--text-primary)") }} />
+                          <Icon size={22} style={{ color: isSelected ? "#fff" : (et.color || "var(--text-primary)") }} />
                           <span
                             style={{
                               fontSize: 12,
@@ -307,7 +310,7 @@ export default function SOSModal({
                               lineHeight: 1.25,
                             }}
                           >
-                            {t.label}
+                            {t(et.labelKey)}
                           </span>
                         </button>
                       );
@@ -318,11 +321,11 @@ export default function SOSModal({
                 {selectedType === "OTHER" && (
                   <div>
                     <label style={{ ...fieldLabel, color: "#ec4899" }}>
-                      Specify Reason for Other <span style={{ color: "var(--danger, #ef4444)" }}>*</span>
+                      {t("sosSpecifyOtherLabel")} <span style={{ color: "var(--danger, #ef4444)" }}>*</span>
                     </label>
                     <textarea
                       rows={3}
-                      placeholder="e.g. Gas cylinder leak, Water pipe burst, Stuck in terrace, Electrical short circuit..."
+                      placeholder={t("sosReasonExamples")}
                       value={otherReason}
                       onChange={(e) => setOtherReason(e.target.value)}
                       className="input w-full"
@@ -342,7 +345,7 @@ export default function SOSModal({
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10, gap: 8 }}>
                     <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 700, color: "var(--text-primary)", margin: 0 }}>
                       <MdLocationOn size={16} style={{ color: "var(--danger, #ef4444)" }} />
-                      Emergency Notes & Location Details
+                      {t("sosNotesLocationLabel")}
                     </label>
                     <span
                       style={{
@@ -357,13 +360,13 @@ export default function SOSModal({
                         border: "1px solid var(--glass-border)",
                       }}
                     >
-                      Optional
+                      {t("sosOptionalTag")}
                     </span>
                   </div>
                   <div style={{ position: "relative" }}>
                     <textarea
                       rows={5}
-                      placeholder="Provide additional details to help security and neighbors respond faster (e.g. Exact location, flat number, injured persons)..."
+                      placeholder={t("sosDescriptionPlaceholder")}
                       value={description}
                       onChange={(e) => setDescription(e.target.value)}
                       className="input w-full"
@@ -390,7 +393,7 @@ export default function SOSModal({
                           cursor: "pointer",
                         }}
                       >
-                        <MdClear size={12} /> Clear
+                        <MdClear size={12} /> {t("sosClearBtn")}
                       </button>
                     )}
                   </div>
@@ -405,7 +408,7 @@ export default function SOSModal({
                   fullWidth
                   borderDraw
                 >
-                  Review & Continue
+                  {t("sosReviewContinue")}
                 </GlobalButton>
               </div>
             ) : (
@@ -434,10 +437,10 @@ export default function SOSModal({
                     <TypeIcon size={26} color="#fff" />
                   </div>
                   <h3 style={{ fontSize: 16, fontWeight: 800, color: "var(--text-primary)", margin: 0, letterSpacing: "-0.02em" }}>
-                    Confirm Emergency SOS
+                    {t("sosConfirmTitle")}
                   </h3>
                   <p style={{ fontSize: 12, color: "var(--text-secondary)", margin: "6px 0 0", fontWeight: 500 }}>
-                    Are you sure you want to trigger this emergency alert?
+                    {t("sosConfirmMsg")}
                   </p>
 
                   <div
@@ -455,18 +458,18 @@ export default function SOSModal({
                     }}
                   >
                     <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
-                      <span style={{ color: "var(--text-secondary)", fontWeight: 600 }}>Emergency Type</span>
-                      <span style={{ color: "var(--text-primary)", fontWeight: 800 }}>{currentTypeObj.label}</span>
+                      <span style={{ color: "var(--text-secondary)", fontWeight: 600 }}>{t("sosEmergencyTypeLabel")}</span>
+                      <span style={{ color: "var(--text-primary)", fontWeight: 800 }}>{t(currentTypeObj.labelKey)}</span>
                     </div>
                     {selectedType === "OTHER" && otherReason && (
                       <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
-                        <span style={{ color: "var(--text-secondary)", fontWeight: 600 }}>Reason</span>
+                        <span style={{ color: "var(--text-secondary)", fontWeight: 600 }}>{t("sosReasonWord")}</span>
                         <span style={{ color: "#ec4899", fontWeight: 700 }}>{otherReason}</span>
                       </div>
                     )}
                     {description.trim() && (
                       <div>
-                        <span style={{ color: "var(--text-secondary)", fontWeight: 600, display: "block", marginBottom: 4 }}>Notes</span>
+                        <span style={{ color: "var(--text-secondary)", fontWeight: 600, display: "block", marginBottom: 4 }}>{t("sosNotesWord")}</span>
                         <p style={{ color: "var(--text-primary)", fontWeight: 500, fontStyle: "italic", margin: 0, lineHeight: 1.45 }}>
                           “{description.trim()}”
                         </p>
@@ -475,7 +478,7 @@ export default function SOSModal({
                   </div>
 
                   <p style={{ fontSize: 11, color: "#ef4444", fontWeight: 600, lineHeight: 1.45, margin: "12px 0 0" }}>
-                    This will instantly notify on-duty security, admins, and neighboring residents.
+                    {t("sosInstantNotify")}
                   </p>
                 </div>
 
@@ -487,7 +490,7 @@ export default function SOSModal({
                     onClick={() => setStage("FORM")}
                     disabled={loading}
                   >
-                    Back / Edit
+                    {t("sosBackEdit")}
                   </GlobalButton>
                   <GlobalButton
                     type="button"
@@ -499,7 +502,7 @@ export default function SOSModal({
                     borderDraw
                     style={{ flex: 1 }}
                   >
-                    {loading ? "Triggering SOS..." : "Confirm & Send SOS"}
+                    {loading ? t("sosTriggering") : t("sosConfirmSend")}
                   </GlobalButton>
                 </div>
               </div>
@@ -512,7 +515,7 @@ export default function SOSModal({
             {alerts.length === 0 ? (
               <div style={{ textAlign: "center", padding: "36px 12px", color: "var(--text-secondary)", fontSize: 13 }}>
                 <MdCheckCircle size={32} style={{ margin: "0 auto 8px", color: "var(--success, #10b981)", opacity: 0.85, display: "block" }} />
-                No active emergencies in the society.
+                {t("sosNoActiveEmergencies")}
               </div>
             ) : (
               alerts.map((alert) => (
@@ -542,14 +545,14 @@ export default function SOSModal({
                           color: "#fff",
                         }}
                       >
-                        {alert.type}
+                        {t(EMERGENCY_TYPES.find((et) => et.type === alert.type)?.labelKey || "sosTypeOther")}
                       </span>
                       <p style={{ fontSize: 13, fontWeight: 700, margin: "8px 0 0", color: "var(--text-primary)", lineHeight: 1.4 }}>
                         {alert.message}
                       </p>
                       {alert.other_reason && (
                         <p style={{ fontSize: 12, color: "#ec4899", fontWeight: 700, margin: "4px 0 0" }}>
-                          Reason: {alert.other_reason}
+                          {t("sosReason", { reason: alert.other_reason })}
                         </p>
                       )}
                     </div>
@@ -562,7 +565,7 @@ export default function SOSModal({
                       loading={resolvingId === alert.id}
                       disabled={resolvingId === alert.id}
                     >
-                      {resolvingId === alert.id ? "Resolving..." : "Mark Resolved"}
+                      {resolvingId === alert.id ? t("sosResolving") : t("sosMarkResolved")}
                     </GlobalButton>
                   </div>
                   <div
@@ -577,15 +580,15 @@ export default function SOSModal({
                     }}
                   >
                     <span>
-                      <strong style={{ color: "var(--text-primary)" }}>Raised By:</strong> {sourceName(alert)}
+                      <strong style={{ color: "var(--text-primary)" }}>{t("sosRaisedBy")}</strong> {sourceName(alert, t)}
                     </span>
                     {alert.source === "RESIDENT" && alert.Flat && (
                       <span>
-                        <strong style={{ color: "var(--text-primary)" }}>Flat:</strong> {alert.Flat?.Block?.name}-{alert.Flat?.flat_number}
+                        <strong style={{ color: "var(--text-primary)" }}>{t("sosFlatLabel")}</strong> {alert.Flat?.Block?.name}-{alert.Flat?.flat_number}
                       </span>
                     )}
                     <span>
-                      <strong style={{ color: "var(--text-primary)" }}>Time:</strong> {new Date(alert.created_at).toLocaleTimeString()}
+                      <strong style={{ color: "var(--text-primary)" }}>{t("sosTimeLabel")}</strong> {new Date(alert.created_at).toLocaleTimeString()}
                     </span>
                   </div>
                 </div>

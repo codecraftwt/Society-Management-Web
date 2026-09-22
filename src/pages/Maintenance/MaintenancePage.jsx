@@ -24,16 +24,46 @@ import "../Admin/Admin.css";
 
 /* ── helpers ── */
 const MAINTENANCE_TYPES = [
-  { value: "LUMPSUM", label: "Lumpsum", desc: "Fixed amount for all flats" },
-  { value: "FLAT", label: "By Flat Type (BHK)", desc: "Different amount per flat type" },
-  { value: "SQ_FEET", label: "Per Sq. Ft.", desc: "Amount × flat area" },
+  { value: "LUMPSUM" },
+  { value: "FLAT" },
+  { value: "SQ_FEET" },
 ];
 
 const FLAT_TYPES = ["1BHK", "2BHK", "3BHK", "ROW_HOUSE", "COMMERCIAL"];
 const RESIDENT_TYPES = ["OWNER", "TENANT"];
 const FREQUENCIES = ["MONTHLY", "QUARTERLY", "YEARLY", "ONE_TIME"];
-const FLAT_LABELS = { "1BHK": "1 BHK", "2BHK": "2 BHK", "3BHK": "3 BHK", ROW_HOUSE: "Row House", COMMERCIAL: "Commercial" };
 const MONTH_NAMES = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+const MONTH_KEYS = ["monthJan", "monthFeb", "monthMar", "monthApr", "monthMay", "monthJun", "monthJul", "monthAug", "monthSep", "monthOct", "monthNov", "monthDec"];
+
+const TYPE_LABEL_KEYS = {
+  LUMPSUM: "mntTypeLumpsum",
+  FLAT: "mntTypeFlat",
+  SQ_FEET: "mntTypeSqFt",
+};
+
+const TYPE_DESC_KEYS = {
+  LUMPSUM: "mntTypeLumpsumDesc",
+  FLAT: "mntTypeFlatDesc",
+  SQ_FEET: "mntTypeSqFtDesc",
+};
+
+const FLAT_LABEL_KEYS = {
+  "1BHK": "mntFlat1BHK",
+  "2BHK": "mntFlat2BHK",
+  "3BHK": "mntFlat3BHK",
+  ROW_HOUSE: "mntFlatRowHouse",
+  COMMERCIAL: "mntFlatCommercial",
+};
+
+const FREQUENCY_KEYS = {
+  MONTHLY: "mntFreqMonthly",
+  QUARTERLY: "mntFreqQuarterly",
+  YEARLY: "mntFreqYearly",
+  ONE_TIME: "mntFreqOneTime",
+};
+
+const tFlatLabel = (t, f) => (FLAT_LABEL_KEYS[f] ? t(FLAT_LABEL_KEYS[f]) : f);
+const tFrequency = (t, f) => (FREQUENCY_KEYS[f] ? t(FREQUENCY_KEYS[f]) : f);
 
 const currentMonthLabel = () => {
   const d = new Date();
@@ -78,19 +108,22 @@ const TYPE_META = {
    STATUS PILL
 ───────────────────────────────────────── */
 function StatusPill({ status }) {
+  const { t } = useLang();
   if (status === "PAID")
-    return <span className="inline-flex items-center gap-1 text-xs font-bold rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 px-2.5 py-1"><MdCheckCircle size={12} /> Paid</span>;
+    return <span className="inline-flex items-center gap-1 text-xs font-bold rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 px-2.5 py-1"><MdCheckCircle size={12} /> {t("mntStatusPaid")}</span>;
   if (status === "PENDING_VERIFICATION")
-    return <span className="inline-flex items-center gap-1 text-xs font-bold rounded-full bg-blue-500/15 text-blue-400 border border-blue-500/30 px-2.5 py-1"><MdSchedule size={12} /> Awaiting</span>;
-  return <span className="inline-flex items-center gap-1 text-xs font-bold rounded-full bg-amber-500/15 text-amber-400 border border-amber-500/30 px-2.5 py-1"><MdSchedule size={12} /> Pending</span>;
+    return <span className="inline-flex items-center gap-1 text-xs font-bold rounded-full bg-blue-500/15 text-blue-400 border border-blue-500/30 px-2.5 py-1"><MdSchedule size={12} /> {t("mntStatusAwaiting")}</span>;
+  return <span className="inline-flex items-center gap-1 text-xs font-bold rounded-full bg-amber-500/15 text-amber-400 border border-amber-500/30 px-2.5 py-1"><MdSchedule size={12} /> {t("mntStatusPending")}</span>;
 }
 
 function TypeChip({ type }) {
+  const { t } = useLang();
   const meta = TYPE_META[type] || { icon: MdTune, color: "text-gray-400" };
   const Icon = meta.icon;
+  const label = TYPE_LABEL_KEYS[type] ? t(TYPE_LABEL_KEYS[type]) : type;
   return (
     <span className={`inline-flex items-center gap-1 text-[11px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full border ${meta.bg} ${meta.color}`}>
-      <Icon size={11} /> {type}
+      <Icon size={11} /> {label}
     </span>
   );
 }
@@ -99,14 +132,15 @@ function TypeChip({ type }) {
    CONFIG CARD / ROW
 ───────────────────────────────────────── */
 function ConfigCard({ rate, deleting, onEdit, onDelete, last, canEdit = true }) {
+  const { t } = useLang();
   const Icon = TYPE_META[rate.maintenance_type]?.icon || MdTune;
   const color = TYPE_META[rate.maintenance_type]?.color || "text-gray-400";
   const label =
     rate.maintenance_type === "FLAT"
-      ? `${FLAT_LABELS[rate.flat_type] || rate.flat_type || "—"} · ${rate.resident_type || "OWNER"}`
+      ? `${tFlatLabel(t, rate.flat_type)} · ${rate.resident_type === "TENANT" ? t("mntTenant") : t("mntOwner")}`
       : rate.maintenance_type === "SQ_FEET"
         ? `₹${rate.rate_per_sqft}/sq.ft`
-        : "All flats";
+        : t("mntAllFlats");
 
   return (
     <div
@@ -123,7 +157,7 @@ function ConfigCard({ rate, deleting, onEdit, onDelete, last, canEdit = true }) 
           <TypeChip type={rate.maintenance_type} />
         </div>
         <p className="text-xs text-secondary truncate">
-          {label} · {rate.frequency || "MONTHLY"} · {rate.maintenance_type === "SQ_FEET" ? `₹${Number(rate.rate_per_sqft).toFixed(2)}/sq.ft` : formatMoney(rate.amount)}
+          {label} · {tFrequency(t, rate.frequency || "MONTHLY")} · {rate.maintenance_type === "SQ_FEET" ? `₹${Number(rate.rate_per_sqft).toFixed(2)}/sq.ft` : formatMoney(rate.amount)}
         </p>
       </div>
 
@@ -135,7 +169,7 @@ function ConfigCard({ rate, deleting, onEdit, onDelete, last, canEdit = true }) 
             onChange={() => onEdit({ ...rate, is_active: !rate.is_active })}
             className="accent-emerald-500"
           />
-          Active
+          {t("mntActive")}
         </label>
       )}
 
@@ -145,13 +179,13 @@ function ConfigCard({ rate, deleting, onEdit, onDelete, last, canEdit = true }) 
             onClick={() => onEdit(rate)}
             className="sa-btn-edit inline-flex items-center gap-1 px-3 py-1.5 text-xs"
           >
-            Edit
+            {t("mntEdit")}
           </button>
           <button
             onClick={() => onDelete(rate)}
             disabled={deleting === rate.id}
-            title="Delete configuration"
-            aria-label="Delete configuration"
+            title={t("mntDeleteConfiguration")}
+            aria-label={t("mntDeleteConfiguration")}
             className="sa-btn-delete inline-flex items-center justify-center w-8 h-8 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none disabled:transform-none"
           >
             {deleting === rate.id ? <Spinner size={14} /> : <MdDelete size={15} />}
@@ -166,6 +200,7 @@ function ConfigCard({ rate, deleting, onEdit, onDelete, last, canEdit = true }) 
    CONFIG FORM (modal body)
 ───────────────────────────────────────── */
 function ConfigForm({ initial, onClose, onSuccessClose, onSaved, isSuperAdmin = false, societies = [], societyId = "", onSocietyChange }) {
+  const { t } = useLang();
   const [type, setType] = useState(initial?.maintenance_type || "LUMPSUM");
   const [name, setName] = useState(initial?.name || "");
   const [amount, setAmount] = useState(initial?.amount ?? "");
@@ -206,17 +241,17 @@ function ConfigForm({ initial, onClose, onSuccessClose, onSaved, isSuperAdmin = 
     e.preventDefault();
     setError("");
     if (isSuperAdmin && !societyId) {
-      setError("Select a society to continue");
+      setError(t("mntSelectSocietyContinue"));
       return;
     }
 
     if (name.trim()) {
-      const nameErr = getTitleError(name, "Maintenance name");
+      const nameErr = getTitleError(name, t("mntFieldMaintenanceName"));
       if (nameErr) { setError(nameErr); return; }
     }
 
     const amountValue = type === "SQ_FEET" ? ratePerSqft : amount;
-    const amountErr = getPositiveAmountError(amountValue, type === "SQ_FEET" ? "Rate per sq.ft" : "Amount");
+    const amountErr = getPositiveAmountError(amountValue, type === "SQ_FEET" ? t("mntFieldRatePerSqFt") : t("mntFieldAmount"));
     if (amountErr) { setError(amountErr); return; }
 
     const payload = {
@@ -237,11 +272,11 @@ function ConfigForm({ initial, onClose, onSuccessClose, onSaved, isSuperAdmin = 
     setSaving(true);
     try {
       const res = await maintenanceService.saveMaintenanceConfig(payload);
-      toast.success(res.action === "created" ? "Configuration created" : "Configuration updated");
+      toast.success(res.action === "created" ? t("mntConfigCreated") : t("mntConfigUpdated"));
       onSaved();
       (onSuccessClose || onClose)();
     } catch (err) {
-      setError(err?.response?.data?.message || "Failed to save configuration");
+      setError(err?.response?.data?.message || t("mntSaveConfigFailed"));
     } finally {
       setSaving(false);
     }
@@ -251,7 +286,7 @@ function ConfigForm({ initial, onClose, onSuccessClose, onSaved, isSuperAdmin = 
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       {/* Type selector */}
       <div>
-        <Label>Billing method</Label>
+        <Label>{t("mntBillingMethod")}</Label>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {MAINTENANCE_TYPES.map((mt) => {
             const active = type === mt.value;
@@ -278,8 +313,8 @@ function ConfigForm({ initial, onClose, onSuccessClose, onSaved, isSuperAdmin = 
                   flexDirection: "column",
                 }}
               >
-                <p className="text-sm font-bold" style={{ color: active ? "var(--accent)" : "var(--text-primary)" }}>{mt.label}</p>
-                <p className="text-[11px] mt-1" style={{ color: "var(--text-secondary)" }}>{mt.desc}</p>
+                <p className="text-sm font-bold" style={{ color: active ? "var(--accent)" : "var(--text-primary)" }}>{t(TYPE_LABEL_KEYS[mt.value])}</p>
+                <p className="text-[11px] mt-1" style={{ color: "var(--text-secondary)" }}>{t(TYPE_DESC_KEYS[mt.value])}</p>
               </button>
             );
           })}
@@ -290,7 +325,7 @@ function ConfigForm({ initial, onClose, onSuccessClose, onSaved, isSuperAdmin = 
       {isSuperAdmin ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-center">
           <div>
-            <Label>SOCIETY</Label>
+            <Label>{t("mntSociety")}</Label>
             <div ref={societyWrapRef} style={{ display: "flex", alignItems: "center", background: "var(--input-bg)", border: `1px solid ${societyId ? "var(--accent)" : "var(--input-border)"}`, borderRadius: 10, overflow: "hidden", transition: "border-color 0.2s" }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 44, height: 44, flexShrink: 0, borderRight: "1px solid var(--input-border)", background: "var(--card-inner-bg)" }}>
                 <MdBusiness size={17} style={{ color: "var(--accent)" }} />
@@ -299,25 +334,25 @@ function ConfigForm({ initial, onClose, onSuccessClose, onSaved, isSuperAdmin = 
                 value={societyId}
                 onChange={(e) => onSocietyChange?.(e.target.value)}
                 searchable
-                placeholder="Select society..."
+                placeholder={t("mntSelectSocietyPlaceholder")}
                 rootStyle={{ flex: 1 }}
                 anchorRef={societyWrapRef}
                 style={{ height: 44, fontSize: 13, fontWeight: 600, flex: 1, border: "none", borderRadius: 0, background: "transparent", paddingLeft: 12 }}
               >
-                <option value="">— Select Society —</option>
+                <option value="">{t("mntSelectSocietyOption")}</option>
                 {societies.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
               </Select>
             </div>
           </div>
           <div>
-            <Label>Name (optional)</Label>
-            <input className={inputCls} style={{ borderColor: "var(--input-border)", color: "var(--text-primary)", height: 44 }} value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Monthly Maintenance" />
+            <Label>{t("mntNameOptional")}</Label>
+            <input className={inputCls} style={{ borderColor: "var(--input-border)", color: "var(--text-primary)", height: 44 }} value={name} onChange={(e) => setName(e.target.value)} placeholder={t("mntNamePlaceholder")} />
           </div>
         </div>
       ) : (
         <div>
-          <Label>Name (optional)</Label>
-          <input className={inputCls} style={{ borderColor: "var(--input-border)", color: "var(--text-primary)", height: 44 }} value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Monthly Maintenance" />
+          <Label>{t("mntNameOptional")}</Label>
+          <input className={inputCls} style={{ borderColor: "var(--input-border)", color: "var(--text-primary)", height: 44 }} value={name} onChange={(e) => setName(e.target.value)} placeholder={t("mntNamePlaceholder")} />
         </div>
       )}
 
@@ -326,18 +361,18 @@ function ConfigForm({ initial, onClose, onSuccessClose, onSaved, isSuperAdmin = 
         <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 10px", borderRadius: 8, background: "var(--accent-soft)" }}>
           <MdCheckCircle size={13} style={{ color: "var(--accent)", flexShrink: 0 }} />
           <span style={{ fontSize: 12, fontWeight: 600, color: "var(--accent)" }}>
-            Working on: {societies.find((s) => String(s.id) === String(societyId))?.name || ""}
+            {t("mntWorkingOn", { name: societies.find((s) => String(s.id) === String(societyId))?.name || "" })}
           </span>
         </div>
       ) : (
         <p style={{ fontSize: 11, color: "var(--text-secondary)", marginTop: -6 }}>
-          Select a society to configure amounts, frequency and description below.
+          {t("mntSelectSocietyToConfigure")}
         </p>
       ))}
 
       {isSuperAdmin && !societyId ? (
         <p className="text-xs text-secondary" style={{ padding: "14px 0", border: "1px dashed var(--glass-border)", borderRadius: 10, textAlign: "center" }}>
-          Select a society to unlock the rest of the form.
+          {t("mntSelectSocietyUnlock")}
         </p>
       ) : (
       <>
@@ -345,26 +380,26 @@ function ConfigForm({ initial, onClose, onSuccessClose, onSaved, isSuperAdmin = 
       {type === "FLAT" && (
         <>
           {flatTypesLoading ? (
-            <p className="text-xs text-secondary">Loading flat types…</p>
+            <p className="text-xs text-secondary">{t("mntLoadingFlatTypes")}</p>
           ) : flatOptions.length === 0 ? (
             <p className="text-xs text-amber-500 flex items-center gap-1">
-              <MdOutlineErrorOutline size={12} /> No flats exist in this society yet, so no flat type can be selected.
+              <MdOutlineErrorOutline size={12} /> {t("mntNoFlats")}
             </p>
           ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <Label>Flat type *</Label>
+              <Label>{t("mntFlatTypeLabel")}</Label>
               <Select
-                options={flatOptions.map((f) => ({ value: f, label: FLAT_LABELS[f] || f }))}
+                options={flatOptions.map((f) => ({ value: f, label: tFlatLabel(t, f) }))}
                 value={flatType || flatOptions[0]}
                 onChange={(e) => setFlatType(e.target.value)}
                 style={{ height: 44, fontSize: 13, fontWeight: 600, borderColor: "var(--input-border)", borderRadius: 10, background: "var(--input-bg)" }}
               />
             </div>
             <div>
-              <Label>Who pays? *</Label>
+              <Label>{t("mntWhoPays")}</Label>
               <Select
-                options={RESIDENT_TYPES.map((r) => ({ value: r, label: r === "OWNER" ? "Owner" : "Tenant" }))}
+                options={RESIDENT_TYPES.map((r) => ({ value: r, label: r === "OWNER" ? t("mntOwner") : t("mntTenant") }))}
                 value={residentType}
                 onChange={(e) => setResidentType(e.target.value)}
                 style={{ height: 44, fontSize: 13, fontWeight: 600, borderColor: "var(--input-border)", borderRadius: 10, background: "var(--input-bg)" }}
@@ -380,9 +415,9 @@ function ConfigForm({ initial, onClose, onSuccessClose, onSaved, isSuperAdmin = 
         {type !== "FLAT" || (flatOptions.length > 0 && !flatTypesLoading) ? (
           <div>
             <Label>
-              {type === "LUMPSUM" && "Amount (₹) for every flat *"}
-              {type === "FLAT" && `Amount (₹) for ${FLAT_LABELS[flatType || flatOptions[0]] || flatType || flatOptions[0]} *`}
-              {type === "SQ_FEET" && "Rate per sq.ft (₹) *"}
+              {type === "LUMPSUM" && t("mntAmountEveryFlat")}
+              {type === "FLAT" && t("mntAmountForFlat", { flat: tFlatLabel(t, flatType || flatOptions[0]) })}
+              {type === "SQ_FEET" && t("mntRatePerSqFt")}
             </Label>
             <input
               type="number"
@@ -400,9 +435,9 @@ function ConfigForm({ initial, onClose, onSuccessClose, onSaved, isSuperAdmin = 
           <div className="hidden sm:block" />
         )}
         <div className={type !== "FLAT" || (flatOptions.length > 0 && !flatTypesLoading) ? "" : "sm:col-span-2"}>
-          <Label>Frequency</Label>
+          <Label>{t("mntFrequency")}</Label>
           <Select
-            options={FREQUENCIES.map((f) => ({ value: f, label: f }))}
+            options={FREQUENCIES.map((f) => ({ value: f, label: tFrequency(t, f) }))}
             value={frequency}
             onChange={(e) => setFrequency(e.target.value)}
             style={{ height: 44, fontSize: 13, fontWeight: 600, borderColor: "var(--input-border)", borderRadius: 10, background: "var(--input-bg)" }}
@@ -415,13 +450,13 @@ function ConfigForm({ initial, onClose, onSuccessClose, onSaved, isSuperAdmin = 
             aria-checked={isActive}
           >
             <HoloToggle checked={!!isActive} onChange={setIsActive} showLabel={false} />
-            <span className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>Active</span>
+            <span className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>{t("mntActive")}</span>
           </label>
         </div>
       </div>
 
       <div>
-        <Label>Description (optional)</Label>
+        <Label>{t("mntDescriptionOptional")}</Label>
         <textarea rows={2} className={inputCls} style={{ borderColor: "var(--input-border)", color: "var(--text-primary)", height: 96, resize: "vertical", minHeight: 60, paddingTop: 12 }} value={description} onChange={(e) => setDescription(e.target.value)} />
       </div>
 
@@ -429,7 +464,7 @@ function ConfigForm({ initial, onClose, onSuccessClose, onSaved, isSuperAdmin = 
 
       <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-4 border-t mt-1" style={{ borderColor: "var(--glass-border)" }}>
         <GlobalButton type="button" variant="cancel" onClick={onClose}>
-          Cancel
+          {t("mntCancel")}
         </GlobalButton>
         <GlobalButton
           type="submit"
@@ -439,7 +474,7 @@ function ConfigForm({ initial, onClose, onSuccessClose, onSaved, isSuperAdmin = 
           disabled={saving}
           borderDraw
         >
-          {initial?.id ? "Update" : "Save Configuration"}
+          {initial?.id ? t("mntUpdate") : t("mntSaveConfiguration")}
         </GlobalButton>
       </div>
       </>
@@ -452,6 +487,7 @@ function ConfigForm({ initial, onClose, onSuccessClose, onSaved, isSuperAdmin = 
    GENERATE MODAL WITH ELIGIBLE RESIDENTS PREVIEW
 ───────────────────────────────────────── */
 function GenerateModal({ configs, onClose, onGenerated }) {
+  const { t } = useLang();
   /* Unsaved-changes guard */
   const [confirmDiscard, setConfirmDiscard] = useState(false);
   const dirtyRef = useUnsavedDirty(true);
@@ -522,7 +558,7 @@ function GenerateModal({ configs, onClose, onGenerated }) {
 
   const handleGenerate = async () => {
     if (!selectedRateId) {
-      toast.error("Please select a maintenance bill type before generating bills.");
+      toast.error(t("mntSelectTypeFirst"));
       return;
     }
     setGenerating(true);
@@ -534,11 +570,11 @@ function GenerateModal({ configs, onClose, onGenerated }) {
         last_pay_date: dueDate,
       });
       const genCount = res?.summary?.generated || 0;
-      toast.success(`Successfully generated ${genCount} maintenance bill(s)!`);
+      toast.success(t("mntGeneratedSuccess", { count: genCount }));
       onGenerated();
       onClose();
     } catch (err) {
-      toast.error(err?.response?.data?.message || "Generation failed");
+      toast.error(err?.response?.data?.message || t("mntGenerationFailed"));
     } finally {
       setGenerating(false);
     }
@@ -601,10 +637,10 @@ function GenerateModal({ configs, onClose, onGenerated }) {
             </div>
             <div>
               <h3 style={{ fontWeight: 800, fontSize: 18, color: "var(--text-primary)", margin: 0, letterSpacing: "-0.02em" }}>
-                Generate Maintenance Bills
+                {t("mntGenTitle")}
               </h3>
               <p style={{ fontSize: 12, color: "var(--accent)", margin: "2px 0 0", fontWeight: 600 }}>
-                Review eligible residents, specify due date, and dispatch bills
+                {t("mntGenSubtitle")}
               </p>
             </div>
           </div>
@@ -622,7 +658,7 @@ function GenerateModal({ configs, onClose, onGenerated }) {
           {/* Top Inputs: Issue Date & Due Date */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <Label>Issue Date *</Label>
+              <Label>{t("mntIssueDate")}</Label>
               <input
                 type="date"
                 className="w-full h-10 px-3 rounded-xl border border-(--glass-border) bg-(--card-inner-bg) text-(--text-primary) font-semibold text-xs focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 transition-all cursor-pointer"
@@ -630,10 +666,10 @@ function GenerateModal({ configs, onClose, onGenerated }) {
                 onChange={(e) => setIssueDate(e.target.value)}
                 required
               />
-              <span className="text-[11px] text-secondary mt-1.5 block">Bill issue date (defaults to today)</span>
+              <span className="text-[11px] text-secondary mt-1.5 block">{t("mntIssueDateHint")}</span>
             </div>
             <div>
-              <Label>Due Date (Last Date to Pay) *</Label>
+              <Label>{t("mntDueDate")}</Label>
               <input
                 type="date"
                 className="w-full h-10 px-3 rounded-xl border border-(--glass-border) bg-(--card-inner-bg) text-(--text-primary) font-semibold text-xs focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/30 transition-all cursor-pointer"
@@ -642,15 +678,15 @@ function GenerateModal({ configs, onClose, onGenerated }) {
                 onChange={(e) => setDueDate(e.target.value)}
                 required
               />
-              <span className="text-[11px] text-emerald-400 mt-1.5 block">Residents can pay without late penalty until this date</span>
+              <span className="text-[11px] text-emerald-400 mt-1.5 block">{t("mntDueDateHint")}</span>
             </div>
           </div>
 
           {/* Rate Configurations to Apply (Single Selection) */}
           <div>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
-              <Label>Select Maintenance Bill Type *</Label>
-              <span className="text-xs text-indigo-400 font-semibold">Select 1 Bill Type</span>
+              <Label>{t("mntSelectBillType")}</Label>
+              <span className="text-xs text-indigo-400 font-semibold">{t("mntSelectOneBillType")}</span>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
               {billable.map((c) => {
@@ -680,7 +716,7 @@ function GenerateModal({ configs, onClose, onGenerated }) {
                         </span>
                       </div>
                       {c.maintenance_type === "FLAT" && c.flat_type && (
-                        <span className="text-[11px] text-secondary block font-medium">Flat Type: {c.flat_type}</span>
+                        <span className="text-[11px] text-secondary block font-medium">{t("mntFlatTypeTw", { type: tFlatLabel(t, c.flat_type) })}</span>
                       )}
                     </div>
                     <span className="text-xs font-extrabold text-emerald-400 shrink-0">
@@ -690,7 +726,7 @@ function GenerateModal({ configs, onClose, onGenerated }) {
                 );
               })}
               {billable.length === 0 && (
-                <p className="text-xs text-amber-400">No active billable configurations. Create one to enable generation.</p>
+                <p className="text-xs text-amber-400">{t("mntNoActiveBillable")}</p>
               )}
             </div>
           </div>
@@ -710,7 +746,7 @@ function GenerateModal({ configs, onClose, onGenerated }) {
                 <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                   <MdPerson size={18} className="text-blue-400" />
                   <span style={{ fontWeight: 800, fontSize: 13, color: "var(--text-primary)" }}>
-                    Eligible Residents Preview
+                    {t("mntEligiblePreview")}
                   </span>
                 </div>
                 {preview && (
@@ -725,7 +761,7 @@ function GenerateModal({ configs, onClose, onGenerated }) {
                       border: "1px solid rgba(59,130,246,0.3)",
                     }}
                   >
-                    {preview.billable_count} to bill
+                    {t("mntToBill", { count: preview.billable_count })}
                   </span>
                 )}
                 {preview?.already_billed_count > 0 && (
@@ -740,14 +776,14 @@ function GenerateModal({ configs, onClose, onGenerated }) {
                       border: "1px solid rgba(245,158,11,0.3)",
                     }}
                   >
-                    {preview.already_billed_count} already generated
+                    {t("mntAlreadyGenerated", { count: preview.already_billed_count })}
                   </span>
                 )}
               </div>
 
               {preview && (
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <span style={{ fontSize: 11, color: "var(--text-secondary)" }}>Total Amount:</span>
+                  <span style={{ fontSize: 11, color: "var(--text-secondary)" }}>{t("mntTotalAmount")}</span>
                   <span style={{ fontSize: 14, fontWeight: 900, color: "#10b981" }}>
                     {formatMoney(preview.total_amount)}
                   </span>
@@ -770,7 +806,7 @@ function GenerateModal({ configs, onClose, onGenerated }) {
                 }}
                 value={searchResident}
                 onChange={(e) => setSearchResident(e.target.value)}
-                placeholder="Search by resident name, flat number, or block..."
+                placeholder={t("mntSearchPlaceholder")}
               />
             </div>
 
@@ -778,15 +814,15 @@ function GenerateModal({ configs, onClose, onGenerated }) {
             {previewLoading ? (
               <div className="flex flex-col items-center justify-center py-8 gap-2">
                 <Spinner size={22} />
-                <span className="text-xs text-secondary">Loading eligible residents...</span>
+                <span className="text-xs text-secondary">{t("mntLoadingResidents")}</span>
               </div>
             ) : filteredResidents.length === 0 ? (
               <div className="text-center py-8 text-secondary">
                 <MdOutlineErrorOutline size={26} className="mx-auto mb-1 opacity-40" />
                 <p className="text-xs font-semibold">
                   {preview?.eligible_count === 0
-                    ? "No eligible owner flats match the selected configurations."
-                    : "No residents matched your search query."}
+                    ? t("mntNoEligibleFlats")
+                    : t("mntNoSearchMatches")}
                 </p>
               </div>
             ) : (
@@ -802,11 +838,11 @@ function GenerateModal({ configs, onClose, onGenerated }) {
                 <table className="w-full text-left" style={{ fontSize: 12, borderCollapse: "collapse" }}>
                   <thead style={{ position: "sticky", top: 0, background: "var(--card-inner-bg)", borderBottom: "1px solid var(--glass-border)", zIndex: 1 }}>
                     <tr style={{ color: "var(--text-secondary)", fontSize: 10, textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                      <th style={{ padding: "8px 12px" }}>Flat / Unit</th>
-                      <th style={{ padding: "8px 12px" }}>Resident (Owner)</th>
-                      <th style={{ padding: "8px 12px" }}>Applied Rate</th>
-                      <th style={{ padding: "8px 12px" }}>Amount</th>
-                      <th style={{ padding: "8px 12px", textAlign: "right" }}>Status</th>
+                      <th style={{ padding: "8px 12px" }}>{t("mntThFlatUnit")}</th>
+                      <th style={{ padding: "8px 12px" }}>{t("mntThResident")}</th>
+                      <th style={{ padding: "8px 12px" }}>{t("mntThAppliedRate")}</th>
+                      <th style={{ padding: "8px 12px" }}>{t("mntThAmount")}</th>
+                      <th style={{ padding: "8px 12px", textAlign: "right" }}>{t("mntThStatus")}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -821,7 +857,7 @@ function GenerateModal({ configs, onClose, onGenerated }) {
                         <td style={{ padding: "10px 12px" }}>
                           <div style={{ fontWeight: 800, color: "var(--text-primary)" }}>{r.flat_number}</div>
                           <div style={{ fontSize: 10, color: "var(--text-secondary)" }}>
-                            Block {r.block_name} {r.flat_type && `· ${r.flat_type}`}
+                            {t("mntBlockPrefix", { block: r.block_name, flatType: r.flat_type ? `· ${tFlatLabel(t, r.flat_type)}` : "" })}
                           </div>
                         </td>
                         <td style={{ padding: "10px 12px" }}>
@@ -874,7 +910,7 @@ function GenerateModal({ configs, onClose, onGenerated }) {
                                 border: "1px solid rgba(245,158,11,0.3)",
                               }}
                             >
-                              Already Billed
+                              {t("mntAlreadyBilled")}
                             </span>
                           ) : (
                             <span
@@ -889,7 +925,7 @@ function GenerateModal({ configs, onClose, onGenerated }) {
                                 border: "1px solid rgba(16,185,129,0.3)",
                               }}
                             >
-                              Ready to Bill
+                              {t("mntReadyToBill")}
                             </span>
                           )}
                         </td>
@@ -908,7 +944,7 @@ function GenerateModal({ configs, onClose, onGenerated }) {
               className="sa-btn sa-btn-ghost"
               style={{ padding: "9px 18px", fontSize: 13 }}
             >
-              Cancel
+              {t("mntCancel")}
             </button>
 
             <button
@@ -925,8 +961,8 @@ function GenerateModal({ configs, onClose, onGenerated }) {
                 {generating ? <Spinner size={16} /> : <MdBuild size={17} />}
                 <span>
                   {generating
-                    ? "Generating Bills..."
-                    : `Generate ${preview?.billable_count || 0} Bills (${formatMoney(preview?.total_amount || 0)})`}
+                    ? t("mntGenerating")
+                    : t("mntGenerateN", { count: preview?.billable_count || 0, total: formatMoney(preview?.total_amount || 0) })}
                 </span>
               </span>
             </button>
@@ -967,6 +1003,7 @@ const formatDisplayDate = (str) => {
 };
 
 function BillsTab({ billingMonth, setBillingMonth, onView, configs = [] }) {
+  const { t } = useLang();
   const [bills, setBills] = useState([]);
   const [loading, setLoading] = useState(true);
   const [status, setStatus] = useState("");
@@ -975,10 +1012,10 @@ function BillsTab({ billingMonth, setBillingMonth, onView, configs = [] }) {
 
   // Type filter options matching the creation types (Lumpsum, By Flat Type, Per Sq. Ft.)
   const typeOptions = [
-    { value: "", label: "All Types" },
-    { value: "LUMPSUM", label: "Lumpsum" },
-    { value: "FLAT", label: "By Flat Type" },
-    { value: "SQ_FEET", label: "Per Sq. Ft." },
+    { value: "", label: t("mntTypeAll") },
+    { value: "LUMPSUM", label: t("mntTypeLumpsum") },
+    { value: "FLAT", label: t("mntTypeFlat") },
+    { value: "SQ_FEET", label: t("mntTypeSqFt") },
   ];
 
   // Custom range type: 'date_range' (Day Dates) | 'month_range' (Month/Year)
@@ -1032,11 +1069,11 @@ function BillsTab({ billingMonth, setBillingMonth, onView, configs = [] }) {
       const data = await maintenanceService.getMaintenanceBills(params);
       setBills(data);
     } catch (err) {
-      toast.error(err?.response?.data?.message || "Failed to load bills");
+      toast.error(err?.response?.data?.message || t("mntLoadBillsFailed"));
     } finally {
       setLoading(false);
     }
-  }, [mode, customType, startDate, endDate, dateField, billingMonth, status, typeFilter, fromMonth, fromYear, toMonth, toYear]);
+  }, [mode, customType, startDate, endDate, dateField, billingMonth, status, typeFilter, fromMonth, fromYear, toMonth, toYear, t]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -1082,7 +1119,7 @@ function BillsTab({ billingMonth, setBillingMonth, onView, configs = [] }) {
     setCustomType("date_range");
   };
 
-  const monthOptions = MONTH_NAMES.map((m, i) => ({ value: i, label: m }));
+  const monthOptions = MONTH_NAMES.map((m, i) => ({ value: i, label: t(MONTH_KEYS[i]) }));
   const yearOptions = years.map((y) => ({ value: y, label: String(y) }));
 
   // Label for active custom period
@@ -1090,8 +1127,8 @@ function BillsTab({ billingMonth, setBillingMonth, onView, configs = [] }) {
     if (customType === "date_range") {
       return `${formatDisplayDate(startDate)} – ${formatDisplayDate(endDate)}`;
     }
-    return `${MONTH_NAMES[fromMonth]?.slice(0, 3)} ${fromYear} – ${MONTH_NAMES[toMonth]?.slice(0, 3)} ${toYear}`;
-  }, [customType, startDate, endDate, fromMonth, fromYear, toMonth, toYear]);
+    return `${t(MONTH_KEYS[fromMonth])} ${fromYear} – ${t(MONTH_KEYS[toMonth])} ${toYear}`;
+  }, [customType, startDate, endDate, fromMonth, fromYear, toMonth, toYear, t]);
 
   return (
     <div className="flex flex-col gap-4">
@@ -1109,10 +1146,10 @@ function BillsTab({ billingMonth, setBillingMonth, onView, configs = [] }) {
         <div className="overflow-x-auto pb-1 md:pb-0 scrollbar-none shrink-0">
           <SlidingTabs
             items={[
-              { id: "", label: "All Bills" },
-              { id: "PENDING", label: "Pending" },
-              { id: "PAID", label: "Paid" },
-              { id: "PENDING_VERIFICATION", label: "Awaiting" },
+              { id: "", label: t("mntStatusAll") },
+              { id: "PENDING", label: t("mntStatusPending") },
+              { id: "PAID", label: t("mntStatusPaid") },
+              { id: "PENDING_VERIFICATION", label: t("mntStatusAwaiting") },
             ]}
             value={status}
             onChange={setStatus}
@@ -1173,7 +1210,7 @@ function BillsTab({ billingMonth, setBillingMonth, onView, configs = [] }) {
           >
             <MdCalendarToday size={14} style={{ color: mode === "custom" ? "var(--accent, #818cf8)" : "var(--text-secondary)" }} />
             <span className="truncate max-w-45">
-              {mode === "custom" ? customPeriodLabel : "Custom Period"}
+              {mode === "custom" ? customPeriodLabel : t("mntCustomPeriod")}
             </span>
           </button>
 
@@ -1199,7 +1236,7 @@ function BillsTab({ billingMonth, setBillingMonth, onView, configs = [] }) {
           <button
             type="button"
             onClick={load}
-            title="Refresh bills"
+            title={t("mntRefreshBills")}
             className="inline-flex items-center justify-center rounded-xl border transition-all cursor-pointer shrink-0"
             style={{
               width: 36,
@@ -1226,13 +1263,13 @@ function BillsTab({ billingMonth, setBillingMonth, onView, configs = [] }) {
       <GlobalModal
         isOpen={customOpen}
         onClose={() => setCustomOpen(false)}
-        title="Custom Period Range"
-        subtitle="Filter maintenance bills by specific day dates or month range"
+        title={t("mntCustomPeriodRange")}
+        subtitle={t("mntCustomPeriodSubtitle")}
         icon={MdCalendarToday}
         size="md"
         showFooter
-        submitLabel="Apply Filter"
-        cancelLabel="Cancel"
+        submitLabel={t("mntApplyFilter")}
+        cancelLabel={t("mntCancel")}
         onSubmit={applyCustom}
         onCancel={() => setCustomOpen(false)}
       >
@@ -1251,7 +1288,7 @@ function BillsTab({ billingMonth, setBillingMonth, onView, configs = [] }) {
               boxShadow: customType === "date_range" ? "0 2px 8px rgba(160,90,255,0.3)" : "none",
             }}
           >
-            Specific Dates (Day / Month / Year)
+            {t("mntSpecificDates")}
           </button>
           <button
             type="button"
@@ -1263,7 +1300,7 @@ function BillsTab({ billingMonth, setBillingMonth, onView, configs = [] }) {
               boxShadow: customType === "month_range" ? "0 2px 8px rgba(160,90,255,0.3)" : "none",
             }}
           >
-            Month Range
+            {t("mntMonthRange")}
           </button>
         </div>
 
@@ -1271,16 +1308,16 @@ function BillsTab({ billingMonth, setBillingMonth, onView, configs = [] }) {
           <div className="flex flex-col gap-4">
             {/* Quick Presets */}
             <div>
-              <Label>Quick Presets</Label>
+              <Label>{t("mntQuickPresets")}</Label>
               <div className="flex flex-wrap gap-1.5">
                 {[
-                  { key: "today", label: "Today" },
-                  { key: "yesterday", label: "Yesterday" },
-                  { key: "last7", label: "Last 7 Days" },
-                  { key: "thisMonth", label: "This Month" },
-                  { key: "last30", label: "Last 30 Days" },
-                  { key: "lastMonth", label: "Last Month" },
-                  { key: "thisYear", label: "This Year" },
+                  { key: "today", label: t("mntPresetToday") },
+                  { key: "yesterday", label: t("mntPresetYesterday") },
+                  { key: "last7", label: t("mntPresetLast7") },
+                  { key: "thisMonth", label: t("mntPresetThisMonth") },
+                  { key: "last30", label: t("mntPresetLast30") },
+                  { key: "lastMonth", label: t("mntPresetLastMonth") },
+                  { key: "thisYear", label: t("mntPresetThisYear") },
                 ].map((p) => (
                   <button
                     key={p.key}
@@ -1312,7 +1349,7 @@ function BillsTab({ billingMonth, setBillingMonth, onView, configs = [] }) {
             {/* Date Pickers */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex flex-col gap-1.5">
-                <Label>From Date (Start Day) *</Label>
+                <Label>{t("mntFromDate")}</Label>
                 <input
                   type="date"
                   value={startDate}
@@ -1329,7 +1366,7 @@ function BillsTab({ billingMonth, setBillingMonth, onView, configs = [] }) {
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <Label>To Date (End Day) *</Label>
+                <Label>{t("mntToDate")}</Label>
                 <input
                   type="date"
                   value={endDate}
@@ -1348,7 +1385,7 @@ function BillsTab({ billingMonth, setBillingMonth, onView, configs = [] }) {
 
             {/* Date Target Field */}
             <div className="flex flex-col gap-1.5">
-              <Label>Filter Date By</Label>
+              <Label>{t("mntFilterDateBy")}</Label>
               <div className="flex items-center gap-3">
                 <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold" style={{ color: "var(--text-primary)" }}>
                   <input
@@ -1359,7 +1396,7 @@ function BillsTab({ billingMonth, setBillingMonth, onView, configs = [] }) {
                     onChange={(e) => setDateField(e.target.value)}
                     className="accent-blue-600"
                   />
-                  <span>Bill Creation Date</span>
+                  <span>{t("mntBillCreationDate")}</span>
                 </label>
                 <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold" style={{ color: "var(--text-primary)" }}>
                   <input
@@ -1370,7 +1407,7 @@ function BillsTab({ billingMonth, setBillingMonth, onView, configs = [] }) {
                     onChange={(e) => setDateField(e.target.value)}
                     className="accent-blue-600"
                   />
-                  <span>Due Date</span>
+                  <span>{t("mntDueDateFilter")}</span>
                 </label>
               </div>
             </div>
@@ -1378,7 +1415,7 @@ function BillsTab({ billingMonth, setBillingMonth, onView, configs = [] }) {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="flex flex-col gap-1.5">
-              <Label>From Month</Label>
+              <Label>{t("mntFromMonth")}</Label>
               <Select
                 options={monthOptions}
                 value={fromMonth}
@@ -1394,7 +1431,7 @@ function BillsTab({ billingMonth, setBillingMonth, onView, configs = [] }) {
               />
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label>From Year</Label>
+              <Label>{t("mntFromYear")}</Label>
               <Select
                 options={yearOptions}
                 value={fromYear}
@@ -1410,7 +1447,7 @@ function BillsTab({ billingMonth, setBillingMonth, onView, configs = [] }) {
               />
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label>To Month</Label>
+              <Label>{t("mntToMonth")}</Label>
               <Select
                 options={monthOptions}
                 value={toMonth}
@@ -1426,7 +1463,7 @@ function BillsTab({ billingMonth, setBillingMonth, onView, configs = [] }) {
               />
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label>To Year</Label>
+              <Label>{t("mntToYear")}</Label>
               <Select
                 options={yearOptions}
                 value={toYear}
@@ -1452,7 +1489,7 @@ function BillsTab({ billingMonth, setBillingMonth, onView, configs = [] }) {
             color: "var(--text-secondary)",
           }}
         >
-          <span>Selected Range:</span>
+          <span>{t("mntSelectedRange")}</span>
           <span className="font-bold text-sm" style={{ color: "var(--accent)" }}>
             {customPeriodLabel}
           </span>
@@ -1464,16 +1501,16 @@ function BillsTab({ billingMonth, setBillingMonth, onView, configs = [] }) {
           <MdFilterList size={13} />
           {mode === "custom"
             ? customPeriodLabel
-            : billingMonth || "No month selected"}
+            : billingMonth || t("mntNoMonthSelected")}
         </span>
         {typeFilter && (
           <span className="inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full border" style={{ borderColor: "var(--accent-light, #818cf8)", background: "var(--accent-soft)", color: "var(--accent)" }}>
-            Type: {typeOptions.find((o) => o.value === typeFilter)?.label || typeFilter}
+            {t("mntTypeChip", { type: typeOptions.find((o) => o.value === typeFilter)?.label || typeFilter })}
           </span>
         )}
         {status && (
           <span className="inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full border" style={{ borderColor: "var(--glass-border)", color: "var(--text-secondary)" }}>
-            Status: {status}
+            {t("mntStatusChip", { status: status })}
           </span>
         )}
       </div>
@@ -1483,20 +1520,20 @@ function BillsTab({ billingMonth, setBillingMonth, onView, configs = [] }) {
       ) : bills.length === 0 ? (
         <div className="flex flex-col items-center gap-2 py-16 text-secondary">
           <MdReceiptLong size={40} className="opacity-30" />
-          <p className="text-sm">No maintenance bills found</p>
+          <p className="text-sm">{t("mntNoBills")}</p>
         </div>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-sm min-w-180" style={{ color: "var(--text-primary)" }}>
             <thead>
               <tr className="text-left text-xs uppercase tracking-wider text-secondary">
-                <th className="py-2 pr-3">Bill / Flat</th>
-                <th className="py-2 pr-3">Type</th>
-                <th className="py-2 pr-3">Issue Date</th>
-                <th className="py-2 pr-3">Amount</th>
-                <th className="py-2 pr-3">Status</th>
-                <th className="py-2 pr-3">Due Date</th>
-                <th className="py-2 text-right">View</th>
+                <th className="py-2 pr-3">{t("mntThBillFlat")}</th>
+                <th className="py-2 pr-3">{t("mntThType")}</th>
+                <th className="py-2 pr-3">{t("mntThIssueDate")}</th>
+                <th className="py-2 pr-3">{t("mntThAmount")}</th>
+                <th className="py-2 pr-3">{t("mntThStatus")}</th>
+                <th className="py-2 pr-3">{t("mntThDueDate")}</th>
+                <th className="py-2 text-right">{t("mntThView")}</th>
               </tr>
             </thead>
             <tbody>
@@ -1524,7 +1561,7 @@ function BillsTab({ billingMonth, setBillingMonth, onView, configs = [] }) {
                   <td className="py-3 pr-3 text-xs text-secondary">{b.due_date ? new Date(b.due_date).toLocaleDateString("en-US", { day: "numeric", month: "short", year: "numeric" }) : "—"}</td>
                   <td className="py-3 text-right">
                     <button onClick={() => onView(b.id)} className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold border transition-colors" style={{ borderColor: "var(--glass-border)" }}>
-                      <MdVisibility size={13} /> Details
+                      <MdVisibility size={13} /> {t("mntDetails")}
                     </button>
                   </td>
                 </tr>
@@ -1596,11 +1633,11 @@ export default function MaintenancePage() {
       const data = await maintenanceService.getMaintenanceConfigs();
       setConfigs(data);
     } catch (err) {
-      toast.error(err?.response?.data?.message || "Failed to load configurations");
+      toast.error(err?.response?.data?.message || t("mntLoadConfigsFailed"));
     } finally {
       setLoading(false);
     }
-  }, [isSuperAdmin, societyId]);
+  }, [isSuperAdmin, societyId, t]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -1608,14 +1645,14 @@ export default function MaintenancePage() {
   const openEdit = (rate) => { setEditing(rate); setShowForm(true); };
 
   const handleDelete = async (rate) => {
-    if (!window.confirm(`Delete "${rate.name || rate.maintenance_type}"? If used by bills it will be deactivated.`)) return;
+    if (!window.confirm(t("mntDeleteConfirm", { name: rate.name || rate.maintenance_type }))) return;
     setDeleting(rate.id);
     try {
       const res = await maintenanceService.deleteMaintenanceConfig(rate.id);
-      toast.success(res.message || "Deleted");
+      toast.success(res.message || t("mntDeleted"));
       load();
     } catch (err) {
-      toast.error(err?.response?.data?.message || "Delete failed");
+      toast.error(err?.response?.data?.message || t("mntDeleteFailed"));
     } finally {
       setDeleting(null);
     }
@@ -1647,10 +1684,10 @@ export default function MaintenancePage() {
           </div>
           <div>
             <h1 className="text-lg sm:text-xl font-bold tracking-tight text-primary flex items-center gap-2" style={{ letterSpacing: "-0.02em", margin: 0 }}>
-              Maintenance Management
+              {t("mntManagement")}
             </h1>
             <p className="text-xs text-secondary mt-0.5 hidden sm:block">
-              Configure rates, generate bills and track them.
+              {t("mntSubtitle")}
             </p>
           </div>
         </div>
@@ -1665,7 +1702,7 @@ export default function MaintenancePage() {
               className="shrink-0"
               style={{ fontWeight: 700 }}
             >
-              New Configuration
+              {t("mntHeaderNewConfig")}
             </GlobalButton>
           )}
         </div>
@@ -1676,24 +1713,24 @@ export default function MaintenancePage() {
         <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap", background: "var(--card-inner-bg)", padding: "8px 14px", borderRadius: 14, border: "1px solid var(--glass-border)" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10, flex: 1, minWidth: 220 }}>
             <MdBusiness size={18} style={{ color: "var(--accent)" }} />
-            <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase", whiteSpace: "nowrap" }}>Select Society</span>
+            <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase", whiteSpace: "nowrap" }}>{t("mntSelectSociety")}</span>
             <Select
               className="input"
               value={societyId}
               onChange={handleSocietyChange}
               style={{ height: 38, fontSize: 13, fontWeight: 700, flex: 1, border: "1.5px solid var(--accent-alpha,rgba(107,70,193,0.25))" }}
             >
-              <option value="">— Choose a Society —</option>
+              <option value="">{t("mntChooseSociety")}</option>
               {societies.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
             </Select>
           </div>
           {!societyId ? (
             <span style={{ fontSize: 12, color: "var(--stat-amber-color)", fontWeight: 700 }}>
-              💡 Select a society to manage its maintenance
+              💡 {t("mntSelectSocietyHint")}
             </span>
           ) : (
             <span style={{ fontSize: 12, color: "var(--stat-green-color)", fontWeight: 700 }}>
-              ✓ Working on: {societies.find((s) => String(s.id) === String(societyId))?.name || ""}
+              ✓ {t("mntWorkingOn", { name: societies.find((s) => String(s.id) === String(societyId))?.name || "" })}
             </span>
           )}
         </div>
@@ -1703,8 +1740,8 @@ export default function MaintenancePage() {
         <div className="rounded-xl border p-8 flex flex-col items-center gap-3 text-center"
           style={{ background: "var(--card-bg)", borderColor: "var(--glass-border)" }}>
           <MdBusiness size={36} className="opacity-30" />
-          <p className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>Select a society to continue</p>
-          <p className="text-xs text-secondary">Maintenance configurations, bill generation and reports need a society context.</p>
+          <p className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>{t("mntSelectSocietyContinue")}</p>
+          <p className="text-xs text-secondary">{t("mntSocietyContextHint")}</p>
         </div>
       )}
 
@@ -1713,15 +1750,15 @@ export default function MaintenancePage() {
         value={tab}
         onChange={setTab}
         items={[
-          { id: "config", label: "Configure", icon: <MdTune size={15} /> },
-          { id: "bills", label: "Generated Bills", icon: <MdReceiptLong size={15} /> },
+          { id: "config", label: t("mntTabConfigure"), icon: <MdTune size={15} /> },
+          { id: "bills", label: t("mntTabGeneratedBills"), icon: <MdReceiptLong size={15} /> },
         ]}
       />
 
       {tab === "config" ? (
         <div className="flex flex-col gap-4">
           <div className="flex sm:items-center justify-between flex-col sm:flex-row gap-2">
-            <p className="text-sm text-secondary">{configs.length} configuration(s) — {activeCount} active. Uses standard MaintenanceRates + bills.</p>
+            <p className="text-sm text-secondary">{t("mntConfigsSummary", { count: configs.length, active: activeCount })}</p>
             {canEdit && (
               <GlobalButton
                 variant="add"
@@ -1731,7 +1768,7 @@ export default function MaintenancePage() {
                 className="shrink-0"
                 style={{ fontWeight: 700 }}
               >
-                Generate Bills
+                {t("mntGenerateBills")}
               </GlobalButton>
             )}
           </div>
@@ -1741,9 +1778,9 @@ export default function MaintenancePage() {
           ) : configs.length === 0 ? (
             <div className="flex flex-col items-center gap-2 py-16 text-secondary">
               <MdTune size={40} className="opacity-30" />
-              <p className="text-sm">No maintenance configurations yet</p>
+              <p className="text-sm">{t("mntNoConfigs")}</p>
               {canEdit && (
-                <button onClick={openAdd} className={btnGhost} style={{ borderColor: "var(--glass-border)" }}>Add your first configuration</button>
+                <button onClick={openAdd} className={btnGhost} style={{ borderColor: "var(--glass-border)" }}>{t("mntAddFirstConfig")}</button>
               )}
             </div>
           ) : (
@@ -1798,10 +1835,10 @@ export default function MaintenancePage() {
                 </div>
                 <div>
                   <h3 className="text-[15px] sm:text-base" style={{ fontWeight: 700, color: "var(--text-primary)", margin: 0, letterSpacing: "-0.01em" }}>
-                    {editing?.id ? "Edit Configuration" : "New Maintenance Configuration"}
+                    {editing?.id ? t("mntConfigFormEditTitle") : t("mntConfigFormNewTitle")}
                   </h3>
                   <p className="text-[11px] sm:text-xs" style={{ color: "var(--text-secondary)", margin: "2px 0 0", fontWeight: 500 }}>
-                    Configure maintenance rules, flat rates & billing frequency
+                    {t("mntConfigFormSubtitle")}
                   </p>
                 </div>
               </div>
@@ -1861,6 +1898,7 @@ export default function MaintenancePage() {
    DETAIL MODAL
 ───────────────────────────────────────── */
 function BillDetailModal({ id, onClose }) {
+  const { t } = useLang();
   const [detail, setDetail] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -1870,12 +1908,12 @@ function BillDetailModal({ id, onClose }) {
         const data = await maintenanceService.getMaintenanceBillDetail(id);
         setDetail(data);
       } catch (err) {
-        toast.error(err?.response?.data?.message || "Failed to load bill");
+        toast.error(err?.response?.data?.message || t("mntLoadBillFailed"));
       } finally {
         setLoading(false);
       }
     })();
-  }, [id]);
+  }, [id, t]);
 
   const bill = detail?.bill;
   const rate = detail?.rate;
@@ -1921,10 +1959,10 @@ function BillDetailModal({ id, onClose }) {
             </div>
             <div>
               <h3 style={{ fontWeight: 800, fontSize: 17, color: "var(--text-primary)", margin: 0, letterSpacing: "-0.02em" }}>
-                Bill Details
+                {t("mntBillDetails")}
               </h3>
               <p style={{ fontSize: 12, color: "#34d399", margin: "2px 0 0", fontWeight: 600 }}>
-                {bill ? `Invoice #${bill.id} · ${bill.billing_month || "Current"}` : "Maintenance Invoice"}
+                {bill ? t("mntInvoiceNo", { id: bill.id, month: bill.billing_month || t("mntCurrent") }) : t("mntMaintenanceInvoice")}
               </p>
             </div>
           </div>
@@ -1942,53 +1980,53 @@ function BillDetailModal({ id, onClose }) {
           {loading ? (
             <div className="flex justify-center py-12"><Spinner size={26} /></div>
           ) : !bill ? (
-            <p className="text-sm text-secondary text-center py-6">Bill not found</p>
+            <p className="text-sm text-secondary text-center py-6">{t("mntBillNotFound")}</p>
           ) : (
             <div className="flex flex-col gap-3">
               <div className="rounded-xl border p-4 flex items-center justify-between" style={{ borderColor: "var(--glass-border)", background: "var(--card-inner-bg)" }}>
                 <div>
-                  <p className="text-xs text-secondary">Amount</p>
+                  <p className="text-xs text-secondary">{t("mntThAmount")}</p>
                   <p className="text-2xl font-extrabold" style={{ color: "var(--text-primary)" }}>{formatMoney(bill.amount)}</p>
                 </div>
                 <StatusPill status={bill.status} />
               </div>
 
-              <Row label="Title" value={bill.title} />
-              <Row label="Flat" value={bill.Flat ? `${bill.Flat.flat_number}` : "—"} />
-              <Row label="Billing month" value={bill.billing_month} />
-              <Row label="Due date" value={bill.due_date ? new Date(bill.due_date).toLocaleDateString() : "—"} />
+              <Row label={t("mntRowTitle")} value={bill.title} />
+              <Row label={t("mntRowFlat")} value={bill.Flat ? `${bill.Flat.flat_number}` : "—"} />
+              <Row label={t("mntRowBillingMonth")} value={bill.billing_month} />
+              <Row label={t("mntRowDueDate")} value={bill.due_date ? new Date(bill.due_date).toLocaleDateString() : "—"} />
 
               {rate && (
                 <div className="rounded-xl border p-3" style={{ borderColor: "var(--glass-border)", background: "var(--card-inner-bg)" }}>
-                  <p className="text-xs font-bold text-secondary uppercase tracking-wider mb-2">Configuration</p>
-                  <Row label="Method" value={rate.maintenance_type} />
-                  {rate.maintenance_type === "FLAT" && <Row label="Flat type" value={rate.flat_type} />}
-                  {rate.name && <Row label="Name" value={rate.name} />}
+                  <p className="text-xs font-bold text-secondary uppercase tracking-wider mb-2">{t("mntSectionConfiguration")}</p>
+                  <Row label={t("mntRowMethod")} value={rate.maintenance_type} />
+                  {rate.maintenance_type === "FLAT" && <Row label={t("mntRowFlatType")} value={rate.flat_type} />}
+                  {rate.name && <Row label={t("mntRowName")} value={rate.name} />}
                 </div>
               )}
 
               {calc && (
                 <div className="rounded-xl border p-3" style={{ borderColor: "var(--glass-border)", background: "var(--card-inner-bg)" }}>
-                  <p className="text-xs font-bold text-secondary uppercase tracking-wider mb-2">Calculation snapshot</p>
-                  <Row label="Method" value={calc.maintenance_type || "—"} />
-                  {calc.flat_type && <Row label="Flat type" value={calc.flat_type} />}
+                  <p className="text-xs font-bold text-secondary uppercase tracking-wider mb-2">{t("mntSectionCalculation")}</p>
+                  <Row label={t("mntRowMethod")} value={calc.maintenance_type || "—"} />
+                  {calc.flat_type && <Row label={t("mntRowFlatType")} value={calc.flat_type} />}
                   {calc.maintenance_type === "SQ_FEET" && (
                     <>
-                      <Row label="Area" value={calc.area_sqft ? `${calc.area_sqft} sq.ft` : "—"} />
-                      <Row label="Rate" value={calc.rate_per_sqft ? `₹${calc.rate_per_sqft}/sq.ft` : "—"} />
-                      <Row label="Calculation" value={calc.calculation || "—"} />
+                      <Row label={t("mntRowArea")} value={calc.area_sqft ? `${calc.area_sqft} sq.ft` : "—"} />
+                      <Row label={t("mntRowRate")} value={calc.rate_per_sqft ? `₹${calc.rate_per_sqft}/sq.ft` : "—"} />
+                      <Row label={t("mntRowCalculation")} value={calc.calculation || "—"} />
                     </>
                   )}
                   {calc.maintenance_type !== "SQ_FEET" && (
-                    <Row label="Configured amount" value={calc.configured_amount != null ? formatMoney(calc.configured_amount) : "—"} />
+                    <Row label={t("mntRowConfiguredAmount")} value={calc.configured_amount != null ? formatMoney(calc.configured_amount) : "—"} />
                   )}
                 </div>
               )}
 
               {owner && (
                 <div className="rounded-xl border p-3" style={{ borderColor: "var(--glass-border)", background: "var(--card-inner-bg)" }}>
-                  <p className="text-xs font-bold text-secondary uppercase tracking-wider mb-2">Responsible owner</p>
-                  <p className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>{owner.User?.name || `User #${owner.user_id}`}</p>
+                  <p className="text-xs font-bold text-secondary uppercase tracking-wider mb-2">{t("mntSectionResponsibleOwner")}</p>
+                  <p className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>{owner.User?.name || t("mntUserHash", { id: owner.user_id })}</p>
                   {owner.User?.mobile && <p className="text-xs text-secondary">{owner.User.mobile}</p>}
                 </div>
               )}
@@ -1996,7 +2034,7 @@ function BillDetailModal({ id, onClose }) {
           )}
 
           <div className="flex justify-end pt-4 border-t mt-4" style={{ borderColor: "var(--glass-border)" }}>
-            <button onClick={onClose} className={btnPrimary} style={{ borderRadius: 12 }}>Close</button>
+            <button onClick={onClose} className={btnPrimary} style={{ borderRadius: 12 }}>{t("mntClose")}</button>
           </div>
         </div>
       </div>

@@ -2394,6 +2394,63 @@ html.light.role-theme .stat-card__label {
 }
 
 /* --------------------------------------------------------------------------
+   6b. ACCOUNTING KPI PALETTE
+   Distinct colors for the /admin/accounting cards (opening/income/expense/
+   balance/bills/maintenance/amenity) so they no longer mirror the shared
+   admin dashboard groups (purple/teal/cyan/red).
+   Dark  = sky, indigo, coral-pink, royal blue, cyan, lavender
+   Light = matching gradient tiles
+   -------------------------------------------------------------------------- */
+
+html.role-theme:not(.light) .ad-kpi.ad-kpi--opening { border-color: rgba(56, 189, 248, 0.5) !important; }
+html.role-theme:not(.light) .ad-kpi.ad-kpi--balance { border-color: rgba(59, 130, 246, 0.5) !important; }
+html.role-theme:not(.light) .ad-kpi.ad-kpi--bills { border-color: rgba(34, 211, 238, 0.5) !important; }
+html.role-theme:not(.light) .ad-kpi.ad-kpi--income,
+html.role-theme:not(.light) .ad-kpi.ad-kpi--maintenance { border-color: rgba(99, 102, 241, 0.5) !important; }
+html.role-theme:not(.light) .ad-kpi.ad-kpi--expense { border-color: rgba(251, 113, 133, 0.5) !important; }
+html.role-theme:not(.light) .ad-kpi.ad-kpi--amenity { border-color: rgba(167, 139, 250, 0.5) !important; }
+
+html.role-theme:not(.light) .ad-kpi.ad-kpi--opening .ad-kpi-label { color: #38bdf8 !important; }
+html.role-theme:not(.light) .ad-kpi.ad-kpi--balance .ad-kpi-label { color: #3b82f6 !important; }
+html.role-theme:not(.light) .ad-kpi.ad-kpi--bills .ad-kpi-label { color: #22d3ee !important; }
+html.role-theme:not(.light) .ad-kpi.ad-kpi--income .ad-kpi-label,
+html.role-theme:not(.light) .ad-kpi.ad-kpi--maintenance .ad-kpi-label { color: #6366f1 !important; }
+html.role-theme:not(.light) .ad-kpi.ad-kpi--expense .ad-kpi-label { color: #fb7185 !important; }
+html.role-theme:not(.light) .ad-kpi.ad-kpi--amenity .ad-kpi-label { color: #a78bfa !important; }
+
+html.light.role-theme .ad-kpi.ad-kpi--opening { background: linear-gradient(135deg, #38bdf8 0%, #0ea5e9 100%) !important; border: none !important; }
+html.light.role-theme .ad-kpi.ad-kpi--balance { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) !important; border: none !important; }
+html.light.role-theme .ad-kpi.ad-kpi--bills { background: linear-gradient(135deg, #22d3ee 0%, #06b6d4 100%) !important; border: none !important; }
+html.light.role-theme .ad-kpi.ad-kpi--income,
+html.light.role-theme .ad-kpi.ad-kpi--maintenance { background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%) !important; border: none !important; }
+html.light.role-theme .ad-kpi.ad-kpi--expense { background: linear-gradient(135deg, #fb7185 0%, #f43f5e 100%) !important; border: none !important; }
+html.light.role-theme .ad-kpi.ad-kpi--amenity { background: linear-gradient(135deg, #a78bfa 0%, #8b5cf6 100%) !important; border: none !important; }
+
+/* --------------------------------------------------------------------------
+   6c. ADMIN DASHBOARD KPI PALETTE
+   Ocean blues + violet + pink for /admin/dashboard KPI tiles. Scoped to
+   .admin-dash so AdminEmergency (which reuses these variant classes) keeps
+   its original colors.
+   Dark  = cyan, royal blue, coral-pink, lavender
+   Light = matching gradient tiles
+   -------------------------------------------------------------------------- */
+
+html.role-theme:not(.light) .admin-dash .ad-kpi.ad-kpi--residents { border-color: rgba(34, 211, 238, 0.5) !important; }
+html.role-theme:not(.light) .admin-dash .ad-kpi.ad-kpi--guards { border-color: rgba(59, 130, 246, 0.5) !important; }
+html.role-theme:not(.light) .admin-dash .ad-kpi.ad-kpi--complaints { border-color: rgba(251, 113, 133, 0.5) !important; }
+html.role-theme:not(.light) .admin-dash .ad-kpi.ad-kpi--flats { border-color: rgba(167, 139, 250, 0.5) !important; }
+
+html.role-theme:not(.light) .admin-dash .ad-kpi.ad-kpi--residents .ad-kpi-label { color: #22d3ee !important; }
+html.role-theme:not(.light) .admin-dash .ad-kpi.ad-kpi--guards .ad-kpi-label { color: #3b82f6 !important; }
+html.role-theme:not(.light) .admin-dash .ad-kpi.ad-kpi--complaints .ad-kpi-label { color: #fb7185 !important; }
+html.role-theme:not(.light) .admin-dash .ad-kpi.ad-kpi--flats .ad-kpi-label { color: #a78bfa !important; }
+
+html.light.role-theme .admin-dash .ad-kpi.ad-kpi--residents { background: linear-gradient(135deg, #22d3ee 0%, #06b6d4 100%) !important; border: none !important; }
+html.light.role-theme .admin-dash .ad-kpi.ad-kpi--guards { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) !important; border: none !important; }
+html.light.role-theme .admin-dash .ad-kpi.ad-kpi--complaints { background: linear-gradient(135deg, #fb7185 0%, #f43f5e 100%) !important; border: none !important; }
+html.light.role-theme .admin-dash .ad-kpi.ad-kpi--flats { background: linear-gradient(135deg, #a78bfa 0%, #8b5cf6 100%) !important; border: none !important; }
+
+/* --------------------------------------------------------------------------
    7. TABLES STANDARDIZATION
    -------------------------------------------------------------------------- */
 html.role-theme .global-table-container,

@@ -4,6 +4,8 @@ import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import API from "../../../services/api";
 import { useLang } from "../../../context/LanguageContext";
+import { useContext } from "react";
+import { AuthContext } from "../../../context/AuthContext";
 import { exportToExcel } from "../../../utils/exportExcel";
 import { exportToPDF } from "../../../utils/exportPDF";
 import {
@@ -202,11 +204,15 @@ const [totalPages, setTotalPages] = useState(1);
   const [floors, setFloors] = useState([]);
   const [flats, setFlats] = useState([]);
 
+  const { user } = useContext(AuthContext);
+  const isSuperAdmin = user?.activeRole === "SUPER_ADMIN";
+
   useEffect(() => {
+    if (!isSuperAdmin) return;
     API.get("/societies")
       .then(res => setSocieties(res.data || []))
       .catch(err => console.error("Failed to fetch societies", err));
-  }, []);
+  }, [isSuperAdmin]);
 
   const fetchBills = useCallback(async (pg, sid, bid, fdid, flid, s, fd, td, isInit = false) => {
     isInit ? setLoading(true) : setFetching(true);
@@ -346,11 +352,14 @@ const [totalPages, setTotalPages] = useState(1);
             <MdArrowBack size={18} />
           </button>
           <div className="er-icon er-icon--finance"><MdAttachMoney size={22} /></div>
-          <div><h2 className="page-title">Global Financial Report</h2><p className="page-subtitle">{loading ? "—" : `₹${counts.collected.toLocaleString()} collected total`}</p></div>
+          <div>
+            <h2 className="page-title">{t("finReportTitle") || "Global Financial Report"}</h2>
+            <p className="page-subtitle">{loading ? "—" : t("finSubtitle", { collected: `₹${counts.collected.toLocaleString()}` })}</p>
+          </div>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-          <button onClick={handleExcelExport} className="btn-export" style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 13px", fontSize: 12, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}><MdTableChart size={14} /> Excel</button>
-          <button onClick={handlePDFExport} className="btn-export" style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 13px", fontSize: 12, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}><MdPictureAsPdf size={14} /> PDF</button>
+          <button onClick={handleExcelExport} className="btn-export" style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 13px", fontSize: 12, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}><MdTableChart size={14} /> {t("rptExportExcel") || "Excel"}</button>
+          <button onClick={handlePDFExport} className="btn-export" style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 13px", fontSize: 12, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}><MdPictureAsPdf size={14} /> {t("rptExportPDF") || "PDF"}</button>
           <button onClick={() => setShowFilters(true)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 13px", borderRadius: 10, fontSize: 12, fontWeight: 700, background: applied ? "rgba(107,70,193,0.15)" : "var(--card-inner-bg,rgba(255,255,255,0.06))", color: applied ? "#9F87D7" : "var(--text-secondary)", border: applied ? "1px solid rgba(107,70,193,0.35)" : "1px solid var(--glass-border)", cursor: "pointer", position: "relative", whiteSpace: "nowrap" }}><MdFilterList size={14} /> Filters{applied && <span style={{ position: "absolute", top: -3, right: -3, width: 8, height: 8, borderRadius: "50%", background: "#6B46C1", boxShadow: "0 0 6px rgba(107,70,193,0.6)" }} />}</button>
         </div>
       </div>
@@ -385,8 +394,8 @@ const [totalPages, setTotalPages] = useState(1);
       <div className="data-table-wrap" style={bleed}>
         <div style={{ padding: "13px 16px", borderBottom: "1px solid var(--glass-border)", display: "flex", alignItems: "center", justifyItems: "space-between", gap: 8 }}>
           <span style={{ fontSize: 13, fontWeight: 700, color: "var(--text-primary)", flex: 1 }}>
-            Financial Records
-            {!loading && <span style={{ fontSize: 12, fontWeight: 400, color: "var(--text-secondary)", marginLeft: 8 }}>— {totalItems} records{applied ? " (filtered)" : ""}</span>}
+            {t("finRecordsTitle") || "Financial Records"}
+            {!loading && <span style={{ fontSize: 12, fontWeight: 400, color: "var(--text-secondary)", marginLeft: 8 }}>{t("finRecordsSubtitle", { total: totalItems })}{applied ? ` (${t("finFiltered") || "filtered"})` : ""}</span>}
           </span>
           {fetching && <Spinner small />}
         </div>
@@ -394,7 +403,7 @@ const [totalPages, setTotalPages] = useState(1);
         {loading ? (
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10, padding: "60px 20px", color: "var(--text-secondary)" }}><Spinner /><p style={{ fontSize: 13, margin: 0 }}>Loading finances...</p></div>
         ) : bills.length === 0 ? (
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10, padding: "60px 20px", color: "var(--text-secondary)" }}><MdOutlineInbox size={48} style={{ opacity: 0.2 }} /><p style={{ fontSize: 13, margin: 0 }}>No records found</p></div>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10, padding: "60px 20px", color: "var(--text-secondary)" }}><MdOutlineInbox size={48} style={{ opacity: 0.2 }} /><p style={{ fontSize: 13, margin: 0 }}>{t("finNoRecords") || "No records found"}</p></div>
         ) : isMobile ? (
           <div style={{ padding: "10px 12px", display: "flex", flexDirection: "column", gap: 10 }}>
             {bills.map((b, i) => (

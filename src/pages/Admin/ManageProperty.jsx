@@ -892,32 +892,15 @@ function AreaAssignModal({
                 </div>
 
                 {/* Filter Tabs */}
-                <div style={{ display: "inline-flex", background: "var(--card-bg)", padding: 3, borderRadius: 8, border: "1px solid var(--glass-border)", gap: 2, maxWidth: "100%", overflowX: "auto", scrollbarWidth: "none" }}>
-                  {[
-                    { key: "ALL", label: t("mpFilterAllN", { n: flats.length }) },
-                    { key: "EMPTY", label: t("mpFilterEmptyN", { n: emptyCount }) },
-                    { key: "CONFIGURED", label: t("mpFilterConfiguredN", { n: configuredCount }) },
-                  ].map(tab => (
-                    <button
-                      key={tab.key}
-                      type="button"
-                      onClick={() => setFilterType(tab.key)}
-                      style={{
-                        padding: "4px 10px",
-                        borderRadius: 6,
-                        border: "none",
-                        fontSize: 11,
-                        fontWeight: filterType === tab.key ? 700 : 500,
-                        background: filterType === tab.key ? "var(--accent)" : "transparent",
-                        color: filterType === tab.key ? "#fff" : "var(--text-secondary)",
-                        cursor: "pointer",
-                        transition: "all 0.15s ease"
-                      }}
-                    >
-                      {tab.label}
-                    </button>
-                  ))}
-                </div>
+                <SlidingTabs
+                  value={filterType}
+                  onChange={setFilterType}
+                  items={[
+                    { id: "ALL", label: t("mpFilterAllN", { n: flats.length }) },
+                    { id: "EMPTY", label: t("mpFilterEmptyN", { n: emptyCount }) },
+                    { id: "CONFIGURED", label: t("mpFilterConfiguredN", { n: configuredCount }) },
+                  ]}
+                />
 
                 {/* Quick Remainder-Fill Tool (Using Both seamlessly) */}
                 {emptyCount > 0 && (
@@ -2156,6 +2139,8 @@ function FlatsTab({
   const [confirmId,    setConfirmId]    = useState(null);
   const [deletingId,   setDeletingId]   = useState(null);
   const [error,        setError]        = useState("");
+  const [page,         setPage]         = useState(1);
+  const [limit,        setLimit]        = useState(10);
 
   useEffect(() => { loadFlats(); }, []);
 
@@ -2191,11 +2176,23 @@ function FlatsTab({
     const mf = filterStatus === "ALL" ? true : filterStatus === "OCCUPIED" ? !!f.resident_id : !f.resident_id;
     return ms && mf;
   });
+  const totalPages = Math.max(1, Math.ceil(filtered.length / limit));
+  const pageItems = filtered.slice((page - 1) * limit, page * limit);
+  const rangeStart = filtered.length ? (page - 1) * limit + 1 : 0;
+  const rangeEnd = Math.min(page * limit, filtered.length);
+
+  useEffect(() => {
+    setPage(1);
+  }, [search, filterStatus]);
+
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages);
+  }, [page, totalPages]);
 
   const FILTER_TABS = [
-    { key: "ALL",      label: t("mpAll") || "All",           color: "#5A3BA2" },
-    { key: "OCCUPIED", label: t("mpOccupied") || "Occupied", color: "#16a34a" },
-    { key: "VACANT",   label: t("mpVacant") || "Vacant",     color: "var(--accent)" },
+    { id: "ALL",      label: t("mpAll") || "All",           badge: counts.ALL },
+    { id: "OCCUPIED", label: t("mpOccupied") || "Occupied", badge: counts.OCCUPIED },
+    { id: "VACANT",   label: t("mpVacant") || "Vacant",     badge: counts.VACANT },
   ];
 
   return (
@@ -2224,17 +2221,12 @@ function FlatsTab({
 
       <div className="data-table-wrap">
         <div style={{ padding: "12px 14px", borderBottom: "1px solid var(--glass-border)", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
-          <div style={{ display: "flex", gap: 4, background: "var(--card-inner-bg)", border: "1px solid var(--glass-border)", borderRadius: 10, padding: 4, flex: 1 }}>
-            {FILTER_TABS.map(tab => {
-              const on = filterStatus === tab.key;
-              return (
-                <button key={tab.key} onClick={() => setFilterStatus(tab.key)} style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center", justifyContent: "center", gap: isMobile ? 3 : 5, padding: isMobile ? "6px 4px" : "6px 8px", borderRadius: 7, border: "none", cursor: "pointer", fontSize: isMobile ? 11 : 12, fontWeight: on ? 700 : 500, transition: "all 0.18s", background: on ? tab.color : "transparent", color: on ? "#fff" : "var(--text-secondary)", boxShadow: on ? "0 2px 8px rgba(0,0,0,0.22)" : "none" }}>
-                  {tab.label}
-                  <span style={{ fontSize: 10, fontWeight: 700, padding: "1px 5px", borderRadius: 999, lineHeight: 1.6, background: on ? "rgba(255,255,255,0.22)" : "var(--glass-border)", color: on ? "#fff" : "var(--text-secondary)" }}>{counts[tab.key]}</span>
-                </button>
-              );
-            })}
-          </div>
+          <SlidingTabs
+            fullWidth
+            value={filterStatus}
+            onChange={setFilterStatus}
+            items={FILTER_TABS}
+          />
         </div>
 
         {loading ? (
@@ -2248,7 +2240,7 @@ function FlatsTab({
           </div>
         ) : isMobile ? (
           <div style={{ display: "flex", flexDirection: "column", gap: 9, padding: 12 }}>
-            {filtered.map((f, idx) => {
+            {pageItems.map((f, idx) => {
               const occ = !!f.resident_id;
               const isRowHouse = !f.Floor && f.Block;
               const blockName = f.Block?.name || (f.Floor ? f.Floor.Block?.name : "—");
@@ -2285,10 +2277,17 @@ function FlatsTab({
           </div>
         ) : (
           <>
-            <table className="data-table">
+            <table className="data-table mp-property-list-table" style={{ width: "100%", tableLayout: "fixed" }}>
+              <colgroup>
+                <col style={{ width: 64 }} />
+                <col style={{ width: "24%" }} />
+                <col style={{ width: "32%" }} />
+                <col style={{ width: "18%" }} />
+                <col />
+              </colgroup>
               <thead>
                 <tr>
-                  <th style={{ width: 64 }}>{t("srNo")}</th>
+                  <th>{t("srNo")}</th>
                   <th>{t("mpUnit")}</th>
                   <th>{t("mpLocation")}</th>
                   <th>{t("mpStatus")}</th>
@@ -2296,13 +2295,13 @@ function FlatsTab({
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((f, idx) => {
+                {pageItems.map((f, idx) => {
                   const occ = !!f.resident_id;
                   const isRowHouse = !f.Floor && f.Block;
                   const blockName = f.Block?.name || (f.Floor ? f.Floor.Block?.name : "—");
                   return (
                     <tr key={f.id}>
-                      <td style={{ color: "var(--text-secondary)", fontSize: 12 }}>{idx + 1}</td>
+                      <td style={{ color: "var(--text-secondary)", fontSize: 12 }}>{(page - 1) * limit + idx + 1}</td>
                       <td>
                         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                           <div style={{ width: 32, height: 32, borderRadius: 9, flexShrink: 0, background: occ ? "var(--stat-green-bg)" : "var(--stat-amber-bg)", border: `1px solid ${occ ? "var(--stat-green-border)" : "var(--stat-amber-border)"}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -2346,10 +2345,25 @@ function FlatsTab({
                 })}
               </tbody>
             </table>
-            <div className="table-footer">
-              <span style={{ fontSize: 12, color: "var(--text-secondary)" }}>{t("mpUnitsOf", { n: filtered.length, total: flats.length })}</span>
-            </div>
           </>
+        )}
+
+        {!loading && filtered.length > 0 && (
+          <div className="table-footer" style={{ flexDirection: "column", justifyContent: "center", gap: 10 }}>
+            <span style={{ fontSize: 12, color: "var(--text-secondary)" }}>
+              {t("mpShowing") || "Showing"} {rangeStart}–{rangeEnd} {t("mpOf") || "of"} {filtered.length}
+            </span>
+            <Pagination
+              page={page}
+              totalPages={totalPages}
+              onPageChange={setPage}
+              pageSize={limit}
+              onPageSizeChange={(size) => {
+                setLimit(size);
+                setPage(1);
+              }}
+            />
+          </div>
         )}
       </div>
     </div>

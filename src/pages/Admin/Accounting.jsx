@@ -38,8 +38,6 @@ import {
   MdPictureAsPdf,
   MdTableChart,
   MdReceipt,
-  MdHomeRepairService,
-  MdPool,
   MdVisibility,
 } from "react-icons/md";
 import { AuthContext } from "../../context/AuthContext";
@@ -180,6 +178,7 @@ function Modal({ title, icon: Icon = MdOutlineReceiptLong, maxWidth = "max-w-xl"
 ════════════════════════════════════════════════════════════════════════ */
 export default function Accounting({ initialTab = "overview" }) {
   const { user } = useContext(AuthContext);
+  const { t } = useLang();
   const isSuperAdmin = user?.role === "SUPER_ADMIN" || user?.activeRole === "SUPER_ADMIN";
   const isDeleteAllowed = isAdmin(user) || hasPermission(user, "accounting", "delete");
   const isManageOpening = isAdmin(user) || hasPermission(user, "accounting", "manage_opening_balance");
@@ -224,7 +223,7 @@ export default function Accounting({ initialTab = "overview" }) {
       setChart(ch);
     } catch (err) {
       console.error("Failed to load accounting data", err);
-      setError("Failed to load accounting data. Please try again.");
+      setError(t("accLoadFailed"));
     } finally {
       setLoading(false);
     }
@@ -251,7 +250,7 @@ export default function Accounting({ initialTab = "overview" }) {
           <p className="font-medium text-sm">{error}</p>
         </div>
         <button onClick={load} className="btn-primary flex items-center gap-2 px-4 py-2 text-xs font-semibold shrink-0">
-          <MdRefresh size={16} /> Retry
+          <MdRefresh size={16} /> {t("retry")}
         </button>
       </div>
     );
@@ -260,43 +259,12 @@ export default function Accounting({ initialTab = "overview" }) {
   const b = balance || {};
   const months = chart?.months || [];
 
-  const kpis = [
-    {
-      label: "Opening Balance",
-      value: CURRENCY(b.opening_balance),
-      sub: b.opening_balance_effective_date ? `Effective ${b.opening_balance_effective_date}` : "Not yet set",
-      icon: MdSavings,
-      kpiClass: "ad-kpi ad-kpi--opening",
-    },
-    {
-      label: "Total Income",
-      value: CURRENCY(b.total_income ?? b.total_credit),
-      sub: `Bills ${CURRENCY(b.bill_income)} · Maint ${CURRENCY(b.maintenance_income)} · Amenities ${CURRENCY(b.amenity_income)}`,
-      icon: MdArrowUpward,
-      kpiClass: "ad-kpi ad-kpi--income",
-    },
-    {
-      label: "Total Expenses",
-      value: CURRENCY(b.total_expenses ?? b.total_debit),
-      sub: b.void_reversals ? `Includes ${CURRENCY(b.void_reversals)} void reversals` : "Money out this period",
-      icon: MdArrowDownward,
-      kpiClass: "ad-kpi ad-kpi--expense",
-    },
-    {
-      label: "Current Balance",
-      value: CURRENCY(b.current_balance),
-      sub: `${b.society_name || "Society"} — running cash position`,
-      icon: MdAccountBalance,
-      kpiClass: "ad-kpi ad-kpi--balance",
-    },
-  ];
-
   const allTabs = [
-    { id: "overview", label: "Overview", icon: MdAccountBalance },
-    { id: "ledger", label: "Cash Book Ledger", module: "general_ledger", icon: MdOutlineReceiptLong },
-    { id: "expenses", label: "Expense Tracking", module: "expenses", icon: MdPayments },
-    { id: "audit", label: "Financial Audit Log", module: "financial_audit_log", icon: MdHistoryEdu },
-    { id: "opening", label: "Opening Balance", icon: MdSavings },
+    { id: "overview", label: t("accOverviewTab"), icon: MdAccountBalance },
+    { id: "ledger", label: t("accLedgerTab"), module: "general_ledger", icon: MdOutlineReceiptLong },
+    { id: "expenses", label: t("accExpensesTab"), module: "expenses", icon: MdPayments },
+    { id: "audit", label: t("accAuditTab"), module: "financial_audit_log", icon: MdHistoryEdu },
+    { id: "opening", label: t("accOpeningTab"), icon: MdSavings },
   ];
   const tabs = allTabs.filter((t) => !t.module || isAdmin(user) || hasPermission(user, t.module, "view"));
   const activeTab = tabs.some((t) => t.id === tab) ? tab : "overview";
@@ -331,7 +299,7 @@ export default function Accounting({ initialTab = "overview" }) {
             <MdOutlineReceiptLong size={22} />
           </div>
           <h1 className="text-lg sm:text-xl font-bold tracking-tight text-primary flex items-center gap-2 m-0">
-            Account & Cash Management
+            {t("accTitle")}
           </h1>
         </div>
 
@@ -369,14 +337,14 @@ export default function Accounting({ initialTab = "overview" }) {
                   new Date().getFullYear() + 1,
                 ].map((y) => ({
                   value: y,
-                  label: `Year ${y}`,
+                  label: t("accYear", { year: y }),
                 }))}
               />
             </div>
 
             <button
               onClick={load}
-              title="Refresh data"
+              title={t("accRefreshTitle")}
               className="inline-flex items-center justify-center rounded-xl border transition-all cursor-pointer shrink-0"
               style={{
                 width: 38,
@@ -405,23 +373,23 @@ export default function Accounting({ initialTab = "overview" }) {
         <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap", background: "var(--card-inner-bg)", padding: "8px 14px", borderRadius: 14, border: "1px solid var(--glass-border)" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10, flex: 1, minWidth: 220 }}>
             <MdBusiness size={18} style={{ color: "var(--accent)" }} />
-            <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase", whiteSpace: "nowrap" }}>Select Society</span>
+            <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase", whiteSpace: "nowrap" }}>{t("accSelectSociety")}</span>
             <Select
               value={societyId}
               onChange={handleSocietyChange}
               style={{ height: 38, fontSize: 13, fontWeight: 700, flex: 1, border: "1.5px solid var(--accent-alpha,rgba(107,70,193,0.25))" }}
             >
-              <option value="">— Choose a Society —</option>
+              <option value="">{t("accChooseSociety")}</option>
               {societies.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
             </Select>
           </div>
           {(!societyId || societyId === "ALL") ? (
             <span style={{ fontSize: 12, color: "var(--stat-amber-color)", fontWeight: 700 }}>
-              💡 Select a society to view its accounting
+              {t("accSelectSocietyHint")}
             </span>
           ) : (
             <span style={{ fontSize: 12, color: "var(--stat-green-color)", fontWeight: 700 }}>
-              ✓ Working on: {societies.find((s) => String(s.id) === String(societyId))?.name || ""}
+              ✓ {t("accWorkingOn", { name: societies.find((s) => String(s.id) === String(societyId))?.name || "" })}
             </span>
           )}
         </div>
@@ -431,8 +399,8 @@ export default function Accounting({ initialTab = "overview" }) {
         <div className="rounded-xl border p-8 flex flex-col items-center gap-3 text-center"
           style={{ background: "var(--card-bg)", borderColor: "var(--glass-border)" }}>
           <MdBusiness size={36} className="opacity-30" />
-          <p className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>Select a society to continue</p>
-          <p className="text-xs text-secondary">Balance, cash book, expenses, and audit logs need a society context.</p>
+          <p className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>{t("accSelectToContinue")}</p>
+          <p className="text-xs text-secondary">{t("accNeedSocietyContext")}</p>
         </div>
       )}
 
@@ -475,153 +443,53 @@ function OverviewTab({ b, months, year, onOpenTab }) {
     debited: m.debited,
   }));
 
-  const glassCardStyle = {
-    background: "var(--card-bg, rgba(15, 23, 42, 0.65))",
-    border: "1px solid var(--glass-border, rgba(255, 255, 255, 0.12))",
-    boxShadow: "0 8px 32px 0 rgba(0, 0, 0, 0.2), inset 0 1px 0 0 rgba(255, 255, 255, 0.08)",
-    backdropFilter: "blur(20px)",
-    WebkitBackdropFilter: "blur(20px)",
-  };
-
   return (
     <div className="space-y-6">
-      {/* ── Dashboard KPI Cards with Uniform Glassmorphism & Distinct Text Colors ── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+      {/* ── Dashboard KPI Cards ── */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
         {/* 1. Opening Balance */}
-        <div
-          className="relative overflow-hidden rounded-2xl p-5 flex flex-col justify-between gap-4 transition-all duration-200 hover:-translate-y-1 hover:shadow-xl group"
-          style={glassCardStyle}
-        >
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-indigo-400">
-              Opening Balance
-            </span>
-            <div
-              className="w-9 h-9 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110"
-              style={{
-                background: "rgba(99, 102, 241, 0.14)",
-                border: "1px solid rgba(99, 102, 241, 0.3)",
-                color: "#818cf8",
-              }}
-            >
-              <MdSavings size={18} />
-            </div>
-          </div>
-          <div>
-            <div className="text-2xl lg:text-3xl font-black text-indigo-400 tracking-tight">
-              {CURRENCY(b.opening_balance)}
-            </div>
-            <p className="text-[11px] text-secondary mt-1.5 line-clamp-1">
-              {b.opening_balance_effective_date ? `Effective ${b.opening_balance_effective_date}` : "Initial balance reserve"}
-            </p>
-          </div>
+        <div className="ad-kpi ad-kpi--opening">
+          <span className="ad-kpi-val">{CURRENCY(b.opening_balance)}</span>
+          <span className="ad-kpi-label">{t("accOpeningBalance")}</span>
+          <span className="ad-kpi-desc hidden lg:block">
+            {b.opening_balance_effective_date ? t("accEffectiveOn", { date: b.opening_balance_effective_date }) : t("accInitialBalanceReserve")}
+          </span>
         </div>
 
         {/* 2. Total Income */}
-        <div
-          className="relative overflow-hidden rounded-2xl p-5 flex flex-col justify-between gap-4 transition-all duration-200 hover:-translate-y-1 hover:shadow-xl group"
-          style={glassCardStyle}
-        >
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-400">
-              Total Income
-            </span>
-            <div
-              className="w-9 h-9 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110"
-              style={{
-                background: "rgba(16, 185, 129, 0.14)",
-                border: "1px solid rgba(16, 185, 129, 0.3)",
-                color: "#34d399",
-              }}
-            >
-              <MdArrowUpward size={18} />
-            </div>
-          </div>
-          <div>
-            <div className="text-2xl lg:text-3xl font-black text-emerald-400 tracking-tight">
-              {CURRENCY(b.total_income ?? b.total_credit)}
-            </div>
-            <p className="text-[11px] text-secondary mt-1.5 line-clamp-1">
-              Bills {CURRENCY(b.bill_income)} · Maint {CURRENCY(b.maintenance_income)} · Amenities {CURRENCY(b.amenity_income)}
-            </p>
-          </div>
+        <div className="ad-kpi ad-kpi--income">
+          <span className="ad-kpi-val">{CURRENCY(b.total_income ?? b.total_credit)}</span>
+          <span className="ad-kpi-label">{t("accTotalIncome")}</span>
+          <span className="ad-kpi-desc hidden lg:block">
+            {t("accBillsMaintAmenities", { bills: CURRENCY(b.bill_income), maint: CURRENCY(b.maintenance_income), amenities: CURRENCY(b.amenity_income) })}
+          </span>
         </div>
 
         {/* 3. Total Expenses */}
-        <div
-          className="relative overflow-hidden rounded-2xl p-5 flex flex-col justify-between gap-4 transition-all duration-200 hover:-translate-y-1 hover:shadow-xl group"
-          style={glassCardStyle}
-        >
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-rose-400">
-              Total Expenses
-            </span>
-            <div
-              className="w-9 h-9 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110"
-              style={{
-                background: "rgba(244, 63, 94, 0.14)",
-                border: "1px solid rgba(244, 63, 94, 0.3)",
-                color: "#fb7185",
-              }}
-            >
-              <MdArrowDownward size={18} />
-            </div>
-          </div>
-          <div>
-            <div className="text-2xl lg:text-3xl font-black text-rose-400 tracking-tight">
-              {CURRENCY(b.total_expenses ?? b.total_debit)}
-            </div>
-            <p className="text-[11px] text-secondary mt-1.5 line-clamp-1">
-              {b.void_reversals ? `Includes ${CURRENCY(b.void_reversals)} void reversals` : "Money out this period"}
-            </p>
-          </div>
+        <div className="ad-kpi ad-kpi--expense">
+          <span className="ad-kpi-val">{CURRENCY(b.total_expenses ?? b.total_debit)}</span>
+          <span className="ad-kpi-label">{t("accTotalExpenses")}</span>
+          <span className="ad-kpi-desc hidden lg:block">
+            {b.void_reversals ? t("accIncludesVoid", { amount: CURRENCY(b.void_reversals) }) : t("accMoneyOut")}
+          </span>
         </div>
 
         {/* 4. Current Balance */}
-        <div
-          className="relative overflow-hidden rounded-2xl p-5 flex flex-col justify-between gap-4 transition-all duration-200 hover:-translate-y-1 hover:shadow-xl group"
-          style={glassCardStyle}
-        >
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-purple-400">
-              Current Balance
-            </span>
-            <div
-              className="w-9 h-9 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110"
-              style={{
-                background: "rgba(168, 85, 247, 0.14)",
-                border: "1px solid rgba(168, 85, 247, 0.3)",
-                color: "#c084fc",
-              }}
-            >
-              <MdAccountBalance size={18} />
-            </div>
-          </div>
-          <div>
-            <div className="text-2xl lg:text-3xl font-black text-purple-400 tracking-tight">
-              {CURRENCY(b.current_balance)}
-            </div>
-            <p className="text-[11px] text-secondary mt-1.5 line-clamp-1">
-              {b.society_name || "Society"} — running cash position
-            </p>
-          </div>
+        <div className="ad-kpi ad-kpi--balance">
+          <span className="ad-kpi-val">{CURRENCY(b.current_balance)}</span>
+          <span className="ad-kpi-label">{t("accCurrentBalance")}</span>
+          <span className="ad-kpi-desc hidden lg:block">
+            {t("accRunningCashPosition", { society: b.society_name || t("accSocietyName") })}
+          </span>
         </div>
       </div>
 
-      {/* Income breakdown with uniform glassmorphism & distinct text colors */}
-      <div
-        className="rounded-2xl p-6 shadow-sm border"
-        style={{
-          background: "var(--card-bg, rgba(15, 23, 42, 0.6))",
-          borderColor: "var(--glass-border, rgba(255, 255, 255, 0.1))",
-          backdropFilter: "blur(16px)",
-          WebkitBackdropFilter: "blur(16px)",
-        }}
-      >
+      {/* Income breakdown */}
+      <div className="bg-card border border-glass-border rounded-2xl p-6 shadow-sm">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-base font-bold text-primary">Revenue & Income Inflow</h2>
-            <p className="text-xs text-secondary">Categorized breakdown of all money credited to society accounts</p>
+            <h2 className="text-base font-bold text-primary">{t("accRevenueTitle")}</h2>
+            <p className="text-xs text-secondary">{t("accRevenueSubtitle")}</p>
           </div>
           <span
             className="text-xs font-bold px-3 py-1 rounded-full border"
@@ -631,86 +499,29 @@ function OverviewTab({ b, months, year, onOpenTab }) {
               color: "#34d399",
             }}
           >
-            Total {CURRENCY(b.total_income ?? b.total_credit)}
+            {t("accTotalLabel", { amount: CURRENCY(b.total_income ?? b.total_credit) })}
           </span>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
           {/* Utility & Flat Bills */}
-          <div
-            className="relative overflow-hidden rounded-2xl p-5 flex flex-col justify-between gap-3.5 transition-all duration-200 hover:-translate-y-1 hover:shadow-xl group"
-            style={glassCardStyle}
-          >
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-sky-400">
-                Utility & Flat Bills
-              </span>
-              <div
-                className="w-9 h-9 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110"
-                style={{
-                  background: "rgba(14, 165, 233, 0.14)",
-                  border: "1px solid rgba(14, 165, 233, 0.3)",
-                  color: "#38bdf8",
-                }}
-              >
-                <MdReceipt size={18} />
-              </div>
-            </div>
-            <div>
-              <div className="text-2xl font-black text-sky-400">{CURRENCY(b.bill_income)}</div>
-              <p className="text-[11px] text-secondary mt-1">Water, electricity, diesel & common utility bills</p>
-            </div>
+          <div className="ad-kpi ad-kpi--bills">
+            <span className="ad-kpi-val">{CURRENCY(b.bill_income)}</span>
+            <span className="ad-kpi-label">{t("accUtilityFlatBills")}</span>
+            <span className="ad-kpi-desc hidden lg:block">{t("accUtilityDesc")}</span>
           </div>
 
           {/* Maintenance Fees */}
-          <div
-            className="relative overflow-hidden rounded-2xl p-5 flex flex-col justify-between gap-3.5 transition-all duration-200 hover:-translate-y-1 hover:shadow-xl group"
-            style={glassCardStyle}
-          >
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-teal-400">
-                Maintenance Fees
-              </span>
-              <div
-                className="w-9 h-9 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110"
-                style={{
-                  background: "rgba(20, 184, 166, 0.14)",
-                  border: "1px solid rgba(20, 184, 166, 0.3)",
-                  color: "#2dd4bf",
-                }}
-              >
-                <MdHomeRepairService size={18} />
-              </div>
-            </div>
-            <div>
-              <div className="text-2xl font-black text-teal-400">{CURRENCY(b.maintenance_income)}</div>
-              <p className="text-[11px] text-secondary mt-1">Monthly society maintenance collections</p>
-            </div>
+          <div className="ad-kpi ad-kpi--maintenance">
+            <span className="ad-kpi-val">{CURRENCY(b.maintenance_income)}</span>
+            <span className="ad-kpi-label">{t("accMaintenanceFees")}</span>
+            <span className="ad-kpi-desc hidden lg:block">{t("accMaintenanceDesc")}</span>
           </div>
 
           {/* Amenity Bookings */}
-          <div
-            className="relative overflow-hidden rounded-2xl p-5 flex flex-col justify-between gap-3.5 transition-all duration-200 hover:-translate-y-1 hover:shadow-xl group"
-            style={glassCardStyle}
-          >
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-amber-400">
-                Amenity Bookings
-              </span>
-              <div
-                className="w-9 h-9 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110"
-                style={{
-                  background: "rgba(245, 158, 11, 0.14)",
-                  border: "1px solid rgba(245, 158, 11, 0.3)",
-                  color: "#fbbf24",
-                }}
-              >
-                <MdPool size={18} />
-              </div>
-            </div>
-            <div>
-              <div className="text-2xl font-black text-amber-400">{CURRENCY(b.amenity_income)}</div>
-              <p className="text-[11px] text-secondary mt-1">Clubhouse, hall & sports amenities</p>
-            </div>
+          <div className="ad-kpi ad-kpi--amenity">
+            <span className="ad-kpi-val">{CURRENCY(b.amenity_income)}</span>
+            <span className="ad-kpi-label">{t("accAmenityBookings")}</span>
+            <span className="ad-kpi-desc hidden lg:block">{t("accAmenityDesc")}</span>
           </div>
         </div>
       </div>
@@ -726,8 +537,8 @@ function OverviewTab({ b, months, year, onOpenTab }) {
             <MdViewList size={16} /> {t("chartOpenLedger")}
           </button>
         </div>
-        <div className="w-full h-72 min-h-0">
-          <ResponsiveContainer width="100%" height="100%">
+        <div style={{ width: "100%", height: 288, minWidth: 0 }}>
+          <ResponsiveContainer width="100%" height="100%" minWidth={0}>
             <BarChart data={chartData} barCategoryGap={8}>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--glass-border)" vertical={false} />
               <XAxis
@@ -787,6 +598,7 @@ function DetailItem({ label, value, tone }) {
 }
 
 function LedgerDetailsModal({ row, onClose }) {
+  const { t } = useLang();
   const d = row.detail || {};
   const isCredit = row.type === "CREDIT";
   const billLink = (row.source === "BILL" || row.source === "MAINTENANCE") && d.title;
@@ -795,37 +607,37 @@ function LedgerDetailsModal({ row, onClose }) {
 
   const items = [];
   if (isCredit && billLink) {
-    items.push({ label: "Paid By", value: d.payer_name });
-    items.push({ label: "Flat Number", value: d.flat_number });
-    items.push({ label: "Bill Title", value: d.title });
-    items.push({ label: "Bill Type", value: d.bill_type });
-    items.push({ label: "Billing Month", value: d.billing_month });
-    items.push({ label: "Due Date", value: d.due_date });
+    items.push({ label: t("accPaidBy"), value: d.payer_name });
+    items.push({ label: t("accFlatNumber"), value: d.flat_number });
+    items.push({ label: t("accBillTitle"), value: d.title });
+    items.push({ label: t("accBillType"), value: d.bill_type });
+    items.push({ label: t("accBillingMonth"), value: d.billing_month });
+    items.push({ label: t("accDueDate"), value: d.due_date });
   } else if (isCredit && amenity) {
-    items.push({ label: "Booked By", value: d.booker_name });
-    items.push({ label: "Amenity Name", value: d.amenity_name });
-    items.push({ label: "Booked Date", value: d.booked_date });
+    items.push({ label: t("accBookedBy"), value: d.booker_name });
+    items.push({ label: t("accAmenityName"), value: d.amenity_name });
+    items.push({ label: t("accBookedDate"), value: d.booked_date });
   } else if (expense) {
-    items.push({ label: "Paid To", value: d.pay_to });
-    items.push({ label: "Expense Reason", value: d.reason });
-    items.push({ label: "Payment Mode", value: d.payment_mode });
-    items.push({ label: "Payment Date", value: d.payment_date });
+    items.push({ label: t("accPaidTo"), value: d.pay_to });
+    items.push({ label: t("accExpenseReason"), value: d.reason });
+    items.push({ label: t("accPaymentMode"), value: d.payment_mode });
+    items.push({ label: t("accPaymentDate"), value: d.payment_date });
   }
 
   items.push({
-    label: isCredit ? "Credit Amount" : "Debit Amount",
+    label: isCredit ? t("accCreditAmount") : t("accDebitAmount"),
     value: CURRENCY(row.amount),
     tone: isCredit ? "green" : "red",
   });
-  items.push({ label: "Running Balance", value: CURRENCY(row.running_balance), tone: "blue" });
-  items.push({ label: "Entry Date", value: row.entry_date ? String(row.entry_date).slice(0, 10) : null });
-  items.push({ label: "Status", value: row.status === "REVERSED" ? "Reversed" : "Active" });
-  items.push({ label: "Sourced By", value: row.created_by_name ? `${row.created_by_name}${row.created_by_role ? ` (${row.created_by_role})` : ""}` : (row.created_by_role || "System") });
-  if (row.reversal_of_id) items.push({ label: "Reversal Of ID", value: `#${row.reversal_of_id}` });
+  items.push({ label: t("accRunningBalance"), value: CURRENCY(row.running_balance), tone: "blue" });
+  items.push({ label: t("accEntryDate"), value: row.entry_date ? String(row.entry_date).slice(0, 10) : null });
+  items.push({ label: t("accStatus"), value: row.status === "REVERSED" ? t("accReversed") : t("accActiveStatus") });
+  items.push({ label: t("accSourcedBy"), value: row.created_by_name ? `${row.created_by_name}${row.created_by_role ? ` (${row.created_by_role})` : ""}` : (row.created_by_role || t("accSystem")) });
+  if (row.reversal_of_id) items.push({ label: t("accReversalOfID"), value: `#${row.reversal_of_id}` });
 
   return (
     <Modal
-      title={isCredit ? "Cash Book Entry — Credit (Money In)" : "Cash Book Entry — Debit (Money Out)"}
+      title={isCredit ? t("accLedgerDetailCredit") : t("accLedgerDetailDebit")}
       icon={isCredit ? MdArrowUpward : MdArrowDownward}
       maxWidth="max-w-2xl"
       onClose={onClose}
@@ -837,18 +649,18 @@ function LedgerDetailsModal({ row, onClose }) {
               isCredit ? "bg-emerald-500/15 text-emerald-500 border border-emerald-500/30" : "bg-rose-500/15 text-rose-500 border border-rose-500/30"
             }`}
           >
-            {isCredit ? "+ CREDIT (IN)" : "− DEBIT (OUT)"}
+            {isCredit ? t("accCreditIn") : t("accDebitOut")}
           </span>
           <span className="text-xs font-bold text-primary bg-card px-2.5 py-1 rounded-lg border border-glass-border">
             {row.source}
           </span>
         </div>
-        <span className="text-xs text-secondary font-mono">Entry #{row.id ?? "—"}</span>
+        <span className="text-xs text-secondary font-mono">{t("accEntryNo", { id: row.id ?? "—" })}</span>
       </div>
 
       {row.description && (
         <div className="p-3 bg-card-inner-bg border border-glass-border rounded-xl">
-          <div className="text-[11px] font-semibold uppercase text-secondary">Particulars / Description</div>
+          <div className="text-[11px] font-semibold uppercase text-secondary">{t("accParticularsDesc")}</div>
           <div className="text-sm font-medium text-primary mt-0.5">{row.description}</div>
         </div>
       )}
@@ -862,13 +674,13 @@ function LedgerDetailsModal({ row, onClose }) {
 
       {row.status === "REVERSED" && (
         <p className="text-xs text-amber-500 bg-amber-500/10 border border-amber-500/20 rounded-xl p-3">
-          ⚠️ This entry was reversed. Its financial impact has been refunded and the running cash balance reflects the adjustment.
+          {t("accReversedNote")}
         </p>
       )}
 
       <div className="flex justify-end pt-2">
         <button onClick={onClose} className="btn-soft px-5 py-2 text-xs font-semibold">
-          Close Details
+          {t("accCloseDetails")}
         </button>
       </div>
     </Modal>
@@ -922,20 +734,20 @@ function LedgerFilterModal({ filters, onApply, onClose }) {
   };
 
   return (
-    <Modal title="Filter Cash Book Ledger" icon={MdFilterList} maxWidth="max-w-xl" onClose={onClose}>
+    <Modal title={t("accFilterLedger")} icon={MdFilterList} maxWidth="max-w-xl" onClose={onClose}>
       <form onSubmit={handleApply} className="space-y-4">
         {/* Quick Date Range Presets */}
         <div>
           <span className="text-xs font-semibold uppercase tracking-wider text-secondary block mb-2">
-            Quick Date Presets
+            {t("accQuickPresets")}
           </span>
           <div className="flex flex-wrap gap-2">
             {[
-              { id: "ALL", label: "All Time" },
-              { id: "TODAY", label: "Today" },
-              { id: "MONTH", label: "This Month" },
-              { id: "LAST_MONTH", label: "Last Month" },
-              { id: "YEAR", label: "This Year" },
+              { id: "ALL", label: t("accAllTime") },
+              { id: "TODAY", label: t("accToday") },
+              { id: "MONTH", label: t("accThisMonth") },
+              { id: "LAST_MONTH", label: t("accLastMonth") },
+              { id: "YEAR", label: t("accThisYear") },
             ].map((p) => (
               <button
                 key={p.id}
@@ -951,19 +763,19 @@ function LedgerFilterModal({ filters, onApply, onClose }) {
 
         {/* Transaction Type & Source Category (2 columns) */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Field label="Transaction Direction" icon={MdOutlineReceiptLong}>
+          <Field label={t("accTxnDirection")} icon={MdOutlineReceiptLong}>
             <select
               style={inputStyle}
               value={draft.type}
               onChange={(e) => setDraft({ ...draft, type: e.target.value })}
             >
               <option value="">{t("accAllTxn")}</option>
-              <option value="CREDIT">+ Credits Only (Money In)</option>
-              <option value="DEBIT">− Debits Only (Money Out)</option>
+              <option value="CREDIT">{t("accCreditsOnly")}</option>
+              <option value="DEBIT">{t("accDebitsOnly")}</option>
             </select>
           </Field>
 
-          <Field label="Category / Source" icon={MdOutlineAccountBalanceWallet}>
+          <Field label={t("accCategorySource")} icon={MdOutlineAccountBalanceWallet}>
             <select
               style={inputStyle}
               value={draft.source}
@@ -981,7 +793,7 @@ function LedgerFilterModal({ filters, onApply, onClose }) {
 
         {/* Date From & Date To (2 columns) */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Field label="From Date" icon={MdCalendarToday}>
+          <Field label={t("accFromDate")} icon={MdCalendarToday}>
             <input
               type="date"
               style={inputStyle}
@@ -990,7 +802,7 @@ function LedgerFilterModal({ filters, onApply, onClose }) {
             />
           </Field>
 
-          <Field label="To Date" icon={MdCalendarToday}>
+          <Field label={t("accToDate")} icon={MdCalendarToday}>
             <input
               type="date"
               style={inputStyle}
@@ -1000,7 +812,6 @@ function LedgerFilterModal({ filters, onApply, onClose }) {
           </Field>
         </div>
 
-
         {/* Footer Actions */}
         <div className="flex items-center justify-between pt-3 border-t border-glass-border">
           <button
@@ -1008,7 +819,7 @@ function LedgerFilterModal({ filters, onApply, onClose }) {
             onClick={handleClear}
             className="btn-soft px-4 py-2.5 text-xs font-semibold text-rose-500 hover:bg-rose-500/10"
           >
-            Clear All
+            {t("accClearAll")}
           </button>
           <div className="flex items-center gap-2">
             <button
@@ -1016,13 +827,13 @@ function LedgerFilterModal({ filters, onApply, onClose }) {
               onClick={onClose}
               className="btn-soft px-4 py-2.5 text-xs font-semibold"
             >
-              Cancel
+              {t("cancel")}
             </button>
             <button
               type="submit"
               className="btn-primary px-6 py-2.5 text-xs font-bold shadow-md"
             >
-              Apply Filters
+              {t("accApplyFilters")}
             </button>
           </div>
         </div>
@@ -1051,7 +862,7 @@ function LedgerTab({ b, onNeedsBalance }) {
       setPagination(res.pagination || {});
     } catch (e) {
       console.error("Failed to load ledger", e);
-      setErr("Failed to load the cash book ledger.");
+      setErr(t("accLoadLedgerFail"));
     } finally {
       setLoading(false);
     }
@@ -1062,14 +873,6 @@ function LedgerTab({ b, onNeedsBalance }) {
   }, [filters.page, filters.limit]);
 
   const [isSearchOpen, setIsSearchOpen] = useState(Boolean(filters.search));
-
-  const glassCardStyle = {
-    background: "var(--card-bg, rgba(15, 23, 42, 0.65))",
-    border: "1px solid var(--glass-border, rgba(255, 255, 255, 0.12))",
-    boxShadow: "0 8px 32px 0 rgba(0, 0, 0, 0.2), inset 0 1px 0 0 rgba(255, 255, 255, 0.08)",
-    backdropFilter: "blur(20px)",
-    WebkitBackdropFilter: "blur(20px)",
-  };
 
   const applyFilters = (next = {}) => {
     const merged = { ...filters, ...next };
@@ -1111,7 +914,7 @@ function LedgerTab({ b, onNeedsBalance }) {
       <div className="bg-red-500/10 border border-red-500/30 rounded-2xl p-6 text-red-500 flex items-center justify-between gap-4 max-w-2xl mx-auto my-8">
         <p className="font-medium text-sm">{err}</p>
         <button onClick={() => applyFilters()} className="btn-primary px-4 py-2 text-xs font-semibold">
-          Retry
+          {t("retry")}
         </button>
       </div>
     );
@@ -1120,103 +923,35 @@ function LedgerTab({ b, onNeedsBalance }) {
   return (
     <div className="space-y-6">
       {/* ── Cash Book Dashboard KPI Cards ── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
         {/* Net Live Balance */}
-        <div
-          className="relative overflow-hidden rounded-2xl p-5 flex flex-col justify-between gap-4 transition-all duration-200 hover:-translate-y-1 group"
-          style={glassCardStyle}
-        >
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-purple-400">Net Live Balance</span>
-            <div
-              className="w-9 h-9 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110"
-              style={{
-                background: "rgba(168, 85, 247, 0.14)",
-                border: "1px solid rgba(168, 85, 247, 0.3)",
-                color: "#c084fc",
-              }}
-            >
-              <MdAccountBalance size={18} />
-            </div>
-          </div>
-          <div>
-            <div className="text-2xl font-black text-purple-400 tracking-tight">{CURRENCY(b?.current_balance)}</div>
-            <p className="text-[11px] text-secondary mt-1 line-clamp-1">Current available society cash position</p>
-          </div>
+        <div className="ad-kpi ad-kpi--balance">
+          <span className="ad-kpi-val">{CURRENCY(b?.current_balance)}</span>
+          <span className="ad-kpi-label">{t("accNetLiveBalance")}</span>
+          <span className="ad-kpi-desc hidden lg:block">{t("accCashPositionDesc")}</span>
         </div>
 
         {/* Total Inflows */}
-        <div
-          className="relative overflow-hidden rounded-2xl p-5 flex flex-col justify-between gap-4 transition-all duration-200 hover:-translate-y-1 group"
-          style={glassCardStyle}
-        >
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-400">Total Inflows (Credits)</span>
-            <div
-              className="w-9 h-9 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110"
-              style={{
-                background: "rgba(16, 185, 129, 0.14)",
-                border: "1px solid rgba(16, 185, 129, 0.3)",
-                color: "#34d399",
-              }}
-            >
-              <MdArrowUpward size={18} />
-            </div>
-          </div>
-          <div>
-            <div className="text-2xl font-black text-emerald-400 tracking-tight">{CURRENCY(b?.total_income ?? b?.total_credit)}</div>
-            <p className="text-[11px] text-secondary mt-1 line-clamp-1">Bills, maintenance & amenity collections</p>
-          </div>
+        <div className="ad-kpi ad-kpi--income">
+          <span className="ad-kpi-val">{CURRENCY(b?.total_income ?? b?.total_credit)}</span>
+          <span className="ad-kpi-label">{t("accTotalInflows")}</span>
+          <span className="ad-kpi-desc hidden lg:block">{t("accInflowsDesc")}</span>
         </div>
 
         {/* Total Outflows */}
-        <div
-          className="relative overflow-hidden rounded-2xl p-5 flex flex-col justify-between gap-4 transition-all duration-200 hover:-translate-y-1 group"
-          style={glassCardStyle}
-        >
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-rose-400">Total Outflows (Debits)</span>
-            <div
-              className="w-9 h-9 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110"
-              style={{
-                background: "rgba(244, 63, 94, 0.14)",
-                border: "1px solid rgba(244, 63, 94, 0.3)",
-                color: "#fb7185",
-              }}
-            >
-              <MdArrowDownward size={18} />
-            </div>
-          </div>
-          <div>
-            <div className="text-2xl font-black text-rose-400 tracking-tight">{CURRENCY(b?.total_expenses ?? b?.total_debit)}</div>
-            <p className="text-[11px] text-secondary mt-1 line-clamp-1">Operational disbursements & expenses</p>
-          </div>
+        <div className="ad-kpi ad-kpi--expense">
+          <span className="ad-kpi-val">{CURRENCY(b?.total_expenses ?? b?.total_debit)}</span>
+          <span className="ad-kpi-label">{t("accTotalOutflows")}</span>
+          <span className="ad-kpi-desc hidden lg:block">{t("accOutflowsDesc")}</span>
         </div>
 
         {/* Opening Balance */}
-        <div
-          className="relative overflow-hidden rounded-2xl p-5 flex flex-col justify-between gap-4 transition-all duration-200 hover:-translate-y-1 group"
-          style={glassCardStyle}
-        >
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-indigo-400">Opening Balance</span>
-            <div
-              className="w-9 h-9 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110"
-              style={{
-                background: "rgba(99, 102, 241, 0.14)",
-                border: "1px solid rgba(99, 102, 241, 0.3)",
-                color: "#818cf8",
-              }}
-            >
-              <MdSavings size={18} />
-            </div>
-          </div>
-          <div>
-            <div className="text-2xl font-black text-indigo-400 tracking-tight">{CURRENCY(b?.opening_balance)}</div>
-            <p className="text-[11px] text-secondary mt-1 line-clamp-1">
-              {b?.opening_balance_effective_date ? `Effective ${b.opening_balance_effective_date}` : "Initial starting reserve"}
-            </p>
-          </div>
+        <div className="ad-kpi ad-kpi--opening">
+          <span className="ad-kpi-val">{CURRENCY(b?.opening_balance)}</span>
+          <span className="ad-kpi-label">{t("accOpeningBalance")}</span>
+          <span className="ad-kpi-desc hidden lg:block">
+            {b?.opening_balance_effective_date ? t("accEffectiveOn", { date: b.opening_balance_effective_date }) : t("accInitialStartingReserve")}
+          </span>
         </div>
       </div>
 
@@ -1235,10 +970,10 @@ function LedgerTab({ b, onNeedsBalance }) {
           <div>
             <h2 className="text-base font-bold text-primary flex items-center gap-2">
               <MdOutlineReceiptLong className="text-accent" size={20} />
-              Cash Book Ledger (General Ledger)
+              {t("accLedgerTitle")}
             </h2>
             <p className="text-xs text-secondary mt-0.5">
-              Real-time chronological record of society cash inflows, collections, and expense disbursements.
+              {t("accLedgerSubtitle")}
             </p>
           </div>
           <div className="flex items-center gap-2.5 flex-wrap">
@@ -1246,7 +981,7 @@ function LedgerTab({ b, onNeedsBalance }) {
             <ExpandableSearch
               value={filters.search}
               onChange={(val) => applyFilters({ search: val })}
-              placeholder="Search description, payee, particulars…"
+              placeholder={t("accSearchPlaceholder")}
               fetching={loading}
               isOpen={isSearchOpen}
               onOpenChange={setIsSearchOpen}
@@ -1275,7 +1010,7 @@ function LedgerTab({ b, onNeedsBalance }) {
                 onClick={() => applyFilters({ type: "", source: "", from: "", to: "", search: "" })}
                 className="text-xs font-semibold text-rose-500 hover:underline px-2 py-1"
               >
-                Reset
+                {t("accReset")}
               </button>
             )}
           </div>
@@ -1284,10 +1019,10 @@ function LedgerTab({ b, onNeedsBalance }) {
         {/* Active Filter Chips */}
         {activeFilterCount > 0 && (
           <div className="flex flex-wrap items-center gap-2 p-3 bg-card-inner-bg border border-glass-border rounded-xl">
-            <span className="text-xs text-secondary font-semibold mr-1">Active:</span>
+            <span className="text-xs text-secondary font-semibold mr-1">{t("accActive")}</span>
             {filters.type && (
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold bg-accent/15 text-accent border border-accent/25">
-                Type: {filters.type === "CREDIT" ? "Credits (+)" : "Debits (−)"}
+                {t("accTypeChip", { value: filters.type === "CREDIT" ? t("accCreditsChip") : t("accDebitsChip") })}
                 <button onClick={() => applyFilters({ type: "" })} className="hover:opacity-75">
                   <MdClose size={14} />
                 </button>
@@ -1295,7 +1030,7 @@ function LedgerTab({ b, onNeedsBalance }) {
             )}
             {filters.source && (
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold bg-accent/15 text-accent border border-accent/25">
-                Source: {filters.source}
+                {t("accSourceChip", { value: filters.source })}
                 <button onClick={() => applyFilters({ source: "" })} className="hover:opacity-75">
                   <MdClose size={14} />
                 </button>
@@ -1303,7 +1038,7 @@ function LedgerTab({ b, onNeedsBalance }) {
             )}
             {(filters.from || filters.to) && (
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold bg-accent/15 text-accent border border-accent/25">
-                Date: {filters.from || "Any"} to {filters.to || "Now"}
+                {t("accDateChip", { from: filters.from || t("accAny"), to: filters.to || t("accNow") })}
                 <button onClick={() => applyFilters({ from: "", to: "" })} className="hover:opacity-75">
                   <MdClose size={14} />
                 </button>
@@ -1311,7 +1046,7 @@ function LedgerTab({ b, onNeedsBalance }) {
             )}
             {filters.search && (
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold bg-accent/15 text-accent border border-accent/25">
-                Keyword: "{filters.search}"
+                {t("accKeywordChip", { value: filters.search })}
                 <button onClick={() => applyFilters({ search: "" })} className="hover:opacity-75">
                   <MdClose size={14} />
                 </button>
@@ -1325,13 +1060,13 @@ function LedgerTab({ b, onNeedsBalance }) {
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left text-xs uppercase tracking-wider text-secondary border-b border-glass-border">
-                <th className="py-3.5 pr-4 font-bold">Date</th>
-                <th className="py-3.5 pr-4 font-bold">Type</th>
-                <th className="py-3.5 pr-4 font-bold">Category</th>
-                <th className="py-3.5 pr-4 font-bold">Description / Particulars</th>
-                <th className="py-3.5 pr-4 font-bold text-right">Amount</th>
-                <th className="py-3.5 pr-4 font-bold text-right">Running Balance</th>
-                <th className="py-3.5 font-bold text-right">Details</th>
+                <th className="py-3.5 pr-4 font-bold">{t("accColDate")}</th>
+                <th className="py-3.5 pr-4 font-bold">{t("accColType")}</th>
+                <th className="py-3.5 pr-4 font-bold">{t("accColCategory")}</th>
+                <th className="py-3.5 pr-4 font-bold">{t("accColParticulars")}</th>
+                <th className="py-3.5 pr-4 font-bold text-right">{t("accColAmount")}</th>
+                <th className="py-3.5 pr-4 font-bold text-right">{t("accColRunningBalance")}</th>
+                <th className="py-3.5 font-bold text-right">{t("accColDetails")}</th>
               </tr>
             </thead>
             <tbody>
@@ -1355,7 +1090,7 @@ function LedgerTab({ b, onNeedsBalance }) {
                         }`}
                       >
                         {isCredit ? <MdArrowUpward size={13} /> : <MdArrowDownward size={13} />}
-                        {isCredit ? "+ CREDIT" : "− DEBIT"}
+                        {isCredit ? t("accCreditShort") : t("accDebitShort")}
                       </span>
                     </td>
                     <td className="py-3.5 pr-4 font-bold text-primary text-xs">
@@ -1380,7 +1115,7 @@ function LedgerTab({ b, onNeedsBalance }) {
                       <button
                         onClick={() => setSelected(r)}
                         className="p-2 rounded-xl bg-accent/10 text-accent border border-accent/20 hover:bg-accent hover:text-white transition-all"
-                        title="View entry details"
+                        title={t("accViewEntryDetails")}
                       >
                         <MdViewList size={16} />
                       </button>
@@ -1391,7 +1126,7 @@ function LedgerTab({ b, onNeedsBalance }) {
               {rows.length === 0 && (
                 <tr>
                   <td colSpan={7} className="py-12 text-center text-secondary text-sm">
-                    No cash book ledger entries match the selected filters.
+                    {t("accNoLedgerEntries")}
                   </td>
                 </tr>
               )}
@@ -1400,11 +1135,16 @@ function LedgerTab({ b, onNeedsBalance }) {
         </div>
 
         {/* Pagination */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-glass-border">
+        <div className="flex items-center justify-between gap-x-4 gap-y-3 flex-wrap pt-3 border-t border-glass-border">
           <p className="text-xs text-secondary font-medium">
-            Page {pagination.currentPage || 1} of {pagination.totalPages || 1} · {pagination.totalItems || 0} total ledger entries
+            {t("accPageInfo", {
+              cur: pagination.currentPage || 1,
+              total: pagination.totalPages || 1,
+              items: pagination.totalItems || 0,
+            })}
           </p>
           <Pagination
+            style={{ marginTop: 0 }}
             page={pagination.currentPage || 1}
             totalPages={pagination.totalPages || 1}
             onPageChange={(p) => applyFilters({ page: p })}
@@ -1429,6 +1169,7 @@ function LedgerTab({ b, onNeedsBalance }) {
 
 /* ── EXPENSES TAB ─────────────────────────────────────────────────────────── */
 function ExpensesTab({ isDeleteAllowed }) {
+  const { t } = useLang();
   const [rows, setRows] = useState([]);
   const [totals, setTotals] = useState(null);
   const [pagination, setPagination] = useState({});
@@ -1443,14 +1184,6 @@ function ExpensesTab({ isDeleteAllowed }) {
   const [showView, setShowView] = useState(null);
   const [saving, setSaving] = useState(false);
 
-  const glassCardStyle = {
-    background: "var(--card-bg, rgba(15, 23, 42, 0.65))",
-    border: "1px solid var(--glass-border, rgba(255, 255, 255, 0.12))",
-    boxShadow: "0 8px 32px 0 rgba(0, 0, 0, 0.2), inset 0 1px 0 0 rgba(255, 255, 255, 0.08)",
-    backdropFilter: "blur(20px)",
-    WebkitBackdropFilter: "blur(20px)",
-  };
-
   const load = async (p = page, q = "", size = limit) => {
     try {
       setLoading(true);
@@ -1463,7 +1196,7 @@ function ExpensesTab({ isDeleteAllowed }) {
       setPagination(res.pagination || {});
     } catch (e) {
       console.error("Failed to load expenses", e);
-      setErr("Failed to load expenses.");
+      setErr(t("accLoadExpensesFail"));
     } finally {
       setLoading(false);
     }
@@ -1483,11 +1216,11 @@ function ExpensesTab({ isDeleteAllowed }) {
       setSaving(true);
       if (id) await updateExpense(id, payload);
       else await createExpense(payload);
-      toast.success(id ? "Expense updated successfully." : "Expense recorded and ledger debited.");
+      toast.success(id ? t("accExpenseUpdated") : t("accExpenseCreated"));
       setShowForm(null);
       load(page, search);
     } catch (e) {
-      toast.error(e.response?.data?.message || "Failed to save expense.");
+      toast.error(e.response?.data?.message || t("accExpenseSaveFail"));
     } finally {
       setSaving(false);
     }
@@ -1498,11 +1231,11 @@ function ExpensesTab({ isDeleteAllowed }) {
     try {
       setSaving(true);
       await voidExpense(showVoid.id, showVoid.reason);
-      toast.success("Expense voided and ledger reversal posted.");
+      toast.success(t("accExpenseVoided"));
       setShowVoid(null);
       load(page, search);
     } catch (e) {
-      toast.error(e.response?.data?.message || "Failed to void expense.");
+      toast.error(e.response?.data?.message || t("accExpenseVoidFail"));
     } finally {
       setSaving(false);
     }
@@ -1526,7 +1259,7 @@ function ExpensesTab({ isDeleteAllowed }) {
       <div className="bg-red-500/10 border border-red-500/30 rounded-2xl p-6 text-red-500 flex items-center justify-between gap-4 max-w-2xl mx-auto my-8">
         <p className="font-medium text-sm">{err}</p>
         <button onClick={() => load()} className="btn-primary px-4 py-2 text-xs font-semibold">
-          Retry
+          {t("retry")}
         </button>
       </div>
     );
@@ -1534,79 +1267,28 @@ function ExpensesTab({ isDeleteAllowed }) {
 
   return (
     <div className="space-y-6">
-      {/* Expense Metric Highlights using glassmorphic cards */}
+      {/* Expense Metric Highlights */}
       {totals && (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
           {/* Total Recorded Amount */}
-          <div
-            className="relative overflow-hidden rounded-2xl p-5 flex flex-col justify-between gap-4 transition-all duration-200 hover:-translate-y-1 group"
-            style={glassCardStyle}
-          >
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-sky-400">Total Recorded Amount</span>
-              <div
-                className="w-9 h-9 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110"
-                style={{
-                  background: "rgba(14, 165, 233, 0.14)",
-                  border: "1px solid rgba(14, 165, 233, 0.3)",
-                  color: "#38bdf8",
-                }}
-              >
-                <MdReceipt size={18} />
-              </div>
-            </div>
-            <div>
-              <div className="text-2xl font-black text-sky-400 tracking-tight">{CURRENCY(totals.grand_total)}</div>
-              <p className="text-[11px] text-secondary mt-1 line-clamp-1">Across all active & voided records</p>
-            </div>
+          <div className="ad-kpi ad-kpi--bills">
+            <span className="ad-kpi-val">{CURRENCY(totals.grand_total)}</span>
+            <span className="ad-kpi-label">{t("accTotalRecorded")}</span>
+            <span className="ad-kpi-desc hidden lg:block">{t("accAcrossAllRecords")}</span>
           </div>
 
           {/* Active Debited Outflow */}
-          <div
-            className="relative overflow-hidden rounded-2xl p-5 flex flex-col justify-between gap-4 transition-all duration-200 hover:-translate-y-1 group"
-            style={glassCardStyle}
-          >
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-rose-400">Active Debited Outflow</span>
-              <div
-                className="w-9 h-9 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110"
-                style={{
-                  background: "rgba(244, 63, 94, 0.14)",
-                  border: "1px solid rgba(244, 63, 94, 0.3)",
-                  color: "#fb7185",
-                }}
-              >
-                <MdArrowDownward size={18} />
-              </div>
-            </div>
-            <div>
-              <div className="text-2xl font-black text-rose-400 tracking-tight">{CURRENCY(totals.posted_total)}</div>
-              <p className="text-[11px] text-secondary mt-1 line-clamp-1">Currently deducted from cash balance</p>
-            </div>
+          <div className="ad-kpi ad-kpi--expense">
+            <span className="ad-kpi-val">{CURRENCY(totals.posted_total)}</span>
+            <span className="ad-kpi-label">{t("accActiveOutflow")}</span>
+            <span className="ad-kpi-desc hidden lg:block">{t("accDeductedFromBalance")}</span>
           </div>
 
           {/* Voided Records */}
-          <div
-            className="relative overflow-hidden rounded-2xl p-5 flex flex-col justify-between gap-4 transition-all duration-200 hover:-translate-y-1 group"
-            style={glassCardStyle}
-          >
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-amber-400">Voided Records</span>
-              <div
-                className="w-9 h-9 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110"
-                style={{
-                  background: "rgba(245, 158, 11, 0.14)",
-                  border: "1px solid rgba(245, 158, 11, 0.3)",
-                  color: "#fbbf24",
-                }}
-              >
-                <MdSavings size={18} />
-              </div>
-            </div>
-            <div>
-              <div className="text-2xl font-black text-amber-400 tracking-tight">{totals.void_count || 0}</div>
-              <p className="text-[11px] text-secondary mt-1 line-clamp-1">Audited ledger reversals posted</p>
-            </div>
+          <div className="ad-kpi ad-kpi--amenity">
+            <span className="ad-kpi-val">{totals.void_count || 0}</span>
+            <span className="ad-kpi-label">{t("accVoidedRecords")}</span>
+            <span className="ad-kpi-desc hidden lg:block">{t("accAuditedReversals")}</span>
           </div>
         </div>
       )}
@@ -1626,10 +1308,10 @@ function ExpensesTab({ isDeleteAllowed }) {
           <div>
             <h2 className="text-base font-bold text-primary flex items-center gap-2">
               <MdPayments className="text-accent" size={20} />
-              Expense Tracking & Management
+              {t("accExpenseTitle")}
             </h2>
             <p className="text-xs text-secondary mt-0.5">
-              Record maintenance bills, vendor payments, and operational expenses. Each entry posts a verified DEBIT.
+              {t("accExpenseSubtitle")}
             </p>
           </div>
           <div className="flex items-center gap-2.5 flex-wrap">
@@ -1637,7 +1319,7 @@ function ExpensesTab({ isDeleteAllowed }) {
             <ExpandableSearch
               value={search}
               onChange={(val) => { setSearch(val); load(1, val); }}
-              placeholder="Search payee or reason…"
+              placeholder={t("accSearchPayee")}
               fetching={loading}
               isOpen={isSearchOpen}
               onOpenChange={setIsSearchOpen}
@@ -1648,7 +1330,7 @@ function ExpensesTab({ isDeleteAllowed }) {
               className="btn-primary flex items-center gap-2 px-4 py-2 text-xs font-bold shadow-md shrink-0 cursor-pointer"
               style={{ height: 38 }}
             >
-              <MdAdd size={18} /> Record New Expense
+              <MdAdd size={18} /> {t("accRecordNewExpense")}
             </button>
           </div>
         </div>
@@ -1658,13 +1340,13 @@ function ExpensesTab({ isDeleteAllowed }) {
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left text-xs uppercase tracking-wider text-secondary border-b border-glass-border">
-                <th className="py-3.5 pr-4 font-bold">Payment Date</th>
-                <th className="py-3.5 pr-4 font-bold">Paid To (Payee)</th>
-                <th className="py-3.5 pr-4 font-bold">Reason / Particulars</th>
-                <th className="py-3.5 pr-4 font-bold">Mode</th>
-                <th className="py-3.5 pr-4 font-bold">Sourced By</th>
-                <th className="py-3.5 pr-4 font-bold text-right">Amount</th>
-                <th className="py-3.5 font-bold text-right">Actions</th>
+                <th className="py-3.5 pr-4 font-bold">{t("accColPaymentDate")}</th>
+                <th className="py-3.5 pr-4 font-bold">{t("accColPayee")}</th>
+                <th className="py-3.5 pr-4 font-bold">{t("accColReason")}</th>
+                <th className="py-3.5 pr-4 font-bold">{t("accColMode")}</th>
+                <th className="py-3.5 pr-4 font-bold">{t("accColSourcedBy")}</th>
+                <th className="py-3.5 pr-4 font-bold text-right">{t("accColAmount")}</th>
+                <th className="py-3.5 font-bold text-right">{t("accColActions")}</th>
               </tr>
             </thead>
             <tbody>
@@ -1693,7 +1375,7 @@ function ExpensesTab({ isDeleteAllowed }) {
                         )}
                       </span>
                     ) : (
-                      <span>{e.created_by_role || "System"}</span>
+                      <span>{e.created_by_role || t("accSystem")}</span>
                     )}
                   </td>
                   <td className={`py-3.5 pr-4 text-right font-extrabold whitespace-nowrap ${e.status === "VOID" ? "text-secondary line-through" : "text-rose-500"}`}>
@@ -1705,14 +1387,14 @@ function ExpensesTab({ isDeleteAllowed }) {
                         <button
                           onClick={() => setShowView(e)}
                           className="p-1.5 rounded-lg bg-card-inner-bg text-secondary hover:text-primary hover:border-accent border border-glass-border transition-colors"
-                          title="View expense details"
+                          title={t("accViewExpenseDetails")}
                         >
                           <MdVisibility size={16} />
                         </button>
                         <button
                           onClick={() => setShowForm(e)}
                           className="p-1.5 rounded-lg bg-card-inner-bg text-secondary hover:text-primary hover:border-accent border border-glass-border transition-colors"
-                          title="Edit expense"
+                          title={t("accEditExpenseTip")}
                         >
                           <MdEdit size={16} />
                         </button>
@@ -1720,7 +1402,7 @@ function ExpensesTab({ isDeleteAllowed }) {
                           <button
                             onClick={() => setShowVoid({ id: e.id, amount: e.amount, reason: "" })}
                             className="p-1.5 rounded-lg bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white border border-rose-500/20 transition-colors"
-                            title="Void & Reverse expense"
+                            title={t("accVoidExpenseTip")}
                           >
                             <MdDelete size={16} />
                           </button>
@@ -1733,7 +1415,7 @@ function ExpensesTab({ isDeleteAllowed }) {
               {rows.length === 0 && (
                 <tr>
 <td colSpan={7} className="py-12 text-center text-secondary text-sm">
-                    No expense records found. Click "+ Record New Expense" to create one.
+                    {t("accNoExpenses")}
                   </td>
                 </tr>
               )}
@@ -1742,11 +1424,16 @@ function ExpensesTab({ isDeleteAllowed }) {
         </div>
 
         {/* Pagination */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-glass-border">
+        <div className="flex items-center justify-between gap-x-4 gap-y-3 flex-wrap pt-3 border-t border-glass-border">
           <p className="text-xs text-secondary font-medium">
-            Page {pagination.currentPage || 1} of {pagination.totalPages || 1} · {pagination.totalItems || 0} total expenses
+            {t("accPageInfoExpenses", {
+              cur: pagination.currentPage || 1,
+              total: pagination.totalPages || 1,
+              items: pagination.totalItems || 0,
+            })}
           </p>
           <Pagination
+            style={{ marginTop: 0 }}
             page={pagination.currentPage || page}
             totalPages={pagination.totalPages || 1}
             onPageChange={goPage}
@@ -1770,23 +1457,21 @@ function ExpensesTab({ isDeleteAllowed }) {
       )}
 
       {showVoid && (
-        <Modal title="Void & Reverse Expense" icon={MdDelete} maxWidth="max-w-lg" onClose={() => setShowVoid(null)}>
+        <Modal title={t("accVoidReverse")} icon={MdDelete} maxWidth="max-w-lg" onClose={() => setShowVoid(null)}>
           <div className="p-4 bg-rose-500/10 border border-rose-500/20 rounded-xl space-y-2">
             <p className="text-sm font-bold text-rose-500 flex items-center gap-1.5">
-              <MdReportProblem size={18} /> Confirm Expense Reversal
+              <MdReportProblem size={18} /> {t("accConfirmReversal")}
             </p>
             <p className="text-xs text-secondary">
-              Voiding will immediately cancel this expense and credit back{" "}
-              <span className="font-bold text-primary">{CURRENCY(showVoid.amount)}</span> to the cash book balance with an
-              audited ledger entry.
+              {t("accVoidNote", { amount: CURRENCY(showVoid.amount) })}
             </p>
           </div>
 
-          <Field label="Void Reason / Notes (Optional)" icon={MdDescription}>
+          <Field label={t("accVoidReason")} icon={MdDescription}>
             <textarea
               rows={2}
               style={{ ...inputStyle, resize: "none" }}
-              placeholder="e.g. Duplicate entry or vendor cancelled invoice"
+              placeholder={t("accVoidPlaceholder")}
               value={showVoid.reason}
               onChange={(e) => setShowVoid({ ...showVoid, reason: e.target.value })}
             />
@@ -1794,14 +1479,14 @@ function ExpensesTab({ isDeleteAllowed }) {
 
           <div className="flex justify-end gap-3 pt-2">
             <button onClick={() => setShowVoid(null)} className="btn-soft px-4 py-2 text-xs font-semibold">
-              Cancel
+              {t("cancel")}
             </button>
             <button
               onClick={confirmVoid}
               disabled={saving}
               className="btn-danger px-5 py-2 text-xs font-bold disabled:opacity-50 flex items-center gap-1.5"
             >
-              {saving ? "Voiding…" : "Yes, Void Expense"}
+              {saving ? t("accVoiding") : t("accYesVoid")}
             </button>
           </div>
         </Modal>
@@ -1814,17 +1499,18 @@ function ExpensesTab({ isDeleteAllowed }) {
 
 /* ── EXPENSE FULL DETAILS MODAL (read-only + creator attribution) ─────────── */
 function ExpenseDetails({ expense, onClose }) {
+  const { t } = useLang();
   const items = [
-    { label: "Paid To (Payee)", value: expense.pay_to },
-    { label: "Reason / Particulars", value: expense.reason },
-    { label: "Payment Mode", value: expense.payment_mode },
-    { label: "Payment Date", value: expense.payment_date ? String(expense.payment_date).slice(0, 10) : null },
-    { label: "Status", value: expense.status ? (expense.status === "VOID" ? "Voided (reversed)" : "Posted / Active") : null },
+    { label: t("accColPayee"), value: expense.pay_to },
+    { label: t("accColReason"), value: expense.reason },
+    { label: t("accPaymentMode"), value: expense.payment_mode },
+    { label: t("accPaymentDate"), value: expense.payment_date ? String(expense.payment_date).slice(0, 10) : null },
+    { label: t("accStatus"), value: expense.status ? (expense.status === "VOID" ? t("accVoidedReversed") : t("accPostedActive")) : null },
   ];
 
   return (
     <Modal
-      title="Expense Details"
+      title={t("accExpenseDetails")}
       icon={MdReceipt}
       maxWidth="max-w-2xl"
       onClose={onClose}
@@ -1832,37 +1518,37 @@ function ExpenseDetails({ expense, onClose }) {
       <div className="flex items-center justify-between gap-3 p-3 bg-card-inner-bg border border-glass-border rounded-xl mb-4">
         <div className="flex items-center gap-2">
           <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold bg-rose-500/15 text-rose-500 border border-rose-500/30">
-            − DEBIT (OUT)
+            {t("accDebitOut")}
           </span>
           <span className="text-xs font-bold text-primary bg-card px-2.5 py-1 rounded-lg border border-glass-border">EXPENSE</span>
         </div>
-        <span className="text-xs text-secondary font-mono">Entry #{expense.id ?? "—"}</span>
+        <span className="text-xs text-secondary font-mono">{t("accEntryNo", { id: expense.id ?? "—" })}</span>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         {items.map((it) => (
           <DetailItem key={it.label} label={it.label} value={it.value} />
         ))}
-        <DetailItem label="Amount" value={CURRENCY(expense.amount)} tone="red" />
+        <DetailItem label={t("accAmount")} value={CURRENCY(expense.amount)} tone="red" />
       </div>
 
       <div className="mt-3 p-3 bg-card-inner-bg border border-glass-border rounded-xl grid grid-cols-1 sm:grid-cols-2 gap-3">
         <DetailItem
-          label="Recorded By"
-          value={expense.created_by_name ? `${expense.created_by_name}${expense.created_by_role ? ` (${expense.created_by_role})` : ""}` : (expense.created_by_role || "System")}
+          label={t("accRecordedBy")}
+          value={expense.created_by_name ? `${expense.created_by_name}${expense.created_by_role ? ` (${expense.created_by_role})` : ""}` : (expense.created_by_role || t("accSystem"))}
         />
-        <DetailItem label="Recorded At" value={expense.created_at ? new Date(expense.created_at).toLocaleString() : null} />
+        <DetailItem label={t("accRecordedAt")} value={expense.created_at ? new Date(expense.created_at).toLocaleString() : null} />
       </div>
 
       {expense.status === "VOID" && (
         <p className="mt-3 text-xs text-amber-500 bg-amber-500/10 border border-amber-500/20 rounded-xl p-3">
-          ⚠️ This expense was voided. A credit reversal was posted to the cash book ledger and the reversal is preserved in the audit log.
+          {t("accVoidedNote")}
         </p>
       )}
 
       <div className="flex justify-end pt-2">
         <button onClick={onClose} className="btn-soft px-5 py-2 text-xs font-semibold">
-          Close Details
+          {t("accCloseDetails")}
         </button>
       </div>
     </Modal>
@@ -1871,6 +1557,7 @@ function ExpenseDetails({ expense, onClose }) {
 
 /* ── STYLISH EXPENSE CREATE / EDIT FORM MODAL (2-3 DETAILS PER ROW) ────────── */
 function ExpenseForm({ expense, saving, onClose, onSubmit }) {
+  const { t } = useLang();
   const [form, setForm] = useState({
     pay_to: expense?.pay_to || "",
     reason: expense?.reason || "",
@@ -1884,16 +1571,16 @@ function ExpenseForm({ expense, saving, onClose, onSubmit }) {
   const submit = (e) => {
     e.preventDefault();
 
-    const payeeErr = getTitleError(form.pay_to, "Payee");
+    const payeeErr = getTitleError(form.pay_to, t("accColPayee"));
     if (payeeErr) { toast.error(payeeErr); return; }
 
-    const dateErr = getRequiredDateError(form.payment_date, "Payment date");
+    const dateErr = getRequiredDateError(form.payment_date, t("accPaymentDate"));
     if (dateErr) { toast.error(dateErr); return; }
 
-    const reasonErr = getDescriptionError(form.reason, "Reason / Particulars description");
+    const reasonErr = getDescriptionError(form.reason, t("accColReason"));
     if (reasonErr) { toast.error(reasonErr); return; }
 
-    const amountErr = getPositiveAmountError(form.amount, "Expense amount");
+    const amountErr = getPositiveAmountError(form.amount, t("accExpenseAmount"));
     if (amountErr) { toast.error(amountErr); return; }
 
     onSubmit({ ...form, amount: Number(form.amount), payment_mode: form.payment_mode });
@@ -1901,7 +1588,7 @@ function ExpenseForm({ expense, saving, onClose, onSubmit }) {
 
   return (
     <Modal
-      title={expense ? "Edit Expense Details" : "Record Society Expense"}
+      title={expense ? t("accEditExpense") : t("accRecordExpense")}
       icon={MdPayments}
       maxWidth="max-w-2xl"
       onClose={onClose}
@@ -1910,21 +1597,21 @@ function ExpenseForm({ expense, saving, onClose, onSubmit }) {
         {/* Info Banner */}
         <div className="p-3.5 bg-accent/10 border border-accent/20 rounded-xl text-xs text-primary flex items-center gap-2">
           <MdCheckCircle className="text-accent shrink-0" size={18} />
-          <span>Recorded expenses automatically update the Cash Book and are deducted from current balance.</span>
+          <span>{t("accExpenseBanner")}</span>
         </div>
 
         {/* 2 or 3 inputs in one row */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Field label="Paid To (Payee / Vendor)" required icon={MdPerson}>
+          <Field label={t("accPayeeVendor")} required icon={MdPerson}>
             <input
               style={inputStyle}
-              placeholder="e.g. ABC Electrician / City Water Supply"
+              placeholder={t("accPayeePlaceholder")}
               value={form.pay_to}
               onChange={set("pay_to")}
               autoFocus
             />
           </Field>
-          <Field label="Payment Date" required icon={MdCalendarToday}>
+          <Field label={t("accPaymentDate")} required icon={MdCalendarToday}>
             <input
               type="date"
               style={inputStyle}
@@ -1935,10 +1622,10 @@ function ExpenseForm({ expense, saving, onClose, onSubmit }) {
         </div>
 
         {/* Reason / Particulars */}
-        <Field label="Reason / Particulars Description" required icon={MdDescription}>
+        <Field label={t("accReasonDesc")} required icon={MdDescription}>
           <input
             style={inputStyle}
-            placeholder="e.g. Lift maintenance service charges for March"
+            placeholder={t("accReasonPlaceholder")}
             value={form.reason}
             onChange={set("reason")}
           />
@@ -1946,7 +1633,7 @@ function ExpenseForm({ expense, saving, onClose, onSubmit }) {
 
         {/* Amount and Payment Mode */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Field label="Expense Amount (₹)" required icon={MdOutlineAccountBalanceWallet}>
+          <Field label={t("accExpenseAmount")} required icon={MdOutlineAccountBalanceWallet}>
             <div className="relative">
               <span className="absolute left-3.5 top-1/2 -translate-y-1/2 font-bold text-accent">₹</span>
               <input
@@ -1961,11 +1648,11 @@ function ExpenseForm({ expense, saving, onClose, onSubmit }) {
               />
             </div>
           </Field>
-          <Field label="Payment Mode" required icon={MdPayments}>
+          <Field label={t("accPaymentMode")} required icon={MdPayments}>
             <select style={inputStyle} value={form.payment_mode} onChange={set("payment_mode")}>
               {MODES.map((m) => (
                 <option key={m} value={m}>
-                  {m === "BANK_TRANSFER" ? "Bank Transfer (NEFT/RTGS/IMPS)" : m}
+                  {m === "BANK_TRANSFER" ? t("accBankTransfer") : m}
                 </option>
               ))}
             </select>
@@ -1975,14 +1662,14 @@ function ExpenseForm({ expense, saving, onClose, onSubmit }) {
         {/* Footer Actions */}
         <div className="flex justify-end gap-3 pt-3 border-t border-glass-border">
           <button type="button" onClick={onClose} className="btn-soft px-5 py-2.5 text-xs font-semibold">
-            Cancel
+            {t("cancel")}
           </button>
           <button
             type="submit"
             disabled={saving}
             className="btn-primary flex items-center gap-2 px-6 py-2.5 text-xs font-bold shadow-md disabled:opacity-50"
           >
-            {saving ? "Processing…" : expense ? "Save Changes" : "Record Expense"}
+            {saving ? t("accProcessing") : expense ? t("accSaveChanges") : t("accRecordExpenseBtn")}
           </button>
         </div>
       </form>
@@ -1992,6 +1679,7 @@ function ExpenseForm({ expense, saving, onClose, onSubmit }) {
 
 /* ── OPENING BALANCE TAB ─────────────────────────────────────────────────── */
 function OpeningTab({ b, isManageOpening, onChanged }) {
+  const { t } = useLang();
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
@@ -2003,11 +1691,11 @@ function OpeningTab({ b, isManageOpening, onChanged }) {
   const submit = async (e) => {
     e.preventDefault();
     if (!form.reason.trim()) {
-      toast.error("A reason is required for opening balance adjustments.");
+      toast.error(t("accReasonRequired"));
       return;
     }
     if (!Number.isFinite(Number(form.amount)) || Number(form.amount) < 0) {
-      toast.error("Opening balance must be a non-negative number.");
+      toast.error(t("accNonNegative"));
       return;
     }
     try {
@@ -2017,11 +1705,11 @@ function OpeningTab({ b, isManageOpening, onChanged }) {
         effective_date: form.effective_date,
         reason: form.reason,
       });
-      toast.success(b.opening_balance ? "Opening balance adjusted and audited." : "Opening balance recorded.");
+      toast.success(b.opening_balance ? t("accOpeningAdjusted") : t("accOpeningRecorded"));
       setShowForm(false);
       onChanged();
     } catch (err) {
-      toast.error(err.response?.data?.message || "Failed to set opening balance.");
+      toast.error(err.response?.data?.message || t("accOpeningSetFail"));
     } finally {
       setSaving(false);
     }
@@ -2035,10 +1723,10 @@ function OpeningTab({ b, isManageOpening, onChanged }) {
           <div>
             <h2 className="text-base font-bold text-primary flex items-center gap-2">
               <MdSavings className="text-accent" size={20} />
-              Society Opening Balance Setup
+              {t("accOpeningSetup")}
             </h2>
             <p className="text-xs text-secondary mt-0.5">
-              Initial funds carried over before system tracking. Any later correction is logged in the Financial Audit Book.
+              {t("accOpeningSetupSubtitle")}
             </p>
           </div>
           {isManageOpening && (
@@ -2046,7 +1734,7 @@ function OpeningTab({ b, isManageOpening, onChanged }) {
               onClick={() => setShowForm(true)}
               className="btn-primary flex items-center gap-2 px-5 py-2.5 text-xs font-bold shadow-md self-start"
             >
-              <MdEdit size={16} /> {b.opening_balance ? "Adjust Opening Balance" : "Set Opening Balance"}
+              <MdEdit size={16} /> {b.opening_balance ? t("accAdjustOpening") : t("accSetOpening")}
             </button>
           )}
         </div>
@@ -2055,43 +1743,43 @@ function OpeningTab({ b, isManageOpening, onChanged }) {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
           <div className="ad-kpi ad-kpi--opening">
             <span className="ad-kpi-val">{CURRENCY(b.opening_balance)}</span>
-            <span className="ad-kpi-label">Current Opening Balance</span>
-            <span className="ad-kpi-desc">Initial carry-over baseline reserve</span>
+            <span className="ad-kpi-label">{t("accCurrentOpening")}</span>
+            <span className="ad-kpi-desc">{t("accCarryOverBaseline")}</span>
           </div>
           <div className="ad-kpi ad-kpi--balance">
-            <span className="ad-kpi-val">{b.opening_balance_effective_date || "Not set"}</span>
-            <span className="ad-kpi-label">Effective Date</span>
-            <span className="ad-kpi-desc">Date of opening funds carry-over</span>
+            <span className="ad-kpi-val">{b.opening_balance_effective_date || t("accNotSet")}</span>
+            <span className="ad-kpi-label">{t("accEffectiveDate")}</span>
+            <span className="ad-kpi-desc">{t("accDateOfCarryOver")}</span>
           </div>
           <div className="ad-kpi ad-kpi--income">
-            <span className="ad-kpi-val">{b.opening_balance ? "Configured" : "Pending Setup"}</span>
-            <span className="ad-kpi-label">Setup Status</span>
+            <span className="ad-kpi-val">{b.opening_balance ? t("accConfigured") : t("accPendingSetup")}</span>
+            <span className="ad-kpi-label">{t("accSetupStatus")}</span>
             <span className="ad-kpi-desc">
-              {b.opening_balance_set_at ? new Date(b.opening_balance_set_at).toLocaleDateString() : "No record yet"}
+              {b.opening_balance_set_at ? new Date(b.opening_balance_set_at).toLocaleDateString() : t("accNoRecordYet")}
             </span>
           </div>
         </div>
 
         {!isManageOpening && (
           <p className="text-xs text-secondary bg-card-inner-bg border border-glass-border rounded-xl p-4">
-            Only a Society Admin or authorized Accountant can set or adjust the opening balance.
+            {t("accOnlyAdminCan")}
           </p>
         )}
       </div>
 
       {showForm && (
         <Modal
-          title={b.opening_balance ? "Adjust Opening Balance" : "Set Opening Balance"}
+          title={b.opening_balance ? t("accAdjustOpening") : t("accSetOpening")}
           icon={MdSavings}
           maxWidth="max-w-xl"
           onClose={() => setShowForm(false)}
         >
           <form onSubmit={submit} className="space-y-4">
             <p className="text-xs text-secondary">
-              Adjustments are permanently recorded in the Financial Audit Log with the previous value and your reason.
+              {t("accAdjustAuditNote")}
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <Field label="Opening Balance (₹)" required icon={MdOutlineAccountBalanceWallet}>
+              <Field label={t("accOpeningAmountLabel")} required icon={MdOutlineAccountBalanceWallet}>
                 <input
                   type="number"
                   min="0"
@@ -2103,7 +1791,7 @@ function OpeningTab({ b, isManageOpening, onChanged }) {
                   autoFocus
                 />
               </Field>
-              <Field label="Effective Date" required icon={MdCalendarToday}>
+              <Field label={t("accEffectiveDate")} required icon={MdCalendarToday}>
                 <input
                   type="date"
                   style={inputStyle}
@@ -2112,21 +1800,21 @@ function OpeningTab({ b, isManageOpening, onChanged }) {
                 />
               </Field>
             </div>
-            <Field label="Reason for Setting / Adjustment" required icon={MdDescription}>
+            <Field label={t("accReasonLabel")} required icon={MdDescription}>
               <textarea
                 rows={2}
                 style={{ ...inputStyle, resize: "none" }}
-                placeholder="e.g. Initial funds transferred from bank ledger audit"
+                placeholder={t("accReasonPlaceholder")}
                 value={form.reason}
                 onChange={(e) => setForm({ ...form, reason: e.target.value })}
               />
             </Field>
             <div className="flex justify-end gap-3 pt-3 border-t border-glass-border">
               <button type="button" onClick={() => setShowForm(false)} className="btn-soft px-5 py-2.5 text-xs font-semibold">
-                Cancel
+                {t("cancel")}
               </button>
               <button type="submit" disabled={saving} className="btn-primary px-6 py-2.5 text-xs font-bold disabled:opacity-50">
-                {saving ? "Saving…" : b.opening_balance ? "Adjust & Audit" : "Set Opening Balance"}
+                {saving ? t("accSaving") : b.opening_balance ? t("accAdjustAudit") : t("accSetOpeningBalanceBtn")}
               </button>
             </div>
           </form>
@@ -2148,13 +1836,13 @@ const ACTION_TONES = {
 };
 
 const ACTION_LABELS = {
-  OPENING_BALANCE_SET: "Opening Balance Set",
-  OPENING_BALANCE_ADJUST: "Opening Balance Adjusted",
-  EXPENSE_CREATE: "Created Expense",
-  EXPENSE_UPDATE: "Edited Expense",
-  EXPENSE_VOID: "Voided Expense",
-  PAYMENT_REVERSED: "Payment Reversed",
-  MANUAL_ADJUSTMENT: "Manual Adjustment",
+  OPENING_BALANCE_SET: "accActOpeningSet",
+  OPENING_BALANCE_ADJUST: "accActOpeningAdjust",
+  EXPENSE_CREATE: "accActExpenseCreate",
+  EXPENSE_UPDATE: "accActExpenseUpdate",
+  EXPENSE_VOID: "accActExpenseVoid",
+  PAYMENT_REVERSED: "accActPaymentReversed",
+  MANUAL_ADJUSTMENT: "accActManualAdjustment",
 };
 
 const isOpeningAction = (a) => a === "OPENING_BALANCE_SET" || a === "OPENING_BALANCE_ADJUST";
@@ -2172,59 +1860,59 @@ const fmtWhen = (d) => {
 };
 
 const ROLE_LABELS = {
-  COMMITTEE_MEMBER: "Committee Member",
-  SOCIETY_ADMIN: "Society Admin",
-  SUPER_ADMIN: "Super Admin",
-  ADMIN: "Admin",
-  ACCOUNTANT: "Accountant",
-  RESIDENT: "Resident",
-  GUARD: "Guard",
-  FAMILY_MEMBER: "Family Member",
+  COMMITTEE_MEMBER: "roleCommittee",
+  SOCIETY_ADMIN: "roleSocietyAdmin",
+  SUPER_ADMIN: "roleSuperAdmin",
+  ADMIN: "roleAdmin",
+  ACCOUNTANT: "roleAccountant",
+  RESIDENT: "roleResident",
+  GUARD: "roleGuard",
+  FAMILY_MEMBER: "roleFamily",
 };
 
 const AUDIT_FIELD_LABELS = {
-  amount: "Amount",
-  new_balance: "New Balance",
-  opening_balance: "Opening Balance",
-  prev_balance: "Previous Balance",
-  running_balance: "Running Balance",
-  effective_date: "Effective Date",
-  entry_date: "Entry Date",
-  payment_date: "Payment Date",
-  created_at: "Created Date",
-  updated_at: "Updated Date",
-  paid_at: "Paid Date",
-  voided_at: "Voided Date",
-  pay_to: "Paid To (Payee)",
-  reason: "Audit Reason",
-  record_reason: "Reason",
-  status: "Status",
-  payment_mode: "Payment Mode",
-  method: "Payment Mode",
-  paid_by: "Paid By",
-  created_by: "Created By",
-  recording_user_id: "Recorded By ID",
-  description: "Description",
-  source: "Category",
-  bill_id: "Bill Ref ID",
-  amenity_id: "Amenity ID",
-  society_id: "Society",
-  resident_id: "Resident ID",
-  payer_user_id: "Payer ID",
-  user_id: "User ID",
-  name: "Name",
-  transaction_ref: "Transaction Ref",
-  id: "Record ID",
-  reversal_of_id: "Reversal Of ID",
-  type: "Transaction Type",
-  void_reason: "Void Reason",
-  voided_by: "Voided By",
+  amount: "accFieldAmount",
+  new_balance: "accFieldNewBalance",
+  opening_balance: "accFieldOpBalance",
+  prev_balance: "accFieldPrevBalance",
+  running_balance: "accFieldRunBalance",
+  effective_date: "accFieldEffDate",
+  entry_date: "accFieldEntryDate",
+  payment_date: "accFieldPayDate",
+  created_at: "accFieldCreatedDate",
+  updated_at: "accFieldUpdatedDate",
+  paid_at: "accFieldPaidDate",
+  voided_at: "accFieldVoidedDate",
+  pay_to: "accFieldPayTo",
+  reason: "accFieldReason",
+  record_reason: "accFieldRecordReason",
+  status: "accFieldStatus",
+  payment_mode: "accFieldPayMode",
+  method: "accFieldMethod",
+  paid_by: "accFieldPaidBy",
+  created_by: "accFieldCreatedBy",
+  recording_user_id: "accFieldRecordingUserID",
+  description: "accFieldDescription",
+  source: "accFieldSource",
+  bill_id: "accFieldBillRef",
+  amenity_id: "accFieldAmenityID",
+  society_id: "accFieldSociety",
+  resident_id: "accFieldResidentID",
+  payer_user_id: "accFieldPayerID",
+  user_id: "accFieldUserID",
+  name: "accFieldName",
+  transaction_ref: "accFieldTxnRef",
+  id: "accFieldRecordID",
+  reversal_of_id: "accFieldReversalOf",
+  type: "accFieldTxnType",
+  void_reason: "accFieldVoidReason",
+  voided_by: "accFieldVoidedBy",
 };
 
 const CURRENCY_FIELDS = ["amount", "opening_balance", "prev_balance", "new_balance", "running_balance", "balance", "total", "fee", "discount"];
 const DATE_FIELDS = ["effective_date", "entry_date", "payment_date", "created_at", "updated_at", "voided_at", "paid_at", "issue_date", "due_date"];
 
-const fmtAuditValue = (v, key, fallbackName = "") => {
+const fmtAuditValue = (v, key, fallbackName = "", t) => {
   if (v === null || v === undefined || v === "") return "";
   const k = String(key || "").toLowerCase();
   if (CURRENCY_FIELDS.includes(k)) return CURRENCY(v);
@@ -2232,13 +1920,13 @@ const fmtAuditValue = (v, key, fallbackName = "") => {
     const dt = new Date(v);
     if (!isNaN(dt.getTime())) return dt.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
   }
-  if (k === "status") return v === "POSTED" ? "Recorded" : v === "VOID" ? "Voided" : v;
-  if (typeof v === "boolean") return v ? "Yes" : "No";
+  if (k === "status") return v === "POSTED" ? t("accRecorded") : v === "VOID" ? t("accVoidedWord") : v;
+  if (typeof v === "boolean") return v ? t("accYesWord") : t("accNoWord");
 
   // Role conversion (e.g. COMMITTEE_MEMBER -> Committee Member)
   const roleKey = String(v).toUpperCase();
   if (["paid_by", "role", "performed_by_role", "payer_role"].includes(k) || ROLE_LABELS[roleKey]) {
-    if (ROLE_LABELS[roleKey]) return ROLE_LABELS[roleKey];
+    if (ROLE_LABELS[roleKey]) return t(ROLE_LABELS[roleKey]);
     return String(v).replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
   }
 
@@ -2253,7 +1941,7 @@ const fmtAuditValue = (v, key, fallbackName = "") => {
 };
 
 /* Format meaningful audit reason / description */
-const getMeaningfulAuditReason = (row) => {
+const getMeaningfulAuditReason = (row, t) => {
   const oldV = row.old_value || {};
   const newV = row.new_value || {};
   const amt = newV.amount !== undefined ? CURRENCY(newV.amount) : oldV.amount !== undefined ? CURRENCY(oldV.amount) : "";
@@ -2264,31 +1952,31 @@ const getMeaningfulAuditReason = (row) => {
   }
 
   if (row.action === "EXPENSE_CREATE") {
-    return `Expense of ${amt || "funds"} recorded for ${payee || "vendor"} (debited from cash balance)`;
+    return t("accExportAuditPath", { amt: amt || t("accFunds"), payee: payee || t("accVendor") });
   }
   if (row.action === "EXPENSE_VOID") {
-    return `Expense of ${amt || "funds"} for ${payee || "vendor"} voided (reversed and credited back)`;
+    return t("accExportExpenseVoid", { amt: amt || t("accFunds"), payee: payee || t("accVendor") });
   }
   if (row.action === "EXPENSE_UPDATE") {
-    return `Expense particulars or amount updated for ${payee || "vendor"}`;
+    return t("accExportExpenseUpdate", { payee: payee || t("accVendor") });
   }
   if (row.action === "OPENING_BALANCE_SET") {
-    return `Initial society starting cash reserve configured as ${amt || "configured amount"}`;
+    return t("accExportOpeningSet", { amt: amt || t("accConfiguredAmount") });
   }
   if (row.action === "OPENING_BALANCE_ADJUST") {
-    return `Opening cash balance reserve adjusted to ${amt || "new amount"}`;
+    return t("accExportOpeningAdjust", { amt: amt || t("accNewAmount") });
   }
   if (row.action === "PAYMENT_REVERSED") {
-    return `Payment collection of ${amt || "funds"} reversed in ledger`;
+    return t("accExportPaymentReversed", { amt: amt || t("accFunds") });
   }
   if (row.action === "MANUAL_ADJUSTMENT") {
-    return `Manual journal entry adjustment posted to ledger`;
+    return t("accExportManualAdjust");
   }
-  return `Financial record verified and audited`;
+  return t("accExportVerified");
 };
 
 /* Format single key change highlight for table column */
-const getAuditHighlight = (row) => {
+const getAuditHighlight = (row, t) => {
   const oldV = row.old_value || {};
   const newV = row.new_value || {};
 
@@ -2296,34 +1984,34 @@ const getAuditHighlight = (row) => {
     const oldAmt = oldV.amount !== undefined ? CURRENCY(oldV.amount) : null;
     const newAmt = newV.amount !== undefined ? CURRENCY(newV.amount) : null;
     if (oldAmt && newAmt) return `${oldAmt} → ${newAmt}`;
-    if (newAmt) return `Balance: ${newAmt}`;
+    if (newAmt) return t("accBalanceLabel", { amt: newAmt });
   }
 
   if (row.action === "EXPENSE_CREATE") {
     const amt = newV.amount !== undefined ? CURRENCY(newV.amount) : null;
     const payee = newV.pay_to ? `${newV.pay_to}` : null;
-    return [payee, amt].filter(Boolean).join(" · ") || "New expense recorded";
+    return [payee, amt].filter(Boolean).join(" · ") || t("accNewExpenseRecorded");
   }
 
   if (row.action === "EXPENSE_VOID") {
     const amt = oldV.amount !== undefined ? CURRENCY(oldV.amount) : null;
-    return `Voided ${amt || ""}`;
+    return t("accVoidedPrefix", { amt: amt || "" });
   }
 
   if (row.action === "EXPENSE_UPDATE") {
     if (oldV.amount !== undefined && newV.amount !== undefined && oldV.amount !== newV.amount) {
-      return `Amount: ${CURRENCY(oldV.amount)} → ${CURRENCY(newV.amount)}`;
+      return t("accAmountChange", { old: CURRENCY(oldV.amount), new: CURRENCY(newV.amount) });
     }
     if (oldV.pay_to !== undefined && newV.pay_to !== undefined && oldV.pay_to !== newV.pay_to) {
-      return `Payee: ${oldV.pay_to} → ${newV.pay_to}`;
+      return t("accPayeeChange", { old: oldV.pay_to, new: newV.pay_to });
     }
-    return "Details updated";
+    return t("accDetailsUpdated");
   }
 
-  return getMeaningfulAuditReason(row);
+  return getMeaningfulAuditReason(row, t);
 };
 
-const prettyAuditList = (v, societyName = "", performerName = "") => {
+const prettyAuditList = (v, societyName = "", performerName = "", t) => {
   if (v === null || v === undefined || v === "" || typeof v !== "object" || Array.isArray(v)) return [];
 
   // Check date similarity
@@ -2351,7 +2039,7 @@ const prettyAuditList = (v, societyName = "", performerName = "") => {
       // Rule: Society ID -> name of the society
       if (keyLower === "society_id") {
         if (societyName) {
-          return { key: k, label: "Society", value: societyName };
+          return { key: k, label: t("accFieldSociety"), value: societyName };
         }
         return null;
       }
@@ -2361,11 +2049,11 @@ const prettyAuditList = (v, societyName = "", performerName = "") => {
         return null;
       }
 
-      const fv = fmtAuditValue(val, k, performerName);
+      const fv = fmtAuditValue(val, k, performerName, t);
       if (fv === "") return null;
       return {
         key: k,
-        label: AUDIT_FIELD_LABELS[k] || k.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
+        label: AUDIT_FIELD_LABELS[k] ? t(AUDIT_FIELD_LABELS[k]) : k.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
         value: fv,
       };
     })
@@ -2374,20 +2062,21 @@ const prettyAuditList = (v, societyName = "", performerName = "") => {
 
 /* ── AUDIT DETAILS POPUP (MODERN, CLEAN AUDIT RECORD MODAL) ─────────────── */
 function AuditDetailsModal({ row, societyName, onClose }) {
+  const { t } = useLang();
   const performerName =
     row.performed_by_name ||
     row.performer_name ||
     row.created_by_name ||
     row.user_name ||
-    (row.performed_by_role ? (ROLE_LABELS[row.performed_by_role] || row.performed_by_role) : "Society Admin");
+    (row.performed_by_role ? (t(ROLE_LABELS[row.performed_by_role]) || row.performed_by_role) : t("accSocietyAdminDefault"));
 
-  const before = prettyAuditList(row.old_value, societyName, performerName);
-  const after = prettyAuditList(row.new_value, societyName, performerName);
+  const before = prettyAuditList(row.old_value, societyName, performerName, t);
+  const after = prettyAuditList(row.new_value, societyName, performerName, t);
   const tone = ACTION_TONES[row.action] || "gray";
   const showBefore = before && before.length > 0;
   const showAfter = after && after.length > 0;
 
-  const meaningfulReason = getMeaningfulAuditReason(row);
+  const meaningfulReason = getMeaningfulAuditReason(row, t);
 
   const toneConfig = {
     green: { bg: "rgba(16, 185, 129, 0.12)", border: "rgba(16, 185, 129, 0.28)", text: "#10B981", badge: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30" },
@@ -2401,7 +2090,7 @@ function AuditDetailsModal({ row, societyName, onClose }) {
   const activeTone = toneConfig[tone] || toneConfig.gray;
 
   return (
-    <Modal title="Financial Audit Record Details" icon={MdHistoryEdu} maxWidth="max-w-3xl" onClose={onClose}>
+    <Modal title={t("accAuditRecordDetails")} icon={MdHistoryEdu} maxWidth="max-w-3xl" onClose={onClose}>
       <div className="space-y-4">
         {/* Top Hero Card */}
         <div
@@ -2421,10 +2110,10 @@ function AuditDetailsModal({ row, societyName, onClose }) {
             <div>
               <div className="flex items-center gap-2 flex-wrap">
                 <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider border ${activeTone.badge}`}>
-                  {ACTION_LABELS[row.action] || row.action}
+                  {t(ACTION_LABELS[row.action] || row.action)}
                 </span>
                 <span className="text-xs font-semibold px-2 py-0.5 rounded-md" style={{ background: "rgba(255,255,255,0.06)", color: "var(--text-secondary)" }}>
-                  Entry #{row.id}
+                  {t("accEntryNo", { id: row.id })}
                 </span>
               </div>
               <p className="text-xs text-secondary mt-1 flex items-center gap-1 font-mono">
@@ -2438,7 +2127,7 @@ function AuditDetailsModal({ row, societyName, onClose }) {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div className="p-3.5 rounded-xl border flex flex-col justify-between" style={{ background: "var(--card-inner-bg)", borderColor: "var(--glass-border)" }}>
             <span className="text-[10px] font-bold uppercase tracking-wider text-secondary flex items-center gap-1">
-              <MdPerson size={13} className="text-accent" /> Performed By
+              <MdPerson size={13} className="text-accent" /> {t("accPerformedBy")}
             </span>
             <span className="text-sm font-bold text-primary mt-1 truncate" title={performerName}>
               {performerName}
@@ -2447,19 +2136,19 @@ function AuditDetailsModal({ row, societyName, onClose }) {
 
           <div className="p-3.5 rounded-xl border flex flex-col justify-between" style={{ background: "var(--card-inner-bg)", borderColor: "var(--glass-border)" }}>
             <span className="text-[10px] font-bold uppercase tracking-wider text-secondary flex items-center gap-1">
-              <MdBusiness size={13} className="text-accent" /> Society Context
+              <MdBusiness size={13} className="text-accent" /> {t("accSocietyContext")}
             </span>
-            <span className="text-sm font-bold text-primary mt-1 truncate" title={societyName || "Global / Current"}>
-              {societyName || "Current Society"}
+            <span className="text-sm font-bold text-primary mt-1 truncate" title={societyName || t("accGlobalCurrent")}>
+              {societyName || t("accCurrentSociety")}
             </span>
           </div>
 
           <div className="p-3.5 rounded-xl border flex flex-col justify-between" style={{ background: "var(--card-inner-bg)", borderColor: "var(--glass-border)" }}>
             <span className="text-[10px] font-bold uppercase tracking-wider text-secondary flex items-center gap-1">
-              <MdCheckCircle size={13} className="text-accent" /> Verification Status
+              <MdCheckCircle size={13} className="text-accent" /> {t("accVerificationStatus")}
             </span>
             <span className="text-sm font-bold text-emerald-400 mt-1 flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block" /> Ledger Verified
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block" /> {t("accLedgerVerified")}
             </span>
           </div>
         </div>
@@ -2467,7 +2156,7 @@ function AuditDetailsModal({ row, societyName, onClose }) {
         {/* Audit Event Summary */}
         <div className="p-4 rounded-xl border" style={{ background: "var(--card-inner-bg)", borderColor: "var(--glass-border)" }}>
           <div className="text-[11px] font-bold uppercase tracking-wider text-secondary flex items-center gap-1.5 mb-1.5">
-            <MdDescription size={14} className="text-accent" /> Audit Event Summary
+            <MdDescription size={14} className="text-accent" /> {t("accAuditEventSummary")}
           </div>
           <p className="text-sm font-semibold text-primary m-0 leading-relaxed">
             {meaningfulReason}
@@ -2479,7 +2168,7 @@ function AuditDetailsModal({ row, societyName, onClose }) {
           <div className="space-y-2">
             <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-rose-400">
               <span className="w-2.5 h-2.5 rounded-full bg-rose-500/80 inline-block" />
-              Previous State (Before Modification)
+              {t("accPreviousState")}
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
               {before.map((f) => (
@@ -2493,7 +2182,7 @@ function AuditDetailsModal({ row, societyName, onClose }) {
           <div className="space-y-2">
             <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-emerald-400">
               <span className="w-2.5 h-2.5 rounded-full bg-emerald-500/80 inline-block" />
-              Updated State (After Modification)
+              {t("accUpdatedState")}
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
               {after.map((f) => (
@@ -2505,14 +2194,14 @@ function AuditDetailsModal({ row, societyName, onClose }) {
 
         {!showBefore && !showAfter && (
           <div className="text-xs text-secondary text-center p-4 rounded-xl border" style={{ background: "var(--card-inner-bg)", borderColor: "var(--glass-border)" }}>
-            No parameter modifications recorded for this audit entry.
+            {t("accNoParamMods")}
           </div>
         )}
 
         {/* Footer actions */}
         <div className="flex justify-end pt-3 border-t border-glass-border">
           <button onClick={onClose} className="btn-primary px-6 py-2 text-xs font-bold rounded-xl cursor-pointer">
-            Close Record
+            {t("accCloseRecord")}
           </button>
         </div>
       </div>
@@ -2521,6 +2210,7 @@ function AuditDetailsModal({ row, societyName, onClose }) {
 }
 
 function AuditLogTab({ societyName }) {
+  const { t } = useLang();
   const [rows, setRows] = useState([]);
   const [pagination, setPagination] = useState({});
   const [loading, setLoading] = useState(true);
@@ -2541,7 +2231,7 @@ function AuditLogTab({ societyName }) {
       setPagination(res.pagination || {});
     } catch (e) {
       console.error("Failed to load financial audit log", e);
-      setErr("Failed to load the financial audit log. Please try again.");
+      setErr(t("accLoadAuditFail"));
     } finally {
       setLoading(false);
     }
@@ -2555,59 +2245,59 @@ function AuditLogTab({ societyName }) {
     if (!search.trim()) return rows;
     const q = search.toLowerCase();
     return rows.filter((r) => {
-      const action = (ACTION_LABELS[r.action] || r.action || "").toLowerCase();
+      const action = (t(ACTION_LABELS[r.action]) || r.action || "").toLowerCase();
       const performer = (r.performed_by_name || r.performer_name || r.performed_by_role || "").toLowerCase();
-      const reason = getMeaningfulAuditReason(r).toLowerCase();
-      const highlight = getAuditHighlight(r).toLowerCase();
+      const reason = getMeaningfulAuditReason(r, t).toLowerCase();
+      const highlight = getAuditHighlight(r, t).toLowerCase();
       return action.includes(q) || performer.includes(q) || reason.includes(q) || highlight.includes(q);
     });
-  }, [rows, search]);
+  }, [rows, search, t]);
 
   const handleDownloadPDF = () => {
     const exportData = filteredRows.length > 0 ? filteredRows : rows;
     if (!exportData || exportData.length === 0) {
-      toast.info("No audit records to export.");
+      toast.info(t("accNoAuditToExport"));
       return;
     }
-    const columns = ["Timestamp", "Action / Event", "Performed By", "Reason / Notes", "Change Highlights"];
+    const columns = [t("accColTimestamp"), t("accColActionEvent"), t("accColPerformedBy"), t("accColReasonNotes"), t("accColChangeHighlights")];
     const tableData = exportData.map((r) => [
       fmtWhen(r.performed_at),
-      ACTION_LABELS[r.action] || r.action,
-      r.performed_by_name || r.performer_name || r.performed_by_role || "Society Admin",
-      getMeaningfulAuditReason(r),
-      getAuditHighlight(r),
+      t(ACTION_LABELS[r.action]) || r.action,
+      r.performed_by_name || r.performer_name || r.performed_by_role || t("accSocietyAdminDefault"),
+      getMeaningfulAuditReason(r, t),
+      getAuditHighlight(r, t),
     ]);
     exportToPDF({
-      title: `${societyName ? societyName + " — " : ""}Financial Audit Logbook`,
-      subtitle: "Immutable, append-only audit trail recording financial operations",
+      title: `${societyName ? societyName + " — " : ""}${t("accAuditTitle")}`,
+      subtitle: t("accAuditSubtitle"),
       columns,
       rows: tableData,
       fileName: `Financial_Audit_Log_${new Date().toISOString().slice(0, 10)}`,
       orientation: "landscape",
     });
-    toast.success("Financial Audit Log downloaded as PDF.");
+    toast.success(t("accAuditDownloadPDF"));
     setShowExportMenu(false);
   };
 
   const handleDownloadCSV = () => {
     const exportData = filteredRows.length > 0 ? filteredRows : rows;
     if (!exportData || exportData.length === 0) {
-      toast.info("No audit records to export.");
+      toast.info(t("accNoAuditToExport"));
       return;
     }
     const data = exportData.map((r) => ({
-      "Timestamp": fmtWhen(r.performed_at),
-      "Action": ACTION_LABELS[r.action] || r.action,
-      "Performed By": r.performed_by_name || r.performer_name || r.performed_by_role || "Society Admin",
-      "Audit Reason": getMeaningfulAuditReason(r),
-      "Change Highlights": getAuditHighlight(r),
+      [t("accColTimestamp")]: fmtWhen(r.performed_at),
+      [t("accColActionEvent")]: t(ACTION_LABELS[r.action]) || r.action,
+      [t("accColPerformedBy")]: r.performed_by_name || r.performer_name || r.performed_by_role || t("accSocietyAdminDefault"),
+      [t("accFieldReason")]: getMeaningfulAuditReason(r, t),
+      [t("accColChangeHighlights")]: getAuditHighlight(r, t),
     }));
     exportToExcel({
       data,
       fileName: `Financial_Audit_Log_${new Date().toISOString().slice(0, 10)}`,
       sheetName: "AuditLog",
     });
-    toast.success("Financial Audit Log exported successfully.");
+    toast.success(t("accAuditExported"));
     setShowExportMenu(false);
   };
 
@@ -2616,7 +2306,7 @@ function AuditLogTab({ societyName }) {
       <div className="bg-red-500/10 border border-red-500/30 rounded-2xl p-6 text-red-500 flex flex-col sm:flex-row items-center justify-between gap-4">
         <div className="flex items-center gap-3 text-sm font-medium">{err}</div>
         <button onClick={() => load(page)} className="btn-primary flex items-center gap-2 px-4 py-2 text-xs font-semibold shrink-0">
-          <MdRefresh size={16} /> Retry
+          <MdRefresh size={16} /> {t("retry")}
         </button>
       </div>
     );
@@ -2637,10 +2327,10 @@ function AuditLogTab({ societyName }) {
         <div>
           <h2 className="text-base font-bold text-primary flex items-center gap-2">
             <MdHistoryEdu className="text-accent" size={20} />
-            Official Financial Audit Logbook
+            {t("accAuditTitle")}
           </h2>
           <p className="text-xs text-secondary mt-0.5">
-            Immutable, append-only audit trail recording opening balances, expense modifications, and financial adjustments.
+            {t("accAuditSubtitle")}
           </p>
         </div>
         <div className="flex items-center gap-2.5 flex-wrap">
@@ -2648,7 +2338,7 @@ function AuditLogTab({ societyName }) {
           <ExpandableSearch
             value={search}
             onChange={(val) => setSearch(val)}
-            placeholder="Search action, performer, notes…"
+            placeholder={t("accSearchAudit")}
             fetching={loading}
             isOpen={isSearchOpen}
             onOpenChange={setIsSearchOpen}
@@ -2662,7 +2352,7 @@ function AuditLogTab({ societyName }) {
               style={{ height: 38 }}
             >
               <MdDownload size={16} className="text-accent" />
-              <span>Download Logbook</span>
+              <span>{t("accDownloadLogbook")}</span>
             </button>
             {showExportMenu && (
               <div
@@ -2678,14 +2368,14 @@ function AuditLogTab({ societyName }) {
                   className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold text-primary hover:bg-card-inner-bg transition-colors cursor-pointer"
                 >
                   <MdPictureAsPdf size={16} className="text-rose-500" />
-                  <span>Download PDF (.pdf)</span>
+                  <span>{t("accDownloadPDF")}</span>
                 </button>
                 <button
                   onClick={handleDownloadCSV}
                   className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold text-primary hover:bg-card-inner-bg transition-colors cursor-pointer"
                 >
                   <MdTableChart size={16} className="text-emerald-500" />
-                  <span>Download CSV (.xlsx)</span>
+                  <span>{t("accDownloadCSV")}</span>
                 </button>
               </div>
             )}
@@ -2693,7 +2383,7 @@ function AuditLogTab({ societyName }) {
 
           <button
             onClick={() => load(page)}
-            title="Refresh log"
+            title={t("accRefreshLog")}
             className="inline-flex items-center justify-center rounded-xl border transition-all cursor-pointer shrink-0"
             style={{
               width: 38,
@@ -2713,25 +2403,25 @@ function AuditLogTab({ societyName }) {
         <table className="w-full text-left text-sm">
           <thead>
             <tr className="border-b text-xs uppercase tracking-wider text-secondary" style={{ borderColor: "var(--glass-border)" }}>
-              <th className="py-3.5 pr-4 font-bold">Timestamp</th>
-              <th className="py-3.5 pr-4 font-bold">Action / Event</th>
-              <th className="py-3.5 pr-4 font-bold">Performed By</th>
-              <th className="py-3.5 pr-4 font-bold">Reason / Notes</th>
-              <th className="py-3.5 pr-4 font-bold">Change Highlights</th>
-              <th className="py-3.5 font-bold text-right">Details</th>
+              <th className="py-3.5 pr-4 font-bold">{t("accColTimestamp")}</th>
+              <th className="py-3.5 pr-4 font-bold">{t("accColActionEvent")}</th>
+              <th className="py-3.5 pr-4 font-bold">{t("accColPerformedBy")}</th>
+              <th className="py-3.5 pr-4 font-bold">{t("accColReasonNotes")}</th>
+              <th className="py-3.5 pr-4 font-bold">{t("accColChangeHighlights")}</th>
+              <th className="py-3.5 font-bold text-right">{t("accColDetailsAction")}</th>
             </tr>
           </thead>
           <tbody>
             {filteredRows.length === 0 && (
               <tr>
                 <td colSpan={6} className="py-12 text-center text-secondary text-sm">
-                  {loading ? "Loading audit records…" : search ? `No audit records matching "${search}".` : "No financial audit records logged yet."}
+                  {loading ? t("accLoadingAudit") : search ? t("accNoAuditMatch", { search }) : t("accNoAuditRecords")}
                 </td>
               </tr>
             )}
             {filteredRows.map((r) => {
               const tone = ACTION_TONES[r.action] || "gray";
-              const performer = r.performed_by_name || r.performer_name || r.performed_by_role || "Society Admin";
+              const performer = r.performed_by_name || r.performer_name || r.performed_by_role || t("accSocietyAdminDefault");
               return (
                 <tr
                   key={r.id}
@@ -2759,7 +2449,7 @@ function AuditLogTab({ societyName }) {
                           : "bg-gray-500/15 text-gray-400 border border-gray-500/30"
                       }`}
                     >
-                      {ACTION_LABELS[r.action] || r.action}
+                      {t(ACTION_LABELS[r.action]) || r.action}
                     </span>
                   </td>
                   <td className="py-3.5 pr-4 text-primary font-bold text-xs whitespace-nowrap">
@@ -2767,11 +2457,11 @@ function AuditLogTab({ societyName }) {
                       {performer}
                     </span>
                   </td>
-                  <td className="py-3.5 pr-4 text-secondary max-w-60 truncate font-medium text-xs" title={getMeaningfulAuditReason(r)}>
-                    {getMeaningfulAuditReason(r)}
+                  <td className="py-3.5 pr-4 text-secondary max-w-60 truncate font-medium text-xs" title={getMeaningfulAuditReason(r, t)}>
+                    {getMeaningfulAuditReason(r, t)}
                   </td>
                   <td className="py-3.5 pr-4 text-primary font-bold text-xs max-w-72 truncate">
-                    {getAuditHighlight(r)}
+                    {getAuditHighlight(r, t)}
                   </td>
                   <td className="py-3.5 text-right whitespace-nowrap">
                     <button
@@ -2781,7 +2471,7 @@ function AuditLogTab({ societyName }) {
                         background: "var(--accent-soft, rgba(99,102,241,0.18))",
                         border: "1px solid var(--accent-light, #818cf8)",
                       }}
-                      title="View full audit record"
+                      title={t("accViewAuditTip")}
                     >
                       <MdViewList size={16} />
                     </button>
@@ -2793,11 +2483,16 @@ function AuditLogTab({ societyName }) {
         </table>
       </div>
 
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t" style={{ borderColor: "var(--glass-border)" }}>
+      <div className="flex items-center justify-between gap-x-4 gap-y-3 flex-wrap pt-3 border-t" style={{ borderColor: "var(--glass-border)" }}>
         <span className="text-xs text-secondary font-medium">
-          Page {pagination.currentPage || page} of {pagination.totalPages || 1} · {pagination.totalItems || 0} total audit records
+          {t("accPageInfoAudit", {
+            cur: pagination.currentPage || page,
+            total: pagination.totalPages || 1,
+            items: pagination.totalItems || 0,
+          })}
         </span>
         <Pagination
+          style={{ marginTop: 0 }}
           page={page}
           totalPages={pagination.totalPages || 1}
           onPageChange={(p) => {

@@ -36,13 +36,13 @@ import { FaUserShield, FaExclamationTriangle } from "react-icons/fa";
 import "./Admin.css";
 
 const EMERGENCY_TYPES = [
-  { key: "ALL", label: "All Types" },
-  { key: "SECURITY", label: "Security / Intruder", icon: MdSecurity, color: "#ef4444", bg: "rgba(239,68,68,0.12)", border: "rgba(239,68,68,0.3)" },
-  { key: "FIRE", label: "Fire Alert", icon: MdLocalFireDepartment, color: "#f97316", bg: "rgba(249,115,22,0.12)", border: "rgba(249,115,22,0.3)" },
-  { key: "MEDICAL", label: "Medical Emergency", icon: MdLocalHospital, color: "#3b82f6", bg: "rgba(59,130,246,0.12)", border: "rgba(59,130,246,0.3)" },
-  { key: "LIFT_STUCK", label: "Lift Stuck", icon: MdWarning, color: "#8b5cf6", bg: "rgba(139,92,246,0.12)", border: "rgba(139,92,246,0.3)" },
-  { key: "ANIMAL", label: "Animal Menace", icon: MdHelp, color: "#06b6d4", bg: "rgba(6,182,212,0.12)", border: "rgba(6,182,212,0.3)" },
-  { key: "OTHER", label: "Other Emergency", icon: MdHelp, color: "#ec4899", bg: "rgba(236,72,153,0.12)", border: "rgba(236,72,153,0.3)" },
+  { key: "ALL", labelKey: "sosAllTypes" },
+  { key: "SECURITY", labelKey: "sosTypeSecurity", icon: MdSecurity, color: "#ef4444", bg: "rgba(239,68,68,0.12)", border: "rgba(239,68,68,0.3)" },
+  { key: "FIRE", labelKey: "sosTypeFire", icon: MdLocalFireDepartment, color: "#f97316", bg: "rgba(249,115,22,0.12)", border: "rgba(249,115,22,0.3)" },
+  { key: "MEDICAL", labelKey: "sosTypeMedical", icon: MdLocalHospital, color: "#3b82f6", bg: "rgba(59,130,246,0.12)", border: "rgba(59,130,246,0.3)" },
+  { key: "LIFT_STUCK", labelKey: "sosTypeLiftStuck", icon: MdWarning, color: "#8b5cf6", bg: "rgba(139,92,246,0.12)", border: "rgba(139,92,246,0.3)" },
+  { key: "ANIMAL", labelKey: "sosTypeAnimal", icon: MdHelp, color: "#06b6d4", bg: "rgba(6,182,212,0.12)", border: "rgba(6,182,212,0.3)" },
+  { key: "OTHER", labelKey: "sosTypeOther", icon: MdHelp, color: "#ec4899", bg: "rgba(236,72,153,0.12)", border: "rgba(236,72,153,0.3)" },
 ];
 
 const TYPE_MAP = Object.fromEntries(EMERGENCY_TYPES.filter(t => t.key !== "ALL").map(t => [t.key, t]));
@@ -134,11 +134,11 @@ export default function AdminEmergency() {
       setAlerts(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
       console.error("Failed to load emergency alerts:", err);
-      toast.error("Failed to load emergency alerts");
+      toast.error(t("sosToastLoadFailed"));
     } finally {
       setLoading(false);
     }
-  }, [isSuperAdmin, selectedSocietyId, statusFilter, typeFilter, startDate, endDate, search]);
+  }, [isSuperAdmin, selectedSocietyId, statusFilter, typeFilter, startDate, endDate, search, t]);
 
   useEffect(() => {
     fetchAlerts();
@@ -176,7 +176,7 @@ export default function AdminEmergency() {
       }));
     } catch (err) {
       console.error("Failed to fetch SOS acknowledgement history:", err);
-      toast.error("Failed to load read history");
+      toast.error(t("sosToastHistoryFailed"));
       setHistoryModal((prev) => ({ ...prev, loading: false }));
     }
   };
@@ -206,12 +206,12 @@ export default function AdminEmergency() {
       await API.patch(`/emergency/${resolveModal.alert.id}/resolve`, {
         resolution_notes: resolveModal.notes.trim() || undefined,
       });
-      toast.success("Emergency marked as resolved ✅");
+      toast.success(t("sosToastResolved"));
       setResolveModal({ isOpen: false, alert: null, notes: "", loading: false });
       fetchAlerts();
     } catch (err) {
       console.error("Failed to resolve emergency:", err);
-      toast.error(err?.response?.data?.message || "Failed to resolve emergency");
+      toast.error(err?.response?.data?.message || t("sosToastResolveFailed"));
       setResolveModal((prev) => ({ ...prev, loading: false }));
     }
   };
@@ -220,7 +220,7 @@ export default function AdminEmergency() {
   const handleConfirmEdit = async () => {
     if (!editModal.alert) return;
     if (editModal.type === "OTHER" && !editModal.other_reason?.trim()) {
-      toast.error("Please specify a reason for selecting Other");
+      toast.error(t("sosToastOtherReason"));
       return;
     }
 
@@ -232,12 +232,12 @@ export default function AdminEmergency() {
         other_reason: editModal.other_reason,
         resolution_notes: editModal.resolution_notes,
       });
-      toast.success("Emergency alert updated successfully");
+      toast.success(t("sosToastUpdated"));
       setEditModal({ isOpen: false, alert: null, type: "MEDICAL", message: "", other_reason: "", resolution_notes: "", loading: false });
       fetchAlerts();
     } catch (err) {
       console.error("Failed to update emergency:", err);
-      toast.error(err?.response?.data?.message || "Failed to update alert");
+      toast.error(err?.response?.data?.message || t("sosToastUpdateFailed"));
       setEditModal((prev) => ({ ...prev, loading: false }));
     }
   };
@@ -245,19 +245,19 @@ export default function AdminEmergency() {
   // Handle Delete with CustomAlertModal
   const handleDelete = (alertItem) => {
     showAlert({
-      title: "Delete Emergency Alert?",
-      message: `Are you sure you want to delete this ${alertItem.type} SOS alert permanently? This action cannot be undone.`,
+      title: t("sosDeleteTitle"),
+      message: t("sosDeleteConfirmMsg", { type: alertItem.type }),
       type: "danger",
-      confirmText: "Delete",
-      cancelText: "Cancel",
+      confirmText: t("sosDeleteConfirm"),
+      cancelText: t("sosDeleteCancel"),
       onConfirm: async () => {
         try {
           await API.delete(`/emergency/${alertItem.id}`);
-          toast.success("Emergency alert deleted");
+          toast.success(t("sosToastDeleted"));
           fetchAlerts();
         } catch (err) {
           console.error("Failed to delete emergency:", err);
-          toast.error(err?.response?.data?.message || "Failed to delete emergency alert");
+          toast.error(err?.response?.data?.message || t("sosToastDeleteFailed"));
         }
       },
     });
@@ -268,9 +268,9 @@ export default function AdminEmergency() {
       <div className="admin-page p-6 text-center">
         <div className="bg-red-500/10 border border-red-500/30 p-8 rounded-2xl max-w-md mx-auto">
           <FaExclamationTriangle size={48} className="text-red-500 mx-auto mb-4" />
-          <h2 className="text-xl font-bold mb-2">Access Denied</h2>
+          <h2 className="text-xl font-bold mb-2">{t("sosAccessDeniedTitle")}</h2>
           <p className="text-secondary text-sm">
-            You do not have permission to view SOS Emergency Management. Please contact your society administrator.
+            {t("sosAccessDeniedMsg")}
           </p>
         </div>
       </div>
@@ -301,10 +301,10 @@ export default function AdminEmergency() {
           </div>
           <div>
             <h1 className="text-lg font-semibold" style={{ letterSpacing: "-0.02em", margin: 0 }}>
-              SOS Emergency
+              {t("sosPageTitle")}
             </h1>
             <p className="text-secondary text-xs mt-0.5">
-              Monitor live emergencies, acknowledgements & resolutions
+              {t("sosPageSubtitle")}
             </p>
           </div>
         </div>
@@ -315,9 +315,9 @@ export default function AdminEmergency() {
             value={statusFilter}
             onChange={(val) => setStatusFilter(val)}
             items={[
-              { id: "ALL", label: "All", badge: metrics.total },
-              { id: "ACTIVE", label: "Active", badge: metrics.active },
-              { id: "RESOLVED", label: "Resolved", badge: metrics.resolved },
+              { id: "ALL", label: t("sosStatusAll"), badge: metrics.total },
+              { id: "ACTIVE", label: t("sosStatusActive"), badge: metrics.active },
+              { id: "RESOLVED", label: t("sosStatusResolved"), badge: metrics.resolved },
             ]}
           />
 
@@ -334,9 +334,9 @@ export default function AdminEmergency() {
             onChange={(e) => setTypeFilter(e.target.value)}
             style={{ height: 42, minHeight: 42, fontSize: 13, borderRadius: 12, minWidth: 150 }}
           >
-            {EMERGENCY_TYPES.map((t) => (
-              <option key={t.key} value={t.key}>
-                {t.label}
+            {EMERGENCY_TYPES.map((type) => (
+              <option key={type.key} value={type.key}>
+                {t(type.labelKey)}
               </option>
             ))}
           </Select>
@@ -366,7 +366,7 @@ export default function AdminEmergency() {
               style={{ height: 42, minHeight: 42 }}
             >
               <FaExclamationTriangle size={14} className="animate-pulse" />
-              <span>Broadcast SOS</span>
+              <span>{t("sosBroadcastBtn")}</span>
             </button>
           )}
 
@@ -385,28 +385,28 @@ export default function AdminEmergency() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="ad-kpi ad-kpi--residents">
           <span className="ad-kpi-val">{metrics.total}</span>
-          <span className="ad-kpi-label">Total SOS Alerts</span>
+          <span className="ad-kpi-label">{t("sosKpiTotalTitle")}</span>
           <span className="ad-kpi-desc">{t("sosAllEmergencies")}</span>
         </div>
 
         <div className="ad-kpi ad-kpi--complaints">
           <span className="ad-kpi-val">{metrics.active}</span>
-          <span className="ad-kpi-label">Active SOS</span>
+          <span className="ad-kpi-label">{t("sosKpiActiveTitle")}</span>
           <span className="ad-kpi-desc">
-            {metrics.active > 0 ? "Requires immediate attention" : "No active emergencies"}
+            {metrics.active > 0 ? t("sosKpiActiveDesc") : t("sosKpiNoActiveDesc")}
           </span>
         </div>
 
         <div className="ad-kpi ad-kpi--guards">
           <span className="ad-kpi-val">{metrics.resolved}</span>
-          <span className="ad-kpi-label">Resolved</span>
-          <span className="ad-kpi-desc">Handled emergencies</span>
+          <span className="ad-kpi-label">{t("sosKpiResolvedTitle")}</span>
+          <span className="ad-kpi-desc">{t("sosKpiResolvedDesc")}</span>
         </div>
 
         <div className="ad-kpi ad-kpi--flats">
           <span className="ad-kpi-val">{metrics.totalAcks}</span>
-          <span className="ad-kpi-label">Total Acknowledgements</span>
-          <span className="ad-kpi-desc">Confirmed recipient reads</span>
+          <span className="ad-kpi-label">{t("sosKpiAcksTitle")}</span>
+          <span className="ad-kpi-desc">{t("sosKpiAcksDesc")}</span>
         </div>
       </div>
 
@@ -428,12 +428,12 @@ export default function AdminEmergency() {
           </div>
           <div className="space-y-1">
             <h3 className="text-lg font-bold" style={{ color: "var(--text-primary)" }}>
-              No Emergency Alerts Found
+              {t("sosEmptyTitle")}
             </h3>
             <p className="text-xs text-secondary max-w-sm mx-auto">
               {search || statusFilter !== "ALL" || typeFilter !== "ALL"
-                ? "No SOS records match your active filter criteria. Try adjusting the search filters."
-                : "There are currently no active or recorded emergency SOS alerts in the database."}
+                ? t("sosEmptyFiltered")
+                : t("sosEmptyAll")}
             </p>
           </div>
           {canTrigger && (
@@ -444,7 +444,7 @@ export default function AdminEmergency() {
                 className="btn bg-red-600 hover:bg-red-700 text-white text-xs font-bold px-4 py-2 rounded-xl inline-flex items-center gap-2 shadow-md shadow-red-600/20 cursor-pointer"
               >
                 <FaExclamationTriangle size={14} className="animate-pulse" />
-                <span>Trigger Emergency SOS</span>
+                <span>{t("sosTriggerBtn")}</span>
               </button>
             </div>
           )}
@@ -453,7 +453,7 @@ export default function AdminEmergency() {
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
           {alerts.map((alert) => {
             const typeMeta = TYPE_MAP[alert.type] || TYPE_MAP.OTHER || {
-              label: alert.type,
+              labelKey: "sosTypeOther",
               icon: MdWarning,
               color: "#ef4444",
               bg: "rgba(239,68,68,0.12)",
@@ -467,13 +467,13 @@ export default function AdminEmergency() {
               alert.Resident?.name ||
               alert.Guard?.name ||
               alert.Admin?.name ||
-              (alert.source === "GUARD" ? "Security Guard" : alert.source === "RESIDENT" ? "Resident" : "Staff");
+              (alert.source === "GUARD" ? t("sosSourceGuard") : alert.source === "RESIDENT" ? t("sosSourceResident") : t("sosSourceStaff"));
 
             const flatStr = alert.Flat
-              ? `${alert.Flat.Block?.name ? `Block ${alert.Flat.Block.name} · ` : ""}Flat ${alert.Flat.flat_number}`
+              ? `${alert.Flat.Block?.name ? `${t("sosBlockWord")} ${alert.Flat.Block.name} · ` : ""}${t("sosFlatWord")} ${alert.Flat.flat_number}`
               : alert.source === "GUARD"
-              ? "Security Gate"
-              : "Society Premises";
+              ? t("sosSecurityGate")
+              : t("sosSocietyPremises");
 
             return (
               <div
@@ -495,7 +495,7 @@ export default function AdminEmergency() {
                     >
                       <Icon size={17} style={{ color: typeMeta.color }} />
                       <span className="text-xs font-black tracking-wide" style={{ color: typeMeta.color }}>
-                        {typeMeta.label}
+                        {t(typeMeta.labelKey)}
                       </span>
                     </div>
 
@@ -513,7 +513,7 @@ export default function AdminEmergency() {
                         }`}
                       >
                         {isResolved ? <MdCheckCircle size={13} /> : <MdWarning size={13} />}
-                        {alert.status}
+                        {isResolved ? t("sosStatusResolved") : t("sosStatusActive")}
                       </span>
                     </div>
                   </div>
@@ -532,7 +532,7 @@ export default function AdminEmergency() {
                           {senderName}
                         </p>
                         <p className="text-[10px] text-secondary">
-                          Source: <span className="font-semibold text-primary">{alert.source}</span>
+                          {t("sosSourceLabel")} <span className="font-semibold text-primary">{alert.source}</span>
                         </p>
                       </div>
                     </div>
@@ -557,12 +557,12 @@ export default function AdminEmergency() {
                     }}
                   >
                     <p className="text-xs leading-relaxed" style={{ color: "var(--text-primary)", fontWeight: 500, margin: 0 }}>
-                      {alert.message || "Emergency assistance requested."}
+                      {alert.message || t("sosDefaultMsg")}
                     </p>
 
                     {alert.other_reason && (
                       <div className="mt-2 pt-2 border-t border-glass flex items-center gap-1.5 text-xs text-pink-400 font-semibold">
-                        <span>Reason: {alert.other_reason}</span>
+                        <span>{t("sosReason", { reason: alert.other_reason })}</span>
                       </div>
                     )}
                   </div>
@@ -579,12 +579,12 @@ export default function AdminEmergency() {
                       }}
                     >
                       <div className="flex items-center justify-between text-emerald-400 font-bold text-[11px]">
-                        <span>Resolved by: {alert.Resolver?.name || "Staff"}</span>
+                        <span>{t("sosResolvedBy", { name: alert.Resolver?.name || t("sosSourceStaff") })}</span>
                         <span>{alert.resolved_at ? new Date(alert.resolved_at).toLocaleTimeString() : ""}</span>
                       </div>
                       {alert.resolution_notes && (
                         <p className="text-secondary text-[11px] leading-tight mt-1" style={{ margin: "4px 0 0" }}>
-                          Note: {alert.resolution_notes}
+                          {t("sosNote", { note: alert.resolution_notes })}
                         </p>
                       )}
                     </div>
@@ -623,7 +623,7 @@ export default function AdminEmergency() {
                     }}
                   >
                     <MdVisibility size={14} style={{ color: "var(--accent)" }} />
-                    <span>Acks</span>
+                    <span>{t("sosAcksBtn")}</span>
                     <span
                       style={{
                         fontSize: "10px",
@@ -646,7 +646,7 @@ export default function AdminEmergency() {
                         onClick={() => setResolveModal({ isOpen: true, alert, notes: "", loading: false })}
                         className="py-1.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition flex items-center justify-center gap-1 shadow-sm cursor-pointer"
                       >
-                        <MdCheckCircle size={14} /> Resolve
+                        <MdCheckCircle size={14} /> {t("sosResolveBtn")}
                       </button>
                     )}
 
@@ -667,7 +667,7 @@ export default function AdminEmergency() {
                         }
                         className="p-2 rounded-xl text-secondary hover:text-primary transition"
                         style={{ background: "var(--card-inner-bg)", border: "1px solid var(--glass-border)", cursor: "pointer" }}
-                        title="Edit SOS Details"
+                        title={t("sosEditTitleTip")}
                       >
                         <MdEdit size={14} />
                       </button>
@@ -677,10 +677,10 @@ export default function AdminEmergency() {
                     {canDelete && (
                       <button
                         type="button"
-                        onClick={() => handleDeleteClick(alert)}
+                        onClick={() => handleDelete(alert)}
                         className="p-2 rounded-xl text-red-400 hover:text-red-300 hover:bg-red-500/10 transition"
                         style={{ background: "var(--card-inner-bg)", border: "1px solid var(--glass-border)", cursor: "pointer" }}
-                        title="Delete SOS Alert"
+                        title={t("sosDeleteTitleTip")}
                       >
                         <MdDeleteOutline size={14} />
                       </button>
@@ -698,8 +698,8 @@ export default function AdminEmergency() {
         <GlobalModal
           isOpen={historyModal.isOpen}
           onClose={() => setHistoryModal({ isOpen: false, alert: null, loading: false, data: null, search: "", statusFilter: "ALL" })}
-          title="SOS Read & Acknowledgement History"
-          subtitle={`Tracking user view & read receipt for ${historyModal.alert?.type || "Emergency"} Alert`}
+          title={t("sosHistoryTitle")}
+          subtitle={t("sosHistorySubtitle", { type: historyModal.alert?.type || "Emergency" })}
           icon={MdDoneAll}
           size="xl"
           warnUnsavedChanges={false}
@@ -731,7 +731,7 @@ export default function AdminEmergency() {
                   <MdPeople size={22} />
                 </div>
                 <div>
-                  <p className="text-[10px] uppercase font-bold tracking-wider text-secondary">Total Recipients</p>
+                  <p className="text-[10px] uppercase font-bold tracking-wider text-secondary">{t("sosTotalRecipients")}</p>
                   <p className="text-xl font-black" style={{ color: "var(--text-primary)", lineHeight: 1.2 }}>
                     {historyModal.data?.summary?.total ?? 0}
                   </p>
@@ -762,7 +762,7 @@ export default function AdminEmergency() {
                   <MdDoneAll size={22} />
                 </div>
                 <div>
-                  <p className="text-[10px] uppercase font-bold tracking-wider text-secondary">Marked As Read</p>
+                  <p className="text-[10px] uppercase font-bold tracking-wider text-secondary">{t("sosMarkedRead")}</p>
                   <p className="text-xl font-black text-emerald-400" style={{ lineHeight: 1.2 }}>
                     {historyModal.data?.summary?.read ?? 0}
                   </p>
@@ -793,7 +793,7 @@ export default function AdminEmergency() {
                   <MdHourglassEmpty size={22} />
                 </div>
                 <div>
-                  <p className="text-[10px] uppercase font-bold tracking-wider text-secondary">Unread</p>
+                  <p className="text-[10px] uppercase font-bold tracking-wider text-secondary">{t("sosStatusUnread")}</p>
                   <p className="text-xl font-black text-amber-400" style={{ lineHeight: 1.2 }}>
                     {historyModal.data?.summary?.unread ?? 0}
                   </p>
@@ -810,9 +810,9 @@ export default function AdminEmergency() {
                   fetchModalHistory(historyModal.alert.id, historyModal.search, val);
                 }}
                 items={[
-                  { id: "ALL", label: "All", badge: historyModal.data?.summary?.total ?? 0 },
-                  { id: "READ", label: "Read", badge: historyModal.data?.summary?.read ?? 0 },
-                  { id: "UNREAD", label: "Unread", badge: historyModal.data?.summary?.unread ?? 0 },
+                  { id: "ALL", label: t("sosStatusAll"), badge: historyModal.data?.summary?.total ?? 0 },
+                  { id: "READ", label: t("sosStatusRead"), badge: historyModal.data?.summary?.read ?? 0 },
+                  { id: "UNREAD", label: t("sosStatusUnread"), badge: historyModal.data?.summary?.unread ?? 0 },
                 ]}
               />
 
@@ -854,11 +854,11 @@ export default function AdminEmergency() {
                     className="uppercase text-[10px] text-secondary font-bold"
                   >
                     <tr>
-                      <th className="p-3">Resident / Member</th>
-                      <th className="p-3">Flat / Unit</th>
-                      <th className="p-3">Role</th>
-                      <th className="p-3">Status</th>
-                      <th className="p-3">Read At</th>
+                      <th className="p-3">{t("sosColResident")}</th>
+                      <th className="p-3">{t("sosColFlat")}</th>
+                      <th className="p-3">{t("sosColRole")}</th>
+                      <th className="p-3">{t("sosColStatus")}</th>
+                      <th className="p-3">{t("sosColReadAt")}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-glass">
@@ -903,7 +903,7 @@ export default function AdminEmergency() {
                                 border: `1px solid ${isRead ? "rgba(16, 185, 129, 0.3)" : "rgba(245, 158, 11, 0.3)"}`,
                               }}
                             >
-                              {isRead ? "✓ Read" : "⏳ Unread"}
+                              {isRead ? t("sosReadBadge") : t("sosUnreadBadge")}
                             </span>
                           </td>
                           <td className="p-3 text-secondary">
@@ -925,24 +925,24 @@ export default function AdminEmergency() {
         <GlobalModal
           isOpen={resolveModal.isOpen}
           onClose={() => setResolveModal({ isOpen: false, alert: null, notes: "", loading: false })}
-          title="Mark SOS as Resolved"
-          subtitle={`Resolve ${resolveModal.alert?.type || "Emergency"} alert`}
+          title={t("sosResolveModalTitle")}
+          subtitle={t("sosResolveModalSubtitle", { type: resolveModal.alert?.type || "Emergency" })}
           icon={MdCheckCircle}
           size="md"
         >
           <div className="space-y-4">
             <p className="text-xs text-secondary">
-              Marking this emergency as resolved will notify the resident and committee members, and terminate active alert broadcasts.
+              {t("sosResolveModalDesc")}
             </p>
 
             <div>
               <label className="block text-xs font-semibold text-secondary uppercase tracking-wider mb-1">
-                Resolution Notes (Optional)
+                {t("sosResolutionNotesLabel")}
               </label>
               <textarea
                 rows={4}
                 style={{ minHeight: "100px", fontSize: "13px", lineHeight: "1.5" }}
-                placeholder="e.g. Security attended the flat, ambulance arrived, patient safely transferred."
+                placeholder={t("sosResolutionPlaceholder")}
                 value={resolveModal.notes}
                 onChange={(e) => setResolveModal((prev) => ({ ...prev, notes: e.target.value }))}
                 className="input w-full rounded-xl p-3.5 resize-y"
@@ -956,7 +956,7 @@ export default function AdminEmergency() {
                 className="btn btn-secondary text-xs px-4 py-2"
                 disabled={resolveModal.loading}
               >
-                Cancel
+                {t("sosCancelBtn")}
               </button>
               <button
                 type="button"
@@ -965,7 +965,7 @@ export default function AdminEmergency() {
                 className="btn bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-5 py-2 font-bold flex items-center gap-1.5 shadow-sm"
               >
                 <MdCheckCircle size={16} />
-                {resolveModal.loading ? "Resolving..." : "Confirm Resolution"}
+                {resolveModal.loading ? t("sosResolving") : t("sosConfirmResolution")}
               </button>
             </div>
           </div>
@@ -977,24 +977,24 @@ export default function AdminEmergency() {
         <GlobalModal
           isOpen={editModal.isOpen}
           onClose={() => setEditModal({ isOpen: false, alert: null, type: "MEDICAL", message: "", other_reason: "", resolution_notes: "", loading: false })}
-          title="Edit Emergency Alert"
-          subtitle="Update details for this SOS record"
+          title={t("sosEditModalTitle")}
+          subtitle={t("sosEditModalSubtitle")}
           icon={MdEdit}
           size="md"
         >
           <div className="space-y-4">
             <div>
               <label className="block text-xs font-semibold text-secondary uppercase tracking-wider mb-1">
-                Emergency Type
+                {t("sosEmergencyTypeLabel")}
               </label>
               <Select
                 value={editModal.type}
                 onChange={(e) => setEditModal((prev) => ({ ...prev, type: e.target.value }))}
                 className="input w-full text-xs rounded-xl h-10"
               >
-                {EMERGENCY_TYPES.filter((t) => t.key !== "ALL").map((t) => (
-                  <option key={t.key} value={t.key}>
-                    {t.label}
+                {EMERGENCY_TYPES.filter((type) => type.key !== "ALL").map((type) => (
+                  <option key={type.key} value={type.key}>
+                    {t(type.labelKey)}
                   </option>
                 ))}
               </Select>
@@ -1003,12 +1003,12 @@ export default function AdminEmergency() {
             {editModal.type === "OTHER" && (
               <div>
                 <label className="block text-xs font-semibold text-pink-400 uppercase tracking-wider mb-1">
-                  Reason for Other <span className="text-red-500">*</span>
+                  {t("sosReasonOtherLabel")} <span className="text-red-500">*</span>
                 </label>
                 <textarea
                   rows={2}
                   style={{ minHeight: "70px", fontSize: "13px", lineHeight: "1.5" }}
-                  placeholder="Specify reason for Other..."
+                  placeholder={t("sosReasonOtherPlaceholder")}
                   value={editModal.other_reason}
                   onChange={(e) => setEditModal((prev) => ({ ...prev, other_reason: e.target.value }))}
                   className="input w-full rounded-xl p-3 resize-y border-pink-500/40"
@@ -1018,12 +1018,12 @@ export default function AdminEmergency() {
 
             <div>
               <label className="block text-xs font-semibold text-secondary uppercase tracking-wider mb-1">
-                Message / Description
+                {t("sosMessageLabel")}
               </label>
               <textarea
                 rows={4}
                 style={{ minHeight: "110px", fontSize: "13px", lineHeight: "1.5" }}
-                placeholder="Describe the emergency details..."
+                placeholder={t("sosMessagePlaceholder")}
                 value={editModal.message}
                 onChange={(e) => setEditModal((prev) => ({ ...prev, message: e.target.value }))}
                 className="input w-full rounded-xl p-3.5 resize-y"
@@ -1032,12 +1032,12 @@ export default function AdminEmergency() {
 
             <div>
               <label className="block text-xs font-semibold text-secondary uppercase tracking-wider mb-1">
-                Resolution Notes (Optional)
+                {t("sosResolutionNotesLabel")}
               </label>
               <textarea
                 rows={3}
                 style={{ minHeight: "85px", fontSize: "13px", lineHeight: "1.5" }}
-                placeholder="Notes if already handled..."
+                placeholder={t("sosNotesPlaceholder")}
                 value={editModal.resolution_notes}
                 onChange={(e) => setEditModal((prev) => ({ ...prev, resolution_notes: e.target.value }))}
                 className="input w-full rounded-xl p-3 resize-y"
@@ -1051,7 +1051,7 @@ export default function AdminEmergency() {
                 className="btn btn-secondary text-xs px-4 py-2"
                 disabled={editModal.loading}
               >
-                Cancel
+                {t("sosCancelBtn")}
               </button>
               <button
                 type="button"
@@ -1059,7 +1059,7 @@ export default function AdminEmergency() {
                 disabled={editModal.loading}
                 className="btn bg-red-600 hover:bg-red-700 text-white text-xs px-5 py-2 font-bold shadow-sm"
               >
-                {editModal.loading ? "Saving..." : "Save Changes"}
+                {editModal.loading ? t("sosSaving") : t("sosSaveChanges")}
               </button>
             </div>
           </div>
@@ -1077,9 +1077,9 @@ export default function AdminEmergency() {
           defaultSocietyId={selectedSocietyId || user?.society_id || ""}
           requireSociety={isSuperAdmin && !selectedSocietyId}
           withAlerts={false}
-          senderLabel="Admin"
-          modalTitle="🚨 Broadcast Emergency SOS"
-          successMessage="🚨 Emergency SOS broadcasted successfully to all residents!"
+          senderLabel="sosSenderAdmin"
+          modalTitle="sosBroadcastModalTitle"
+          successMessage="sosBroadcastSuccess"
         />
       )}
     </div>

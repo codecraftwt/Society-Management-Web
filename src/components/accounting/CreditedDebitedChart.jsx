@@ -154,8 +154,8 @@ export default function CreditedDebitedChart({ linkTo, fullWidth }) {
                 }}
               />
               <Legend wrapperStyle={{ fontSize: "11px" }} />
-              <Bar dataKey="credited" name={creditedLabel} fill="#10b981" radius={[5, 5, 0, 0]} />
-              <Bar dataKey="debited" name={debitedLabel} fill="#f43f5e" radius={[5, 5, 0, 0]} />
+              <Bar dataKey="credited" name={creditedLabel} fill="#6366f1" radius={[5, 5, 0, 0]} />
+              <Bar dataKey="debited" name={debitedLabel} fill="#fb7185" radius={[5, 5, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>

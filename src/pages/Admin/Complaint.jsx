@@ -64,6 +64,12 @@ const formatTime = (d) => {
   return new Date(d).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true });
 };
 
+const toDateBoundary = (value, endOfDay = false) => {
+  if (!value) return "";
+  const date = new Date(`${value}T${endOfDay ? "23:59:59.999" : "00:00:00.000"}`);
+  return Number.isNaN(date.getTime()) ? "" : date.toISOString();
+};
+
 /* ─── FLAT LABEL HELPER ──────────────────────────────────────────────────────
    The API join structure can vary. The complaint row may have:
      c.Flat               → direct association on the complaint (flat_id FK)
@@ -905,7 +911,7 @@ function MobileComplaintCard({ c, updateStatus, updatingId, t, onOpen, onPhotoCl
           }}
         >
           <MdChat size={13} />
-          <span>Messages</span>
+          <span>{t("compMessages")}</span>
           {commentCount != null && (
             <span
               style={{
@@ -998,6 +1004,7 @@ const isMobile           = useIsMobile();
   const [unreadMap,     setUnreadMap]     = useState({});
   const [filtersOpen,   setFiltersOpen]   = useState(false);
   const [exportOpen,    setExportOpen]    = useState(false);
+  const [exporting,     setExporting]     = useState("");
 
   /* Lazy comment counts — real data from the existing comments endpoint,
      cached per complaint so we never refetch across page turns. */
@@ -1127,6 +1134,8 @@ const isMobile           = useIsMobile();
         block_id: filterBlockId,
         floor_id: filterFloorId,
         flat_id:  filterFlatId,
+        date_from: toDateBoundary(dateFrom),
+        date_to: toDateBoundary(dateTo, true),
       };
       const headers = (isSuperAdmin && filterSocietyId) ? { "x-society-id": filterSocietyId } : {};
 
@@ -1155,12 +1164,12 @@ const isMobile           = useIsMobile();
     } finally {
       setLoading(false);
     }
-  }, [filterBlockId, filterFloorId, filterFlatId, filterSocietyId, isSuperAdmin, debSearch, filterStatus, limit]);
+  }, [filterBlockId, filterFloorId, filterFlatId, filterSocietyId, isSuperAdmin, debSearch, filterStatus, dateFrom, dateTo, limit]);
 
   // Load complaints when any filter or page dependency changes
   useEffect(() => {
     loadComplaints(1, debSearch, filterStatus);
-  }, [filterSocietyId, filterBlockId, filterFloorId, filterFlatId, debSearch, filterStatus]);
+  }, [filterSocietyId, filterBlockId, filterFloorId, filterFlatId, debSearch, filterStatus, dateFrom, dateTo, loadComplaints]);
 
   useEffect(() => {
     const socket = getSocket();
@@ -1331,13 +1340,51 @@ const isMobile           = useIsMobile();
 
   const handlePageChange = (p) => loadComplaints(p, debSearch, filterStatus);
 
-  const exportCSV = () => {
+  const fetchComplaintsForExport = async () => {
+    const headers = (isSuperAdmin && filterSocietyId) ? { "x-society-id": filterSocietyId } : {};
+    const baseParams = {
+      limit: 1000,
+      search: debSearch,
+      filter: filterStatus,
+      block_id: filterBlockId,
+      floor_id: filterFloorId,
+      flat_id: filterFlatId,
+      date_from: toDateBoundary(dateFrom),
+      date_to: toDateBoundary(dateTo, true),
+    };
+    const extractRows = (response) => Array.isArray(response.data?.data)
+      ? response.data.data
+      : Array.isArray(response.data?.complaints)
+      ? response.data.complaints
+      : Array.isArray(response.data)
+      ? response.data
+      : [];
+
+    const first = await API.get("/complaints", { params: { ...baseParams, page: 1 }, headers });
+    const rows = extractRows(first);
+    const pages = Number(first.data?.pagination?.totalPages) || 1;
+    if (pages > 1) {
+      const remaining = await Promise.all(
+        Array.from({ length: pages - 1 }, (_, index) =>
+          API.get("/complaints", { params: { ...baseParams, page: index + 2 }, headers })
+        )
+      );
+      remaining.forEach((response) => rows.push(...extractRows(response)));
+    }
+    return rows;
+  };
+
+  const exportCSV = async () => {
+    if (exporting) return;
+    setExporting("csv");
+    try {
+      const exportRows = await fetchComplaintsForExport();
     const escapeCell = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
     const headers = [
       t("compColTitle"), t("compColDesc"), t("reportResident"), t("reportFlat"),
       t("reportSociety"), t("billStatusCol"), t("compSubmittedAt"),
     ];
-    const body = complaints.map(c => [
+      const body = exportRows.map(c => [
       c.title,
       c.description || "",
       c.User?.name || "",
@@ -1356,18 +1403,34 @@ const isMobile           = useIsMobile();
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Complaint CSV export failed:", error);
+      toast.error(t("compExportFailed"));
+    } finally {
+      setExporting("");
+    }
   };
 
-  const exportPDF = () => {
-    exportToPDF({
-      title: t("adminCompTitle"),
-      fileName: `complaints-${new Date().toISOString().slice(0, 10)}`,
-      columns: [t("compColTitle"), t("compColDesc"), t("reportResident"), t("reportFlat"), t("reportSociety"), t("billStatusCol"), t("compSubmittedAt")],
-      rows: complaints.map((c) => [
-        c.title || "", c.description || "", c.User?.name || "",
-        flatLabel(c, t), c.Society?.name || "", c.status, formatDate(c.created_at),
-      ]),
-    });
+  const exportPDF = async () => {
+    if (exporting) return;
+    setExporting("pdf");
+    try {
+      const exportRows = await fetchComplaintsForExport();
+      exportToPDF({
+        title: t("adminCompTitle"),
+        fileName: `complaints-${new Date().toISOString().slice(0, 10)}`,
+        columns: [t("compColTitle"), t("compColDesc"), t("reportResident"), t("reportFlat"), t("reportSociety"), t("billStatusCol"), t("compSubmittedAt")],
+        rows: exportRows.map((c) => [
+          c.title || "", c.description || "", c.User?.name || "",
+          flatLabel(c, t), c.Society?.name || "", c.status, formatDate(c.created_at),
+        ]),
+      });
+    } catch (error) {
+      console.error("Complaint PDF export failed:", error);
+      toast.error(t("compExportFailed"));
+    } finally {
+      setExporting("");
+    }
   };
 
   const TABS = [
@@ -1431,7 +1494,10 @@ const isMobile           = useIsMobile();
           </div>
         </div>
 
-        <div className="flex items-center gap-2.5 flex-nowrap shrink-0 overflow-x-auto max-w-full pb-1" style={{ scrollbarWidth: "none" }}>
+        <div
+          className="relative z-40 flex items-center justify-end gap-2.5 flex-wrap max-w-full pb-1"
+          style={{ overflow: "visible" }}
+        >
           {/* Status Sliding Tabs */}
           <SlidingTabs
             value={filterStatus}
@@ -1458,6 +1524,7 @@ const isMobile           = useIsMobile();
 
           {/* Date Range Filter */}
           <DateRangeFilter
+            className={styles.dateRangeControl}
             fromDate={dateFrom}
             toDate={dateTo}
             onChange={({ from, to }) => {
@@ -1508,18 +1575,20 @@ const isMobile           = useIsMobile();
               className={styles.exportBtn}
               style={{ height: 42, minHeight: 42, borderRadius: 12, display: "inline-flex", alignItems: "center", gap: 6 }}
               onClick={() => setExportOpen(o => !o)}
-              disabled={complaints.length === 0}
+              disabled={complaints.length === 0 || Boolean(exporting)}
               title={t("compExport")}
             >
-              <MdDownload size={15} /> {t("compExport") || "Export"} <MdArrowDropDown size={16} />
+              {exporting ? <Spinner small /> : <MdDownload size={15} />}
+              {exporting ? t("compExporting") : (t("compExport") || "Export")}
+              {!exporting && <MdArrowDropDown size={16} />}
             </button>
             {exportOpen && (
               <div className={styles.exportMenu}>
-                <button className={styles.exportMenuItem} disabled={complaints.length === 0}
+                <button className={styles.exportMenuItem} disabled={complaints.length === 0 || Boolean(exporting)}
                   onClick={() => { exportCSV(); setExportOpen(false); }}>
                   <MdTableChart size={14} /> CSV
                 </button>
-                <button className={styles.exportMenuItem} disabled={complaints.length === 0}
+                <button className={styles.exportMenuItem} disabled={complaints.length === 0 || Boolean(exporting)}
                   onClick={() => { exportPDF(); setExportOpen(false); }}>
                   <MdPictureAsPdf size={14} /> PDF
                 </button>

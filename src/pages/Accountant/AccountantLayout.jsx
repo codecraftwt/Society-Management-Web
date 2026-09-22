@@ -329,8 +329,8 @@ function AccountantLayoutInner() {
         onClose={() => setShowSOS(false)}
         onRefresh={loadEmergencies}
         alerts={alerts}
-        senderLabel="SOS"
-        modalTitle="🚨 Society SOS Center"
+        senderLabel="sosSenderSOS"
+        modalTitle="sosSocietySOSCenter"
       />
     </div>
   );
