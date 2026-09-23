@@ -1295,12 +1295,27 @@ html.role-theme .hh-admin-badge {
   border-color: rgba(var(--acct-purple-rgb), 0.28) !important;
 }
 
+html.role-theme .hh-admin-toggle {
+  border: 1px solid rgba(148,163,184,0.40) !important;
+}
+
 html.role-theme .hh-admin-toggle--on {
-  background: var(--accent) !important;
+  background: linear-gradient(135deg, #22C55E, #16A34A) !important;
+  border-color: #16A34A !important;
 }
 
 html.role-theme .hh-admin-toggle--off {
-  background: var(--card-inner-bg) !important;
+  background: rgba(148,163,184,0.30) !important;
+  border-color: rgba(148,163,184,0.55) !important;
+}
+
+html.light.role-theme .hh-admin-toggle--off {
+  background: #d4d8de !important;
+  border-color: #98a0ab !important;
+}
+
+html.light.role-theme .hh-admin-toggle__knob {
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.45) !important;
 }
 
 html.role-theme .hh-btn-cancel {
@@ -1345,6 +1360,44 @@ html.role-theme .hh-close-btn:hover {
 
 html.role-theme .hh-member-row:hover {
   transform: none !important;
+}
+
+html.role-theme .hh-section {
+  background: var(--card-inner-bg) !important;
+  border: 1px solid var(--glass-border) !important;
+  box-shadow: var(--shadow-md) !important;
+}
+
+html.role-theme .hh-section-title {
+  color: var(--text-primary) !important;
+}
+
+html.role-theme .hh-section-count,
+html.role-theme .hh-pill {
+  background: var(--card-bg) !important;
+  border-color: var(--glass-border) !important;
+  color: var(--text-secondary) !important;
+}
+
+html.role-theme .hh-flat-tag {
+  background: var(--card-bg) !important;
+  border-color: var(--glass-border) !important;
+  color: var(--text-secondary) !important;
+}
+
+html.role-theme .hh-pill:hover {
+  background: var(--row-hover) !important;
+  color: var(--text-primary) !important;
+}
+
+html.role-theme .hh-pill--selected {
+  background: var(--accent-soft) !important;
+  border-color: var(--accent) !important;
+  color: var(--accent) !important;
+}
+
+html.role-theme .hh-role-sub {
+  color: var(--text-secondary) !important;
 }
 
 html.role-theme .hh-save-btn:hover:not(:disabled) {

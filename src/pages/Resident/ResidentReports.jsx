@@ -1,7 +1,6 @@
-import React, { useContext } from "react";
+import React from "react";
 import { useNavigate } from "react-router-dom";
 import { useLang } from "../../context/LanguageContext";
-import { AuthContext } from "../../context/AuthContext";
 import {
   MdReportProblem,
   MdAccountBalance,
@@ -13,7 +12,6 @@ import {
 export default function ResidentReports() {
   const navigate = useNavigate();
   const { t }    = useLang();
-  const { user } = useContext(AuthContext);
 
   /* Built inside the component so labels update live on language change */
   const reports = [
@@ -56,10 +54,7 @@ export default function ResidentReports() {
         stat:   t("rrVisitorsStat"),
       },
     },
-  ].filter(r => {
-    if (r.path.includes("finance-report") && user?.resident_type !== "OWNER") return false;
-    return true;
-  });
+  ];
 
   return (
     <div className="space-y-6 animate-fadeIn">

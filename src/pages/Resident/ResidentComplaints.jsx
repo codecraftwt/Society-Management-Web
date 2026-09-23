@@ -14,7 +14,7 @@ import {
   MdClose, MdCameraAlt, MdPhotoLibrary, MdDelete,
   MdFlipCameraAndroid, MdCalendarToday,
   MdChevronLeft, MdChevronRight,
-  MdChat, MdSend, MdReportProblem, MdImage, MdOpenInNew,
+  MdChat, MdSend, MdReportProblem, MdImage, MdOpenInNew, MdAttachFile,
   MdCheckCircle, MdSchedule, MdPending,
 } from "react-icons/md";
 import Select from "../../components/common/Select";
@@ -819,17 +819,15 @@ function MobileComplaintCard({ c, unreadMap, confirmDeleteId, deletingId, onOpen
           </p>
         )}
         {c.photo_url && (
-          <div onClick={e => { e.stopPropagation(); onPhotoOpen(c.photo_url); }}
-            style={{ borderRadius: 12, overflow: "hidden", border: "1.5px solid var(--glass-border)",
-              cursor: "pointer", position: "relative" }}>
-            <img src={c.photo_url} alt="Complaint"
-              style={{ width: "100%", display: "block", objectFit: "cover", maxHeight: 160 }} />
-            <div style={{ position: "absolute", bottom: 6, right: 8, display: "flex", alignItems: "center", gap: 4,
-              background: "rgba(0,0,0,0.55)", borderRadius: 6, padding: "2px 7px", backdropFilter: "blur(4px)" }}>
-              <MdOpenInNew size={11} style={{ color: "#fff" }} />
-              <span style={{ fontSize: 10, color: "#fff", fontWeight: 600 }}>{t("noticesView")}</span>
-            </div>
-          </div>
+          <button type="button" onClick={e => { e.stopPropagation(); onPhotoOpen(c.photo_url); }}
+            style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 7, width: "100%",
+              padding: "9px 12px", borderRadius: 10, border: "1.5px solid var(--glass-border)",
+              background: "var(--card-inner-bg)", color: "var(--accent)", fontSize: 12, fontWeight: 600,
+              cursor: "pointer" }}>
+            <MdAttachFile size={14} />
+            <span>{t("noticesViewAttachment") || "View Attachment"}</span>
+            <MdOpenInNew size={12} />
+          </button>
         )}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between",
           paddingTop: 6, borderTop: "1px solid var(--glass-border)" }} onClick={e => e.stopPropagation()}>
@@ -1517,7 +1515,7 @@ const { t }              = useLang();
                     </div>
                   )}
                   {capturedPhoto && (
-                    <div style={{ position: "relative", display: "inline-block", maxWidth: "100%" }} className="animate-fadeIn">
+                    <div style={{ position: "relative", width: "100%", maxWidth: "100%" }} className="animate-fadeIn">
                       <img src={capturedPhoto} alt="Complaint photo"
                         style={{ borderRadius: 12, border: "1.5px solid var(--glass-border)",
                           objectFit: "cover", maxHeight: 220, width: "100%", display: "block" }} />

@@ -1,10 +1,11 @@
 
 
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, useContext } from "react";
 import API from "../../../services/api";
 import { useLang } from "../../../context/LanguageContext"; // ← NEW
+import { AuthContext } from "../../../context/AuthContext"; // ← NEW
 import ReportFilterSheet from "../../../components/common/ReportFilterSheet"; // ← NEW
-import { exportToExcel } from "../../../utils/exportExcel";
+import { exportToCSV } from "../../../utils/exportExcel";
 import { exportToPDF } from "../../../utils/exportPDF";
 import {
   MdPeople, MdOutlineInbox, MdFilterList,
@@ -69,6 +70,13 @@ export default function ResidentVisitorReport() {
   const navigate   = useNavigate();
   const isMobile   = useIsMobile();
   const { t }      = useLang(); // ← NEW
+  const { user }   = useContext(AuthContext); // ← NEW
+  const societyName = user?.society_name || "Society";
+  const exportMeta = {
+    societyName,
+    generatedBy: user?.name || "Resident",
+    roleLabel: "Resident",
+  };
 
   const [visitors,    setVisitors]    = useState([]);
   const [filtered,    setFiltered]    = useState([]);
@@ -117,8 +125,8 @@ export default function ResidentVisitorReport() {
     left:   filtered.filter(v =>  v.exit_time).length,
   }), [filtered]);
 
-  const handleExcel = () => exportToExcel({
-    fileName: "My_Visitor_Report", sheetName: "Visitors",
+  const handleCSV = () => exportToCSV({
+    fileName: "My_Visitor_Report", sheetName: "Visitors", meta: exportMeta,
     data: filtered.map((v, i) => ({
       "#": i + 1,
       [t("vrVisitor")]:  v.visitor_name,
@@ -133,9 +141,11 @@ export default function ResidentVisitorReport() {
 
   const handlePDF = () => exportToPDF({
     title: t("rvTitle"), fileName: "My_Visitor_Report",
-    columns: ["#", t("vrVisitor"), t("vrPurpose"), t("vrMobile"), t("vrEntry"), t("vrExit"), t("billStatusCol")],
+    societyName, meta: exportMeta,
+    subtitle: `${filtered.length} ${t("reportRecords")}`,
+    columns: ["#", t("vrVisitor"), t("vrPurpose"), t("vrMobile"), t("rvVehicle"), t("vrEntry"), t("vrExit"), t("billStatusCol")],
     rows: filtered.map((v, i) => [
-      i + 1, v.visitor_name, v.purpose, v.mobile,
+      i + 1, v.visitor_name, v.purpose, v.mobile, v.vehicle_number || "-",
       formatDate(v.entry_time), formatDate(v.exit_time),
       v.exit_time ? t("rvLeft") : t("rvInside"),
     ]),
@@ -190,8 +200,8 @@ export default function ResidentVisitorReport() {
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-          <button onClick={handleExcel} className="btn-export" style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 13px", fontSize: 12, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}>
-            <MdTableChart size={14} /> {t("reportExcel")}
+          <button onClick={handleCSV} className="btn-export" style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 13px", fontSize: 12, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}>
+            <MdTableChart size={14} /> {t("reportCSV")}
           </button>
           <button onClick={handlePDF} className="btn-export" style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 13px", fontSize: 12, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}>
             <MdPictureAsPdf size={14} /> {t("reportPDF")}

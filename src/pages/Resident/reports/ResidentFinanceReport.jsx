@@ -1,8 +1,9 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, useContext } from "react";
 import API from "../../../services/api";
 import { useLang } from "../../../context/LanguageContext"; // ← NEW
+import { AuthContext } from "../../../context/AuthContext"; // ← NEW
 import ReportFilterSheet from "../../../components/common/ReportFilterSheet"; // ← NEW
-import { exportToExcel } from "../../../utils/exportExcel";
+import { exportToCSV } from "../../../utils/exportExcel";
 import { exportToPDF } from "../../../utils/exportPDF";
 import {
   MdAccountBalance, MdOutlineInbox, MdFilterList,
@@ -59,6 +60,13 @@ export default function ResidentFinanceReport() {
   const navigate   = useNavigate();
   const isMobile   = useIsMobile();
   const { t }      = useLang(); // ← NEW
+  const { user }   = useContext(AuthContext); // ← NEW
+  const societyName = user?.society_name || "Society";
+  const exportMeta = {
+    societyName,
+    generatedBy: user?.name || "Resident",
+    roleLabel: "Resident",
+  };
 
   const [bills,       setBills]       = useState([]);
   const [filtered,    setFiltered]    = useState([]);
@@ -108,21 +116,31 @@ export default function ResidentFinanceReport() {
     due:       filtered.filter(b => b.status !== "PAID").reduce((s, b) => s + Number(b.amount), 0),
   }), [filtered]);
 
-  const handleExcel = () => exportToExcel({
-    fileName: "My_Finance_Report", sheetName: "Bills",
+  const fmtDate = (d) => (d ? new Date(d).toLocaleDateString("en-IN") : "—");
+
+  const handleCSV = () => exportToCSV({
+    fileName: "My_Finance_Report", sheetName: "Bills", meta: exportMeta,
     data: filtered.map((b, i) => ({
       "#": i + 1,
       [t("billTitleCol")]:   b.title,
-      [t("billMonthCol")]:   b.billing_month,
       [t("billAmountLabel")]:fmtINR(b.amount),
+      [t("billIssueDateCol")]: fmtDate(b.issue_date || b.created_at),
+      [t("billPaidDateCol")]:  b.status === "PAID" ? fmtDate(b.paid_date) : "—",
       [t("billStatusCol")]:  b.status,
     })),
   });
 
   const handlePDF = () => exportToPDF({
     title: t("rfrTitle"), fileName: "My_Finance_Report",
-    columns: ["#", t("billTitleCol"), t("billMonthCol"), t("billAmountLabel"), t("billStatusCol")],
-    rows: filtered.map((b, i) => [i + 1, b.title, b.billing_month, fmtINR(b.amount), b.status]),
+    societyName, meta: exportMeta,
+    subtitle: `${filtered.length} ${t("reportRecords")}`,
+    columns: ["#", t("billTitleCol"), t("billAmountLabel"), t("billIssueDateCol"), t("billPaidDateCol"), t("billStatusCol")],
+    rows: filtered.map((b, i) => [
+      i + 1, b.title, fmtINR(b.amount),
+      fmtDate(b.issue_date || b.created_at),
+      b.status === "PAID" ? fmtDate(b.paid_date) : "—",
+      b.status,
+    ]),
   });
 
   const statCards = [
@@ -177,8 +195,8 @@ export default function ResidentFinanceReport() {
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-          <button onClick={handleExcel} className="btn-export" style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 13px", fontSize: 12, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}>
-            <MdTableChart size={14} /> {t("reportExcel")}
+          <button onClick={handleCSV} className="btn-export" style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 13px", fontSize: 12, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}>
+            <MdTableChart size={14} /> {t("reportCSV")}
           </button>
           <button onClick={handlePDF} className="btn-export" style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 13px", fontSize: 12, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}>
             <MdPictureAsPdf size={14} /> {t("reportPDF")}
@@ -260,9 +278,14 @@ export default function ResidentFinanceReport() {
                     <div style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "4px 10px", borderRadius: 8, marginBottom: 8, background: isPaid ? "rgba(74,222,128,0.08)" : "rgba(251,191,36,0.08)", border: `1px solid ${isPaid ? "rgba(74,222,128,0.2)" : "rgba(251,191,36,0.2)"}` }}>
                       <span style={{ fontSize: 15, fontWeight: 800, color: accentColor, letterSpacing: "-0.02em" }}>{fmtINR(b.amount)}</span>
                     </div>
-                    {b.billing_month && (
-                      <span style={{ fontSize: 11, color: "var(--text-secondary)" }}>{b.billing_month}</span>
-                    )}
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
+                      <span style={{ fontSize: 11, color: "var(--text-secondary)" }}>
+                        {t("billIssueDateCol")}: {fmtDate(b.issue_date || b.created_at)}
+                      </span>
+                      <span style={{ fontSize: 11, color: "var(--text-secondary)", textAlign: "right" }}>
+                        {t("billPaidDateCol")}: {b.status === "PAID" ? fmtDate(b.paid_date) : "—"}
+                      </span>
+                    </div>
                   </div>
                 </div>
               );
@@ -276,15 +299,16 @@ export default function ResidentFinanceReport() {
           <>
             <table className="data-table">
               <thead>
-                <tr>{["#", t("billTitleCol"), t("billMonthCol"), t("billAmountLabel"), t("billStatusCol")].map(h => <th key={h}>{h}</th>)}</tr>
+                <tr>{["#", t("billTitleCol"), t("billAmountLabel"), t("billIssueDateCol"), t("billPaidDateCol"), t("billStatusCol")].map(h => <th key={h}>{h}</th>)}</tr>
               </thead>
               <tbody>
                 {filtered.map((b, i) => (
                   <tr key={b.id} className="animate-fadeIn" style={{ animationDelay: `${i * 20}ms` }}>
                     <td><span style={{ fontSize: 12, color: "var(--text-secondary)" }}>{i + 1}</span></td>
                     <td><span style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)" }}>{b.title}</span></td>
-                    <td><span style={{ fontSize: 13, color: "var(--text-secondary)" }}>{b.billing_month}</span></td>
                     <td><span style={{ fontSize: 14, fontWeight: 800, letterSpacing: "-0.02em", color: b.status === "PAID" ? "#4ade80" : "var(--warning)" }}>{fmtINR(b.amount)}</span></td>
+                    <td><span style={{ fontSize: 13, color: "var(--text-secondary)" }}>{fmtDate(b.issue_date || b.created_at)}</span></td>
+                    <td><span style={{ fontSize: 13, color: "var(--text-secondary)" }}>{b.status === "PAID" ? fmtDate(b.paid_date) : "—"}</span></td>
                     <td><StatusBadge status={b.status} t={t} /></td>
                   </tr>
                 ))}

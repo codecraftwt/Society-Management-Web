@@ -4042,11 +4042,11 @@
   /* â”€â”€ Admin toggle â”€â”€ */
   .hh-admin-toggle {
     position: relative; width: 38px; height: 21px;
-    border-radius: 999px; border: none; cursor: pointer;
+    border-radius: 999px; border: 1px solid rgba(148,163,184,0.35); cursor: pointer;
     flex-shrink: 0; transition: background 0.25s ease;
   }
-  .hh-admin-toggle--on  { background: linear-gradient(135deg, #3B82F6, #3B82F6); }
-  .hh-admin-toggle--off { background: rgba(255,255,255,0.12); }
+  .hh-admin-toggle--on  { background: linear-gradient(135deg, #22C55E, #16A34A); }
+  .hh-admin-toggle--off { background: rgba(148,163,184,0.28); border: 1px solid rgba(148,163,184,0.45); }
   .hh-admin-toggle__knob {
     position: absolute; top: 2.5px; left: 2.5px;
     width: 16px; height: 16px; border-radius: 50%;
@@ -4584,11 +4584,11 @@
   /* â”€â”€ Admin toggle â”€â”€ */
   .hh-admin-toggle {
     position: relative; width: 38px; height: 21px;
-    border-radius: 999px; border: none; cursor: pointer;
+    border-radius: 999px; border: 1px solid rgba(148,163,184,0.35); cursor: pointer;
     flex-shrink: 0; transition: background 0.25s ease;
   }
-  .hh-admin-toggle--on  { background: linear-gradient(135deg, #3B82F6, #3B82F6); }
-  .hh-admin-toggle--off { background: rgba(255,255,255,0.12); }
+  .hh-admin-toggle--on  { background: linear-gradient(135deg, #22C55E, #16A34A); }
+  .hh-admin-toggle--off { background: rgba(148,163,184,0.28); border: 1px solid rgba(148,163,184,0.45); }
   .hh-admin-toggle__knob {
     position: absolute; top: 2.5px; left: 2.5px;
     width: 16px; height: 16px; border-radius: 50%;
@@ -5474,6 +5474,7 @@
     justify-content: space-between; gap: 12px; flex-wrap: wrap;
   }
   .ge-er-left { display: flex; align-items: center; gap: 14px; }
+  .ge-er-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 
   /* Stat cards row */
   .ge-stats {
@@ -18466,4 +18467,61 @@ html.light .as-tab.active {
 
 .as-panel {
   animation: rp-fade 0.25s ease;
+}
+
+/* ==========================================================================
+   MY HOUSEHOLD — toggle (Family Members / Household Help) + member list
+   ========================================================================== */
+.hh-sections { display: flex; flex-direction: column; gap: 1.1rem; }
+.hh-tabs { margin-bottom: 0.85rem; }
+.hh-section {
+  border-radius: 18px; padding: 1.1rem;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.03);
+}
+.hh-section-head {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 0.85rem;
+}
+.hh-section-title {
+  display: flex; align-items: center; gap: 8px;
+  font-weight: 700; font-size: 0.92rem; color: #EDECF0;
+  text-transform: capitalize;
+}
+.hh-section-count {
+  min-width: 20px; height: 20px; border-radius: 999px;
+  background: rgba(255,255,255,0.10); color: #A39EB2;
+  font-size: 0.66rem; font-weight: 700;
+  display: inline-flex; align-items: center; justify-content: center;
+  padding: 0 6px;
+}
+.hh-section-head .btn-primary {
+  margin-left: auto; padding: 0.45rem 0.8rem; font-size: 0.78rem; border-radius: 9px;
+}
+
+/* Quick-pick pills (relations / roles) */
+.hh-pill-grid { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 0.5rem; }
+.hh-pill {
+  padding: 0.42rem 0.85rem; border-radius: 999px;
+  border: 1.5px solid transparent; font-size: 0.78rem; font-weight: 600;
+  background: rgba(255,255,255,0.06); color: #A39EB2;
+  cursor: pointer; transition: background 0.15s, color 0.15s, border-color 0.15s;
+  font-family: inherit;
+}
+.hh-pill:hover { background: rgba(255,255,255,0.10); color: #EDECF0; }
+.hh-pill--selected {
+  background: rgba(99,102,241,0.16);
+  border-color: #6366F1; color: #c7d2fe;
+}
+.hh-role-sub { font-size: 0.68rem; color: #726988; margin: -2px 2px 8px; }
+
+/* Active flat tag (shown in section head when user owns multiple flats) */
+.hh-flat-tag {
+  margin-left: auto;
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 0.68rem; font-weight: 600; color: #A39EB2;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.10);
+  padding: 3px 9px; border-radius: 999px;
+  white-space: nowrap;
 }

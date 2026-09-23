@@ -6,7 +6,7 @@ import ExpandableSearch from "../../components/common/ExpandableSearch";
 import useUnsavedDirty from "../../hooks/useUnsavedDirty";
 import ConfirmDiscard from "../../components/common/ConfirmDiscard";
 import {
-  MdAdd, MdDelete, MdDirectionsCarFilled,
+  MdAdd, MdDelete, MdEdit, MdDirectionsCarFilled,
   MdTwoWheeler, MdClose, MdCheckCircle,
   MdLocalParking, MdApartment, MdHome,
   MdSend, MdWarning, MdInfo, MdHourglassEmpty,
@@ -255,6 +255,7 @@ export default function MyVehicles() {
   const [submitLoading,   setSubmitLoading]   = useState(false);
   const [deleteLoadingId, setDeleteLoadingId] = useState(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState(null);
+  const [editVehicleId,   setEditVehicleId]   = useState(null);
 
   /* allocated slots */
   const [allocatedSlots, setAllocatedSlots] = useState([]);
@@ -345,10 +346,19 @@ export default function MyVehicles() {
   }, [successMsg]);
 
   /* ────────────────────────────
-     RESET SLOT SELECTION when flat or vehicle type changes
+     KEEP slot selection when flat or vehicle type changes,
+     but only if that slot is still valid for the new
+     flat + type. Otherwise reset to "Request New Extra Slot".
   ──────────────────────────── */
   useEffect(() => {
-    setSelectedSlotId(null);
+    setSelectedSlotId(prev => {
+      if (!prev) return prev;
+      const s = allocatedSlots.find(x => x.id === prev);
+      const stillValid = s &&
+        String(s.flat_id) === String(form.flat_id) &&
+        s.vehicle_type === form.vehicle_type;
+      return stillValid ? prev : null;
+    });
   }, [form.flat_id, form.vehicle_type]);
 
   /* ────────────────────────────
@@ -362,9 +372,9 @@ export default function MyVehicles() {
     return true;
   });
 
-  // Whether a given slot is already linked to a vehicle
+  // Whether a given slot is already linked to another vehicle (excluding the one being edited)
   const isSlotOccupied = (slot) =>
-    vehicles.some(v => v.parking_slot_id === slot.id);
+    vehicles.some(v => v.parking_slot_id === slot.id && v.id !== editVehicleId);
 
   const hasAnyFreeSlot = availableSlots.some(s => !isSlotOccupied(s));
 
@@ -396,8 +406,8 @@ export default function MyVehicles() {
     // We use this local variable exclusively below — never re-read the state.
     const slotIdToLink = selectedSlotId; // number | null
 
-    // Debug: verify exactly what is being sent to the backend
-    console.log("[MyVehicles] handleSubmit →", {
+    // ── Debug: verify exactly what is being sent to the backend ───────────
+    console.log(`[MyVehicles] ${editVehicleId ? "handleEdit" : "handleSubmit"} →`, {
       vehicle_number:  form.vehicle_number.toUpperCase(),
       vehicle_type:    form.vehicle_type,
       flat_id:         form.flat_id ? Number(form.flat_id) : undefined,
@@ -406,38 +416,38 @@ export default function MyVehicles() {
 
     setSubmitLoading(true);
     try {
-      // ── POST /vehicles ────────────────────────────────────────────────────
-      // Backend must:
-      //   • if parking_slot_id is a number → save it on the vehicle row
-      //     and set ParkingSlot.status = "ASSIGNED"
-      //   • if parking_slot_id is null     → leave vehicle unlinked and
-      //     auto-create a RESIDENT request (response carries request_id)
-      const vehicleRes = await API.post("/vehicles", {
+      // ── POST /vehicles or PUT /vehicles/:id ───────────────────────────────
+      const payload = {
         vehicle_name:    form.vehicle_name,
         vehicle_number:  form.vehicle_number.toUpperCase(),
         vehicle_type:    form.vehicle_type,
         flat_id:         form.flat_id ? Number(form.flat_id) : undefined,
         parking_slot_id: slotIdToLink,   // number → link now; null → admin assigns later
-        // REMOVED: link_to_assigned_slot, parking_type  (old fields — do not send)
-      });
+      };
+
+      const vehicleRes = editVehicleId
+        ? await API.put(`/vehicles/${editVehicleId}`, payload)
+        : await API.post("/vehicles", payload);
 
       // ── Branch purely on what the FRONTEND decided + backend signals ───────
+      const baseVerb = editVehicleId ? "Vehicle updated" : "Vehicle added";
+
       if (slotIdToLink !== null) {
         // Resident chose a specific slot → it is linked immediately, no admin request.
         const linkedSlot = availableSlots.find(s => s.id === slotIdToLink);
         setSuccessMsg(
-          `Vehicle added and linked to slot ${linkedSlot?.slot_number ?? slotIdToLink}!`
+          `${baseVerb} and linked to slot ${linkedSlot?.slot_number ?? slotIdToLink}!`
         );
       } else if (vehicleRes.data?.free_slot) {
         // Backend found an unlinked free pre-assigned slot — surface it.
         setSuccessMsg(
-          `Vehicle added! Free slot ${vehicleRes.data.free_slot} is available — select it to link.`
+          `${baseVerb}! Free slot ${vehicleRes.data.free_slot} is available — select it to link.`
         );
       } else if (vehicleRes.data?.request_id) {
         // Backend auto-created (or found) the RESIDENT slot request.
-        setSuccessMsg("Vehicle added! A parking slot request has been sent to the admin.");
+        setSuccessMsg(`${baseVerb}! A parking slot request has been sent to the admin.`);
       } else {
-        setSuccessMsg("Vehicle added! Note: no slot request could be created — please contact admin.");
+        setSuccessMsg(`${baseVerb}! Note: no slot request could be created — please contact admin.`);
       }
 
       // Reset form state
@@ -448,12 +458,13 @@ export default function MyVehicles() {
         flat_id:        myFlats.length === 1 ? String(myFlats[0].id) : "",
       });
       setSelectedSlotId(null);
+      setEditVehicleId(null);
       setShowForm(false);
       loadVehicles();
       loadAllocatedSlots();
       loadParkingRequests();
     } catch (err) {
-      setErrorMsg(err?.response?.data?.message || "Failed to add vehicle. Please try again.");
+      setErrorMsg(err?.response?.data?.message || (editVehicleId ? "Failed to update vehicle. Please try again." : "Failed to add vehicle. Please try again."));
     } finally {
       setSubmitLoading(false);
     }
@@ -483,12 +494,29 @@ export default function MyVehicles() {
     setShowForm(false);
     setErrorMsg("");
     setSelectedSlotId(null);
+    setEditVehicleId(null);
     setForm({
       vehicle_number: "",
       vehicle_type:   "",
       vehicle_name:   "",
       flat_id:        myFlats.length === 1 ? String(myFlats[0].id) : "",
     });
+  };
+
+  /* ────────────────────────────
+     OPEN EDIT MODE (prefill the form from an existing vehicle)
+  ──────────────────────────── */
+  const openEdit = (v) => {
+    setForm({
+      vehicle_number: v.vehicle_number,
+      vehicle_type:   v.vehicle_type,
+      vehicle_name:   v.vehicle_name,
+      flat_id:        v.flat_id ? String(v.flat_id) : (myFlats.length === 1 ? String(myFlats[0].id) : ""),
+    });
+    setSelectedSlotId(v.parking_slot_id ?? null);
+    setEditVehicleId(v.id);
+    setErrorMsg("");
+    setShowForm(true);
   };
 
   const requestClose = () => {
@@ -629,10 +657,12 @@ export default function MyVehicles() {
                 </div>
                 <div>
                   <h3 className="text-lg font-black tracking-tight" style={{ color: "var(--text-primary)" }}>
-                    {t("vehFormTitle") || "Add New Vehicle"}
+                    {editVehicleId ? "Edit Vehicle" : (t("vehFormTitle") || "Add New Vehicle")}
                   </h3>
                   <p className="text-xs text-secondary mt-0.5">
-                    Register your vehicle and select or request a parking slot
+                    {editVehicleId
+                      ? "Update your vehicle details and parking slot"
+                      : "Register your vehicle and select or request a parking slot"}
                   </p>
                 </div>
               </div>
@@ -884,6 +914,12 @@ export default function MyVehicles() {
                 <button type="submit" className="btn-primary flex items-center gap-2" disabled={submitLoading}>
                   {submitLoading ? (
                     <><Spinner size={14} /> Saving...</>
+                  ) : editVehicleId ? (
+                    selectedSlotId !== null ? (
+                      <><MdCheckCircle size={14} /> Save Changes</>
+                    ) : (
+                      <><MdSend size={14} /> Save &amp; Request Slot</>
+                    )
                   ) : selectedSlotId !== null ? (
                     <><MdCheckCircle size={14} /> Add Vehicle &amp; Link Slot</>
                   ) : (
@@ -951,12 +987,21 @@ export default function MyVehicles() {
                           </div>
                         </div>
                       </div>
-                      <GlobalButton
-                        variant="delete"
-                        size="sm"
-                        icon={MdDelete}
-                        onClick={() => setDeleteConfirmId(v.id)}
-                      />
+                      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                        <GlobalButton
+                          variant="edit"
+                          size="sm"
+                          icon={MdEdit}
+                          onClick={() => openEdit(v)}
+                          title="Edit vehicle"
+                        />
+                        <GlobalButton
+                          variant="delete"
+                          size="sm"
+                          icon={MdDelete}
+                          onClick={() => setDeleteConfirmId(v.id)}
+                        />
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -1013,14 +1058,24 @@ export default function MyVehicles() {
                             </span>
                           </td>
                           <td className="p-3 text-right">
-                            <GlobalButton
-                              variant="delete"
-                              size="sm"
-                              icon={MdDelete}
-                              onClick={() => setDeleteConfirmId(v.id)}
-                            >
-                              Delete
-                            </GlobalButton>
+                            <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 8 }}>
+                              <GlobalButton
+                                variant="edit"
+                                size="sm"
+                                icon={MdEdit}
+                                onClick={() => openEdit(v)}
+                              >
+                                Edit
+                              </GlobalButton>
+                              <GlobalButton
+                                variant="delete"
+                                size="sm"
+                                icon={MdDelete}
+                                onClick={() => setDeleteConfirmId(v.id)}
+                              >
+                                Delete
+                              </GlobalButton>
+                            </div>
                           </td>
                         </tr>
                       ))}

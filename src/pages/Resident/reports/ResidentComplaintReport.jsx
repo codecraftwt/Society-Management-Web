@@ -1,9 +1,10 @@
-import React, { useEffect, useState, useCallback, useMemo, useRef } from "react";
+import React, { useEffect, useState, useCallback, useMemo, useRef, useContext } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import API from "../../../services/api";
 import { useLang } from "../../../context/LanguageContext";
-import { exportToExcel } from "../../../utils/exportExcel";
+import { AuthContext } from "../../../context/AuthContext";
+import { exportToCSV } from "../../../utils/exportExcel";
 import { exportToPDF } from "../../../utils/exportPDF";
 import {
   MdReportProblem, MdOutlineInbox, MdFilterList,
@@ -196,6 +197,13 @@ export default function ResidentComplaintReport() {
   const isMobile = useIsMobile();
   const { t } = useLang();
   const navigate = useNavigate();
+  const { user } = useContext(AuthContext);
+  const societyName = user?.society_name || "Society";
+  const exportMeta = {
+    societyName,
+    generatedBy: user?.name || "Resident",
+    roleLabel: "Resident",
+  };
 
   const [complaints, setComplaints] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -261,8 +269,8 @@ export default function ResidentComplaintReport() {
   const pageData = filtered.slice((page - 1) * limit, page * limit);
   const handlePageChange = p => { setPage(p); setTotalPages(pages); };
 
-  const handleExcel = () => exportToExcel({
-    fileName: "My_Complaint_Report", sheetName: "Complaints",
+  const handleCSV = () => exportToCSV({
+    fileName: "My_Complaint_Report", sheetName: "Complaints", meta: exportMeta,
     data: filtered.map((c, i) => ({
       "#": i + 1,
       [t("compColTitle")]:   c.title,
@@ -274,8 +282,10 @@ export default function ResidentComplaintReport() {
 
   const handlePDF = () => exportToPDF({
     title: t("rcrTitle"), fileName: "My_Complaint_Report",
-    columns: ["#", t("compColTitle"), t("billStatusCol"), t("rcrSubmittedOn")],
-    rows: filtered.map((c, i) => [i + 1, c.title, c.status, formatDate(c.created_at)]),
+    societyName, meta: exportMeta,
+    subtitle: `${filtered.length} ${t("reportRecords")}`,
+    columns: ["#", t("compColTitle"), t("compColDesc"), t("billStatusCol"), t("rcrSubmittedOn")],
+    rows: filtered.map((c, i) => [i + 1, c.title, c.description || "-", c.status, formatDate(c.created_at)]),
   });
 
   const filterLabels = {
@@ -315,7 +325,7 @@ export default function ResidentComplaintReport() {
           <div><h2 className="page-title">{t("rcrTitle")}</h2><p className="page-subtitle">{loading ? "—" : `${stats.total} ${t("rcrSubtitle")}`}</p></div>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-          <button onClick={handleExcel} className="btn-export" style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 13px", fontSize: 12, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}><MdTableChart size={14} /> {t("reportExcel")}</button>
+          <button onClick={handleCSV} className="btn-export" style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 13px", fontSize: 12, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}><MdTableChart size={14} /> {t("reportCSV")}</button>
           <button onClick={handlePDF} className="btn-export" style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 13px", fontSize: 12, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}><MdPictureAsPdf size={14} /> {t("reportPDF")}</button>
           <button onClick={() => setShowFilters(true)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 13px", borderRadius: 10, fontSize: 12, fontWeight: 700, background: applied ? "rgba(107,70,193,0.15)" : "var(--card-inner-bg,rgba(255,255,255,0.06))", color: applied ? "var(--accent, #9F87D7)" : "var(--text-secondary)", border: applied ? "1.5px solid var(--accent, rgba(107,70,193,0.35))" : "1px solid var(--glass-border)", cursor: "pointer", position: "relative", whiteSpace: "nowrap" }}><MdFilterList size={15} /> {t("reportFilters")}{applied && <span style={{ position: "absolute", top: -3, right: -3, width: 8, height: 8, borderRadius: "50%", background: "var(--accent, #6B46C1)", boxShadow: "0 0 6px var(--accent)" }} />}</button>
         </div>

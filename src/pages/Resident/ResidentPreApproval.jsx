@@ -10,12 +10,13 @@ import {
   MdCalendarToday, MdQrCode, MdWarning,
   MdCheckCircle, MdContentCopy, MdPerson,
   MdVisibility, MdDownload, MdPictureAsPdf,
-  MdSearch, MdOutlineInbox,
+  MdSearch, MdOutlineInbox, MdHome, MdHistory,
 } from "react-icons/md";
 import { QRCodeCanvas } from "qrcode.react";
 import Modal from "../../components/Modal";
 import Select from "../../components/common/Select";
 import { jsPDF } from "jspdf";
+import Pagination from "../../components/common/Pagination";
 import { getTitleError, getMobileError, getVehicleNumberError } from "../../utils/validators";
 
 /* ── IST date helpers ── */
@@ -77,6 +78,9 @@ export default function ResidentPreApproval() {
   const [istDate,      setIstDate]      = useState("");
   const [viewPass,     setViewPass]     = useState(null);
   const [showForm,     setShowForm]     = useState(false);
+  const [activeTab,    setActiveTab]    = useState("active");
+  const [page,         setPage]         = useState(1);
+  const [limit,        setLimit]        = useState(10);
   const viewPassQrRef  = useRef(null);
 
   const clearFilters = () => {
@@ -84,6 +88,7 @@ export default function ResidentPreApproval() {
     setFilterPurpose("ALL");
     setDateFrom("");
     setDateTo("");
+    setPage(1);
   };
 
   const hasActiveFilters = Boolean(search.trim() || filterPurpose !== "ALL" || dateFrom || dateTo);
@@ -110,13 +115,50 @@ export default function ResidentPreApproval() {
     });
   }, [myPasses, filterPurpose, dateFrom, dateTo, search]);
 
+  const pendingPasses = useMemo(
+    () => filteredPasses.filter((p) => p.status !== "USED" && p.status !== "EXPIRED"),
+    [filteredPasses]
+  );
+  const historyPasses = useMemo(
+    () => filteredPasses.filter((p) => p.status === "USED" || p.status === "EXPIRED"),
+    [filteredPasses]
+  );
+
+  const activeTotalPages = Math.max(1, Math.ceil(pendingPasses.length / limit));
+  const historyTotalPages = Math.max(1, Math.ceil(historyPasses.length / limit));
+  const totalPages = activeTab === "active" ? activeTotalPages : historyTotalPages;
+  const safePage = Math.min(page, totalPages);
+  const pagePasses = useMemo(() => {
+    const source = activeTab === "active" ? pendingPasses : historyPasses;
+    return source.slice((safePage - 1) * limit, safePage * limit);
+  }, [activeTab, pendingPasses, historyPasses, safePage, limit]);
+
   const todayIST = getTodayIST();
+
+  // Flat-aware helpers — passes coming from the backend now carry flat_number
+  // (single source of truth shared with the App).
+  const flatLabelOf = (pass) => {
+    if (pass?.flat_number) return pass.flat_number;
+    const flatObj = pass?.Flat || null;
+    return flatObj?.flat_number || null;
+  };
+
+  const groups = useMemo(() => {
+    const pending = [];
+    const history = [];
+    myPasses.forEach((p) => {
+      if (p.status === "USED" || p.status === "EXPIRED") history.push(p);
+      else pending.push(p);
+    });
+    return { pending, history };
+  }, [myPasses]);
+
   const counts = useMemo(() => {
     const total = myPasses.length;
-    const today = myPasses.filter(p => p.valid_date?.startsWith(todayIST)).length;
-    const active = myPasses.filter(p => !p.valid_date || p.valid_date >= todayIST).length;
-    return { total, today, active };
-  }, [myPasses, todayIST]);
+    const today = groups.pending.filter(p => p.valid_date?.startsWith(todayIST)).length;
+    const active = groups.pending.length;
+    return { total, today, active, used: groups.history.length };
+  }, [myPasses, groups, todayIST]);
 
   const eligibleFlats = myFlats.filter(item => {
     const flatObj = item.Flat || item;
@@ -369,6 +411,10 @@ export default function ResidentPreApproval() {
           <span className="complaint-stat-val">{counts.active}</span>
           <span className="complaint-stat-label">Active Passes</span>
         </div>
+        <div className="complaint-stat-card complaint-stat-resolved" style={{ borderLeftColor: "#8b5cf6" }}>
+          <span className="complaint-stat-val">{counts.used}</span>
+          <span className="complaint-stat-label">Used Passes</span>
+        </div>
       </div>
 
       {/* ── LIVE IST CLOCK ── */}
@@ -549,7 +595,7 @@ export default function ResidentPreApproval() {
                 { id: "OTHER", label: t("preapPurposeOther") || "Other" },
               ]}
               value={filterPurpose}
-              onChange={setFilterPurpose}
+              onChange={(id) => { setFilterPurpose(id); setPage(1); }}
             />
           </div>
 
@@ -560,10 +606,12 @@ export default function ResidentPreApproval() {
               onChange={({ from, to }) => {
                 setDateFrom(from);
                 setDateTo(to);
+                setPage(1);
               }}
               onClear={() => {
                 setDateFrom("");
                 setDateTo("");
+                setPage(1);
               }}
               placeholder="Valid Date"
             />
@@ -571,10 +619,23 @@ export default function ResidentPreApproval() {
             <ExpandableSearch
               placeholder="Search gate passes…"
               value={search}
-              onChange={setSearch}
+              onChange={(v) => { setSearch(v); setPage(1); }}
             />
           </div>
         </div>
+      )}
+
+      {/* ── TAB BAR (Active / History) ── */}
+      {myPasses.length > 0 && (
+        <SlidingTabs
+          items={[
+            { id: "active", label: t("preapTabActive") || "Active", badge: pendingPasses.length },
+            { id: "history", label: t("preapTabHistory") || "History", badge: historyPasses.length },
+          ]}
+          value={activeTab}
+          onChange={(id) => { setActiveTab(id); setPage(1); }}
+          fullWidth
+        />
       )}
 
       {/* ── PASSES LIST / EMPTY STATES ── */}
@@ -588,10 +649,14 @@ export default function ResidentPreApproval() {
             </button>
           )}
         </div>
-      ) : filteredPasses.length === 0 ? (
+      ) : (activeTab === "active" ? pendingPasses : historyPasses).length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-2 py-14 text-secondary animate-fadeIn bg-card rounded-2xl p-6 border border-white/10">
           <MdSearch size={36} className="opacity-25" />
-          <p className="text-sm">No gate passes match your filters</p>
+          <p className="text-sm">
+            {activeTab === "active"
+              ? "No active gate passes match your filters"
+              : "No gate passes in history match your filters"}
+          </p>
           <button
             onClick={clearFilters}
             className="text-xs text-accent hover:underline mt-1"
@@ -601,96 +666,184 @@ export default function ResidentPreApproval() {
           </button>
         </div>
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2">
-          {filteredPasses.map((pass, idx) => {
-            const pc = PURPOSE_COLORS[pass.purpose] || PURPOSE_COLORS.OTHER;
-            const isCopied = copiedId === pass.id;
-            const isExpired = pass.valid_date && pass.valid_date < todayIST;
-
-            return (
-              <div
-                key={pass.id}
-                className="rounded-xl overflow-hidden border border-white/10 bg-white/5 animate-fadeIn"
-                style={{ animationDelay: `${idx * 50}ms` }}
-              >
-                {/* color bar */}
-                <div className="h-0.5" style={{ background: pc.text }} />
-
-                <div className="p-3.5 flex flex-col gap-2.5">
-                  {/* top row */}
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex items-center gap-2.5">
-                      <div
-                        className="w-8 h-8 rounded-lg flex items-center justify-center text-base shrink-0"
-                        style={{ background: pc.bg, border: `1px solid ${pc.border}` }}
-                      >
-                        {PURPOSE_ICONS[pass.purpose] || "🔖"}
-                      </div>
-                      <div>
-                        <p className="text-sm font-semibold leading-tight" style={{ color: "var(--text-primary)" }}>{pass.visitor_name}</p>
-                        <span
-                          className="text-[10px] px-1.5 py-0.5 rounded-md mt-0.5 inline-block"
-                          style={{ background: pc.bg, border: `1px solid ${pc.border}`, color: pc.text }}
-                        >
-                          {purposeLabels[pass.purpose] || pass.purpose}
-                        </span>
-                      </div>
-                    </div>
-                    <span className={`text-[10px] px-2 py-0.5 rounded shrink-0 font-medium ${
-                      isExpired
-                        ? "bg-red-500/20 text-red-400"
-                        : "bg-green-500/20 text-green-400"
-                    }`}>
-                      {isExpired ? "Expired" : "Active"}
-                    </span>
-                  </div>
-
-                  {/* OTP code + QR */}
-                  <div className="flex items-center justify-between gap-3">
-                    <p className="text-2xl font-bold tracking-[0.2em] text-green-300 tabular-nums">
-                      {pass.otp}
-                    </p>
-                    <div className="bg-white rounded-lg p-1 shrink-0">
-                      <QRCodeCanvas value={pass.otp} size={40} />
-                    </div>
-                  </div>
-
-                  {/* meta chips */}
-                  <div className="flex flex-wrap gap-1.5">
-                    {pass.vehicle_number && (
-                      <span className="flex items-center gap-1 text-[11px] text-secondary px-2 py-0.5 rounded-md bg-white/5 border border-white/10">
-                        <MdDirectionsCar size={11} /> {pass.vehicle_number}
-                      </span>
-                    )}
-                    <span className="flex items-center gap-1 text-[11px] text-secondary px-2 py-0.5 rounded-md bg-white/5 border border-white/10">
-                      <MdCalendarToday size={10} /> Valid till {formatDateIST(pass.valid_date)}
-                    </span>
-                  </div>
-
-                  {/* action buttons */}
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => setViewPass(pass)}
-                      className="flex items-center justify-center gap-1.5 flex-1 py-1.5 rounded-lg text-xs font-medium border transition-all duration-200 bg-blue-500/10 text-blue-400 border-blue-500/25 hover:bg-blue-500/20"
-                    >
-                      <MdVisibility size={13} /> View Pass
-                    </button>
-                    <button
-                      onClick={() => handleCopyPass(pass.otp, pass.id)}
-                      className={`flex items-center justify-center gap-1.5 flex-1 py-1.5 rounded-lg text-xs font-medium border transition-all duration-200 ${
-                        isCopied
-                          ? "bg-green-500/20 text-green-400 border-green-500/30"
-                          : "bg-white/8 text-secondary border-white/10 hover:bg-white/12 hover:opacity-90"
-                      }`}
-                    >
-                      {isCopied ? <MdCheckCircle size={13} /> : <MdContentCopy size={13} />}
-                      {isCopied ? "Copied!" : "Copy Code"}
-                    </button>
-                  </div>
-                </div>
+        <div className="space-y-6">
+          {activeTab === "active" ? (
+            /* ── ACTIVE PASSES (paginated) ── */
+            <>
+              <div className="flex items-center gap-2 mb-2.5">
+                <MdQrCode size={16} className="text-green-400" />
+                <h3 className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
+                  Active Passes <span className="text-secondary font-normal">({pendingPasses.length})</span>
+                </h3>
               </div>
-            );
-          })}
+              <div className="grid gap-3 sm:grid-cols-2">
+                {pagePasses.map((pass, idx) => {
+                  const pc = PURPOSE_COLORS[pass.purpose] || PURPOSE_COLORS.OTHER;
+                  const isCopied = copiedId === pass.id;
+                  const flatLabel = flatLabelOf(pass);
+
+                  return (
+                    <div
+                      key={pass.id}
+                      className="rounded-xl overflow-hidden border border-white/10 bg-white/5 animate-fadeIn"
+                      style={{ animationDelay: `${idx * 50}ms` }}
+                    >
+                      <div className="h-0.5" style={{ background: pc.text }} />
+
+                      <div className="p-3.5 flex flex-col gap-2.5">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex items-center gap-2.5">
+                            <div
+                              className="w-8 h-8 rounded-lg flex items-center justify-center text-base shrink-0"
+                              style={{ background: pc.bg, border: `1px solid ${pc.border}` }}
+                            >
+                              {PURPOSE_ICONS[pass.purpose] || "🔖"}
+                            </div>
+                            <div>
+                              <p className="text-sm font-semibold leading-tight" style={{ color: "var(--text-primary)" }}>{pass.visitor_name}</p>
+                              <span
+                                className="text-[10px] px-1.5 py-0.5 rounded-md mt-0.5 inline-block"
+                                style={{ background: pc.bg, border: `1px solid ${pc.border}`, color: pc.text }}
+                              >
+                                {purposeLabels[pass.purpose] || pass.purpose}
+                              </span>
+                            </div>
+                          </div>
+                          <span className="text-[10px] px-2 py-0.5 rounded shrink-0 font-medium bg-green-500/20 text-green-400">
+                            Active
+                          </span>
+                        </div>
+
+                        <div className="flex items-center justify-between gap-3">
+                          <p className="text-2xl font-bold tracking-[0.2em] text-green-300 tabular-nums">
+                            {pass.otp}
+                          </p>
+                          <div className="bg-white rounded-lg p-1 shrink-0">
+                            <QRCodeCanvas value={pass.otp} size={40} />
+                          </div>
+                        </div>
+
+                        <div className="flex flex-wrap gap-1.5">
+                          {flatLabel && (
+                            <span className="flex items-center gap-1 text-[11px] text-secondary px-2 py-0.5 rounded-md bg-white/5 border border-white/10">
+                              <MdHome size={11} /> Flat {flatLabel}
+                            </span>
+                          )}
+                          {pass.vehicle_number && (
+                            <span className="flex items-center gap-1 text-[11px] text-secondary px-2 py-0.5 rounded-md bg-white/5 border border-white/10">
+                              <MdDirectionsCar size={11} /> {pass.vehicle_number}
+                            </span>
+                          )}
+                          <span className="flex items-center gap-1 text-[11px] text-secondary px-2 py-0.5 rounded-md bg-white/5 border border-white/10">
+                            <MdCalendarToday size={10} /> Valid till {formatDateIST(pass.valid_date)}
+                          </span>
+                        </div>
+
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => setViewPass(pass)}
+                            className="flex items-center justify-center gap-1.5 flex-1 py-1.5 rounded-lg text-xs font-medium border transition-all duration-200 bg-blue-500/10 text-blue-400 border-blue-500/25 hover:bg-blue-500/20"
+                          >
+                            <MdVisibility size={13} /> View Pass
+                          </button>
+                          <button
+                            onClick={() => handleCopyPass(pass.otp, pass.id)}
+                            className={`flex items-center justify-center gap-1.5 flex-1 py-1.5 rounded-lg text-xs font-medium border transition-all duration-200 ${
+                              isCopied
+                                ? "bg-green-500/20 text-green-400 border-green-500/30"
+                                : "bg-white/8 text-secondary border-white/10 hover:bg-white/12 hover:opacity-90"
+                            }`}
+                          >
+                            {isCopied ? <MdCheckCircle size={13} /> : <MdContentCopy size={13} />}
+                            {isCopied ? "Copied!" : "Copy Code"}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          ) : (
+            /* ── PASS HISTORY (paginated) ── */
+            <>
+              <div className="flex items-center gap-2 mb-2.5">
+                <MdHistory size={16} className="text-secondary" />
+                <h3 className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
+                  Pass History <span className="text-secondary font-normal">({historyPasses.length})</span>
+                </h3>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {pagePasses.map((pass, idx) => {
+                  const pc = PURPOSE_COLORS[pass.purpose] || PURPOSE_COLORS.OTHER;
+                  const isUsed = pass.status === "USED";
+                  const flatLabel = flatLabelOf(pass);
+
+                  return (
+                    <div
+                      key={pass.id}
+                      className="rounded-xl overflow-hidden border border-white/10 bg-white/5 animate-fadeIn opacity-90"
+                      style={{ animationDelay: `${idx * 50}ms` }}
+                    >
+                      <div className="h-0.5" style={{ background: isUsed ? "#3b82f6" : "#ef4444" }} />
+
+                      <div className="p-3.5 flex flex-col gap-2">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex items-center gap-2.5">
+                            <div
+                              className="w-8 h-8 rounded-lg flex items-center justify-center text-base shrink-0 opacity-70"
+                              style={{ background: pc.bg, border: `1px solid ${pc.border}` }}
+                            >
+                              {PURPOSE_ICONS[pass.purpose] || "🔖"}
+                            </div>
+                            <div>
+                              <p className="text-sm font-semibold leading-tight" style={{ color: "var(--text-primary)" }}>{pass.visitor_name}</p>
+                              <span
+                                className="text-[10px] px-1.5 py-0.5 rounded-md mt-0.5 inline-block"
+                                style={{ background: pc.bg, border: `1px solid ${pc.border}`, color: pc.text }}
+                              >
+                                {purposeLabels[pass.purpose] || pass.purpose}
+                              </span>
+                            </div>
+                          </div>
+                          <span className={`text-[10px] px-2 py-0.5 rounded shrink-0 font-medium ${
+                            isUsed ? "bg-blue-500/20 text-blue-400" : "bg-red-500/20 text-red-400"
+                          }`}>
+                            {isUsed ? "Used" : "Expired"}
+                          </span>
+                        </div>
+
+                        <div className="flex flex-wrap gap-1.5">
+                          {flatLabel && (
+                            <span className="flex items-center gap-1 text-[11px] text-secondary px-2 py-0.5 rounded-md bg-white/5 border border-white/10">
+                              <MdHome size={11} /> Flat {flatLabel}
+                            </span>
+                          )}
+                          {pass.mobile && (
+                            <span className="flex items-center gap-1 text-[11px] text-secondary px-2 py-0.5 rounded-md bg-white/5 border border-white/10">
+                              <MdPhone size={10} /> {pass.mobile}
+                            </span>
+                          )}
+                          <span className="flex items-center gap-1 text-[11px] text-secondary px-2 py-0.5 rounded-md bg-white/5 border border-white/10">
+                            <MdCalendarToday size={10} /> {formatDateIST(pass.valid_date)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          )}
+
+          <Pagination
+            page={safePage}
+            totalPages={totalPages}
+            onPageChange={(p) => { setPage(p); }}
+            pageSize={limit}
+            onPageSizeChange={(s) => { setLimit(s); setPage(1); }}
+            style={{ marginTop: 4 }}
+          />
         </div>
       )}
 
@@ -726,6 +879,14 @@ export default function ResidentPreApproval() {
 
               {/* meta */}
               <div className="flex flex-wrap justify-center gap-2">
+                {(() => {
+                  const flatLabel = flatLabelOf(viewPass);
+                  return flatLabel ? (
+                    <span className="flex items-center gap-1 text-xs text-secondary px-2.5 py-1 rounded-lg bg-white/5 border border-white/10">
+                      <MdHome size={12} /> Flat {flatLabel}
+                    </span>
+                  ) : null;
+                })()}
                 {viewPass.vehicle_number && (
                   <span className="flex items-center gap-1 text-xs text-secondary px-2.5 py-1 rounded-lg bg-white/5 border border-white/10">
                     <MdDirectionsCar size={12} /> {viewPass.vehicle_number}
