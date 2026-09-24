@@ -537,7 +537,7 @@ export default function GuardDashboard() {
           className="gd-glass-card bg-red-500/15 border border-red-500/35 rounded-2xl p-5 text-red-500 flex flex-col sm:flex-row items-center justify-between gap-4 cursor-pointer hover:bg-red-500/20 transition-all duration-300 hover:-translate-y-1 shadow-lg shadow-red-500/10 animate-pulse"
         >
           <div className="flex items-center gap-3.5">
-            <div className="w-10 h-10 rounded-xl bg-red-500 text-white flex items-center justify-center flex-shrink-0 shadow-md">
+            <div className="w-10 h-10 rounded-xl bg-red-500 text-white flex items-center justify-center shrink-0 shadow-md">
               <MdWarning size={24} />
             </div>
             <div>
@@ -571,7 +571,7 @@ export default function GuardDashboard() {
       {overstayingVisitors.length > 0 && (
         <div className="gd-glass-card bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm hover:border-amber-500/50 transition-all duration-300">
           <div className="flex items-start gap-3.5">
-            <div className="w-10 h-10 rounded-xl bg-amber-500 text-white flex items-center justify-center flex-shrink-0 shadow-md">
+            <div className="w-10 h-10 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-md">
               <MdOutlineTimer size={22} />
             </div>
             <div>
@@ -696,7 +696,7 @@ export default function GuardDashboard() {
 
                 {action.badge && (
                   <span
-                    className={`gd-action__badge absolute top-3 right-3 z-[2] px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider shadow-sm ${
+                    className={`gd-action__badge absolute top-3 right-3 z-2 px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider shadow-sm ${
                       action.badgeColor || "bg-blue-600 text-white"
                     }`}
                   >
@@ -711,7 +711,7 @@ export default function GuardDashboard() {
                   <Icon size={22} />
                 </div>
 
-                <div className="relative z-[1] mt-auto">
+                <div className="relative z-1 mt-auto">
                   <div className="flex items-center gap-1">
                     <h3 className="text-[13px] sm:text-sm font-bold text-primary leading-tight">
                       {action.title}
@@ -811,7 +811,7 @@ export default function GuardDashboard() {
 
             {/* Search Input Toggle */}
             {isSearchOpen ? (
-              <div className="relative flex items-center min-w-[240px] sm:w-72 max-w-full animate-fadeIn">
+              <div className="relative flex items-center min-w-60 sm:w-72 max-w-full animate-fadeIn">
                 <MdSearch
                   size={18}
                   className="absolute left-3.5 top-1/2 -translate-y-1/2 text-accent pointer-events-none z-10"
@@ -936,7 +936,7 @@ export default function GuardDashboard() {
                     {/* Visitor Info */}
                     <div className="flex items-center gap-3.5 min-w-0 flex-1">
                       <div
-                        className="gd-stream-avatar flex-shrink-0"
+                        className="gd-stream-avatar shrink-0"
                         style={{ backgroundColor: meta.bg, color: meta.color }}
                       >
                         <Icon size={18} />
@@ -950,7 +950,7 @@ export default function GuardDashboard() {
 
                       <div className="min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-bold text-sm text-primary truncate max-w-[170px] sm:max-w-none">
+                          <span className="font-bold text-sm text-primary truncate max-w-42.5 sm:max-w-none">
                             {v.visitor_name || t("gdGuestVisitor", "Guest Visitor")}
                           </span>
 
@@ -981,7 +981,7 @@ export default function GuardDashboard() {
 
                         <div className="flex items-center gap-2 text-xs text-secondary mt-1.5 flex-wrap">
                           <span className="flex items-center gap-1 text-primary font-medium">
-                            <MdApartment className="text-accent flex-shrink-0" />
+                            <MdApartment className="text-accent shrink-0" />
                             {getFlatLabel(v, t)}
                           </span>
 
@@ -1009,7 +1009,7 @@ export default function GuardDashboard() {
                     </div>
 
                     {/* Right Metadata & Action */}
-                    <div className="flex items-center gap-4 justify-between lg:justify-end flex-shrink-0 pl-1 lg:pl-0 border-t lg:border-t-0 border-glass-border pt-3 lg:pt-0">
+                    <div className="flex items-center gap-4 justify-between lg:justify-end shrink-0 pl-1 lg:pl-0 border-t lg:border-t-0 border-glass-border pt-3 lg:pt-0">
                       <div className="text-left lg:text-right">
                         <div className="flex items-center gap-1.5 justify-start lg:justify-end">
                           <MdAccessTime size={12} className="text-secondary" />
@@ -1098,7 +1098,7 @@ export default function GuardDashboard() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-rose-500/15 text-rose-500 flex items-center justify-center flex-shrink-0">
+              <div className="w-10 h-10 rounded-xl bg-rose-500/15 text-rose-500 flex items-center justify-center shrink-0">
                 <MdLogout size={22} />
               </div>
               <div>
