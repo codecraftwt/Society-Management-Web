@@ -1424,7 +1424,7 @@ const { t }              = useLang();
                       color: "var(--text-secondary)",
                       marginBottom: "6px",
                     }}>
-                      Select Unit <span style={{ color: "var(--stat-red-color)" }}>*</span>
+                      {t("selectUnit")} <span style={{ color: "var(--stat-red-color)" }}>*</span>
                     </label>
                     <Select
                       className="input"

@@ -64,17 +64,17 @@ const calcDuration = (entry, exit) => {
   return `${m}m`;
 };
 
-const getPurposeConfig = (purpose) => {
+const getPurposeConfig = (purpose, t) => {
   const p = (purpose || "GUEST").toUpperCase();
   switch (p) {
     case "DELIVERY":
-      return { label: "Delivery", icon: MdLocalShipping, color: "text-amber-400", bg: "bg-amber-500/15 border-amber-500/30", dot: "bg-amber-400" };
+      return { label: t("visDelivery") || "Delivery", icon: MdLocalShipping, color: "text-amber-400", bg: "bg-amber-500/15 border-amber-500/30", dot: "bg-amber-400" };
     case "CAB":
-      return { label: "Cab", icon: MdLocalTaxi, color: "text-emerald-400", bg: "bg-emerald-500/15 border-emerald-500/30", dot: "bg-emerald-400" };
+      return { label: t("visCab") || "Cab", icon: MdLocalTaxi, color: "text-emerald-400", bg: "bg-emerald-500/15 border-emerald-500/30", dot: "bg-emerald-400" };
     case "SERVICE":
-      return { label: "Service", icon: MdBuild, color: "text-purple-400", bg: "bg-purple-500/15 border-purple-500/30", dot: "bg-purple-400" };
+      return { label: t("visService") || "Service", icon: MdBuild, color: "text-purple-400", bg: "bg-purple-500/15 border-purple-500/30", dot: "bg-purple-400" };
     default:
-      return { label: "Guest", icon: MdPerson, color: "text-blue-400", bg: "bg-blue-500/15 border-blue-500/30", dot: "bg-blue-400" };
+      return { label: t("visGuest") || "Guest", icon: MdPerson, color: "text-blue-400", bg: "bg-blue-500/15 border-blue-500/30", dot: "bg-blue-400" };
   }
 };
 
@@ -350,7 +350,7 @@ export default function ResidentVisitors() {
             {/* MOBILE CARDS */}
             <div className="md:hidden space-y-3">
               {visitors.map((v, i) => {
-                const pConfig = getPurposeConfig(v.purpose);
+                const pConfig = getPurposeConfig(v.purpose, t);
                 const PurposeIcon = pConfig.icon;
                 return (
                   <div
@@ -375,7 +375,7 @@ export default function ResidentVisitors() {
                             {pConfig.label}
                           </span>
                           <span className="inline-block bg-blue-500/15 text-blue-400 text-[11px] px-2 py-0.5 rounded-full border border-blue-500/25">
-                            Flat: {v.Flat?.flat_number || "—"}
+                            {t("rdFlat")}: {v.Flat?.flat_number || "—"}
                           </span>
                         </div>
 
@@ -458,7 +458,7 @@ export default function ResidentVisitors() {
                   <tr>
                     <th>{t("vrVisitor")}</th>
                     <th>{t("vrPurpose") || "Type / Purpose"}</th>
-                    <th>Flat</th>
+                    <th>{t("rdFlat")}</th>
                     <th>{t("vrEntry")}</th>
                     <th>{t("billStatusCol")}</th>
                     <th style={{ width: 40 }}></th>
@@ -466,13 +466,13 @@ export default function ResidentVisitors() {
                 </thead>
                 <tbody>
                   {visitors.map((v, i) => {
-                    const pConfig = getPurposeConfig(v.purpose);
+                    const pConfig = getPurposeConfig(v.purpose, t);
                     const PurposeIcon = pConfig.icon;
                     return (
                       <React.Fragment key={v.id}>
                         <tr
                           onClick={() => toggleExpand(v.id)}
-                          className="border-b border-white/5 cursor-pointer group transition-colors duration-200 hover:bg-white/3"
+                          className="border-b border-white/5 cursor-pointer group transition-colors duration-200 hover:bg-white/3 animate-fadeIn"
                           style={{
                             animationDelay: `${i * 25}ms`,
                             background: expandedId === v.id ? "rgba(255,255,255,0.025)" : "",

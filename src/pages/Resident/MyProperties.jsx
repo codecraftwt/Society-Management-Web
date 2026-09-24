@@ -11,11 +11,13 @@ import GlobalButton from "../../components/common/GlobalButton";
 import useUnsavedDirty from "../../hooks/useUnsavedDirty";
 import ConfirmDiscard from "../../components/common/ConfirmDiscard";
 import { getNameError, getEmailError, getMobileError, getRequiredDateError, getDateRangeError, getPasswordError } from "../../utils/validators";
+import { useLang } from "../../context/LanguageContext";
 
 /* ─────────────────────────────────────────────
    Document Upload Field
 ───────────────────────────────────────────── */
 function DocumentUploadField({ label, icon: Icon, accept, file, onChange }) {
+  const { t } = useLang();
   const inputRef = useRef(null);
   return (
     <div>
@@ -35,7 +37,7 @@ function DocumentUploadField({ label, icon: Icon, accept, file, onChange }) {
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-xs font-semibold truncate" style={{ color: file ? "#4ade80" : "var(--text-primary, #fff)" }}>
-            {file ? file.name : "Click to upload"}
+            {file ? file.name : t("rpropClickUpload")}
           </p>
         </div>
         <input
@@ -54,6 +56,7 @@ function DocumentUploadField({ label, icon: Icon, accept, file, onChange }) {
    Main Component
 ───────────────────────────────────────────── */
 export default function MyProperties() {
+  const { t } = useLang();
   const { user } = useContext(AuthContext);
   const [properties, setProperties]   = useState([]);
   const [loading, setLoading]         = useState(true);
@@ -122,7 +125,7 @@ export default function MyProperties() {
       setProperties(enriched);
     } catch (err) {
       console.error("[MyProperties] loadProperties error:", err);
-      toast.error("Failed to load properties.");
+      toast.error(t("rpropLoadFailed"));
     } finally {
       setLoading(false);
     }
@@ -138,29 +141,29 @@ export default function MyProperties() {
   const handleAddTenant = async (e) => {
     e.preventDefault();
 
-    const nameError = getNameError(formData.name, "Full name");
+    const nameError = getNameError(formData.name, t("rpropFullName"));
     if (nameError) return toast.error(nameError);
 
-    const emailError = getEmailError(formData.email);
+    const emailError = getEmailError(formData.email, t("rpropEmail"));
     if (emailError) return toast.error(emailError);
 
-    const phoneError = getMobileError(formData.phone);
+    const phoneError = getMobileError(formData.phone, t("rpropPhone"));
     if (phoneError) return toast.error(phoneError);
 
-    const passwordError = getPasswordError(formData.password, "Temp password");
+    const passwordError = getPasswordError(formData.password, t("rpropTempPassword"));
     if (passwordError) return toast.error(passwordError);
 
-    const moveInError = getRequiredDateError(formData.move_in_date, "Lease start date");
+    const moveInError = getRequiredDateError(formData.move_in_date, t("rpropLeaseStart"));
     if (moveInError) return toast.error(moveInError);
 
-    const moveOutError = getRequiredDateError(formData.move_out_date, "Lease end date");
+    const moveOutError = getRequiredDateError(formData.move_out_date, t("rpropLeaseEnd"));
     if (moveOutError) return toast.error(moveOutError);
 
-    const rangeError = getDateRangeError(formData.move_in_date, formData.move_out_date, "Lease start date", "Lease end date");
+    const rangeError = getDateRangeError(formData.move_in_date, formData.move_out_date, t("rpropLeaseStart"), t("rpropLeaseEnd"));
     if (rangeError) return toast.error(rangeError);
 
     if (!aadharFile || !panFile)
-      return toast.error("Please upload both Aadhar and PAN documents.");
+      return toast.error(t("rpropUploadBothDocs"));
 
     setSubmitting(true);
     try {
@@ -175,50 +178,50 @@ export default function MyProperties() {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
-      toast.success("Tenant added & documents uploaded! Awaiting Admin verification.");
+      toast.success(t("rpropTenantAdded"));
       setShowForm(false);
       setFormData({ name: "", email: "", phone: "", password: "", vehicle_count: 0, occupant_count: 1, move_in_date: "", move_out_date: "" });
       setAadharFile(null);
       setPanFile(null);
       loadProperties();
     } catch (err) {
-      toast.error(err.response?.data?.message || "Failed to add tenant");
+      toast.error(err.response?.data?.message || t("rpropAddFailed"));
     } finally {
       setSubmitting(false);
     }
   };
 
   const handleRemoveTenant = async (tenantMembershipId, flatId) => {
-    if (!window.confirm("Are you sure you want to remove this tenant? This will revoke their access.")) return;
+    if (!window.confirm(t("rpropConfirmRemove"))) return;
     try {
       await API.post("/users/resident/remove-tenant", {
         flat_id:              flatId,
         tenant_membership_id: tenantMembershipId,
       });
-      toast.success("Tenant removed successfully.");
+      toast.success(t("rpropTenantRemoved"));
       setViewTenantData(null);
       setIsRenewing(false);
       loadProperties();
     } catch (err) {
-      toast.error(err.response?.data?.message || "Failed to remove tenant.");
+      toast.error(err.response?.data?.message || t("rpropRemoveFailed"));
     }
   };
 
   const handleRenewLease = async (tenantMembershipId, flatId) => {
-    if (!newLeaseDate) return toast.error("Please select a new lease end date.");
+    if (!newLeaseDate) return toast.error(t("rpropSelectNewDate"));
     try {
       await API.post("/users/resident/renew-tenant", {
         flat_id:              flatId,
         tenant_membership_id: tenantMembershipId,
         new_move_out_date:    newLeaseDate,
       });
-      toast.success("Lease renewed successfully!");
+      toast.success(t("rpropLeaseRenewed"));
       setIsRenewing(false);
       setNewLeaseDate("");
       setViewTenantData(null);
       loadProperties();
     } catch (err) {
-      toast.error(err.response?.data?.message || "Failed to renew lease.");
+      toast.error(err.response?.data?.message || t("rpropRenewFailed"));
     }
   };
 
@@ -252,9 +255,9 @@ export default function MyProperties() {
         <div className="w-16 h-16 rounded-2xl flex items-center justify-center ad-page-icon">
           <MdHome size={32} />
         </div>
-        <h3 className="text-lg font-semibold">No Properties Found</h3>
+        <h3 className="text-lg font-semibold">{t("rpropNoProperties")}</h3>
         <p className="text-secondary text-sm max-w-xs">
-          You don't have any flats assigned as owner yet. Contact your society admin.
+          {t("rpropNoPropertiesSub")}
         </p>
       </div>
     );
@@ -268,8 +271,8 @@ export default function MyProperties() {
           <MdHome size={20} />
         </div>
         <div>
-          <h2 className="text-lg font-semibold">My Properties</h2>
-          <p className="text-secondary text-xs">Manage your flats and tenants</p>
+          <h2 className="text-lg font-semibold">{t("rpropTitle")}</h2>
+          <p className="text-secondary text-xs">{t("rpropSubtitle")}</p>
         </div>
       </div>
 
@@ -285,10 +288,10 @@ export default function MyProperties() {
           const showSelfOccupied = !isPending && !isApproved;
 
           // ✅ flat_number / block_name / floor_number come directly from get-flat
-          const flatNumber  = prop.flat_number  || "Unknown";
-          const blockName   = prop.block_name   ? `Block ${prop.block_name}` : "";
-          const floorLabel  = prop.floor_number != null ? `Floor ${prop.floor_number}` : "";
-          const flatLabel   = [blockName, floorLabel, `Flat ${flatNumber}`].filter(Boolean).join(", ");
+          const flatNumber  = prop.flat_number  || t("rpropUnknown");
+          const blockName   = prop.block_name   ? `${t("rdBlock")} ${prop.block_name}` : "";
+          const floorLabel  = prop.floor_number != null ? `${t("rpropFloor")} ${prop.floor_number}` : "";
+          const flatLabel   = [blockName, floorLabel, `${t("rdFlat")} ${flatNumber}`].filter(Boolean).join(", ");
 
           return (
             <div
@@ -300,7 +303,7 @@ export default function MyProperties() {
                 <div>
                   <h3 className="text-lg font-bold">{flatLabel}</h3>
                   <p className="text-xs text-secondary mt-1">
-                    Status:{" "}
+                    {t("rpropStatus")}{" "}
                     <span
                       className={
                         showSelfOccupied
@@ -310,7 +313,7 @@ export default function MyProperties() {
                           : "text-blue-400 font-semibold"
                       }
                     >
-                      {showSelfOccupied ? "Self-Occupied" : isPending ? "Tenant Verification Pending" : "Rented Out"}
+                      {showSelfOccupied ? t("rpropSelfOccupied") : isPending ? t("rpropVerificationPending") : t("rpropRentedOut")}
                     </span>
                   </p>
                 </div>
@@ -321,14 +324,14 @@ export default function MyProperties() {
                     {isRejected && (
                       <div className="flex flex-col items-end text-right">
                         <span className="text-[10px] text-red-400 bg-red-500/10 px-2 py-0.5 rounded font-semibold border border-red-500/20">
-                          Previous Request Rejected
+                          {t("rpropPrevRejected")}
                         </span>
                         {rejectionReason && (
                           <span
                             className="text-[10px] text-red-400/80 mt-1 max-w-48 line-clamp-2"
                             title={rejectionReason}
                           >
-                            <b className="text-red-400">Reason:</b> {rejectionReason}
+                            <b className="text-red-400">{t("rpropReason")}</b> {rejectionReason}
                           </span>
                         )}
                       </div>
@@ -339,7 +342,7 @@ export default function MyProperties() {
                       icon={MdPersonAdd}
                       onClick={() => { setSelectedFlatId(prop.flat_id); setShowForm(true); }}
                     >
-                      Add Tenant
+                      {t("rpropAddTenant")}
                     </GlobalButton>
                   </div>
                 )}
@@ -353,14 +356,14 @@ export default function MyProperties() {
                       <MdAccessTime size={16} />
                     </div>
                     <div>
-                      <p className="text-sm font-semibold text-blue-400">Under Verification</p>
-                      <p className="text-[10px] text-secondary">Tenant profile is waiting for Admin approval.</p>
+                      <p className="text-sm font-semibold text-blue-400">{t("rpropUnderVerification")}</p>
+                      <p className="text-[10px] text-secondary">{t("rpropUnderVerificationSub")}</p>
                     </div>
                   </div>
                   <button
                     onClick={() => handleRemoveTenant(prop.tenantData.id, prop.flat_id)}
                     className="bg-red-500/10 text-red-500 border border-red-500/20 p-2 rounded-lg hover:bg-red-500/20 transition"
-                    title="Cancel Request"
+                    title={t("rpropCancelRequest")}
                   >
                     <MdClose size={18} />
                   </button>
@@ -375,15 +378,15 @@ export default function MyProperties() {
                       <MdWarning size={16} />
                     </div>
                     <div>
-                      <p className="text-sm font-semibold text-blue-500">Tenant Occupied</p>
-                      <p className="text-[10px] text-secondary">You are not living here.</p>
+                      <p className="text-sm font-semibold text-blue-500">{t("rpropTenantOccupied")}</p>
+                      <p className="text-[10px] text-secondary">{t("rpropTenantOccupiedSub")}</p>
                     </div>
                   </div>
                   <button
                     onClick={() => { setIsRenewing(false); setViewTenantData(prop.tenantData); }}
                     className="bg-blue-500/20 text-blue-500 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-blue-500/30 transition-all"
                   >
-                    View Tenant
+{t("rpropViewTenant")}
                   </button>
                 </div>
               )}
@@ -408,7 +411,7 @@ export default function MyProperties() {
               className="sticky top-0 z-10 flex justify-between items-center p-5 border-b"
               style={{ background: "var(--card-bg, #1e1e2d)", borderColor: "var(--divider, rgba(255,255,255,0.1))" }}
             >
-              <h3 className="text-lg font-bold" style={{ color: "var(--text-primary, #fff)" }}>Add Tenant Details</h3>
+              <h3 className="text-lg font-bold" style={{ color: "var(--text-primary, #fff)" }}>{t("rpropAddTenantDetails")}</h3>
               <button type="button" onClick={requestCloseAddTenant} className="text-secondary hover:opacity-80 transition">
                 <MdClose size={22} />
               </button>
@@ -417,30 +420,30 @@ export default function MyProperties() {
             <form onSubmit={handleAddTenant} className="p-6 space-y-5">
               {/* Personal Info */}
               <div style={{ background: "var(--card-inner-bg, rgba(255,255,255,0.02))", padding: "14px", borderRadius: "12px", border: "1px solid var(--divider, rgba(255,255,255,0.05))" }}>
-                <h4 className="text-sm font-bold text-blue-400 mb-3 uppercase tracking-wider">Personal Information</h4>
+                <h4 className="text-sm font-bold text-blue-400 mb-3 uppercase tracking-wider">{t("rpropPersonalInfo")}</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <div><label className="text-[10px] text-secondary font-semibold uppercase block mb-1">Full Name</label><input required style={inputStyle} value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} /></div>
-                  <div><label className="text-[10px] text-secondary font-semibold uppercase block mb-1">Email</label><input required type="email" style={inputStyle} value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} /></div>
-                  <div><label className="text-[10px] text-secondary font-semibold uppercase block mb-1">Phone</label><input required style={inputStyle} value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} /></div>
-                  <div><label className="text-[10px] text-secondary font-semibold uppercase block mb-1">Temp Password</label><input required type="password" style={inputStyle} value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} /></div>
+                  <div><label className="text-[10px] text-secondary font-semibold uppercase block mb-1">{t("rpropFullName")}</label><input required style={inputStyle} value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} /></div>
+                  <div><label className="text-[10px] text-secondary font-semibold uppercase block mb-1">{t("rpropEmail")}</label><input required type="email" style={inputStyle} value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} /></div>
+                  <div><label className="text-[10px] text-secondary font-semibold uppercase block mb-1">{t("rpropPhone")}</label><input required style={inputStyle} value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} /></div>
+                  <div><label className="text-[10px] text-secondary font-semibold uppercase block mb-1">{t("rpropTempPassword")}</label><input required type="password" style={inputStyle} value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} /></div>
                 </div>
               </div>
 
               {/* Lease & Occupancy */}
               <div style={{ background: "var(--card-inner-bg, rgba(255,255,255,0.02))", padding: "14px", borderRadius: "12px", border: "1px solid var(--divider, rgba(255,255,255,0.05))" }}>
-                <h4 className="text-sm font-bold text-blue-400 mb-3 uppercase tracking-wider">Lease & Occupancy</h4>
+                <h4 className="text-sm font-bold text-blue-400 mb-3 uppercase tracking-wider">{t("rpropLeaseOccupancy")}</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <div><label className="text-[10px] text-secondary font-semibold uppercase block mb-1">Lease Start Date</label><input required type="date" style={inputStyle} value={formData.move_in_date} onChange={(e) => setFormData({ ...formData, move_in_date: e.target.value })} /></div>
-                  <div><label className="text-[10px] text-secondary font-semibold uppercase block mb-1">Lease End Date</label><input required type="date" style={inputStyle} value={formData.move_out_date} onChange={(e) => setFormData({ ...formData, move_out_date: e.target.value })} /></div>
+                  <div><label className="text-[10px] text-secondary font-semibold uppercase block mb-1">{t("rpropLeaseStart")}</label><input required type="date" style={inputStyle} value={formData.move_in_date} onChange={(e) => setFormData({ ...formData, move_in_date: e.target.value })} /></div>
+                  <div><label className="text-[10px] text-secondary font-semibold uppercase block mb-1">{t("rpropLeaseEnd")}</label><input required type="date" style={inputStyle} value={formData.move_out_date} onChange={(e) => setFormData({ ...formData, move_out_date: e.target.value })} /></div>
                 </div>
               </div>
 
               {/* KYC Documents */}
               <div style={{ background: "var(--card-inner-bg, rgba(255,255,255,0.02))", padding: "14px", borderRadius: "12px", border: "1px solid var(--divider, rgba(255,255,255,0.05))" }}>
-                <h4 className="text-sm font-bold text-blue-400 mb-2 uppercase tracking-wider">KYC Documents</h4>
+                <h4 className="text-sm font-bold text-blue-400 mb-2 uppercase tracking-wider">{t("rpropKYCDocs")}</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <DocumentUploadField label="Aadhar Card" icon={MdBadge}     accept="application/pdf,image/*" file={aadharFile} onChange={setAadharFile} />
-                  <DocumentUploadField label="PAN Card"    icon={MdCreditCard} accept="application/pdf,image/*" file={panFile}    onChange={setPanFile}    />
+                  <DocumentUploadField label={t("rpropAadhar")} icon={MdBadge}     accept="application/pdf,image/*" file={aadharFile} onChange={setAadharFile} />
+                  <DocumentUploadField label={t("rpropPAN")}    icon={MdCreditCard} accept="application/pdf,image/*" file={panFile}    onChange={setPanFile}    />
                 </div>
               </div>
 
@@ -452,7 +455,7 @@ export default function MyProperties() {
                   icon={MdPersonAdd}
                   loading={submitting}
                 >
-                  {submitting ? "Uploading Documents & Saving..." : "Submit Tenant"}
+                  {submitting ? t("rpropUploading") : t("rpropSubmitTenant")}
                 </GlobalButton>
               </div>
             </form>
@@ -480,7 +483,7 @@ export default function MyProperties() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex justify-between items-center p-5 border-b" style={{ borderColor: "var(--divider, rgba(255,255,255,0.1))" }}>
-              <h3 className="text-lg font-bold" style={{ color: "var(--text-primary, #fff)" }}>Tenant Profile</h3>
+              <h3 className="text-lg font-bold" style={{ color: "var(--text-primary, #fff)" }}>{t("rpropTenantProfile")}</h3>
               <button type="button" onClick={() => { setViewTenantData(null); setIsRenewing(false); }} className="text-secondary hover:opacity-80 transition">
                 <MdClose size={22} />
               </button>
@@ -506,11 +509,11 @@ export default function MyProperties() {
                 style={{ background: "var(--card-inner-bg)", padding: "16px", borderRadius: "12px", border: "1px solid var(--divider)" }}
               >
                 <div>
-                  <p className="text-[10px] text-secondary font-semibold uppercase">Move-In Date</p>
+                  <p className="text-[10px] text-secondary font-semibold uppercase">{t("rpropMoveIn")}</p>
                   <p className="text-sm font-semibold">{viewTenantData.move_in_date || "N/A"}</p>
                 </div>
                 <div>
-                  <p className="text-[10px] text-secondary font-semibold uppercase">Move-Out Date</p>
+                  <p className="text-[10px] text-secondary font-semibold uppercase">{t("rpropMoveOut")}</p>
                   <p className="text-sm font-semibold text-blue-400">{viewTenantData.move_out_date || "N/A"}</p>
                 </div>
               </div>
@@ -519,7 +522,7 @@ export default function MyProperties() {
               {isRenewing ? (
                 <div className="p-4 border border-blue-500/30 bg-blue-500/5 rounded-xl space-y-4 animate-scaleIn">
                   <div>
-                    <label className="text-[10px] text-secondary font-semibold uppercase block mb-1">Select New Lease End Date</label>
+                    <label className="text-[10px] text-secondary font-semibold uppercase block mb-1">{t("rpropSelectNewLeaseEnd")}</label>
                     <input
                       type="date"
                       style={inputStyle}
@@ -530,20 +533,20 @@ export default function MyProperties() {
                   </div>
                   <div className="flex gap-2">
                     <button onClick={() => setIsRenewing(false)} className="flex-1 bg-card border border-(--divider) py-2.5 rounded-xl text-xs font-bold hover:bg-white/5 transition">
-                      Cancel
+                      {t("cancel")}
                     </button>
                     <button onClick={() => handleRenewLease(viewTenantData.id, viewTenantData.flat_id)} className="flex-1 bg-blue-500/20 text-blue-400 border border-blue-500/30 py-2.5 rounded-xl text-xs font-bold hover:bg-blue-500/30 transition">
-                      Confirm Renewal
+                      {t("rpropConfirmRenewal")}
                     </button>
                   </div>
                 </div>
               ) : (
                 <div className="grid grid-cols-2 gap-3">
                   <button onClick={() => setIsRenewing(true)} className="bg-blue-500/10 text-blue-400 border border-blue-500/20 py-3 rounded-xl text-sm font-bold flex justify-center items-center gap-2 hover:bg-blue-500/20 transition-all">
-                    <MdAutorenew size={18} /> Renew Lease
+                    <MdAutorenew size={18} /> {t("rpropRenewLease")}
                   </button>
                   <button onClick={() => handleRemoveTenant(viewTenantData.id, viewTenantData.flat_id)} className="bg-red-500/10 text-red-500 border border-red-500/20 py-3 rounded-xl text-sm font-bold flex justify-center items-center gap-2 hover:bg-red-500/20 transition-all">
-                    <MdDelete size={18} /> End Lease
+                    <MdDelete size={18} /> {t("rpropEndLease")}
                   </button>
                 </div>
               )}

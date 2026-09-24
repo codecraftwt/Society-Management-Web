@@ -253,10 +253,10 @@ export default function ResidentPreApproval() {
   if (!hasEligibleFlat) return;
 
   // ✅ simple validation
-  const nameErr = getTitleError(form.visitor_name, "Visitor name");
+  const nameErr = getTitleError(form.visitor_name, t("preapVisitorName"));
   if (nameErr) { alert(nameErr); return; }
 
-  const mobileErr = getMobileError(form.mobile, "Mobile number");
+  const mobileErr = getMobileError(form.mobile, t("preapMobile"));
   if (mobileErr) { alert(mobileErr); return; }
 
   if (form.vehicle_number) {
@@ -265,7 +265,7 @@ export default function ResidentPreApproval() {
   }
 
   if (!form.valid_date || !form.purpose) {
-    alert("Please fill all required fields");
+    alert(t("preapFillRequired"));
     return;
   }
 
@@ -383,7 +383,7 @@ export default function ResidentPreApproval() {
           </div>
           <div>
             <h2 className="page-title">{t("preapTitle")}</h2>
-            <p className="page-subtitle">{counts.total} Passes Recorded</p>
+            <p className="page-subtitle">{t("preapRecorded", { count: counts.total })}</p>
           </div>
         </div>
 
@@ -401,26 +401,26 @@ export default function ResidentPreApproval() {
       <div className="ge-stats">
         <div className="complaint-stat-card complaint-stat-total">
           <span className="complaint-stat-val">{counts.total}</span>
-          <span className="complaint-stat-label">Total Passes</span>
+          <span className="complaint-stat-label">{t("preapStatTotal")}</span>
         </div>
         <div className="complaint-stat-card complaint-stat-inprogress">
           <span className="complaint-stat-val">{counts.today}</span>
-          <span className="complaint-stat-label">Valid Today</span>
+          <span className="complaint-stat-label">{t("preapStatToday")}</span>
         </div>
         <div className="complaint-stat-card complaint-stat-resolved">
           <span className="complaint-stat-val">{counts.active}</span>
-          <span className="complaint-stat-label">Active Passes</span>
+          <span className="complaint-stat-label">{t("preapStatActive")}</span>
         </div>
         <div className="complaint-stat-card complaint-stat-resolved" style={{ borderLeftColor: "#8b5cf6" }}>
           <span className="complaint-stat-val">{counts.used}</span>
-          <span className="complaint-stat-label">Used Passes</span>
+          <span className="complaint-stat-label">{t("preapStatUsed")}</span>
         </div>
       </div>
 
       {/* ── LIVE IST CLOCK ── */}
       <div className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl bg-white/5 border border-white/10 text-sm">
         <span className="w-2 h-2 rounded-full bg-green-400 shrink-0" />
-        <span className="text-secondary text-xs">Current time (IST)</span>
+        <span className="text-secondary text-xs">{t("preapIstLabel")}</span>
         <span className="ml-auto font-mono text-xs font-medium tabular-nums text-secondary tracking-wide">
           {istDate}&nbsp;&nbsp;{istTime}
         </span>
@@ -438,7 +438,7 @@ export default function ResidentPreApproval() {
       {flatAssigned && !hasEligibleFlat && isOwner && (
         <div className="flex items-start gap-3 bg-blue-500/10 border border-blue-500/25 rounded-xl p-4 animate-scaleIn">
           <MdWarning size={18} className="text-blue-400 shrink-0 mt-0.5" />
-          <p className="text-sm text-blue-400/90 leading-relaxed">Owners cannot pre-approve visitors for rented units.</p>
+          <p className="text-sm text-blue-400/90 leading-relaxed">{t("preapOwnerRentedWarn")}</p>
         </div>
       )}
 
@@ -465,7 +465,7 @@ export default function ResidentPreApproval() {
               >
                 {eligibleFlats.map((flat) => (
                   <option key={flat.flat_id || flat.id} value={flat.flat_id || flat.id}>
-                    Flat {flat.Flat?.flat_number || flat.flat_number || flat.flatNumber || flat.number || "—"}
+                    {t("rdFlat")} {flat.Flat?.flat_number || flat.flat_number || flat.flatNumber || flat.number || "—"}
                   </option>
                 ))}
               </Select>
@@ -613,11 +613,11 @@ export default function ResidentPreApproval() {
                 setDateTo("");
                 setPage(1);
               }}
-              placeholder="Valid Date"
+              placeholder={t("preapValidDate")}
             />
 
             <ExpandableSearch
-              placeholder="Search gate passes…"
+              placeholder={t("preapSearch")}
               value={search}
               onChange={(v) => { setSearch(v); setPage(1); }}
             />
@@ -642,7 +642,7 @@ export default function ResidentPreApproval() {
       {myPasses.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-3 py-16 text-secondary animate-fadeIn bg-card rounded-2xl p-6 border border-white/10">
           <MdOutlineInbox size={48} className="opacity-20" />
-          <p className="text-sm">No pre-approved gate passes generated yet</p>
+          <p className="text-sm">{t("preapEmpty")}</p>
           {hasEligibleFlat && (
             <button onClick={() => setShowForm(true)} className="btn-primary mt-1">
               <MdQrCode size={16} /> {t("preapGenerateBtn")}
@@ -652,11 +652,7 @@ export default function ResidentPreApproval() {
       ) : (activeTab === "active" ? pendingPasses : historyPasses).length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-2 py-14 text-secondary animate-fadeIn bg-card rounded-2xl p-6 border border-white/10">
           <MdSearch size={36} className="opacity-25" />
-          <p className="text-sm">
-            {activeTab === "active"
-              ? "No active gate passes match your filters"
-              : "No gate passes in history match your filters"}
-          </p>
+          <p className="text-sm">{t("preapNoMatch")}</p>
           <button
             onClick={clearFilters}
             className="text-xs text-accent hover:underline mt-1"
@@ -673,7 +669,7 @@ export default function ResidentPreApproval() {
               <div className="flex items-center gap-2 mb-2.5">
                 <MdQrCode size={16} className="text-green-400" />
                 <h3 className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
-                  Active Passes <span className="text-secondary font-normal">({pendingPasses.length})</span>
+                  {t("preapStatActive") || "Active Passes"} <span className="text-secondary font-normal">({pendingPasses.length})</span>
                 </h3>
               </div>
               <div className="grid gap-3 sm:grid-cols-2">
@@ -710,7 +706,7 @@ export default function ResidentPreApproval() {
                             </div>
                           </div>
                           <span className="text-[10px] px-2 py-0.5 rounded shrink-0 font-medium bg-green-500/20 text-green-400">
-                            Active
+                            {t("preapActive") || "Active"}
                           </span>
                         </div>
 
@@ -726,7 +722,7 @@ export default function ResidentPreApproval() {
                         <div className="flex flex-wrap gap-1.5">
                           {flatLabel && (
                             <span className="flex items-center gap-1 text-[11px] text-secondary px-2 py-0.5 rounded-md bg-white/5 border border-white/10">
-                              <MdHome size={11} /> Flat {flatLabel}
+                              <MdHome size={11} /> {t("rdFlat") || "Flat"} {flatLabel}
                             </span>
                           )}
                           {pass.vehicle_number && (
@@ -735,7 +731,7 @@ export default function ResidentPreApproval() {
                             </span>
                           )}
                           <span className="flex items-center gap-1 text-[11px] text-secondary px-2 py-0.5 rounded-md bg-white/5 border border-white/10">
-                            <MdCalendarToday size={10} /> Valid till {formatDateIST(pass.valid_date)}
+                            <MdCalendarToday size={10} /> {t("preapValidTill", { date: formatDateIST(pass.valid_date) })}
                           </span>
                         </div>
 
@@ -744,7 +740,7 @@ export default function ResidentPreApproval() {
                             onClick={() => setViewPass(pass)}
                             className="flex items-center justify-center gap-1.5 flex-1 py-1.5 rounded-lg text-xs font-medium border transition-all duration-200 bg-blue-500/10 text-blue-400 border-blue-500/25 hover:bg-blue-500/20"
                           >
-                            <MdVisibility size={13} /> View Pass
+                            <MdVisibility size={13} /> {t("preapViewPass") || "View Pass"}
                           </button>
                           <button
                             onClick={() => handleCopyPass(pass.otp, pass.id)}
@@ -755,7 +751,7 @@ export default function ResidentPreApproval() {
                             }`}
                           >
                             {isCopied ? <MdCheckCircle size={13} /> : <MdContentCopy size={13} />}
-                            {isCopied ? "Copied!" : "Copy Code"}
+                            {isCopied ? t("preapCopied") : t("preapCopyCode")}
                           </button>
                         </div>
                       </div>
@@ -770,7 +766,7 @@ export default function ResidentPreApproval() {
               <div className="flex items-center gap-2 mb-2.5">
                 <MdHistory size={16} className="text-secondary" />
                 <h3 className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
-                  Pass History <span className="text-secondary font-normal">({historyPasses.length})</span>
+                  {t("preapSectionHistory") || "Pass History"} <span className="text-secondary font-normal">({historyPasses.length})</span>
                 </h3>
               </div>
               <div className="grid gap-3 sm:grid-cols-2">
@@ -809,14 +805,14 @@ export default function ResidentPreApproval() {
                           <span className={`text-[10px] px-2 py-0.5 rounded shrink-0 font-medium ${
                             isUsed ? "bg-blue-500/20 text-blue-400" : "bg-red-500/20 text-red-400"
                           }`}>
-                            {isUsed ? "Used" : "Expired"}
+                            {isUsed ? t("preapUsed") || "Used" : t("preapExpired") || "Expired"}
                           </span>
                         </div>
 
                         <div className="flex flex-wrap gap-1.5">
                           {flatLabel && (
                             <span className="flex items-center gap-1 text-[11px] text-secondary px-2 py-0.5 rounded-md bg-white/5 border border-white/10">
-                              <MdHome size={11} /> Flat {flatLabel}
+                              <MdHome size={11} /> {t("rdFlat") || "Flat"} {flatLabel}
                             </span>
                           )}
                           {pass.mobile && (
@@ -851,7 +847,7 @@ export default function ResidentPreApproval() {
       <Modal
         isOpen={!!viewPass}
         onClose={() => setViewPass(null)}
-        title="Gate Pass"
+        title={t("preapGatePass")}
         size="sm"
       >
         {viewPass && (() => {
@@ -883,7 +879,7 @@ export default function ResidentPreApproval() {
                   const flatLabel = flatLabelOf(viewPass);
                   return flatLabel ? (
                     <span className="flex items-center gap-1 text-xs text-secondary px-2.5 py-1 rounded-lg bg-white/5 border border-white/10">
-                      <MdHome size={12} /> Flat {flatLabel}
+                      <MdHome size={12} /> {t("rdFlat") || "Flat"} {flatLabel}
                     </span>
                   ) : null;
                 })()}
@@ -893,7 +889,7 @@ export default function ResidentPreApproval() {
                   </span>
                 )}
                 <span className="flex items-center gap-1 text-xs text-secondary px-2.5 py-1 rounded-lg bg-white/5 border border-white/10">
-                  <MdCalendarToday size={11} /> Valid till {formatDateIST(viewPass.valid_date)}
+                  <MdCalendarToday size={11} /> {t("preapValidTill", { date: formatDateIST(viewPass.valid_date) })}
                 </span>
               </div>
 
@@ -907,7 +903,7 @@ export default function ResidentPreApproval() {
                 }`}
               >
                 {copiedId === viewPass.id ? <MdCheckCircle size={14} /> : <MdContentCopy size={14} />}
-                {copiedId === viewPass.id ? "Copied!" : "Copy Code"}
+                {copiedId === viewPass.id ? t("preapCopied") : t("preapCopyCode")}
               </button>
 
               {/* download buttons */}

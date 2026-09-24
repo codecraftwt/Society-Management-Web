@@ -2,12 +2,14 @@ import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { QRCodeSVG } from "qrcode.react";
 import API from "../../services/api";
+import { useLang } from "../../context/LanguageContext";
 import { IoArrowBackOutline, IoCopyOutline, IoCheckmarkOutline, IoShieldCheckmarkOutline } from "react-icons/io5";
 import { MdReceiptLong, MdQrCodeScanner } from "react-icons/md";
 
 export default function PaymentMethods() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { t } = useLang();
 
   const { id, amount, title, type } = location.state || {};
 
@@ -19,7 +21,7 @@ export default function PaymentMethods() {
 
   useEffect(() => {
     if (!id) {
-      setError("No bill selected");
+      setError(t("payErrorNoBill"));
       setLoading(false);
       return;
     }
@@ -34,10 +36,10 @@ export default function PaymentMethods() {
       if (data.success && data.data) {
         setUpiData(data.data);
       } else {
-        setError(data.message || "Could not load payment details");
+        setError(data.message || t("payErrorLoad"));
       }
     } catch (err) {
-      setError(err.response?.data?.message || "Failed to load payment details");
+      setError(err.response?.data?.message || t("payErrorLoadFail"));
     } finally {
       setLoading(false);
     }
@@ -66,10 +68,10 @@ export default function PaymentMethods() {
           },
         });
       } else {
-        alert(data.message || "Confirmation failed");
+        alert(data.message || t("payErrorConfirm"));
       }
     } catch (err) {
-      alert(err.response?.data?.message || "Something went wrong");
+      alert(err.response?.data?.message || t("payErrorGeneric"));
     } finally {
       setConfirming(false);
     }
@@ -89,12 +91,12 @@ export default function PaymentMethods() {
             color: "var(--text-primary)",
           }}
           onClick={() => navigate(-1)}
-          aria-label="Go back"
+          aria-label={t("back")}
         >
           <IoArrowBackOutline size={18} />
         </button>
         <div className="text-center flex-1 pr-9">
-          <h2 className="text-base font-bold tracking-tight text-primary">Pay Bill</h2>
+          <h2 className="text-base font-bold tracking-tight text-primary">{t("payTitle")}</h2>
         </div>
       </div>
 
@@ -102,14 +104,14 @@ export default function PaymentMethods() {
         <div className="p-8 text-center space-y-3 rounded-2xl border"
           style={{ background: "var(--card-bg)", borderColor: "var(--glass-border)" }}>
           <div className="animate-spin w-7 h-7 border-2 border-accent border-t-transparent rounded-full mx-auto" />
-          <p className="text-xs text-secondary">Generating secure QR code...</p>
+          <p className="text-xs text-secondary">{t("payGenQr")}</p>
         </div>
       ) : error ? (
         <div className="p-6 text-center space-y-3 rounded-2xl border"
           style={{ background: "var(--card-bg)", borderColor: "var(--glass-border)" }}>
           <p className="text-xs text-red-400 font-semibold">{error}</p>
           <button onClick={fetchUpiData} className="btn-primary text-xs px-4 py-2 mx-auto">
-            Retry
+            {t("retry")}
           </button>
         </div>
       ) : (
@@ -138,9 +140,9 @@ export default function PaymentMethods() {
               </div>
               <div className="min-w-0">
                 <p className="text-xs font-semibold text-primary truncate">
-                  {title || "Maintenance Bill"}
+                  {title || t("payMaintenanceBill")}
                 </p>
-                <p className="text-[10px] text-secondary">Total Payable</p>
+                <p className="text-[10px] text-secondary">{t("payTotalPayable")}</p>
               </div>
             </div>
             <div className="text-right shrink-0">
@@ -157,12 +159,12 @@ export default function PaymentMethods() {
                 <QRCodeSVG value={upiData.upiLink} size={148} bgColor="#ffffff" fgColor="#0f172a" />
               ) : (
                 <div className="w-[148px] h-[148px] flex items-center justify-center text-gray-400 text-xs">
-                  QR unavailable
+                  {t("payQrUnavailable")}
                 </div>
               )}
             </div>
             <p className="text-[11px] font-semibold text-secondary mt-2 flex items-center gap-1">
-              <MdQrCodeScanner size={13} className="text-accent" /> Scan with GPay, PhonePe, Paytm or BHIM
+              <MdQrCodeScanner size={13} className="text-accent" /> {t("payScanHint")}
             </p>
           </div>
 
@@ -175,7 +177,7 @@ export default function PaymentMethods() {
             }}
           >
             <div className="min-w-0 flex-1">
-              <p className="text-[10px] text-secondary uppercase font-bold tracking-wider">UPI ID</p>
+              <p className="text-[10px] text-secondary uppercase font-bold tracking-wider">{t("payUpiId")}</p>
               <p className="font-mono font-bold text-xs text-primary truncate">
                 {upiData?.upiId || "society@upi"}
               </p>
@@ -191,7 +193,7 @@ export default function PaymentMethods() {
               }}
             >
               {copied ? <IoCheckmarkOutline size={13} /> : <IoCopyOutline size={13} />}
-              <span>{copied ? "Copied" : "Copy"}</span>
+              <span>{copied ? t("payCopied") : t("payCopy")}</span>
             </button>
           </div>
 
@@ -202,13 +204,13 @@ export default function PaymentMethods() {
             disabled={confirming}
             className="btn-primary w-full justify-center h-10 text-xs font-bold rounded-xl shadow-md"
           >
-            {confirming ? "Verifying Payment..." : "I Have Completed Payment"}
+            {confirming ? t("payVerifying") : t("payCompleted")}
           </button>
 
           {/* Trust badge */}
           <div className="flex items-center justify-center gap-1.5 text-[11px] text-secondary pt-1">
             <IoShieldCheckmarkOutline size={14} className="text-green-400" />
-            <span>100% Secure & Verified Payment</span>
+            <span>{t("paySecure")}</span>
           </div>
         </div>
       )}

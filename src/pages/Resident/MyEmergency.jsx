@@ -310,7 +310,7 @@ export default function MyEmergency() {
             textTransform: "uppercase", letterSpacing: "0.06em",
             display: "flex", alignItems: "center", gap: 4,
           }}>
-            <MdHome size={12} /> Select Unit{" "}
+            <MdHome size={12} /> {t("selectUnit")}{" "}
             <span style={{ color: "var(--reject-color)" }}>*</span>
           </label>
           <Select

@@ -5,12 +5,14 @@ import { useLang } from "../../context/LanguageContext";
 import {
   MdDashboard,
   MdSend,
-  MdCampaign,
+  MdOutlineCampaign,
   MdCleaningServices,
+  MdOutlineQrCodeScanner,
   MdQrCodeScanner,
   MdAccountBalanceWallet,
   MdReceiptLong,
-  MdInventory2,
+  MdOutlineReceiptLong,
+  MdOutlineInventory2,
   MdApartment,
   MdCheckCircle,
   MdChevronRight,
@@ -168,10 +170,10 @@ export default function ResidentProfile() {
   // Time-based greeting helper
   const greeting = useMemo(() => {
     const hour = new Date().getHours();
-    if (hour < 12) return "Good Morning";
-    if (hour < 17) return "Good Afternoon";
-    return "Good Evening";
-  }, []);
+    if (hour < 12) return t("rpGreetingMorning");
+    if (hour < 17) return t("rpGreetingAfternoon");
+    return t("rpGreetingEvening");
+  }, [t]);
 
   // Current active flat object
   const currentFlat = useMemo(() => {
@@ -204,11 +206,11 @@ export default function ResidentProfile() {
   // Handle Quick Pre-Approval Submit
   const handleCreatePreApproval = async (e) => {
     e?.preventDefault();
-    const nameErr = getTitleError(preApprovalModal.visitorName, "Visitor name");
+    const nameErr = getTitleError(preApprovalModal.visitorName, t("rpVisitorNameField"));
     if (nameErr) { toast.error(nameErr); return; }
 
     if (preApprovalModal.visitorPhone.trim()) {
-      const phoneErr = getMobileError(preApprovalModal.visitorPhone, "Phone");
+      const phoneErr = getMobileError(preApprovalModal.visitorPhone, t("rpPhone"));
       if (phoneErr) { toast.error(phoneErr); return; }
     }
 
@@ -229,7 +231,9 @@ export default function ResidentProfile() {
         notes: preApprovalModal.notes.trim() || undefined,
       });
 
-      toast.success(`🎉 ${preApprovalModal.purpose} entry pre-approved successfully!`);
+      const purposeLabel = getPurposeLabel(preApprovalModal.purpose);
+
+      toast.success(t("rpPreApprovalSuccess", { purpose: purposeLabel }));
       setPreApprovalModal({
         isOpen: false,
         purpose: "GUEST",
@@ -242,7 +246,7 @@ export default function ResidentProfile() {
       });
       loadDashboardData(true);
     } catch (err) {
-      toast.error(err?.response?.data?.message || "Failed to create pre-approval");
+      toast.error(err?.response?.data?.message || t("rpPreApprovalFailed"));
       setPreApprovalModal((p) => ({ ...p, submitting: false }));
     }
   };
@@ -251,61 +255,65 @@ export default function ResidentProfile() {
   const coreActionCards = [
     {
       id: "notices",
-      title: "Notices",
-      subtitle: latestNotices.length > 0 ? `${latestNotices.length} Active Bulletins` : "Official Announcements",
-      badge: latestNotices.length > 0 ? `${latestNotices.length} New` : "Updated",
+      title: t("menuNotices"),
+      subtitle: latestNotices.length > 0 ? t("rpActiveBulletins", { count: latestNotices.length }) : t("rpOfficialAnnouncements"),
+      badge: latestNotices.length > 0 ? t("rpNew", { count: latestNotices.length }) : t("rpUpdated"),
       badgeClass: "bg-blue-500/20 text-blue-400 border-blue-500/30",
-      icon: MdCampaign,
+      icon: MdOutlineCampaign,
       iconColor: "text-blue-400",
       glowColor: "from-blue-600/25 via-indigo-600/15 to-purple-600/5",
       borderColor: "border-blue-500/30 hover:border-blue-400",
-      ctaText: "Open Notice Board",
+      ctaText: t("rpOpenNoticeBoard"),
       onClick: () => navigate(`${base}/notices`),
     },
     {
       id: "bills",
-      title: "Bills",
-      subtitle: pendingBills.length > 0 ? `₹${totalPendingAmount.toLocaleString("en-IN")} Total Due` : "All Dues Cleared",
-      badge: pendingBills.length > 0 ? `${pendingBills.length} Due` : "Zero Dues",
+      title: t("menuBills"),
+      subtitle: pendingBills.length > 0 ? t("rpTotalDue", { amount: totalPendingAmount.toLocaleString("en-IN") }) : t("rpAllDuesCleared"),
+      badge: pendingBills.length > 0 ? t("rpDue", { count: pendingBills.length }) : t("rpZeroDues"),
       badgeClass: pendingBills.length > 0 ? "bg-rose-500/20 text-rose-400 border-rose-500/30" : "bg-emerald-500/20 text-emerald-400 border-emerald-500/30",
-      icon: MdReceiptLong,
+      icon: MdOutlineReceiptLong,
       iconColor: "text-rose-400",
       glowColor: "from-rose-600/25 via-pink-600/15 to-purple-600/5",
       borderColor: "border-rose-500/30 hover:border-rose-400",
-      ctaText: pendingBills.length > 0 ? "Pay Dues Now" : "View Payment History",
+      ctaText: pendingBills.length > 0 ? t("rpPayDuesNow") : t("rpViewPaymentHistory"),
       onClick: () => navigate(`${base}/bills`),
     },
     {
       id: "gatepass",
-      title: "Gate pass",
-      subtitle: "Pre-Approve Guests, Cabs & Deliveries",
-      badge: "Fast Track",
+      title: t("rdCardGatePass"),
+      subtitle: t("rpGatePassSub"),
+      badge: t("rpFastTrack"),
       badgeClass: "bg-cyan-500/20 text-cyan-300 border-cyan-500/30",
-      icon: MdQrCodeScanner,
+      icon: MdOutlineQrCodeScanner,
       iconColor: "text-cyan-400",
       glowColor: "from-cyan-600/25 via-teal-600/15 to-blue-600/5",
       borderColor: "border-cyan-500/30 hover:border-cyan-400",
-      ctaText: "Generate Entry Pass",
+      ctaText: t("rpGenerateEntryPass"),
       onClick: () => navigate(`${base}/preapproval`),
     },
     {
       id: "collection",
-      title: "Collection",
-      subtitle: pendingParcels.length > 0 ? `${pendingParcels.length} Parcels Waiting Pickup` : "Smart Delivery Locker",
-      badge: pendingParcels.length > 0 ? `${pendingParcels.length} Ready` : "No Deliveries",
+      title: t("rpCardCollectionTitle"),
+      subtitle: pendingParcels.length > 0 ? t("rpParcelsWaiting", { count: pendingParcels.length }) : t("rpCollectionSub"),
+      badge: pendingParcels.length > 0 ? t("rpReady", { count: pendingParcels.length }) : t("rpNoDeliveries"),
       badgeClass: pendingParcels.length > 0 ? "bg-amber-500/20 text-amber-400 border-amber-500/30" : "bg-card-inner-bg text-secondary border-glass-border",
-      icon: MdInventory2,
+      icon: MdOutlineInventory2,
       iconColor: "text-amber-400",
       glowColor: "from-amber-600/25 via-orange-600/15 to-yellow-600/5",
       borderColor: "border-amber-500/30 hover:border-amber-400",
-      ctaText: "View Parcel Box",
+      ctaText: t("rpViewParcelBox"),
       onClick: () => navigate(`${base}/my-collection`),
     },
   ];
 
   if (loading) return <DashboardSkeleton />;
 
-  const societyName = profile?.Society?.name || currentFlat?.society_name || "Society Living Hub";
+  // Localized label for pre-approval purposes
+  const getPurposeLabel = (p) =>
+    t({ GUEST: "preapPurposeGuest", CAB: "preapPurposeCab", DELIVERY: "preapPurposeDelivery" }[p] || "preapPurposeGuest");
+
+  const societyName = profile?.Society?.name || currentFlat?.society_name || t("rpSocietyFallback");
 
   return (
     <div className="ge-root rp-dash space-y-6 animate-fadeIn pb-14">
@@ -325,12 +333,12 @@ export default function ResidentProfile() {
               </span>
               <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-accent-soft text-accent border border-accent/30 flex items-center gap-1">
                 <MdVerified size={12} />
-                <span>{profile?.resident_type || profile?.role || "Resident"}</span>
+                <span>{profile?.resident_type || profile?.role || t("rdRoleBadge")}</span>
               </span>
             </div>
 
             <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-primary tracking-tight">
-              {profile?.name || "Resident"}
+              {profile?.name || t("rdDefaultName")}
             </h1>
 
             <div className="flex items-center gap-2 flex-wrap pt-1">
@@ -343,8 +351,8 @@ export default function ResidentProfile() {
                 <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-card-inner-bg/90 border border-glass-border text-xs font-black text-primary shadow-sm">
                   <MdHome size={16} className="text-cyan-400" />
                   <span>
-                    {currentFlat.block_name ? `Block ${currentFlat.block_name} · ` : ""}
-                    Flat {currentFlat.flat_number || "—"}
+                    {currentFlat.block_name ? `${t("rdBlock")} ${currentFlat.block_name} · ` : ""}
+                    {t("rdFlat")} {currentFlat.flat_number || "—"}
                   </span>
                 </div>
               )}
@@ -354,7 +362,7 @@ export default function ResidentProfile() {
             {flats.length > 1 && (
               <div className="pt-2">
                 <p className="text-[10.5px] font-bold uppercase tracking-wider text-secondary mb-1.5">
-                  Your Properties:
+                  {t("rpYourProperties")}
                 </p>
                 <div className="flex items-center gap-2 overflow-x-auto pb-1 max-w-full">
                   {flats.map((flat) => {
@@ -392,7 +400,7 @@ export default function ResidentProfile() {
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
               </span>
-              <span className="text-xs font-black text-primary tracking-wide">Community Active</span>
+              <span className="text-xs font-black text-primary tracking-wide">{t("rpCommunityActive")}</span>
             </div>
 
             {/* Quick Action Buttons */}
@@ -401,10 +409,10 @@ export default function ResidentProfile() {
                 type="button"
                 onClick={() => navigate("/resident/bills")}
                 className="btn px-4 py-2.5 rounded-2xl bg-accent/10 hover:bg-accent/20 border border-accent/30 text-accent font-black text-xs transition active:scale-95 cursor-pointer flex items-center gap-1.5"
-                title="View Bills & Payments"
+                title={t("rpViewBillsPayments")}
               >
                 <MdReceiptLong size={16} />
-                <span>My Dues</span>
+                <span>{t("rpMyDues")}</span>
               </button>
 
               <button
@@ -413,7 +421,7 @@ export default function ResidentProfile() {
                 className={`p-2.5 rounded-2xl bg-card-inner-bg border border-glass-border text-secondary hover:text-primary hover:border-accent/40 hover:bg-card transition active:scale-95 cursor-pointer shadow-sm ${
                   refreshing ? "animate-spin text-accent" : ""
                 }`}
-                title="Refresh dashboard data"
+                title={t("rpRefreshDashboard")}
               >
                 <MdRefresh size={19} />
               </button>
@@ -428,10 +436,10 @@ export default function ResidentProfile() {
           <div className="flex items-center gap-2.5">
             <div className="w-2 h-5 bg-accent rounded-full shadow-sm shadow-accent/50" />
             <h2 className="text-base font-black text-primary tracking-tight">
-              Quick Services & Action Hub
+              {t("rpQuickServicesTitle")}
             </h2>
           </div>
-          <span className="text-xs text-secondary font-bold">4 Essential Hubs</span>
+          <span className="text-xs text-secondary font-bold">{t("rpEssentialHubs", { count: 4 })}</span>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
@@ -484,7 +492,7 @@ export default function ResidentProfile() {
           <div className="flex items-center gap-2.5">
             <div className="w-2 h-5 bg-teal-400 rounded-full shadow-sm shadow-teal-400/50" />
             <h2 className="text-base font-black text-primary tracking-tight">
-              Daily Help & Domestic Staff
+              {t("rpDailyHelpTitle")}
             </h2>
           </div>
           <button
@@ -492,7 +500,7 @@ export default function ResidentProfile() {
             onClick={() => navigate(`${base}/my-household`)}
             className="text-xs font-bold text-accent hover:underline flex items-center gap-1"
           >
-            <span>Manage All Staff</span>
+            <span>{t("rpManageAllStaff")}</span>
             <MdArrowForward size={15} />
           </button>
         </div>
@@ -504,9 +512,9 @@ export default function ResidentProfile() {
                 <MdCleaningServices size={28} />
               </div>
               <div>
-                <h4 className="text-base font-bold text-primary">Track Your Maid, Cook & Drivers</h4>
+                <h4 className="text-base font-bold text-primary">{t("rpTrackStaffTitle")}</h4>
                 <p className="text-xs text-secondary mt-0.5 max-w-lg">
-                  Add domestic staff to your household to monitor real-time gate entry and exit timestamps securely.
+                  {t("rpTrackStaffSub")}
                 </p>
               </div>
             </div>
@@ -517,7 +525,7 @@ export default function ResidentProfile() {
               className="py-2.5 px-5 rounded-xl text-xs font-bold text-white bg-linear-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 shadow-md shadow-teal-600/25 transition active:scale-95 cursor-pointer shrink-0 flex items-center gap-2"
             >
               <MdAdd size={17} />
-              <span>Add Staff Member</span>
+              <span>{t("rpAddStaff")}</span>
             </button>
           </div>
         ) : (
@@ -545,7 +553,7 @@ export default function ResidentProfile() {
                     <div className="min-w-0">
                       <p className="text-xs sm:text-sm font-bold text-primary truncate">{help.name}</p>
                       <p className="text-[10.5px] font-semibold text-secondary capitalize truncate">
-                        {help.member_type || help.role || "Domestic Staff"}
+                        {help.member_type || help.role || t("rpDomesticStaff")}
                       </p>
                     </div>
                   </div>
@@ -557,7 +565,7 @@ export default function ResidentProfile() {
                         : "bg-card-inner-bg text-secondary border border-glass-border"
                     }`}
                   >
-                    {isInside ? "🟢 Inside" : "⚪ Off-Duty"}
+                    {isInside ? t("rpInside") : t("rpOffDuty")}
                   </span>
                 </div>
               );
@@ -572,7 +580,7 @@ export default function ResidentProfile() {
           <div className="flex items-center gap-2.5">
             <div className="w-2 h-5 bg-cyan-400 rounded-full shadow-sm shadow-cyan-400/50" />
             <h2 className="text-base font-black text-primary tracking-tight">
-              Visitor Access & Pre-Approvals
+              {t("rpVisitorAccessTitle")}
             </h2>
           </div>
 
@@ -595,7 +603,7 @@ export default function ResidentProfile() {
               className="py-2 px-3.5 rounded-xl text-xs font-bold text-cyan-400 bg-cyan-500/10 border border-cyan-500/30 hover:bg-cyan-500/20 transition active:scale-95 cursor-pointer flex items-center gap-1.5 shadow-sm"
             >
               <MdPerson size={15} />
-              <span>+ Pre-Approve Guest</span>
+              <span>{t("rpPreApproveGuest")}</span>
             </button>
 
             <button
@@ -615,7 +623,7 @@ export default function ResidentProfile() {
               className="py-2 px-3.5 rounded-xl text-xs font-bold text-amber-400 bg-amber-500/10 border border-amber-500/30 hover:bg-amber-500/20 transition active:scale-95 cursor-pointer flex items-center gap-1.5 shadow-sm"
             >
               <MdLocalTaxi size={15} />
-              <span>+ Cab</span>
+              <span>{t("rpAddCab")}</span>
             </button>
 
             <button
@@ -635,7 +643,7 @@ export default function ResidentProfile() {
               className="py-2 px-3.5 rounded-xl text-xs font-bold text-purple-400 bg-purple-500/10 border border-purple-500/30 hover:bg-purple-500/20 transition active:scale-95 cursor-pointer flex items-center gap-1.5 shadow-sm"
             >
               <MdLocalShipping size={15} />
-              <span>+ Delivery</span>
+              <span>{t("rpAddDelivery")}</span>
             </button>
 
             <button
@@ -643,7 +651,7 @@ export default function ResidentProfile() {
               onClick={() => navigate(`${base}/visitors`)}
               className="text-xs font-bold text-accent hover:underline ml-1"
             >
-              Visitor Logs →
+              {t("rpVisitorLogs")}
             </button>
           </div>
         </div>
@@ -652,9 +660,9 @@ export default function ResidentProfile() {
         {visitors.length === 0 ? (
           <div className="p-8 rounded-3xl border border-glass-border bg-card text-center text-secondary shadow-sm">
             <MdQrCodeScanner size={32} className="mx-auto mb-2 opacity-35 text-cyan-400" />
-            <p className="text-sm font-bold text-primary">No Recent Visitor Activity</p>
+            <p className="text-sm font-bold text-primary">{t("rpNoRecentVisitors")}</p>
             <p className="text-xs text-secondary mt-1 max-w-md mx-auto">
-              Pre-approve expected visitors with the quick action buttons above for instant, hassle-free security check-in.
+              {t("rpNoRecentVisitorsSub")}
             </p>
           </div>
         ) : (
@@ -682,7 +690,7 @@ export default function ResidentProfile() {
                     </div>
 
                     <div className="min-w-0">
-                      <p className="text-xs sm:text-sm font-bold text-primary truncate">{v.name || v.visitor_name || "Visitor"}</p>
+                      <p className="text-xs sm:text-sm font-bold text-primary truncate">{v.name || v.visitor_name || t("vrVisitor")}</p>
                       <p className="text-[10.5px] text-secondary font-medium truncate">
                         {v.vehicle_number ? `🚗 ${v.vehicle_number}` : type}
                       </p>
@@ -721,15 +729,15 @@ export default function ResidentProfile() {
         <Modal
           isOpen={preApprovalModal.isOpen}
           onClose={() => setPreApprovalModal((p) => ({ ...p, isOpen: false }))}
-          title={`Pre-Approve ${preApprovalModal.purpose} Entry`}
-          subtitle="Generate instant gate pass for seamless security check-in"
+          title={t("rpPreApproveModalTitle", { purpose: getPurposeLabel(preApprovalModal.purpose) })}
+          subtitle={t("rpPreApproveModalSub")}
           icon={MdQrCodeScanner}
           size="md"
         >
           <form onSubmit={handleCreatePreApproval} className="space-y-4 pt-1">
             {/* Purpose Selector */}
             <div>
-              <label className="block text-xs font-bold text-primary mb-1.5">Entry Purpose</label>
+              <label className="block text-xs font-bold text-primary mb-1.5">{t("rpEntryPurpose")}</label>
               <div className="grid grid-cols-3 gap-2">
                 {["GUEST", "CAB", "DELIVERY"].map((type) => (
                   <button
@@ -745,7 +753,7 @@ export default function ResidentProfile() {
                     {type === "GUEST" && <MdPerson size={14} />}
                     {type === "CAB" && <MdLocalTaxi size={14} />}
                     {type === "DELIVERY" && <MdLocalShipping size={14} />}
-                    <span>{type}</span>
+                    <span>{getPurposeLabel(type)}</span>
                   </button>
                 ))}
               </div>
@@ -755,17 +763,17 @@ export default function ResidentProfile() {
             <div>
               <label className="block text-xs font-bold text-primary mb-1">
                 {preApprovalModal.purpose === "CAB"
-                  ? "Cab Service / Driver Name"
+                  ? t("rpCabDriverName")
                   : preApprovalModal.purpose === "DELIVERY"
-                  ? "Delivery Partner (e.g. Amazon, Zomato)"
-                  : "Guest Full Name"}{" "}
+                  ? t("rpDeliveryPartner")
+                  : t("rpGuestFullName")}{" "}
                 <span className="text-cyan-400">*</span>
               </label>
               <input
                 type="text"
                 required
                 className="input w-full py-2.5 px-3.5 rounded-xl bg-card-inner-bg border-glass-border text-sm font-semibold text-primary"
-                placeholder="e.g. John Doe / Uber / Swiggy"
+                placeholder={t("rpNamePlaceholder")}
                 value={preApprovalModal.visitorName}
                 onChange={(e) => setPreApprovalModal((p) => ({ ...p, visitorName: e.target.value }))}
                 autoFocus
@@ -775,22 +783,22 @@ export default function ResidentProfile() {
             {/* Phone & Vehicle Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-bold text-primary mb-1">Contact Phone (Optional)</label>
+                <label className="block text-xs font-bold text-primary mb-1">{t("rpContactPhoneOptional")}</label>
                 <input
                   type="tel"
                   className="input w-full py-2.5 px-3.5 rounded-xl bg-card-inner-bg border-glass-border text-sm font-semibold text-primary"
-                  placeholder="e.g. 9876543210"
+                  placeholder={t("preapMobilePlaceholder")}
                   value={preApprovalModal.visitorPhone}
                   onChange={(e) => setPreApprovalModal((p) => ({ ...p, visitorPhone: e.target.value }))}
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-primary mb-1">Vehicle Plate (Optional)</label>
+                <label className="block text-xs font-bold text-primary mb-1">{t("rpVehiclePlateOptional")}</label>
                 <input
                   type="text"
                   className="input w-full py-2.5 px-3.5 rounded-xl bg-card-inner-bg border-glass-border text-sm font-bold uppercase font-mono text-primary"
-                  placeholder="e.g. MH02AB1234"
+                  placeholder={t("preapVehiclePlaceholder")}
                   value={preApprovalModal.vehicleNumber}
                   onChange={(e) => setPreApprovalModal((p) => ({ ...p, vehicleNumber: e.target.value.toUpperCase() }))}
                 />
@@ -800,7 +808,7 @@ export default function ResidentProfile() {
             {/* Expected Date & Destination */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-bold text-primary mb-1">Expected Date</label>
+                <label className="block text-xs font-bold text-primary mb-1">{t("rpExpectedDate")}</label>
                 <input
                   type="date"
                   className="input w-full py-2.5 px-3.5 rounded-xl bg-card-inner-bg border-glass-border text-xs font-semibold text-primary"
@@ -810,22 +818,25 @@ export default function ResidentProfile() {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-primary mb-1">Destination Flat</label>
+                <label className="block text-xs font-bold text-primary mb-1">{t("rpDestinationFlat")}</label>
                 <div className="py-2.5 px-3.5 rounded-xl bg-card-inner-bg/80 border border-glass-border text-xs font-bold text-accent">
                   {currentFlat
-                    ? `Flat ${currentFlat.flat_number} (${currentFlat.block_name || "Main"})`
-                    : "Assigned Flat"}
+                    ? t("rpFlatWithBlock", {
+                        number: currentFlat.flat_number,
+                        block: currentFlat.block_name || t("rpMain"),
+                      })
+                    : t("rpAssignedFlat")}
                 </div>
               </div>
             </div>
 
             {/* Notes */}
             <div>
-              <label className="block text-xs font-bold text-primary mb-1">Gate Instructions / Notes</label>
+              <label className="block text-xs font-bold text-primary mb-1">{t("rpGateNotes")}</label>
               <textarea
                 rows={2}
                 className="input w-full py-2 px-3.5 rounded-xl bg-card-inner-bg border-glass-border text-xs font-medium text-primary resize-none"
-                placeholder="e.g. Allow entry without calling, leave parcel at door..."
+                placeholder={t("rpGateNotesPlaceholder")}
                 value={preApprovalModal.notes}
                 onChange={(e) => setPreApprovalModal((p) => ({ ...p, notes: e.target.value }))}
               />
@@ -837,14 +848,16 @@ export default function ResidentProfile() {
                 onClick={() => setPreApprovalModal((p) => ({ ...p, isOpen: false }))}
                 className="flex-1 py-2.5 px-4 rounded-xl text-xs font-semibold border border-glass-border bg-card-inner-bg hover:bg-white/10 text-secondary transition cursor-pointer"
               >
-                Cancel
+                {t("cancel")}
               </button>
               <button
                 type="submit"
                 disabled={preApprovalModal.submitting}
                 className="flex-2 py-2.5 px-4 rounded-xl font-bold text-xs sm:text-sm text-white bg-linear-to-r from-accent via-purple-600 to-indigo-600 hover:from-accent-light hover:to-indigo-500 shadow-md shadow-accent/25 transition active:scale-95 disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2"
               >
-                {preApprovalModal.submitting ? "Approving..." : `✓ Authorize ${preApprovalModal.purpose} Entry`}
+                {preApprovalModal.submitting
+                  ? t("rpApproving")
+                  : t("rpAuthorizeEntry", { purpose: getPurposeLabel(preApprovalModal.purpose) })}
               </button>
             </div>
           </form>

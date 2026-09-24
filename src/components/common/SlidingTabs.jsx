@@ -2,26 +2,28 @@ import { useCallback, useLayoutEffect, useRef, useState } from "react";
 import "./SlidingTabs.css";
 
 export default function SlidingTabs({
-  items = [],
+  items,
+  tabs,
   value,
   onChange,
   fullWidth = false,
   className = "",
 }) {
+  const tabList = items ?? tabs ?? [];
   const listRef = useRef(null);
   const itemRefs = useRef([]);
   const [indicator, setIndicator] = useState({ left: 4, width: 0 });
 
   const updateIndicator = useCallback(() => {
     const list = listRef.current;
-    const index = items.findIndex((item) => item.id === value);
+    const index = tabList.findIndex((item) => item.id === value);
     const el = itemRefs.current[index];
     if (!list || !el) return;
     setIndicator({
       left: el.offsetLeft,
       width: el.offsetWidth,
     });
-  }, [items, value]);
+  }, [tabList, value]);
 
   useLayoutEffect(() => {
     updateIndicator();
@@ -38,7 +40,7 @@ export default function SlidingTabs({
       ro.disconnect();
       window.removeEventListener("resize", updateIndicator);
     };
-  }, [updateIndicator, items.length]);
+  }, [updateIndicator, tabList.length]);
 
   return (
     <div
@@ -54,7 +56,7 @@ export default function SlidingTabs({
           opacity: indicator.width ? 1 : 0,
         }}
       />
-      {items.map((item, index) => {
+      {tabList.map((item, index) => {
         const active = item.id === value;
         return (
           <button

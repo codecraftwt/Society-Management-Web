@@ -34,10 +34,14 @@ const VEHICLE_ICON = {
   CAR:  <MdDirectionsCarFilled style={{ fontSize: 20, color: "var(--accent)" }} />,
   BIKE: <MdTwoWheeler          style={{ fontSize: 20, color: "var(--acct-violet, var(--accent))" }} />,
 };
-const TYPE_LABEL = { CAR: "Car 🚗", BIKE: "Bike 🏍️" };
+const vehTypeLabel = (t, type) => {
+  const base = type === "CAR" ? t("vehTypeCar") : type === "BIKE" ? t("vehTypeBike") : type;
+  const emoji = type === "CAR" ? " 🚗" : type === "BIKE" ? " 🏍️" : "";
+  return `${base}${emoji}`;
+};
 
 /* ── Allocated Slot Card ── */
-function AllocatedSlotCard({ slot }) {
+function AllocatedSlotCard({ slot, t }) {
   const isCAR = slot.vehicle_type === "CAR";
   const ac    = isCAR ? "var(--accent)" : "var(--acct-violet)";
   const abg   = isCAR ? "var(--accent-soft)"  : "rgba(var(--acct-violet-rgb),0.12)";
@@ -49,7 +53,7 @@ function AllocatedSlotCard({ slot }) {
         <div style={{ display:"flex", alignItems:"center", gap:8, padding:"10px 16px", borderBottom:"1px solid var(--glass-border)", background:"var(--card-inner-bg)" }}>
           <MdApartment style={{ color:"var(--text-secondary)", fontSize:15 }} />
           <span style={{ fontSize:12, color:"var(--text-secondary)", fontWeight:700, letterSpacing:"0.04em" }}>
-            Flat {slot.flat.flat_number}{slot.flat.floor_id != null && ` · Floor ${slot.flat.floor_id}`}
+            {t("rdFlat")} {slot.flat.flat_number}{slot.flat.floor_id != null && <> · {t("vehFloor", { floor: slot.flat.floor_id })}</>}
           </span>
         </div>
       )}
@@ -65,8 +69,8 @@ function AllocatedSlotCard({ slot }) {
               {slot.slot_number}
             </p>
             <p style={{ margin:"4px 0 0", fontSize:12, color:"var(--text-secondary)", fontWeight:600 }}>
-              {TYPE_LABEL[slot.vehicle_type] || slot.vehicle_type}
-              {slot.parking_floor && <> &nbsp;·&nbsp; Level {slot.parking_floor}</>}
+              {vehTypeLabel(t, slot.vehicle_type)}
+              {slot.parking_floor && <> &nbsp;·&nbsp; {t("vehLevel", { level: slot.parking_floor })}</>}
             </p>
             {slot.linked_vehicle ? (
   <p
@@ -97,7 +101,7 @@ function AllocatedSlotCard({ slot }) {
   </p>
 ) : (
               <p style={{ margin:"4px 0 0", fontSize:11, color:"var(--accent)", fontWeight:600 }}>
-                No vehicle linked yet — add a vehicle to claim this slot
+                {t("vehNoLinkedYet")}
               </p>
             )}
           </div>
@@ -115,7 +119,7 @@ function AllocatedSlotCard({ slot }) {
             color: slot.parking_type === "DEFAULT" ? "var(--approve-color)" : "var(--approval-color)",
             border: `1px solid ${slot.parking_type === "DEFAULT" ? "var(--approve-border)" : "var(--approval-border)"}`,
           }}>
-            {slot.parking_type === "DEFAULT" ? "Default" : "Extra"}
+            {slot.parking_type === "DEFAULT" ? t("vehDefault") : t("vehExtra")}
           </span>
           {/* Occupancy badge */}
           <span style={{
@@ -124,7 +128,7 @@ function AllocatedSlotCard({ slot }) {
             color: slot.linked_vehicle ? "var(--accent)" : "var(--text-secondary)",
             border: `1px solid ${slot.linked_vehicle ? "rgba(var(--acct-purple-rgb),0.28)" : "var(--glass-border)"}`,
           }}>
-            {slot.linked_vehicle ? "Occupied" : "Unlinked"}
+            {slot.linked_vehicle ? t("vehOccupied") : t("vehUnlinked")}
           </span>
         </div>
       </div>
@@ -133,12 +137,12 @@ function AllocatedSlotCard({ slot }) {
 }
 
 /* ── Status badge for parking requests ── */
-function ReqStatusBadge({ status }) {
+function ReqStatusBadge({ status, t }) {
   const cfg = {
-    PENDING:   { label:"Pending",   color:"var(--approval-color)", bg:"var(--approval-bg)",  border:"var(--approval-border)"  },
-    APPROVED:  { label:"Approved",  color:"var(--approve-color)", bg:"var(--approve-bg)",  border:"var(--approve-border)"  },
-    REJECTED:  { label:"Rejected",  color:"var(--reject-color)", bg:"var(--reject-bg)", border:"var(--reject-border)" },
-    COMPLETED: { label:"Completed", color:"var(--accent)", bg:"var(--accent-soft)", border:"rgba(var(--acct-purple-rgb),0.28)" },
+    PENDING:   { label:t("parkStatusPending"),   color:"var(--approval-color)", bg:"var(--approval-bg)",  border:"var(--approval-border)"  },
+    APPROVED:  { label:t("parkStatusApproved"),  color:"var(--approve-color)", bg:"var(--approve-bg)",  border:"var(--approve-border)"  },
+    REJECTED:  { label:t("parkStatusRejected"),  color:"var(--reject-color)", bg:"var(--reject-bg)", border:"var(--reject-border)" },
+    COMPLETED: { label:t("parkStatusCompleted"), color:"var(--accent)", bg:"var(--accent-soft)", border:"rgba(var(--acct-purple-rgb),0.28)" },
   }[status] || { label:status, color:"#A39EB2", bg:"rgba(163,158,178,0.10)", border:"rgba(163,158,178,0.22)" };
 
   return (
@@ -149,7 +153,7 @@ function ReqStatusBadge({ status }) {
 }
 
 /* ── Slot Picker Option ── */
-function SlotPickerOption({ slot, isSelected, isOccupied, onSelect }) {
+function SlotPickerOption({ slot, isSelected, isOccupied, onSelect, t }) {
   const isDefault = slot.parking_type === "DEFAULT";
 
   return (
@@ -209,7 +213,7 @@ function SlotPickerOption({ slot, isSelected, isOccupied, onSelect }) {
           </p>
           {slot.parking_floor != null && (
             <p style={{ margin: "2px 0 0", fontSize: 11, color: "var(--text-secondary)", fontWeight: 600 }}>
-              Level {slot.parking_floor}
+              {t("vehLevel", { level: slot.parking_floor })}
             </p>
           )}
         </div>
@@ -224,7 +228,7 @@ function SlotPickerOption({ slot, isSelected, isOccupied, onSelect }) {
           color: isDefault ? "var(--approve-color)" : "var(--approval-color)",
           border: `1px solid ${isDefault ? "var(--approve-border)" : "var(--approval-border)"}`,
         }}>
-          {isDefault ? "Default" : "Extra"}
+          {isDefault ? t("vehDefault") : t("vehExtra")}
         </span>
 
         {/* Available / Occupied */}
@@ -234,7 +238,7 @@ function SlotPickerOption({ slot, isSelected, isOccupied, onSelect }) {
           color: isOccupied ? "var(--reject-color)" : "var(--approve-color)",
           border: `1px solid ${isOccupied ? "var(--reject-border)" : "var(--approve-border)"}`,
         }}>
-          {isOccupied ? "Occupied" : "Available"}
+          {isOccupied ? t("vehOccupied") : t("vehAvailable")}
         </span>
       </div>
     </button>
@@ -390,14 +394,14 @@ export default function MyVehicles() {
     setErrorMsg("");
 
     if (myFlats.length > 1 && !form.flat_id) {
-      setErrorMsg("Please select which flat this vehicle belongs to.");
+      setErrorMsg(t("vehErrSelectFlat"));
       return;
     }
 
     // If free slots exist the resident must make an explicit choice —
     // either pick one or deliberately choose "Request New Extra Slot".
     if (availableSlots.length > 0 && selectedSlotId === null && hasAnyFreeSlot) {
-      setErrorMsg("Please select a parking slot, or choose 'Request New Extra Slot' to ask the admin.");
+      setErrorMsg(t("vehErrSelectSlot"));
       return;
     }
 
@@ -435,19 +439,15 @@ export default function MyVehicles() {
       if (slotIdToLink !== null) {
         // Resident chose a specific slot → it is linked immediately, no admin request.
         const linkedSlot = availableSlots.find(s => s.id === slotIdToLink);
-        setSuccessMsg(
-          `${baseVerb} and linked to slot ${linkedSlot?.slot_number ?? slotIdToLink}!`
-        );
+        setSuccessMsg(t("parkSuccessLinked", { slot: linkedSlot?.slot_number ?? slotIdToLink }));
       } else if (vehicleRes.data?.free_slot) {
         // Backend found an unlinked free pre-assigned slot — surface it.
-        setSuccessMsg(
-          `${baseVerb}! Free slot ${vehicleRes.data.free_slot} is available — select it to link.`
-        );
+        setSuccessMsg(t("parkSuccessFreeSlot", { slot: vehicleRes.data.free_slot }));
       } else if (vehicleRes.data?.request_id) {
         // Backend auto-created (or found) the RESIDENT slot request.
-        setSuccessMsg(`${baseVerb}! A parking slot request has been sent to the admin.`);
+        setSuccessMsg(t("parkSuccessWithRequest"));
       } else {
-        setSuccessMsg(`${baseVerb}! Note: no slot request could be created — please contact admin.`);
+        setSuccessMsg(t("parkSuccessNoRequest"));
       }
 
       // Reset form state
@@ -464,7 +464,7 @@ export default function MyVehicles() {
       loadAllocatedSlots();
       loadParkingRequests();
     } catch (err) {
-      setErrorMsg(err?.response?.data?.message || (editVehicleId ? "Failed to update vehicle. Please try again." : "Failed to add vehicle. Please try again."));
+      setErrorMsg(err?.response?.data?.message || t("parkErrorAdd"));
     } finally {
       setSubmitLoading(false);
     }
@@ -479,12 +479,12 @@ export default function MyVehicles() {
     setDeleteLoadingId(targetId);
     try {
       await API.delete(`/vehicles/${targetId}`);
-      setSuccessMsg("Vehicle removed successfully!");
+      setSuccessMsg(t("vehDeleted"));
       setDeleteConfirmId(null);
       loadVehicles();
       loadAllocatedSlots();
     } catch (err) {
-      setErrorMsg(err?.response?.data?.message || "Failed to delete vehicle.");
+      setErrorMsg(err?.response?.data?.message || t("vehDeleteFailed"));
     } finally {
       setDeleteLoadingId(null);
     }
@@ -550,7 +550,7 @@ export default function MyVehicles() {
           </div>
           <div>
             <h2 className="page-title">{t("vehTitle")}</h2>
-            <p className="page-subtitle">Manage your vehicles and parking slots</p>
+            <p className="page-subtitle">{t("vehSubtitle")}</p>
           </div>
         </div>
         {activeTab === "vehicles" && (
@@ -572,11 +572,11 @@ export default function MyVehicles() {
         </div>
         <div className="complaint-stat-card complaint-stat-pending">
           <span className="complaint-stat-val">{allocatedSlots.length}</span>
-          <span className="complaint-stat-label">Parking Slots</span>
+          <span className="complaint-stat-label">{t("vehStatSlots")}</span>
         </div>
         <div className="complaint-stat-card complaint-stat-inprogress">
           <span className="complaint-stat-val">{pendingCount}</span>
-          <span className="complaint-stat-label">Pending Requests</span>
+          <span className="complaint-stat-label">{t("vehStatPending")}</span>
         </div>
       </div>
 
@@ -584,10 +584,10 @@ export default function MyVehicles() {
         <div className={`mv-banner ${overDeclared ? "mv-banner--warn" : "mv-banner--ok"}`}>
           <MdDirectionsCar size={15} />
           <span>
-            {actualVehicleCount} of {declaredVehicleCount} declared vehicle{declaredVehicleCount !== 1 ? "s" : ""} registered.
+            {t("vehDeclaredOf", { count: actualVehicleCount, total: declaredVehicleCount, s: declaredVehicleCount !== 1 ? "s" : "" })}
             {overDeclared
-              ? " You've reached your declared count — you can still add more and the admin will be notified."
-              : " You can register more vehicles up to your declared count."}
+              ? " " + t("vehDeclaredReached")
+              : " " + t("vehDeclaredCanAdd")}
           </span>
         </div>
       )}
@@ -600,15 +600,15 @@ export default function MyVehicles() {
             onChange={setActiveTab}
             tabs={[
               { id: "vehicles", label: t("vehTitle"), icon: <MdDirectionsCarFilled size={15} />, badge: vehicles.length },
-              { id: "slots", label: "Parking Slots", icon: <MdLocalParking size={15} />, badge: allocatedSlots.length },
-              { id: "requests", label: "Slot Requests", icon: <FaParking size={14} />, badge: parkingRequests.length, alert: pendingCount },
+              { id: "slots", label: t("vehTabSlots"), icon: <MdLocalParking size={15} />, badge: allocatedSlots.length },
+              { id: "requests", label: t("vehTabRequests"), icon: <FaParking size={14} />, badge: parkingRequests.length, alert: pendingCount },
             ]}
           />
         </div>
 
         <div className="ml-auto">
           <ExpandableSearch
-            placeholder="Search vehicles, slots or requests…"
+            placeholder={t("vehSearch")}
             value={search}
             onChange={setSearch}
           />
@@ -660,9 +660,7 @@ export default function MyVehicles() {
                     {editVehicleId ? "Edit Vehicle" : (t("vehFormTitle") || "Add New Vehicle")}
                   </h3>
                   <p className="text-xs text-secondary mt-0.5">
-                    {editVehicleId
-                      ? "Update your vehicle details and parking slot"
-                      : "Register your vehicle and select or request a parking slot"}
+                    {t("vehFormSubtitle")}
                   </p>
                 </div>
               </div>
@@ -670,7 +668,7 @@ export default function MyVehicles() {
                 type="button"
                 onClick={requestClose}
                 className="p-2 rounded-xl text-secondary hover:text-primary hover:bg-white/10 transition cursor-pointer"
-                title="Close"
+                title={t("close")}
               >
                 <MdClose size={22} />
               </button>
@@ -691,7 +689,7 @@ export default function MyVehicles() {
                   <label style={{ fontSize:12, fontWeight:700, color:"var(--text-secondary)", textTransform:"uppercase", letterSpacing:"0.05em" }}>
                     {t("vehFieldName")}
                   </label>
-                  <input className="input w-full mt-1" placeholder="e.g. My Car, Office Bike" required
+                  <input className="input w-full mt-1" placeholder={t("vehPhName")} required
                     value={form.vehicle_name}
                     onChange={e => setForm({ ...form, vehicle_name: e.target.value })} />
                 </div>
@@ -724,11 +722,11 @@ export default function MyVehicles() {
                 {myFlats.length > 1 && (
                   <div>
                     <label style={{ fontSize:12, fontWeight:700, color:"var(--text-secondary)", textTransform:"uppercase", letterSpacing:"0.05em" }}>
-                      Which Flat? <span style={{ color:"var(--reject-color)" }}>*</span>
+                      {t("parkWhichFlat")} <span style={{ color:"var(--reject-color)" }}>*</span>
                     </label>
                     {flatsLoading ? (
                       <div style={{ display:"flex", alignItems:"center", gap:8, padding:"10px 0", color:"var(--text-secondary)", fontSize:13 }}>
-                        <Spinner size={13} /> Loading flats…
+                        <Spinner size={13} /> {t("vehLoadingFlats")}
                       </div>
                     ) : (
                       <div style={{ display:"flex", flexDirection:"column", gap:8, marginTop:8 }}>
@@ -755,8 +753,8 @@ export default function MyVehicles() {
                                   <MdHome size={17} style={{ color: isSel ? "var(--accent)" : "var(--text-secondary)" }} />
                                 </div>
                                 <div>
-                                  <p style={{ margin:0, fontSize:13, fontWeight:700, color: isSel ? "var(--accent)" : "var(--text-primary)" }}>Flat {flat.flat_number}</p>
-                                  {flat.floor_id && <p style={{ margin:"2px 0 0", fontSize:11, color:"var(--text-secondary)" }}>Floor {flat.floor_id}</p>}
+                                  <p style={{ margin:0, fontSize:13, fontWeight:700, color: isSel ? "var(--accent)" : "var(--text-primary)" }}>{t("rdFlat")} {flat.flat_number}</p>
+                                  {flat.floor_id && <p style={{ margin:"2px 0 0", fontSize:11, color:"var(--text-secondary)" }}>{t("vehFloor", { floor: flat.floor_id })}</p>}
                                 </div>
                               </div>
                               <div style={{ display:"flex", alignItems:"center", gap:8 }}>
@@ -768,12 +766,12 @@ export default function MyVehicles() {
                                     border:    `1px solid ${freeCount > 0 ? "var(--approve-border)" : "var(--reject-border)"}`,
                                   }}>
                                     <MdLocalParking size={12} />
-                                    {freeCount > 0 ? `${freeCount} slot${freeCount > 1 ? "s" : ""} free` : "All occupied"}
+                                    {freeCount > 0 ? t("vehXSlotsFree", { count: freeCount, s: freeCount > 1 ? "s" : "" }) : t("vehAllOccupied")}
                                   </span>
                                 )}
                                 {form.vehicle_type && flatSlots.length === 0 && (
                                   <span style={{ fontSize:10, color:"var(--text-secondary)", fontWeight:600, padding:"3px 8px", borderRadius:999, background:"var(--card-inner-bg)", border:"1px solid var(--glass-border)" }}>
-                                    No {form.vehicle_type} slot assigned
+                                    {t("vehNoSlotAssigned", { type: form.vehicle_type })}
                                   </span>
                                 )}
                                 {isSel && <MdCheckCircle size={16} style={{ color:"var(--accent)", flexShrink:0 }} />}
@@ -796,7 +794,7 @@ export default function MyVehicles() {
                     <div style={{ display:"flex", alignItems:"center", gap:8, padding:"12px 16px", borderBottom:"1px solid var(--glass-border)", background:"var(--card-inner-bg)" }}>
                       <FaParking style={{ color:"var(--accent)", fontSize:14 }} />
                       <span style={{ fontSize:12, fontWeight:700, color:"var(--text-primary)", textTransform:"uppercase", letterSpacing:"0.05em" }}>
-                        Select Parking Slot
+                        {t("parkSelfSlotTitle")}
                       </span>
                     </div>
 
@@ -808,11 +806,10 @@ export default function MyVehicles() {
                           <MdInfo size={16} />
                           <div>
                             <p style={{ margin:0, fontSize:13, fontWeight:700, color:"var(--accent)" }}>
-                              No {form.vehicle_type} slot pre-assigned to your flat
+                              {t("parkNoSlotPreassigned", { type: form.vehicle_type })}
                             </p>
                             <p style={{ margin:"4px 0 0", fontSize:11, color:"var(--text-secondary)", lineHeight:1.5 }}>
-                              This vehicle will be registered as <strong>Extra</strong> and a slot request
-                              will be sent to the admin automatically. They'll assign an available slot.
+                              {t("parkExtraReg1")} <strong>Extra</strong> {t("parkExtraReg2")}
                             </p>
                           </div>
                         </div>
@@ -828,6 +825,7 @@ export default function MyVehicles() {
                                 isSelected={selectedSlotId === slot.id}
                                 isOccupied={occupied}
                                 onSelect={(id) => setSelectedSlotId(id)}
+                                t={t}
                               />
                             );
                           })}
@@ -835,7 +833,7 @@ export default function MyVehicles() {
                           {/* Divider */}
                           <div style={{ display:"flex", alignItems:"center", gap:10, margin:"4px 0 2px" }}>
                             <div style={{ flex:1, height:1, background:"var(--glass-border)" }} />
-                            <span style={{ fontSize:11, color:"var(--text-secondary)", fontWeight:600 }}>or</span>
+                            <span style={{ fontSize:11, color:"var(--text-secondary)", fontWeight:600 }}>{t("vehOr")}</span>
                             <div style={{ flex:1, height:1, background:"var(--glass-border)" }} />
                           </div>
 
@@ -864,10 +862,10 @@ export default function MyVehicles() {
                               </div>
                               <div>
                                 <p style={{ margin:0, fontSize:13, fontWeight:700, color: selectedSlotId === null ? "var(--accent)" : "var(--text-primary)" }}>
-                                  Request New Extra Slot
+                                  {t("vehRequestExtraSlot")}
                                 </p>
                                 <p style={{ margin:"3px 0 0", fontSize:11, color:"var(--text-secondary)", lineHeight:1.5 }}>
-                                  Skip all pre-assigned slots and ask the admin to allocate a new one.
+                                  {t("vehRequestExtraHint")}
                                 </p>
                               </div>
                             </div>
@@ -876,7 +874,7 @@ export default function MyVehicles() {
                               background:"var(--approval-bg)", color:"var(--approval-color)",
                               border:"1px solid var(--approval-border)", flexShrink:0,
                             }}>
-                              Admin assigns
+                              {t("vehAdminAssigns")}
                             </span>
                           </button>
 
@@ -884,19 +882,19 @@ export default function MyVehicles() {
                           {selectedSlotId !== null && (
                             <div className="mv-hint mv-hint--ok">
                               <MdCheckCircle size={13} />
-                              Slot {availableSlots.find(s => s.id === selectedSlotId)?.slot_number} will be linked to this vehicle immediately — no admin action needed.
+                              {t("parkLinkedImmediate", { slot: availableSlots.find(s => s.id === selectedSlotId)?.slot_number })}
                             </div>
                           )}
                           {selectedSlotId === null && hasAnyFreeSlot && (
                             <div className="mv-hint mv-hint--warn">
                               <MdInfo size={13} />
-                              Free slots are available above. A new extra slot request will still go to your admin if you proceed.
+                              {t("parkHintFreeSlots")}
                             </div>
                           )}
                           {selectedSlotId === null && !hasAnyFreeSlot && (
                             <div className="mv-info">
                               <MdInfo size={13} />
-                              All your assigned slots are occupied. A new extra slot request will be sent to the admin.
+                              {t("parkHintAllOccupied")}
                             </div>
                           )}
                         </>
@@ -913,17 +911,11 @@ export default function MyVehicles() {
                 </button>
                 <button type="submit" className="btn-primary flex items-center gap-2" disabled={submitLoading}>
                   {submitLoading ? (
-                    <><Spinner size={14} /> Saving...</>
-                  ) : editVehicleId ? (
-                    selectedSlotId !== null ? (
-                      <><MdCheckCircle size={14} /> Save Changes</>
-                    ) : (
-                      <><MdSend size={14} /> Save &amp; Request Slot</>
-                    )
+                    <><Spinner size={14} /> {t("compSubmitting")}</>
                   ) : selectedSlotId !== null ? (
-                    <><MdCheckCircle size={14} /> Add Vehicle &amp; Link Slot</>
+                    <><MdCheckCircle size={14} /> {t("parkBtnLinkSlot")}</>
                   ) : (
-                    <><MdSend size={14} /> Add Vehicle &amp; Request Slot</>
+                    <><MdSend size={14} /> {t("parkBtnRequestSlot")}</>
                   )}
                 </button>
               </div>
@@ -952,7 +944,7 @@ export default function MyVehicles() {
             ) : visibleVehicles.length === 0 ? (
               <div className="mv-empty">
                 <MdSearch size={36} style={{ opacity:0.2 }} />
-                <p style={{ fontSize:14 }}>No vehicles match “{search.trim()}”</p>
+                <p style={{ fontSize:14 }}>{t("vehNoMatch", { query: search.trim() })}</p>
               </div>
             ) : (
               <>
@@ -967,22 +959,22 @@ export default function MyVehicles() {
                         <div>
                           <p style={{ fontWeight:700, fontSize:14, margin:0, color:"var(--text-primary)" }}>{v.vehicle_name}</p>
                           <p style={{ fontSize:12, color:"var(--text-secondary)", margin:"3px 0 0", fontWeight:600, letterSpacing:"0.04em" }}>
-                            {v.vehicle_number} · {TYPE_LABEL[v.vehicle_type] || v.vehicle_type}
+                            {v.vehicle_number} · {vehTypeLabel(t, v.vehicle_type)}
                           </p>
                           <div style={{ display:"flex", alignItems:"center", gap:6, marginTop:3, flexWrap:"wrap" }}>
                             {v.parking_slot_id ? (
                               <span style={{ fontSize:11, color:"var(--approve-color)", display:"flex", alignItems:"center", gap:3 }}>
                                 <MdLocalParking size={11} />
-                                {v.slot?.slot_number || "Slot linked"}
+                                {v.slot?.slot_number || t("vehSlotLinked")}
                                 {v.slot?.parking_floor && ` · ${v.slot.parking_floor}`}
                               </span>
                             ) : (
                               <span style={{ fontSize:11, color:"var(--accent)", display:"flex", alignItems:"center", gap:3 }}>
-                                <MdHourglassEmpty size={11} /> Awaiting slot from admin
+                                <MdHourglassEmpty size={11} /> {t("vehAwaitingSlot")}
                               </span>
                             )}
-                            <span style={{ fontSize:10, fontWeight:700, padding:"1px 6px", borderRadius:999, background: v.parking_type==="DEFAULT" ? "var(--approve-bg)" : "var(--approval-bg)", color: v.parking_type==="DEFAULT" ? "var(--approve-color)" : "var(--approval-color)", border:`1px solid ${v.parking_type==="DEFAULT" ? "var(--approve-border)" : "var(--approval-border)"}` }}>
-                              {v.parking_type === "DEFAULT" ? "Default" : "Extra"}
+<span style={{ fontSize:10, fontWeight:700, padding:"1px 6px", borderRadius:999, background: v.parking_type==="DEFAULT" ? "var(--approve-bg)" : "var(--approval-bg)", color: v.parking_type==="DEFAULT" ? "var(--approve-color)" : "var(--approval-color)", border:`1px solid ${v.parking_type==="DEFAULT" ? "var(--approve-border)" : "var(--approval-border)"}` }}>
+                              {v.parking_type === "DEFAULT" ? t("vehDefault") : t("vehExtra")}
                             </span>
                           </div>
                         </div>
@@ -1011,7 +1003,7 @@ export default function MyVehicles() {
                   <table className="w-full text-sm">
                     <thead>
                       <tr style={{ borderBottom:"1px solid var(--glass-border)" }}>
-                        {["#","Vehicle","Number","Type","Parking Slot","Slot Type","Action"].map((h, i) => (
+                        {["#", t("vehColVehicle"), t("vehColNumber"), t("vehColType"), t("vehColParkingSlot"), t("vehColSlotType"), t("vehColAction")].map((h, i) => (
                           <th key={h} className={`p-3 text-xs font-semibold uppercase tracking-wider text-secondary ${i===6?"text-right":"text-left"}`}>{h}</th>
                         ))}
                       </tr>
@@ -1033,22 +1025,22 @@ export default function MyVehicles() {
                           </td>
                           <td className="p-3">
                             <span style={{ display:"inline-flex", alignItems:"center", gap:5, padding:"3px 10px", borderRadius:999, fontSize:11, fontWeight:700, color: v.vehicle_type==="BIKE" ? "var(--acct-violet)" : "var(--accent)", background: v.vehicle_type==="BIKE" ? "rgba(var(--acct-violet-rgb),0.12)" : "var(--accent-soft)", border:`1px solid ${v.vehicle_type==="BIKE" ? "rgba(var(--acct-violet-rgb),0.28)" : "rgba(var(--acct-purple-rgb),0.28)"}` }}>
-                              {TYPE_LABEL[v.vehicle_type] || v.vehicle_type}
+                              {vehTypeLabel(t, v.vehicle_type)}
                             </span>
                           </td>
                           <td className="p-3">
                             {v.parking_slot_id ? (
                               <div style={{ display:"flex", alignItems:"center", gap:6 }}>
                                 <span style={{ display:"inline-flex", alignItems:"center", gap:5, padding:"3px 10px", borderRadius:999, fontSize:11, fontWeight:700, color:"var(--approve-color)", background:"var(--approve-bg)", border:"1px solid var(--approve-border)" }}>
-                                  <MdLocalParking size={11} /> {v.slot?.slot_number || "Linked"}
+                                  <MdLocalParking size={11} /> {v.slot?.slot_number || t("vehLinked")}
                                 </span>
                                 {v.slot?.parking_floor && (
-                                  <span style={{ fontSize:10, color:"var(--text-secondary)" }}>Level {v.slot.parking_floor}</span>
+                                  <span style={{ fontSize:10, color:"var(--text-secondary)" }}>{t("vehLevel", { level: v.slot.parking_floor })}</span>
                                 )}
                               </div>
                             ) : (
                               <span style={{ display:"inline-flex", alignItems:"center", gap:5, padding:"3px 10px", borderRadius:999, fontSize:11, fontWeight:700, color:"var(--approval-color)", background:"var(--approval-bg)", border:"1px solid var(--approval-border)" }}>
-                                <MdHourglassEmpty size={11} /> Awaiting admin
+                                <MdHourglassEmpty size={11} /> {t("vehAwaitingAdmin")}
                               </span>
                             )}
                           </td>
@@ -1058,24 +1050,12 @@ export default function MyVehicles() {
                             </span>
                           </td>
                           <td className="p-3 text-right">
-                            <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 8 }}>
-                              <GlobalButton
-                                variant="edit"
-                                size="sm"
-                                icon={MdEdit}
-                                onClick={() => openEdit(v)}
-                              >
-                                Edit
-                              </GlobalButton>
-                              <GlobalButton
-                                variant="delete"
-                                size="sm"
-                                icon={MdDelete}
-                                onClick={() => setDeleteConfirmId(v.id)}
-                              >
-                                Delete
-                              </GlobalButton>
-                            </div>
+                            <GlobalButton
+                              variant="delete"
+                              size="sm"
+                              icon={MdDelete}
+                              onClick={() => setDeleteConfirmId(v.id)}
+                            >{t("vehDelete")}</GlobalButton>
                           </td>
                         </tr>
                       ))}
@@ -1095,16 +1075,16 @@ export default function MyVehicles() {
         <div className="space-y-4">
           {slotsLoading ? (
             <div style={{ display:"flex", alignItems:"center", justifyContent:"center", padding:"48px 20px", color:"var(--text-secondary)", gap:10 }}>
-              <Spinner size={18} /> Loading your parking slots...
+              <Spinner size={18} /> {t("vehLoadingSlots")}
             </div>
           ) : allocatedSlots.length === 0 ? (
             <div className="bg-card rounded-xl">
               <div className="mv-empty">
                 <MdLocalParking size={44} style={{ opacity:0.18 }} />
-                <p style={{ fontSize:14, fontWeight:600 }}>No parking slots assigned to your flat yet</p>
+                <p style={{ fontSize:14, fontWeight:600 }}>{t("vehNoSlotsTitle")}</p>
                 <p style={{ fontSize:12, maxWidth:320, lineHeight:1.5 }}>
-                  Your admin will assign parking slots to your flat when registering you.
-                  Once assigned, add a vehicle from "My Vehicles" to link to that slot automatically.
+                  {t("vehNoSlotsHint1")}
+                  {t("vehNoSlotsHint2")}
                 </p>
               </div>
             </div>
@@ -1113,9 +1093,7 @@ export default function MyVehicles() {
               <div className="mv-info">
                 <MdInfo size={15} />
                 <span>
-                  These slots were <strong>pre-assigned to your flat</strong> by the admin.
-                  Add a vehicle from the "My Vehicles" tab and manually choose which slot to link it to.
-                  If all your slots are occupied and you add another vehicle, a request will go to the admin for an extra slot.
+                  {t("vehPreAssignedA")} <strong>{t("vehPreAssignedStrong")}</strong>{t("vehPreAssignedB")}
                 </span>
               </div>
 
@@ -1123,8 +1101,7 @@ export default function MyVehicles() {
                 <div className="mv-info">
                   <MdApartment size={15} />
                   <span>
-                    You have <strong>{allocatedSlots.length}</strong> parking slots across{" "}
-                    {new Set(allocatedSlots.map(s => s.flat_id)).size} flat(s).
+                    {t("vehSlotsAcrossA")} <strong>{allocatedSlots.length}</strong> {t("vehSlotsAcrossB", { flats: new Set(allocatedSlots.map(s => s.flat_id)).size })}
                   </span>
                 </div>
               )}
@@ -1133,22 +1110,22 @@ export default function MyVehicles() {
                 <div className="bg-card rounded-xl">
                   <div className="mv-empty">
                     <MdSearch size={36} style={{ opacity:0.2 }} />
-                    <p style={{ fontSize:14 }}>No parking slots match “{search.trim()}”</p>
+                    <p style={{ fontSize:14 }}>{t("vehSlotsNoMatch", { query: search.trim() })}</p>
                   </div>
                 </div>
               ) : (
                 <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(280px,1fr))", gap:16 }}>
-                  {visibleSlots.map(slot => <AllocatedSlotCard key={slot.id} slot={slot} />)}
+                  {visibleSlots.map(slot => <AllocatedSlotCard key={slot.id} slot={slot} t={t} />)}
                 </div>
               )}
 
               <div style={{ display:"flex", gap:12, flexWrap:"wrap", marginTop:4 }}>
                 {[
-                  { label:"Total Slots",     value: allocatedSlots.length },
-                  { label:"Car Slots",       value: allocatedSlots.filter(s => s.vehicle_type==="CAR").length },
-                  { label:"Bike Slots",      value: allocatedSlots.filter(s => s.vehicle_type==="BIKE").length },
-                  { label:"In Use",          value: allocatedSlots.filter(s => s.linked_vehicle).length },
-                  { label:"Free / Unlinked", value: allocatedSlots.filter(s => !s.linked_vehicle).length },
+                  { label:t("vehStatTotalSlots"), value: allocatedSlots.length },
+                  { label:t("vehStatCarSlots"),   value: allocatedSlots.filter(s => s.vehicle_type==="CAR").length },
+                  { label:t("vehStatBikeSlots"),  value: allocatedSlots.filter(s => s.vehicle_type==="BIKE").length },
+                  { label:t("vehStatInUse"),      value: allocatedSlots.filter(s => s.linked_vehicle).length },
+                  { label:t("vehStatFree"),       value: allocatedSlots.filter(s => !s.linked_vehicle).length },
                 ].map(stat => (
                   <div key={stat.label} style={{ flex:"1 1 90px", padding:"12px 16px", borderRadius:12, background:"var(--card-inner-bg)", border:"1px solid var(--glass-border)", textAlign:"center" }}>
                     <p style={{ margin:0, fontSize:22, fontWeight:800, color:"var(--text-primary)" }}>{stat.value}</p>
@@ -1169,24 +1146,21 @@ export default function MyVehicles() {
           <div className="mv-info">
             <MdInfo size={15} />
             <span>
-              These are <strong>extra slot requests</strong> sent to your admin when you added a vehicle
-              and either had no free pre-assigned slot or chose to request a new one manually.
-              Your admin will assign a free slot and you'll be notified.
+              {t("vehReqInfoA")} <strong>{t("vehReqInfoStrong")}</strong>{t("vehReqInfoB")}
             </span>
           </div>
 
           {requestsLoading ? (
             <div style={{ display:"flex", alignItems:"center", justifyContent:"center", padding:"48px 20px", color:"var(--text-secondary)", gap:10 }}>
-              <Spinner size={18} /> Loading requests...
+              <Spinner size={18} /> {t("vehLoadingRequests")}
             </div>
           ) : parkingRequests.length === 0 ? (
             <div className="bg-card rounded-xl">
               <div className="mv-empty">
                 <MdHourglassEmpty size={44} style={{ opacity:0.18 }} />
-                <p style={{ fontSize:14, fontWeight:600 }}>No extra slot requests</p>
+                <p style={{ fontSize:14, fontWeight:600 }}>{t("vehNoRequestsTitle")}</p>
                 <p style={{ fontSize:12, maxWidth:300, lineHeight:1.5 }}>
-                  When you add a vehicle and no pre-assigned slot is free (or you choose to request a new one),
-                  an extra slot request will appear here.
+                  {t("vehNoRequestsHint")}
                 </p>
               </div>
             </div>
@@ -1194,7 +1168,7 @@ export default function MyVehicles() {
             <div className="bg-card rounded-xl">
               <div className="mv-empty">
                 <MdSearch size={36} style={{ opacity:0.2 }} />
-                <p style={{ fontSize:14 }}>No slot requests match “{search.trim()}”</p>
+                <p style={{ fontSize:14 }}>{t("vehReqNoMatch", { query: search.trim() })}</p>
               </div>
             </div>
           ) : (
@@ -1204,7 +1178,7 @@ export default function MyVehicles() {
                 <table className="w-full text-sm">
                   <thead>
                     <tr style={{ background:"var(--card-inner-bg)", borderBottom:"1px solid var(--divider)" }}>
-                      {["#","Vehicle","Type","Slot Assigned","Status","Requested On"].map(h => (
+                      {["#", t("vehColVehicle"), t("vehColType"), t("vehColSlotAssigned"), t("vehColStatus"), t("vehColRequested")].map(h => (
                         <th key={h} className="px-5 py-3 text-left text-xs font-semibold text-secondary uppercase tracking-wider">{h}</th>
                       ))}
                     </tr>
@@ -1216,7 +1190,7 @@ export default function MyVehicles() {
                         <td className="px-5 py-3 font-mono font-bold text-sm">{r.vehicle_number}</td>
                         <td className="px-5 py-3">
                           <span style={{ display:"inline-flex", alignItems:"center", gap:5, padding:"3px 10px", borderRadius:999, fontSize:11, fontWeight:700, color: r.vehicle_type==="BIKE" ? "var(--acct-violet)" : "var(--accent)", background: r.vehicle_type==="BIKE" ? "rgba(var(--acct-violet-rgb),0.12)" : "var(--accent-soft)", border:`1px solid ${r.vehicle_type==="BIKE" ? "rgba(var(--acct-violet-rgb),0.28)" : "rgba(var(--acct-purple-rgb),0.28)"}` }}>
-                            {TYPE_LABEL[r.vehicle_type] || r.vehicle_type}
+                            {vehTypeLabel(t, r.vehicle_type)}
                           </span>
                         </td>
                         <td className="px-5 py-3">
@@ -1225,10 +1199,10 @@ export default function MyVehicles() {
                               <MdLocalParking size={11} /> {r.assigned_spot}
                             </span>
                           ) : (
-                            <span style={{ fontSize:12, color:"var(--text-secondary)", opacity:0.5 }}>Awaiting admin</span>
+                            <span style={{ fontSize:12, color:"var(--text-secondary)", opacity:0.5 }}>{t("vehAwaitingAdmin")}</span>
                           )}
                         </td>
-                        <td className="px-5 py-3"><ReqStatusBadge status={r.status} /></td>
+                        <td className="px-5 py-3"><ReqStatusBadge status={r.status} t={t} /></td>
                         <td className="px-5 py-3 text-xs text-secondary">
                           {new Date(r.createdAt).toLocaleDateString("en-IN", { day:"2-digit", month:"short", year:"numeric" })}
                         </td>
@@ -1245,16 +1219,16 @@ export default function MyVehicles() {
                     <div>
                       <p style={{ margin:0, fontWeight:700, fontSize:14, fontFamily:"monospace" }}>{r.vehicle_number}</p>
                       <p style={{ margin:"3px 0 0", fontSize:12, color:"var(--text-secondary)" }}>
-                        {TYPE_LABEL[r.vehicle_type] || r.vehicle_type}
+                        {vehTypeLabel(t, r.vehicle_type)}
                         {r.assigned_spot && <> · <span style={{ color:"var(--approve-color)" }}>{r.assigned_spot}</span></>}
                       </p>
                       {!r.assigned_spot && (
                         <span style={{ display:"inline-flex", marginTop:4, alignItems:"center", gap:4, padding:"2px 8px", borderRadius:999, fontSize:10, fontWeight:700, background:"var(--approval-bg)", color:"var(--approval-color)", border:"1px solid var(--approval-border)" }}>
-                          Awaiting slot assignment
+                          {t("vehAwaitingSlotAssign")}
                         </span>
                       )}
                     </div>
-                    <ReqStatusBadge status={r.status} />
+                    <ReqStatusBadge status={r.status} t={t} />
                   </div>
                 ))}
               </div>
@@ -1268,9 +1242,9 @@ export default function MyVehicles() {
         isOpen={Boolean(deleteConfirmId)}
         onClose={() => setDeleteConfirmId(null)}
         onConfirm={() => handleDelete(deleteConfirmId)}
-        title="Remove Vehicle"
-        message="Are you sure you want to remove this vehicle? Your flat's parking slot will be freed for reuse."
-        confirmText="Remove Vehicle"
+        title={t("vehRemoveTitle")}
+        message={t("vehRemoveMsg")}
+        confirmText={t("vehRemoveConfirm")}
         variant="danger"
         loading={Boolean(deleteLoadingId)}
       />

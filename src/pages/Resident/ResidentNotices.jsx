@@ -193,7 +193,7 @@ const [totalPages, setTotalPages] = useState(1);
         setShowLeaveGuardModal(false);
       }
     } catch (err) {
-      alert(err.response?.data?.message || "Failed to acknowledge notice");
+      alert(err.response?.data?.message || t("noticeAckError"));
     } finally {
       setAckLoading(false);
     }
@@ -248,7 +248,7 @@ const [totalPages, setTotalPages] = useState(1);
             <div>
               <h2 className="page-title">{t("noticesTitle") || "Society Notices"}</h2>
               <p className="page-subtitle">
-                {initialLoad ? "—" : `${totalAll} notices published for your society`}
+                {initialLoad ? "—" : t("noticeCountSub", { count: totalAll })}
               </p>
             </div>
         </div>
@@ -304,7 +304,7 @@ const [totalPages, setTotalPages] = useState(1);
                                 : "bg-amber-500/10 text-amber-400 border-amber-500/20 animate-pulse"
                             }`}
                           >
-                            {isAcked ? "✓ ACKNOWLEDGED" : "ACK REQUIRED"}
+                            {isAcked ? `✓ ${t("noticeBadgeAcked")}` : t("noticeBadgeReq")}
                           </span>
                         )}
                       </div>
@@ -339,12 +339,12 @@ const [totalPages, setTotalPages] = useState(1);
                         <MdAttachFile size={13} /> {t("noticesViewAttachment") || "Attachment"} <MdOpenInNew size={11} />
                       </button>
                     ) : (
-                      <span className="text-[11px] text-secondary/40">Click to read details</span>
+                      <span className="text-[11px] text-secondary/40">{t("noticeClickRead")}</span>
                     )}
 
                     {isAckReq && !isAcked && (
                       <span className="text-[11px] font-semibold text-amber-400 flex items-center gap-1">
-                        <MdWarning size={12} /> Action Needed
+                        <MdWarning size={12} /> {t("noticeActionNeeded")}
                       </span>
                     )}
                   </div>
@@ -363,7 +363,7 @@ const [totalPages, setTotalPages] = useState(1);
           isOpen={!!selectedNotice}
           onClose={handleAttemptClose}
           title={selectedNotice.title}
-          subtitle={`Published ${formatDate(selectedNotice.created_at)}`}
+          subtitle={t("noticePublishedOn", { date: formatDate(selectedNotice.created_at) })}
           icon={MdCampaign}
           size="md"
         >
@@ -386,13 +386,13 @@ const [totalPages, setTotalPages] = useState(1);
                   <div>
                     <p className="text-xs font-bold uppercase tracking-wider">
                       {selectedNotice.acknowledgement_status === "ACKNOWLEDGED"
-                        ? "Notice Acknowledged"
-                        : "Acknowledgement Required"}
+                        ? t("noticeAckDoneTitle")
+                        : t("noticeAckReqTitle")}
                     </p>
                     <p className="text-[11px] opacity-80 mt-0.5">
                       {selectedNotice.acknowledgement_status === "ACKNOWLEDGED"
-                        ? `Acknowledged on ${formatDate(selectedNotice.acknowledged_at)}`
-                        : "Please read carefully and click 'Mark as Read' below to confirm."}
+                        ? t("noticeAckOnDate", { date: formatDate(selectedNotice.acknowledged_at) })
+                        : t("noticeAckReadHint")}
                     </p>
                   </div>
                 </div>
@@ -413,7 +413,7 @@ const [totalPages, setTotalPages] = useState(1);
 
             {/* Notice Body */}
             <div className="space-y-2">
-              <h4 className="text-xs font-semibold text-secondary uppercase tracking-wider">Notice Details</h4>
+              <h4 className="text-xs font-semibold text-secondary uppercase tracking-wider">{t("noticeDetailsTitle")}</h4>
               <p className="text-sm text-primary leading-relaxed whitespace-pre-line bg-white/5 p-4 rounded-xl border border-white/5">
                 {selectedNotice.description}
               </p>
@@ -422,7 +422,7 @@ const [totalPages, setTotalPages] = useState(1);
             {/* Attachment Section */}
             {selectedNotice.file_url && (
               <div className="space-y-2">
-                <h4 className="text-xs font-semibold text-secondary uppercase tracking-wider">Attachment</h4>
+                <h4 className="text-xs font-semibold text-secondary uppercase tracking-wider">{t("noticeAttachmentTitle")}</h4>
                 <button
                   type="button"
                   onClick={() => handleFileView(selectedNotice.file_url)}
@@ -430,7 +430,7 @@ const [totalPages, setTotalPages] = useState(1);
                 >
                   <div className="flex items-center gap-2.5">
                     <MdAttachFile size={18} />
-                    <span className="text-xs font-semibold">View Notice Document / File</span>
+                    <span className="text-xs font-semibold">{t("noticeViewFile")}</span>
                   </div>
                   <MdOpenInNew size={16} />
                 </button>
@@ -450,7 +450,7 @@ const [totalPages, setTotalPages] = useState(1);
                 </GlobalButton>
               ) : (
                 <GlobalButton variant="secondary" onClick={() => setSelectedNotice(null)}>
-                  Close
+                  {t("close")}
                 </GlobalButton>
               )}
             </div>
@@ -470,7 +470,7 @@ const [totalPages, setTotalPages] = useState(1);
         >
           <div className="space-y-4">
             <p className="text-xs text-secondary leading-relaxed">
-              This notice requires explicit read confirmation. You must acknowledge this notice before closing or navigating away.
+              {t("noticeLeavePromptBody")}
             </p>
             <div className="flex items-center justify-end gap-3 pt-2">
               <GlobalButton

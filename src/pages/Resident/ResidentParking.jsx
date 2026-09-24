@@ -268,13 +268,13 @@ useEffect(() => {
         : null;
       let successMsg;
       if (slotIdToLink !== null) {
-        successMsg = `Vehicle added and linked to slot ${linkedSlot?.slot_number ?? slotIdToLink}!`;
+        successMsg = t("parkSuccessLinked", { slot: linkedSlot?.slot_number ?? slotIdToLink });
       } else if (res.data?.free_slot) {
-        successMsg = `Vehicle added! Free slot ${res.data.free_slot} is available — select it to link.`;
+        successMsg = t("parkSuccessFreeSlot", { slot: res.data.free_slot });
       } else if (res.data?.request_id) {
-        successMsg = "Vehicle added! A parking slot request has been sent to the admin.";
+        successMsg = t("parkSuccessWithRequest");
       } else {
-        successMsg = "Vehicle added! Note: no slot request could be created — please contact admin.";
+        successMsg = t("parkSuccessNoRequest");
       }
       resetForm();
       loadParkingContext();
@@ -283,7 +283,7 @@ useEffect(() => {
 
       fetchData(1, filter, debouncedSearch);
     } catch (err) {
-      setErrorMessage(err?.response?.data?.message || "Failed to add vehicle. Please try again.");
+      setErrorMessage(err?.response?.data?.message || t("parkErrorAdd"));
     } finally {
       setSubmitLoading(false);
     }
@@ -397,25 +397,16 @@ useEffect(() => {
         )}
 
         {/* Mode toggle — For Self / For Guest */}
-        <div className="flex rounded-xl bg-white/5 border border-white/8 p-1 mb-4">
-          <button
-            type="button"
-            onClick={() => { setMode("self"); setErrorMessage(""); }}
-            className={`flex-1 h-10 rounded-lg flex items-center justify-center gap-2 text-sm font-bold transition cursor-pointer ${
-              mode === "self" ? "bg-accent text-white" : "text-secondary hover:bg-white/5"
-            }`}
-          >
-            <MdDirectionsCar size={16} /> {t("parkModeSelf") || "For Self"}
-          </button>
-          <button
-            type="button"
-            onClick={() => { setMode("guest"); setErrorMessage(""); }}
-            className={`flex-1 h-10 rounded-lg flex items-center justify-center gap-2 text-sm font-bold transition cursor-pointer ${
-              mode === "guest" ? "bg-accent text-white" : "text-secondary hover:bg-white/5"
-            }`}
-          >
-            <MdLocalParking size={16} /> {t("parkModeGuest") || "For Guest"}
-          </button>
+        <div className="mb-4">
+          <SlidingTabs
+            fullWidth
+            value={mode}
+            onChange={(m) => { setMode(m); setErrorMessage(""); }}
+            items={[
+              { id: "self", label: t("parkModeSelf") || "For Self", icon: <MdDirectionsCar size={16} /> },
+              { id: "guest", label: t("parkModeGuest") || "For Guest", icon: <MdLocalParking size={16} /> },
+            ]}
+          />
         </div>
 
         <form onSubmit={mode === "self" ? handleSelfSubmit : handleGuestSubmit} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -541,10 +532,10 @@ useEffect(() => {
               ) : availableSlots.length === 0 ? (
                 <div className="bg-white/5 border border-white/8 rounded-lg p-4 text-sm">
                   <p className="flex items-center gap-2 font-bold" style={{ color: "var(--accent)" }}>
-                    <MdInfo size={16} /> No {form.vehicle_type} slot pre-assigned to your flat
+                    <MdInfo size={16} /> {t("parkNoSlotPreassigned", { type: form.vehicle_type })}
                   </p>
                   <p className="text-secondary mt-1.5 leading-relaxed">
-                    This vehicle will be registered as <strong>Extra</strong> and a slot request will be sent to the admin automatically. They'll assign an available slot.
+                    {t("parkExtraReg1")} <strong>Extra</strong> {t("parkExtraReg2")}
                   </p>
                 </div>
               ) : (
@@ -661,15 +652,15 @@ useEffect(() => {
                     {selectedSlotId !== null && (
                       <div className="rounded-lg p-3 text-xs flex items-center gap-2" style={{ background: "var(--accent-soft)", color: "var(--accent)" }}>
                         <MdCheckCircle size={13} />
-                        Slot {availableSlots.find((s) => s.id === selectedSlotId)?.slot_number} will be linked to this vehicle immediately — no admin action needed.
+                        {t("parkLinkedImmediate", { slot: availableSlots.find((s) => s.id === selectedSlotId)?.slot_number })}
                       </div>
                     )}
                     {selectedSlotId === null && (
                       <div className="rounded-lg p-3 text-xs flex items-center gap-2 bg-white/5 border border-white/8 text-secondary">
                         <MdInfo size={13} />
                         {hasAnyFreeSlot
-                          ? "Free slots are available above. A new extra slot request will still go to your admin if you proceed."
-                          : "All your assigned slots are occupied. A new extra slot request will be sent to the admin."}
+                          ? t("parkHintFreeSlots")
+                          : t("parkHintAllOccupied")}
                       </div>
                     )}
                   </div>
@@ -684,8 +675,8 @@ useEffect(() => {
                 ? <span className="flex items-center gap-2"><Spinner size={14} /> {t("compSubmitting")}</span>
                 : mode === "self"
                   ? (selectedSlotId !== null
-                      ? <><MdDirectionsCar size={16} /> {"Add Vehicle & Link Slot"}</>
-                      : <><MdSend size={16} /> {"Add Vehicle & Request Slot"}</>)
+                      ? <><MdDirectionsCar size={16} /> {t("parkBtnLinkSlot")}</>
+                      : <><MdSend size={16} /> {t("parkBtnRequestSlot")}</>)
                   : <><MdSend size={16} /> {t("compSubmitBtn")}</>}
             </button>
             <button

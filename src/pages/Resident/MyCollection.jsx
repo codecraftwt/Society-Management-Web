@@ -718,14 +718,14 @@ export default function MyCollection() {
                     <div className="pt-2 pb-1">
                       <div className="flex items-center justify-between relative px-2">
                         {/* Background Connector Line */}
-                        <div className="absolute left-6 right-6 top-[11px] h-[3px] bg-glass-border rounded-full z-0 overflow-hidden">
+                        <div className="absolute left-6 right-6 top-2.75 h-0.75 bg-glass-border rounded-full z-0 overflow-hidden">
                           <div
                             className={`h-full transition-all duration-500 rounded-full ${
                               progressStep === 1
-                                ? "w-0 bg-gradient-to-r from-amber-400 to-amber-500"
+                                ? "w-0 bg-linear-to-r from-amber-400 to-amber-500"
                                 : progressStep === 2
-                                ? "w-1/2 bg-gradient-to-r from-amber-400 via-cyan-400 to-blue-500 shadow-sm shadow-cyan-400/50"
-                                : "w-full bg-gradient-to-r from-amber-400 via-cyan-400 to-emerald-500 shadow-sm shadow-emerald-400/50"
+                                ? "w-1/2 bg-linear-to-r from-amber-400 via-cyan-400 to-blue-500 shadow-sm shadow-cyan-400/50"
+                                : "w-full bg-linear-to-r from-amber-400 via-cyan-400 to-emerald-500 shadow-sm shadow-emerald-400/50"
                             }`}
                           />
                         </div>
@@ -796,7 +796,7 @@ export default function MyCollection() {
                   {isAtGate && (
                     <div className="space-y-2.5">
                       {p.pickup_code && (
-                        <div className="flex items-center justify-between gap-3 bg-gradient-to-r from-cyan-500/10 to-blue-500/10 border border-cyan-500/25 rounded-2xl p-3.5 shadow-sm">
+                        <div className="flex items-center justify-between gap-3 bg-linear-to-r from-cyan-500/10 to-blue-500/10 border border-cyan-500/25 rounded-2xl p-3.5 shadow-sm">
                           <div className="min-w-0">
                             <span className="text-[10px] font-bold uppercase tracking-wider text-cyan-400 block mb-0.5">
                               {t("parcelOtpLabel") || "Pickup OTP"}
@@ -873,7 +873,7 @@ export default function MyCollection() {
           {isOwner && eligibleFlats.length > 1 && (
             <div>
               <label className="text-xs text-secondary block mb-1.5">
-                Select Unit <span style={{ color: "var(--stat-red-color)" }}>*</span>
+                {t("selectUnit")} <span style={{ color: "var(--stat-red-color)" }}>*</span>
               </label>
               <Select
                 className="input h-11 w-full"

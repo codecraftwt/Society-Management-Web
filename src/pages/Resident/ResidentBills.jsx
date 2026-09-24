@@ -12,11 +12,13 @@ import SlidingTabs from "../../components/common/SlidingTabs";
 import Pagination from "../../components/common/Pagination";
 
 import {
-  MdReceiptLong, MdPerson, MdEmail, MdPhone, MdBusiness,
+  MdPerson, MdEmail, MdPhone, MdBusiness,
   MdOutlineInbox, MdCheckCircle, MdSchedule,
   MdSearch, MdClose, MdArrowForward,
   MdChevronLeft, MdChevronRight,
-  MdContentCopy, MdLocationCity, MdAccountBalance,
+  MdContentCopy, MdLocationCity,
+  MdOutlineReceiptLong, MdOutlineAccountBalance,
+  MdOutlineCheckCircle, MdOutlineSchedule, MdOutlineCurrencyRupee,
 } from "react-icons/md";
 
 function useDebounce(value, delay = 500) {
@@ -238,10 +240,10 @@ const navigate = useNavigate();
   const handleClearFilters  = () => { setSearch(""); setFilter("ALL"); };
 
   const STATS = [
-    { label: t("billStatTotal"),   val: counts.total,   icon: "🧾", color: "purple" },
-    { label: t("billStatPaid"),    val: counts.paid,    icon: "✅", color: "green"  },
-    { label: t("billStatPending"), val: counts.pending, icon: "⏳", color: "amber"  },
-    { label: t("resBillDue"),      val: `₹${counts.due.toLocaleString("en-IN")}`, icon: "💸", color: "red" },
+    { label: t("billStatTotal"),   val: counts.total,   icon: <MdOutlineReceiptLong size={20} />, color: "purple" },
+    { label: t("billStatPaid"),    val: counts.paid,    icon: <MdOutlineCheckCircle size={20} />, color: "green"  },
+    { label: t("billStatPending"), val: counts.pending, icon: <MdOutlineSchedule size={20} />, color: "amber"  },
+    { label: t("resBillDue"),      val: `₹${counts.due.toLocaleString("en-IN")}`, icon: <MdOutlineCurrencyRupee size={20} />, color: "red" },
   ];
 
   const slidingFilterItems = [
@@ -260,7 +262,7 @@ const navigate = useNavigate();
       {/* ── Header ── */}
       <div className="flex items-center gap-3">
         <div className="ad-page-icon">
-          <MdReceiptLong size={22} />
+          <MdOutlineReceiptLong size={22} />
         </div>
         <div>
           <h2 className="page-title">{t("resBillsTitle")}</h2>
@@ -278,7 +280,7 @@ const navigate = useNavigate();
             className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-inner"
             style={{ background: "var(--accent-soft)", color: "var(--accent)" }}
           >
-            <MdAccountBalance size={24} />
+            <MdOutlineAccountBalance size={24} />
           </div>
           <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
@@ -287,13 +289,17 @@ const navigate = useNavigate();
               </p>
               {accountants.length > 0 && (
                 <span className="px-2 py-0.5 rounded-full text-[10.5px] font-black bg-accent/15 text-accent border border-accent/25">
-                  {accountants.length} {accountants.length === 1 ? "Contact" : "Contacts"}
+                  {accountants.length === 1
+                    ? t("resBillAcctContactOne", { count: accountants.length })
+                    : t("resBillAcctContactMany", { count: accountants.length })}
                 </span>
               )}
             </div>
             <p className="text-xs text-secondary truncate mt-0.5">
               {accountants.length > 0
-                ? `${accountants.length} society accountant${accountants.length > 1 ? "s" : ""} available for dues verification & queries`
+                ? accountants.length === 1
+                  ? t("resBillAcctAvailableOne", { count: accountants.length })
+                  : t("resBillAcctAvailableMany", { count: accountants.length })
                 : t("resBillAccountantNone") || "Contact your society accountant for bill enquiries"}
             </p>
           </div>
@@ -336,7 +342,7 @@ const navigate = useNavigate();
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4"
           style={{ borderBottom: "1px solid var(--glass-border)" }}>
           <div className="flex items-center gap-2 shrink-0">
-            <MdReceiptLong size={16} style={{ color: "var(--accent)" }} />
+            <MdOutlineReceiptLong size={16} style={{ color: "var(--accent)" }} />
             <span className="font-bold text-sm" style={{ color: "var(--text-primary)" }}>
               {t("billSocietyBills")}
             </span>
@@ -598,14 +604,14 @@ const navigate = useNavigate();
                   className="w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 shadow-sm"
                   style={{ background: "var(--accent-soft)", color: "var(--accent)" }}
                 >
-                  <MdAccountBalance size={22} />
+                  <MdOutlineAccountBalance size={22} />
                 </div>
                 <div>
                   <h3 className="text-lg font-black tracking-tight" style={{ color: "var(--text-primary)" }}>
                     {t("resBillAccountant") || "Society Accountants & Contacts"}
                   </h3>
                   <p className="text-xs text-secondary mt-0.5">
-                    Assigned financial desk officers for maintenance verification, queries & offline payments
+                    {t("resBillAccountantSub") || "Assigned financial desk officers for maintenance verification, queries & offline payments"}
                   </p>
                 </div>
               </div>
@@ -673,7 +679,7 @@ const navigate = useNavigate();
                                 Accountant
                               </span>
                               {acc.societyName && (
-                                <span className="inline-flex items-center gap-1 text-[11px] text-secondary truncate max-w-[130px]">
+                                <span className="inline-flex items-center gap-1 text-[11px] text-secondary truncate max-w-32.5">
                                   <MdLocationCity size={12} className="shrink-0" />
                                   <span className="truncate">{acc.societyName}</span>
                                 </span>
