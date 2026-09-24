@@ -343,7 +343,7 @@ export default function ResidentDocument() {
       <GlobalModal
         isOpen={!!viewDoc}
         onClose={() => setViewDoc(null)}
-        title={viewDoc?.title || "Document"}
+        title={viewDoc?.title || t("docDocument")}
         subtitle={viewDoc?.file_name}
         icon={MdDescription}
         size="lg"

@@ -3,38 +3,49 @@ import { createPortal } from "react-dom";
 import { MdFolderOpen, MdClose, MdAdd, MdSearch } from "react-icons/md";
 import SlidingTabs from "../../components/common/SlidingTabs";
 import ExpandableSearch from "../../components/common/ExpandableSearch";
-import axios from "axios";
 import useUnsavedDirty from "../../hooks/useUnsavedDirty";
 import ConfirmDiscard from "../../components/common/ConfirmDiscard";
-
-const API = import.meta.env.VITE_API_URL || "";
-const getToken = () => localStorage.getItem("token");
+import { useLang } from "../../context/LanguageContext";
+import API from "../../services/api";
+import { BASE_URL } from "../../config/apiConfig";
 
 const CATEGORY_MAP = {
   aadhar: {
-    label: "Aadhaar Card",
+    labelKey: "docAadhar",
+    descKey: "docAadharDesc",
     icon: "🪪",
     colorClass: "rd-icon-blue",
     badgeClass: "rd-badge-blue",
     glowClass: "rd-glow-blue",
-    desc: "Government-issued identity document",
   },
   pan: {
-    label: "PAN Card",
+    labelKey: "docPan",
+    descKey: "docPanDesc",
     icon: "💳",
     colorClass: "rd-icon-amber",
     badgeClass: "rd-badge-amber",
     glowClass: "rd-glow-amber",
-    desc: "Permanent Account Number card",
   },
+};
+
+const getDocMeta = (type, t) => {
+  const base = CATEGORY_MAP[type];
+  return {
+    ...(base || { icon: "📄", colorClass: "rd-icon-purple", badgeClass: "rd-badge-purple", glowClass: "rd-glow-purple" }),
+    label: base ? t(base.labelKey) : type,
+    desc: base ? t(base.descKey) : t("docFallback"),
+  };
 };
 
 /* ─────────────────────────────────────────
    VIEW MODAL
 ───────────────────────────────────────── */
 function ViewModal({ doc, onClose }) {
-  const meta = CATEGORY_MAP[doc.type] || { label: doc.type, icon: "📄", colorClass: "rd-icon-purple", badgeClass: "rd-badge-purple" };
-  const fileUrl = `${API}${doc.file_url}`;
+  const { t } = useLang();
+  const meta = getDocMeta(doc.type, t);
+  const fileUrl = doc.file_url?.startsWith("http")
+    ? doc.file_url
+    : `${BASE_URL}/${doc.file_url}`;
   const ext = doc.file_url?.split(".").pop()?.toLowerCase();
   const isImage = ["jpg", "jpeg", "png", "webp", "gif"].includes(ext);
   const isPdf = ext === "pdf";
@@ -91,7 +102,7 @@ function ViewModal({ doc, onClose }) {
               style={{ textDecoration: "none", padding: "7px 14px", display: "inline-flex", alignItems: "center", gap: "5px" }}
             >
               <span style={{ fontSize: "0.75rem" }}>⬇</span>
-              <span>Download</span>
+              <span>{t("mdDownload")}</span>
             </a>
             <button type="button" onClick={onClose} className="hh-close-btn">
               <MdClose size={16} />
@@ -118,7 +129,7 @@ function ViewModal({ doc, onClose }) {
             <div style={{ textAlign: "center", padding: "3rem 2rem" }}>
               <div style={{ fontSize: "3rem", marginBottom: "1rem" }}>📄</div>
               <p style={{ color: "var(--text-secondary)", fontSize: "14px", margin: "0 0 1rem" }}>
-                Preview not available for this file type
+                {t("mdPreviewUnavailable")}
               </p>
               <a
                 href={fileUrl}
@@ -127,7 +138,7 @@ function ViewModal({ doc, onClose }) {
                 className="btn-primary"
                 style={{ textDecoration: "none", display: "inline-flex" }}
               >
-                Open File
+                {t("mdOpenFile")}
               </a>
             </div>
           )}
@@ -142,7 +153,8 @@ function ViewModal({ doc, onClose }) {
    UPLOAD / RE-UPLOAD MODAL
 ───────────────────────────────────────── */
 function UploadModal({ docType, existingDoc, onClose, onSuccess }) {
-  const meta = CATEGORY_MAP[docType] || { label: docType, icon: "📄", colorClass: "rd-icon-purple" };
+  const { t } = useLang();
+  const meta = getDocMeta(docType, t);
   const [file, setFile] = useState(null);
   const [dragOver, setDragOver] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -182,7 +194,7 @@ function UploadModal({ docType, existingDoc, onClose, onSuccess }) {
   };
 
   const handleSubmit = async () => {
-  if (!file) { setError("Please select a file first."); return; }
+  if (!file) { setError(t("mdSelectFileFirst")); return; }
   setError(null);
   setUploading(true);
   try {
@@ -191,26 +203,16 @@ function UploadModal({ docType, existingDoc, onClose, onSuccess }) {
 
     if (isEdit) {
       // ✅ Update route — single doc only
-      await axios.patch(`${API}/api/user-documents/${docType}`, formData, {
-        headers: {
-          Authorization: `Bearer ${getToken()}`,
-          "Content-Type": "multipart/form-data",
-        },
-      });
+      await API.patch(`/user-documents/${docType}`, formData);
     } else {
       // Initial upload — both docs required, handled by existing POST
-      await axios.post(`${API}/api/user-documents`, formData, {
-        headers: {
-          Authorization: `Bearer ${getToken()}`,
-          "Content-Type": "multipart/form-data",
-        },
-      });
+      await API.post("/user-documents", formData);
     }
 
     onSuccess();
     onClose();
   } catch (err) {
-    setError(err.response?.data?.message || err.message || "Upload failed.");
+    setError(err.response?.data?.message || err.message || t("mdUploadFailed"));
   } finally {
     setUploading(false);
   }
@@ -241,10 +243,10 @@ function UploadModal({ docType, existingDoc, onClose, onSuccess }) {
             </div>
             <div>
               <p style={{ margin: 0, fontSize: "14px", fontWeight: 700, color: "var(--text-primary)" }}>
-                {isEdit ? `Re-upload ${meta.label}` : `Upload ${meta.label}`}
+                {isEdit ? t("mdReuploadTitle", { label: meta.label }) : t("mdUploadTitle", { label: meta.label })}
               </p>
               <p style={{ margin: 0, fontSize: "11px", color: "var(--text-secondary)" }}>
-                {isEdit ? "Replace existing document" : "Upload new document"}
+                {isEdit ? t("mdReplaceExisting") : t("mdUploadNew")}
               </p>
             </div>
           </div>
@@ -280,9 +282,9 @@ function UploadModal({ docType, existingDoc, onClose, onSuccess }) {
               <div className="ad-dz-empty">
                 <span className="ad-dz-cloud" style={{ fontSize: "2rem" }}>☁</span>
                 <p className="ad-dz-text">
-                  Drag & drop or <span className="ad-dz-browse">browse</span>
+                  {t("mdDragDrop")} <span className="ad-dz-browse">{t("mdBrowse")}</span>
                 </p>
-                <p className="ad-dz-hint">JPG, PNG, WEBP or PDF · Max 5 MB</p>
+                <p className="ad-dz-hint">{t("mdFileHint")}</p>
               </div>
             ) : (
               <div className="ad-dz-filled">
@@ -307,7 +309,7 @@ function UploadModal({ docType, existingDoc, onClose, onSuccess }) {
               className="hh-btn-cancel"
               style={{ flex: 1, padding: "0.65rem", borderRadius: "10px", fontSize: "13px", fontWeight: 600, cursor: "pointer" }}
             >
-              Cancel
+              {t("cancel")}
             </button>
             <button
               onClick={handleSubmit}
@@ -332,9 +334,9 @@ function UploadModal({ docType, existingDoc, onClose, onSuccess }) {
                     animation: "spin 0.65s linear infinite",
                     display: "inline-block", flexShrink: 0,
                   }} />
-                  Uploading…
+                  {t("mdUploading")}
                 </>
-              ) : isEdit ? "Re-upload" : "Upload"}
+              ) : isEdit ? t("mdReupload") : t("mdUpload")}
             </button>
           </div>
         </div>
@@ -354,7 +356,8 @@ function UploadModal({ docType, existingDoc, onClose, onSuccess }) {
    DELETE CONFIRM MODAL
 ───────────────────────────────────────── */
 function DeleteModal({ doc, onClose, onSuccess }) {
-  const meta = CATEGORY_MAP[doc.type] || { label: doc.type };
+  const { t } = useLang();
+  const meta = getDocMeta(doc.type, t);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState(null);
 
@@ -374,13 +377,11 @@ function DeleteModal({ doc, onClose, onSuccess }) {
     setDeleting(true);
     setError(null);
     try {
-      await axios.delete(`${API}/api/user-documents/${doc.type}`, {
-        headers: { Authorization: `Bearer ${getToken()}` },
-      });
+      await API.delete(`/user-documents/${doc.type}`);
       onSuccess();
       onClose();
     } catch (err) {
-      setError(err.response?.data?.message || err.message || "Delete failed.");
+      setError(err.response?.data?.message || err.message || t("mdDeleteFailed"));
       setDeleting(false);
     }
   };
@@ -395,12 +396,12 @@ function DeleteModal({ doc, onClose, onSuccess }) {
         <div className="hh-confirm-icon hh-confirm-icon--danger" style={{ fontSize: "1.4rem" }}>🗑</div>
 
         <h3 className="hh-confirm-title" style={{ margin: "0 0 8px", fontSize: "1rem", fontWeight: 700 }}>
-          Delete {meta.label}?
+          {t("mdDeleteTitle", { label: meta.label })}
         </h3>
         <p className="hh-confirm-sub" style={{ margin: "0 0 1.25rem", fontSize: "0.8rem", lineHeight: 1.6 }}>
-          This will permanently remove your{" "}
-          <strong style={{ color: "var(--reject-color)" }}>{meta.label}</strong> from the system.
-          This action cannot be undone.
+          {t("mdDeleteConfirmA")}{" "}
+          <strong style={{ color: "var(--reject-color)" }}>{meta.label}</strong>{" "}
+          {t("mdDeleteConfirmB")}
         </p>
 
         {error && (
@@ -414,7 +415,7 @@ function DeleteModal({ doc, onClose, onSuccess }) {
             disabled={deleting}
             className="hh-btn-cancel"
             style={{ flex: 1, padding: "0.65rem", borderRadius: "10px", fontSize: "0.85rem", fontWeight: 600, cursor: "pointer", opacity: deleting ? 0.55 : 1 }}
-          >Cancel</button>
+          >{t("cancel")}</button>
           <button
             type="button"
             onClick={handleDelete}
@@ -422,7 +423,7 @@ function DeleteModal({ doc, onClose, onSuccess }) {
             className="btn-danger"
             style={{ flex: 1, display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "6px", padding: "0.65rem" }}
           >
-            {deleting ? "Deleting…" : "Delete"}
+            {deleting ? t("mdDeleting") : t("mdDelete")}
           </button>
         </div>
       </div>
@@ -435,11 +436,8 @@ function DeleteModal({ doc, onClose, onSuccess }) {
    DOCUMENT CARD
 ───────────────────────────────────────── */
 function DocCard({ doc, onView, onEdit, onDelete }) {
-  const meta = CATEGORY_MAP[doc.type] || {
-    label: doc.type, icon: "📄",
-    colorClass: "rd-icon-purple", badgeClass: "rd-badge-purple", glowClass: "rd-glow-purple",
-    desc: "Document",
-  };
+  const { t } = useLang();
+  const meta = getDocMeta(doc.type, t);
 
   const uploadedDate = doc.uploaded_at
     ? new Date(doc.uploaded_at).toLocaleDateString("en-IN", {
@@ -474,20 +472,20 @@ function DocCard({ doc, onView, onEdit, onDelete }) {
         <div className="rd-card-footer">
           <span className="rd-size-chip">
             <span style={{ fontSize: "0.7rem" }}>📎</span>
-            {ext} File
+            {t("mdFileSuffix", { ext })}
           </span>
 
           <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
             {/* View */}
             <button className="rd-btn rd-btn-view" onClick={() => onView(doc)}>
               <span style={{ fontSize: "0.72rem" }}>👁</span>
-              <span>View</span>
+              <span>{t("view")}</span>
             </button>
 
             {/* Edit / Re-upload */}
             <button type="button" className="md-btn-edit" onClick={() => onEdit(doc)}>
               <span style={{ fontSize: "0.72rem" }}>✏️</span>
-              <span>Edit</span>
+              <span>{t("mdEdit")}</span>
             </button>
 
             <button type="button" className="md-btn-delete" onClick={() => onDelete(doc)}>
@@ -504,7 +502,8 @@ function DocCard({ doc, onView, onEdit, onDelete }) {
    EMPTY SLOT CARD
 ───────────────────────────────────────── */
 function EmptySlotCard({ docType, onUpload }) {
-  const meta = CATEGORY_MAP[docType];
+  const { t } = useLang();
+  const meta = getDocMeta(docType, t);
   return (
     <div
       className="rd-doc-card"
@@ -519,16 +518,16 @@ function EmptySlotCard({ docType, onUpload }) {
         </div>
         <div className="rd-card-body">
           <p className="rd-doc-title" style={{ opacity: 0.7 }}>{meta.label}</p>
-          <p className="rd-doc-desc">Not uploaded yet</p>
+          <p className="rd-doc-desc">{t("mdNotUploaded")}</p>
         </div>
         <div className="rd-card-footer">
-          <span className="rd-size-chip" style={{ opacity: 0.5 }}>No file</span>
+          <span className="rd-size-chip" style={{ opacity: 0.5 }}>{t("mdNoFile")}</span>
           <button
             className="rd-btn rd-btn-view"
             onClick={() => onUpload(docType)}
           >
             <span style={{ fontSize: "0.72rem" }}>⬆</span>
-            <span>Upload</span>
+            <span>{t("mdUpload")}</span>
           </button>
         </div>
       </div>
@@ -540,6 +539,7 @@ function EmptySlotCard({ docType, onUpload }) {
    MAIN PAGE
 ───────────────────────────────────────── */
 export default function MyDocuments() {
+  const { t } = useLang();
   const [docs, setDocs] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -563,9 +563,7 @@ export default function MyDocuments() {
     try {
       setLoading(true);
       setError(null);
-      const res = await axios.get(`${API}/api/user-documents/my`, {
-        headers: { Authorization: `Bearer ${getToken()}` },
-      });
+      const res = await API.get("/user-documents/my");
       if (res.data) {
         const arr = [];
         if (res.data.aadhar_url)
@@ -586,7 +584,7 @@ export default function MyDocuments() {
       }
     } catch (err) {
       if (err.response?.status === 404) setDocs([]);
-      else setError(err.response?.data?.message || err.message || "Failed to load");
+      else setError(err.response?.data?.message || err.message || t("mdLoadFailed"));
     } finally {
       setLoading(false);
     }
@@ -602,9 +600,9 @@ export default function MyDocuments() {
 
   const q = search.trim().toLowerCase();
   const matchesMeta = (type) => {
-    const meta = CATEGORY_MAP[type];
+    const meta = getDocMeta(type, t);
     if (!q) return true;
-    return [type, meta?.label, meta?.desc].some((v) => String(v || "").toLowerCase().includes(q));
+    return [type, meta.label, meta.desc].some((v) => String(v || "").toLowerCase().includes(q));
   };
   const visibleDocs = (docs || []).filter((d) => matchesMeta(d.type) || String(d.file_url || "").toLowerCase().includes(q));
   const visibleMissing = missingTypes.filter((type) => matchesMeta(type));
@@ -627,8 +625,8 @@ export default function MyDocuments() {
             <MdFolderOpen size={22} />
           </div>
           <div>
-            <h2 className="page-title">My Documents</h2>
-            <p className="page-subtitle">View, upload and manage your identity documents</p>
+            <h2 className="page-title">{t("mdTitle")}</h2>
+            <p className="page-subtitle">{t("mdSubtitle")}</p>
           </div>
         </div>
         {missingTypes.length > 0 && (
@@ -637,7 +635,7 @@ export default function MyDocuments() {
             className="btn-primary flex items-center gap-2"
             onClick={() => setUploadModal({ docType: missingTypes[0], existingDoc: null })}
           >
-            <MdAdd size={18} /> Upload
+            <MdAdd size={18} /> {t("mdUpload")}
           </button>
         )}
       </div>
@@ -645,15 +643,15 @@ export default function MyDocuments() {
       <div className="ge-stats">
         <div className="complaint-stat-card complaint-stat-total">
           <span className="complaint-stat-val">{docs ? uploadedCount : "—"}</span>
-          <span className="complaint-stat-label">Uploaded</span>
+          <span className="complaint-stat-label">{t("mdStatUploaded")}</span>
         </div>
         <div className="complaint-stat-card complaint-stat-inprogress">
           <span className="complaint-stat-val">{docs ? pendingCount : "—"}</span>
-          <span className="complaint-stat-label">Pending</span>
+          <span className="complaint-stat-label">{t("mdStatPending")}</span>
         </div>
         <div className="complaint-stat-card complaint-stat-resolved">
           <span className="complaint-stat-val">{totalDocs}</span>
-          <span className="complaint-stat-label">Required</span>
+          <span className="complaint-stat-label">{t("mdStatRequired")}</span>
         </div>
       </div>
 
@@ -664,16 +662,16 @@ export default function MyDocuments() {
             value={tab}
             onChange={setTab}
             tabs={[
-              { id: "ALL", label: "All", badge: totalDocs },
-              { id: "UPLOADED", label: "Uploaded", badge: uploadedCount },
-              { id: "PENDING", label: "Pending", badge: pendingCount, alert: pendingCount },
+              { id: "ALL", label: t("mdTabAll"), badge: totalDocs },
+              { id: "UPLOADED", label: t("mdStatUploaded"), badge: uploadedCount },
+              { id: "PENDING", label: t("mdStatPending"), badge: pendingCount, alert: pendingCount },
             ]}
           />
         </div>
 
         <div className="ml-auto">
           <ExpandableSearch
-            placeholder="Search Aadhaar, PAN…"
+            placeholder={t("mdSearch")}
             value={search}
             onChange={setSearch}
           />
@@ -691,14 +689,14 @@ export default function MyDocuments() {
             border: "2px solid rgba(var(--acct-purple-rgb),0.28)", borderTopColor: "var(--accent)",
             borderRadius: "50%", animation: "spin 0.65s linear infinite",
           }} />
-          Loading documents…
+          {t("mdLoading")}
         </div>
       )}
 
       {error && !loading && (
         <div className="rd-error">
           <p className="rd-error-text">{error}</p>
-          <button type="button" className="rd-btn rd-btn-view" onClick={fetchDocs}>Retry</button>
+          <button type="button" className="rd-btn rd-btn-view" onClick={fetchDocs}>{t("retry")}</button>
         </div>
       )}
 
@@ -707,7 +705,7 @@ export default function MyDocuments() {
           <div className="md-empty">
             <MdSearch size={36} style={{ opacity: 0.28 }} />
             <p style={{ fontSize: 15, fontWeight: 600 }}>
-              {q ? `No documents match “${search.trim()}”` : "No documents in this tab"}
+              {q ? t("mdEmptyNoMatch", { query: search.trim() }) : t("mdEmptyTab")}
             </p>
           </div>
         </div>
@@ -738,7 +736,7 @@ export default function MyDocuments() {
       {/* ── Footer ── */}
       {!loading && docs && docs.length > 0 && (
         <p className="rd-footer-note">
-          Your documents are securely stored and only accessible to you and authorised society administrators.
+          {t("mdFooterNote")}
         </p>
       )}
 
@@ -753,11 +751,11 @@ export default function MyDocuments() {
           existingDoc={uploadModal.existingDoc}
           onClose={() => setUploadModal(null)}
           onSuccess={() => {
-            const label = CATEGORY_MAP[uploadModal.docType]?.label || "Document";
+            const label = getDocMeta(uploadModal.docType, t).label;
             showToast(
               uploadModal.existingDoc
-                ? `${label} updated successfully`
-                : `${label} uploaded successfully`
+                ? t("mdUpdated", { label })
+                : t("mdUploaded", { label })
             );
             fetchDocs();
           }}
@@ -769,8 +767,8 @@ export default function MyDocuments() {
           doc={deleteDoc}
           onClose={() => setDeleteDoc(null)}
           onSuccess={() => {
-            const label = CATEGORY_MAP[deleteDoc.type]?.label || "Document";
-            showToast(`${label} deleted`, "error");
+            const label = getDocMeta(deleteDoc.type, t).label;
+            showToast(t("mdDeleted", { label }), "error");
             fetchDocs();
           }}
         />

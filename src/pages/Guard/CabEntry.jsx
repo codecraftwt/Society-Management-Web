@@ -3,17 +3,13 @@ import API from "../../services/api";
 import { useLang } from "../../context/LanguageContext";
 import {
   MdAdd,
-  MdClose,
   MdLocalTaxi,
   MdPhone,
-  MdDirectionsCar,
-  MdAccessTime,
-  MdCheckCircle,
   MdLogout,
 } from "react-icons/md";
 import { toast } from "react-toastify";
 import SlidingTabs from "../../components/common/SlidingTabs";
-import ToggleSearchBar from "../../components/common/ToggleSearchBar";
+import ExpandableSearch from "../../components/common/ExpandableSearch";
 import Pagination from "../../components/common/Pagination";
 import StepVisitorEntryModal from "../../components/guard/StepVisitorEntryModal";
 
@@ -51,7 +47,7 @@ function Spinner({ size = 16 }) {
   );
 }
 
-function resolveFlatLabel(flat) {
+function resolveFlatLabel(flat, tl = (_k, _p, fb) => fb) {
   if (!flat) return "NA";
   const block = flat.Floor?.Block?.name || flat.Block?.name || null;
   const floorNumber = flat.Floor?.floor_number ?? null;
@@ -59,7 +55,7 @@ function resolveFlatLabel(flat) {
   return (
     [
       block,
-      floorNumber != null ? `Floor ${floorNumber}` : null,
+      floorNumber != null ? tl("cabFloor", { n: floorNumber }, `Floor ${floorNumber}`) : null,
       flatNumber,
     ]
       .filter(Boolean)
@@ -67,8 +63,8 @@ function resolveFlatLabel(flat) {
   );
 }
 
-function resolveVisitorFlatLabel(v) {
-  return resolveFlatLabel(v?.Flat);
+function resolveVisitorFlatLabel(v, tl) {
+  return resolveFlatLabel(v?.Flat, tl);
 }
 
 function splitCabName(name = "") {
@@ -143,10 +139,10 @@ export default function CabEntry() {
     setExitLoadingId(id);
     try {
       await API.put(`/visitors/exit/${id}`);
-      toast.success(`Cab exit logged for ${name}`);
+      toast.success(t("cabToastExit", { name }, "Cab exit logged for {name}"));
       loadCabs(page, debSearch, filter);
     } catch (err) {
-      toast.error(err.response?.data?.message || "Failed to mark cab exit");
+      toast.error(err.response?.data?.message || t("cabToastExitFail", "Failed to mark cab exit"));
     } finally {
       setExitLoadingId(null);
     }
@@ -194,7 +190,7 @@ export default function CabEntry() {
           }`}
         >
           <span className="complaint-stat-val text-amber-600">{counts.ALL}</span>
-          <span className="complaint-stat-label">Total Cabs</span>
+          <span className="complaint-stat-label">{t("cabStatTotal", "Total Cabs")}</span>
         </div>
         <div
           onClick={() => handleFilterChange("IN")}
@@ -203,7 +199,7 @@ export default function CabEntry() {
           }`}
         >
           <span className="complaint-stat-val text-emerald-600">{counts.IN}</span>
-          <span className="complaint-stat-label">Inside Society</span>
+          <span className="complaint-stat-label">{t("cabStatInside", "Inside Society")}</span>
         </div>
         <div
           onClick={() => handleFilterChange("OUT")}
@@ -212,7 +208,7 @@ export default function CabEntry() {
           }`}
         >
           <span className="complaint-stat-val text-gray-500">{counts.OUT}</span>
-          <span className="complaint-stat-label">Exited Gate</span>
+          <span className="complaint-stat-label">{t("cabStatExited", "Exited Gate")}</span>
         </div>
       </div>
 
@@ -224,7 +220,7 @@ export default function CabEntry() {
             value={filter}
             onChange={handleFilterChange}
             tabs={filterTabs.map(({ key, label, count }) => ({
-              key,
+              id: key,
               label: (
                 <span className="flex items-center gap-1.5">
                   <span>{label}</span>
@@ -235,13 +231,11 @@ export default function CabEntry() {
           />
         </div>
 
-        <div className="ge-search-wrap">
-          <ToggleSearchBar
-            value={search}
-            onChange={(val) => setSearch(val)}
-            placeholder={t("cabSearchPlaceholder", "Search driver, taxi brand, vehicle no, flat...")}
-          />
-        </div>
+        <ExpandableSearch
+          placeholder={t("cabSearchPlaceholder", "Search driver, taxi brand, vehicle no, flat...")}
+          value={search}
+          onChange={setSearch}
+        />
       </div>
 
       {/* ── DESKTOP TABLE ── */}
@@ -249,26 +243,26 @@ export default function CabEntry() {
         {initialLoad ? (
           <div className="p-8 text-center text-secondary">
             <Spinner size={24} />
-            <p className="mt-2 text-xs">Loading cab records...</p>
+            <p className="mt-2 text-xs">{t("cabLoading", "Loading cab records...")}</p>
           </div>
         ) : cabs.length === 0 ? (
           <div className="ge-empty">
             <span className="ge-empty-icon">🚖</span>
-            <span>No cab entries found</span>
+            <span>{t("cabEmpty", "No cab entries found")}</span>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="ge-table">
               <thead>
                 <tr>
-                  <th>Driver &amp; Cab Service</th>
-                  <th>Flat Destination</th>
-                  <th>Contact</th>
-                  <th>Vehicle Number</th>
-                  <th>Entry Time</th>
-                  <th>Exit Time</th>
-                  <th>Status</th>
-                  <th>Action</th>
+                  <th>{t("cabColDriver", "Driver & Cab Service")}</th>
+                  <th>{t("cabColFlat", "Flat Destination")}</th>
+                  <th>{t("cabColContact", "Contact")}</th>
+                  <th>{t("cabColVehicleNo", "Vehicle Number")}</th>
+                  <th>{t("cabColEntryTime", "Entry Time")}</th>
+                  <th>{t("cabColExitTime", "Exit Time")}</th>
+                  <th>{t("cabColStatus", "Status")}</th>
+                  <th>{t("cabColAction", "Action")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -293,7 +287,7 @@ export default function CabEntry() {
                         </div>
                       </td>
                       <td>
-                        <span className="ge-flat-chip">{resolveVisitorFlatLabel(item)}</span>
+<span className="ge-flat-chip">{resolveVisitorFlatLabel(item, t)}</span>
                       </td>
                       <td>
                         <a
@@ -332,11 +326,11 @@ export default function CabEntry() {
                       <td>
                         {isInside ? (
                           <span className="ge-badge ge-badge--inside">
-                            ● Inside
+                            ● {t("cabBadgeInside", "Inside")}
                           </span>
                         ) : (
                           <span className="ge-badge ge-badge--left">
-                            ✔ Exited
+                            ✔ {t("cabBadgeExited", "Exited")}
                           </span>
                         )}
                       </td>
@@ -352,10 +346,10 @@ export default function CabEntry() {
                             ) : (
                               <MdLogout size={13} />
                             )}
-                            <span>Mark Exit</span>
+                            <span>{t("cabMarkExit", "Mark Exit")}</span>
                           </button>
                         ) : (
-                          <span className="text-xs text-secondary italic">Completed</span>
+                          <span className="text-xs text-secondary italic">{t("cabCompleted", "Completed")}</span>
                         )}
                       </td>
                     </tr>
@@ -391,7 +385,7 @@ export default function CabEntry() {
         ) : cabs.length === 0 ? (
           <div className="ge-empty">
             <span className="ge-empty-icon">🚖</span>
-            <span>No cab entries found</span>
+            <span>{t("cabEmpty", "No cab entries found")}</span>
           </div>
         ) : (
           <>
@@ -414,22 +408,22 @@ export default function CabEntry() {
                       </div>
                     </div>
                     {item.exit_time ? (
-                      <span className="ge-badge ge-badge--left">✔ Exited</span>
+                      <span className="ge-badge ge-badge--left">✔ {t("cabBadgeExited", "Exited")}</span>
                     ) : (
-                      <span className="ge-badge ge-badge--inside">● Inside</span>
+                      <span className="ge-badge ge-badge--inside">● {t("cabBadgeInside", "Inside")}</span>
                     )}
                   </div>
                   <div className="ge-mc-rows">
                     <div className="ge-mc-row">
-                      <span className="ge-mc-label">Destination</span>
-                      <span className="ge-flat-chip">{resolveVisitorFlatLabel(item)}</span>
+                      <span className="ge-mc-label">{t("cabDest", "Destination")}</span>
+                      <span className="ge-flat-chip">{resolveVisitorFlatLabel(item, t)}</span>
                     </div>
                     <div className="ge-mc-row">
-                      <span className="ge-mc-label">Vehicle</span>
+                      <span className="ge-mc-label">{t("cabVehicle", "Vehicle")}</span>
                       <span className="ge-mc-val font-mono">{item.vehicle_number || "—"}</span>
                     </div>
                     <div className="ge-mc-row">
-                      <span className="ge-mc-label">Contact</span>
+                      <span className="ge-mc-label">{t("cabContact", "Contact")}</span>
                       <a
                         href={`tel:${item.mobile}`}
                         className="ge-mc-val text-blue-600 flex items-center gap-1"
@@ -438,7 +432,7 @@ export default function CabEntry() {
                       </a>
                     </div>
                     <div className="ge-mc-row">
-                      <span className="ge-mc-label">Entry Time</span>
+                      <span className="ge-mc-label">{t("cabEntryTime", "Entry Time")}</span>
                       <span className="ge-mc-val">
                         {item.entry_time ? new Date(item.entry_time).toLocaleTimeString() : "—"}
                       </span>
@@ -451,7 +445,7 @@ export default function CabEntry() {
                           className="px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm"
                         >
                           {exitLoadingId === item.id ? <Spinner size={12} /> : <MdLogout size={14} />}
-                          <span>Record Exit</span>
+                          <span>{t("cabRecordExit", "Record Exit")}</span>
                         </button>
                       </div>
                     )}

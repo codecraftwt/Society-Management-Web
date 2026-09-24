@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { MdSearch, MdClose } from "react-icons/md";
+import { useLang } from "../../context/LanguageContext";
 
 export default function ToggleSearchBar({
   value = "",
@@ -7,6 +8,7 @@ export default function ToggleSearchBar({
   placeholder = "Search...",
   className = "",
 }) {
+  const { t } = useLang();
   const [isOpen, setIsOpen] = useState(() => Boolean(value));
   const inputRef = useRef(null);
 
@@ -34,11 +36,11 @@ export default function ToggleSearchBar({
         <button
           type="button"
           onClick={handleOpen}
-          className="h-9 px-3.5 rounded-xl bg-card-inner-bg/80 hover:bg-indigo-500/15 text-secondary hover:text-indigo-500 transition-all duration-200 flex items-center gap-2 text-xs font-bold shadow-2xs hover:shadow-xs cursor-pointer border-0 outline-none"
-          title="Search"
+          className="h-10 px-3.5 rounded-xl bg-card border border-glass-border hover:border-accent text-secondary hover:text-primary transition-all flex items-center gap-2 text-xs font-bold shadow-xs hover:shadow-sm"
+          title="Open Search"
         >
-          <MdSearch size={18} className="text-indigo-500 shrink-0" />
-          <span className="hidden sm:inline font-bold">Search</span>
+          <MdSearch size={18} className="text-accent" />
+          <span className="hidden sm:inline">Search</span>
         </button>
       ) : (
         <div className="flex items-center h-9 rounded-xl bg-card-inner-bg/90 backdrop-blur-md px-3 shadow-inner w-56 sm:w-64 transition-all duration-300 ease-out border-0 outline-none ring-1 ring-indigo-500/20">
@@ -64,7 +66,7 @@ export default function ToggleSearchBar({
           <button
             type="button"
             onClick={handleClose}
-            className="p-1 rounded-lg hover:bg-black/10 dark:hover:bg-white/10 text-secondary hover:text-primary transition shrink-0 ml-1 border-0 outline-none cursor-pointer"
+            className="p-1 rounded-lg hover:bg-black/10 dark:hover:bg-white/10 text-secondary hover:text-primary transition shrink-0 ml-1"
             title="Close Search"
           >
             <MdClose size={16} />

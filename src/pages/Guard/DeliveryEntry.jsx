@@ -3,18 +3,14 @@ import API from "../../services/api";
 import { useLang } from "../../context/LanguageContext";
 import {
   MdAdd,
-  MdClose,
   MdLocalShipping,
   MdPhone,
-  MdDirectionsCar,
-  MdAccessTime,
-  MdCheckCircle,
   MdLogout,
 } from "react-icons/md";
 import { FaTruck } from "react-icons/fa";
 import { toast } from "react-toastify";
 import SlidingTabs from "../../components/common/SlidingTabs";
-import ToggleSearchBar from "../../components/common/ToggleSearchBar";
+import ExpandableSearch from "../../components/common/ExpandableSearch";
 import Pagination from "../../components/common/Pagination";
 import StepVisitorEntryModal from "../../components/guard/StepVisitorEntryModal";
 
@@ -52,7 +48,7 @@ function Spinner({ size = 16 }) {
   );
 }
 
-function resolveFlatLabel(flat) {
+function resolveFlatLabel(flat, tl = (_k, _p, fb) => fb) {
   if (!flat) return "NA";
   const block = flat.Floor?.Block?.name || flat.Block?.name || null;
   const floorNumber = flat.Floor?.floor_number ?? null;
@@ -60,7 +56,7 @@ function resolveFlatLabel(flat) {
   return (
     [
       block,
-      floorNumber != null ? `Floor ${floorNumber}` : null,
+      floorNumber != null ? tl("delFloor", { n: floorNumber }, `Floor ${floorNumber}`) : null,
       flatNumber,
     ]
       .filter(Boolean)
@@ -68,8 +64,8 @@ function resolveFlatLabel(flat) {
   );
 }
 
-function resolveVisitorFlatLabel(v) {
-  return resolveFlatLabel(v?.Flat);
+function resolveVisitorFlatLabel(v, tl) {
+  return resolveFlatLabel(v?.Flat, tl);
 }
 
 function splitDeliveryName(name = "") {
@@ -144,10 +140,10 @@ export default function DeliveryEntry() {
     setExitLoadingId(id);
     try {
       await API.put(`/visitors/exit/${id}`);
-      toast.success(`Exit logged for delivery ${name}`);
+      toast.success(t("delToastExit", { name }, "Exit logged for delivery {name}"));
       loadDeliveries(page, debSearch, filter);
     } catch (err) {
-      toast.error(err.response?.data?.message || "Failed to mark delivery exit");
+      toast.error(err.response?.data?.message || t("delToastExitFail", "Failed to mark delivery exit"));
     } finally {
       setExitLoadingId(null);
     }
@@ -195,7 +191,7 @@ export default function DeliveryEntry() {
           }`}
         >
           <span className="complaint-stat-val text-cyan-600">{counts.ALL}</span>
-          <span className="complaint-stat-label">Total Deliveries</span>
+          <span className="complaint-stat-label">{t("delStatTotal", "Total Deliveries")}</span>
         </div>
         <div
           onClick={() => handleFilterChange("IN")}
@@ -204,7 +200,7 @@ export default function DeliveryEntry() {
           }`}
         >
           <span className="complaint-stat-val text-emerald-600">{counts.IN}</span>
-          <span className="complaint-stat-label">Inside Campus</span>
+          <span className="complaint-stat-label">{t("delStatInside", "Inside Campus")}</span>
         </div>
         <div
           onClick={() => handleFilterChange("OUT")}
@@ -213,7 +209,7 @@ export default function DeliveryEntry() {
           }`}
         >
           <span className="complaint-stat-val text-gray-500">{counts.OUT}</span>
-          <span className="complaint-stat-label">Departed Gate</span>
+          <span className="complaint-stat-label">{t("delStatExited", "Departed Gate")}</span>
         </div>
       </div>
 
@@ -224,8 +220,8 @@ export default function DeliveryEntry() {
             className="ge-filter-tabs"
             value={filter}
             onChange={handleFilterChange}
-            tabs={filterTabs.map(({ key, label, count }) => ({
-              key,
+tabs={filterTabs.map(({ key, label, count }) => ({
+              id: key,
               label: (
                 <span className="flex items-center gap-1.5">
                   <span>{label}</span>
@@ -236,13 +232,11 @@ export default function DeliveryEntry() {
           />
         </div>
 
-        <div className="ge-search-wrap">
-          <ToggleSearchBar
-            value={search}
-            onChange={(val) => setSearch(val)}
-            placeholder={t("delSearchPlaceholder", "Search agent, Swiggy/Zomato, phone, flat...")}
-          />
-        </div>
+        <ExpandableSearch
+          placeholder={t("delSearchPlaceholder", "Search agent, Swiggy/Zomato, phone, flat...")}
+          value={search}
+          onChange={setSearch}
+        />
       </div>
 
       {/* ── DESKTOP TABLE ── */}
@@ -250,26 +244,26 @@ export default function DeliveryEntry() {
         {initialLoad ? (
           <div className="p-8 text-center text-secondary">
             <Spinner size={24} />
-            <p className="mt-2 text-xs">Loading delivery records...</p>
+            <p className="mt-2 text-xs">{t("delLoading", "Loading delivery records...")}</p>
           </div>
         ) : deliveries.length === 0 ? (
           <div className="ge-empty">
             <span className="ge-empty-icon">📦</span>
-            <span>No delivery records found</span>
+            <span>{t("delEmpty", "No delivery records found")}</span>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="ge-table">
               <thead>
                 <tr>
-                  <th>Delivery Partner &amp; Agent</th>
-                  <th>Flat Destination</th>
-                  <th>Contact</th>
-                  <th>Vehicle Number</th>
-                  <th>Entry Time</th>
-                  <th>Exit Time</th>
-                  <th>Status</th>
-                  <th>Action</th>
+                  <th>{t("delColPartner", "Delivery Partner & Agent")}</th>
+                  <th>{t("delColFlat", "Flat Destination")}</th>
+                  <th>{t("delColContact", "Contact")}</th>
+                  <th>{t("delColVehicleNo", "Vehicle Number")}</th>
+                  <th>{t("delColEntryTime", "Entry Time")}</th>
+                  <th>{t("delColExitTime", "Exit Time")}</th>
+                  <th>{t("delColStatus", "Status")}</th>
+                  <th>{t("delColAction", "Action")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -294,7 +288,7 @@ export default function DeliveryEntry() {
                         </div>
                       </td>
                       <td>
-                        <span className="ge-flat-chip">{resolveVisitorFlatLabel(item)}</span>
+                        <span className="ge-flat-chip">{resolveVisitorFlatLabel(item, t)}</span>
                       </td>
                       <td>
                         <a
@@ -333,11 +327,11 @@ export default function DeliveryEntry() {
                       <td>
                         {isInside ? (
                           <span className="ge-badge ge-badge--inside">
-                            ● Inside
+                            ● {t("delBadgeInside", "Inside")}
                           </span>
                         ) : (
                           <span className="ge-badge ge-badge--left">
-                            ✔ Exited
+                            ✔ {t("delBadgeExited", "Exited")}
                           </span>
                         )}
                       </td>
@@ -353,10 +347,10 @@ export default function DeliveryEntry() {
                             ) : (
                               <MdLogout size={13} />
                             )}
-                            <span>Mark Exit</span>
+                            <span>{t("delMarkExit", "Mark Exit")}</span>
                           </button>
                         ) : (
-                          <span className="text-xs text-secondary italic">Completed</span>
+                          <span className="text-xs text-secondary italic">{t("delCompleted", "Completed")}</span>
                         )}
                       </td>
                     </tr>
@@ -392,7 +386,7 @@ export default function DeliveryEntry() {
         ) : deliveries.length === 0 ? (
           <div className="ge-empty">
             <span className="ge-empty-icon">📦</span>
-            <span>No delivery records found</span>
+            <span>{t("delEmpty", "No delivery records found")}</span>
           </div>
         ) : (
           <>
@@ -415,18 +409,18 @@ export default function DeliveryEntry() {
                       </div>
                     </div>
                     {item.exit_time ? (
-                      <span className="ge-badge ge-badge--left">✔ Exited</span>
+                      <span className="ge-badge ge-badge--left">✔ {t("delBadgeExited", "Exited")}</span>
                     ) : (
-                      <span className="ge-badge ge-badge--inside">● Inside</span>
+                      <span className="ge-badge ge-badge--inside">● {t("delBadgeInside", "Inside")}</span>
                     )}
                   </div>
                   <div className="ge-mc-rows">
                     <div className="ge-mc-row">
-                      <span className="ge-mc-label">Destination</span>
-                      <span className="ge-flat-chip">{resolveVisitorFlatLabel(item)}</span>
+                      <span className="ge-mc-label">{t("delDest", "Destination")}</span>
+                      <span className="ge-flat-chip">{resolveVisitorFlatLabel(item, t)}</span>
                     </div>
                     <div className="ge-mc-row">
-                      <span className="ge-mc-label">Contact</span>
+                      <span className="ge-mc-label">{t("delContact", "Contact")}</span>
                       <a
                         href={`tel:${item.mobile}`}
                         className="ge-mc-val text-blue-600 flex items-center gap-1"
@@ -436,12 +430,12 @@ export default function DeliveryEntry() {
                     </div>
                     {item.vehicle_number && (
                       <div className="ge-mc-row">
-                        <span className="ge-mc-label">Vehicle</span>
+                        <span className="ge-mc-label">{t("delVehicle", "Vehicle")}</span>
                         <span className="ge-mc-val font-mono">{item.vehicle_number}</span>
                       </div>
                     )}
                     <div className="ge-mc-row">
-                      <span className="ge-mc-label">Entry Time</span>
+                      <span className="ge-mc-label">{t("delEntryTime", "Entry Time")}</span>
                       <span className="ge-mc-val">
                         {item.entry_time ? new Date(item.entry_time).toLocaleTimeString() : "—"}
                       </span>
@@ -454,7 +448,7 @@ export default function DeliveryEntry() {
                           className="px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm"
                         >
                           {exitLoadingId === item.id ? <Spinner size={12} /> : <MdLogout size={14} />}
-                          <span>Record Exit</span>
+                          <span>{t("delRecordExit", "Record Exit")}</span>
                         </button>
                       </div>
                     )}

@@ -922,10 +922,6 @@
     font-size: 2rem;
     line-height: 1;
     filter: drop-shadow(0 4px 12px rgba(37, 99, 235, 0.25));
-    transition: transform 0.3s ease;
-  }
-  .ra-card:hover .ra-card-emoji {
-    transform: scale(1.08);
   }
   .ra-card-body {
     flex: 1;

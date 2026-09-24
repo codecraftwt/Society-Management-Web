@@ -157,7 +157,7 @@ export default function ResidentDirectory() {
           <div>
             <h2 className="page-title">{t("menuDirectory") || "Society Directory"}</h2>
             <div className="page-subtitle">
-              {loading ? "Loading directory..." : `${neighbours.length} Registered Neighbours`}
+              {loading ? t("dirLoadingDirectory") : t("dirRegisteredNeighbours", { count: neighbours.length })}
             </div>
           </div>
         </div>
@@ -175,15 +175,15 @@ export default function ResidentDirectory() {
       >
         <div className="complaint-stat-card complaint-stat-total">
           <span className="complaint-stat-val">{neighbours.length}</span>
-          <span className="complaint-stat-label">Total Neighbours</span>
+          <span className="complaint-stat-label">{t("dirTotalNeighbours")}</span>
         </div>
         <div className="complaint-stat-card complaint-stat-inprogress">
           <span className="complaint-stat-val">{blocks.length || 1}</span>
-          <span className="complaint-stat-label">Society Blocks</span>
+          <span className="complaint-stat-label">{t("dirSocietyBlocks")}</span>
         </div>
         <div className="complaint-stat-card complaint-stat-resolved">
           <span className="complaint-stat-val">{filtered.length}</span>
-          <span className="complaint-stat-label">Active Matches</span>
+          <span className="complaint-stat-label">{t("dirActiveMatches")}</span>
         </div>
       </div>
 
@@ -203,7 +203,7 @@ export default function ResidentDirectory() {
         {/* Right: Expandable Search */}
         <div className="flex items-center gap-2.5 ml-auto">
           <ExpandableSearch
-            placeholder="Search neighbour, flat, phone..."
+            placeholder={t("dirSearch")}
             value={search}
             onChange={setSearch}
           />
@@ -226,11 +226,11 @@ export default function ResidentDirectory() {
       ) : filtered.length === 0 ? (
         <div className="empty-state">
           <MdOutlineInbox size={48} className="empty-state__icon" />
-          <h3 className="empty-state__title">No Neighbours Found</h3>
+          <h3 className="empty-state__title">{t("dirEmptyTitle")}</h3>
           <p className="empty-state__desc">
             {search || selectedBlock !== "ALL"
-              ? "No resident matches your current filters."
-              : "No neighbours are currently registered in your society directory."}
+              ? t("dirEmptyFilter")
+              : t("dirEmptyRegistered")}
           </p>
         </div>
       ) : (
@@ -243,7 +243,7 @@ export default function ResidentDirectory() {
         >
           {filtered.map((item) => {
             const user = item.User || {};
-            const blockName = item.Block?.name || item.block_name || item.Block?.block_name || "Block";
+            const blockName = item.Block?.name || item.block_name || item.Block?.block_name || t("dirBlock");
             const flatNum = item.flat_number || "—";
             const initial = (user.name || "R").charAt(0).toUpperCase();
             const copyPhoneId = `phone-${item.id}`;
@@ -299,7 +299,7 @@ export default function ResidentDirectory() {
                           whiteSpace: "nowrap",
                         }}
                       >
-                        {user.name || "Resident"}
+                        {user.name || t("dirResidentFallback")}
                       </h4>
                       <span
                         style={{
@@ -387,7 +387,7 @@ export default function ResidentDirectory() {
                       </a>
                       <button
                         onClick={() => handleCopy(user.phone, copyPhoneId)}
-                        title="Copy Phone"
+                        title={t("dirCopyPhone")}
                         style={{
                           background: "none",
                           border: "none",
@@ -439,7 +439,7 @@ export default function ResidentDirectory() {
                       </a>
                       <button
                         onClick={() => handleCopy(user.email, copyEmailId)}
-                        title="Copy Email"
+                        title={t("dirCopyEmail")}
                         style={{
                           background: "none",
                           border: "none",

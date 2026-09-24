@@ -60,20 +60,22 @@ const getElapsedMinutes = (dateStr) => {
   return Math.max(0, Math.floor((now - entry) / 60000));
 };
 
-const formatElapsedStr = (mins) => {
-  if (mins < 1) return "Just now";
-  if (mins < 60) return `${mins}m inside`;
+const formatElapsedStr = (mins, t) => {
+  if (mins < 1) return t("gdJustNow", "Just now");
+  if (mins < 60) return t("gdMinsInside", { mins }, "{mins}m inside");
   const hrs = Math.floor(mins / 60);
   const remMins = mins % 60;
-  return `${hrs}h ${remMins > 0 ? `${remMins}m` : ""} inside`;
+  return remMins > 0
+    ? t("gdHoursInside", { hrs, mins: remMins }, "{hrs}h {mins}m inside")
+    : t("gdHoursOnlyInside", { hrs }, "{hrs}h inside");
 };
 
-const getVisitorTypeMeta = (type) => {
-  const t = (type || "").toUpperCase();
-  switch (t) {
+const getVisitorTypeMeta = (type, t) => {
+  const tt = (type || "").toUpperCase();
+  switch (tt) {
     case "CAB":
       return {
-        label: "Cab",
+        label: t("gdTypeCab", "Cab"),
         icon: MdLocalTaxi,
         color: "var(--acct-yellow, #eab308)",
         bg: "rgba(234, 179, 8, 0.12)",
@@ -81,7 +83,7 @@ const getVisitorTypeMeta = (type) => {
       };
     case "DELIVERY":
       return {
-        label: "Delivery",
+        label: t("gdTypeDelivery", "Delivery"),
         icon: FaTruck,
         color: "var(--acct-cyan, #06b6d4)",
         bg: "rgba(6, 182, 212, 0.12)",
@@ -89,7 +91,7 @@ const getVisitorTypeMeta = (type) => {
       };
     case "SERVICE":
       return {
-        label: "Service",
+        label: t("gdTypeService", "Service"),
         icon: FaTools,
         color: "var(--acct-purple, #a855f7)",
         bg: "rgba(168, 85, 247, 0.12)",
@@ -97,7 +99,7 @@ const getVisitorTypeMeta = (type) => {
       };
     case "DAILY_HELP":
       return {
-        label: "Daily Help",
+        label: t("gdTypeDailyHelp", "Daily Help"),
         icon: FaHandshake,
         color: "var(--acct-teal, #14b8a6)",
         bg: "rgba(20, 184, 166, 0.12)",
@@ -105,7 +107,7 @@ const getVisitorTypeMeta = (type) => {
       };
     default:
       return {
-        label: "Guest",
+        label: t("gdTypeGuest", "Guest"),
         icon: FaUserFriends,
         color: "var(--accent, #3b82f6)",
         bg: "rgba(59, 130, 246, 0.12)",
@@ -114,8 +116,8 @@ const getVisitorTypeMeta = (type) => {
   }
 };
 
-const getFlatLabel = (v) => {
-  if (!v?.Flat) return "Main Gate / General";
+const getFlatLabel = (v, t) => {
+  if (!v?.Flat) return t("gdMainGateGeneral", "Main Gate / General");
   const b = v.Flat.Floor?.Block?.name || v.Flat.Block?.name || "";
   const fl = v.Flat.Floor?.floor_number;
   const fn = v.Flat.flat_number || "—";
@@ -282,7 +284,7 @@ export default function GuardDashboard() {
         const phone = (v.visitor_phone || "").toLowerCase();
         const vehicle = (v.vehicle_number || v.vehicle_no || "").toLowerCase();
         const purpose = (v.purpose || v.visitor_type || "").toLowerCase();
-        const flat = getFlatLabel(v).toLowerCase();
+        const flat = getFlatLabel(v, t).toLowerCase();
         return (
           name.includes(q) ||
           phone.includes(q) ||
@@ -299,7 +301,7 @@ export default function GuardDashboard() {
       if (a.exit_time && !b.exit_time) return 1;
       return new Date(b.entry_time || 0) - new Date(a.entry_time || 0);
     });
-  }, [visitors, activeTab, overstayingVisitors, searchQuery]);
+  }, [visitors, activeTab, overstayingVisitors, searchQuery, t]);
 
   /* ── Mark Visitor Exit Action ── */
   const handleConfirmExit = async () => {
@@ -307,12 +309,12 @@ export default function GuardDashboard() {
     setExitLoading(true);
     try {
       await API.put(`/visitors/exit/${exitTarget.id}`);
-      toast.success(`Exit logged for ${exitTarget.visitor_name}`);
+      toast.success(t("gdExitLogged", { name: exitTarget.visitor_name }, "Exit logged for {name}"));
       setExitTarget(null);
       loadDashboardData(true);
     } catch (err) {
       toast.error(
-        err.response?.data?.message || "Failed to record visitor exit"
+        err.response?.data?.message || t("gdExitFailed", "Failed to record visitor exit")
       );
     } finally {
       setExitLoading(false);
@@ -323,8 +325,8 @@ export default function GuardDashboard() {
   const quickActions = [
     {
       id: "guest",
-      title: "Guest Entry",
-      desc: "Friends, family & personal visits",
+      title: t("gdActionGuest", "Guest Entry"),
+      desc: t("gdActionGuestDesc", "Friends, family & personal visits"),
       icon: FaUserFriends,
       path: "/guard/guest-entry",
       color: "#2563EB",
@@ -335,8 +337,8 @@ export default function GuardDashboard() {
     },
     {
       id: "cab",
-      title: "Cab Entry",
-      desc: "Uber, Ola, BluSmart & taxi",
+      title: t("gdActionCab", "Cab Entry"),
+      desc: t("gdActionCabDesc", "Uber, Ola, BluSmart & taxi"),
       icon: MdLocalTaxi,
       path: "/guard/cab-entry",
       color: "#D97706",
@@ -346,8 +348,8 @@ export default function GuardDashboard() {
     },
     {
       id: "delivery",
-      title: "Delivery Entry",
-      desc: "Zomato, Swiggy, Amazon & parcel",
+      title: t("gdActionDelivery", "Delivery Entry"),
+      desc: t("gdActionDeliveryDesc", "Zomato, Swiggy, Amazon & parcel"),
       icon: FaTruck,
       path: "/guard/delivery-entry",
       color: "#0891B2",
@@ -357,8 +359,8 @@ export default function GuardDashboard() {
     },
     {
       id: "service",
-      title: "Service Entry",
-      desc: "Plumber, electrician, repairs & maids",
+      title: t("gdActionService", "Service Entry"),
+      desc: t("gdActionServiceDesc", "Plumber, electrician, repairs & maids"),
       icon: FaTools,
       path: "/guard/service-entry",
       color: "#8B5CF6",
@@ -368,8 +370,8 @@ export default function GuardDashboard() {
     },
     {
       id: "dailyhelp",
-      title: "Daily Help",
-      desc: "Maids, cooks, drivers & helpers",
+      title: t("gdActionDailyHelp", "Daily Help"),
+      desc: t("gdActionDailyHelpDesc", "Maids, cooks, drivers & helpers"),
       icon: FaHandshake,
       path: "/guard/daily-help",
       color: "#0D9488",
@@ -379,8 +381,8 @@ export default function GuardDashboard() {
     },
     {
       id: "logbook",
-      title: "Shift Log Book",
-      desc: "Handover notes & gate records",
+      title: t("gdActionLogbook", "Shift Log Book"),
+      desc: t("gdActionLogbookDesc", "Handover notes & gate records"),
       icon: MdHistoryEdu,
       path: "/guard/shift-logbook",
       color: "#6366F1",
@@ -390,8 +392,8 @@ export default function GuardDashboard() {
     },
     {
       id: "gatepass",
-      title: "GatePass Verify",
-      desc: "Verify QR or resident pass code",
+      title: t("gdActionGatepass", "GatePass Verify"),
+      desc: t("gdActionGatepassDesc", "Verify QR or resident pass code"),
       icon: MdVerified,
       path: "/guard/gatepass",
       color: "#16A34A",
@@ -402,8 +404,8 @@ export default function GuardDashboard() {
     },
     {
       id: "parking",
-      title: "Parking Check",
-      desc: "Check visitor slots & plates",
+      title: t("gdActionParking", "Parking Check"),
+      desc: t("gdActionParkingDesc", "Check visitor slots & plates"),
       icon: FaParking,
       path: "/guard/parking",
       color: "#9333EA",
@@ -413,8 +415,8 @@ export default function GuardDashboard() {
     },
     {
       id: "collection",
-      title: "Parcel & Courier",
-      desc: "Track resident parcel drop-offs",
+      title: t("gdActionCollection", "Parcel & Courier"),
+      desc: t("gdActionCollectionDesc", "Track resident parcel drop-offs"),
       icon: MdOutlineCardGiftcard,
       path: "/guard/collection",
       color: "#DB2777",
@@ -424,8 +426,8 @@ export default function GuardDashboard() {
     },
     {
       id: "emergency",
-      title: "Guard SOS Alert",
-      desc: "Broadcast emergency gate alert",
+      title: t("gdActionEmergency", "Guard SOS Alert"),
+      desc: t("gdActionEmergencyDesc", "Broadcast emergency gate alert"),
       icon: MdWarning,
       onClick: () => setShowEmergencyModal(true),
       color: "#DC2626",
@@ -463,7 +465,7 @@ export default function GuardDashboard() {
           </div>
 
           <p className="text-xs md:text-sm text-secondary truncate">
-            {t("gdGuardPortal", "Guard Security Hub")} • Gate Operations &amp; Visitor Management
+            {t("gdGuardPortal", "Guard Security Hub")} • {t("gdGateOpsTagline", "Gate Operations & Visitor Management")}
           </p>
         </div>
 
@@ -507,10 +509,10 @@ export default function GuardDashboard() {
             />
             <span>
               {isOnDuty
-                ? `On Duty (${shift?.shift_type || "General"})`
+                ? t("gdOnDutyFormatted", { shift: shift?.shift_type || t("gdGeneral", "General") }, "On Duty ({shift})")
                 : shift?.shift_type
-                ? `Off Duty • ${shift.shift_type} at ${formatTime12h(shift.start_time)}`
-                : "Off Duty"}
+                ? t("gdOffDutyShift", { shift: shift.shift_type, time: formatTime12h(shift.start_time) }, "Off Duty • {shift} at {time}")
+                : t("gdOffDuty", "Off Duty")}
             </span>
           </div>
 
@@ -519,7 +521,7 @@ export default function GuardDashboard() {
             onClick={() => loadDashboardData(true)}
             disabled={refreshing}
             className="p-2.5 rounded-xl bg-card-inner-bg/80 hover:bg-card border border-glass-border text-secondary hover:text-primary transition shadow-sm hover:scale-105 active:scale-95"
-            title="Refresh Data"
+            title={t("gdRefreshData", "Refresh Data")}
           >
             <MdRefresh size={18} className={refreshing ? "animate-spin text-accent" : ""} />
           </button>
@@ -541,22 +543,24 @@ export default function GuardDashboard() {
             <div>
               <div className="flex items-center gap-2">
                 <span className="text-[11px] font-black uppercase tracking-wider bg-red-500 text-white px-2 py-0.5 rounded-md shadow-sm">
-                  Emergency Alert
+                  {t("gdEmergencyAlert", "Emergency Alert")}
                 </span>
                 <span className="font-bold text-sm sm:text-base">
-                  {activeAlerts.length} Active Emergency Incident{activeAlerts.length > 1 ? "s" : ""}
+                  {activeAlerts.length === 1
+                    ? t("gdActiveIncidentOne", { count: activeAlerts.length }, "{count} Active Emergency Incident")
+                    : t("gdActiveIncidentMany", { count: activeAlerts.length }, "{count} Active Emergency Incidents")}
                 </span>
               </div>
               <p className="text-xs text-secondary mt-0.5">
                 {activeAlerts[0]?.Flat
-                  ? `Incident reported at ${getFlatLabel(activeAlerts[0])}. Click to view action protocol.`
-                  : "Resident or gate panic alert is currently active."}
+                  ? t("gdIncidentReported", { flat: getFlatLabel(activeAlerts[0], t) }, "Incident reported at {flat}. Click to view action protocol.")
+                  : t("gdPanicActive", "Resident or gate panic alert is currently active.")}
               </p>
             </div>
           </div>
 
           <button className="btn-danger text-xs font-bold px-4 py-2 rounded-xl shrink-0 shadow-md">
-            Open SOS Panel
+            {t("gdOpenSosPanel", "Open SOS Panel")}
           </button>
         </div>
       )}
@@ -573,14 +577,14 @@ export default function GuardDashboard() {
             <div>
               <div className="flex items-center gap-2">
                 <span className="text-[11px] font-bold tracking-wider uppercase bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30 px-2 py-0.5 rounded-md">
-                  Security Radar
+                  {t("gdSecurityRadar", "Security Radar")}
                 </span>
                 <span className="font-bold text-sm sm:text-base text-primary">
-                  {overstayingVisitors.length} Visitor{overstayingVisitors.length > 1 ? "s" : ""} Overstaying
+                  {overstayingVisitors.length} Visitor{overstayingVisitors.length > 1 ? "s" : ""} Overstaying (&gt;45 mins)
                 </span>
               </div>
               <p className="text-xs text-secondary mt-1">
-                Delivery/cab/service entries exceeding allowable gate duration.
+                {t("gdOverstayNote", "Delivery/cab/service entries exceeding allowable gate duration.")}
               </p>
 
               <div className="flex items-center gap-2 mt-2.5 flex-wrap">
@@ -592,7 +596,7 @@ export default function GuardDashboard() {
                       className="px-2.5 py-1 rounded-lg text-xs font-medium bg-card-inner-bg/90 border border-glass-border text-primary flex items-center gap-1.5 shadow-sm hover:scale-105 transition-transform"
                     >
                       <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-ping" />
-                      <strong>{ov.visitor_name}</strong> ({ov.visitor_type || ov.purpose}) • {getFlatLabel(ov)} •{" "}
+                      <strong>{ov.visitor_name}</strong> ({getVisitorTypeMeta(ov.visitor_type || ov.purpose, t).label}) • {getFlatLabel(ov, t)} •{" "}
                       <span className="font-bold text-red-500">{mins}m</span>
                     </span>
                   );
@@ -605,7 +609,7 @@ export default function GuardDashboard() {
             onClick={() => setActiveTab("OVERSTAY")}
             className="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold shadow-md transition self-start md:self-center shrink-0 hover:scale-105 active:scale-95"
           >
-            Review Overstays
+            {t("gdReviewOverstays", "Review Overstays")}
           </button>
         </div>
       )}
@@ -621,7 +625,7 @@ export default function GuardDashboard() {
         >
           <span className="ad-kpi-val">{stats.inside}</span>
           <span className="ad-kpi-label">{t("gdStatInside", "Visitors Inside")}</span>
-          <span className="ad-kpi-desc hidden lg:block">Active on society premises</span>
+          <span className="ad-kpi-desc hidden lg:block">{t("gdKpiInsideDesc", "Active on society premises")}</span>
         </div>
 
         {/* Total Today */}
@@ -631,7 +635,7 @@ export default function GuardDashboard() {
         >
           <span className="ad-kpi-val">{stats.today}</span>
           <span className="ad-kpi-label">{t("gdStatToday", "Total Today")}</span>
-          <span className="ad-kpi-desc hidden lg:block">All visitor entries today</span>
+          <span className="ad-kpi-desc hidden lg:block">{t("gdKpiTodayDesc", "All visitor entries today")}</span>
         </div>
 
         {/* Exited Today */}
@@ -641,7 +645,7 @@ export default function GuardDashboard() {
         >
           <span className="ad-kpi-val">{stats.exited}</span>
           <span className="ad-kpi-label">{t("gdStatExited", "Exited Today")}</span>
-          <span className="ad-kpi-desc hidden lg:block">Departed via gate checkout</span>
+          <span className="ad-kpi-desc hidden lg:block">{t("gdKpiExitedDesc", "Departed via gate checkout")}</span>
         </div>
 
         {/* Emergency Count */}
@@ -652,7 +656,7 @@ export default function GuardDashboard() {
           <span className="ad-kpi-val">{activeAlerts.length}</span>
           <span className="ad-kpi-label">{t("gdStatAlerts", "Active Alerts")}</span>
           <span className="ad-kpi-desc hidden lg:block">
-            {activeAlerts.length > 0 ? "Immediate attention needed" : "All systems normal"}
+            {activeAlerts.length > 0 ? t("gdKpiAlertsAttention", "Immediate attention needed") : t("gdKpiAlertsNormal", "All systems normal")}
           </span>
         </div>
       </div>
@@ -669,7 +673,7 @@ export default function GuardDashboard() {
                 {t("gdQuickActions", "Quick Gate Operations")}
               </h2>
               <p className="text-xs text-secondary">
-                1-Click gate entry &amp; logging tools
+                {t("gdQuickActionsSub", "1-Click gate entry & logging tools")}
               </p>
             </div>
           </div>
@@ -740,7 +744,9 @@ export default function GuardDashboard() {
                 {t("gdGateStream", "Live Gate Visitors Stream")}
               </h2>
               <p className="text-xs text-secondary mt-0.5">
-                Auto-refresh every 15s · {stats.inside} visitor{stats.inside === 1 ? "" : "s"} inside now
+                {stats.inside === 1
+                  ? t("gdAutoRefreshOne", { count: stats.inside }, "Auto-refresh every 15s · {count} visitor inside now")
+                  : t("gdAutoRefreshMany", { count: stats.inside }, "Auto-refresh every 15s · {count} visitors inside now")}
               </p>
             </div>
           </div>
@@ -756,7 +762,7 @@ export default function GuardDashboard() {
                     : "text-secondary hover:text-primary"
                 }`}
               >
-                <span>Inside Now</span>
+                <span>{t("gdTabInside", "Inside Now")}</span>
                 <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-bold">
                   {stats.inside}
                 </span>
@@ -770,7 +776,7 @@ export default function GuardDashboard() {
                     : "text-secondary hover:text-primary"
                 }`}
               >
-                <span>Overstaying</span>
+                <span>{t("gdTabOverstay", "Overstaying")}</span>
                 {overstayingVisitors.length > 0 && (
                   <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-amber-500 text-white font-bold animate-pulse">
                     {overstayingVisitors.length}
@@ -786,7 +792,7 @@ export default function GuardDashboard() {
                     : "text-secondary hover:text-primary"
                 }`}
               >
-                <span>All Today</span>
+                <span>{t("gdTabAll", "All Today")}</span>
                 <span className="text-[10px] text-secondary font-semibold">({stats.today})</span>
               </button>
             </div>
@@ -796,11 +802,11 @@ export default function GuardDashboard() {
               type="button"
               onClick={() => loadDashboardData(true)}
               disabled={loading}
-              title="Refresh live data"
+              title={t("gdRefreshLive", "Refresh live data")}
               className="p-2 sm:px-3 sm:py-1.5 rounded-xl bg-card-inner-bg hover:bg-card border border-glass-border transition flex items-center gap-1.5 shadow-sm hover:scale-105 active:scale-95 disabled:opacity-60"
             >
               <MdRefresh size={16} className={`text-accent ${loading ? "animate-spin" : ""}`} />
-              <span className="text-xs font-semibold text-secondary hidden sm:inline">Refresh</span>
+              <span className="text-xs font-semibold text-secondary hidden sm:inline">{t("gdRefresh", "Refresh")}</span>
             </button>
 
             {/* Search Input Toggle */}
@@ -821,7 +827,7 @@ export default function GuardDashboard() {
                       setIsSearchOpen(false);
                     }
                   }}
-                  placeholder="Search name, flat, phone..."
+                  placeholder={t("gdSearchPlaceholder", "Search name, flat, phone...")}
                   className="gd-stream-search-input w-full pr-14 py-2 rounded-xl text-xs bg-card-inner-bg border border-accent/40 text-primary placeholder-secondary focus:outline-none focus:border-accent shadow-sm"
                   style={{ paddingLeft: "42px" }}
                 />
@@ -834,7 +840,7 @@ export default function GuardDashboard() {
                         searchInputRef.current?.focus();
                       }}
                       className="p-1 rounded-lg text-secondary hover:text-primary transition"
-                      title="Clear"
+                      title={t("gdClear", "Clear")}
                     >
                       <MdClose size={14} />
                     </button>
@@ -846,7 +852,7 @@ export default function GuardDashboard() {
                       setIsSearchOpen(false);
                     }}
                     className="p-1 rounded-lg text-secondary hover:text-rose-500 hover:bg-rose-500/10 transition"
-                    title="Close Search"
+                    title={t("gdCloseSearch", "Close Search")}
                   >
                     <MdClose size={15} />
                   </button>
@@ -864,10 +870,10 @@ export default function GuardDashboard() {
                     ? "border-accent text-accent"
                     : "border-glass-border text-secondary hover:text-primary"
                 }`}
-                title="Search Live Visitors"
+                title={t("gdSearchLive", "Search Live Visitors")}
               >
                 <MdSearch size={16} />
-                <span className="text-xs font-semibold hidden sm:inline">Search</span>
+                <span className="text-xs font-semibold hidden sm:inline">{t("gdSearch", "Search")}</span>
                 {searchQuery && (
                   <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
                 )}
@@ -881,7 +887,7 @@ export default function GuardDashboard() {
           {loading ? (
             <div className="py-16 text-center space-y-3">
               <div className="w-8 h-8 border-3 border-accent border-t-transparent rounded-full animate-spin mx-auto" />
-              <p className="text-xs font-medium text-secondary">Loading live visitors data...</p>
+              <p className="text-xs font-medium text-secondary">{t("gdLoadingVisitors", "Loading live visitors data...")}</p>
             </div>
           ) : filteredVisitors.length === 0 ? (
             <div className="py-16 text-center space-y-3">
@@ -890,23 +896,23 @@ export default function GuardDashboard() {
               </div>
               <h3 className="text-sm font-bold text-primary">
                 {searchQuery
-                  ? "No matching visitors found"
+                  ? t("gdEmptyMatching", "No matching visitors found")
                   : activeTab === "OVERSTAY"
-                  ? "No overstaying visitors on premises"
+                  ? t("gdEmptyOverstay", "No overstaying visitors on premises")
                   : activeTab === "INSIDE"
-                  ? "No active visitors inside right now"
-                  : "No visitor records today"}
+                  ? t("gdEmptyInside", "No active visitors inside right now")
+                  : t("gdEmptyAll", "No visitor records today")}
               </h3>
               <p className="text-xs text-secondary max-w-sm mx-auto">
                 {activeTab === "INSIDE"
-                  ? "All visitors have safely departed or no gate entries recorded yet."
-                  : "Gate activity is all clear and logged."}
+                  ? t("gdEmptyInsideSub", "All visitors have safely departed or no gate entries recorded yet.")
+                  : t("gdEmptyAllSub", "Gate activity is all clear and logged.")}
               </p>
             </div>
           ) : (
             <div className="gd-stream-rows mt-4">
               {filteredVisitors.map((v, index) => {
-                const meta = getVisitorTypeMeta(v.visitor_type || v.purpose);
+                const meta = getVisitorTypeMeta(v.visitor_type || v.purpose, t);
                 const Icon = meta.icon;
                 const isInside = !v.exit_time;
                 const elapsedMins = getElapsedMinutes(v.entry_time);
@@ -945,7 +951,7 @@ export default function GuardDashboard() {
                       <div className="min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className="font-bold text-sm text-primary truncate max-w-[170px] sm:max-w-none">
-                            {v.visitor_name || "Guest Visitor"}
+                            {v.visitor_name || t("gdGuestVisitor", "Guest Visitor")}
                           </span>
 
                           <span
@@ -962,13 +968,13 @@ export default function GuardDashboard() {
 
                           {isInside && !isOverstay && (
                             <span className="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
-                              Inside
+                              {t("gdInside", "Inside")}
                             </span>
                           )}
 
                           {isOverstay && (
                             <span className="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-amber-500 text-white shadow-sm animate-pulse">
-                              Overstay {elapsedMins}m
+                              {t("gdOverstayBadge", { mins: elapsedMins }, "Overstay {mins}m")}
                             </span>
                           )}
                         </div>
@@ -976,7 +982,7 @@ export default function GuardDashboard() {
                         <div className="flex items-center gap-2 text-xs text-secondary mt-1.5 flex-wrap">
                           <span className="flex items-center gap-1 text-primary font-medium">
                             <MdApartment className="text-accent flex-shrink-0" />
-                            {getFlatLabel(v)}
+                            {getFlatLabel(v, t)}
                           </span>
 
                           {v.visitor_phone && (
@@ -1022,11 +1028,11 @@ export default function GuardDashboard() {
                                 isOverstay ? "text-amber-500" : "text-emerald-500"
                               }`}
                             >
-                              {formatElapsedStr(elapsedMins)}
+                              {formatElapsedStr(elapsedMins, t)}
                             </span>
                           ) : (
                             <span>
-                              Left at{" "}
+                              {t("gdLeftAt", "Left at")}{" "}
                               {new Date(v.exit_time).toLocaleTimeString("en-IN", {
                                 hour: "2-digit",
                                 minute: "2-digit",
@@ -1036,8 +1042,7 @@ export default function GuardDashboard() {
                           )}
                         </p>
                         {isInside && (
-                          <div className="gd-dwell-wrap"
-                            title={v.dwell_minutes ? `Allowed ${v.dwell_minutes} min — overstay threshold` : "Dwell time vs 45 min overstay threshold"}>
+                          <div className="gd-dwell-wrap" title="Dwell time vs 45 min overstay threshold">
                             <div
                               className="gd-dwell"
                               style={{
@@ -1061,13 +1066,13 @@ export default function GuardDashboard() {
                           className="btn-danger px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm hover:scale-105 active:scale-95 transition"
                         >
                           <MdLogout size={14} />
-                          <span className="hidden sm:inline">Mark Exit</span>
-                          <span className="sm:hidden">Exit</span>
+                          <span className="hidden sm:inline">{t("gdMarkExit", "Mark Exit")}</span>
+                          <span className="sm:hidden">{t("gdExit", "Exit")}</span>
                         </button>
                       ) : (
                         <span className="px-3 py-1.5 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-bold border border-emerald-500/25 flex items-center gap-1">
                           <MdCheckCircle size={14} />
-                          Exited
+                          {t("gdExited", "Exited")}
                         </span>
                       )}
                     </div>
@@ -1097,30 +1102,30 @@ export default function GuardDashboard() {
                 <MdLogout size={22} />
               </div>
               <div>
-                <h3 className="text-base font-bold text-primary">Confirm Gate Exit</h3>
-                <p className="text-xs text-secondary">Record official visitor exit timestamp</p>
+                <h3 className="text-base font-bold text-primary">{t("gdConfirmExitTitle", "Confirm Gate Exit")}</h3>
+                <p className="text-xs text-secondary">{t("gdConfirmExitSub", "Record official visitor exit timestamp")}</p>
               </div>
             </div>
 
             <div className="p-4 rounded-xl bg-card-inner-bg border border-glass-border space-y-2">
               <div className="flex justify-between text-xs">
-                <span className="text-secondary font-medium">Visitor Name:</span>
+                <span className="text-secondary font-medium">{t("gdFieldVisitor", "Visitor Name:")}</span>
                 <span className="font-bold text-primary">{exitTarget.visitor_name}</span>
               </div>
               <div className="flex justify-between text-xs">
-                <span className="text-secondary font-medium">Destination:</span>
-                <span className="font-bold text-primary">{getFlatLabel(exitTarget)}</span>
+                <span className="text-secondary font-medium">{t("gdFieldDestination", "Destination:")}</span>
+                <span className="font-bold text-primary">{getFlatLabel(exitTarget, t)}</span>
               </div>
               <div className="flex justify-between text-xs">
-                <span className="text-secondary font-medium">Entry Type:</span>
+                <span className="text-secondary font-medium">{t("gdFieldEntryType", "Entry Type:")}</span>
                 <span className="font-bold uppercase text-accent">
-                  {exitTarget.visitor_type || exitTarget.purpose || "Guest"}
+                  {getVisitorTypeMeta(exitTarget.visitor_type || exitTarget.purpose, t).label}
                 </span>
               </div>
               <div className="flex justify-between text-xs">
-                <span className="text-secondary font-medium">Time Inside:</span>
+                <span className="text-secondary font-medium">{t("gdFieldTimeInside", "Time Inside:")}</span>
                 <span className="font-bold text-emerald-500">
-                  {formatElapsedStr(getElapsedMinutes(exitTarget.entry_time))}
+                  {formatElapsedStr(getElapsedMinutes(exitTarget.entry_time), t)}
                 </span>
               </div>
             </div>
@@ -1136,7 +1141,7 @@ export default function GuardDashboard() {
                 ) : (
                   <>
                     <MdCheckCircle size={16} />
-                    <span>Confirm Exit</span>
+                    <span>{t("gdConfirmExit", "Confirm Exit")}</span>
                   </>
                 )}
               </button>
@@ -1146,7 +1151,7 @@ export default function GuardDashboard() {
                 disabled={exitLoading}
                 className="btn-primary py-2 px-4 rounded-xl text-xs font-bold"
               >
-                Cancel
+                {t("cancel", "Cancel")}
               </button>
             </div>
           </div>

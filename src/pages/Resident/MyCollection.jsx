@@ -181,7 +181,7 @@ export default function MyCollection() {
       setParcelFlatMap((prev) => ({ ...prev, ...map }));
     } catch (err) {
       console.error(err);
-      toast.error("Failed to load parcels");
+      toast.error(t("parcelToastLoadFailed"));
     } finally {
       setLoading(false);
     }
@@ -242,7 +242,7 @@ export default function MyCollection() {
     }
 
     if (isOwner && myFlats.length > 1 && !selectedFlatId) {
-      toast.error("Please select a unit for this parcel.");
+      toast.error(t("parcelToastSelectUnit"));
       return;
     }
 
@@ -297,12 +297,12 @@ export default function MyCollection() {
         return next;
       });
 
-      toast.success("Parcel expected successfully!");
+      toast.success(t("parcelToastCreated"));
     } catch (err) {
       console.error("❌ Parcel creation failed:", err);
       setParcels((prev) => prev.filter((p) => !String(p.id).startsWith("temp_")));
       setShowModal(true);
-      toast.error(err.response?.data?.message || "Failed to create parcel");
+      toast.error(err.response?.data?.message || t("parcelToastCreateFailed"));
     } finally {
       setSubmitting(false);
     }
@@ -316,10 +316,10 @@ export default function MyCollection() {
         prev.map((p) => (p.id === id ? { ...p, status: "CANCELLED" } : p))
       );
       await API.put(`/parcels/${id}/status`, { status: "CANCELLED" });
-      toast.success("Parcel cancelled");
+      toast.success(t("parcelToastCancelled"));
     } catch (err) {
       console.error("❌ Cancel failed:", err);
-      toast.error(err.response?.data?.message || "Failed to cancel parcel");
+      toast.error(err.response?.data?.message || t("parcelToastCancelFailed"));
       fetchParcels();
     } finally {
       setCancellingId(null);
@@ -520,7 +520,7 @@ export default function MyCollection() {
         <div className="gc-warn rounded-2xl p-4 border border-amber-500/20 bg-amber-500/10 text-amber-400 text-sm">
           ⚠️{" "}
           {isOwner && myFlats.length > 0
-            ? "Owners cannot manage parcels for rented units."
+            ? t("parcelOwnerRentedBlock")
             : t("compNoFlat") || "No unit associated with your account. Please contact admin."}
         </div>
       )}
@@ -584,7 +584,7 @@ export default function MyCollection() {
               onClick={() => { setSearch(""); setTab("ALL"); setFromDate(""); setToDate(""); }}
               className="text-xs text-accent hover:underline mt-1 font-semibold"
             >
-              Reset all filters
+              {t("parcelResetFilters")}
             </button>
           ) : (
             <button
@@ -611,7 +611,7 @@ export default function MyCollection() {
             let cardTheme = "border-glass-border bg-card hover:border-white/20";
             let badgeBg = "bg-amber-500/15 text-amber-400 border-amber-500/30";
             let badgeIcon = <MdHourglassTop size={13} className="shrink-0 text-amber-400" />;
-            let badgeText = "Pending Arrival";
+            let badgeText = t("parcelBadgePending");
             let iconContainer = "bg-amber-500/15 text-amber-400 shadow-sm shadow-amber-500/10";
             let progressStep = 1;
 
@@ -619,21 +619,21 @@ export default function MyCollection() {
               cardTheme = "border-cyan-500/35 bg-card hover:border-cyan-500/60 ring-1 ring-cyan-500/20";
               badgeBg = "bg-cyan-500/15 text-cyan-400 border-cyan-500/30 shadow-sm shadow-cyan-500/10";
               badgeIcon = <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse shrink-0" />;
-              badgeText = "At Security Gate";
+              badgeText = t("parcelBadgeAtGate");
               iconContainer = "bg-cyan-500/15 text-cyan-400 shadow-sm shadow-cyan-500/10";
               progressStep = 2;
             } else if (isCollected) {
               cardTheme = "border-emerald-500/25 bg-card hover:border-emerald-500/45";
               badgeBg = "bg-emerald-500/15 text-emerald-400 border-emerald-500/30";
               badgeIcon = <MdDoneAll size={13} className="shrink-0 text-emerald-400" />;
-              badgeText = "Collected";
+              badgeText = t("parcelCollected");
               iconContainer = "bg-emerald-500/15 text-emerald-400 shadow-sm shadow-emerald-500/10";
               progressStep = 3;
             } else if (isCancelled) {
               cardTheme = "border-rose-500/25 bg-card opacity-85";
               badgeBg = "bg-rose-500/15 text-rose-400 border-rose-500/30";
               badgeIcon = <MdClose size={13} className="shrink-0" />;
-              badgeText = "Cancelled";
+              badgeText = t("parcelCancelled");
               iconContainer = "bg-rose-500/15 text-rose-400";
               progressStep = 0;
             }
@@ -669,7 +669,7 @@ export default function MyCollection() {
                           </h3>
                           {isTempParcel && (
                             <span className="text-[10px] font-medium text-secondary">
-                              (Creating...)
+                              {t("parcelTempCreating")}
                             </span>
                           )}
                         </div>
@@ -691,10 +691,10 @@ export default function MyCollection() {
 
                   {/* Glassmorphic Metadata Container */}
                   <div className="p-2.5 rounded-xl bg-card-inner-bg/80 border border-glass-border flex items-center justify-between gap-2 text-xs">
-                    <div className="flex items-center gap-1.5 min-w-0 truncate text-secondary" title={`Resident: ${ownerName}`}>
+                    <div className="flex items-center gap-1.5 min-w-0 truncate text-secondary" title={t("parcelResidentTitle", { name: ownerName })}>
                       <MdPerson size={14} className="shrink-0 text-accent/80" />
                       <span className="truncate font-medium text-primary/90">
-                        {ownerName || "Resident / Owner"}
+                        {ownerName || t("parcelResidentFallback")}
                       </span>
                     </div>
 
@@ -742,7 +742,7 @@ export default function MyCollection() {
                             {progressStep > 1 ? "✓" : "1"}
                           </div>
                           <span className={`text-[10px] font-semibold tracking-tight ${progressStep >= 1 ? "text-amber-400" : "text-secondary/60"}`}>
-                            Expected
+                            {t("parcelExpected")}
                           </span>
                         </div>
 
@@ -760,7 +760,7 @@ export default function MyCollection() {
                             {progressStep > 2 ? "✓" : "2"}
                           </div>
                           <span className={`text-[10px] font-semibold tracking-tight ${progressStep >= 2 ? "text-cyan-400" : "text-secondary/60"}`}>
-                            At Gate
+                            {t("parcelAtGate")}
                           </span>
                         </div>
 
@@ -776,7 +776,7 @@ export default function MyCollection() {
                             {progressStep >= 3 ? "✓" : "3"}
                           </div>
                           <span className={`text-[10px] font-semibold tracking-tight ${progressStep >= 3 ? "text-emerald-400" : "text-secondary/60"}`}>
-                            Collected
+                            {t("parcelCollected")}
                           </span>
                         </div>
                       </div>
@@ -809,10 +809,10 @@ export default function MyCollection() {
                           <button
                             onClick={() => setQrParcel(p)}
                             className="btn-secondary flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-xl shrink-0 shadow-sm"
-                            title="View Pickup QR Code"
+                            title={t("parcelQrViewTitle")}
                           >
                             <MdQrCode size={16} className="text-accent" />
-                            <span>QR Code</span>
+                            <span>{t("parcelQrButton")}</span>
                           </button>
                         </div>
                       )}
@@ -826,7 +826,7 @@ export default function MyCollection() {
                           {cancellingId === p.id ? (
                             <>
                               <Spinner size={14} />
-                              <span>Cancelling...</span>
+                              <span>{t("parcelCancelling")}</span>
                             </>
                           ) : (
                             <>
@@ -846,7 +846,7 @@ export default function MyCollection() {
                         <span>{t("parcelDelivered") || "Successfully Handed Over"}</span>
                       </div>
                       <span className="text-[10px] uppercase font-bold tracking-wider opacity-85 px-2 py-0.5 rounded-md bg-emerald-500/15 border border-emerald-500/25">
-                        Verified
+                        {t("parcelVerified")}
                       </span>
                     </div>
                   )}
@@ -884,7 +884,7 @@ export default function MyCollection() {
                 required
               >
                 <option value="" disabled>
-                  -- Choose the delivery unit --
+                  {t("parcelChooseDeliveryUnit")}
                 </option>
                 {eligibleFlats.map((item, index) => {
                   const flatObj = item.Flat || item;
@@ -919,7 +919,7 @@ export default function MyCollection() {
             >
               <MdHome size={15} style={{ color: "var(--accent)", flexShrink: 0 }} />
               <span>
-                Parcel for:{" "}
+                {t("parcelForLabel")}{" "}
                 <strong style={{ color: "var(--text-primary)" }}>{buildFlatLabel(eligibleFlats[0])}</strong>
               </span>
             </div>
@@ -950,7 +950,7 @@ export default function MyCollection() {
             {submitting ? (
               <>
                 <Spinner size={16} />
-                <span>Creating...</span>
+                <span>{t("parcelCreating")}</span>
               </>
             ) : (
               <>

@@ -230,58 +230,58 @@ export default function StepVisitorEntryModal({
     switch (purpose.toUpperCase()) {
       case "CAB":
         return {
-          title: "Cab Visitor Pass",
-          subtitle: "Register driver & commercial cab entry",
-          sectionTitle: "Cab & Driver Details",
-          sectionSubtitle: "Enter the driver and trip details to generate pass.",
+          titleKey: "sgeCabTitle",
+          subtitleKey: "sgeCabSubtitle",
+          sectionTitleKey: "sgeCabSectionTitle",
+          sectionSubtitleKey: "sgeCabSectionSubtitle",
           icon: MdLocalTaxi,
           color: "#2563EB",
           brands: CAB_BRANDS,
-          namePlaceholder: "Driver Full Name",
+          namePlaceholderKey: "sgeCabNamePlaceholder",
           requireBrand: true,
-          brandTitle: "Cab Provider / Aggregator",
+          brandTitleKey: "sgeCabBrandTitle",
           code: "CAB",
         };
       case "DELIVERY":
         return {
-          title: "Delivery Visitor Pass",
-          subtitle: "Register food, courier & parcel drop-off",
-          sectionTitle: "Delivery Agent Details",
-          sectionSubtitle: "Enter the delivery agent info to create a gate pass.",
+          titleKey: "sgeDeliveryTitle",
+          subtitleKey: "sgeDeliverySubtitle",
+          sectionTitleKey: "sgeDeliverySectionTitle",
+          sectionSubtitleKey: "sgeDeliverySectionSubtitle",
           icon: MdLocalShipping,
           color: "#2563EB",
           brands: DELIVERY_BRANDS,
-          namePlaceholder: "Delivery Agent Name",
+          namePlaceholderKey: "sgeDeliveryNamePlaceholder",
           requireBrand: true,
-          brandTitle: "Delivery Service / Company",
+          brandTitleKey: "sgeDeliveryBrandTitle",
           code: "DLV",
         };
       case "SERVICE":
         return {
-          title: "Service Visitor Pass",
-          subtitle: "Register technician, staff & maintenance visits",
-          sectionTitle: "Service Technician Details",
-          sectionSubtitle: "Enter technician information to authorize entry.",
+          titleKey: "sgeServiceTitle",
+          subtitleKey: "sgeServiceSubtitle",
+          sectionTitleKey: "sgeServiceSectionTitle",
+          sectionSubtitleKey: "sgeServiceSectionSubtitle",
           icon: MdHandyman,
           color: "#2563EB",
           brands: SERVICE_SKILLS,
-          namePlaceholder: "Technician / Staff Name",
+          namePlaceholderKey: "sgeServiceNamePlaceholder",
           requireBrand: true,
-          brandTitle: "Service Category",
+          brandTitleKey: "sgeServiceBrandTitle",
           code: "SRV",
         };
       default:
         return {
-          title: "Guest Visitor Pass",
-          subtitle: "Register friends, family or guest visits",
-          sectionTitle: "Visitor Details",
-          sectionSubtitle: "Enter the guest information to create a visitor pass.",
+          titleKey: "sgeGuestTitle",
+          subtitleKey: "sgeGuestSubtitle",
+          sectionTitleKey: "sgeGuestSectionTitle",
+          sectionSubtitleKey: "sgeGuestSectionSubtitle",
           icon: FaUserFriends,
           color: "#2563EB",
           brands: [],
-          namePlaceholder: "Visitor Full Name",
+          namePlaceholderKey: "sgeGuestNamePlaceholder",
           requireBrand: false,
-          brandTitle: "",
+          brandTitleKey: "sgeGuestBrandTitle",
           code: "GST",
         };
     }
@@ -291,7 +291,7 @@ export default function StepVisitorEntryModal({
   const validateStep1 = () => {
     const errs = {};
     if (categoryConfig.requireBrand && !selectedBrand) {
-      errs.brand = "Please select a provider/category.";
+      errs.brand = t("sgeErrBrand", "Please select a provider/category.");
     }
     const nameErr = getTitleError(visitorName, "Visitor name");
     if (nameErr) errs.name = nameErr;
@@ -320,7 +320,7 @@ export default function StepVisitorEntryModal({
 
   const handleNextFromStep1 = () => {
     if (!validateStep1()) {
-      toast.warn("Please check the form for errors.");
+      toast.warn(t("sgeFormErrors", "Please check the form for errors."));
       return;
     }
     setCurrentStep(2);
@@ -344,7 +344,7 @@ export default function StepVisitorEntryModal({
       const brandData = categoryConfig.brands.find((b) => b.id === selectedBrand);
       const brandName =
         selectedBrand === "other"
-          ? otherBrandName.trim() || "Service"
+          ? otherBrandName.trim() || t("sgeService", "Service")
           : brandData?.name || "";
       return brandName ? `${brandName} - ${visitorName.trim()}` : visitorName.trim();
     }
@@ -354,7 +354,7 @@ export default function StepVisitorEntryModal({
   // ── Submit Visitor Entry ──
   const handleSubmitEntry = async () => {
     if (!selectedFlat?.id) {
-      toast.error("Flat selection is required.");
+      toast.error(t("sgeFlatRequired", "Flat selection is required."));
       return;
     }
 
@@ -372,14 +372,14 @@ export default function StepVisitorEntryModal({
 
       const res = await API.post("/visitors", payload);
       toast.success(
-        res.data?.message || `${categoryConfig.title} Approved & Created!`
+        res.data?.message || t("sgeApprovedCreated", { title: t(categoryConfig.titleKey) }, "{title} Approved & Created!")
       );
       if (onSuccess) onSuccess();
       onClose();
     } catch (err) {
       console.error("Error creating visitor entry:", err);
       toast.error(
-        err.response?.data?.message || "Failed to allow visitor entry."
+        err.response?.data?.message || t("sgeEntryFailed", "Failed to allow visitor entry.")
       );
     } finally {
       setSubmitting(false);
@@ -389,10 +389,10 @@ export default function StepVisitorEntryModal({
   if (!isOpen) return null;
 
   const steps = [
-    { num: "01", label: "Info", stepIndex: 1 },
-    { num: "02", label: "Building", stepIndex: 2 },
-    { num: "03", label: "Flat", stepIndex: 3 },
-    { num: "04", label: "Confirm", stepIndex: 4 },
+    { num: "01", label: t("sgeStepInfo", "Info"), stepIndex: 1 },
+    { num: "02", label: t("sgeStepBuilding", "Building"), stepIndex: 2 },
+    { num: "03", label: t("sgeStepFlat", "Flat"), stepIndex: 3 },
+    { num: "04", label: t("sgeStepConfirm", "Confirm"), stepIndex: 4 },
   ];
 
   return (
@@ -414,14 +414,14 @@ export default function StepVisitorEntryModal({
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="text-base sm:text-lg font-bold text-primary tracking-tight">
-                  {categoryConfig.title}
+                  {t(categoryConfig.titleKey)}
                 </h3>
                 <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
-                  STEP {currentStep} OF 4
+                  {t("sgeStepOf", { step: currentStep, total: 4 }, "STEP {step} OF {total}")}
                 </span>
               </div>
               <p className="text-xs text-secondary mt-0.5">
-                {categoryConfig.subtitle}
+                {t(categoryConfig.subtitleKey)}
               </p>
             </div>
           </div>
@@ -430,7 +430,7 @@ export default function StepVisitorEntryModal({
           <button
             onClick={onClose}
             className="w-10 h-10 rounded-full border border-glass-border hover:bg-card-inner-bg text-secondary hover:text-primary transition-all flex items-center justify-center shadow-xs active:scale-95 shrink-0"
-            title="Close"
+            title={t("close", "Close")}
           >
             <MdClose size={18} />
           </button>
@@ -502,10 +502,10 @@ export default function StepVisitorEntryModal({
               {/* Form Section Header */}
               <div className="pb-1">
                 <h4 className="text-sm font-bold text-primary">
-                  {categoryConfig.sectionTitle}
+                  {t(categoryConfig.sectionTitleKey)}
                 </h4>
                 <p className="text-xs text-secondary mt-0.5">
-                  {categoryConfig.sectionSubtitle}
+                  {t(categoryConfig.sectionSubtitleKey)}
                 </p>
               </div>
 
@@ -513,7 +513,7 @@ export default function StepVisitorEntryModal({
               {categoryConfig.requireBrand && categoryConfig.brands.length > 0 && (
                 <div>
                   <label className="block text-xs font-semibold text-secondary mb-1.5">
-                    {categoryConfig.brandTitle} <span className="text-red-500">*</span>
+                    {t(categoryConfig.brandTitleKey)} <span className="text-red-500">*</span>
                   </label>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                     {categoryConfig.brands.map((b) => {
@@ -554,7 +554,7 @@ export default function StepVisitorEntryModal({
                     <div className="mt-2.5 animate-fadeIn">
                       <input
                         type="text"
-                        placeholder="Enter custom brand or company name..."
+                        placeholder={t("sgeCustomBrandPlaceholder", "Enter custom brand or company name...")}
                         value={otherBrandName}
                         onChange={(e) => setOtherBrandName(e.target.value)}
                         className="w-full h-11 px-3.5 text-xs font-medium rounded-xl bg-card-inner-bg border border-glass-border focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20 text-primary outline-none"
@@ -566,9 +566,11 @@ export default function StepVisitorEntryModal({
 
               {/* Visitor Full Name Input */}
               <div>
-                <label className="block text-xs font-semibold text-secondary mb-1.5">
-                  {categoryConfig.namePlaceholder} <span className="text-red-500">*</span>
-                </label>
+                {categoryConfig.namePlaceholderKey && (
+                  <label className="block text-xs font-semibold text-secondary mb-1.5">
+                    {t(categoryConfig.namePlaceholderKey)} <span className="text-red-500">*</span>
+                  </label>
+                )}
                 <div
                   className={`flex items-center h-12 rounded-xl bg-card-inner-bg border transition-all overflow-hidden ${
                     errors.name
@@ -582,7 +584,7 @@ export default function StepVisitorEntryModal({
                   <input
                     type="text"
                     required
-                    placeholder="e.g. Ramesh Kumar"
+                    placeholder={t("sgeNameExample", "e.g. Ramesh Kumar")}
                     value={visitorName}
                     onChange={(e) => {
                       setVisitorName(e.target.value);
@@ -601,7 +603,7 @@ export default function StepVisitorEntryModal({
                 {/* Contact Mobile */}
                 <div>
                   <label className="block text-xs font-semibold text-secondary mb-1.5">
-                    Contact Mobile
+                    {t("sgeContactMobile", "Contact Mobile")}
                   </label>
                   <div
                     className={`flex items-center h-12 rounded-xl bg-card-inner-bg border transition-all overflow-hidden ${
@@ -616,7 +618,7 @@ export default function StepVisitorEntryModal({
                     <input
                       type="tel"
                       maxLength={10}
-                      placeholder="10-digit mobile number"
+                      placeholder={t("sgeMobilePlaceholder", "10-digit mobile number")}
                       value={mobile}
                       onChange={(e) => {
                         setMobile(e.target.value.replace(/\D/g, ""));
@@ -633,7 +635,7 @@ export default function StepVisitorEntryModal({
                 {/* Vehicle Number */}
                 <div>
                   <label className="block text-xs font-semibold text-secondary mb-1.5">
-                    Vehicle Number (Optional)
+                    {t("sgeVehicleOptional", "Vehicle Number (Optional)")}
                   </label>
                   <div
                     className={`flex items-center h-12 rounded-xl bg-card-inner-bg border transition-all overflow-hidden ${
@@ -647,7 +649,7 @@ export default function StepVisitorEntryModal({
                     </div>
                     <input
                       type="text"
-                      placeholder="e.g. MH 12 AB 1234"
+                      placeholder={t("sgeVehicleExample", "e.g. MH 12 AB 1234")}
                       value={vehicleNumber}
                       onChange={(e) => {
                         setVehicleNumber(e.target.value.toUpperCase());
@@ -668,12 +670,12 @@ export default function StepVisitorEntryModal({
                   {/* Vehicle Type Segmented Control */}
                   <div>
                     <label className="block text-xs font-semibold text-secondary mb-1.5">
-                      Vehicle Type
+                      {t("sgeVehicleType", "Vehicle Type")}
                     </label>
                     <div className="flex h-12 p-1 rounded-xl bg-card-inner-bg border border-glass-border">
                       {[
-                        { type: "CAR", label: "Car", icon: MdDirectionsCar },
-                        { type: "BIKE", label: "Bike", icon: MdDirectionsBike },
+                        { type: "CAR", label: t("sgeVehicleCar", "Car"), icon: MdDirectionsCar },
+                        { type: "BIKE", label: t("sgeVehicleBike", "Bike"), icon: MdDirectionsBike },
                       ].map((vt) => {
                         const isVtSel = vehicleType === vt.type;
                         return (
@@ -698,7 +700,7 @@ export default function StepVisitorEntryModal({
                   {/* Parking Slot Dropdown */}
                   <div>
                     <label className="block text-xs font-semibold text-secondary mb-1.5">
-                      Assign Visitor Slot
+                      {t("sgeAssignSlot", "Assign Visitor Slot")}
                     </label>
                     <div className="relative flex items-center h-12 rounded-xl bg-card-inner-bg border border-glass-border focus-within:border-blue-600 focus-within:ring-2 focus-within:ring-blue-500/20">
                       <div className="pl-3.5 pr-2 text-secondary flex items-center justify-center shrink-0">
@@ -710,11 +712,11 @@ export default function StepVisitorEntryModal({
                         className="w-full h-full pr-8 bg-transparent text-xs font-bold text-primary outline-none border-0 appearance-none cursor-pointer"
                       >
                         <option value="" className="bg-card text-primary">
-                          No Parking Slot
+                          {t("sgeNoSlot", "No Parking Slot")}
                         </option>
                         {parkingSlots.map((s) => (
                           <option key={s.id || s.slot_number} value={s.slot_number} className="bg-card text-primary">
-                            Slot {s.slot_number} ({s.vehicle_type || "Any"})
+                            {`Slot ${s.slot_number} (${s.vehicle_type || t("sgeAny", "Any")})`}
                           </option>
                         ))}
                       </select>
@@ -734,25 +736,25 @@ export default function StepVisitorEntryModal({
               <div className="flex items-center justify-between pb-1">
                 <div>
                   <h4 className="text-sm font-bold text-primary">
-                    Select Destination Building / Block
+                    {t("sgeSelectBuilding", "Select Destination Building / Block")}
                   </h4>
                   <p className="text-xs text-secondary mt-0.5">
-                    Choose the society block the visitor is arriving for
+                    {t("sgeSelectBuildingSub", "Choose the society block the visitor is arriving for")}
                   </p>
                 </div>
                 <span className="text-[11px] font-bold text-blue-600 dark:text-blue-400 bg-blue-500/10 border border-blue-500/20 px-2.5 py-0.5 rounded-full">
-                  {blocks.length} Blocks
+                  {t("sgeBlockCount", { count: blocks.length }, "{count} Blocks")}
                 </span>
               </div>
 
               {loadingData ? (
                 <div className="py-12 text-center text-secondary space-y-2">
                   <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto" />
-                  <p className="text-xs font-medium">Loading society blocks...</p>
+                  <p className="text-xs font-medium">{t("sgeLoadingBlocks", "Loading society blocks...")}</p>
                 </div>
               ) : blocks.length === 0 ? (
                 <div className="py-10 text-center text-secondary text-xs">
-                  No buildings or assigned flats found in this society.
+                  {t("sgeNoBuildings", "No buildings or assigned flats found in this society.")}
                 </div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[46vh] overflow-y-auto pr-1">
@@ -798,13 +800,13 @@ export default function StepVisitorEntryModal({
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pb-1 border-b border-glass-border">
                 <div>
                   <h4 className="text-sm font-bold text-primary flex items-center gap-1.5">
-                    <span>Flats in {selectedBlock?.name}</span>
+                    <span>{t("sgeFlatsIn", { block: selectedBlock?.name }, "Flats in {block}")}</span>
                     <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-blue-500/10 text-blue-600 dark:text-blue-400">
                       {filteredFlats.length} Units
                     </span>
                   </h4>
                   <p className="text-xs text-secondary mt-0.5">
-                    Click flat number to proceed
+                    {t("sgeClickFlat", "Click flat number to proceed")}
                   </p>
                 </div>
 
@@ -813,7 +815,7 @@ export default function StepVisitorEntryModal({
                   <MdSearch size={16} className="text-secondary shrink-0 mr-1.5" />
                   <input
                     type="text"
-                    placeholder="Search flat..."
+                    placeholder={t("sgeSearchFlat", "Search flat...")}
                     value={flatSearch}
                     onChange={(e) => setFlatSearch(e.target.value)}
                     className="w-full bg-transparent text-xs font-bold text-primary outline-none border-0"
@@ -845,7 +847,7 @@ export default function StepVisitorEntryModal({
               <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 max-h-[38vh] overflow-y-auto pr-1">
                 {filteredFlats.map((flat) => {
                   const isSel = selectedFlat?.id === flat.id;
-                  const residentName = flat.User?.name || "Resident";
+                  const residentName = flat.User?.name || t("sgeResident", "Resident");
                   return (
                     <button
                       type="button"
@@ -885,10 +887,10 @@ export default function StepVisitorEntryModal({
                 </div>
                 <div>
                   <h4 className="text-xs font-bold text-emerald-600 dark:text-emerald-400">
-                    Verify &amp; Authorize Gate Pass
+                    {t("sgeVerifyPass", "Verify & Authorize Gate Pass")}
                   </h4>
                   <p className="text-[11px] text-secondary mt-0.5">
-                    Review visitor destination details and confirm entry
+                    {t("sgeVerifyPassSub", "Review visitor destination details and confirm entry")}
                   </p>
                 </div>
               </div>
@@ -898,7 +900,7 @@ export default function StepVisitorEntryModal({
                 <div className="flex items-center justify-between pb-2.5 border-b border-glass-border">
                   <div>
                     <span className="text-[10px] font-bold uppercase tracking-wider text-secondary block">
-                      Visitor / Driver
+                      {t("sgeVisitorDriver", "Visitor / Driver")}
                     </span>
                     <span className="text-sm font-bold text-primary">
                       {formattedVisitorName}
@@ -912,7 +914,7 @@ export default function StepVisitorEntryModal({
                 <div className="grid grid-cols-2 gap-3 pb-2.5 border-b border-glass-border">
                   <div>
                     <span className="text-[10px] font-bold uppercase tracking-wider text-secondary block">
-                      Destination Flat
+                      {t("sgeDestinationFlat", "Destination Flat")}
                     </span>
                     <span className="text-xs font-bold text-primary flex items-center gap-1 mt-0.5">
                       <MdMeetingRoom className="text-blue-600" />
@@ -921,11 +923,11 @@ export default function StepVisitorEntryModal({
                   </div>
                   <div>
                     <span className="text-[10px] font-bold uppercase tracking-wider text-secondary block">
-                      Contact Mobile
+                      {t("sgeContactMobile", "Contact Mobile")}
                     </span>
                     <span className="text-xs font-mono font-bold text-primary flex items-center gap-1 mt-0.5">
                       <MdPhone className="text-blue-600" />
-                      {mobile || "Not Provided"}
+                      {mobile || t("sgeNotProvided", "Not Provided")}
                     </span>
                   </div>
                 </div>
@@ -934,7 +936,7 @@ export default function StepVisitorEntryModal({
                   <div className="flex items-center justify-between pt-0.5">
                     <div>
                       <span className="text-[10px] font-bold uppercase tracking-wider text-secondary block">
-                        Vehicle
+                        {t("sgeVehicle", "Vehicle")}
                       </span>
                       <span className="text-xs font-mono font-bold text-primary uppercase mt-0.5 block">
                         {vehicleNumber} ({vehicleType})
@@ -942,7 +944,7 @@ export default function StepVisitorEntryModal({
                     </div>
                     {assignedSlot && (
                       <span className="px-2.5 py-1 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-600 dark:text-purple-400 font-bold text-[11px]">
-                        Slot: {assignedSlot}
+                        {t("sgeSlotValue", { slot: assignedSlot }, "Slot: {slot}")}
                       </span>
                     )}
                   </div>
@@ -960,7 +962,7 @@ export default function StepVisitorEntryModal({
               onClick={() => setCurrentStep((p) => p - 1)}
               className="h-11 px-5 rounded-full text-xs font-bold border border-glass-border text-secondary hover:text-primary transition flex items-center gap-1.5 hover:bg-card-inner-bg active:scale-98"
             >
-              <MdArrowBack size={16} /> Back
+              <MdArrowBack size={16} /> {t("sgeBack", "Back")}
             </button>
           ) : (
             <div />
@@ -972,7 +974,7 @@ export default function StepVisitorEntryModal({
               onClick={onClose}
               className="h-11 px-5 rounded-full text-xs font-bold text-secondary hover:text-primary hover:bg-card-inner-bg transition active:scale-98"
             >
-              Cancel
+              {t("cancel", "Cancel")}
             </button>
 
             {currentStep === 1 && (
@@ -981,7 +983,7 @@ export default function StepVisitorEntryModal({
                 onClick={handleNextFromStep1}
                 className="h-11 px-7 rounded-full text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-500/20 transition-all flex items-center gap-1.5 active:scale-98"
               >
-                <span>Continue</span>
+                <span>{t("sgeContinue", "Continue")}</span>
                 <MdArrowForward size={16} />
               </button>
             )}
@@ -994,10 +996,10 @@ export default function StepVisitorEntryModal({
                 className="h-11 px-7 rounded-full text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-500/20 transition-all flex items-center gap-1.5 disabled:opacity-50 active:scale-98"
               >
                 {submitting ? (
-                  "Recording..."
+                  t("sgeRecording", "Recording...")
                 ) : (
                   <>
-                    <MdCheckCircle size={18} /> CONFIRM &amp; ALLOW ENTRY
+                    <MdCheckCircle size={18} /> {t("sgeConfirmAllow", "CONFIRM & ALLOW ENTRY")}
                   </>
                 )}
               </button>

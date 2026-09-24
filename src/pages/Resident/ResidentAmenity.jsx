@@ -15,6 +15,10 @@ import Pagination from "../../components/common/Pagination";
     MdChevronLeft, MdChevronRight, MdWarning, MdBlock,
     MdPayment, MdRefresh, MdTimer, MdContentCopy, MdCheck, MdDateRange,
     MdPool, MdClose, MdOutlineTimer,
+    MdFitnessCenter, MdSportsCricket, MdSportsSoccer, MdSportsTennis,
+    MdSportsBasketball, MdSportsVolleyball, MdSportsGolf, MdSportsBaseball,
+    MdSportsHockey, MdSportsKabaddi, MdPark, MdChair, MdCelebration,
+    MdTheaters, MdTheaterComedy, MdSpa, MdMenuBook, MdEmojiEvents,
   } from "react-icons/md";
 
     
@@ -48,6 +52,7 @@ import Pagination from "../../components/common/Pagination";
   }
 
   function PaymentCountdown({ expiresAt }) {
+    const { t } = useLang();
     const [now, setNow] = useState(() => Date.now());
     useEffect(() => {
       const id = setInterval(() => setNow(Date.now()), 1000);
@@ -58,7 +63,7 @@ import Pagination from "../../components/common/Pagination";
     if (!expiresAt || remaining <= 0) {
       return (
         <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 10.5, fontWeight: 600, color: "#ef4444" }}>
-          <MdOutlineTimer size={12} /> Payment window expired
+          <MdOutlineTimer size={12} /> {t("amenPayWindowExpired")}
         </span>
       );
     }
@@ -67,12 +72,13 @@ import Pagination from "../../components/common/Pagination";
     return (
       <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 10.5, fontWeight: 600, color: "var(--text-secondary)" }}>
         <MdOutlineTimer size={12} style={{ color: "var(--stat-purple-color, #a78bfa)" }} />
-        Complete payment in {String(mins).padStart(2, "0")}:{String(secs).padStart(2, "0")}
+        {t("amenPayCompleteIn", { time: `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}` })}
       </span>
     );
   }
 
   function ClosureBanner({ amenity }) {
+    const { t } = useLang();
     if (amenity.is_active || !amenity.disabled_reason) return null;
     const isTemp = amenity.disable_type === "TEMPORARY";
     return (
@@ -91,10 +97,10 @@ import Pagination from "../../components/common/Pagination";
         <span>
           {amenity.disabled_reason}
           {isTemp && amenity.disabled_until && (
-            <span style={{ fontWeight: 600 }}> Reopens on {amenity.disabled_until}.</span>
+            <span style={{ fontWeight: 600 }}> {t("amenReopensOn", { date: amenity.disabled_until })}</span>
           )}
           {!isTemp && (
-            <span style={{ fontWeight: 600 }}> Booking is unavailable until further notice.</span>
+            <span style={{ fontWeight: 600 }}> {t("amenClosedUnavailable")}</span>
           )}
         </span>
       </div>
@@ -103,18 +109,33 @@ import Pagination from "../../components/common/Pagination";
 
   const amenityIcon = (name = "") => {
     const n = name.toLowerCase();
-    if (n.includes("pool") || n.includes("swim"))      return "🏊";
-    if (n.includes("gym")  || n.includes("fitness"))   return "🏋️";
-    if (n.includes("tennis")|| n.includes("court"))    return "🎾";
-    if (n.includes("club") || n.includes("lounge"))    return "🛋️";
-    if (n.includes("park") || n.includes("garden"))    return "🌿";
-    if (n.includes("hall") || n.includes("banquet"))   return "🎉";
-    if (n.includes("theater")|| n.includes("cinema"))  return "🎬";
-    if (n.includes("spa")  || n.includes("sauna"))     return "♨️";
-    if (n.includes("library"))                         return "📚";
-    if (n.includes("ground")|| n.includes("field"))    return "⚽";
-    if (n.includes("auditorium"))                      return "🎭";
-    return "✦";
+    let Icon = MdEmojiEvents;
+    if (n.includes("swim") || n.includes("pool"))              Icon = MdPool;
+    else if (n.includes("gym") || n.includes("fitness") || n.includes("workout")) Icon = MdFitnessCenter;
+    else if (n.includes("cricket"))                            Icon = MdSportsCricket;
+    else if (n.includes("football") || n.includes("soccer"))   Icon = MdSportsSoccer;
+    else if (n.includes("tennis") || n.includes("badminton"))  Icon = MdSportsTennis;
+    else if (n.includes("basketball"))                         Icon = MdSportsBasketball;
+    else if (n.includes("volley"))                             Icon = MdSportsVolleyball;
+    else if (n.includes("golf"))                               Icon = MdSportsGolf;
+    else if (n.includes("baseball"))                           Icon = MdSportsBaseball;
+    else if (n.includes("hockey"))                             Icon = MdSportsHockey;
+    else if (n.includes("kabaddi"))                            Icon = MdSportsKabaddi;
+    else if (n.includes("club") || n.includes("lounge") || n.includes("rest")) Icon = MdChair;
+    else if (n.includes("park") || n.includes("garden") || n.includes("lawn")) Icon = MdPark;
+    else if (n.includes("hall") || n.includes("banquet") || n.includes("function")) Icon = MdCelebration;
+    else if (n.includes("theater") || n.includes("cinema") || n.includes("movie")) Icon = MdTheaters;
+    else if (n.includes("auditorium"))                         Icon = MdTheaterComedy;
+    else if (n.includes("spa") || n.includes("sauna") || n.includes("wellness")) Icon = MdSpa;
+    else if (n.includes("library") || n.includes("reading"))   Icon = MdMenuBook;
+    else if (n.includes("ground") || n.includes("field") || n.includes("sport")) Icon = MdSportsSoccer;
+    return (
+      <Icon
+        size={34}
+        style={{ color: "#93C5FD", display: "block" }}
+        aria-hidden="true"
+      />
+    );
   };
 
   /* ══════════════════════════════════════════════════════════
@@ -449,7 +470,7 @@ const navigate = useNavigate();
       const days = new Set(selectedSlots.map((s) => s.date)).size;
       let label;
       if (days > 1) {
-        label = `${selectedSlots.length} ${selectedSlots.length === 1 ? "slot" : "slots"} · ${days} ${days === 1 ? "day" : "days"}`;
+        label = `${selectedSlots.length} ${selectedSlots.length === 1 ? t("amenSlot") : t("amenSlots")} · ${days} ${days === 1 ? t("amenDay") : t("amenDays")}`;
       } else {
         label = mins % 60 === 0
           ? `${mins / 60} hr${mins / 60 === 1 ? "" : "s"}`
@@ -506,7 +527,7 @@ const navigate = useNavigate();
         setShowDateModal(false);
         setShowPaymentModal(true);
       } catch (err) {
-        const msg = err.response?.data?.message || "Failed to create booking. Please try again.";
+        const msg = err.response?.data?.message || t("amenErrCreateBooking");
         setBookingError(msg);
         setPaymentStatus(null);
       } finally {
@@ -525,7 +546,7 @@ const navigate = useNavigate();
         setPaymentData(res.data.upiPayment);
         setShowPaymentModal(true);
       } catch (err) {
-        const msg = err.response?.data?.message || "Could not initiate repayment.";
+        const msg = err.response?.data?.message || t("amenErrRepay");
         alert(msg);
       } finally {
         setRepayingId(null);
@@ -552,7 +573,7 @@ const navigate = useNavigate();
         await loadMyBookings(1, statusFilter, debouncedSearch, amenityFilter);
         setTab("BOOKINGS");
       } catch (err) {
-        alert(err.response?.data?.message || "Confirmation failed. Please try again.");
+        alert(err.response?.data?.message || t("amenErrConfirmPayment"));
       } finally {
         setConfirming(false);
       }
@@ -602,11 +623,11 @@ const navigate = useNavigate();
 
     const statusDisplayLabel = (status) => {
       switch (status) {
-        case "PAYMENT_PENDING": return "Awaiting Payment";
-        case "PENDING":         return "Awaiting Approval";
-        case "APPROVED":        return "Confirmed";
-        case "CANCELLED":       return "Cancelled";
-        case "REJECTED":        return "Rejected";
+        case "PAYMENT_PENDING": return t("amenAwaitingPayment");
+        case "PENDING":         return t("amenAwaitingApproval");
+        case "APPROVED":        return t("amenConfirmed");
+        case "CANCELLED":       return t("amenCancelled");
+        case "REJECTED":        return t("amenRejected");
         default:                return status;
       }
     };
@@ -640,14 +661,14 @@ const navigate = useNavigate();
               <div style={{ width: "64px", height: "64px", borderRadius: "50%", background: "rgba(234,179,8,0.13)", border: "1px solid rgba(234,179,8,0.3)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 12px" }}>
                 <FaLock style={{ color: "#eab308", fontSize: "1.35rem" }} />
               </div>
-              <h3 style={{ fontSize: "15px", fontWeight: "700", color: "var(--text-primary)", margin: "0 0 4px" }}>Awaiting Admin Approval</h3>
-              <p style={{ fontSize: "11px", color: "var(--text-secondary)", lineHeight: "1.55", margin: "0 0 14px" }}>Your payment was received. The admin will approve your booking shortly.</p>
+              <h3 style={{ fontSize: "15px", fontWeight: "700", color: "var(--text-primary)", margin: "0 0 4px" }}>{t("amenAwaitingAdminApproval")}</h3>
+              <p style={{ fontSize: "11px", color: "var(--text-secondary)", lineHeight: "1.55", margin: "0 0 14px" }}>{t("amenPassPendingNote")}</p>
               {tearLine}
               <div style={{ background: "rgba(255,255,255,0.05)", borderRadius: "10px", padding: "10px 12px", display: "grid", gridTemplateColumns: "1fr 1fr", rowGap: "7px", fontSize: "12px", textAlign: "left", marginBottom: "10px" }}>
-                <span style={gridLabelStyle}>Amenity</span><span style={gridValueStyle}>{selectedBooking.Amenity?.name}</span>
-                <span style={gridLabelStyle}>Date</span><span style={gridValueStyle}>{bookingDates(selectedBooking)}</span>
-                <span style={gridLabelStyle}>Booking #</span><span style={gridValueStyle}>#{selectedBooking.id}</span>
-                <span style={gridLabelStyle}>Status</span><span style={{ textAlign: "right", color: "#eab308", fontWeight: "700", fontSize: "11px" }}>Pending Approval</span>
+                <span style={gridLabelStyle}>{t("amenPassAmenity")}</span><span style={gridValueStyle}>{selectedBooking.Amenity?.name}</span>
+                <span style={gridLabelStyle}>{t("amenPassDate")}</span><span style={gridValueStyle}>{bookingDates(selectedBooking)}</span>
+                <span style={gridLabelStyle}>{t("amenPassBookingId")}</span><span style={gridValueStyle}>#{selectedBooking.id}</span>
+                <span style={gridLabelStyle}>{t("amenPassStatus")}</span><span style={{ textAlign: "right", color: "#eab308", fontWeight: "700", fontSize: "11px" }}>{t("amenPendingApproval")}</span>
               </div>
             </div>
             <div className="ra-pass-actions">
@@ -667,16 +688,16 @@ const navigate = useNavigate();
               <div style={{ width: "64px", height: "64px", borderRadius: "50%", background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.25)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 12px" }}>
                 <FaBan style={{ color: "#ef4444", fontSize: "1.35rem" }} />
               </div>
-              <h3 style={{ fontSize: "15px", fontWeight: "700", color: "var(--text-primary)", margin: "0 0 4px" }}>Booking {status === "CANCELLED" ? "Cancelled" : "Rejected"}</h3>
+              <h3 style={{ fontSize: "15px", fontWeight: "700", color: "var(--text-primary)", margin: "0 0 4px" }}>{status === "CANCELLED" ? t("amenPassBookingCancelled") : t("amenPassBookingRejected")}</h3>
               {tearLine}
               <div style={{ background: "rgba(255,255,255,0.05)", borderRadius: "10px", padding: "10px 12px", display: "grid", gridTemplateColumns: "1fr 1fr", rowGap: "7px", fontSize: "12px", textAlign: "left", marginBottom: "10px" }}>
-                <span style={gridLabelStyle}>Amenity</span><span style={gridValueStyle}>{selectedBooking.Amenity?.name}</span>
-                <span style={gridLabelStyle}>Date</span><span style={gridValueStyle}>{bookingDates(selectedBooking)}</span>
-                <span style={gridLabelStyle}>Booking #</span><span style={gridValueStyle}>#{selectedBooking.id}</span>
+                <span style={gridLabelStyle}>{t("amenPassAmenity")}</span><span style={gridValueStyle}>{selectedBooking.Amenity?.name}</span>
+                <span style={gridLabelStyle}>{t("amenPassDate")}</span><span style={gridValueStyle}>{bookingDates(selectedBooking)}</span>
+                <span style={gridLabelStyle}>{t("amenPassBookingId")}</span><span style={gridValueStyle}>#{selectedBooking.id}</span>
               </div>
             </div>
             <div className="ra-pass-actions">
-              <button className="ra-pass-btn ra-pass-btn--close" onClick={() => setShowPassModal(false)}><FaTimes /><span>Close</span></button>
+              <button className="ra-pass-btn ra-pass-btn--close" onClick={() => setShowPassModal(false)}><FaTimes /><span>{t("close")}</span></button>
             </div>
           </div>
         );
@@ -696,11 +717,11 @@ const navigate = useNavigate();
             </div>
             <h3 style={{ marginTop: "8px", fontSize: "14px", fontWeight: "600" }}>{user?.name}</h3>
             <div style={{ marginTop: "10px", background: "rgba(255,255,255,0.06)", borderRadius: "10px", padding: "9px 12px", display: "grid", gridTemplateColumns: "1fr 1fr", rowGap: "6px", fontSize: "12px", textAlign: "left" }}>
-              <span style={gridLabelStyle}>Date</span><span style={gridValueStyle}>{bookingDates(selectedBooking)}</span>
-              <span style={gridLabelStyle}>Booking #</span><span style={gridValueStyle}>#{selectedBooking.id}</span>
-              <span style={gridLabelStyle}>Status</span><span style={{ textAlign: "right", color: "#22c55e", fontWeight: "700" }}>Confirmed</span>
-              <span style={gridLabelStyle}>Amenity</span><span style={gridValueStyle}>{selectedBooking.Amenity?.name}</span>
-              <span style={gridLabelStyle}>Amount</span><span style={gridValueStyle}>₹{bookingAmount(selectedBooking)}</span>
+              <span style={gridLabelStyle}>{t("amenPassDate")}</span><span style={gridValueStyle}>{bookingDates(selectedBooking)}</span>
+              <span style={gridLabelStyle}>{t("amenPassBookingId")}</span><span style={gridValueStyle}>#{selectedBooking.id}</span>
+              <span style={gridLabelStyle}>{t("amenPassStatus")}</span><span style={{ textAlign: "right", color: "#22c55e", fontWeight: "700" }}>{t("amenConfirmed")}</span>
+              <span style={gridLabelStyle}>{t("amenPassAmenity")}</span><span style={gridValueStyle}>{selectedBooking.Amenity?.name}</span>
+              <span style={gridLabelStyle}>{t("amenPassAmount")}</span><span style={gridValueStyle}>₹{bookingAmount(selectedBooking)}</span>
             </div>
             <div style={{ marginTop: "8px", fontSize: "9px", color: "var(--text-muted)", letterSpacing: "0.1em" }}>{t("amenPassScanNote")}</div>
           </div>
@@ -776,7 +797,7 @@ const navigate = useNavigate();
                       color:      isTemp ? "var(--acct-cyan)"               : "#7f1d1d",
                       border: `1px solid ${isTemp ? "rgba(160,90,255,0.28)" : "rgba(220,38,38,0.22)"}`,
                     }}>
-                      {isTemp ? "Temp. closed" : "Closed"}
+                      {isTemp ? t("amenTempClosed") : t("amenClosed")}
                     </div>
                   )}
                   <div className="ra-card-emoji" style={{ opacity: isDisabled ? 0.45 : 1 }}>
@@ -803,7 +824,7 @@ const navigate = useNavigate();
                   {isDisabled ? (
                     <button type="button" disabled className="ra-book-btn"
                       style={{ opacity: 0.38, cursor: "not-allowed", background: "var(--card-inner-bg,rgba(0,0,0,0.04))" }}>
-                      <span>Booking unavailable</span>
+                      <span>{t("amenBookingUnavailable")}</span>
                     </button>
                   ) : (
                     <button type="button" onClick={() => selectAmenity(a)} className="ra-book-btn">
@@ -829,10 +850,12 @@ const navigate = useNavigate();
                 <MdPayment size={18} className="ra-pay-banner-icon" />
                 <div>
                   <div className="ra-pay-banner-title">
-                    {counts.PAYMENT_PENDING} booking{counts.PAYMENT_PENDING > 1 ? "s" : ""} awaiting payment
+                    {counts.PAYMENT_PENDING > 1
+                      ? t("amenPendingPaymentMany", { count: counts.PAYMENT_PENDING })
+                      : t("amenPendingPaymentOne", { count: counts.PAYMENT_PENDING })}
                   </div>
                   <div className="ra-pay-banner-sub">
-                    Complete payment before the timer runs out, or use the Repay button below.
+                    {t("amenPayBannerSub")}
                   </div>
                 </div>
               </div>
@@ -856,7 +879,7 @@ const navigate = useNavigate();
                 </div>
                 <div className="complaint-stat-card complaint-stat-pending">
                   <span className="complaint-stat-val">{(counts.PAYMENT_PENDING || 0) + (counts.PENDING || 0)}</span>
-                  <span className="complaint-stat-label">Pending</span>
+                  <span className="complaint-stat-label">{t("amenPending")}</span>
                 </div>
                 <div className="complaint-stat-card complaint-stat-resolved">
                   <span className="complaint-stat-val">{counts.APPROVED || 0}</span>
@@ -900,7 +923,7 @@ const navigate = useNavigate();
 
             {initialLoad && (
               <div className="flex flex-col items-center gap-3 py-10 text-secondary">
-                <Spinner /><p className="text-sm">Loading…</p>
+                <Spinner /><p className="text-sm">{t("loading")}</p>
               </div>
             )}
 
@@ -914,10 +937,10 @@ const navigate = useNavigate();
             {!initialLoad && counts.ALL > 0 && myBookings.length === 0 && !fetching && (
               <div className="ra-empty">
                 <span className="ra-empty-icon">🔍</span>
-                <p>No bookings match your filters</p>
+                <p>{t("amenNoBookingsMatch")}</p>
                 <button type="button" onClick={clearAllFilters}
                   style={{ color: "var(--accent)", background: "none", border: "none", cursor: "pointer", fontSize: 12, marginTop: 6 }}>
-                  Clear filters
+                  {t("amenClearFilters")}
                 </button>
               </div>
             )}
@@ -958,7 +981,7 @@ const navigate = useNavigate();
                           background: "var(--stat-purple-bg)", color: "var(--stat-purple-color)",
                           border: "1px solid var(--stat-purple-border)",
                         }}>
-                          Awaiting Payment
+                          {t("amenAwaitingPayment")}
                         </span>
                         <div style={{ display: "flex", gap: 6 }}>
                           <button
@@ -976,7 +999,7 @@ const navigate = useNavigate();
                             {repayingId === b.id
                               ? <Spinner small />
                               : <>
-                                  <MdRefresh size={13} /> Pay Now
+                                  <MdRefresh size={13} /> {t("amenPayNow")}
                                 </>
                             }
                           </button>
@@ -988,7 +1011,7 @@ const navigate = useNavigate();
                               background: "transparent", color: "var(--text-secondary)",
                               border: "1px solid var(--glass-border)", cursor: "pointer",
                             }}>
-                            Cancel
+                            {t("cancel")}
                           </button>
                         </div>
                       </div>
@@ -1018,7 +1041,7 @@ const navigate = useNavigate();
             {!initialLoad && myBookings.length > 0 && (
               <div className="flex flex-col items-center gap-2 mt-3">
                 <p className="text-xs text-secondary">
-                  Showing {myBookings.length} of {totalItems}
+                  {t("amenShowingCount", { shown: myBookings.length, total: totalItems })}
                 </p>
                 <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} pageSize={limit} onPageSizeChange={(s) => { limitRef.current = s; setLimit(s); setPage(1); handlePageChange(1); }} />
               </div>
@@ -1038,15 +1061,15 @@ const navigate = useNavigate();
               {paymentStatus === "processing" && (
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12, padding: "24px 0" }} className="animate-fadeIn">
                   <Spinner />
-                  <p style={{ fontSize: 13, color: "var(--text-secondary)" }}>Verifying payment…</p>
+                  <p style={{ fontSize: 13, color: "var(--text-secondary)" }}>{t("amenVerifyingPayment")}</p>
                 </div>
               )}
 
               {paymentStatus === "success" && (
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10, padding: "24px 0", color: "#22c55e" }} className="animate-fadeIn">
                   <div style={{ fontSize: 40 }}>✅</div>
-                  <p style={{ fontSize: 14, fontWeight: 700, color: "var(--text-primary)" }}>Booking Confirmed!</p>
-                  <p style={{ fontSize: 12, color: "var(--text-secondary)" }}>Redirecting to your bookings…</p>
+                  <p style={{ fontSize: 14, fontWeight: 700, color: "var(--text-primary)" }}>{t("amenBookingConfirmed")}</p>
+                  <p style={{ fontSize: 12, color: "var(--text-secondary)" }}>{t("amenRedirecting")}</p>
                 </div>
               )}
 
@@ -1058,9 +1081,9 @@ const navigate = useNavigate();
                 }} className="animate-fadeIn">
                   <MdWarning size={15} style={{ color: "#ef4444", flexShrink: 0, marginTop: 1 }} />
                   <div>
-                    <div style={{ fontSize: 12, fontWeight: 700, color: "#ef4444" }}>Payment failed</div>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: "#ef4444" }}>{t("amenPaymentFailed")}</div>
                     <div style={{ fontSize: 11, color: "var(--text-secondary)", marginTop: 2 }}>
-                      Your slot is held for a few more minutes. Go to My Bookings → Pay Now to retry.
+                      {t("amenPaymentFailedNote")}
                     </div>
                   </div>
                 </div>
@@ -1074,9 +1097,9 @@ const navigate = useNavigate();
                 }} className="animate-fadeIn">
                   <MdPayment size={15} style={{ color: "var(--accent)", flexShrink: 0, marginTop: 1 }} />
                   <div>
-                    <div style={{ fontSize: 12, fontWeight: 700, color: "var(--accent)" }}>Payment not completed</div>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: "var(--accent)" }}>{t("amenPaymentNotCompleted")}</div>
                     <div style={{ fontSize: 11, color: "var(--text-secondary)", marginTop: 2 }}>
-                      Your slot is temporarily reserved. Use the Repay button in My Bookings before the timer runs out.
+                      {t("amenPaymentNotCompletedNote")}
                     </div>
                   </div>
                 </div>
@@ -1274,15 +1297,15 @@ const navigate = useNavigate();
               {paymentStatus === "processing" && (
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12, padding: "24px 0" }} className="animate-fadeIn">
                   <Spinner />
-                  <p style={{ fontSize: 13, color: "var(--text-secondary)" }}>Verifying payment…</p>
+                  <p style={{ fontSize: 13, color: "var(--text-secondary)" }}>{t("amenVerifyingPayment")}</p>
                 </div>
               )}
 
               {paymentStatus === "success" && (
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10, padding: "24px 0", color: "#22c55e" }} className="animate-fadeIn">
                   <div style={{ fontSize: 40 }}>✅</div>
-                  <p style={{ fontSize: 14, fontWeight: 700, color: "var(--text-primary)" }}>Booking Confirmed!</p>
-                  <p style={{ fontSize: 12, color: "var(--text-secondary)" }}>Redirecting to your bookings…</p>
+                  <p style={{ fontSize: 14, fontWeight: 700, color: "var(--text-primary)" }}>{t("amenBookingConfirmed")}</p>
+                  <p style={{ fontSize: 12, color: "var(--text-secondary)" }}>{t("amenRedirecting")}</p>
                 </div>
               )}
 
@@ -1294,9 +1317,9 @@ const navigate = useNavigate();
                 }} className="animate-fadeIn">
                   <MdWarning size={15} style={{ color: "#ef4444", flexShrink: 0, marginTop: 1 }} />
                   <div>
-                    <div style={{ fontSize: 12, fontWeight: 700, color: "#ef4444" }}>Payment failed</div>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: "#ef4444" }}>{t("amenPaymentFailed")}</div>
                     <div style={{ fontSize: 11, color: "var(--text-secondary)", marginTop: 2 }}>
-                      Your slot is held for a few more minutes. Go to My Bookings → Pay Now to retry.
+                      {t("amenPaymentFailedNote")}
                     </div>
                   </div>
                 </div>
@@ -1310,9 +1333,9 @@ const navigate = useNavigate();
                 }} className="animate-fadeIn">
                   <MdPayment size={15} style={{ color: "var(--accent)", flexShrink: 0, marginTop: 1 }} />
                   <div>
-                    <div style={{ fontSize: 12, fontWeight: 700, color: "var(--accent)" }}>Payment not completed</div>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: "var(--accent)" }}>{t("amenPaymentNotCompleted")}</div>
                     <div style={{ fontSize: 11, color: "var(--text-secondary)", marginTop: 2 }}>
-                      Your slot is temporarily reserved. Use the Repay button in My Bookings before the timer runs out.
+                      {t("amenPaymentNotCompletedNote")}
                     </div>
                   </div>
                 </div>
@@ -1383,7 +1406,7 @@ const navigate = useNavigate();
                             <div key={dateKey} className="ra-slot-day-group">
                               <div className="ra-slot-day-label">
                                 <span>{d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}</span>
-                                {picked > 0 && <span className="ra-slot-day-picked">{picked} selected</span>}
+                                {picked > 0 && <span className="ra-slot-day-picked">{t("amenXSelected", { count: picked })}</span>}
                               </div>
                               <div className="ra-slots-grid">
                                 {dateSlots.map((s, i) => {
@@ -1454,12 +1477,12 @@ const navigate = useNavigate();
         {showPaymentModal && paymentData && (
           <Modal isOpen={showPaymentModal}
             onClose={() => { setShowPaymentModal(false); setPaymentData(null); }}
-            title="Complete Payment">
+            title={t("amenCompletePayment")}>
             <div className="ra-modal-inner" style={{ textAlign: "center" }}>
 
               <div className="ra-pay-amount">₹{paymentData.amount}</div>
               <p style={{ fontSize: 12, color: "var(--text-secondary)", marginBottom: 16 }}>
-                Scan the QR code or pay using UPI ID below
+                {t("amenScanUpiNote")}
               </p>
 
               <div className="ra-pay-qr">
@@ -1474,7 +1497,7 @@ const navigate = useNavigate();
               </div>
 
               <div className="ra-pay-divider">
-                <span>or pay via UPI ID</span>
+                <span>{t("amenOrUpi")}</span>
               </div>
 
               <div className="ra-pay-upi-row">
@@ -1487,7 +1510,7 @@ const navigate = useNavigate();
                     setCopied(true);
                     setTimeout(() => setCopied(false), 2000);
                   }}>
-                  {copied ? <><MdCheck size={14} /> Copied</> : <><MdContentCopy size={14} /> Copy</>}
+                  {copied ? <><MdCheck size={14} /> {t("amenCopied")}</> : <><MdContentCopy size={14} /> {t("amenCopy")}</>}
                 </button>
               </div>
 
@@ -1497,14 +1520,14 @@ const navigate = useNavigate();
                 disabled={confirming}
                 onClick={confirmPayment}>
                 {confirming ? (
-                  <><Spinner small /> Confirming…</>
+                  <><Spinner small /> {t("amenConfirming")}</>
                 ) : (
-                  "I have paid"
+                  t("amenIHavePaid")
                 )}
               </button>
 
               <p style={{ fontSize: 10, color: "var(--text-secondary)", marginTop: 10, opacity: 0.7 }}>
-                After payment, click the button above to confirm your booking.
+                {t("amenAfterPayNote")}
               </p>
             </div>
           </Modal>

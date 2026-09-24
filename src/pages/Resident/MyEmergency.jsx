@@ -293,7 +293,7 @@ export default function MyEmergency() {
         }}>
           <MdHome size={15} style={{ color: "var(--reject-color)", flexShrink: 0 }} />
           <span>
-            Unit:{" "}
+            {t("emergencyUnitLabel")}{" "}
             <strong style={{ color: "var(--text-primary)" }}>
               {buildFlatLabel(myFlats[0])}
             </strong>
@@ -320,7 +320,7 @@ export default function MyEmergency() {
             onChange={(e) => setSelectedFlatId(e.target.value)}
             required
           >
-            <option value="" disabled>-- Choose the affected unit --</option>
+            <option value="" disabled>{t("emergencyChooseUnit")}</option>
             {myFlats.map((item, index) => {
               const flatObj  = item.Flat || item;
               const fId      = item.flat_id || flatObj.id || `fallback-${index}`;
@@ -393,7 +393,7 @@ export default function MyEmergency() {
             value={activeTab}
             onChange={handleTabChange}
             tabs={[
-              { id: "ALL", label: "All", badge: counts.ALL },
+              { id: "ALL", label: t("emergencyAll"), badge: counts.ALL },
               { id: "ACTIVE", label: t("emergencyActive"), badge: counts.ACTIVE, alert: counts.ACTIVE },
               { id: "RESOLVED", label: t("emergencyResolved"), badge: counts.RESOLVED },
             ]}
@@ -527,11 +527,10 @@ export default function MyEmergency() {
 
           <div className="table-footer" style={{ flexWrap: "wrap", gap: 10 }}>
             <span style={{ fontSize: 12, color: "var(--text-secondary)" }}>
-              Showing{" "}
-              <strong style={{ color: "var(--text-primary)" }}>
-                {(safePage - 1) * limit + 1}–{Math.min(safePage * limit, totalItems)}
-              </strong>{" "}
-              of <strong style={{ color: "var(--text-primary)" }}>{totalItems}</strong> alerts
+              {t("emergencyShowing", {
+                range: `${(safePage - 1) * limit + 1}–${Math.min(safePage * limit, totalItems)}`,
+                total: totalItems,
+              })}
             </span>
             <Pagination page={safePage} totalPages={totalPages} onPageChange={setPage} pageSize={limit} onPageSizeChange={(s) => { setLimit(s); setPage(1); }} />
           </div>
@@ -608,12 +607,12 @@ export default function MyEmergency() {
                     {form.type === "OTHER" && (
                       <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                         <label style={{ fontSize: 11, fontWeight: 600, color: "#ec4899", textTransform: "uppercase", letterSpacing: "0.06em" }}>
-                          Specify Reason for Other <span style={{ color: "#ef4444" }}>*</span>
+                          {t("emergencyReasonOtherLabel")} <span style={{ color: "#ef4444" }}>*</span>
                         </label>
                         <textarea
                           rows={3}
                           className="input"
-                          placeholder="e.g. Gas leak, Elevator problem, Water pipe burst, Electrical failure..."
+                          placeholder={t("emergencyReasonOtherPlaceholder")}
                           value={form.other_reason}
                           onChange={(e) => setForm((f) => ({ ...f, other_reason: e.target.value }))}
                           style={{ minHeight: 85, fontSize: 13, padding: "10px 12px", borderRadius: 10, borderColor: "rgba(236,72,153,0.4)", resize: "vertical", lineHeight: 1.5 }}
@@ -623,7 +622,7 @@ export default function MyEmergency() {
 
                     <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                       <label style={{ fontSize: 11, fontWeight: 600, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.06em" }}>
-                        {t("emergencyMsgLabel")} (Optional)
+                        {t("emergencyMsgLabel")} ({t("emergencyOptional")})
                       </label>
                       <textarea
                         className="input"
@@ -642,7 +641,7 @@ export default function MyEmergency() {
                       className="btn-danger flex items-center justify-center gap-2"
                       style={{ width: "100%", height: 46 }}
                     >
-                      <MdSend size={18} /> Review & Continue
+                      <MdSend size={18} /> {t("emergencyReviewContinue")}
                     </button>
                   </>
                 ) : (
@@ -650,36 +649,36 @@ export default function MyEmergency() {
                   <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
                     <div style={{ padding: 14, borderRadius: 12, background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", textAlign: "center" }}>
                       <p style={{ margin: 0, fontSize: 15, fontWeight: 800, color: "#ef4444" }}>
-                        Confirm Emergency SOS
+                        {t("emergencyConfirmTitle")}
                       </p>
                       <p style={{ margin: "4px 0 0", fontSize: 12, color: "var(--text-secondary)" }}>
-                        Are you sure you want to broadcast this emergency alert?
+                        {t("emergencyConfirmMsg")}
                       </p>
                     </div>
 
                     <div style={{ background: "var(--card-inner-bg)", padding: 12, borderRadius: 10, border: "1px solid var(--glass-border)", fontSize: 12, display: "flex", flexDirection: "column", gap: 8 }}>
                       <div style={{ display: "flex", justifyContent: "space-between" }}>
-                        <span style={{ color: "var(--text-secondary)" }}>Emergency Type:</span>
+                        <span style={{ color: "var(--text-secondary)" }}>{t("emergencyTypeLabel")}:</span>
                         <strong style={{ color: "var(--text-primary)" }}>{form.type}</strong>
                       </div>
 
                       {form.type === "OTHER" && form.other_reason && (
                         <div style={{ display: "flex", justifyContent: "space-between" }}>
-                          <span style={{ color: "var(--text-secondary)" }}>Reason:</span>
+                          <span style={{ color: "var(--text-secondary)" }}>{t("emergencyReasonWord")}</span>
                           <strong style={{ color: "#ec4899" }}>{form.other_reason}</strong>
                         </div>
                       )}
 
                       {form.message && (
                         <div>
-                          <span style={{ color: "var(--text-secondary)", display: "block", marginBottom: 2 }}>Notes:</span>
+                          <span style={{ color: "var(--text-secondary)", display: "block", marginBottom: 2 }}>{t("emergencyNotesWord")}</span>
                           <p style={{ margin: 0, color: "var(--text-primary)", fontStyle: "italic" }}>"{form.message}"</p>
                         </div>
                       )}
                     </div>
 
                     <p style={{ margin: 0, fontSize: 11, color: "#f87171", textAlign: "center", fontWeight: 600 }}>
-                      ⚠️ On-duty security guards and society members will be alerted immediately.
+                      ⚠️ {t("emergencyAlertEveryone")}
                     </p>
 
                     <div style={{ display: "flex", gap: 10, marginTop: 4 }}>
@@ -690,7 +689,7 @@ export default function MyEmergency() {
                         className="btn-secondary"
                         style={{ flex: 1, height: 44, borderRadius: 10, fontWeight: 600 }}
                       >
-                        Back
+                        {t("socBack")}
                       </button>
                       <button
                         type="button"
@@ -702,7 +701,7 @@ export default function MyEmergency() {
                         {sending ? (
                           <><Spinner size={16} /> {t("emergencySending")}</>
                         ) : (
-                          <><MdSend size={18} /> Confirm & Send SOS</>
+                          <><MdSend size={18} /> {t("emergencyConfirmSend")}</>
                         )}
                       </button>
                     </div>

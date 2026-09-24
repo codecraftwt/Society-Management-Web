@@ -3,7 +3,6 @@ import API from "../../services/api";
 import { useLang } from "../../context/LanguageContext";
 import {
   MdAdd,
-  MdClose,
   MdDirectionsWalk,
   MdPhone,
   MdDirectionsCar,
@@ -14,7 +13,7 @@ import {
 import { FaUserFriends } from "react-icons/fa";
 import { toast } from "react-toastify";
 import SlidingTabs from "../../components/common/SlidingTabs";
-import ToggleSearchBar from "../../components/common/ToggleSearchBar";
+import ExpandableSearch from "../../components/common/ExpandableSearch";
 import Pagination from "../../components/common/Pagination";
 import StepVisitorEntryModal from "../../components/guard/StepVisitorEntryModal";
 
@@ -138,10 +137,10 @@ export default function GuestEntry() {
     setExitLoadingId(id);
     try {
       await API.put(`/visitors/exit/${id}`);
-      toast.success(`Exit logged for ${name}`);
+      toast.success(t("geExitLogged", { name }, "Exit logged for {name}"));
       loadVisitors(page, debSearch, filter);
     } catch (err) {
-      toast.error(err.response?.data?.message || "Failed to log exit");
+      toast.error(err.response?.data?.message || t("geExitFailed", "Failed to log exit"));
     } finally {
       setExitLoadingId(null);
     }
@@ -212,7 +211,7 @@ export default function GuestEntry() {
             value={filter}
             onChange={handleFilterChange}
             tabs={filterTabs.map(({ key, label, count }) => ({
-              key,
+              id: key,
               label: (
                 <span className="flex items-center gap-1.5">
                   <span>{label}</span>
@@ -223,13 +222,11 @@ export default function GuestEntry() {
           />
         </div>
 
-        <div className="ge-search-wrap">
-          <ToggleSearchBar
-            value={search}
-            onChange={(val) => setSearch(val)}
-            placeholder={t("geSearchPlaceholder", "Search by guest name, phone, flat...")}
-          />
-        </div>
+        <ExpandableSearch
+          placeholder={t("geSearchPlaceholder", "Search by guest name, phone, flat...")}
+          value={search}
+          onChange={setSearch}
+        />
       </div>
 
       {/* ── DESKTOP TABLE ── */}
@@ -237,7 +234,7 @@ export default function GuestEntry() {
         {initialLoad ? (
           <div className="p-8 text-center text-secondary">
             <Spinner size={24} />
-            <p className="mt-2 text-xs">Loading guest records...</p>
+            <p className="mt-2 text-xs">{t("geLoading", "Loading guest records...")}</p>
           </div>
         ) : visitors.length === 0 ? (
           <div className="ge-empty">
@@ -274,7 +271,7 @@ export default function GuestEntry() {
                               {item.visitor_name}
                             </span>
                             <span className="text-[11px] text-secondary">
-                              Personal Guest
+                              {t("gePersonalGuest", "Personal Guest")}
                             </span>
                           </div>
                         </div>
@@ -298,7 +295,7 @@ export default function GuestEntry() {
                           </span>
                           {item.assigned_slot && (
                             <span className="block text-[10px] text-purple-600 dark:text-purple-400 font-bold">
-                              Slot: {item.assigned_slot}
+                              {t("geSlot", { slot: item.assigned_slot }, "Slot: {slot}")}
                             </span>
                           )}
                         </div>
@@ -326,11 +323,11 @@ export default function GuestEntry() {
                       <td>
                         {isInside ? (
                           <span className="ge-badge ge-badge--inside">
-                            ● Inside
+                            ● {t("geFilterInside", "Inside")}
                           </span>
                         ) : (
                           <span className="ge-badge ge-badge--left">
-                            ✔ Exited
+                            ✔ {t("geFilterLeft", "Exited")}
                           </span>
                         )}
                       </td>
@@ -346,10 +343,10 @@ export default function GuestEntry() {
                             ) : (
                               <MdLogout size={13} />
                             )}
-                            <span>Mark Exit</span>
+                            <span>{t("geMarkExit", "Mark Exit")}</span>
                           </button>
                         ) : (
-                          <span className="text-xs text-secondary italic">Completed</span>
+                          <span className="text-xs text-secondary italic">{t("geCompleted", "Completed")}</span>
                         )}
                       </td>
                     </tr>
@@ -422,7 +419,7 @@ export default function GuestEntry() {
                   </div>
                   {item.vehicle_number && (
                     <div className="ge-mc-row">
-                      <span className="ge-mc-label">Vehicle</span>
+                      <span className="ge-mc-label">{t("geVehicle", "Vehicle")}</span>
                       <span className="ge-mc-val font-mono">{item.vehicle_number}</span>
                     </div>
                   )}
@@ -440,7 +437,7 @@ export default function GuestEntry() {
                         className="px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm"
                       >
                         {exitLoadingId === item.id ? <Spinner size={12} /> : <MdLogout size={14} />}
-                        <span>Mark Exit</span>
+                        <span>{t("geMarkExit", "Mark Exit")}</span>
                       </button>
                     </div>
                   )}
