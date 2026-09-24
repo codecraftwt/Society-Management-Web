@@ -1605,9 +1605,10 @@ export default function MaintenancePage() {
 
   /* ── SuperAdmin society gate ── */
   const [societies, setSocieties] = useState([]);
-  const [societyId, setSocietyId] = useState(
-    () => localStorage.getItem("superadmin_society_filter") || ""
-  );
+  const [societyId, setSocietyId] = useState(() => {
+    const saved = localStorage.getItem("superadmin_society_filter");
+    return saved && saved !== "ALL" ? saved : "";
+  });
 
   useEffect(() => {
     if (!isSuperAdmin) return;

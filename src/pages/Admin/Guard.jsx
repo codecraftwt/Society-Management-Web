@@ -174,18 +174,18 @@ export default function Guard() {
   const [timingsLoading, setTimingsLoading] = useState(false);
   const [showTimingsModal, setShowTimingsModal] = useState(false);
 
+  // SuperAdmin society filter
+  const [societiesList, setSocietiesList] = useState([]);
+  const [filterSocietyId, setFilterSocietyId] = useState(() => {
+    return localStorage.getItem("superadmin_society_filter") || "ALL";
+  });
+
   const timingsSocietyId = isSuperAdmin
     ? filterSocietyId && filterSocietyId !== "ALL" ? filterSocietyId : null
     : user?.society_id;
   const [formData, setFormData] = useState({ name: "", email: "", password: "", society_id: "" });
   const [editingId, setEditingId] = useState(null);
   const [submitLoading, setSubmitLoading] = useState(false);
-
-  // SuperAdmin society filter
-  const [societiesList, setSocietiesList] = useState([]);
-  const [filterSocietyId, setFilterSocietyId] = useState(() => {
-    return localStorage.getItem("superadmin_society_filter") || "ALL";
-  });
 
   // Delete Confirm Dialog state
   const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, id: null, societyId: null, loading: false });

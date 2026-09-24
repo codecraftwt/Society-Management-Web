@@ -87,7 +87,14 @@ export default function GuardGatePass() {
     try {
       const res = await API.post("/preapproval/verify", { code: passCode });
       const isExit = res.data?.scan_type === "exit";
-      setMessage(res.data.message || "GatePass verified successfully!");
+      const detail = [];
+      if (res.data?.dwell_minutes) {
+        detail.push(`${t("ggAllowedTime") || "Allowed time"}: ${res.data.dwell_minutes} min`);
+      }
+      if (res.data?.dailyLimit) {
+        detail.push(`${t("ggDailyUsage") || "Daily"}: ${res.data.usesToday ?? 0}/${res.data.dailyLimit}`);
+      }
+      setMessage([res.data.message || "GatePass verified successfully!", ...detail].filter(Boolean).join("  •  "));
       setSuccess(true);
       setCode("");
       setSelectedSlot(null);
@@ -129,7 +136,14 @@ export default function GuardGatePass() {
         slot_number: selectedSlot,
         vehicle_type: vehicleType,
       });
-      setMessage(res.data.message || "Entry confirmed with assigned parking slot!");
+      const detail = [];
+      if (res.data?.dwell_minutes) {
+        detail.push(`${t("ggAllowedTime") || "Allowed time"}: ${res.data.dwell_minutes} min`);
+      }
+      if (res.data?.dailyLimit) {
+        detail.push(`${t("ggDailyUsage") || "Daily"}: ${res.data.usesToday ?? 0}/${res.data.dailyLimit}`);
+      }
+      setMessage([res.data.message || "Entry confirmed with assigned parking slot!", ...detail].filter(Boolean).join("  •  "));
       setSuccess(true);
       setCode("");
       setSelectedSlot(null);

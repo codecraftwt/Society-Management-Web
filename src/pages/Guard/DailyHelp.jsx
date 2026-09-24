@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import API from "../../services/api";
 import { useLang } from "../../context/LanguageContext";
 import {
@@ -12,11 +12,15 @@ import {
   MdWork,
   MdCleaningServices,
   MdPeople,
+  MdClose,
+  MdClear,
+  MdVerified,
+  MdLock,
 } from "react-icons/md";
 import { FaHandshake } from "react-icons/fa";
 import { toast } from "react-toastify";
 import SlidingTabs from "../../components/common/SlidingTabs";
-import ExpandableSearch from "../../components/common/ExpandableSearch";
+
 
 function Spinner({ size = 16 }) {
   return (
@@ -43,16 +47,29 @@ function Spinner({ size = 16 }) {
   );
 }
 
+const normalizePassCode = (raw) => {
+  const digits = String(raw || "").replace(/\D/g, "");
+  return digits.length === 6 ? `GP-${digits}` : null;
+};
+
+const tint = (color, alpha) => `color-mix(in srgb, var(--${color}) ${alpha}%, transparent)`;
+
 export default function DailyHelp() {
   const { t } = useLang();
 
   const [helpers, setHelpers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [actionLoadingPhone, setActionLoadingPhone] = useState(null);
 
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("ALL"); // ALL, INSIDE, OUTSIDE
+
+  // Gate pass code modal state
+  const [passHelper, setPassHelper] = useState(null);
+  const [passCode, setPassCode] = useState("");
+  const [passLoading, setPassLoading] = useState(false);
+  const [passError, setPassError] = useState("");
+  const passInputRef = useRef(null);
 
   const fetchDirectory = useCallback(async (isManual = false) => {
     if (isManual) setRefreshing(true);
@@ -73,16 +90,35 @@ export default function DailyHelp() {
     fetchDirectory();
   }, [fetchDirectory]);
 
-  // Handle Check-In / Check-Out Action
-  const handleToggleEntry = async (helper) => {
+  // Open gate pass modal for a Check-In / Check-Out action
+  const handleToggleEntry = (helper) => {
+    setPassHelper(helper);
+    setPassCode("");
+    setPassError("");
+    setTimeout(() => passInputRef.current?.focus(), 80);
+  };
+
+  // Submit the gate pass code and perform the check-in / check-out
+  const submitGatePass = async () => {
+    const helper = passHelper;
+    if (!helper || passLoading) return;
+
+    const code = normalizePassCode(passCode);
+    if (!code) {
+      setPassError(t("dhPassInvalidCode", "Enter the full 6-digit pass code (GP-XXXXXX)"));
+      return;
+    }
+
     const isInside = helper.status === "INSIDE";
-    setActionLoadingPhone(helper.phone);
+    setPassLoading(true);
+    setPassError("");
 
     try {
       if (isInside) {
         // Mark Exit
         const res = await API.put("/visitors/daily-help/exit", {
           phone: helper.phone,
+          gatePassCode: code,
         });
         toast.success(res.data?.message || `Checked out ${helper.name} from all flats`);
       } else {
@@ -91,15 +127,17 @@ export default function DailyHelp() {
           name: helper.name,
           phone: helper.phone,
           flatIds: helper.flatIds || [],
+          gatePassCode: code,
         });
         toast.success(res.data?.message || `Checked in ${helper.name} successfully`);
       }
       fetchDirectory();
+      setPassHelper(null);
     } catch (err) {
       console.error("Error toggling helper status:", err);
-      toast.error(err.response?.data?.message || "Operation failed");
+      setPassError(err.response?.data?.message || "Operation failed");
     } finally {
-      setActionLoadingPhone(null);
+      setPassLoading(false);
     }
   };
 
@@ -219,12 +257,26 @@ export default function DailyHelp() {
           />
         </div>
 
-        <div className="ge-search-wrap">
-          <ExpandableSearch
+        <div className="ge-search-box">
+          <MdSearch size={18} className="ge-search-box-icon" />
+          <input
+            type="text"
+            className="ge-search-box-input"
+            placeholder={t("searchDailyHelpPlaceholder", "Search helper by name, phone, maid, cook, flat...")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder={t("searchDailyHelpPlaceholder", "Search helper by name, phone, maid, cook, flat...")}
           />
+          {search && (
+            <button
+              type="button"
+              className="ge-search-box-clear"
+              onClick={() => setSearch("")}
+              aria-label="Clear search"
+              title="Clear search"
+            >
+              <MdClose size={13} />
+            </button>
+          )}
         </div>
       </div>
 
@@ -256,7 +308,6 @@ export default function DailyHelp() {
               <tbody>
                 {filteredHelpers.map((h) => {
                   const isInside = h.status === "INSIDE";
-                  const isActionLoading = actionLoadingPhone === h.phone;
 
                   return (
                     <tr key={h.phone || h.id}>
@@ -317,16 +368,13 @@ export default function DailyHelp() {
                       <td>
                         <button
                           onClick={() => handleToggleEntry(h)}
-                          disabled={isActionLoading}
-                          className={`px-3 py-1.5 rounded-xl text-xs font-extrabold text-white transition flex items-center gap-1.5 shadow-sm disabled:opacity-50 ${
+                          className={`px-3 py-1.5 rounded-xl text-xs font-extrabold text-white transition flex items-center gap-1.5 shadow-sm ${
                             isInside
                               ? "bg-red-600 hover:bg-red-700 active:scale-95"
                               : "bg-emerald-600 hover:bg-emerald-700 active:scale-95"
                           }`}
                         >
-                          {isActionLoading ? (
-                            <Spinner size={13} />
-                          ) : isInside ? (
+                          {isInside ? (
                             <MdLogout size={14} />
                           ) : (
                             <MdLogin size={14} />
@@ -357,7 +405,6 @@ export default function DailyHelp() {
         ) : (
           filteredHelpers.map((h) => {
             const isInside = h.status === "INSIDE";
-            const isActionLoading = actionLoadingPhone === h.phone;
 
             return (
               <div key={h.phone || h.id} className="ge-mobile-card">
@@ -400,14 +447,11 @@ export default function DailyHelp() {
                   <div className="mt-3 pt-2 border-t border-divider flex justify-end">
                     <button
                       onClick={() => handleToggleEntry(h)}
-                      disabled={isActionLoading}
                       className={`px-4 py-2 rounded-xl text-xs font-black text-white flex items-center gap-1.5 shadow-md ${
                         isInside ? "bg-red-600" : "bg-emerald-600"
                       }`}
                     >
-                      {isActionLoading ? (
-                        <Spinner size={13} />
-                      ) : isInside ? (
+                      {isInside ? (
                         <MdLogout size={14} />
                       ) : (
                         <MdLogin size={14} />
@@ -421,6 +465,220 @@ export default function DailyHelp() {
           })
         )}
       </div>
+
+      {/* ── GATE PASS CODE MODAL ── */}
+      {passHelper && (
+        <div
+          className="fixed inset-0 flex items-center justify-center p-4 animate-fadeIn"
+          style={{ background: "var(--overlay-bg)", backdropFilter: "blur(6px)", zIndex: 1200 }}
+          onClick={() => !passLoading && setPassHelper(null)}
+        >
+          <div
+            className="w-full max-w-md rounded-3xl p-6 sm:p-7 border relative overflow-hidden shadow-xl"
+            style={{
+              background: "var(--card-bg)",
+              border: "1px solid var(--glass-border)",
+              boxShadow: "var(--shadow-lg)",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Ambient glow */}
+            <div
+              className="absolute top-0 right-0 w-64 h-64 rounded-full blur-3xl pointer-events-none -mr-16 -mt-16"
+              style={{ background: "linear-gradient(135deg, " + tint("accent", 20) + ", transparent)" }}
+            />
+            <div className="absolute inset-x-0 top-0 h-1" style={{ background: "linear-gradient(to right, transparent, var(--accent), transparent)" }} />
+
+            <div className="relative z-10 space-y-4">
+              {/* Header */}
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div
+                    className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0"
+                    style={{
+                      background: tint("accent", 14),
+                      border: "1px solid " + tint("accent", 30),
+                      color: "var(--accent)",
+                    }}
+                  >
+                    {passHelper.status === "INSIDE" ? <MdLogout size={20} /> : <MdLogin size={20} />}
+                  </div>
+                  <div>
+                    <h3 className="text-base sm:text-lg font-extrabold tracking-tight" style={{ color: "var(--text-primary)" }}>
+                      {passHelper.status === "INSIDE"
+                        ? t("dhPassOutTitle", "Check OUT — Gate Pass Required")
+                        : t("dhPassInTitle", "Check IN — Gate Pass Required")}
+                    </h3>
+                    <p className="text-xs mt-0.5" style={{ color: "var(--text-secondary)" }}>
+                      {t("dhPassSubtitle", "Verify the resident-issued gate pass before {action}")}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => !passLoading && setPassHelper(null)}
+                  className="shrink-0 rounded-xl p-1.5 hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+                  style={{ color: "var(--text-secondary)" }}
+                  aria-label="Close"
+                >
+                  <MdClose size={20} />
+                </button>
+              </div>
+
+              {/* Helper summary */}
+              <div
+                className="flex items-center gap-3 p-3 rounded-2xl border"
+                style={{ background: "var(--card-inner-bg)", borderColor: "var(--glass-border)" }}
+              >
+                <div
+                  className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+                  style={{
+                    background: tint(passHelper.status === "INSIDE" ? "red" : "green", 14),
+                    color: passHelper.status === "INSIDE" ? "var(--danger)" : "var(--success)",
+                  }}
+                >
+                  <MdCleaningServices size={18} />
+                </div>
+                <div className="min-w-0">
+                  <p className="font-extrabold text-sm truncate" style={{ color: "var(--text-primary)" }}>
+                    {passHelper.name}
+                  </p>
+                  <p className="text-[11px] font-mono" style={{ color: "var(--text-secondary)" }}>
+                    {passHelper.phone} · {passHelper.flats || "Multiple Units"}
+                  </p>
+                </div>
+              </div>
+
+              {/* Code input */}
+              <div>
+                <p className="text-[11px] font-bold uppercase tracking-wider mb-2" style={{ color: "var(--text-secondary)" }}>
+                  {t("dhPassCodeLabel", "Gate Pass Code")}
+                </p>
+                <div
+                  onClick={() => passInputRef.current?.focus()}
+                  className="cursor-pointer group"
+                >
+                  <div className="flex items-center justify-center gap-2.5 py-1.5">
+                    <span className="text-lg sm:text-xl font-extrabold tracking-wider select-none tabular-nums" style={{ color: "var(--text-secondary)" }}>
+                      GP-
+                    </span>
+                    {Array.from({ length: 6 }).map((_, idx) => {
+                      const char = passCode[idx] || "";
+                      const isCurrent = passCode.length === idx;
+                      const filled = Boolean(char);
+                      return (
+                        <div
+                          key={idx}
+                          className="w-10 h-14 sm:w-12 sm:h-14 rounded-2xl border-2 flex items-center justify-center text-xl sm:text-2xl font-extrabold tracking-wider transition-all duration-200"
+                          style={{
+                            borderColor: filled || isCurrent ? "var(--accent)" : "var(--glass-border)",
+                            borderBottomColor: filled || isCurrent ? "var(--accent)" : "var(--accent)",
+                            borderBottomWidth: 2,
+                            background: filled || isCurrent ? tint("accent", 14) : "var(--card-inner-bg)",
+                            color: "var(--text-primary)",
+                            boxShadow: filled || isCurrent ? "0 4px 12px " + tint("accent", 18) : "none",
+                          }}
+                        >
+                          {char || (isCurrent ? <span className="w-2.5 h-0.5 animate-pulse" style={{ background: "var(--accent)" }} /> : "")}
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <input
+                    ref={passInputRef}
+                    type="text"
+                    autoFocus
+                    maxLength={6}
+                    value={passCode}
+                    onChange={(e) => setPassCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                    onKeyDown={(e) => e.key === "Enter" && submitGatePass()}
+                    autoComplete="off"
+                    spellCheck={false}
+                    className="opacity-0 absolute -top-10 left-0 w-1 h-1 pointer-events-none"
+                  />
+                </div>
+
+                {/* Clear shortcut */}
+                <div className="flex items-center justify-center gap-2 mt-2">
+                  {passCode ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setPassCode("");
+                        passInputRef.current?.focus();
+                      }}
+                      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold transition-all"
+                      style={{ color: "var(--text-secondary)", background: "var(--card-inner-bg)", border: "1px solid var(--glass-border)" }}
+                    >
+                      <MdClear size={12} />
+                      <span>{t("dhPassClear", "Clear code")}</span>
+                    </button>
+                  ) : (
+                    <span className="inline-flex items-center gap-1.5 text-[11px] font-medium" style={{ color: "var(--text-tertiary)" }}>
+                      <MdLock size={12} />
+                      <span>{t("dhPassHint", "Type 6 digits or paste code (GP-XXXXXX)")}</span>
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Error banner */}
+              {passError && (
+                <div
+                  className="p-3 rounded-2xl border flex items-center gap-2.5 text-sm font-semibold animate-fadeIn"
+                  style={{
+                    background: tint("warning", 12),
+                    borderColor: tint("warning", 30),
+                    color: "var(--warning)",
+                  }}
+                >
+                  <MdLock size={16} />
+                  <span>{passError}</span>
+                </div>
+              )}
+
+              {/* Actions */}
+              <div className="flex gap-3 pt-1">
+                <button
+                  type="button"
+                  onClick={() => !passLoading && setPassHelper(null)}
+                  disabled={passLoading}
+                  className="flex-1 py-3 rounded-2xl text-sm font-bold transition-all border"
+                  style={{ color: "var(--text-secondary)", borderColor: "var(--glass-border)", background: "var(--card-inner-bg)" }}
+                >
+                  {t("dhPassCancel", "Cancel")}
+                </button>
+                <button
+                  type="button"
+                  onClick={submitGatePass}
+                  disabled={passLoading || passCode.length < 6}
+                  className="relative flex-1 py-3 rounded-2xl text-sm font-bold flex items-center justify-center gap-2 text-white border-none transition-all duration-200 active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed overflow-hidden"
+                  style={{
+                    background: "linear-gradient(135deg, var(--accent), var(--accent-dark))",
+                    boxShadow: "0 8px 24px " + tint("accent", 26),
+                  }}
+                >
+                  <span
+                    className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 pointer-events-none"
+                    style={{ background: "linear-gradient(to right, transparent, rgba(255,255,255,0.22), transparent)" }}
+                  />
+                  {passLoading ? (
+                    <>
+                      <Spinner size={16} />
+                      <span>{passHelper.status === "INSIDE" ? t("dhPassCheckingOut", "Checking OUT...") : t("dhPassCheckingIn", "Checking IN...")}</span>
+                    </>
+                  ) : (
+                    <>
+                      <MdVerified size={16} />
+                      <span>{passHelper.status === "INSIDE" ? t("dhPassConfirmOut", "Confirm Check OUT") : t("dhPassConfirmIn", "Confirm Check IN")}</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

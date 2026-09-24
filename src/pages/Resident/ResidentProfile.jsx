@@ -259,6 +259,10 @@ export default function ResidentProfile() {
       subtitle: latestNotices.length > 0 ? t("rpActiveBulletins", { count: latestNotices.length }) : t("rpOfficialAnnouncements"),
       badge: latestNotices.length > 0 ? t("rpNew", { count: latestNotices.length }) : t("rpUpdated"),
       badgeClass: "bg-blue-500/20 text-blue-400 border-blue-500/30",
+      icon: MdCampaign,
+      color: "#3B82F6",
+      bg: "rgba(37, 99, 235, 0.15)",
+      cardClass: "gd-action--notice",
       icon: MdOutlineCampaign,
       iconColor: "text-blue-400",
       glowColor: "from-blue-600/25 via-indigo-600/15 to-purple-600/5",
@@ -272,6 +276,10 @@ export default function ResidentProfile() {
       subtitle: pendingBills.length > 0 ? t("rpTotalDue", { amount: totalPendingAmount.toLocaleString("en-IN") }) : t("rpAllDuesCleared"),
       badge: pendingBills.length > 0 ? t("rpDue", { count: pendingBills.length }) : t("rpZeroDues"),
       badgeClass: pendingBills.length > 0 ? "bg-rose-500/20 text-rose-400 border-rose-500/30" : "bg-emerald-500/20 text-emerald-400 border-emerald-500/30",
+      icon: MdReceiptLong,
+      color: "#E11D48",
+      bg: "rgba(225, 29, 72, 0.15)",
+      cardClass: "gd-action--bills",
       icon: MdOutlineReceiptLong,
       iconColor: "text-rose-400",
       glowColor: "from-rose-600/25 via-pink-600/15 to-purple-600/5",
@@ -285,6 +293,10 @@ export default function ResidentProfile() {
       subtitle: t("rpGatePassSub"),
       badge: t("rpFastTrack"),
       badgeClass: "bg-cyan-500/20 text-cyan-300 border-cyan-500/30",
+      icon: MdQrCodeScanner,
+      color: "#0891B2",
+      bg: "rgba(8, 145, 178, 0.15)",
+      cardClass: "gd-action--fastpass",
       icon: MdOutlineQrCodeScanner,
       iconColor: "text-cyan-400",
       glowColor: "from-cyan-600/25 via-teal-600/15 to-blue-600/5",
@@ -298,6 +310,10 @@ export default function ResidentProfile() {
       subtitle: pendingParcels.length > 0 ? t("rpParcelsWaiting", { count: pendingParcels.length }) : t("rpCollectionSub"),
       badge: pendingParcels.length > 0 ? t("rpReady", { count: pendingParcels.length }) : t("rpNoDeliveries"),
       badgeClass: pendingParcels.length > 0 ? "bg-amber-500/20 text-amber-400 border-amber-500/30" : "bg-card-inner-bg text-secondary border-glass-border",
+      icon: MdInventory2,
+      color: "#D97706",
+      bg: "rgba(217, 119, 6, 0.15)",
+      cardClass: "gd-action--parcel",
       icon: MdOutlineInventory2,
       iconColor: "text-amber-400",
       glowColor: "from-amber-600/25 via-orange-600/15 to-yellow-600/5",
@@ -442,43 +458,43 @@ export default function ResidentProfile() {
           <span className="text-xs text-secondary font-bold">{t("rpEssentialHubs", { count: 4 })}</span>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
-          {coreActionCards.map((card) => {
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+          {coreActionCards.map((card, idx) => {
             const IconComp = card.icon;
             return (
               <div
                 key={card.id}
                 onClick={card.onClick}
-                className={`group relative overflow-hidden rounded-3xl p-5 sm:p-6 border ${card.borderColor} bg-linear-to-br ${card.glowColor} to-card flex flex-col justify-between gap-5 transition-all duration-300 hover:-translate-y-2 hover:shadow-xl cursor-pointer`}
-                style={{ background: "var(--card-bg)" }}
+                style={{ "--gd-c": card.color, animationDelay: `${idx * 60}ms` }}
+                className={`gd-action ${card.cardClass} group relative overflow-hidden rounded-2xl p-4 sm:p-5 cursor-pointer flex flex-col gap-3`}
               >
-                {/* Top Row: Floating 3D Icon Pod + Status Badge */}
-                <div className="flex items-start justify-between gap-3">
-                  <div className="w-13 h-13 rounded-2xl bg-card-inner-bg border border-glass-border flex items-center justify-center shadow-md transition-transform duration-300 group-hover:scale-110">
-                    <IconComp size={28} className={card.iconColor} />
-                  </div>
+                <span className="gd-action__blob" aria-hidden />
 
-                  <span className={`px-2.5 py-1 rounded-xl text-[10px] font-black uppercase tracking-wider border shadow-sm ${card.badgeClass}`}>
+                {card.badge && (
+                  <span
+                    className={`gd-action__badge absolute top-3 right-3 z-[2] px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider shadow-sm ${card.badgeClass}`}
+                  >
                     {card.badge}
                   </span>
+                )}
+
+                <div
+                  className="gd-action__icon"
+                  style={{ backgroundColor: card.bg, color: card.color }}
+                >
+                  <IconComp size={22} />
                 </div>
 
-                {/* Card Main Information */}
-                <div className="space-y-1">
-                  <h3 className="text-xl font-black text-primary group-hover:text-accent transition-colors">
-                    {card.title}
-                  </h3>
-                  <p className="text-xs font-semibold text-secondary leading-relaxed line-clamp-2">
+                <div className="relative z-[1] mt-auto">
+                  <div className="flex items-center gap-1">
+                    <h3 className="text-[13px] sm:text-sm font-bold text-primary leading-tight">
+                      {card.title}
+                    </h3>
+                    <MdChevronRight className="gd-action__arrow shrink-0" size={16} />
+                  </div>
+                  <p className="text-[10px] sm:text-[11px] text-secondary line-clamp-2 mt-0.5 leading-snug">
                     {card.subtitle}
                   </p>
-                </div>
-
-                {/* Action CTA Bar */}
-                <div className="pt-3 border-t border-glass-border/40 flex items-center justify-between text-xs font-bold text-primary group-hover:text-accent transition-colors">
-                  <span>{card.ctaText}</span>
-                  <div className="w-7 h-7 rounded-xl bg-card-inner-bg border border-glass-border flex items-center justify-center group-hover:translate-x-1.5 transition-transform duration-200">
-                    <MdChevronRight size={18} />
-                  </div>
                 </div>
               </div>
             );

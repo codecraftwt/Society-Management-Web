@@ -1,4 +1,3 @@
-
 import { useEffect, useState, useCallback, useRef } from "react";
 import API from "../../services/api";
 import socket from "../../services/socket";
@@ -12,10 +11,9 @@ import {
 } from "react-icons/md";
 import Select from "../../components/common/Select";
 import SlidingTabs from "../../components/common/SlidingTabs";
-import ExpandableSearch from "../../components/common/ExpandableSearch";
+import ToggleSearchBar from "../../components/common/ToggleSearchBar";
 import Modal from "../../components/Modal";
 import { toast } from "react-toastify";
-
 import Pagination from "../../components/common/Pagination";
 
 function useIsMobile() {
@@ -49,28 +47,28 @@ function Spinner({ size = 22 }) {
 
 function StatusBadge({ status, t }) {
   const cfg = {
-    PENDING:   { label: t("gpPending") || "Pending",   Icon: MdWarning,      color: "var(--warning)", bg: "rgba(255,193,7,0.12)",  border: "rgba(255,193,7,0.28)"  },
-    APPROVED:  { label: t("gpApproved"),                Icon: MdCheckCircle, color: "var(--success)", bg: "rgba(25,135,84,0.12)",  border: "rgba(25,135,84,0.28)"  },
-    REJECTED:  { label: t("gpRejected"),                Icon: MdCancel,      color: "var(--danger)",  bg: "rgba(171,46,60,0.12)", border: "rgba(171,46,60,0.28)" },
-    COMPLETED: { label: t("gpCompleted"),               Icon: MdDone,        color: "var(--acct-violet, #9E58FF)", bg: "rgba(158,88,255,0.12)", border: "rgba(158,88,255,0.28)" },
-  }[status] || { label: status, Icon: MdCheckCircle, color: "var(--success)", bg: "rgba(25,135,84,0.12)", border: "rgba(25,135,84,0.28)" };
+    PENDING:   { label: t("gpPending") || "Pending",   Icon: MdWarning,      color: "#f59e0b", bg: "rgba(245,158,11,0.12)",  border: "rgba(245,158,11,0.28)"  },
+    APPROVED:  { label: t("gpApproved") || "Approved", Icon: MdCheckCircle, color: "#10b981", bg: "rgba(16,185,129,0.12)",  border: "rgba(16,185,129,0.28)"  },
+    REJECTED:  { label: t("gpRejected") || "Rejected", Icon: MdCancel,      color: "#ef4444", bg: "rgba(239,68,68,0.12)", border: "rgba(239,68,68,0.28)" },
+    COMPLETED: { label: t("gpCompleted") || "Exited",  Icon: MdDone,        color: "#8b5cf6", bg: "rgba(139,92,246,0.12)", border: "rgba(139,92,246,0.28)" },
+  }[status] || { label: status, Icon: MdCheckCircle, color: "#10b981", bg: "rgba(16,185,129,0.12)", border: "rgba(16,185,129,0.28)" };
 
   return (
-    <span className="gp-status-badge" style={{ color: cfg.color, background: cfg.bg, border: `1.5px solid ${cfg.border}` }}>
-      <cfg.Icon size={12} /> {cfg.label}
+    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-[11px] font-black uppercase tracking-wider" style={{ color: cfg.color, background: cfg.bg, border: `1px solid ${cfg.border}` }}>
+      <cfg.Icon size={13} /> {cfg.label}
     </span>
   );
 }
 
 const VEHICLE_CFG = {
-  CAR:  { emoji: "🚗", label: "Car",  color: "var(--acct-cyan, #4BCBEB)", bg: "rgba(75,203,235,0.12)",  border: "rgba(75,203,235,0.28)"  },
-  BIKE: { emoji: "🏍️", label: "Bike", color: "var(--acct-violet, #9E58FF)", bg: "rgba(158,88,255,0.12)", border: "rgba(158,88,255,0.28)" },
+  CAR:  { emoji: "🚗", label: "Car",  color: "#3b82f6", bg: "rgba(59,130,246,0.12)",  border: "rgba(59,130,246,0.28)"  },
+  BIKE: { emoji: "🏍️", label: "Bike", color: "#8b5cf6", bg: "rgba(139,92,246,0.12)", border: "rgba(139,92,246,0.28)" },
 };
 
 function VehicleTypeBadge({ type }) {
   const cfg = VEHICLE_CFG[type?.toUpperCase()] || {
-    emoji: "🚘", label: type, color: "#A39EB2",
-    bg: "rgba(163,158,178,0.10)", border: "rgba(163,158,178,0.22)",
+    emoji: "🚘", label: type, color: "#6b7280",
+    bg: "rgba(107,114,128,0.10)", border: "rgba(107,114,128,0.22)",
   };
   return (
     <span style={{ display:"inline-flex", alignItems:"center", gap:5, padding:"3px 10px", borderRadius:999, fontSize:11, fontWeight:700, whiteSpace:"nowrap", color:cfg.color, background:cfg.bg, border:`1px solid ${cfg.border}` }}>
@@ -86,9 +84,9 @@ function ParkingTypePill({ type }) {
       display:"inline-flex", alignItems:"center", gap:4,
       padding:"2px 8px", borderRadius:999, fontSize:10, fontWeight:800,
       textTransform:"uppercase", letterSpacing:"0.05em",
-      color: isResident ? "var(--accent)" : "var(--acct-cyan, #4BCBEB)",
-      background: isResident ? "rgba(160,90,255,0.12)" : "rgba(75,203,235,0.12)",
-      border: `1px solid ${isResident ? "rgba(160,90,255,0.28)" : "rgba(75,203,235,0.28)"}`,
+      color: isResident ? "var(--accent)" : "#06b6d4",
+      background: isResident ? "rgba(160,90,255,0.12)" : "rgba(6,182,212,0.12)",
+      border: `1px solid ${isResident ? "rgba(160,90,255,0.28)" : "rgba(6,182,212,0.28)"}`,
     }}>
       {isResident ? "🏠 Resident" : "👤 Visitor"}
     </span>
@@ -107,22 +105,24 @@ function RequestCard({ r, slots, selectedSlot, setSelectedSlot, onAssign, onReje
   const hasSlot    = !!r.assigned_spot;
 
   const stripColor = {
-    PENDING:   "var(--warning)",
-    APPROVED:  "var(--success)",
-    REJECTED:  "var(--danger)",
-    COMPLETED: "var(--acct-violet, #9E58FF)",
-  }[r.status] || "var(--success)";
+    PENDING:   "#f59e0b",
+    APPROVED:  "#10b981",
+    REJECTED:  "#ef4444",
+    COMPLETED: "#8b5cf6",
+  }[r.status] || "#10b981";
 
   return (
-    <div className="gp-card animate-fadeIn">
+    <div className="gp-card animate-fadeIn shadow-xs hover:shadow-md transition-all">
       <div className="gp-card-strip" style={{ background: stripColor }} />
       <div className="gp-card-inner">
         <div className="gp-card-top">
           <div style={{ display:"flex", alignItems:"center", gap:12 }}>
-            <div className="gp-avatar"><MdDirectionsCar size={20} /></div>
+            <div className="gp-avatar" style={{ background: "rgba(99, 102, 241, 0.12)", color: "#6366F1", border: "1px solid rgba(99, 102, 241, 0.25)" }}>
+              <MdDirectionsCar size={22} />
+            </div>
             <div>
-              <p className="gp-guest-name">{r.guest_name}</p>
-              <p className="gp-vehicle-num">{r.vehicle_number}</p>
+              <p className="gp-guest-name text-primary font-black text-sm">{r.guest_name}</p>
+              <p className="gp-vehicle-num text-xs font-mono font-extrabold text-secondary tracking-wider">{r.vehicle_number}</p>
             </div>
           </div>
           <div style={{ display:"flex", alignItems:"center", gap:8, flexShrink:0 }}>
@@ -139,8 +139,8 @@ function RequestCard({ r, slots, selectedSlot, setSelectedSlot, onAssign, onReje
           <VehicleTypeBadge type={r.vehicle_type} />
           <ParkingTypePill type={r.parking_type} />
           {r.assigned_spot && (
-            <span className="gp-assigned-chip">
-              <MdLocalParking size={12} /> {t("gpSlotLabel")} {r.assigned_spot}
+            <span className="gp-assigned-chip font-bold">
+              <MdLocalParking size={13} /> {t("gpSlotLabel") || "Slot"} {r.assigned_spot}
             </span>
           )}
         </div>
@@ -151,34 +151,34 @@ function RequestCard({ r, slots, selectedSlot, setSelectedSlot, onAssign, onReje
               <>
                 <div>
                   <label className="gp-select-label">
-                    {t("gpAssignSlot")}
+                    {t("gpAssignSlot") || "Assign Parking Slot"}
                     {availableSlots.length === 0 && (
                       <span className="gp-no-slots-hint">
-                        <MdWarning size={12} /> {t("gpNoSlots")}
+                        <MdWarning size={12} /> {t("gpNoSlots") || "No slots available"}
                       </span>
                     )}
                   </label>
                   <div style={{ position:"relative" }}>
-                    <MdLocalParking size={15} style={{ position:"absolute", left:12, top:"50%", transform:"translateY(-50%)", color:"var(--text-secondary)", pointerEvents:"none" }} />
+                    <MdLocalParking size={16} style={{ position:"absolute", left:12, top:"50%", transform:"translateY(-50%)", color:"var(--text-secondary)", pointerEvents:"none" }} />
                     <Select
                       className="input gp-slot-select"
                       value={selectedSlot[r.id] || ""}
                       onChange={e => setSelectedSlot({ ...selectedSlot, [r.id]: e.target.value })}
                       disabled={availableSlots.length === 0}
                     >
-                      <option value="">{t("gpSelectSlot")}</option>
+                      <option value="">{t("gpSelectSlot") || "-- Select Parking Slot --"}</option>
                       {availableSlots.map(slot => (
-                        <option key={slot.id} value={slot.slot_number}>{slot.slot_number}</option>
+                        <option key={slot.id} value={slot.slot_number}>Slot {slot.slot_number} (Available)</option>
                       ))}
                     </Select>
                   </div>
                 </div>
                 <div className="gp-btn-row">
-                  <button onClick={() => onAssign(r.id)} className="gp-btn-approve btn-primary" disabled={!selectedSlot[r.id]}>
-                    <MdCheckCircle size={15} /> {t("gpAssignBtn")}
+                  <button onClick={() => onAssign(r.id)} className="gp-btn-approve font-black" disabled={!selectedSlot[r.id]}>
+                    <MdCheckCircle size={16} /> {t("gpAssignBtn") || "Approve & Assign"}
                   </button>
-                  <button onClick={() => onReject(r.id)} className="gp-btn-reject btn-danger">
-                    <MdCancel size={15} /> {t("gpRejectBtn")}
+                  <button onClick={() => onReject(r.id)} className="gp-btn-reject font-black">
+                    <MdCancel size={16} /> {t("gpRejectBtn") || "Reject"}
                   </button>
                 </div>
               </>
@@ -186,8 +186,8 @@ function RequestCard({ r, slots, selectedSlot, setSelectedSlot, onAssign, onReje
 
             {isApproved && hasSlot && (
               <div className="gp-btn-row">
-                <button onClick={() => onExit(r.id)} className="gp-btn-exit btn-primary">
-                  <MdExitToApp size={15} /> {t("gpMarkExit")}
+                <button onClick={() => onExit(r.id)} className="gp-btn-exit font-black">
+                  <MdExitToApp size={16} /> {t("gpMarkExit") || "Mark Vehicle Exit"}
                 </button>
               </div>
             )}
@@ -197,7 +197,6 @@ function RequestCard({ r, slots, selectedSlot, setSelectedSlot, onAssign, onReje
     </div>
   );
 }
-
 
 /* ═══════════════════════════════════════════════════
    RESIDENT VEHICLE ENTRY MODAL
@@ -282,18 +281,6 @@ function ResidentEntryModal({ isOpen, onClose, slots, onCreated, t }) {
       size="md"
     >
       <div className="space-y-4 pt-1">
-        <style>{`
-          html.role-theme input.gp-modal-input,
-          html.role-theme input.gp-modal-input:focus,
-          html.role-theme input.gp-modal-input:focus-visible,
-          html.role-theme input.gp-modal-input:active {
-            border: none !important;
-            border-color: transparent !important;
-            box-shadow: none !important;
-            outline: none !important;
-            background: transparent !important;
-          }
-        `}</style>
         {/* Search Bar */}
         <div className="flex flex-col sm:flex-row gap-2.5 items-stretch sm:items-center">
           <div className="flex items-center rounded-xl bg-card-inner-bg border border-glass-border focus-within:border-cyan-500 focus-within:ring-2 focus-within:ring-cyan-500/25 transition-all flex-1 px-3.5 py-1 gap-2.5 shadow-inner">
@@ -302,15 +289,7 @@ function ResidentEntryModal({ isOpen, onClose, slots, onCreated, t }) {
             </div>
             <input
               type="text"
-              className="gp-modal-input w-full py-2 text-sm sm:text-base font-extrabold uppercase font-mono tracking-wider text-primary placeholder:text-secondary/50 bg-transparent border-0 outline-none ring-0"
-              style={{
-                background: "transparent",
-                border: "none",
-                borderColor: "transparent",
-                outline: "none",
-                boxShadow: "none",
-                padding: "4px 0",
-              }}
+              className="w-full py-2 text-sm sm:text-base font-extrabold uppercase font-mono tracking-wider text-primary placeholder:text-secondary/50 bg-transparent border-0 outline-none ring-0"
               placeholder="Enter license plate (e.g. TN01AB1234)"
               value={vehicleNumber}
               onChange={(e) => {
@@ -329,7 +308,7 @@ function ResidentEntryModal({ isOpen, onClose, slots, onCreated, t }) {
                   setLookupResult(null);
                   setLookupError("");
                 }}
-                className="text-secondary/60 hover:text-primary transition-colors text-xs font-bold px-1 py-1 rounded cursor-pointer shrink-0"
+                className="text-secondary/60 hover:text-primary transition-colors text-xs font-bold px-1 py-1 rounded cursor-pointer shrink-0 border-0 outline-none"
                 title="Clear"
               >
                 ✕
@@ -341,7 +320,7 @@ function ResidentEntryModal({ isOpen, onClose, slots, onCreated, t }) {
             type="button"
             onClick={handleLookup}
             disabled={lookupLoading || !vehicleNumber.trim()}
-            className="py-2.5 px-5 rounded-xl font-bold text-xs sm:text-sm text-white bg-gradient-to-r from-cyan-600 via-blue-600 to-indigo-600 hover:from-cyan-500 hover:to-indigo-500 shadow-md shadow-cyan-600/25 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer shrink-0"
+            className="py-2.5 px-5 rounded-xl font-bold text-xs sm:text-sm text-white bg-gradient-to-r from-cyan-600 via-blue-600 to-indigo-600 hover:from-cyan-500 hover:to-indigo-500 shadow-md shadow-cyan-600/25 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer shrink-0 border-0 outline-none"
           >
             {lookupLoading ? <Spinner size={15} /> : <MdPersonSearch size={18} />}
             <span>{lookupLoading ? "Searching..." : "Lookup"}</span>
@@ -350,7 +329,7 @@ function ResidentEntryModal({ isOpen, onClose, slots, onCreated, t }) {
 
         {/* Error Message */}
         {lookupError && (
-          <div className="flex items-center gap-2.5 p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs font-semibold animate-in fade-in">
+          <div className="flex items-center gap-2.5 p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs font-semibold">
             <MdWarning size={16} className="shrink-0" />
             <span>{lookupError}</span>
           </div>
@@ -358,8 +337,7 @@ function ResidentEntryModal({ isOpen, onClose, slots, onCreated, t }) {
 
         {/* Vehicle Found HUD Result Card */}
         {lookupResult && (
-          <div className="rounded-2xl bg-gradient-to-br from-cyan-500/10 via-card-inner-bg to-card-inner-bg border border-cyan-500/25 p-4 space-y-3.5 animate-in fade-in zoom-in-95">
-            {/* Card Top Title Row */}
+          <div className="rounded-2xl bg-gradient-to-br from-cyan-500/10 via-card-inner-bg to-card-inner-bg border border-cyan-500/25 p-4 space-y-3.5">
             <div className="flex items-center justify-between gap-3 pb-2.5 border-b border-glass-border/40">
               <div className="flex items-center gap-2 min-w-0">
                 <span className="px-2.5 py-1 rounded-lg bg-cyan-500/20 text-cyan-300 font-mono font-black text-sm border border-cyan-500/30 shrink-0">
@@ -375,7 +353,6 @@ function ResidentEntryModal({ isOpen, onClose, slots, onCreated, t }) {
               </span>
             </div>
 
-            {/* Details 4-Column Grid */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs">
               <div className="p-2.5 rounded-xl bg-card-inner-bg/60 border border-glass-border/40">
                 <span className="text-[10px] font-bold text-secondary uppercase tracking-wider block">
@@ -414,7 +391,6 @@ function ResidentEntryModal({ isOpen, onClose, slots, onCreated, t }) {
               </div>
             </div>
 
-            {/* Slot Selection & Authorization CTA */}
             <div className="space-y-2.5 pt-1">
               <label className="block text-xs font-bold text-primary">
                 Assign Parking Spot <span className="text-cyan-400">*</span>
@@ -451,7 +427,7 @@ function ResidentEntryModal({ isOpen, onClose, slots, onCreated, t }) {
                 <button
                   type="button"
                   onClick={handleModalClose}
-                  className="flex-1 py-2.5 px-4 rounded-xl text-xs font-semibold border border-glass-border bg-card-inner-bg hover:bg-white/10 text-secondary transition"
+                  className="flex-1 py-2.5 px-4 rounded-xl text-xs font-semibold border border-glass-border bg-card-inner-bg hover:bg-white/10 text-secondary transition cursor-pointer"
                 >
                   Cancel
                 </button>
@@ -459,7 +435,7 @@ function ResidentEntryModal({ isOpen, onClose, slots, onCreated, t }) {
                   type="button"
                   onClick={handleCreate}
                   disabled={submitLoading || !selectedSlot}
-                  className="flex-2 py-2.5 px-4 rounded-xl font-bold text-xs sm:text-sm text-white bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 hover:from-emerald-500 hover:to-cyan-500 shadow-lg shadow-emerald-600/25 transition-all active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer"
+                  className="flex-2 py-2.5 px-4 rounded-xl font-bold text-xs sm:text-sm text-white bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 hover:from-emerald-500 hover:to-cyan-500 shadow-lg shadow-emerald-600/25 transition-all active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer border-0 outline-none"
                 >
                   {submitLoading ? (
                     <>
@@ -482,17 +458,15 @@ function ResidentEntryModal({ isOpen, onClose, slots, onCreated, t }) {
   );
 }
 
-
 /* ═══════════════════════════════════════════════════
    MAIN COMPONENT
 ═══════════════════════════════════════════════════ */
-
 
 export default function GuardParking() {
   const [limit, setLimit] = useState(5);
   const limitRef = useRef(limit);
   limitRef.current = limit;
-const isMobile = useIsMobile();
+  const isMobile = useIsMobile();
   const { t }    = useLang();
 
   const [viewMode,     setViewMode]     = useState("visitor");
@@ -513,7 +487,6 @@ const isMobile = useIsMobile();
   const [activeTab, setActiveTab] = useState("ALL");
   const debSearch = useDebounce(search, 500);
 
-  // ✅ Refs so socket handlers always see current values without re-registering
   const viewModeRef  = useRef(viewMode);
   const activeTabRef = useRef(activeTab);
   const debSearchRef = useRef(debSearch);
@@ -565,34 +538,27 @@ const isMobile = useIsMobile();
     }
   }, []);
 
-  /* ── Initial load ── */
   useEffect(() => {
     loadSlots();
     loadRequests(1, "", "ALL", "visitor", true);
   }, [loadRequests]);
 
-  /* ── Re-fetch on debounced search ── */
   useEffect(() => {
     if (initialLoad) return;
     loadRequests(1, debSearch, activeTab, viewMode);
-  }, [debSearch]); // eslint-disable-line
+  }, [debSearch]);
 
-  /* ── Socket listeners for real-time updates ── */
   useEffect(() => {
     const onNewRequest = (newRequest) => {
       const currentMode = viewModeRef.current;
-
-      // ✅ Only react if guard is viewing visitor parking
       if (currentMode !== "visitor") return;
 
-      // ✅ Add new request to top of list if on page 1 and ALL/PENDING tab
       const currentTab = activeTabRef.current;
       if (pageRef.current === 1 && (currentTab === "ALL" || currentTab === "PENDING")) {
         setRequests((prev) => {
-          // Don't add if already exists
           if (prev.find((r) => r.id === newRequest.id)) return prev;
           const updated = [newRequest, ...prev];
-          return updated.slice(0, limit); // keep page size
+          return updated.slice(0, limit);
         });
         setCounts((prev) => ({
           ...prev,
@@ -601,27 +567,20 @@ const isMobile = useIsMobile();
         }));
         setTotalItems((prev) => prev + 1);
       } else {
-        // On other pages/tabs, just refresh to keep counts accurate
         loadRequests(pageRef.current, debSearchRef.current, currentTab, currentMode);
       }
     };
 
     const onUpdated = (updated) => {
-      // ✅ Update the card in-place — no full reload needed
       setRequests((prev) =>
         prev.map((r) => (r.id === updated.id ? { ...r, ...updated } : r))
       );
 
-      // ✅ Recount: easiest way is a silent background refresh of counts only
-      // We do a full reload but only if the status change affects current tab visibility
       const currentTab = activeTabRef.current;
       if (currentTab !== "ALL") {
-        // If filtered tab, the card may need to disappear — reload
         loadRequests(pageRef.current, debSearchRef.current, currentTab, viewModeRef.current);
       } else {
-        // On ALL tab: update counts by refreshing slots + doing a background count refresh
         loadSlots();
-        // Refresh counts silently by reloading (setFetching won't flash because it's fast)
         loadRequests(pageRef.current, debSearchRef.current, "ALL", viewModeRef.current);
       }
     };
@@ -633,7 +592,7 @@ const isMobile = useIsMobile();
       socket.off("parking_request_new",     onNewRequest);
       socket.off("parking_request_updated", onUpdated);
     };
-  }, [loadRequests]); // ✅ stable — loadRequests is memoized, refs handle the rest
+  }, [loadRequests]);
 
   const handleTabChange = (f) => {
     setActiveTab(f);
@@ -687,147 +646,61 @@ const isMobile = useIsMobile();
   };
 
   const tabs = [
-    { key: "ALL",       label: t("gpTabAll"),    count: counts.ALL       },
-    { key: "PENDING",   label: t("gpPending") || "Pending", count: counts.PENDING  },
-    { key: "APPROVED",  label: t("gpApproved"),  count: counts.APPROVED  },
-    { key: "REJECTED",  label: t("gpRejected"),  count: counts.REJECTED  },
-    { key: "COMPLETED", label: t("gpCompleted"), count: counts.COMPLETED },
-  ];
-
-  const statCards = [
-    { key: "total",     label: t("gpStatTotal"),          val: counts.ALL       },
-    { key: "pending",   label: t("gpPending") || "Pending", val: counts.PENDING },
-    { key: "approved",  label: t("gpApproved"),            val: counts.APPROVED  },
-    { key: "completed", label: t("gpCompleted"),           val: counts.COMPLETED },
+    { key: "ALL",       label: t("gpTabAll") || "All Logs", count: counts.ALL },
+    { key: "PENDING",   label: t("gpPending") || "Pending", count: counts.PENDING },
+    { key: "APPROVED",  label: t("gpApproved") || "Approved", count: counts.APPROVED },
+    { key: "REJECTED",  label: t("gpRejected") || "Rejected", count: counts.REJECTED },
+    { key: "COMPLETED", label: t("gpCompleted") || "Exited", count: counts.COMPLETED },
   ];
 
   return (
-    <>
-      <style>{`
-        .gp-root{display:flex;flex-direction:column;gap:20px;padding-bottom:24px;}
-        .gp-er{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;}
-        .gp-er-left{display:flex;align-items:center;gap:14px;}
-        .gp-er-icon{width:48px;height:48px;border-radius:14px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:var(--accent-soft);border:1.5px solid rgba(160,90,255,0.25);color:var(--accent);}
-        .gp-er-title{font-size:20px;font-weight:800;color:var(--text-primary);letter-spacing:-0.03em;margin:0;}
-        .gp-er-sub{font-size:12px;color:var(--text-secondary);margin-top:2px;}
-        .gp-refresh-btn{display:flex;align-items:center;gap:6px;padding:8px 14px;border-radius:10px;font-size:12px;font-weight:700;background:var(--card-bg);border:1px solid var(--glass-border);color:var(--text-secondary);cursor:pointer;transition:all 0.2s;}
-        .gp-refresh-btn:hover{color:var(--text-primary);}
-        .gp-refresh-btn svg{transition:transform 0.6s;}
-        .gp-refresh-btn.spinning svg{animation:spin 0.8s linear infinite;}
-        .gp-mode-switcher{display:flex;gap:8px;padding:5px;background:var(--card-bg);border:1.5px solid var(--glass-border);border-radius:14px;width:fit-content;}
-        .gp-mode-btn{display:flex;align-items:center;gap:7px;padding:9px 18px;border-radius:10px;font-size:13px;font-weight:700;border:none;cursor:pointer;transition:all 0.18s;background:transparent;color:var(--text-secondary);}
-        .gp-mode-btn:hover{color:var(--text-primary);}
-        .gp-mode-btn--visitor.active{background:var(--accent);color:#fff;box-shadow:0 3px 12px rgba(160,90,255,0.35);}
-        .gp-mode-btn--resident.active{background:var(--accent);color:#fff;box-shadow:0 3px 12px rgba(160,90,255,0.35);}
-        .gp-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
-        .gp-stat{border-radius:16px;padding:14px 16px;border:1.5px solid;display:flex;flex-direction:column;gap:4px;position:relative;overflow:hidden;transition:transform 0.2s;}
-        .gp-stat::before{content:"";position:absolute;top:0;left:0;right:0;height:2px;border-radius:16px 16px 0 0;}
-        .gp-stat:hover{transform:translateY(-2px);}
-        .gp-stat__val{font-size:26px;font-weight:800;letter-spacing:-0.04em;line-height:1;}
-        .gp-stat__label{font-size:10px;font-weight:600;opacity:0.75;letter-spacing:0.03em;text-transform:uppercase;}
-        .gp-stat--total{background:var(--card-bg);border-color:var(--glass-border);}
-        .gp-stat--total::before{background:var(--accent);}
-        .gp-stat--total .gp-stat__val,.gp-stat--total .gp-stat__label{color:var(--accent);}
-        .gp-stat--pending{background:var(--card-bg);border-color:var(--glass-border);}
-        .gp-stat--pending::before{background:var(--warning);}
-        .gp-stat--pending .gp-stat__val,.gp-stat--pending .gp-stat__label{color:var(--warning);}
-        .gp-stat--approved{background:var(--card-bg);border-color:var(--glass-border);}
-        .gp-stat--approved::before{background:var(--success);}
-        .gp-stat--approved .gp-stat__val,.gp-stat--approved .gp-stat__label{color:var(--success);}
-        .gp-stat--completed{background:var(--card-bg);border-color:var(--glass-border);}
-        .gp-stat--completed::before{background:var(--acct-violet,#9E58FF);}
-        .gp-stat--completed .gp-stat__val,.gp-stat--completed .gp-stat__label{color:var(--acct-violet,#9E58FF);}
-        .gp-toolbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
-        .gp-search-wrap{position:relative;flex:1;min-width:180px;max-width:320px;}
-        .gp-search-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text-secondary);pointer-events:none;}
-        .gp-search-input{width:100%;padding:9px 36px 9px 36px;border-radius:10px;font-size:13px;font-weight:500;background:var(--input-bg);border:1.5px solid var(--input-border);color:var(--text-primary);outline:none;transition:border-color 0.2s;}
-        .gp-search-input:focus{border-color:var(--accent);}
-        .gp-search-input::placeholder{color:var(--text-secondary);}
-        .gp-tabs{display:flex;gap:6px;flex-wrap:wrap;background:var(--card-bg);border:1.5px solid var(--glass-border);border-radius:14px;padding:5px;}
-        .gp-tab{flex:1;min-width:70px;display:flex;align-items:center;justify-content:center;gap:6px;padding:8px 12px;border-radius:10px;font-size:12px;font-weight:600;border:none;cursor:pointer;transition:all 0.18s;background:transparent;color:var(--text-secondary);white-space:nowrap;}
-        .gp-tab:hover{color:var(--text-primary);}
-        .gp-tab--active-all{background:var(--accent);color:#fff;box-shadow:0 3px 10px rgba(160,90,255,0.35);}
-        .gp-tab--active-pending{background:var(--warning);color:#191C24;box-shadow:0 3px 10px rgba(255,193,7,0.35);}
-        .gp-tab--active-approved{background:var(--success);color:#fff;box-shadow:0 3px 10px rgba(25,135,84,0.35);}
-        .gp-tab--active-rejected{background:var(--danger);color:#fff;box-shadow:0 3px 10px rgba(171,46,60,0.35);}
-        .gp-tab--active-completed{background:var(--acct-violet,#9E58FF);color:#fff;box-shadow:0 3px 10px rgba(158,88,255,0.35);}
-        .gp-tab-count{background:rgba(255,255,255,0.15);color:inherit;font-size:10px;font-weight:700;padding:1px 6px;border-radius:999px;line-height:1.6;}
-        .gp-tab:not([class*="active"]) .gp-tab-count{background:var(--glass-border);color:var(--text-secondary);}
-        @media(max-width:767px){.gp-tab-count{display:none;}}
-        .gp-card{display:flex;background:var(--card-bg);border:1.5px solid var(--glass-border);border-radius:18px;overflow:hidden;transition:border-color 0.2s,box-shadow 0.2s;}
-        .gp-card:hover{border-color:rgba(160,90,255,0.3);box-shadow:0 4px 20px rgba(0,0,0,0.18);}
-        .gp-card-strip{width:4px;flex-shrink:0;}
-        .gp-card-inner{flex:1;padding:16px 18px;display:flex;flex-direction:column;gap:12px;min-width:0;}
-        .gp-card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;}
-        .gp-avatar{width:40px;height:40px;border-radius:12px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:var(--accent-soft);border:1px solid rgba(160,90,255,0.2);color:var(--accent);}
-        .gp-guest-name{font-size:14px;font-weight:700;color:var(--text-primary);margin:0;line-height:1.2;}
-        .gp-vehicle-num{font-size:12px;color:var(--text-secondary);margin:3px 0 0;font-weight:600;letter-spacing:0.04em;}
-        .gp-status-badge{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:700;white-space:nowrap;}
-        .gp-meta-row{display:flex;align-items:center;flex-wrap:wrap;gap:8px;}
-        .gp-assigned-chip{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700;background:var(--accent-soft);color:var(--accent);border:1px solid rgba(160,90,255,0.22);}
-        .gp-actions-panel{background:var(--card-inner-bg);border:1px solid var(--glass-border);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:12px;}
-        .gp-select-label{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px;font-size:10px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:var(--text-secondary);margin-bottom:6px;}
-        .gp-no-slots-hint{display:flex;align-items:center;gap:3px;font-size:10px;color:#f87171;background:rgba(248,113,113,0.10);border:1px solid rgba(248,113,113,0.22);padding:2px 7px;border-radius:999px;font-weight:700;}
-        .gp-slot-select{padding-left:34px !important;height:42px;font-size:13px;font-weight:600;}
-        .gp-slot-select:disabled{opacity:0.5;cursor:not-allowed;}
-        .gp-btn-row{display:flex;gap:10px;}
-        .gp-btn-approve{flex:1;display:flex;align-items:center;justify-content:center;gap:7px;padding:10px 0;border-radius:11px;font-size:13px;font-weight:700;background:linear-gradient(135deg,#16a34a,#22c55e);color:#fff;border:none;cursor:pointer;box-shadow:0 4px 14px rgba(22,163,74,0.30);transition:all 0.2s;}
-        .gp-btn-approve:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 6px 20px rgba(22,163,74,0.45);}
-        .gp-btn-approve:disabled{opacity:0.45;cursor:not-allowed;transform:none;box-shadow:none;}
-        .gp-btn-reject{flex:1;display:flex;align-items:center;justify-content:center;gap:7px;padding:10px 0;border-radius:11px;font-size:13px;font-weight:700;background:linear-gradient(135deg,#dc2626,#ef4444);color:#fff;border:none;cursor:pointer;box-shadow:0 4px 14px rgba(239,68,68,0.28);transition:all 0.2s;}
-        .gp-btn-reject:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(239,68,68,0.42);}
-        .gp-btn-exit{flex:1;display:flex;align-items:center;justify-content:center;gap:7px;padding:10px 0;border-radius:11px;font-size:13px;font-weight:700;background:var(--accent);color:#fff;border:none;cursor:pointer;box-shadow:0 4px 14px rgba(160,90,255,0.30);transition:all 0.2s;}
-        .gp-btn-exit:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(160,90,255,0.45);}
-        .gp-expand-btn{width:30px;height:30px;border-radius:8px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:var(--card-inner-bg,rgba(255,255,255,0.06));border:1px solid var(--glass-border);cursor:pointer;color:var(--text-secondary);transition:all 0.18s;}
-        .gp-expand-btn:hover{color:var(--text-primary);}
-        .gp-empty{display:flex;flex-direction:column;align-items:center;gap:10px;padding:60px 20px;color:var(--text-secondary);}
-        .gp-empty-icon{width:56px;height:56px;border-radius:16px;display:flex;align-items:center;justify-content:center;background:var(--card-inner-bg);border:1.5px solid var(--glass-border);font-size:24px;}
-        .gp-list{display:flex;flex-direction:column;gap:12px;}
-        .gp-footer{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-top:4px;}
-        .gp-footer-text{font-size:12px;color:var(--text-secondary);}
-        .gp-footer-text strong{color:var(--text-primary);}
-        @keyframes spin{to{transform:rotate(360deg);}}
-        @media(max-width:640px){
-          .gp-stats{grid-template-columns:repeat(2,1fr);gap:8px;}
-          .gp-stat{padding:12px 14px;border-radius:14px;}
-          .gp-stat__val{font-size:22px;}
-          .gp-tabs{border-radius:12px;padding:4px;gap:4px;}
-          .gp-tab{font-size:11px;padding:7px 8px;}
-          .gp-card-inner{padding:13px 14px;}
-          .gp-actions-panel{padding:12px;}
-          .gp-search-wrap{max-width:100%;}
-          .gp-mode-switcher{width:100%;}
-          .gp-mode-btn{flex:1;justify-content:center;}
-        }
-      `}</style>
-
-      <div className="page-root gp-root">
-
-        {/* ── HEADER ── */}
-        <div className="gp-er">
-          <div className="gp-er-left">
-            <div className="ad-page-icon"><MdLocalParking size={22} /></div>
-            <div>
-              <h2 className="gp-er-title">{t("gpTitle")}</h2>
-              <p className="gp-er-sub">{counts.ALL} {t("gpSubtitle")}</p>
-            </div>
+    <div className="ge-root space-y-6 animate-fadeIn">
+      {/* ── HEADER ── */}
+      <div className="ge-er flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="ge-er-left flex items-center gap-3">
+          <div
+            className="ad-page-icon shrink-0"
+            style={{
+              background: "linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(99, 102, 241, 0.08))",
+              color: "#6366F1",
+              border: "1px solid rgba(99, 102, 241, 0.3)",
+              boxShadow: "0 4px 12px rgba(99, 102, 241, 0.15)",
+            }}
+          >
+            <MdLocalParking size={24} />
           </div>
-          <div className="flex items-center gap-2.5 flex-wrap">
-            <button
-              onClick={() => setShowResidentModal(true)}
-              className="flex items-center gap-2 py-2 px-3.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-cyan-600 via-blue-600 to-indigo-600 hover:from-cyan-500 hover:to-blue-500 shadow-md shadow-cyan-600/20 transition-all active:scale-95 cursor-pointer shrink-0"
-            >
-              <MdDirectionsCar size={16} />
-              <span>+ Resident Vehicle Entry</span>
-            </button>
-            <button onClick={handleRefresh} className={`gp-refresh-btn ${refreshing ? "spinning" : ""}`}>
-              <MdRefresh size={15} />
-              {refreshing ? t("gpRefreshing") : t("gpRefresh")}
-            </button>
+          <div>
+            <h2 className="page-title text-xl font-black text-primary">
+              {t("gpTitle") || "Gate Security Parking"}
+            </h2>
+            <p className="page-subtitle text-xs text-secondary font-medium">
+              {counts.ALL} {t("gpSubtitle") || "Visitor & Resident Vehicle Gate Logs"}
+            </p>
           </div>
         </div>
 
-        {/* ── VIEW MODE SWITCHER ── */}
+        <div className="flex items-center gap-2.5">
+          <button
+            onClick={() => setShowResidentModal(true)}
+            className="px-4 py-2.5 rounded-xl text-xs font-black text-white bg-indigo-600 hover:bg-indigo-700 shadow-md hover:shadow-indigo-500/25 transition-all flex items-center gap-2 cursor-pointer border-0 outline-none"
+          >
+            <MdAdd size={18} />
+            <span>+ Resident Vehicle Entry</span>
+          </button>
+
+          <button
+            onClick={handleRefresh}
+            disabled={refreshing}
+            className="btn-secondary flex items-center gap-1.5 text-xs font-bold px-3.5 py-2.5 rounded-xl transition-all cursor-pointer border-0 outline-none"
+          >
+            <MdRefresh size={18} className={refreshing ? "animate-spin text-accent" : ""} />
+            <span>{refreshing ? "Refreshing..." : "Refresh"}</span>
+          </button>
+        </div>
+      </div>
+
+      {/* ── VIEW MODE SWITCHER ── */}
+      <div className="flex justify-start">
         <SlidingTabs
           className="gp-mode-tabs"
           value={viewMode}
@@ -837,116 +710,164 @@ const isMobile = useIsMobile();
             { id: "resident", label: "Resident Parking" },
           ]}
         />
+      </div>
 
-        {/* ── RESIDENT ENTRY MODAL POPUP ── */}
-        <ResidentEntryModal
-          isOpen={showResidentModal}
-          onClose={() => setShowResidentModal(false)}
-          slots={slots}
-          onCreated={() => {
-            loadRequests(1, "", "ALL", viewMode, false, true);
-            loadSlots();
-          }}
-          t={t}
-        />
+      {/* ── RESIDENT ENTRY MODAL POPUP ── */}
+      <ResidentEntryModal
+        isOpen={showResidentModal}
+        onClose={() => setShowResidentModal(false)}
+        slots={slots}
+        onCreated={() => {
+          loadRequests(1, "", "ALL", viewMode, false, true);
+          loadSlots();
+        }}
+        t={t}
+      />
 
-        {/* ── STAT CARDS ── */}
-        {!initialLoad && counts.ALL > 0 && (
-          <div className="gp-stats">
-            {statCards.map(s => (
-              <div key={s.key} className={`gp-stat gp-stat--${s.key}`}>
-                <div className="gp-stat__val">{s.val}</div>
-                <div className="gp-stat__label">{s.label}</div>
+      {/* ── KPI STAT CARDS ── */}
+      {!initialLoad && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+          <div
+            onClick={() => handleTabChange("ALL")}
+            className={`complaint-stat-card complaint-stat-total cursor-pointer transition-all ${
+              activeTab === "ALL" ? "ring-2 ring-indigo-500 shadow-md scale-101" : ""
+            }`}
+          >
+            <div className="flex items-center justify-between">
+              <span className="complaint-stat-val text-indigo-600">{counts.ALL}</span>
+              <div className="w-8 h-8 rounded-xl bg-indigo-500/10 text-indigo-600 flex items-center justify-center font-bold">
+                <MdLocalParking size={18} />
               </div>
+            </div>
+            <span className="complaint-stat-label">Total Parking Logs</span>
+          </div>
+
+          <div
+            onClick={() => handleTabChange("PENDING")}
+            className={`complaint-stat-card complaint-stat-inprogress cursor-pointer transition-all ${
+              activeTab === "PENDING" ? "ring-2 ring-amber-500 shadow-md scale-101" : ""
+            }`}
+          >
+            <div className="flex items-center justify-between">
+              <span className="complaint-stat-val text-amber-500">{counts.PENDING}</span>
+              <div className="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center font-bold">
+                <MdWarning size={18} />
+              </div>
+            </div>
+            <span className="complaint-stat-label">Pending Approval</span>
+          </div>
+
+          <div
+            onClick={() => handleTabChange("APPROVED")}
+            className={`complaint-stat-card complaint-stat-resolved cursor-pointer transition-all ${
+              activeTab === "APPROVED" ? "ring-2 ring-emerald-500 shadow-md scale-101" : ""
+            }`}
+          >
+            <div className="flex items-center justify-between">
+              <span className="complaint-stat-val text-emerald-600">{counts.APPROVED}</span>
+              <div className="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center font-bold">
+                <MdCheckCircle size={18} />
+              </div>
+            </div>
+            <span className="complaint-stat-label">Currently Parked</span>
+          </div>
+
+          <div
+            onClick={() => handleTabChange("COMPLETED")}
+            className={`complaint-stat-card complaint-stat-resolved cursor-pointer transition-all ${
+              activeTab === "COMPLETED" ? "ring-2 ring-purple-500 shadow-md scale-101" : ""
+            }`}
+          >
+            <div className="flex items-center justify-between">
+              <span className="complaint-stat-val text-purple-600">{counts.COMPLETED}</span>
+              <div className="w-8 h-8 rounded-xl bg-purple-500/10 text-purple-600 flex items-center justify-center font-bold">
+                <MdDone size={18} />
+              </div>
+            </div>
+            <span className="complaint-stat-label">Exited / Completed</span>
+          </div>
+        </div>
+      )}
+
+      {/* ── SEARCH & FILTER TOOLBAR ── */}
+      {!initialLoad && (
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-card/60 backdrop-blur-md p-2 rounded-2xl border border-glass-border shadow-xs">
+          <div className="overflow-x-auto max-w-full pb-1 sm:pb-0">
+            <SlidingTabs
+              value={activeTab}
+              onChange={handleTabChange}
+              items={tabs.map(({ key, label, count }) => ({
+                id: key,
+                label: `${label} (${count})`,
+              }))}
+            />
+          </div>
+
+          <div className="flex items-center gap-2 self-end sm:self-auto">
+            <ToggleSearchBar
+              value={search}
+              onChange={setSearch}
+              placeholder={t("gpSearchPlaceholder") || "Search guest, vehicle..."}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* ── PARKING LIST ── */}
+      {initialLoad ? (
+        <div className="p-12 text-center text-secondary bg-card rounded-2xl border border-glass-border">
+          <Spinner size={24} />
+          <p className="mt-2 text-xs font-bold">{t("gpLoading") || "Loading parking entries..."}</p>
+        </div>
+      ) : requests.length === 0 ? (
+        <div className="p-12 text-center bg-card rounded-2xl border border-glass-border space-y-2">
+          <div className="text-3xl">{viewMode === "resident" ? "🏠" : "🅿️"}</div>
+          <p className="text-sm font-extrabold text-primary">
+            {viewMode === "resident"
+              ? "No Resident Parking Entries Yet"
+              : activeTab === "ALL" ? t("gpEmptyAll") || "No Parking Entries Recorded" : `No ${activeTab.toLowerCase()} requests`}
+          </p>
+          <p className="text-xs text-secondary">
+            {viewMode === "resident"
+              ? "Use the '+ Resident Vehicle Entry' button above to assign a slot to a registered resident vehicle."
+              : t("gpEmptySub") || "Gate parking entries will appear here."}
+          </p>
+          {search && (
+            <button
+              onClick={() => setSearch("")}
+              className="text-xs font-bold text-accent cursor-pointer border-0 bg-transparent mt-2"
+            >
+              Clear Search
+            </button>
+          )}
+        </div>
+      ) : (
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {requests.map(r => (
+              <RequestCard
+                key={r.id}
+                r={r}
+                slots={slots}
+                selectedSlot={selectedSlot}
+                setSelectedSlot={setSelectedSlot}
+                onAssign={handleAssign}
+                onReject={handleReject}
+                onExit={handleExit}
+                isMobile={isMobile}
+                t={t}
+              />
             ))}
           </div>
-        )}
 
-        {/* ── SEARCH + TABS ── */}
-        {!initialLoad && (
-            <div className="ge-toolbar">
-              <div className="overflow-x-auto max-w-full pb-1 sm:pb-0">
-                <SlidingTabs
-                  className="gp-filter-tabs"
-                  value={activeTab}
-                  onChange={handleTabChange}
-                  tabs={tabs.map(({ key, label, count }) => ({
-                    id: key,
-                    label,
-                    badge: count,
-                  }))}
-                />
-              </div>
-
-              <div className="ml-auto">
-                <ExpandableSearch
-                  placeholder={t("gpSearchPlaceholder") || "Search guest, vehicle..."}
-                  value={search}
-                  onChange={setSearch}
-                />
-              </div>
-            </div>
-        )}
-
-        {/* ── LIST ── */}
-        {initialLoad ? (
-          <div className="gp-empty">
-            <Spinner size={24} />
-            <p style={{ fontSize:13, margin:0 }}>{t("gpLoading")}</p>
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
+            <span className="text-xs text-secondary font-medium">
+              Showing <strong>{(page - 1) * limit + 1}–{Math.min(page * limit, totalItems)}</strong> of <strong>{totalItems}</strong> parking entries
+            </span>
+            <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} pageSize={limit} onPageSizeChange={(s) => { limitRef.current = s; setLimit(s); setPage(1); handlePageChange(1); }} />
           </div>
-        ) : requests.length === 0 ? (
-          <div className="gp-empty">
-            <div className="gp-empty-icon">{viewMode === "resident" ? "🏠" : "🅿️"}</div>
-            <p style={{ fontSize:14, fontWeight:700, margin:0, color:"var(--text-primary)" }}>
-              {viewMode === "resident"
-                ? "No resident parking entries yet"
-                : activeTab === "ALL" ? t("gpEmptyAll") : `${t("gpEmptyStatus")} ${activeTab.toLowerCase()}`}
-            </p>
-            <p style={{ fontSize:12, margin:0 }}>
-              {viewMode === "resident"
-                ? "Use the lookup panel above to add a resident vehicle entry"
-                : t("gpEmptySub")}
-            </p>
-            {search && (
-              <button
-                onClick={() => setSearch("")}
-                style={{ fontSize:12, fontWeight:600, color:"var(--accent)", background:"none", border:"none", cursor:"pointer", marginTop:4 }}
-              >
-                Clear search
-              </button>
-            )}
-          </div>
-        ) : (
-          <>
-            <div className="gp-list">
-              {requests.map(r => (
-                <RequestCard
-                  key={r.id}
-                  r={r}
-                  slots={slots}
-                  selectedSlot={selectedSlot}
-                  setSelectedSlot={setSelectedSlot}
-                  onAssign={handleAssign}
-                  onReject={handleReject}
-                  onExit={handleExit}
-                  isMobile={isMobile}
-                  t={t}
-                />
-              ))}
-            </div>
-
-            <div className="gp-footer">
-              <span className="gp-footer-text">
-                Showing{" "}
-                <strong>{(page - 1) * limit + 1}–{Math.min(page * limit, totalItems)}</strong>{" "}
-                of <strong>{totalItems}</strong> requests
-              </span>
-              <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} pageSize={limit} onPageSizeChange={(s) => { limitRef.current = s; setLimit(s); setPage(1); handlePageChange(1); }} />
-            </div>
-          </>
-        )}
-
-      </div>
-    </>
+        </>
+      )}
+    </div>
   );
 }

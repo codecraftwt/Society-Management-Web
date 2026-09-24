@@ -2,7 +2,23 @@
 import { createContext, useContext, useState, useCallback, useEffect } from "react";
 import { translations, LANGUAGES } from "../locales";
 
-const defaultT = (key, fallback) => translations["en"]?.[key] ?? fallback ?? undefined;
+const interpolate = (str, params) => {
+  if (!str || typeof str !== "string" || !params || typeof params !== "object") return str;
+  let out = str;
+  Object.keys(params).forEach((k) => {
+    out = out.replace(new RegExp(`\\{{1,2}\\s*${k}\\s*\\}{1,2}`, "g"), params[k]);
+  });
+  return out;
+};
+
+const resolveT = (lang, key, arg1, arg2) => {
+  let fb = typeof arg1 === "string" ? arg1 : (typeof arg2 === "string" ? arg2 : undefined);
+  let p = (typeof arg1 === "object" && arg1 !== null) ? arg1 : ((typeof arg2 === "object" && arg2 !== null) ? arg2 : undefined);
+  let str = translations[lang]?.[key] ?? translations["en"]?.[key] ?? fb ?? key;
+  return interpolate(str, p);
+};
+
+const defaultT = (key, arg1, arg2) => resolveT("en", key, arg1, arg2);
 
 const defaultValue = {
   lang:       "en",
@@ -43,17 +59,7 @@ export function LanguageProvider({ role, children }) {
   }, [storageKey]);
 
   const t = useCallback(
-    (key, params, fallback) => {
-      let fb = typeof params === "string" ? params : (typeof fallback === "string" ? fallback : undefined);
-      let p = typeof params === "object" && params !== null ? params : undefined;
-      let str = translations[lang]?.[key] ?? translations["en"]?.[key] ?? fb ?? key;
-      if (p && typeof str === "string") {
-        Object.keys(p).forEach((k) => {
-          str = str.replace(new RegExp(`\\{${k}\\}`, "g"), p[k]);
-        });
-      }
-      return str;
-    },
+    (key, arg1, arg2) => resolveT(lang, key, arg1, arg2),
     [lang]
   );
 
@@ -67,8 +73,6 @@ export function LanguageProvider({ role, children }) {
 /* ─── Hook ─── */
 export function useLang() {
   return useContext(LanguageContext);
-  /* No throw — returns defaultValue if used outside a provider,
-     so the app degrades gracefully instead of crashing. */
 }
 
 export default LanguageContext;

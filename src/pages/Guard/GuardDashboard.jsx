@@ -247,13 +247,18 @@ export default function GuardDashboard() {
     return false;
   }, [shift, dateTime]);
 
-  /* ── Security Radar (Overstaying Visitors > 45 mins) ── */
+  /* ── Security Radar (Overstaying Visitors) ──
+     Pass-entered visitors use their configured allowed-time (dwell_minutes);
+     legacy deliveries/cabs/services fall back to the 45-minute rule. */
   const overstayingVisitors = useMemo(() => {
     return visitors.filter((v) => {
       if (v.exit_time) return false;
       const type = (v.visitor_type || v.purpose || "").toUpperCase();
+      const mins = getElapsedMinutes(v.entry_time);
+      if (v.dwell_minutes) {
+        return mins >= Number(v.dwell_minutes);
+      }
       if (["DELIVERY", "CAB", "SERVICE"].includes(type)) {
-        const mins = getElapsedMinutes(v.entry_time);
         return mins >= 45;
       }
       return false;
@@ -571,7 +576,7 @@ export default function GuardDashboard() {
                   Security Radar
                 </span>
                 <span className="font-bold text-sm sm:text-base text-primary">
-                  {overstayingVisitors.length} Visitor{overstayingVisitors.length > 1 ? "s" : ""} Overstaying (&gt;45 mins)
+                  {overstayingVisitors.length} Visitor{overstayingVisitors.length > 1 ? "s" : ""} Overstaying
                 </span>
               </div>
               <p className="text-xs text-secondary mt-1">
@@ -905,10 +910,12 @@ export default function GuardDashboard() {
                 const Icon = meta.icon;
                 const isInside = !v.exit_time;
                 const elapsedMins = getElapsedMinutes(v.entry_time);
+                const dwellLimit = v.dwell_minutes ? Number(v.dwell_minutes) : 45;
                 const isOverstay =
                   isInside &&
-                  ["DELIVERY", "CAB", "SERVICE"].includes((v.visitor_type || v.purpose || "").toUpperCase()) &&
-                  elapsedMins >= 45;
+                  (v.dwell_minutes ||
+                    ["DELIVERY", "CAB", "SERVICE"].includes((v.visitor_type || v.purpose || "").toUpperCase())) &&
+                  elapsedMins >= dwellLimit;
 
                 return (
                   <div
@@ -1029,15 +1036,16 @@ export default function GuardDashboard() {
                           )}
                         </p>
                         {isInside && (
-                          <div className="gd-dwell-wrap" title="Dwell time vs 45 min overstay threshold">
+                          <div className="gd-dwell-wrap"
+                            title={v.dwell_minutes ? `Allowed ${v.dwell_minutes} min — overstay threshold` : "Dwell time vs 45 min overstay threshold"}>
                             <div
                               className="gd-dwell"
                               style={{
-                                width: `${Math.min(100, (elapsedMins / 45) * 100)}%`,
+                                width: `${Math.min(100, (elapsedMins / dwellLimit) * 100)}%`,
                                 background:
-                                  elapsedMins >= 45
+                                  elapsedMins >= dwellLimit
                                     ? "#ef4444"
-                                    : elapsedMins >= 30
+                                    : elapsedMins >= dwellLimit * 0.66
                                     ? "#f59e0b"
                                     : "#10b981",
                               }}

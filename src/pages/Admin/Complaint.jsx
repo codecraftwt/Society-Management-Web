@@ -698,6 +698,8 @@ function ComplaintRowMenu({ c, updatingId, unread, commentCount, onView, onMessa
 /* ── Mobile card ─────────────────────────────────────────────────────────────── */
 function MobileComplaintCard({ c, updateStatus, updatingId, t, onOpen, onPhotoClick, unreadMap, commentCount }) {
   const hasUnread = (unreadMap[c.id] || 0) > 0;
+  const attachmentUrl = c.photo_url || c.attachment_url || c.attachment;
+
   return (
     <div
       onClick={() => onOpen(c, "details")}
@@ -759,6 +761,37 @@ function MobileComplaintCard({ c, updateStatus, updatingId, t, onOpen, onPhotoCl
           <StatusPill status={c.status} t={t} />
         </div>
 
+        {/* Attachment Button FIRST */}
+        {attachmentUrl && (
+          <div style={{ display: "flex", alignItems: "center", marginTop: "2px" }}>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onPhotoClick(attachmentUrl, c.title);
+              }}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "6px",
+                padding: "6px 12px",
+                borderRadius: "8px",
+                fontSize: "12px",
+                fontWeight: 600,
+                background: "rgba(160, 90, 255, 0.12)",
+                border: "1px solid rgba(160, 90, 255, 0.28)",
+                color: "var(--accent, #6B46C1)",
+                cursor: "pointer",
+                transition: "all 0.15s ease",
+              }}
+            >
+              <MdAttachFile size={15} />
+              <span>{t("viewAttachment") || "View Attachment"}</span>
+              <MdOpenInNew size={13} style={{ opacity: 0.8 }} />
+            </button>
+          </div>
+        )}
+
         {/* Description */}
         {c.description && (
           <p
@@ -775,49 +808,6 @@ function MobileComplaintCard({ c, updateStatus, updatingId, t, onOpen, onPhotoCl
           >
             {c.description}
           </p>
-        )}
-
-        {/* Photo Thumbnail */}
-        {c.photo_url && (
-          <div
-            onClick={(e) => {
-              e.stopPropagation();
-              onPhotoClick(c.photo_url, c.title);
-            }}
-            style={{
-              position: "relative",
-              borderRadius: "12px",
-              overflow: "hidden",
-              border: "1px solid var(--glass-border)",
-              maxHeight: "140px",
-              cursor: "pointer",
-            }}
-          >
-            <img
-              src={c.photo_url}
-              alt="complaint attachment"
-              style={{ width: "100%", height: "130px", objectFit: "cover", display: "block" }}
-            />
-            <div
-              style={{
-                position: "absolute",
-                bottom: "6px",
-                right: "6px",
-                background: "rgba(0,0,0,0.65)",
-                backdropFilter: "blur(6px)",
-                color: "#fff",
-                fontSize: "10px",
-                fontWeight: 600,
-                padding: "3px 8px",
-                borderRadius: "6px",
-                display: "flex",
-                alignItems: "center",
-                gap: "4px",
-              }}
-            >
-              <MdImage size={12} /> View Photo
-            </div>
-          </div>
         )}
 
         {/* Resident & Flat Chips */}
@@ -1689,7 +1679,16 @@ const isMobile           = useIsMobile();
               <div key={c.id} className="animate-fadeIn" style={{ animationDelay: `${i * 40}ms` }}>
                 <MobileComplaintCard c={c} updateStatus={updateStatus} updatingId={updatingId} t={t}
                   onOpen={openDrawer} unreadMap={unreadMap} commentCount={commentCounts[c.id]}
-                  onPhotoClick={(url, title) => { setLightboxPhoto(url); setLightboxTitle(title); }} />
+                  onPhotoClick={(url, title) => {
+                    if (!url) return;
+                    const isPdf = typeof url === "string" && (url.toLowerCase().endsWith(".pdf") || url.includes("/pdf"));
+                    if (isPdf) {
+                      window.open(url, "_blank", "noopener,noreferrer");
+                    } else {
+                      setLightboxPhoto(url);
+                      setLightboxTitle(title || "Attachment");
+                    }
+                  }} />
               </div>
             ))}
           </div>
@@ -1824,9 +1823,39 @@ const isMobile           = useIsMobile();
                   {/* Attachment */}
                   <div className={styles.section}>
                     <span className={styles.sectionTitle}>{t("adminCompAttachedPhoto")}</span>
-                    {selected.photo_url ? (
-                      <img className={styles.attachedImg} src={selected.photo_url} alt="complaint"
-                        onClick={() => { setLightboxPhoto(selected.photo_url); setLightboxTitle(selected.title); }} />
+                    {(selected.photo_url || selected.attachment_url || selected.attachment) ? (
+                      <div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const url = selected.photo_url || selected.attachment_url || selected.attachment;
+                            const isPdf = typeof url === "string" && (url.toLowerCase().endsWith(".pdf") || url.includes("/pdf"));
+                            if (isPdf) {
+                              window.open(url, "_blank", "noopener,noreferrer");
+                            } else {
+                              setLightboxPhoto(url);
+                              setLightboxTitle(selected.title);
+                            }
+                          }}
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "6px",
+                            padding: "7px 14px",
+                            borderRadius: "8px",
+                            fontSize: "12.5px",
+                            fontWeight: 600,
+                            background: "rgba(160, 90, 255, 0.12)",
+                            border: "1px solid rgba(160, 90, 255, 0.3)",
+                            color: "var(--accent, #6B46C1)",
+                            cursor: "pointer",
+                          }}
+                        >
+                          <MdAttachFile size={15} />
+                          <span>{t("viewAttachment") || "View Attachment"}</span>
+                          <MdOpenInNew size={13} style={{ opacity: 0.8 }} />
+                        </button>
+                      </div>
                     ) : (
                       <div className={styles.noAttachment}>
                         <MdOpenInNew size={18} style={{ opacity: 0.45 }} />

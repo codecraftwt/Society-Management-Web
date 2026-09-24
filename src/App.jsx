@@ -194,6 +194,8 @@ function App() {
             <Route path="payments" element={<Payments />} />
             <Route path="manage-bills" element={<ManageBill />} />
             <Route path="tenant-management" element={<TenantManagement />} />
+            <Route path="emergency" element={<AdminEmergency />} />
+            <Route path="maintenance" element={<MaintenancePage />} />
             <Route
               path="superadmin-reports/visitor-report"
               element={<SuperAdminVisitorReport />}

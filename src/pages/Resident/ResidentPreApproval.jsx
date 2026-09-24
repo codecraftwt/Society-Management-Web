@@ -11,6 +11,7 @@ import {
   MdCheckCircle, MdContentCopy, MdPerson,
   MdVisibility, MdDownload, MdPictureAsPdf,
   MdSearch, MdOutlineInbox, MdHome, MdHistory,
+  MdRepeat, MdTimer, MdAccessTime, MdInfoOutline,
 } from "react-icons/md";
 import { QRCodeCanvas } from "qrcode.react";
 import Modal from "../../components/Modal";
@@ -184,6 +185,46 @@ export default function ResidentPreApproval() {
     OTHER: t("preapPurposeOther"),
   };
 
+  /* ── Pass type + dwell/longevity controls ── */
+  const [passType,      setPassType]      = useState("SINGLE");
+  const [dwellChoice,   setDwellChoice]   = useState("45");
+  const [dwellCustom,   setDwellCustom]   = useState("");
+  const [validityMonths, setValidityMonths] = useState("1");
+
+  const DWELL_OPTIONS = [
+    { value: "30",  label: t("preapDwellMin", "30 min", { count: 30 }) },
+    { value: "45",  label: t("preapDwellMin", "45 min", { count: 45 }) },
+    { value: "60",  label: t("preapDwellHour", "1 hour") },
+    { value: "120", label: t("preapDwellHours", "2 hours", { count: 2 }) },
+    { value: "180", label: t("preapDwellHours", "3 hours", { count: 3 }) },
+    { value: "300", label: t("preapDwellHours", "5 hours", { count: 5 }) },
+    { value: "other", label: t("preapDwellOther", "Other / Custom") },
+  ];
+
+  const VALIDITY_OPTIONS = [
+    { value: 1, label: t("preapValMonthOne", "1 month") },
+    { value: 2, label: t("preapValMonthMany", "2 months", { count: 2 }) },
+    { value: 3, label: t("preapValMonthMany", "3 months", { count: 3 }) },
+  ];
+
+  const addMonthsToISODate = (isoDate, months) => {
+    const d = new Date(`${isoDate}T00:00:00`);
+    const y = d.getFullYear();
+    const m = d.getMonth() + months;
+    const lastDay = new Date(y, m + 1, 0).getDate();
+    const day = Math.min(d.getDate(), lastDay);
+    const out = new Date(y, m, day);
+    return `${out.getFullYear()}-${String(out.getMonth() + 1).padStart(2, "0")}-${String(out.getDate()).padStart(2, "0")}`;
+  };
+
+  const dwellLabel = (mins) => {
+    const n = Number(mins) || 45;
+    if (n % 60 === 0) return n === 60 ? "1 hour" : `${n / 60} hours`;
+    return `${n} min`;
+  };
+
+  const isDaily = (p) => String(p?.pass_type || "").toUpperCase() === "DAILY";
+
   /* ── Live IST clock ── */
   useEffect(() => {
     const tick = () => {
@@ -279,6 +320,12 @@ export default function ResidentPreApproval() {
       vehicle_number: form.vehicle_number.trim(),
       purpose: form.purpose,
       valid_date: form.valid_date, // YYYY-MM-DD
+      pass_type: passType,
+      dwell_minutes: dwellMinutes,
+      valid_until:
+        passType === "DAILY"
+          ? addMonthsToISODate(form.valid_date, parseInt(validityMonths, 10))
+          : null,
     };
 
     const res = await API.post("/preapproval", payload);
@@ -290,6 +337,8 @@ export default function ResidentPreApproval() {
       vehicle_number: form.vehicle_number,
       purpose: form.purpose,
       valid_date: form.valid_date,
+      pass_type: passType,
+      dwell_minutes: dwellMinutes,
     };
 
     setShowForm(false);
@@ -302,6 +351,10 @@ export default function ResidentPreApproval() {
       purpose: "",
       valid_date: "",
     });
+    setPassType("SINGLE");
+    setDwellChoice("45");
+    setDwellCustom("");
+    setValidityMonths("1");
 
     fetchMyPasses();
   } catch (err) {
@@ -366,11 +419,22 @@ export default function ResidentPreApproval() {
   };
 
   const downloadViewPNG = () => downloadQRPNG(viewPassQrRef.current, `Gate_Pass_${viewPass?.otp || "QR"}`);
-  const downloadViewPDF = () => downloadQRPDF(viewPassQrRef.current, `Gate_Pass_${viewPass?.otp || "QR"}`, {
-    title: t("preapTitle"),
-    code: viewPass?.otp || "",
-    meta: [viewPass?.visitor_name || "", viewPass ? `${t("preapValidDate")}: ${formatDateIST(viewPass.valid_date)}` : ""].filter(Boolean),
-  });
+  const downloadViewPDF = () => {
+    const meta = [
+      viewPass?.visitor_name || "",
+      viewPass ? `${t("preapValidDate")}: ${formatDateIST(viewPass.valid_date)}` : "",
+      viewPass?.pass_type === "DAILY"
+        ? `${t("preapDailyBadge", "Daily")}: ${formatDateIST(viewPass.valid_date)} → ${formatDateIST(viewPass.valid_until)}`
+        : "",
+      viewPass?.dwell_minutes ? `${t("preapDwellUsage", "Allowed time")}: ${dwellLabel(viewPass.dwell_minutes)}` : "",
+    ].filter(Boolean);
+
+    return downloadQRPDF(viewPassQrRef.current, `Gate_Pass_${viewPass?.otp || "QR"}`, {
+      title: t("preapTitle"),
+      code: viewPass?.otp || "",
+      meta,
+    });
+  };
 
   return (
     <div className="space-y-5 animate-fadeIn">
@@ -472,6 +536,30 @@ export default function ResidentPreApproval() {
             </div>
           )}
 
+          {/* Pass Type toggle */}
+          <div>
+            <label className="text-xs text-secondary mb-1.5 block">{t("preapPassType")}</label>
+            <div className="grid grid-cols-2 gap-2">
+              {[
+                { value: "SINGLE", label: t("preapPassSingle", "One-time Pass"), icon: <MdQrCode size={15} /> },
+                { value: "DAILY", label: t("preapPassDaily", "Daily Pass"), icon: <MdRepeat size={15} /> },
+              ].map((opt) => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => setPassType(opt.value)}
+                  className={`flex items-center justify-center gap-1.5 h-11 rounded-xl text-xs font-semibold border transition-all duration-200 ${
+                    passType === opt.value
+                      ? "bg-green-500/20 text-green-400 border-green-500/40"
+                      : "bg-white/5 text-secondary border-white/10 hover:bg-white/10"
+                  }`}
+                >
+                  {opt.icon} {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
           {/* Row 1: Name + Mobile */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
@@ -541,20 +629,78 @@ export default function ResidentPreApproval() {
           </div>
 
           {/* Row 3: Valid Date */}
-          <div className="sm:w-1/2">
-            <label className="text-xs text-secondary mb-1.5 block">
-              {t("preapValidDate")} <span className="text-red-400">*</span>
-            </label>
-            <div className="relative">
-              <input
-                type="date"
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="sm:w-full">
+              <label className="text-xs text-secondary mb-1.5 block">
+                {passType === "DAILY" ? t("preapDailyRange") : t("preapValidDate")} <span className="text-red-400">*</span>
+              </label>
+              <div className="relative">
+                <input
+                  type="date"
+                  className="input h-11 w-full"
+                  value={form.valid_date}
+                  onChange={(e) => setForm({ ...form, valid_date: e.target.value })}
+                  required
+                />
+              </div>
+            </div>
+
+            {/* Allowed time inside (dwell) */}
+            <div className="sm:w-full">
+              <label className="text-xs text-secondary mb-1.5 block">{t("preapAllowedTime")}</label>
+              <Select
                 className="input h-11 w-full"
-                value={form.valid_date}
-                onChange={(e) => setForm({ ...form, valid_date: e.target.value })}
-                required
-              />
+                value={dwellChoice}
+                onChange={(e) => setDwellChoice(e.target.value)}
+              >
+                {DWELL_OPTIONS.map((o) => (
+                  <option key={o.value} value={o.value}>{o.label}</option>
+                ))}
+              </Select>
             </div>
           </div>
+
+          {/* Custom dwell minutes */}
+          {dwellChoice === "other" && (
+            <div className="sm:w-1/2">
+              <label className="text-xs text-secondary mb-1.5 block">{t("preapCustomMinutes")}</label>
+              <input
+                type="number"
+                min="1"
+                max="1440"
+                className="input h-11 w-full"
+                placeholder="e.g. 90"
+                value={dwellCustom}
+                onChange={(e) => setDwellCustom(e.target.value)}
+              />
+            </div>
+          )}
+
+          {/* Daily pass: validity months + scan rule */}
+          {passType === "DAILY" && (
+            <div className="rounded-xl border border-white/10 bg-white/5 p-3 space-y-3 animate-scaleIn">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs text-secondary mb-1.5 block">{t("preapValidity")}</label>
+                  <Select
+                    className="input h-10 w-full"
+                    value={String(validityMonths)}
+                    onChange={(e) => setValidityMonths(e.target.value)}
+                  >
+                    {VALIDITY_OPTIONS.map((o) => (
+                      <option key={o.value} value={o.value}>{o.label}</option>
+                    ))}
+                  </Select>
+                </div>
+                <div className="flex items-end pb-1">
+                  <p className="text-[11px] text-secondary flex items-start gap-1 leading-snug">
+                    <MdInfoOutline size={13} className="mt-0.5 shrink-0 text-green-400" />
+                    {t("preapDailyScansNote", "Works for 2 visits per day (entry + exit). Resets automatically every day.")}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Submit & Cancel */}
           <div className="flex items-center gap-2 pt-2">
@@ -733,6 +879,14 @@ export default function ResidentPreApproval() {
                           <span className="flex items-center gap-1 text-[11px] text-secondary px-2 py-0.5 rounded-md bg-white/5 border border-white/10">
                             <MdCalendarToday size={10} /> {t("preapValidTill", { date: formatDateIST(pass.valid_date) })}
                           </span>
+                          <span className="flex items-center gap-1 text-[11px] text-secondary px-2 py-0.5 rounded-md bg-white/5 border border-white/10">
+                            <MdTimer size={11} /> {t("preapDwellUsage", "Allowed time")} {dwellLabel(pass.dwell_minutes)}
+                          </span>
+                          {isDaily(pass) && (
+                            <span className="flex items-center gap-1 text-[11px] text-secondary px-2 py-0.5 rounded-md bg-white/5 border border-white/10">
+                              <MdAccessTime size={11} /> Used {pass.uses_today ?? "–"}/{pass.daily_limit ?? 2} today
+                            </span>
+                          )}
                         </div>
 
                         <div className="flex gap-2">
@@ -891,6 +1045,16 @@ export default function ResidentPreApproval() {
                 <span className="flex items-center gap-1 text-xs text-secondary px-2.5 py-1 rounded-lg bg-white/5 border border-white/10">
                   <MdCalendarToday size={11} /> {t("preapValidTill", { date: formatDateIST(viewPass.valid_date) })}
                 </span>
+                {viewPass.dwell_minutes && (
+                  <span className="flex items-center gap-1 text-xs text-secondary px-2.5 py-1 rounded-lg bg-white/5 border border-white/10">
+                    <MdTimer size={11} /> {t("preapDwellUsage", "Allowed time")} {dwellLabel(viewPass.dwell_minutes)}
+                  </span>
+                )}
+                {isDaily(viewPass) && (
+                  <span className="flex items-center gap-1 text-xs text-secondary px-2.5 py-1 rounded-lg bg-white/5 border border-white/10">
+                    <MdAccessTime size={11} /> Used {viewPass.uses_today ?? "–"}/{viewPass.daily_limit ?? 2} today
+                  </span>
+                )}
               </div>
 
               {/* copy button */}

@@ -1640,3 +1640,577 @@ html.role-theme .me-page .btn-danger:hover,
 html.role-theme .me-page button:hover {
   transform: none !important;
 }
+
+/* --------------------------------------------------------------------------
+   Household Attendance — hh-att-* (light + dark via theme tokens)
+   -------------------------------------------------------------------------- */
+
+html.role-theme .hh-icon-btn--att {
+  background: rgba(var(--acct-teal-rgb), 0.14) !important;
+  border-color: rgba(var(--acct-teal-rgb), 0.35) !important;
+  color: var(--acct-teal) !important;
+}
+
+html.role-theme .hh-icon-btn--att:hover {
+  background: rgba(var(--acct-teal-rgb), 0.26) !important;
+  color: var(--acct-teal) !important;
+}
+
+/* Daily Pass quick button (violet — distinct from attendance teal) */
+html.role-theme .hh-icon-btn--daily {
+  background: rgba(var(--acct-purple-rgb), 0.14) !important;
+  border-color: rgba(var(--acct-purple-rgb), 0.35) !important;
+  color: var(--accent) !important;
+}
+
+html.role-theme .hh-icon-btn--daily:hover {
+  background: rgba(var(--acct-purple-rgb), 0.26) !important;
+  color: var(--accent) !important;
+}
+
+/* Daily Pass modal — success + selector styles */
+html.role-theme .hh-pass-box {
+  max-width: 420px;
+}
+
+html.role-theme .hh-pass-success {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0 4px;
+  text-align: center;
+}
+
+html.role-theme .hh-pass-success-ic {
+  color: #22c55e;
+}
+
+html.role-theme .hh-pass-code-label {
+  margin: 0;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-secondary);
+}
+
+html.role-theme .hh-pass-code {
+  margin: 0;
+  font-size: 1.9rem;
+  font-weight: 800;
+  letter-spacing: 0.2em;
+  color: #22c55e;
+  font-variant-numeric: tabular-nums;
+}
+
+html.role-theme .hh-pass-range {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+
+html.role-theme .hh-pass-copied {
+  background: #22c55e !important;
+}
+
+html.role-theme .hh-pass-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  font-size: 0.72rem;
+  line-height: 1.45;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+html.role-theme .hh-pass-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-top: 0.6rem;
+}
+
+html.role-theme .hh-pass-pick {
+  padding: 0.55rem 0.4rem;
+  border-radius: 10px;
+  font-size: 0.74rem;
+  font-weight: 600;
+  text-align: center;
+  border: 1px solid var(--glass-border);
+  background: var(--card-inner-bg);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+html.role-theme .hh-pass-pick:hover {
+  border-color: rgba(var(--acct-purple-rgb), 0.4);
+  color: var(--text-primary);
+}
+
+html.role-theme .hh-pass-pick--on {
+  background: rgba(var(--acct-purple-rgb), 0.16) !important;
+  border-color: rgba(var(--acct-purple-rgb), 0.5) !important;
+  color: var(--accent) !important;
+}
+
+html.role-theme .hh-att-box {
+  width: 100%;
+  max-width: 680px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 20px;
+  padding: 1.25rem;
+  background: var(--card-bg);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow-lg, 0 20px 30px -10px rgba(0, 0, 0, 0.4));
+}
+
+html.role-theme .hh-att-box .hh-edit-er {
+  flex-shrink: 0;
+  margin-bottom: 0.75rem;
+}
+
+html.role-theme .hh-att-body {
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+html.role-theme .hh-att-split {
+  display: grid;
+  grid-template-columns: 290px 1fr;
+  gap: 16px;
+  align-items: start;
+}
+
+@media (max-width: 640px) {
+  html.role-theme .hh-att-box {
+    max-width: 420px;
+  }
+  html.role-theme .hh-att-split {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+}
+
+html.role-theme .hh-att-col-cal,
+html.role-theme .hh-att-col-calc {
+  display: flex;
+  flex-direction: column;
+}
+
+html.role-theme .hh-att-body::-webkit-scrollbar {
+  width: 5px;
+}
+
+html.role-theme .hh-att-body::-webkit-scrollbar-thumb {
+  background: var(--glass-border);
+  border-radius: 4px;
+}
+
+html.role-theme .hh-att-head-icon {
+  background: rgba(var(--acct-teal-rgb), 0.14) !important;
+  color: var(--acct-teal) !important;
+}
+
+html.role-theme .hh-att-role-chip {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 6px;
+  padding: 1px 7px;
+  font-size: 0.58rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--acct-teal);
+  background: rgba(var(--acct-teal-rgb), 0.14);
+  border: 1px solid rgba(var(--acct-teal-rgb), 0.3);
+  border-radius: 999px;
+  vertical-align: 1px;
+}
+
+html.role-theme .hh-att-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+html.role-theme .hh-att-nav-btn {
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  border: 1px solid var(--glass-border);
+  background: var(--card-inner-bg);
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.18s, color 0.18s;
+}
+
+html.role-theme .hh-att-nav-btn:hover {
+  transform: none !important;
+  background: var(--row-hover);
+  color: var(--text-primary);
+}
+
+html.role-theme .hh-att-nav-label {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: 0.01em;
+}
+
+html.role-theme .hh-att-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 1.8rem 0;
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+}
+
+html.role-theme .hh-att-spinner {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2.5px solid var(--glass-border);
+  border-top-color: var(--accent);
+  animation: hh-spin 0.7s linear infinite;
+}
+
+@keyframes hh-spin {
+  to { transform: rotate(360deg); }
+}
+
+html.role-theme .hh-att-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  margin-bottom: 0.55rem;
+}
+
+html.role-theme .hh-att-stat {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 7px;
+  border-radius: 10px;
+  background: var(--card-inner-bg);
+  border: 1px solid var(--glass-border);
+  position: relative;
+  overflow: hidden;
+}
+
+html.role-theme .hh-att-stat-ic {
+  width: 18px;
+  height: 18px;
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+html.role-theme .hh-att-stat--present .hh-att-stat-ic {
+  background: rgba(var(--acct-green-rgb), 0.18);
+  color: var(--approve-color);
+}
+
+html.role-theme .hh-att-stat--absent .hh-att-stat-ic {
+  background: rgba(var(--acct-red-rgb), 0.16);
+  color: var(--acct-red);
+}
+
+html.role-theme .hh-att-stat--time .hh-att-stat-ic {
+  background: rgba(var(--acct-teal-rgb), 0.16);
+  color: var(--acct-teal);
+}
+
+html.role-theme .hh-att-stat--present {
+  background: var(--approve-bg);
+  border-color: var(--approve-border);
+}
+
+html.role-theme .hh-att-stat--absent {
+  background: rgba(var(--acct-red-rgb), 0.14);
+  border-color: rgba(var(--acct-red-rgb), 0.3);
+}
+
+html.role-theme .hh-att-stat--time {
+  background: rgba(var(--acct-teal-rgb), 0.12);
+  border-color: rgba(var(--acct-teal-rgb), 0.3);
+}
+
+html.role-theme .hh-att-stat-val {
+  font-size: 1rem;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+html.role-theme .hh-att-stat--present .hh-att-stat-val { color: var(--approve-color); }
+html.role-theme .hh-att-stat--absent  .hh-att-stat-val { color: var(--acct-red); }
+html.role-theme .hh-att-stat--time    .hh-att-stat-val { color: var(--acct-teal); }
+
+html.role-theme .hh-att-stat-label {
+  font-size: 0.58rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+html.role-theme .hh-att-cal {
+  background: var(--card-inner-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  padding: 10px;
+}
+
+html.role-theme .hh-att-week {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  margin-bottom: 4px;
+}
+
+html.role-theme .hh-att-weekday {
+  text-align: center;
+  font-size: 0.58rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  opacity: 0.75;
+}
+
+html.role-theme .hh-att-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 3px;
+}
+
+html.role-theme .hh-att-cell {
+  aspect-ratio: 1;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+html.role-theme .hh-att-cell--present {
+  background: var(--approve-bg);
+  border: 1px solid var(--approve-border);
+  color: var(--approve-color);
+}
+
+html.role-theme .hh-att-cell--absent {
+  background: rgba(var(--acct-red-rgb), 0.12);
+  border: 1px solid rgba(var(--acct-red-rgb), 0.26);
+  color: var(--acct-red);
+}
+
+html.role-theme .hh-att-cell--future {
+  color: var(--text-secondary);
+  opacity: 0.35;
+}
+
+html.role-theme .hh-att-cell--today {
+  box-shadow: inset 0 0 0 1.5px var(--accent);
+  position: relative;
+}
+
+html.role-theme .hh-att-cell-num { line-height: 1; }
+html.role-theme .hh-att-cell-ic { line-height: 1; }
+
+html.role-theme .hh-att-legend {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+html.role-theme .hh-att-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.64rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+html.role-theme .hh-att-legend-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
+
+html.role-theme .hh-att-legend-dot--present { background: var(--approve-color); }
+html.role-theme .hh-att-legend-dot--absent  { background: var(--acct-red); }
+html.role-theme .hh-att-legend-dot--future  { background: var(--text-disabled, var(--text-secondary)); opacity: 0.5; }
+
+html.role-theme .hh-att-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 5px;
+  margin: 10px 2px 0;
+  font-size: 0.65rem;
+  color: var(--text-secondary);
+  line-height: 1.45;
+}
+
+html.role-theme .hh-att-note svg {
+  color: var(--acct-teal);
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+/* ── Salary Calculator (in attendance modal) ── */
+
+html.role-theme .hh-sal-box {
+  margin-top: 6px;
+  background: var(--card-inner-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  padding: 10px 12px;
+}
+
+html.role-theme .hh-sal-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+html.role-theme .hh-sal-head-ic {
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(var(--accent-rgb, var(--acct-purple-rgb)), 0.16);
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+html.role-theme .hh-sal-title {
+  margin: 0;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.2;
+}
+
+html.role-theme .hh-sal-sub {
+  margin: 1px 0 0;
+  font-size: 0.63rem;
+  color: var(--text-secondary);
+}
+
+html.role-theme .hh-sal-input-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 5px;
+}
+
+html.role-theme .hh-sal-rupee {
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: var(--accent);
+  padding-left: 2px;
+}
+
+html.role-theme .hh-sal-input {
+  flex: 1;
+}
+
+html.role-theme .hh-sal-result {
+  margin-top: 8px;
+  border-top: 1px dashed var(--glass-border);
+  padding-top: 8px;
+}
+
+html.role-theme .hh-sal-breakdown {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+html.role-theme .hh-sal-breakdown b {
+  color: var(--accent);
+}
+
+html.role-theme .hh-sal-eq,
+html.role-theme .hh-sal-mul {
+  color: var(--text-secondary);
+  opacity: 0.6;
+}
+
+html.role-theme .hh-sal-payout {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 8px;
+  background: rgba(var(--acct-green-rgb), 0.14);
+  border: 1px solid rgba(var(--acct-green-rgb), 0.3);
+  border-radius: 10px;
+  padding: 8px 10px;
+}
+
+html.role-theme .hh-sal-payout-label {
+  display: block;
+  font-size: 0.63rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--approve-color);
+}
+
+html.role-theme .hh-sal-payout-sub {
+  display: block;
+  margin-top: 1px;
+  font-size: 0.6rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+html.role-theme .hh-sal-payout-amt {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--approve-color);
+  white-space: nowrap;
+}
+
+html.role-theme .hh-sal-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 5px;
+  margin: 7px 2px 0;
+  font-size: 0.63rem;
+  color: var(--text-secondary);
+  line-height: 1.45;
+}
+
+html.role-theme .hh-sal-note svg {
+  color: var(--accent);
+  flex-shrink: 0;
+  margin-top: 1px;
+}

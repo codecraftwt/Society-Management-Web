@@ -12,10 +12,15 @@ import {
   MdRefresh,
   MdShield,
   MdWarning,
+  MdAdd,
+  MdEditNote,
+  MdBookmark,
+  MdCheckCircle,
 } from "react-icons/md";
 import { toast } from "react-toastify";
 import SlidingTabs from "../../components/common/SlidingTabs";
-import ExpandableSearch from "../../components/common/ExpandableSearch";
+import ToggleSearchBar from "../../components/common/ToggleSearchBar";
+import GlobalModal from "../../components/common/GlobalModal";
 
 function Spinner({ size = 16 }) {
   return (
@@ -48,11 +53,15 @@ export default function ShiftLogbook() {
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+
+  // New Log Modal State
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [inputText, setInputText] = useState("");
   const [isImportant, setIsImportant] = useState(false);
   const [posting, setPosting] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
 
+  // Filter & Search
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("ALL"); // ALL, IMPORTANT, TODAY
 
@@ -101,6 +110,7 @@ export default function ShiftLogbook() {
       setLogs((prev) => [newLog, ...prev]);
       setInputText("");
       setIsImportant(false);
+      setIsAddModalOpen(false);
       toast.success("Shift log note added successfully");
     } catch (err) {
       console.error("Error adding log:", err);
@@ -150,7 +160,12 @@ export default function ShiftLogbook() {
       if (search.trim()) {
         const q = search.toLowerCase().trim();
         const textMatch = (l.text || l.note || "").toLowerCase().includes(q);
-        const authorMatch = (l.Guard?.name || l.guard_name || l.author || "").toLowerCase().includes(q);
+        const authorName =
+          l.Guard?.name ||
+          l.guard_name ||
+          (typeof l.author === "string" ? l.author : l.author?.name) ||
+          "";
+        const authorMatch = authorName.toLowerCase().includes(q);
         return textMatch || authorMatch;
       }
       return true;
@@ -166,33 +181,47 @@ export default function ShiftLogbook() {
   return (
     <div className="ge-root space-y-6 animate-fadeIn">
       {/* ── HEADER ── */}
-      <div className="ge-er">
-        <div className="ge-er-left">
+      <div className="ge-er flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="ge-er-left flex items-center gap-3">
           <div
-            className="ad-page-icon"
+            className="ad-page-icon shrink-0"
             style={{
-              background: "rgba(99, 102, 241, 0.15)",
+              background: "linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(99, 102, 241, 0.08))",
               color: "#6366F1",
+              border: "1px solid rgba(99, 102, 241, 0.3)",
+              boxShadow: "0 4px 12px rgba(99, 102, 241, 0.15)",
             }}
           >
             <MdHistoryEdu size={24} />
           </div>
           <div>
-            <h2 className="page-title">{t("logbookTitle", "Guard Shift Log Book")}</h2>
-            <p className="page-subtitle">
+            <h2 className="page-title text-xl font-black text-primary">
+              {t("logbookTitle", "Guard Shift Logbook")}
+            </h2>
+            <p className="page-subtitle text-xs text-secondary font-medium">
               {counts.total} {t("logbookSubtitle", "Shift handover notes, gate observations & incident flags")}
             </p>
           </div>
         </div>
 
-        <button
-          onClick={() => fetchLogs(true)}
-          disabled={refreshing}
-          className="btn-secondary flex items-center gap-1.5 text-xs font-bold px-3.5 py-2"
-        >
-          <MdRefresh size={18} className={refreshing ? "animate-spin text-accent" : ""} />
-          <span>{refreshing ? "Refreshing..." : "Refresh"}</span>
-        </button>
+        <div className="flex items-center gap-2.5">
+          <button
+            onClick={() => fetchLogs(true)}
+            disabled={refreshing}
+            className="btn-secondary flex items-center gap-1.5 text-xs font-bold px-3.5 py-2.5 rounded-xl transition-all hover:scale-102 active:scale-98"
+          >
+            <MdRefresh size={18} className={refreshing ? "animate-spin text-accent" : ""} />
+            <span>{refreshing ? "Refreshing..." : "Refresh"}</span>
+          </button>
+
+          <button
+            onClick={() => setIsAddModalOpen(true)}
+            className="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-black transition-all flex items-center gap-2 shadow-md hover:shadow-indigo-500/25 hover:scale-102 active:scale-98"
+          >
+            <MdAdd size={19} />
+            <span>Add Log Entry</span>
+          </button>
+        </div>
       </div>
 
       {/* ── KPI STAT CARDS ── */}
@@ -203,84 +232,48 @@ export default function ShiftLogbook() {
             filter === "ALL" ? "ring-2 ring-indigo-500 shadow-md scale-101" : ""
           }`}
         >
-          <span className="complaint-stat-val text-indigo-600">{counts.total}</span>
+          <div className="flex items-center justify-between">
+            <span className="complaint-stat-val text-indigo-600">{counts.total}</span>
+            <div className="w-9 h-9 rounded-xl bg-indigo-500/10 text-indigo-600 flex items-center justify-center font-bold">
+              <MdBookmark size={18} />
+            </div>
+          </div>
           <span className="complaint-stat-label">Total Logbook Records</span>
         </div>
+
         <div
           onClick={() => setFilter("IMPORTANT")}
           className={`complaint-stat-card complaint-stat-inprogress cursor-pointer transition-all ${
             filter === "IMPORTANT" ? "ring-2 ring-rose-500 shadow-md scale-101" : ""
           }`}
         >
-          <span className="complaint-stat-val text-rose-600">{counts.important}</span>
+          <div className="flex items-center justify-between">
+            <span className="complaint-stat-val text-rose-600">{counts.important}</span>
+            <div className="w-9 h-9 rounded-xl bg-rose-500/10 text-rose-600 flex items-center justify-center font-bold">
+              <MdFlag size={18} />
+            </div>
+          </div>
           <span className="complaint-stat-label">Important Action Flags</span>
         </div>
+
         <div
           onClick={() => setFilter("TODAY")}
           className={`complaint-stat-card complaint-stat-resolved cursor-pointer transition-all ${
             filter === "TODAY" ? "ring-2 ring-emerald-500 shadow-md scale-101" : ""
           }`}
         >
-          <span className="complaint-stat-val text-emerald-600">{counts.today}</span>
+          <div className="flex items-center justify-between">
+            <span className="complaint-stat-val text-emerald-600">{counts.today}</span>
+            <div className="w-9 h-9 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center font-bold">
+              <MdToday size={18} />
+            </div>
+          </div>
           <span className="complaint-stat-label">Added Today</span>
         </div>
       </div>
 
-      {/* ── CREATE NEW LOG NOTE COMPOSER ── */}
-      <div className="gd-glass-card p-5 rounded-2xl border border-glass-border shadow-sm space-y-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-indigo-500 animate-pulse" />
-            <h3 className="text-sm font-extrabold text-primary">
-              Write New Shift / Handover Log Entry
-            </h3>
-          </div>
-          <span className="text-xs text-secondary font-medium">
-            Logged as <strong>{currentUser.name || "Security Officer"}</strong>
-          </span>
-        </div>
-
-        <form onSubmit={handleAddLog} className="space-y-3">
-          <textarea
-            rows={3}
-            placeholder="Record gate events, shift handover notes, suspicious visitors, or society instructions..."
-            value={inputText}
-            onChange={(e) => setInputText(e.target.value)}
-            className="w-full p-3.5 text-sm rounded-2xl bg-card-inner-bg border border-glass-border focus:border-accent text-primary outline-none resize-none shadow-inner"
-          />
-
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
-            <label className="inline-flex items-center gap-2 cursor-pointer select-none">
-              <input
-                type="checkbox"
-                checked={isImportant}
-                onChange={(e) => setIsImportant(e.target.checked)}
-                className="w-4 h-4 rounded text-rose-600 focus:ring-rose-500"
-              />
-              <span className="text-xs font-extrabold text-rose-600 dark:text-rose-400 flex items-center gap-1">
-                <MdFlag size={15} /> Flag as Important Handover Note
-              </span>
-            </label>
-
-            <button
-              type="submit"
-              disabled={posting || !inputText.trim()}
-              className="px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-black transition-all flex items-center justify-center gap-2 shadow-md disabled:opacity-40 hover:scale-102 active:scale-98"
-            >
-              {posting ? (
-                <Spinner size={14} />
-              ) : (
-                <>
-                  <MdSend size={15} /> Post Log Entry
-                </>
-              )}
-            </button>
-          </div>
-        </form>
-      </div>
-
-      {/* ── SEARCH & FILTER TOOLBAR ── */}
-      <div className="ge-toolbar">
+      {/* ── SEARCH & FILTER TOOLBAR WITH TOGGLE SEARCH BAR ── */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-card/60 backdrop-blur-md p-2 rounded-2xl border border-glass-border shadow-xs">
         <div className="overflow-x-auto max-w-full pb-1 sm:pb-0">
           <SlidingTabs
             className="ge-filter-tabs"
@@ -298,30 +291,37 @@ export default function ShiftLogbook() {
           />
         </div>
 
-        <div className="ge-search-wrap">
-          <ExpandableSearch
+        <div className="flex items-center gap-2 self-end sm:self-auto">
+          <ToggleSearchBar
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder={t("searchLogbookPlaceholder", "Search logs by message text or guard name...")}
+            onChange={(val) => setSearch(val)}
+            placeholder={t("searchLogbookPlaceholder", "Search by message or guard...")}
           />
         </div>
       </div>
 
       {/* ── LOG FEED TIMELINE ── */}
-      <div className="space-y-3">
+      <div className="space-y-3.5">
         {loading ? (
           <div className="p-12 text-center text-secondary">
             <Spinner size={26} />
             <p className="mt-2 text-xs font-bold">Loading shift logbook entries...</p>
           </div>
         ) : filteredLogs.length === 0 ? (
-          <div className="ge-empty py-12">
-            <span className="ge-empty-icon">📝</span>
-            <span>No logbook notes match your search or filter</span>
+          <div className="ge-empty py-12 bg-card rounded-2xl border border-glass-border text-center space-y-2">
+            <span className="text-3xl">📝</span>
+            <p className="text-sm font-extrabold text-primary">No Logbook Notes Found</p>
+            <p className="text-xs text-secondary">
+              No shift entries match your selected search or filter tag.
+            </p>
           </div>
         ) : (
           filteredLogs.map((log) => {
-            const authorName = log.Guard?.name || log.guard_name || log.author || "Guard Officer";
+            const authorName =
+              log.Guard?.name ||
+              log.guard_name ||
+              (typeof log.author === "string" ? log.author : log.author?.name) ||
+              "Guard Officer";
             const isMine = log.guard_id === currentUser.id || log.user_id === currentUser.id;
             const createdAt = new Date(log.createdAt || log.created_at);
 
@@ -330,19 +330,22 @@ export default function ShiftLogbook() {
                 key={log.id}
                 className={`p-5 rounded-2xl border transition-all duration-200 ${
                   log.is_important
-                    ? "bg-rose-500/5 border-rose-500/30 shadow-md"
-                    : "bg-card border-glass-border shadow-sm hover:border-gray-400"
+                    ? "bg-rose-500/5 border-rose-500/30 shadow-md hover:border-rose-500/50"
+                    : "bg-card border-glass-border shadow-sm hover:border-indigo-500/30"
                 }`}
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-center gap-3">
                     <div
-                      className="w-10 h-10 rounded-xl flex items-center justify-center font-black text-sm shrink-0"
+                      className="w-10 h-10 rounded-xl flex items-center justify-center font-black text-sm shrink-0 shadow-xs"
                       style={{
                         backgroundColor: log.is_important
                           ? "rgba(244, 63, 94, 0.15)"
                           : "rgba(99, 102, 241, 0.15)",
                         color: log.is_important ? "#F43F5E" : "#6366F1",
+                        border: log.is_important
+                          ? "1px solid rgba(244, 63, 94, 0.3)"
+                          : "1px solid rgba(99, 102, 241, 0.3)",
                       }}
                     >
                       {log.is_important ? <MdFlag size={20} /> : <MdShield size={20} />}
@@ -354,14 +357,14 @@ export default function ShiftLogbook() {
                           {authorName}
                         </span>
                         {log.is_important && (
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-rose-500 text-white shadow-xs">
-                            Important
+                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-rose-500 text-white shadow-xs flex items-center gap-1">
+                            <MdFlag size={11} /> Important
                           </span>
                         )}
                       </div>
 
                       <div className="flex items-center gap-2 text-xs text-secondary mt-0.5 font-medium">
-                        <MdAccessTime size={13} />
+                        <MdAccessTime size={13} className="opacity-70" />
                         <span>
                           {createdAt.toLocaleDateString("en-IN", {
                             day: "numeric",
@@ -383,7 +386,7 @@ export default function ShiftLogbook() {
                     <button
                       onClick={() => handleDeleteLog(log.id)}
                       disabled={deletingId === log.id}
-                      className="p-1.5 rounded-lg text-secondary hover:text-red-500 hover:bg-red-500/10 transition"
+                      className="p-2 rounded-xl text-secondary hover:text-red-500 hover:bg-red-500/10 transition-all"
                       title="Delete log entry"
                     >
                       {deletingId === log.id ? <Spinner size={14} /> : <MdDeleteOutline size={18} />}
@@ -391,7 +394,7 @@ export default function ShiftLogbook() {
                   )}
                 </div>
 
-                <p className="mt-3.5 text-sm text-primary leading-relaxed font-normal whitespace-pre-wrap pl-13">
+                <p className="mt-3.5 text-sm text-primary leading-relaxed font-normal whitespace-pre-wrap pl-13 border-l-2 border-indigo-500/20">
                   {log.text || log.note}
                 </p>
               </div>
@@ -399,6 +402,90 @@ export default function ShiftLogbook() {
           })
         )}
       </div>
+
+      {/* ── MODAL POPUP FOR CREATING LOG ENTRY ── */}
+      <GlobalModal
+        isOpen={isAddModalOpen}
+        onClose={() => {
+          if (!posting) {
+            setIsAddModalOpen(false);
+            setInputText("");
+            setIsImportant(false);
+          }
+        }}
+        title="New Shift Log Entry"
+        subtitle={`Logged as ${currentUser.name || "Security Officer"}`}
+        icon={MdEditNote}
+        size="md"
+        showFooter={true}
+        onCancel={() => {
+          setIsAddModalOpen(false);
+          setInputText("");
+          setIsImportant(false);
+        }}
+        onSubmit={handleAddLog}
+        submitLabel="Post Log Entry"
+        submitLoading={posting}
+        submitDisabled={posting || !inputText.trim()}
+        submitIcon={MdSend}
+      >
+        <div className="space-y-4 py-1">
+          <div>
+            <label className="block text-xs font-extrabold text-primary mb-1.5">
+              Log Note / Handover Observation <span className="text-rose-500">*</span>
+            </label>
+            <textarea
+              rows={4}
+              autoFocus
+              placeholder="Record gate observations, shift handover notes, suspicious visitors, or key instructions..."
+              value={inputText}
+              onChange={(e) => setInputText(e.target.value)}
+              className="w-full p-3.5 text-sm rounded-xl bg-card-inner-bg border border-glass-border focus:border-accent text-primary outline-none resize-none shadow-inner transition-all"
+            />
+            <div className="flex justify-between items-center mt-1.5 text-[11px] text-secondary">
+              <span>Be precise for oncoming shift guards & administration</span>
+              <span className="font-bold">{inputText.length} chars</span>
+            </div>
+          </div>
+
+          <div
+            onClick={() => setIsImportant(!isImportant)}
+            className={`p-3.5 rounded-xl border cursor-pointer transition-all flex items-center justify-between ${
+              isImportant
+                ? "bg-rose-500/10 border-rose-500/40 text-rose-600 dark:text-rose-400 shadow-xs"
+                : "bg-card-inner-bg border-glass-border hover:border-gray-400 text-secondary"
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              <div
+                className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 font-bold ${
+                  isImportant
+                    ? "bg-rose-500 text-white shadow-xs"
+                    : "bg-gray-200 dark:bg-gray-800 text-secondary"
+                }`}
+              >
+                <MdFlag size={18} />
+              </div>
+              <div>
+                <p className="text-xs font-extrabold text-primary">
+                  Flag as Important Handover Note
+                </p>
+                <p className="text-[11px] text-secondary">
+                  Highlights this log entry with red warning priority
+                </p>
+              </div>
+            </div>
+
+            <input
+              type="checkbox"
+              checked={isImportant}
+              onChange={(e) => setIsImportant(e.target.checked)}
+              className="w-4 h-4 rounded text-rose-600 focus:ring-rose-500 cursor-pointer"
+              onClick={(e) => e.stopPropagation()}
+            />
+          </div>
+        </div>
+      </GlobalModal>
     </div>
   );
 }

@@ -53,19 +53,25 @@ export default function AdminEmergency() {
   const { t } = useLang();
 
   const isSuperAdmin = user?.role === "SUPER_ADMIN" || user?.activeRole === "SUPER_ADMIN";
+  const isGuard = user?.role === "GUARD" || user?.activeRole === "GUARD";
+  const isAdminOrCommittee = ["SUPER_ADMIN", "ADMIN", "SOCIETY_ADMIN", "COMMITTEE_MEMBER"].includes(user?.role) || ["SUPER_ADMIN", "ADMIN", "SOCIETY_ADMIN", "COMMITTEE_MEMBER"].includes(user?.activeRole);
 
   // Permissions check
-  const canView = hasPermission(user, "emergency", "view");
-  const canTrigger = hasPermission(user, "emergency", "trigger") || ["SUPER_ADMIN", "ADMIN", "SOCIETY_ADMIN"].includes(user?.role) || ["SUPER_ADMIN", "ADMIN", "SOCIETY_ADMIN"].includes(user?.activeRole);
-  const canResolve = hasPermission(user, "emergency", "resolve");
-  const canEdit = hasPermission(user, "emergency", "edit");
-  const canDelete = hasPermission(user, "emergency", "delete");
+  const canView = true;
+  const canTrigger = hasPermission(user, "emergency", "trigger") || isGuard || isAdminOrCommittee;
+  const canResolve = hasPermission(user, "emergency", "resolve") || isGuard || isAdminOrCommittee;
+  const canEdit = hasPermission(user, "emergency", "edit") || isGuard || isAdminOrCommittee;
+  const canDelete = hasPermission(user, "emergency", "delete") || isGuard || isAdminOrCommittee;
   const canViewHistory = hasPermission(user, "emergency", "view_history") || canView;
 
   // State
   const [alerts, setAlerts] = useState([]);
   const [societies, setSocieties] = useState([]);
-  const [selectedSocietyId, setSelectedSocietyId] = useState(isSuperAdmin ? "" : user?.society_id || "");
+  const [selectedSocietyId, setSelectedSocietyId] = useState(() => {
+    if (!isSuperAdmin) return user?.society_id || "";
+    const saved = localStorage.getItem("superadmin_society_filter");
+    return saved && saved !== "ALL" ? saved : "";
+  });
   const [loading, setLoading] = useState(true);
   const [isSOSModalOpen, setIsSOSModalOpen] = useState(false);
 
@@ -345,7 +351,11 @@ export default function AdminEmergency() {
           {isSuperAdmin && (
             <Select
               value={selectedSocietyId}
-              onChange={(e) => setSelectedSocietyId(e.target.value)}
+              onChange={(e) => {
+                const val = e.target.value;
+                setSelectedSocietyId(val);
+                localStorage.setItem("superadmin_society_filter", val);
+              }}
               style={{ height: 42, minHeight: 42, fontSize: 13, borderRadius: 12, minWidth: 160 }}
             >
               <option value="">{t("allSocieties")}</option>

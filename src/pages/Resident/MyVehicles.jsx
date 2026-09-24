@@ -302,7 +302,8 @@ export default function MyVehicles() {
   const loadVehicles = useCallback(async () => {
     try {
       const res = await API.get("/vehicles/my");
-      setVehicles(res.data || []);
+      const list = Array.isArray(res.data) ? res.data : (Array.isArray(res.data?.data) ? res.data.data : []);
+      setVehicles(list);
     } catch (e) { console.error(e); }
   }, []);
 
@@ -323,7 +324,8 @@ export default function MyVehicles() {
     setRequestsLoading(true);
     try {
       const res = await API.get("/parking?parking_type=RESIDENT&limit=50");
-      setParkingRequests(res.data?.data || []);
+      const list = Array.isArray(res.data?.data) ? res.data.data : (Array.isArray(res.data) ? res.data : []);
+      setParkingRequests(list);
     } catch (e) { console.error(e); }
     finally { setRequestsLoading(false); }
   }, []);

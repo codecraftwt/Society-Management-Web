@@ -68,13 +68,18 @@ const toArr = (res) => {
    TAB: RESIDENTS
 ────────────────────────────────────────────────────────────── */
 const ResidentsTab = ({ residents, t, onMoveOut }) => {
-  if (!residents.length)
+  const validResidents = (residents || []).filter((r) => {
+    const name = r.User?.name || r.user?.name || r.name || r.resident_name;
+    return Boolean(name && name.trim() && name.toLowerCase() !== "unknown");
+  });
+
+  if (!validResidents.length)
     return <Empty icon="👤" text={t("fhNoResidents")} sub={t("fhNoResidentsSub")} />;
 
   return (
     <div className="fh-list">
-      {residents.map((r, i) => {
-        const name     = r.User?.name || r.user?.name || r.name || r.resident_name || t("fhUnknown");
+      {validResidents.map((r, i) => {
+        const name     = r.User?.name || r.user?.name || r.name || r.resident_name;
         const initials = name.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase();
         const moveIn   = r.move_in_date || r.move_in  || r.moveIn  || r.check_in  || r.created_at || null;
         const moveOut  = r.move_out_date || r.move_out || r.moveOut || r.check_out || null;

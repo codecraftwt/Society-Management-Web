@@ -349,17 +349,6 @@ export default function Notice() {
       ),
     },
     {
-      key: "viewed_at",
-      header: "First Viewed",
-      width: 160,
-      render: (u) =>
-        u.viewed_at ? (
-          <span style={{ fontSize: "0.8rem", color: "var(--text-primary)" }}>{fmtDate(u.viewed_at)}</span>
-        ) : (
-          <span style={{ fontSize: "0.8rem", color: "var(--text-muted)", opacity: 0.6 }}>—</span>
-        ),
-    },
-    {
       key: "acknowledged_at",
       header: "Acknowledged At",
       width: 160,
