@@ -60,10 +60,84 @@ function SectionLabel({ children }) {
   );
 }
 
+const fmtTime12h = (hhmm) => {
+  if (!hhmm || !/^\d{2}:\d{2}/.test(hhmm)) return hhmm || "—";
+  try {
+    const [h, m] = hhmm.split(":");
+    const d = new Date();
+    d.setHours(parseInt(h, 10));
+    d.setMinutes(parseInt(m, 10));
+    return d.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true }).replace(" ", " ");
+  } catch {
+    return hhmm;
+  }
+};
+
+/* Compact 12-hour time control (Hour / Minute / AM-PM).
+   Operates on "HH:mm" (24h) values so the stored format stays consistent. */
+function TimeInput12({ value, onChange, disabled }) {
+  let h24 = 0, min = 0;
+  if (/^\d{2}:\d{2}$/.test(value || "")) {
+    const [hh, mm] = value.split(":").map(Number);
+    h24 = hh; min = mm;
+  }
+  const h12 = h24 % 12 === 0 ? 12 : h24 % 12;
+  const ap = h24 >= 12 ? "PM" : "AM";
+  const toHHmm = (hour12, minutes, ampm) => {
+    let h = hour12 % 12;
+    if (ampm === "PM") h += 12;
+    return `${String(h).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
+  };
+  const selStyle = {
+    height: 40, fontSize: 13.5, fontWeight: 600, borderRadius: 10,
+    background: "var(--card-inner-bg, rgba(255,255,255,0.04))",
+    border: "1.5px solid var(--glass-border)", color: "var(--text-primary)",
+    padding: "0 6px", outline: "none", cursor: "pointer",
+    boxShadow: "0 2px 6px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.06)",
+    transition: "border-color 0.2s, box-shadow 0.2s",
+  };
+  return (
+    <span className="gt-time-group" style={{ display: "inline-flex", alignItems: "center", gap: 6, flex: 1, minWidth: 0 }}>
+      <select
+        className="input"
+        disabled={disabled}
+        value={h12}
+        onChange={e => onChange(toHHmm(Number(e.target.value), min, ap))}
+        style={{ ...selStyle, flex: "1 1 0", minWidth: 0 }}
+      >
+        {Array.from({ length: 12 }, (_, i) => i + 1).map(n => (
+          <option key={n} value={n}>{n}</option>
+        ))}
+      </select>
+      <select
+        className="input"
+        disabled={disabled}
+        value={min}
+        onChange={e => onChange(toHHmm(h12, Number(e.target.value), ap))}
+        style={{ ...selStyle, flex: "1 1 0", minWidth: 0 }}
+      >
+        {Array.from({ length: 60 }, (_, i) => i).map(n => (
+          <option key={n} value={n}>{String(n).padStart(2, "0")}</option>
+        ))}
+      </select>
+      <select
+        className="input"
+        disabled={disabled}
+        value={ap}
+        onChange={e => onChange(toHHmm(h12, min, e.target.value))}
+        style={{ ...selStyle, flexShrink: 0, width: "auto" }}
+      >
+        <option value="AM">AM</option>
+        <option value="PM">PM</option>
+      </select>
+    </span>
+  );
+}
+
 export default function Guard() {
   const { t } = useLang();
   const { user } = useContext(AuthContext);
-  const { showUnauthorized, showError } = useCustomAlert();
+  const { showUnauthorized, showError, showSuccess } = useCustomAlert();
   const activeRole = user?.activeRole ?? user?.role;
   const isSuperAdmin = activeRole === "SUPER_ADMIN";
   
@@ -82,6 +156,27 @@ export default function Guard() {
   const [shiftForm, setShiftForm] = useState({ shift_type: "", start_date: "", end_date: "" });
   const [editingShiftId, setEditingShiftId] = useState(null);
   const [shiftError, setShiftError] = useState("");
+
+  // Society-wide shift timing config (GuardShiftTiming)
+  const DEFAULTS = {
+    MORNING: { start: "08:00", end: "16:00" },
+    AFTERNOON: { start: "16:00", end: "00:00" },
+    NIGHT: { start: "00:00", end: "08:00" },
+  };
+  const SHIFT_WINDOWS = [
+    { type: "MORNING", label: t("guardShiftMorning") || "Morning", icon: MdWbSunny, accent: "#10b981", glow: "rgba(16,185,129,0.35)", tint: "rgba(16,185,129,0.10)" },
+    { type: "AFTERNOON", label: t("guardShiftAfternoon") || "Afternoon", icon: MdBrightness5, accent: "#f59e0b", glow: "rgba(245,158,11,0.35)", tint: "rgba(245,158,11,0.10)" },
+    { type: "NIGHT", label: t("guardShiftNight") || "Night", icon: MdNightsStay, accent: "#818cf8", glow: "rgba(129,140,248,0.35)", tint: "rgba(129,140,248,0.10)" },
+  ];
+  const [shiftTimings, setShiftTimings] = useState(null);
+  const [timingsDirty, setTimingsDirty] = useState(false);
+  const [timingsSaving, setTimingsSaving] = useState(false);
+  const [timingsLoading, setTimingsLoading] = useState(false);
+  const [showTimingsModal, setShowTimingsModal] = useState(false);
+
+  const timingsSocietyId = isSuperAdmin
+    ? filterSocietyId && filterSocietyId !== "ALL" ? filterSocietyId : null
+    : user?.society_id;
   const [formData, setFormData] = useState({ name: "", email: "", password: "", society_id: "" });
   const [editingId, setEditingId] = useState(null);
   const [submitLoading, setSubmitLoading] = useState(false);
@@ -154,6 +249,159 @@ export default function Guard() {
   useEffect(() => {
     fetchGuards();
   }, [isSuperAdmin, filterSocietyId]);
+
+  /* ── SOCIETY SHIFT TIMINGS ── */
+  const fetchTimings = async (societyId) => {
+    if (!societyId) {
+      setShiftTimings(null);
+      setTimingsDirty(false);
+      return;
+    }
+    setTimingsLoading(true);
+    try {
+      const res = await API.get("/guard-shift/timings", {
+        params: isSuperAdmin ? { society_id: societyId } : {},
+      });
+      const t = res.data?.timings || {};
+      setShiftTimings({
+        MORNING: t.MORNING || DEFAULTS.MORNING,
+        AFTERNOON: t.AFTERNOON || DEFAULTS.AFTERNOON,
+        NIGHT: t.NIGHT || DEFAULTS.NIGHT,
+      });
+      setTimingsDirty(false);
+    } catch (err) {
+      const msg = err?.response?.data?.message || "Failed to load shift timings.";
+      showError(msg);
+      setShiftTimings(null);
+    } finally {
+      setTimingsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchTimings(timingsSocietyId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [timingsSocietyId]);
+
+  const isValidHHmm = (v) => /^([01]\d|2[0-3]):[0-5]\d$/.test(v);
+
+  const toMins = (v) => {
+    const [h, m] = (v || "0:0").split(":").map(Number);
+    return h * 60 + (m || 0);
+  };
+
+  const isActiveNow = (s, e) => {
+    if (!s || !e || !isValidHHmm(s) || !isValidHHmm(e)) return false;
+    const now = new Date().getHours() * 60 + new Date().getMinutes();
+    const a = toMins(s), b = toMins(e);
+    if (a === b) return true;
+    if (a < b) return now >= a && now < b;
+    return now >= a || now < b;
+  };
+
+  const durationLabel = (s, e) => {
+    if (!s || !e || !isValidHHmm(s) || !isValidHHmm(e)) return "…";
+    let d = (toMins(e) - toMins(s) + 1440) % 1440;
+    if (d === 0) d = 1440;
+    const h = Math.floor(d / 60), m = d % 60;
+    return m ? `${h}h ${m}m` : `${h}h`;
+  };
+
+  const activeShift = timingsLoading || !shiftTimings
+    ? null
+    : SHIFT_WINDOWS.find((w) => isActiveNow(shiftTimings[w.type]?.start, shiftTimings[w.type]?.end)) || null;
+
+  const timingsHaveOverlap = () => {
+    if (!shiftTimings) return false;
+    const toMin = (v) => {
+      const [h, m] = v.split(":").map(Number);
+      return h * 60 + (m || 0);
+    };
+    const inWindow = (mins, s, e) => {
+      const a = toMin(s), b = toMin(e);
+      if (a === b) return true;
+      if (a < b) return mins >= a && mins < b;
+      return mins >= a || mins < b;
+    };
+    const rows = [shiftTimings.MORNING, shiftTimings.AFTERNOON, shiftTimings.NIGHT];
+    for (let i = 0; i < rows.length; i++) {
+      for (let j = i + 1; j < rows.length; j++) {
+        const a = rows[i], b = rows[j];
+        if (
+          (isValidHHmm(a.start) && isValidHHmm(a.end) && isValidHHmm(b.start) && isValidHHmm(b.end)) &&
+          (inWindow(toMin(b.start), a.start, a.end) || inWindow(toMin(a.start), b.start, b.end))
+        ) {
+          return true;
+        }
+      }
+    }
+    return false;
+  };
+
+  const handleSaveTimings = async () => {
+    if (!timingsSocietyId) {
+      showError(isSuperAdmin ? "Select a society to configure shift timings." : "Society not found.");
+      return;
+    }
+    if (!shiftTimings) return;
+    for (const type of ["MORNING", "AFTERNOON", "NIGHT"]) {
+      const r = shiftTimings[type];
+      if (!r || !isValidHHmm(r.start) || !isValidHHmm(r.end)) {
+        showError(`${type} shift requires valid start and end times (HH:mm).`);
+        return;
+      }
+    }
+    if (timingsHaveOverlap()) {
+      showError("Shift windows must not overlap. Adjust the timings so each time of day belongs to one shift.");
+      return;
+    }
+    try {
+      setTimingsSaving(true);
+      await API.put("/guard-shift/timings", {
+        ...(isSuperAdmin ? { society_id: timingsSocietyId } : {}),
+        timings: shiftTimings,
+      });
+      setTimingsDirty(false);
+      setShowTimingsModal(false);
+      showSuccess("Shift timings updated. Guards reflect the new windows immediately.");
+    } catch (err) {
+      const msg = err?.response?.data?.message || "Failed to save shift timings.";
+      showError(msg);
+    } finally {
+      setTimingsSaving(false);
+    }
+  };
+
+  const handleResetTimings = async () => {
+    if (!timingsSocietyId) {
+      showError(isSuperAdmin ? "Select a society to configure shift timings." : "Society not found.");
+      return;
+    }
+    try {
+      setTimingsSaving(true);
+      await API.put("/guard-shift/timings", {
+        ...(isSuperAdmin ? { society_id: timingsSocietyId } : {}),
+        timings: DEFAULTS,
+      });
+      setShiftTimings({
+        MORNING: { ...DEFAULTS.MORNING },
+        AFTERNOON: { ...DEFAULTS.AFTERNOON },
+        NIGHT: { ...DEFAULTS.NIGHT },
+      });
+      setTimingsDirty(false);
+      showSuccess("Shift timings reset to defaults (08:00–16:00 / 16:00–00:00 / 00:00–08:00).");
+    } catch (err) {
+      const msg = err?.response?.data?.message || "Failed to reset shift timings.";
+      showError(msg);
+    } finally {
+      setTimingsSaving(false);
+    }
+  };
+
+  const setTimingField = (type, field, value) => {
+    setShiftTimings(prev => prev ? { ...prev, [type]: { ...prev[type], [field]: value } } : prev);
+    setTimingsDirty(true);
+  };
 
   const handleOpenAddModal = () => {
     if (!hasPermission(user, "guard", "create")) {
@@ -527,6 +775,169 @@ export default function Guard() {
         </div>
       </div>
 
+      {/* ── SOCIETY SHIFT TIMINGS CONFIG ── */}
+      {canShiftGuard && (
+        <div style={{
+          marginTop: 14,
+          borderRadius: 16,
+          border: "1px solid var(--glass-border)",
+          background: "var(--card-bg, rgba(255,255,255,0.03))",
+          backdropFilter: "blur(12px)",
+          padding: 16,
+        }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <div style={{
+                width: 34, height: 34, borderRadius: 10, flexShrink: 0,
+                display: "flex", alignItems: "center", justifyContent: "center",
+                background: "linear-gradient(135deg, rgba(160,90,255,0.2), rgba(16,185,129,0.15))",
+                border: "1px solid rgba(160,90,255,0.3)", color: "var(--accent)",
+                boxShadow: "0 0 18px rgba(160,90,255,0.15)",
+              }}>
+                <MdSchedule size={18} />
+              </div>
+              <div>
+                <div style={{ fontSize: 14, fontWeight: 800, color: "var(--text-primary)", letterSpacing: "0.01em" }}>
+                  {t("guardShiftTimingsTitle") || "Guard Shift Timings"}
+                </div>
+                <div style={{ fontSize: 11, color: "var(--text-secondary)", marginTop: 1 }}>
+                  {isSuperAdmin
+                    ? (timingsSocietyId
+                        ? "Configure shift windows for the selected society."
+                        : "Select a society to configure its shift windows.")
+                    : "These windows decide when each shift type is active for all guards."}
+                </div>
+              </div>
+            </div>
+
+            {timingsSocietyId && (
+              <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                {activeShift && (
+                  <div className="gt-live-pill" style={{
+                    display: "inline-flex", alignItems: "center", gap: 6,
+                    padding: "6px 12px", borderRadius: 999, fontSize: 11,
+                    fontWeight: 800, letterSpacing: "0.06em", textTransform: "uppercase",
+                    background: activeShift.tint, border: `1px solid ${activeShift.accent}44`,
+                    color: activeShift.accent,
+                  }}>
+                    <span className="gt-live-dot" />
+                    Now: {activeShift.label}
+                  </div>
+                )}
+                <GlobalButton
+                  variant="primary"
+                  size="sm"
+                  icon={MdEdit}
+                  onClick={() => setShowTimingsModal(true)}
+                  disabled={timingsLoading || timingsSaving}
+                >
+                  {t("guardShiftTimingsEdit") || "Edit Shift Timings"}
+                </GlobalButton>
+              </div>
+            )}
+          </div>
+
+          {timingsSocietyId ? (
+            <div style={{ marginTop: 16, display: "grid", gap: 14, gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))" }}>
+              {SHIFT_WINDOWS.map(({ type, label, icon, accent, glow }, ci) => {
+                const ShiftIcon = icon;
+                const r = shiftTimings?.[type];
+                const active = timingsLoading ? false : isActiveNow(r?.start, r?.end);
+                return (
+                  <div
+                    key={type}
+                    className={`gt-shift-card ${active ? "gt-shift-card--active" : ""}`}
+                    style={{
+                      position: "relative",
+                      overflow: "hidden",
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 10,
+                      padding: "16px 14px",
+                      borderRadius: 18,
+                      textAlign: "center",
+                      background: `linear-gradient(150deg, ${accent}1F 0%, ${accent}0A 55%, var(--card-bg, rgba(255,255,255,0.02)) 100%)`,
+                      border: `1.5px solid ${active ? accent : `${accent}3D`}`,
+                      boxShadow: active
+                        ? `0 14px 32px -10px ${glow}, inset 0 1px 0 rgba(255,255,255,0.12)`
+                        : `0 4px 18px ${glow}, inset 0 1px 0 rgba(255,255,255,0.06)`,
+                      animationDelay: `${ci * 70}ms`,
+                    }}
+                  >
+                    <div style={{
+                      position: "absolute", top: -24, right: -24, width: 84, height: 84,
+                      borderRadius: "50%", background: `${accent}1A`, pointerEvents: "none",
+                    }} />
+
+                    <div style={{ display: "flex", justifyContent: "center", marginTop: 2 }}>
+                      <div style={{
+                        width: 42, height: 42, borderRadius: 13,
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        background: `linear-gradient(135deg, ${accent}30, ${accent}12)`,
+                        border: `1px solid ${accent}45`, color: accent,
+                        boxShadow: `0 6px 16px -6px ${glow}`,
+                      }}>
+                        <ShiftIcon size={20} />
+                      </div>
+                    </div>
+
+                    <div>
+                      <div style={{ fontSize: 12.5, fontWeight: 800, letterSpacing: "0.04em", textTransform: "uppercase", color: "var(--text-primary)" }}>
+                        {label}
+                      </div>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginTop: 6 }}>
+                        <span style={{
+                          fontSize: 15, fontWeight: 800, color: "var(--text-primary)",
+                          fontVariantNumeric: "tabular-nums",
+                          background: "var(--card-inner-bg, rgba(255,255,255,0.05))",
+                          border: "1px solid var(--glass-border)",
+                          padding: "3px 9px", borderRadius: 8,
+                        }}>
+                          {r ? fmtTime12h(r.start) : "…"}
+                        </span>
+                        <span style={{ color: accent, fontWeight: 800, fontSize: 14 }}>→</span>
+                        <span style={{
+                          fontSize: 15, fontWeight: 800, color: "var(--text-primary)",
+                          fontVariantNumeric: "tabular-nums",
+                          background: "var(--card-inner-bg, rgba(255,255,255,0.05))",
+                          border: "1px solid var(--glass-border)",
+                          padding: "3px 9px", borderRadius: 8,
+                        }}>
+                          {r ? fmtTime12h(r.end) : "…"}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", marginTop: 2, minHeight: 20 }}>
+                      {active ? (
+                        <span style={{
+                          display: "inline-flex", alignItems: "center", gap: 5,
+                          padding: "3px 10px", borderRadius: 999, fontSize: 10,
+                          fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase",
+                          background: accent, color: "#ffffff", boxShadow: `0 4px 12px ${glow}`,
+                        }}>
+                          <span className="gt-pill-dot" /> Active Now
+                        </span>
+                      ) : (
+                        <span style={{ fontSize: 10.5, fontWeight: 700, color: "var(--text-tertiary)", letterSpacing: "0.05em" }}>
+                          {r ? `${durationLabel(r.start, r.end)} shift` : "—"}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div style={{ marginTop: 10, fontSize: 12, color: "var(--text-tertiary)", fontStyle: "italic" }}>
+              {isSuperAdmin
+                ? "Switch the society filter above from “All” to a specific society to edit its shift timings."
+                : "No society context available."}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* ── GUARD LIST TABLE ── */}
       <GlobalTable
         columns={columns}
@@ -746,9 +1157,9 @@ export default function Guard() {
               required
             >
               <option value="">Select Shift Type</option>
-              <option value="MORNING">Morning (06:00 AM - 02:00 PM)</option>
-              <option value="AFTERNOON">Afternoon (02:00 PM - 10:00 PM)</option>
-              <option value="NIGHT">Night (10:00 PM - 06:00 AM)</option>
+              <option value="MORNING">Morning ({fmtTime12h(shiftTimings?.MORNING?.start)} - {fmtTime12h(shiftTimings?.MORNING?.end)})</option>
+              <option value="AFTERNOON">Afternoon ({fmtTime12h(shiftTimings?.AFTERNOON?.start)} - {fmtTime12h(shiftTimings?.AFTERNOON?.end)})</option>
+              <option value="NIGHT">Night ({fmtTime12h(shiftTimings?.NIGHT?.start)} - {fmtTime12h(shiftTimings?.NIGHT?.end)})</option>
             </Select>
           </div>
 
@@ -775,6 +1186,118 @@ export default function Guard() {
             </div>
           </div>
         </form>
+      </GlobalModal>
+
+      {/* ── EDIT SHIFT TIMINGS MODAL ── */}
+      <GlobalModal
+        isOpen={showTimingsModal}
+        onClose={() => setShowTimingsModal(false)}
+        title={t("guardShiftTimingsTitle") || "Guard Shift Timings"}
+        subtitle={t("guardShiftTimingsSubtitle") || "These windows decide when each shift type is active for all guards."}
+        icon={MdSchedule}
+        size="md"
+        showFooter
+        submitLabel={t("guardShiftTimingsSave") || "Save Timings"}
+        cancelLabel={t("cancel") || "Cancel"}
+        onSubmit={handleSaveTimings}
+        submitLoading={timingsSaving}
+        submitDisabled={timingsSaving || timingsLoading || !timingsDirty || timingsHaveOverlap()}
+        submitIcon={MdSchedule}
+      >
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          {SHIFT_WINDOWS.map(({ type, label, icon, accent }) => {
+            const ShiftIcon = icon;
+            return (
+              <div
+                key={type}
+                style={{
+                  position: "relative",
+                  overflow: "hidden",
+                  borderRadius: 14,
+                  padding: 14,
+                  background: `linear-gradient(135deg, ${accent}14, transparent 62%)`,
+                  border: `1px solid ${accent}38`,
+                  boxShadow: `0 2px 10px ${accent}14`,
+                }}
+              >
+                <div style={{
+                  position: "absolute", top: -26, right: -26, width: 80, height: 80,
+                  borderRadius: "50%", background: `${accent}0F`, pointerEvents: "none",
+                }} />
+
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                  <div style={{
+                    width: 30, height: 30, borderRadius: 9,
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    background: `${accent}1F`, color: accent, flexShrink: 0,
+                    boxShadow: `0 4px 12px ${accent}33`,
+                  }}>
+                    <ShiftIcon size={16} />
+                  </div>
+                  <span style={{ fontSize: 13.5, fontWeight: 800, color: "var(--text-primary)", letterSpacing: "0.01em" }}>
+                    {label}
+                  </span>
+                  <span style={{
+                    marginLeft: "auto", fontSize: 10, fontWeight: 700, letterSpacing: "0.08em",
+                    textTransform: "uppercase", color: "var(--text-tertiary)", flexShrink: 0,
+                  }}>
+                    {t("guardShiftWindow") || "Shift Window"}
+                  </span>
+                </div>
+
+                <div style={{
+                  display: "grid",
+                  gridTemplateColumns: "minmax(0,1fr) 26px minmax(0,1fr)",
+                  alignItems: "center", gap: 10,
+                }}>
+                  <div style={{ minWidth: 0 }}>
+                    <SectionLabel>{t("guardShiftStart") || "Start"}</SectionLabel>
+                    <TimeInput12
+                      value={shiftTimings?.[type]?.start || ""}
+                      disabled={timingsLoading}
+                      onChange={(v) => setTimingField(type, "start", v)}
+                    />
+                  </div>
+                  <div style={{ color: "var(--text-tertiary)", fontSize: 16, textAlign: "center", alignSelf: "center", marginTop: 16 }}>→</div>
+                  <div style={{ minWidth: 0 }}>
+                    <SectionLabel>{t("guardShiftEnd") || "End"}</SectionLabel>
+                    <TimeInput12
+                      value={shiftTimings?.[type]?.end || ""}
+                      disabled={timingsLoading}
+                      onChange={(v) => setTimingField(type, "end", v)}
+                    />
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+
+          {timingsHaveOverlap() && (
+            <div style={{
+              display: "flex", alignItems: "center", gap: 8,
+              color: "#ef4444", fontSize: 12, padding: "8px 12px", borderRadius: 8,
+              background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)",
+            }}>
+              <span>⚠</span>
+              <span>{t("guardShiftTimingsOverlap") || "Shift windows overlap — each moment of the day must belong to exactly one shift."}</span>
+            </div>
+          )}
+
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}>
+            <span style={{ fontSize: 11, color: "var(--text-tertiary)" }}>
+              {timingsDirty ? `* ${t("guardShiftTimingsUnsaved") || "Unsaved changes"}` : <>&nbsp;</>}
+            </span>
+            <GlobalButton
+              variant="secondary"
+              size="sm"
+              icon={MdEdit}
+              onClick={handleResetTimings}
+              disabled={timingsSaving || timingsLoading}
+            >
+              {t("guardShiftTimingsReset") || "Reset to Defaults"}
+            </GlobalButton>
+          </div>
+        </div>
       </GlobalModal>
 
       {/* ── DELETE CONFIRM DIALOG ── */}

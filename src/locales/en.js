@@ -778,6 +778,7 @@ const en = {
   // Guard GatePass
   ggTitle:      "Verify GatePass",
   ggSubtitle:   "Scan or enter a resident-issued pass code",
+  ggInvalidCode:"Enter the full 6-digit pass code (GP-XXXXXX)",
   ggPlaceholder:"Enter GatePass Code",
   ggVerifying:  "Verifying...",
   ggVerifyBtn:  "Verify GatePass",
@@ -791,6 +792,9 @@ const en = {
   ggCancel:     "Cancel",
   ggCar:        "Car",
   ggBike:       "Bike",
+  ggCode:       "Code",
+  ggEntryRecorded: "Visitor ENTRY recorded",
+  ggExitRecorded:  "Visitor EXIT recorded",
 
   // Guard Collection
   gcTitle:          "Gate Parcel Dashboard",
@@ -1338,6 +1342,15 @@ const en = {
   guardShiftMorning:   "Morning",
   guardShiftAfternoon: "Afternoon",
   guardShiftNight:     "Night",
+  guardShiftStart:     "Start",
+  guardShiftEnd:       "End",
+  guardShiftTimingsTitle:    "Guard Shift Timings",
+  guardShiftTimingsSubtitle: "These windows decide when each shift type is active for all guards.",
+  guardShiftTimingsEdit:     "Edit Shift Timings",
+  guardShiftTimingsSave:     "Save Timings",
+  guardShiftTimingsReset:    "Reset to Defaults",
+  guardShiftTimingsOverlap:  "Shift windows overlap — each moment of the day must belong to exactly one shift.",
+  guardShiftTimingsUnsaved:  "Unsaved changes",
   guardStartDate:      "Start Date",
   guardEndDate:        "End Date",
   guardSaveSchedule:   "Save Schedule",
@@ -3515,6 +3528,22 @@ cpwSuccessMsg:            "Password updated successfully!",
   mntEdit: "Edit",
   mntDeleteConfiguration: "Delete configuration",
   mntAllFlats: "All flats",
+
+  // Guard Dashboard Keys
+  gdGuardPortal: "Guard Security Hub",
+  gdGreetingMorning: "Good Morning",
+  gdGreetingAfternoon: "Good Afternoon",
+  gdGreetingEvening: "Good Evening",
+  gdGuard: "Security Officer",
+  gdStatInside: "Currently Inside",
+  gdStatToday: "Total Today",
+  gdStatExited: "Exited Today",
+  gdStatAlerts: "Active Alerts",
+  gdQuickActions: "Quick Gate Operations",
+  gdGateStream: "Live Gate Visitors Stream",
+  gdWelcome: "Welcome",
+  gdDutySchedule: "Duty Schedule",
+  gdNoShift: "No shift assigned currently",
 };
 
 export default en;

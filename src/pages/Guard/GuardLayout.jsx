@@ -2,7 +2,7 @@ import { getSocket } from "../../services/socket";
 import { Outlet, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { FaUserFriends, FaTruck, FaParking } from "react-icons/fa";
+import { FaUserFriends, FaTruck, FaParking, FaTools, FaHandshake } from "react-icons/fa";
 import {
   MdMenu,
   MdLogout,
@@ -10,6 +10,7 @@ import {
   MdLocalTaxi,
   MdSettings,
   MdHistory,
+  MdHistoryEdu,
   MdOutlineCardGiftcard,
   MdWarning,
   MdVerified,
@@ -63,6 +64,24 @@ function GuardLayoutInner() {
       path: "/guard/delivery-entry",
       icon: FaTruck,
       group: "GATE OPERATIONS",
+    },
+    {
+      label: t("guardMenuService", "Service Entry"),
+      path: "/guard/service-entry",
+      icon: FaTools,
+      group: "GATE OPERATIONS",
+    },
+    {
+      label: t("guardMenuDailyHelp", "Daily Help"),
+      path: "/guard/daily-help",
+      icon: FaHandshake,
+      group: "GATE OPERATIONS",
+    },
+    {
+      label: t("guardMenuShiftLogbook", "Shift Log Book"),
+      path: "/guard/shift-logbook",
+      icon: MdHistoryEdu,
+      group: "LOGS & RECORDS",
     },
     {
       label: t("guardMenuCollection"),

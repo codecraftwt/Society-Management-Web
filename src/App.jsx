@@ -97,6 +97,9 @@ import GuardDashboard from "./pages/Guard/GuardDashboard";
 import GuestEntry from "./pages/Guard/GuestEntry";
 import CabEntry from "./pages/Guard/CabEntry";
 import DeliveryEntry from "./pages/Guard/DeliveryEntry";
+import ServiceEntry from "./pages/Guard/ServiceEntry";
+import DailyHelp from "./pages/Guard/DailyHelp";
+import ShiftLogbook from "./pages/Guard/ShiftLogbook";
 import VisitorLogScreen from "./pages/Guard/VisitorLogScreen";
 import GuardSetting from "./pages/Guard/GuardSetting";
 import EmergencyHistory from "./pages/Guard/EmergencyHistory";
@@ -351,6 +354,9 @@ function App() {
             <Route path="guest-entry" element={<GuestEntry />} />
             <Route path="cab-entry" element={<CabEntry />} />
             <Route path="delivery-entry" element={<DeliveryEntry />} />
+            <Route path="service-entry" element={<ServiceEntry />} />
+            <Route path="daily-help" element={<DailyHelp />} />
+            <Route path="shift-logbook" element={<ShiftLogbook />} />
             <Route path="visitorlogs" element={<VisitorLogScreen />} />
             <Route path="settings" element={<GuardSetting />} />
             <Route path="emergency-history" element={<EmergencyHistory />} />

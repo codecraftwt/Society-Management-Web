@@ -778,6 +778,7 @@ const hi = {
   // Guard GatePass
   ggTitle:      "गेटपास सत्यापित करें",
   ggSubtitle:   "निवासी द्वारा जारी पास कोड दर्ज करें",
+  ggInvalidCode:"पूरा 6 अंकों वाला पास कोड दर्ज करें (GP-XXXXXX)",
   ggPlaceholder:"गेटपास कोड दर्ज करें",
   ggVerifying:  "सत्यापित हो रहा है...",
   ggVerifyBtn:  "गेटपास सत्यापित करें",
@@ -791,6 +792,9 @@ const hi = {
   ggCancel:     "रद्द करें",
   ggCar:        "कार",
   ggBike:       "बाइक",
+  ggCode:       "कोड",
+  ggEntryRecorded: "अभ्यागत का प्रवेश दर्ज किया गया",
+  ggExitRecorded:  "अभ्यागत का निकास दर्ज किया गया",
 
   // Guard Collection
   gcTitle:          "गेट पार्सल डैशबोर्ड",
@@ -1321,6 +1325,15 @@ const hi = {
   guardShiftMorning:   "सुबह",
   guardShiftAfternoon: "दोपहर",
   guardShiftNight:     "रात",
+  guardShiftStart:     "शुरू",
+  guardShiftEnd:       "समाप्त",
+  guardShiftTimingsTitle:    "गार्ड शिफ्ट समय",
+  guardShiftTimingsSubtitle: "ये विंडो तय करती हैं कि प्रत्येक शिफ्ट प्रकार सभी गार्डों के लिए कब सक्रिय है।",
+  guardShiftTimingsEdit:     "शिफ्ट समय संपादित करें",
+  guardShiftTimingsSave:     "समय सहेजें",
+  guardShiftTimingsReset:    "डिफ़ॉल्ट पर रीसेट करें",
+  guardShiftTimingsOverlap:  "शिफ्ट विंडो ओवरलैप — दिन का हर क्षण केवल एक शिफ्ट का होना चाहिए।",
+  guardShiftTimingsUnsaved:  "असहेजे गए बदलाव",
   guardStartDate:      "शुरू तिथि",
   guardEndDate:        "अंत तिथि",
   guardSaveSchedule:   "शेड्यूल सहेजें",
@@ -3487,6 +3500,22 @@ cpwSuccessMsg:            "पासवर्ड सफलतापूर्व�
   mntEdit: "संपादित करें",
   mntDeleteConfiguration: "कॉन्फ़िगरेशन हटाएं",
   mntAllFlats: "सभी फ्लैट",
+
+  // Guard Dashboard Keys
+  gdGuardPortal: "गार्ड सुरक्षा केंद्र",
+  gdGreetingMorning: "शुभ प्रभात",
+  gdGreetingAfternoon: "शुभ दोपहर",
+  gdGreetingEvening: "शुभ संध्या",
+  gdGuard: "सुरक्षा अधिकारी",
+  gdStatInside: "वर्तमान में अंदर",
+  gdStatToday: "आज कुल",
+  gdStatExited: "आज बाहर गए",
+  gdStatAlerts: "सक्रिय अलर्ट",
+  gdQuickActions: "त्वरित गेट संचालन",
+  gdGateStream: "लाइव गेट विज़िटर स्ट्रीम",
+  gdWelcome: "स्वागत है",
+  gdDutySchedule: "ड्यूटी शेड्यूल",
+  gdNoShift: "वर्तमान में कोई शिफ्ट असाइन नहीं है",
 };
 
 export default hi;

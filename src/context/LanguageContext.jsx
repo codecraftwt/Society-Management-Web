@@ -43,11 +43,13 @@ export function LanguageProvider({ role, children }) {
   }, [storageKey]);
 
   const t = useCallback(
-    (key, params) => {
-      let str = translations[lang]?.[key] ?? translations["en"]?.[key] ?? key;
-      if (params && typeof str === "string") {
-        Object.keys(params).forEach((k) => {
-          str = str.replace(new RegExp(`\\{${k}\\}`, "g"), params[k]);
+    (key, params, fallback) => {
+      let fb = typeof params === "string" ? params : (typeof fallback === "string" ? fallback : undefined);
+      let p = typeof params === "object" && params !== null ? params : undefined;
+      let str = translations[lang]?.[key] ?? translations["en"]?.[key] ?? fb ?? key;
+      if (p && typeof str === "string") {
+        Object.keys(p).forEach((k) => {
+          str = str.replace(new RegExp(`\\{${k}\\}`, "g"), p[k]);
         });
       }
       return str;

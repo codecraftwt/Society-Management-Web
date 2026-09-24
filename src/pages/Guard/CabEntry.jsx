@@ -1,16 +1,21 @@
-
-import { useEffect, useState, useCallback, useRef} from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import API from "../../services/api";
 import { useLang } from "../../context/LanguageContext";
-import { getTitleError, getMobileError, getVehicleNumberError } from "../../utils/validators";
-import { MdAdd, MdSearch, MdClose, MdChevronLeft, MdChevronRight, MdLocalTaxi } from "react-icons/md";
-import Modal from "../../components/Modal";
+import {
+  MdAdd,
+  MdClose,
+  MdLocalTaxi,
+  MdPhone,
+  MdDirectionsCar,
+  MdAccessTime,
+  MdCheckCircle,
+  MdLogout,
+} from "react-icons/md";
 import { toast } from "react-toastify";
-import Select from "../../components/common/Select";
 import SlidingTabs from "../../components/common/SlidingTabs";
-import ExpandableSearch from "../../components/common/ExpandableSearch";
-
+import ToggleSearchBar from "../../components/common/ToggleSearchBar";
 import Pagination from "../../components/common/Pagination";
+import StepVisitorEntryModal from "../../components/guard/StepVisitorEntryModal";
 
 function useDebounce(value, delay = 500) {
   const [d, setD] = useState(value);
@@ -23,28 +28,52 @@ function useDebounce(value, delay = 500) {
 
 function Spinner({ size = 16 }) {
   return (
-    <svg style={{ width: size, height: size }} className="animate-spin text-current" viewBox="0 0 24 24" fill="none">
-      <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" style={{ opacity: 0.25 }} />
-      <path fill="currentColor" style={{ opacity: 0.75 }} d="M4 12a8 8 0 018-8v8z" />
+    <svg
+      style={{ width: size, height: size }}
+      className="animate-spin text-current"
+      viewBox="0 0 24 24"
+      fill="none"
+    >
+      <circle
+        cx="12"
+        cy="12"
+        r="10"
+        stroke="currentColor"
+        strokeWidth="4"
+        style={{ opacity: 0.25 }}
+      />
+      <path
+        fill="currentColor"
+        style={{ opacity: 0.75 }}
+        d="M4 12a8 8 0 018-8v8z"
+      />
     </svg>
   );
 }
 
 function resolveFlatLabel(flat) {
   if (!flat) return "NA";
-  const block       = flat.Floor?.Block?.name || flat.Block?.name || null;
+  const block = flat.Floor?.Block?.name || flat.Block?.name || null;
   const floorNumber = flat.Floor?.floor_number ?? null;
-  const flatNumber  = flat.flat_number || "";
-  return [
-    block,
-    floorNumber != null ? `Floor ${floorNumber}` : null,
-    flatNumber,
-  ].filter(Boolean).join(" / ") || "NA";
+  const flatNumber = flat.flat_number || "";
+  return (
+    [
+      block,
+      floorNumber != null ? `Floor ${floorNumber}` : null,
+      flatNumber,
+    ]
+      .filter(Boolean)
+      .join(" / ") || "NA"
+  );
+}
+
+function resolveVisitorFlatLabel(v) {
+  return resolveFlatLabel(v?.Flat);
 }
 
 function splitCabName(name = "") {
   const idx = name.indexOf(" - ");
-  if (idx === -1) return { aggregator: "", driver: name };
+  if (idx === -1) return { aggregator: "Cab", driver: name };
   return { aggregator: name.slice(0, idx), driver: name.slice(idx + 3) };
 }
 
@@ -52,41 +81,22 @@ export default function CabEntry() {
   const { t } = useLang();
 
   const [showModal, setShowModal] = useState(false);
-  const [flats, setFlats] = useState([]);
   const [cabs, setCabs] = useState([]);
   const [counts, setCounts] = useState({ ALL: 0, IN: 0, OUT: 0 });
   const [initialLoad, setInitialLoad] = useState(true);
   const [fetching, setFetching] = useState(false);
+  const [exitLoadingId, setExitLoadingId] = useState(null);
 
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const limitRef = useRef(limit);
   limitRef.current = limit;
-const [totalPages, setTotalPages] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
 
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("ALL");
   const debSearch = useDebounce(search, 500);
-
-  const [form, setForm] = useState({
-    driver_name: "",
-    vehicle_number: "",
-    aggregator: "",
-    flat_id: "",
-    mobile: "",
-  });
-
-  const loadFlats = async () => {
-    try {
-      const flatRes = await API.get("/flats/assigned?limit=1000");
-      const flatData = flatRes.data;
-      setFlats(Array.isArray(flatData) ? flatData : flatData?.data || []);
-    } catch (err) {
-      console.error("Failed to load flats for cab entry:", err);
-      setFlats([]);
-    }
-  };
 
   const loadCabs = useCallback(async (pg, q, f, isInit = false) => {
     isInit ? setInitialLoad(true) : setFetching(true);
@@ -106,7 +116,7 @@ const [totalPages, setTotalPages] = useState(1);
       setTotalItems(data?.pagination?.totalItems ?? 0);
       setPage(pg);
     } catch (err) {
-      console.error(err);
+      console.error("Failed to load cabs:", err);
     } finally {
       setInitialLoad(false);
       setFetching(false);
@@ -114,7 +124,6 @@ const [totalPages, setTotalPages] = useState(1);
   }, []);
 
   useEffect(() => {
-    loadFlats();
     loadCabs(1, "", "ALL", true);
   }, []);
 
@@ -130,161 +139,224 @@ const [totalPages, setTotalPages] = useState(1);
 
   const handlePageChange = (p) => loadCabs(p, debSearch, filter);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    const nameErr = getTitleError(form.driver_name, "Driver name");
-    if (nameErr) { toast.error(nameErr); return; }
-    const mobileErr = getMobileError(form.mobile);
-    if (mobileErr) { toast.error(mobileErr); return; }
-    const vehicleErr = getVehicleNumberError(form.vehicle_number);
-    if (vehicleErr) { toast.error(vehicleErr); return; }
+  const handleMarkExit = async (id, name) => {
+    setExitLoadingId(id);
     try {
-      await API.post("/visitors", {
-        visitor_name: `${form.aggregator} - ${form.driver_name.trim()}`,
-        purpose: "CAB",
-        flat_id: Number(form.flat_id),
-        mobile: form.mobile,
-        vehicle_number: form.vehicle_number,
-      });
-
-      setForm({
-        driver_name: "",
-        vehicle_number: "",
-        aggregator: "",
-        flat_id: "",
-        mobile: "",
-      });
-      setShowModal(false);
-      loadCabs(1, debSearch, filter);
+      await API.put(`/visitors/exit/${id}`);
+      toast.success(`Cab exit logged for ${name}`);
+      loadCabs(page, debSearch, filter);
     } catch (err) {
-      const msg = err.response?.data?.message || "Entry failed";
-      toast.error(msg);
+      toast.error(err.response?.data?.message || "Failed to mark cab exit");
+    } finally {
+      setExitLoadingId(null);
     }
   };
 
-  const emptyCopy = search || filter !== "ALL"
-    ? (t("cabEmptyFilter") || "No cab entries match your filters")
-    : t("cabEmpty");
+  const filterTabs = [
+    { key: "ALL", label: t("cabFilterAll", "All Cabs"), count: counts.ALL },
+    { key: "IN", label: t("cabFilterInside", "Inside"), count: counts.IN },
+    { key: "OUT", label: t("cabFilterLeft", "Exited"), count: counts.OUT },
+  ];
 
   return (
     <div className="ge-root">
-
+      {/* ── HEADER ── */}
       <div className="ge-er">
         <div className="ge-er-left">
-          <div className="ad-page-icon">
+          <div
+            className="ad-page-icon"
+            style={{ background: "rgba(217, 119, 6, 0.15)", color: "#D97706" }}
+          >
             <MdLocalTaxi size={22} />
           </div>
           <div>
-            <h2 className="page-title">{t("cabTitle")}</h2>
-            <p className="page-subtitle">{counts.ALL} {t("cabTotal") || "total cabs"}</p>
+            <h2 className="page-title">{t("cabTitle", "Cab Entry Log")}</h2>
+            <p className="page-subtitle">
+              {counts.ALL} {t("cabTotal", "Total Cab Trips Today")}
+            </p>
           </div>
         </div>
-        <button onClick={() => setShowModal(true)} className="btn-primary">
-          <MdAdd size={18} /> {t("cabAddBtn")}
+        <button
+          onClick={() => setShowModal(true)}
+          className="btn-primary"
+          style={{ background: "#D97706" }}
+        >
+          <MdAdd size={18} /> {t("cabAddBtn", "New Cab Entry")}
         </button>
       </div>
 
+      {/* ── STAT CARDS ── */}
       <div className="ge-stats">
-        <div className="complaint-stat-card complaint-stat-total">
-          <span className="complaint-stat-val">{counts.ALL}</span>
-          <span className="complaint-stat-label">{t("geStatTotal")}</span>
+        <div
+          onClick={() => handleFilterChange("ALL")}
+          className={`complaint-stat-card complaint-stat-total cursor-pointer ${
+            filter === "ALL" ? "ring-2 ring-amber-500 shadow-md" : ""
+          }`}
+        >
+          <span className="complaint-stat-val text-amber-600">{counts.ALL}</span>
+          <span className="complaint-stat-label">Total Cabs</span>
         </div>
-        <div className="complaint-stat-card complaint-stat-inprogress">
-          <span className="complaint-stat-val">{counts.IN}</span>
-          <span className="complaint-stat-label">{t("geStatInside")}</span>
+        <div
+          onClick={() => handleFilterChange("IN")}
+          className={`complaint-stat-card complaint-stat-inprogress cursor-pointer ${
+            filter === "IN" ? "ring-2 ring-emerald-500 shadow-md" : ""
+          }`}
+        >
+          <span className="complaint-stat-val text-emerald-600">{counts.IN}</span>
+          <span className="complaint-stat-label">Inside Society</span>
         </div>
-        <div className="complaint-stat-card complaint-stat-resolved">
-          <span className="complaint-stat-val">{counts.OUT}</span>
-          <span className="complaint-stat-label">{t("geStatExited")}</span>
+        <div
+          onClick={() => handleFilterChange("OUT")}
+          className={`complaint-stat-card complaint-stat-resolved cursor-pointer ${
+            filter === "OUT" ? "ring-2 ring-gray-500 shadow-md" : ""
+          }`}
+        >
+          <span className="complaint-stat-val text-gray-500">{counts.OUT}</span>
+          <span className="complaint-stat-label">Exited Gate</span>
         </div>
       </div>
 
+      {/* ── SEARCH + FILTER ── */}
       <div className="ge-toolbar">
         <div className="overflow-x-auto max-w-full pb-1 sm:pb-0">
           <SlidingTabs
             className="ge-filter-tabs"
             value={filter}
             onChange={handleFilterChange}
-            tabs={[
-              { id: "ALL", label: t("geFilterAll"), badge: counts.ALL },
-              { id: "IN", label: t("geFilterInside"), badge: counts.IN, alert: counts.IN },
-              { id: "OUT", label: t("geFilterLeft"), badge: counts.OUT },
-            ]}
+            tabs={filterTabs.map(({ key, label, count }) => ({
+              key,
+              label: (
+                <span className="flex items-center gap-1.5">
+                  <span>{label}</span>
+                  <span className="opacity-75 font-normal">({count})</span>
+                </span>
+              ),
+            }))}
           />
         </div>
 
-        <div className="ml-auto">
-          <ExpandableSearch
-            placeholder={t("cabSearch") || "Search driver, aggregator, vehicle..."}
+        <div className="ge-search-wrap">
+          <ToggleSearchBar
             value={search}
-            onChange={(val) => { setSearch(val); setPage(1); }}
+            onChange={(val) => setSearch(val)}
+            placeholder={t("cabSearchPlaceholder", "Search driver, taxi brand, vehicle no, flat...")}
           />
         </div>
       </div>
 
-      <div className="ge-table-wrap">
+      {/* ── DESKTOP TABLE ── */}
+      <div className="ge-table-card">
         {initialLoad ? (
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12, padding: "48px 20px" }}>
+          <div className="p-8 text-center text-secondary">
             <Spinner size={24} />
-            <p style={{ fontSize: 13, color: "var(--text-secondary)", margin: 0 }}>{t("compLoading")}</p>
+            <p className="mt-2 text-xs">Loading cab records...</p>
           </div>
         ) : cabs.length === 0 ? (
           <div className="ge-empty">
-            <MdLocalTaxi size={40} />
-            <span>{emptyCopy}</span>
-            {search && (
-              <button onClick={() => setSearch("")}
-                style={{ fontSize: 12, fontWeight: 600, color: "var(--accent)", background: "none", border: "none", cursor: "pointer", marginTop: 4 }}>
-                Clear search
-              </button>
-            )}
+            <span className="ge-empty-icon">🚖</span>
+            <span>No cab entries found</span>
           </div>
         ) : (
-          <>
+          <div className="overflow-x-auto">
             <table className="ge-table">
               <thead>
-                <tr className="ge-t-row">
-                  <th className="ge-th">#</th>
-                  <th className="ge-th">{t("cabColAggregator")}</th>
-                  <th className="ge-th">{t("cabColDriver")}</th>
-                  <th className="ge-th">{t("cabColMobile")}</th>
-                  <th className="ge-th">{t("cabColVehicle")}</th>
-                  <th className="ge-th">{t("geColFlat")}</th>
-                  <th className="ge-th">{t("geColEntry")}</th>
-                  <th className="ge-th">{t("geColExit")}</th>
-                  <th className="ge-th">{t("billStatusCol")}</th>
+                <tr>
+                  <th>Driver &amp; Cab Service</th>
+                  <th>Flat Destination</th>
+                  <th>Contact</th>
+                  <th>Vehicle Number</th>
+                  <th>Entry Time</th>
+                  <th>Exit Time</th>
+                  <th>Status</th>
+                  <th>Action</th>
                 </tr>
               </thead>
               <tbody>
-                {cabs.map((v, i) => {
-                  const { aggregator, driver } = splitCabName(v.visitor_name);
+                {cabs.map((item) => {
+                  const isInside = !item.exit_time;
+                  const { aggregator, driver } = splitCabName(item.visitor_name);
                   return (
-                    <tr key={v.id} className="ge-tbody-row">
-                      <td className="ge-td ge-td--num">{(page - 1) * limit + i + 1}</td>
-                      <td className="ge-td">
-                        {aggregator ? <span className="ge-flat-chip">{aggregator}</span> : "—"}
-                      </td>
-                      <td className="ge-td ge-td--name">
-                        <div className="ge-name-cell">
-                          <span className={`ge-row-bar ${v.exit_time ? "ge-row-bar--left" : "ge-row-bar--inside"}`} />
-                          {driver || v.visitor_name}
+                    <tr key={item.id}>
+                      <td>
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-8 h-8 rounded-lg bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center font-bold text-xs shrink-0">
+                            <MdLocalTaxi size={16} />
+                          </div>
+                          <div>
+                            <span className="font-bold text-primary block text-sm">
+                              {driver}
+                            </span>
+                            <span className="text-[11px] font-semibold text-amber-600 dark:text-amber-400">
+                              {aggregator}
+                            </span>
+                          </div>
                         </div>
                       </td>
-                      <td className="ge-td">{v.mobile || "—"}</td>
-                      <td className="ge-td">{v.vehicle_number || "—"}</td>
-                      <td className="ge-td">
-                        <span className="ge-flat-chip">{resolveFlatLabel(v.Flat)}</span>
+                      <td>
+                        <span className="ge-flat-chip">{resolveVisitorFlatLabel(item)}</span>
                       </td>
-                      <td className="ge-td ge-td--time">{new Date(v.entry_time).toLocaleTimeString()}</td>
-                      <td className="ge-td ge-td--time">
-                        {v.exit_time
-                          ? new Date(v.exit_time).toLocaleTimeString()
-                          : <span className="ge-dash">—</span>}
+                      <td>
+                        <a
+                          href={`tel:${item.mobile}`}
+                          className="inline-flex items-center gap-1 text-xs font-mono text-blue-600 dark:text-blue-400 hover:underline"
+                        >
+                          <MdPhone size={12} />
+                          {item.mobile || "—"}
+                        </a>
                       </td>
-                      <td className="ge-td">
-                        {v.exit_time
-                          ? <span className="ge-badge ge-badge--left">✔ {t("geFilterLeft")}</span>
-                          : <span className="ge-badge ge-badge--inside">● {t("geFilterInside")}</span>}
+                      <td>
+                        <span className="text-xs font-mono text-primary font-bold">
+                          {item.vehicle_number || "—"}
+                        </span>
+                      </td>
+                      <td>
+                        <span className="text-xs text-primary font-medium">
+                          {item.entry_time
+                            ? new Date(item.entry_time).toLocaleTimeString([], {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })
+                            : "—"}
+                        </span>
+                      </td>
+                      <td>
+                        <span className="text-xs text-secondary font-medium">
+                          {item.exit_time
+                            ? new Date(item.exit_time).toLocaleTimeString([], {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })
+                            : "—"}
+                        </span>
+                      </td>
+                      <td>
+                        {isInside ? (
+                          <span className="ge-badge ge-badge--inside">
+                            ● Inside
+                          </span>
+                        ) : (
+                          <span className="ge-badge ge-badge--left">
+                            ✔ Exited
+                          </span>
+                        )}
+                      </td>
+                      <td>
+                        {isInside ? (
+                          <button
+                            onClick={() => handleMarkExit(item.id, driver)}
+                            disabled={exitLoadingId === item.id}
+                            className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition flex items-center gap-1 shadow-sm disabled:opacity-50"
+                          >
+                            {exitLoadingId === item.id ? (
+                              <Spinner size={12} />
+                            ) : (
+                              <MdLogout size={13} />
+                            )}
+                            <span>Mark Exit</span>
+                          </button>
+                        ) : (
+                          <span className="text-xs text-secondary italic">Completed</span>
+                        )}
                       </td>
                     </tr>
                   );
@@ -292,144 +364,130 @@ const [totalPages, setTotalPages] = useState(1);
               </tbody>
             </table>
 
-            <div className="table-footer" style={{ flexWrap: "wrap", gap: 10 }}>
-              <span style={{ fontSize: 12, color: "var(--text-secondary)" }}>
-                Showing{" "}
-                <strong style={{ color: "var(--text-primary)" }}>
-                  {(page - 1) * limit + 1}–{Math.min(page * limit, totalItems)}
-                </strong>{" "}
-                of{" "}
-                <strong style={{ color: "var(--text-primary)" }}>{totalItems}</strong>
-              </span>
-              <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} pageSize={limit} onPageSizeChange={(s) => { limitRef.current = s; setLimit(s); setPage(1); handlePageChange(1); }} />
+            <div style={{ display: "flex", justifyContent: "center", padding: "12px 0 8px" }}>
+              <Pagination
+                page={page}
+                totalPages={totalPages}
+                onPageChange={handlePageChange}
+                pageSize={limit}
+                onPageSizeChange={(s) => {
+                  limitRef.current = s;
+                  setLimit(s);
+                  setPage(1);
+                  handlePageChange(1);
+                }}
+              />
             </div>
-          </>
+          </div>
         )}
       </div>
 
+      {/* ── MOBILE CARDS ── */}
       <div className="ge-mobile-list">
         {initialLoad ? (
-          <div style={{ display: "flex", justifyContent: "center", padding: "32px 0" }}>
-            <Spinner size={22} />
+          <div className="p-6 text-center text-secondary">
+            <Spinner size={20} />
           </div>
         ) : cabs.length === 0 ? (
           <div className="ge-empty">
-            <MdLocalTaxi size={40} />
-            <span>{emptyCopy}</span>
+            <span className="ge-empty-icon">🚖</span>
+            <span>No cab entries found</span>
           </div>
         ) : (
           <>
-            {cabs.map(v => {
-              const { aggregator, driver } = splitCabName(v.visitor_name);
+            {cabs.map((item) => {
+              const { aggregator, driver } = splitCabName(item.visitor_name);
               return (
-                <div key={v.id} className="ge-mobile-card">
+                <div key={item.id} className="ge-mobile-card">
                   <div className="ge-mc-top">
                     <div className="ge-mc-name-row">
-                      <span className={`ge-row-bar ${v.exit_time ? "ge-row-bar--left" : "ge-row-bar--inside"}`} />
-                      <span className="ge-mc-name">{driver || v.visitor_name}</span>
+                      <span
+                        className={`ge-row-bar ${
+                          item.exit_time ? "ge-row-bar--left" : "ge-row-bar--inside"
+                        }`}
+                      />
+                      <div>
+                        <span className="ge-mc-name">{driver}</span>
+                        <span className="text-[10px] text-amber-600 block font-semibold">
+                          {aggregator}
+                        </span>
+                      </div>
                     </div>
-                    {v.exit_time
-                      ? <span className="ge-badge ge-badge--left">✔ {t("geFilterLeft")}</span>
-                      : <span className="ge-badge ge-badge--inside">● {t("geFilterInside")}</span>}
+                    {item.exit_time ? (
+                      <span className="ge-badge ge-badge--left">✔ Exited</span>
+                    ) : (
+                      <span className="ge-badge ge-badge--inside">● Inside</span>
+                    )}
                   </div>
                   <div className="ge-mc-rows">
-                    {aggregator ? (
-                      <div className="ge-mc-row">
-                        <span className="ge-mc-label">{t("cabColAggregator")}</span>
-                        <span className="ge-flat-chip">{aggregator}</span>
-                      </div>
-                    ) : null}
                     <div className="ge-mc-row">
-                      <span className="ge-mc-label">{t("cabColMobile")}</span>
-                      <span className="ge-mc-val">{v.mobile || "—"}</span>
+                      <span className="ge-mc-label">Destination</span>
+                      <span className="ge-flat-chip">{resolveVisitorFlatLabel(item)}</span>
                     </div>
                     <div className="ge-mc-row">
-                      <span className="ge-mc-label">{t("cabColVehicle")}</span>
-                      <span className="ge-mc-val">{v.vehicle_number || "—"}</span>
+                      <span className="ge-mc-label">Vehicle</span>
+                      <span className="ge-mc-val font-mono">{item.vehicle_number || "—"}</span>
                     </div>
                     <div className="ge-mc-row">
-                      <span className="ge-mc-label">{t("geColFlat")}</span>
-                      <span className="ge-flat-chip">{resolveFlatLabel(v.Flat)}</span>
+                      <span className="ge-mc-label">Contact</span>
+                      <a
+                        href={`tel:${item.mobile}`}
+                        className="ge-mc-val text-blue-600 flex items-center gap-1"
+                      >
+                        <MdPhone size={12} /> {item.mobile}
+                      </a>
                     </div>
                     <div className="ge-mc-row">
-                      <span className="ge-mc-label">{t("geColEntry")}</span>
-                      <span className="ge-mc-val">{new Date(v.entry_time).toLocaleTimeString()}</span>
-                    </div>
-                    <div className="ge-mc-row">
-                      <span className="ge-mc-label">{t("geColExit")}</span>
-                      <span className={v.exit_time ? "ge-mc-val" : "ge-dash"}>
-                        {v.exit_time ? new Date(v.exit_time).toLocaleTimeString() : "—"}
+                      <span className="ge-mc-label">Entry Time</span>
+                      <span className="ge-mc-val">
+                        {item.entry_time ? new Date(item.entry_time).toLocaleTimeString() : "—"}
                       </span>
                     </div>
+                    {!item.exit_time && (
+                      <div className="mt-3 pt-2 border-t border-divider flex justify-end">
+                        <button
+                          onClick={() => handleMarkExit(item.id, driver)}
+                          disabled={exitLoadingId === item.id}
+                          className="px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm"
+                        >
+                          {exitLoadingId === item.id ? <Spinner size={12} /> : <MdLogout size={14} />}
+                          <span>Record Exit</span>
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
               );
             })}
 
             <div style={{ display: "flex", justifyContent: "center", padding: "8px 0 4px" }}>
-              <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} pageSize={limit} onPageSizeChange={(s) => { limitRef.current = s; setLimit(s); setPage(1); handlePageChange(1); }} />
+              <Pagination
+                page={page}
+                totalPages={totalPages}
+                onPageChange={handlePageChange}
+                pageSize={limit}
+                onPageSizeChange={(s) => {
+                  limitRef.current = s;
+                  setLimit(s);
+                  setPage(1);
+                  handlePageChange(1);
+                }}
+              />
             </div>
           </>
         )}
       </div>
 
-      <Modal isOpen={showModal} onClose={() => setShowModal(false)} title={t("cabModalTitle")}>
-        <form onSubmit={handleSubmit} className="ge-form">
-          <Select
-            className="input"
-            required
-            value={form.aggregator}
-            onChange={e => setForm({ ...form, aggregator: e.target.value })}
-          >
-            <option value="">{t("cabSelectAggregator")}</option>
-            <option>Uber</option>
-            <option>Ola</option>
-            <option>BluSmart</option>
-            <option>{t("cabOther")}</option>
-          </Select>
-          <input
-            placeholder={t("cabFieldDriver")}
-            className="input"
-            required
-            value={form.driver_name}
-            onChange={e => setForm({ ...form, driver_name: e.target.value })}
-          />
-          <input
-            placeholder={t("cabFieldMobile")}
-            className="input"
-            required
-            value={form.mobile}
-            onChange={e => setForm({ ...form, mobile: e.target.value })}
-          />
-          <input
-            placeholder={t("cabFieldVehicle")}
-            className="input"
-            required
-            value={form.vehicle_number}
-            onChange={e => setForm({ ...form, vehicle_number: e.target.value })}
-          />
-          <Select
-            className="input"
-            required
-            value={form.flat_id}
-            onChange={e => setForm({ ...form, flat_id: e.target.value })}
-          >
-            <option value="">{t("billChooseFlat")}</option>
-            {flats.map(flat => (
-              <option key={flat.id} value={flat.id}>
-                {flat.flat_number} (
-                  {flat.Block?.name ||
-                   flat.Floor?.Block?.name ||
-                   "—"}
-                ) – {flat.User?.name || t("billNoResident")}
-              </option>
-            ))}
-          </Select>
-          <button type="submit" className="btn-primary" style={{ width: "100%", justifyContent: "center" }}>
-            {t("geSaveEntry")}
-          </button>
-        </form>
-      </Modal>
+      {/* ── 4-STEP WIZARD ENTRY MODAL ── */}
+      <StepVisitorEntryModal
+        isOpen={showModal}
+        onClose={() => setShowModal(false)}
+        purpose="CAB"
+        onSuccess={() => {
+          setShowModal(false);
+          loadCabs(1, search, filter);
+        }}
+      />
     </div>
   );
 }

@@ -6,43 +6,583 @@
 /* --------------------------------------------------------------------------
    Dashboard
    -------------------------------------------------------------------------- */
-html.role-theme .gd-welcome-card,
-html.role-theme .gd-shift-card {
+@keyframes wave {
+  0% { transform: rotate(0deg); }
+  20% { transform: rotate(14deg); }
+  40% { transform: rotate(-4deg); }
+  60% { transform: rotate(10deg); }
+  80% { transform: rotate(-2deg); }
+  100% { transform: rotate(0deg); }
+}
+
+.animate-wave {
+  animation: wave 1.8s infinite;
+  transform-origin: 70% 70%;
+}
+
+/* Hero Banner — Matching Admin Dashboard Theme */
+html.role-theme .gd-hero-card {
+  position: relative;
   background: var(--card-bg) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
   border: 1.5px solid var(--glass-border) !important;
   box-shadow: var(--shadow-sm) !important;
-  backdrop-filter: none !important;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+html.role-theme .gd-hero-card:hover {
+  border-color: rgba(var(--acct-purple-rgb), 0.28) !important;
+  box-shadow: var(--shadow-md) !important;
 }
 
-html.role-theme .gd-welcome-bar {
-  background: var(--accent) !important;
+html.light.role-theme .gd-hero-card {
+  background: var(--card-bg) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border: 1.5px solid var(--glass-border) !important;
+  box-shadow: var(--shadow-sm) !important;
+}
+html.light.role-theme .gd-hero-card:hover {
+  border-color: rgba(99, 102, 241, 0.3) !important;
+  box-shadow: 0 14px 30px -8px rgba(0, 0, 0, 0.08) !important;
 }
 
-html.role-theme .gd-welcome-title {
-  color: var(--text-primary) !important;
+/* Stream Search Input */
+html.role-theme .gd-stream-search-input {
+  padding-left: 44px !important;
+  padding-right: 58px !important;
+  height: 38px !important;
 }
 
-html.role-theme .gd-welcome-society,
-html.role-theme .gd-welcome-time,
-html.role-theme .gd-shift-label,
-html.role-theme .gd-shift-dates {
-  color: var(--text-secondary) !important;
+/* Base Glassmorphic Cards (Light & Dark Theme) */
+html.role-theme .gd-glass-card {
+  position: relative;
+  background: var(--card-bg) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border: 1.5px solid var(--glass-border) !important;
+  box-shadow: var(--shadow-sm) !important;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+html.role-theme .gd-glass-card:hover {
+  border-color: rgba(255, 255, 255, 0.2) !important;
+  box-shadow: var(--shadow-md) !important;
 }
 
-html.role-theme .gd-shift-type {
-  color: var(--success) !important;
+html.light.role-theme .gd-glass-card {
+  background: rgba(255, 255, 255, 0.85) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border: 1.5px solid rgba(226, 232, 240, 0.95) !important;
+  box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.06), 0 4px 6px -2px rgba(0, 0, 0, 0.02), inset 0 1px 0 0 rgba(255, 255, 255, 0.95) !important;
+}
+html.light.role-theme .gd-glass-card:hover {
+  background: rgba(255, 255, 255, 0.96) !important;
+  border-color: rgba(99, 102, 241, 0.35) !important;
+  box-shadow: 0 18px 40px -8px rgba(99, 102, 241, 0.14), inset 0 1px 0 0 rgba(255, 255, 255, 1) !important;
 }
 
-html.role-theme .gd-shift-time {
-  color: var(--acct-teal) !important;
+/* KPI Card Glass & Interactive Hover Physics */
+html.role-theme .gd-kpi-card {
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+}
+html.role-theme .gd-kpi-card:hover {
+  transform: translateY(-4px) scale(1.02) !important;
+}
+html.light.role-theme .gd-kpi-card:hover {
+  box-shadow: 0 14px 28px -6px rgba(0, 0, 0, 0.18), inset 0 1px 1px rgba(255, 255, 255, 0.5) !important;
+}
+html.role-theme:not(.light) .gd-kpi-card:hover {
+  box-shadow: 0 14px 28px -6px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
+  border-color: rgba(255, 255, 255, 0.25) !important;
 }
 
-html.role-theme .gd-no-shift {
-  color: var(--accent) !important;
+/* Quick Gate Operations — Glassmorphic & Hover Color Cards */
+html.light.role-theme .gd-action--guest {
+  background: linear-gradient(135deg, rgba(239, 246, 255, 0.85) 0%, rgba(219, 234, 254, 0.75) 100%) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border: 1.5px solid rgba(191, 219, 254, 0.9) !important;
+  box-shadow: 0 4px 15px rgba(37, 99, 235, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.8) !important;
+}
+html.light.role-theme .gd-action--guest:hover {
+  transform: translateY(-6px) scale(1.025);
+  border-color: #2563eb !important;
+  box-shadow: 0 18px 35px -5px rgba(37, 99, 235, 0.3), inset 0 1px 0 rgba(255, 255, 255, 1) !important;
 }
 
-html.role-theme .gd-emergency-title {
-  color: var(--danger) !important;
+html.light.role-theme .gd-action--cab {
+  background: linear-gradient(135deg, rgba(255, 251, 235, 0.85) 0%, rgba(254, 243, 199, 0.75) 100%) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border: 1.5px solid rgba(253, 230, 138, 0.9) !important;
+  box-shadow: 0 4px 15px rgba(217, 119, 6, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.8) !important;
+}
+html.light.role-theme .gd-action--cab:hover {
+  transform: translateY(-6px) scale(1.025);
+  border-color: #d97706 !important;
+  box-shadow: 0 18px 35px -5px rgba(217, 119, 6, 0.3), inset 0 1px 0 rgba(255, 255, 255, 1) !important;
+}
+
+html.light.role-theme .gd-action--delivery {
+  background: linear-gradient(135deg, rgba(236, 254, 255, 0.85) 0%, rgba(207, 250, 254, 0.75) 100%) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border: 1.5px solid rgba(165, 243, 252, 0.9) !important;
+  box-shadow: 0 4px 15px rgba(8, 145, 178, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.8) !important;
+}
+html.light.role-theme .gd-action--delivery:hover {
+  transform: translateY(-6px) scale(1.025);
+  border-color: #0891b2 !important;
+  box-shadow: 0 18px 35px -5px rgba(8, 145, 178, 0.3), inset 0 1px 0 rgba(255, 255, 255, 1) !important;
+}
+
+html.light.role-theme .gd-action--gatepass {
+  background: linear-gradient(135deg, rgba(240, 253, 244, 0.85) 0%, rgba(220, 252, 231, 0.75) 100%) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border: 1.5px solid rgba(187, 247, 208, 0.9) !important;
+  box-shadow: 0 4px 15px rgba(22, 163, 74, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.8) !important;
+}
+html.light.role-theme .gd-action--gatepass:hover {
+  transform: translateY(-6px) scale(1.025);
+  border-color: #16a34a !important;
+  box-shadow: 0 18px 35px -5px rgba(22, 163, 74, 0.3), inset 0 1px 0 rgba(255, 255, 255, 1) !important;
+}
+
+html.light.role-theme .gd-action--parking {
+  background: linear-gradient(135deg, rgba(250, 245, 255, 0.85) 0%, rgba(243, 232, 255, 0.75) 100%) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border: 1.5px solid rgba(233, 213, 255, 0.9) !important;
+  box-shadow: 0 4px 15px rgba(147, 51, 234, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.8) !important;
+}
+html.light.role-theme .gd-action--parking:hover {
+  transform: translateY(-6px) scale(1.025);
+  border-color: #9333ea !important;
+  box-shadow: 0 18px 35px -5px rgba(147, 51, 234, 0.3), inset 0 1px 0 rgba(255, 255, 255, 1) !important;
+}
+
+html.light.role-theme .gd-action--service {
+  background: linear-gradient(135deg, rgba(253, 242, 248, 0.85) 0%, rgba(252, 231, 243, 0.75) 100%) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border: 1.5px solid rgba(244, 114, 182, 0.9) !important;
+  box-shadow: 0 4px 15px rgba(219, 39, 119, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.8) !important;
+}
+html.light.role-theme .gd-action--service:hover {
+  transform: translateY(-6px) scale(1.025);
+  border-color: #db2777 !important;
+  box-shadow: 0 18px 35px -5px rgba(219, 39, 119, 0.3), inset 0 1px 0 rgba(255, 255, 255, 1) !important;
+}
+
+html.light.role-theme .gd-action--dailyhelp {
+  background: linear-gradient(135deg, rgba(240, 253, 250, 0.85) 0%, rgba(204, 251, 241, 0.75) 100%) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border: 1.5px solid rgba(45, 212, 191, 0.9) !important;
+  box-shadow: 0 4px 15px rgba(13, 148, 136, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.8) !important;
+}
+html.light.role-theme .gd-action--dailyhelp:hover {
+  transform: translateY(-6px) scale(1.025);
+  border-color: #0d9488 !important;
+  box-shadow: 0 18px 35px -5px rgba(13, 148, 136, 0.3), inset 0 1px 0 rgba(255, 255, 255, 1) !important;
+}
+
+html.light.role-theme .gd-action--logbook {
+  background: linear-gradient(135deg, rgba(238, 242, 255, 0.85) 0%, rgba(224, 231, 255, 0.75) 100%) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border: 1.5px solid rgba(165, 180, 252, 0.9) !important;
+  box-shadow: 0 4px 15px rgba(99, 102, 241, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.8) !important;
+}
+html.light.role-theme .gd-action--logbook:hover {
+  transform: translateY(-6px) scale(1.025);
+  border-color: #6366f1 !important;
+  box-shadow: 0 18px 35px -5px rgba(99, 102, 241, 0.3), inset 0 1px 0 rgba(255, 255, 255, 1) !important;
+}
+
+html.light.role-theme .gd-action--collection {
+  background: linear-gradient(135deg, rgba(253, 242, 248, 0.85) 0%, rgba(252, 231, 243, 0.75) 100%) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border: 1.5px solid rgba(251, 207, 232, 0.9) !important;
+  box-shadow: 0 4px 15px rgba(219, 39, 119, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.8) !important;
+}
+html.light.role-theme .gd-action--collection:hover {
+  transform: translateY(-6px) scale(1.025);
+  border-color: #db2777 !important;
+  box-shadow: 0 18px 35px -5px rgba(219, 39, 119, 0.3), inset 0 1px 0 rgba(255, 255, 255, 1) !important;
+}
+
+html.light.role-theme .gd-action--emergency {
+  background: linear-gradient(135deg, rgba(254, 242, 242, 0.85) 0%, rgba(254, 226, 226, 0.75) 100%) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border: 1.5px solid rgba(254, 202, 202, 0.9) !important;
+  box-shadow: 0 4px 15px rgba(220, 38, 38, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.8) !important;
+}
+html.light.role-theme .gd-action--emergency:hover {
+  transform: translateY(-6px) scale(1.025);
+  border-color: #dc2626 !important;
+  box-shadow: 0 18px 35px -5px rgba(220, 38, 38, 0.35), inset 0 1px 0 rgba(255, 255, 255, 1) !important;
+}
+
+/* Dark Mode Glass Action Cards */
+html.role-theme:not(.light) .gd-action--guest {
+  border: 1.5px solid rgba(59, 130, 246, 0.35) !important;
+  background: rgba(30, 41, 59, 0.75) !important;
+  backdrop-filter: blur(18px) !important;
+  -webkit-backdrop-filter: blur(18px) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
+}
+html.role-theme:not(.light) .gd-action--guest:hover {
+  transform: translateY(-6px) scale(1.025);
+  border-color: #3b82f6 !important;
+  background: rgba(30, 41, 59, 0.95) !important;
+  box-shadow: 0 12px 30px rgba(59, 130, 246, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
+}
+
+html.role-theme:not(.light) .gd-action--cab {
+  border: 1.5px solid rgba(234, 179, 8, 0.35) !important;
+  background: rgba(30, 41, 59, 0.75) !important;
+  backdrop-filter: blur(18px) !important;
+  -webkit-backdrop-filter: blur(18px) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
+}
+html.role-theme:not(.light) .gd-action--cab:hover {
+  transform: translateY(-6px) scale(1.025);
+  border-color: #eab308 !important;
+  background: rgba(30, 41, 59, 0.95) !important;
+  box-shadow: 0 12px 30px rgba(234, 179, 8, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
+}
+
+html.role-theme:not(.light) .gd-action--delivery {
+  border: 1.5px solid rgba(6, 182, 212, 0.35) !important;
+  background: rgba(30, 41, 59, 0.75) !important;
+  backdrop-filter: blur(18px) !important;
+  -webkit-backdrop-filter: blur(18px) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
+}
+html.role-theme:not(.light) .gd-action--delivery:hover {
+  transform: translateY(-6px) scale(1.025);
+  border-color: #06b6d4 !important;
+  background: rgba(30, 41, 59, 0.95) !important;
+  box-shadow: 0 12px 30px rgba(6, 182, 212, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
+}
+
+html.role-theme:not(.light) .gd-action--service {
+  border: 1.5px solid rgba(244, 114, 182, 0.35) !important;
+  background: rgba(30, 41, 59, 0.75) !important;
+  backdrop-filter: blur(18px) !important;
+  -webkit-backdrop-filter: blur(18px) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
+}
+html.role-theme:not(.light) .gd-action--service:hover {
+  transform: translateY(-6px) scale(1.025);
+  border-color: #f472b6 !important;
+  background: rgba(30, 41, 59, 0.95) !important;
+  box-shadow: 0 12px 30px rgba(244, 114, 182, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
+}
+
+html.role-theme:not(.light) .gd-action--dailyhelp {
+  border: 1.5px solid rgba(45, 212, 191, 0.35) !important;
+  background: rgba(30, 41, 59, 0.75) !important;
+  backdrop-filter: blur(18px) !important;
+  -webkit-backdrop-filter: blur(18px) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
+}
+html.role-theme:not(.light) .gd-action--dailyhelp:hover {
+  transform: translateY(-6px) scale(1.025);
+  border-color: #0d9488 !important;
+  background: rgba(30, 41, 59, 0.95) !important;
+  box-shadow: 0 12px 30px rgba(13, 148, 136, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
+}
+
+html.role-theme:not(.light) .gd-action--logbook {
+  border: 1.5px solid rgba(165, 180, 252, 0.35) !important;
+  background: rgba(30, 41, 59, 0.75) !important;
+  backdrop-filter: blur(18px) !important;
+  -webkit-backdrop-filter: blur(18px) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
+}
+html.role-theme:not(.light) .gd-action--logbook:hover {
+  transform: translateY(-6px) scale(1.025);
+  border-color: #6366f1 !important;
+  background: rgba(30, 41, 59, 0.95) !important;
+  box-shadow: 0 12px 30px rgba(99, 102, 241, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
+}
+
+html.role-theme:not(.light) .gd-action--gatepass {
+  border: 1.5px solid rgba(34, 197, 94, 0.35) !important;
+  background: rgba(30, 41, 59, 0.75) !important;
+  backdrop-filter: blur(18px) !important;
+  -webkit-backdrop-filter: blur(18px) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
+}
+html.role-theme:not(.light) .gd-action--gatepass:hover {
+  transform: translateY(-6px) scale(1.025);
+  border-color: #22c55e !important;
+  background: rgba(30, 41, 59, 0.95) !important;
+  box-shadow: 0 12px 30px rgba(34, 197, 94, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
+}
+
+html.role-theme:not(.light) .gd-action--parking {
+  border: 1.5px solid rgba(168, 85, 247, 0.35) !important;
+  background: rgba(30, 41, 59, 0.75) !important;
+  backdrop-filter: blur(18px) !important;
+  -webkit-backdrop-filter: blur(18px) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
+}
+html.role-theme:not(.light) .gd-action--parking:hover {
+  transform: translateY(-6px) scale(1.025);
+  border-color: #a855f7 !important;
+  background: rgba(30, 41, 59, 0.95) !important;
+  box-shadow: 0 12px 30px rgba(168, 85, 247, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
+}
+
+html.role-theme:not(.light) .gd-action--collection {
+  border: 1.5px solid rgba(236, 72, 153, 0.35) !important;
+  background: rgba(30, 41, 59, 0.75) !important;
+  backdrop-filter: blur(18px) !important;
+  -webkit-backdrop-filter: blur(18px) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
+}
+html.role-theme:not(.light) .gd-action--collection:hover {
+  transform: translateY(-6px) scale(1.025);
+  border-color: #ec4899 !important;
+  background: rgba(30, 41, 59, 0.95) !important;
+  box-shadow: 0 12px 30px rgba(236, 72, 153, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
+}
+
+html.role-theme:not(.light) .gd-action--emergency {
+  border: 1.5px solid rgba(239, 68, 68, 0.45) !important;
+  background: rgba(30, 41, 59, 0.75) !important;
+  backdrop-filter: blur(18px) !important;
+  -webkit-backdrop-filter: blur(18px) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
+}
+html.role-theme:not(.light) .gd-action--emergency:hover {
+  transform: translateY(-6px) scale(1.025);
+  border-color: #ef4444 !important;
+  background: rgba(30, 41, 59, 0.95) !important;
+  box-shadow: 0 12px 30px rgba(239, 68, 68, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
+}
+
+/* --------------------------------------------------------------------------
+   Quick Gate Operations — modern shared styles (blob, shine, icon, arrow)
+   -------------------------------------------------------------------------- */
+@keyframes gdActionIn {
+  from { opacity: 0; transform: translateY(14px) scale(0.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes gdShine {
+  0%   { left: -70%; opacity: 0; }
+  25%  { opacity: 1; }
+  100% { left: 130%; opacity: 0; }
+}
+
+html.role-theme .gd-action {
+  isolation: isolate;
+  overflow: hidden;
+  border-radius: 20px !important;
+  animation: gdActionIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 0.35s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+html.role-theme .gd-action::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -70%;
+  width: 55%;
+  height: 100%;
+  background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.45), transparent);
+  transform: skewX(-18deg);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 3;
+}
+html.role-theme .gd-action:hover::after {
+  animation: gdShine 0.75s ease forwards;
+}
+
+html.role-theme .gd-action__blob {
+  position: absolute;
+  right: -26px;
+  top: -26px;
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  background: var(--gd-c);
+  opacity: 0.12;
+  transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.45s;
+  pointer-events: none;
+  z-index: 0;
+}
+html.role-theme .gd-action:hover .gd-action__blob {
+  transform: scale(1.45);
+  opacity: 0.22;
+}
+
+html.role-theme .gd-action__icon {
+  position: relative;
+  z-index: 1;
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6px 16px -6px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.35s;
+}
+html.role-theme .gd-action:hover .gd-action__icon {
+  transform: translateY(-2px) scale(1.1) rotate(-3deg);
+  box-shadow: 0 10px 24px -8px var(--gd-c), 0 0 0 3px color-mix(in srgb, var(--gd-c) 22%, transparent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+
+html.role-theme .gd-action__arrow {
+  color: var(--gd-c);
+  opacity: 0;
+  transform: translateX(-6px);
+  transition: opacity 0.3s, transform 0.3s;
+}
+html.role-theme .gd-action:hover .gd-action__arrow {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+@media (max-width: 639px) {
+  html.role-theme .gd-action__icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+  }
+  html.role-theme .gd-action__icon svg {
+    width: 20px !important;
+    height: 20px !important;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Live Gate Stream — modern header, LIVE badge & visitor rows
+   -------------------------------------------------------------------------- */
+@keyframes gdLivePulse {
+  0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.55); }
+  70% { box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+}
+@keyframes gdStreamIn {
+  from { opacity: 0; transform: translateY(10px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+html.role-theme .gd-live-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  color: #10b981;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+html.role-theme .gd-live-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #10b981;
+  animation: gdLivePulse 1.6s infinite;
+}
+
+html.role-theme .gd-stream-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+html.role-theme .gd-stream-row {
+  position: relative;
+  background: var(--card-bg);
+  border: 1.5px solid var(--glass-border);
+  box-shadow: var(--shadow-sm);
+  border-radius: 18px !important;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: gdStreamIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+html.role-theme .gd-stream-row:hover {
+  border-color: rgba(var(--acct-purple-rgb), 0.3) !important;
+  box-shadow: var(--shadow-md) !important;
+  transform: translateY(-2px);
+}
+html.role-theme:not(.light) .gd-stream-row {
+  background: #22252e;
+  border-width: 2px;
+}
+html.role-theme .gd-stream-row--overstay {
+  border-color: rgba(245, 158, 11, 0.55) !important;
+  box-shadow: 0 12px 28px -10px rgba(245, 158, 11, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
+}
+html.light.role-theme .gd-stream-row--overstay {
+  background: rgba(254, 243, 199, 0.5);
+}
+
+html.role-theme .gd-stream-accent {
+  position: absolute;
+  left: 0;
+  top: 14px;
+  bottom: 14px;
+  width: 4px;
+  border-radius: 999px;
+  opacity: 0.9;
+}
+html.role-theme .gd-stream-avatar {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+html.role-theme .gd-stream-live-dot {
+  position: absolute;
+  right: -3px;
+  top: -3px;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  border: 2px solid var(--card-bg);
+  animation: gdLivePulse 1.8s infinite;
+}
+
+html.role-theme .gd-dwell-wrap {
+  margin-top: 6px;
+  width: 110px;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--card-inner-bg);
+  overflow: hidden;
+}
+html.role-theme .gd-dwell {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.5s ease, background 0.4s ease;
+}
+@media (min-width: 1024px) {
+  html.role-theme .gd-dwell-wrap {
+    margin-left: auto;
+  }
 }
 
 html.role-theme .ge-search-wrap {

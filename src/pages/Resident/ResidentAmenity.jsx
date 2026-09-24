@@ -14,7 +14,7 @@ import Pagination from "../../components/common/Pagination";
   import {
     MdChevronLeft, MdChevronRight, MdWarning, MdBlock,
     MdPayment, MdRefresh, MdTimer, MdContentCopy, MdCheck, MdDateRange,
-    MdPool,
+    MdPool, MdClose, MdOutlineTimer,
   } from "react-icons/md";
 
     
@@ -44,6 +44,31 @@ import Pagination from "../../components/common/Pagination";
         <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" className="opacity-25" />
         <path fill="currentColor" className="opacity-75" d="M4 12a8 8 0 018-8v8z" />
       </svg>
+    );
+  }
+
+  function PaymentCountdown({ expiresAt }) {
+    const [now, setNow] = useState(() => Date.now());
+    useEffect(() => {
+      const id = setInterval(() => setNow(Date.now()), 1000);
+      return () => clearInterval(id);
+    }, []);
+    const expires = expiresAt ? new Date(expiresAt).getTime() : 0;
+    const remaining = expires - now;
+    if (!expiresAt || remaining <= 0) {
+      return (
+        <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 10.5, fontWeight: 600, color: "#ef4444" }}>
+          <MdOutlineTimer size={12} /> Payment window expired
+        </span>
+      );
+    }
+    const mins = Math.floor(remaining / 60000);
+    const secs = Math.floor((remaining % 60000) / 1000);
+    return (
+      <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 10.5, fontWeight: 600, color: "var(--text-secondary)" }}>
+        <MdOutlineTimer size={12} style={{ color: "var(--stat-purple-color, #a78bfa)" }} />
+        Complete payment in {String(mins).padStart(2, "0")}:{String(secs).padStart(2, "0")}
+      </span>
     );
   }
 

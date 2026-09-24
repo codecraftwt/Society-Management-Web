@@ -403,11 +403,15 @@ export default function MyCollection() {
     if (tab !== "ALL" && p.status !== tab) return false;
     if (fromDate || toDate) {
       const pDate = p.createdAt || p.entry_time;
-      if (pDate) {
-        const d = new Date(pDate).toISOString().slice(0, 10);
-        if (fromDate && d < fromDate) return false;
-        if (toDate && d > toDate) return false;
-      }
+      if (!pDate) return false;
+      const dt = new Date(pDate);
+      if (isNaN(dt.getTime())) return false;
+      const y = dt.getFullYear();
+      const m = String(dt.getMonth() + 1).padStart(2, "0");
+      const day = String(dt.getDate()).padStart(2, "0");
+      const d = `${y}-${m}-${day}`;
+      if (fromDate && d < fromDate) return false;
+      if (toDate && d > toDate) return false;
     }
     if (!q) return true;
     const flat =
@@ -543,9 +547,9 @@ export default function MyCollection() {
             <DateRangeFilter
               fromDate={fromDate}
               toDate={toDate}
-              onChange={({ fromDate: f, toDate: t }) => {
-                setFromDate(f);
-                setToDate(t);
+              onChange={({ from, to }) => {
+                setFromDate(from);
+                setToDate(to);
               }}
               onClear={() => {
                 setFromDate("");

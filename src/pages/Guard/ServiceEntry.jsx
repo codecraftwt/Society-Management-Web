@@ -4,14 +4,14 @@ import { useLang } from "../../context/LanguageContext";
 import {
   MdAdd,
   MdClose,
-  MdDirectionsWalk,
+  MdHandyman,
   MdPhone,
   MdDirectionsCar,
   MdAccessTime,
   MdCheckCircle,
   MdLogout,
 } from "react-icons/md";
-import { FaUserFriends } from "react-icons/fa";
+import { FaTools } from "react-icons/fa";
 import { toast } from "react-toastify";
 import SlidingTabs from "../../components/common/SlidingTabs";
 import ToggleSearchBar from "../../components/common/ToggleSearchBar";
@@ -72,11 +72,11 @@ function resolveVisitorFlatLabel(v) {
   return resolveFlatLabel(v?.Flat);
 }
 
-export default function GuestEntry() {
+export default function ServiceEntry() {
   const { t } = useLang();
 
   const [showModal, setShowModal] = useState(false);
-  const [visitors, setVisitors] = useState([]);
+  const [services, setServices] = useState([]);
   const [counts, setCounts] = useState({ ALL: 0, IN: 0, OUT: 0 });
   const [initialLoad, setInitialLoad] = useState(true);
   const [fetching, setFetching] = useState(false);
@@ -93,25 +93,25 @@ export default function GuestEntry() {
   const [filter, setFilter] = useState("ALL");
   const debSearch = useDebounce(search, 500);
 
-  const loadVisitors = useCallback(async (pg, q, f, isInit = false) => {
+  const loadServices = useCallback(async (pg, q, f, isInit = false) => {
     isInit ? setInitialLoad(true) : setFetching(true);
     try {
       const params = new URLSearchParams({
         page: pg,
         limit: limitRef.current,
         filter: f,
-        purpose: "GUEST",
+        purpose: "SERVICE",
         ...(q ? { search: q } : {}),
       });
       const res = await API.get(`/visitors?${params}`);
       const data = res.data;
-      setVisitors(Array.isArray(data) ? data : data?.data || []);
+      setServices(Array.isArray(data) ? data : data?.data || []);
       setCounts(data?.counts || { ALL: 0, IN: 0, OUT: 0 });
       setTotalPages(data?.pagination?.totalPages ?? 1);
       setTotalItems(data?.pagination?.totalItems ?? 0);
       setPage(pg);
     } catch (err) {
-      console.error("Failed to load guests:", err);
+      console.error("Failed to load services:", err);
     } finally {
       setInitialLoad(false);
       setFetching(false);
@@ -119,38 +119,38 @@ export default function GuestEntry() {
   }, []);
 
   useEffect(() => {
-    loadVisitors(1, "", "ALL", true);
+    loadServices(1, "", "ALL", true);
   }, []);
 
   useEffect(() => {
     if (initialLoad) return;
-    loadVisitors(1, debSearch, filter);
+    loadServices(1, debSearch, filter);
   }, [debSearch]);
 
   const handleFilterChange = (f) => {
     setFilter(f);
-    loadVisitors(1, debSearch, f);
+    loadServices(1, debSearch, f);
   };
 
-  const handlePageChange = (p) => loadVisitors(p, debSearch, filter);
+  const handlePageChange = (p) => loadServices(p, debSearch, filter);
 
   const handleMarkExit = async (id, name) => {
     setExitLoadingId(id);
     try {
       await API.put(`/visitors/exit/${id}`);
-      toast.success(`Exit logged for ${name}`);
-      loadVisitors(page, debSearch, filter);
+      toast.success(`Exit recorded for ${name}`);
+      loadServices(page, debSearch, filter);
     } catch (err) {
-      toast.error(err.response?.data?.message || "Failed to log exit");
+      toast.error(err.response?.data?.message || "Failed to mark exit");
     } finally {
       setExitLoadingId(null);
     }
   };
 
   const filterTabs = [
-    { key: "ALL", label: t("geFilterAll", "All Guests"), count: counts.ALL },
-    { key: "IN", label: t("geFilterInside", "Inside"), count: counts.IN },
-    { key: "OUT", label: t("geFilterLeft", "Exited"), count: counts.OUT },
+    { key: "ALL", label: t("gdFilterAll", "All Service"), count: counts.ALL },
+    { key: "IN", label: t("gdFilterInside", "Inside Premises"), count: counts.IN },
+    { key: "OUT", label: t("gdFilterLeft", "Exited Today"), count: counts.OUT },
   ];
 
   return (
@@ -158,18 +158,28 @@ export default function GuestEntry() {
       {/* ── HEADER ── */}
       <div className="ge-er">
         <div className="ge-er-left">
-          <div className="ad-page-icon">
-            <FaUserFriends size={22} />
+          <div
+            className="ad-page-icon"
+            style={{
+              background: "rgba(139, 92, 246, 0.15)",
+              color: "#8B5CF6",
+            }}
+          >
+            <FaTools size={22} />
           </div>
           <div>
-            <h2 className="page-title">{t("geTitle", "Guest Entry Log")}</h2>
+            <h2 className="page-title">{t("serviceEntryTitle", "Service & Repair Entry")}</h2>
             <p className="page-subtitle">
-              {counts.ALL} {t("geTotal", "Total Guest Visits Today")}
+              {counts.ALL} {t("serviceEntriesTotal", "Total service visits logged today")}
             </p>
           </div>
         </div>
-        <button onClick={() => setShowModal(true)} className="btn-primary">
-          <MdAdd size={18} /> {t("geAddBtn", "New Guest Entry")}
+        <button
+          onClick={() => setShowModal(true)}
+          className="btn-primary"
+          style={{ background: "#8B5CF6" }}
+        >
+          <MdAdd size={18} /> {t("addServiceEntryBtn", "New Service Entry")}
         </button>
       </div>
 
@@ -178,11 +188,11 @@ export default function GuestEntry() {
         <div
           onClick={() => handleFilterChange("ALL")}
           className={`complaint-stat-card complaint-stat-total cursor-pointer ${
-            filter === "ALL" ? "ring-2 ring-blue-500 shadow-md" : ""
+            filter === "ALL" ? "ring-2 ring-purple-500 shadow-md" : ""
           }`}
         >
-          <span className="complaint-stat-val text-blue-600">{counts.ALL}</span>
-          <span className="complaint-stat-label">{t("geStatTotal", "Total Guests")}</span>
+          <span className="complaint-stat-val text-purple-600">{counts.ALL}</span>
+          <span className="complaint-stat-label">Total Services</span>
         </div>
         <div
           onClick={() => handleFilterChange("IN")}
@@ -191,7 +201,7 @@ export default function GuestEntry() {
           }`}
         >
           <span className="complaint-stat-val text-emerald-600">{counts.IN}</span>
-          <span className="complaint-stat-label">{t("geStatInside", "Inside Premises")}</span>
+          <span className="complaint-stat-label">Currently Inside</span>
         </div>
         <div
           onClick={() => handleFilterChange("OUT")}
@@ -200,7 +210,7 @@ export default function GuestEntry() {
           }`}
         >
           <span className="complaint-stat-val text-gray-500">{counts.OUT}</span>
-          <span className="complaint-stat-label">{t("geStatExited", "Departed")}</span>
+          <span className="complaint-stat-label">Checked Out</span>
         </div>
       </div>
 
@@ -227,7 +237,7 @@ export default function GuestEntry() {
           <ToggleSearchBar
             value={search}
             onChange={(val) => setSearch(val)}
-            placeholder={t("geSearchPlaceholder", "Search by guest name, phone, flat...")}
+            placeholder={t("searchTechnicianPlaceholder", "Search technician, skill, flat, mobile...")}
           />
         </div>
       </div>
@@ -237,44 +247,44 @@ export default function GuestEntry() {
         {initialLoad ? (
           <div className="p-8 text-center text-secondary">
             <Spinner size={24} />
-            <p className="mt-2 text-xs">Loading guest records...</p>
+            <p className="mt-2 text-xs">Loading service entries...</p>
           </div>
-        ) : visitors.length === 0 ? (
+        ) : services.length === 0 ? (
           <div className="ge-empty">
-            <span className="ge-empty-icon">👥</span>
-            <span>{t("geEmpty", "No guest records found")}</span>
+            <span className="ge-empty-icon">🔧</span>
+            <span>No service technician entries found</span>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="ge-table">
               <thead>
                 <tr>
-                  <th>{t("geColVisitor", "Guest Name")}</th>
-                  <th>{t("geColFlat", "Flat Visited")}</th>
-                  <th>{t("geColPhone", "Phone Number")}</th>
-                  <th>{t("geColVehicle", "Vehicle Details")}</th>
-                  <th>{t("geColEntry", "Entry Time")}</th>
-                  <th>{t("geColExit", "Exit Time")}</th>
-                  <th>{t("geColStatus", "Status")}</th>
-                  <th>{t("geColAction", "Action")}</th>
+                  <th>Technician / Skill</th>
+                  <th>Flat Visited</th>
+                  <th>Contact</th>
+                  <th>Vehicle</th>
+                  <th>Entry Time</th>
+                  <th>Exit Time</th>
+                  <th>Status</th>
+                  <th>Action</th>
                 </tr>
               </thead>
               <tbody>
-                {visitors.map((item) => {
+                {services.map((item) => {
                   const isInside = !item.exit_time;
                   return (
                     <tr key={item.id}>
                       <td>
                         <div className="flex items-center gap-2.5">
-                          <div className="w-8 h-8 rounded-lg bg-blue-500/15 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold text-xs shrink-0">
-                            <FaUserFriends size={14} />
+                          <div className="w-8 h-8 rounded-lg bg-purple-500/15 text-purple-600 dark:text-purple-400 flex items-center justify-center font-bold text-xs shrink-0">
+                            <MdHandyman size={16} />
                           </div>
                           <div>
                             <span className="font-bold text-primary block text-sm">
                               {item.visitor_name}
                             </span>
                             <span className="text-[11px] text-secondary">
-                              Personal Guest
+                              Service / Maintenance
                             </span>
                           </div>
                         </div>
@@ -292,16 +302,9 @@ export default function GuestEntry() {
                         </a>
                       </td>
                       <td>
-                        <div className="text-xs">
-                          <span className="font-mono text-primary font-medium">
-                            {item.vehicle_number || "—"}
-                          </span>
-                          {item.assigned_slot && (
-                            <span className="block text-[10px] text-purple-600 dark:text-purple-400 font-bold">
-                              Slot: {item.assigned_slot}
-                            </span>
-                          )}
-                        </div>
+                        <span className="text-xs font-mono text-secondary">
+                          {item.vehicle_number || "—"}
+                        </span>
                       </td>
                       <td>
                         <span className="text-xs text-primary font-medium">
@@ -382,14 +385,14 @@ export default function GuestEntry() {
           <div className="p-6 text-center text-secondary">
             <Spinner size={20} />
           </div>
-        ) : visitors.length === 0 ? (
+        ) : services.length === 0 ? (
           <div className="ge-empty">
-            <span className="ge-empty-icon">👥</span>
-            <span>{t("geEmpty", "No guest records found")}</span>
+            <span className="ge-empty-icon">🔧</span>
+            <span>No service technician entries found</span>
           </div>
         ) : (
           <>
-            {visitors.map((item) => (
+            {services.map((item) => (
               <div key={item.id} className="ge-mobile-card">
                 <div className="ge-mc-top">
                   <div className="ge-mc-name-row">
@@ -401,18 +404,18 @@ export default function GuestEntry() {
                     <span className="ge-mc-name">{item.visitor_name}</span>
                   </div>
                   {item.exit_time ? (
-                    <span className="ge-badge ge-badge--left">✔ {t("geFilterLeft", "Exited")}</span>
+                    <span className="ge-badge ge-badge--left">✔ Exited</span>
                   ) : (
-                    <span className="ge-badge ge-badge--inside">● {t("geFilterInside", "Inside")}</span>
+                    <span className="ge-badge ge-badge--inside">● Inside</span>
                   )}
                 </div>
                 <div className="ge-mc-rows">
                   <div className="ge-mc-row">
-                    <span className="ge-mc-label">{t("geColFlat", "Flat")}</span>
+                    <span className="ge-mc-label">Flat Visited</span>
                     <span className="ge-flat-chip">{resolveVisitorFlatLabel(item)}</span>
                   </div>
                   <div className="ge-mc-row">
-                    <span className="ge-mc-label">{t("geColPhone", "Phone")}</span>
+                    <span className="ge-mc-label">Contact</span>
                     <a
                       href={`tel:${item.mobile}`}
                       className="ge-mc-val text-blue-600 flex items-center gap-1"
@@ -420,14 +423,8 @@ export default function GuestEntry() {
                       <MdPhone size={12} /> {item.mobile}
                     </a>
                   </div>
-                  {item.vehicle_number && (
-                    <div className="ge-mc-row">
-                      <span className="ge-mc-label">Vehicle</span>
-                      <span className="ge-mc-val font-mono">{item.vehicle_number}</span>
-                    </div>
-                  )}
                   <div className="ge-mc-row">
-                    <span className="ge-mc-label">{t("geColEntry", "Entry Time")}</span>
+                    <span className="ge-mc-label">Entry Time</span>
                     <span className="ge-mc-val">
                       {item.entry_time ? new Date(item.entry_time).toLocaleTimeString() : "—"}
                     </span>
@@ -440,7 +437,7 @@ export default function GuestEntry() {
                         className="px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm"
                       >
                         {exitLoadingId === item.id ? <Spinner size={12} /> : <MdLogout size={14} />}
-                        <span>Mark Exit</span>
+                        <span>Record Exit</span>
                       </button>
                     </div>
                   )}
@@ -470,10 +467,10 @@ export default function GuestEntry() {
       <StepVisitorEntryModal
         isOpen={showModal}
         onClose={() => setShowModal(false)}
-        purpose="GUEST"
+        purpose="SERVICE"
         onSuccess={() => {
           setShowModal(false);
-          loadVisitors(1, search, filter);
+          loadServices(1, search, filter);
         }}
       />
     </div>
