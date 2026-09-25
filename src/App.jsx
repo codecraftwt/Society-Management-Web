@@ -46,17 +46,17 @@ import Resident from "./pages/Admin/Resident";
 import AssignFlat from "./pages/Admin/AssignFlat";
 import AssignParkingSlot from "./pages/Admin/AssignParkingSlot";
 import Guard from "./pages/Admin/Guard";
-import Notice from "./pages/Admin/Notice";
-import Complaint from "./pages/Admin/Complaint";
+import Notice from "./sections/notice";
+import SocietyComplaints from "./sections/complaint";
 import Accountant from "./pages/Admin/Accountant";
-import ManageBill from "./pages/Admin/ManageBill";
-import VisitorLogs from "./pages/Admin/VisitorLog";
+import ManageBill from "./sections/billing";
+import VisitorLogs from "./sections/visitor-log";
 import Reports from "./pages/Admin/Reports";
 import ComplaintReport from "./pages/Admin/reports/ComplaintReport";
 import VisitorReport from "./pages/Admin/reports/VisitorReport";
 import FinancialReport from "./pages/Admin/reports/FinancialReport";
-import AdminAmenity from "./pages/Admin/AdminAmenity";
-import AdminDocument from "./pages/Admin/AdminDocument";
+import SocietyAmenities from "./sections/amenity";
+import SocietyDocuments from "./sections/document";
 import ManageProperty from "./pages/Admin/ManageProperty";
 import AdminSetting from "./pages/Admin/AdminSetting";
 import FlatHistory from "./pages/Admin/FlatHistory";
@@ -110,14 +110,13 @@ import GuardHelpContacts from "./pages/Guard/GuardHelpContacts";
 
 /* === ACCOUNTANT === */
 import AccountantLayout from "./pages/Accountant/AccountantLayout";
-import ManageBillsAccountant from "./pages/Accountant/ManageBilllsAccountant";
-import PaymentsAccountant from "./pages/Accountant/PaymentsAccountant";
+import { ManageBillsAccountant } from "./sections/billing";
 import AccountDashboard from "./pages/Accountant/AccountantDashboard";
 import AccountantReports from "./pages/Accountant/AccountantReports";
 import Floors from "./pages/SuperAdmin/Floors.jsx";
 import TenantManagement from "./pages/Admin/TenantManagement.jsx";
 import Accounting from "./pages/Admin/Accounting";
-import Payments from "./pages/Admin/Payments";
+import SocietyPayments from "./sections/payments";
 
 
 function App() {
@@ -172,13 +171,13 @@ function App() {
 
             {/* --- INJECTED GLOBAL ADMIN ROUTES --- */}
             <Route path="resident" element={<Resident />} />
-            <Route path="complaints" element={<Complaint />} />
+            <Route path="complaints" element={<SocietyComplaints />} />
             <Route path="notice" element={<Notice />} />
             <Route path="guard" element={<Guard />} />
             <Route path="visitor-logs" element={<VisitorLogs />} />
             <Route path="reports" element={<Reports />} />
-            <Route path="amenities" element={<AdminAmenity />} />
-            <Route path="society_documents" element={<AdminDocument />} />
+            <Route path="amenities" element={<SocietyAmenities />} />
+            <Route path="society_documents" element={<SocietyDocuments />} />
             <Route path="assign-flat" element={<AssignFlat />} />
             <Route path="assign-parking-slot" element={<AssignParkingSlot />} />
             <Route path="settings" element={<AdminSetting />} />
@@ -191,7 +190,7 @@ function App() {
             <Route path="parking" element={<SuperAdminParking />} />
             <Route path="accounting" element={<Accounting />} />
             <Route path="accountant" element={<Accountant />} />
-            <Route path="payments" element={<Payments />} />
+            <Route path="payments" element={<SocietyPayments />} />
             <Route path="manage-bills" element={<ManageBill />} />
             <Route path="tenant-management" element={<TenantManagement />} />
             <Route path="emergency" element={<AdminEmergency />} />
@@ -255,7 +254,7 @@ function App() {
               <Route path="notice" element={<Notice />} />
             </Route>
             <Route element={<PermissionRoute module="complaints" />}>
-              <Route path="complaints" element={<Complaint />} />
+              <Route path="complaints" element={<SocietyComplaints />} />
             </Route>
             <Route element={<PermissionRoute module="accountant" />}>
               <Route path="accountant" element={<Accountant />} />
@@ -264,7 +263,7 @@ function App() {
               <Route path="manage-bills" element={<ManageBill />} />
             </Route>
             <Route element={<PermissionRoute module="payments" />}>
-              <Route path="payments" element={<Payments />} />
+              <Route path="payments" element={<SocietyPayments />} />
             </Route>
             <Route element={<PermissionRoute module="visitor_logs" />}>
               <Route path="visitor-logs" element={<VisitorLogs />} />
@@ -279,10 +278,10 @@ function App() {
               <Route path="reports/financial" element={<FinancialReport />} />
             </Route>
             <Route element={<PermissionRoute module="amenities" />}>
-              <Route path="amenities" element={<AdminAmenity />} />
+              <Route path="amenities" element={<SocietyAmenities />} />
             </Route>
             <Route element={<PermissionRoute module="society_documents" />}>
-              <Route path="society_documents" element={<AdminDocument />} />
+              <Route path="society_documents" element={<SocietyDocuments />} />
             </Route>
             <Route element={<PermissionRoute module="flat_history" />}>
               <Route path="flat-history" element={<FlatHistory />} />
@@ -377,7 +376,7 @@ function App() {
               <Route path="manage-bills" element={<ManageBillsAccountant />} />
             </Route>
             <Route element={<PermissionRoute module="payments" />}>
-              <Route path="payments" element={<Payments />} />
+              <Route path="payments" element={<SocietyPayments />} />
             </Route>
             <Route element={<PermissionRoute module="accounting" />}>
               <Route path="accounting" element={<Accounting />} />
@@ -399,13 +398,13 @@ function App() {
               <Route path="reports/financial" element={<FinancialReport />} />
             </Route>
             <Route element={<PermissionRoute module="society_documents" />}>
-              <Route path="society_documents" element={<AdminDocument />} />
+              <Route path="society_documents" element={<SocietyDocuments />} />
             </Route>
             <Route element={<PermissionRoute module="notice" />}>
               <Route path="notice" element={<Notice />} />
             </Route>
             <Route element={<PermissionRoute module="amenities" />}>
-              <Route path="amenities" element={<AdminAmenity />} />
+              <Route path="amenities" element={<SocietyAmenities />} />
             </Route>
             <Route element={<PermissionRoute module="parking_slots" />}>
               <Route path="parking-slots" element={<AssignParkingSlot />} />
@@ -429,7 +428,7 @@ function App() {
               <Route path="visitor-logs" element={<VisitorLogs />} />
             </Route>
             <Route element={<PermissionRoute module="complaints" />}>
-              <Route path="complaints" element={<Complaint />} />
+              <Route path="complaints" element={<SocietyComplaints />} />
             </Route>
             <Route element={<PermissionRoute module="emergency" />}>
               <Route path="emergency" element={<AdminEmergency />} />

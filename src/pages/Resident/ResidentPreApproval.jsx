@@ -313,6 +313,11 @@ export default function ResidentPreApproval() {
   try {
     setSubmitting(true);
 
+    const dwellMinutes =
+      dwellChoice === "other"
+        ? Math.max(15, parseInt(dwellCustom, 10) || 45)
+        : parseInt(dwellChoice, 10) || 45;
+
     const payload = {
       flat_id: selectedFlatId,
       visitor_name: form.visitor_name.trim(),
