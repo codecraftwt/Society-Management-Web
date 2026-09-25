@@ -333,6 +333,32 @@ export const hasErrors = (errors) =>
     (key) => errors[key] !== null && errors[key] !== undefined && errors[key] !== ''
   );
 
+/**
+ * Extract a user-friendly message from an axios error. Handles JSON error
+ * responses ({ message }) and HTML error pages (e.g. multer errors rendered
+ * by Express send an HTML page with the message inside a <pre> block).
+ */
+export const getErrorMessage = (err, fallback = 'Something went wrong. Please try again.') => {
+  const data = err?.response?.data;
+  if (typeof data === 'string') {
+    const m = data.match(/(?:Error:)\s*([^<\r\n]+)/);
+    if (m && m[1] && m[1].trim()) return m[1].trim().replace(/&amp;/g, '&');
+    const pre = data.match(/<pre>([\s\S]*?)<\/pre>/);
+    if (pre) {
+      const lines = pre[1]
+        .replace(/<[^>]+>/g, '')
+        .replace(/&nbsp;/g, ' ')
+        .replace(/&amp;/g, '&')
+        .split('\n')
+        .map((l) => l.trim())
+        .filter(Boolean);
+      if (lines.length) return lines[0];
+    }
+    return fallback;
+  }
+  return data?.message || err?.message || fallback;
+};
+
 export const validators = {
   sanitizeText,
   isEmpty,

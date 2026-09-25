@@ -13322,6 +13322,21 @@ html.light .cpw-tip-row {
   letter-spacing: 0.02em;
 }
 
+/* Society admin badge shown for society admins */
+.res-socadmin-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(160, 90, 255, 0.12);
+  color: #c4a6ff;
+  border: 1px solid rgba(160, 90, 255, 0.32);
+  letter-spacing: 0.02em;
+}
+
 .res-clean-table tbody tr,
 .res-clean-table tbody tr:hover,
 .res-clean-table tbody tr:nth-child(odd),
@@ -15253,8 +15268,8 @@ html:not(.light) {
   scrollbar-width: thin;
 }
 html:not(.light) ::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
+  width: 6px;
+  height: 6px;
 }
 html:not(.light) ::-webkit-scrollbar-track {
   background: transparent;
@@ -15262,13 +15277,13 @@ html:not(.light) ::-webkit-scrollbar-track {
 html:not(.light) ::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.12);
   border-radius: 999px;
-  border: 2px solid transparent;
+  border: 1px solid transparent;
   background-clip: padding-box;
 }
 html:not(.light) ::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.22);
   background-clip: padding-box;
-  border: 2px solid transparent;
+  border: 1px solid transparent;
 }
 html:not(.light) ::selection {
   background: rgba(37, 99, 235, 0.35);
@@ -15286,7 +15301,7 @@ html:not(.light) :focus-visible {
   scrollbar-gutter: stable;
 }
 .modal-scroll-thin::-webkit-scrollbar {
-  width: 6px;
+  width: 4px;
 }
 .modal-scroll-thin::-webkit-scrollbar-track {
   background: transparent;

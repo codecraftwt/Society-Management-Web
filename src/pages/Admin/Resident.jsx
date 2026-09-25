@@ -3313,6 +3313,7 @@ const [totalPages, setTotalPages] = useState(1);
                         <div>
                           <div style={{ fontWeight: 700, fontSize: 13, color: "var(--text-primary)" }}>{r.name}</div>
                           <div style={{ display: "flex", gap: 5, flexWrap: "wrap", marginTop: 3 }}>
+                            {r.roles?.includes("SOCIETY_ADMIN") && <span className="res-socadmin-badge" style={{ display: "inline-flex" }}>★ {t("roleSocietyAdmin")}</span>}
                             {r.roles?.includes("COMMITTEE_MEMBER") && <span className="res-committee-badge" style={{ display: "inline-flex" }}>★ {t("colCommittee") || "Committee"}</span>}
                             {r.roles?.includes("ACCOUNTANT") && <span className="res-accountant-badge" style={{ display: "inline-flex" }}>★ {t("resAccountantBadge")}</span>}
                           </div>
@@ -3405,6 +3406,7 @@ const [totalPages, setTotalPages] = useState(1);
                             {flat.flat_number}
                           </span>
                         ))}
+                        {r.roles?.includes("SOCIETY_ADMIN") && <span className="res-socadmin-badge">★ {t("roleSocietyAdmin")}</span>}
                         {r.roles?.includes("COMMITTEE_MEMBER") && <span className="res-committee-badge">★ {t("colCommittee") || "Committee"}</span>}
                         {r.roles?.includes("ACCOUNTANT") && <span className="res-accountant-badge">★ {t("resAccountantBadge")}</span>}
                         <span style={{ cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 3, fontSize: 10, fontWeight: 600, padding: "2px 7px", borderRadius: 999, background: "rgba(251,191,36,0.10)", color: "var(--accent)", border: "1px solid rgba(251,191,36,0.20)" }} title={`Vehicles: ${r.vehicle_count ?? 0}`}><MdDirectionsCar size={10} /> {r.vehicle_count ?? 0}</span>

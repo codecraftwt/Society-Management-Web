@@ -80,7 +80,7 @@
   position: absolute;
   top: calc(100% + 6px);
   right: 0;
-  z-index: 30;
+  z-index: 3000;
   min-width: 140px;
   padding: 6px;
   border-radius: 10px;

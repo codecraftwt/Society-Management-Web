@@ -377,10 +377,19 @@ export default function Complaint() {
   const hasDateFilter = dateFrom || dateTo;
   const clearDate     = () => { setDateFrom(""); setDateTo(""); };
 
+  // Keep the page's society filter in sync with the global one the axios
+  // interceptor reads (superadmin_society_filter). Without this the request
+  // interceptor keeps forcing the stale persisted society on every call, so
+  // picking "All Societies" or another society here would have no effect.
+  const applySocietyFilter = useCallback((val) => {
+    setFilterSocietyId(val);
+    localStorage.setItem("superadmin_society_filter", val || "ALL");
+  }, []);
+
   const clearAllFilters = () => {
     setSearchQuery("");
     setFilterStatus("ALL");
-    setFilterSocietyId("");
+    applySocietyFilter("");
     setFilterBlockId("");
     setFilterFloorId("");
     setFilterFlatId("");
@@ -486,7 +495,7 @@ export default function Complaint() {
     const chips = [];
     if (isSuperAdmin && filterSocietyId) {
       const s = societiesList.find(x => String(x.id) === String(filterSocietyId));
-      chips.push({ id: "society", label: t("reportSociety") || "Society", value: s?.name || filterSocietyId, remove: () => setFilterSocietyId("") });
+      chips.push({ id: "society", label: t("reportSociety") || "Society", value: s?.name || filterSocietyId, remove: () => applySocietyFilter("") });
     }
     if (filterBlockId) {
       const b = blocksList.find(x => String(x.id) === String(filterBlockId));
@@ -561,7 +570,7 @@ export default function Complaint() {
         </div>
 
         <div
-          className="relative z-40 flex items-center justify-end gap-2.5 flex-wrap shrink-0"
+          className="relative z-50 flex items-center justify-end gap-2.5 flex-wrap shrink-0"
           style={{ overflow: "visible" }}
         >
           {/* Export Dropdown */}
@@ -645,7 +654,7 @@ export default function Complaint() {
           <Select
             className="input"
             value={filterSocietyId}
-            onChange={(e) => { setFilterSocietyId(e.target.value); setPage(1); }}
+            onChange={(e) => { applySocietyFilter(e.target.value); setPage(1); }}
             style={{ height: 42, minHeight: 42, fontSize: 13, borderRadius: 12, minWidth: 160 }}
           >
             <option value="">{t("allSocieties") || "All Societies"}</option>
@@ -676,7 +685,7 @@ export default function Complaint() {
           {isSuperAdmin && (
             <div className={styles.fGroup}>
               <span className={styles.fLabel}>{t("reportSociety") || "Society"}</span>
-              <Select value={filterSocietyId} onChange={(e) => setFilterSocietyId(e.target.value)}>
+              <Select value={filterSocietyId} onChange={(e) => applySocietyFilter(e.target.value)}>
                 <option value="">{t("allSocieties")}</option>
                 {societiesList.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
               </Select>

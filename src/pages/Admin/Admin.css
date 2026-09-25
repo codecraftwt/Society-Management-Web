@@ -119,8 +119,8 @@ html.light.role-theme .sa-modal-body.modal-scroll-thin {
 }
 html.role-theme .sa-modal-body.modal-scroll-thin::-webkit-scrollbar,
 html:not(.light) .sa-modal-body.modal-scroll-thin::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
+  width: 4px;
+  height: 4px;
 }
 html.role-theme .sa-modal-body.modal-scroll-thin::-webkit-scrollbar-track,
 html:not(.light) .sa-modal-body.modal-scroll-thin::-webkit-scrollbar-track {

@@ -10,13 +10,6 @@ html.light.role-theme .sa-page-er {
   box-shadow: var(--shadow-sm) !important;
 }
 
-/* Accountant table: match .data-table-wrap behavior â€” no always-visible
-   horizontal scrollbar on the GlobalTable scroll container. */
-html.role-theme .acct-table .global-table-scroll,
-html.light.role-theme .acct-table .global-table-scroll {
-  overflow-x: hidden !important;
-}
-
 html.role-theme .sa-page-er::before,
 html.light.role-theme .sa-page-er::before {
   background: var(--accent) !important;
@@ -669,8 +662,8 @@ html.light.role-theme .sa-btn-ghost:hover {
   position: absolute;
   top: calc(100% + 6px);
   right: 0;
-  z-index: 200;
-  min-width: 160px;
+  z-index: 4000;
+  min-width: 120px;
   background: var(--card-bg);
   border: 1px solid var(--glass-border, rgba(255,255,255,0.1));
   border-radius: 12px;
@@ -842,7 +835,7 @@ html.light.role-theme .sa-root button.text-white {
    ========================================================================== */
 
 /* ==========================================================================
-   SOCIETY DETAIL MODAL — polished layout design system
+   SOCIETY DETAIL MODAL ï¿½ polished layout design system
    ========================================================================== */
 .sd-modal-body {
   display: flex;

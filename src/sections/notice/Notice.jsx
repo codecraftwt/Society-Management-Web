@@ -398,6 +398,8 @@ export default function Notice() {
           subtitle={historyModal.notice?.title || t("noticeAckHistorySub", "Recipient view & read status")}
           icon={MdCheckCircle}
           size="xl"
+          bodyStyle={{ minHeight: "min(440px, 62vh)" }}
+          bodyClassName="modal-scroll-thin"
         >
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             {/* Summary Cards Row */}

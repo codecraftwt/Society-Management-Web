@@ -1,4 +1,5 @@
-import { useEffect, useState, useContext } from "react";
+import { useEffect, useState, useContext, useRef, useCallback } from "react";
+import { createPortal } from "react-dom";
 import API from "../../services/api";
 import { useLang } from "../../context/LanguageContext";
 import { AuthContext } from "../../context/AuthContext";
@@ -7,7 +8,8 @@ import {
   MdCheck, MdAccountBalance,
   MdApartment, MdHome, MdPersonAdd,
   MdCheckCircle, MdBlock, MdInfoOutline,
-  MdArrowForward, MdVisibility, MdVisibilityOff
+  MdArrowForward, MdVisibility, MdVisibilityOff,
+  MdMoreVert
 } from "react-icons/md";
 import Select from "../../components/common/Select";
 import GlobalButton from "../../components/common/GlobalButton";
@@ -19,6 +21,106 @@ import { isCommitteeMember, hasPermission } from "../../utils/permissions";
 import { getTitleError, getEmailError, getMobileError } from "../../utils/validators";
 import { useCustomAlert } from "../../context/CustomAlertContext";
 import { toast } from "react-toastify";
+
+/* ─────────────────────────────────────────
+   ACCOUNTANT ACTION MENU (three-dot kebab)
+   ───────────────────────────────────────── */
+function AccountantActionMenu({ canEdit, onEdit, canToggle, status, onToggle, t }) {
+  const [open, setOpen] = useState(false);
+  const [pos, setPos] = useState(null);
+  const btnRef = useRef(null);
+  const menuRef = useRef(null);
+
+  const close = useCallback(() => {
+    setOpen(false);
+    setPos(null);
+  }, []);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDocDown = (e) => {
+      if (btnRef.current && btnRef.current.contains(e.target)) return;
+      if (menuRef.current && menuRef.current.contains(e.target)) return;
+      close();
+    };
+    const onKey = (e) => { if (e.key === "Escape") close(); };
+    const onReposition = () => close();
+    document.addEventListener("mousedown", onDocDown);
+    document.addEventListener("keydown", onKey);
+    window.addEventListener("scroll", onReposition, true);
+    window.addEventListener("resize", onReposition);
+    return () => {
+      document.removeEventListener("mousedown", onDocDown);
+      document.removeEventListener("keydown", onKey);
+      window.removeEventListener("scroll", onReposition, true);
+      window.removeEventListener("resize", onReposition);
+    };
+  }, [open, close]);
+
+  const toggle = () => {
+    if (open) { close(); return; }
+    const rect = btnRef.current.getBoundingClientRect();
+    const menuW = 120;
+    const menuH = 4 * 34 + 24;
+    const left = Math.max(8, rect.right - menuW);
+    const spaceBelow = window.innerHeight - rect.bottom;
+    setPos(
+      spaceBelow >= menuH
+        ? { left, top: rect.bottom + 6 }
+        : { left, bottom: window.innerHeight - rect.top + 6 }
+    );
+    setOpen(true);
+  };
+
+  const act = (fn) => { close(); fn(); };
+
+  if (!canEdit && !canToggle) return null;
+
+  return (
+    <>
+      <button
+        ref={btnRef}
+        onClick={toggle}
+        className="sa-action-dots"
+        aria-label={t("acctActionsMenu") || "Accountant actions"}
+        aria-haspopup="menu"
+        aria-expanded={open}
+      >
+        <MdMoreVert size={20} />
+      </button>
+      {open && createPortal(
+        <div
+          ref={menuRef}
+          role="menu"
+          className="sa-action-dropdown"
+          style={{ position: "fixed", zIndex: 11000, right: "auto", ...pos }}
+        >
+          {canEdit && (
+            <button role="menuitem" className="sa-action-item" onClick={() => act(onEdit)}>
+              <MdEdit size={15} />
+              {t("acctEdit") || "Edit"}
+            </button>
+          )}
+          {canEdit && canToggle && <div className="sa-action-divider" />}
+          {canToggle && (
+            status === "ACTIVE" ? (
+              <button role="menuitem" className="sa-action-item sa-action-item-danger" onClick={() => act(onToggle)}>
+                <MdBlock size={15} />
+                {t("acctDisable") || "Disable"}
+              </button>
+            ) : (
+              <button role="menuitem" className="sa-action-item" onClick={() => act(onToggle)}>
+                <MdCheckCircle size={15} style={{ color: "#4ade80" }} />
+                {t("acctActivate") || "Activate"}
+              </button>
+            )
+          )}
+        </div>,
+        document.body
+      )}
+    </>
+  );
+}
 
 function SectionLabel({ children }) {
   return (
@@ -453,6 +555,7 @@ export default function Accountant() {
     ...(isSuperAdmin && (!filterSocietyId || filterSocietyId === "ALL") ? [{
       key: "society",
       header: t("acctColSociety") || "Society",
+      width: 170,
       render: (acc) => (
         <div style={{ display: "flex", alignItems: "center", gap: 6, color: "var(--text-secondary)", fontSize: "0.85rem" }}>
           <MdApartment size={15} style={{ color: "var(--accent)" }} />
@@ -463,8 +566,9 @@ export default function Accountant() {
     {
       key: "contact",
       header: t("acctColContact") || "Contact",
+      width: 150,
       render: (acc) => (
-        <span style={{ color: "var(--text-secondary)", fontSize: "0.85rem" }}>
+        <span style={{ color: "var(--text-secondary)", fontSize: "0.85rem", whiteSpace: "nowrap" }}>
           {acc.phone ? `+91 ${acc.phone}` : "—"}
         </span>
       ),
@@ -472,6 +576,7 @@ export default function Accountant() {
     {
       key: "from_society",
       header: t("acctColFromSociety") || "From Society",
+      width: 150,
       render: (acc) => (
         acc.from_society ? (
           <span style={{
@@ -497,8 +602,9 @@ export default function Accountant() {
     {
       key: "start_date",
       header: t("acctColWorkingSince") || "Working Since",
+      width: 130,
       render: (acc) => (
-        <span style={{ color: "var(--text-primary)", fontSize: "0.83rem", fontWeight: 500 }}>
+        <span style={{ color: "var(--text-primary)", fontSize: "0.83rem", fontWeight: 500, whiteSpace: "nowrap" }}>
           {formatDate(acc.start_date)}
         </span>
       ),
@@ -506,8 +612,9 @@ export default function Accountant() {
     {
       key: "inactive_date",
       header: t("acctColInactiveSince") || "Inactive Since",
+      width: 130,
       render: (acc) => (
-        <span style={{ color: acc.inactive_date ? "#f87171" : "var(--text-secondary)", fontSize: "0.83rem", fontWeight: 500 }}>
+        <span style={{ color: acc.inactive_date ? "#f87171" : "var(--text-secondary)", fontSize: "0.83rem", fontWeight: 500, whiteSpace: "nowrap" }}>
           {acc.status === "INACTIVE" || acc.inactive_date ? formatDate(acc.inactive_date) : "—"}
         </span>
       ),
@@ -515,6 +622,7 @@ export default function Accountant() {
     {
       key: "status",
       header: t("acctColStatus") || "Status",
+      width: 110,
       render: (acc) => (
         acc.status === "ACTIVE" ? (
           <GlobalBadge variant="success" dot>{t("acctActive") || "Active"}</GlobalBadge>
@@ -527,69 +635,16 @@ export default function Accountant() {
       key: "actions",
       header: t("acctColActions") || "Actions",
       align: "right",
+      width: 80,
       render: (acc) => (
-        <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, alignItems: "center" }}>
-          {hasPermission(user, "accountant", "edit") && (
-            <GlobalButton
-              variant="edit"
-              size="sm"
-              icon={MdEdit}
-              onClick={() => openEditModal(acc)}
-            >
-              {t("acctEdit") || "Edit"}
-            </GlobalButton>
-          )}
-
-          {hasPermission(user, "accountant", "toggle_status") && (
-            acc.status === "ACTIVE" ? (
-              <button
-                type="button"
-                onClick={() => openStatusConfirm(acc, "deactivate")}
-                className="sa-btn"
-                style={{
-                  background: "rgba(239,68,68,0.12)",
-                  color: "#f87171",
-                  border: "1px solid rgba(239,68,68,0.28)",
-                  fontSize: 12,
-                  fontWeight: 700,
-                  padding: "6px 12px",
-                  borderRadius: 8,
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 5,
-                  cursor: "pointer",
-                }}
-                title={t("acctDisableTitle") || "Make accountant inactive"}
-              >
-                <MdBlock size={14} />
-                <span>{t("acctDisable") || "Disable"}</span>
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={() => openStatusConfirm(acc, "activate")}
-                className="sa-btn"
-                style={{
-                  background: "rgba(34,197,94,0.12)",
-                  color: "#4ade80",
-                  border: "1px solid rgba(34,197,94,0.28)",
-                  fontSize: 12,
-                  fontWeight: 700,
-                  padding: "6px 12px",
-                  borderRadius: 8,
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 5,
-                  cursor: "pointer",
-                }}
-                title={t("acctActivateTitle") || "Re-activate accountant"}
-              >
-                <MdCheckCircle size={14} />
-                <span>{t("acctActivate") || "Activate"}</span>
-              </button>
-            )
-          )}
-        </div>
+        <AccountantActionMenu
+          t={t}
+          canEdit={hasPermission(user, "accountant", "edit")}
+          onEdit={() => openEditModal(acc)}
+          canToggle={hasPermission(user, "accountant", "toggle_status")}
+          status={acc.status}
+          onToggle={() => openStatusConfirm(acc, acc.status === "ACTIVE" ? "deactivate" : "activate")}
+        />
       ),
     }] : []),
   ];

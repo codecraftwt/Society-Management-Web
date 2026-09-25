@@ -1,10 +1,10 @@
 import { useContext, useState } from "react";
+import { toast } from "react-toastify";
 import { MdCampaign } from "react-icons/md";
 import API from "../../../services/api";
 import { AuthContext } from "../../../context/AuthContext";
 import { useLang } from "../../../context/LanguageContext";
-import { useCustomAlert } from "../../../context/CustomAlertContext";
-import { getTitleError, getDescriptionError } from "../../../utils/validators";
+import { getTitleError, getDescriptionError, getErrorMessage } from "../../../utils/validators";
 import GlobalModal from "../../../components/common/GlobalModal";
 import NoticeForm from "../NoticeForm";
 
@@ -18,7 +18,6 @@ export default function Create({
 }) {
   const { t } = useLang();
   const { user } = useContext(AuthContext);
-  const { showError } = useCustomAlert();
 
   const [submitting, setSubmitting] = useState(false);
   const [file, setFile] = useState(null);
@@ -32,10 +31,10 @@ export default function Create({
   const handleSubmit = async (e) => {
     if (e) e.preventDefault();
     const titleErr = getTitleError(form.title, "Title");
-    if (titleErr) { showError(titleErr); return; }
+    if (titleErr) { toast.error(titleErr); return; }
     const descErr = getDescriptionError(form.description, "Description");
-    if (descErr) { showError(descErr); return; }
-    if (isSuperAdmin && !form.society_id) { showError(t("noticeSelectSocietyErr", "Please select a society.")); return; }
+    if (descErr) { toast.error(descErr); return; }
+    if (isSuperAdmin && !form.society_id) { toast.error(t("noticeSelectSocietyErr", "Please select a society.")); return; }
 
     setSubmitting(true);
     try {
@@ -57,7 +56,7 @@ export default function Create({
       onClose();
       onCreated();
     } catch (err) {
-      showError(err.response?.data?.message || t("noticePublishFail", "Failed to publish notice"));
+      toast.error(getErrorMessage(err, t("noticePublishFail", "Failed to publish notice")));
     } finally {
       setSubmitting(false);
     }

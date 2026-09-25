@@ -1,7 +1,33 @@
+import { useMemo } from "react";
+import { toast } from "react-toastify";
 import { MdAttachFile, MdClose } from "react-icons/md";
 
 import { useLang } from "../../context/LanguageContext";
+import { BASE_URL } from "../../config/apiConfig";
 import Select from "../../components/common/Select";
+
+const IMAGE_EXTS = ["png", "jpg", "jpeg", "gif", "webp", "svg", "bmp", "avif"];
+
+const ALLOWED_MIMES = new Set([
+  "image/jpeg",
+  "image/png",
+  "image/gif",
+  "image/webp",
+  "image/svg+xml",
+  "application/pdf",
+]);
+
+const ALLOWED_EXTS = ["pdf", "jpg", "jpeg", "png", "gif", "webp", "svg"];
+const MAX_FILE_SIZE = 10 * 1024 * 1024;
+
+const imgStyle = {
+  width: "100%",
+  maxHeight: 220,
+  objectFit: "cover",
+  borderRadius: 12,
+  border: "1px solid var(--glass-border)",
+  background: "var(--card-inner-bg)",
+};
 
 export default function NoticeForm({
   isSuperAdmin,
@@ -10,8 +36,31 @@ export default function NoticeForm({
   setForm,
   file,
   setFile,
+  existingFileUrl,
 }) {
   const { t } = useLang();
+
+  const newPreviewUrl = useMemo(() => {
+    if (!file || !file.type?.startsWith("image/")) return null;
+    const url = URL.createObjectURL(file);
+    return url;
+  }, [file]);
+
+  const existingFileName = useMemo(() => {
+    if (!existingFileUrl) return "";
+    const raw = existingFileUrl.split("?")[0];
+    return raw.split("/").pop() || "";
+  }, [existingFileUrl]);
+
+  const existingImage = useMemo(() => {
+    if (!existingFileUrl || newPreviewUrl) return null;
+    const raw = existingFileUrl.split("?")[0];
+    const ext = raw.split(".").pop()?.toLowerCase();
+    if (!IMAGE_EXTS.includes(ext)) return null;
+    return existingFileUrl.startsWith("http://") || existingFileUrl.startsWith("https://")
+      ? raw
+      : `${BASE_URL}${raw}`;
+  }, [existingFileUrl, newPreviewUrl]);
 
   return (
     <>
@@ -79,65 +128,123 @@ export default function NoticeForm({
       <div>
         <label className="sa-label">{t("noticeAttachmentLabel")}</label>
         {file ? (
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 9,
-              padding: "8px 12px",
-              borderRadius: 9,
-              background: "rgba(16,185,129,0.08)",
-              border: "1px solid rgba(16,185,129,0.25)",
-            }}
-          >
-            <MdAttachFile size={16} style={{ color: "#10b981", flexShrink: 0 }} />
-            <span
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {newPreviewUrl && <img src={newPreviewUrl} alt="New attachment preview" style={imgStyle} />}
+            <div
               style={{
-                fontSize: 12,
-                color: "var(--text-primary)",
-                flex: 1,
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
+                display: "flex",
+                alignItems: "center",
+                gap: 9,
+                padding: "8px 12px",
+                borderRadius: 9,
+                background: "rgba(16,185,129,0.08)",
+                border: "1px solid rgba(16,185,129,0.25)",
               }}
             >
-              {file.name}
-            </span>
-            <button
-              type="button"
-              onClick={() => setFile(null)}
-              style={{ background: "none", border: "none", cursor: "pointer", color: "#ef4444" }}
-            >
-              <MdClose size={16} />
-            </button>
+              <MdAttachFile size={16} style={{ color: "#10b981", flexShrink: 0 }} />
+              <span
+                style={{
+                  fontSize: 12,
+                  color: "var(--text-primary)",
+                  flex: 1,
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {file.name}
+              </span>
+              <button
+                type="button"
+                onClick={() => setFile(null)}
+                style={{ background: "none", border: "none", cursor: "pointer", color: "#ef4444" }}
+              >
+                <MdClose size={16} />
+              </button>
+            </div>
           </div>
         ) : (
-          <label
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              padding: "10px 14px",
-              borderRadius: 10,
-              cursor: "pointer",
-              border: "1.5px dashed var(--glass-border)",
-              background: "var(--card-inner-bg)",
-              fontSize: "0.82rem",
-              color: "var(--text-secondary)",
-            }}
-          >
-            <MdAttachFile size={16} />
-            <span>{t("noticeAttachHint")}</span>
-            <input
-              type="file"
-              accept="image/*,application/pdf"
-              onChange={(e) => {
-                const selected = e.target.files[0];
-                if (selected) setFile(selected);
+          <>
+            {existingImage && <img src={existingImage} alt="Current attachment preview" style={{ ...imgStyle, marginBottom: 10 }} />}
+            <label
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                padding: "10px 14px",
+                borderRadius: 10,
+                cursor: "pointer",
+                border: "1.5px dashed var(--glass-border)",
+                background: "var(--card-inner-bg)",
+                fontSize: "0.82rem",
+                color: "var(--text-secondary)",
               }}
-              style={{ display: "none" }}
-            />
-          </label>
+            >
+              <MdAttachFile size={16} />
+              <span>{existingFileUrl ? (t("noticeReplaceHint") || "Replace attachment") : t("noticeAttachHint")}</span>
+              <input
+                type="file"
+                accept="image/*,application/pdf"
+                onChange={(e) => {
+                  const selected = e.target.files[0];
+                  e.target.value = "";
+                  if (!selected) return;
+                  const ext = selected.name?.split(".").pop()?.toLowerCase() || "";
+                  const allowedType = ALLOWED_MIMES.has(selected.type);
+                  const allowedExt = ALLOWED_EXTS.includes(ext) && !selected.type;
+                  if (!allowedType && !allowedExt) {
+                    toast.error(t("noticeInvalidFileType", "Invalid file type. Only PDF, JPG, PNG, WEBP, GIF and SVG are allowed."));
+                    return;
+                  }
+                  if (selected.size > MAX_FILE_SIZE) {
+                    toast.error(t("noticeFileTooLarge", "File size exceeds the 10 MB limit."));
+                    return;
+                  }
+                  setFile(selected);
+                }}
+                style={{ display: "none" }}
+              />
+            </label>
+            {existingFileUrl && (
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 9,
+                  padding: "8px 12px",
+                  marginTop: 10,
+                  borderRadius: 9,
+                  background: "rgba(160,90,255,0.08)",
+                  border: "1px solid rgba(160,90,255,0.25)",
+                }}
+              >
+                <MdAttachFile size={16} style={{ color: "var(--accent)", flexShrink: 0 }} />
+                <span
+                  style={{
+                    fontSize: 12,
+                    color: "var(--text-primary)",
+                    flex: 1,
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {existingFileName || t("noticeAttachmentLabel")}
+                </span>
+                <span
+                  style={{
+                    fontSize: 10,
+                    color: "var(--text-secondary)",
+                    fontWeight: 700,
+                    textTransform: "uppercase",
+                    flexShrink: 0,
+                  }}
+                >
+                  {t("noticeCurrent", "Current")}
+                </span>
+              </div>
+            )}
+          </>
         )}
       </div>
     </>
