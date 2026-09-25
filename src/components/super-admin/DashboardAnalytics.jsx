@@ -26,20 +26,19 @@ import { useLang } from "../../context/LanguageContext";
 import API from "../../services/api";
 
 // ── Colour palettes ──────────────────────────────────────────────────────────
-// Uses the project's brand accent colours (role-theme.css): purple, teal,
-// cyan, coral, violet — same tones used on cards throughout the app.
+// Matches the Society Admin dashboard charts: cyan, royal blue, coral, lavender.
 const DARK_PALETTE = {
   text: "#E2E8F0",
   textMuted: "#94A3B8",
   grid: "rgba(255,255,255,0.06)",
   tooltip: "#1E293B",
   tooltipBorder: "rgba(255,255,255,0.08)",
-  purple: "#a05aff",
-  teal: "#1bcfb4",
-  cyan: "#4bcbeb",
-  coral: "#fe9496",
-  violet: "#9e58ff",
-  blue: "#0d6efd",
+  purple: "#22d3ee",
+  teal: "#3b82f6",
+  cyan: "#fb7185",
+  coral: "#a78bfa",
+  violet: "#06b6d4",
+  blue: "#2563eb",
 };
 const LIGHT_PALETTE = {
   text: "#374151",
@@ -47,16 +46,16 @@ const LIGHT_PALETTE = {
   grid: "rgba(0,0,0,0.06)",
   tooltip: "#FFFFFF",
   tooltipBorder: "#E5E7EB",
-  purple: "#a05aff",
-  teal: "#1bcfb4",
-  cyan: "#4bcbeb",
-  coral: "#fe9496",
-  violet: "#9e58ff",
-  blue: "#0d6efd",
+  purple: "#22d3ee",
+  teal: "#3b82f6",
+  cyan: "#fb7185",
+  coral: "#a78bfa",
+  violet: "#06b6d4",
+  blue: "#2563eb",
 };
 
-const DONUT_COLORS_DARK = ["#a05aff", "#4bcbeb", "#1bcfb4", "#fe9496", "#9e58ff", "#0d6efd"];
-const DONUT_COLORS_LIGHT = ["#a05aff", "#4bcbeb", "#1bcfb4", "#fe9496", "#9e58ff", "#0d6efd"];
+const DONUT_COLORS_DARK = ["#22d3ee", "#3b82f6", "#fb7185", "#a78bfa", "#06b6d4", "#2563eb"];
+const DONUT_COLORS_LIGHT = ["#22d3ee", "#3b82f6", "#fb7185", "#a78bfa", "#06b6d4", "#2563eb"];
 
 // ── Tooltip style ────────────────────────────────────────────────────────────
 function buildTooltipStyle(p) {
@@ -292,7 +291,7 @@ export default function DashboardAnalytics({ societies, loading, onDataLoaded })
               <XAxis dataKey="name" tick={{ fill: p.textMuted, fontSize: 10 }} tickFormatter={shortName}
                 axisLine={false} tickLine={false} interval={0} angle={-18} textAnchor="end" height={52} />
               <YAxis tick={{ fill: p.textMuted, fontSize: 11 }} axisLine={false} tickLine={false} allowDecimals={false} />
-              <Tooltip contentStyle={ttStyle} cursor={{ fill: "rgba(160,90,255,0.10)" }} />
+              <Tooltip contentStyle={ttStyle} cursor={{ fill: "rgba(34,211,238,0.10)" }} />
               <Bar dataKey="residents" name={t("saAnResidents", "Residents")} fill={p.purple} radius={[6, 6, 0, 0]} maxBarSize={46}>
                 <LabelList dataKey="residents" position="top" style={{ fill: p.text, fontSize: 10, fontWeight: 700 }} />
               </Bar>
@@ -348,7 +347,7 @@ export default function DashboardAnalytics({ societies, loading, onDataLoaded })
               <XAxis dataKey="name" tick={{ fill: p.textMuted, fontSize: 10 }} tickFormatter={shortName}
                 axisLine={false} tickLine={false} interval={0} angle={-18} textAnchor="end" height={52} />
               <YAxis tick={{ fill: p.textMuted, fontSize: 11 }} axisLine={false} tickLine={false} allowDecimals={false} />
-              <Tooltip contentStyle={ttStyle} cursor={{ fill: "rgba(158,88,255,0.10)" }} />
+              <Tooltip contentStyle={ttStyle} cursor={{ fill: "rgba(251,113,133,0.10)" }} />
               <Legend wrapperStyle={{ color: p.text, fontSize: 12 }} />
               <Bar dataKey="owners" name={t("saAnOwners", "Owners")} stackId="a" fill={p.teal} maxBarSize={44} />
               <Bar dataKey="tenants" name={t("saAnTenants", "Tenants")} stackId="a" fill={p.violet} radius={[6, 6, 0, 0]} maxBarSize={44} />
@@ -397,7 +396,7 @@ export default function DashboardAnalytics({ societies, loading, onDataLoaded })
               <CartesianGrid stroke={p.grid} strokeDasharray="3 3" horizontal={false} />
               <XAxis type="number" tick={{ fill: p.textMuted, fontSize: 11 }} axisLine={false} tickLine={false} allowDecimals={false} />
               <YAxis type="category" dataKey="name" tick={{ fill: p.textMuted, fontSize: 11 }} axisLine={false} tickLine={false} width={86} />
-              <Tooltip contentStyle={ttStyle} cursor={{ fill: "rgba(75,203,235,0.10)" }} />
+              <Tooltip contentStyle={ttStyle} cursor={{ fill: "rgba(167,139,250,0.10)" }} />
               <Bar dataKey="Residents" name={t("saAnResidents", "Residents")} fill={p.cyan} radius={[0, 6, 6, 0]} maxBarSize={22} />
             </BarChart>
           </ResponsiveContainer>

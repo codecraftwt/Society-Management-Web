@@ -1,11 +1,10 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useLang } from "../../context/LanguageContext";
+import { toast } from "react-toastify";
 import API from "../../services/api";
 import {
-  MdCheckCircle, MdWarning,
-  MdBarChart, MdRefresh, MdSettings
+  MdBarChart, MdRefresh
 } from "react-icons/md";
-import { FaBuilding, FaUserShield, FaUsers } from "react-icons/fa";
 import DashboardAnalytics from "../../components/super-admin/DashboardAnalytics";
 import GlobalButton from "../../components/common/GlobalButton";
 
@@ -15,12 +14,6 @@ export default function SuperAdminDashboard() {
   const [societies, setSocieties] = useState([]);
   const [loading, setLoading] = useState(true);
   const [liveTotals, setLiveTotals] = useState({ totalResidents: 0, totalOwners: 0, totalTenants: 0 });
-  const [toast, setToast] = useState(null);
-
-  const showToast = (msg, type = "success") => {
-    setToast({ msg, type });
-    setTimeout(() => setToast(null), 3000);
-  };
 
   const fetchSocieties = useCallback(async () => {
     try {
@@ -28,7 +21,7 @@ export default function SuperAdminDashboard() {
       const res = await API.get("/societies");
       setSocieties(res.data || []);
     } catch {
-      showToast(t("saErrLoadSocieties"), "error");
+      toast.error(t("saErrLoadSocieties"));
     } finally {
       setLoading(false);
     }
@@ -50,17 +43,13 @@ export default function SuperAdminDashboard() {
     {
       label: t("saStatTotal"),
       value: societies.length,
-      icon: FaBuilding,
-      color: "#FBBF24",
-      bg: "rgba(251,191,36,0.12)",
+      variant: "ad-kpi--residents",
       desc: t("saDashSocRegist", { count: societies.length }, "{count} societies registered"),
     },
     {
       label: t("saDashStatResidents", "Total Residents"),
       value: liveTotals.totalResidents || "–",
-      icon: FaUsers,
-      color: "#34D399",
-      bg: "rgba(52,211,153,0.12)",
+      variant: "ad-kpi--guards",
       desc: t(
         "saDashStatResidentsDesc",
         { owners: liveTotals.totalOwners || 0, tenants: liveTotals.totalTenants || 0 },
@@ -70,31 +59,19 @@ export default function SuperAdminDashboard() {
     {
       label: t("saStatAssigned"),
       value: totalAssigned,
-      icon: FaUserShield,
-      color: "#38BDF8",
-      bg: "rgba(56,189,248,0.12)",
+      variant: "ad-kpi--complaints",
       desc: t("saDashPendingDesc", { count: totalUnassigned }, "{count} pending assignment"),
     },
     {
       label: t("saDashStatPending", "Pending Config"),
       value: totalUnassigned,
-      icon: MdSettings,
-      color: "#F472B6",
-      bg: "rgba(244,114,182,0.12)",
+      variant: "ad-kpi--flats",
       desc: t("saDashAssignedDesc", { count: totalAssigned }, "{count} societies with active admin"),
     },
   ], [societies, totalAssigned, totalUnassigned, liveTotals, t]);
 
   return (
-    <div className="sa-page sa-dash-page">
-      {/* Toast Notification */}
-      {toast && (
-        <div className={`sa-toast ${toast.type === "error" ? "sa-toast-error" : "sa-toast-success"}`}>
-          {toast.type === "error" ? <MdWarning size={18} /> : <MdCheckCircle size={18} />}
-          {toast.msg}
-        </div>
-      )}
-
+    <div className="sa-page sa-dash-page admin-dash">
       {/* ── HEADER ── */}
       <div className="sa-dash-header">
         <div className="sa-dash-header-text">
@@ -107,18 +84,12 @@ export default function SuperAdminDashboard() {
       </div>
 
       {/* ── KPI CARDS ── */}
-      <div className="sa-kpi-grid">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
         {stats.map((stat) => (
-          <div key={stat.label} className="sa-kpi-card" style={{ "--kpi-c": stat.color, "--kpi-bg": stat.bg }}>
-            <div className="sa-kpi-icon-wrap">
-              <stat.icon size={20} />
-            </div>
-            <div className="sa-kpi-body">
-              <p className="sa-kpi-label">{stat.label}</p>
-              <p className="sa-kpi-value">{stat.value}</p>
-              <p className="sa-kpi-desc">{stat.desc}</p>
-            </div>
-            <div className="sa-kpi-glow" />
+          <div key={stat.label} className={`ad-kpi ${stat.variant}`}>
+            <span className="ad-kpi-val">{stat.value}</span>
+            <span className="ad-kpi-label">{stat.label}</span>
+            <span className="ad-kpi-desc hidden lg:block">{stat.desc}</span>
           </div>
         ))}
       </div>

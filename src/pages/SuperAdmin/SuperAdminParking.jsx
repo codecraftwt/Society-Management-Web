@@ -2,6 +2,7 @@
 import { useEffect, useState, useCallback, useRef} from "react";
 import API from "../../services/api";
 import { useLang } from "../../context/LanguageContext";
+import { toast } from "react-toastify";
 import {
   MdAdd, MdDelete, MdClose,
   MdDirectionsCar, MdTwoWheeler,
@@ -83,7 +84,6 @@ function ResidentEntryPanel({ slots, onCreated, t, societyId }) {
   const [submitting, setSubmitting] = useState(null);
   const [rejecting, setRejecting] = useState(null);
   const [submitError, setSubmitError] = useState({});
-  const [successMsg, setSuccessMsg] = useState("");
   const [expandedId, setExpandedId] = useState(null);
 
   const loadVehicles = useCallback(async () => {
@@ -104,12 +104,6 @@ function ResidentEntryPanel({ slots, onCreated, t, societyId }) {
 
   useEffect(() => { loadVehicles(); }, [loadVehicles]);
 
-  useEffect(() => {
-    if (!successMsg) return;
-    const t = setTimeout(() => setSuccessMsg(""), 3500);
-    return () => clearTimeout(t);
-  }, [successMsg]);
-
   const handleCreate = async (vehicle) => {
     const slot = selectedSlot[vehicle.vehicle_id];
     if (!slot) return;
@@ -124,7 +118,7 @@ function ResidentEntryPanel({ slots, onCreated, t, societyId }) {
         flat_id: vehicle.flat_id,
         assigned_spot: slot,
       });
-      setSuccessMsg(`Slot ${slot} assigned to ${vehicle.vehicle_number} ✓`);
+      toast.success(`Slot ${slot} assigned to ${vehicle.vehicle_number} ✓`);
       setSelectedSlot(prev => ({ ...prev, [vehicle.vehicle_id]: "" }));
       setExpandedId(null);
       loadVehicles();
@@ -147,7 +141,7 @@ function ResidentEntryPanel({ slots, onCreated, t, societyId }) {
         vehicle_number: vehicle.vehicle_number,
         vehicle_id: vehicle.vehicle_id,
       });
-      setSuccessMsg(`Vehicle ${vehicle.vehicle_number} rejected and removed.`);
+      toast.success(`Vehicle ${vehicle.vehicle_number} rejected and removed.`);
       setExpandedId(null);
       loadVehicles();
       onCreated();
@@ -190,17 +184,6 @@ function ResidentEntryPanel({ slots, onCreated, t, societyId }) {
           </p>
         </div>
       </div>
-
-      {successMsg && (
-        <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-semibold"
-          style={{ background: "rgba(47,194,126,0.10)", border: "1px solid rgba(47,194,126,0.25)", color: "#2FC27E" }}>
-          <MdCheckCircle size={15} /> {successMsg}
-          <button onClick={() => setSuccessMsg("")}
-            style={{ marginLeft: "auto", background: "none", border: "none", cursor: "pointer", color: "inherit" }}>
-            <MdClose size={13} />
-          </button>
-        </div>
-      )}
 
       <div className="flex items-center gap-3">
         <div className="relative flex-1">
@@ -405,8 +388,6 @@ function ResidentRequestsPanel({ allSlots, onSlotAssigned, societyId }) {
   const [rejecting, setRejecting] = useState(null);
   const [selectedSlot, setSelectedSlot] = useState({});
   const [expandedId, setExpandedId] = useState(null);
-  const [successMsg, setSuccessMsg] = useState("");
-  const [errorMsg, setErrorMsg] = useState("");
 
   const loadRequests = useCallback(async () => {
     setLoading(true);
@@ -426,26 +407,19 @@ function ResidentRequestsPanel({ allSlots, onSlotAssigned, societyId }) {
 
   useEffect(() => { loadRequests(); }, [loadRequests]);
 
-  useEffect(() => {
-    if (!successMsg) return;
-    const t = setTimeout(() => setSuccessMsg(""), 3500);
-    return () => clearTimeout(t);
-  }, [successMsg]);
-
   const handleAssign = async (reqId) => {
     const slot = selectedSlot[reqId];
     if (!slot) return;
     setAssigning(reqId);
-    setErrorMsg("");
     try {
       await API.put(`/parking/${reqId}/admin-assign`, { assigned_spot: slot });
-      setSuccessMsg(`Slot ${slot} assigned! Resident notified.`);
+      toast.success(`Slot ${slot} assigned! Resident notified.`);
       setSelectedSlot(prev => ({ ...prev, [reqId]: "" }));
       setExpandedId(null);
       loadRequests();
       onSlotAssigned();
     } catch (err) {
-      setErrorMsg(err?.response?.data?.message || "Failed to assign slot");
+      toast.error(err?.response?.data?.message || "Failed to assign slot");
     } finally {
       setAssigning(null);
     }
@@ -453,13 +427,12 @@ function ResidentRequestsPanel({ allSlots, onSlotAssigned, societyId }) {
 
   const handleReject = async (reqId) => {
     setRejecting(reqId);
-    setErrorMsg("");
     try {
       await API.put(`/parking/${reqId}/admin-reject`);
-      setSuccessMsg("Request rejected.");
+      toast.success("Request rejected.");
       loadRequests();
     } catch (err) {
-      setErrorMsg(err?.response?.data?.message || "Failed to reject");
+      toast.error(err?.response?.data?.message || "Failed to reject");
     } finally {
       setRejecting(null);
     }
@@ -498,21 +471,6 @@ function ResidentRequestsPanel({ allSlots, onSlotAssigned, societyId }) {
           </p>
         </div>
       </div>
-
-      {successMsg && (
-        <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-semibold"
-          style={{ background: "rgba(47,194,126,0.10)", border: "1px solid rgba(47,194,126,0.25)", color: "#2FC27E" }}>
-          <MdCheckCircle size={15} /> {successMsg}
-          <button onClick={() => setSuccessMsg("")} style={{ marginLeft: "auto", background: "none", border: "none", cursor: "pointer", color: "inherit" }}><MdClose size={13} /></button>
-        </div>
-      )}
-      {errorMsg && (
-        <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-semibold"
-          style={{ background: "rgba(255,107,107,0.10)", border: "1px solid rgba(255,107,107,0.28)", color: "#FF6B6B" }}>
-          <MdWarning size={15} /> {errorMsg}
-          <button onClick={() => setErrorMsg("")} style={{ marginLeft: "auto", background: "none", border: "none", cursor: "pointer", color: "inherit" }}><MdClose size={13} /></button>
-        </div>
-      )}
 
       <div className="flex gap-2 flex-wrap">
         {TABS.map(tab => (
@@ -771,16 +729,16 @@ const [totalPages, setTotalPages] = useState(1);
     if (selectedSocietyId === "ALL") return;
 
     const floorErr = getRequiredError(form.parking_floor, "Floor / Level");
-    if (floorErr) { alert(floorErr); return; }
+    if (floorErr) { toast.error(floorErr); return; }
 
     const prefixErr = getTitleError(form.prefix, "Prefix");
-    if (prefixErr) { alert(prefixErr); return; }
+    if (prefixErr) { toast.error(prefixErr); return; }
 
     const startErr = getNumberError(form.start_number, "Start number", { min: 1, allowZero: false });
-    if (startErr) { alert(startErr); return; }
+    if (startErr) { toast.error(startErr); return; }
 
     const countErr = getNumberError(form.count, "Count", { min: 1, allowZero: false });
-    if (countErr) { alert(countErr); return; }
+    if (countErr) { toast.error(countErr); return; }
 
     setSubmitting(true);
     try {

@@ -2451,6 +2451,112 @@ html.light.role-theme .admin-dash .ad-kpi.ad-kpi--complaints { background: linea
 html.light.role-theme .admin-dash .ad-kpi.ad-kpi--flats { background: linear-gradient(135deg, #a78bfa 0%, #8b5cf6 100%) !important; border: none !important; }
 
 /* --------------------------------------------------------------------------
+   6d. DASHBOARD KPI GLASS HOVER
+   Mirrors Guard's Quick Gate Operations cards (gd-action system): size lift,
+   glass shine sweep, accent border + glow on hover, corner blob scale.
+   Scoped to .admin-dash so Society Admin, Super Admin & Guard KPI cards that
+   sit outside the dashboard keep their existing behaviour.
+   -------------------------------------------------------------------------- */
+@keyframes adKpiShine {
+  0%   { transform: translateX(-90%) skewX(-18deg); opacity: 0; }
+  25%  { opacity: 1; }
+  100% { transform: translateX(200%) skewX(-18deg); opacity: 0; }
+}
+
+html.role-theme .admin-dash .ad-kpi {
+  isolation: isolate !important;
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 0.35s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+html.role-theme .admin-dash .ad-kpi::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 55%;
+  height: 100%;
+  background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.45), transparent);
+  transform: translateX(-90%) skewX(-18deg);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 2;
+  will-change: transform;
+}
+html.role-theme .admin-dash .ad-kpi:hover::before {
+  animation: adKpiShine 0.75s ease forwards;
+}
+
+html.role-theme .admin-dash .ad-kpi::after {
+  transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.45s;
+  z-index: 0;
+}
+html.role-theme .admin-dash .ad-kpi:hover::after {
+  transform: scale(1.45);
+  opacity: 0.26;
+}
+
+html.role-theme:not(.light) .admin-dash .ad-kpi:hover {
+  transform: translateY(-6px) scale(1.025) !important;
+}
+
+html.role-theme:not(.light) .admin-dash .ad-kpi--residents:hover,
+html.role-theme:not(.light) .admin-dash .ad-kpi--balance:hover,
+html.role-theme:not(.light) .admin-dash .ad-kpi--amenity:hover {
+  border-color: #0e7490 !important;
+  box-shadow: 0 6px 18px -4px rgba(14, 116, 144, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.16) !important;
+}
+html.role-theme:not(.light) .admin-dash .ad-kpi--guards:hover,
+html.role-theme:not(.light) .admin-dash .ad-kpi--income:hover,
+html.role-theme:not(.light) .admin-dash .ad-kpi--maintenance:hover {
+  border-color: #1d4ed8 !important;
+  box-shadow: 0 6px 18px -4px rgba(29, 78, 216, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.16) !important;
+}
+html.role-theme:not(.light) .admin-dash .ad-kpi--complaints:hover,
+html.role-theme:not(.light) .admin-dash .ad-kpi--opening:hover,
+html.role-theme:not(.light) .admin-dash .ad-kpi--bills:hover {
+  border-color: #e11d48 !important;
+  box-shadow: 0 6px 18px -4px rgba(225, 29, 72, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.16) !important;
+}
+html.role-theme:not(.light) .admin-dash .ad-kpi--flats:hover,
+html.role-theme:not(.light) .admin-dash .ad-kpi--expense:hover {
+  border-color: #6d28d9 !important;
+  box-shadow: 0 6px 18px -4px rgba(109, 40, 217, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.16) !important;
+}
+
+html.light.role-theme .admin-dash .ad-kpi {
+  border: 2px solid transparent !important;
+}
+html.light.role-theme .admin-dash .ad-kpi:hover {
+  transform: translateY(-6px) scale(1.025) !important;
+}
+
+html.light.role-theme .admin-dash .ad-kpi--residents:hover,
+html.light.role-theme .admin-dash .ad-kpi--balance:hover,
+html.light.role-theme .admin-dash .ad-kpi--amenity:hover {
+  box-shadow: 0 6px 18px -4px rgba(14, 116, 144, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.9) !important;
+  border-color: #0e7490 !important;
+}
+html.light.role-theme .admin-dash .ad-kpi--guards:hover,
+html.light.role-theme .admin-dash .ad-kpi--income:hover,
+html.light.role-theme .admin-dash .ad-kpi--maintenance:hover {
+  box-shadow: 0 6px 18px -4px rgba(29, 78, 216, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.9) !important;
+  border-color: #1d4ed8 !important;
+}
+html.light.role-theme .admin-dash .ad-kpi--complaints:hover,
+html.light.role-theme .admin-dash .ad-kpi--opening:hover,
+html.light.role-theme .admin-dash .ad-kpi--bills:hover {
+  box-shadow: 0 6px 18px -4px rgba(225, 29, 72, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.9) !important;
+  border-color: #e11d48 !important;
+}
+html.light.role-theme .admin-dash .ad-kpi--flats:hover,
+html.light.role-theme .admin-dash .ad-kpi--expense:hover {
+  box-shadow: 0 6px 18px -4px rgba(109, 40, 217, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.9) !important;
+  border-color: #6d28d9 !important;
+}
+
+/* --------------------------------------------------------------------------
    7. TABLES STANDARDIZATION
    -------------------------------------------------------------------------- */
 html.role-theme .global-table-container,

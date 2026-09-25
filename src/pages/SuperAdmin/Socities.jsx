@@ -1,10 +1,10 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useLang } from "../../context/LanguageContext";
+import { toast } from "react-toastify";
 import API from "../../services/api";
 import {
-  MdAdd, MdApartment, MdCheckCircle,
-  MdWarning, MdHomeWork
+  MdAdd, MdApartment, MdHomeWork
 } from "react-icons/md";
 import { FaBuilding, FaUserShield } from "react-icons/fa";
 import Select from "../../components/common/Select";
@@ -55,21 +55,13 @@ export default function Societies() {
   // Delete Confirm Dialog state
   const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, id: null, loading: false });
 
-  // Toast state
-  const [toast, setToast] = useState(null);
-
-  const showToast = (msg, type = "success") => {
-    setToast({ msg, type });
-    setTimeout(() => setToast(null), 3000);
-  };
-
   const loadSocieties = useCallback(async () => {
     try {
       setLoading(true);
       const res = await API.get("/societies");
       setSocieties(res.data || []);
     } catch {
-      showToast(t("saErrLoadSocieties"), "error");
+      toast.error(t("saErrLoadSocieties"));
     } finally {
       setLoading(false);
     }
@@ -82,17 +74,17 @@ export default function Societies() {
   const addSociety = async (e) => {
     if (e) e.preventDefault();
     const nameErr = getTitleError(name, "Society name");
-    if (nameErr) { showToast(nameErr, "error"); return; }
+    if (nameErr) { toast.error(nameErr); return; }
     const addressErr = getRequiredError(address, "Address");
-    if (addressErr) { showToast(addressErr, "error"); return; }
+    if (addressErr) { toast.error(addressErr); return; }
     try {
       setAddLoading(true);
       const res = await API.post("/societies", { name: name.trim(), address: address.trim(), property_type: propertyType });
       setSocieties((p) => [...p, { ...res.data, societyAdmins: null }]);
       setName(""); setAddress(""); setPropertyType("Apartments"); setShowAddForm(false);
-      showToast(t("saToastSocietyCreated"));
+      toast.success(t("saToastSocietyCreated"));
     } catch {
-      showToast(t("saErrCreateSociety"), "error");
+      toast.error(t("saErrCreateSociety"));
     } finally {
       setAddLoading(false);
     }
@@ -104,19 +96,19 @@ export default function Societies() {
       setDeleteConfirm((prev) => ({ ...prev, loading: true }));
       await API.delete(`/societies/${deleteConfirm.id}`);
       setSocieties((p) => p.filter((s) => s.id !== deleteConfirm.id));
-      showToast(t("saToastSocietyDeleted"));
+      toast.success(t("saToastSocietyDeleted"));
       setDeleteConfirm({ isOpen: false, id: null, loading: false });
     } catch {
-      showToast(t("saErrDeleteFail"), "error");
+      toast.error(t("saErrDeleteFail"));
       setDeleteConfirm((prev) => ({ ...prev, loading: false }));
     }
   };
 
   const saveAdmin = async () => {
     const nameErr = getTitleError(adminName, "Admin name");
-    if (nameErr) { showToast(nameErr, "error"); return; }
+    if (nameErr) { toast.error(nameErr); return; }
     const emailErr = getEmailError(adminEmail);
-    if (emailErr) { showToast(emailErr, "error"); return; }
+    if (emailErr) { toast.error(emailErr); return; }
     try {
       setSaveLoading(true);
       await API.post(`/users/societies/${selectedSocietyId}/admin`, {
@@ -124,9 +116,9 @@ export default function Societies() {
       });
       loadSocieties();
       setShowModal(false); setAdminName(""); setAdminEmail(""); setIsEditMode(false);
-      showToast(isEditMode ? t("saToastAdminUpdated") : t("saToastAdminAssigned"));
+      toast.success(isEditMode ? t("saToastAdminUpdated") : t("saToastAdminAssigned"));
     } catch {
-      showToast(t("saErrSaveAdmin"), "error");
+      toast.error(t("saErrSaveAdmin"));
     } finally {
       setSaveLoading(false);
     }
@@ -167,13 +159,6 @@ export default function Societies() {
 
   return (
     <div className="sa-page sa-dash-page animate-fadeIn">
-      {/* Toast Notification */}
-      {toast && (
-        <div className={`sa-toast ${toast.type === "error" ? "sa-toast-error" : "sa-toast-success"}`}>
-          {toast.type === "error" ? <MdWarning size={18} /> : <MdCheckCircle size={18} />}
-          {toast.msg}
-        </div>
-      )}
 
       {/* ── HEADER ── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
