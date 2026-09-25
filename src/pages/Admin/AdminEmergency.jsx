@@ -47,10 +47,21 @@ const EMERGENCY_TYPES = [
 
 const TYPE_MAP = Object.fromEntries(EMERGENCY_TYPES.filter(t => t.key !== "ALL").map(t => [t.key, t]));
 
+const SOURCE_META = {
+  RESIDENT: "sosSourceResident",
+  GUARD: "sosSourceGuard",
+  ADMIN: "sosSourceAdmin",
+  COMMITTEE: "sosSourceCommittee",
+  SUPER_ADMIN: "sosSourceSuperAdmin",
+};
+
 export default function AdminEmergency() {
   const { user } = useContext(AuthContext);
   const { showAlert } = useCustomAlert();
   const { t } = useLang();
+
+  const typeLabel = (typeKey) => t(TYPE_MAP[typeKey]?.labelKey || "sosTypeOther");
+  const sourceLabel = (source) => t(SOURCE_META[source] || "sosSourceStaff");
 
   const isSuperAdmin = user?.role === "SUPER_ADMIN" || user?.activeRole === "SUPER_ADMIN";
   const isGuard = user?.role === "GUARD" || user?.activeRole === "GUARD";
@@ -252,7 +263,7 @@ export default function AdminEmergency() {
   const handleDelete = (alertItem) => {
     showAlert({
       title: t("sosDeleteTitle"),
-      message: t("sosDeleteConfirmMsg", { type: alertItem.type }),
+      message: t("sosDeleteConfirmMsg", { type: typeLabel(alertItem.type) }),
       type: "danger",
       confirmText: t("sosDeleteConfirm"),
       cancelText: t("sosDeleteCancel"),
@@ -292,23 +303,22 @@ export default function AdminEmergency() {
             style={{
               width: 44,
               height: 44,
-              borderRadius: 13,
+              borderRadius: 14,
               flexShrink: 0,
-              background: "linear-gradient(135deg, rgba(239,68,68,0.2), rgba(244,63,94,0.12))",
-              border: "1.5px solid rgba(239,68,68,0.3)",
+              background: "linear-gradient(135deg, var(--accent), #9e58ff)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              boxShadow: "0 4px 14px rgba(239,68,68,0.2)",
-              color: "#ef4444",
+              boxShadow: "0 8px 20px rgba(158, 88, 255, 0.3)",
+              color: "#ffffff",
             }}
           >
-            <MdSecurity size={24} />
+            <MdSecurity size={22} color="#fff" />
           </div>
           <div>
-            <h1 className="text-lg font-semibold" style={{ letterSpacing: "-0.02em", margin: 0 }}>
+            <h2 className="text-lg font-semibold" style={{ letterSpacing: "-0.02em", margin: 0 }}>
               {t("sosPageTitle")}
-            </h1>
+            </h2>
             <p className="text-secondary text-xs mt-0.5">
               {t("sosPageSubtitle")}
             </p>
@@ -542,7 +552,7 @@ export default function AdminEmergency() {
                           {senderName}
                         </p>
                         <p className="text-[10px] text-secondary">
-                          {t("sosSourceLabel")} <span className="font-semibold text-primary">{alert.source}</span>
+                          {t("sosSourceLabel")} <span className="font-semibold text-primary">{sourceLabel(alert.source)}</span>
                         </p>
                       </div>
                     </div>
@@ -709,7 +719,7 @@ export default function AdminEmergency() {
           isOpen={historyModal.isOpen}
           onClose={() => setHistoryModal({ isOpen: false, alert: null, loading: false, data: null, search: "", statusFilter: "ALL" })}
           title={t("sosHistoryTitle")}
-          subtitle={t("sosHistorySubtitle", { type: historyModal.alert?.type || "Emergency" })}
+          subtitle={t("sosHistorySubtitle", { type: typeLabel(historyModal.alert?.type) })}
           icon={MdDoneAll}
           size="xl"
           warnUnsavedChanges={false}
@@ -936,7 +946,7 @@ export default function AdminEmergency() {
           isOpen={resolveModal.isOpen}
           onClose={() => setResolveModal({ isOpen: false, alert: null, notes: "", loading: false })}
           title={t("sosResolveModalTitle")}
-          subtitle={t("sosResolveModalSubtitle", { type: resolveModal.alert?.type || "Emergency" })}
+          subtitle={t("sosResolveModalSubtitle", { type: typeLabel(resolveModal.alert?.type) })}
           icon={MdCheckCircle}
           size="md"
         >

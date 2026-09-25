@@ -17471,6 +17471,38 @@ html.light .sa-btn-primary .sa-pill-inner {
   background: radial-gradient(circle 80px at 80% -50%, #2563eb, #1e3a8a) !important;
 }
 
+/* --- NO-SHADOW modifier (used on specific buttons, e.g. Create Bill) --- */
+.mb-btn-no-shadow,
+.mb-btn-no-shadow:hover:not(:disabled),
+.mb-btn-no-shadow:active:not(:disabled),
+.mb-btn-no-shadow:focus,
+.mb-btn-no-shadow:focus-visible,
+.mb-btn-no-shadow:focus-within {
+  box-shadow: none !important;
+}
+html.light .mb-btn-no-shadow,
+html.light .mb-btn-no-shadow:hover:not(:disabled),
+html.light .mb-btn-no-shadow:active:not(:disabled) {
+  box-shadow: none !important;
+}
+html .mb-btn-no-shadow.sa-btn-primary,
+html.light .mb-btn-no-shadow.sa-btn-primary,
+html.dark .mb-btn-no-shadow.sa-btn-primary,
+html:not(.light) .mb-btn-no-shadow.sa-btn-primary,
+html.role-theme .mb-btn-no-shadow.sa-btn-primary:hover:not(:disabled),
+html.light.role-theme .mb-btn-no-shadow.sa-btn-primary:hover:not(:disabled),
+html.role-theme .mb-btn-no-shadow.sa-btn-primary:active:not(:disabled),
+html.light.role-theme .mb-btn-no-shadow.sa-btn-primary:active:not(:disabled) {
+  box-shadow: none !important;
+}
+.mb-btn-no-shadow .sa-pill-blob1,
+.mb-btn-no-shadow .sa-pill-blob,
+.mb-btn-no-shadow .sa-pill-inner,
+.mb-btn-no-shadow::after,
+.mb-btn-no-shadow .sa-pill-inner::before {
+  box-shadow: none !important;
+}
+
 /* --- VARIANT: SUCCESS (Green) --- */
 .sa-btn-success {
   background: radial-gradient(circle 80px at 80% -10%, #a7f3d0, #064e3b) !important;

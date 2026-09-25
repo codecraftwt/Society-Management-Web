@@ -534,8 +534,21 @@ export default function Complaint() {
       {/* ── 1. UNIFIED PAGE HEADER ─────────────────────────────────────────── */}
       <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3 mb-5">
         <div className="flex items-center gap-3">
-          <div className="ad-page-icon">
-            <MdReportProblem size={22} />
+          <div
+            style={{
+              width: 44,
+              height: 44,
+              borderRadius: 14,
+              flexShrink: 0,
+              background: "linear-gradient(135deg, var(--accent), #9e58ff)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              boxShadow: "0 8px 20px rgba(158, 88, 255, 0.3)",
+              color: "#ffffff",
+            }}
+          >
+            <MdReportProblem size={22} color="#fff" />
           </div>
           <div>
             <h2 className="text-lg font-semibold" style={{ letterSpacing: "-0.02em", margin: 0 }}>
@@ -548,80 +561,9 @@ export default function Complaint() {
         </div>
 
         <div
-          className="relative z-40 flex items-center justify-end gap-2.5 flex-wrap max-w-full pb-1"
+          className="relative z-40 flex items-center justify-end gap-2.5 flex-wrap shrink-0"
           style={{ overflow: "visible" }}
         >
-          {/* Status Sliding Tabs */}
-          <SlidingTabs
-            value={filterStatus}
-            onChange={(val) => { setFilterStatus(val); setPage(1); }}
-            items={(() => {
-              const allTabs = [
-                { id: "ALL", label: t("compTabAll") || "All", badge: counts.ALL },
-                { id: "PENDING", label: t("compStatusPending") || "Pending", badge: counts.PENDING },
-                { id: "IN_PROGRESS", label: t("compTabInProgress") || "In Progress", badge: counts.IN_PROGRESS },
-                { id: "RESOLVED", label: t("compStatusResolved") || "Resolved", badge: counts.RESOLVED },
-              ];
-              return isSearchOpen ? allTabs.filter(tab => tab.id === filterStatus) : allTabs;
-            })()}
-          />
-
-          {/* Expandable Search Bar */}
-          <ExpandableSearch
-            value={searchQuery}
-            onChange={(val) => { setSearchQuery(val); setPage(1); }}
-            placeholder={t("compSearchPh") || "Search complaints..."}
-            isOpen={isSearchOpen}
-            onOpenChange={setIsSearchOpen}
-          />
-
-          {/* Date Range Filter */}
-          <DateRangeFilter
-            className={styles.dateRangeControl}
-            fromDate={dateFrom}
-            toDate={dateTo}
-            onChange={({ from, to }) => {
-              setDateFrom(from);
-              setDateTo(to);
-              setPage(1);
-            }}
-            onClear={() => {
-              setDateFrom("");
-              setDateTo("");
-              setPage(1);
-            }}
-            placeholder={t("compDate") || "Date Range"}
-          />
-
-          {/* Super Admin Society Filter */}
-          {isSuperAdmin && (
-            <Select
-              className="input"
-              value={filterSocietyId}
-              onChange={(e) => { setFilterSocietyId(e.target.value); setPage(1); }}
-              style={{ height: 42, minHeight: 42, fontSize: 13, borderRadius: 12, minWidth: 160 }}
-            >
-              <option value="">{t("allSocieties") || "All Societies"}</option>
-              {societiesList.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-            </Select>
-          )}
-
-          {/* Filters Toggle Button */}
-          <button
-            type="button"
-            className={`${styles.filtersBtn} ${filtersOpen ? styles.filtersBtnActive : ""}`}
-            style={{ height: 42, minHeight: 42, borderRadius: 12, display: "inline-flex", alignItems: "center", gap: 6, padding: "0 14px" }}
-            onClick={() => setFiltersOpen(o => !o)}
-          >
-            <MdFilterAlt size={16} />
-            <span>{t("compFilters") || "Filters"}</span>
-            {activeChips.length > 0 && (
-              <span style={{ fontSize: 10, fontWeight: 800, background: "var(--accent)", color: "#fff", padding: "1px 6px", borderRadius: 999 }}>
-                {activeChips.length}
-              </span>
-            )}
-          </button>
-
           {/* Export Dropdown */}
           <div className={styles.exportWrap} ref={exportWrapRef}>
             <button
@@ -649,6 +591,83 @@ export default function Complaint() {
             )}
           </div>
         </div>
+      </div>
+
+      {/* ── 2. FILTERS ROW ────────────────────────────────────────── */}
+      <div
+        className="relative z-40 flex items-center justify-start gap-2.5 flex-wrap mb-5"
+        style={{ overflow: "visible" }}
+      >
+        {/* Status Sliding Tabs */}
+        <SlidingTabs
+          value={filterStatus}
+          onChange={(val) => { setFilterStatus(val); setPage(1); }}
+          items={(() => {
+            const allTabs = [
+              { id: "ALL", label: t("compTabAll") || "All", badge: counts.ALL },
+              { id: "PENDING", label: t("compStatusPending") || "Pending", badge: counts.PENDING },
+              { id: "IN_PROGRESS", label: t("compTabInProgress") || "In Progress", badge: counts.IN_PROGRESS },
+              { id: "RESOLVED", label: t("compStatusResolved") || "Resolved", badge: counts.RESOLVED },
+            ];
+            return isSearchOpen ? allTabs.filter(tab => tab.id === filterStatus) : allTabs;
+          })()}
+        />
+
+        {/* Expandable Search Bar */}
+        <ExpandableSearch
+          value={searchQuery}
+          onChange={(val) => { setSearchQuery(val); setPage(1); }}
+          placeholder={t("compSearchPh") || "Search complaints..."}
+          isOpen={isSearchOpen}
+          onOpenChange={setIsSearchOpen}
+        />
+
+        {/* Date Range Filter */}
+        <DateRangeFilter
+          className={styles.dateRangeControl}
+          fromDate={dateFrom}
+          toDate={dateTo}
+          onChange={({ from, to }) => {
+            setDateFrom(from);
+            setDateTo(to);
+            setPage(1);
+          }}
+          onClear={() => {
+            setDateFrom("");
+            setDateTo("");
+            setPage(1);
+          }}
+          placeholder={t("compDate") || "Date Range"}
+        />
+
+        {/* Super Admin Society Filter */}
+        {isSuperAdmin && (
+          <Select
+            className="input"
+            value={filterSocietyId}
+            onChange={(e) => { setFilterSocietyId(e.target.value); setPage(1); }}
+            style={{ height: 42, minHeight: 42, fontSize: 13, borderRadius: 12, minWidth: 160 }}
+          >
+            <option value="">{t("allSocieties") || "All Societies"}</option>
+            {societiesList.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+          </Select>
+        )}
+
+        {/* Filters Toggle Button */}
+        <button
+          type="button"
+          className={`${styles.filtersBtn} ${filtersOpen ? styles.filtersBtnActive : ""}`}
+          style={{ height: 42, minHeight: 42, borderRadius: 12, display: "inline-flex", alignItems: "center", gap: 6, padding: "0 14px" }}
+          onClick={() => setFiltersOpen(o => !o)}
+        >
+          <MdFilterAlt size={16} />
+          <span>{t("compFilters") || "Filters"}</span>
+          {activeChips.length > 0 && (
+            <span style={{ fontSize: 10, fontWeight: 800, background: "var(--accent)", color: "#fff", padding: "1px 6px", borderRadius: 999 }}>
+              {activeChips.length}
+            </span>
+          )}
+        </button>
       </div>
 
       {/* ── 2. FILTER POPOVER & ACTIVE CHIPS ───────────────────────── */}

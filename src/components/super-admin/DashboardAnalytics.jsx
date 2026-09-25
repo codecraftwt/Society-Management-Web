@@ -22,6 +22,7 @@ import {
   ResponsiveContainer, PieChart, Pie, Cell, LabelList,
 } from "recharts";
 import { useTheme } from "../../context/ThemeContext";
+import { useLang } from "../../context/LanguageContext";
 import API from "../../services/api";
 
 // ── Colour palettes ──────────────────────────────────────────────────────────
@@ -98,8 +99,20 @@ function NoData({ message = "No data available" }) {
   );
 }
 
+// ── Property type label mapping ──────────────────────────────────────────────
+function propTypeLabel(pt, t) {
+  const map = {
+    Apartments: t("saAnPropApt", "Apartments"),
+    "Row Houses": t("saAnPropRow", "Row Houses"),
+    Mixed: t("saAnPropMixed", "Mixed"),
+    Commercial: t("saAnPropCom", "Commercial"),
+  };
+  return map[pt] || pt;
+}
+
 // ── Main component ───────────────────────────────────────────────────────────
 export default function DashboardAnalytics({ societies, loading, onDataLoaded }) {
+  const { t } = useLang();
   const { theme } = useTheme();
   const p = theme === "dark" ? DARK_PALETTE : LIGHT_PALETTE;
   const donutColors = theme === "dark" ? DONUT_COLORS_DARK : DONUT_COLORS_LIGHT;
@@ -180,9 +193,9 @@ export default function DashboardAnalytics({ societies, loading, onDataLoaded })
       .sort((a, b) => b.residents - a.residents || a.name.localeCompare(b.name));
 
     const compositionData = [
-      { name: "Owners", value: totalOwners, color: p.gold },
-      { name: "Tenants", value: totalTenants, color: p.rose },
-      ...(totalOther > 0 ? [{ name: "Unclassified", value: totalOther, color: p.sky }] : []),
+      { name: t("saAnOwners", "Owners"), value: totalOwners, color: p.gold },
+      { name: t("saAnTenants", "Tenants"), value: totalTenants, color: p.rose },
+      ...(totalOther > 0 ? [{ name: t("saAnUnclassified", "Unclassified"), value: totalOther, color: p.sky }] : []),
     ];
 
     const totalAssigned = (societies || []).filter((s) => !!s.societyAdmins).length;
@@ -191,7 +204,7 @@ export default function DashboardAnalytics({ societies, loading, onDataLoaded })
     // Property type distribution
     const propertyCounts = {};
     (societies || []).forEach((s) => {
-      const k = s.property_type || "Apartments";
+      const k = propTypeLabel(s.property_type || "Apartments", t);
       propertyCounts[k] = (propertyCounts[k] || 0) + 1;
     });
     const propertyTypeData = Object.entries(propertyCounts).map(([name, value]) => ({ name, value }));
@@ -199,7 +212,7 @@ export default function DashboardAnalytics({ societies, loading, onDataLoaded })
     // Residents grouped by property type (distinct from society count donut)
     const typeTotals = {};
     (societies || []).forEach((s) => {
-      const k = s.property_type || "Apartments";
+      const k = propTypeLabel(s.property_type || "Apartments", t);
       typeTotals[k] = (typeTotals[k] || 0) + (societyMap[String(s.id)]?.residents || 0);
     });
     const residentByTypeData = Object.entries(typeTotals)
@@ -218,7 +231,7 @@ export default function DashboardAnalytics({ societies, loading, onDataLoaded })
       totalAssigned,
       totalUnassigned,
     };
-  }, [societies, residents, p.gold, p.rose, p.sky]);
+  }, [societies, residents, p.gold, p.rose, p.sky, t]);
 
   // Report live totals to parent KPI cards
   useEffect(() => {
@@ -251,7 +264,7 @@ export default function DashboardAnalytics({ societies, loading, onDataLoaded })
       <div className="sa-analytics-grid">
         {[1, 2, 3].map((i) => (
           <ChartCard key={i} title="–" subtitle="">
-            <NoData message="No societies registered yet. Add one to see live analytics." />
+            <NoData message={t("saAnNoSocsYet", "No societies registered yet. Add one to see live analytics.")} />
           </ChartCard>
         ))}
       </div>
@@ -265,9 +278,9 @@ export default function DashboardAnalytics({ societies, loading, onDataLoaded })
 
       {/* ── 1. Residents by Society (vertical bar) ── */}
       <ChartCard
-        title="Residents by Society"
-        subtitle="Live registered residents across societies"
-        badge="Live"
+        title={t("saAnResBySocTitle", "Residents by Society")}
+        subtitle={t("saAnResBySocSub", "Live registered residents across societies")}
+        badge={t("saAnLive", "Live")}
         className="sa-chart-wide"
       >
         {residentData.length ? (
@@ -278,19 +291,19 @@ export default function DashboardAnalytics({ societies, loading, onDataLoaded })
                 axisLine={false} tickLine={false} interval={0} angle={-18} textAnchor="end" height={52} />
               <YAxis tick={{ fill: p.textMuted, fontSize: 11 }} axisLine={false} tickLine={false} allowDecimals={false} />
               <Tooltip contentStyle={ttStyle} cursor={{ fill: "rgba(251,191,36,0.10)" }} />
-              <Bar dataKey="residents" name="Residents" fill={p.gold} radius={[6, 6, 0, 0]} maxBarSize={46}>
+              <Bar dataKey="residents" name={t("saAnResidents", "Residents")} fill={p.gold} radius={[6, 6, 0, 0]} maxBarSize={46}>
                 <LabelList dataKey="residents" position="top" style={{ fill: p.text, fontSize: 10, fontWeight: 700 }} />
               </Bar>
             </BarChart>
           </ResponsiveContainer>
-        ) : <NoData message="No residents assigned to any society yet." />}
+        ) : <NoData message={t("saAnNoResAssigned", "No residents assigned to any society yet.")} />}
       </ChartCard>
 
       {/* ── 2. Owner vs Tenant donut (pie) ── */}
       <ChartCard
-        title="Resident Composition"
-        subtitle="Owner vs tenant mix across the platform"
-        badge="Live"
+        title={t("saAnCompTitle", "Resident Composition")}
+        subtitle={t("saAnCompSub", "Owner vs tenant mix across the platform")}
+        badge={t("saAnLive", "Live")}
       >
         {compositionData.reduce((s, d) => s + d.value, 0) > 0 ? (
           <ResponsiveContainer width="100%" height={280}>
@@ -313,18 +326,18 @@ export default function DashboardAnalytics({ societies, loading, onDataLoaded })
                 <tspan x="50%" dy="-0.3em" fontSize={24} fontWeight={800} fill={p.text}>
                   {analytics.totalResidents.toLocaleString()}
                 </tspan>
-                <tspan x="50%" dy="1.6em" fontSize={10} fill={p.textMuted}>Total Residents</tspan>
+                <tspan x="50%" dy="1.6em" fontSize={10} fill={p.textMuted}>{t("saDashStatResidents", "Total Residents")}</tspan>
               </text>
             </PieChart>
           </ResponsiveContainer>
-        ) : <NoData message="No resident data yet." />}
+        ) : <NoData message={t("saAnNoResData", "No resident data yet.")} />}
       </ChartCard>
 
       {/* ── 3. Community composition per society (vertical stacked) ── */}
       <ChartCard
-        title="Community Mix by Society"
-        subtitle="Owners vs tenants stacked per society"
-        badge="Live"
+        title={t("saAnMixTitle", "Community Mix by Society")}
+        subtitle={t("saAnMixSub", "Owners vs tenants stacked per society")}
+        badge={t("saAnLive", "Live")}
       >
         {residentData.some((d) => d.residents > 0) ? (
           <ResponsiveContainer width="100%" height={280}>
@@ -335,18 +348,18 @@ export default function DashboardAnalytics({ societies, loading, onDataLoaded })
               <YAxis tick={{ fill: p.textMuted, fontSize: 11 }} axisLine={false} tickLine={false} allowDecimals={false} />
               <Tooltip contentStyle={ttStyle} cursor={{ fill: "rgba(244,114,182,0.10)" }} />
               <Legend wrapperStyle={{ color: p.text, fontSize: 12 }} />
-              <Bar dataKey="owners" name="Owners" stackId="a" fill={p.sky} maxBarSize={44} />
-              <Bar dataKey="tenants" name="Tenants" stackId="a" fill={p.rose} radius={[6, 6, 0, 0]} maxBarSize={44} />
+              <Bar dataKey="owners" name={t("saAnOwners", "Owners")} stackId="a" fill={p.sky} maxBarSize={44} />
+              <Bar dataKey="tenants" name={t("saAnTenants", "Tenants")} stackId="a" fill={p.rose} radius={[6, 6, 0, 0]} maxBarSize={44} />
             </BarChart>
           </ResponsiveContainer>
-        ) : <NoData message="No resident data yet." />}
+        ) : <NoData message={t("saAnNoResData", "No resident data yet.")} />}
       </ChartCard>
 
       {/* ── 4. Property type mix donut ── */}
       <ChartCard
-        title="Societies by Property Type"
-        subtitle="Distribution of societies across property types"
-        badge="Live"
+        title={t("saAnPropTitle", "Societies by Property Type")}
+        subtitle={t("saAnPropSub", "Distribution of societies across property types")}
+        badge={t("saAnLive", "Live")}
       >
         {propertyTypeData.reduce((s, d) => s + d.value, 0) > 0 ? (
           <ResponsiveContainer width="100%" height={260}>
@@ -363,18 +376,18 @@ export default function DashboardAnalytics({ societies, loading, onDataLoaded })
                   <Cell key={`pt-${index}`} fill={donutColors[index % donutColors.length]} stroke="none" />
                 ))}
               </Pie>
-              <Tooltip contentStyle={ttStyle} formatter={(v) => `${v} societ${v === 1 ? "y" : "ies"}`} />
+              <Tooltip contentStyle={ttStyle} formatter={(v) => `${v} ${v === 1 ? t("saAnSocOne", "society") : t("saAnSocMany", "societies")}`} />
               <Legend verticalAlign="bottom" iconType="circle" wrapperStyle={{ color: p.text, fontSize: 12 }} />
             </PieChart>
           </ResponsiveContainer>
-        ) : <NoData message="No societies available." />}
+        ) : <NoData message={t("saAnNoSocsAvail", "No societies available.")} />}
       </ChartCard>
 
       {/* ── 5. Residents by property type (horizontal bar) ── */}
       <ChartCard
-        title="Residents by Property Type"
-        subtitle="Where residents are spread across property categories"
-        badge="Live"
+        title={t("saAnResByPropTitle", "Residents by Property Type")}
+        subtitle={t("saAnResByPropSub", "Where residents are spread across property categories")}
+        badge={t("saAnLive", "Live")}
       >
         {residentByTypeData.some((d) => d.Residents > 0) ? (
           <ResponsiveContainer width="100%" height={260}>
@@ -383,17 +396,17 @@ export default function DashboardAnalytics({ societies, loading, onDataLoaded })
               <XAxis type="number" tick={{ fill: p.textMuted, fontSize: 11 }} axisLine={false} tickLine={false} allowDecimals={false} />
               <YAxis type="category" dataKey="name" tick={{ fill: p.textMuted, fontSize: 11 }} axisLine={false} tickLine={false} width={86} />
               <Tooltip contentStyle={ttStyle} cursor={{ fill: "rgba(52,211,153,0.10)" }} />
-              <Bar dataKey="Residents" name="Residents" fill={p.emerald} radius={[0, 6, 6, 0]} maxBarSize={22} />
+              <Bar dataKey="Residents" name={t("saAnResidents", "Residents")} fill={p.emerald} radius={[0, 6, 6, 0]} maxBarSize={22} />
             </BarChart>
           </ResponsiveContainer>
-        ) : <NoData message="No resident data yet." />}
+        ) : <NoData message={t("saAnNoResData", "No resident data yet.")} />}
       </ChartCard>
 
       {/* ── 6. Top societies leaderboard ── */}
       <ChartCard
-        title="Top Societies by Residents"
-        subtitle="Highest enrolled societies on the platform"
-        badge="Live"
+        title={t("saAnTopTitle", "Top Societies by Residents")}
+        subtitle={t("saAnTopSub", "Highest enrolled societies on the platform")}
+        badge={t("saAnLive", "Live")}
       >
         <div className="sa-top-list" style={{ paddingTop: 4 }}>
           {topFive.map((s, i) => (
@@ -414,7 +427,7 @@ export default function DashboardAnalytics({ societies, loading, onDataLoaded })
               <span className="sa-top-count">{s.residents}</span>
             </div>
           ))}
-          {topFive.length === 0 && <NoData message="No societies enrolled yet." />}
+          {topFive.length === 0 && <NoData message={t("saAnNoSocsEnrolled", "No societies enrolled yet.")} />}
         </div>
       </ChartCard>
 

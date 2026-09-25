@@ -596,8 +596,8 @@ export default function ManageBills({ variant }) {
       {isAccountant ? (
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="ad-page-icon">
-              <MdReceiptLong size={22} />
+            <div style={{ width: 44, height: 44, borderRadius: 14, flexShrink: 0, background: "linear-gradient(135deg, var(--accent), #9e58ff)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 8px 20px rgba(158, 88, 255, 0.3)", color: "#ffffff" }}>
+              <MdReceiptLong size={22} color="#fff" />
             </div>
             <div>
               <h2 className="text-lg font-semibold" style={{ letterSpacing: "-0.02em" }}>{t("billsTitle")}</h2>
@@ -617,8 +617,8 @@ export default function ManageBills({ variant }) {
       ) : (
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 mb-5">
           <div className="flex items-center gap-3">
-            <div className="ad-page-icon">
-              <MdReceiptLong size={22} />
+            <div style={{ width: 44, height: 44, borderRadius: 14, flexShrink: 0, background: "linear-gradient(135deg, var(--accent), #9e58ff)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 8px 20px rgba(158, 88, 255, 0.3)", color: "#ffffff" }}>
+              <MdReceiptLong size={22} color="#fff" />
             </div>
             <div>
               <h2 className="text-lg font-semibold" style={{ letterSpacing: "-0.02em", margin: 0 }}>
@@ -664,7 +664,7 @@ export default function ManageBills({ variant }) {
                 icon={MdAdd}
                 borderDraw
                 onClick={handleOpenCreate}
-                className="shrink-0"
+                className="shrink-0 mb-btn-no-shadow"
                 style={{ fontWeight: 700, height: 42 }}
               >
                 {t("billCreate")}

@@ -1,6 +1,7 @@
 import React from "react";
 import { MdWarning } from "react-icons/md";
 import GlobalConfirmDialog from "./GlobalConfirmDialog";
+import { useLang } from "../../context/LanguageContext";
 
 /**
  * UnsavedChangesModal Component
@@ -18,18 +19,19 @@ export function UnsavedChangesModal({
   isOpen,
   onKeepEditing,
   onDiscard,
-  title = "Discard Unsaved Changes?",
-  message = "You have unsaved changes. Are you sure you want to close this form?",
+  title,
+  message,
 }) {
+  const { t } = useLang();
   return (
     <GlobalConfirmDialog
       isOpen={isOpen}
       onClose={onKeepEditing}
       onConfirm={onDiscard}
-      title={title}
-      message={message}
-      confirmLabel="Discard Changes"
-      cancelLabel="Keep Editing"
+      title={title || t("cdTitle", "Discard unsaved changes?")}
+      message={message || t("cdMessage", "You have unsaved changes in this form. If you close now they will be lost.")}
+      confirmLabel={t("cdDiscard", "Discard & Close")}
+      cancelLabel={t("cdKeep", "Keep Editing")}
       variant="warning"
       icon={MdWarning}
     />

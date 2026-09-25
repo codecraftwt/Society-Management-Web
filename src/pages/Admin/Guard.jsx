@@ -140,6 +140,11 @@ export default function Guard() {
   const { showUnauthorized, showError, showSuccess } = useCustomAlert();
   const activeRole = user?.activeRole ?? user?.role;
   const isSuperAdmin = activeRole === "SUPER_ADMIN";
+
+  const shiftName = (type) =>
+    type === "MORNING" ? t("guardShiftMorning", "Morning")
+    : type === "AFTERNOON" ? t("guardShiftAfternoon", "Afternoon")
+    : t("guardShiftNight", "Night");
   
   const canCreateGuard = hasPermission(user, "guard", "create");
   const canEditGuard = hasPermission(user, "guard", "edit");
@@ -270,7 +275,7 @@ export default function Guard() {
       });
       setTimingsDirty(false);
     } catch (err) {
-      const msg = err?.response?.data?.message || "Failed to load shift timings.";
+      const msg = err?.response?.data?.message || t("guardErrLoadTimings", "Failed to load shift timings.");
       showError(msg);
       setShiftTimings(null);
     } finally {
@@ -340,19 +345,19 @@ export default function Guard() {
 
   const handleSaveTimings = async () => {
     if (!timingsSocietyId) {
-      showError(isSuperAdmin ? "Select a society to configure shift timings." : "Society not found.");
+      showError(isSuperAdmin ? t("guardErrSelectSociety", "Select a society to configure shift timings.") : t("guardErrNoSociety", "Society not found."));
       return;
     }
     if (!shiftTimings) return;
     for (const type of ["MORNING", "AFTERNOON", "NIGHT"]) {
       const r = shiftTimings[type];
       if (!r || !isValidHHmm(r.start) || !isValidHHmm(r.end)) {
-        showError(`${type} shift requires valid start and end times (HH:mm).`);
+        showError(t("guardErrInvalidTimings", "{type} shift requires valid start and end times (HH:mm).", { type: shiftName(type) }));
         return;
       }
     }
     if (timingsHaveOverlap()) {
-      showError("Shift windows must not overlap. Adjust the timings so each time of day belongs to one shift.");
+      showError(t("guardErrOverlap", "Shift windows must not overlap. Adjust the timings so each time of day belongs to one shift."));
       return;
     }
     try {
@@ -363,9 +368,9 @@ export default function Guard() {
       });
       setTimingsDirty(false);
       setShowTimingsModal(false);
-      showSuccess("Shift timings updated. Guards reflect the new windows immediately.");
+      showSuccess(t("guardSuccessTimingsSaved", "Shift timings updated. Guards reflect the new windows immediately."));
     } catch (err) {
-      const msg = err?.response?.data?.message || "Failed to save shift timings.";
+      const msg = err?.response?.data?.message || t("guardErrSaveTimings", "Failed to save shift timings.");
       showError(msg);
     } finally {
       setTimingsSaving(false);
@@ -374,7 +379,7 @@ export default function Guard() {
 
   const handleResetTimings = async () => {
     if (!timingsSocietyId) {
-      showError(isSuperAdmin ? "Select a society to configure shift timings." : "Society not found.");
+      showError(isSuperAdmin ? t("guardErrSelectSociety", "Select a society to configure shift timings.") : t("guardErrNoSociety", "Society not found."));
       return;
     }
     try {
@@ -389,9 +394,9 @@ export default function Guard() {
         NIGHT: { ...DEFAULTS.NIGHT },
       });
       setTimingsDirty(false);
-      showSuccess("Shift timings reset to defaults (08:00–16:00 / 16:00–00:00 / 00:00–08:00).");
+      showSuccess(t("guardSuccessTimingsReset", "Shift timings reset to defaults (08:00–16:00 / 16:00–00:00 / 00:00–08:00)."));
     } catch (err) {
-      const msg = err?.response?.data?.message || "Failed to reset shift timings.";
+      const msg = err?.response?.data?.message || t("guardErrResetTimings", "Failed to reset shift timings.");
       showError(msg);
     } finally {
       setTimingsSaving(false);
@@ -405,7 +410,7 @@ export default function Guard() {
 
   const handleOpenAddModal = () => {
     if (!hasPermission(user, "guard", "create")) {
-      showUnauthorized("You do not have permission to add guards.");
+      showUnauthorized(t("guardErrPermissionAdd", "You do not have permission to add guards."));
       return;
     }
     setEditingId(null);
@@ -415,7 +420,7 @@ export default function Guard() {
 
   const handleEdit = (g) => {
     if (!hasPermission(user, "guard", "edit")) {
-      showUnauthorized("You do not have permission to edit guard details.");
+      showUnauthorized(t("guardErrPermissionEdit", "You do not have permission to edit guard details."));
       return;
     }
     setEditingId(g.id);
@@ -432,7 +437,7 @@ export default function Guard() {
     if (e) e.preventDefault();
     const reqAction = editingId ? "edit" : "create";
     if (!hasPermission(user, "guard", reqAction)) {
-      showUnauthorized(`You do not have permission to ${reqAction} guards.`);
+      showUnauthorized(t("guardErrPermissionAction", "You do not have permission to {action} guards.", { action: reqAction === "edit" ? t("guardActionEdit", "edit") : t("guardActionCreate", "create") }));
       return;
     }
     const nameErr = getTitleError(formData.name, "Guard name");
@@ -440,8 +445,8 @@ export default function Guard() {
     const emailErr = getEmailError(formData.email);
     if (emailErr) { showError(emailErr); return; }
     if (!editingId) {
-      if (!formData.password) { showError("Password is required for new guards."); return; }
-      if (formData.password.length < 6) { showError("Password must be at least 6 characters."); return; }
+      if (!formData.password) { showError(t("guardErrPasswordRequired", "Password is required for new guards.")); return; }
+      if (formData.password.length < 6) { showError(t("guardErrPasswordMin", "Password must be at least 6 characters.")); return; }
     }
 
     try {
@@ -468,9 +473,9 @@ export default function Guard() {
       fetchGuards();
     } catch (err) {
       if (err.response?.status === 403) {
-        showUnauthorized(err.response?.data?.message || "Operation restricted");
+        showUnauthorized(err.response?.data?.message || t("guardErrRestricted", "Operation restricted"));
       } else {
-        showError(err.response?.data?.message || "Operation failed");
+        showError(err.response?.data?.message || t("guardErrOperationFailed", "Operation failed"));
       }
     } finally {
       setSubmitLoading(false);
@@ -479,7 +484,7 @@ export default function Guard() {
 
   const handleOpenDelete = (g) => {
     if (!hasPermission(user, "guard", "delete")) {
-      showUnauthorized("You do not have permission to delete guards.");
+      showUnauthorized(t("guardErrPermissionDelete", "You do not have permission to delete guards."));
       return;
     }
     setDeleteConfirm({ isOpen: true, id: g.id, societyId: g.society_id, loading: false });
@@ -488,7 +493,7 @@ export default function Guard() {
   const handleDeleteConfirm = async () => {
     if (!deleteConfirm.id) return;
     if (!hasPermission(user, "guard", "delete")) {
-      showUnauthorized("You do not have permission to delete guards.");
+      showUnauthorized(t("guardErrPermissionDelete", "You do not have permission to delete guards."));
       setDeleteConfirm({ isOpen: false, id: null, societyId: null, loading: false });
       return;
     }
@@ -499,9 +504,9 @@ export default function Guard() {
       fetchGuards();
     } catch (err) {
       if (err.response?.status === 403) {
-        showUnauthorized(err.response?.data?.message || "Operation restricted");
+        showUnauthorized(err.response?.data?.message || t("guardErrRestricted", "Operation restricted"));
       } else {
-        showError(err.response?.data?.message || "Failed to delete guard");
+        showError(err.response?.data?.message || t("guardErrDelete", "Failed to delete guard"));
       }
       setDeleteConfirm(p => ({ ...p, loading: false }));
     }
@@ -510,7 +515,7 @@ export default function Guard() {
   /* ── SHIFTS ── */
   const openShiftModal = (guard, shift = null) => {
     if (!hasPermission(user, "guard", "edit_shift")) {
-      showUnauthorized("You do not have permission to manage guard shifts.");
+      showUnauthorized(t("guardErrPermissionShift", "You do not have permission to manage guard shifts."));
       return;
     }
     setSelectedGuard(guard);
@@ -534,11 +539,11 @@ export default function Guard() {
   const handleShiftSubmit = async (e) => {
     if (e) e.preventDefault();
     if (!shiftForm.shift_type || !shiftForm.start_date || !shiftForm.end_date) {
-      setShiftError("Please fill all shift fields.");
+      setShiftError(t("guardErrFillShift", "Please fill all shift fields."));
       return;
     }
     if (new Date(shiftForm.start_date) > new Date(shiftForm.end_date)) {
-      setShiftError("Start date cannot be after End date.");
+      setShiftError(t("guardErrStartAfterEnd", "Start date cannot be after End date."));
       return;
     }
 
@@ -546,11 +551,8 @@ export default function Guard() {
       .filter(s => !editingShiftId || s.id !== editingShiftId)
       .find(s => shiftForm.start_date <= s.end_date && shiftForm.end_date >= s.start_date);
     if (existingShift) {
-      const typeLabels = { MORNING: "Morning", AFTERNOON: "Afternoon", NIGHT: "Night" };
-      const label = typeLabels[existingShift.shift_type] || existingShift.shift_type;
       setShiftError(
-        `Guard already has a ${label} shift from ${existingShift.start_date} to ${existingShift.end_date}. ` +
-        `A guard can only have one shift per date — edit that shift instead of creating a new one.`
+        t("guardErrDuplicateShift", "Guard already has a {label} shift from {start} to {end}. A guard can only have one shift per date — edit that shift instead of creating a new one.", { label: shiftName(existingShift.shift_type), start: existingShift.start_date, end: existingShift.end_date })
       );
       return;
     }
@@ -570,7 +572,7 @@ export default function Guard() {
       if (status === 409 && data?.existingShift && !editingShiftId) {
         openShiftModal(selectedGuard, data.existingShift);
       } else {
-        setShiftError(data?.message || "Failed to save shift");
+        setShiftError(data?.message || t("guardErrSaveShift", "Failed to save shift"));
       }
     } finally {
       setSubmitLoading(false);
@@ -605,14 +607,14 @@ export default function Guard() {
     ...(isSuperAdmin
       ? [{
           key: "society",
-          header: "Society",
+          header: t("guardColSociety", "Society"),
           hiddenMobile: true,
           render: (g) => {
             const societyName =
               (g.societyName && g.societyName !== "NA"
                 ? g.societyName
                 : societiesList.find(s => String(s.id) === String(g.society_id))?.name) ||
-              "Not assigned";
+              t("guardNotAssigned", "Not assigned");
             return (
               <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                 <MdApartment size={13} style={{ color: "var(--accent)", opacity: 0.8 }} />
@@ -638,7 +640,7 @@ export default function Guard() {
                   type="button"
                   onClick={() => openShiftModal(g, s)}
                   style={{ padding: 0, border: "none", background: "none", cursor: "pointer", borderRadius: 6 }}
-                  title={`Edit ${s.shift_type} shift (${s.start_date} → ${s.end_date})`}
+                  title={t("guardEditShiftTitleTooltip", "Edit {type} shift ({range})", { type: shiftName(s.shift_type), range: `${s.start_date} → ${s.end_date}` })}
                 >
                   <ShiftBadge type={s.shift_type} t={t} />
                 </button>
@@ -668,7 +670,7 @@ export default function Guard() {
                   color: "var(--text-secondary)", background: "none", border: "none",
                   cursor: "pointer", padding: 0, textAlign: "left",
                 }}
-                title={`Edit ${s.shift_type} shift (${s.start_date} → ${s.end_date})`}
+                title={t("guardEditShiftTitleTooltip", "Edit {type} shift ({range})", { type: shiftName(s.shift_type), range: `${s.start_date} → ${s.end_date}` })}
               >
                 <MdCalendarToday size={11} style={{ opacity: 0.7 }} />
                 <span>{s.shift_type}: {s.start_date} → {s.end_date}</span>
@@ -696,9 +698,9 @@ export default function Guard() {
                 size="sm"
                 icon={MdEdit}
                 onClick={() => handleEdit(g)}
-                title="Edit Guard"
+                title={t("guardEditBtn", "Edit")}
               >
-                Edit
+                {t("guardEditBtn", "Edit")}
               </GlobalButton>
             )}
             {canShiftGuard && (
@@ -731,17 +733,29 @@ export default function Guard() {
       {/* ── HEADER ── */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-          <div style={{
-            width: 46, height: 46, borderRadius: 14, flexShrink: 0,
-            display: "flex", alignItems: "center", justifyContent: "center",
-            background: "linear-gradient(135deg, rgba(160,90,255,0.15), rgba(160,90,255,0.08))",
-            border: "1.5px solid rgba(160,90,255,0.25)", color: "var(--accent)",
-          }}>
-            <MdSecurity size={22} />
+          <div
+            style={{
+              width: 44,
+              height: 44,
+              borderRadius: 14,
+              flexShrink: 0,
+              background: "linear-gradient(135deg, var(--accent), #9e58ff)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              boxShadow: "0 8px 20px rgba(158, 88, 255, 0.3)",
+              color: "#ffffff",
+            }}
+          >
+            <MdSecurity size={22} color="#fff" />
           </div>
           <div>
-            <h2 className="page-title">{t("guardTitle")}</h2>
-            <p className="page-subtitle">{guards.length} {t("guardRegistered")}</p>
+            <h2 className="text-lg font-semibold" style={{ letterSpacing: "-0.02em", margin: 0 }}>
+              {t("guardTitle")}
+            </h2>
+            <p className="text-secondary text-xs mt-0.5">
+              {guards.length} {t("guardRegistered")}
+            </p>
           </div>
         </div>
 
@@ -803,9 +817,9 @@ export default function Guard() {
                 <div style={{ fontSize: 11, color: "var(--text-secondary)", marginTop: 1 }}>
                   {isSuperAdmin
                     ? (timingsSocietyId
-                        ? "Configure shift windows for the selected society."
-                        : "Select a society to configure its shift windows.")
-                    : "These windows decide when each shift type is active for all guards."}
+                        ? t("guardTimingsCfgSelected", "Configure shift windows for the selected society.")
+                        : t("guardTimingsCfgPick", "Select a society to configure its shift windows."))
+                    : t("guardShiftTimingsSubtitle", "These windows decide when each shift type is active for all guards.")}
                 </div>
               </div>
             </div>
@@ -821,7 +835,7 @@ export default function Guard() {
                     color: activeShift.accent,
                   }}>
                     <span className="gt-live-dot" />
-                    Now: {activeShift.label}
+                    {t("guardActiveNow", "Now: {label}", { label: activeShift.label })}
                   </div>
                 )}
                 <GlobalButton
@@ -916,11 +930,11 @@ export default function Guard() {
                           fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase",
                           background: accent, color: "#ffffff", boxShadow: `0 4px 12px ${glow}`,
                         }}>
-                          <span className="gt-pill-dot" /> Active Now
+                          <span className="gt-pill-dot" /> {t("guardActiveNowPill", "Active Now")}
                         </span>
                       ) : (
                         <span style={{ fontSize: 10.5, fontWeight: 700, color: "var(--text-tertiary)", letterSpacing: "0.05em" }}>
-                          {r ? `${durationLabel(r.start, r.end)} shift` : "—"}
+                          {r ? t("guardDurationShift", "{duration} shift", { duration: durationLabel(r.start, r.end) }) : "—"}
                         </span>
                       )}
                     </div>
@@ -931,8 +945,8 @@ export default function Guard() {
           ) : (
             <div style={{ marginTop: 10, fontSize: 12, color: "var(--text-tertiary)", fontStyle: "italic" }}>
               {isSuperAdmin
-                ? "Switch the society filter above from “All” to a specific society to edit its shift timings."
-                : "No society context available."}
+                ? t("guardTimingsHintPick", "Switch the society filter above from “All” to a specific society to edit its shift timings.")
+                : t("guardNoSocietyContext", "No society context available.")}
             </div>
           )}
         </div>
@@ -963,12 +977,12 @@ export default function Guard() {
       <GlobalModal
         isOpen={showGuardModal}
         onClose={() => setShowGuardModal(false)}
-        title={editingId ? "Update Security Guard" : t("guardFormTitle") || "Add Security Guard"}
-        subtitle="Credentials and Society Assignment"
+        title={editingId ? t("guardFormTitleEdit", "Update Security Guard") : t("guardFormTitle") || "Add Security Guard"}
+        subtitle={t("guardModalSubtitle", "Credentials and Society Assignment")}
         icon={MdPerson}
         size="md"
         showFooter
-        submitLabel={editingId ? "Update Guard" : t("guardCreateBtn") || "Add Guard"}
+        submitLabel={editingId ? t("guardUpdateBtn", "Update Guard") : t("guardCreateBtn") || "Add Guard"}
         cancelLabel={t("cancel") || "Cancel"}
         onSubmit={handleSubmit}
         submitLoading={submitLoading}
@@ -979,14 +993,14 @@ export default function Guard() {
         <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
           {isSuperAdmin && (
             <div>
-              <SectionLabel>Society</SectionLabel>
+              <SectionLabel>{t("guardColSociety", "Society")}</SectionLabel>
               <Select
                 className="input"
                 value={formData.society_id}
                 onChange={e => setFormData({ ...formData, society_id: e.target.value })}
                 required
               >
-                <option value="">Select Society</option>
+                <option value="">{t("guardSelectSociety", "Select Society")}</option>
                 {societiesList.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
               </Select>
             </div>
@@ -1025,11 +1039,11 @@ export default function Guard() {
           </div>
 
           <div>
-            <SectionLabel>{editingId ? "New Password (Leave blank to keep)" : t("guardPassword")}</SectionLabel>
+            <SectionLabel>{editingId ? t("guardPasswordNew", "New Password (Leave blank to keep)") : t("guardPassword")}</SectionLabel>
             <div style={{ position: "relative" }}>
               <input
                 type={showPassword ? "text" : "password"}
-                placeholder={editingId ? "Leave blank to keep current password" : t("guardPassword")}
+                placeholder={editingId ? t("guardPasswordKeepPlaceholder", "Leave blank to keep current password") : t("guardPassword")}
                 value={formData.password}
                 onChange={e => setFormData({ ...formData, password: e.target.value })}
                 required={!editingId}
@@ -1056,12 +1070,12 @@ export default function Guard() {
       <GlobalModal
         isOpen={showShiftModal}
         onClose={() => setShowShiftModal(false)}
-        title={editingShiftId ? "Edit Guard Shift" : "Assign Guard Shift"}
-        subtitle={selectedGuard ? `Guard: ${selectedGuard.name}` : "Shift schedule"}
+        title={editingShiftId ? t("guardShiftEditTitle", "Edit Guard Shift") : t("guardShiftAssignTitle", "Assign Guard Shift")}
+        subtitle={selectedGuard ? t("guardShiftFor", "Guard: {name}", { name: selectedGuard.name }) : t("guardShiftScheduleSub", "Shift schedule")}
         icon={MdSchedule}
         size="md"
         showFooter
-        submitLabel={editingShiftId ? "Update Shift" : "Assign Shift"}
+        submitLabel={editingShiftId ? t("guardShiftUpdateBtn", "Update Shift") : t("guardShiftAssignBtn", "Assign Shift")}
         cancelLabel={t("cancel") || "Cancel"}
         onSubmit={handleShiftSubmit}
         submitLoading={submitLoading}
@@ -1072,7 +1086,7 @@ export default function Guard() {
           {/* Shift Selection Toggle Options */}
           {selectedGuard && (guardShifts[selectedGuard.id] || []).length > 0 && (
             <div style={{ display: "flex", flexDirection: "column", gap: 8, paddingBottom: 10, borderBottom: "1px solid var(--divider, rgba(255,255,255,0.08))" }}>
-              <SectionLabel>Assigned Shifts ({guardShifts[selectedGuard.id].length})</SectionLabel>
+              <SectionLabel>{t("guardAssignedShifts", "Assigned Shifts ({count})", { count: guardShifts[selectedGuard.id].length })}</SectionLabel>
               <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
                 {guardShifts[selectedGuard.id].map((s) => {
                   const isSelected = editingShiftId === s.id;
@@ -1132,7 +1146,7 @@ export default function Guard() {
                     fontSize: 11,
                   }}
                 >
-                  <MdAdd size={14} /> New Shift
+                  <MdAdd size={14} /> {t("guardNewShift", "New Shift")}
                 </button>
               </div>
             </div>
@@ -1149,23 +1163,23 @@ export default function Guard() {
           )}
 
           <div>
-            <SectionLabel>Shift Type</SectionLabel>
+            <SectionLabel>{t("guardShiftType") || "Shift Type"}</SectionLabel>
             <Select
               className="input"
               value={shiftForm.shift_type}
               onChange={e => setShiftForm({ ...shiftForm, shift_type: e.target.value })}
               required
             >
-              <option value="">Select Shift Type</option>
-              <option value="MORNING">Morning ({fmtTime12h(shiftTimings?.MORNING?.start)} - {fmtTime12h(shiftTimings?.MORNING?.end)})</option>
-              <option value="AFTERNOON">Afternoon ({fmtTime12h(shiftTimings?.AFTERNOON?.start)} - {fmtTime12h(shiftTimings?.AFTERNOON?.end)})</option>
-              <option value="NIGHT">Night ({fmtTime12h(shiftTimings?.NIGHT?.start)} - {fmtTime12h(shiftTimings?.NIGHT?.end)})</option>
+              <option value="">{t("guardSelectShiftType", "Select Shift Type")}</option>
+              <option value="MORNING">{t("guardShiftMorning", "Morning")} ({fmtTime12h(shiftTimings?.MORNING?.start)} - {fmtTime12h(shiftTimings?.MORNING?.end)})</option>
+              <option value="AFTERNOON">{t("guardShiftAfternoon", "Afternoon")} ({fmtTime12h(shiftTimings?.AFTERNOON?.start)} - {fmtTime12h(shiftTimings?.AFTERNOON?.end)})</option>
+              <option value="NIGHT">{t("guardShiftNight", "Night")} ({fmtTime12h(shiftTimings?.NIGHT?.start)} - {fmtTime12h(shiftTimings?.NIGHT?.end)})</option>
             </Select>
           </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
             <div>
-              <SectionLabel>Start Date</SectionLabel>
+              <SectionLabel>{t("guardStartDate") || "Start Date"}</SectionLabel>
               <input
                 type="date"
                 className="input"
@@ -1175,7 +1189,7 @@ export default function Guard() {
               />
             </div>
             <div>
-              <SectionLabel>End Date</SectionLabel>
+              <SectionLabel>{t("guardEndDate") || "End Date"}</SectionLabel>
               <input
                 type="date"
                 className="input"
@@ -1305,8 +1319,8 @@ export default function Guard() {
         isOpen={deleteConfirm.isOpen}
         onClose={() => setDeleteConfirm({ isOpen: false, id: null, societyId: null, loading: false })}
         onConfirm={handleDeleteConfirm}
-        title="Delete Security Guard"
-        message="Are you sure you want to delete this guard account? They will lose access to gate check-in systems immediately."
+        title={t("guardDeleteTitle", "Delete Security Guard")}
+        message={t("guardDeleteMsg", "Are you sure you want to delete this guard account? They will lose access to gate check-in systems immediately.")}
         variant="danger"
         loading={deleteConfirm.loading}
       />

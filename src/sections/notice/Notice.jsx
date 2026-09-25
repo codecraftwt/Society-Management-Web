@@ -267,7 +267,7 @@ export default function Notice() {
   const historyColumns = [
     {
       key: "name",
-      header: "Resident",
+      header: t("noticeHistResident", "Resident"),
       render: (u) => (
         <div>
           <p style={{ fontWeight: 650, margin: 0, color: "var(--text-primary)" }}>{u.name}</p>
@@ -277,7 +277,7 @@ export default function Notice() {
     },
     {
       key: "flat_number",
-      header: "Flat Unit",
+      header: t("noticeHistFlatUnit", "Flat Unit"),
       width: 120,
       render: (u) => (
         <span style={{ fontWeight: 650, color: "var(--text-primary)" }}>{u.flat_number || "—"}</span>
@@ -285,7 +285,7 @@ export default function Notice() {
     },
     {
       key: "acknowledged_at",
-      header: "Acknowledged At",
+      header: t("noticeHistAckAt", "Acknowledged At"),
       width: 160,
       render: (u) =>
         u.acknowledged_at ? (
@@ -296,27 +296,27 @@ export default function Notice() {
     },
     {
       key: "status",
-      header: "Status",
+      header: t("noticeHistStatus", "Status"),
       align: "right",
       width: 180,
       render: (u) => {
         if (u.status === "ACKNOWLEDGED") {
           return (
             <span style={{ whiteSpace: "nowrap", fontSize: "0.72rem", fontWeight: 700, padding: "3px 10px", borderRadius: 999, background: "rgba(16,185,129,0.15)", color: "#10b981", border: "1px solid rgba(16,185,129,0.3)" }}>
-              ✓ ACKNOWLEDGED
+              ✓ {t("noticeHistBadgeAck", "ACKNOWLEDGED")}
             </span>
           );
         } else if (u.status === "VIEWED_NOT_ACKNOWLEDGED") {
           return (
             <span style={{ whiteSpace: "nowrap", fontSize: "0.72rem", fontWeight: 700, padding: "3px 10px", borderRadius: 999, background: "rgba(245,158,11,0.15)", color: "#f59e0b", border: "1px solid rgba(245,158,11,0.3)" }}>
-              VIEWED
+              {t("noticeHistBadgeViewed", "VIEWED")}
             </span>
           );
         }
         return (
-          <span style={{ whiteSpace: "nowrap", fontSize: "0.72rem", fontWeight: 700, padding: "3px 10px", borderRadius: 999, background: "rgba(239,68,68,0.15)", color: "#ef4444", border: "1px solid rgba(239,68,68,0.3)" }}>
-            NOT VIEWED
-          </span>
+<span style={{ whiteSpace: "nowrap", fontSize: "0.72rem", fontWeight: 700, padding: "3px 10px", borderRadius: 999, background: "rgba(239,68,68,0.15)", color: "#ef4444", border: "1px solid rgba(239,68,68,0.3)" }}>
+              {t("noticeHistBadgeNotViewed", "NOT VIEWED")}
+            </span>
         );
       },
     },
@@ -395,7 +395,7 @@ export default function Notice() {
           isOpen={historyModal.isOpen}
           onClose={() => setHistoryModal({ isOpen: false, notice: null, loading: false, data: null, search: "", statusFilter: "ALL" })}
           title={t("noticeAckHistoryTitle") || "Notice Acknowledgement History"}
-          subtitle={historyModal.notice?.title || "Recipient view & read status"}
+          subtitle={historyModal.notice?.title || t("noticeAckHistorySub", "Recipient view & read status")}
           icon={MdCheckCircle}
           size="xl"
         >
@@ -405,28 +405,28 @@ export default function Notice() {
               <div style={{ padding: "12px 14px", borderRadius: 12, background: "rgba(160,90,255,0.08)", border: "1px solid rgba(160,90,255,0.2)", display: "flex", alignItems: "center", gap: 10 }}>
                 <MdPeople size={22} style={{ color: "var(--accent)" }} />
                 <div>
-                  <p style={{ fontSize: 11, color: "var(--text-secondary)", margin: 0, textTransform: "uppercase", fontWeight: 600 }}>Total</p>
+                  <p style={{ fontSize: 11, color: "var(--text-secondary)", margin: 0, textTransform: "uppercase", fontWeight: 600 }}>{t("noticeHistTotal", "Total")}</p>
                   <p style={{ fontSize: 18, fontWeight: 800, margin: 0, color: "var(--text-primary)" }}>{historyModal.data?.summary?.total ?? 0}</p>
                 </div>
               </div>
               <div style={{ padding: "12px 14px", borderRadius: 12, background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.2)", display: "flex", alignItems: "center", gap: 10 }}>
                 <MdVisibility size={22} style={{ color: "#f59e0b" }} />
                 <div>
-                  <p style={{ fontSize: 11, color: "var(--text-secondary)", margin: 0, textTransform: "uppercase", fontWeight: 600 }}>Viewed</p>
+                  <p style={{ fontSize: 11, color: "var(--text-secondary)", margin: 0, textTransform: "uppercase", fontWeight: 600 }}>{t("noticeViewed", "Viewed")}</p>
                   <p style={{ fontSize: 18, fontWeight: 800, margin: 0, color: "#f59e0b" }}>{historyModal.data?.summary?.viewed ?? 0}</p>
                 </div>
               </div>
               <div style={{ padding: "12px 14px", borderRadius: 12, background: "rgba(16,185,129,0.08)", border: "1px solid rgba(16,185,129,0.2)", display: "flex", alignItems: "center", gap: 10 }}>
                 <MdDoneAll size={22} style={{ color: "#10b981" }} />
                 <div>
-                  <p style={{ fontSize: 11, color: "var(--text-secondary)", margin: 0, textTransform: "uppercase", fontWeight: 600 }}>Acknowledged</p>
+                  <p style={{ fontSize: 11, color: "var(--text-secondary)", margin: 0, textTransform: "uppercase", fontWeight: 600 }}>{t("noticeAcknowledged", "Acknowledged")}</p>
                   <p style={{ fontSize: 18, fontWeight: 800, margin: 0, color: "#10b981" }}>{historyModal.data?.summary?.acknowledged ?? 0}</p>
                 </div>
               </div>
               <div style={{ padding: "12px 14px", borderRadius: 12, background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)", display: "flex", alignItems: "center", gap: 10 }}>
                 <MdHourglassEmpty size={22} style={{ color: "#ef4444" }} />
                 <div>
-                  <p style={{ fontSize: 11, color: "var(--text-secondary)", margin: 0, textTransform: "uppercase", fontWeight: 600 }}>Pending</p>
+                  <p style={{ fontSize: 11, color: "var(--text-secondary)", margin: 0, textTransform: "uppercase", fontWeight: 600 }}>{t("noticePending", "Pending")}</p>
                   <p style={{ fontSize: 18, fontWeight: 800, margin: 0, color: "#ef4444" }}>{historyModal.data?.summary?.pending ?? 0}</p>
                 </div>
               </div>
@@ -452,10 +452,10 @@ export default function Notice() {
 
               <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
                 {[
-                  { key: "ALL", label: "All" },
-                  { key: "ACKNOWLEDGED", label: "Acknowledged" },
-                  { key: "VIEWED", label: "Viewed" },
-                  { key: "NOT_VIEWED", label: "Not Viewed" },
+                  { key: "ALL", label: t("noticeHistFilterAll", "All") },
+                  { key: "ACKNOWLEDGED", label: t("noticeAcknowledged", "Acknowledged") },
+                  { key: "VIEWED", label: t("noticeViewed", "Viewed") },
+                  { key: "NOT_VIEWED", label: t("noticeNotViewed", "Not Viewed") },
                 ].map(({ key, label }) => (
                   <button
                     key={key}
@@ -487,7 +487,7 @@ export default function Notice() {
               columns={historyColumns}
               data={historyModal.data?.users || []}
               loading={historyModal.loading}
-              emptyMessage="No recipient history found."
+              emptyMessage={t("noticeHistEmpty", "No recipient history found.")}
               compact
             />
           </div>
@@ -516,7 +516,7 @@ export default function Notice() {
           isOpen={true}
           onClose={() => setReadMoreNotice(null)}
           title={readMoreNotice.title}
-          subtitle={`Published ${fmtDate(readMoreNotice.created_at)}${readMoreNotice.created_by_name ? ` • By ${readMoreNotice.created_by_name}` : ""}`}
+          subtitle={`${t("noticePublishedDate", "Published {date}", { date: fmtDate(readMoreNotice.created_at) })}${readMoreNotice.created_by_name ? t("noticeBySuffix", " • By {name}", { name: readMoreNotice.created_by_name }) : ""}`}
           icon={MdCampaign}
           size="md"
         >
@@ -535,7 +535,7 @@ export default function Notice() {
                     border: "1px solid rgba(59, 130, 246, 0.25)",
                   }}
                 >
-                  By: {readMoreNotice.created_by_name} ({readMoreNotice.created_by_role === "COMMITTEE_MEMBER" ? "Committee" : "Admin"})
+                  {t("noticeBy", "By: {name} ({role})", { name: readMoreNotice.created_by_name, role: readMoreNotice.created_by_role === "COMMITTEE_MEMBER" ? t("noticeRoleCommittee", "Committee") : t("noticeRoleAdmin", "Admin") })}
                 </span>
               )}
               {readMoreNotice.acknowledgement_required && (
@@ -550,7 +550,7 @@ export default function Notice() {
                     border: "1px solid rgba(16, 185, 129, 0.25)",
                   }}
                 >
-                  ACK REQUIRED
+                  {t("noticeAckBadge", "ACK REQUIRED")}
                 </span>
               )}
             </div>
@@ -598,7 +598,7 @@ export default function Notice() {
                   }}
                 >
                   <MdAttachFile size={16} />
-                  <span>View Attached Document</span>
+                  <span>{t("noticeViewAttached", "View Attached Document")}</span>
                   <MdOutlineOpenInNew size={14} />
                 </button>
               </div>

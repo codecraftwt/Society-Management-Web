@@ -53,15 +53,19 @@ export default function SuperAdminDashboard() {
       icon: FaBuilding,
       color: "#FBBF24",
       bg: "rgba(251,191,36,0.12)",
-      desc: `${societies.length} societies registered`,
+      desc: t("saDashSocRegist", { count: societies.length }, "{count} societies registered"),
     },
     {
-      label: "Total Residents",
+      label: t("saDashStatResidents", "Total Residents"),
       value: liveTotals.totalResidents || "–",
       icon: FaUsers,
       color: "#34D399",
       bg: "rgba(52,211,153,0.12)",
-      desc: `${liveTotals.totalOwners || 0} Owners · ${liveTotals.totalTenants || 0} Tenants`,
+      desc: t(
+        "saDashStatResidentsDesc",
+        { owners: liveTotals.totalOwners || 0, tenants: liveTotals.totalTenants || 0 },
+        "{owners} Owners · {tenants} Tenants"
+      ),
     },
     {
       label: t("saStatAssigned"),
@@ -69,15 +73,15 @@ export default function SuperAdminDashboard() {
       icon: FaUserShield,
       color: "#38BDF8",
       bg: "rgba(56,189,248,0.12)",
-      desc: `${totalUnassigned} pending assignment`,
+      desc: t("saDashPendingDesc", { count: totalUnassigned }, "{count} pending assignment"),
     },
     {
-      label: "Pending Config",
+      label: t("saDashStatPending", "Pending Config"),
       value: totalUnassigned,
       icon: MdSettings,
       color: "#F472B6",
       bg: "rgba(244,114,182,0.12)",
-      desc: `${totalAssigned} societies with active admin`,
+      desc: t("saDashAssignedDesc", { count: totalAssigned }, "{count} societies with active admin"),
     },
   ], [societies, totalAssigned, totalUnassigned, liveTotals, t]);
 
@@ -95,10 +99,10 @@ export default function SuperAdminDashboard() {
       <div className="sa-dash-header">
         <div className="sa-dash-header-text">
           <h1 className="sa-page-title">{t("saOverviewTitle")}</h1>
-          <p className="sa-page-subtitle">Executive Command Center &amp; Platform Intelligence</p>
+          <p className="sa-page-subtitle">{t("saDashSubtitle", "Executive Command Center & Platform Intelligence")}</p>
         </div>
-<GlobalButton variant="add" borderDraw onClick={fetchSocieties} icon={MdRefresh} title="Reload">
-          Reload
+        <GlobalButton variant="add" borderDraw onClick={fetchSocieties} icon={MdRefresh} title={t("saDashReload", "Reload")}>
+          {t("saDashReload", "Reload")}
         </GlobalButton>
       </div>
 
@@ -123,8 +127,8 @@ export default function SuperAdminDashboard() {
       <div className="sa-section-header">
         <MdBarChart size={20} />
         <div>
-          <h2 className="sa-section-title">Platform Analytics</h2>
-          <p className="sa-section-sub">Live intelligence across societies, occupancy &amp; resident demographics</p>
+          <h2 className="sa-section-title">{t("saDashAnalyticsTitle", "Platform Analytics")}</h2>
+          <p className="sa-section-sub">{t("saDashAnalyticsSub", "Live intelligence across societies, occupancy & resident demographics")}</p>
         </div>
       </div>
       <DashboardAnalytics

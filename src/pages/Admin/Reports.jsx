@@ -40,12 +40,25 @@ export default function Reports() {
     <div className="space-y-6 animate-fadeIn">
 
       {/* ── HEADER ── */}
-      <div className="flex items-start gap-3">
-        <div className="w-10 h-10 rounded-xl bg-blue-500/15 border border-blue-500/25 flex items-center justify-center shrink-0 mt-0.5">
-          <MdBarChart size={20} className="text-blue-400" />
+      <div className="flex items-center gap-3">
+        <div
+          style={{
+            width: 44,
+            height: 44,
+            borderRadius: 14,
+            flexShrink: 0,
+            background: "linear-gradient(135deg, var(--accent), #9e58ff)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            boxShadow: "0 8px 20px rgba(158, 88, 255, 0.3)",
+            color: "#ffffff",
+          }}
+        >
+          <MdBarChart size={22} color="#fff" />
         </div>
         <div>
-          <h2 className="text-lg font-semibold">{t("adminRptTitle")}</h2>
+          <h2 className="text-lg font-semibold" style={{ letterSpacing: "-0.02em", margin: 0 }}>{t("adminRptTitle")}</h2>
           <p className="text-secondary text-xs mt-0.5">{t("adminRptSubtitle")}</p>
         </div>
       </div>

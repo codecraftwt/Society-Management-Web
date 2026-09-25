@@ -59,27 +59,24 @@ export default function Index({
             style={{
               width: 44,
               height: 44,
-              borderRadius: 13,
+              borderRadius: 14,
               flexShrink: 0,
-              background: "linear-gradient(135deg, rgba(160,90,255,0.18), rgba(160,90,255,0.1))",
-              border: "1.5px solid rgba(160,90,255,0.28)",
+              background: "linear-gradient(135deg, var(--accent), #9e58ff)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              boxShadow: "0 4px 14px rgba(160,90,255,0.18)",
+              boxShadow: "0 8px 20px rgba(158, 88, 255, 0.3)",
+              color: "#ffffff",
             }}
           >
-            <MdCampaign size={22} style={{ color: "var(--accent, #3b82f6)" }} />
+            <MdCampaign size={22} color="#fff" />
           </div>
           <div>
-            <h2 style={{ fontSize: 18, fontWeight: 700, margin: 0, color: "var(--text-primary)" }}>
+            <h2 className="text-lg font-semibold" style={{ letterSpacing: "-0.02em", margin: 0 }}>
               {t("noticeBoard") || "Notice Board"}
             </h2>
-            <p style={{ fontSize: 12, color: "var(--text-secondary)", margin: "2px 0 0" }}>
-              {initialLoad ? "—" : `${totalAll} notices published`}
-            </p>
-            <p style={{ fontSize: 11, color: "var(--accent, #3b82f6)", fontWeight: 600, margin: "4px 0 0", letterSpacing: "0.02em" }}>
-              New Notice Section
+            <p className="text-secondary text-xs mt-0.5">
+              {initialLoad ? "—" : t("noticeCount", "{count} notices published", { count: totalAll })}
             </p>
           </div>
         </div>
@@ -195,7 +192,7 @@ export default function Index({
             {t("noticeEmpty") || "No notices published yet"}
           </h3>
           <p style={{ fontSize: 13, color: "var(--text-secondary)", margin: 0, maxWidth: 380 }}>
-            There are no active notices matching your filter. Publish a new notice to broadcast announcements to society residents.
+            {t("noticeEmptySub", "There are no active notices matching your filter. Publish a new notice to broadcast announcements to society residents.")}
           </p>
           {canPost && (
             <GlobalButton
@@ -303,7 +300,7 @@ export default function Index({
                                 border: "1px solid rgba(59, 130, 246, 0.25)",
                               }}
                             >
-                              By: {n.created_by_name} ({n.created_by_role === "COMMITTEE_MEMBER" ? "Committee" : "Admin"})
+                              {t("noticeBy", "By: {name} ({role})", { name: n.created_by_name, role: n.created_by_role === "COMMITTEE_MEMBER" ? t("noticeRoleCommittee", "Committee") : t("noticeRoleAdmin", "Admin") })}
                             </span>
                           )}
 
@@ -335,7 +332,7 @@ export default function Index({
                                 border: "1px solid rgba(16, 185, 129, 0.25)",
                               }}
                             >
-                              ACK REQUIRED
+                              {t("noticeAckBadge", "ACK REQUIRED")}
                             </span>
                           )}
                         </div>
@@ -370,7 +367,7 @@ export default function Index({
                               display: "inline-block",
                             }}
                           >
-                            Read More →
+                            {t("noticeReadMore", "Read More")} →
                           </button>
                         </p>
                       ) : (
@@ -410,7 +407,7 @@ export default function Index({
                           }}
                         >
                           <MdAttachFile size={14} />
-                          <span>Attachment</span>
+                          <span>{t("noticeAttachmentBadge", "Attachment")}</span>
                           <MdOutlineOpenInNew size={12} style={{ opacity: 0.8 }} />
                         </button>
                       </div>
@@ -451,7 +448,7 @@ export default function Index({
                                 icon={MdEdit}
                                 onClick={() => onEdit(n)}
                               >
-                                Edit
+                                {t("noticeEditBtn", "Edit")}
                               </GlobalButton>
                               <GlobalButton
                                 variant="delete"

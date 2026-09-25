@@ -3,8 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { useLang } from "../../context/LanguageContext";
 import API from "../../services/api";
 import {
-  MdAdd, MdApartment, MdSearch, MdRefresh, MdCheckCircle,
-  MdWarning, MdHomeWork, MdArrowBack
+  MdAdd, MdApartment, MdCheckCircle,
+  MdWarning, MdHomeWork
 } from "react-icons/md";
 import { FaBuilding, FaUserShield } from "react-icons/fa";
 import Select from "../../components/common/Select";
@@ -13,8 +13,20 @@ import SocietyActionMenu from "../../components/super-admin/SocietyActionMenu";
 import GlobalButton from "../../components/common/GlobalButton";
 import GlobalModal from "../../components/common/GlobalModal";
 import GlobalConfirmDialog from "../../components/common/GlobalConfirmDialog";
+import ExpandableSearch from "../../components/common/ExpandableSearch";
+import SlidingTabs from "../../components/common/SlidingTabs";
 
 const DEFAULT_PASSWORD = "Admin@123";
+
+const socPropTypeLabel = (pt, t) => {
+  const map = {
+    Apartments: t("saAnPropApt", "Apartments"),
+    "Row Houses": t("saAnPropRow", "Row Houses"),
+    Mixed: t("saAnPropMixed", "Mixed"),
+    Commercial: t("saAnPropCom", "Commercial"),
+  };
+  return map[pt] || pt;
+};
 
 export default function Societies() {
   const { t } = useLang();
@@ -148,13 +160,13 @@ export default function Societies() {
   };
 
   const filterBtns = [
-    { key: "all", label: t("saFilterAll") },
-    { key: "assigned", label: t("saFilterAssigned") },
-    { key: "unassigned", label: t("saFilterUnassigned") },
+    { id: "all", label: t("saFilterAll"), badge: societies.length },
+    { id: "assigned", label: t("saFilterAssigned"), badge: societies.filter((s) => !!s.societyAdmins).length },
+    { id: "unassigned", label: t("saFilterUnassigned"), badge: societies.filter((s) => !s.societyAdmins).length },
   ];
 
   return (
-    <div className="sa-page sa-dash-page">
+    <div className="sa-page sa-dash-page animate-fadeIn">
       {/* Toast Notification */}
       {toast && (
         <div className={`sa-toast ${toast.type === "error" ? "sa-toast-error" : "sa-toast-success"}`}>
@@ -164,58 +176,53 @@ export default function Societies() {
       )}
 
       {/* ── HEADER ── */}
-      <div className="sa-dash-header">
-        <div className="sa-dash-header-text">
-          <h1 className="sa-page-title">Manage Societies</h1>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div
+            style={{
+              width: 44,
+              height: 44,
+              borderRadius: 14,
+              flexShrink: 0,
+              background: "linear-gradient(135deg, var(--accent), #9e58ff)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              boxShadow: "0 8px 20px rgba(158, 88, 255, 0.3)",
+              color: "#ffffff",
+            }}
+          >
+            <MdApartment size={22} color="#fff" />
+          </div>
+          <div>
+            <h2 className="text-lg font-semibold" style={{ letterSpacing: "-0.02em", margin: 0 }}>
+              {t("saSocPageTitle", "Manage Societies")}
+            </h2>
+            <p className="text-secondary text-xs mt-0.5">
+              {t("saSocCountSub", "{count} societies", { count: societies.length })}
+            </p>
+          </div>
         </div>
-        <GlobalButton
-          variant="add"
-          icon={MdAdd}
-          borderDraw
-          onClick={() => setShowAddForm(true)}
-        >
-          {t("saAddSocietyBtn")}
-        </GlobalButton>
-      </div>
 
-      {/* ── TOOLBAR ── */}
-      <div className="sa-toolbar">
-        <GlobalButton
-          variant="secondary"
-          size="sm"
-          icon={MdArrowBack}
-          onClick={() => navigate(-1)}
-        >
-          {t("socBack")}
-        </GlobalButton>
-        <div className="sa-search-wrap" style={{ flex: 1 }}>
-          <MdSearch size={17} style={{ color: "var(--text-muted)", flexShrink: 0 }} />
-          <input
-            className="sa-search-input"
-            placeholder={t("saSearchPlaceholder")}
+        <div className="flex items-center justify-end gap-2.5 flex-wrap shrink-0">
+          <SlidingTabs value={filterStatus} onChange={setFilterStatus} items={filterBtns} />
+          <ExpandableSearch
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={setSearchQuery}
+            placeholder={t("saSearchPlaceholder")}
+            maxWidth={280}
           />
+          <GlobalButton
+            variant="add"
+            borderDraw
+            icon={MdAdd}
+            className="w-full sm:w-auto justify-center shrink-0"
+            style={{ fontWeight: 700 }}
+            onClick={() => setShowAddForm(true)}
+          >
+            {t("saAddSocietyBtn")}
+          </GlobalButton>
         </div>
-        <div className="sa-segment">
-          {filterBtns.map(({ key, label }) => (
-            <button
-              key={key}
-              onClick={() => setFilterStatus(key)}
-              className={filterStatus === key ? "sa-segment-active" : ""}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-        <GlobalButton
-          variant="secondary"
-          size="sm"
-          icon={MdRefresh}
-          onClick={loadSocieties}
-          title={t("gpRefresh")}
-          style={{ width: 38, padding: 0 }}
-        />
       </div>
 
       {/* ── ADD SOCIETY MODAL ── */}
@@ -260,12 +267,12 @@ export default function Societies() {
             </div>
           </div>
           <div className="sa-input-group" style={{ gridColumn: "1 / -1" }}>
-            <label className="sa-label">Property Type</label>
+            <label className="sa-label">{t("saSocPropTypeLabel", "Property Type")}</label>
             <Select className="input" value={propertyType} onChange={(e) => setPropertyType(e.target.value)}>
-              <option value="Apartments">Apartments / Flats</option>
-              <option value="Row Houses">Row Houses / Villas</option>
-              <option value="Mixed">Mixed (Flats &amp; Villas)</option>
-              <option value="Commercial">Commercial Complex</option>
+              <option value="Apartments">{t("saSocTypeApt", "Apartments / Flats")}</option>
+              <option value="Row Houses">{t("saSocTypeRow", "Row Houses / Villas")}</option>
+              <option value="Mixed">{t("saSocTypeMixed", "Mixed (Flats & Villas)")}</option>
+              <option value="Commercial">{t("saSocTypeCom", "Commercial Complex")}</option>
             </Select>
           </div>
         </form>
@@ -296,11 +303,11 @@ export default function Societies() {
           )}
         </div>
       ) : (
-        <div className="sa-society-grid">
-          {filteredSocieties.map((s) => {
+        <div className="sa-society-grid" key={`${filterStatus}-${searchQuery.trim().toLowerCase()}`}>
+          {filteredSocieties.map((s, i) => {
             const typeColor = typeColors[s.property_type] || "#9F87D7";
             return (
-              <div key={s.id} className="sa-society-card">
+              <div key={s.id} className="sa-society-card animate-fadeIn" style={{ animationDelay: `${i * 30}ms` }}>
                 {/* Header row */}
                 <div className="sa-soc-card-top">
                   <div className="sa-soc-icon" style={{ background: `${typeColor}1A`, color: typeColor }}>
@@ -327,15 +334,15 @@ export default function Societies() {
 
                 {/* Property Type row */}
                 <div className="sa-soc-row">
-                  <span className="sa-soc-row-label">TYPE</span>
+                  <span className="sa-soc-row-label">{t("saSocRowType", "TYPE")}</span>
                   <span className="sa-soc-type-badge" style={{ color: typeColor, background: `${typeColor}18`, borderColor: `${typeColor}30` }}>
-                    {s.property_type || "Apartments"}
+                    {socPropTypeLabel(s.property_type || "Apartments", t)}
                   </span>
                 </div>
 
                 {/* Admin row */}
                 <div className="sa-soc-row">
-                  <span className="sa-soc-row-label">ADMIN</span>
+                  <span className="sa-soc-row-label">{t("saSocRowAdmin", "ADMIN")}</span>
                   {s.societyAdmins ? (
                     <div className="sa-soc-admin-info">
                       <div className="sa-soc-avatar">
@@ -398,8 +405,8 @@ export default function Societies() {
         onClose={() => setDeleteConfirm({ isOpen: false, id: null, loading: false })}
         onConfirm={handleDeleteConfirm}
         title={t("saConfirmDelete") || "Delete Society"}
-        message="Are you sure you want to delete this society? This will remove all associated units, records, and accounts. This action cannot be undone."
-        confirmLabel="Delete Society"
+        message={t("saSocDeleteMsg", "Are you sure you want to delete this society? This will remove all associated units, records, and accounts. This action cannot be undone.")}
+        confirmLabel={t("saSocDeleteLabel", "Delete Society")}
         cancelLabel={t("cancel") || "Cancel"}
         variant="danger"
         loading={deleteConfirm.loading}

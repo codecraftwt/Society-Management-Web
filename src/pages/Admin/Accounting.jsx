@@ -278,42 +278,38 @@ export default function Accounting({ initialTab = "overview" }) {
   return (
     <div className="space-y-6 w-full min-w-0 max-w-400 mx-auto pb-8">
       {/* ── UNIFIED HEADER BAR ── */}
-      <div
-        className="ad-page-header flex flex-col gap-3.5 p-4 sm:p-5 rounded-2xl border"
-        style={{
-          background: "var(--card-bg, rgba(15, 23, 42, 0.6))",
-          borderColor: "var(--glass-border, rgba(255, 255, 255, 0.1))",
-          backdropFilter: "blur(16px)",
-          WebkitBackdropFilter: "blur(16px)",
-        }}
-      >
-        {/* Row 1: Title & Icon only (Clean, without crowded subtitle) */}
-        <div className="flex items-center gap-3">
-          <div
-            className="w-10 h-10 rounded-xl flex items-center justify-center text-accent shrink-0"
-            style={{
-              background: "var(--accent-soft, rgba(99,102,241,0.18))",
-              border: "1px solid var(--accent-light, #818cf8)",
-            }}
-          >
-            <MdOutlineReceiptLong size={22} />
-          </div>
-          <h1 className="text-lg sm:text-xl font-bold tracking-tight text-primary flex items-center gap-2 m-0">
-            {t("accTitle")}
-          </h1>
-        </div>
-
-        {/* Row 2: Toggle buttons (SlidingTabs) + Year dropdown + Reload button in one row */}
-        <div className="flex items-center justify-between gap-3 flex-wrap sm:flex-nowrap w-full pt-1">
-          <div className="flex items-center overflow-x-auto max-w-full pb-0.5" style={{ scrollbarWidth: "none" }}>
-            <SlidingTabs
-              items={slidingTabItems}
-              value={activeTab}
-              onChange={setTab}
-            />
+      <div className="flex flex-col gap-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          {/* Title & Icon */}
+          <div className="flex items-center gap-3">
+            <div
+              style={{
+                width: 44,
+                height: 44,
+                borderRadius: 14,
+                flexShrink: 0,
+                background: "linear-gradient(135deg, var(--accent), #9e58ff)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                boxShadow: "0 8px 20px rgba(158, 88, 255, 0.3)",
+                color: "#ffffff",
+              }}
+            >
+              <MdOutlineReceiptLong size={22} color="#fff" />
+            </div>
+            <div>
+              <h2 className="text-lg font-semibold" style={{ letterSpacing: "-0.02em", margin: 0 }}>
+                {t("accTitle")}
+              </h2>
+              <p className="text-secondary text-xs mt-0.5">
+                {t("accSubtitle")}
+              </p>
+            </div>
           </div>
 
-          <div className="flex items-center gap-2.5 shrink-0 ml-auto">
+          {/* Year dropdown + Reload button */}
+          <div className="flex items-center gap-2.5 shrink-0">
             <div style={{ width: 125 }}>
               <Select
                 value={year}
@@ -366,34 +362,32 @@ export default function Accounting({ initialTab = "overview" }) {
             </button>
           </div>
         </div>
-      </div>
 
-      {/* SuperAdmin: must select a society first */}
-      {isSuperAdmin && (
-        <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap", background: "var(--card-inner-bg)", padding: "8px 14px", borderRadius: 14, border: "1px solid var(--glass-border)" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, flex: 1, minWidth: 220 }}>
-            <MdBusiness size={18} style={{ color: "var(--accent)" }} />
-            <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase", whiteSpace: "nowrap" }}>{t("accSelectSociety")}</span>
-            <Select
-              value={societyId}
-              onChange={handleSocietyChange}
-              style={{ height: 38, fontSize: 13, fontWeight: 700, flex: 1, border: "1.5px solid var(--accent-alpha,rgba(107,70,193,0.25))" }}
-            >
-              <option value="">{t("accChooseSociety")}</option>
-              {societies.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-            </Select>
+        {/* Toggle buttons (SlidingTabs) + Society Select on their own line */}
+        <div className="flex items-center justify-between gap-3 flex-wrap sm:flex-nowrap w-full">
+          <div className="flex items-center overflow-x-auto max-w-full pb-0.5" style={{ scrollbarWidth: "none" }}>
+            <SlidingTabs
+              items={slidingTabItems}
+              value={activeTab}
+              onChange={setTab}
+            />
           </div>
-          {(!societyId || societyId === "ALL") ? (
-            <span style={{ fontSize: 12, color: "var(--stat-amber-color)", fontWeight: 700 }}>
-              {t("accSelectSocietyHint")}
-            </span>
-          ) : (
-            <span style={{ fontSize: 12, color: "var(--stat-green-color)", fontWeight: 700 }}>
-              ✓ {t("accWorkingOn", { name: societies.find((s) => String(s.id) === String(societyId))?.name || "" })}
-            </span>
+
+          {isSuperAdmin && (
+            <div className="flex items-center gap-2.5 shrink-0">
+              <Select
+                className="input"
+                placeholder={t("accSelectSociety")}
+                value={societyId}
+                onChange={handleSocietyChange}
+                style={{ height: 40, fontSize: 13, minWidth: 200 }}
+              >
+                {societies.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+              </Select>
+            </div>
           )}
         </div>
-      )}
+      </div>
 
       {isSuperAdmin && (!societyId || societyId === "ALL") && (
         <div className="rounded-xl border p-8 flex flex-col items-center gap-3 text-center"

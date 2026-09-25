@@ -597,19 +597,31 @@ export default function Accountant() {
   return (
     <div className="page-root animate-fadeIn" style={{ overflowX: "hidden" }}>
       {/* ── HEADER ── */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-          <div style={{
-            width: 46, height: 46, borderRadius: 14, flexShrink: 0,
-            display: "flex", alignItems: "center", justifyContent: "center",
-            background: "linear-gradient(135deg, rgba(160,90,255,0.15), rgba(160,90,255,0.08))",
-            border: "1.5px solid rgba(160,90,255,0.25)", color: "var(--accent)",
-          }}>
-            <MdAccountBalance size={22} />
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div
+            style={{
+              width: 44,
+              height: 44,
+              borderRadius: 14,
+              flexShrink: 0,
+              background: "linear-gradient(135deg, var(--accent), #9e58ff)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              boxShadow: "0 8px 20px rgba(158, 88, 255, 0.3)",
+              color: "#ffffff",
+            }}
+          >
+            <MdAccountBalance size={22} color="#fff" />
           </div>
           <div>
-            <h2 className="page-title">{t("acctTitle") || "Accountants"}</h2>
-            <p className="page-subtitle">{t("acctSubtitle") || "Manage society accountants, roles, and status tracking"}</p>
+            <h2 className="text-lg font-semibold" style={{ letterSpacing: "-0.02em", margin: 0 }}>
+              {t("acctTitle") || "Accountants"}
+            </h2>
+            <p className="text-secondary text-xs mt-0.5">
+              {t("acctSubtitle") || "Manage society accountants, roles, and status tracking"}
+            </p>
           </div>
         </div>
 
@@ -646,6 +658,7 @@ export default function Accountant() {
 
       {/* ── ACCOUNTANTS TABLE ── */}
       <GlobalTable
+        className="acct-table"
         columns={tableColumns}
         data={accountants}
         loading={loading}

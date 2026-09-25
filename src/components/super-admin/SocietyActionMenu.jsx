@@ -46,7 +46,7 @@ export default function SocietyActionMenu({ onEditAdmin, onManage, onDelete, has
       <button
         className="sa-action-dots"
         onClick={() => setOpen((p) => !p)}
-        aria-label="Society actions"
+        aria-label={t("saSocActionsAria", "Society actions")}
         aria-haspopup="menu"
         aria-expanded={open}
       >

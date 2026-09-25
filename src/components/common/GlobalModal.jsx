@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { MdClose, MdWarningAmber } from "react-icons/md";
 import GlobalButton from "./GlobalButton";
+import { useLang } from "../../context/LanguageContext";
 
 /**
  * GlobalModal
@@ -104,6 +105,7 @@ function ModalShell({
   const dialogRef = useRef(null);
   const dirtyRef = useRef(false);
   const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
+  const { t } = useLang();
 
   /* ── Track if the form inside has unsaved edits ── */
   useEffect(() => {
@@ -229,7 +231,7 @@ function ModalShell({
             type="button"
             onClick={requestClose}
             className="sa-modal-close"
-            title="Close"
+            title={t("close") || "Close"}
           >
             <MdClose size={18} />
           </button>
@@ -328,7 +330,7 @@ function ModalShell({
                 color: "var(--text-primary, #e2e8f0)",
               }}
             >
-              Discard unsaved changes?
+              {t("cdTitle", "Discard unsaved changes?")}
             </h3>
             <p
               style={{
@@ -338,7 +340,7 @@ function ModalShell({
                 color: "var(--text-secondary, #94a3b8)",
               }}
             >
-              You have unsaved changes in this form. If you close now they will be lost.
+              {t("cdMessage", "You have unsaved changes in this form. If you close now they will be lost.")}
             </p>
             <div style={{ display: "flex", gap: 10, marginTop: 22 }}>
               <button
@@ -356,7 +358,7 @@ function ModalShell({
                   cursor: "pointer",
                 }}
               >
-                Keep Editing
+                {t("cdKeep", "Keep Editing")}
               </button>
               <button
                 type="button"
@@ -373,7 +375,7 @@ function ModalShell({
                   cursor: "pointer",
                 }}
               >
-                Discard & Close
+                {t("cdDiscard", "Discard & Close")}
               </button>
             </div>
           </div>

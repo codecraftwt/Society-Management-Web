@@ -858,13 +858,29 @@ const [totalPages, setTotalPages] = useState(1);
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-            style={{ background: "rgba(91,141,239,0.12)", border: "1px solid rgba(91,141,239,0.25)" }}>
-            <FaParking size={18} style={{ color: "#94B5F5" }} />
+          <div
+            style={{
+              width: 44,
+              height: 44,
+              borderRadius: 14,
+              flexShrink: 0,
+              background: "linear-gradient(135deg, var(--accent), #9e58ff)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              boxShadow: "0 8px 20px rgba(158, 88, 255, 0.3)",
+              color: "#ffffff",
+            }}
+          >
+            <FaParking size={22} color="#fff" />
           </div>
           <div>
-            <h2 className="text-lg font-semibold">Global Parking Management</h2>
-            <p className="text-secondary text-xs mt-0.5">Manage parking across all societies</p>
+            <h2 className="text-lg font-semibold" style={{ letterSpacing: "-0.02em", margin: 0 }}>
+              {t("saParkTitle") || "Global Parking Management"}
+            </h2>
+            <p className="text-secondary text-xs mt-0.5">
+              {t("saParkSubtitle") || "Manage parking across all societies"}
+            </p>
           </div>
         </div>
 
@@ -873,10 +889,10 @@ const [totalPages, setTotalPages] = useState(1);
           <div className="relative min-w-48">
             <MdBusiness size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-secondary pointer-events-none z-10" />
             <Select
-              className="input h-10 w-full pl-9 text-xs font-bold bg-card"
+              className="input h-10 w-full text-xs font-bold bg-card"
               value={selectedSocietyId}
               onChange={handleSocietyChange}
-              style={{ border: "1.5px solid var(--accent-alpha,rgba(107,70,193,0.25))" }}>
+              style={{ paddingLeft: 42, border: "1.5px solid var(--accent-alpha,rgba(107,70,193,0.25))" }}>
               <option value="ALL">All Societies (View Only)</option>
               {societies.map(s => (
                 <option key={s.id} value={s.id}>{s.name}</option>
@@ -915,6 +931,8 @@ const [totalPages, setTotalPages] = useState(1);
           badge: tab.key === "resident-requests" && pendingResidentCount > 0 ? pendingResidentCount : undefined,
         }))}
       />
+
+      <div className="mb-4" />
 
       {mainTab === "resident-entry" && (
         <ResidentEntryPanel

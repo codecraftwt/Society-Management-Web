@@ -37,7 +37,7 @@ export default function Edit({
     if (titleErr) { showError(titleErr); return; }
     const descErr = getDescriptionError(form.description, "Description");
     if (descErr) { showError(descErr); return; }
-    if (isSuperAdmin && !form.society_id) { showError("Please select a society."); return; }
+    if (isSuperAdmin && !form.society_id) { showError(t("noticeSelectSocietyErr", "Please select a society.")); return; }
 
     setSubmitting(true);
     try {
@@ -59,7 +59,7 @@ export default function Edit({
       onClose();
       onUpdated();
     } catch (err) {
-      showError(err.response?.data?.message || "Failed to publish notice");
+      showError(err.response?.data?.message || t("noticePublishFail", "Failed to publish notice"));
     } finally {
       setSubmitting(false);
     }

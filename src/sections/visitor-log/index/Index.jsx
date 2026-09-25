@@ -167,11 +167,24 @@ export default function Index({
       {/* ── Page Header: Unified Single Row with Sliding Tabs, Unit Filters & Search ── */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <div className="ad-page-icon">
-            <MdOutlineInbox size={22} />
+          <div
+            style={{
+              width: 44,
+              height: 44,
+              borderRadius: 14,
+              flexShrink: 0,
+              background: "linear-gradient(135deg, var(--accent), #9e58ff)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              boxShadow: "0 8px 20px rgba(158, 88, 255, 0.3)",
+              color: "#ffffff",
+            }}
+          >
+            <MdOutlineInbox size={22} color="#fff" />
           </div>
           <div>
-            <h2 className="text-lg font-semibold" style={{ letterSpacing: "-0.02em" }}>
+            <h2 className="text-lg font-semibold" style={{ letterSpacing: "-0.02em", margin: 0 }}>
               {t("vlTitle") || "Visitor Logs"}
             </h2>
             <p className="text-secondary text-xs mt-0.5">

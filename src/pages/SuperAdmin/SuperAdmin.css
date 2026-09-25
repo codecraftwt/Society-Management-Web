@@ -10,6 +10,13 @@ html.light.role-theme .sa-page-er {
   box-shadow: var(--shadow-sm) !important;
 }
 
+/* Accountant table: match .data-table-wrap behavior — no always-visible
+   horizontal scrollbar on the GlobalTable scroll container. */
+html.role-theme .acct-table .global-table-scroll,
+html.light.role-theme .acct-table .global-table-scroll {
+  overflow-x: hidden !important;
+}
+
 html.role-theme .sa-page-er::before,
 html.light.role-theme .sa-page-er::before {
   background: var(--accent) !important;
@@ -95,6 +102,11 @@ html.role-theme .sa-modal-body select.input {
   box-shadow: none !important;
   color: var(--text-primary) !important;
   transition: all 0.2s ease;
+}
+
+html.role-theme .sa-input input,
+html.role-theme .sa-input select {
+  padding: 0 12px 0 34px !important;
 }
 
 html.role-theme .sa-form-card .sa-input input::placeholder,

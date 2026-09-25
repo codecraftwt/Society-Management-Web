@@ -1,5 +1,6 @@
 import React from "react";
 import { MdWarningAmber } from "react-icons/md";
+import { useLang } from "../../context/LanguageContext";
 
 /**
  * ConfirmDiscard
@@ -10,9 +11,12 @@ export default function ConfirmDiscard({
   open,
   onKeep,
   onDiscard,
-  message = "You have unsaved changes in this form. If you close now they will be lost.",
+  message,
 }) {
+  const { t } = useLang();
   if (!open) return null;
+
+  const body = message || t("cdMessage", "You have unsaved changes in this form. If you close now they will be lost.");
 
   const overlayStyle = {
     position: "fixed",
@@ -63,7 +67,7 @@ export default function ConfirmDiscard({
             color: "var(--text-primary, #e2e8f0)",
           }}
         >
-          Discard unsaved changes?
+          {t("cdTitle", "Discard unsaved changes?")}
         </h3>
         <p
           style={{
@@ -73,7 +77,7 @@ export default function ConfirmDiscard({
             color: "var(--text-secondary, #94a3b8)",
           }}
         >
-          {message}
+          {body}
         </p>
         <div style={{ display: "flex", gap: 10, marginTop: 22 }}>
           <button
@@ -91,7 +95,7 @@ export default function ConfirmDiscard({
               cursor: "pointer",
             }}
           >
-            Keep Editing
+            {t("cdKeep", "Keep Editing")}
           </button>
           <button
             type="button"
@@ -108,7 +112,7 @@ export default function ConfirmDiscard({
               cursor: "pointer",
             }}
           >
-            Discard & Close
+            {t("cdDiscard", "Discard & Close")}
           </button>
         </div>
       </div>
