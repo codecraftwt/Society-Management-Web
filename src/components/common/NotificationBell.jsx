@@ -126,7 +126,10 @@ export default function NotificationBell() {
   const unreadCount = notifications.filter((n) => !n.is_read).length;
 
   const isAdmin =
-    user?.activeRole === "SOCIETY_ADMIN" || user?.role === "SOCIETY_ADMIN";
+    user?.activeRole === "SOCIETY_ADMIN" ||
+    user?.activeRole === "SUPER_ADMIN" ||
+    user?.role === "SOCIETY_ADMIN" ||
+    user?.role === "SUPER_ADMIN";
 
   // Action types that have their own dedicated button
   const HAS_OWN_BUTTON = new Set([

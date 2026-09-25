@@ -291,6 +291,11 @@
   outline: none;
 }
 
+.reg-input-wrap > div:not(.reg-phone-prefix) {
+  flex: 1;
+  min-width: 0;
+}
+
 .reg-icon-left {
   position: absolute;
   left: 14px;
@@ -326,7 +331,7 @@
   background-repeat: no-repeat;
   background-position: right 16px center;
   padding-left: 44px;
-  padding-right: 2.5rem;
+  padding-right: 1.25rem;
   cursor: pointer;
 }
 

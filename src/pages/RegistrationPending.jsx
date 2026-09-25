@@ -267,7 +267,6 @@ function RegistrationPending() {
 
   /* ─── Derived UI values ─── */
   const cfg = STATUS_CFG[status] || STATUS_CFG.PENDING;
-  const isDecided = status === "APPROVED" || status === "REJECTED";
 
   /* ─── No userId guard ─── */
   if (!userId) {
@@ -383,7 +382,7 @@ function RegistrationPending() {
           )}
 
           {/* ── Action buttons ── */}
-          {!loading && isDecided && (
+          {!loading && (
             <>
               <button
                 className="rp-btn-primary"
@@ -394,7 +393,7 @@ function RegistrationPending() {
                     : {}
                 }
               >
-                {status === "APPROVED" ? "Go to Login →" : "Back to Login"}
+                {status === "APPROVED" ? "Go to Login →" : "OK"}
               </button>
 
               {status === "REJECTED" && (

@@ -69,6 +69,12 @@ function SuperAdminLayoutInner() {
       group: "COMMUNITY & UNITS",
     },
     {
+      label: t("saMenuTenantApprovals") || "Tenant Approvals",
+      path: `${base}/tenant-management`,
+      icon: MdVerified,
+      group: "COMMUNITY & UNITS",
+    },
+    {
       label: t("saMenuAllComplaints") || "All Complaints",
       path: `${base}/complaints`,
       icon: MdReportProblem,

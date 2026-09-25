@@ -95,10 +95,20 @@ function BhkBadge({ type }) {
   );
 }
 
+function PendingApprovalBadge() {
+  const { t } = useLang();
+  return (
+    <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 11, fontWeight: 700, padding: "3px 9px", borderRadius: 999, background: "rgba(251,191,36,0.12)", color: "var(--accent)", border: "1px solid rgba(251,191,36,0.28)", letterSpacing: "0.02em" }}>
+      <MdWarning size={11} />
+      {t("resPendingApproval") || "Pending Approval"}
+    </span>
+  );
+}
+
 /* ─────────────────────────────────────────
    RESIDENT ACTION MENU (three-dot kebab)
    ───────────────────────────────────────── */
-function ResidentActionMenu({ onAssignFlat, onEdit, isCommittee, isAccountant, isSocietyAdmin, isTenant, onPromote, onRemoveCommittee, onDeactivateAccountant, onDelete, t }) {
+function ResidentActionMenu({ onAssignFlat, onEdit, isCommittee, isAccountant, isSocietyAdmin, isTenant, onPromote, onRemoveCommittee, onDeactivateAccountant, onDelete, isPendingApproval, onApprove, onReject, t }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
 
@@ -125,6 +135,19 @@ function ResidentActionMenu({ onAssignFlat, onEdit, isCommittee, isAccountant, i
       </button>
       {open && (
         <div className="sa-action-dropdown" role="menu">
+          {isPendingApproval && (
+            <>
+              <button role="menuitem" className="sa-action-item" onClick={() => act(onApprove)} style={{ color: "#4ade80" }}>
+                <MdCheck size={15} />
+                {t("resApproveActivate") || "Approve & Activate"}
+              </button>
+              <button role="menuitem" className="sa-action-item sa-action-item-danger" onClick={() => act(onReject)}>
+                <MdClose size={15} />
+                {t("reject") || "Reject"}
+              </button>
+              <div className="sa-action-divider" />
+            </>
+          )}
           <button role="menuitem" className="sa-action-item" onClick={() => act(onAssignFlat)}>
             <MdAdd size={15} />
             {t("colAssignFlat") || "Assign Unit"}
@@ -2243,6 +2266,10 @@ const [totalPages, setTotalPages] = useState(1);
   const [accountantConfirm, setAccountantConfirm] = useState(null);
   const [flatDetailModal, setFlatDetailModal] = useState(null);
 
+  const [rejectTarget, setRejectTarget] = useState(null);
+  const [rejectReason, setRejectReason] = useState("");
+  const [rejectLoading, setRejectLoading] = useState(false);
+
   const { user } = useContext(AuthContext);
   const { showUnauthorized, showError } = useCustomAlert();
   const isSuperAdmin = user?.activeRole === "SUPER_ADMIN";
@@ -2459,6 +2486,46 @@ const [totalPages, setTotalPages] = useState(1);
       return;
     }
     setAssignModal({ id: resident.id, name: resident.name, society_id: resident.society_id });
+  };
+
+  const handleApproveResident = async (resident) => {
+    if (!hasPermission(user, "tenant_management", "approve")) {
+      showUnauthorized("You do not have permission to approve residents.");
+      return;
+    }
+    try {
+      await API.put(`/admin/approve-resident/${resident.id}`);
+      toast.success(`${resident.name} approved & activated`);
+      loadResidents(page, debouncedSearch);
+    } catch (err) {
+      if (err.response?.status === 403) {
+        showUnauthorized(err.response?.data?.message || "Approval restricted");
+      } else {
+        toast.error(err.response?.data?.message || "Failed to approve resident");
+      }
+    }
+  };
+
+  const confirmRejectResident = async () => {
+    if (!rejectTarget) return;
+    setRejectLoading(true);
+    try {
+      await API.put(`/admin/reject-resident/${rejectTarget.id}`, {
+        reason: rejectReason.trim() || undefined,
+      });
+      toast.info(`${rejectTarget.name} rejected`);
+      setRejectTarget(null);
+      setRejectReason("");
+      loadResidents(page, debouncedSearch);
+    } catch (err) {
+      if (err.response?.status === 403) {
+        showUnauthorized(err.response?.data?.message || "Rejection restricted");
+      } else {
+        toast.error(err.response?.data?.message || "Failed to reject resident");
+      }
+    } finally {
+      setRejectLoading(false);
+    }
   };
 
   const promoteCommittee = async (userId) => {
@@ -3330,7 +3397,12 @@ const [totalPages, setTotalPages] = useState(1);
                         <div style={{ fontSize: 12, color: "var(--text-secondary)" }}>{r.email}</div>
                         {r.phone && <div style={{ fontSize: 12, color: "var(--text-secondary)", marginTop: 3, display: "flex", alignItems: "center", gap: 4 }}><MdPhone size={11} style={{ opacity: 0.5 }} /> {r.phone}</div>}
                       </td>
-                      <td style={{ padding: "14px 16px" }}><ResidentTypeBadge type={r.resident_type} /></td>
+                      <td style={{ padding: "14px 16px" }}>
+                        <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 5 }}>
+                          <ResidentTypeBadge type={r.resident_type} />
+                          {r.approval_status === "PENDING" && <PendingApprovalBadge />}
+                        </div>
+                      </td>
                       <td style={{ padding: "14px 16px", minWidth: 140 }}>
                         <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
                           {r.flats && r.flats.length > 0 ? r.flats.map((flat, fIdx) => (
@@ -3377,6 +3449,9 @@ const [totalPages, setTotalPages] = useState(1);
                                 isAccountant={!!r.roles?.includes("ACCOUNTANT")}
                                 isSocietyAdmin={!!r.roles?.includes("SOCIETY_ADMIN")}
                                 isTenant={r.resident_type === "TENANT"}
+                                isPendingApproval={r.approval_status === "PENDING"}
+                                onApprove={() => handleApproveResident(r)}
+                                onReject={() => setRejectTarget(r)}
                                 onPromote={() => setCommitteeConfirm({ type: "promote", id: r.id, name: r.name })}
                                 onRemoveCommittee={() => setCommitteeConfirm({ type: "remove", id: r.id, name: r.name })}
                                 onDeactivateAccountant={() => setAccountantConfirm({ id: r.id, name: r.name })}
@@ -3408,6 +3483,7 @@ const [totalPages, setTotalPages] = useState(1);
                       {r.phone && <p style={{ fontSize: 11, color: "var(--text-secondary)", margin: "1px 0 0", display: "flex", alignItems: "center", gap: 3 }}><MdPhone size={10} style={{ opacity: 0.5 }} /> {r.phone}</p>}
                       <div style={{ display: "flex", alignItems: "center", gap: 5, flexWrap: "wrap", marginTop: 6 }}>
                         <ResidentTypeBadge type={r.resident_type} />
+                        {r.approval_status === "PENDING" && <PendingApprovalBadge />}
                         {r.flats?.map((flat, fIdx) => (
                           <span key={flat.id || fIdx} style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 999, background: "rgba(34,197,94,0.10)", color: "#4ade80", border: "1px solid rgba(34,197,94,0.22)" }}>
                             {flat.flat_number}
@@ -3436,6 +3512,9 @@ const [totalPages, setTotalPages] = useState(1);
                             isAccountant={!!r.roles?.includes("ACCOUNTANT")}
                             isSocietyAdmin={!!r.roles?.includes("SOCIETY_ADMIN")}
                             isTenant={r.resident_type === "TENANT"}
+                            isPendingApproval={r.approval_status === "PENDING"}
+                            onApprove={() => handleApproveResident(r)}
+                            onReject={() => setRejectTarget(r)}
                             onPromote={() => setCommitteeConfirm({ type: "promote", id: r.id, name: r.name })}
                             onRemoveCommittee={() => setCommitteeConfirm({ type: "remove", id: r.id, name: r.name })}
                             onDeactivateAccountant={() => setAccountantConfirm({ id: r.id, name: r.name })}
@@ -3548,6 +3627,59 @@ const [totalPages, setTotalPages] = useState(1);
                 style={{ borderRadius: 999, fontWeight: 700 }}
               >
                 <MdBlock size={16} /> <span>{t("resMakeInactive")}</span>
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Reject Resident (Pending Approval) Modal */}
+      {rejectTarget && createPortal(
+        <div
+          onClick={(e) => { if (e.target === e.currentTarget) setRejectTarget(null); }}
+          style={{ position: "fixed", inset: 0, zIndex: 9999, background: "rgba(0,0,0,0.65)", backdropFilter: "blur(8px)", display: "flex", alignItems: "center", justifyContent: "center", padding: "16px" }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{ width: "100%", maxWidth: 420, background: "var(--card-bg, #0f172a)", border: "1px solid var(--glass-border, rgba(255,255,255,0.12))", borderRadius: 20, padding: "24px", boxShadow: "0 24px 80px rgba(0,0,0,0.5)", animation: "saModalPopIn 0.25s cubic-bezier(0.16, 1, 0.3, 1)" }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
+              <div style={{ width: 42, height: 42, borderRadius: 12, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(251,191,36,0.14)", border: "1px solid rgba(251,191,36,0.3)" }}>
+                <MdWarning size={22} style={{ color: "#f59e0b" }} />
+              </div>
+              <div>
+                <p style={{ margin: 0, fontSize: 16, fontWeight: 800, color: "var(--text-primary)", letterSpacing: "-0.02em" }}>
+                  {t("resRejectTitle") || "Reject Registration"}
+                </p>
+                <p style={{ margin: 0, fontSize: 12, color: "var(--text-secondary)" }}>{rejectTarget.name}</p>
+              </div>
+            </div>
+
+            <p style={{ margin: 0, fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.6 }}>
+              {t("resRejectBody") || "This will mark the registration as rejected and deactivate the account. The resident will be notified."}
+            </p>
+
+            <textarea
+              rows={3}
+              value={rejectReason}
+              onChange={(e) => setRejectReason(e.target.value)}
+              placeholder={t("resRejectReasonPlaceholder") || "Reason (optional)"}
+              style={{ width: "100%", boxSizing: "border-box", marginTop: 12, padding: "10px 12px", borderRadius: 10, background: "var(--card-inner-bg, rgba(255,255,255,0.05))", border: "1px solid var(--glass-border, rgba(255,255,255,0.12))", color: "var(--text-primary)", fontSize: 13, outline: "none", resize: "vertical", fontFamily: "inherit" }}
+            />
+
+            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 20 }}>
+              <button type="button" onClick={() => setRejectTarget(null)} className="sa-btn sa-btn-ghost" disabled={rejectLoading}>
+                {t("cancel") || "Cancel"}
+              </button>
+              <button
+                type="button"
+                onClick={confirmRejectResident}
+                className="btn-danger"
+                style={{ borderRadius: 999, fontWeight: 700 }}
+                disabled={rejectLoading}
+              >
+                {rejectLoading ? <>{t("rejecting") || "Rejecting…"}</> : <><MdClose size={16} /> <span>{t("reject") || "Reject"}</span></>}
               </button>
             </div>
           </div>

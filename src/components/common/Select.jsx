@@ -147,7 +147,7 @@ export default function Select({
 
   const emit = (o) => {
     setOpen(false);
-    if (onChange) onChange({ target: { value: o.value } });
+    if (onChange) onChange({ target: { name, value: o.value } });
   };
 
   const openMenu = (toOpen) => {
