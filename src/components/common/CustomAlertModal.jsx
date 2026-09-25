@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import {
   MdVpnLock,
@@ -12,7 +12,35 @@ import {
 } from "react-icons/md";
 import { ALERT_TYPES } from "../../context/CustomAlertContext";
 
+const SUCCESS_CONFETTI = [
+  { c: "#34d399", cx: -46, cy: -58, r: "300deg", d: 0, w: 5, h: 10 },
+  { c: "#10b981", cx: 42, cy: -64, r: "-285deg", d: 0.04, w: 6, h: 12 },
+  { c: "#a7f3d0", cx: -62, cy: -18, r: "260deg", d: 0.08, w: 4, h: 8 },
+  { c: "#059669", cx: 58, cy: -22, r: "-240deg", d: 0.03, w: 5, h: 11 },
+  { c: "#6ee7b7", cx: -30, cy: -78, r: "320deg", d: 0.1, w: 6, h: 9 },
+  { c: "#34d399", cx: 30, cy: -80, r: "-315deg", d: 0.06, w: 5, h: 10 },
+  { c: "#10b981", cx: -74, cy: 6, r: "230deg", d: 0.12, w: 4, h: 8 },
+  { c: "#a7f3d0", cx: 70, cy: 2, r: "-215deg", d: 0.09, w: 5, h: 9 },
+  { c: "#059669", cx: -50, cy: 34, r: "210deg", d: 0.13, w: 6, h: 12 },
+  { c: "#34d399", cx: 48, cy: 38, r: "-205deg", d: 0.11, w: 4, h: 10 },
+  { c: "#6ee7b7", cx: -16, cy: 52, r: "190deg", d: 0.15, w: 5, h: 8 },
+  { c: "#10b981", cx: 14, cy: 54, r: "-185deg", d: 0.14, w: 6, h: 9 },
+];
+
 export default function CustomAlertModal({ config, onClose }) {
+  const [closing, setClosing] = useState(false);
+
+  useEffect(() => {
+    if (!config) return;
+    if (config.type !== ALERT_TYPES.SUCCESS || config.onConfirm) return;
+    const t1 = setTimeout(() => setClosing(true), 2200);
+    const t2 = setTimeout(onClose, 2550);
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+    };
+  }, [config, onClose]);
+
   if (!config) return null;
 
   const {
@@ -63,12 +91,12 @@ export default function CustomAlertModal({ config, onClose }) {
       btnBg: confirmStyle === "danger" ? "#e11d48" : "#4f46e5",
     },
     [ALERT_TYPES.SUCCESS]: {
-      icon: <MdCheckCircle size={32} className="text-emerald-400" />,
+      icon: <MdCheckCircle size={36} className="text-emerald-400" />,
       tag: "SUCCESS",
-      tagColor: "text-emerald-400 bg-emerald-500/10 border-emerald-500/25",
-      glowColor: "rgba(16, 185, 129, 0.25)",
-      badgeBg: "linear-gradient(135deg, rgba(16,185,129,0.2) 0%, rgba(5,150,105,0.08) 100%)",
-      badgeBorder: "rgba(16, 185, 129, 0.35)",
+      tagColor: "text-emerald-300 bg-emerald-500/10 border-emerald-500/30",
+      glowColor: "rgba(16, 185, 129, 0.35)",
+      badgeBg: "linear-gradient(135deg, rgba(16,185,129,0.28) 0%, rgba(5,150,105,0.1) 100%)",
+      badgeBorder: "rgba(16, 185, 129, 0.45)",
       headerTitle: title || "Operation Successful",
       btnGradient: "from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 shadow-emerald-600/25",
       btnBg: "#059669",
@@ -109,6 +137,7 @@ export default function CustomAlertModal({ config, onClose }) {
   };
 
   const currentVariant = variantMap[type] || variantMap[ALERT_TYPES.INFO];
+  const isSuccess = type === ALERT_TYPES.SUCCESS;
 
   const modalContent = (
     <div
@@ -123,7 +152,9 @@ export default function CustomAlertModal({ config, onClose }) {
         backdropFilter: "blur(10px)",
         WebkitBackdropFilter: "blur(10px)",
         padding: "16px",
-        animation: "customAlertFadeIn 0.24s cubic-bezier(0.16, 1, 0.3, 1) forwards",
+        opacity: closing ? 0 : 1,
+        transition: "opacity 0.26s ease",
+        pointerEvents: closing ? "none" : "auto",
       }}
       onClick={handleCancel}
     >
@@ -136,6 +167,26 @@ export default function CustomAlertModal({ config, onClose }) {
           from { opacity: 0; transform: scale(0.90) translateY(16px); }
           to { opacity: 1; transform: scale(1) translateY(0); }
         }
+        @keyframes customAlertSpringPop {
+          0% { opacity: 0; transform: scale(0.6) translateY(24px); }
+          55% { opacity: 1; transform: scale(1.05) translateY(-5px); }
+          80% { opacity: 1; transform: scale(0.98) translateY(1px); }
+          100% { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        @keyframes customBadgePop {
+          0% { transform: scale(0); }
+          60% { transform: scale(1.18) rotate(-6deg); }
+          80% { transform: scale(0.94) rotate(3deg); }
+          100% { transform: scale(1) rotate(0); }
+        }
+        @keyframes customPulseRing {
+          0% { transform: scale(1); opacity: 0.6; }
+          100% { transform: scale(2); opacity: 0; }
+        }
+        @keyframes customConfettiBurst {
+          0% { opacity: 1; transform: translate(0, 0) scale(1); }
+          100% { opacity: 0; transform: translate(var(--cx, 0px), var(--cy, 0px)) rotate(var(--cr, 320deg)) scale(0.6); }
+        }
       `}</style>
 
       <div
@@ -147,8 +198,12 @@ export default function CustomAlertModal({ config, onClose }) {
           borderRadius: "24px",
           padding: "26px 24px 22px",
           border: "1.5px solid var(--glass-border, rgba(255, 255, 255, 0.12))",
-          boxShadow: `0 24px 60px -12px rgba(0, 0, 0, 0.65), 0 0 30px ${currentVariant.glowColor}`,
-          animation: "customAlertSlideUp 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards",
+          boxShadow: `0 24px 60px -12px rgba(0, 0, 0, 0.65), 0 0 34px ${currentVariant.glowColor}`,
+          animation: isSuccess
+            ? "customAlertSpringPop 0.5s cubic-bezier(0.16, 1, 0.3, 1) both"
+            : "customAlertSlideUp 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards",
+          transform: closing ? "scale(0.94) translateY(8px)" : undefined,
+          transition: "transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
           position: "relative",
           overflow: "hidden",
         }}
@@ -162,7 +217,7 @@ export default function CustomAlertModal({ config, onClose }) {
             left: "15%",
             right: "15%",
             height: "2px",
-            background: `linear-gradient(90deg, transparent, ${currentVariant.glowColor.replace("0.25", "0.9")}, transparent)`,
+            background: `linear-gradient(90deg, transparent, ${currentVariant.glowColor.replace("0.25", "0.9").replace("0.35", "0.9")}, transparent)`,
           }}
         />
 
@@ -198,21 +253,70 @@ export default function CustomAlertModal({ config, onClose }) {
 
         {/* Aura Badge Icon Header */}
         <div className="flex flex-col items-center text-center">
-          <div
-            style={{
-              width: "68px",
-              height: "68px",
-              borderRadius: "22px",
-              background: currentVariant.badgeBg,
-              border: `1.5px solid ${currentVariant.badgeBorder}`,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              marginBottom: "16px",
-              boxShadow: `0 0 24px ${currentVariant.glowColor}`,
-            }}
-          >
-            {currentVariant.icon}
+          <div style={{ position: "relative", marginBottom: "16px" }}>
+            {isSuccess && (
+              <>
+                <div
+                  style={{
+                    position: "absolute",
+                    inset: -14,
+                    pointerEvents: "none",
+                    zIndex: 0,
+                  }}
+                >
+                  {SUCCESS_CONFETTI.map((p, i) => (
+                    <span
+                      key={i}
+                      style={{
+                        position: "absolute",
+                        left: "50%",
+                        top: "50%",
+                        width: p.w,
+                        height: p.h,
+                        borderRadius: 2,
+                        background: p.c,
+                        opacity: 0,
+                        animation: "customConfettiBurst 0.95s cubic-bezier(0.16, 1, 0.3, 1) both",
+                        animationDelay: `${p.d}s`,
+                        "--cx": `${p.cx}px`,
+                        "--cy": `${p.cy}px`,
+                        "--cr": p.r,
+                      }}
+                    />
+                  ))}
+                </div>
+                <div
+                  style={{
+                    position: "absolute",
+                    inset: 0,
+                    width: 68,
+                    height: 68,
+                    margin: "auto",
+                    borderRadius: 22,
+                    border: "2px solid rgba(16, 185, 129, 0.5)",
+                    animation: "customPulseRing 1.4s ease-out 0.28s both",
+                  }}
+                />
+              </>
+            )}
+            <div
+              style={{
+                width: "68px",
+                height: "68px",
+                borderRadius: "22px",
+                background: currentVariant.badgeBg,
+                border: `1.5px solid ${currentVariant.badgeBorder}`,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                position: "relative",
+                zIndex: 1,
+                boxShadow: `0 0 ${isSuccess ? 30 : 24}px ${currentVariant.glowColor}`,
+                animation: isSuccess ? "customBadgePop 0.55s cubic-bezier(0.16, 1, 0.3, 1) 0.06s both" : undefined,
+              }}
+            >
+              {currentVariant.icon}
+            </div>
           </div>
 
           <span className={`text-[10px] font-extrabold uppercase tracking-widest px-2.5 py-0.5 rounded-full border mb-2 ${currentVariant.tagColor}`}>

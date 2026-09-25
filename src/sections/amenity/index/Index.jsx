@@ -1,4 +1,5 @@
-import { useState, createPortal } from "react";
+import { useState } from "react";
+import { createPortal } from "react-dom";
 import { MdAdd, MdClose, MdOutlineInbox, MdCheckCircle, MdCancel, MdToggleOn, MdToggleOff, MdAccessTime, MdPeople, MdEventAvailable, MdGridView, MdCalendarMonth, MdWarning, MdBlock, MdPayment, MdEdit, MdFilterAlt, MdCheck, MdExpandMore } from "react-icons/md";
 import { useLang } from "../../../context/LanguageContext";
 import { Spinner, amenityEmoji, PALETTES, isPaidAmenity } from "../amenityHelpers.jsx";

@@ -17,7 +17,7 @@ import GlobalConfirmDialog from "../../components/common/GlobalConfirmDialog";
 import Pagination from "../../components/common/Pagination";
 import Select from "../../components/common/Select";
 import SlidingTabs from "../../components/common/SlidingTabs";
-import { AccountantRowActions, AdminRowActions, BillStatus, Spinner, StatCards } from "./billPieces";
+import { AccountantRowActions, AdminRowActions, BillStatus, FlatUnitCell, Spinner, StatCards } from "./billPieces";
 import { BILL_CATEGORIES, BILL_TYPE_FILTERS, getCurrentBillingMonth, getTodayISO, useIsMobile } from "./billingHelpers";
 import { BillCreateModal, BillDetailsModal, BulkModals, CreateSuccessPopup } from "./billModals";
 
@@ -99,18 +99,33 @@ export default function ManageBills({ variant }) {
     [selectedBillsList]
   );
   const selectedApprovable = useMemo(
-    () => selectedBillsList.filter((b) => b.status !== "PAID"),
+    () => selectedBillsList.filter((b) => b.status === "PAID" || b.status === "PENDING_VERIFICATION"),
     [selectedBillsList]
   );
   const selectedDeletable = selectedBillsList;
-  const selectedPaid = useMemo(
-    () => selectedBillsList.filter((b) => b.status === "PAID"),
+  const selectedPending = useMemo(
+    () => selectedBillsList.filter((b) => b.status === "PENDING"),
     [selectedBillsList]
   );
   const selectedApprovableAmount = useMemo(
     () => selectedApprovable.reduce((sum, b) => sum + Number(b.amount || 0), 0),
     [selectedApprovable]
   );
+
+  const hasPendingBills = selectedPending.length > 0;
+  const canBulkApprove = selectedCount > 0 && !hasPendingBills && selectedApprovable.length === selectedCount;
+
+  const deselectPendingBills = () => {
+    setSelectedBillsMap((prev) => {
+      const next = { ...prev };
+      for (const [id, bill] of Object.entries(next)) {
+        if (bill.status === "PENDING") {
+          delete next[id];
+        }
+      }
+      return next;
+    });
+  };
 
   const isAllPageSelected = useMemo(
     () => bills.length > 0 && bills.every((b) => Boolean(selectedBillsMap[b.id])),
@@ -448,6 +463,11 @@ export default function ManageBills({ variant }) {
       setShowBulkApproveModal(false);
       return;
     }
+    if (selectedPending.length > 0) {
+      showError(`Cannot bulk approve: ${selectedPending.length} selected bill(s) are still PENDING (unpaid). All selected bills must have status as PAID before approving.`);
+      setShowBulkApproveModal(false);
+      return;
+    }
     if (selectedApprovable.length === 0) return;
     try {
       setBulkApproving(true);
@@ -674,8 +694,8 @@ export default function ManageBills({ variant }) {
         </div>
       )}
 
-      {/* ── STAT CARDS (Accountant) ── */}
-      {isAccountant && !initialLoad && counts.total > 0 && (
+      {/* ── STAT CARDS ── */}
+      {!initialLoad && counts.total > 0 && (
         <StatCards isMobile={isMobile} stats={STATS} />
       )}
 
@@ -795,25 +815,76 @@ export default function ManageBills({ variant }) {
                     <span style={{ opacity: 0.75, fontWeight: 800 }}>• ₹{selectedTotalAmount.toLocaleString("en-IN")}</span>
                   </span>
 
+                  {/* Warning badge if selection contains PENDING bills */}
+                  {hasPendingBills && (
+                    <span
+                      style={{
+                        fontSize: 12,
+                        fontWeight: 700,
+                        background: "rgba(245, 158, 11, 0.15)",
+                        border: "1px solid rgba(245, 158, 11, 0.35)",
+                        color: "#f59e0b",
+                        padding: "6px 10px",
+                        borderRadius: 10,
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 6,
+                      }}
+                      title="Bulk approve requires all selected bills to have status as PAID"
+                    >
+                      <MdWarning size={14} />
+                      <span>{selectedPending.length} are Pending</span>
+                      <button
+                        type="button"
+                        onClick={deselectPendingBills}
+                        style={{
+                          background: "none",
+                          border: "none",
+                          padding: 0,
+                          marginLeft: 4,
+                          color: "#fbbf24",
+                          textDecoration: "underline",
+                          cursor: "pointer",
+                          fontWeight: 800,
+                          fontSize: 11,
+                        }}
+                        title="Remove pending bills from selection"
+                      >
+                        Deselect Pending
+                      </button>
+                    </span>
+                  )}
+
                   {hasPermission(user, "manage_bills", "edit") && (
                     <button
                       type="button"
-                      onClick={() => setShowBulkApproveModal(true)}
-                      disabled={selectedApprovable.length === 0}
-                      title={selectedApprovable.length === 0 ? "No unpaid bills in selection" : "Approve and confirm payment for selected bills"}
+                      onClick={() => {
+                        if (hasPendingBills) {
+                          showError(`Cannot approve: ${selectedPending.length} selected bill(s) are still PENDING (unpaid). All selected bills must have status as PAID to approve.`);
+                          return;
+                        }
+                        setShowBulkApproveModal(true);
+                      }}
+                      disabled={!canBulkApprove}
+                      title={
+                        hasPendingBills
+                          ? `Cannot approve: ${selectedPending.length} of the selected bills are PENDING. Bills must have status as PAID to approve.`
+                          : (selectedCount === 0 ? "No bills selected" : `Approve all ${selectedApprovable.length} selected bills`)
+                      }
                       style={{
                         display: "inline-flex",
                         alignItems: "center",
                         gap: 6,
                         fontSize: 12,
                         fontWeight: 700,
-                        background: selectedApprovable.length > 0 ? "linear-gradient(135deg, #10b981, #059669)" : "rgba(16,185,129,0.2)",
-                        color: selectedApprovable.length > 0 ? "#ffffff" : "rgba(255,255,255,0.4)",
+                        background: canBulkApprove ? "linear-gradient(135deg, #10b981, #059669)" : "rgba(16,185,129,0.15)",
+                        color: canBulkApprove ? "#ffffff" : "rgba(255,255,255,0.35)",
                         border: "none",
                         borderRadius: 10,
                         padding: "8px 14px",
-                        cursor: selectedApprovable.length > 0 ? "pointer" : "not-allowed",
-                        boxShadow: selectedApprovable.length > 0 ? "0 4px 12px rgba(16,185,129,0.3)" : "none",
+                        cursor: canBulkApprove ? "pointer" : "not-allowed",
+                        boxShadow: canBulkApprove ? "0 4px 12px rgba(16,185,129,0.3)" : "none",
+                        opacity: canBulkApprove ? 1 : 0.6,
                         transition: "all 0.2s",
                       }}
                     >
@@ -921,14 +992,19 @@ export default function ManageBills({ variant }) {
                       <span className="text-xs text-secondary font-medium">{t("billAmountLabel")}</span>
                       <span className="bill-amount-val">₹{Number(b.amount).toLocaleString("en-IN")}</span>
                     </div>
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-2 gap-3 items-start">
                       <div>
                         <p className="text-xs text-secondary mb-1">{t("billFlatCol")}</p>
-                        <span className="flat-chip">{b.Flat?.flat_number || "—"}{b.Flat?.Block?.name ? ` · ${b.Flat.Block.name}` : ""}</span>
+                        <FlatUnitCell flat={b.Flat} block={b.Flat?.Block} />
                       </div>
                       <div>
                         <p className="text-xs text-secondary mb-1">{t("billResidentCol")}</p>
-                        <p className="text-xs font-semibold" style={{ color: "var(--text-primary)" }}>{b.Flat?.User?.name || "NA"}</p>
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                          <div className="w-5 h-5 rounded-full bg-accent/15 text-accent font-bold text-[9px] flex items-center justify-center shrink-0 uppercase">
+                            {(b.Flat?.User?.name || "U").slice(0, 2)}
+                          </div>
+                          <p className="text-xs font-semibold text-primary truncate max-w-[120px]">{b.Flat?.User?.name || "NA"}</p>
+                        </div>
                       </div>
                     </div>
                     <AccountantRowActions
@@ -983,22 +1059,40 @@ export default function ManageBills({ variant }) {
                         <span className="text-xs text-secondary font-medium">{t("billAmountLabel")}</span>
                         <span className="bill-amount-val">₹{Number(b.amount).toLocaleString("en-IN")}</span>
                       </div>
-                      <div className="grid grid-cols-2 gap-3">
+                      <div className="grid grid-cols-2 gap-3 items-start">
                         <div>
                           <p className="text-xs text-secondary mb-1">{t("billFlatCol")}</p>
-                          <span className="flat-chip">{b.Flat?.flat_number || "—"}{" · "}{b.Flat?.Block?.name || "—"}</span>
-                          {isSuperAdmin && (
-                            <div style={{ marginTop: 4, fontSize: 10, fontWeight: 700, color: "var(--accent)" }}>
-                              🏢 {b.Flat?.Block?.Society?.name || "—"}
-                            </div>
-                          )}
+                          <FlatUnitCell
+                            flat={b.Flat}
+                            block={b.Flat?.Block}
+                            societyName={isSuperAdmin ? b.Flat?.Block?.Society?.name : undefined}
+                          />
                         </div>
                         <div>
                           <p className="text-xs text-secondary mb-1">{t("billResidentCol")}</p>
-                          <p className="text-xs font-semibold" style={{ color: "var(--text-primary)" }}>{b.Flat?.User?.name || "NA"}</p>
+                          <div className="flex items-center gap-1.5 mt-0.5">
+                            <div className="w-5 h-5 rounded-full bg-accent/15 text-accent font-bold text-[9px] flex items-center justify-center shrink-0 uppercase">
+                              {(b.Flat?.User?.name || "U").slice(0, 2)}
+                            </div>
+                            <p className="text-xs font-semibold text-primary truncate max-w-[120px]">{b.Flat?.User?.name || "NA"}</p>
+                          </div>
                         </div>
                       </div>
-                      <AdminRowActions bill={b} confirmDeleteId={confirmDeleteId} setConfirmDeleteId={setConfirmDeleteId} handleDeleteBill={handleDeleteBill} deletingId={deletingId} handleConfirmPayment={handleConfirmPayment} confirmingId={confirmingId} t={t} canEdit={hasPermission(user, "manage_bills", "edit")} canDelete={hasPermission(user, "manage_bills", "delete")} authUser={user} showUnauthorized={showUnauthorized} />
+                      <AdminRowActions
+                        bill={b}
+                        confirmDeleteId={confirmDeleteId}
+                        setConfirmDeleteId={setConfirmDeleteId}
+                        handleDeleteBill={handleDeleteBill}
+                        deletingId={deletingId}
+                        handleConfirmPayment={handleConfirmPayment}
+                        confirmingId={confirmingId}
+                        t={t}
+                        canEdit={hasPermission(user, "manage_bills", "edit")}
+                        canDelete={hasPermission(user, "manage_bills", "delete")}
+                        authUser={user}
+                        showUnauthorized={showUnauthorized}
+                        onDetailsClick={setViewBill}
+                      />
                     </div>
                   </div>
                 );
@@ -1020,7 +1114,7 @@ export default function ManageBills({ variant }) {
                   <th>{t("billMonthCol")}</th>
                   <th>{t("billAmountCol")}</th>
                   <th>{t("billStatusCol")}</th>
-                  <th>{t("billActionCol")}</th>
+                  <th style={{ textAlign: "right", minWidth: 90, paddingRight: 16 }}>{t("billActionCol")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -1036,12 +1130,19 @@ export default function ManageBills({ variant }) {
                         </div>
                       </div>
                     </td>
-                    <td><span className="flat-chip">{b.Flat?.flat_number || "—"}{b.Flat?.Block?.name ? <span style={{ opacity: 0.55 }}> · {b.Flat.Block.name}</span> : null}</span></td>
-                    <td><span className="text-sm text-secondary">{b.Flat?.User?.name || "—"}</span></td>
+                    <td><FlatUnitCell flat={b.Flat} block={b.Flat?.Block} /></td>
+                    <td>
+                      <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 rounded-full bg-accent/15 text-accent font-bold text-[10px] flex items-center justify-center shrink-0 uppercase">
+                          {(b.Flat?.User?.name || "U").slice(0, 2)}
+                        </div>
+                        <span className="text-xs font-semibold text-primary">{b.Flat?.User?.name || "—"}</span>
+                      </div>
+                    </td>
                     <td><span className="info-chip">{b.billing_month}</span></td>
                     <td><span className="bill-table-amount">₹{Number(b.amount).toLocaleString("en-IN")}</span></td>
                     <td><BillStatus status={b.status} t={t} variant="accountant" /></td>
-                    <td onClick={e => e.stopPropagation()}>
+                    <td style={{ textAlign: "right", paddingRight: 16 }} onClick={e => e.stopPropagation()}>
                       <AccountantRowActions
                         bill={b}
                         onDetailsClick={setViewBill}
@@ -1077,7 +1178,7 @@ export default function ManageBills({ variant }) {
                   <th>{t("billMonthCol")}</th>
                   <th>{t("billAmountCol")}</th>
                   <th>{t("billStatusCol")}</th>
-                  <th>{t("billActionCol")}</th>
+                  <th style={{ textAlign: "right", minWidth: 90, paddingRight: 16 }}>{t("billActionCol")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -1115,13 +1216,34 @@ export default function ManageBills({ variant }) {
                           <span className="font-semibold text-sm" style={{ color: "var(--text-primary)" }}>{b.title}</span>
                         </div>
                       </td>
-                      <td><span className="flat-chip">{b.Flat?.flat_number || "—"}<span style={{ opacity: 0.55 }}>{" · "}{b.Flat?.Block?.name || "—"}</span></span></td>
-                      <td><span className="text-sm text-secondary">{b.Flat?.User?.name || "—"}</span></td>
+                      <td><FlatUnitCell flat={b.Flat} block={b.Flat?.Block} /></td>
+                      <td>
+                        <div className="flex items-center gap-2">
+                          <div className="w-6 h-6 rounded-full bg-accent/15 text-accent font-bold text-[10px] flex items-center justify-center shrink-0 uppercase">
+                            {(b.Flat?.User?.name || "U").slice(0, 2)}
+                          </div>
+                          <span className="text-xs font-semibold text-primary">{b.Flat?.User?.name || "—"}</span>
+                        </div>
+                      </td>
                       <td><span className="info-chip">{b.billing_month}</span></td>
                       <td><span className="bill-table-amount">₹{Number(b.amount).toLocaleString("en-IN")}</span></td>
                       <td><BillStatus status={b.status} t={t} /></td>
-                      <td onClick={e => e.stopPropagation()}>
-                        <AdminRowActions bill={b} confirmDeleteId={confirmDeleteId} setConfirmDeleteId={setConfirmDeleteId} handleDeleteBill={handleDeleteBill} deletingId={deletingId} handleConfirmPayment={handleConfirmPayment} confirmingId={confirmingId} t={t} canEdit={hasPermission(user, "manage_bills", "edit")} canDelete={hasPermission(user, "manage_bills", "delete")} authUser={user} showUnauthorized={showUnauthorized} />
+                      <td style={{ textAlign: "right", paddingRight: 16 }} onClick={e => e.stopPropagation()}>
+                        <AdminRowActions
+                          bill={b}
+                          confirmDeleteId={confirmDeleteId}
+                          setConfirmDeleteId={setConfirmDeleteId}
+                          handleDeleteBill={handleDeleteBill}
+                          deletingId={deletingId}
+                          handleConfirmPayment={handleConfirmPayment}
+                          confirmingId={confirmingId}
+                          t={t}
+                          canEdit={hasPermission(user, "manage_bills", "edit")}
+                          canDelete={hasPermission(user, "manage_bills", "delete")}
+                          authUser={user}
+                          showUnauthorized={showUnauthorized}
+                          onDetailsClick={setViewBill}
+                        />
                       </td>
                     </tr>
                   );
@@ -1148,28 +1270,31 @@ export default function ManageBills({ variant }) {
         )}
       </div>
 
-      {/* ── BILL & PAYMENT DETAILS MODAL + DELETE CONFIRM (Accountant) ── */}
-      {isAccountant ? (
-        <>
-          <BillDetailsModal
-            viewBill={viewBill}
-            onClose={() => setViewBill(null)}
-            handleConfirmPayment={handleConfirmPayment}
-            confirmingId={confirmingId}
-            t={t}
-          />
-          <GlobalConfirmDialog
-            isOpen={Boolean(confirmDeleteId)}
-            onClose={() => setConfirmDeleteId(null)}
-            onConfirm={() => handleDeleteBill(confirmDeleteId)}
-            title={t("billDeleteConfirmTitle") || "Delete Bill"}
-            message={t("billDeleteConfirmMsg") || "Are you sure you want to delete this bill? This action cannot be undone."}
-            confirmText={t("billYesDelete") || "Yes, Delete"}
-            variant="danger"
-            loading={Boolean(deletingId)}
-          />
-        </>
-      ) : (
+      {/* ── BILL & PAYMENT DETAILS MODAL ── */}
+      <BillDetailsModal
+        viewBill={viewBill}
+        onClose={() => setViewBill(null)}
+        handleConfirmPayment={handleConfirmPayment}
+        confirmingId={confirmingId}
+        t={t}
+      />
+
+      {/* ── DELETE CONFIRM (Accountant) ── */}
+      {isAccountant && (
+        <GlobalConfirmDialog
+          isOpen={Boolean(confirmDeleteId)}
+          onClose={() => setConfirmDeleteId(null)}
+          onConfirm={() => handleDeleteBill(confirmDeleteId)}
+          title={t("billDeleteConfirmTitle") || "Delete Bill"}
+          message={t("billDeleteConfirmMsg") || "Are you sure you want to delete this bill? This action cannot be undone."}
+          confirmText={t("billYesDelete") || "Yes, Delete"}
+          variant="danger"
+          loading={Boolean(deletingId)}
+        />
+      )}
+
+      {/* ── BULK ACTIONS (Admin / Super Admin) ── */}
+      {!isAccountant && (
         <BulkModals
           showBulkApproveModal={showBulkApproveModal}
           setShowBulkApproveModal={setShowBulkApproveModal}
@@ -1180,7 +1305,7 @@ export default function ManageBills({ variant }) {
           selectedApprovable={selectedApprovable}
           selectedDeletable={selectedDeletable}
           selectedApprovableAmount={selectedApprovableAmount}
-          selectedPaid={selectedPaid}
+          selectedPending={selectedPending}
           handleBulkApprove={handleBulkApprove}
           handleBulkDelete={handleBulkDelete}
         />

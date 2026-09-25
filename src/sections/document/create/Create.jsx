@@ -80,7 +80,7 @@ export default function Create({ isOpen, onClose, onCreated, onToast, catLabel }
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="flex flex-col gap-1.5">
             <label className="text-xs font-semibold" style={{ color: "var(--text-secondary)" }}>
-              {t("adDocFieldTitle")} <span style={{ color: "var(--stat-red-color)" }}>*</span>
+              {t("adDocFieldTitle")} <span style={{ color: "#ef4444" }}>*</span>
             </label>
             <input
               className="input"
@@ -92,7 +92,7 @@ export default function Create({ isOpen, onClose, onCreated, onToast, catLabel }
           </div>
           <div className="flex flex-col gap-1.5">
             <label className="text-xs font-semibold" style={{ color: "var(--text-secondary)" }}>
-              {t("adDocFieldCategory")} <span style={{ color: "var(--stat-red-color)" }}>*</span>
+              {t("adDocFieldCategory")} <span style={{ color: "#ef4444" }}>*</span>
             </label>
             <Select
               className="input"
@@ -125,7 +125,7 @@ export default function Create({ isOpen, onClose, onCreated, onToast, catLabel }
 
         <div className="flex flex-col gap-1.5">
           <label className="text-xs font-semibold" style={{ color: "var(--text-secondary)" }}>
-            {t("adDocFieldFile")} <span style={{ color: "var(--stat-red-color)" }}>*</span>
+            {t("adDocFieldFile")} <span style={{ color: "#ef4444" }}>*</span>
           </label>
           <div
             className={`ad-dropzone${dragOver ? " ad-dropzone--over" : ""}${file ? " ad-dropzone--filled" : ""}`}

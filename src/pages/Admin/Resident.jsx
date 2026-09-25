@@ -2179,8 +2179,10 @@ function EditFlatSection({ allUnassignedFlats, availableSlots, currentFlats, cur
 ───────────────────────────────────────── */
 
 
+const DEFAULT_RESIDENT_PASSWORD = "Admin@123";
+
 const EMPTY_FORM = {
-  name: "", email: "", password: "", phone: "",
+  name: "", email: "", password: DEFAULT_RESIDENT_PASSWORD, phone: "",
   resident_type: "OWNER",
   flat_assignments: [emptyAssignment()],
   vehicle_count: 0,
@@ -2442,7 +2444,10 @@ const [totalPages, setTotalPages] = useState(1);
     }
     const next = !showForm;
     setShowForm(next);
-    if (next) setFormSocietyId(filterSocietyId);
+    if (next) {
+      resetForm();
+      setFormSocietyId(filterSocietyId);
+    }
     setConfirmId(null);
     setAssignModal(null);
     if (showForm) resetForm();
@@ -2570,9 +2575,8 @@ const [totalPages, setTotalPages] = useState(1);
       }
       const phoneErr = formData.phone ? getMobileError(formData.phone, "Phone") : null;
       if (phoneErr) { setFormError(t("rcaErrPhoneInvalid")); return; }
-      if (!editingId && !formData.password) {
-        setFormError(t("rcaErrPassword"));
-        return;
+      if (!editingId && !formData.password?.trim()) {
+        setFormData((prev) => ({ ...prev, password: DEFAULT_RESIDENT_PASSWORD }));
       }
       setFormStep(2);
       return;
@@ -2674,7 +2678,7 @@ const [totalPages, setTotalPages] = useState(1);
         const residentRes = await API.post("/users/resident", {
           name: formData.name.trim(),
           email: formData.email.trim(),
-          password: formData.password,
+          password: formData.password || DEFAULT_RESIDENT_PASSWORD,
           phone: formData.phone || undefined,
           resident_type: "OWNER",
           flat_assignments: flatAssignments,
@@ -2961,7 +2965,7 @@ const [totalPages, setTotalPages] = useState(1);
                           <div style={{ position: "relative" }}>
                             <input
                               className="input w-full"
-                              placeholder={t("rcaPasswordPlaceholder")}
+                              placeholder={t("rcaPasswordPlaceholder") || DEFAULT_RESIDENT_PASSWORD}
                               type={showPassword ? "text" : "password"}
                               value={formData.password}
                               onChange={(e) => setFormData({ ...formData, password: e.target.value })}
@@ -2981,6 +2985,9 @@ const [totalPages, setTotalPages] = useState(1);
                               {showPassword ? <MdVisibilityOff size={17} /> : <MdVisibility size={17} />}
                             </button>
                           </div>
+                          <p style={{ fontSize: 11, color: "var(--text-secondary)", marginTop: 4, opacity: 0.75 }}>
+                            {t("resPasswordHint") || "Default: Admin@123 (Resident can change password after login)"}
+                          </p>
                         </Field>
                       )}
                     </div>

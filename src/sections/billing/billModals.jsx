@@ -1,5 +1,5 @@
 import { createPortal } from "react-dom";
-import { MdCheckCircle, MdDelete, MdHome, MdPayments, MdReceiptLong } from "react-icons/md";
+import { MdCheckCircle, MdDelete, MdHome, MdPayments, MdReceiptLong, MdWarning } from "react-icons/md";
 import GlobalButton from "../../components/common/GlobalButton";
 import GlobalModal from "../../components/common/GlobalModal";
 import Select from "../../components/common/Select";
@@ -547,7 +547,7 @@ export function BulkModals({
   selectedApprovable,
   selectedDeletable,
   selectedApprovableAmount,
-  selectedPaid,
+  selectedPending,
   handleBulkApprove,
   handleBulkDelete,
 }) {
@@ -603,7 +603,7 @@ export function BulkModals({
                     Approve Selected Bills
                   </h3>
                   <p style={{ fontSize: 12, margin: "4px 0 0", color: "var(--text-secondary)" }}>
-                    Confirm payment and mark status as PAID
+                    Confirm and verify payment for selected bills
                   </p>
                 </div>
               </div>
@@ -628,15 +628,29 @@ export function BulkModals({
                   <span style={{ color: "var(--text-secondary)" }}>Total Amount:</span>
                   <strong style={{ color: "var(--accent, #818cf8)", fontSize: 15 }}>₹{selectedApprovableAmount.toLocaleString("en-IN")}</strong>
                 </div>
-                {selectedPaid.length > 0 && (
-                  <div style={{ fontSize: 11, color: "var(--text-secondary)", borderTop: "1px solid var(--glass-border)", paddingTop: 8 }}>
-                    ℹ️ {selectedPaid.length} already PAID bill(s) in selection will remain unaffected.
+                {selectedPending?.length > 0 && (
+                  <div
+                    style={{
+                      background: "rgba(239, 68, 68, 0.12)",
+                      border: "1px solid rgba(239, 68, 68, 0.35)",
+                      borderRadius: 10,
+                      padding: "10px 12px",
+                      color: "#f87171",
+                      fontSize: 12,
+                      fontWeight: 600,
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 8,
+                    }}
+                  >
+                    <MdWarning size={18} style={{ flexShrink: 0 }} />
+                    <span>Cannot approve: {selectedPending.length} selected bill(s) are still PENDING (unpaid). All selected bills must have status as PAID before approving.</span>
                   </div>
                 )}
               </div>
 
               <p style={{ fontSize: 12, color: "var(--text-secondary)", marginBottom: 22, lineHeight: 1.5 }}>
-                Approving will update the status of each bill to <strong>PAID</strong>, mark associated payment records as <strong>SUCCESS</strong>, and send real-time web and push notifications to residents.
+                Approving will confirm the status and verification of each bill, ensuring all payment and ledger records are finalized.
               </p>
 
               <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
@@ -651,21 +665,23 @@ export function BulkModals({
                 </button>
                 <button
                   type="button"
-                  disabled={bulkApproving}
+                  disabled={bulkApproving || selectedPending?.length > 0 || selectedApprovable.length === 0}
                   onClick={handleBulkApprove}
                   style={{
                     display: "flex",
                     alignItems: "center",
                     gap: 8,
-                    background: "linear-gradient(135deg, #10b981, #059669)",
-                    color: "#ffffff",
+                    background: (!selectedPending?.length && selectedApprovable.length > 0)
+                      ? "linear-gradient(135deg, #10b981, #059669)"
+                      : "rgba(16,185,129,0.15)",
+                    color: (!selectedPending?.length && selectedApprovable.length > 0) ? "#ffffff" : "rgba(255,255,255,0.35)",
                     fontWeight: 700,
                     fontSize: 13,
                     padding: "9px 20px",
                     borderRadius: 12,
                     border: "none",
-                    cursor: bulkApproving ? "not-allowed" : "pointer",
-                    boxShadow: "0 4px 14px rgba(16,185,129,0.35)",
+                    cursor: (!selectedPending?.length && selectedApprovable.length > 0 && !bulkApproving) ? "pointer" : "not-allowed",
+                    boxShadow: (!selectedPending?.length && selectedApprovable.length > 0) ? "0 4px 14px rgba(16,185,129,0.35)" : "none",
                   }}
                 >
                   {bulkApproving ? <Spinner size={16} /> : <MdCheckCircle size={17} />}
@@ -748,9 +764,9 @@ export function BulkModals({
                   <span style={{ color: "var(--text-secondary)" }}>Bills to Delete:</span>
                   <strong style={{ color: "#ef4444" }}>{selectedDeletable.length} bill(s)</strong>
                 </div>
-                {selectedPaid.length > 0 && (
+                {selectedPending.length > 0 && (
                   <div style={{ fontSize: 11, color: "var(--text-secondary)", borderTop: "1px solid var(--glass-border)", paddingTop: 8 }}>
-                    ℹ️ Includes {selectedPaid.length} approved/paid bill(s). Associated payment records will also be removed.
+                    ℹ️ Includes {selectedPending.length} approved/paid bill(s). Associated payment records will also be removed.
                   </div>
                 )}
               </div>

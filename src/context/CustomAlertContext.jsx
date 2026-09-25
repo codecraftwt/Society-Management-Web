@@ -69,12 +69,14 @@ export const customAlert = {
 
 export function CustomAlertProvider({ children }) {
   const [alertConfig, setAlertConfig] = useState(null);
+  const [dialogSeq, setDialogSeq] = useState(0);
 
   const hideAlert = useCallback(() => {
     setAlertConfig(null);
   }, []);
 
   const showAlert = useCallback((config) => {
+    setDialogSeq((s) => s + 1);
     setAlertConfig({
       type: ALERT_TYPES.INFO,
       confirmText: "OK",
@@ -154,7 +156,7 @@ export function CustomAlertProvider({ children }) {
       }}
     >
       {children}
-      <CustomAlertModal config={alertConfig} onClose={hideAlert} />
+      <CustomAlertModal key={dialogSeq} config={alertConfig} onClose={hideAlert} />
     </CustomAlertContext.Provider>
   );
 }

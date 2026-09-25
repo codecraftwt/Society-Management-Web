@@ -26,6 +26,7 @@ import useUnsavedDirty from "../../hooks/useUnsavedDirty";
 import ConfirmDiscard from "../../components/common/ConfirmDiscard";
 
 import Pagination from "../../components/common/Pagination";
+import "./Admin.css";
 
 /* ── Status Badge (slot) ── */
 function StatusBadge({ status, t }) {
@@ -744,7 +745,7 @@ function ResidentRequestsPanel({ allSlots, onSlotAssigned }) {
 /* ═══════════════════════════════════════════
    Main
 ═══════════════════════════════════════════ */
-export default function AssignParkingSlot() {
+export default function AssignParkingSlot({ hideHeader = false, societyId } = {}) {
   const { t } = useLang();
   const { user } = useAuthContext();
   const { showUnauthorized, showError } = useCustomAlert();
@@ -1161,15 +1162,17 @@ const [totalPages, setTotalPages] = useState(1);
     <div className="parking-management-page space-y-5 animate-fadeIn">
       {/* ── Page Header: Unified Single Row ── */}
       <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <div className="ad-page-icon">
-            <FaParking size={20} />
+        {!hideHeader && (
+          <div className="flex items-center gap-3">
+            <div className="ad-page-icon">
+              <FaParking size={20} />
+            </div>
+            <div>
+              <h2 className="text-lg font-semibold" style={{ letterSpacing: "-0.02em" }}>{t("parkManagementTitle") || "Parking Management"}</h2>
+              <p className="text-secondary text-xs mt-0.5">{t("parkPageSummary")}</p>
+            </div>
           </div>
-          <div>
-            <h2 className="text-lg font-semibold" style={{ letterSpacing: "-0.02em" }}>{t("parkManagementTitle") || "Parking Management"}</h2>
-            <p className="text-secondary text-xs mt-0.5">{t("parkPageSummary")}</p>
-          </div>
-        </div>
+        )}
 
         <div className="flex items-center gap-2.5 flex-nowrap shrink-0 overflow-x-auto max-w-full">
           <SlidingTabs

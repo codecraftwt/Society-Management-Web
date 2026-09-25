@@ -1,159 +1,248 @@
+import React, { useState } from "react";
 import { createPortal } from "react-dom";
-import { MdOutlinePayments, MdPerson, MdHome, MdCalendarToday, MdReceipt, MdDescription, MdAccountBalanceWallet } from "react-icons/md";
+import {
+  MdCheckCircle,
+  MdPrint,
+  MdClose,
+  MdContentCopy,
+  MdCheck,
+} from "react-icons/md";
+import { toast } from "react-toastify";
 import { useLang } from "../../../context/LanguageContext";
-import { CURRENCY, amenityDescription, resolveResidentName, resolveFlatNumber } from "../paymentDetails";
-
-function DetailCard({ label, value, icon: Icon }) {
-  return (
-    <div
-      className="p-3.5 rounded-xl flex flex-col gap-1 transition-all"
-      style={{
-        background: "var(--card-inner-bg)",
-        border: "1px solid var(--glass-border)",
-      }}
-    >
-      <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-secondary">
-        {Icon && <Icon size={14} className="text-accent shrink-0" />}
-        <span>{label}</span>
-      </div>
-      <p className="text-xs sm:text-sm font-bold text-primary truncate" title={String(value || "—")}>
-        {value || "—"}
-      </p>
-    </div>
-  );
-}
+import {
+  CURRENCY,
+  amenityDescription,
+  resolveResidentName,
+  resolveFlatNumber,
+} from "../paymentDetails";
 
 export default function PaymentDetailsModal({ row, onClose }) {
   const { t } = useLang();
+  const [copied, setCopied] = useState(false);
+
+  if (!row) return null;
+
   const residentName = resolveResidentName(row);
   const flatNumber = resolveFlatNumber(row);
   const description =
     row.Bill?.title ||
     amenityDescription(row.booking, t) ||
-    (row.source === "MAINTENANCE" ? t("payMaintenanceHash", { id: row.bill_id || "—" }) : "—");
+    (row.source === "MAINTENANCE"
+      ? t("payMaintenanceHash", { id: row.bill_id || "—" }) || `Maintenance #${row.bill_id || "—"}`
+      : "—");
 
   const formattedDate = row.payment_date
     ? new Date(row.payment_date).toLocaleString("en-IN", {
-        dateStyle: "medium",
-        timeStyle: "short",
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true,
       })
     : "—";
 
   const reference =
     row.bill_id
-      ? t("payBillHash", { id: row.bill_id })
+      ? t("payBillHash", { id: row.bill_id }) || `Bill #${row.bill_id}`
       : row.booking_id
-      ? t("payBookingHash", { id: row.booking_id })
+      ? t("payBookingHash", { id: row.booking_id }) || `Booking #${row.booking_id}`
       : row.booking?.id
-      ? t("payBookingHash", { id: row.booking.id })
-      : "—";
+      ? t("payBookingHash", { id: row.booking.id }) || `Booking #${row.booking.id}`
+      : row.transaction_id || `TXN-${row.id || "001"}`;
+
+  const rawRef =
+    row.bill_id ? `BILL-${row.bill_id}` : row.booking_id ? `BOOK-${row.booking_id}` : reference;
+
+  const handleCopyRef = () => {
+    try {
+      navigator.clipboard.writeText(rawRef);
+      setCopied(true);
+      toast.success("Reference copied!");
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      toast.info(`Reference: ${rawRef}`);
+    }
+  };
+
+  const handlePrint = () => {
+    window.print();
+  };
+
+  const detailRows = [
+    { label: "Resident", value: residentName },
+    { label: "Flat / Unit", value: flatNumber !== "—" ? flatNumber : "General" },
+    { label: "Payment Date", value: formattedDate },
+    { label: "Payment Mode", value: row.payment_mode || "UPI" },
+    { label: "Source", value: row.source || "BILL" },
+    {
+      label: "Reference",
+      value: reference,
+      isRef: true,
+    },
+    { label: "Description / Particulars", value: description, isFull: true },
+  ];
 
   return createPortal(
     <div
-      className="fixed inset-0 flex items-center justify-center overflow-y-auto p-4 sm:p-6 animate-fadeIn"
-      style={{ background: "rgba(0,0,0,0.65)", backdropFilter: "blur(8px)", zIndex: 1200 }}
+      className="fixed inset-0 flex items-center justify-center p-4 animate-fadeIn"
+      style={{
+        background: "rgba(0, 0, 0, 0.65)",
+        backdropFilter: "blur(6px)",
+        WebkitBackdropFilter: "blur(6px)",
+        zIndex: 1300,
+      }}
       onClick={onClose}
     >
+      {/* Print Specific CSS */}
+      <style>{`
+        @media print {
+          body * {
+            visibility: hidden;
+          }
+          .formal-receipt-voucher, .formal-receipt-voucher * {
+            visibility: visible;
+          }
+          .formal-receipt-voucher {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100% !important;
+            max-width: 100% !important;
+            box-shadow: none !important;
+            border: 1px solid #ccc !important;
+            background: #fff !important;
+            color: #000 !important;
+            padding: 24px !important;
+          }
+          .no-print {
+            display: none !important;
+          }
+        }
+      `}</style>
+
+      {/* Formal Modal Container */}
       <div
-        className="w-full max-w-2xl rounded-2xl animate-scaleIn overflow-hidden"
+        className="formal-receipt-voucher w-full max-w-md rounded-2xl animate-scaleIn bg-card border border-glass shadow-xl relative overflow-hidden"
         style={{
-          background: "var(--card-bg, #0f172a)",
-          border: "1px solid var(--glass-border)",
-          boxShadow: "0 24px 80px rgba(0,0,0,0.5), 0 0 20px rgba(160,90,255,0.15)",
-          backdropFilter: "blur(20px)",
+          boxShadow: "0 20px 60px -10px rgba(0,0,0,0.5)",
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Modal Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b" style={{ borderColor: "var(--glass-border)" }}>
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: "var(--accent-soft, rgba(99,102,241,0.18))", color: "var(--accent, #818cf8)", border: "1px solid var(--accent-light, #818cf8)" }}>
-              <MdOutlinePayments size={20} />
-            </div>
-            <div>
-              <h3 className="text-base font-bold text-primary">{t("payDetailsTitle")}</h3>
-              <p className="text-xs text-secondary">{t("payDetailsSub")}</p>
-            </div>
+        {/* Header */}
+        <div
+          className="flex items-center justify-between px-5 py-3.5 border-b"
+          style={{ borderColor: "var(--glass-border)" }}
+        >
+          <div>
+            <h3 className="text-sm font-bold text-primary tracking-tight">Payment Details</h3>
+            <p className="text-[11px] text-secondary">Verified society revenue collection record</p>
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-lg flex items-center justify-center text-secondary hover:text-primary transition-colors text-lg"
-            style={{ background: "var(--card-inner-bg)" }}
+            className="no-print p-1.5 rounded-lg text-secondary hover:text-primary hover:bg-card-inner transition-colors cursor-pointer"
+            title="Close"
           >
-            ✕
+            <MdClose size={17} />
           </button>
         </div>
 
-        {/* Modal Body */}
-        <div className="p-6 space-y-4 max-h-[80vh] overflow-y-auto">
-          {/* Hero Amount Banner */}
+        {/* Content */}
+        <div className="px-5 py-4 space-y-4">
+          {/* Amount Summary Row */}
           <div
-            className="p-4 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3"
-            style={{
-              background: "rgba(16, 185, 129, 0.08)",
-              border: "1px solid rgba(16, 185, 129, 0.25)",
-            }}
+            className="flex items-center justify-between pb-3.5 border-b"
+            style={{ borderColor: "var(--glass-border)" }}
           >
             <div>
-              <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
-                {t("payTotalReceived")}
+              <span className="text-[10px] font-bold uppercase tracking-wider text-secondary block">
+                Total Amount Received
               </span>
-              <p className="text-2xl font-extrabold text-emerald-600 dark:text-emerald-400">
+              <div className="text-2xl font-extrabold text-primary font-mono tracking-tight mt-0.5">
                 {CURRENCY(row.amount)}
-              </p>
+              </div>
             </div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <span
-                className={`inline-flex items-center rounded-lg px-2.5 py-1 text-xs font-bold uppercase tracking-wide ${
-                  row.source === "AMENITY"
-                    ? "bg-purple-500/10 text-purple-500 border border-purple-500/20"
-                    : row.source === "MAINTENANCE"
-                    ? "bg-blue-500/10 text-blue-500 border border-blue-500/20"
-                    : "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20"
-                }`}
-              >
+
+            <div className="flex items-center gap-1.5 flex-wrap justify-end">
+              <span className="px-2 py-0.5 rounded-md text-[10px] font-extrabold uppercase bg-card-inner border border-glass text-secondary">
                 {row.source || "BILL"}
               </span>
-              <span className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-card-inner-bg border border-glass-border text-secondary">
-                {t("payModeLabel")} <strong className="text-primary">{row.payment_mode || "UPI"}</strong>
+              <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-card-inner border border-glass text-primary">
+                {row.payment_mode || "UPI"}
+              </span>
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
+                <MdCheckCircle size={11} />
+                <span>Success</span>
               </span>
             </div>
           </div>
 
-          {/* 2-3 Column Detail Items */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
-            <DetailCard label={t("payResident")} value={residentName} icon={MdPerson} />
-            <DetailCard label={t("payFlatUnit")} value={flatNumber} icon={MdHome} />
-            <DetailCard label={t("payColDate")} value={formattedDate} icon={MdCalendarToday} />
-            <DetailCard label={t("payPaymentMode")} value={row.payment_mode || "UPI"} icon={MdOutlinePayments} />
-            <DetailCard label={t("payColSource")} value={row.source || "BILL"} icon={MdAccountBalanceWallet} />
-            <DetailCard label={t("payReference")} value={reference} icon={MdReceipt} />
+          {/* Clean Key-Value Data List (No bulky cards or backgrounds) */}
+          <div className="divide-y divide-glass/50 text-xs">
+            {detailRows.map((item, idx) => (
+              <div
+                key={idx}
+                className={`py-2 flex ${
+                  item.isFull ? "flex-col gap-1" : "items-center justify-between gap-4"
+                }`}
+              >
+                <span className="text-secondary font-medium shrink-0">
+                  {item.label}
+                </span>
+
+                {item.isRef ? (
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-bold text-primary font-mono">{item.value}</span>
+                    <button
+                      type="button"
+                      onClick={handleCopyRef}
+                      className="no-print p-1 rounded hover:bg-card-inner text-secondary hover:text-primary transition-colors cursor-pointer"
+                      title="Copy Reference"
+                    >
+                      {copied ? (
+                        <MdCheck size={12} className="text-emerald-500" />
+                      ) : (
+                        <MdContentCopy size={12} />
+                      )}
+                    </button>
+                  </div>
+                ) : (
+                  <span
+                    className={`font-semibold text-primary text-right ${
+                      item.isFull ? "text-left text-xs leading-relaxed" : "truncate max-w-[240px]"
+                    }`}
+                  >
+                    {item.value || "—"}
+                  </span>
+                )}
+              </div>
+            ))}
           </div>
 
-          {/* Description Section */}
+          {/* Footer Actions */}
           <div
-            className="p-3.5 rounded-xl space-y-1"
-            style={{
-              background: "var(--card-inner-bg)",
-              border: "1px solid var(--glass-border)",
-            }}
+            className="no-print pt-3 flex items-center justify-between gap-3 border-t"
+            style={{ borderColor: "var(--glass-border)" }}
           >
-            <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-secondary">
-              <MdDescription size={14} className="text-accent shrink-0" />
-              <span>{t("payParticulars")}</span>
-            </div>
-            <p className="text-xs sm:text-sm font-medium text-primary wrap-break-word leading-relaxed">
-              {description}
-            </p>
-          </div>
-
-          {/* Modal Footer */}
-          <div className="flex justify-end pt-2">
             <button
-              onClick={onClose}
-              className="btn-soft px-5 py-2 text-xs font-semibold rounded-xl hover:opacity-90 transition-opacity"
+              type="button"
+              onClick={handlePrint}
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-card-inner border border-glass text-secondary hover:text-primary hover:border-accent transition-all cursor-pointer"
             >
-              {t("close")}
+              <MdPrint size={14} />
+              <span>Print Voucher</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-1.5 rounded-lg text-xs font-bold bg-primary text-primary-contrast hover:opacity-90 transition-opacity cursor-pointer"
+              style={{
+                backgroundColor: "var(--accent, #6366f1)",
+                color: "#ffffff",
+              }}
+            >
+              {t("close") || "Close"}
             </button>
           </div>
         </div>

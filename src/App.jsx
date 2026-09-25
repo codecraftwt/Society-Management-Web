@@ -34,7 +34,6 @@ import Blocks from "./pages/SuperAdmin/Blocks";
 import SuperAdminLayout from "./pages/SuperAdmin/SuperAdminLayout";
 import SuperAdminReports from "./pages/SuperAdmin/Reports";
 const SuperAdminParking = lazy(() => import("./pages/SuperAdmin/SuperAdminParking"));
-const SystemReports = SuperAdminReports; 
 import SuperAdminVisitorReport from "./pages/SuperAdmin/reports/VisitorReport";
 import SuperAdminComplaintReport from "./pages/SuperAdmin/reports/ComplaintReport";
 import SuperAdminFinancialReport from "./pages/SuperAdmin/reports/FinancialReport";
@@ -175,7 +174,7 @@ function App() {
             <Route path="notice" element={<Notice />} />
             <Route path="guard" element={<Guard />} />
             <Route path="visitor-logs" element={<VisitorLogs />} />
-            <Route path="reports" element={<Reports />} />
+            <Route path="reports" element={<SuperAdminReports />} />
             <Route path="amenities" element={<SocietyAmenities />} />
             <Route path="society_documents" element={<SocietyDocuments />} />
             <Route path="assign-flat" element={<AssignFlat />} />
@@ -183,10 +182,10 @@ function App() {
             <Route path="settings" element={<AdminSetting />} />
             <Route path="flat-history" element={<FlatHistory />} />
             <Route path="role-permissions" element={<RolePermissions />} />
-            <Route path="reports/complaints" element={<ComplaintReport />} />
-            <Route path="reports/visitors" element={<VisitorReport />} />
-            <Route path="reports/financial" element={<FinancialReport />} />
-            <Route path="superadmin-reports" element={<SystemReports />} />
+            <Route path="reports/complaints" element={<SuperAdminComplaintReport />} />
+            <Route path="reports/visitors" element={<SuperAdminVisitorReport />} />
+            <Route path="reports/financial" element={<SuperAdminFinancialReport />} />
+            <Route path="superadmin-reports" element={<SuperAdminReports />} />
             <Route path="parking" element={<SuperAdminParking />} />
             <Route path="accounting" element={<Accounting />} />
             <Route path="accountant" element={<Accountant />} />

@@ -1,4 +1,5 @@
-import { useState, createPortal } from "react";
+import { useState } from "react";
+import { createPortal } from "react-dom";
 import { MdWarning } from "react-icons/md";
 import { useLang } from "../../../context/LanguageContext";
 import { Spinner } from "../amenityHelpers.jsx";

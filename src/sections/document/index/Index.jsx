@@ -1,7 +1,6 @@
 import {
   MdDescription, MdDelete, MdVisibility, MdInsertDriveFile,
-  MdAdd, MdRefresh,
-  MdGavel, MdGroups, MdDirectionsCar, MdBarChart, MdSecurity,
+  MdAdd, MdRefresh, MdPictureAsPdf, MdTableChart, MdSlideshow, MdImage,
 } from "react-icons/md";
 import { useLang } from "../../../context/LanguageContext";
 import GlobalButton from "../../../components/common/GlobalButton";
@@ -9,13 +8,6 @@ import ExpandableSearch from "../../../components/common/ExpandableSearch";
 import SlidingTabs from "../../../components/common/SlidingTabs";
 import Pagination from "../../../components/common/Pagination";
 
-const ICON_MAP = {
-  Legal: MdGavel,
-  Meetings: MdGroups,
-  Guidelines: MdDirectionsCar,
-  Finance: MdBarChart,
-  Security: MdSecurity,
-};
 const COLOR_MAP = {
   Legal: "purple",
   Meetings: "blue",
@@ -24,9 +16,23 @@ const COLOR_MAP = {
   Security: "green",
 };
 
+const FILE_TYPES = [
+  { exts: ["pdf"], icon: MdPictureAsPdf, color: "#f87171" },
+  { exts: ["doc", "docx"], icon: MdDescription, color: "#60a5fa" },
+  { exts: ["xls", "xlsx", "csv"], icon: MdTableChart, color: "#4ade80" },
+  { exts: ["ppt", "pptx"], icon: MdSlideshow, color: "#fb923c" },
+  { exts: ["png", "jpg", "jpeg", "webp", "gif"], icon: MdImage, color: "#22d3ee" },
+];
+
+const getFileType = (fileName = "") => {
+  const ext = String(fileName).split(".").pop()?.toLowerCase();
+  const hit = FILE_TYPES.find((f) => f.exts.includes(ext));
+  return hit || { icon: MdInsertDriveFile, color: "#818cf8" };
+};
+
 function DocCard({ doc, t, onDelete, onOpen, isCommittee, catLabel }) {
-  const Icon = ICON_MAP[doc.category] || MdDescription;
   const color = COLOR_MAP[doc.category] || "blue";
+  const { icon: FileIcon, color: fileColor } = getFileType(doc.file_name);
   const formatDate = (d) =>
     !d ? "—" : new Date(d).toLocaleDateString("en-US", { month: "short", year: "numeric" });
 
@@ -44,12 +50,12 @@ function DocCard({ doc, t, onDelete, onOpen, isCommittee, catLabel }) {
           <div
             className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
             style={{
-              background: "var(--card-inner-bg, rgba(255,255,255,0.04))",
-              border: "1px solid var(--glass-border)",
-              color: `var(--stat-${color}-color, #818cf8)`,
+              background: `${fileColor}1f`,
+              border: `1px solid ${fileColor}52`,
+              color: fileColor,
             }}
           >
-            <Icon size={20} />
+            <FileIcon size={20} />
           </div>
           <div className="min-w-0 flex-1">
             <h3
@@ -116,23 +122,26 @@ function DocCard({ doc, t, onDelete, onOpen, isCommittee, catLabel }) {
           <button
             type="button"
             onClick={() => onDelete(doc)}
-            className="w-9 h-9 rounded-xl border flex items-center justify-center transition-all shrink-0"
+            className="w-9 h-9 rounded-xl border flex items-center justify-center transition-all shrink-0 cursor-pointer"
             style={{
-              background: "var(--card-inner-bg)",
-              borderColor: "var(--glass-border)",
-              color: "var(--stat-red-color, #ef4444)",
+              background: "rgba(239, 68, 68, 0.08)",
+              borderColor: "rgba(239, 68, 68, 0.22)",
+              color: "#ef4444",
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.background = "var(--stat-red-bg, rgba(239,68,68,0.15))";
-              e.currentTarget.style.borderColor = "var(--stat-red-border, rgba(239,68,68,0.3))";
+              e.currentTarget.style.background = "rgba(239, 68, 68, 0.18)";
+              e.currentTarget.style.borderColor = "rgba(239, 68, 68, 0.4)";
+              e.currentTarget.style.color = "#dc2626";
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.background = "var(--card-inner-bg)";
-              e.currentTarget.style.borderColor = "var(--glass-border)";
+              e.currentTarget.style.background = "rgba(239, 68, 68, 0.08)";
+              e.currentTarget.style.borderColor = "rgba(239, 68, 68, 0.22)";
+              e.currentTarget.style.color = "#ef4444";
             }}
             aria-label={t("billDelete")}
+            title={t("billDelete") || "Delete"}
           >
-            <MdDelete size={14} />
+            <MdDelete size={16} />
           </button>
         )}
       </div>
@@ -254,7 +263,7 @@ export default function Index({
             background: "var(--card-bg)",
           }}
         >
-          <p style={{ color: "var(--stat-red-color, #ef4444)", margin: 0, fontSize: 13 }}>{error}</p>
+          <p style={{ color: "#ef4444", margin: 0, fontSize: 13 }}>{error}</p>
           <GlobalButton variant="secondary" icon={MdRefresh} onClick={onRetry}>
             {t("docRetry")}
           </GlobalButton>

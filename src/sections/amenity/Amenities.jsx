@@ -16,7 +16,7 @@ export default function Amenities() {
   const isMobile = useIsMobile();
   const { t } = useLang();
   const { user } = useContext(AuthContext);
-  const { showUnauthorized, showWarning, showError } = useCustomAlert();
+  const { showUnauthorized, showWarning, showError, showSuccess } = useCustomAlert();
   const canEdit = !isCommitteeMember(user);
 
   const [amenities, setAmenities] = useState([]);
@@ -153,6 +153,7 @@ export default function Amenities() {
       } else {
         await API.post("/admin/amenities", payload);
       }
+      showSuccess(editingAmenity ? "Amenity updated successfully." : "Amenity created successfully.");
       loadAmenities();
       setShowForm(false);
       setEditingAmenity(null);
@@ -245,6 +246,7 @@ export default function Amenities() {
     }
     try {
       await API.patch(`/admin/amenities/${disableModalAmenity.id}/disable`, payload);
+      showSuccess("Amenity disabled successfully.");
       await loadAmenities();
       await loadBookings(); // refresh — PAYMENT_PENDING rows may now be CANCELLED
     } catch (e) {
