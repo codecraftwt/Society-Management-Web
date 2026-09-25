@@ -10,6 +10,7 @@ import { FaBuilding, FaUserShield } from "react-icons/fa";
 import Select from "../../components/common/Select";
 import { getTitleError, getRequiredError, getEmailError } from "../../utils/validators";
 import SocietyActionMenu from "../../components/super-admin/SocietyActionMenu";
+import SocietyDetailModal from "../../components/super-admin/SocietyDetailModal";
 import GlobalButton from "../../components/common/GlobalButton";
 import GlobalModal from "../../components/common/GlobalModal";
 import GlobalConfirmDialog from "../../components/common/GlobalConfirmDialog";
@@ -54,6 +55,9 @@ export default function Societies() {
 
   // Delete Confirm Dialog state
   const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, id: null, loading: false });
+
+  // Society detail modal state
+  const [detailSociety, setDetailSociety] = useState(null);
 
   const loadSocieties = useCallback(async () => {
     try {
@@ -292,7 +296,7 @@ export default function Societies() {
           {filteredSocieties.map((s, i) => {
             const typeColor = typeColors[s.property_type] || "#9F87D7";
             return (
-              <div key={s.id} className="sa-society-card animate-fadeIn" style={{ animationDelay: `${i * 30}ms` }}>
+              <div key={s.id} className="sa-society-card animate-fadeIn" style={{ animationDelay: `${i * 30}ms`, cursor: "pointer" }} onClick={() => setDetailSociety(s)}>
                 {/* Header row */}
                 <div className="sa-soc-card-top">
                   <div className="sa-soc-icon" style={{ background: `${typeColor}1A`, color: typeColor }}>
@@ -395,6 +399,23 @@ export default function Societies() {
         cancelLabel={t("cancel") || "Cancel"}
         variant="danger"
         loading={deleteConfirm.loading}
+      />
+
+      {/* ── SOCIETY DETAIL MODAL ── */}
+      <SocietyDetailModal
+        society={detailSociety}
+        onClose={() => setDetailSociety(null)}
+        onEditAdmin={() => {
+          const s = detailSociety;
+          setDetailSociety(null);
+          if (s) openAdminModal(s);
+        }}
+        onManage={() => {
+          const s = detailSociety;
+          setDetailSociety(null);
+          if (s) navigate(`/superadmin/society/${s.id}/blocks`);
+        }}
+        t={t}
       />
     </div>
   );

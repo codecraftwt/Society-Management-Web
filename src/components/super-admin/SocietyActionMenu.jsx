@@ -36,16 +36,24 @@ export default function SocietyActionMenu({ onEditAdmin, onManage, onDelete, has
     return () => document.removeEventListener("keydown", handler);
   }, [open]);
 
-  const handleItem = (fn) => {
+  const handleItem = (fn) => (e) => {
+    e.stopPropagation();
     setOpen(false);
     fn();
   };
 
   return (
-    <div className="sa-action-menu-wrap" ref={menuRef}>
+    <div
+      className="sa-action-menu-wrap"
+      ref={menuRef}
+      onClick={(e) => e.stopPropagation()}
+    >
       <button
         className="sa-action-dots"
-        onClick={() => setOpen((p) => !p)}
+        onClick={(e) => {
+          e.stopPropagation();
+          setOpen((p) => !p);
+        }}
         aria-label={t("saSocActionsAria", "Society actions")}
         aria-haspopup="menu"
         aria-expanded={open}
@@ -58,7 +66,7 @@ export default function SocietyActionMenu({ onEditAdmin, onManage, onDelete, has
           <button
             role="menuitem"
             className="sa-action-item"
-            onClick={() => handleItem(onEditAdmin)}
+            onClick={handleItem(onEditAdmin)}
           >
             <BiSolidEdit size={15} />
             {hasAdmin ? t("saEditAdmin") : t("saAssignAdmin")}
@@ -67,7 +75,7 @@ export default function SocietyActionMenu({ onEditAdmin, onManage, onDelete, has
           <button
             role="menuitem"
             className="sa-action-item"
-            onClick={() => handleItem(onManage)}
+            onClick={handleItem(onManage)}
           >
             <MdManageAccounts size={15} />
             {t("saManageBtn")}
@@ -78,7 +86,7 @@ export default function SocietyActionMenu({ onEditAdmin, onManage, onDelete, has
           <button
             role="menuitem"
             className="sa-action-item sa-action-item-danger"
-            onClick={() => handleItem(onDelete)}
+            onClick={handleItem(onDelete)}
           >
             <MdDelete size={15} />
             {t("mpDelete")}
