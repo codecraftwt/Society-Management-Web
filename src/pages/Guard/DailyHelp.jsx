@@ -2,7 +2,6 @@ import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import API from "../../services/api";
 import { useLang } from "../../context/LanguageContext";
 import {
-  MdSearch,
   MdPhone,
   MdApartment,
   MdLogin,
@@ -20,6 +19,7 @@ import {
 import { FaHandshake } from "react-icons/fa";
 import { toast } from "react-toastify";
 import SlidingTabs from "../../components/common/SlidingTabs";
+import ExpandableSearch from "../../components/common/ExpandableSearch";
 
 
 function Spinner({ size = 16 }) {
@@ -79,12 +79,12 @@ export default function DailyHelp() {
       setHelpers(list);
     } catch (err) {
       console.error("Error loading daily help directory:", err);
-      toast.error(err.response?.data?.message || "Failed to load daily help directory");
+      toast.error(err.response?.data?.message || t("dhFetchFail", "Failed to load daily help directory"));
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     fetchDirectory();
@@ -120,7 +120,7 @@ export default function DailyHelp() {
           phone: helper.phone,
           gatePassCode: code,
         });
-        toast.success(res.data?.message || `Checked out ${helper.name} from all flats`);
+        toast.success(res.data?.message || t("dhToastOut", { name: helper.name }, "Checked out {name} from all flats"));
       } else {
         // Mark Entry
         const res = await API.post("/visitors/daily-help/entry", {
@@ -129,13 +129,13 @@ export default function DailyHelp() {
           flatIds: helper.flatIds || [],
           gatePassCode: code,
         });
-        toast.success(res.data?.message || `Checked in ${helper.name} successfully`);
+        toast.success(res.data?.message || t("dhToastIn", { name: helper.name }, "Checked in {name} successfully"));
       }
       fetchDirectory();
       setPassHelper(null);
     } catch (err) {
       console.error("Error toggling helper status:", err);
-      setPassError(err.response?.data?.message || "Operation failed");
+      setPassError(err.response?.data?.message || t("dhOpFailed", "Operation failed"));
     } finally {
       setPassLoading(false);
     }
@@ -170,9 +170,9 @@ export default function DailyHelp() {
   }, [helpers, filter, search]);
 
   const filterTabs = [
-    { key: "ALL", label: t("dailyHelpFilterAll", "All Daily Help"), count: counts.total },
-    { key: "INSIDE", label: t("dailyHelpFilterInside", "Inside Society"), count: counts.inside },
-    { key: "OUTSIDE", label: t("dailyHelpFilterOutside", "Outside"), count: counts.outside },
+    { key: "ALL", label: t("dhFilterAll", "All Daily Help"), count: counts.total },
+    { key: "INSIDE", label: t("dhFilterInside", "Inside Society"), count: counts.inside },
+    { key: "OUTSIDE", label: t("dhFilterOutside", "Outside"), count: counts.outside },
   ];
 
   return (
@@ -190,9 +190,9 @@ export default function DailyHelp() {
             <FaHandshake size={22} />
           </div>
           <div>
-            <h2 className="page-title">{t("dailyHelpTitle", "Daily Help & Staff Directory")}</h2>
+            <h2 className="page-title">{t("dhTitle", "Daily Help & Staff Directory")}</h2>
             <p className="page-subtitle">
-              {counts.total} {t("dailyHelpSubtitle", "Registered house helps, maids, cooks & drivers")}
+              {counts.total} {t("dhSubtitle", "Registered house helps, maids, cooks & drivers")}
             </p>
           </div>
         </div>
@@ -203,7 +203,7 @@ export default function DailyHelp() {
           className="btn-secondary flex items-center gap-1.5 text-xs font-bold px-3.5 py-2"
         >
           <MdRefresh size={18} className={refreshing ? "animate-spin text-accent" : ""} />
-          <span>{refreshing ? "Refreshing..." : "Refresh"}</span>
+          <span>{refreshing ? t("dhRefreshing", "Refreshing...") : t("dhRefresh", "Refresh")}</span>
         </button>
       </div>
 
@@ -216,7 +216,7 @@ export default function DailyHelp() {
           }`}
         >
           <span className="complaint-stat-val text-teal-600">{counts.total}</span>
-          <span className="complaint-stat-label">Total Helpers Registered</span>
+          <span className="complaint-stat-label">{t("dhStatTotal", "Total Helpers Registered")}</span>
         </div>
         <div
           onClick={() => setFilter("INSIDE")}
@@ -225,7 +225,7 @@ export default function DailyHelp() {
           }`}
         >
           <span className="complaint-stat-val text-emerald-600">{counts.inside}</span>
-          <span className="complaint-stat-label">Currently Inside Gate</span>
+          <span className="complaint-stat-label">{t("dhStatInside", "Currently Inside Gate")}</span>
         </div>
         <div
           onClick={() => setFilter("OUTSIDE")}
@@ -234,7 +234,7 @@ export default function DailyHelp() {
           }`}
         >
           <span className="complaint-stat-val text-gray-500">{counts.outside}</span>
-          <span className="complaint-stat-label">Checked Out / Outside</span>
+          <span className="complaint-stat-label">{t("dhStatExited", "Checked Out / Outside")}</span>
         </div>
       </div>
 
@@ -257,27 +257,11 @@ export default function DailyHelp() {
           />
         </div>
 
-        <div className="ge-search-box">
-          <MdSearch size={18} className="ge-search-box-icon" />
-          <input
-            type="text"
-            className="ge-search-box-input"
-            placeholder={t("searchDailyHelpPlaceholder", "Search helper by name, phone, maid, cook, flat...")}
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-          {search && (
-            <button
-              type="button"
-              className="ge-search-box-clear"
-              onClick={() => setSearch("")}
-              aria-label="Clear search"
-              title="Clear search"
-            >
-              <MdClose size={13} />
-            </button>
-          )}
-        </div>
+        <ExpandableSearch
+          value={search}
+          onChange={setSearch}
+          placeholder={t("dhSearchPlaceholder", "Search helper by name, phone, maid, cook, flat...")}
+        />
       </div>
 
       {/* ── DESKTOP TABLE ── */}
@@ -285,24 +269,24 @@ export default function DailyHelp() {
         {loading ? (
           <div className="p-12 text-center text-secondary">
             <Spinner size={26} />
-            <p className="mt-2 text-xs font-bold">Loading daily help directory...</p>
+            <p className="mt-2 text-xs font-bold">{t("dhLoading", "Loading daily help directory...")}</p>
           </div>
         ) : filteredHelpers.length === 0 ? (
           <div className="ge-empty py-12">
             <span className="ge-empty-icon">🧹</span>
-            <span>No daily help records match your search or filter</span>
+            <span>{t("dhEmpty", "No daily help records match your search or filter")}</span>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="ge-table">
               <thead>
                 <tr>
-                  <th>Helper / Staff</th>
-                  <th>Role &amp; Service</th>
-                  <th>Assigned Flats</th>
-                  <th>Contact</th>
-                  <th>Status</th>
-                  <th>1-Click Gate Action</th>
+                  <th>{t("dhColStaff", "Helper / Staff")}</th>
+                  <th>{t("dhColRole", "Role & Service")}</th>
+                  <th>{t("dhColFlats", "Assigned Flats")}</th>
+                  <th>{t("dhColContact", "Contact")}</th>
+                  <th>{t("dhColStatus", "Status")}</th>
+                  <th>{t("dhColAction", "1-Click Gate Action")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -329,7 +313,7 @@ export default function DailyHelp() {
                               {h.name}
                             </span>
                             <span className="text-[11px] text-secondary">
-                              Society Daily Staff
+                              {t("dhSocietyStaff", "Society Daily Staff")}
                             </span>
                           </div>
                         </div>
@@ -337,12 +321,12 @@ export default function DailyHelp() {
                       <td>
                         <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-extrabold bg-teal-500/10 text-teal-600 dark:text-teal-400 border border-teal-500/20">
                           <MdWork size={12} />
-                          {h.roles || "Household Staff"}
+                          {h.roles || t("dhHouseholdStaff", "Household Staff")}
                         </span>
                       </td>
                       <td>
                         <span className="ge-flat-chip font-bold">
-                          {h.flats || "Multiple Units"}
+                          {h.flats || t("dhMultipleUnits", "Multiple Units")}
                         </span>
                       </td>
                       <td>
@@ -357,11 +341,11 @@ export default function DailyHelp() {
                       <td>
                         {isInside ? (
                           <span className="ge-badge ge-badge--inside">
-                            ● Inside Society
+                            ● {t("dhBadgeInsideSociety", "Inside Society")}
                           </span>
                         ) : (
                           <span className="ge-badge ge-badge--left">
-                            ○ Outside
+                            ○ {t("dhBadgeOutside", "Outside")}
                           </span>
                         )}
                       </td>
@@ -379,7 +363,7 @@ export default function DailyHelp() {
                           ) : (
                             <MdLogin size={14} />
                           )}
-                          <span>{isInside ? "Check OUT" : "Check IN"}</span>
+                          <span>{isInside ? t("dhActionOut", "Check OUT") : t("dhActionIn", "Check IN")}</span>
                         </button>
                       </td>
                     </tr>
@@ -400,7 +384,7 @@ export default function DailyHelp() {
         ) : filteredHelpers.length === 0 ? (
           <div className="ge-empty">
             <span className="ge-empty-icon">🧹</span>
-            <span>No daily help records found</span>
+            <span>{t("dhEmptyMobile", "No daily help records found")}</span>
           </div>
         ) : (
           filteredHelpers.map((h) => {
@@ -418,24 +402,24 @@ export default function DailyHelp() {
                     <div>
                       <span className="ge-mc-name">{h.name}</span>
                       <span className="text-[10px] text-teal-600 font-bold block mt-0.5">
-                        {h.roles || "Household Staff"}
+                        {h.roles || t("dhHouseholdStaff", "Household Staff")}
                       </span>
                     </div>
                   </div>
                   {isInside ? (
-                    <span className="ge-badge ge-badge--inside">● Inside</span>
+                    <span className="ge-badge ge-badge--inside">● {t("dhBadgeInside", "Inside")}</span>
                   ) : (
-                    <span className="ge-badge ge-badge--left">○ Outside</span>
+                    <span className="ge-badge ge-badge--left">○ {t("dhBadgeOutside", "Outside")}</span>
                   )}
                 </div>
 
                 <div className="ge-mc-rows">
                   <div className="ge-mc-row">
-                    <span className="ge-mc-label">Assigned Flats</span>
+                    <span className="ge-mc-label">{t("dhColFlats", "Assigned Flats")}</span>
                     <span className="ge-flat-chip">{h.flats || "—"}</span>
                   </div>
                   <div className="ge-mc-row">
-                    <span className="ge-mc-label">Contact</span>
+                    <span className="ge-mc-label">{t("dhColContact", "Contact")}</span>
                     <a
                       href={`tel:${h.phone}`}
                       className="ge-mc-val text-blue-600 flex items-center gap-1 font-mono font-bold"
@@ -456,7 +440,7 @@ export default function DailyHelp() {
                       ) : (
                         <MdLogin size={14} />
                       )}
-                      <span>{isInside ? "Check OUT" : "Check IN"}</span>
+                      <span>{isInside ? t("dhActionOut", "Check OUT") : t("dhActionIn", "Check IN")}</span>
                     </button>
                   </div>
                 </div>
@@ -510,7 +494,7 @@ export default function DailyHelp() {
                         : t("dhPassInTitle", "Check IN — Gate Pass Required")}
                     </h3>
                     <p className="text-xs mt-0.5" style={{ color: "var(--text-secondary)" }}>
-                      {t("dhPassSubtitle", "Verify the resident-issued gate pass before {action}")}
+                      {t("dhPassSubtitle", "Verify the resident-issued gate pass to continue")}
                     </p>
                   </div>
                 </div>
@@ -519,7 +503,7 @@ export default function DailyHelp() {
                   onClick={() => !passLoading && setPassHelper(null)}
                   className="shrink-0 rounded-xl p-1.5 hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
                   style={{ color: "var(--text-secondary)" }}
-                  aria-label="Close"
+                  aria-label={t("dhClose", "Close")}
                 >
                   <MdClose size={20} />
                 </button>
@@ -544,7 +528,7 @@ export default function DailyHelp() {
                     {passHelper.name}
                   </p>
                   <p className="text-[11px] font-mono" style={{ color: "var(--text-secondary)" }}>
-                    {passHelper.phone} · {passHelper.flats || "Multiple Units"}
+                    {passHelper.phone} · {passHelper.flats || t("dhMultipleUnits", "Multiple Units")}
                   </p>
                 </div>
               </div>

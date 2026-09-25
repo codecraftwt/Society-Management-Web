@@ -115,12 +115,12 @@ const [totalPages, setTotalPages] = useState(1);
       setPage(pg);
     } catch (err) {
       console.error(err);
-      toast.error("Failed to load parcels");
+      toast.error(t("gcLoadFail", "Failed to load parcels"));
     } finally {
       setInitialLoad(false);
       setFetching(false);
     }
-  }, [tab, debSearch]);
+  }, [tab, debSearch, t]);
 
   useEffect(() => {
     loadData(1, true, "ALL", "");
@@ -214,7 +214,7 @@ const [totalPages, setTotalPages] = useState(1);
       setCounts((c) => shiftCount(c, "EXPECTED", "AT_GATE"));
 
       await API.put(`/parcels/${id}/status`, { status: "AT_GATE" });
-      toast.success("Parcel marked as arrived at gate");
+      toast.success(t("gcArrivedSuccess", "Parcel marked as arrived at gate"));
 
     } catch (err) {
       console.error("❌ Mark arrived failed:", err);
@@ -256,14 +256,14 @@ const [totalPages, setTotalPages] = useState(1);
       setCounts((c) => shiftCount(c, "AT_GATE", "COLLECTED"));
       setCollectModalParcel(null);
       setModalOtp("");
-      toast.success("✅ Parcel collected successfully!");
+      toast.success(t("gcCollectSuccess", "Parcel collected successfully!"));
     } catch (err) {
       console.error("❌ Collect failed:", err);
 
       if (err.response?.status === 403 && err.response?.data?.message?.includes("shift")) {
         toast.warning(t("gcNotOnShift") || "You are not on shift. Please check your active shift.");
       } else if (err.response?.status === 400) {
-        toast.error("❌ " + (t("gcInvalidOtp") || "Invalid OTP. Please check with resident and try again."));
+        toast.error(t("gcInvalidOtp", "Invalid OTP. Please check with resident and try again."));
       } else {
         toast.error(t("gcError") || "An error occurred. Please try again.");
       }
@@ -372,7 +372,7 @@ const [totalPages, setTotalPages] = useState(1);
               onClick={() => setSearch("")}
               className="text-xs text-accent hover:underline mt-1"
             >
-              Clear search
+              {t("gcClearSearch", "Clear search")}
             </button>
           )}
         </div>
@@ -390,7 +390,7 @@ const [totalPages, setTotalPages] = useState(1);
               let cardTheme = "border-glass-border bg-card hover:border-white/20";
               let badgeBg = "bg-amber-500/15 text-amber-400 border-amber-500/30";
               let badgeIcon = <MdHourglassTop size={13} className="shrink-0 text-amber-400" />;
-              let badgeText = "Pending Arrival";
+              let badgeText = t("gcBadgePending", "Pending Arrival");
               let iconContainer = "bg-amber-500/15 text-amber-400 shadow-sm shadow-amber-500/10";
               let progressStep = 1;
 
@@ -398,28 +398,28 @@ const [totalPages, setTotalPages] = useState(1);
                 cardTheme = "border-cyan-500/35 bg-card hover:border-cyan-500/60 ring-1 ring-cyan-500/20";
                 badgeBg = "bg-cyan-500/15 text-cyan-400 border-cyan-500/30 shadow-sm shadow-cyan-500/10";
                 badgeIcon = <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse shrink-0" />;
-                badgeText = "At Security Gate";
+                badgeText = t("gcBadgeAtGate", "At Security Gate");
                 iconContainer = "bg-cyan-500/15 text-cyan-400 shadow-sm shadow-cyan-500/10";
                 progressStep = 2;
               } else if (isCollected) {
                 cardTheme = "border-emerald-500/25 bg-card hover:border-emerald-500/45";
                 badgeBg = "bg-emerald-500/15 text-emerald-400 border-emerald-500/30";
                 badgeIcon = <MdDoneAll size={13} className="shrink-0 text-emerald-400" />;
-                badgeText = "Collected";
+                badgeText = t("gcBadgeCollected", "Collected");
                 iconContainer = "bg-emerald-500/15 text-emerald-400 shadow-sm shadow-emerald-500/10";
                 progressStep = 3;
               } else if (isCancelled) {
                 cardTheme = "border-rose-500/25 bg-card opacity-85";
                 badgeBg = "bg-rose-500/15 text-rose-400 border-rose-500/30";
                 badgeIcon = <MdClose size={13} className="shrink-0" />;
-                badgeText = "Cancelled";
+                badgeText = t("gcBadgeCancelled", "Cancelled");
                 iconContainer = "bg-rose-500/15 text-rose-400";
                 progressStep = 0;
               }
 
               const flatDisplay = p.Flat
                 ? `${p.Flat?.Floor?.Block?.name ? `${p.Flat.Floor.Block.name} • ` : ""}Flat ${p.Flat?.flat_number || ""}`
-                : "Unit —";
+                : t("gcUnitUnknown", "Unit —");
 
               const ownerName =
                 p.resident?.name ||
@@ -465,10 +465,10 @@ const [totalPages, setTotalPages] = useState(1);
 
                     {/* Glassmorphic Metadata Container */}
                     <div className="p-2.5 rounded-xl bg-card-inner-bg/80 border border-glass-border flex items-center justify-between gap-2 text-xs">
-                      <div className="flex items-center gap-1.5 min-w-0 truncate text-secondary" title={`Resident: ${ownerName}`}>
+                      <div className="flex items-center gap-1.5 min-w-0 truncate text-secondary" title={t("gcResidentTitle", { name: ownerName }, "Resident: {name}")}>
                         <MdPerson size={14} className="shrink-0 text-accent/80" />
                         <span className="truncate font-medium text-primary/90">
-                          {ownerName || "Resident / Owner"}
+                          {ownerName || t("gcResidentOrOwner", "Resident / Owner")}
                         </span>
                       </div>
 
@@ -516,7 +516,7 @@ const [totalPages, setTotalPages] = useState(1);
                               {progressStep > 1 ? "✓" : "1"}
                             </div>
                             <span className={`text-[10px] font-semibold tracking-tight ${progressStep >= 1 ? "text-amber-400" : "text-secondary/60"}`}>
-                              Expected
+                              {t("gcStepExpected", "Expected")}
                             </span>
                           </div>
 
@@ -534,7 +534,7 @@ const [totalPages, setTotalPages] = useState(1);
                               {progressStep > 2 ? "✓" : "2"}
                             </div>
                             <span className={`text-[10px] font-semibold tracking-tight ${progressStep >= 2 ? "text-cyan-400" : "text-secondary/60"}`}>
-                              At Gate
+                              {t("gcStepAtGate", "At Gate")}
                             </span>
                           </div>
 
@@ -550,7 +550,7 @@ const [totalPages, setTotalPages] = useState(1);
                               {progressStep >= 3 ? "✓" : "3"}
                             </div>
                             <span className={`text-[10px] font-semibold tracking-tight ${progressStep >= 3 ? "text-emerald-400" : "text-secondary/60"}`}>
-                              Collected
+                              {t("gcStepCollected", "Collected")}
                             </span>
                           </div>
                         </div>
@@ -567,7 +567,7 @@ const [totalPages, setTotalPages] = useState(1);
                         className="w-full justify-center py-2.5 text-xs font-semibold rounded-xl flex items-center gap-2 shadow-sm bg-linear-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white border-none transition-all shadow-amber-500/10 active:scale-[0.99]"
                       >
                         {processingId === p.id ? (
-                          <><Spinner size={14} /> <span>Marking Arrived...</span></>
+                          <><Spinner size={14} /> <span>{t("gcArriving", "Marking Arrived...")}</span></>
                         ) : (
                           <><MdOutlineDoorFront size={16} /> <span>{t("gcMarkArrived") || "Mark as Arrived at Gate"}</span></>
                         )}
@@ -594,7 +594,7 @@ const [totalPages, setTotalPages] = useState(1);
                           <span>{t("gcCollectedMsg") || "Successfully Handed Over"}</span>
                         </div>
                         <span className="text-[10px] uppercase font-bold tracking-wider opacity-85 px-2 py-0.5 rounded-md bg-emerald-500/15 border border-emerald-500/25">
-                          Verified
+                          {t("gcVerified", "Verified")}
                         </span>
                       </div>
                     )}
@@ -614,11 +614,15 @@ const [totalPages, setTotalPages] = useState(1);
           {/* ── Pagination footer ── */}
           <div className="gc-footer flex items-center justify-between gap-3 flex-wrap pt-2">
             <span className="text-xs text-secondary">
-              Showing{" "}
-              <strong className="text-primary">
-                {(page - 1) * limit + 1}–{Math.min(page * limit, totalItems)}
-              </strong>{" "}
-              of <strong className="text-primary">{totalItems}</strong> parcels
+              {t(
+                "gcShowingRange",
+                {
+                  from: (page - 1) * limit + 1,
+                  to: Math.min(page * limit, totalItems),
+                  total: totalItems,
+                },
+                "Showing {from}–{to} of {total} parcels"
+              )}
             </span>
             <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} pageSize={limit} onPageSizeChange={(s) => { limitRef.current = s; setLimit(s); setPage(1); handlePageChange(1); }} />
           </div>
@@ -634,8 +638,8 @@ const [totalPages, setTotalPages] = useState(1);
             setModalOtp("");
           }
         }}
-        title="Parcel Handover Terminal"
-        subtitle="Verify resident 4-digit security code to authorize parcel release"
+        title={t("gcModalTitle", "Parcel Handover Terminal")}
+        subtitle={t("gcModalSubtitle", "Verify resident 4-digit security code to authorize parcel release")}
         icon={MdSecurity}
         size="md"
       >
@@ -661,7 +665,7 @@ const [totalPages, setTotalPages] = useState(1);
                   </div>
                   <div className="min-w-0">
                     <div className="text-[10px] font-bold tracking-wider text-secondary uppercase">
-                      Courier Package
+                      {t("gcCourierPackage", "Courier Package")}
                     </div>
                     <div className="font-extrabold text-sm text-primary capitalize truncate">
                       {collectModalParcel.courier_name}
@@ -674,7 +678,7 @@ const [totalPages, setTotalPages] = useState(1);
                   <span className="font-bold text-xs">
                     {collectModalParcel.Flat
                       ? `${collectModalParcel.Flat?.Floor?.Block?.name ? `${collectModalParcel.Flat.Floor.Block.name}-` : ""}${collectModalParcel.Flat?.flat_number || ""}`
-                      : "Flat"}
+                      : t("gcFlat", "Flat")}
                   </span>
                 </div>
               </div>
@@ -682,25 +686,25 @@ const [totalPages, setTotalPages] = useState(1);
               <div className="grid grid-cols-2 gap-3 pt-3 text-xs">
                 <div>
                   <span className="text-[10px] font-semibold text-secondary uppercase tracking-wider block">
-                    Authorized Recipient
+                    {t("gcAuthorizedRecipient", "Authorized Recipient")}
                   </span>
                   <div className="flex items-center gap-1.5 mt-1">
                     <div className="w-5 h-5 rounded-full bg-primary/10 text-primary flex items-center justify-center text-[10px] font-bold">
                       {(collectModalParcel.resident?.name || collectModalParcel.Flat?.User?.name || "R").charAt(0).toUpperCase()}
                     </div>
                     <span className="font-semibold text-primary truncate">
-                      {collectModalParcel.resident?.name || collectModalParcel.Flat?.User?.name || "Resident"}
+                      {collectModalParcel.resident?.name || collectModalParcel.Flat?.User?.name || t("gcResidentFallback", "Resident")}
                     </span>
                   </div>
                 </div>
 
                 <div>
                   <span className="text-[10px] font-semibold text-secondary uppercase tracking-wider block">
-                    Handover Status
+                    {t("gcHandoverStatus", "Handover Status")}
                   </span>
                   <span className="inline-flex items-center gap-1 px-2 py-0.5 mt-1 rounded-md text-[11px] font-bold bg-amber-500/15 text-amber-400 border border-amber-500/30">
                     <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
-                    Security Clearance
+                    {t("gcSecurityClearance", "Security Clearance")}
                   </span>
                 </div>
               </div>
@@ -711,10 +715,10 @@ const [totalPages, setTotalPages] = useState(1);
               <div className="text-center">
                 <div className="inline-flex items-center gap-1.5 text-xs font-bold text-primary">
                   <MdVpnKey className="text-cyan-400" size={14} />
-                  Enter 4-Digit Resident Passcode
+                  {t("gcEnterPasscode", "Enter 4-Digit Resident Passcode")}
                 </div>
                 <p className="text-[11px] text-secondary mt-0.5">
-                  Type or paste the 4-digit pickup code shown in the resident's app
+                  {t("gcPasscodeHint", "Type or paste the 4-digit pickup code shown in the resident's app")}
                 </p>
               </div>
 
@@ -786,7 +790,7 @@ const [totalPages, setTotalPages] = useState(1);
                     }}
                     className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-semibold text-secondary hover:text-rose-400 bg-card-inner-bg/80 border border-glass-border/60 hover:border-rose-500/30 transition shadow-xs cursor-pointer"
                   >
-                    <MdClear size={13} /> Clear Code
+                    <MdClear size={13} /> {t("gcClearCode", "Clear Code")}
                   </button>
                 </div>
               )}
@@ -813,12 +817,12 @@ const [totalPages, setTotalPages] = useState(1);
                 {collectingId ? (
                   <>
                     <Spinner size={16} />
-                    <span>Verifying Code...</span>
+                    <span>{t("gcVerifyingCode", "Verifying Code...")}</span>
                   </>
                 ) : (
                   <>
                     <MdVerified size={17} />
-                    <span>Authorize & Release Parcel</span>
+                    <span>{t("gcAuthorizeRelease", "Authorize & Release Parcel")}</span>
                   </>
                 )}
               </button>

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   MdPhone, MdEmail, MdExpandMore, MdExpandLess,
   MdSearch, MdClose, MdLocalPolice, MdLocalFireDepartment,
@@ -9,35 +9,12 @@ import { FaWhatsapp, FaAmbulance } from "react-icons/fa";
 import API from "../../services/api";
 import SlidingTabs from "../../components/common/SlidingTabs";
 import ExpandableSearch from "../../components/common/ExpandableSearch";
-
-/* ── Static data ── */
-const emergencyContacts = [
-  { id: 1, label: "Police",         number: "100",  icon: MdLocalPolice,         color: "blue",   desc: "Law enforcement emergency"  },
-  { id: 2, label: "Fire",           number: "101",  icon: MdLocalFireDepartment, color: "red",    desc: "Fire department emergency"  },
-  { id: 3, label: "Ambulance",      number: "108",  icon: FaAmbulance,           color: "green",  desc: "Medical emergency"          },
-  { id: 4, label: "Women Helpline", number: "1091", icon: MdVerified,            color: "purple", desc: "Women safety helpline"      },
-];
-
-const faqs = [
-  { id: 1, q: "How do I log a guest entry?",              a: "Go to Guest Entry from the sidebar. Fill in the visitor's name, host flat number, purpose, and vehicle details if applicable. Click Submit to log the entry and generate an OTP for verification." },
-  { id: 2, q: "What should I do during an emergency?",    a: "Press the Emergency button on your dashboard immediately. This alerts all admins and residents. Simultaneously call the relevant emergency number (Police 100, Fire 101, Ambulance 108). Do not leave your post unless absolutely necessary." },
-  { id: 3, q: "How do I verify a delivery agent?",        a: "Use the Delivery Entry section. Confirm the agent's ID, package details, and the resident's flat number. Call the resident if unsure. Only allow entry after resident confirmation." },
-  { id: 4, q: "How are cab entries managed?",             a: "Go to Cab Entry and fill in the vehicle number, driver details, and the resident's flat. The resident should be notified automatically. Log exit time when the cab leaves." },
-  { id: 5, q: "What is a Gate Pass and how do I use it?", a: "A Gate Pass is issued by a resident for expected visitors. You'll see a pre-approved pass with a code. Match the visitor's details with the pass code before allowing entry." },
-  { id: 6, q: "How do I report a parking violation?",     a: "Go to the Parking section and log the vehicle number, location, and time of the violation. You can also add a photo note. The system will notify the admin for further action." },
-  { id: 7, q: "What should I do if the system is down?",  a: "Maintain a manual register for all entries and exits. Note down visitor details, time, and flat number. Contact the IT support number or the society manager immediately. Do not halt gate operations." },
-];
-
-const guideSteps = [
-  { icon: "1", title: "Guest Entry",         desc: "Log all visitors with ID proof and host confirmation before allowing entry."                  },
-  { icon: "2", title: "Cab & Delivery",       desc: "Verify agent IDs and resident confirmation for all cabs and deliveries."                      },
-  { icon: "3", title: "Emergency Protocol",   desc: "Use emergency button and contact relevant authorities immediately."                            },
-  { icon: "4", title: "Gate Pass Check",      desc: "Match pre-approved gate passes before granting access to expected visitors."                  },
-];
+import { useLang } from "../../context/LanguageContext";
 
 const avatarColors = ["blue", "amber", "green", "purple"];
 
 export default function GuardHelpContacts() {
+  const { t } = useLang();
   const [search,          setSearch]          = useState("");
   const [openFaq,         setOpenFaq]         = useState(null);
   const [activeTab,       setActiveTab]       = useState("contacts");
@@ -45,36 +22,62 @@ export default function GuardHelpContacts() {
   const [loadingContacts, setLoadingContacts] = useState(true);
   const [contactsError,   setContactsError]   = useState("");
 
+  /* ── Localized data ── */
+  const emergencyContacts = [
+    { id: 1, label: t("ghEmgPolice", "Police"),               number: "100",  icon: MdLocalPolice,         color: "blue",   desc: t("ghEmgPoliceDesc", "Law enforcement emergency") },
+    { id: 2, label: t("ghEmgFire", "Fire"),                   number: "101",  icon: MdLocalFireDepartment, color: "red",    desc: t("ghEmgFireDesc", "Fire department emergency") },
+    { id: 3, label: t("ghEmgAmbulance", "Ambulance"),         number: "108",  icon: FaAmbulance,           color: "green",  desc: t("ghEmgAmbulanceDesc", "Medical emergency") },
+    { id: 4, label: t("ghEmgWomen", "Women Helpline"),        number: "1091", icon: MdVerified,            color: "purple", desc: t("ghEmgWomenDesc", "Women safety helpline") },
+  ];
+
+  const faqs = [
+    { id: 1, q: t("ghFaq1q", "How do I log a guest entry?"),              a: t("ghFaq1a", "Go to Guest Entry from the sidebar. Fill in the visitor's name, host flat number, purpose, and vehicle details if applicable. Click Submit to log the entry and generate an OTP for verification.") },
+    { id: 2, q: t("ghFaq2q", "What should I do during an emergency?"),    a: t("ghFaq2a", "Press the Emergency button on your dashboard immediately. This alerts all admins and residents. Simultaneously call the relevant emergency number (Police 100, Fire 101, Ambulance 108). Do not leave your post unless absolutely necessary.") },
+    { id: 3, q: t("ghFaq3q", "How do I verify a delivery agent?"),        a: t("ghFaq3a", "Use the Delivery Entry section. Confirm the agent's ID, package details, and the resident's flat number. Call the resident if unsure. Only allow entry after resident confirmation.") },
+    { id: 4, q: t("ghFaq4q", "How are cab entries managed?"),             a: t("ghFaq4a", "Go to Cab Entry and fill in the vehicle number, driver details, and the resident's flat. The resident should be notified automatically. Log exit time when the cab leaves.") },
+    { id: 5, q: t("ghFaq5q", "What is a Gate Pass and how do I use it?"), a: t("ghFaq5a", "A Gate Pass is issued by a resident for expected visitors. You'll see a pre-approved pass with a code. Match the visitor's details with the pass code before allowing entry.") },
+    { id: 6, q: t("ghFaq6q", "How do I report a parking violation?"),     a: t("ghFaq6a", "Go to the Parking section and log the vehicle number, location, and time of the violation. You can also add a photo note. The system will notify the admin for further action.") },
+    { id: 7, q: t("ghFaq7q", "What should I do if the system is down?"),  a: t("ghFaq7a", "Maintain a manual register for all entries and exits. Note down visitor details, time, and flat number. Contact the IT support number or the society manager immediately. Do not halt gate operations.") },
+  ];
+
+  const guideSteps = [
+    { icon: "1", title: t("ghStep1Title", "Guest Entry"),               desc: t("ghStep1Desc", "Log all visitors with ID proof and host confirmation before allowing entry.") },
+    { icon: "2", title: t("ghStep2Title", "Cab & Delivery"),            desc: t("ghStep2Desc", "Verify agent IDs and resident confirmation for all cabs and deliveries.") },
+    { icon: "3", title: t("ghStep3Title", "Emergency Protocol"),        desc: t("ghStep3Desc", "Use emergency button and contact relevant authorities immediately.") },
+    { icon: "4", title: t("ghStep4Title", "Gate Pass Check"),           desc: t("ghStep4Desc", "Match pre-approved gate passes before granting access to expected visitors.") },
+  ];
+
   /* ── Fetch ── */
-  useEffect(() => {
-    const fetchContacts = async () => {
-      try {
-        setLoadingContacts(true);
-        setContactsError("");
-        const res = await API.get("/contacts");
-        if (res.data.success) {
-          const formatted = res.data.data.map((user, i) => ({
-            id:       user.id,
-            name:     user.name,
-            role:     user.role || (user.roles?.[0] || "Member"),
-            phone:    user.phone,
-            email:    user.email,
-            avatar:   user.name?.split(" ").map((n) => n[0]).join("").toUpperCase(),
-            colorKey: avatarColors[i % avatarColors.length],
-          }));
-          setSocietyContacts(formatted);
-        } else {
-          setContactsError("Could not load contacts.");
-        }
-      } catch (err) {
-        console.error("Error fetching contacts:", err);
-        setContactsError("Failed to fetch contacts. Please try again.");
-      } finally {
-        setLoadingContacts(false);
+  const fetchContacts = useCallback(async () => {
+    try {
+      setLoadingContacts(true);
+      setContactsError("");
+      const res = await API.get("/contacts");
+      if (res.data.success) {
+        const formatted = res.data.data.map((user, i) => ({
+          id:       user.id,
+          name:     user.name,
+          role:     user.role || (user.roles?.[0] || "Member"),
+          phone:    user.phone,
+          email:    user.email,
+          avatar:   user.name?.split(" ").map((n) => n[0]).join("").toUpperCase(),
+          colorKey: avatarColors[i % avatarColors.length],
+        }));
+        setSocietyContacts(formatted);
+      } else {
+        setContactsError(t("ghContactsLoadFail", "Could not load contacts."));
       }
-    };
+    } catch (err) {
+      console.error("Error fetching contacts:", err);
+      setContactsError(t("ghContactsLoadError", "Failed to fetch contacts. Please try again."));
+    } finally {
+      setLoadingContacts(false);
+    }
+  }, [t]);
+
+  useEffect(() => {
     fetchContacts();
-  }, []);
+  }, [fetchContacts]);
 
   const filteredFaqs = faqs.filter(
     (f) =>
@@ -83,9 +86,9 @@ export default function GuardHelpContacts() {
   );
 
   const tabs = [
-    { key: "contacts", label: "Contacts"    },
-    { key: "faq",      label: "FAQ"         },
-    { key: "guide",    label: "Quick Guide" },
+    { key: "contacts", label: t("ghTabContacts", "Contacts")    },
+    { key: "faq",      label: t("ghTabFaq", "FAQ")              },
+    { key: "guide",    label: t("ghTabGuide", "Quick Guide")    },
   ];
 
   return (
@@ -98,8 +101,8 @@ export default function GuardHelpContacts() {
             <MdHeadset size={22} />
           </div>
           <div>
-            <h1 className="gh-page-title">Help & Contacts</h1>
-            <p className="gh-page-subtitle">Emergency numbers, society contacts & guard guide</p>
+            <h1 className="gh-page-title">{t("ghTitle", "Help & Contacts")}</h1>
+            <p className="gh-page-subtitle">{t("ghSubtitle", "Emergency numbers, society contacts & guard guide")}</p>
           </div>
         </div>
       </div>
@@ -108,7 +111,7 @@ export default function GuardHelpContacts() {
       <div className="gh-emerg-banner">
         <MdWarning size={18} className="gh-emerg-banner-icon" />
         <span className="gh-emerg-banner-text">
-          In a life-threatening emergency, call <strong>112</strong> — National Emergency Number
+          {t("ghEmergBannerPre", "In a life-threatening emergency, call")} <strong>112</strong> {t("ghEmergBannerPost", "— National Emergency Number")}
         </span>
       </div>
 
@@ -128,7 +131,7 @@ export default function GuardHelpContacts() {
           {/* Emergency Numbers */}
           <div className="gh-section-label">
             <MdLocalPolice size={14} />
-            Emergency Numbers
+            {t("ghSectionEmergency", "Emergency Numbers")}
           </div>
           <div className="gh-emerg-grid">
             {emergencyContacts.map((c) => (
@@ -142,7 +145,7 @@ export default function GuardHelpContacts() {
                   <p className="gh-emerg-desc">{c.desc}</p>
                 </div>
                 <a href={`tel:${c.number}`} className="gh-call-btn">
-                  <MdPhone size={14} /> Call
+                  <MdPhone size={14} /> {t("ghCall", "Call")}
                 </a>
               </div>
             ))}
@@ -151,7 +154,7 @@ export default function GuardHelpContacts() {
           {/* Society Contacts */}
           <div className="gh-section-label" style={{ marginTop: "1.25rem" }}>
             <MdBusiness size={14} />
-            Society Contacts
+            {t("ghSectionSociety", "Society Contacts")}
           </div>
 
           <div className="gh-contacts-list">
@@ -173,7 +176,7 @@ export default function GuardHelpContacts() {
             ) : societyContacts.length === 0 ? (
               <div className="gh-empty-state">
                 <MdBusiness size={36} className="gh-empty-icon" />
-                <p className="gh-empty-text">No society contacts found.</p>
+                <p className="gh-empty-text">{t("ghContactsEmpty", "No society contacts found.")}</p>
               </div>
             ) : (
               societyContacts.map((c) => (
@@ -196,11 +199,11 @@ export default function GuardHelpContacts() {
                         rel="noreferrer"
                       >
                         <FaWhatsapp size={12} />
-                        <span className="gh-action-label-desktop">WhatsApp</span>
+                        <span className="gh-action-label-desktop">{t("ghWhatsApp", "WhatsApp")}</span>
                       </a>
                       <a href={`mailto:${c.email || ""}`} className="gh-action-btn gh-action-btn--email">
                         <MdEmail size={12} />
-                        <span className="gh-action-label-desktop">Email</span>
+                        <span className="gh-action-label-desktop">{t("ghEmail", "Email")}</span>
                       </a>
                     </div>
                   </div>
@@ -213,8 +216,8 @@ export default function GuardHelpContacts() {
           <div className="gh-support-card">
             <MdSupportAgent size={20} className="gh-support-icon" />
             <div>
-              <p className="gh-support-title">Tech & App Support</p>
-              <p className="gh-support-sub">Having trouble with the app? Contact our support team.</p>
+              <p className="gh-support-title">{t("ghSupportTitle", "Tech & App Support")}</p>
+              <p className="gh-support-sub">{t("ghSupportSub", "Having trouble with the app? Contact our support team.")}</p>
             </div>
             <a href="mailto:support@society.com" className="gh-support-btn">
               <MdEmail size={14} /> support@society.com
@@ -229,7 +232,7 @@ export default function GuardHelpContacts() {
 
           <div className="flex items-center justify-end mb-3">
             <ExpandableSearch
-              placeholder="Search FAQs…"
+              placeholder={t("ghSearchFaq", "Search FAQs…")}
               value={search}
               onChange={setSearch}
             />
@@ -238,7 +241,7 @@ export default function GuardHelpContacts() {
           {filteredFaqs.length === 0 ? (
             <div className="gh-empty-state">
               <MdSearch size={36} className="gh-empty-icon" />
-              <p className="gh-empty-text">No FAQs match your search.</p>
+              <p className="gh-empty-text">{t("ghFaqNoMatch", "No FAQs match your search.")}</p>
             </div>
           ) : (
             <div className="gh-faq-list">
@@ -280,7 +283,7 @@ export default function GuardHelpContacts() {
           <div className="gh-guide-intro">
             <MdInfo size={18} className="gh-guide-intro-icon" />
             <span>
-              Follow these steps on every shift to ensure the safety and security of all residents.
+              {t("ghGuideIntro", "Follow these steps on every shift to ensure the safety and security of all residents.")}
             </span>
           </div>
 
@@ -299,13 +302,13 @@ export default function GuardHelpContacts() {
 
           {/* Shift checklist */}
           <div className="gh-shift-tips">
-            <p className="gh-shift-tips-title">Shift Checklist</p>
+            <p className="gh-shift-tips-title">{t("ghShiftChecklist", "Shift Checklist")}</p>
             {[
-              "Check visitor log at the start of shift",
-              "Verify all incoming deliveries with residents",
-              "Report any suspicious vehicles or persons immediately",
-              "Hand over physical log book to next guard",
-              "Test emergency communication devices",
+              t("ghCheckItem1", "Check visitor log at the start of shift"),
+              t("ghCheckItem2", "Verify all incoming deliveries with residents"),
+              t("ghCheckItem3", "Report any suspicious vehicles or persons immediately"),
+              t("ghCheckItem4", "Hand over physical log book to next guard"),
+              t("ghCheckItem5", "Test emergency communication devices"),
             ].map((item, i) => (
               <div key={i} className="gh-checklist-item">
                 <span className="gh-checklist-dot" />
@@ -317,8 +320,13 @@ export default function GuardHelpContacts() {
           {/* Dos & Don'ts */}
           <div className="gh-dos-donts">
             <div className="gh-do-card">
-              <p className="gh-do-title">✓ Do</p>
-              {["Greet visitors politely", "Verify ID before entry", "Log all entries and exits", "Alert admin for any issue"].map((d, i) => (
+              <p className="gh-do-title">✓ {t("ghCheckDo", "Do")}</p>
+              {[
+                t("ghDoItem1", "Greet visitors politely"),
+                t("ghDoItem2", "Verify ID before entry"),
+                t("ghDoItem3", "Log all entries and exits"),
+                t("ghDoItem4", "Alert admin for any issue"),
+              ].map((d, i) => (
                 <div key={i} className="gh-do-item">
                   <span className="gh-do-dot" />
                   <span>{d}</span>
@@ -326,8 +334,13 @@ export default function GuardHelpContacts() {
               ))}
             </div>
             <div className="gh-dont-card">
-              <p className="gh-dont-title">✗ Don't</p>
-              {["Allow unverified visitors", "Leave gate unattended", "Share access codes", "Confront threats alone"].map((d, i) => (
+              <p className="gh-dont-title">✗ {t("ghCheckDont", "Don't")}</p>
+              {[
+                t("ghDontItem1", "Allow unverified visitors"),
+                t("ghDontItem2", "Leave gate unattended"),
+                t("ghDontItem3", "Share access codes"),
+                t("ghDontItem4", "Confront threats alone"),
+              ].map((d, i) => (
                 <div key={i} className="gh-dont-item">
                   <span className="gh-dont-dot" />
                   <span>{d}</span>

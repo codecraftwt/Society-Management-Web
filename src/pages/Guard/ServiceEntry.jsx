@@ -14,7 +14,7 @@ import {
 import { FaTools } from "react-icons/fa";
 import { toast } from "react-toastify";
 import SlidingTabs from "../../components/common/SlidingTabs";
-import ToggleSearchBar from "../../components/common/ToggleSearchBar";
+import ExpandableSearch from "../../components/common/ExpandableSearch";
 import Pagination from "../../components/common/Pagination";
 import StepVisitorEntryModal from "../../components/guard/StepVisitorEntryModal";
 
@@ -52,7 +52,7 @@ function Spinner({ size = 16 }) {
   );
 }
 
-function resolveFlatLabel(flat) {
+function resolveFlatLabel(flat, tl = (_k, _p, fb) => fb) {
   if (!flat) return "NA";
   const block = flat.Floor?.Block?.name || flat.Block?.name || null;
   const floorNumber = flat.Floor?.floor_number ?? null;
@@ -60,7 +60,7 @@ function resolveFlatLabel(flat) {
   return (
     [
       block,
-      floorNumber != null ? `Floor ${floorNumber}` : null,
+      floorNumber != null ? tl("svcFloor", { n: floorNumber }, `Floor ${floorNumber}`) : null,
       flatNumber,
     ]
       .filter(Boolean)
@@ -68,8 +68,8 @@ function resolveFlatLabel(flat) {
   );
 }
 
-function resolveVisitorFlatLabel(v) {
-  return resolveFlatLabel(v?.Flat);
+function resolveVisitorFlatLabel(v, tl) {
+  return resolveFlatLabel(v?.Flat, tl);
 }
 
 export default function ServiceEntry() {
@@ -138,19 +138,19 @@ export default function ServiceEntry() {
     setExitLoadingId(id);
     try {
       await API.put(`/visitors/exit/${id}`);
-      toast.success(`Exit recorded for ${name}`);
+      toast.success(t("svcToastExit", { name }, "Exit recorded for {name}"));
       loadServices(page, debSearch, filter);
     } catch (err) {
-      toast.error(err.response?.data?.message || "Failed to mark exit");
+      toast.error(err.response?.data?.message || t("svcToastExitFail", "Failed to mark exit"));
     } finally {
       setExitLoadingId(null);
     }
   };
 
   const filterTabs = [
-    { key: "ALL", label: t("gdFilterAll", "All Service"), count: counts.ALL },
-    { key: "IN", label: t("gdFilterInside", "Inside Premises"), count: counts.IN },
-    { key: "OUT", label: t("gdFilterLeft", "Exited Today"), count: counts.OUT },
+    { key: "ALL", label: t("svcFilterAll", "All Service"), count: counts.ALL },
+    { key: "IN", label: t("svcFilterInside", "Inside Premises"), count: counts.IN },
+    { key: "OUT", label: t("svcFilterLeft", "Exited Today"), count: counts.OUT },
   ];
 
   return (
@@ -168,9 +168,9 @@ export default function ServiceEntry() {
             <FaTools size={22} />
           </div>
           <div>
-            <h2 className="page-title">{t("serviceEntryTitle", "Service & Repair Entry")}</h2>
+            <h2 className="page-title">{t("svcTitle", "Service & Repair Entry")}</h2>
             <p className="page-subtitle">
-              {counts.ALL} {t("serviceEntriesTotal", "Total service visits logged today")}
+              {counts.ALL} {t("svcTotal", "Total service visits logged today")}
             </p>
           </div>
         </div>
@@ -179,7 +179,7 @@ export default function ServiceEntry() {
           className="btn-primary"
           style={{ background: "#8B5CF6" }}
         >
-          <MdAdd size={18} /> {t("addServiceEntryBtn", "New Service Entry")}
+          <MdAdd size={18} /> {t("svcAddBtn", "New Service Entry")}
         </button>
       </div>
 
@@ -192,7 +192,7 @@ export default function ServiceEntry() {
           }`}
         >
           <span className="complaint-stat-val text-purple-600">{counts.ALL}</span>
-          <span className="complaint-stat-label">Total Services</span>
+          <span className="complaint-stat-label">{t("svcStatTotal", "Total Services")}</span>
         </div>
         <div
           onClick={() => handleFilterChange("IN")}
@@ -201,7 +201,7 @@ export default function ServiceEntry() {
           }`}
         >
           <span className="complaint-stat-val text-emerald-600">{counts.IN}</span>
-          <span className="complaint-stat-label">Currently Inside</span>
+          <span className="complaint-stat-label">{t("svcStatInside", "Currently Inside")}</span>
         </div>
         <div
           onClick={() => handleFilterChange("OUT")}
@@ -210,7 +210,7 @@ export default function ServiceEntry() {
           }`}
         >
           <span className="complaint-stat-val text-gray-500">{counts.OUT}</span>
-          <span className="complaint-stat-label">Checked Out</span>
+          <span className="complaint-stat-label">{t("svcStatExited", "Checked Out")}</span>
         </div>
       </div>
 
@@ -221,25 +221,19 @@ export default function ServiceEntry() {
             className="ge-filter-tabs"
             value={filter}
             onChange={handleFilterChange}
-            tabs={filterTabs.map(({ key, label, count }) => ({
-              key,
-              label: (
-                <span className="flex items-center gap-1.5">
-                  <span>{label}</span>
-                  <span className="opacity-75 font-normal">({count})</span>
-                </span>
-              ),
+            items={filterTabs.map(({ key, label, count }) => ({
+              id: key,
+              label: label,
+              badge: count,
             }))}
           />
         </div>
 
-        <div className="ge-search-wrap">
-          <ToggleSearchBar
-            value={search}
-            onChange={(val) => setSearch(val)}
-            placeholder={t("searchTechnicianPlaceholder", "Search technician, skill, flat, mobile...")}
-          />
-        </div>
+        <ExpandableSearch
+          value={search}
+          onChange={setSearch}
+          placeholder={t("svcSearchPlaceholder", "Search technician, skill, flat, mobile...")}
+        />
       </div>
 
       {/* ── DESKTOP TABLE ── */}
@@ -247,26 +241,26 @@ export default function ServiceEntry() {
         {initialLoad ? (
           <div className="p-8 text-center text-secondary">
             <Spinner size={24} />
-            <p className="mt-2 text-xs">Loading service entries...</p>
+            <p className="mt-2 text-xs">{t("svcLoading", "Loading service entries...")}</p>
           </div>
         ) : services.length === 0 ? (
           <div className="ge-empty">
             <span className="ge-empty-icon">🔧</span>
-            <span>No service technician entries found</span>
+            <span>{t("svcEmpty", "No service technician entries found")}</span>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="ge-table">
               <thead>
                 <tr>
-                  <th>Technician / Skill</th>
-                  <th>Flat Visited</th>
-                  <th>Contact</th>
-                  <th>Vehicle</th>
-                  <th>Entry Time</th>
-                  <th>Exit Time</th>
-                  <th>Status</th>
-                  <th>Action</th>
+                  <th>{t("svcColTech", "Technician / Skill")}</th>
+                  <th>{t("svcColFlat", "Flat Visited")}</th>
+                  <th>{t("svcColContact", "Contact")}</th>
+                  <th>{t("svcColVehicle", "Vehicle")}</th>
+                  <th>{t("svcColEntryTime", "Entry Time")}</th>
+                  <th>{t("svcColExitTime", "Exit Time")}</th>
+                  <th>{t("svcColStatus", "Status")}</th>
+                  <th>{t("svcColAction", "Action")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -284,13 +278,13 @@ export default function ServiceEntry() {
                               {item.visitor_name}
                             </span>
                             <span className="text-[11px] text-secondary">
-                              Service / Maintenance
+                              {t("svcSubService", "Service / Maintenance")}
                             </span>
                           </div>
                         </div>
                       </td>
                       <td>
-                        <span className="ge-flat-chip">{resolveVisitorFlatLabel(item)}</span>
+                        <span className="ge-flat-chip">{resolveVisitorFlatLabel(item, t)}</span>
                       </td>
                       <td>
                         <a
@@ -329,11 +323,11 @@ export default function ServiceEntry() {
                       <td>
                         {isInside ? (
                           <span className="ge-badge ge-badge--inside">
-                            ● Inside
+                            ● {t("svcBadgeInside", "Inside")}
                           </span>
                         ) : (
                           <span className="ge-badge ge-badge--left">
-                            ✔ Exited
+                            ✔ {t("svcBadgeExited", "Exited")}
                           </span>
                         )}
                       </td>
@@ -349,10 +343,10 @@ export default function ServiceEntry() {
                             ) : (
                               <MdLogout size={13} />
                             )}
-                            <span>Mark Exit</span>
+                            <span>{t("svcMarkExit", "Mark Exit")}</span>
                           </button>
                         ) : (
-                          <span className="text-xs text-secondary italic">Completed</span>
+                          <span className="text-xs text-secondary italic">{t("svcCompleted", "Completed")}</span>
                         )}
                       </td>
                     </tr>
@@ -388,7 +382,7 @@ export default function ServiceEntry() {
         ) : services.length === 0 ? (
           <div className="ge-empty">
             <span className="ge-empty-icon">🔧</span>
-            <span>No service technician entries found</span>
+            <span>{t("svcEmpty", "No service technician entries found")}</span>
           </div>
         ) : (
           <>
@@ -404,18 +398,18 @@ export default function ServiceEntry() {
                     <span className="ge-mc-name">{item.visitor_name}</span>
                   </div>
                   {item.exit_time ? (
-                    <span className="ge-badge ge-badge--left">✔ Exited</span>
+                    <span className="ge-badge ge-badge--left">✔ {t("svcBadgeExited", "Exited")}</span>
                   ) : (
-                    <span className="ge-badge ge-badge--inside">● Inside</span>
+                    <span className="ge-badge ge-badge--inside">● {t("svcBadgeInside", "Inside")}</span>
                   )}
                 </div>
                 <div className="ge-mc-rows">
                   <div className="ge-mc-row">
-                    <span className="ge-mc-label">Flat Visited</span>
-                    <span className="ge-flat-chip">{resolveVisitorFlatLabel(item)}</span>
+                    <span className="ge-mc-label">{t("svcColFlat", "Flat Visited")}</span>
+                    <span className="ge-flat-chip">{resolveVisitorFlatLabel(item, t)}</span>
                   </div>
                   <div className="ge-mc-row">
-                    <span className="ge-mc-label">Contact</span>
+                    <span className="ge-mc-label">{t("svcColContact", "Contact")}</span>
                     <a
                       href={`tel:${item.mobile}`}
                       className="ge-mc-val text-blue-600 flex items-center gap-1"
@@ -424,7 +418,7 @@ export default function ServiceEntry() {
                     </a>
                   </div>
                   <div className="ge-mc-row">
-                    <span className="ge-mc-label">Entry Time</span>
+                    <span className="ge-mc-label">{t("svcColEntryTime", "Entry Time")}</span>
                     <span className="ge-mc-val">
                       {item.entry_time ? new Date(item.entry_time).toLocaleTimeString() : "—"}
                     </span>
@@ -437,7 +431,7 @@ export default function ServiceEntry() {
                         className="px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm"
                       >
                         {exitLoadingId === item.id ? <Spinner size={12} /> : <MdLogout size={14} />}
-                        <span>Record Exit</span>
+                        <span>{t("svcRecordExit", "Record Exit")}</span>
                       </button>
                     </div>
                   )}

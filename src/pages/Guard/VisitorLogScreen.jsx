@@ -99,10 +99,10 @@ const [totalPages, setTotalPages] = useState(1);
   const markExit = async (id) => {
     try {
       await API.put(`/visitors/exit/${id}`);
-      toast.success(t("vlsMarkExitSuccess") || "Visitor marked as OUT");
+      toast.success(t("vlsMarkExitSuccess", "Visitor marked as OUT"));
       loadVisitors(page, debSearch, tab);
     } catch (err) {
-      toast.error(err.response?.data?.message || t("vlsMarkExitFail") || "Failed to mark exit");
+      toast.error(err.response?.data?.message || t("vlsMarkExitFail", "Failed to mark exit"));
     }
   };
 
@@ -111,7 +111,13 @@ const [totalPages, setTotalPages] = useState(1);
     const b = v.Flat.Floor?.Block?.name || v.Flat.Block?.name || "";
     const fl = v.Flat.Floor?.floor_number;
     const fn = v.Flat.flat_number || "—";
-    return [b ? `Block ${b}` : null, fl != null ? `Fl ${fl}` : null, `Flat ${fn}`].filter(Boolean).join(" · ");
+    return [
+      b ? t("vlsBlockPrefix", { name: b }, "Block {name}") : null,
+      fl != null ? t("vlsFloorPrefix", { floor: fl }, "Fl {floor}") : null,
+      t("vlsFlatPrefix", { number: fn }, "Flat {number}"),
+    ]
+      .filter(Boolean)
+      .join(" · ");
   };
 
   const formatDateTime = (dateStr) => {
@@ -126,7 +132,7 @@ const [totalPages, setTotalPages] = useState(1);
   const filterTabs = [
     { key: "ALL", label: t("geFilterAll") || "All Logs & History", count: counts.ALL },
     { key: "IN",  label: t("geFilterInside") || "Currently Inside", count: counts.IN },
-    { key: "OUT", label: "History (Exited)", count: counts.OUT },
+    { key: "OUT", label: t("vlsHistoryExited", "History (Exited)"), count: counts.OUT },
   ];
 
   const columns = [
@@ -146,7 +152,7 @@ const [totalPages, setTotalPages] = useState(1);
           </div>
           <div className="min-w-0">
             <p className="font-bold text-primary truncate m-0 text-sm">
-              {v.visitor_name || t("vlsUnknown") || "Unknown"}
+              {v.visitor_name || t("vlsUnknown", "Unknown")}
             </p>
             <div className="flex items-center gap-2 text-xs text-secondary mt-0.5">
               {v.mobile && <span>{v.mobile}</span>}
@@ -171,7 +177,7 @@ const [totalPages, setTotalPages] = useState(1);
         if (p === "SERVICE" || p === "MAINTENANCE") colorClass = "bg-emerald-500/15 text-emerald-400 border-emerald-500/25";
         return (
           <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold border uppercase tracking-wider ${colorClass}`}>
-            {v.purpose || "Guest"}
+            {v.purpose || t("vlsGuest", "Guest")}
           </span>
         );
       },
@@ -209,7 +215,7 @@ const [totalPages, setTotalPages] = useState(1);
         if (!v.exit_time) {
           return (
             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20">
-              <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" /> Inside
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" /> {t("vlsInsideBadge", "Inside")}
             </span>
           );
         }
@@ -248,7 +254,7 @@ const [totalPages, setTotalPages] = useState(1);
             {t("vlsMarkExit") || "Mark OUT"}
           </GlobalButton>
         ) : (
-          <span className="text-[11px] text-secondary/60 font-medium">Logged</span>
+          <span className="text-[11px] text-secondary/60 font-medium">{t("vlsLogged", "Logged")}</span>
         ),
     },
   ];
@@ -266,7 +272,7 @@ const [totalPages, setTotalPages] = useState(1);
               {t("vlsTitle") || "Visitor Logs & History"}
             </h1>
             <p className="text-xs text-secondary mt-0.5">
-              Complete gate logs and historical records of all visitors, deliveries, and cabs
+              {t("vlsHeaderSub", "Complete gate logs and historical records of all visitors, deliveries, and cabs")}
             </p>
           </div>
         </div>
@@ -285,7 +291,7 @@ const [totalPages, setTotalPages] = useState(1);
           </div>
           <div className="ad-kpi-info">
             <span className="ad-kpi-val">{counts.ALL}</span>
-            <span className="ad-kpi-lbl">Total Visitor Logs</span>
+            <span className="ad-kpi-label">{t("vlsStatTotal", "Total Visitor Logs")}</span>
           </div>
         </div>
 
@@ -300,7 +306,7 @@ const [totalPages, setTotalPages] = useState(1);
           </div>
           <div className="ad-kpi-info">
             <span className="ad-kpi-val">{counts.IN}</span>
-            <span className="ad-kpi-lbl">Currently Inside</span>
+            <span className="ad-kpi-label">{t("vlsStatInside", "Currently Inside")}</span>
           </div>
         </div>
 
@@ -315,7 +321,7 @@ const [totalPages, setTotalPages] = useState(1);
           </div>
           <div className="ad-kpi-info">
             <span className="ad-kpi-val">{counts.OUT}</span>
-            <span className="ad-kpi-lbl">Exit History (Left)</span>
+            <span className="ad-kpi-label">{t("vlsStatOut", "Exit History (Left)")}</span>
           </div>
         </div>
       </div>
@@ -337,7 +343,7 @@ const [totalPages, setTotalPages] = useState(1);
 
         <div className="ml-auto">
           <ExpandableSearch
-            placeholder={t("vlsSearchPlaceholder") || "Search by visitor name, mobile, vehicle..."}
+            placeholder={t("vlsSearchPlaceholder", "Search by visitor name, mobile, vehicle...")}
             value={search}
             onChange={(val) => { setSearch(val); setPage(1); }}
           />
@@ -351,10 +357,10 @@ const [totalPages, setTotalPages] = useState(1);
         loading={initialLoad}
         emptyMessage={
           tab === "OUT"
-            ? "No visitor exit history found."
+            ? t("vlsEmptyOut", "No visitor exit history found.")
             : tab === "IN"
-            ? "No visitors are currently inside the premises."
-            : "No visitor logs found."
+            ? t("vlsEmptyIn", "No visitors are currently inside the premises.")
+            : t("vlsEmptyAll", "No visitor logs found.")
         }
         emptyIcon={MdOutlineInbox}
         page={page}

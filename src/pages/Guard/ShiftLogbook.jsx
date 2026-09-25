@@ -19,7 +19,7 @@ import {
 } from "react-icons/md";
 import { toast } from "react-toastify";
 import SlidingTabs from "../../components/common/SlidingTabs";
-import ToggleSearchBar from "../../components/common/ToggleSearchBar";
+import ExpandableSearch from "../../components/common/ExpandableSearch";
 import GlobalModal from "../../components/common/GlobalModal";
 
 function Spinner({ size = 16 }) {
@@ -81,12 +81,12 @@ export default function ShiftLogbook() {
       setLogs(list);
     } catch (err) {
       console.error("Error loading guard logs:", err);
-      toast.error(err.response?.data?.message || "Failed to load logbook");
+      toast.error(err.response?.data?.message || t("lgFetchFail", "Failed to load logbook"));
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     fetchLogs();
@@ -95,7 +95,7 @@ export default function ShiftLogbook() {
   const handleAddLog = async (e) => {
     if (e) e.preventDefault();
     if (!inputText.trim()) {
-      toast.warn("Please write a log note before submitting.");
+      toast.warn(t("lgEmptyNote", "Please write a log note before submitting."));
       return;
     }
 
@@ -111,25 +111,25 @@ export default function ShiftLogbook() {
       setInputText("");
       setIsImportant(false);
       setIsAddModalOpen(false);
-      toast.success("Shift log note added successfully");
+      toast.success(t("lgAddSuccess", "Shift log note added successfully"));
     } catch (err) {
       console.error("Error adding log:", err);
-      toast.error(err.response?.data?.message || "Failed to add log note");
+      toast.error(err.response?.data?.message || t("lgAddFail", "Failed to add log note"));
     } finally {
       setPosting(false);
     }
   };
 
   const handleDeleteLog = async (id) => {
-    if (!window.confirm("Are you sure you want to remove this log entry?")) return;
+    if (!window.confirm(t("lgDeleteConfirm", "Are you sure you want to remove this log entry?"))) return;
     setDeletingId(id);
     try {
       await API.delete(`/guard-logs/${id}`);
       setLogs((prev) => prev.filter((item) => item.id !== id));
-      toast.success("Log note deleted");
+      toast.success(t("lgDeleteSuccess", "Log note deleted"));
     } catch (err) {
       console.error("Error deleting log:", err);
-      toast.error(err.response?.data?.message || "Failed to delete log");
+      toast.error(err.response?.data?.message || t("lgDeleteFail", "Failed to delete log"));
     } finally {
       setDeletingId(null);
     }
@@ -173,9 +173,9 @@ export default function ShiftLogbook() {
   }, [logs, filter, search]);
 
   const filterTabs = [
-    { key: "ALL", label: t("logFilterAll", "All Logs"), count: counts.total },
-    { key: "IMPORTANT", label: t("logFilterImportant", "Important Flags"), count: counts.important },
-    { key: "TODAY", label: t("logFilterToday", "Today's Logs"), count: counts.today },
+    { key: "ALL", label: t("lgFilterAll", "All Logs"), count: counts.total },
+    { key: "IMPORTANT", label: t("lgFilterImportant", "Important Flags"), count: counts.important },
+    { key: "TODAY", label: t("lgFilterToday", "Today's Logs"), count: counts.today },
   ];
 
   return (
@@ -196,30 +196,30 @@ export default function ShiftLogbook() {
           </div>
           <div>
             <h2 className="page-title text-xl font-black text-primary">
-              {t("logbookTitle", "Guard Shift Logbook")}
+              {t("lgTitle", "Guard Shift Logbook")}
             </h2>
             <p className="page-subtitle text-xs text-secondary font-medium">
-              {counts.total} {t("logbookSubtitle", "Shift handover notes, gate observations & incident flags")}
+              {counts.total} {t("lgSubtitle", "Shift handover notes, gate observations & incident flags")}
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2.5">
+        <div className="w-full sm:w-auto flex items-center gap-2.5">
           <button
             onClick={() => fetchLogs(true)}
             disabled={refreshing}
-            className="btn-secondary flex items-center gap-1.5 text-xs font-bold px-3.5 py-2.5 rounded-xl transition-all hover:scale-102 active:scale-98"
+            className="btn-secondary flex items-center justify-center gap-1.5 text-xs font-bold px-3.5 py-2.5 rounded-xl transition-all hover:scale-102 active:scale-98 flex-1 sm:flex-none"
           >
             <MdRefresh size={18} className={refreshing ? "animate-spin text-accent" : ""} />
-            <span>{refreshing ? "Refreshing..." : "Refresh"}</span>
+            <span>{refreshing ? t("lgRefreshing", "Refreshing...") : t("lgRefresh", "Refresh")}</span>
           </button>
 
           <button
             onClick={() => setIsAddModalOpen(true)}
-            className="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-black transition-all flex items-center gap-2 shadow-md hover:shadow-indigo-500/25 hover:scale-102 active:scale-98"
+            className="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-black transition-all flex items-center justify-center gap-2 shadow-md hover:shadow-indigo-500/25 hover:scale-102 active:scale-98 flex-1 sm:flex-none"
           >
             <MdAdd size={19} />
-            <span>Add Log Entry</span>
+            <span>{t("lgAddBtn", "Add Log Entry")}</span>
           </button>
         </div>
       </div>
@@ -238,7 +238,7 @@ export default function ShiftLogbook() {
               <MdBookmark size={18} />
             </div>
           </div>
-          <span className="complaint-stat-label">Total Logbook Records</span>
+          <span className="complaint-stat-label">{t("lgStatTotal", "Total Logbook Records")}</span>
         </div>
 
         <div
@@ -253,7 +253,7 @@ export default function ShiftLogbook() {
               <MdFlag size={18} />
             </div>
           </div>
-          <span className="complaint-stat-label">Important Action Flags</span>
+          <span className="complaint-stat-label">{t("lgStatImportant", "Important Action Flags")}</span>
         </div>
 
         <div
@@ -268,7 +268,7 @@ export default function ShiftLogbook() {
               <MdToday size={18} />
             </div>
           </div>
-          <span className="complaint-stat-label">Added Today</span>
+          <span className="complaint-stat-label">{t("lgStatToday", "Added Today")}</span>
         </div>
       </div>
 
@@ -291,13 +291,11 @@ export default function ShiftLogbook() {
           />
         </div>
 
-        <div className="flex items-center gap-2 self-end sm:self-auto">
-          <ToggleSearchBar
-            value={search}
-            onChange={(val) => setSearch(val)}
-            placeholder={t("searchLogbookPlaceholder", "Search by message or guard...")}
-          />
-        </div>
+        <ExpandableSearch
+          value={search}
+          onChange={setSearch}
+          placeholder={t("lgSearchPlaceholder", "Search by message or guard...")}
+        />
       </div>
 
       {/* ── LOG FEED TIMELINE ── */}
@@ -305,14 +303,14 @@ export default function ShiftLogbook() {
         {loading ? (
           <div className="p-12 text-center text-secondary">
             <Spinner size={26} />
-            <p className="mt-2 text-xs font-bold">Loading shift logbook entries...</p>
+            <p className="mt-2 text-xs font-bold">{t("lgLoading", "Loading shift logbook entries...")}</p>
           </div>
         ) : filteredLogs.length === 0 ? (
           <div className="ge-empty py-12 bg-card rounded-2xl border border-glass-border text-center space-y-2">
             <span className="text-3xl">📝</span>
-            <p className="text-sm font-extrabold text-primary">No Logbook Notes Found</p>
+            <p className="text-sm font-extrabold text-primary">{t("lgEmptyTitle", "No Logbook Notes Found")}</p>
             <p className="text-xs text-secondary">
-              No shift entries match your selected search or filter tag.
+              {t("lgEmptySub", "No shift entries match your selected search or filter tag.")}
             </p>
           </div>
         ) : (
@@ -321,7 +319,7 @@ export default function ShiftLogbook() {
               log.Guard?.name ||
               log.guard_name ||
               (typeof log.author === "string" ? log.author : log.author?.name) ||
-              "Guard Officer";
+              t("lgAuthorFallback", "Guard Officer");
             const isMine = log.guard_id === currentUser.id || log.user_id === currentUser.id;
             const createdAt = new Date(log.createdAt || log.created_at);
 
@@ -335,7 +333,7 @@ export default function ShiftLogbook() {
                 }`}
               >
                 <div className="flex items-start justify-between gap-3">
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-3 min-w-0">
                     <div
                       className="w-10 h-10 rounded-xl flex items-center justify-center font-black text-sm shrink-0 shadow-xs"
                       style={{
@@ -351,20 +349,20 @@ export default function ShiftLogbook() {
                       {log.is_important ? <MdFlag size={20} /> : <MdShield size={20} />}
                     </div>
 
-                    <div>
-                      <div className="flex items-center gap-2">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <span className="text-sm font-extrabold text-primary">
                           {authorName}
                         </span>
                         {log.is_important && (
                           <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-rose-500 text-white shadow-xs flex items-center gap-1">
-                            <MdFlag size={11} /> Important
+                            <MdFlag size={11} /> {t("lgBadgeImportant", "Important")}
                           </span>
                         )}
                       </div>
 
-                      <div className="flex items-center gap-2 text-xs text-secondary mt-0.5 font-medium">
-                        <MdAccessTime size={13} className="opacity-70" />
+                      <div className="flex items-center gap-2 text-xs text-secondary mt-0.5 font-medium min-w-0">
+                        <MdAccessTime size={13} className="opacity-70 shrink-0" />
                         <span>
                           {createdAt.toLocaleDateString("en-IN", {
                             day: "numeric",
@@ -386,15 +384,15 @@ export default function ShiftLogbook() {
                     <button
                       onClick={() => handleDeleteLog(log.id)}
                       disabled={deletingId === log.id}
-                      className="p-2 rounded-xl text-secondary hover:text-red-500 hover:bg-red-500/10 transition-all"
-                      title="Delete log entry"
+                      className="p-2 rounded-xl text-secondary hover:text-red-500 hover:bg-red-500/10 transition-all shrink-0"
+                      title={t("lgDeleteTitle", "Delete log entry")}
                     >
                       {deletingId === log.id ? <Spinner size={14} /> : <MdDeleteOutline size={18} />}
                     </button>
                   )}
                 </div>
 
-                <p className="mt-3.5 text-sm text-primary leading-relaxed font-normal whitespace-pre-wrap pl-13 border-l-2 border-indigo-500/20">
+                <p className="mt-3.5 text-sm text-primary leading-relaxed font-normal whitespace-pre-wrap pl-4 sm:pl-13 border-l-2 border-indigo-500/20 min-w-0">
                   {log.text || log.note}
                 </p>
               </div>
@@ -413,8 +411,12 @@ export default function ShiftLogbook() {
             setIsImportant(false);
           }
         }}
-        title="New Shift Log Entry"
-        subtitle={`Logged as ${currentUser.name || "Security Officer"}`}
+        title={t("lgModalTitle", "New Shift Log Entry")}
+        subtitle={t(
+          "lgModalSubtitle",
+          { name: currentUser.name || t("lgSecurityOfficer", "Security Officer") },
+          "Logged as {name}"
+        )}
         icon={MdEditNote}
         size="md"
         showFooter={true}
@@ -424,7 +426,7 @@ export default function ShiftLogbook() {
           setIsImportant(false);
         }}
         onSubmit={handleAddLog}
-        submitLabel="Post Log Entry"
+        submitLabel={t("lgSubmitLabel", "Post Log Entry")}
         submitLoading={posting}
         submitDisabled={posting || !inputText.trim()}
         submitIcon={MdSend}
@@ -432,19 +434,22 @@ export default function ShiftLogbook() {
         <div className="space-y-4 py-1">
           <div>
             <label className="block text-xs font-extrabold text-primary mb-1.5">
-              Log Note / Handover Observation <span className="text-rose-500">*</span>
+              {t("lgFieldLabel", "Log Note / Handover Observation")} <span className="text-rose-500">*</span>
             </label>
             <textarea
               rows={4}
               autoFocus
-              placeholder="Record gate observations, shift handover notes, suspicious visitors, or key instructions..."
+              placeholder={t(
+                "lgFieldPlaceholder",
+                "Record gate observations, shift handover notes, suspicious visitors, or key instructions..."
+              )}
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
               className="w-full p-3.5 text-sm rounded-xl bg-card-inner-bg border border-glass-border focus:border-accent text-primary outline-none resize-none shadow-inner transition-all"
             />
             <div className="flex justify-between items-center mt-1.5 text-[11px] text-secondary">
-              <span>Be precise for oncoming shift guards & administration</span>
-              <span className="font-bold">{inputText.length} chars</span>
+              <span>{t("lgFieldHint", "Be precise for oncoming shift guards & administration")}</span>
+              <span className="font-bold">{t("lgFieldChars", { count: inputText.length }, "{count} chars")}</span>
             </div>
           </div>
 
@@ -468,10 +473,10 @@ export default function ShiftLogbook() {
               </div>
               <div>
                 <p className="text-xs font-extrabold text-primary">
-                  Flag as Important Handover Note
+                  {t("lgImportantLabel", "Flag as Important Handover Note")}
                 </p>
                 <p className="text-[11px] text-secondary">
-                  Highlights this log entry with red warning priority
+                  {t("lgImportantSub", "Highlights this log entry with red warning priority")}
                 </p>
               </div>
             </div>

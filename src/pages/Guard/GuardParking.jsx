@@ -11,7 +11,7 @@ import {
 } from "react-icons/md";
 import Select from "../../components/common/Select";
 import SlidingTabs from "../../components/common/SlidingTabs";
-import ToggleSearchBar from "../../components/common/ToggleSearchBar";
+import ExpandableSearch from "../../components/common/ExpandableSearch";
 import Modal from "../../components/Modal";
 import { toast } from "react-toastify";
 import Pagination from "../../components/common/Pagination";
@@ -47,10 +47,10 @@ function Spinner({ size = 22 }) {
 
 function StatusBadge({ status, t }) {
   const cfg = {
-    PENDING:   { label: t("gpPending") || "Pending",   Icon: MdWarning,      color: "#f59e0b", bg: "rgba(245,158,11,0.12)",  border: "rgba(245,158,11,0.28)"  },
-    APPROVED:  { label: t("gpApproved") || "Approved", Icon: MdCheckCircle, color: "#10b981", bg: "rgba(16,185,129,0.12)",  border: "rgba(16,185,129,0.28)"  },
-    REJECTED:  { label: t("gpRejected") || "Rejected", Icon: MdCancel,      color: "#ef4444", bg: "rgba(239,68,68,0.12)", border: "rgba(239,68,68,0.28)" },
-    COMPLETED: { label: t("gpCompleted") || "Exited",  Icon: MdDone,        color: "#8b5cf6", bg: "rgba(139,92,246,0.12)", border: "rgba(139,92,246,0.28)" },
+    PENDING:   { label: t("gpPending", "Pending"),   Icon: MdWarning,      color: "#f59e0b", bg: "rgba(245,158,11,0.12)",  border: "rgba(245,158,11,0.28)"  },
+    APPROVED:  { label: t("gpApproved", "Approved"), Icon: MdCheckCircle, color: "#10b981", bg: "rgba(16,185,129,0.12)",  border: "rgba(16,185,129,0.28)"  },
+    REJECTED:  { label: t("gpRejected", "Rejected"), Icon: MdCancel,      color: "#ef4444", bg: "rgba(239,68,68,0.12)", border: "rgba(239,68,68,0.28)" },
+    COMPLETED: { label: t("gpCompleted", "Exited"),  Icon: MdDone,        color: "#8b5cf6", bg: "rgba(139,92,246,0.12)", border: "rgba(139,92,246,0.28)" },
   }[status] || { label: status, Icon: MdCheckCircle, color: "#10b981", bg: "rgba(16,185,129,0.12)", border: "rgba(16,185,129,0.28)" };
 
   return (
@@ -66,18 +66,22 @@ const VEHICLE_CFG = {
 };
 
 function VehicleTypeBadge({ type }) {
-  const cfg = VEHICLE_CFG[type?.toUpperCase()] || {
+  const { t } = useLang();
+  const ut = type?.toUpperCase();
+  const cfg = VEHICLE_CFG[ut] || {
     emoji: "🚘", label: type, color: "#6b7280",
     bg: "rgba(107,114,128,0.10)", border: "rgba(107,114,128,0.22)",
   };
+  const label = ut === "CAR" ? t("gpCar", "Car") : ut === "BIKE" ? t("gpBike", "Bike") : cfg.label;
   return (
     <span style={{ display:"inline-flex", alignItems:"center", gap:5, padding:"3px 10px", borderRadius:999, fontSize:11, fontWeight:700, whiteSpace:"nowrap", color:cfg.color, background:cfg.bg, border:`1px solid ${cfg.border}` }}>
-      <span style={{ fontSize:13 }}>{cfg.emoji}</span> {cfg.label}
+      <span style={{ fontSize:13 }}>{cfg.emoji}</span> {label}
     </span>
   );
 }
 
 function ParkingTypePill({ type }) {
+  const { t } = useLang();
   const isResident = type === "RESIDENT";
   return (
     <span style={{
@@ -88,7 +92,7 @@ function ParkingTypePill({ type }) {
       background: isResident ? "rgba(160,90,255,0.12)" : "rgba(6,182,212,0.12)",
       border: `1px solid ${isResident ? "rgba(160,90,255,0.28)" : "rgba(6,182,212,0.28)"}`,
     }}>
-      {isResident ? "🏠 Resident" : "👤 Visitor"}
+      {isResident ? `🏠 ${t("gpResidentPill", "Resident")}` : `👤 ${t("gpVisitorPill", "Visitor")}`}
     </span>
   );
 }
@@ -103,6 +107,11 @@ function RequestCard({ r, slots, selectedSlot, setSelectedSlot, onAssign, onReje
   const isPending  = r.status === "PENDING";
   const isApproved = r.status === "APPROVED";
   const hasSlot    = !!r.assigned_spot;
+
+  const typeLabel =
+    r.vehicle_type === "CAR" ? t("gpCar", "Car")
+    : r.vehicle_type === "BIKE" ? t("gpBike", "Bike")
+    : r.vehicle_type || t("gpVehicle", "Vehicle");
 
   const stripColor = {
     PENDING:   "#f59e0b",
@@ -140,7 +149,7 @@ function RequestCard({ r, slots, selectedSlot, setSelectedSlot, onAssign, onReje
           <ParkingTypePill type={r.parking_type} />
           {r.assigned_spot && (
             <span className="gp-assigned-chip font-bold">
-              <MdLocalParking size={13} /> {t("gpSlotLabel") || "Slot"} {r.assigned_spot}
+              <MdLocalParking size={13} /> {t("gpSlotLabel", "Slot")} {r.assigned_spot}
             </span>
           )}
         </div>
@@ -151,34 +160,42 @@ function RequestCard({ r, slots, selectedSlot, setSelectedSlot, onAssign, onReje
               <>
                 <div>
                   <label className="gp-select-label">
-                    {t("gpAssignSlot") || "Assign Parking Slot"}
+                    {t("gpAssignSlot", "Assign Parking Slot")}
                     {availableSlots.length === 0 && (
                       <span className="gp-no-slots-hint">
-                        <MdWarning size={12} /> {t("gpNoSlots") || "No slots available"}
+                        <MdWarning size={12} /> {t("gpNoSlots", "No slots available")}
                       </span>
                     )}
                   </label>
-                  <div style={{ position:"relative" }}>
-                    <MdLocalParking size={16} style={{ position:"absolute", left:12, top:"50%", transform:"translateY(-50%)", color:"var(--text-secondary)", pointerEvents:"none" }} />
-                    <Select
-                      className="input gp-slot-select"
-                      value={selectedSlot[r.id] || ""}
-                      onChange={e => setSelectedSlot({ ...selectedSlot, [r.id]: e.target.value })}
-                      disabled={availableSlots.length === 0}
-                    >
-                      <option value="">{t("gpSelectSlot") || "-- Select Parking Slot --"}</option>
-                      {availableSlots.map(slot => (
-                        <option key={slot.id} value={slot.slot_number}>Slot {slot.slot_number} (Available)</option>
-                      ))}
-                    </Select>
-                  </div>
+                  {availableSlots.length === 0 ? (
+                    <div className="gp-no-slot-notice">
+                      <MdWarning size={16} className="shrink-0" />
+                      <span>
+                        {t("gpNoSlotsDetail", { type: typeLabel }, "All {type} slots are currently occupied. Please wait for a slot to be released or reject the entry.")}
+                      </span>
+                    </div>
+                  ) : (
+                    <div style={{ position:"relative" }}>
+                      <MdLocalParking size={16} style={{ position:"absolute", left:12, top:"50%", transform:"translateY(-50%)", color:"var(--text-secondary)", pointerEvents:"none" }} />
+                      <Select
+                        className="input gp-slot-select"
+                        value={selectedSlot[r.id] || ""}
+                        onChange={e => setSelectedSlot({ ...selectedSlot, [r.id]: e.target.value })}
+                      >
+                        <option value="">{t("gpSelectSlot", "-- Select Parking Slot --")}</option>
+                        {availableSlots.map(slot => (
+                          <option key={slot.id} value={slot.slot_number}>{t("gpSlotOption", { slot: slot.slot_number }, "Slot {slot} (Available)")}</option>
+                        ))}
+                      </Select>
+                    </div>
+                  )}
                 </div>
                 <div className="gp-btn-row">
                   <button onClick={() => onAssign(r.id)} className="gp-btn-approve font-black" disabled={!selectedSlot[r.id]}>
-                    <MdCheckCircle size={16} /> {t("gpAssignBtn") || "Approve & Assign"}
+                    <MdCheckCircle size={16} /> {t("gpAssignBtn", "Approve & Assign")}
                   </button>
                   <button onClick={() => onReject(r.id)} className="gp-btn-reject font-black">
-                    <MdCancel size={16} /> {t("gpRejectBtn") || "Reject"}
+                    <MdCancel size={16} /> {t("gpRejectBtn", "Reject")}
                   </button>
                 </div>
               </>
@@ -187,7 +204,7 @@ function RequestCard({ r, slots, selectedSlot, setSelectedSlot, onAssign, onReje
             {isApproved && hasSlot && (
               <div className="gp-btn-row">
                 <button onClick={() => onExit(r.id)} className="gp-btn-exit font-black">
-                  <MdExitToApp size={16} /> {t("gpMarkExit") || "Mark Vehicle Exit"}
+                  <MdExitToApp size={16} /> {t("gpMarkExit", "Mark Vehicle Exit")}
                 </button>
               </div>
             )}
@@ -225,7 +242,7 @@ function ResidentEntryModal({ isOpen, onClose, slots, onCreated, t }) {
       const res = await API.get(`/parking/lookup-vehicle?vehicle_number=${vehicleNumber.trim().toUpperCase()}`);
       setLookupResult(res.data);
     } catch (err) {
-      setLookupError(err?.response?.data?.message || "Vehicle not registered in this society");
+      setLookupError(err?.response?.data?.message || t("gpLookupFail", "Vehicle not registered in this society"));
     } finally {
       setLookupLoading(false);
     }
@@ -233,7 +250,7 @@ function ResidentEntryModal({ isOpen, onClose, slots, onCreated, t }) {
 
   const handleCreate = async () => {
     if (!selectedSlot) {
-      setSubmitError("Please select an available parking slot");
+      setSubmitError(t("gpSelectSlotError", "Please select an available parking slot"));
       return;
     }
     setSubmitLoading(true);
@@ -247,14 +264,14 @@ function ResidentEntryModal({ isOpen, onClose, slots, onCreated, t }) {
         flat_id:        lookupResult.flat_id,
         assigned_spot:  selectedSlot,
       });
-      toast.success(`🚗 Vehicle ${lookupResult.vehicle_number} assigned to slot ${selectedSlot}`);
+      toast.success(t("gpAssignToast", { vehicle: lookupResult.vehicle_number, slot: selectedSlot }, "Vehicle {vehicle} assigned to slot {slot}"));
       setVehicleNumber("");
       setLookupResult(null);
       setSelectedSlot("");
       onClose();
       onCreated();
     } catch (err) {
-      setSubmitError(err?.response?.data?.message || "Failed to create resident parking entry");
+      setSubmitError(err?.response?.data?.message || t("gpCreateFail", "Failed to create resident parking entry"));
     } finally {
       setSubmitLoading(false);
     }
@@ -275,8 +292,8 @@ function ResidentEntryModal({ isOpen, onClose, slots, onCreated, t }) {
     <Modal
       isOpen={isOpen}
       onClose={handleModalClose}
-      title="Resident Vehicle Lookup & Entry"
-      subtitle="Search registered vehicles by license plate and assign a parking slot"
+      title={t("gpModTitle", "Resident Vehicle Lookup & Entry")}
+      subtitle={t("gpModSubtitle", "Search registered vehicles by license plate and assign a parking slot")}
       icon={MdDirectionsCar}
       size="md"
     >
@@ -290,7 +307,7 @@ function ResidentEntryModal({ isOpen, onClose, slots, onCreated, t }) {
             <input
               type="text"
               className="w-full py-2 text-sm sm:text-base font-extrabold uppercase font-mono tracking-wider text-primary placeholder:text-secondary/50 bg-transparent border-0 outline-none ring-0"
-              placeholder="Enter license plate (e.g. TN01AB1234)"
+              placeholder={t("gpPlatePlaceholder", "Enter license plate (e.g. TN01AB1234)")}
               value={vehicleNumber}
               onChange={(e) => {
                 setVehicleNumber(e.target.value.toUpperCase());
@@ -309,7 +326,7 @@ function ResidentEntryModal({ isOpen, onClose, slots, onCreated, t }) {
                   setLookupError("");
                 }}
                 className="text-secondary/60 hover:text-primary transition-colors text-xs font-bold px-1 py-1 rounded cursor-pointer shrink-0 border-0 outline-none"
-                title="Clear"
+                title={t("gpClear", "Clear")}
               >
                 ✕
               </button>
@@ -323,7 +340,7 @@ function ResidentEntryModal({ isOpen, onClose, slots, onCreated, t }) {
             className="py-2.5 px-5 rounded-xl font-bold text-xs sm:text-sm text-white bg-gradient-to-r from-cyan-600 via-blue-600 to-indigo-600 hover:from-cyan-500 hover:to-indigo-500 shadow-md shadow-cyan-600/25 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer shrink-0 border-0 outline-none"
           >
             {lookupLoading ? <Spinner size={15} /> : <MdPersonSearch size={18} />}
-            <span>{lookupLoading ? "Searching..." : "Lookup"}</span>
+            <span>{lookupLoading ? t("gpSearching", "Searching...") : t("gpLookup", "Lookup")}</span>
           </button>
         </div>
 
@@ -344,56 +361,56 @@ function ResidentEntryModal({ isOpen, onClose, slots, onCreated, t }) {
                   {lookupResult.vehicle_number}
                 </span>
                 <span className="text-xs font-bold text-primary capitalize truncate">
-                  {lookupResult.vehicle_name || "Resident Vehicle"}
+                  {lookupResult.vehicle_name || t("gpResidentVehicle", "Resident Vehicle")}
                 </span>
               </div>
 
               <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 shrink-0">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> Verified
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> {t("gpVerified", "Verified")}
               </span>
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs">
               <div className="p-2.5 rounded-xl bg-card-inner-bg/60 border border-glass-border/40">
                 <span className="text-[10px] font-bold text-secondary uppercase tracking-wider block">
-                  Vehicle Type
+                  {t("gpVehicleType", "Vehicle Type")}
                 </span>
                 <span className="font-extrabold text-primary mt-0.5 block capitalize">
-                  {lookupResult.vehicle_type === "CAR" ? "🚗 Car / SUV" : lookupResult.vehicle_type === "BIKE" ? "🏍️ Bike" : lookupResult.vehicle_type}
+                  {lookupResult.vehicle_type === "CAR" ? `🚗 ${t("gpCarSuv", "Car / SUV")}` : lookupResult.vehicle_type === "BIKE" ? `🏍️ ${t("gpBikeType", "Bike")}` : lookupResult.vehicle_type}
                 </span>
               </div>
 
               <div className="p-2.5 rounded-xl bg-card-inner-bg/60 border border-glass-border/40">
                 <span className="text-[10px] font-bold text-secondary uppercase tracking-wider block">
-                  Resident Owner
+                  {t("gpResidentOwner", "Resident Owner")}
                 </span>
                 <span className="font-bold text-primary mt-0.5 block truncate">
-                  {lookupResult.resident_name || "Resident"}
+                  {lookupResult.resident_name || t("gpResidentFallback", "Resident")}
                 </span>
               </div>
 
               <div className="p-2.5 rounded-xl bg-card-inner-bg/60 border border-glass-border/40">
                 <span className="text-[10px] font-bold text-secondary uppercase tracking-wider block">
-                  Destination Unit
+                  {t("gpDestinationUnit", "Destination Unit")}
                 </span>
                 <span className="font-bold text-accent mt-0.5 block truncate">
-                  Flat {lookupResult.flat_number || "—"}
+                  {t("gpFlatNumber", { number: lookupResult.flat_number || "—" }, "Flat {number}")}
                 </span>
               </div>
 
               <div className="p-2.5 rounded-xl bg-card-inner-bg/60 border border-glass-border/40">
                 <span className="text-[10px] font-bold text-secondary uppercase tracking-wider block">
-                  Available Slots
+                  {t("gpAvailableSlots", "Available Slots")}
                 </span>
                 <span className="font-extrabold text-emerald-400 mt-0.5 block">
-                  {availableSlots.length} available
+                  {t("gpNAvailable", { count: availableSlots.length }, "{count} available")}
                 </span>
               </div>
             </div>
 
             <div className="space-y-2.5 pt-1">
               <label className="block text-xs font-bold text-primary">
-                Assign Parking Spot <span className="text-cyan-400">*</span>
+                {t("gpAssignSpot", "Assign Parking Spot")} <span className="text-cyan-400">*</span>
               </label>
 
               <div>
@@ -406,12 +423,12 @@ function ResidentEntryModal({ isOpen, onClose, slots, onCreated, t }) {
                 >
                   <option value="">
                     {availableSlots.length === 0
-                      ? `No available slots for ${lookupResult.vehicle_type}`
-                      : `-- Select an available ${lookupResult.vehicle_type} slot --`}
+                      ? t("gpNoSlotForType", { type: lookupResult.vehicle_type }, "No available slots for {type}")
+                      : t("gpSelectTypeSlot", { type: lookupResult.vehicle_type }, "-- Select an available {type} slot --")}
                   </option>
                   {availableSlots.map((slot) => (
                     <option key={slot.id} value={slot.slot_number}>
-                      Slot {slot.slot_number} (Available)
+                      {t("gpSlotOption", { slot: slot.slot_number }, "Slot {slot} (Available)")}
                     </option>
                   ))}
                 </Select>
@@ -429,7 +446,7 @@ function ResidentEntryModal({ isOpen, onClose, slots, onCreated, t }) {
                   onClick={handleModalClose}
                   className="flex-1 py-2.5 px-4 rounded-xl text-xs font-semibold border border-glass-border bg-card-inner-bg hover:bg-white/10 text-secondary transition cursor-pointer"
                 >
-                  Cancel
+                  {t("gpCancel", "Cancel")}
                 </button>
                 <button
                   type="button"
@@ -440,12 +457,12 @@ function ResidentEntryModal({ isOpen, onClose, slots, onCreated, t }) {
                   {submitLoading ? (
                     <>
                       <Spinner size={16} />
-                      <span>Authorizing Entry...</span>
+                      <span>{t("gpAuthorizing", "Authorizing Entry...")}</span>
                     </>
                   ) : (
                     <>
                       <MdCheckCircle size={18} />
-                      <span>Authorize & Assign Slot</span>
+                      <span>{t("gpAuthorizeAssign", "Authorize & Assign Slot")}</span>
                     </>
                   )}
                 </button>
@@ -615,42 +632,42 @@ export default function GuardParking() {
 
   const handleAssign = async (id) => {
     const slot = selectedSlot[id];
-    if (!slot) { toast.error(t("gpErrSelectSlot") || "Please select a slot"); return; }
+    if (!slot) { toast.error(t("gpErrSelectSlot", "Please select a slot")); return; }
     try {
       await API.put(`/parking/${id}/assign`, { assigned_spot: slot });
       setSelectedSlot({ ...selectedSlot, [id]: "" });
-      toast.success("Parking slot assigned successfully!");
+      toast.success(t("gpAssignSuccess", "Parking slot assigned successfully!"));
       loadSlots();
     } catch (err) {
-      toast.error(err?.response?.data?.message || "Failed to assign slot");
+      toast.error(err?.response?.data?.message || t("gpAssignFail", "Failed to assign slot"));
     }
   };
 
   const handleReject = async (id) => {
     try {
       await API.put(`/parking/${id}/reject`);
-      toast.info("Request rejected");
+      toast.info(t("gpRejectInfo", "Request rejected"));
     } catch (err) {
-      toast.error(err?.response?.data?.message || "Failed to reject");
+      toast.error(err?.response?.data?.message || t("gpRejectFail", "Failed to reject"));
     }
   };
 
   const handleExit = async (id) => {
     try {
       await API.put(`/parking/${id}/exit`);
-      toast.success("Exit recorded successfully!");
+      toast.success(t("gpExitSuccess", "Exit recorded successfully!"));
       loadSlots();
     } catch (err) {
-      toast.error(err?.response?.data?.message || "Failed to mark exit");
+      toast.error(err?.response?.data?.message || t("gpExitFail", "Failed to mark exit"));
     }
   };
 
   const tabs = [
-    { key: "ALL",       label: t("gpTabAll") || "All Logs", count: counts.ALL },
-    { key: "PENDING",   label: t("gpPending") || "Pending", count: counts.PENDING },
-    { key: "APPROVED",  label: t("gpApproved") || "Approved", count: counts.APPROVED },
-    { key: "REJECTED",  label: t("gpRejected") || "Rejected", count: counts.REJECTED },
-    { key: "COMPLETED", label: t("gpCompleted") || "Exited", count: counts.COMPLETED },
+    { key: "ALL",       label: t("gpTabAll", "All Logs"), count: counts.ALL },
+    { key: "PENDING",   label: t("gpPending", "Pending"), count: counts.PENDING },
+    { key: "APPROVED",  label: t("gpApproved", "Approved"), count: counts.APPROVED },
+    { key: "REJECTED",  label: t("gpRejected", "Rejected"), count: counts.REJECTED },
+    { key: "COMPLETED", label: t("gpCompleted", "Exited"), count: counts.COMPLETED },
   ];
 
   return (
@@ -671,10 +688,10 @@ export default function GuardParking() {
           </div>
           <div>
             <h2 className="page-title text-xl font-black text-primary">
-              {t("gpTitle") || "Gate Security Parking"}
+              {t("gpTitle", "Gate Security Parking")}
             </h2>
             <p className="page-subtitle text-xs text-secondary font-medium">
-              {counts.ALL} {t("gpSubtitle") || "Visitor & Resident Vehicle Gate Logs"}
+              {counts.ALL} {t("gpSubtitle", "Visitor & Resident Vehicle Gate Logs")}
             </p>
           </div>
         </div>
@@ -682,10 +699,10 @@ export default function GuardParking() {
         <div className="flex items-center gap-2.5">
           <button
             onClick={() => setShowResidentModal(true)}
-            className="px-4 py-2.5 rounded-xl text-xs font-black text-white bg-indigo-600 hover:bg-indigo-700 shadow-md hover:shadow-indigo-500/25 transition-all flex items-center gap-2 cursor-pointer border-0 outline-none"
+            className="btn-primary text-xs shrink-0"
           >
             <MdAdd size={18} />
-            <span>+ Resident Vehicle Entry</span>
+            <span>{t("gpResEntryBtn", "Resident Vehicle Entry")}</span>
           </button>
 
           <button
@@ -694,7 +711,7 @@ export default function GuardParking() {
             className="btn-secondary flex items-center gap-1.5 text-xs font-bold px-3.5 py-2.5 rounded-xl transition-all cursor-pointer border-0 outline-none"
           >
             <MdRefresh size={18} className={refreshing ? "animate-spin text-accent" : ""} />
-            <span>{refreshing ? "Refreshing..." : "Refresh"}</span>
+            <span>{refreshing ? t("gpRefreshing", "Refreshing…") : t("gpRefresh", "Refresh")}</span>
           </button>
         </div>
       </div>
@@ -706,8 +723,8 @@ export default function GuardParking() {
           value={viewMode}
           onChange={handleViewMode}
           items={[
-            { id: "visitor",  label: "Visitor Parking" },
-            { id: "resident", label: "Resident Parking" },
+            { id: "visitor",  label: t("gpModeVisitor", "Visitor Parking") },
+            { id: "resident", label: t("gpModeResident", "Resident Parking") },
           ]}
         />
       </div>
@@ -739,7 +756,7 @@ export default function GuardParking() {
                 <MdLocalParking size={18} />
               </div>
             </div>
-            <span className="complaint-stat-label">Total Parking Logs</span>
+            <span className="complaint-stat-label">{t("gpStatTotalLogs", "Total Parking Logs")}</span>
           </div>
 
           <div
@@ -754,7 +771,7 @@ export default function GuardParking() {
                 <MdWarning size={18} />
               </div>
             </div>
-            <span className="complaint-stat-label">Pending Approval</span>
+            <span className="complaint-stat-label">{t("gpStatPending", "Pending Approval")}</span>
           </div>
 
           <div
@@ -769,7 +786,7 @@ export default function GuardParking() {
                 <MdCheckCircle size={18} />
               </div>
             </div>
-            <span className="complaint-stat-label">Currently Parked</span>
+            <span className="complaint-stat-label">{t("gpStatParked", "Currently Parked")}</span>
           </div>
 
           <div
@@ -784,7 +801,7 @@ export default function GuardParking() {
                 <MdDone size={18} />
               </div>
             </div>
-            <span className="complaint-stat-label">Exited / Completed</span>
+            <span className="complaint-stat-label">{t("gpStatExited", "Exited / Completed")}</span>
           </div>
         </div>
       )}
@@ -803,13 +820,11 @@ export default function GuardParking() {
             />
           </div>
 
-          <div className="flex items-center gap-2 self-end sm:self-auto">
-            <ToggleSearchBar
-              value={search}
-              onChange={setSearch}
-              placeholder={t("gpSearchPlaceholder") || "Search guest, vehicle..."}
-            />
-          </div>
+          <ExpandableSearch
+            value={search}
+            onChange={setSearch}
+            placeholder={t("gpSearchPlaceholder", "Search guest, vehicle...")}
+          />
         </div>
       )}
 
@@ -817,27 +832,27 @@ export default function GuardParking() {
       {initialLoad ? (
         <div className="p-12 text-center text-secondary bg-card rounded-2xl border border-glass-border">
           <Spinner size={24} />
-          <p className="mt-2 text-xs font-bold">{t("gpLoading") || "Loading parking entries..."}</p>
+          <p className="mt-2 text-xs font-bold">{t("gpLoading", "Loading parking entries...")}</p>
         </div>
       ) : requests.length === 0 ? (
         <div className="p-12 text-center bg-card rounded-2xl border border-glass-border space-y-2">
           <div className="text-3xl">{viewMode === "resident" ? "🏠" : "🅿️"}</div>
           <p className="text-sm font-extrabold text-primary">
             {viewMode === "resident"
-              ? "No Resident Parking Entries Yet"
-              : activeTab === "ALL" ? t("gpEmptyAll") || "No Parking Entries Recorded" : `No ${activeTab.toLowerCase()} requests`}
+              ? t("gpEmptyResident", "No Resident Parking Entries Yet")
+              : activeTab === "ALL" ? t("gpEmptyAll", "No Parking Entries Recorded") : t("gpEmptyRequests", { status: activeTab.toLowerCase() }, "No {status} requests")}
           </p>
           <p className="text-xs text-secondary">
             {viewMode === "resident"
-              ? "Use the '+ Resident Vehicle Entry' button above to assign a slot to a registered resident vehicle."
-              : t("gpEmptySub") || "Gate parking entries will appear here."}
+              ? t("gpEmptyResidentSub", "Use the '+ Resident Vehicle Entry' button above to assign a slot to a registered resident vehicle.")
+              : t("gpEmptySub", "Gate parking entries will appear here.")}
           </p>
           {search && (
             <button
               onClick={() => setSearch("")}
               className="text-xs font-bold text-accent cursor-pointer border-0 bg-transparent mt-2"
             >
-              Clear Search
+              {t("gpClearSearch", "Clear Search")}
             </button>
           )}
         </div>
@@ -862,7 +877,15 @@ export default function GuardParking() {
 
           <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
             <span className="text-xs text-secondary font-medium">
-              Showing <strong>{(page - 1) * limit + 1}–{Math.min(page * limit, totalItems)}</strong> of <strong>{totalItems}</strong> parking entries
+              {t(
+                "gpShowingRange",
+                {
+                  from: (page - 1) * limit + 1,
+                  to: Math.min(page * limit, totalItems),
+                  total: totalItems,
+                },
+                "Showing {from}–{to} of {total} parking entries"
+              )}
             </span>
             <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} pageSize={limit} onPageSizeChange={(s) => { limitRef.current = s; setLimit(s); setPage(1); handlePageChange(1); }} />
           </div>

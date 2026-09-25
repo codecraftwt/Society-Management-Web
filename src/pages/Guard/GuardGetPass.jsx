@@ -89,12 +89,12 @@ export default function GuardGatePass() {
       const isExit = res.data?.scan_type === "exit";
       const detail = [];
       if (res.data?.dwell_minutes) {
-        detail.push(`${t("ggAllowedTime") || "Allowed time"}: ${res.data.dwell_minutes} min`);
+        detail.push(t("ggAllowedTimeText", { count: res.data.dwell_minutes }, "Allowed time: {count} min"));
       }
       if (res.data?.dailyLimit) {
-        detail.push(`${t("ggDailyUsage") || "Daily"}: ${res.data.usesToday ?? 0}/${res.data.dailyLimit}`);
+        detail.push(t("ggDailyUsageText", { used: res.data.usesToday ?? 0, limit: res.data.dailyLimit }, "Daily: {used}/{limit}"));
       }
-      setMessage([res.data.message || "GatePass verified successfully!", ...detail].filter(Boolean).join("  •  "));
+      setMessage([res.data.message || t("ggVerifiedSuccess", "GatePass verified successfully!"), ...detail].filter(Boolean).join("  •  "));
       setSuccess(true);
       setCode("");
       setSelectedSlot(null);
@@ -138,12 +138,12 @@ export default function GuardGatePass() {
       });
       const detail = [];
       if (res.data?.dwell_minutes) {
-        detail.push(`${t("ggAllowedTime") || "Allowed time"}: ${res.data.dwell_minutes} min`);
+        detail.push(t("ggAllowedTimeText", { count: res.data.dwell_minutes }, "Allowed time: {count} min"));
       }
       if (res.data?.dailyLimit) {
-        detail.push(`${t("ggDailyUsage") || "Daily"}: ${res.data.usesToday ?? 0}/${res.data.dailyLimit}`);
+        detail.push(t("ggDailyUsageText", { used: res.data.usesToday ?? 0, limit: res.data.dailyLimit }, "Daily: {used}/{limit}"));
       }
-      setMessage([res.data.message || "Entry confirmed with assigned parking slot!", ...detail].filter(Boolean).join("  •  "));
+      setMessage([res.data.message || t("ggEntryConfirmSuccess", "Entry confirmed with assigned parking slot!"), ...detail].filter(Boolean).join("  •  "));
       setSuccess(true);
       setCode("");
       setSelectedSlot(null);
@@ -209,7 +209,7 @@ export default function GuardGatePass() {
             className="w-2 h-2 rounded-full animate-pulse"
             style={{ background: "var(--accent)" }}
           />
-          <span>Security Gate Terminal Active</span>
+          <span>{t("ggTerminalActive", "Security Gate Terminal Active")}</span>
         </div>
       </div>
 
@@ -251,7 +251,7 @@ export default function GuardGatePass() {
               {t("ggVerifyBtn") || "Enter GatePass / Visitor Code"}
             </h2>
             <p className="text-xs max-w-sm mx-auto" style={{ color: "var(--text-secondary)" }}>
-              Ask the visitor for their gate pass code: the letters GP, a dash, then 6 digits (e.g. GP-123456).
+              {t("ggAskVisitorHint", "Ask the visitor for their gate pass code: the letters GP, a dash, then 6 digits (e.g. GP-123456).")}
             </p>
           </div>
 
@@ -356,12 +356,12 @@ export default function GuardGatePass() {
                     }}
                   >
                     <MdClear size={13} />
-                    <span>Clear code</span>
+                    <span>{t("ggClearCode", "Clear code")}</span>
                   </button>
                 ) : (
                   <span className="inline-flex items-center gap-1.5 text-[11px] font-medium" style={{ color: "var(--text-tertiary)" }}>
                     <MdOutlineKeyboard size={13} />
-                    <span>Type 6 digits or paste a code</span>
+                    <span>{t("ggTypeCodeHint", "Type 6 digits or paste a code")}</span>
                   </span>
                 )}
               </div>
@@ -465,7 +465,7 @@ export default function GuardGatePass() {
                       {t("ggSelectSlot") || "Assign Parking Slot"}
                     </h3>
                     <p className="text-[11px]" style={{ color: "var(--text-secondary)" }}>
-                      This guest requires an available parking bay.
+                      {t("ggGuestParkingNeeded", "This guest requires an available parking bay.")}
                     </p>
                   </div>
                 </div>
@@ -540,7 +540,7 @@ export default function GuardGatePass() {
                           {slot.slot_number}
                         </span>
                         <span className="text-[10px] font-semibold" style={{ color: "var(--text-secondary)" }}>
-                          {slot.floor_number ? `Fl ${slot.floor_number}` : "Available"}
+                          {slot.floor_number ? t("ggFloor", { floor: slot.floor_number }, "Fl {floor}") : t("ggAvailable", "Available")}
                         </span>
                       </button>
                     );
@@ -556,7 +556,7 @@ export default function GuardGatePass() {
                 >
                   <span className="flex items-center gap-1.5">
                     <MdCheckCircle size={15} />
-                    <span>Assigned Slot: <strong className="tabular-nums">{selectedSlot}</strong></span>
+                    <span>{t("ggAssignedSlot", { slot: selectedSlot }, "Assigned Slot: {slot}")}</span>
                   </span>
                   <span className="text-[10px] uppercase font-bold tracking-wider opacity-80">
                     {vehicleType}
@@ -607,7 +607,7 @@ export default function GuardGatePass() {
             <div className="flex items-center justify-center gap-4 pt-2 text-[11px]" style={{ color: "var(--text-tertiary)" }}>
               <span className="flex items-center gap-1.5">
                 <MdOutlineDoorFront size={14} />
-                <span>Second scan marks visitor OUT</span>
+                <span>{t("ggSecondScanOut", "Second scan marks visitor OUT")}</span>
               </span>
             </div>
           )}

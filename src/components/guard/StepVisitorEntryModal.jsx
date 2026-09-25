@@ -38,6 +38,7 @@ import {
   getMobileError,
   getVehicleNumberError,
 } from "../../utils/validators";
+import GlobalButton from "../common/GlobalButton";
 
 // ─── Brand & Service Presets ───
 const CAB_BRANDS = [
@@ -407,7 +408,13 @@ export default function StepVisitorEntryModal({
         <div className="px-6 py-4.5 sm:px-7 sm:py-5 flex items-center justify-between border-b border-glass-border bg-card relative shrink-0">
           <div className="flex items-center gap-3.5">
             {/* 44-48px Rounded Squircle Blue Container */}
-            <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-blue-600 text-white flex items-center justify-center shadow-md shadow-blue-500/20 shrink-0">
+            <div
+              className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl text-white flex items-center justify-center shadow-md shrink-0"
+              style={{
+                background: "var(--accent, #2563EB)",
+                boxShadow: "0 8px 20px rgba(var(--acct-purple-rgb), 0.14)",
+              }}
+            >
               <categoryConfig.icon size={22} />
             </div>
 
@@ -416,7 +423,14 @@ export default function StepVisitorEntryModal({
                 <h3 className="text-base sm:text-lg font-bold text-primary tracking-tight">
                   {t(categoryConfig.titleKey)}
                 </h3>
-                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
+                <span
+                  className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider border"
+                  style={{
+                    color: "var(--accent, #2563EB)",
+                    borderColor: "rgba(var(--acct-purple-rgb), 0.2)",
+                    background: "transparent",
+                  }}
+                >
                   {t("sgeStepOf", { step: currentStep, total: 4 }, "STEP {step} OF {total}")}
                 </span>
               </div>
@@ -440,14 +454,15 @@ export default function StepVisitorEntryModal({
         <div className="px-7 py-3.5 bg-card-inner-bg/80 border-b border-glass-border shrink-0">
           <div className="relative flex items-center justify-between">
             {/* Background Thin Connecting Line */}
-            <div className="absolute left-5 right-5 top-1/2 -translate-y-1/2 h-0.5 bg-glass-border/80 -z-0" />
+            <div className="absolute left-5 right-5 top-1/2 -translate-y-1/2 h-0.5 bg-glass-border/80 z-0" />
 
             {/* Active Filled Progress Line */}
             <div
-              className="absolute left-5 top-1/2 -translate-y-1/2 h-0.5 bg-blue-600 -z-0 transition-all duration-300 ease-out"
+              className="absolute left-5 top-1/2 -translate-y-1/2 h-0.5 z-0 transition-all duration-300 ease-out"
               style={{
                 width: `${((currentStep - 1) / (steps.length - 1)) * 100}%`,
                 maxWidth: "calc(100% - 40px)",
+                background: "var(--accent, #2563EB)",
               }}
             />
 
@@ -468,23 +483,20 @@ export default function StepVisitorEntryModal({
                 >
                   <div
                     className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-200 ${
-                      isCurrent
-                        ? "bg-blue-600 text-white shadow-md shadow-blue-500/30 scale-105"
-                        : isDone
-                        ? "bg-emerald-600 text-white shadow-xs"
-                        : "bg-card border-2 border-glass-border text-secondary"
+                      isCurrent ? "text-white scale-105" : isDone ? "text-white" : "bg-card border-2 border-glass-border text-secondary"
                     }`}
+                    style={{
+                      background: isCurrent ? "var(--accent, #2563EB)" : isDone ? "#10B981" : undefined,
+                      boxShadow: isCurrent ? "0 6px 18px rgba(var(--acct-purple-rgb), 0.2)" : undefined,
+                    }}
                   >
                     {isDone ? <MdCheck size={16} /> : <span>{s.num}</span>}
                   </div>
                   <span
                     className={`text-[10px] mt-1 tracking-tight ${
-                      isCurrent
-                        ? "text-blue-600 dark:text-blue-400 font-bold"
-                        : isDone
-                        ? "text-primary font-semibold"
-                        : "text-secondary font-medium"
+                      isCurrent ? "font-bold" : isDone ? "text-primary font-semibold" : "text-secondary font-medium"
                     }`}
+                    style={{ color: isCurrent ? "var(--accent, #2563EB)" : undefined }}
                   >
                     {s.label}
                   </span>
@@ -526,16 +538,13 @@ export default function StepVisitorEntryModal({
                             setSelectedBrand(b.id);
                             if (errors.brand) setErrors((prev) => ({ ...prev, brand: null }));
                           }}
-                          className={`p-2.5 rounded-xl border text-center font-bold text-xs transition-all duration-150 flex items-center justify-center gap-2 cursor-pointer ${
-                            isSel
-                              ? "border-blue-600 bg-blue-500/10 text-blue-600 dark:text-blue-400 shadow-xs"
-                              : "border-glass-border hover:border-gray-300 dark:hover:border-gray-600 bg-card text-primary"
-                          }`}
+                          className={`p-2.5 rounded-xl border text-center font-bold text-xs transition-all duration-150 flex items-center justify-center gap-2 cursor-pointer ${isSel ? "shadow-xs" : "border-glass-border hover:border-gray-300 dark:hover:border-gray-600 bg-card text-primary"}`}
+                          style={isSel ? { borderColor: "var(--accent, #2563EB)", color: "var(--accent, #2563EB)", background: "transparent" } : {}}
                         >
                           <span
                             className="w-5 h-5 rounded-md flex items-center justify-center text-[10px] font-black shrink-0"
                             style={{
-                              backgroundColor: isSel ? "#2563EB" : "rgba(100, 116, 139, 0.15)",
+                              backgroundColor: isSel ? "var(--accent, #2563EB)" : "rgba(100, 116, 139, 0.15)",
                               color: isSel ? "#FFFFFF" : "var(--text-primary)",
                             }}
                           >
@@ -683,11 +692,8 @@ export default function StepVisitorEntryModal({
                             type="button"
                             key={vt.type}
                             onClick={() => setVehicleType(vt.type)}
-                            className={`flex-1 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
-                              isVtSel
-                                ? "bg-blue-600 text-white shadow-xs"
-                                : "text-secondary hover:text-primary"
-                            }`}
+                          className={`flex-1 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${isVtSel ? "text-white shadow-xs" : "text-secondary hover:text-primary"}`}
+                          style={isVtSel ? { background: "var(--accent, #2563EB)", color: "#fff" } : {}}
                           >
                             <vt.icon size={16} />
                             <span>{vt.label}</span>
@@ -742,14 +748,24 @@ export default function StepVisitorEntryModal({
                     {t("sgeSelectBuildingSub", "Choose the society block the visitor is arriving for")}
                   </p>
                 </div>
-                <span className="text-[11px] font-bold text-blue-600 dark:text-blue-400 bg-blue-500/10 border border-blue-500/20 px-2.5 py-0.5 rounded-full">
+                <span
+                  className="text-[11px] font-bold px-2.5 py-0.5 rounded-full border"
+                    style={{
+                      color: "var(--accent, #2563EB)",
+                      borderColor: "rgba(var(--acct-purple-rgb), 0.2)",
+                      background: "transparent",
+                    }}
+                >
                   {t("sgeBlockCount", { count: blocks.length }, "{count} Blocks")}
                 </span>
               </div>
 
               {loadingData ? (
                 <div className="py-12 text-center text-secondary space-y-2">
-                  <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto" />
+                  <div
+                    className="w-6 h-6 border-2 border-t-transparent rounded-full animate-spin mx-auto"
+                    style={{ borderColor: "var(--accent, #2563EB)", borderTopColor: "transparent" }}
+                  />
                   <p className="text-xs font-medium">{t("sgeLoadingBlocks", "Loading society blocks...")}</p>
                 </div>
               ) : blocks.length === 0 ? (
@@ -764,18 +780,28 @@ export default function StepVisitorEntryModal({
                       <div
                         key={b.id}
                         onClick={() => handleSelectBlock(b)}
-                        className={`group p-3.5 rounded-2xl border transition-all duration-150 cursor-pointer flex items-center justify-between ${
+                        className={`group p-3.5 rounded-2xl border transition-all duration-150 cursor-pointer flex items-center justify-between`}
+                        style={
                           isSelected
-                            ? "border-blue-600 bg-blue-500/10 shadow-xs"
-                            : "border-glass-border hover:border-blue-500/50 bg-card hover:shadow-xs"
-                        }`}
+                            ? { borderColor: "var(--accent, #2563EB)", background: "var(--accent-soft, rgba(99,102,241,0.08))", boxShadow: "var(--shadow-sm)" }
+                            : {}
+                        }
                       >
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-600 flex items-center justify-center shrink-0">
+                          <div
+                            className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                            style={{
+                              background: isSelected ? "var(--accent-soft, rgba(99,102,241,0.08))" : "rgba(99,102,241,0.06)",
+                              color: isSelected ? "var(--accent, #2563EB)" : "var(--text-primary)",
+                            }}
+                          >
                             <MdApartment size={20} />
                           </div>
                           <div>
-                            <h5 className="text-xs font-bold text-primary group-hover:text-blue-600 transition-colors">
+                            <h5
+                              className="text-xs font-bold transition-colors"
+                              style={{ color: isSelected ? "var(--accent, #2563EB)" : undefined }}
+                            >
                               {b.name}
                             </h5>
                             <p className="text-[11px] text-secondary font-medium mt-0.5">
@@ -783,7 +809,7 @@ export default function StepVisitorEntryModal({
                             </p>
                           </div>
                         </div>
-                        <div className="w-6 h-6 rounded-lg bg-card-inner-bg border border-glass-border flex items-center justify-center text-secondary group-hover:text-blue-600 transition-all">
+                          <div className="w-6 h-6 rounded-lg bg-card-inner-bg border border-glass-border flex items-center justify-center text-secondary transition-all">
                           <MdArrowForward size={14} />
                         </div>
                       </div>
@@ -801,7 +827,13 @@ export default function StepVisitorEntryModal({
                 <div>
                   <h4 className="text-sm font-bold text-primary flex items-center gap-1.5">
                     <span>{t("sgeFlatsIn", { block: selectedBlock?.name }, "Flats in {block}")}</span>
-                    <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-blue-500/10 text-blue-600 dark:text-blue-400">
+                    <span
+                      className="px-2 py-0.5 rounded-md text-[10px] font-bold"
+                    style={{
+                      background: "var(--accent-soft, rgba(99,102,241,0.08))",
+                      color: "var(--accent, #2563EB)",
+                    }}
+                    >
                       {filteredFlats.length} Units
                     </span>
                   </h4>
@@ -831,11 +863,8 @@ export default function StepVisitorEntryModal({
                       key={fl.id}
                       type="button"
                       onClick={() => setSelectedFloorId(fl.id)}
-                      className={`px-3 py-1 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
-                        selectedFloorId === fl.id
-                          ? "bg-blue-600 text-white shadow-xs"
-                          : "bg-card-inner-bg border border-glass-border text-secondary hover:text-primary"
-                      }`}
+                        className={`px-3 py-1 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${selectedFloorId === fl.id ? "text-white shadow-xs" : "bg-card-inner-bg border border-glass-border text-secondary hover:text-primary"}`}
+                      style={selectedFloorId === fl.id ? { background: "var(--accent, #2563EB)", color: "#fff" } : {}}
                     >
                       Floor {fl.floor_number}
                     </button>
@@ -853,21 +882,14 @@ export default function StepVisitorEntryModal({
                       type="button"
                       key={flat.id}
                       onClick={() => handleSelectFlat(flat)}
-                      className={`p-2.5 rounded-2xl border text-center transition-all duration-150 flex flex-col items-center justify-center gap-0.5 cursor-pointer ${
-                        isSel
-                          ? "border-blue-600 bg-blue-600 text-white shadow-xs"
-                          : "border-glass-border bg-card-inner-bg text-primary hover:border-blue-500/50"
-                      }`}
+                      className={`p-2.5 rounded-2xl border text-center transition-all duration-150 flex flex-col items-center justify-center gap-0.5 cursor-pointer ${isSel ? "text-white shadow-xs" : "border-glass-border bg-card-inner-bg text-primary hover:border-blue-500/50"}`}
+                      style={isSel ? { borderColor: "var(--accent, #2563EB)", background: "var(--accent, #2563EB)", color: "#fff" } : {}}
                     >
-                      <MdMeetingRoom size={18} className={isSel ? "text-white" : "text-blue-600"} />
+                      <MdMeetingRoom size={18} style={{ color: isSel ? "#fff" : "var(--accent, #2563EB)" }} />
                       <span className="text-xs font-bold tracking-tight">
                         {flat.flat_number}
                       </span>
-                      <span
-                        className={`text-[9px] font-medium truncate max-w-full block ${
-                          isSel ? "text-white/90" : "text-secondary"
-                        }`}
-                      >
+                      <span className={`text-[9px] font-medium truncate max-w-full block ${isSel ? "text-white/90" : "text-secondary"}`}>
                         {residentName}
                       </span>
                     </button>
@@ -906,7 +928,10 @@ export default function StepVisitorEntryModal({
                       {formattedVisitorName}
                     </span>
                   </div>
-                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-blue-600 text-white">
+                  <span
+                    className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider"
+                    style={{ background: "var(--accent, #2563EB)", color: "#fff" }}
+                  >
                     {purpose.toUpperCase()}
                   </span>
                 </div>
@@ -917,7 +942,7 @@ export default function StepVisitorEntryModal({
                       {t("sgeDestinationFlat", "Destination Flat")}
                     </span>
                     <span className="text-xs font-bold text-primary flex items-center gap-1 mt-0.5">
-                      <MdMeetingRoom className="text-blue-600" />
+                      <MdMeetingRoom style={{ color: "var(--accent, #2563EB)" }} />
                       {selectedBlock?.name} • Flat {selectedFlat?.flat_number}
                     </span>
                   </div>
@@ -926,7 +951,7 @@ export default function StepVisitorEntryModal({
                       {t("sgeContactMobile", "Contact Mobile")}
                     </span>
                     <span className="text-xs font-mono font-bold text-primary flex items-center gap-1 mt-0.5">
-                      <MdPhone className="text-blue-600" />
+                      <MdPhone style={{ color: "var(--accent, #2563EB)" }} />
                       {mobile || t("sgeNotProvided", "Not Provided")}
                     </span>
                   </div>
@@ -957,52 +982,48 @@ export default function StepVisitorEntryModal({
         {/* ── 4. FOOTER CONTROLS ── */}
         <div className="px-6 py-4 bg-card border-t border-glass-border flex items-center justify-between gap-3 shrink-0">
           {currentStep > 1 ? (
-            <button
-              type="button"
+            <GlobalButton
+              variant="back"
+              size="sm"
+              icon={MdArrowBack}
               onClick={() => setCurrentStep((p) => p - 1)}
-              className="h-11 px-5 rounded-full text-xs font-bold border border-glass-border text-secondary hover:text-primary transition flex items-center gap-1.5 hover:bg-card-inner-bg active:scale-98"
             >
-              <MdArrowBack size={16} /> {t("sgeBack", "Back")}
-            </button>
+              {t("sgeBack", "Back")}
+            </GlobalButton>
           ) : (
             <div />
           )}
 
           <div className="flex items-center gap-2.5">
-            <button
-              type="button"
-              onClick={onClose}
-              className="h-11 px-5 rounded-full text-xs font-bold text-secondary hover:text-primary hover:bg-card-inner-bg transition active:scale-98"
-            >
+            <GlobalButton variant="cancel" size="sm" onClick={onClose}>
               {t("cancel", "Cancel")}
-            </button>
+            </GlobalButton>
 
             {currentStep === 1 && (
-              <button
-                type="button"
+                <GlobalButton
+                variant="add"
+                size="md"
+                icon={MdArrowForward}
+                iconPosition="right"
                 onClick={handleNextFromStep1}
-                className="h-11 px-7 rounded-full text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-500/20 transition-all flex items-center gap-1.5 active:scale-98"
+                style={{ background: "var(--accent)" }}
+                borderDraw
               >
-                <span>{t("sgeContinue", "Continue")}</span>
-                <MdArrowForward size={16} />
-              </button>
+                {t("sgeContinue", "Continue")}
+              </GlobalButton>
             )}
 
             {currentStep === 4 && (
-              <button
-                type="button"
-                disabled={submitting}
-                onClick={handleSubmitEntry}
-                className="h-11 px-7 rounded-full text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-500/20 transition-all flex items-center gap-1.5 disabled:opacity-50 active:scale-98"
-              >
-                {submitting ? (
-                  t("sgeRecording", "Recording...")
-                ) : (
-                  <>
-                    <MdCheckCircle size={18} /> {t("sgeConfirmAllow", "CONFIRM & ALLOW ENTRY")}
-                  </>
-                )}
-              </button>
+            <GlobalButton
+              variant="confirm"
+              size="md"
+              icon={MdCheckCircle}
+              onClick={handleSubmitEntry}
+              disabled={submitting}
+              borderDraw
+            >
+              {submitting ? t("sgeRecording", "Recording...") : t("sgeConfirmAllow", "CONFIRM & ALLOW ENTRY")}
+            </GlobalButton>
             )}
           </div>
         </div>
