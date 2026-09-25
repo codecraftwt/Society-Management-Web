@@ -26,18 +26,20 @@ import { useLang } from "../../context/LanguageContext";
 import API from "../../services/api";
 
 // ── Colour palettes ──────────────────────────────────────────────────────────
+// Uses the project's brand accent colours (role-theme.css): purple, teal,
+// cyan, coral, violet — same tones used on cards throughout the app.
 const DARK_PALETTE = {
   text: "#E2E8F0",
   textMuted: "#94A3B8",
   grid: "rgba(255,255,255,0.06)",
   tooltip: "#1E293B",
   tooltipBorder: "rgba(255,255,255,0.08)",
-  gold: "#FBBF24",
-  emerald: "#34D399",
-  rose: "#F472B6",
-  sky: "#38BDF8",
-  lavender: "#A78BFA",
-  coral: "#FB7185",
+  purple: "#a05aff",
+  teal: "#1bcfb4",
+  cyan: "#4bcbeb",
+  coral: "#fe9496",
+  violet: "#9e58ff",
+  blue: "#0d6efd",
 };
 const LIGHT_PALETTE = {
   text: "#374151",
@@ -45,16 +47,16 @@ const LIGHT_PALETTE = {
   grid: "rgba(0,0,0,0.06)",
   tooltip: "#FFFFFF",
   tooltipBorder: "#E5E7EB",
-  gold: "#D97706",
-  emerald: "#059669",
-  rose: "#DB2777",
-  sky: "#0284C7",
-  lavender: "#7C3AED",
-  coral: "#E11D48",
+  purple: "#a05aff",
+  teal: "#1bcfb4",
+  cyan: "#4bcbeb",
+  coral: "#fe9496",
+  violet: "#9e58ff",
+  blue: "#0d6efd",
 };
 
-const DONUT_COLORS_DARK = ["#FBBF24", "#38BDF8", "#A78BFA", "#34D399", "#F472B6", "#FB7185"];
-const DONUT_COLORS_LIGHT = ["#D97706", "#0284C7", "#7C3AED", "#059669", "#DB2777", "#E11D48"];
+const DONUT_COLORS_DARK = ["#a05aff", "#4bcbeb", "#1bcfb4", "#fe9496", "#9e58ff", "#0d6efd"];
+const DONUT_COLORS_LIGHT = ["#a05aff", "#4bcbeb", "#1bcfb4", "#fe9496", "#9e58ff", "#0d6efd"];
 
 // ── Tooltip style ────────────────────────────────────────────────────────────
 function buildTooltipStyle(p) {
@@ -193,9 +195,9 @@ export default function DashboardAnalytics({ societies, loading, onDataLoaded })
       .sort((a, b) => b.residents - a.residents || a.name.localeCompare(b.name));
 
     const compositionData = [
-      { name: t("saAnOwners", "Owners"), value: totalOwners, color: p.gold },
-      { name: t("saAnTenants", "Tenants"), value: totalTenants, color: p.rose },
-      ...(totalOther > 0 ? [{ name: t("saAnUnclassified", "Unclassified"), value: totalOther, color: p.sky }] : []),
+      { name: t("saAnOwners", "Owners"), value: totalOwners, color: p.purple },
+      { name: t("saAnTenants", "Tenants"), value: totalTenants, color: p.violet },
+      ...(totalOther > 0 ? [{ name: t("saAnUnclassified", "Unclassified"), value: totalOther, color: p.cyan }] : []),
     ];
 
     const totalAssigned = (societies || []).filter((s) => !!s.societyAdmins).length;
@@ -231,7 +233,7 @@ export default function DashboardAnalytics({ societies, loading, onDataLoaded })
       totalAssigned,
       totalUnassigned,
     };
-  }, [societies, residents, p.gold, p.rose, p.sky, t]);
+  }, [societies, residents, p.purple, p.violet, p.cyan, t]);
 
   // Report live totals to parent KPI cards
   useEffect(() => {
@@ -290,8 +292,8 @@ export default function DashboardAnalytics({ societies, loading, onDataLoaded })
               <XAxis dataKey="name" tick={{ fill: p.textMuted, fontSize: 10 }} tickFormatter={shortName}
                 axisLine={false} tickLine={false} interval={0} angle={-18} textAnchor="end" height={52} />
               <YAxis tick={{ fill: p.textMuted, fontSize: 11 }} axisLine={false} tickLine={false} allowDecimals={false} />
-              <Tooltip contentStyle={ttStyle} cursor={{ fill: "rgba(251,191,36,0.10)" }} />
-              <Bar dataKey="residents" name={t("saAnResidents", "Residents")} fill={p.gold} radius={[6, 6, 0, 0]} maxBarSize={46}>
+              <Tooltip contentStyle={ttStyle} cursor={{ fill: "rgba(160,90,255,0.10)" }} />
+              <Bar dataKey="residents" name={t("saAnResidents", "Residents")} fill={p.purple} radius={[6, 6, 0, 0]} maxBarSize={46}>
                 <LabelList dataKey="residents" position="top" style={{ fill: p.text, fontSize: 10, fontWeight: 700 }} />
               </Bar>
             </BarChart>
@@ -346,10 +348,10 @@ export default function DashboardAnalytics({ societies, loading, onDataLoaded })
               <XAxis dataKey="name" tick={{ fill: p.textMuted, fontSize: 10 }} tickFormatter={shortName}
                 axisLine={false} tickLine={false} interval={0} angle={-18} textAnchor="end" height={52} />
               <YAxis tick={{ fill: p.textMuted, fontSize: 11 }} axisLine={false} tickLine={false} allowDecimals={false} />
-              <Tooltip contentStyle={ttStyle} cursor={{ fill: "rgba(244,114,182,0.10)" }} />
+              <Tooltip contentStyle={ttStyle} cursor={{ fill: "rgba(158,88,255,0.10)" }} />
               <Legend wrapperStyle={{ color: p.text, fontSize: 12 }} />
-              <Bar dataKey="owners" name={t("saAnOwners", "Owners")} stackId="a" fill={p.sky} maxBarSize={44} />
-              <Bar dataKey="tenants" name={t("saAnTenants", "Tenants")} stackId="a" fill={p.rose} radius={[6, 6, 0, 0]} maxBarSize={44} />
+              <Bar dataKey="owners" name={t("saAnOwners", "Owners")} stackId="a" fill={p.teal} maxBarSize={44} />
+              <Bar dataKey="tenants" name={t("saAnTenants", "Tenants")} stackId="a" fill={p.violet} radius={[6, 6, 0, 0]} maxBarSize={44} />
             </BarChart>
           </ResponsiveContainer>
         ) : <NoData message={t("saAnNoResData", "No resident data yet.")} />}
@@ -395,8 +397,8 @@ export default function DashboardAnalytics({ societies, loading, onDataLoaded })
               <CartesianGrid stroke={p.grid} strokeDasharray="3 3" horizontal={false} />
               <XAxis type="number" tick={{ fill: p.textMuted, fontSize: 11 }} axisLine={false} tickLine={false} allowDecimals={false} />
               <YAxis type="category" dataKey="name" tick={{ fill: p.textMuted, fontSize: 11 }} axisLine={false} tickLine={false} width={86} />
-              <Tooltip contentStyle={ttStyle} cursor={{ fill: "rgba(52,211,153,0.10)" }} />
-              <Bar dataKey="Residents" name={t("saAnResidents", "Residents")} fill={p.emerald} radius={[0, 6, 6, 0]} maxBarSize={22} />
+              <Tooltip contentStyle={ttStyle} cursor={{ fill: "rgba(75,203,235,0.10)" }} />
+              <Bar dataKey="Residents" name={t("saAnResidents", "Residents")} fill={p.cyan} radius={[0, 6, 6, 0]} maxBarSize={22} />
             </BarChart>
           </ResponsiveContainer>
         ) : <NoData message={t("saAnNoResData", "No resident data yet.")} />}
@@ -419,7 +421,7 @@ export default function DashboardAnalytics({ societies, loading, onDataLoaded })
                     className="sa-top-bar-fill"
                     style={{
                       width: `${topFive[0].residents ? Math.round((s.residents / topFive[0].residents) * 100) : 0}%`,
-                      background: [p.gold, p.rose, p.emerald, p.sky, p.lavender][i],
+                      background: [p.purple, p.coral, p.teal, p.cyan, p.violet][i],
                     }}
                   />
                 </div>
