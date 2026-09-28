@@ -176,9 +176,10 @@ function GuardLayoutInner() {
       <Sidebar
         menu={menu}
         brandTitle={
-          <>
-            {t("guardPanelLabel") || "Guard"}<span className="text-accent">{t("panelSuffix") || " Panel"}</span>
-          </>
+          <span className="text-accent">
+            {t("guardPanelLabel") || "Guard"}
+            {t("panelSuffix") || " Panel"}
+          </span>
         }
         brandSubtitle={t("sbViewGuard")}
         base="/guard"
@@ -187,8 +188,8 @@ function GuardLayoutInner() {
       {/* ── MAIN CONTENT ── */}
       <div className="main-content-layout min-w-0">
         <AppHeader
-          title={t("guardDashboardTitle")}
-          subtitle={t("guardDashboardSubtitle")}
+          title={null}
+          subtitle={null}
           actions={
             <button
               onClick={() => setShowEmergency(true)}

@@ -217,9 +217,10 @@ function AccountantLayoutInner() {
       <Sidebar
         menu={visibleMenu}
         brandTitle={
-          <>
-            {t("accountantPanelLabel") || "Accountant"}<span className="text-accent">{t("panelSuffix") || " Panel"}</span>
-          </>
+          <span className="text-accent">
+            {t("accountantPanelLabel") || "Accountant"}
+            {t("panelSuffix") || " Panel"}
+          </span>
         }
         brandSubtitle={t("sbViewAccountant")}
         base={base}
@@ -230,7 +231,8 @@ function AccountantLayoutInner() {
       {/* ── MAIN CONTENT ── */}
       <div className="main-content-layout min-w-0">
         <AppHeader
-          title={t("accountantDashboardTitle")}
+          title={null}
+          subtitle={null}
           actions={
             <div className="flex items-center gap-2">
               <RoleSwitcher />
@@ -239,11 +241,11 @@ function AccountantLayoutInner() {
               {hasPermission(user, "emergency", "trigger") && (
                 <button
                   onClick={() => setShowSOS(true)}
-                  className="flex items-center gap-1.5 rounded-xl bg-linear-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 shadow-md shadow-red-500/30 transition px-3 h-9 text-white text-xs font-bold cursor-pointer"
+                  className="flex items-center justify-center sm:justify-start gap-1.5 rounded-xl bg-linear-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 shadow-md shadow-red-500/30 transition w-9 sm:w-auto px-0 sm:px-3 h-9 text-white text-xs font-bold cursor-pointer"
                   title="Raise an SOS alert to the whole society"
                 >
                   <MdEmergency size={15} />
-                  <span>SOS</span>
+                  <span className="hidden sm:inline">SOS</span>
                 </button>
               )}
 

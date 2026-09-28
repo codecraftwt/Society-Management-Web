@@ -2556,6 +2556,7 @@ const mr = {
   parkShowingTotal:          "एकूण {total} पैकी {shown} दाखवत आहे",
   parkNoSlotsMatch:          "“{search}” शी जुळणारे स्लॉट नाहीत",
   parkNoSlotsFilter:         "या फिल्टरसाठी स्लॉट सापडले नाहीत",
+  parkNoMatchInFilter:       "“{filter}” अंतर्गत स्लॉट सापडले नाहीत",
   parkAdjustFilters:         "शोध किंवा वाहन प्रकार फिल्टर बदलून पहा.",
   parkSlotValue:             "स्लॉट {slot}",
   parkFourWheeler:           "चारचाकी (कार)",

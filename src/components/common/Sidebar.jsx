@@ -3,7 +3,6 @@ import { Link, useLocation } from "react-router-dom";
 import { createPortal } from "react-dom";
 import {
   MdExpandMore,
-  MdClose,
 } from "react-icons/md";
 import { FaBuilding } from "react-icons/fa";
 import {
@@ -203,24 +202,6 @@ export default function Sidebar({
             title={t("sbCollapse")}
           >
             <TbLayoutSidebarLeftCollapseFilled size={20} />
-          </button>
-        )}
-
-        {isMobileDrawer && (
-          <button
-            type="button"
-            onClick={closeMobile}
-            className="flex items-center justify-center w-10 h-10 rounded-xl shrink-0 transition-colors hover:bg-white/5 active:scale-95"
-            style={{
-              background: "var(--card-inner-bg, rgba(255,255,255,0.08))",
-              border: "1.5px solid var(--glass-border, rgba(255,255,255,0.18))",
-              color: "var(--text-primary, #fff)",
-              zIndex: 2,
-            }}
-            aria-label={t("sbCloseMenu")}
-            title={t("sbCloseMenu")}
-          >
-            <MdClose size={20} />
           </button>
         )}
       </div>

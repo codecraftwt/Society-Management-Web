@@ -1,4 +1,4 @@
-import { lazy, Suspense } from "react";
+import { Suspense } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -33,7 +33,6 @@ import Flats from "./pages/SuperAdmin/Flats";
 import Blocks from "./pages/SuperAdmin/Blocks";
 import SuperAdminLayout from "./pages/SuperAdmin/SuperAdminLayout";
 import SuperAdminReports from "./pages/SuperAdmin/Reports";
-const SuperAdminParking = lazy(() => import("./pages/SuperAdmin/SuperAdminParking"));
 import SuperAdminVisitorReport from "./pages/SuperAdmin/reports/VisitorReport";
 import SuperAdminComplaintReport from "./pages/SuperAdmin/reports/ComplaintReport";
 import SuperAdminFinancialReport from "./pages/SuperAdmin/reports/FinancialReport";
@@ -186,7 +185,7 @@ function App() {
             <Route path="reports/visitors" element={<SuperAdminVisitorReport />} />
             <Route path="reports/financial" element={<SuperAdminFinancialReport />} />
             <Route path="superadmin-reports" element={<SuperAdminReports />} />
-            <Route path="parking" element={<SuperAdminParking />} />
+            <Route path="parking" element={<AssignParkingSlot />} />
             <Route path="accounting" element={<Accounting />} />
             <Route path="accountant" element={<Accountant />} />
             <Route path="payments" element={<SocietyPayments />} />

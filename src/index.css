@@ -12312,6 +12312,10 @@ html.light .cpw-tip-row {
 
 .rs-trigger-label { font-size: 12px; }
 
+/* Desktop: show the role label, keep the icon hidden */
+.rs-trigger-text { display: inline; }
+.rs-trigger-icon { display: none; }
+
 .rs-trigger-arrow {
   font-size: 9px;
   color: var(--text-muted);
@@ -12482,11 +12486,31 @@ html.light .cpw-tip-row {
 
 /* â”€â”€ Mobile responsive â”€â”€ */
 @media (max-width: 640px) {
-  .rs-trigger { padding: 6px 9px; gap: 5px; }
-  .rs-trigger-label { display: none; }
-  .rs-dropdown { min-width: 210px; }
+  .rs-trigger { padding: 0 10px; gap: 5px; justify-content: center; }
+  /* Swap the role label for its icon — must target them separately,
+     otherwise both spans get display:none and the trigger looks empty. */
+  .rs-trigger-text { display: none; }
+  .rs-trigger-icon { display: inline; }
+  .rs-dropdown {
+    /* The trigger sits left of the SOS/alert buttons, so a right-anchored
+       panel runs off the left edge and gets clipped by the app shell's
+       overflow-hidden. Anchor to the viewport on small screens instead. */
+    position: fixed;
+    top: 62px;
+    left: 12px;
+    right: 12px;
+    width: auto;
+    min-width: 0;
+    max-height: calc(100vh - 78px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    z-index: 400;
+  }
   .rs-option-name { font-size: 12px; }
   .rs-option-desc { display: none; }
+  /* Accountant navbar uses the shared Select-based switcher; keep it
+     from pushing the SOS / notification buttons off screen. */
+  .role-switcher { max-width: 148px; min-width: 0; }
 }
 
 
@@ -18473,6 +18497,7 @@ html.light .sel-menu-scroll::-webkit-scrollbar-thumb {
    ==== */
 .as-tabs-bar {
   display: flex;
+  position: relative;
   gap: 6px;
   padding: 6px;
   border-radius: 16px;
@@ -18482,7 +18507,26 @@ html.light .sel-menu-scroll::-webkit-scrollbar-thumb {
   max-width: 100%;
   overflow-x: auto;
 }
+
+/* Sliding pill that travels between tabs */
+.as-tabs-indicator {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  height: calc(100% - 12px);
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%);
+  box-shadow: 0 6px 18px -8px var(--accent-soft);
+  transition: left 0.34s cubic-bezier(0.22, 1, 0.36, 1),
+    width 0.34s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.2s ease;
+  pointer-events: none;
+  z-index: 0;
+}
+
 .as-tab {
+  position: relative;
+  z-index: 1;
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -18494,22 +18538,44 @@ html.light .sel-menu-scroll::-webkit-scrollbar-thumb {
   font-size: 0.8rem;
   font-weight: 700;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: color 0.24s ease, border-color 0.24s ease;
   white-space: nowrap;
 }
 .as-tab:hover { color: var(--text-primary); }
 .as-tab.active {
-  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
   color: #fff;
-  box-shadow: 0 6px 18px -8px rgba(99,102,241,0.6);
 }
 html.light .as-tab.active {
-  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
   color: #fff;
 }
 
 .as-panel {
   animation: rp-fade 0.25s ease;
+}
+
+/* Direction-aware panel slide */
+@keyframes as-slide-in-right {
+  from { opacity: 0; transform: translateX(28px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes as-slide-in-left {
+  from { opacity: 0; transform: translateX(-28px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+.as-panel--right {
+  animation: as-slide-in-right 0.36s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.as-panel--left {
+  animation: as-slide-in-left 0.36s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .as-tabs-indicator,
+  .as-panel--right,
+  .as-panel--left {
+    animation: none;
+    transition: none;
+  }
 }
 
 /* ==========================================================================

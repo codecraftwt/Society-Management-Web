@@ -76,10 +76,6 @@ function ResidentLayoutInner() {
     ? t("familyPanel") || "Family Panel"
     : t("residentPanel") || "Resident Panel";
 
-  const spaceIdx = panelLabel.indexOf(" ");
-  const word1 = spaceIdx > -1 ? panelLabel.slice(0, spaceIdx) : panelLabel;
-  const word2 = spaceIdx > -1 ? panelLabel.slice(spaceIdx) : "";
-
   /* Menus with non-breaking grouping metadata */
   const residentMenu = [
     {
@@ -281,10 +277,10 @@ function ResidentLayoutInner() {
           title="Switch role"
         >
           <span className="rs-active-dot" />
-          <span className="rs-trigger-label hidden sm:inline">
+          <span className="rs-trigger-label rs-trigger-text">
             {ROLE_META[user.activeRole]?.label ?? user.activeRole}
           </span>
-          <span className="rs-trigger-label sm:hidden">
+          <span className="rs-trigger-label rs-trigger-icon">
             {ROLE_META[user.activeRole]?.icon ?? "👤"}
           </span>
           <span className="rs-trigger-arrow">▼</span>
@@ -375,11 +371,7 @@ function ResidentLayoutInner() {
       {/* ── REUSABLE SIDEBAR ── */}
       <Sidebar
         menu={menu}
-        brandTitle={
-          <>
-            {word1}<span className="text-accent">{word2}</span>
-          </>
-        }
+        brandTitle={<span className="text-accent">{panelLabel}</span>}
         brandSubtitle={user?.society_name || (isFamilyMember ? t("sbViewFamily") : t("sbViewResident"))}
         base={base}
         drawerExtra={mobileRoleSwitcher}
@@ -388,8 +380,8 @@ function ResidentLayoutInner() {
       {/* ── MAIN CONTENT ── */}
       <div className="main-content-layout min-w-0">
         <AppHeader
-          title={panelLabel}
-          subtitle={user?.name ? `${t("welcome")}, ${user.name}` : null}
+          title={null}
+          subtitle={null}
           societyName={collapsed ? user?.society_name : null}
           actions={
             <>
@@ -410,11 +402,11 @@ function ResidentLayoutInner() {
               {/* SOS button */}
               <button
                 onClick={() => setShowSOS(true)}
-                className="flex items-center gap-1.5 rounded-xl bg-linear-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 shadow-md shadow-red-500/30 transition px-3 h-9 text-white text-xs font-bold cursor-pointer"
+                className="flex items-center justify-center sm:justify-start gap-1.5 rounded-xl bg-linear-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 shadow-md shadow-red-500/30 transition w-9 sm:w-auto px-0 sm:px-3 h-9 text-white text-xs font-bold cursor-pointer"
                 title="Raise an SOS alert to the whole society"
               >
                 <MdEmergency size={15} />
-                <span>SOS</span>
+                <span className="hidden sm:inline">SOS</span>
               </button>
 
               {alerts.length > 0 && (

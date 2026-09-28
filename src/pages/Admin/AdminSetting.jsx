@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useCallback, useLayoutEffect, useMemo } from "react";
 import API from "../../services/api";
 import { toast } from "react-toastify";
 import { useLang } from "../../context/LanguageContext";
@@ -91,6 +91,58 @@ export default function Settings() {
   };
 
   const [tab, setTab] = useState("password");
+  const [tabDir, setTabDir] = useState("right");
+  const tabsBarRef = useRef(null);
+  const tabRefs = useRef([]);
+  const [indicator, setIndicator] = useState({ left: 0, width: 0 });
+
+  const tabList = useMemo(() => {
+    const list = [
+      { key: "password", label: t("cpwChangePassword"), icon: <MdLock size={15} /> },
+    ];
+    if (isAdminOrSocietyAdmin) {
+      list.push({
+        key: "roles",
+        label: "Role & Section Permissions",
+        icon: <MdShield size={15} />,
+      });
+    }
+    return list;
+  }, [isAdminOrSocietyAdmin, t]);
+
+  const updateIndicator = useCallback(() => {
+    const bar = tabsBarRef.current;
+    if (!bar) return;
+    const index = tabList.findIndex((item) => item.key === tab);
+    const el = tabRefs.current[index];
+    if (!el) return;
+    setIndicator({ left: el.offsetLeft, width: el.offsetWidth });
+  }, [tabList, tab]);
+
+  useLayoutEffect(() => {
+    updateIndicator();
+  }, [updateIndicator]);
+
+  useLayoutEffect(() => {
+    const bar = tabsBarRef.current;
+    if (!bar || typeof ResizeObserver === "undefined") return undefined;
+    const ro = new ResizeObserver(() => updateIndicator());
+    ro.observe(bar);
+    tabRefs.current.forEach((node) => node && ro.observe(node));
+    window.addEventListener("resize", updateIndicator);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", updateIndicator);
+    };
+  }, [updateIndicator, tabList.length]);
+
+  const handleTabClick = (key) => {
+    if (key === tab) return;
+    const from = tabList.findIndex((item) => item.key === tab);
+    const to = tabList.findIndex((item) => item.key === key);
+    setTabDir(to > from ? "right" : "left");
+    setTab(key);
+  };
 
   const [cur,     setCur]     = useState("");
   const [np,      setNp]      = useState("");
@@ -178,30 +230,37 @@ export default function Settings() {
       </div>
 
       {/* ── Tabs ── */}
-      <div className="as-tabs-bar">
-        <button
-          type="button"
-          className={`as-tab${tab === "password" ? " active" : ""}`}
-          onClick={() => setTab("password")}
-        >
-          <MdLock size={15} />
-          {t("cpwChangePassword")}
-        </button>
-        {isAdminOrSocietyAdmin && (
+      <div className="as-tabs-bar" ref={tabsBarRef} role="tablist">
+        <span
+          className="as-tabs-indicator"
+          aria-hidden="true"
+          style={{
+            left: indicator.left,
+            width: indicator.width,
+            opacity: indicator.width ? 1 : 0,
+          }}
+        />
+        {tabList.map((item, index) => (
           <button
+            key={item.key}
             type="button"
-            className={`as-tab${tab === "roles" ? " active" : ""}`}
-            onClick={() => setTab("roles")}
+            role="tab"
+            aria-selected={tab === item.key}
+            className={`as-tab${tab === item.key ? " active" : ""}`}
+            ref={(node) => {
+              tabRefs.current[index] = node;
+            }}
+            onClick={() => handleTabClick(item.key)}
           >
-            <MdShield size={15} />
-            Role & Section Permissions
+            {item.icon}
+            {item.label}
           </button>
-        )}
+        ))}
       </div>
 
       {/* ── Tab: Change Password ── */}
       {tab === "password" && (
-        <div className="as-panel">
+        <div className={`as-panel as-panel--${tabDir}`} key={`pw-${tabDir}`}>
           <div className="as-grid">
             {/* Side panel */}
             <aside className="as-side">
@@ -399,7 +458,7 @@ export default function Settings() {
 
       {/* ── Tab: Role Permissions ── */}
       {tab === "roles" && isAdminOrSocietyAdmin && (
-        <div className="as-panel">
+        <div className={`as-panel as-panel--${tabDir}`} key={`roles-${tabDir}`}>
           <RolePermissions />
         </div>
       )}

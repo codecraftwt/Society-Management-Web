@@ -229,9 +229,10 @@ function SuperAdminLayoutInner() {
       <Sidebar
         menu={menu}
         brandTitle={
-          <>
-            {t("saBrandName") || "Society"}<span className="text-accent">{t("saBrandSuffix") || "Control"}</span>
-          </>
+          <span className="text-accent">
+            {t("saBrandName") || "Society"}
+            {t("saBrandSuffix") || "Control"}
+          </span>
         }
         brandSubtitle={t("sbViewSuperAdmin")}
         base={base}
@@ -242,7 +243,8 @@ function SuperAdminLayoutInner() {
       {/* ── MAIN CONTENT ── */}
       <div className="main-content-layout min-w-0">
         <AppHeader
-          title={t("saDashboardTitle") || "Global Overview"}
+          title={null}
+          subtitle={null}
           showNotificationBell={false}
           actions={
             <>

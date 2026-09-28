@@ -2604,6 +2604,7 @@ const en = {
   parkShowingTotal:          "Showing {shown} of {total} total slots",
   parkNoSlotsMatch:          "No slots match “{search}”",
   parkNoSlotsFilter:         "No slots found for this filter",
+  parkNoMatchInFilter:       "No slots found under “{filter}”",
   parkAdjustFilters:         "Try adjusting your search criteria or vehicle type filter.",
   parkSlotValue:             "Slot {slot}",
   parkFourWheeler:           "Four Wheeler (Car)",

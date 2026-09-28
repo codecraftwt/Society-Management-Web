@@ -2643,6 +2643,7 @@ const hi = {
   parkShowingTotal:          "कुल {total} में से {shown} दिख रहे हैं",
   parkNoSlotsMatch:          "“{search}” से कोई स्लॉट मेल नहीं खाता",
   parkNoSlotsFilter:         "इस फ़िल्टर के लिए कोई स्लॉट नहीं मिला",
+  parkNoMatchInFilter:       "“{filter}” में कोई स्लॉट नहीं मिला",
   parkAdjustFilters:         "खोज या वाहन प्रकार फ़िल्टर बदलकर देखें।",
   parkSlotValue:             "स्लॉट {slot}",
   parkFourWheeler:           "चार पहिया (कार)",

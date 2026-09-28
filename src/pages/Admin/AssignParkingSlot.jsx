@@ -12,7 +12,7 @@ import {
   MdOutlineInbox, MdCheckCircle,
   MdBlock, MdFilterList, MdSearch,
   MdLocalParking, MdWarning, MdPersonSearch,
-  MdPendingActions, MdDone, MdRefresh, MdPersonRemove,
+  MdPendingActions, MdDone, MdRefresh, MdPersonRemove, MdChevronRight,
 } from "react-icons/md";
 import { FaParking } from "react-icons/fa";
 import Select from "../../components/common/Select";
@@ -1033,11 +1033,13 @@ const [totalPages, setTotalPages] = useState(1);
     if (isInitial) setInitialLoad(true);
     else setFetching(true);
     try {
+      /* UI uses OCCUPIED; the API stores ASSIGNED */
+      const apiStatus = statusF === "OCCUPIED" ? "ASSIGNED" : statusF;
       const params = new URLSearchParams({
         page: pageNum,
         limit: limitRef.current,
         ...(vFilter !== "ALL" ? { vehicle_type: vFilter } : {}),
-        ...(statusF !== "ALL" ? { status: statusF } : {}),
+        ...(apiStatus !== "ALL" ? { status: apiStatus } : {}),
         ...(currentSearch ? { search: currentSearch } : {}),
       });
       const res = await API.get(`/parking-slots?${params}`);
@@ -1089,6 +1091,7 @@ const [totalPages, setTotalPages] = useState(1);
       setStatusFilter("ALL");
       setVehicleFilter(key);
     }
+    setPage(1);
   };
 
   const refreshAll = () => {
@@ -1107,7 +1110,9 @@ const [totalPages, setTotalPages] = useState(1);
     { key: "OCCUPIED", label: t("parkOccupied") || "Occupied", icon: <MdBlock size={13} />, count: stats.occupied || (stats.total - stats.available) },
   ];
 
-  const activeFilter = statusFilter === "AVAILABLE" ? "AVAILABLE" : vehicleFilter;
+  const activeFilter = statusFilter !== "ALL" ? statusFilter : vehicleFilter;
+  const activeFilterLabel =
+    filterTabs.find((f) => f.key === activeFilter)?.label || t("parkTabAll") || "All";
 
   const mainTabs = [
     { key: "slots", label: t("parkMainSlots"), icon: <FaParking size={13} /> },
@@ -1174,7 +1179,19 @@ const [totalPages, setTotalPages] = useState(1);
           </div>
         )}
 
-        <div className="flex items-center gap-2.5 flex-nowrap shrink-0 overflow-x-auto max-w-full">
+        <div className="ps-page-toolbar flex items-center gap-2.5 flex-nowrap shrink-0 overflow-x-auto max-w-full">
+          {!isCommittee && mainTab === "slots" && (
+            <GlobalButton
+              variant="add"
+              icon={MdAdd}
+              borderDraw
+              className="parking-create-slots-btn justify-center shrink-0 whitespace-nowrap"
+              onClick={handleOpenCreate}
+            >
+              {t("parkCreateBtn") || "Create Slots"}
+            </GlobalButton>
+          )}
+
           <SlidingTabs
             value={mainTab}
             onChange={(key) => { setMainTab(key); setShowForm(false); }}
@@ -1200,18 +1217,6 @@ const [totalPages, setTotalPages] = useState(1);
                 : t("parkSearchSlots")
             }
           />
-
-          {!isCommittee && mainTab === "slots" && (
-            <GlobalButton
-              variant="add"
-              icon={MdAdd}
-              borderDraw
-              className="parking-create-slots-btn justify-center shrink-0 whitespace-nowrap"
-              onClick={handleOpenCreate}
-            >
-              {t("parkCreateBtn") || "Create Slots"}
-            </GlobalButton>
-          )}
         </div>
       </div>
 
@@ -1307,6 +1312,8 @@ const [totalPages, setTotalPages] = useState(1);
                       }`}
                       style={{ animationDelay: `${i * 15}ms` }}
                     >
+                      <span className="ps-card-blob" aria-hidden="true" />
+
                       {/* Top Header */}
                       <div className="ps-card-top">
                         <div className="ps-card-left-header">
@@ -1315,21 +1322,21 @@ const [totalPages, setTotalPages] = useState(1);
                               isCar ? "ps-type-icon--car" : "ps-type-icon--bike"
                             }`}
                           >
-                            {isCar ? <MdDirectionsCar size={15} /> : <MdTwoWheeler size={15} />}
+                            {isCar ? <MdDirectionsCar size={16} /> : <MdTwoWheeler size={16} />}
                           </div>
-                          <div>
-                            <div className="ps-slot-number-row">
-                              <span className="ps-slot-label">{t("parkColSlot")}</span>
-                              <h4 className="ps-slot-number">{s.slot_number}</h4>
-                            </div>
-                            <span className="ps-slot-meta">
-                              {s.parking_floor ? t("parkFloorValue", { floor: s.parking_floor }) : t("parkGroundFloor")} ·{" "}
-                              {isCar ? t("parkCar") : t("parkBike")}
-                            </span>
+                          <div className="ps-head-text">
+                            <span className="ps-slot-label">{t("parkColSlot")}</span>
+                            <h4 className="ps-slot-number">{s.slot_number}</h4>
                           </div>
+                          <MdChevronRight className="ps-card-arrow" size={16} />
                         </div>
                         <StatusBadge status={s.status} t={t} />
                       </div>
+
+                      <span className="ps-slot-meta">
+                        {s.parking_floor ? t("parkFloorValue", { floor: s.parking_floor }) : t("parkGroundFloor")} ·{" "}
+                        {isCar ? t("parkCar") : t("parkBike")}
+                      </span>
 
                       {/* Middle Details */}
                       <div className="ps-card-middle">
@@ -1342,32 +1349,35 @@ const [totalPages, setTotalPages] = useState(1);
                           </div>
                         ) : (
                           <div className="ps-occupied-details">
-                            <div className="ps-resident-name-row">
-                              {s.flat_number && (
-                                <span className="ps-flat-badge">{t("parkFlatNumber", { number: s.flat_number })}</span>
-                              )}
-                              <span className="ps-resident-name">
-                                {s.resident?.name || t("parkOccupied")}
+                            <div className="ps-resident-row">
+                              <span className="ps-resident-avatar" aria-hidden="true">
+                                {s.resident?.name?.trim()?.charAt(0)?.toUpperCase() || "R"}
                               </span>
+                              <div className="ps-resident-meta">
+                                <span className="ps-resident-name">
+                                  {s.resident?.name || t("parkOccupied")}
+                                </span>
+                                <span className="ps-resident-sub">
+                                  {s.flat_number
+                                    ? t("parkFlatNumber", { number: s.flat_number })
+                                    : s.resident?.email || t("parkOccupied")}
+                                </span>
+                              </div>
                             </div>
-                            {s.resident?.email && (
-                              <p className="text-[11px] text-secondary mt-0.5 truncate">
-                                {s.resident.email}
-                              </p>
-                            )}
                             {s.vehicle ? (
                               <div className="ps-vehicle-tag">
+                                <span className="ps-plate-mark" aria-hidden="true" />
                                 <span className="ps-vehicle-plate">
                                   {s.vehicle.vehicle_number}
                                 </span>
                                 {s.vehicle.vehicle_name && (
                                   <span className="ps-vehicle-model">
-                                    ({s.vehicle.vehicle_name})
+                                    {s.vehicle.vehicle_name}
                                   </span>
                                 )}
                               </div>
                             ) : (
-                              <p className="text-[11px] text-secondary mt-1 italic">
+                              <p className="ps-no-resident-tag">
                                 {s.resident ? t("parkNoVehicleLinked") : "—"}
                               </p>
                             )}
@@ -1480,7 +1490,11 @@ const [totalPages, setTotalPages] = useState(1);
                 <div className="ps-empty-icon">
                   <MdSearch size={40} />
                 </div>
-                <h4>{search ? t("parkNoSlotsMatch", { search }) : t("parkNoSlotsFilter")}</h4>
+                <h4>
+                  {search
+                    ? t("parkNoSlotsMatch", { search })
+                    : t("parkNoMatchInFilter", { filter: activeFilterLabel })}
+                </h4>
                 <p>{t("parkAdjustFilters")}</p>
                 <GlobalButton
                   onClick={() => { setSearch(""); setVehicleFilter("ALL"); setStatusFilter("ALL"); }}
@@ -1498,69 +1512,80 @@ const [totalPages, setTotalPages] = useState(1);
             {!initialLoad && slots.length > 0 && (
               <div key={page} className="animate-slide-page">
                 <div className="ps-card-grid">
-                  {slots.map((slot) => {
+                  {slots.map((slot, i) => {
                     const isCar = slot.vehicle_type === "CAR";
                     const isAvail = slot.status === "AVAILABLE";
                     return (
                       <div
                         key={slot.id}
                         onClick={() => setDetailSlot(slot)}
-                        className="ps-decent-card cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg group"
+                        style={{ animationDelay: `${i * 15}ms` }}
+                        className={`ps-decent-card ps-decent-card--${isAvail ? "available" : "occupied"} group cursor-pointer`}
                       >
+                        <span className="ps-card-blob" aria-hidden="true" />
+
                         {/* Top Card Bar: Slot Number, Vehicle Type, Status */}
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2.5">
+                        <div className="ps-card-top">
+                          <div className="ps-card-left-header">
                             <div
-                              style={{
-                                width: 36,
-                                height: 36,
-                                borderRadius: 10,
-                                background: isCar ? "rgba(59,130,246,0.12)" : "rgba(16,185,129,0.12)",
-                                color: isCar ? "#3b82f6" : "#10b981",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                flexShrink: 0
-                              }}
+                              className={`ps-type-icon ${
+                                isCar ? "ps-type-icon--car" : "ps-type-icon--bike"
+                              }`}
                             >
-                              {isCar ? <MdDirectionsCar size={19} /> : <MdTwoWheeler size={19} />}
+                              {isCar ? <MdDirectionsCar size={16} /> : <MdTwoWheeler size={16} />}
                             </div>
-                            <div>
-                              <h4 className="font-bold text-sm text-primary m-0 group-hover:text-accent transition-colors">
-                                {slot.slot_number}
-                              </h4>
-                              <span className="text-[11px] text-secondary">
-                                {slot.parking_floor ? t("parkFloorValue", { floor: slot.parking_floor }) : t("parkGround")} · {isCar ? t("parkCar") : t("parkBike")}
-                              </span>
+                            <div className="ps-head-text">
+                              <span className="ps-slot-label">{t("parkColSlot")}</span>
+                              <h4 className="ps-slot-number">{slot.slot_number}</h4>
                             </div>
+                            <MdChevronRight className="ps-card-arrow" size={16} />
                           </div>
                           <StatusBadge status={slot.status} t={t} />
                         </div>
 
+                        <span className="ps-slot-meta">
+                          {slot.parking_floor ? t("parkFloorValue", { floor: slot.parking_floor }) : t("parkGround")} ·{" "}
+                          {isCar ? t("parkCar") : t("parkBike")}
+                        </span>
+
                         {/* Compact Card Middle: Resident, Flat & Vehicle info */}
-                        <div className="pt-2 text-xs border-t border-glass flex items-center justify-between min-h-6.5">
+                        <div className="ps-card-middle">
                           {isAvail ? (
-                            <span className="text-secondary text-[11px] flex items-center gap-1.5">
-                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block" />
-                              {t("parkUnallocatedAvailableShort")}
-                            </span>
-                          ) : (
-                            <div className="flex items-center gap-1.5 truncate flex-wrap">
-                              <div className="w-5 h-5 rounded-full bg-primary/10 text-accent font-bold text-[10px] flex items-center justify-center shrink-0">
-                                {slot.resident?.name?.charAt(0)?.toUpperCase() || "R"}
-                              </div>
-                              <span className="font-semibold text-primary truncate text-xs">
-                                {slot.resident?.name || t("parkOccupied")}
+                            <div className="ps-avail-bay">
+                              <span className="ps-avail-dot" />
+                              <span className="ps-avail-bay-text">
+                                {t("parkUnallocatedAvailableShort")}
                               </span>
-                              {slot.flat_number && (
-                                <span className="text-[10px] px-1.5 py-0.5 rounded bg-white/5 text-secondary border border-white/10 shrink-0">
-                                  {t("parkFlatNumber", { number: slot.flat_number })}
+                            </div>
+                          ) : (
+                            <div className="ps-occupied-details">
+                              <div className="ps-resident-row">
+                                <span className="ps-resident-avatar" aria-hidden="true">
+                                  {slot.resident?.name?.trim()?.charAt(0)?.toUpperCase() || "R"}
                                 </span>
-                              )}
+                                <div className="ps-resident-meta">
+                                  <span className="ps-resident-name">
+                                    {slot.resident?.name || t("parkOccupied")}
+                                  </span>
+                                  {slot.flat_number && (
+                                    <span className="ps-resident-sub">
+                                      {t("parkFlatNumber", { number: slot.flat_number })}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
                               {slot.vehicle?.vehicle_number && (
-                                <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20 font-mono font-semibold shrink-0">
-                                  {slot.vehicle.vehicle_number}
-                                </span>
+                                <div className="ps-vehicle-tag">
+                                  <span className="ps-plate-mark" aria-hidden="true" />
+                                  <span className="ps-vehicle-plate">
+                                    {slot.vehicle.vehicle_number}
+                                  </span>
+                                  {slot.vehicle.vehicle_name && (
+                                    <span className="ps-vehicle-model">
+                                      {slot.vehicle.vehicle_name}
+                                    </span>
+                                  )}
+                                </div>
                               )}
                             </div>
                           )}

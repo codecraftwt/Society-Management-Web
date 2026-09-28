@@ -110,11 +110,45 @@ function PendingApprovalBadge() {
    ───────────────────────────────────────── */
 function ResidentActionMenu({ onAssignFlat, onEdit, isCommittee, isAccountant, isSocietyAdmin, isTenant, onPromote, onRemoveCommittee, onDeactivateAccountant, onDelete, isPendingApproval, onApprove, onReject, t }) {
   const [open, setOpen] = useState(false);
+  const [pos, setPos] = useState(null);
   const ref = useRef(null);
+  const triggerRef = useRef(null);
+  const menuRef = useRef(null);
+
+  /* The card wrapper is overflow:hidden and the table is overflow-x:auto,
+     so the menu is portalled to <body> and positioned as fixed. */
+  const computePos = useCallback(() => {
+    const el = triggerRef.current;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    const w = Math.max(r.width, 150);
+    let left = r.right - w;
+    let top = r.bottom + 6;
+    if (left < 8) left = 8;
+    if (left + w > window.innerWidth - 8) left = Math.max(8, window.innerWidth - w - 8);
+    if (top + 250 > window.innerHeight - 8) top = Math.max(8, r.top - 256);
+    setPos({ top, left, minWidth: w });
+  }, []);
+
+  useEffect(() => {
+    if (!open) return undefined;
+    computePos();
+    const reposition = () => computePos();
+    window.addEventListener("scroll", reposition, true);
+    window.addEventListener("resize", reposition);
+    return () => {
+      window.removeEventListener("scroll", reposition, true);
+      window.removeEventListener("resize", reposition);
+    };
+  }, [open, computePos]);
 
   useEffect(() => {
     if (!open) return;
-    const h = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    const h = (e) => {
+      if (ref.current && ref.current.contains(e.target)) return;
+      if (menuRef.current && menuRef.current.contains(e.target)) return;
+      setOpen(false);
+    };
     document.addEventListener("mousedown", h);
     return () => document.removeEventListener("mousedown", h);
   }, [open]);
@@ -130,11 +164,16 @@ function ResidentActionMenu({ onAssignFlat, onEdit, isCommittee, isAccountant, i
 
   return (
     <div ref={ref} style={{ position: "relative", flexShrink: 0 }}>
-      <button onClick={() => setOpen(p => !p)} className="sa-action-dots" aria-label="Resident actions" aria-haspopup="menu" aria-expanded={open}>
+      <button ref={triggerRef} onClick={() => setOpen(p => !p)} className="sa-action-dots" aria-label="Resident actions" aria-haspopup="menu" aria-expanded={open}>
         <MdMoreVert size={20} />
       </button>
-      {open && (
-        <div className="sa-action-dropdown" role="menu">
+      {open && createPortal(
+        <div
+          ref={menuRef}
+          className="sa-action-dropdown sa-action-dropdown--fixed"
+          role="menu"
+          style={pos ? { top: pos.top, left: pos.left, minWidth: pos.minWidth } : { visibility: "hidden" }}
+        >
           {isPendingApproval && (
             <>
               <button role="menuitem" className="sa-action-item" onClick={() => act(onApprove)} style={{ color: "#4ade80" }}>
@@ -182,7 +221,8 @@ function ResidentActionMenu({ onAssignFlat, onEdit, isCommittee, isAccountant, i
             <MdDelete size={15} />
             {t("mpDelete") || "Delete"}
           </button>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

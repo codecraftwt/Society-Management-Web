@@ -322,15 +322,10 @@ function AdminLayoutInner() {
       <Sidebar
         menu={visibleMenu}
         brandTitle={
-          isCommittee ? (
-            <>
-              {t("committeePanel")}<span className="text-accent">{t("panelSuffix")}</span>
-            </>
-          ) : (
-            <>
-              {t("adminPanelLabel")}<span className="text-accent">{t("panelSuffix")}</span>
-            </>
-          )
+          <span className="text-accent">
+            {isCommittee ? t("committeePanel") : t("adminPanelLabel")}
+            {t("panelSuffix")}
+          </span>
         }
         brandSubtitle={isCommittee ? (user?.committee_position || user?.designation || t("sbViewCommittee")) : t("sbViewAdmin")}
         base={base}
@@ -341,14 +336,8 @@ function AdminLayoutInner() {
       {/* ── MAIN CONTENT ── */}
       <div className="main-content-layout min-w-0">
         <AppHeader
-          title={isCommittee ? t("committeeDashboardTitle") : t("adminDashboardTitle")}
-          subtitle={
-            isCommittee
-              ? (user?.name
-                  ? t("committeeDashboardWelcome", { name: user.name })
-                  : t("committeeDashboardWelcomeAnon"))
-              : t("adminDashboardSubtitle")
-          }
+          title={null}
+          subtitle={null}
           actions={
             <>
               {/* ROLE SWITCHER */}
@@ -360,10 +349,10 @@ function AdminLayoutInner() {
                     title={t("switchRole")}
                   >
                     <span className="rs-active-dot" />
-                    <span className="rs-trigger-label hidden sm:inline">
+                    <span className="rs-trigger-label rs-trigger-text">
                       {roleMeta(user.activeRole).label}
                     </span>
-                    <span className="rs-trigger-label sm:hidden">
+                    <span className="rs-trigger-label rs-trigger-icon">
                       {roleMeta(user.activeRole).icon}
                     </span>
                     <span className="rs-trigger-arrow">▼</span>
@@ -412,11 +401,11 @@ function AdminLayoutInner() {
               {hasPermission(user, "emergency", "trigger") && (
                 <button
                   onClick={() => setShowSOS(true)}
-                  className="flex items-center gap-1.5 rounded-xl bg-linear-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 shadow-md shadow-red-500/30 transition px-3 h-9 text-white text-xs font-bold"
+                  className="flex items-center justify-center sm:justify-start gap-1.5 rounded-xl bg-linear-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 shadow-md shadow-red-500/30 transition w-9 sm:w-auto px-0 sm:px-3 h-9 text-white text-xs font-bold"
                   title={t("raiseSos")}
                 >
                   <MdEmergency size={15} />
-                  <span>SOS</span>
+                  <span className="hidden sm:inline">SOS</span>
                 </button>
               )}
 

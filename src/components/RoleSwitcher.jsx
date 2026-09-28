@@ -53,7 +53,7 @@ export default function RoleSwitcher() {
   };
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+    <div className="role-switcher" style={{ display: "flex", flexDirection: "column", gap: 4 }}>
       <Select
         value={user.activeRole}
         onChange={handleSwitch}

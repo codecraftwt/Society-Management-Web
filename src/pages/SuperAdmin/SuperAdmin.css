@@ -674,6 +674,14 @@ html.light.role-theme .sa-btn-ghost:hover {
   gap: 2px;
   animation: fadeInUp 0.12s ease both;
 }
+/* Portalled to <body> to escape overflow:hidden card + overflow-x:auto table wrappers.
+   top/left/minWidth are supplied inline by the component. */
+.sa-action-dropdown--fixed {
+  position: fixed;
+  top: auto;
+  right: auto;
+  z-index: 10000;
+}
 html.role-theme .sa-action-dropdown,
 html.light.role-theme .sa-action-dropdown {
   background: var(--modal-bg);
