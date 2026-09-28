@@ -361,6 +361,7 @@ export function BillDetailsModal({ viewBill, onClose, handleConfirmPayment, conf
       subtitle={viewBill?.title}
       icon={MdReceiptLong}
       maxWidth="max-w-2xl"
+      bodyClassName="modal-scroll-thin"
     >
       {viewBill && (() => {
         const payment = viewBill.Payments?.[0];

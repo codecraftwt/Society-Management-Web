@@ -345,6 +345,7 @@ export default function Settings() {
                         type={showCur ? "text" : "password"}
                         placeholder={t("cpwCurrentPasswordPh")}
                         autoComplete="current-password"
+                        style={{ paddingLeft: 32 }}
                         value={cur}
                         onChange={e => { setCur(e.target.value); clearField("cur"); }}
                       />
@@ -373,6 +374,7 @@ export default function Settings() {
                         className={`cpw-input${errors.np ? " cpw-error" : npOk ? " cpw-ok" : ""}`}
                         type={showNp ? "text" : "password"}
                         placeholder={t("cpwNewPasswordPh")}
+                        style={{ paddingLeft: 32 }}
                         autoComplete="new-password"
                         value={np}
                         onChange={e => { setNp(e.target.value); clearField("np"); }}
@@ -405,6 +407,7 @@ export default function Settings() {
                         className={`cpw-input${errors.cp ? " cpw-error" : cpOk ? " cpw-ok" : ""}`}
                         type={showCp ? "text" : "password"}
                         placeholder={t("cpwConfirmPasswordPh")}
+                        style={{ paddingLeft: 32 }}
                         autoComplete="new-password"
                         value={cp}
                         onChange={e => { setCp(e.target.value); clearField("cp"); }}

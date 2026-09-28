@@ -1406,7 +1406,7 @@ const { t }              = useLang();
               </div>
 
               {/* Body */}
-              <form onSubmit={handleSubmit} style={{
+              <form onSubmit={handleSubmit} className="modal-scroll-thin" style={{
                 padding: "24px",
                 display: "flex",
                 flexDirection: "column",

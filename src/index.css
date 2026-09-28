@@ -11720,7 +11720,7 @@ display: flex;
   transition: border-color 0.18s, box-shadow 0.18s, background 0.18s;
   font-family: inherit;
 }
-.cpw-input::placeholder { color: #605872; }
+.cpw-input::placeholder { color: #4A4356; }
 .cpw-input:focus {
   border-color: var(--accent);
   box-shadow: 0 0 0 3px rgba(59,130,246,0.12);
@@ -15318,29 +15318,32 @@ html:not(.light) :focus-visible {
   outline-offset: 1px;
 }
 
-/* ── Thin scrollbar for modals (Add/Edit Resident) ── */
+/* ── Thin scrollbar for modals (Add/Edit Resident) ──
+   The doubled class is deliberate: the global dark-theme rule
+   `html:not(.light) ::-webkit-scrollbar` has specificity (0,1,2) and
+   would otherwise win over a plain (0,1,1) class selector. */
 .modal-scroll-thin {
   scrollbar-width: thin;
   scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
   scrollbar-gutter: stable;
 }
-.modal-scroll-thin::-webkit-scrollbar {
+.modal-scroll-thin.modal-scroll-thin::-webkit-scrollbar {
   width: 4px;
 }
-.modal-scroll-thin::-webkit-scrollbar-track {
+.modal-scroll-thin.modal-scroll-thin::-webkit-scrollbar-track {
   background: transparent;
 }
-.modal-scroll-thin::-webkit-scrollbar-thumb {
+.modal-scroll-thin.modal-scroll-thin::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.16);
   border-radius: 999px;
 }
-.modal-scroll-thin::-webkit-scrollbar-thumb:hover {
+.modal-scroll-thin.modal-scroll-thin::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.3);
 }
 html.light .modal-scroll-thin {
   scrollbar-color: rgba(15, 23, 42, 0.2) transparent;
 }
-html.light .modal-scroll-thin::-webkit-scrollbar-thumb {
+html.light .modal-scroll-thin.modal-scroll-thin::-webkit-scrollbar-thumb {
   background: rgba(15, 23, 42, 0.2);
 }
 
