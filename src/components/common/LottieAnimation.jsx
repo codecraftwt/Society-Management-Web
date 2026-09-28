@@ -10,7 +10,10 @@ const SOURCES = {
 let playerPromise = null;
 const dataCache = new Map();
 
+import lottie from 'lottie-web';
 function loadPlayer() {
+  return Promise.resolve(lottie);
+
   if (!playerPromise) {
     playerPromise = import("lottie-web").then((m) => m.default || m);
   }

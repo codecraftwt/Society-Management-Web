@@ -12,6 +12,7 @@ import GlobalModal from "../../components/common/GlobalModal";
 import Index from "./index/Index";
 import Create from "./create/Create";
 import Delete from "./delete/Delete";
+import "./Document.css";
 
 const ALL_CATS = ["All", "Legal", "Meetings", "Guidelines", "Finance", "Security"];
 
@@ -147,7 +148,7 @@ export default function Document() {
   const shownTo = Math.min(page * limit, totalItems);
 
   return (
-    <div className="space-y-5 animate-fadeIn">
+    <div className="documents-page space-y-5 animate-fadeIn">
       {toast && (
         <div className={`ad-toast ad-toast--${toast.type}`}>
           {toast.type === "success" ? <MdCheckCircle size={16} /> : <MdWarningAmber size={16} />}

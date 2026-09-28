@@ -17,11 +17,13 @@ import {
 } from "react-icons/hi";
 import {
   HiOutlineBuildingOffice2,
-  HiOutlineArrowLeft
+  HiOutlineArrowLeft,
+  HiOutlinePhone
 } from "react-icons/hi2";
 import { MdHome, MdGroups, MdAccountBalance } from "react-icons/md";
 
 import ThemeToggle from "../components/common/ThemeToggle";
+import { useLang } from "../context/LanguageContext";
 import homeBannerImg from "../assets/Photos/Home/Home.png";
 import "./Login.css";
 
@@ -290,9 +292,93 @@ function OtpModal({ email, tempToken, onVerified, onCancel }) {
 /* ═══════════════════════════════════════════════════════════
    LOGIN PAGE REACT COMPONENT (UIVERSE.IO Praashoo7 DESIGN)
    ═══════════════════════════════════════════════════════════ */
+function RejectionModal({ details, onClose, t }) {
+  const reason = details?.rejection_reason;
+  const societyName = details?.society_name;
+  const contact = details?.admin_contact;
+  const hasContact = Boolean(contact && (contact.email || contact.phone));
+
+  return (
+    <div className="otp-overlay">
+      <div className="otp-modal-box animate-scaleIn">
+        <div className="rejection-modal-topbar" />
+
+        <div className="otp-modal-inner">
+          <div className="otp-modal-header">
+            <div className="rejection-shield-icon">
+              <HiX />
+            </div>
+
+            <h2 className="otp-title">
+              {t("rejectionTitle", "Registration Rejected")}
+            </h2>
+
+            <p className="otp-subtitle">
+              {societyName
+                ? t("rejectionSubtitleWithSociety", { society: societyName })
+                : t("rejectionSubtitle", "Your registration could not be approved by the society admin.")}
+            </p>
+          </div>
+
+          {reason ? (
+            <div className="rejection-reason-box">
+              <p className="rejection-reason-label">
+                {t("rejectionReasonLabel", "Reason given by the admin")}
+              </p>
+              <p className="rejection-reason-text">{reason}</p>
+            </div>
+          ) : (
+            <div className="rejection-reason-box">
+              <p className="rejection-reason-label">
+                {t("rejectionReasonLabel", "Reason given by the admin")}
+              </p>
+              <p className="rejection-reason-text" style={{ opacity: 0.8, fontWeight: 500 }}>
+                {t("rejectionNoReason", "The admin did not record a specific reason. Please contact the admin for details.")}
+              </p>
+            </div>
+          )}
+
+          <div className="rejection-help-box">
+            <p className="rejection-help-label">{t("rejectionNextSteps", "What you can do")}</p>
+            <ul className="rejection-help-list">
+              <li>{t("rejectionStep1", "Contact your society admin to understand the reason.")}</li>
+              <li>{t("rejectionStep2", "Correct your documents or details as discussed.")}</li>
+              <li>{t("rejectionStep3", "Register again once the issue is resolved.")}</li>
+            </ul>
+          </div>
+
+          {hasContact && (
+            <div className="rejection-contact-box">
+              <p className="rejection-contact-label">{t("rejectionContactAdmin", "Contact the admin")}</p>
+              {contact.name && <p className="rejection-contact-name">{contact.name}</p>}
+              {contact.email && (
+                <a className="rejection-contact-link" href={`mailto:${contact.email}`}>
+                  <HiMail />
+                  <span>{contact.email}</span>
+                </a>
+              )}
+              {contact.phone && (
+                <a className="rejection-contact-link" href={`tel:${contact.phone}`}>
+                  <HiOutlinePhone />
+                  <span>{contact.phone}</span>
+                </a>
+              )}
+            </div>
+          )}
+
+          <button type="button" onClick={onClose} className="rejection-close-btn">
+            {t("rejectionClose", "Back to login")}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function Login() {
   const navigate = useNavigate();
   const { login, switchRole } = useContext(AuthContext);
+  const { t } = useLang();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -302,6 +388,7 @@ function Login() {
   const [step, setStep] = useState("credentials");
   const [tempToken, setTempToken] = useState(null);
   const [panelPrompt, setPanelPrompt] = useState(null);
+  const [rejection, setRejection] = useState(null);
 
   // Panel chooser helpers — committee members & accountants who live in the
   // society also get the Resident panel (mirrors the mobile app).
@@ -345,7 +432,17 @@ function Login() {
         handleVerified(user, token);
       }
     } catch (err) {
-      toast.error(err.response?.data?.message || "Login failed");
+      const data = err.response?.data;
+      // Branch on the machine-readable code, not the message text.
+      if (data?.code === "APPROVAL_REJECTED") {
+        setRejection({
+          rejection_reason: data.rejection_reason || null,
+          society_name: data.society_name || null,
+          admin_contact: data.admin_contact || null,
+        });
+      } else {
+        toast.error(data?.message || "Login failed");
+      }
     } finally {
       setLoginLoading(false);
     }
@@ -452,6 +549,11 @@ function Login() {
           onVerified={handleVerified}
           onCancel={handleCancelOtp}
         />
+      )}
+
+      {/* Registration Rejected Modal */}
+      {rejection && (
+        <RejectionModal details={rejection} t={t} onClose={() => setRejection(null)} />
       )}
 
       {/* Panel Chooser Modal (Residents with Committee or Accountant role) */}

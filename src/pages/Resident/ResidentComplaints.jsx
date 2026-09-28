@@ -16,6 +16,7 @@ import {
   MdChevronLeft, MdChevronRight,
   MdChat, MdSend, MdReportProblem, MdImage, MdOpenInNew, MdAttachFile,
   MdCheckCircle, MdSchedule, MdPending,
+  MdEdit,
 } from "react-icons/md";
 import Select from "../../components/common/Select";
 import useUnsavedDirty from "../../hooks/useUnsavedDirty";
@@ -877,6 +878,14 @@ const { t }              = useLang();
   const [successMsg,    setSuccessMsg]    = useState("");
   const [errorMsg,      setErrorMsg]      = useState("");
   const [formData,      setFormData]      = useState({ title: "", description: "" });
+  // NEW: state for editing a complaint
+  const [editingComplaint, setEditingComplaint] = useState(null);
+  // NEW: open edit handler
+  const openEdit = useCallback((complaint) => {
+    setEditingComplaint(complaint);
+    setShowForm(true);
+  }, []);
+
 
   // -- MULTI-FLAT SUPPORT --
   const [myFlats,        setMyFlats]        = useState([]);

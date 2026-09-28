@@ -707,8 +707,17 @@ html.light.role-theme .sa-action-dropdown {
 .sa-action-item:hover {
   background: var(--glass-border, rgba(255,255,255,0.07));
 }
-.sa-action-item-danger { color: #EF4444; }
-.sa-action-item-danger:hover { background: rgba(239,68,68,0.1); }
+      .sa-action-item-danger { color: #EF4444; }
+      .sa-action-item-danger:hover { background: rgba(239,68,68,0.1); }
+      /* Rejected registrations cannot be assigned a flat until re-approved. */
+      .sa-action-item-disabled {
+        color: var(--text-secondary, #a3a3a3);
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+      .sa-action-item-disabled:hover {
+        background: transparent;
+      }
 .sa-action-divider {
   height: 1px;
   background: var(--glass-border, rgba(255,255,255,0.07));

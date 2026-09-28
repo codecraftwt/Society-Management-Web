@@ -108,7 +108,7 @@ function PendingApprovalBadge() {
 /* ─────────────────────────────────────────
    RESIDENT ACTION MENU (three-dot kebab)
    ───────────────────────────────────────── */
-function ResidentActionMenu({ onAssignFlat, onEdit, isCommittee, isAccountant, isSocietyAdmin, isTenant, onPromote, onRemoveCommittee, onDeactivateAccountant, onDelete, isPendingApproval, onApprove, onReject, t }) {
+function ResidentActionMenu({ onAssignFlat, onEdit, isCommittee, isAccountant, isSocietyAdmin, isTenant, onPromote, onRemoveCommittee, onDeactivateAccountant, onDelete, isPendingApproval, isRejected, onApprove, onReject, t }) {
   const [open, setOpen] = useState(false);
   const [pos, setPos] = useState(null);
   const ref = useRef(null);
@@ -162,6 +162,17 @@ function ResidentActionMenu({ onAssignFlat, onEdit, isCommittee, isAccountant, i
 
   const act = (fn) => { setOpen(false); fn(); };
 
+  /* A rejected registration is read-only until an admin re-approves it: no flat,
+     no profile edit, no committee/accountant role. The API enforces the same rule
+     (ensureAssignable / ensureNotRejected), so this is a UX guard, not the only
+     line of defence. Delete stays available so a rejected record can still be
+     cleaned up. */
+  const blocked = isRejected
+    ? t("resActionBlockedRejected", "Approve this registration first to perform this action.")
+    : undefined;
+  const gate = (fn) => { if (!isRejected) act(fn); };
+  const gatedClass = isRejected ? "sa-action-item sa-action-item-disabled" : "sa-action-item";
+
   return (
     <div ref={ref} style={{ position: "relative", flexShrink: 0 }}>
       <button ref={triggerRef} onClick={() => setOpen(p => !p)} className="sa-action-dots" aria-label="Resident actions" aria-haspopup="menu" aria-expanded={open}>
@@ -187,11 +198,34 @@ function ResidentActionMenu({ onAssignFlat, onEdit, isCommittee, isAccountant, i
               <div className="sa-action-divider" />
             </>
           )}
-          <button role="menuitem" className="sa-action-item" onClick={() => act(onAssignFlat)}>
+          {isRejected && (
+            <>
+              {/* Rejected residents can only be re-approved; the API refuses to
+                  place them in a flat or grant them a role until that happens. */}
+              <button role="menuitem" className="sa-action-item" onClick={() => act(onApprove)} style={{ color: "#4ade80" }}>
+                <MdCheck size={15} />
+                {t("resReapprove", "Re-approve & Activate")}
+              </button>
+              <div className="sa-action-divider" />
+            </>
+          )}
+          <button
+            role="menuitem"
+            className={gatedClass}
+            onClick={() => gate(onAssignFlat)}
+            aria-disabled={isRejected}
+            title={blocked}
+          >
             <MdAdd size={15} />
             {t("colAssignFlat") || "Assign Unit"}
           </button>
-          <button role="menuitem" className="sa-action-item" onClick={() => act(onEdit)}>
+          <button
+            role="menuitem"
+            className={gatedClass}
+            onClick={() => gate(onEdit)}
+            aria-disabled={isRejected}
+            title={blocked}
+          >
             <MdEdit size={15} />
             {t("colEdit") || "Edit"}
           </button>
@@ -209,7 +243,13 @@ function ResidentActionMenu({ onAssignFlat, onEdit, isCommittee, isAccountant, i
                   {t("resDeactivateAcct")}
                 </button>
               ) : (
-                <button role="menuitem" className="sa-action-item" onClick={() => act(onPromote)}>
+                <button
+                  role="menuitem"
+                  className={gatedClass}
+                  onClick={() => gate(onPromote)}
+                  aria-disabled={isRejected}
+                  title={blocked}
+                >
                   <MdPersonAdd size={15} />
                   {t("resAddCommittee")}
                 </button>
@@ -2548,12 +2588,19 @@ const [totalPages, setTotalPages] = useState(1);
 
   const confirmRejectResident = async () => {
     if (!rejectTarget) return;
+    const reason = rejectReason.trim();
+    if (!reason) {
+      toast.error(t("rejectionReasonRequired"));
+      return;
+    }
     setRejectLoading(true);
     try {
-      await API.put(`/admin/reject-resident/${rejectTarget.id}`, {
-        reason: rejectReason.trim() || undefined,
-      });
-      toast.info(`${rejectTarget.name} rejected`);
+      const { data } = await API.put(`/admin/reject-resident/${rejectTarget.id}`, { reason });
+      toast.success(t("residentRejected", { name: rejectTarget.name }));
+      // The API persists the rejection even if SMTP fails, so warn separately.
+      if (data && data.emailSent === false) {
+        toast.warning(t("rejectionEmailFailed", { name: rejectTarget.name }));
+      }
       setRejectTarget(null);
       setRejectReason("");
       loadResidents(page, debouncedSearch);
@@ -3489,7 +3536,8 @@ const [totalPages, setTotalPages] = useState(1);
                                 isAccountant={!!r.roles?.includes("ACCOUNTANT")}
                                 isSocietyAdmin={!!r.roles?.includes("SOCIETY_ADMIN")}
                                 isTenant={r.resident_type === "TENANT"}
-                                isPendingApproval={r.approval_status === "PENDING"}
+                                isPendingApproval={String(r.approval_status || "").toUpperCase() === "PENDING"}
+      isRejected={String(r.approval_status || "").toUpperCase() === "REJECTED"}
                                 onApprove={() => handleApproveResident(r)}
                                 onReject={() => setRejectTarget(r)}
                                 onPromote={() => setCommitteeConfirm({ type: "promote", id: r.id, name: r.name })}
@@ -3552,7 +3600,8 @@ const [totalPages, setTotalPages] = useState(1);
                             isAccountant={!!r.roles?.includes("ACCOUNTANT")}
                             isSocietyAdmin={!!r.roles?.includes("SOCIETY_ADMIN")}
                             isTenant={r.resident_type === "TENANT"}
-                            isPendingApproval={r.approval_status === "PENDING"}
+                            isPendingApproval={String(r.approval_status || "").toUpperCase() === "PENDING"}
+      isRejected={String(r.approval_status || "").toUpperCase() === "REJECTED"}
                             onApprove={() => handleApproveResident(r)}
                             onReject={() => setRejectTarget(r)}
                             onPromote={() => setCommitteeConfirm({ type: "promote", id: r.id, name: r.name })}
@@ -3697,16 +3746,25 @@ const [totalPages, setTotalPages] = useState(1);
             </div>
 
             <p style={{ margin: 0, fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.6 }}>
-              {t("resRejectBody", "This will mark the registration as rejected and deactivate the account. The resident will be notified.")}
+              {t("resRejectBody", "This will mark the registration as rejected and deactivate the account. The resident will be notified by email.")}
             </p>
 
+            <label style={{ display: "block", marginTop: 14, marginBottom: 6, fontSize: 12, fontWeight: 700, color: "var(--text-primary)" }}>
+              {t("resRejectReasonLabel", "Reason for rejection")}{" "}
+              <span style={{ color: "#ef4444" }}>*</span>
+            </label>
             <textarea
               rows={3}
+              maxLength={255}
               value={rejectReason}
               onChange={(e) => setRejectReason(e.target.value)}
-              placeholder={t("resRejectReasonPlaceholder", "Reason (optional)")}
-              style={{ width: "100%", boxSizing: "border-box", marginTop: 12, padding: "10px 12px", borderRadius: 10, background: "var(--card-inner-bg, rgba(255,255,255,0.05))", border: "1px solid var(--glass-border, rgba(255,255,255,0.12))", color: "var(--text-primary)", fontSize: 13, outline: "none", resize: "vertical", fontFamily: "inherit" }}
+              placeholder={t("resRejectReasonPlaceholder", "e.g. Documents could not be verified. Please upload a clear photo of your ID proof.")}
+              style={{ width: "100%", boxSizing: "border-box", padding: "10px 12px", borderRadius: 10, background: "var(--card-inner-bg, rgba(255,255,255,0.05))", border: "1px solid var(--glass-border, rgba(255,255,255,0.12))", color: "var(--text-primary)", fontSize: 13, outline: "none", resize: "vertical", fontFamily: "inherit" }}
             />
+            <p style={{ margin: "6px 0 0", fontSize: 11, color: "var(--text-secondary)" }}>
+              {t("resRejectReasonHelp", "Required. This reason is emailed to the resident and shown on their login screen.")}{" "}
+              <span style={{ opacity: 0.7 }}>{rejectReason.trim().length}/255</span>
+            </p>
 
             <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 20 }}>
               <button type="button" onClick={() => setRejectTarget(null)} className="sa-btn sa-btn-ghost" disabled={rejectLoading}>
@@ -3717,7 +3775,7 @@ const [totalPages, setTotalPages] = useState(1);
                 onClick={confirmRejectResident}
                 className="btn-danger"
                 style={{ borderRadius: 999, fontWeight: 700 }}
-                disabled={rejectLoading}
+                disabled={rejectLoading || !rejectReason.trim()}
               >
                 {rejectLoading ? <>{t("rejecting", "Rejecting…")}</> : <><MdClose size={16} /> <span>{t("reject") || "Reject"}</span></>}
               </button>
