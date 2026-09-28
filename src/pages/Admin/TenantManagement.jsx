@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback, useContext } from "react";
 import { createPortal } from "react-dom";
 import API from "../../services/api";
 import { toast } from "react-toastify";
@@ -6,7 +6,7 @@ import {
   MdCheck, MdClose, MdBadge, MdCreditCard, MdAccessTime,
   MdOpenInNew, MdWarning, MdSearch, MdFilterList,
   MdPerson, MdHome, MdCalendarToday, MdDirectionsCar,
-  MdGroup, MdRefresh, MdVisibility, MdPeople,
+  MdGroup, MdRefresh, MdVisibility, MdPeople, MdBusiness,
   MdChevronLeft, MdChevronRight
 } from "react-icons/md";
 import Select from "../../components/common/Select";
@@ -14,6 +14,7 @@ import ExpandableSearch from "../../components/common/ExpandableSearch";
 
 import Pagination from "../../components/common/Pagination";
 import { useLang } from "../../context/LanguageContext";
+import { AuthContext } from "../../context/AuthContext";
 
 /* ─────────────────────────────────────────────
    HELPERS
@@ -183,6 +184,7 @@ function DetailModal({ tenant, onClose, onApprove, onReject, isPending }) {
             <Row label={t("tmFullName")} value={tenant.tenant_name} />
             <Row label={t("tmEmail")} value={tenant.tenant_email} />
             <Row label={t("tmPhone")} value={tenant.tenant_phone || "—"} />
+            {tenant.society_name && <Row label={t("tmSociety")} value={tenant.society_name} />}
             <Row label={t("tmType")} value={tenant.resident_type || "TENANT"} chip />
           </Section>
 
@@ -289,6 +291,9 @@ const STATUS_TABS = [
 ───────────────────────────────────────────── */
 export default function TenantManagement() {
   const { t } = useLang();
+  const { user } = useContext(AuthContext);
+  const isSuperAdmin = (user?.activeRole ?? user?.role) === "SUPER_ADMIN";
+
   const [tenants, setTenants]       = useState([]);
   const [loading, setLoading]       = useState(true);
   const [activeTab, setActiveTab]   = useState("ALL");
@@ -297,16 +302,24 @@ export default function TenantManagement() {
   const [search, setSearch]             = useState("");
   const [filterBlock, setFilterBlock]   = useState("ALL");
 
+  // Society filter (Super Admin only)
+  const [societies, setSocieties] = useState([]);
+  const [selectedSocietyId, setSelectedSocietyId] = useState(
+    () => localStorage.getItem("superadmin_society_filter") || "ALL"
+  );
+  const isGlobalView = isSuperAdmin && selectedSocietyId === "ALL";
+
   // Modals
   const [detailTenant, setDetailTenant] = useState(null);
   const [rejectModal, setRejectModal]   = useState({ open: false, userId: null });
   const [rejectLoading, setRejectLoading] = useState(false);
 
   /* ── Load from new endpoint ── */
-  const load = async () => {
+  const load = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await API.get(`/admin/tenant-history`);
+      const params = selectedSocietyId && selectedSocietyId !== "ALL" ? { society_id: selectedSocietyId } : {};
+      const res = await API.get(`/admin/tenant-history`, { params });
       const payload = res.data;
       setTenants(Array.isArray(payload?.data) ? payload.data : Array.isArray(payload) ? payload : []);
     } catch {
@@ -314,11 +327,29 @@ export default function TenantManagement() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedSocietyId, t]);
 
   useEffect(() => {
     load();
-  }, []);
+  }, [load]);
+
+  /* ── Society options (Super Admin only) ── */
+  useEffect(() => {
+    if (!isSuperAdmin) return;
+    API.get("/societies")
+      .then((res) => {
+        const list = Array.isArray(res.data) ? res.data : res.data?.data || [];
+        setSocieties(list);
+      })
+      .catch(() => setSocieties([]));
+  }, [isSuperAdmin]);
+
+  const handleSocietyChange = (id) => {
+    setSelectedSocietyId(id);
+    localStorage.setItem("superadmin_society_filter", id);
+    setFilterBlock("ALL");   // blocks are society specific
+    setDetailTenant(null);
+  };
 
   /* ── Derived filter options ── */
   const blocks = useMemo(() => {
@@ -337,6 +368,7 @@ export default function TenantManagement() {
           t.tenant_name?.toLowerCase().includes(q) ||
           t.tenant_email?.toLowerCase().includes(q) ||
           t.tenant_phone?.includes(q) ||
+          t.society_name?.toLowerCase().includes(q) ||
           t.flat_number?.toString().includes(q);
         if (!matches) return false;
       }
@@ -355,7 +387,7 @@ export default function TenantManagement() {
 
   useEffect(() => {
     setPage(1);
-  }, [activeTab, search, filterBlock]);
+  }, [activeTab, search, filterBlock, selectedSocietyId]);
 
   /* ── Tab counts ── */
   const tabCounts = useMemo(() => {
@@ -420,6 +452,18 @@ export default function TenantManagement() {
         </div>
 
         <div className="tm-toolbar flex items-center gap-2.5 flex-wrap">
+          {isSuperAdmin && (
+            <FilterSelect
+              icon={<MdBusiness size={13} />}
+              value={selectedSocietyId}
+              onChange={handleSocietyChange}
+              options={[
+                { value: "ALL", label: t("allSocietiesGlobalView") || "All Societies" },
+                ...societies.map(s => ({ value: String(s.id), label: s.name })),
+              ]}
+            />
+          )}
+
           <FilterSelect
             icon={<MdFilterList size={13} />}
             value={activeTab}
@@ -490,6 +534,9 @@ export default function TenantManagement() {
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-bold truncate" style={{ color: "var(--text-primary)" }}>{row.tenant_name}</p>
                     <p className="truncate" style={{ fontSize: 11, color: "var(--text-secondary)" }}>{row.tenant_email}</p>
+                    {isGlobalView && row.society_name && (
+                      <p className="truncate" style={{ fontSize: 10, color: "var(--accent)", fontWeight: 700 }}>{row.society_name}</p>
+                    )}
                   </div>
                   <StatusBadge label={row.status_label} />
                 </div>
@@ -570,6 +617,9 @@ export default function TenantManagement() {
                     <div className="min-w-0">
                       <p className="text-sm font-bold truncate" style={{ color: "var(--text-primary)" }}>{row.tenant_name}</p>
                       <p className="truncate" style={{ fontSize: 10, color: "var(--text-secondary)" }}>{row.tenant_email}</p>
+                      {isGlobalView && row.society_name && (
+                        <p className="truncate" style={{ fontSize: 10, color: "var(--accent)", fontWeight: 700 }}>{row.society_name}</p>
+                      )}
                     </div>
                   </div>
 

@@ -69,7 +69,7 @@ function SuperAdminLayoutInner() {
       group: "COMMUNITY & UNITS",
     },
     {
-      label: t("saMenuTenantApprovals") || "Tenant Approvals",
+      label: "Tenant Approvals",
       path: `${base}/tenant-management`,
       icon: MdVerified,
       group: "COMMUNITY & UNITS",

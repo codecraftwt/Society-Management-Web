@@ -1015,20 +1015,124 @@ html.role-theme .flat-history-page .fh-card-avatar--vac {
 }
 
 .flat-history-page .fh-card-title-group {
+  flex: 1 1 auto;
   min-width: 0;
+  overflow: hidden;
 }
 
 .flat-history-page .fh-card-number-row {
   gap: 6px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  min-width: 0;
+  max-width: 100%;
 }
 
-html.role-theme .flat-history-page .fh-card-number {
-  margin: 0 !important;
-  color: var(--text-primary) !important;
-  font-size: 14px !important;
-  font-weight: 700 !important;
-  line-height: 1.3;
+/* Sky-blue pill around the flat number on each card */
+.flat-history-page .fh-card-number-pill {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 5px;
+  margin: 0;
+  padding: 2px 9px;
+  border-radius: 999px;
+  background: rgba(56, 189, 248, 0.14);
+  border: 1px solid rgba(56, 189, 248, 0.38);
+  color: #38BDF8;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.5;
+  white-space: nowrap;
+  box-sizing: border-box;
+}
+
+/* The type tag beside it must yield space rather than drop to its own line */
+.flat-history-page .fh-card-number-row .fh-card-type-tag {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.flat-history-page .fh-card-number-pill--muted {
+  background: rgba(148, 163, 184, 0.14);
+  border-color: rgba(148, 163, 184, 0.36);
+  color: var(--text-secondary);
+}
+
+/* Page header controls: chevrons + chip row + search + count must stay on
+   ONE line. The chip row is the only element allowed to shrink/scroll. */
+.flat-history-page .fh-header-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: nowrap;
+  flex: 1 1 auto;
+  min-width: 0;
+  justify-content: flex-end;
+}
+
+.flat-history-page .fh-header-badge {
+  display: inline-flex;
+  flex: 0 0 auto;
+}
+
+@media (max-width: 640px) {
+  /* Redundant with the "Showing X of Y" footer count, so drop it to protect
+     the single-row layout on phones */
+  .flat-history-page .fh-header-badge {
+    display: none;
+  }
+}
+
+/* Block toggle: arrow buttons flanking the sliding pill row */
+.flat-history-page .fh-block-toggle {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  max-width: 100%;
+  flex: 0 1 auto;
+}
+
+.flat-history-page .fh-block-toggle .sliding-tabs {
+  min-width: 0;
+}
+
+.flat-history-page .fh-block-nav {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border-radius: 999px;
+  border: 1px solid var(--card-inner-border, rgba(255, 255, 255, 0.08));
+  background: var(--card-inner-bg, transparent);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: color 0.2s ease, background 0.2s ease, opacity 0.2s ease;
+}
+
+.flat-history-page .fh-block-nav:hover:not(:disabled) {
+  color: var(--text-primary);
+  background: var(--card-inner-border, rgba(255, 255, 255, 0.12));
+}
+
+.flat-history-page .fh-block-nav:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.flat-history-page .fh-block-nav:focus {
+  outline: none;
+}
+
+.flat-history-page .fh-block-nav:focus-visible {
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.7);
 }
 
 html.role-theme .flat-history-page .fh-card-type-tag,

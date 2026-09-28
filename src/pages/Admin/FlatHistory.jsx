@@ -8,8 +8,8 @@ import GlobalBadge from "../../components/common/GlobalBadge";
 import GlobalConfirmDialog from "../../components/common/GlobalConfirmDialog";
 import { useLang } from "../../context/LanguageContext";
 import { AuthContext } from "../../context/AuthContext";
-import { isCommitteeMember, hasPermission } from "../../utils/permissions";
-import { MdApartment, MdLogout } from "react-icons/md";
+import { hasPermission } from "../../utils/permissions";
+import { MdApartment, MdLogout, MdChevronLeft, MdChevronRight } from "react-icons/md";
 import SlidingTabs from "../../components/common/SlidingTabs";
 import ExpandableSearch from "../../components/common/ExpandableSearch";
 
@@ -424,7 +424,11 @@ const ParkingTab = ({ parking, t }) => {
 
 /* ─────────────────────────────────────────────────────────────
    MAIN COMPONENT
-────────────────────────────────────────────────────────────── */
+   ────────────────────────────────────────────────────────────── */
+
+/** Sentinel id for the "All Blocks" pseudo-chip (never a real block name). */
+const ALL_BLOCKS = "__all__";
+
 const FlatHistory = () => {
   const { t } = useLang();
   const { user } = useContext(AuthContext);
@@ -434,11 +438,13 @@ const FlatHistory = () => {
   const [selectedFlat, setSelectedFlat] = useState(null);
   const [activeTab,    setActiveTab]    = useState("residents");
   const [search,       setSearch]       = useState("");
+  const [searchOpen,   setSearchOpen]   = useState(false);
   const [loading,      setLoading]      = useState(false);
   const [fetchError,   setFetchError]   = useState(null);
-  const [activeBlock,  setActiveBlock]  = useState("");
+  const [activeBlock,  setActiveBlock]  = useState(ALL_BLOCKS);
   const [confirmMoveOut, setConfirmMoveOut] = useState(null);
   const [movingOut,    setMovingOut]    = useState(false);
+
 
   const searchInputRef = useRef(null);
 
@@ -481,6 +487,30 @@ const FlatHistory = () => {
     }
     return flat?.block_id ? `${t("fhBlock")} ${flat.block_id}` : "Unassigned";
   }, [t]);
+
+  /* ── Helper: Owner / resident name assigned to the flat ── */
+  const getFlatOwnerName = useCallback((flat) => {
+    return (
+      flat?.User?.name ||
+      flat?.user?.name ||
+      flat?.resident_name ||
+      flat?.owner_name ||
+      flat?.owner?.name ||
+      ""
+    );
+  }, []);
+
+  /* ── Helper: Searchable text for a flat (number, block, owner, type) ── */
+  const flatSearchText = useCallback((flat) => {
+    return [
+      flat?.flat_number ?? "",
+      getBlockName(flat),
+      getFlatOwnerName(flat),
+      flat?.flat_type ?? "",
+    ]
+      .join(" ")
+      .toLowerCase();
+  }, [getBlockName, getFlatOwnerName]);
 
   /* ── 1. Load flat list on mount ── */
   useEffect(() => {
@@ -602,12 +632,13 @@ const FlatHistory = () => {
 
   const blockNames = useMemo(() => Object.keys(allBlockGroups).sort(), [allBlockGroups]);
 
-  /* ── Default active block selection ── */
-  useEffect(() => {
-    if (blockNames.length > 0 && (!activeBlock || !allBlockGroups[activeBlock])) {
-      setActiveBlock(blockNames[0]);
-    }
-  }, [blockNames, activeBlock, allBlockGroups]);
+  const isAllBlocks = activeBlock === ALL_BLOCKS;
+
+  /* ── Every flat in the society (used by the "All Blocks" view) ── */
+  const allFlats = useMemo(
+    () => blockNames.flatMap((bName) => allBlockGroups[bName].flats),
+    [allBlockGroups, blockNames]
+  );
 
   /* ── Search handling ── */
   const searchTrim = search.trim().toLowerCase();
@@ -617,33 +648,83 @@ const FlatHistory = () => {
     const res = {};
     for (const bName of blockNames) {
       const cnt = allBlockGroups[bName].flats.filter((f) =>
-        `flat ${f.flat_number} ${bName}`.toLowerCase().includes(searchTrim)
+        flatSearchText(f).includes(searchTrim)
       ).length;
       if (cnt > 0) res[bName] = cnt;
     }
+    // Totals for the "All Blocks" chip so its badge tracks the search too
+    res[ALL_BLOCKS] = blockNames.reduce((sum, b) => sum + (res[b] || 0), 0);
     return res;
-  }, [allBlockGroups, blockNames, searchTrim]);
+  }, [allBlockGroups, blockNames, searchTrim, flatSearchText]);
 
-  // If search matches other blocks but current block has 0, auto switch to first match
+  /* ── Toggle chips: "All Blocks" first, then one per block ── */
+  const blockTabs = useMemo(() => {
+    const badgeFor = (bName) => {
+      if (matchCountsByBlock[bName] !== undefined) return matchCountsByBlock[bName];
+      if (bName === ALL_BLOCKS) return allFlats.length;
+      return allBlockGroups[bName]?.flats?.length ?? 0;
+    };
+
+    return [
+      { id: ALL_BLOCKS, label: t("allBlocks"), badge: badgeFor(ALL_BLOCKS) },
+      ...blockNames.map((bName) => ({ id: bName, label: bName, badge: badgeFor(bName) })),
+    ];
+  }, [allBlockGroups, allFlats, blockNames, matchCountsByBlock, t]);
+
+  /* ── The chip row holds every block but is clipped to ~4 chips, and scrolls
+        horizontally (swipe / trackpad / wheel / arrows) to reach the rest. ── */
+  const toggleWrapRef = useRef(null);
+
+  const activeBlockIdx = blockTabs.findIndex((item) => item.id === activeBlock);
+
+  const visibleBlockTabs = useMemo(() => {
+    // The open search box only leaves room for the active chip
+    if (searchOpen) return blockTabs.filter((item) => item.id === activeBlock);
+    return blockTabs;
+  }, [blockTabs, searchOpen, activeBlock]);
+
+  const stepBlock = (dir) => {
+    const next = blockTabs[activeBlockIdx + dir];
+    if (next) setActiveBlock(next.id);
+  };
+
+  const canStepBack = activeBlockIdx > 0;
+  const canStepFwd = activeBlockIdx > -1 && activeBlockIdx < blockTabs.length - 1;
+
+  // Keep the selected chip in view when it moves by arrow, click or keyboard
   useEffect(() => {
-    if (!searchTrim) return;
-    if (activeBlock && (matchCountsByBlock[activeBlock] || 0) > 0) return;
-    const firstMatch = blockNames.find((b) => (matchCountsByBlock[b] || 0) > 0);
-    if (firstMatch) {
-      setActiveBlock(firstMatch);
-    }
-  }, [searchTrim, matchCountsByBlock, activeBlock, blockNames]);
+    const strip = toggleWrapRef.current?.querySelector(".sliding-tabs");
+    const active = strip?.querySelector('[aria-selected="true"]');
+    if (!strip || !active) return;
+    const fullyVisible =
+      active.offsetLeft >= strip.scrollLeft &&
+      active.offsetLeft + active.offsetWidth <= strip.scrollLeft + strip.clientWidth;
+    if (fullyVisible) return;
+    strip.scrollTo({
+      left: active.offsetLeft - (strip.clientWidth - active.offsetWidth) / 2,
+      behavior: "smooth",
+    });
+  }, [activeBlock, searchOpen, blockTabs]);
+
+  // A plain mouse wheel should scroll the strip sideways instead of the page
+  const onToggleWheel = useCallback((e) => {
+    const strip = e.currentTarget.querySelector(".sliding-tabs");
+    if (!strip || strip.scrollWidth <= strip.clientWidth) return;
+    if (e.deltaY === 0) return;
+    if (e.shiftKey) return;
+    e.preventDefault();
+    strip.scrollLeft += e.deltaY;
+  }, []);
 
   const activeBlockFlats = useMemo(() => {
-    if (!activeBlock || !allBlockGroups[activeBlock]) return [];
-    const blockFlats = allBlockGroups[activeBlock].flats;
-    if (!searchTrim) return blockFlats;
-    return blockFlats.filter((f) =>
-      `flat ${f.flat_number} ${activeBlock}`.toLowerCase().includes(searchTrim)
-    );
-  }, [allBlockGroups, activeBlock, searchTrim]);
+    const source = isAllBlocks
+      ? allFlats
+      : (activeBlock && allBlockGroups[activeBlock] ? allBlockGroups[activeBlock].flats : []);
+    if (!searchTrim) return source;
+    return source.filter((f) => flatSearchText(f).includes(searchTrim));
+  }, [allFlats, allBlockGroups, activeBlock, isAllBlocks, searchTrim, flatSearchText]);
 
-  /* ── 10 records per page for flats in active block ── */
+  /* ── 10 records per page for flats in the active view ── */
   const [flatPage, setFlatPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const flatTotalPages = Math.max(1, Math.ceil(activeBlockFlats.length / limit));
@@ -651,31 +732,14 @@ const FlatHistory = () => {
     return activeBlockFlats.slice((flatPage - 1) * limit, flatPage * limit);
   }, [activeBlockFlats, flatPage, limit]);
 
-  // Reset page when active block changes
-  useEffect(() => {
+  // Reset page when the active view or the search changes (adjusted during
+  // render so switching chips/search never shows a stale page first)
+  const viewKey = `${activeBlock}|${searchTrim}`;
+  const [prevViewKey, setPrevViewKey] = useState(viewKey);
+  if (viewKey !== prevViewKey) {
+    setPrevViewKey(viewKey);
     setFlatPage(1);
-  }, [activeBlock, searchTrim]);
-
-  /* ── Navigation between blocks (Slider control) ── */
-  const currentBlockIdx = blockNames.indexOf(activeBlock);
-
-  const handleSelectBlock = (bName) => {
-    setActiveBlock(bName);
-  };
-
-  const handlePrevBlock = () => {
-    if (currentBlockIdx > 0) {
-      const prev = blockNames[currentBlockIdx - 1];
-      handleSelectBlock(prev);
-    }
-  };
-
-  const handleNextBlock = () => {
-    if (currentBlockIdx < blockNames.length - 1) {
-      const next = blockNames[currentBlockIdx + 1];
-      handleSelectBlock(next);
-    }
-  };
+  }
 
   /* ── Move-out flow: open confirm, close, execute ── */
   const openMoveOutConfirm = useCallback((resident) => {
@@ -741,7 +805,7 @@ const FlatHistory = () => {
     <div className="fh-root flat-history-page space-y-5 animate-fadeIn">
       {/* ── Page Header: Unified Single Row ── */}
       <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 shrink-0">
           <div className="ad-page-icon">
             <MdApartment size={20} />
           </div>
@@ -751,34 +815,58 @@ const FlatHistory = () => {
           </div>
         </div>
 
-        <div className="flex items-center gap-2.5 flex-wrap">
-          {blockNames.length > 1 && (
-            <SlidingTabs
-              value={activeBlock}
-              onChange={(bName) => { setActiveBlock(bName); setFlatPage(1); }}
-              items={blockNames.map((bName) => ({
-                id: bName,
-                label: bName,
-                badge: matchCountsByBlock[bName] !== undefined ? matchCountsByBlock[bName] : allBlockGroups[bName]?.flats?.length,
-              }))}
-            />
+        <div className="fh-header-controls">
+          {blockNames.length > 0 && (
+            <div className="fh-block-toggle" ref={toggleWrapRef} onWheel={onToggleWheel}>
+              <button
+                type="button"
+                className="fh-block-nav"
+                onClick={() => stepBlock(-1)}
+                disabled={!canStepBack}
+                aria-label={t("fhPrevBlock") || "Previous block"}
+              >
+                <MdChevronLeft size={18} />
+              </button>
+
+              <SlidingTabs
+                value={activeBlock}
+                onChange={setActiveBlock}
+                items={visibleBlockTabs}
+                className="sliding-tabs--tight sliding-tabs--scroll"
+              />
+
+              <button
+                type="button"
+                className="fh-block-nav"
+                onClick={() => stepBlock(1)}
+                disabled={!canStepFwd}
+                aria-label={t("fhNextBlock") || "Next block"}
+              >
+                <MdChevronRight size={18} />
+              </button>
+            </div>
           )}
 
           <ExpandableSearch
+            isOpen={searchOpen}
+            onOpenChange={setSearchOpen}
+            maxWidth={320}
             value={search}
             onChange={(val) => { setSearch(val); setFlatPage(1); }}
-            placeholder={t("fhSearchPlaceholder") || "Search flats or residents..."}
+            placeholder={t("fhSearchPlaceholder") || "Search flats, blocks or owners..."}
           />
 
-          <GlobalBadge variant="info" size="lg" icon={MdApartment}>
-            {flats.length} {t("fhFlats") || "Flats"}
-          </GlobalBadge>
+          <span className="fh-header-badge">
+            <GlobalBadge variant="info" size="lg" icon={MdApartment}>
+              {flats.length} {t("fhFlats") || "Flats"}
+            </GlobalBadge>
+          </span>
         </div>
       </div>
 
       {/* Block Section & Flats Container */}
       <div className="fh-block-section-wrap">
-        {activeBlock && allBlockGroups[activeBlock] ? (
+        {isAllBlocks || (activeBlock && allBlockGroups[activeBlock]) ? (
           <div className="fh-block-content" key={activeBlock}>
             {/* Flats Grid for this block with slide page transition */}
             {activeBlockFlats.length === 0 ? (
@@ -790,10 +878,7 @@ const FlatHistory = () => {
                     const occ = !!flat.resident_id;
                     const isSelected = selectedFlat?.id === flat.id;
                     const residentName =
-                      flat.User?.name ||
-                      flat.user?.name ||
-                      flat.resident_name ||
-                      (occ ? "Occupied Resident" : null);
+                      getFlatOwnerName(flat) || (occ ? "Occupied Resident" : null);
 
                     return (
                       <div
@@ -809,15 +894,18 @@ const FlatHistory = () => {
                             </div>
                             <div className="fh-card-title-group">
                               <div className="fh-card-number-row">
-                                <h3 className="fh-card-number">{(t("fhFlat") || "Flat")} {flat.flat_number}</h3>
+                                <h3 className="fh-card-number-pill">
+                                  {(t("fhFlat") || "Flat")} {flat.flat_number}
+                                </h3>
                                 {flat.flat_type && (
                                   <span className="fh-card-type-tag">{flat.flat_type}</span>
                                 )}
+
                               </div>
                               <span className="fh-card-meta-line">
                                 {flat.Floor?.floor_number != null
-                                  ? `Floor ${flat.Floor.floor_number}`
-                                  : `Block ${activeBlock.replace(/^Block\s*/i, "")}`}
+                                  ? `${getBlockName(flat)} · Floor ${flat.Floor.floor_number}`
+                                  : getBlockName(flat)}
                               </span>
                             </div>
                           </div>
@@ -860,7 +948,8 @@ const FlatHistory = () => {
 
                 <div className="flex flex-col sm:flex-row justify-between items-center px-3 pt-4 mt-4 border-t border-glass gap-3">
                   <span className="text-xs text-secondary">
-                    Showing <strong>{pagedFlats.length}</strong> of <strong>{activeBlockFlats.length}</strong> flats in {activeBlock}
+                    Showing <strong>{pagedFlats.length}</strong> of <strong>{activeBlockFlats.length}</strong> flats{" "}
+                    {isAllBlocks ? t("allBlocks").toLowerCase() : `in ${activeBlock}`}
                   </span>
                   <Pagination page={flatPage} totalPages={flatTotalPages} onPageChange={setFlatPage} pageSize={limit} onPageSizeChange={(s) => { setLimit(s); setFlatPage(1); }} />
                 </div>

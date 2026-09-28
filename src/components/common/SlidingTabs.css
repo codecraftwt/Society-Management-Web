@@ -34,6 +34,30 @@
   flex: none;
 }
 
+/* Tighter variant: 4px between pills, 4px container padding */
+.sliding-tabs--tight {
+  gap: 4px;
+}
+
+.sliding-tabs--tight .sliding-tabs__item {
+  padding: 7px 12px;
+  font-size: 12.5px;
+}
+
+/* Scrollable variant: clipped to roughly four chips, swipe/wheel/trackpad to
+   reach the rest. The scrollbar stays hidden to match the app's chip strips;
+   the flanking arrows in FlatHistory are the visible affordance. */
+.sliding-tabs--scroll {
+  max-width: min(100%, 344px);
+  scroll-behavior: smooth;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+.sliding-tabs--scroll .sliding-tabs__item {
+  flex: 0 0 auto;
+}
+
 .sliding-tabs__indicator {
   box-sizing: border-box;
   position: absolute;
