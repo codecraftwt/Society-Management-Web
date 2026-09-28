@@ -1,6 +1,7 @@
 // src/locales/hi.js
 const hi = {
   // Common
+  nfBackHome: "होम पर वापस जाएँ",
   save: "बदलाव सहेजें",
   saving: "सहेज रहे हैं…",
   saved: "बदलाव सफलतापूर्वक सहेजे गए!",

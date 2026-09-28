@@ -16,6 +16,7 @@ import {
 } from "react-icons/md";
 import { FaBuilding } from "react-icons/fa";
 import Select from "../../components/common/Select";
+import SuccessOverlay from "../../components/common/SuccessOverlay";
 
 export default function Payments() {
   const { t } = useLang();
@@ -32,6 +33,8 @@ export default function Payments() {
   const [source, setSource] = useState("");
   const [modeFilter, setModeFilter] = useState("ALL");
   const [confirming, setConfirming] = useState(null);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [successMsg, setSuccessMsg] = useState("");
   const [selected, setSelected] = useState(null);
   const [search, setSearch] = useState("");
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -127,7 +130,10 @@ export default function Payments() {
     try {
       setConfirming(row.id);
       const res = await confirmBillPayment(row.bill_id);
-      toast.success(res?.message || t("payConfirmOk") || "Payment verified successfully!");
+      const msg = res?.message || t("payConfirmOk") || "Payment verified successfully!";
+      toast.success(msg);
+      setSuccessMsg(msg);
+      setShowSuccess(true);
       load(page, source, limit, societyId);
     } catch (e) {
       console.error("Failed to confirm payment", e);
@@ -333,7 +339,7 @@ export default function Payments() {
 
           <div className="flex items-center gap-2">
             <Select
-              className="input h-11 min-w-[200px] text-sm font-semibold rounded-xl"
+              className="input h-11 min-w-50 text-sm font-semibold rounded-xl"
               value=""
               onChange={(e) => handleSelectSociety(e.target.value)}
             >
@@ -484,6 +490,11 @@ export default function Payments() {
         }}
       />
       {selected && <PaymentDetailsModal row={selected} onClose={() => setSelected(null)} />}
+      <SuccessOverlay
+        open={showSuccess}
+        caption={successMsg}
+        onDone={() => setShowSuccess(false)}
+      />
     </div>
   );
 }

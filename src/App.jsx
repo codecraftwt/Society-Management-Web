@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import SeoHead from "./seo/SeoHead";
@@ -24,6 +24,7 @@ import CookiePolicy from "./pages/legal/CookiePolicy";
 import ProtectedRoute from "./components/protectedRoute";
 import PublicRoute from "./components/PublicRoute";
 import PermissionRoute from "./components/common/PermissionRoute";
+import NotFound from "./pages/NotFound";
 
 /* === SUPER ADMIN === */
 import SuperAdminDashboard from "./pages/SuperAdmin/SuperAdminDashboard";
@@ -443,7 +444,7 @@ function App() {
         </Route>
 
         {/* === FALLBACK NOT FOUND ROUTE === */}
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="*" element={<NotFound />} />
       </Routes>
       </Suspense>
     </>

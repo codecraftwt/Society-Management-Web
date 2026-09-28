@@ -1,6 +1,7 @@
 
 const en = {
   // Common
+  nfBackHome: "Back to Home",
   save: "Save Changes",
   saving: "Saving…",
   saved: "Changes saved successfully!",

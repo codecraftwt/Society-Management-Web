@@ -3,6 +3,7 @@
 // src/locales/mr.js
 const mr = {
   // Common
+  nfBackHome: "मुख्यपृष्ठावर परत जा",
   save: "बदल जतन करा",
   saving: "जतन होत आहे…",
   saved: "बदल यशस्वीरित्या जतन झाले!",
