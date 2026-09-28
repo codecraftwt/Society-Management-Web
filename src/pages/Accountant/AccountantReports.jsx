@@ -1,7 +1,7 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { useLang } from "../../context/LanguageContext";
-import { MdArrowForward, MdBarChart, MdReceiptLong } from "react-icons/md";
+import { MdArrowForward, MdBarChart, MdReceiptLong, MdTrendingDown } from "react-icons/md";
 
 export default function AccountantReports() {
   const navigate = useNavigate();
@@ -50,6 +50,40 @@ export default function AccountantReports() {
 
           <div className="flex items-center justify-between">
             <span className="text-xs font-medium text-accent opacity-80">{t("adminRptFinancialStat")}</span>
+            <div className="flex items-center gap-1.5 text-xs font-semibold text-accent opacity-70 group-hover:opacity-100 group-hover:gap-2.5 transition-all duration-200">
+              {t("rrViewReport")} <MdArrowForward size={14} />
+            </div>
+          </div>
+        </div>
+
+        <div
+          onClick={() => navigate("/accountant/reports/expenses")}
+          className="premium-card p-5 cursor-pointer group relative overflow-hidden transition-all duration-300 hover:-translate-y-1"
+        >
+          <div
+            className="absolute -top-8 -right-8 w-28 h-28 rounded-full pointer-events-none"
+            style={{ background: "var(--accent-soft)", filter: "blur(28px)" }}
+          />
+          <div
+            className="w-11 h-11 rounded-xl flex items-center justify-center mb-4 border group-hover:scale-110 transition-transform duration-300"
+            style={{
+              background: "var(--accent-soft)",
+              borderColor: "var(--glass-border)",
+              color: "var(--accent)",
+            }}
+          >
+            <MdTrendingDown size={22} />
+          </div>
+
+          <h3 className="font-semibold text-base leading-tight" style={{ color: "var(--text-primary)" }}>
+            {t("adminRptExpenses")}
+          </h3>
+          <p className="text-secondary text-xs mt-2 leading-relaxed">{t("adminRptExpensesDesc")}</p>
+
+          <div className="h-px my-4" style={{ background: "var(--divider)" }} />
+
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-medium text-accent opacity-80">{t("adminRptExpensesStat")}</span>
             <div className="flex items-center gap-1.5 text-xs font-semibold text-accent opacity-70 group-hover:opacity-100 group-hover:gap-2.5 transition-all duration-200">
               {t("rrViewReport")} <MdArrowForward size={14} />
             </div>

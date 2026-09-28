@@ -4076,6 +4076,51 @@ cpwSuccessMsg:            "पासवर्ड सफलतापूर्व�
   finFiltered: "छना गया",
   finNoRecords: "कोई रिकॉर्ड नहीं मिला",
 
+  // ── Payment & Expense Reports (payments / expenses tables) ──
+  adminRptExpenses:     "व्यय रिपोर्ट",
+  adminRptExpensesDesc: "धन-निर्गम रिकॉर्ड: प्राप्तकर्ता, कारण, राशि और भुगतान विधि।",
+  adminRptExpensesStat: "व्यय",
+
+  rptColSociety:     "सोसाइटी",
+  rptAllSocieties:   "सभी सोसाइटी",
+  rptAllStatus:      "सभी स्थिति",
+  rptAllSources:     "सभी स्रोत",
+  rptAllModes:       "सभी विधियाँ",
+  rptAllPaidBy:      "सभी भूमिकाएँ",
+
+  payReportTitle:    "भुगतान रिपोर्ट",
+  payReportSubtitle: "हर भुगतान दर्ज, स्रोत, विधि और स्थिति के साथ।",
+  payRecordsTitle:   "भुगतान रिकॉर्ड",
+  payLoading:        "भुगतान लोड हो रहे हैं...",
+  payColSource:      "स्रोत",
+  payColMode:        "विधि",
+  payColDate:        "भुगतान तिथि",
+  paySrcBill:        "बिल",
+  paySrcMaintenance: "रखरखाव",
+  paySrcAmenity:     "सुविधा",
+  payStatusSuccess:  "सफल",
+  payStatusPending:  "लंबित",
+  payStatusFailed:   "विफल",
+  payStatusCancelled:"रद्द",
+  payStatSuccess:    "सफल भुगतान",
+  payStatPending:    "लंबित",
+  payStatPendingAmt: "लंबित राशि",
+
+  expReportTitle:    "व्यय रिपोर्ट",
+  expReportSubtitle: "हर व्यय दर्ज, प्राप्तकर्ता, कारण और विधि के साथ।",
+  expRecordsTitle:   "व्यय रिकॉर्ड",
+  expLoading:        "व्यय लोड हो रहे हैं...",
+  expColPayTo:       "प्राप्तकर्ता",
+  expColReason:      "कारण",
+  expColPaidBy:      "भुगतानकर्ता",
+  expColDate:        "व्यय तिथि",
+  expStatusPosted:   "पोस्टेड",
+  expStatusVoid:     "रद्द",
+  expStatTotal:      "कुल व्यय",
+  expStatVoided:     "रद्द राशि",
+  expStatPosted:     "पोस्टेड",
+  expStatVoidCount:  "रद्द",
+
 
   // ================= HOME / LANDING PAGE =================
   homeBrandTitle: "सोसायटी प्रबंधन",
@@ -4774,6 +4819,28 @@ cpwSuccessMsg:            "पासवर्ड सफलतापूर्व�
   ghFaq6a: "पार्किंग अनुभाग पर जाएँ और उल्लंघन का वाहन नंबर, स्थान और समय लॉग करें। आप फोटो नोट भी जोड़ सकते हैं। आगे की कार्रवाई के लिए सिस्टम प्रशासक को सूचित करेगा।",
   ghFaq7q: "यदि सिस्टम बंद हो जाए तो मुझे क्या करना चाहिए?",
   ghFaq7a: "सभी प्रविष्टियों और निकास के लिए मैन्युअल रजिस्टर बनाए रखें। विज़िटर विवरण, समय और फ्लैट नंबर नोट करें। तुरंत IT सहायता नंबर या सोसाइटी प्रबंधक से संपर्क करें। गेट संचालन न रोकें।",
+
+  /* ── Previously-missing keys ──
+     These call sites used t("key") || "Fallback", but t() only honours a
+     fallback passed as the SECOND argument, so the raw key was rendered. */
+  resPendingApproval:         "अनुमोदन लंबित",
+  resApproveActivate:         "अनुमोदित करें और सक्रिय करें",
+  resRejectTitle:             "पंजीकरण अस्वीकार करें",
+  resRejectBody:              "इससे पंजीकरण अस्वीकृत हो जाएगा और खाता निष्क्रिय कर दिया जाएगा। निवासी को सूचित किया जाएगा।",
+  resRejectReasonPlaceholder: "कारण (वैकल्पिक)",
+  rejecting:                  "अस्वीकार किया जा रहा है…",
+  resPasswordHint:            "डिफ़ॉल्ट: Admin@123 (लॉगिन के बाद निवासी पासवर्ड बदल सकता है)",
+  acctActionsMenu:            "अकाउंटेंट क्रियाएँ",
+  amenitySearch:              "सुविधा से खोजें।",
+  amModalAddSub:              "इस सोसाइटी को एक प्रशासक सौंपें",
+  amModalEditSub:             "सोसाइटी प्रशासक अपडेट करें",
+  billDeleteConfirmTitle:     "बिल हटाएँ",
+  billDeleteConfirmMsg:       "क्या आप वाकई यह बिल हटाना चाहते हैं? यह कार्रवाई वापस नहीं की जा सकती।",
+  blkCreateSub:               "इसमें नया ब्लॉक जोड़ें",
+  csaSubtitle:                "सोसाइटी एडमिन खाता बनाएँ और प्रबंधन के लिए सोसाइटी असाइन करें",
+  flrTitle:                   "ब्लॉक के मंज़िले",
+  noticeReplaceHint:          "अटैचमेंट बदलें",
+  viewAttachment:             "अटैचमेंट देखें",
 };
 
 export default hi;

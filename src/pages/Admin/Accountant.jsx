@@ -82,7 +82,7 @@ function AccountantActionMenu({ canEdit, onEdit, canToggle, status, onToggle, t 
         ref={btnRef}
         onClick={toggle}
         className="sa-action-dots"
-        aria-label={t("acctActionsMenu") || "Accountant actions"}
+        aria-label={t("acctActionsMenu", "Accountant actions")}
         aria-haspopup="menu"
         aria-expanded={open}
       >

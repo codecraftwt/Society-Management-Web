@@ -19,6 +19,9 @@ export default function ReportFilterSheet({
   labels = {},
   /* status options: [{ value, label }] */
   statusOptions = [],
+  /* optional extra fields rendered between Status and the date presets
+     (e.g. society / source / mode pickers). Node or array of nodes. */
+  extraFields = null,
 }) {
   const {
     title        = "Filters",
@@ -65,6 +68,9 @@ export default function ReportFilterSheet({
           ))}
         </Select>
       </div>
+
+      {/* Report-specific extra filters */}
+      {extraFields}
 
       {/* Quick Date Presets */}
       <div>

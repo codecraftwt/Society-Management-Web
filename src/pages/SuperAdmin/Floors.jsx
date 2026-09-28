@@ -73,7 +73,7 @@ export default function Floors() {
             <MdApartment size={22} />
           </div>
           <div style={{ minWidth: 0 }}>
-            <h1 className="sa-page-title">{t("flrTitle") || "Block Floors"}</h1>
+            <h1 className="sa-page-title">{t("flrTitle", "Block Floors")}</h1>
             <p className="sa-page-subtitle">
               {floors.length} floor{floors.length !== 1 ? "s" : ""} added to this block
             </p>

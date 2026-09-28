@@ -25,8 +25,8 @@ const AdminChangeModal = ({ onClose, onSubmit, existingAdmin }) => {
       title={isEdit ? t("amModalEditTitle") : t("amModalAddTitle")}
       subtitle={
         isEdit
-          ? t("amModalEditSub") || "Update the society administrator"
-          : t("amModalAddSub") || "Assign an administrator to this society"
+          ? t("amModalEditSub", "Update the society administrator")
+          : t("amModalAddSub", "Assign an administrator to this society")
       }
       icon={isEdit ? MdEdit : MdPersonAdd}
       size="sm"

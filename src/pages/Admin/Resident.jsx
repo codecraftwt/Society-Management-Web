@@ -100,7 +100,7 @@ function PendingApprovalBadge() {
   return (
     <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 11, fontWeight: 700, padding: "3px 9px", borderRadius: 999, background: "rgba(251,191,36,0.12)", color: "var(--accent)", border: "1px solid rgba(251,191,36,0.28)", letterSpacing: "0.02em" }}>
       <MdWarning size={11} />
-      {t("resPendingApproval") || "Pending Approval"}
+      {t("resPendingApproval", "Pending Approval")}
     </span>
   );
 }
@@ -178,7 +178,7 @@ function ResidentActionMenu({ onAssignFlat, onEdit, isCommittee, isAccountant, i
             <>
               <button role="menuitem" className="sa-action-item" onClick={() => act(onApprove)} style={{ color: "#4ade80" }}>
                 <MdCheck size={15} />
-                {t("resApproveActivate") || "Approve & Activate"}
+                {t("resApproveActivate", "Approve & Activate")}
               </button>
               <button role="menuitem" className="sa-action-item sa-action-item-danger" onClick={() => act(onReject)}>
                 <MdClose size={15} />
@@ -3093,7 +3093,7 @@ const [totalPages, setTotalPages] = useState(1);
                             </button>
                           </div>
                           <p style={{ fontSize: 11, color: "var(--text-secondary)", marginTop: 4, opacity: 0.75 }}>
-                            {t("resPasswordHint") || "Default: Admin@123 (Resident can change password after login)"}
+                            {t("resPasswordHint", "Default: Admin@123 (Resident can change password after login)")}
                           </p>
                         </Field>
                       )}
@@ -3690,21 +3690,21 @@ const [totalPages, setTotalPages] = useState(1);
               </div>
               <div>
                 <p style={{ margin: 0, fontSize: 16, fontWeight: 800, color: "var(--text-primary)", letterSpacing: "-0.02em" }}>
-                  {t("resRejectTitle") || "Reject Registration"}
+                  {t("resRejectTitle", "Reject Registration")}
                 </p>
                 <p style={{ margin: 0, fontSize: 12, color: "var(--text-secondary)" }}>{rejectTarget.name}</p>
               </div>
             </div>
 
             <p style={{ margin: 0, fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.6 }}>
-              {t("resRejectBody") || "This will mark the registration as rejected and deactivate the account. The resident will be notified."}
+              {t("resRejectBody", "This will mark the registration as rejected and deactivate the account. The resident will be notified.")}
             </p>
 
             <textarea
               rows={3}
               value={rejectReason}
               onChange={(e) => setRejectReason(e.target.value)}
-              placeholder={t("resRejectReasonPlaceholder") || "Reason (optional)"}
+              placeholder={t("resRejectReasonPlaceholder", "Reason (optional)")}
               style={{ width: "100%", boxSizing: "border-box", marginTop: 12, padding: "10px 12px", borderRadius: 10, background: "var(--card-inner-bg, rgba(255,255,255,0.05))", border: "1px solid var(--glass-border, rgba(255,255,255,0.12))", color: "var(--text-primary)", fontSize: 13, outline: "none", resize: "vertical", fontFamily: "inherit" }}
             />
 
@@ -3719,7 +3719,7 @@ const [totalPages, setTotalPages] = useState(1);
                 style={{ borderRadius: 999, fontWeight: 700 }}
                 disabled={rejectLoading}
               >
-                {rejectLoading ? <>{t("rejecting") || "Rejecting…"}</> : <><MdClose size={16} /> <span>{t("reject") || "Reject"}</span></>}
+                {rejectLoading ? <>{t("rejecting", "Rejecting…")}</> : <><MdClose size={16} /> <span>{t("reject") || "Reject"}</span></>}
               </button>
             </div>
           </div>

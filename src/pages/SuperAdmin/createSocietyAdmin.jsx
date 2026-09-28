@@ -86,7 +86,7 @@ export default function CreateSocietyAdmin() {
           <div style={{ minWidth: 0 }}>
             <h1 className="sa-page-title">{t("csaTitle")}</h1>
             <p className="sa-page-subtitle">
-              {t("csaSubtitle") || "Create a society admin account and assign a society to manage"}
+              {t("csaSubtitle", "Create a society admin account and assign a society to manage")}
             </p>
           </div>
         </div>
@@ -106,7 +106,7 @@ export default function CreateSocietyAdmin() {
           <div className="sa-form-icon"><MdPersonAdd size={19} /></div>
           <div className="min-w-0">
             <h3 className="sa-form-title">{t("csaTitle")}</h3>
-            <p className="sa-form-subtitle">{t("csaSubtitle") || "Society admin credentials"}</p>
+            <p className="sa-form-subtitle">{t("csaSubtitle", "Society admin credentials")}</p>
           </div>
         </div>
 

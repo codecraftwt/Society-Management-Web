@@ -1285,8 +1285,8 @@ export default function ManageBills({ variant }) {
           isOpen={Boolean(confirmDeleteId)}
           onClose={() => setConfirmDeleteId(null)}
           onConfirm={() => handleDeleteBill(confirmDeleteId)}
-          title={t("billDeleteConfirmTitle") || "Delete Bill"}
-          message={t("billDeleteConfirmMsg") || "Are you sure you want to delete this bill? This action cannot be undone."}
+          title={t("billDeleteConfirmTitle", "Delete Bill")}
+          message={t("billDeleteConfirmMsg", "Are you sure you want to delete this bill? This action cannot be undone.")}
           confirmText={t("billYesDelete") || "Yes, Delete"}
           variant="danger"
           loading={Boolean(deletingId)}

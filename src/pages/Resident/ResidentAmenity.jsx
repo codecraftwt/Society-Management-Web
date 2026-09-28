@@ -864,7 +864,7 @@ const navigate = useNavigate();
             {!initialLoad && (
               <div className="ge-toolbar">
                 <ExpandableSearch
-                  placeholder={t("amenitySearch") || "Search by amenity…"}
+                  placeholder={t("amenitySearch", "Search by amenity…")}
                   value={bookingSearch}
                   onChange={setBookingSearch}
                 />

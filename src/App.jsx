@@ -36,6 +36,7 @@ import SuperAdminReports from "./pages/SuperAdmin/Reports";
 import SuperAdminVisitorReport from "./pages/SuperAdmin/reports/VisitorReport";
 import SuperAdminComplaintReport from "./pages/SuperAdmin/reports/ComplaintReport";
 import SuperAdminFinancialReport from "./pages/SuperAdmin/reports/FinancialReport";
+import SuperAdminExpenseReport from "./pages/SuperAdmin/reports/ExpenseReport";
 
 /* === SOCIETY ADMIN (FULL ACCESS) === */
 import AdminLayout from "./pages/Admin/AdminLayout";
@@ -53,6 +54,7 @@ import Reports from "./pages/Admin/Reports";
 import ComplaintReport from "./pages/Admin/reports/ComplaintReport";
 import VisitorReport from "./pages/Admin/reports/VisitorReport";
 import FinancialReport from "./pages/Admin/reports/FinancialReport";
+import ExpenseReport from "./pages/Admin/reports/ExpenseReport";
 import SocietyAmenities from "./sections/amenity";
 import SocietyDocuments from "./sections/document";
 import ManageProperty from "./pages/Admin/ManageProperty";
@@ -184,6 +186,7 @@ function App() {
             <Route path="reports/complaints" element={<SuperAdminComplaintReport />} />
             <Route path="reports/visitors" element={<SuperAdminVisitorReport />} />
             <Route path="reports/financial" element={<SuperAdminFinancialReport />} />
+            <Route path="reports/expenses" element={<SuperAdminExpenseReport />} />
             <Route path="superadmin-reports" element={<SuperAdminReports />} />
             <Route path="parking" element={<AssignParkingSlot />} />
             <Route path="accounting" element={<Accounting />} />
@@ -274,6 +277,7 @@ function App() {
               <Route path="reports/complaints" element={<ComplaintReport />} />
               <Route path="reports/visitors" element={<VisitorReport />} />
               <Route path="reports/financial" element={<FinancialReport />} />
+              <Route path="reports/expenses" element={<ExpenseReport />} />
             </Route>
             <Route element={<PermissionRoute module="amenities" />}>
               <Route path="amenities" element={<SocietyAmenities />} />
@@ -394,6 +398,7 @@ function App() {
             <Route element={<PermissionRoute module="reports" />}>
               <Route path="reports" element={<AccountantReports />} />
               <Route path="reports/financial" element={<FinancialReport />} />
+              <Route path="reports/expenses" element={<ExpenseReport />} />
             </Route>
             <Route element={<PermissionRoute module="society_documents" />}>
               <Route path="society_documents" element={<SocietyDocuments />} />

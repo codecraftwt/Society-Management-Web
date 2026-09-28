@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useLang } from "../../context/LanguageContext"; // ← NEW
 import {
   MdPeople, MdReportProblem, MdAccountBalance,
-  MdArrowForward, MdBarChart,
+  MdArrowForward, MdBarChart, MdTrendingDown,
 } from "react-icons/md";
 
 export default function Reports() {
@@ -33,6 +33,13 @@ export default function Reports() {
       icon:        MdAccountBalance,
       path:        "/admin/reports/financial",
       color: { bg: "bg-green-500/15",  border: "border-green-500/25",  icon: "text-green-400",  glow: "rgba(34,197,94,0.15)",   stat: t("adminRptFinancialStat") },
+    },
+    {
+      title:       t("adminRptExpenses"),
+      description: t("adminRptExpensesDesc"),
+      icon:        MdTrendingDown,
+      path:        "/admin/reports/expenses",
+      color: { bg: "bg-amber-500/15",  border: "border-amber-500/25",  icon: "text-amber-400",  glow: "rgba(245,158,11,0.15)",  stat: t("adminRptExpensesStat") },
     },
   ];
 

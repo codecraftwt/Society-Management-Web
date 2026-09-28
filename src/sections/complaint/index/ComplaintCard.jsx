@@ -192,7 +192,7 @@ export default function MobileComplaintCard({ c, updateStatus, updatingId, t, on
               }}
             >
               <MdAttachFile size={15} />
-              <span>{t("viewAttachment") || "View Attachment"}</span>
+              <span>{t("viewAttachment", "View Attachment")}</span>
               <MdOpenInNew size={13} style={{ opacity: 0.8 }} />
             </button>
           </div>

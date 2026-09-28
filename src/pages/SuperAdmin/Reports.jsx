@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useLang } from "../../context/LanguageContext";
 import {
   MdPeople, MdReportProblem, MdAccountBalance,
-  MdArrowForward, MdBarChart,
+  MdArrowForward, MdBarChart, MdTrendingDown,
 } from "react-icons/md";
 
 export default function SuperAdminReports() {
@@ -34,6 +34,14 @@ export default function SuperAdminReports() {
       path:        "/superadmin/reports/financial",
       tone:        { c: "#2FC27E", bg: "rgba(47, 194, 126, 0.13)", bd: "rgba(47, 194, 126, 0.28)" },
       stat:        t("adminRptFinancialStat") || "Total Revenue",
+    },
+    {
+      title:       t("adminRptExpenses") || "Expense Report",
+      description: t("adminRptExpensesDesc") || "Money-out records: payee, reason, amount and mode.",
+      icon:        MdTrendingDown,
+      path:        "/superadmin/reports/expenses",
+      tone:        { c: "#E8A33D", bg: "rgba(232, 163, 61, 0.13)", bd: "rgba(232, 163, 61, 0.28)" },
+      stat:        t("adminRptExpensesStat") || "Total Spend",
     },
   ];
 

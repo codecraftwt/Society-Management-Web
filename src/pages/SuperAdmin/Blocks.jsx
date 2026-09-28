@@ -209,7 +209,7 @@ export default function Blocks() {
           <div className="min-w-0">
             <h3 className="sa-form-title">{t("blkCreateTitle") || "Create Block"}</h3>
             <p className="sa-form-subtitle">
-              {(t("blkCreateSub") || "Add a new block to")} {societyName}
+              {(t("blkCreateSub", "Add a new block to"))} {societyName}
             </p>
           </div>
         </div>

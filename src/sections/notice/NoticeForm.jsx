@@ -181,7 +181,7 @@ export default function NoticeForm({
               }}
             >
               <MdAttachFile size={16} />
-              <span>{existingFileUrl ? (t("noticeReplaceHint") || "Replace attachment") : t("noticeAttachHint")}</span>
+              <span>{existingFileUrl ? (t("noticeReplaceHint", "Replace attachment")) : t("noticeAttachHint")}</span>
               <input
                 type="file"
                 accept="image/*,application/pdf"
