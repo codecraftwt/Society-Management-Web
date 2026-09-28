@@ -86,7 +86,7 @@ export default function Settings() {
   const STRENGTH_MAP = {
     1: { label: t("cpwStrWeak"),   cls: "weak",   color: "#ef4444" },
     2: { label: t("cpwStrFair"),   cls: "mid",    color: "#3B82F6" },
-    3: { label: t("cpwStrGood"),   cls: "mid",    color: "#5B8DEF" },
+    3: { label: t("cpwStrGood"),   cls: "good",   color: "#5B8DEF" },
     4: { label: t("cpwStrStrong"), cls: "strong", color: "#22c55e" },
   };
 
@@ -103,7 +103,7 @@ export default function Settings() {
     if (isAdminOrSocietyAdmin) {
       list.push({
         key: "roles",
-        label: "Role & Section Permissions",
+        label: t("asRolesTab"),
         icon: <MdShield size={15} />,
       });
     }
@@ -245,7 +245,10 @@ export default function Settings() {
             key={item.key}
             type="button"
             role="tab"
+            id={`as-tab-${item.key}`}
+            aria-controls={`as-panel-${item.key}`}
             aria-selected={tab === item.key}
+            tabIndex={tab === item.key ? 0 : -1}
             className={`as-tab${tab === item.key ? " active" : ""}`}
             ref={(node) => {
               tabRefs.current[index] = node;
@@ -260,7 +263,13 @@ export default function Settings() {
 
       {/* ── Tab: Change Password ── */}
       {tab === "password" && (
-        <div className={`as-panel as-panel--${tabDir}`} key={`pw-${tabDir}`}>
+        <div
+          className={`as-panel as-panel--${tabDir}`}
+          key={`pw-${tabDir}`}
+          role="tabpanel"
+          id="as-panel-password"
+          aria-labelledby="as-tab-password"
+        >
           <div className="as-grid">
             {/* Side panel */}
             <aside className="as-side">
@@ -277,33 +286,6 @@ export default function Settings() {
                 <div className="as-hero-status">
                   <span className="as-status-dot" />
                   <span>{t("asProtected")}</span>
-                </div>
-
-                {/* Live strength meter */}
-                <div className="as-meter">
-                  <p className="as-meter-label">{t("asHealthLabel")}</p>
-                  <div className="cpw-strength-wrap" style={{ opacity: np ? 1 : 0.35 }}>
-                    <div className={segCls(1)} />
-                    <div className={segCls(2)} />
-                    <div className={segCls(3)} />
-                    <div className={segCls(4)} />
-                    <span className="cpw-str-label" style={{ color: info?.color }}>
-                      {info?.label || ""}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Requirement checklist */}
-                <div className="as-criteria">
-                  <p className="as-criteria-title">{t("asChecklistTitle")}</p>
-                  <div className="cpw-tips">
-                    {tips.map(tip => (
-                      <div key={tip.id} className="cpw-tip-row">
-                        <div className={`cpw-tip-dot${tip.ok ? " cpw-tip-ok" : ""}`} />
-                        <span>{tip.label}</span>
-                      </div>
-                    ))}
-                  </div>
                 </div>
               </div>
 
@@ -348,14 +330,18 @@ export default function Settings() {
                         style={{ paddingLeft: 32 }}
                         value={cur}
                         onChange={e => { setCur(e.target.value); clearField("cur"); }}
+                        aria-invalid={errors.cur ? "true" : undefined}
+                        aria-describedby={errors.cur ? "cpw-err-cur" : undefined}
                       />
                       <button className="cpw-eye-btn" type="button"
-                        onClick={() => setShowCur(v => !v)} aria-label="Toggle visibility">
+                        onClick={() => setShowCur(v => !v)}
+                        aria-label={`${t("cpwCurrentPassword")} — ${showCur ? t("cpwHidePw") : t("cpwShowPw")}`}
+                        aria-pressed={showCur}>
                         {eyeIcon(showCur)}
                       </button>
                     </div>
                     {errors.cur && (
-                      <span className="cpw-field-err" style={{ display: "flex" }}>
+                      <span className="cpw-field-err" id="cpw-err-cur" role="alert" style={{ display: "flex" }}>
                         {errIcon()}<span>{errors.cur}</span>
                       </span>
                     )}
@@ -378,22 +364,53 @@ export default function Settings() {
                         autoComplete="new-password"
                         value={np}
                         onChange={e => { setNp(e.target.value); clearField("np"); }}
+                        aria-invalid={errors.np ? "true" : undefined}
+                        aria-describedby={errors.np ? "cpw-err-np" : undefined}
                       />
                       {npOk && (
-                        <span className="cpw-check-icon" style={{ display: "block", right: 36 }}>
+                        <span className="cpw-check-icon" style={{ display: "block", right: 36 }} aria-hidden="true">
                           {checkIcon()}
                         </span>
                       )}
                       <button className="cpw-eye-btn" type="button"
-                        onClick={() => setShowNp(v => !v)} aria-label="Toggle visibility">
+                        onClick={() => setShowNp(v => !v)}
+                        aria-label={`${t("cpwNewPassword")} — ${showNp ? t("cpwHidePw") : t("cpwShowPw")}`}
+                        aria-pressed={showNp}>
                         {eyeIcon(showNp)}
                       </button>
                     </div>
                     {errors.np && (
-                      <span className="cpw-field-err" style={{ display: "flex" }}>
+                      <span className="cpw-field-err" id="cpw-err-np" role="alert" style={{ display: "flex" }}>
                         {errIcon()}<span>{errors.np}</span>
                       </span>
                     )}
+
+                    {/* Live strength meter + requirements, directly under the field it describes */}
+                    <div className="cpw-live">
+                      <p className="as-meter-label" id="cpw-strength-label">{t("asHealthLabel")}</p>
+                      <div className="cpw-strength-wrap" style={{ opacity: np ? 1 : 0.35 }}
+                        role="meter" aria-valuemin={0} aria-valuemax={4} aria-valuenow={sc}
+                        aria-valuetext={info?.label || ""} aria-labelledby="cpw-strength-label">
+                        <div className={segCls(1)} />
+                        <div className={segCls(2)} />
+                        <div className={segCls(3)} />
+                        <div className={segCls(4)} />
+                        <span className="cpw-str-label" style={{ color: info?.color }}>
+                          {info?.label || ""}
+                        </span>
+                      </div>
+
+                      <p className="as-criteria-title" style={{ marginTop: 12 }}>{t("asChecklistTitle")}</p>
+                      <div className="cpw-tips">
+                        {tips.map(tip => (
+                          <div key={tip.id} className={`cpw-tip-row${tip.ok ? " is-ok" : ""}`}>
+                            <span className={`cpw-tip-dot${tip.ok ? " cpw-tip-ok" : ""}`} aria-hidden="true" />
+                            <span>{tip.label}</span>
+                            <span className="cpw-sr-only">{tip.ok ? "✓" : "✕"}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                   </div>
 
                   <div className="cpw-field">
@@ -411,19 +428,23 @@ export default function Settings() {
                         autoComplete="new-password"
                         value={cp}
                         onChange={e => { setCp(e.target.value); clearField("cp"); }}
+                        aria-invalid={errors.cp ? "true" : undefined}
+                        aria-describedby={errors.cp ? "cpw-err-cp" : undefined}
                       />
                       {cpOk && (
-                        <span className="cpw-check-icon" style={{ display: "block", right: 36 }}>
+                        <span className="cpw-check-icon" style={{ display: "block", right: 36 }} aria-hidden="true">
                           {checkIcon()}
                         </span>
                       )}
                       <button className="cpw-eye-btn" type="button"
-                        onClick={() => setShowCp(v => !v)} aria-label="Toggle visibility">
+                        onClick={() => setShowCp(v => !v)}
+                        aria-label={`${t("cpwConfirmPassword")} — ${showCp ? t("cpwHidePw") : t("cpwShowPw")}`}
+                        aria-pressed={showCp}>
                         {eyeIcon(showCp)}
                       </button>
                     </div>
                     {errors.cp && (
-                      <span className="cpw-field-err" style={{ display: "flex" }}>
+                      <span className="cpw-field-err" id="cpw-err-cp" role="alert" style={{ display: "flex" }}>
                         {errIcon()}<span>{errors.cp}</span>
                       </span>
                     )}
@@ -461,7 +482,13 @@ export default function Settings() {
 
       {/* ── Tab: Role Permissions ── */}
       {tab === "roles" && isAdminOrSocietyAdmin && (
-        <div className={`as-panel as-panel--${tabDir}`} key={`roles-${tabDir}`}>
+        <div
+          className={`as-panel as-panel--${tabDir}`}
+          key={`roles-${tabDir}`}
+          role="tabpanel"
+          id="as-panel-roles"
+          aria-labelledby="as-tab-roles"
+        >
           <RolePermissions />
         </div>
       )}
