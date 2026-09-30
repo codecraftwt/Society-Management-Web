@@ -7,9 +7,12 @@ import {
 } from "react-icons/md";
 import DashboardAnalytics from "../../components/super-admin/DashboardAnalytics";
 import GlobalButton from "../../components/common/GlobalButton";
+import UserAvatar from "../../components/common/UserAvatar";
+import { useAuthContext } from "../../context/AuthContext";
 
 export default function SuperAdminDashboard() {
   const { t } = useLang();
+  const { user } = useAuthContext();
 
   const [societies, setSocieties] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -74,9 +77,22 @@ export default function SuperAdminDashboard() {
     <div className="sa-page sa-dash-page admin-dash">
       {/* ── HEADER ── */}
       <div className="sa-dash-header">
-        <div className="sa-dash-header-text">
-          <h1 className="sa-page-title">{t("saOverviewTitle")}</h1>
-          <p className="sa-page-subtitle">{t("saDashSubtitle", "Executive Command Center & Platform Intelligence")}</p>
+        <div className="flex items-center gap-3 min-w-0">
+          <UserAvatar
+            name={user?.name}
+            src={user?.profile_picture}
+            size={44}
+            radius={18}
+            className="shrink-0"
+          />
+          <div className="sa-dash-header-text">
+            <h1 className="sa-page-title">{t("saOverviewTitle")}</h1>
+            <p className="sa-page-subtitle">
+              {user?.name
+                ? `${user.name}${user.email ? ` · ${user.email}` : ""}`
+                : t("saDashSubtitle", "Executive Command Center & Platform Intelligence")}
+            </p>
+          </div>
         </div>
         <GlobalButton variant="add" borderDraw onClick={fetchSocieties} icon={MdRefresh} title={t("saDashReload", "Reload")}>
           {t("saDashReload", "Reload")}

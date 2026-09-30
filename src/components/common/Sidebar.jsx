@@ -10,6 +10,7 @@ import {
   TbLayoutSidebarLeftExpandFilled,
 } from "react-icons/tb";
 import { useSidebar } from "../../context/SidebarContext";
+import UserAvatar from "./UserAvatar";
 import { AuthContext } from "../../context/AuthContext";
 import { useLang } from "../../context/LanguageContext";
 
@@ -390,16 +391,18 @@ export default function Sidebar({
   const renderProfileFooter = (isMobileDrawer = false) => {
     if (!user) return null;
 
-    const initial = user.name ? user.name.slice(0, 2).toUpperCase() : "SA";
     const roleTitle = user.activeRole || "SUPER_ADMIN";
 
     if (collapsed && !isMobileDrawer) {
       return (
         <div className="mt-auto pt-3 border-t border-glass-border shrink-0 flex justify-center">
           <div className="relative group/tooltip">
-            <div className="w-9 h-9 rounded-xl bg-linear-to-br from-blue-600 to-indigo-700 text-white font-extrabold text-xs flex items-center justify-center shadow-md">
-              {initial}
-            </div>
+            <UserAvatar
+              name={user.name}
+              src={user.profile_picture}
+              size={36}
+              className="w-9 h-9 rounded-xl text-xs shadow-md"
+            />
             <div className="fixed left-20 ml-1.5 z-50 hidden group-hover/tooltip:block bg-card border border-glass-border text-primary text-xs font-semibold px-3 py-1.5 rounded-lg shadow-xl whitespace-nowrap pointer-events-none animate-fadeIn">
               {user.name || "Super Admin"} ({roleTitle})
             </div>
@@ -411,9 +414,12 @@ export default function Sidebar({
     return (
       <div className={`${isMobileDrawer ? "mt-auto pt-4" : "mt-auto pt-3"} border-t border-glass-border shrink-0`}>
         <div className={`flex items-center rounded-xl bg-card-inner-bg border border-glass-border hover:border-accent/30 transition-colors ${isMobileDrawer ? "gap-3 p-3" : "gap-3 p-2.5"}`}>
-          <div className={`${isMobileDrawer ? "w-10 h-10 text-sm" : "w-8 h-8 text-xs"} rounded-lg bg-linear-to-br from-blue-600 to-indigo-700 text-white font-extrabold flex items-center justify-center shrink-0 shadow-sm`}>
-            {initial}
-          </div>
+          <UserAvatar
+            name={user.name}
+            src={user.profile_picture}
+            size={isMobileDrawer ? 40 : 32}
+            className={`rounded-lg font-extrabold shrink-0 shadow-sm ${isMobileDrawer ? "text-sm" : "text-xs"}`}
+          />
           <div className="min-w-0 flex-1">
             <p className={`${isMobileDrawer ? "text-sm" : "text-xs"} font-bold text-primary truncate leading-tight`}>{user.name || "Super Admin"}</p>
             <p className={`${isMobileDrawer ? "text-[11px]" : "text-[10px]"} text-secondary truncate mt-0.5`}>{user.email || "Super Admin Panel"}</p>

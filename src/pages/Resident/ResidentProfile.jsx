@@ -25,12 +25,15 @@ import {
   MdAdd,
   MdLocationCity,
   MdHome,
+  MdLock,
+  MdSwapHoriz,
   MdVerified,
   MdShield,
 } from "react-icons/md";
 import { toast } from "react-toastify";
 import SOSModal from "../../components/emergency/SOSModal";
 import Modal from "../../components/Modal";
+import UserAvatar from "../../components/common/UserAvatar";
 import { getTitleError, getMobileError, getVehicleNumberError } from "../../utils/validators";
 
 function SkeletonBlock({ width = "100%", height = 16, radius = 8, style = {} }) {
@@ -41,6 +44,20 @@ function SkeletonBlock({ width = "100%", height = 16, radius = 8, style = {} }) 
     />
   );
 }
+
+// A flat handed over to a tenant is not a usable context for the owner.
+// /users/get-flat already flags this via `tenant` (active TENANT membership)
+// and `occupancy_status`.
+const isFlatRented = (flat) =>
+  Boolean(flat?.tenant) || String(flat?.occupancy_status || "").toUpperCase() === "RENTED";
+
+const flatPillLabel = (flat) => {
+  const number = flat?.flat_number || "—";
+  const block = String(flat?.block_name || "").trim();
+  if (!block) return number;
+  // flat_number usually already carries the block prefix (e.g. "A-301" in block A)
+  return number.toUpperCase().startsWith(block.toUpperCase()) ? number : `${block}-${number}`;
+};
 
 function DashboardSkeleton() {
   return (
@@ -124,9 +141,17 @@ export default function ResidentProfile() {
       if (flatsRes.status === "fulfilled") {
         const userFlats = Array.isArray(flatsRes.value.data) ? flatsRes.value.data : [];
         setFlats(userFlats);
-        if (userFlats.length > 0 && !selectedFlatId) {
-          setSelectedFlatId(userFlats[0].flat_id || userFlats[0].id);
-        }
+        // Keep the active context on a flat the owner actually occupies —
+        // never auto-select (or stay stuck on) a flat rented out to a tenant.
+        setSelectedFlatId((prev) => {
+          const open = userFlats.filter((f) => !isFlatRented(f));
+          const isStillOpen = open.some(
+            (f) => String(f.flat_id || f.id) === String(prev)
+          );
+          if (isStillOpen) return prev;
+          const fallback = open[0] || userFlats[0];
+          return fallback ? fallback.flat_id || fallback.id : null;
+        });
       }
 
       if (billsRes.status === "fulfilled") {
@@ -175,10 +200,18 @@ export default function ResidentProfile() {
     return t("rpGreetingEvening");
   }, [t]);
 
-  // Current active flat object
+  // Avatar initials for the hero identity tile (fallback when no photo is set)
+  const initials = useMemo(() => {
+    const parts = String(profile?.name || "").trim().split(/\s+/).filter(Boolean).slice(0, 2);
+    return parts.length ? parts.map((p) => p[0]).join("").toUpperCase() : "R";
+  }, [profile?.name]);
+
+  // Current active flat object (rented flats are not selectable)
   const currentFlat = useMemo(() => {
-    if (!flats.length) return null;
-    return flats.find((f) => String(f.flat_id || f.id) === String(selectedFlatId)) || flats[0];
+    const open = flats.filter((f) => !isFlatRented(f));
+    const pool = open.length ? open : flats;
+    if (!pool.length) return null;
+    return pool.find((f) => String(f.flat_id || f.id) === String(selectedFlatId)) || pool[0];
   }, [flats, selectedFlatId]);
 
   // Daily help list derived from household members
@@ -258,7 +291,7 @@ export default function ResidentProfile() {
       title: t("menuNotices"),
       subtitle: latestNotices.length > 0 ? t("rpActiveBulletins", { count: latestNotices.length }) : t("rpOfficialAnnouncements"),
       badge: latestNotices.length > 0 ? t("rpNew", { count: latestNotices.length }) : t("rpUpdated"),
-      badgeClass: "bg-blue-500/20 text-blue-400 border-blue-500/30",
+      badgeColor: "#3B82F6",
       color: "#3B82F6",
       bg: "rgba(37, 99, 235, 0.15)",
       cardClass: "gd-action--notice",
@@ -274,7 +307,7 @@ export default function ResidentProfile() {
       title: t("menuBills"),
       subtitle: pendingBills.length > 0 ? t("rpTotalDue", { amount: totalPendingAmount.toLocaleString("en-IN") }) : t("rpAllDuesCleared"),
       badge: pendingBills.length > 0 ? t("rpDue", { count: pendingBills.length }) : t("rpZeroDues"),
-      badgeClass: pendingBills.length > 0 ? "bg-rose-500/20 text-rose-400 border-rose-500/30" : "bg-emerald-500/20 text-emerald-400 border-emerald-500/30",
+      badgeColor: pendingBills.length > 0 ? "#E11D48" : "#10B981",
       color: "#E11D48",
       bg: "rgba(225, 29, 72, 0.15)",
       cardClass: "gd-action--bills",
@@ -290,7 +323,7 @@ export default function ResidentProfile() {
       title: t("rdCardGatePass"),
       subtitle: t("rpGatePassSub"),
       badge: t("rpFastTrack"),
-      badgeClass: "bg-cyan-500/20 text-cyan-300 border-cyan-500/30",
+      badgeColor: "#0891B2",
       color: "#0891B2",
       bg: "rgba(8, 145, 178, 0.15)",
       cardClass: "gd-action--fastpass",
@@ -306,7 +339,7 @@ export default function ResidentProfile() {
       title: t("rpCardCollectionTitle"),
       subtitle: pendingParcels.length > 0 ? t("rpParcelsWaiting", { count: pendingParcels.length }) : t("rpCollectionSub"),
       badge: pendingParcels.length > 0 ? t("rpReady", { count: pendingParcels.length }) : t("rpNoDeliveries"),
-      badgeClass: pendingParcels.length > 0 ? "bg-amber-500/20 text-amber-400 border-amber-500/30" : "bg-card-inner-bg text-secondary border-glass-border",
+      badgeColor: pendingParcels.length > 0 ? "#D97706" : "#64748B",
       color: "#D97706",
       bg: "rgba(217, 119, 6, 0.15)",
       cardClass: "gd-action--parcel",
@@ -330,116 +363,148 @@ export default function ResidentProfile() {
   return (
     <div className="ge-root rp-dash space-y-6 animate-fadeIn pb-14">
       {/* ── HERO GREETING & PROPERTY IDENTITY BANNER ── */}
-      <div className="relative overflow-hidden rounded-3xl border border-glass-border bg-linear-to-br from-card-inner-bg via-card to-card p-6 sm:p-7 shadow-sm">
-        {/* Ambient Gradient Glow Blobs */}
-        <div className="absolute -top-14 -right-14 w-56 h-56 rounded-full bg-accent/15 blur-3xl pointer-events-none" />
-        <div className="absolute -bottom-14 -left-14 w-56 h-56 rounded-full bg-cyan-500/10 blur-3xl pointer-events-none" />
+      <div className="rph-hero">
+        <span className="rph-hero__aurora rph-hero__aurora--a" aria-hidden />
+        <span className="rph-hero__aurora rph-hero__aurora--b" aria-hidden />
+        <span className="rph-hero__grid" aria-hidden />
 
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-          {/* Identity & Apartment Badges */}
-          <div className="space-y-2.5">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-2xl">👋</span>
-              <span className="text-xs sm:text-sm font-extrabold text-secondary uppercase tracking-wider">
-                {greeting}
-              </span>
-              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-accent-soft text-accent border border-accent/30 flex items-center gap-1">
-                <MdVerified size={12} />
-                <span>{profile?.resident_type || profile?.role || t("rdRoleBadge")}</span>
-              </span>
-            </div>
-
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-primary tracking-tight">
-              {profile?.name || t("rdDefaultName")}
-            </h1>
-
-            <div className="flex items-center gap-2 flex-wrap pt-1">
-              <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-card-inner-bg/90 border border-glass-border text-xs font-bold text-secondary shadow-sm">
-                <MdLocationCity size={16} className="text-accent" />
-                <span>{societyName}</span>
-              </div>
-
-              {currentFlat && (
-                <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-card-inner-bg/90 border border-glass-border text-xs font-black text-primary shadow-sm">
-                  <MdHome size={16} className="text-cyan-400" />
-                  <span>
-                    {currentFlat.block_name ? `${t("rdBlock")} ${currentFlat.block_name} · ` : ""}
-                    {t("rdFlat")} {currentFlat.flat_number || "—"}
-                  </span>
-                </div>
+        <div className="relative z-10 flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+          {/* Identity */}
+          <div className="flex items-center gap-4 sm:gap-5 min-w-0 flex-1">
+            <div className="rph-avatar">
+              <span className="rph-avatar__ring" aria-hidden />
+              {profile?.profile_picture ? (
+                <UserAvatar
+                  name={profile?.name || t("rdDefaultName")}
+                  src={profile.profile_picture}
+                  className="rph-avatar__photo"
+                  alt={profile?.name || "Profile picture"}
+                />
+              ) : (
+                <span className="rph-avatar__initials">{initials}</span>
               )}
+              <span className="rph-avatar__dot" aria-hidden />
             </div>
 
-            {/* Multiple Flat Context Switcher */}
-            {flats.length > 1 && (
-              <div className="pt-2">
-                <p className="text-[10.5px] font-bold uppercase tracking-wider text-secondary mb-1.5">
-                  {t("rpYourProperties")}
-                </p>
-                <div className="flex items-center gap-2 overflow-x-auto pb-1 max-w-full">
-                  {flats.map((flat) => {
-                    const fid = flat.flat_id || flat.id;
-                    const isActive = String(selectedFlatId) === String(fid);
-                    return (
-                      <button
-                        key={fid}
-                        type="button"
-                        onClick={() => setSelectedFlatId(fid)}
-                        className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 border ${
-                          isActive
-                            ? "bg-accent text-white border-accent shadow-md shadow-accent/30"
-                            : "bg-card-inner-bg text-secondary border-glass-border hover:text-primary hover:bg-white/10"
-                        }`}
-                      >
-                        <MdApartment size={14} />
-                        <span>
-                          {flat.block_name ? `${flat.block_name}-` : ""}
-                          {flat.flat_number}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
+            <div className="min-w-0 flex-1 space-y-2.5">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-sm sm:text-base font-extrabold text-secondary tracking-wide">
+                  {greeting}
+                </span>
+                <span className="rph-role-chip">
+                  <MdVerified size={12} />
+                  <span>{profile?.resident_type || profile?.role || t("rdRoleBadge")}</span>
+                </span>
               </div>
-            )}
+
+              <h1 className="rph-name">{profile?.name || t("rdDefaultName")}</h1>
+
+              <div className="flex items-center gap-2.5 flex-wrap">
+                <span className="rph-meta">
+                  <span className="rph-meta__ic rph-meta__ic--sky">
+                    <MdLocationCity size={14} />
+                  </span>
+                  <span className="truncate">{societyName}</span>
+                </span>
+
+                {currentFlat && (
+                  <>
+                    <span className="rph-meta-divider" aria-hidden />
+                    <span className="rph-meta">
+                      <span className="rph-meta__ic rph-meta__ic--cyan">
+                        <MdHome size={14} />
+                      </span>
+                      <span className="truncate">
+                        {currentFlat.block_name ? `${t("rdBlock")} ${currentFlat.block_name} · ` : ""}
+                        {t("rdFlat")} {currentFlat.flat_number || "—"}
+                      </span>
+                    </span>
+                  </>
+                )}
+              </div>
+            </div>
           </div>
 
           {/* Right Action & Status Group */}
-          <div className="flex flex-col sm:flex-row md:flex-col lg:flex-row items-start sm:items-center md:items-end lg:items-center gap-3 shrink-0">
-            {/* Live Society Status Badge */}
-            <div className="flex items-center gap-2 px-3.5 py-2 rounded-2xl bg-card-inner-bg/80 border border-glass-border shadow-sm backdrop-blur-md">
-              <span className="relative flex h-2.5 w-2.5">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
-              </span>
-              <span className="text-xs font-black text-primary tracking-wide">{t("rpCommunityActive")}</span>
-            </div>
+          <div className="rph-aside">
+            <span className="rph-status">
+              <span className="rph-status__dot" aria-hidden />
+              {t("rpCommunityActive")}
+            </span>
 
-            {/* Quick Action Buttons */}
-            <div className="flex items-center gap-2">
+            <div className="rph-actions">
               <button
                 type="button"
                 onClick={() => navigate("/resident/bills")}
-                className="btn px-4 py-2.5 rounded-2xl bg-accent/10 hover:bg-accent/20 border border-accent/30 text-accent font-black text-xs transition active:scale-95 cursor-pointer flex items-center gap-1.5"
+                className="rph-btn rph-btn--dues"
                 title={t("rpViewBillsPayments")}
               >
                 <MdReceiptLong size={16} />
                 <span>{t("rpMyDues")}</span>
+                {totalPendingAmount > 0 && (
+                  <span className="rph-btn__amt">₹{totalPendingAmount.toLocaleString("en-IN")}</span>
+                )}
               </button>
 
               <button
                 type="button"
                 onClick={() => loadDashboardData(true)}
-                className={`p-2.5 rounded-2xl bg-card-inner-bg border border-glass-border text-secondary hover:text-primary hover:border-accent/40 hover:bg-card transition active:scale-95 cursor-pointer shadow-sm ${
-                  refreshing ? "animate-spin text-accent" : ""
-                }`}
+                className={`rph-btn rph-btn--icon ${refreshing ? "animate-spin" : ""}`}
                 title={t("rpRefreshDashboard")}
               >
-                <MdRefresh size={19} />
+                <MdRefresh size={18} />
               </button>
             </div>
           </div>
         </div>
+
+        {/* Multiple Flat Context Switcher — full-width footer strip */}
+        {(flats.length > 1 || flats.some((f) => isFlatRented(f))) && (
+          <div className="rph-switch">
+            <div className="rph-switch__head">
+              <p className="rph-switch__label">
+                <MdSwapHoriz size={13} />
+                {t("rpYourProperties")}
+              </p>
+              <span className="rph-switch__count">
+                {t("rpPropertyCount", { count: flats.length })}
+              </span>
+            </div>
+            <div className="rph-switch__track">
+              {flats.map((flat) => {
+                const fid = flat.flat_id || flat.id;
+                const rented = isFlatRented(flat);
+                const label = flatPillLabel(flat);
+                const isActive = !rented && String(selectedFlatId) === String(fid);
+                const tenantName = flat.tenant?.name || t("rpTenantUnknown");
+                return (
+                  <button
+                    key={fid}
+                    type="button"
+                    aria-disabled={rented || undefined}
+                    onClick={() => {
+                      if (rented) {
+                        toast.warning(t("rpFlatRentedSwitchBlock", { flat: label, name: tenantName }));
+                        return;
+                      }
+                      setSelectedFlatId(fid);
+                    }}
+                    title={
+                      rented
+                        ? t("rpFlatRentedTitle", { flat: label, name: tenantName })
+                        : label
+                    }
+                    className={`rph-switch__pill ${isActive ? "is-active" : ""} ${rented ? "is-rented" : ""}`}
+                  >
+                    {rented ? <MdLock size={13} /> : <MdApartment size={14} />}
+                    <span>{label}</span>
+                    {rented && <span className="rph-switch__tag">{t("rpFlatRentedTag")}</span>}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* ── 3. 4 MODERN & ATTRACTIVE CORE ACTION CARDS (Notices, Bills, Gate pass, Collection) ── */}
@@ -461,15 +526,17 @@ export default function ResidentProfile() {
               <div
                 key={card.id}
                 onClick={card.onClick}
-                style={{ "--gd-c": card.color, animationDelay: `${idx * 60}ms` }}
+                style={{
+                  "--gd-c": card.color,
+                  "--gd-badge-c": card.badgeColor || card.color,
+                  animationDelay: `${idx * 60}ms`,
+                }}
                 className={`gd-action ${card.cardClass} group relative overflow-hidden rounded-2xl p-4 sm:p-5 cursor-pointer flex flex-col gap-3`}
               >
                 <span className="gd-action__blob" aria-hidden />
 
                 {card.badge && (
-                  <span
-                    className={`gd-action__badge absolute top-3 right-3 z-[2] px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider shadow-sm ${card.badgeClass}`}
-                  >
+                  <span className="gd-action__badge absolute top-3 right-3 z-[2] px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider shadow-sm">
                     {card.badge}
                   </span>
                 )}

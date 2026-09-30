@@ -15,18 +15,10 @@ import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import { useLang } from "../../context/LanguageContext";
 import API from "../../services/api";
+import UserAvatar from "../../components/common/UserAvatar";
 
-function Avatar({ name }) {
-  const initials = name
-    ? name
-        .trim()
-        .split(/\s+/)
-        .map((w) => w[0])
-        .slice(0, 2)
-        .join("")
-        .toUpperCase()
-    : "?";
-  return <div className="ms-avatar">{initials}</div>;
+function Avatar({ name, src }) {
+  return <UserAvatar name={name} src={src} size={72} radius={18} />;
 }
 
 function ManageCard({ icon, label, onClick, tone = "accent" }) {
@@ -150,7 +142,7 @@ export default function ResidentDashboard() {
       <div className="bg-card ms-hero">
         <div className="ms-hero-accent" />
         <div className="ms-hero-body">
-          <Avatar name={profile?.name} />
+          <Avatar name={profile?.name} src={profile?.profile_picture} />
           <div className="ms-hero-info">
             <h2 className="ms-hero-name">{profile?.name || t("rdDefaultName")}</h2>
             {profile?.email && <p className="ms-hero-email">{profile.email}</p>}

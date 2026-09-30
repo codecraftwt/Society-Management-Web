@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import API from "../../services/api";
 import { useLang } from "../../context/LanguageContext";
 import SlidingTabs from "../../components/common/SlidingTabs";
+import UserAvatar from "../../components/common/UserAvatar";
+import ProfilePictureUploader from "../../components/common/ProfilePictureUploader";
 import {
   MdSettings,
   MdPerson,
@@ -25,11 +27,8 @@ function Spinner({ size = 16 }) {
   );
 }
 
-function Avatar({ name }) {
-  const initials = name
-    ? name.split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase()
-    : "?";
-  return <div className="gs-avatar">{initials}</div>;
+function Avatar({ name, src }) {
+  return <UserAvatar name={name} src={src} className="gs-avatar" size={72} />;
 }
 
 export default function GuardSetting() {
@@ -116,7 +115,7 @@ export default function GuardSetting() {
       </div>
 
       <div className="gs-hero">
-        <Avatar name={profile?.name} />
+        <Avatar name={profile?.name} src={profile?.profile_picture} />
         <div className="gs-hero-info">
           <h2 className="gs-hero-name">{profile?.name}</h2>
           <p className="gs-hero-email">{profile?.email}</p>
@@ -129,6 +128,18 @@ export default function GuardSetting() {
             </span>
           </div>
         </div>
+      </div>
+
+      <div className="gs-card">
+        <h3 className="gs-section-title">{t("ppTitle", "Profile Picture")}</h3>
+        <p className="gs-sub" style={{ marginBottom: 12 }}>
+          {t("ppSubtitle", "This photo appears on your profile and in admin lists.")}
+        </p>
+        <ProfilePictureUploader
+          name={profile?.name}
+          currentUrl={profile?.profile_picture}
+          onChange={(url) => setProfile((prev) => (prev ? { ...prev, profile_picture: url } : prev))}
+        />
       </div>
 
       <SlidingTabs

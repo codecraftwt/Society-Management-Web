@@ -18662,3 +18662,78 @@ html.light .as-tab.active {
   padding: 3px 9px; border-radius: 999px;
   white-space: nowrap;
 }
+
+/* ═══════════════════════════════════════════
+   PROFILE PICTURE UPLOADER
+   ═══════════════════════════════════════════ */
+.pp-uploader {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.pp-uploader__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-start;
+}
+.pp-uploader__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--border-color, rgba(59, 130, 246, 0.25));
+  background: rgba(59, 130, 246, 0.1);
+  color: var(--text-primary, #1e293b);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, opacity 0.15s ease;
+}
+.pp-uploader__btn:hover:not(:disabled) { background: rgba(59, 130, 246, 0.18); }
+.pp-uploader__btn:disabled { opacity: 0.55; cursor: not-allowed; }
+.pp-uploader__btn--danger {
+  border-color: rgba(239, 68, 68, 0.28);
+  background: rgba(239, 68, 68, 0.09);
+  color: #dc2626;
+}
+.pp-uploader__btn--danger:hover:not(:disabled) { background: rgba(239, 68, 68, 0.16); }
+.pp-uploader__hint {
+  width: 100%;
+  margin: 0;
+  font-size: 11px;
+  color: var(--text-secondary, #64748b);
+}
+.pp-uploader__input { display: none; }
+
+/* Guard settings cards (classes already used by GuardSetting.jsx but previously unstyled) */
+.gs-card {
+  background: var(--card, #fff);
+  border: 1px solid var(--border, rgba(148, 163, 184, 0.25));
+  border-radius: 16px;
+  padding: 18px 20px;
+  margin-bottom: 16px;
+}
+.gs-section-title {
+  margin: 0 0 4px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary, #1e293b);
+}
+.gs-avatar {
+  width: 72px; height: 72px; border-radius: 18px;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 800; font-size: 22px; color: #fff; flex-shrink: 0;
+  box-shadow: 0 8px 24px rgba(59, 130, 246, 0.35);
+  letter-spacing: -0.02em;
+  overflow: hidden;
+}
+
+/* Guard list row avatar (was inline-styled per row) */
+.guard-row-avatar {
+  border-radius: 50%;
+  font-size: 0.36em;
+  box-shadow: 0 2px 8px rgba(160, 90, 255, 0.35);
+}

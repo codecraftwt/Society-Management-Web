@@ -563,6 +563,11 @@ const hi = {
   rpGreetingEvening:      "शुभ संध्या",
   rpSocietyFallback:      "सोसायटी लिविंग हब",
   rpYourProperties:       "आपकी संपत्तियाँ:",
+  rpPropertyCount:        "{count} संपत्तियाँ",
+  rpFlatRentedTag:        "किराए पर",
+  rpFlatRentedTitle:      "फ्लैट {flat} आपके किराएदार {name} को दिया गया है, इसलिए आप इस पर स्विच नहीं कर सकते।",
+  rpFlatRentedSwitchBlock:"आप फ्लैट {flat} पर स्विच नहीं कर सकते क्योंकि यह वर्तमान में आपके किराएदार {name} के कब्जे में है।",
+  rpTenantUnknown:        "आपके किराएदार",
   rpCommunityActive:      "सोसायटी सक्रिय",
   rpViewBillsPayments:    "बिल और भुगतान देखें",
   rpMyDues:               "मेरे बकाया",
@@ -4868,6 +4873,21 @@ cpwSuccessMsg:            "पासवर्ड सफलतापूर्व�
   resActionBlockedRejected:       "यह कार्रवाई करने से पहले इस पंजीकरण को स्वीकृत करें।",
   resRejectReasonLabel:          "अस्वीकरण का कारण",
   resRejectReasonHelp:           "आवश्यक। यह कारण निवासी को ईमेल किया जाता है और उनकी लॉगिन स्क्रीन पर दिखाया जाता है।",
+  resRejectReasonHelp:           "आवश्यक। यह कारण ईमेल द्वारा रहवासी को भेजा जाता है और उनके लॉगिन स्क्रीन पर दिखाया जाता है।",
+
+  ppTitle:        "प्रोफ़ाइल फ़ोटो",
+  ppSubtitle:     "यह फ़ोटो आपकी प्रोफ़ाइल और एडमिन सूची में दिखाई देगी।",
+  ppUpload:       "फ़ोटो अपलोड करें",
+  ppChange:       "फ़ोटो बदलें",
+  ppRemove:       "हटाएँ",
+  ppHint:         "JPEG, PNG, WEBP, GIF या HEIC। अधिकतम 5MB।",
+  ppErrType:      "कृपया JPEG, PNG, WEBP, GIF, HEIC या HEIF छवि चुनें।",
+  ppErrSize:      "छवि बहुत बड़ी है। अधिकतम आकार 5MB है।",
+  ppUploadSuccess:"प्रोफ़ाइल फ़ोटो अपडेट हो गई।",
+  ppUploadFail:   "प्रोफ़ाइल फ़ोटो अपडेट नहीं हो सकी।",
+  ppRemoveSuccess:"प्रोफ़ाइल फ़ोटो हटा दी गई।",
+  ppRemoveFail:   "प्रोफ़ाइल फ़ोटो हटाई नहीं जा सकी।",
+  ppOptional:     "वैकल्पिक",
 };
 
 export default hi;

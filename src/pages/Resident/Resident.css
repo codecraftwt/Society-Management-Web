@@ -751,6 +751,441 @@ html.role-theme .resident-root .filter-pill--active {
 /* --------------------------------------------------------------------------
    Resident dashboard (/resident)
    -------------------------------------------------------------------------- */
+html.role-theme .rph-hero {
+  position: relative;
+  overflow: hidden;
+  border-radius: 26px;
+  padding: 20px;
+  border: 1px solid var(--glass-border);
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--accent) 18%, var(--card-inner-bg)) 0%,
+    var(--card-bg) 44%,
+    color-mix(in srgb, #22d3ee 13%, var(--card-bg)) 100%
+  );
+  box-shadow: 0 24px 60px -30px rgba(15, 23, 42, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.07);
+}
+html.light.role-theme .rph-hero {
+  box-shadow: 0 18px 42px -26px rgba(37, 99, 235, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.95);
+}
+html.role-theme .rph-hero::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 14%;
+  right: 14%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--accent) 75%, transparent), transparent);
+}
+
+@keyframes rphFloat {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  50%      { transform: translate3d(0, -16px, 0) scale(1.07); }
+}
+@keyframes rphPulse {
+  0%        { transform: scale(0.85); opacity: 0.75; }
+  70%, 100% { transform: scale(2.1); opacity: 0; }
+}
+
+html.role-theme .rph-hero__aurora {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(46px);
+  pointer-events: none;
+}
+html.role-theme .rph-hero__aurora--a {
+  top: -96px;
+  right: -64px;
+  width: 264px;
+  height: 264px;
+  background: color-mix(in srgb, var(--accent) 32%, transparent);
+  animation: rphFloat 11s ease-in-out infinite;
+}
+html.role-theme .rph-hero__aurora--b {
+  bottom: -116px;
+  left: -72px;
+  width: 240px;
+  height: 240px;
+  background: rgba(34, 211, 238, 0.18);
+  animation: rphFloat 14s ease-in-out infinite reverse;
+}
+html.light.role-theme .rph-hero__aurora--a { background: color-mix(in srgb, var(--accent) 20%, transparent); }
+html.light.role-theme .rph-hero__aurora--b { background: rgba(34, 211, 238, 0.16); }
+
+html.role-theme .rph-hero__grid {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: radial-gradient(
+    color-mix(in srgb, var(--text-primary) 14%, transparent) 1px,
+    transparent 1px
+  );
+  background-size: 18px 18px;
+  -webkit-mask-image: linear-gradient(180deg, transparent, #000 42%, transparent);
+  mask-image: linear-gradient(180deg, transparent, #000 42%, transparent);
+}
+html.light.role-theme .rph-hero__grid { opacity: 0.6; }
+
+@media (prefers-reduced-motion: reduce) {
+  html.role-theme .rph-hero__aurora,
+  html.role-theme .rph-avatar__dot::after,
+  html.role-theme .rph-status__dot::after {
+    animation: none;
+  }
+}
+
+/* ── Identity ── */
+html.role-theme .rph-avatar {
+  position: relative;
+  width: 74px;
+  height: 74px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+}
+html.role-theme .rph-avatar__ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 24px;
+  background: linear-gradient(135deg, var(--accent) 0%, #22d3ee 100%);
+  box-shadow: 0 14px 28px -14px color-mix(in srgb, var(--accent) 90%, transparent);
+}
+html.role-theme .rph-avatar__initials {
+  position: relative;
+  z-index: 1;
+  font-size: 1.3rem;
+  font-weight: 900;
+  letter-spacing: 0.02em;
+  color: #fff;
+  text-transform: uppercase;
+}
+/* Photo variant. Size + radius live in CSS (not inline) so the <480px
+   override below can shrink the avatar without fighting an inline style.
+   font-size is only ever seen if the image URL fails and UserAvatar falls
+   back to initials. */
+html.role-theme .rph-avatar__photo {
+  position: relative;
+  z-index: 1;
+  width: 74px;
+  height: 74px;
+  border-radius: 24px;
+  font-size: 1.3rem;
+  letter-spacing: 0.02em;
+}
+html.role-theme .rph-avatar__dot {
+  position: absolute;
+  right: -3px;
+  bottom: -3px;
+  /* Must sit above the photo (z-index 1), otherwise the image paints over the
+     part of the dot that overlaps the corner. */
+  z-index: 2;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #22c55e;
+  border: 3px solid var(--card-bg);
+  box-shadow: 0 0 0 1px color-mix(in srgb, #22c55e 30%, transparent);
+}
+html.role-theme .rph-avatar__dot::after {
+  content: "";
+  position: absolute;
+  /* Start at the dot's outer edge and expand as a thin ring. It used to be a
+     filled #22c55e disc scaled to 2.1x, which read as a green blob sitting on
+     top of the photo. */
+  inset: -3px;
+  border-radius: 50%;
+  background: transparent;
+  border: 2px solid #22c55e;
+  animation: rphPulse 2.4s ease-out infinite;
+}
+
+html.role-theme .rph-role-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 11px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--accent);
+  background: var(--accent-soft);
+  border: 1px solid color-mix(in srgb, var(--accent) 32%, transparent);
+}
+
+html.role-theme .rph-name {
+  margin: 0;
+  font-size: clamp(1.3rem, 3.1vw, 1.9rem);
+  font-weight: 900;
+  line-height: 1.1;
+  letter-spacing: -0.025em;
+  color: var(--text-primary);
+}
+@supports ((-webkit-background-clip: text) or (background-clip: text)) {
+  html.role-theme .rph-name {
+    background: linear-gradient(
+      110deg,
+      var(--text-primary) 20%,
+      color-mix(in srgb, var(--accent) 52%, var(--text-primary)) 100%
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+}
+
+html.role-theme .rph-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  max-width: 100%;
+  padding: 6px 14px 6px 6px;
+  border-radius: 15px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  background: color-mix(in srgb, var(--card-inner-bg) 88%, transparent);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+html.role-theme .rph-meta__ic {
+  width: 26px;
+  height: 26px;
+  border-radius: 9px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  color: #fff;
+}
+html.role-theme .rph-meta__ic--sky {
+  background: linear-gradient(135deg, #38bdf8, #2563eb);
+  box-shadow: 0 6px 14px -8px #2563eb;
+}
+html.role-theme .rph-meta__ic--cyan {
+  background: linear-gradient(135deg, #22d3ee, #0891b2);
+  box-shadow: 0 6px 14px -8px #0891b2;
+}
+html.role-theme .rph-meta-divider {
+  width: 1px;
+  height: 20px;
+  background: var(--glass-border);
+}
+
+/* ── Property switcher (full-width footer strip, hugs its content) ── */
+html.role-theme .rph-switch {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 18px;
+  padding-top: 15px;
+  border-top: 1px solid var(--glass-border);
+}
+html.role-theme .rph-switch__label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+html.role-theme .rph-switch__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+}
+html.role-theme .rph-switch__count {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  opacity: 0.75;
+}
+html.role-theme .rph-switch__label svg { color: var(--accent); }
+html.role-theme .rph-switch__track {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: max-content;
+  max-width: 100%;
+  padding: 5px;
+  border-radius: 17px;
+  background: color-mix(in srgb, var(--card-inner-bg) 82%, transparent);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+html.role-theme .rph-switch__track::-webkit-scrollbar { display: none; }
+
+html.role-theme .rph-switch__pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 13px;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  background: transparent;
+  font-size: 0.74rem;
+  font-weight: 800;
+  white-space: nowrap;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), background 0.2s, color 0.2s,
+    border-color 0.2s, box-shadow 0.2s;
+}
+html.role-theme .rph-switch__pill:hover {
+  color: var(--text-primary);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  transform: translateY(-1px);
+}
+html.role-theme .rph-switch__pill.is-active {
+  color: #fff;
+  background: linear-gradient(135deg, var(--accent), color-mix(in srgb, #22d3ee 55%, var(--accent)));
+  border-color: color-mix(in srgb, var(--accent) 50%, transparent);
+  box-shadow: 0 10px 20px -10px color-mix(in srgb, var(--accent) 95%, transparent);
+}
+html.role-theme .rph-switch__pill.is-rented {
+  cursor: not-allowed;
+  opacity: 0.7;
+  color: var(--text-secondary);
+  background: color-mix(in srgb, #f59e0b 9%, transparent);
+  border: 1px dashed color-mix(in srgb, #f59e0b 50%, transparent);
+}
+html.role-theme .rph-switch__pill.is-rented:hover {
+  transform: none;
+  background: color-mix(in srgb, #f59e0b 9%, transparent);
+}
+html.role-theme .rph-switch__tag {
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-size: 8.5px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #fbbf24;
+  background: color-mix(in srgb, #f59e0b 18%, transparent);
+}
+html.light.role-theme .rph-switch__tag { color: #b45309; }
+
+/* ── Status + actions (flat, no nested card) ── */
+html.role-theme .rph-aside {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 11px;
+  flex-shrink: 0;
+}
+@media (max-width: 1023px) {
+  html.role-theme .rph-aside {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+  }
+  html.role-theme .rph-aside .rph-actions { flex: 1; justify-content: flex-end; }
+}
+@media (max-width: 479px) {
+  html.role-theme .rph-hero { padding: 16px; border-radius: 22px; }
+  html.role-theme .rph-avatar { width: 56px; height: 56px; }
+  html.role-theme .rph-avatar__ring { border-radius: 19px; }
+  html.role-theme .rph-avatar__photo { width: 56px; height: 56px; border-radius: 19px; }
+  html.role-theme .rph-avatar__initials { font-size: 1.15rem; }
+  html.role-theme .rph-aside { flex-direction: column; align-items: stretch; }
+  html.role-theme .rph-aside .rph-actions { justify-content: stretch; }
+  html.role-theme .rph-status { align-self: flex-start; }
+}
+html.role-theme .rph-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 6px 13px 6px 10px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: var(--text-primary);
+  background: color-mix(in srgb, #22c55e 12%, transparent);
+  border: 1px solid color-mix(in srgb, #22c55e 32%, transparent);
+}
+html.role-theme .rph-status__dot {
+  position: relative;
+  width: 8px;
+  height: 8px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: #22c55e;
+}
+html.role-theme .rph-status__dot::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: #22c55e;
+  animation: rphPulse 2s ease-out infinite;
+}
+html.role-theme .rph-actions {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+html.role-theme .rph-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 10px 15px;
+  border-radius: 14px;
+  border: 1px solid transparent;
+  font-size: 0.76rem;
+  font-weight: 800;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s, color 0.2s,
+    border-color 0.2s, background 0.2s;
+}
+html.role-theme .rph-btn:active { transform: scale(0.96); }
+html.role-theme .rph-btn--dues {
+  color: #fff;
+  background: linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent) 60%, #05070f));
+  box-shadow: 0 12px 24px -12px color-mix(in srgb, var(--accent) 95%, transparent);
+}
+html.role-theme .rph-btn--dues:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 18px 30px -12px color-mix(in srgb, var(--accent) 95%, transparent);
+}
+html.role-theme .rph-btn__amt {
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 900;
+  background: rgba(0, 0, 0, 0.24);
+}
+html.role-theme .rph-btn--icon {
+  flex: 0 0 auto;
+  width: 42px;
+  padding: 10px 0;
+  color: var(--text-secondary);
+  background: color-mix(in srgb, var(--card-inner-bg) 92%, transparent);
+  border-color: var(--glass-border);
+}
+html.role-theme .rph-btn--icon:hover {
+  color: var(--accent);
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+}
+
 html.role-theme .rp-dash .ge-stats.rp-stats--3 {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }

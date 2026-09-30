@@ -111,6 +111,7 @@ import GuardHelpContacts from "./pages/Guard/GuardHelpContacts";
 
 /* === ACCOUNTANT === */
 import AccountantLayout from "./pages/Accountant/AccountantLayout";
+import AccountantSetting from "./pages/Accountant/AccountantSetting";
 import { ManageBillsAccountant } from "./sections/billing";
 import AccountDashboard from "./pages/Accountant/AccountantDashboard";
 import AccountantReports from "./pages/Accountant/AccountantReports";
@@ -375,6 +376,7 @@ function App() {
         <Route element={<ProtectedRoute roles={["ACCOUNTANT"]} />}>
           <Route path="/accountant" element={<AccountantLayout />}>
             <Route index element={<AccountDashboard />} />
+            <Route path="settings" element={<AccountantSetting />} />
             <Route element={<PermissionRoute module="manage_bills" />}>
               <Route path="manage-bills" element={<ManageBillsAccountant />} />
             </Route>

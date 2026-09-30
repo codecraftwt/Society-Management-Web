@@ -12,6 +12,7 @@ import Select from "../../components/common/Select";
 import GlobalButton from "../../components/common/GlobalButton";
 import GlobalModal from "../../components/common/GlobalModal";
 import GlobalTable from "../../components/common/GlobalTable";
+import UserAvatar from "../../components/common/UserAvatar";
 import GlobalBadge from "../../components/common/GlobalBadge";
 import GlobalConfirmDialog from "../../components/common/GlobalConfirmDialog";
 import { isCommitteeMember, hasPermission } from "../../utils/permissions";
@@ -32,20 +33,14 @@ function ShiftBadge({ type, t }) {
   );
 }
 
-function Avatar({ name, size = 34 }) {
-  const initials = name
-    ? name.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase()
-    : "G";
+function Avatar({ name, src, size = 34 }) {
   return (
-    <div style={{
-      width: size, height: size, borderRadius: "50%", flexShrink: 0,
-      background: "linear-gradient(135deg, var(--accent), #9e58ff)",
-      display: "flex", alignItems: "center", justifyContent: "center",
-      fontSize: size * 0.36, fontWeight: 800, color: "#fff",
-      boxShadow: "0 2px 8px rgba(160,90,255,0.35)",
-    }}>
-      {initials}
-    </div>
+    <UserAvatar
+      name={name}
+      src={src}
+      size={size}
+      className="guard-row-avatar"
+    />
   );
 }
 
@@ -189,6 +184,7 @@ export default function Guard() {
     ? filterSocietyId && filterSocietyId !== "ALL" ? filterSocietyId : null
     : user?.society_id;
   const [formData, setFormData] = useState({ name: "", email: "", password: "", society_id: "" });
+  const [photoFile, setPhotoFile] = useState(null);
   const [editingId, setEditingId] = useState(null);
   const [submitLoading, setSubmitLoading] = useState(false);
 
@@ -415,6 +411,7 @@ export default function Guard() {
     }
     setEditingId(null);
     setFormData({ name: "", email: "", password: "", society_id: filterSocietyId === "ALL" ? "" : filterSocietyId });
+    setPhotoFile(null);
     setShowGuardModal(true);
   };
 
@@ -465,11 +462,21 @@ export default function Guard() {
           password: formData.password,
           society_id: isSuperAdmin ? (formData.society_id || filterSocietyId) : user?.society_id,
         };
-        await API.post("/guards", payload);
+        if (photoFile) {
+          const fd = new FormData();
+          Object.entries(payload).forEach(([key, value]) => {
+            if (value !== undefined && value !== null) fd.append(key, String(value));
+          });
+          fd.append("photo", photoFile);
+          await API.post("/guards", fd);
+        } else {
+          await API.post("/guards", payload);
+        }
       }
       setShowGuardModal(false);
       setEditingId(null);
       setFormData({ name: "", email: "", password: "", society_id: "" });
+      setPhotoFile(null);
       fetchGuards();
     } catch (err) {
       if (err.response?.status === 403) {
@@ -585,7 +592,7 @@ export default function Guard() {
       header: t("guardColGuard") || "Guard",
       render: (g) => (
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <Avatar name={g.name} size={36} />
+          <Avatar name={g.name} src={g.profile_picture} size={36} />
           <div>
             <span style={{ fontSize: "0.88rem", fontWeight: 700, color: "var(--text-primary)" }}>
               {g.name}
@@ -1063,6 +1070,24 @@ export default function Guard() {
               </button>
             </div>
           </div>
+
+          {!editingId && (
+            <div>
+              <SectionLabel>{`${t("ppTitle")} (${t("ppOptional")})`}</SectionLabel>
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif,image/heic,image/heif"
+                onChange={e => setPhotoFile(e.target.files?.[0] || null)}
+                className="input"
+                style={{ paddingTop: 9, paddingBottom: 9 }}
+              />
+              {photoFile && (
+                <p style={{ fontSize: 11, color: "var(--text-secondary)", marginTop: 6 }}>
+                  {photoFile.name} · {(photoFile.size / 1024).toFixed(1)} KB
+                </p>
+              )}
+            </div>
+          )}
         </form>
       </GlobalModal>
 

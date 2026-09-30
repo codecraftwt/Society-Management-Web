@@ -9,6 +9,7 @@ import {
   MdCampaign,
   MdVerified,
   MdBuild,
+  MdSettings,
   MdApartment,
   MdReportProblem,
   MdReceiptLong,
@@ -195,6 +196,12 @@ function AccountantLayoutInner() {
       icon: MdVerified,
       group: "SERVICES & REPORTS",
       module: "society_documents",
+    },
+    {
+      label: t("ppTitle", "Profile Picture"),
+      path: `${base}/settings`,
+      icon: MdSettings,
+      group: "SETTINGS",
     },
   ];
 

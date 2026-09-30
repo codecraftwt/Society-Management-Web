@@ -1,10 +1,11 @@
-import { useState, useRef, useCallback, useLayoutEffect, useMemo } from "react";
+import { useState, useRef, useCallback, useLayoutEffect, useMemo, useEffect } from "react";
 import API from "../../services/api";
 import { toast } from "react-toastify";
 import { useLang } from "../../context/LanguageContext";
 import { useAuthContext } from "../../context/AuthContext";
 import RolePermissions from "./RolePermissions";
-import { MdLock, MdShield } from "react-icons/md";
+import ProfilePictureUploader from "../../components/common/ProfilePictureUploader";
+import { MdLock, MdShield, MdPerson } from "react-icons/md";
 
 function eyeIcon(visible) {
   return visible ? (
@@ -78,7 +79,7 @@ function getStrength(pw) {
 
 export default function Settings() {
   const { t } = useLang();
-  const { user } = useAuthContext();
+  const { user, updateUser } = useAuthContext();
 
   const userRole = (user?.activeRole || user?.role || "").toUpperCase();
   const isAdminOrSocietyAdmin = ["SUPER_ADMIN", "SOCIETY_ADMIN", "ADMIN"].includes(userRole);
@@ -95,9 +96,19 @@ export default function Settings() {
   const tabsBarRef = useRef(null);
   const tabRefs = useRef([]);
   const [indicator, setIndicator] = useState({ left: 0, width: 0 });
+  const [me, setMe] = useState(null);
+
+  useEffect(() => {
+    let active = true;
+    API.get("/users/me")
+      .then((res) => { if (active) setMe(res.data); })
+      .catch(() => {});
+    return () => { active = false; };
+  }, []);
 
   const tabList = useMemo(() => {
     const list = [
+      { key: "picture", label: t("ppTitle", "Profile Picture"), icon: <MdPerson size={15} /> },
       { key: "password", label: t("cpwChangePassword"), icon: <MdLock size={15} /> },
     ];
     if (isAdminOrSocietyAdmin) {
@@ -260,6 +271,38 @@ export default function Settings() {
           </button>
         ))}
       </div>
+
+      {/* ── Tab: Profile Picture ── */}
+      {tab === "picture" && (
+        <div
+          className={`as-panel as-panel--${tabDir}`}
+          key={`pp-${tabDir}`}
+          role="tabpanel"
+          id="as-panel-picture"
+          aria-labelledby="as-tab-picture"
+        >
+          <div className="cpw-card animate-scaleIn">
+            <div className="cpw-card-header">
+              <div className="cpw-card-title">
+                {t("ppTitle", "Profile Picture")}
+              </div>
+              <p className="cpw-card-sub">
+                {t("ppSubtitle", "This photo appears on your profile and in admin lists.")}
+              </p>
+            </div>
+            <ProfilePictureUploader
+              name={me?.name || user?.name}
+              currentUrl={me?.profile_picture}
+              onChange={(url) => {
+                setMe((prev) => (prev ? { ...prev, profile_picture: url } : prev));
+                // Mirror into the auth session so the sidebar/app header pick up
+                // the new photo without a reload.
+                updateUser({ profile_picture: url });
+              }}
+            />
+          </div>
+        </div>
+      )}
 
       {/* ── Tab: Change Password ── */}
       {tab === "password" && (

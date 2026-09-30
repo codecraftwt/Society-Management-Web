@@ -24,6 +24,7 @@ import ConfirmDiscard from "../../components/common/ConfirmDiscard";
 import { useCustomAlert } from "../../context/CustomAlertContext";
 
 import Pagination from "../../components/common/Pagination";
+import UserAvatar from "../../components/common/UserAvatar";
 
 /* ─────────────────────────────────────────
    HELPERS
@@ -2334,6 +2335,7 @@ const [totalPages, setTotalPages] = useState(1);
   const [assignModal, setAssignModal] = useState(null);
 
   const [aadharFile, setAadharFile] = useState(null);
+  const [photoFile, setPhotoFile] = useState(null);
   const [panFile, setPanFile] = useState(null);
 
   const [allUnassignedFlats, setAllUnassignedFlats] = useState([]);
@@ -2459,6 +2461,7 @@ const [totalPages, setTotalPages] = useState(1);
     setFormError("");
     setAadharFile(null);
     setPanFile(null);
+    setPhotoFile(null);
     setEditingId(null);
     setEditFlatData(EMPTY_EDIT_FLAT);
     setEditCurrentFlats([]);
@@ -2829,7 +2832,7 @@ const [totalPages, setTotalPages] = useState(1);
             })),
           }));
 
-        const residentRes = await API.post("/users/resident", {
+        const residentPayload = {
           name: formData.name.trim(),
           email: formData.email.trim(),
           password: formData.password || DEFAULT_RESIDENT_PASSWORD,
@@ -2839,7 +2842,21 @@ const [totalPages, setTotalPages] = useState(1);
           vehicle_count: formData.vehicle_count,
           occupant_count: formData.occupant_count,
           emergency_contact: ecFilled ? { name: ec.name.trim(), phone: ec.phone.trim() } : undefined,
-        }, { headers });
+        };
+
+        let residentRes;
+        if (photoFile) {
+          const fd = new FormData();
+          Object.entries(residentPayload).forEach(([key, value]) => {
+            if (value !== undefined) {
+              fd.append(key, typeof value === "object" && value !== null ? JSON.stringify(value) : String(value));
+            }
+          });
+          fd.append("photo", photoFile);
+          residentRes = await API.post("/users/resident", fd, { headers });
+        } else {
+          residentRes = await API.post("/users/resident", residentPayload, { headers });
+        }
 
         const newUserId =
           residentRes.data?.user?.id ||
@@ -3178,6 +3195,7 @@ const [totalPages, setTotalPages] = useState(1);
                     {!editingId && (
                       <>
                         <SectionDivider icon={MdUploadFile} label={t("rcaKycDocs")} />
+                        <DocumentUploadField label={`${t("ppTitle")} (${t("ppOptional")})`} icon={MdPerson} accept="image/jpeg,image/png,image/webp,image/gif,image/heic,image/heif" file={photoFile} onChange={setPhotoFile} />
                         <DocumentUploadField label={t("rcaAadhar")} icon={MdBadge} accept="application/pdf,image/*" file={aadharFile} onChange={setAadharFile} required />
                         <DocumentUploadField label={t("rcaPan")} icon={MdCreditCard} accept="application/pdf,image/*" file={panFile} onChange={setPanFile} required />
                       </>
@@ -3471,12 +3489,15 @@ const [totalPages, setTotalPages] = useState(1);
                     <tr key={r.id} style={{ borderBottom: "1px solid var(--divider)", verticalAlign: "top", background: "transparent" }}>
                       <td style={{ padding: "14px 16px", fontSize: 12, color: "var(--text-secondary)", fontWeight: 600, width: 40 }}>{(page - 1) * limit + idx + 1}</td>
                       <td style={{ padding: "14px 16px", minWidth: 160 }}>
-                        <div>
-                          <div style={{ fontWeight: 700, fontSize: 13, color: "var(--text-primary)" }}>{r.name}</div>
-                          <div style={{ display: "flex", gap: 5, flexWrap: "wrap", marginTop: 3 }}>
-                            {r.roles?.includes("SOCIETY_ADMIN") && <span className="res-socadmin-badge" style={{ display: "inline-flex" }}>★ {t("roleSocietyAdmin")}</span>}
-                            {r.roles?.includes("COMMITTEE_MEMBER") && <span className="res-committee-badge" style={{ display: "inline-flex" }}>★ {t("colCommittee") || "Committee"}</span>}
-                            {r.roles?.includes("ACCOUNTANT") && <span className="res-accountant-badge" style={{ display: "inline-flex" }}>★ {t("resAccountantBadge")}</span>}
+                        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                          <UserAvatar name={r.name} src={r.profile_picture} size={36} radius="50%" />
+                          <div>
+                            <div style={{ fontWeight: 700, fontSize: 13, color: "var(--text-primary)" }}>{r.name}</div>
+                            <div style={{ display: "flex", gap: 5, flexWrap: "wrap", marginTop: 3 }}>
+                              {r.roles?.includes("SOCIETY_ADMIN") && <span className="res-socadmin-badge" style={{ display: "inline-flex" }}>★ {t("roleSocietyAdmin")}</span>}
+                              {r.roles?.includes("COMMITTEE_MEMBER") && <span className="res-committee-badge" style={{ display: "inline-flex" }}>★ {t("colCommittee") || "Committee"}</span>}
+                              {r.roles?.includes("ACCOUNTANT") && <span className="res-accountant-badge" style={{ display: "inline-flex" }}>★ {t("resAccountantBadge")}</span>}
+                            </div>
                           </div>
                         </div>
                       </td>

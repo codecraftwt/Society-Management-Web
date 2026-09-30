@@ -446,7 +446,20 @@ html.light.role-theme .gd-action:hover .gd-action__icon {
     inset 0 1.5px 0 rgba(255, 255, 255, 0.95) !important;
 }
 
-html.light.role-theme .gd-action__badge {
+/* Resident badge pill — built from --gd-badge-c so the label tone can never
+   collapse into the pill tint. Dark theme needs a bright label, light theme a
+   deep one, otherwise e.g. blue-400 on blue-500/20 is unreadable. */
+html.role-theme .gd-action:is(.gd-action--notice, .gd-action--bills, .gd-action--fastpass, .gd-action--parcel) .gd-action__badge {
+  border-width: 1px;
+  border-style: solid;
+  background-color: color-mix(in srgb, var(--gd-badge-c, var(--gd-c)) 16%, transparent) !important;
+  border-color: color-mix(in srgb, var(--gd-badge-c, var(--gd-c)) 45%, transparent) !important;
+  color: color-mix(in srgb, var(--gd-badge-c, var(--gd-c)) 72%, #ffffff) !important;
+}
+html.light.role-theme .gd-action:is(.gd-action--notice, .gd-action--bills, .gd-action--fastpass, .gd-action--parcel) .gd-action__badge {
+  background-color: color-mix(in srgb, var(--gd-badge-c, var(--gd-c)) 12%, #ffffff) !important;
+  border-color: color-mix(in srgb, var(--gd-badge-c, var(--gd-c)) 42%, transparent) !important;
+  color: color-mix(in srgb, var(--gd-badge-c, var(--gd-c)) 70%, #0b1220) !important;
   box-shadow: 0 2px 8px rgba(15, 23, 42, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.35);
 }
 

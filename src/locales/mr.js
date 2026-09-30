@@ -501,6 +501,11 @@ const mr = {
   rpGreetingEvening:      "शुभ संध्याकाळ",
   rpSocietyFallback:      "सोसायटी लिव्हिंग हब",
   rpYourProperties:       "तुमची मालमत्ता:",
+  rpPropertyCount:        "{count} मालमत्ता",
+  rpFlatRentedTag:        "भाड्याने",
+  rpFlatRentedTitle:      "फ्लॅट {flat} तुमच्या किरायेदार {name} ला दिलेले आहे, त्यामुळे तुम्ही त्यावर स्विच करू शकत नाही.",
+  rpFlatRentedSwitchBlock:"तुम्ही फ्लॅट {flat} वर स्विच करू शकत नाही कारण ते सध्या तुमच्या किरायेदार {name} च्या ताब्यात आहे.",
+  rpTenantUnknown:        "तुमचा किरायेदार",
   rpCommunityActive:      "सोसायटी सक्रिय",
   rpViewBillsPayments:    "बिले आणि पेमेंट पहा",
   rpMyDues:               "माझी थकीत",
@@ -4774,6 +4779,21 @@ cpwSuccessMsg:            "पासवर्ड यशस्वीरित्�
   resActionBlockedRejected:       "ही कृती करण्यापूर्वी ही नोंदणी मंजूर करा.",
   resRejectReasonLabel:          "नाकारण्याचे कारण",
   resRejectReasonHelp:           "आवश्यक. हे कारण रहिवासींना ईमेल केले जाते आणि त्यांच्या लॉगिन स्क्रीनवर दाखवले जाते.",
+  resRejectReasonHelp:           "आवश्यक. हे कारण ईमेलद्वारे रहिवासाला पाठवले जाते आणि त्याच्या लॉगिन स्क्रीनवर दाखवले जाते.",
+
+  ppTitle:        "प्रोफाइल फोटो",
+  ppSubtitle:     "हा फोटो तुमच्या प्रोफाइल आणि प्रशासक यादीत दिसेल.",
+  ppUpload:       "फोटो अपलोड करा",
+  ppChange:       "फोटो बदला",
+  ppRemove:       "काढून टाका",
+  ppHint:         "JPEG, PNG, WEBP, GIF किंवा HEIC. कमाल 5MB.",
+  ppErrType:      "कृपया JPEG, PNG, WEBP, GIF, HEIC किंवा HEIF प्रतिमा निवडा.",
+  ppErrSize:      "प्रतिमा खूप मोठी आहे. कमाल आकार 5MB आहे.",
+  ppUploadSuccess:"प्रोफाइल फोटो अद्ययावत झाला.",
+  ppUploadFail:   "प्रोफाइल फोटो अद्ययावत करता आला नाही.",
+  ppRemoveSuccess:"प्रोफाइल फोटो काढून टाकला.",
+  ppRemoveFail:   "प्रोफाइल फोटो काढता आला नाही.",
+  ppOptional:     "ऐच्छिक",
 };
 
 export default mr;

@@ -5,6 +5,8 @@ import { useLang } from "../../context/LanguageContext"; // ← NEW
 import LanguageSelector from "../../components/common/LanguageSelector"; // ← NEW
 import { getTitleError, getMobileError } from "../../utils/validators";
 import SlidingTabs from "../../components/common/SlidingTabs";
+import UserAvatar from "../../components/common/UserAvatar";
+import ProfilePictureUploader from "../../components/common/ProfilePictureUploader";
 import {
   MdPerson,
   MdEmail,
@@ -53,16 +55,8 @@ function Spinner({ size = 4 }) {
 /* ─────────────────────────────────────────────
   Avatar
 ───────────────────────────────────────────── */
-function Avatar({ name }) {
-  const initials = name
-    ? name
-        .split(" ")
-        .map((w) => w[0])
-        .slice(0, 2)
-        .join("")
-        .toUpperCase()
-    : "?";
-  return <div className="ms-avatar">{initials}</div>;
+function Avatar({ name, src, size }) {
+  return <UserAvatar name={name} src={src} size={size} />;
 }
 
 /* ─────────────────────────────────────────────
@@ -329,7 +323,7 @@ export default function MySetting() {
       <div className="bg-card ms-hero animate-scaleIn">
         <div className="ms-hero-accent" />
         <div className="ms-hero-body">
-          <Avatar name={profile?.name} />
+          <Avatar name={profile?.name} src={profile?.profile_picture} />
           <div className="ms-hero-info">
             <h2 className="ms-hero-name">{profile?.name}</h2>
             <p className="ms-hero-email">{profile?.email}</p>
@@ -347,6 +341,25 @@ export default function MySetting() {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* ══════════════════════════════════════
+          PROFILE PICTURE
+      ══════════════════════════════════════ */}
+      <div className="bg-card ms-card animate-fadeIn">
+        <Sectioner
+          icon={MdPerson}
+          title={t("ppTitle", "Profile Picture")}
+          subtitle={t("ppSubtitle", "This photo appears on your profile and in admin lists.")}
+        />
+        <ProfilePictureUploader
+          name={profile?.name}
+          currentUrl={profile?.profile_picture}
+          onChange={(url) => {
+            setProfile((prev) => (prev ? { ...prev, profile_picture: url } : prev));
+            updateUser({ profile_picture: url });
+          }}
+        />
       </div>
 
       {/* ══════════════════════════════════════
