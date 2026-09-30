@@ -5,8 +5,8 @@ import { AuthContext } from "../../context/AuthContext";
 import {
   MdAdd, MdDelete, MdPerson, MdEmail,
   MdVisibility, MdVisibilityOff,
-  MdSecurity, MdSchedule, MdCalendarToday,
-  MdWbSunny, MdNightsStay, MdBrightness5, MdEdit, MdApartment,
+  MdSecurity, MdSchedule, MdCalendarToday, MdCalendarMonth,
+  MdWbSunny, MdNightsStay, MdBrightness5, MdEdit, MdApartment, MdLock,
 } from "react-icons/md";
 import Select from "../../components/common/Select";
 import GlobalButton from "../../components/common/GlobalButton";
@@ -17,6 +17,11 @@ import GlobalBadge from "../../components/common/GlobalBadge";
 import GlobalConfirmDialog from "../../components/common/GlobalConfirmDialog";
 import { isCommitteeMember, hasPermission } from "../../utils/permissions";
 import { getTitleError, getEmailError } from "../../utils/validators";
+import {
+  getTodayISO, shiftStatus, shiftForToday, isShiftEditable,
+  sortShiftsForDisplay, formatShiftRange,
+  SHIFT_TODAY, SHIFT_UPCOMING, SHIFT_COMPLETED,
+} from "../../utils/guardShifts";
 import { useCustomAlert } from "../../context/CustomAlertContext";
 
 function ShiftBadge({ type, t }) {
@@ -151,11 +156,32 @@ export default function Guard() {
   const [showGuardModal, setShowGuardModal] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showShiftModal, setShowShiftModal] = useState(false);
+  const [showAllShiftsModal, setShowAllShiftsModal] = useState(false);
+  const [reopenListAfterEdit, setReopenListAfterEdit] = useState(false);
   const [selectedGuard, setSelectedGuard] = useState(null);
   const [guardShifts, setGuardShifts] = useState({});
   const [shiftForm, setShiftForm] = useState({ shift_type: "", start_date: "", end_date: "" });
   const [editingShiftId, setEditingShiftId] = useState(null);
   const [shiftError, setShiftError] = useState("");
+
+  /* "Today" has to roll over on its own: a page left open across midnight, or a
+     shift that starts tomorrow, must show the new day without a reload. The
+     value itself is always resolved in the app timezone (see utils/guardShifts),
+     the timer only decides when to recompute it. */
+  const [todayISO, setTodayISO] = useState(() => getTodayISO());
+  useEffect(() => {
+    let timer;
+    const scheduleRollover = () => {
+      const nextMidnight = new Date();
+      nextMidnight.setHours(24, 0, 5, 0);
+      timer = setTimeout(() => {
+        setTodayISO(getTodayISO());
+        scheduleRollover();
+      }, Math.max(1000, nextMidnight.getTime() - Date.now()));
+    };
+    scheduleRollover();
+    return () => clearTimeout(timer);
+  }, []);
 
   // Society-wide shift timing config (GuardShiftTiming)
   const DEFAULTS = {
@@ -520,27 +546,87 @@ export default function Guard() {
   };
 
   /* ── SHIFTS ── */
-  const openShiftModal = (guard, shift = null) => {
+  /* Edit one specific assignment. There is deliberately no "pick a different
+     shift" fallback any more: the caller always passes the row the user chose
+     from the "All Shifts" list, so a record can never be edited by accident.
+     `allowCompleted` is only for the 409 overlap shortcut: the API answers
+     "this range is already taken, edit that shift" and the taken shift may sit
+     in the past. Everywhere else a completed assignment stays read-only. */
+  const openShiftModal = (guard, shift, { allowCompleted = false } = {}) => {
+    if (!hasPermission(user, "guard", "edit_shift")) {
+      showUnauthorized(t("guardErrPermissionShift", "You do not have permission to manage guard shifts."));
+      return;
+    }
+    if (!shift) return;
+    if (!allowCompleted && !isShiftEditable(shift, todayISO)) {
+      showError(t("guardErrCompletedShift", "This shift has already ended and can no longer be edited."));
+      return;
+    }
+    setSelectedGuard(guard);
+    setShiftError("");
+    setEditingShiftId(shift.id);
+    setShiftForm({
+      shift_type: shift.shift_type,
+      start_date: shift.start_date,
+      end_date: shift.end_date,
+    });
+    setShowShiftModal(true);
+  };
+
+  /* The table row only ever shows today's shift. Everything else - running,
+     upcoming and history - lives behind this one action. */
+  const openAllShiftsModal = (guard) => {
+    setSelectedGuard(guard);
+    setShowAllShiftsModal(true);
+  };
+
+  /* Hand off from the list to the editor. The list closes because two stacked
+     modals would overlap, and this flag brings it back once the editor is done
+     so the user keeps their place in the history. */
+  const leaveListForEditor = (open) => {
+    setReopenListAfterEdit(true);
+    setShowAllShiftsModal(false);
+    open();
+  };
+
+  const closeShiftModal = () => {
+    setShowShiftModal(false);
+    if (reopenListAfterEdit) {
+      setReopenListAfterEdit(false);
+      setShowAllShiftsModal(true);
+    }
+  };
+
+  /* Unlike openShiftModal(guard) - which falls back to an existing assignment -
+     this always opens a blank form, so "Assign New Shift" never silently edits
+     an existing record (or a completed one). */
+  const openNewShiftModal = (guard) => {
     if (!hasPermission(user, "guard", "edit_shift")) {
       showUnauthorized(t("guardErrPermissionShift", "You do not have permission to manage guard shifts."));
       return;
     }
     setSelectedGuard(guard);
     setShiftError("");
-    const shifts = guardShifts[guard.id] || [];
-    const targetShift = shift || (shifts.length > 0 ? shifts[0] : null);
-    if (targetShift) {
-      setEditingShiftId(targetShift.id);
-      setShiftForm({
-        shift_type: targetShift.shift_type,
-        start_date: targetShift.start_date,
-        end_date: targetShift.end_date,
-      });
-    } else {
-      setEditingShiftId(null);
-      setShiftForm({ shift_type: "", start_date: "", end_date: "" });
-    }
+    setEditingShiftId(null);
+    setShiftForm({ shift_type: "", start_date: "", end_date: "" });
     setShowShiftModal(true);
+  };
+
+  const selectedGuardShifts = useMemo(
+    () => sortShiftsForDisplay(guardShifts[selectedGuard?.id] || [], todayISO),
+    [guardShifts, selectedGuard?.id, todayISO],
+  );
+
+  const shiftStatusLabel = (status) => {
+    if (status === SHIFT_TODAY) return t("guardShiftStatusToday", "Today");
+    if (status === SHIFT_UPCOMING) return t("guardShiftStatusUpcoming", "Upcoming");
+    return t("guardShiftStatusCompleted", "Completed");
+  };
+
+  const shiftStatusVariant = (status) => {
+    if (status === SHIFT_TODAY) return "success";
+    if (status === SHIFT_UPCOMING) return "info";
+    return "neutral";
   };
 
   const handleShiftSubmit = async (e) => {
@@ -571,13 +657,13 @@ export default function Guard() {
       } else {
         await API.post(`/guards/${selectedGuard.id}/shifts`, shiftForm);
       }
-      setShowShiftModal(false);
+      closeShiftModal();
       fetchGuards();
     } catch (err) {
       const status = err?.response?.status;
       const data = err?.response?.data;
       if (status === 409 && data?.existingShift && !editingShiftId) {
-        openShiftModal(selectedGuard, data.existingShift);
+        openShiftModal(selectedGuard, data.existingShift, { allowCompleted: true });
       } else {
         setShiftError(data?.message || t("guardErrSaveShift", "Failed to save shift"));
       }
@@ -634,27 +720,29 @@ export default function Guard() {
         }]
       : []),
     {
+      /* Only the assignment covering today. Listing every assignment here is
+         what made the row grow without bound. */
       key: "shift",
       header: t("guardColShift") || "Shift",
       render: (g) => {
-        const shifts = guardShifts[g.id] || [];
+        const todayShift = shiftForToday(guardShifts[g.id] || [], todayISO);
+        if (!todayShift) {
+          return (
+            <span style={{ fontSize: "0.8rem", color: "var(--text-tertiary)", fontStyle: "italic" }}>
+              {t("guardNoShiftToday", "No Shift Today")}
+            </span>
+          );
+        }
         return (
-          <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
-            {shifts.length > 0 ? (
-              shifts.map(s => (
-                <button
-                  key={s.id}
-                  type="button"
-                  onClick={() => openShiftModal(g, s)}
-                  style={{ padding: 0, border: "none", background: "none", cursor: "pointer", borderRadius: 6 }}
-                  title={t("guardEditShiftTitleTooltip", "Edit {type} shift ({range})", { type: shiftName(s.shift_type), range: `${s.start_date} → ${s.end_date}` })}
-                >
-                  <ShiftBadge type={s.shift_type} t={t} />
-                </button>
-              ))
-            ) : (
-              <span style={{ fontSize: "0.8rem", color: "var(--text-tertiary)", opacity: 0.6 }}>—</span>
-            )}
+          <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+            <ShiftBadge type={todayShift.shift_type} t={t} />
+            <span style={{
+              fontSize: 10, fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase",
+              padding: "3px 9px", borderRadius: 999,
+              background: "rgba(16,185,129,0.15)", color: "#34d399",
+            }}>
+              {t("guardShiftStatusToday", "Today")}
+            </span>
           </div>
         );
       },
@@ -664,30 +752,17 @@ export default function Guard() {
       header: t("guardColSchedule") || "Schedule",
       hiddenMobile: true,
       render: (g) => {
-        const shifts = guardShifts[g.id] || [];
-        return shifts.length > 0 ? (
-          <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-            {shifts.map(s => (
-              <button
-                key={s.id}
-                type="button"
-                onClick={() => openShiftModal(g, s)}
-                style={{
-                  display: "flex", alignItems: "center", gap: 5, fontSize: "0.8rem",
-                  color: "var(--text-secondary)", background: "none", border: "none",
-                  cursor: "pointer", padding: 0, textAlign: "left",
-                }}
-                title={t("guardEditShiftTitleTooltip", "Edit {type} shift ({range})", { type: shiftName(s.shift_type), range: `${s.start_date} → ${s.end_date}` })}
-              >
-                <MdCalendarToday size={11} style={{ opacity: 0.7 }} />
-                <span>{s.shift_type}: {s.start_date} → {s.end_date}</span>
-              </button>
-            ))}
+        const todayShift = shiftForToday(guardShifts[g.id] || [], todayISO);
+        if (!todayShift) {
+          return (
+            <span style={{ fontSize: "0.8rem", color: "var(--text-tertiary)", opacity: 0.6 }}>—</span>
+          );
+        }
+        return (
+          <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: "0.8rem", color: "var(--text-secondary)" }}>
+            <MdCalendarToday size={11} style={{ opacity: 0.7, flexShrink: 0 }} />
+            <span style={{ whiteSpace: "nowrap" }}>{formatShiftRange(todayShift)}</span>
           </div>
-        ) : (
-          <span style={{ fontSize: "0.8rem", color: "var(--text-tertiary)", fontStyle: "italic", opacity: 0.6 }}>
-            {t("guardNotScheduled") || "Not scheduled"}
-          </span>
         );
       },
     },
@@ -695,43 +770,40 @@ export default function Guard() {
       key: "actions",
       header: t("guardColActions") || "Actions",
       align: "right",
-      render: (g) => {
-        const shifts = guardShifts[g.id] || [];
-        return (
-          <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
-            {canEditGuard && (
-              <GlobalButton
-                variant="edit"
-                size="sm"
-                icon={MdEdit}
-                onClick={() => handleEdit(g)}
-                title={t("guardEditBtn", "Edit")}
-              >
-                {t("guardEditBtn", "Edit")}
-              </GlobalButton>
-            )}
-            {canShiftGuard && (
-              <GlobalButton
-                variant="secondary"
-                size="sm"
-                icon={MdSchedule}
-                onClick={() => openShiftModal(g)}
-                title={t("guardEditShift") || "Edit Guard Shift"}
-              >
-                {t("guardColShift") || "Shift"}
-              </GlobalButton>
-            )}
-            {canDeleteGuard && (
-              <GlobalButton
-                variant="delete"
-                size="sm"
-                icon={MdDelete}
-                onClick={() => handleOpenDelete(g)}
-              />
-            )}
-          </div>
-        );
-      },
+      render: (g) => (
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
+          {canEditGuard && (
+            <GlobalButton
+              variant="edit"
+              size="sm"
+              icon={MdEdit}
+              onClick={() => handleEdit(g)}
+              title={t("guardEditBtn", "Edit")}
+            >
+              {t("guardEditBtn", "Edit")}
+            </GlobalButton>
+          )}
+          {/* The single shift-related action on the row. Editing happens inside
+              the modal, where a completed assignment can be recognised. */}
+          <GlobalButton
+            variant="info"
+            size="sm"
+            icon={MdCalendarMonth}
+            onClick={() => openAllShiftsModal(g)}
+            title={t("guardViewAllShifts", "View All Shifts")}
+          >
+            {t("guardViewAllShifts", "View All Shifts")}
+          </GlobalButton>
+          {canDeleteGuard && (
+            <GlobalButton
+              variant="delete"
+              size="sm"
+              icon={MdDelete}
+              onClick={() => handleOpenDelete(g)}
+            />
+          )}
+        </div>
+      ),
     },
   ];
 
@@ -1094,7 +1166,7 @@ export default function Guard() {
       {/* ── SHIFT ASSIGNMENT MODAL ── */}
       <GlobalModal
         isOpen={showShiftModal}
-        onClose={() => setShowShiftModal(false)}
+        onClose={closeShiftModal}
         title={editingShiftId ? t("guardShiftEditTitle", "Edit Guard Shift") : t("guardShiftAssignTitle", "Assign Guard Shift")}
         subtitle={selectedGuard ? t("guardShiftFor", "Guard: {name}", { name: selectedGuard.name }) : t("guardShiftScheduleSub", "Shift schedule")}
         icon={MdSchedule}
@@ -1108,74 +1180,10 @@ export default function Guard() {
         submitIcon={editingShiftId ? MdEdit : MdAdd}
       >
         <form onSubmit={handleShiftSubmit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-          {/* Shift Selection Toggle Options */}
-          {selectedGuard && (guardShifts[selectedGuard.id] || []).length > 0 && (
-            <div style={{ display: "flex", flexDirection: "column", gap: 8, paddingBottom: 10, borderBottom: "1px solid var(--divider, rgba(255,255,255,0.08))" }}>
-              <SectionLabel>{t("guardAssignedShifts", "Assigned Shifts ({count})", { count: guardShifts[selectedGuard.id].length })}</SectionLabel>
-              <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-                {guardShifts[selectedGuard.id].map((s) => {
-                  const isSelected = editingShiftId === s.id;
-                  return (
-                    <button
-                      key={s.id}
-                      type="button"
-                      onClick={() => {
-                        setEditingShiftId(s.id);
-                        setShiftForm({
-                          shift_type: s.shift_type,
-                          start_date: s.start_date,
-                          end_date: s.end_date,
-                        });
-                        setShiftError("");
-                      }}
-                      style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: 8,
-                        padding: "6px 12px",
-                        borderRadius: 10,
-                        cursor: "pointer",
-                        transition: "all 0.18s ease",
-                        background: isSelected ? "rgba(107,70,193,0.2)" : "var(--card-inner-bg)",
-                        border: isSelected ? "1.5px solid var(--accent, #6B46C1)" : "1px solid var(--glass-border)",
-                        color: isSelected ? "var(--text-primary)" : "var(--text-secondary)",
-                        boxShadow: isSelected ? "0 2px 10px rgba(107,70,193,0.3)" : "none",
-                      }}
-                    >
-                      <ShiftBadge type={s.shift_type} t={t} />
-                      <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.01em" }}>
-                        {s.start_date} → {s.end_date}
-                      </span>
-                    </button>
-                  );
-                })}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setEditingShiftId(null);
-                    setShiftForm({ shift_type: "", start_date: "", end_date: "" });
-                    setShiftError("");
-                  }}
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: 6,
-                    padding: "6px 12px",
-                    borderRadius: 10,
-                    cursor: "pointer",
-                    transition: "all 0.18s ease",
-                    background: editingShiftId === null ? "rgba(16,185,129,0.15)" : "var(--card-inner-bg)",
-                    border: editingShiftId === null ? "1.5px solid #10b981" : "1px dashed var(--glass-border)",
-                    color: editingShiftId === null ? "#34d399" : "var(--text-secondary)",
-                    fontWeight: 700,
-                    fontSize: 11,
-                  }}
-                >
-                  <MdAdd size={14} /> {t("guardNewShift", "New Shift")}
-                </button>
-              </div>
-            </div>
-          )}
+          {/* The editor holds exactly one assignment: the one opened from the
+              "All Shifts" list, or a blank form for a new assignment. The list
+              itself is not repeated here - switching or adding a shift happens
+              in that modal, so this stays a single-purpose form. */}
 
           {shiftError && (
             <div style={{
@@ -1225,6 +1233,102 @@ export default function Guard() {
             </div>
           </div>
         </form>
+      </GlobalModal>
+
+      {/* ── ALL SHIFTS (history + editing entry point) ── */}
+      <GlobalModal
+        isOpen={showAllShiftsModal}
+        onClose={() => setShowAllShiftsModal(false)}
+        title={t("guardAllShiftsTitle", "All Shifts - {name}", { name: selectedGuard?.name || "" })}
+        subtitle={t("guardAllShiftsSubtitle", "The shift running today is highlighted. Completed shifts are read-only.")}
+        icon={MdSchedule}
+        size="md"
+        footer={
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, width: "100%" }}>
+            <GlobalButton variant="cancel" onClick={() => setShowAllShiftsModal(false)}>
+              {t("close") || "Close"}
+            </GlobalButton>
+            {canShiftGuard && selectedGuard && (
+              <GlobalButton
+                variant="add"
+                icon={MdAdd}
+                onClick={() => leaveListForEditor(() => openNewShiftModal(selectedGuard))}
+              >
+                {t("guardAssignNewShift", "Assign New Shift")}
+              </GlobalButton>
+            )}
+          </div>
+        }
+      >
+        {/* GlobalModal's body already scrolls (maxHeight 90vh, overflowY auto),
+            so a guard with a long history grows the list, not the dialog. */}
+        {selectedGuardShifts.length > 0 ? (
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            <SectionLabel>{t("guardAssignedShifts", "Assigned Shifts ({count})", { count: selectedGuardShifts.length })}</SectionLabel>
+            {selectedGuardShifts.map((s) => {
+              const status = shiftStatus(s, todayISO);
+              const isToday = status === SHIFT_TODAY;
+              const editable = canShiftGuard && isShiftEditable(s, todayISO);
+              return (
+                <div
+                  key={s.id}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 12,
+                    padding: "12px 14px",
+                    borderRadius: 14,
+                    background: isToday ? "rgba(37,99,235,0.10)" : "var(--card-inner-bg, rgba(255,255,255,0.04))",
+                    border: `1px solid ${isToday ? "var(--accent, #2563eb)55" : "var(--glass-border)"}`,
+                  }}
+                >
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                      <ShiftBadge type={s.shift_type} t={t} />
+                      <GlobalBadge variant={shiftStatusVariant(status)} size="sm">
+                        {shiftStatusLabel(status)}
+                      </GlobalBadge>
+                    </div>
+                    <div style={{
+                      marginTop: 6, fontSize: 12.5, fontWeight: 600,
+                      color: "var(--text-secondary)", whiteSpace: "nowrap",
+                    }}>
+                      {formatShiftRange(s, { year: true })}
+                    </div>
+                  </div>
+                  <GlobalButton
+                    variant="edit"
+                    size="sm"
+                    icon={editable ? MdEdit : MdLock}
+                    disabled={!editable}
+                    onClick={() => editable && leaveListForEditor(() => openShiftModal(selectedGuard, s))}
+                    title={editable
+                      ? t("guardEditShiftTitleTooltip", "Edit {type} shift ({range})", { type: shiftName(s.shift_type), range: formatShiftRange(s, { year: true }) })
+                      : t("guardErrCompletedShift", "This shift has already ended and can no longer be edited.")}
+                  >
+                    {t("guardEditBtn", "Edit")}
+                  </GlobalButton>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10, padding: "26px 10px", textAlign: "center" }}>
+            <MdSchedule size={30} style={{ color: "var(--text-tertiary)", opacity: 0.6 }} />
+            <span style={{ fontSize: 13, fontWeight: 700, color: "var(--text-secondary)" }}>
+              {t("guardNoShiftsAssigned", "No shifts assigned yet")}
+            </span>
+            {canShiftGuard && selectedGuard && (
+              <GlobalButton
+                variant="add"
+                icon={MdAdd}
+                onClick={() => leaveListForEditor(() => openNewShiftModal(selectedGuard))}
+              >
+                {t("guardAssignNewShift", "Assign New Shift")}
+              </GlobalButton>
+            )}
+          </div>
+        )}
       </GlobalModal>
 
       {/* ── EDIT SHIFT TIMINGS MODAL ── */}

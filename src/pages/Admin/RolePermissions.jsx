@@ -45,6 +45,7 @@ import {
   MdHistory,
 } from "react-icons/md";
 import "./Admin.css";
+import "./RolePermissions.css";
 
 const MODULE_GROUPS = {
   "Overview & Administration": ["dashboard", "settings"],
@@ -107,7 +108,7 @@ const STATUS_FILTER_ITEMS = [
 
 const deepCopy = (obj) => JSON.parse(JSON.stringify(obj));
 
-export default function RolePermissions() {
+export default function RolePermissions({ embedded = false }) {
   const { t } = useLang();
   const { user, refreshPermissions } = useContext(AuthContext);
   const isSuperAdmin = user?.role === "SUPER_ADMIN" || user?.activeRole === "SUPER_ADMIN";
@@ -418,54 +419,32 @@ export default function RolePermissions() {
   }, [societies, societySearch]);
 
   return (
-    <div className="rp-root">
-      {/* ── TOP HEADER ── */}
-      <div className="rp-header">
-        <div className="rp-header-left">
-          <div
-            className="rp-header-icon"
-            style={{
-              background: "linear-gradient(135deg, rgba(160, 90, 255, 0.22), rgba(160, 90, 255, 0.08))",
-              borderColor: "rgba(160, 90, 255, 0.35)",
-              color: "var(--accent, #a05aff)",
-            }}
-          >
-            <FaShieldAlt size={22} />
-          </div>
-          <div className="rp-header-titles">
-            <h2 className="rp-header-title">Role & Section Permissions</h2>
-            <p className="rp-header-sub">
+    <div className="set-rp">
+      {/* ── Header. Skipped when embedded because the Settings detail shell
+             already renders the page title. ── */}
+      {!embedded && (
+        <div className="set-rp__head">
+          <div className="set-rp__head-titles">
+            <h2 className="set-rp__head-title">Role &amp; Section Permissions</h2>
+            <p className="set-rp__head-sub">
               Manage section-level access controls. Toggle any module on or off for the selected role.
             </p>
           </div>
-        </div>
 
-        <div className="rp-header-right">
-          <span
-            className="rp-role-badge"
-            style={{
-              background: "rgba(160, 90, 255, 0.12)",
-              borderColor: "rgba(160, 90, 255, 0.3)",
-              color: "var(--accent, #a05aff)",
-            }}
-          >
-            <span className="rp-role-ic" style={{ background: "var(--accent, #a05aff)" }}>
-              {selectedRoleMeta?.icon ? <selectedRoleMeta.icon size={12} /> : <FaShieldAlt size={12} />}
+          <div className="set-rp__head-right">
+            <span className="set-rp__role">
+              <span className="set-rp__role-ic" style={{ background: "var(--accent, #a05aff)" }}>
+                {selectedRoleMeta?.icon ? <selectedRoleMeta.icon size={12} /> : <FaShieldAlt size={12} />}
+              </span>
+              <span>{selectedRoleMeta?.label || selectedRole}</span>
             </span>
-            <span>{selectedRoleMeta?.label || selectedRole}</span>
-          </span>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* ── READ-ONLY NOTICE FOR NON-EDITORS ── */}
       {!canEdit && (
-        <div
-          className="rp-readonly-banner"
-          style={{
-            background: "rgba(245, 158, 11, 0.08)",
-            borderColor: "rgba(245, 158, 11, 0.25)",
-          }}
-        >
+        <div className="set-rp__readonly">
           <MdOutlineEditOff size={18} />
           <div>
             <strong>Read-only mode:</strong> You do not have permission to modify role settings.
@@ -473,301 +452,119 @@ export default function RolePermissions() {
         </div>
       )}
 
-      {/* ── CONTROLS TOOLBAR ── */}
-      <div
-        className="rp-controls-bar"
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          flexWrap: "wrap",
-          gap: "12px",
-          padding: "12px 16px",
-          borderRadius: "18px",
-          background: "var(--card-bg)",
-          border: "1px solid var(--glass-border)",
-          boxShadow: "var(--shadow-sm)",
-        }}
-      >
-        {/* Left: Role Switcher SlidingTabs */}
-        <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
-          <SlidingTabs
-            items={ROLE_TAB_ITEMS}
-            value={selectedRole}
-            onChange={setSelectedRole}
-          />
-        </div>
+      {/* ── CONTROLS TOOLBAR: one row, everything vertically aligned ── */}
+      <div className="set-rp__toolbar">
+        {/* Left: Role Switcher segmented control */}
+        <SlidingTabs
+          items={ROLE_TAB_ITEMS}
+          value={selectedRole}
+          onChange={setSelectedRole}
+        />
 
-        {/* Right: Society Select (Super Admin), Category Dropdown, Status Filters, Expandable Search */}
-        <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap", marginLeft: "auto" }}>
+        <span className="set-rp__spacer" />
+
+        {/* Right: Society Select (Super Admin), Category, Status filters, Search */}
+        <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
           {/* Target Society Dropdown (Super Admin) */}
           {isSuperAdmin && (
-            <div ref={societyRef} style={{ position: "relative", minWidth: "200px" }}>
+            <div ref={societyRef} className="set-rp__soc">
               <button
                 type="button"
                 onClick={() => canEdit && setSocietyOpen((prev) => !prev)}
-                className="rp-society-select-card"
-                style={{
-                  width: "100%",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "10px",
-                  padding: "6px 12px",
-                  borderRadius: "12px",
-                  border: `1.5px solid ${societyOpen ? "var(--accent, #a05aff)" : "var(--glass-border)"}`,
-                  background: "var(--card-inner-bg)",
-                  color: "var(--text-primary)",
-                  cursor: canEdit ? "pointer" : "not-allowed",
-                  transition: "all 0.22s cubic-bezier(0.4, 0, 0.2, 1)",
-                }}
+                className="set-rp__soc-btn"
+                data-open={societyOpen}
+                disabled={!canEdit}
+                style={!canEdit ? { cursor: "not-allowed", opacity: 0.6 } : undefined}
               >
-                <div
-                  className="rp-society-icon-box"
-                  style={{
-                    width: "28px",
-                    height: "28px",
-                    background: "rgba(160, 90, 255, 0.15)",
-                    color: "var(--accent, #a05aff)",
-                    borderRadius: "8px",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <FaBuilding size={12} />
-                </div>
-                <div className="rp-society-info" style={{ textAlign: "left" }}>
-                  <span className="rp-society-tag" style={{ fontSize: "9px" }}>Target Society</span>
-                  <span className="rp-society-display-name" style={{ fontSize: "12px" }}>
+                <span className="set-rp__soc-ic">
+                  <FaBuilding size={13} />
+                </span>
+                <span className="set-rp__soc-text">
+                  <span className="set-rp__soc-tag">Target Society</span>
+                  <span className="set-rp__soc-name">
                     {selectedSocietyId
                       ? societies.find((s) => String(s.id) === String(selectedSocietyId))?.name || "Select Society"
                       : "Choose a Society..."}
                   </span>
-                </div>
-                <div className="rp-society-arrow-box">
-                  <svg
-                    width="12"
-                    height="12"
-                    viewBox="0 0 20 20"
-                    fill="currentColor"
-                    style={{
-                      transform: societyOpen ? "rotate(180deg)" : "rotate(0deg)",
-                      transition: "transform 0.2s ease",
-                      color: "var(--text-secondary)",
-                    }}
-                  >
-                    <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
-                  </svg>
-                </div>
+                </span>
+                <svg
+                  width="12"
+                  height="12"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                  className="set-rp__soc-chev"
+                  style={{ transform: societyOpen ? "rotate(180deg)" : "rotate(0deg)" }}
+                >
+                  <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                </svg>
               </button>
 
               {societyOpen && (
-                <div
-                  className="animate-scaleIn"
-                  style={{
-                    position: "absolute",
-                    top: "calc(100% + 6px)",
-                    right: 0,
-                    left: 0,
-                    minWidth: "260px",
-                    maxHeight: "320px",
-                    background: "var(--card-bg, #1e293b)",
-                    border: "1.5px solid var(--glass-border)",
-                    borderRadius: "14px",
-                    padding: "8px",
-                    boxShadow: "0 16px 36px -8px rgba(0, 0, 0, 0.45)",
-                    zIndex: 110,
-                    backdropFilter: "blur(12px)",
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "4px",
-                  }}
-                >
-                  <div
-                    style={{
-                      padding: "4px 8px 6px 8px",
-                      fontSize: "10px",
-                      fontWeight: "800",
-                      textTransform: "uppercase",
-                      letterSpacing: "0.06em",
-                      color: "var(--text-muted)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                    }}
-                  >
-                    <span>Select Target Society</span>
-                    <span style={{ fontSize: "11px", fontWeight: "600", color: "var(--text-secondary)" }}>
-                      {societies.length} societies
-                    </span>
+                <div className="set-rp__panel">
+                  <div className="set-rp__panel-search">
+                    <input
+                      value={societySearch}
+                      onChange={(e) => setSocietySearch(e.target.value)}
+                      placeholder="Search societies..."
+                      aria-label="Search societies"
+                    />
                   </div>
 
-                  {societies.length > 5 && (
-                    <div style={{ position: "relative", marginBottom: "4px" }}>
-                      <input
-                        type="text"
-                        placeholder={t("rpSearchSociety")}
-                        value={societySearch}
-                        onChange={(e) => setSocietySearch(e.target.value)}
-                        onClick={(e) => e.stopPropagation()}
-                        style={{
-                          width: "100%",
-                          padding: "6px 10px",
-                          borderRadius: "8px",
-                          border: "1px solid var(--glass-border)",
-                          background: "var(--card-inner-bg)",
-                          color: "var(--text-primary)",
-                          fontSize: "11px",
-                          outline: "none",
-                        }}
-                      />
-                    </div>
+                  {filteredSocieties.length === 0 ? (
+                    <div className="set-rp__panel-label">No societies found</div>
+                  ) : (
+                    filteredSocieties.map((soc) => {
+                      const isSelected = String(selectedSocietyId) === String(soc.id);
+                      return (
+                        <button
+                          key={soc.id}
+                          type="button"
+                          onClick={() => {
+                            setSelectedSocietyId(String(soc.id));
+                            setSocietyOpen(false);
+                          }}
+                          className="set-rp__opt"
+                          data-selected={isSelected}
+                        >
+                          <FaBuilding size={13} className="set-rp__opt-ic" />
+                          <span className="set-rp__opt-label">{soc.name}</span>
+                          <span className="set-rp__opt-id">#{soc.id}</span>
+                          {isSelected && <FaCheck size={11} className="set-rp__opt-check" />}
+                        </button>
+                      );
+                    })
                   )}
-
-                  <div
-                    style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: "2px",
-                      overflowY: "auto",
-                      maxHeight: "220px",
-                    }}
-                  >
-                    {filteredSocieties.length === 0 ? (
-                      <div style={{ padding: "12px", textAlign: "center", fontSize: "12px", color: "var(--text-muted)" }}>
-                        No societies found
-                      </div>
-                    ) : (
-                      filteredSocieties.map((soc) => {
-                        const isSelected = String(selectedSocietyId) === String(soc.id);
-                        return (
-                          <button
-                            key={soc.id}
-                            type="button"
-                            onClick={() => {
-                              setSelectedSocietyId(String(soc.id));
-                              setSocietyOpen(false);
-                            }}
-                            style={{
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "space-between",
-                              width: "100%",
-                              padding: "8px 10px",
-                              borderRadius: "10px",
-                              border: "none",
-                              background: isSelected ? "rgba(160, 90, 255, 0.16)" : "transparent",
-                              color: isSelected ? "var(--accent, #a05aff)" : "var(--text-primary)",
-                              fontSize: "12px",
-                              fontWeight: isSelected ? "700" : "600",
-                              cursor: "pointer",
-                              textAlign: "left",
-                              transition: "all 0.15s ease",
-                            }}
-                          >
-                            <div style={{ display: "flex", alignItems: "center", gap: "8px", minWidth: 0 }}>
-                              <FaBuilding size={13} style={{ opacity: isSelected ? 1 : 0.65, flexShrink: 0, color: isSelected ? "var(--accent, #a05aff)" : "inherit" }} />
-                              <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                                {soc.name}
-                              </span>
-                              <span
-                                style={{
-                                  fontSize: "10px",
-                                  padding: "1px 5px",
-                                  borderRadius: "4px",
-                                  background: "var(--card-inner-bg)",
-                                  color: "var(--text-muted)",
-                                  border: "1px solid var(--glass-border)",
-                                }}
-                              >
-                                #{soc.id}
-                              </span>
-                            </div>
-                            {isSelected && (
-                              <FaCheck size={11} style={{ flexShrink: 0, marginLeft: "6px" }} />
-                            )}
-                          </button>
-                        );
-                      })
-                    )}
-                  </div>
                 </div>
               )}
             </div>
           )}
 
-          {/* Theme-compatible Custom Category Dropdown */}
+          {/* Category Dropdown */}
           <div ref={categoryRef} style={{ position: "relative" }}>
             <button
               type="button"
               onClick={() => setCategoryOpen((prev) => !prev)}
-              className="rp-category-btn"
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "8px",
-                padding: "8px 14px",
-                borderRadius: "44px",
-                border: `1px solid ${categoryOpen ? "var(--accent, #a05aff)" : "var(--glass-border)"}`,
-                background: "var(--card-inner-bg)",
-                color: selectedGroup !== "ALL" ? "var(--accent, #a05aff)" : "var(--text-primary)",
-                fontSize: "12px",
-                fontWeight: "600",
-                cursor: "pointer",
-                transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
-                boxShadow: categoryOpen ? "0 4px 16px -2px rgba(160, 90, 255, 0.2)" : "0 2px 6px rgba(0, 0, 0, 0.04)",
-              }}
+              className="set-rp__cat"
+              data-open={categoryOpen}
+              aria-haspopup="listbox"
+              aria-expanded={categoryOpen}
             >
-              <FaLayerGroup size={12} style={{ color: "var(--accent, #a05aff)" }} />
+              <FaLayerGroup size={13} />
               <span>{selectedGroup === "ALL" ? "All Categories" : selectedGroup}</span>
               <svg
                 width="12"
                 height="12"
                 viewBox="0 0 20 20"
                 fill="currentColor"
-                style={{
-                  marginLeft: "2px",
-                  color: "var(--text-secondary)",
-                  transform: categoryOpen ? "rotate(180deg)" : "rotate(0deg)",
-                  transition: "transform 0.2s ease",
-                }}
+                className="set-rp__cat-chev"
               >
                 <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
               </svg>
             </button>
 
             {categoryOpen && (
-              <div
-                className="animate-scaleIn"
-                style={{
-                  position: "absolute",
-                  top: "calc(100% + 6px)",
-                  right: 0,
-                  minWidth: "230px",
-                  background: "var(--card-bg, #1e293b)",
-                  border: "1.5px solid var(--glass-border)",
-                  borderRadius: "14px",
-                  padding: "6px",
-                  boxShadow: "0 16px 36px -8px rgba(0, 0, 0, 0.45)",
-                  zIndex: 100,
-                  backdropFilter: "blur(12px)",
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "2px",
-                }}
-              >
-                <div
-                  style={{
-                    padding: "6px 10px 4px 10px",
-                    fontSize: "10px",
-                    fontWeight: "800",
-                    textTransform: "uppercase",
-                    letterSpacing: "0.06em",
-                    color: "var(--text-muted)",
-                  }}
-                >
-                  Filter Category
-                </div>
+              <div className="set-rp__panel set-rp__panel--right" role="listbox">
+                <div className="set-rp__panel-label">Filter Category</div>
 
                 {[
                   { key: "ALL", label: "All Categories", icon: FaLayerGroup },
@@ -784,36 +581,18 @@ export default function RolePermissions() {
                     <button
                       key={cat.key}
                       type="button"
+                      role="option"
+                      aria-selected={isSelected}
                       onClick={() => {
                         setSelectedGroup(cat.key);
                         setCategoryOpen(false);
                       }}
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        width: "100%",
-                        padding: "8px 10px",
-                        borderRadius: "10px",
-                        border: "none",
-                        background: isSelected ? "rgba(160, 90, 255, 0.16)" : "transparent",
-                        color: isSelected ? "var(--accent, #a05aff)" : "var(--text-primary)",
-                        fontSize: "12px",
-                        fontWeight: isSelected ? "700" : "600",
-                        cursor: "pointer",
-                        textAlign: "left",
-                        transition: "all 0.15s ease",
-                      }}
+                      className="set-rp__opt"
+                      data-selected={isSelected}
                     >
-                      <div style={{ display: "flex", alignItems: "center", gap: "8px", minWidth: 0 }}>
-                        <IconComp size={14} style={{ opacity: isSelected ? 1 : 0.65, flexShrink: 0 }} />
-                        <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                          {cat.label}
-                        </span>
-                      </div>
-                      {isSelected && (
-                        <FaCheck size={11} style={{ flexShrink: 0, marginLeft: "6px" }} />
-                      )}
+                      <IconComp size={14} className="set-rp__opt-ic" />
+                      <span className="set-rp__opt-label">{cat.label}</span>
+                      {isSelected && <FaCheck size={11} className="set-rp__opt-check" />}
                     </button>
                   );
                 })}
@@ -821,14 +600,14 @@ export default function RolePermissions() {
             )}
           </div>
 
-          {/* Status Filters SlidingTabs */}
+          {/* Status Filters */}
           <SlidingTabs
             items={STATUS_FILTER_ITEMS}
             value={filterMode}
             onChange={setFilterMode}
           />
 
-          {/* Expandable Open/Closed Search */}
+          {/* Search */}
           <ExpandableSearch
             placeholder={t("rpSearchSections")}
             value={searchQuery}
@@ -839,212 +618,111 @@ export default function RolePermissions() {
         </div>
       </div>
 
-      {/* ── PERMISSIONS TABLE ── */}
+      {/* ── PERMISSION LIST ── */}
       {isSuperAdmin && !selectedSocietyId ? (
-        <div className="rp-empty">
-          <FaBuilding size={40} />
+        <div className="set-rp__empty">
+          <FaBuilding size={38} />
           <h3>{t("paySelectContinue")}</h3>
           <p>Choose a target society from the dropdown above to view and configure section permissions.</p>
         </div>
       ) : loading ? (
-        <div className="rp-loading">
-          <div className="rp-spinner" />
+        <div className="set-rp__loading">
+          <div className="set-rp__spinner" />
           <p>{t("rpLoading")}</p>
         </div>
       ) : filteredModulesList.length === 0 ? (
-        <div className="rp-empty">
-          <MdSecurity size={40} />
+        <div className="set-rp__empty">
+          <MdSecurity size={38} />
           <h3>{t("rpNoMatch")}</h3>
           <p>Try adjusting your search query or reset the filter mode.</p>
         </div>
       ) : (
         <div
-          className="rp-table-card"
-          style={{
-            background: "var(--card-bg)",
-            border: "1px solid var(--glass-border)",
-            borderRadius: "18px",
-            overflow: "hidden",
-            boxShadow: "0 8px 30px rgba(0, 0, 0, 0.12)",
-            marginTop: "0.5rem",
-          }}
+          className="set-rp__list"
+          role="table"
+          aria-label="Section permissions"
         >
-          <div className="overflow-x-auto">
-            <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
-              <thead>
-                <tr
-                  style={{
-                    background: "var(--card-inner-bg, rgba(255, 255, 255, 0.03))",
-                    borderBottom: "1px solid var(--glass-border)",
-                  }}
-                >
-                  <th style={{ padding: "14px 18px", fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--text-secondary)", width: "60px" }}>
-                    #
-                  </th>
-                  <th style={{ padding: "14px 18px", fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--text-secondary)" }}>
-                    Section / Feature Module
-                  </th>
-                  <th style={{ padding: "14px 18px", fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--text-secondary)", width: "200px" }}>
-                    Category
-                  </th>
-                  <th style={{ padding: "14px 18px", fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--text-secondary)", width: "140px" }}>
-                    Status
-                  </th>
-                  <th style={{ padding: "14px 18px", fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--text-secondary)", width: "160px", textAlign: "center" }}>
-                    Access Control
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {paginatedList.map((item, idx) => {
-                  const IconComp = item.meta.icon || MdSecurity;
-                  const isEnabled = !!sectionStates[item.key];
-                  const editable = canEdit && hasSocietyTarget;
-                  const itemIndex = (safeCurrentPage - 1) * itemsPerPage + idx + 1;
-
-                  return (
-                    <tr
-                      key={item.key}
-                      style={{
-                        borderBottom: "1px solid var(--glass-border)",
-                        background: isEnabled
-                          ? "linear-gradient(90deg, rgba(99, 102, 241, 0.03) 0%, transparent 100%)"
-                          : "transparent",
-                        transition: "background 0.2s ease",
-                      }}
-                      className="hover:bg-white/3"
-                    >
-                      {/* Index */}
-                      <td style={{ padding: "16px 18px", fontSize: "12px", fontWeight: 600, color: "var(--text-secondary)" }}>
-                        {itemIndex}
-                      </td>
-
-                      {/* Section Info */}
-                      <td style={{ padding: "16px 18px" }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
-                          <div
-                            style={{
-                              width: "38px",
-                              height: "38px",
-                              borderRadius: "10px",
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              background: isEnabled ? "rgba(99, 102, 241, 0.15)" : "var(--card-inner-bg)",
-                              border: `1px solid ${isEnabled ? "rgba(99, 102, 241, 0.3)" : "var(--glass-border)"}`,
-                              color: isEnabled ? "var(--accent)" : "var(--text-secondary)",
-                              flexShrink: 0,
-                            }}
-                          >
-                            <IconComp size={20} />
-                          </div>
-                          <div>
-                            <p style={{ margin: 0, fontSize: "13px", fontWeight: 700, color: "var(--text-primary)" }}>
-                              {item.meta.label}
-                            </p>
-                            <p style={{ margin: "2px 0 0 0", fontSize: "11px", color: "var(--text-secondary)", lineHeight: "1.4" }}>
-                              {item.meta.desc}
-                            </p>
-                          </div>
-                        </div>
-                      </td>
-
-                      {/* Category Badge */}
-                      <td style={{ padding: "16px 18px" }}>
-                        <span
-                          style={{
-                            display: "inline-block",
-                            padding: "4px 10px",
-                            borderRadius: "8px",
-                            fontSize: "11px",
-                            fontWeight: 600,
-                            background: "var(--card-inner-bg)",
-                            border: "1px solid var(--glass-border)",
-                            color: "var(--text-secondary)",
-                          }}
-                        >
-                          {item.group}
-                        </span>
-                      </td>
-
-                      {/* Status Pill */}
-                      <td style={{ padding: "16px 18px" }}>
-                        <span
-                          style={{
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: "6px",
-                            padding: "4px 10px",
-                            borderRadius: "20px",
-                            fontSize: "11px",
-                            fontWeight: 700,
-                            background: isEnabled ? "rgba(16, 185, 129, 0.12)" : "rgba(100, 116, 139, 0.12)",
-                            border: `1px solid ${isEnabled ? "rgba(16, 185, 129, 0.3)" : "rgba(100, 116, 139, 0.25)"}`,
-                            color: isEnabled ? "#10b981" : "#94a3b8",
-                          }}
-                        >
-                          <span
-                            style={{
-                              width: "6px",
-                              height: "6px",
-                              borderRadius: "50%",
-                              background: isEnabled ? "#10b981" : "#64748b",
-                            }}
-                          />
-                          {isEnabled ? "Granted" : "Denied"}
-                        </span>
-                      </td>
-
-                      {/* Holo Toggle Button */}
-                      <td style={{ padding: "14px 18px", textAlign: "center" }}>
-                        <div style={{ display: "flex", justifyContent: "center" }}>
-                          <HoloToggle
-                            id={`holo-toggle-${item.key}`}
-                            checked={isEnabled}
-                            onChange={() => requestToggleSection(item.key)}
-                            disabled={!editable}
-                          />
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+          {/* Column header — desktop only. */}
+          <div className="set-rp__row set-rp__row--head" role="row">
+            <span role="columnheader">#</span>
+            <span role="columnheader">Section / Module</span>
+            <span role="columnheader" className="set-rp__col-cat">Category</span>
+            <span role="columnheader">Status</span>
+            <span role="columnheader" className="set-rp__col-access">Access</span>
           </div>
 
-          {/* ── PAGINATION CONTROLS (10 PER PAGE) ── */}
-          {filteredModulesList.length > 0 && (
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                padding: "14px 20px",
-                borderTop: "1px solid var(--glass-border)",
-                background: "var(--card-inner-bg, rgba(255, 255, 255, 0.02))",
-                flexWrap: "wrap",
-                gap: "12px",
-              }}
-            >
-              <div style={{ fontSize: "12px", color: "var(--text-secondary)", fontWeight: 500 }}>
-                Showing <strong style={{ color: "var(--text-primary)" }}>{startIdx}</strong> to{" "}
-                <strong style={{ color: "var(--text-primary)" }}>{endIdx}</strong> of{" "}
-                <strong style={{ color: "var(--text-primary)" }}>{filteredModulesList.length}</strong> sections
-              </div>
+          {paginatedList.map((item, idx) => {
+            const IconComp = item.meta.icon || MdSecurity;
+            const isEnabled = !!sectionStates[item.key];
+            const editable = canEdit && hasSocietyTarget;
+            const itemIndex = (safeCurrentPage - 1) * itemsPerPage + idx + 1;
 
-              <Pagination
-                page={safeCurrentPage}
-                totalPages={totalPages}
-                onPageChange={setCurrentPage}
-                pageSize={itemsPerPage}
-                onPageSizeChange={(s) => {
-                  setItemsPerPage(s);
-                  setCurrentPage(1);
-                }}
-              />
-            </div>
-          )}
+            return (
+              <div
+                key={item.key}
+                className="set-rp__row"
+                role="row"
+                data-enabled={isEnabled}
+              >
+                <span className="set-rp__col-index" role="cell">
+                  {String(itemIndex).padStart(2, "0")}
+                </span>
+
+                {/* Icon container never touches the text. */}
+                <div className="set-rp__col-mod set-rp__mod" role="cell">
+                  <span className="set-rp__mod-ic" aria-hidden="true">
+                    <IconComp size={18} />
+                  </span>
+                  <div className="set-rp__mod-text">
+                    <p className="set-rp__mod-title">{item.meta.label}</p>
+                    <p className="set-rp__mod-desc">{item.meta.desc}</p>
+                  </div>
+                </div>
+
+                <div className="set-rp__col-cat" role="cell">
+                  <span className="set-rp__cat-badge" title={item.group}>{item.group}</span>
+                </div>
+
+                <div className="set-rp__col-status" role="cell">
+                  <span
+                    className={`set-rp__status ${
+                      isEnabled ? "set-rp__status--on" : "set-rp__status--off"
+                    }`}
+                  >
+                    <span className="set-rp__status-dot" aria-hidden="true" />
+                    {isEnabled ? "Granted" : "Denied"}
+                  </span>
+                </div>
+
+                <div className="set-rp__col-access" role="cell">
+                  <HoloToggle
+                    id={`holo-toggle-${item.key}`}
+                    checked={isEnabled}
+                    onChange={() => requestToggleSection(item.key)}
+                    disabled={!editable}
+                  />
+                </div>
+              </div>
+            );
+          })}
+
+          {/* ── Compact pagination footer ── */}
+          <div className="set-rp__foot">
+            <span className="set-rp__count">
+              Showing <b>{startIdx}</b>–<b>{endIdx}</b> of <b>{filteredModulesList.length}</b> sections
+            </span>
+
+            <Pagination
+              page={safeCurrentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+              pageSize={itemsPerPage}
+              onPageSizeChange={(s) => {
+                setItemsPerPage(s);
+                setCurrentPage(1);
+              }}
+            />
+          </div>
         </div>
       )}
 

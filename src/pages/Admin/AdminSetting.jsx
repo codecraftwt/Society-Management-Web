@@ -1,540 +1,1178 @@
-import { useState, useRef, useCallback, useLayoutEffect, useMemo, useEffect } from "react";
-import API from "../../services/api";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "react-toastify";
+import {
+  MdSettings,
+  MdPerson,
+  MdLock,
+  MdSecurity,
+  MdShield,
+  MdCameraAlt,
+  MdEdit,
+  MdClose,
+  MdCheck,
+  MdCheckCircle,
+  MdArrowBack,
+  MdChevronRight,
+  MdEmail,
+  MdPhone,
+  MdHome,
+  MdApartment,
+  MdBadge,
+  MdFingerprint,
+  MdDeleteOutline,
+  MdCloudUpload,
+  MdVpnKey,
+  MdWarningAmber,
+  MdInfoOutline,
+} from "react-icons/md";
+import API from "../../services/api";
 import { useLang } from "../../context/LanguageContext";
 import { useAuthContext } from "../../context/AuthContext";
 import RolePermissions from "./RolePermissions";
 import ProfilePictureUploader from "../../components/common/ProfilePictureUploader";
-import { MdLock, MdShield, MdPerson } from "react-icons/md";
+import UserAvatar from "../../components/common/UserAvatar";
+import GlobalModal from "../../components/common/GlobalModal";
+import GlobalConfirmDialog from "../../components/common/GlobalConfirmDialog";
+import "./AdminSetting.css";
 
-function eyeIcon(visible) {
-  return visible ? (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
-      stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-      <circle cx="12" cy="12" r="3"/>
-    </svg>
-  ) : (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
-      stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8
-               a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1
-               12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19
-               m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
-      <line x1="1" y1="1" x2="23" y2="23"/>
-    </svg>
-  );
-}
+/* ── helpers ─────────────────────────────────────────────────────────────── */
 
-function lockIcon() {
-  return (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
-      stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="3" y="11" width="18" height="11" rx="2"/>
-      <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-    </svg>
-  );
-}
+const PHONE_RE = /^[+\d][\d\s()-]{5,19}$/;
+const MAX_BYTES = 5 * 1024 * 1024;
+const ACCEPTED_TYPES = [
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/gif",
+  "image/heic",
+  "image/heif",
+];
 
-function shieldIcon(size) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none"
-      stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-      <path d="M9 12l2 2 4-4"/>
-    </svg>
-  );
-}
+/** "SOCIETY_ADMIN" -> "Society Admin" */
+const titleCaseRole = (r) =>
+  String(r || "")
+    .toLowerCase()
+    .split("_")
+    .filter(Boolean)
+    .map((w) => w[0].toUpperCase() + w.slice(1))
+    .join(" ");
 
-function checkIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor">
-      <path fillRule="evenodd"
-        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0
-           l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293
-           a1 1 0 011.414 0z" clipRule="evenodd"/>
-    </svg>
-  );
-}
-
-function errIcon() {
-  return (
-    <svg width="12" height="12" viewBox="0 0 20 20" fill="currentColor">
-      <path fillRule="evenodd"
-        d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0
-           1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6
-           a1 1 0 00-1-1z" clipRule="evenodd"/>
-    </svg>
-  );
-}
-
+/** 0-4 score. Mirrors the previous inline implementation exactly. */
 function getStrength(pw) {
   let s = 0;
-  if (pw.length >= 8) s++;
-  if (/[A-Z]/.test(pw) && /[a-z]/.test(pw)) s++;
-  if (/\d/.test(pw)) s++;
-  if (/[^A-Za-z0-9]/.test(pw)) s++;
+  if (pw.length >= 8) s += 1;
+  if (/[A-Z]/.test(pw) && /[a-z]/.test(pw)) s += 1;
+  if (/\d/.test(pw)) s += 1;
+  if (/[^A-Za-z0-9]/.test(pw)) s += 1;
   return s;
 }
 
-export default function Settings() {
+function EyeIcon({ open }) {
+  return open ? (
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+      <circle cx="12" cy="12" r="3" />
+    </svg>
+  ) : (
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+      <line x1="1" y1="1" x2="23" y2="23" />
+    </svg>
+  );
+}
+
+function LockIcon({ size = 15 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <rect x="3" y="11" width="18" height="11" rx="2" />
+      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+    </svg>
+  );
+}
+
+function CheckIcon({ size = 13 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+      <path fillRule="evenodd"
+        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0 l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293 a1 1 0 011.414 0z"
+        clipRule="evenodd" />
+    </svg>
+  );
+}
+
+function ErrorIcon({ size = 13 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+      <path fillRule="evenodd"
+        d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+        clipRule="evenodd" />
+    </svg>
+  );
+}
+
+export default function AdminSetting() {
   const { t } = useLang();
   const { user, updateUser } = useAuthContext();
 
+  /* ── Role gate: unchanged from the previous implementation ── */
   const userRole = (user?.activeRole || user?.role || "").toUpperCase();
   const isAdminOrSocietyAdmin = ["SUPER_ADMIN", "SOCIETY_ADMIN", "ADMIN"].includes(userRole);
 
-  const STRENGTH_MAP = {
-    1: { label: t("cpwStrWeak"),   cls: "weak",   color: "#ef4444" },
-    2: { label: t("cpwStrFair"),   cls: "mid",    color: "#3B82F6" },
-    3: { label: t("cpwStrGood"),   cls: "good",   color: "#5B8DEF" },
-    4: { label: t("cpwStrStrong"), cls: "strong", color: "#22c55e" },
-  };
+  /* ── Navigation: hub by default, then one section at a time ── */
+  const [view, setView] = useState("hub");
+  const [loading, setLoading] = useState(true);
 
-  const [tab, setTab] = useState("password");
-  const [tabDir, setTabDir] = useState("right");
-  const tabsBarRef = useRef(null);
-  const tabRefs = useRef([]);
-  const [indicator, setIndicator] = useState({ left: 0, width: 0 });
   const [me, setMe] = useState(null);
 
+  /* `loading` starts true, so the effect never needs a synchronous setState —
+     the first update lands after the request settles. */
   useEffect(() => {
-    let active = true;
-    API.get("/users/me")
-      .then((res) => { if (active) setMe(res.data); })
-      .catch(() => {});
-    return () => { active = false; };
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await API.get("/users/me");
+        if (!cancelled) setMe(res.data);
+      } catch {
+        // Fall back to the auth session; the page still renders.
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  const tabList = useMemo(() => {
-    const list = [
-      { key: "picture", label: t("ppTitle", "Profile Picture"), icon: <MdPerson size={15} /> },
-      { key: "password", label: t("cpwChangePassword"), icon: <MdLock size={15} /> },
-    ];
-    if (isAdminOrSocietyAdmin) {
-      list.push({
-        key: "roles",
-        label: t("asRolesTab"),
-        icon: <MdShield size={15} />,
-      });
-    }
-    return list;
-  }, [isAdminOrSocietyAdmin, t]);
+  /* ── Derived profile values ── */
+  const name = me?.name || user?.name || "";
+  const email = me?.email || user?.email || "";
+  const photo = me?.profile_picture || null;
+  const roleLabel = titleCaseRole(me?.activeRole || user?.activeRole || user?.role);
+  const societyLabel = me?.Society?.name || "";
 
-  const updateIndicator = useCallback(() => {
-    const bar = tabsBarRef.current;
-    if (!bar) return;
-    const index = tabList.findIndex((item) => item.key === tab);
-    const el = tabRefs.current[index];
-    if (!el) return;
-    setIndicator({ left: el.offsetLeft, width: el.offsetWidth });
-  }, [tabList, tab]);
+  const allRolesLabel = useMemo(() => {
+    const list = Array.isArray(me?.roles) ? me.roles : [];
+    const mapped = (list.length ? list : [me?.role]).filter(Boolean).map(titleCaseRole);
+    return mapped.join(", ") || t("asNA", "Not provided");
+  }, [me, t]);
 
-  useLayoutEffect(() => {
-    updateIndicator();
-  }, [updateIndicator]);
+  const approvalLabel = me?.approval_status
+    ? titleCaseRole(me.approval_status)
+    : titleCaseRole(user?.status) || "Active";
+  const statusTone =
+    (me?.approval_status || user?.status) === "APPROVED" ||
+    (me?.approval_status || user?.status) === "ACTIVE" ||
+    (!me?.approval_status && !user?.status)
+      ? "ok"
+      : "warn";
 
-  useLayoutEffect(() => {
-    const bar = tabsBarRef.current;
-    if (!bar || typeof ResizeObserver === "undefined") return undefined;
-    const ro = new ResizeObserver(() => updateIndicator());
-    ro.observe(bar);
-    tabRefs.current.forEach((node) => node && ro.observe(node));
-    window.addEventListener("resize", updateIndicator);
-    return () => {
-      ro.disconnect();
-      window.removeEventListener("resize", updateIndicator);
-    };
-  }, [updateIndicator, tabList.length]);
+  const residentTypeLabel = me?.resident_type
+    ? me.resident_type === "OWNER"
+      ? t("asOwner", "Owner")
+      : me.resident_type === "TENANT"
+        ? t("asTenant", "Tenant")
+        : titleCaseRole(me.resident_type)
+    : t("asNotApplicable", "Not applicable");
 
-  const handleTabClick = (key) => {
-    if (key === tab) return;
-    const from = tabList.findIndex((item) => item.key === tab);
-    const to = tabList.findIndex((item) => item.key === key);
-    setTabDir(to > from ? "right" : "left");
-    setTab(key);
+  /* ── Photo flow state ── */
+  const uploaderRef = useRef(null);
+  const fileInputRef = useRef(null);
+  const [photoMenuOpen, setPhotoMenuOpen] = useState(false);
+  const [uploadOpen, setUploadOpen] = useState(false);
+  const [removeOpen, setRemoveOpen] = useState(false);
+  const [dropActive, setDropActive] = useState(false);
+  const [pendingFile, setPendingFile] = useState(null);
+  const [photoBusy, setPhotoBusy] = useState(false);
+  const [photoError, setPhotoError] = useState("");
+
+  const applyPhoto = useCallback(
+    (url) => {
+      setMe((prev) => (prev ? { ...prev, profile_picture: url } : prev));
+      // Mirror into the auth session so the header/sidebar avatar updates too.
+      updateUser({ profile_picture: url });
+    },
+    [updateUser]
+  );
+
+  /** Avatar click: with no photo go straight to upload, otherwise offer the menu. */
+  const openAvatarEditor = () => {
+    setPhotoError("");
+    if (photo) setPhotoMenuOpen(true);
+    else openUpload();
   };
 
-  const [cur,     setCur]     = useState("");
-  const [np,      setNp]      = useState("");
-  const [cp,      setCp]      = useState("");
-  const [showCur, setShowCur] = useState(false);
-  const [showNp,  setShowNp]  = useState(false);
-  const [showCp,  setShowCp]  = useState(false);
-  const [errors,  setErrors]  = useState({});
-  const [loading, setLoading] = useState(false);
-  const bannerTimer = useRef(null);
+  const openUpload = () => {
+    setPhotoMenuOpen(false);
+    setPhotoError("");
+    setPendingFile(null);
+    setUploadOpen(true);
+  };
 
-  const sc   = np ? getStrength(np) : 0;
-  const info = STRENGTH_MAP[sc] || null;
+  const closeUpload = () => {
+    setPendingFile(null);
+    setPhotoError("");
+    setUploadOpen(false);
+  };
 
-  const tips = [
-    { id: "t1", label: t("cpwTip1"), ok: np.length >= 8 },
-    { id: "t2", label: t("cpwTip2"), ok: /[A-Z]/.test(np) && /[a-z]/.test(np) },
-    { id: "t3", label: t("cpwTip3"), ok: /\d/.test(np) },
-    { id: "t4", label: t("cpwTip4"), ok: /[^A-Za-z0-9]/.test(np) },
-  ];
+  const acceptFile = (file) => {
+    if (!file) return;
+    if (!ACCEPTED_TYPES.includes(file.type)) {
+      setPhotoError(t("ppErrType", "Please choose a JPEG, PNG, WEBP, GIF, HEIC or HEIF image."));
+      return;
+    }
+    if (file.size > MAX_BYTES) {
+      setPhotoError(t("ppErrSize", "Image is too large. Maximum size is 5MB."));
+      return;
+    }
+    setPhotoError("");
+    setPendingFile(file);
+  };
 
-  const npOk   = sc >= 2 && np.length >= 8;
-  const cpOk   = np === cp && cp.length > 0;
-  const canSave = cur.length > 0 && npOk && cpOk && !loading;
+  const previewUrl = useMemo(
+    () => (pendingFile ? URL.createObjectURL(pendingFile) : null),
+    [pendingFile]
+  );
+  useEffect(() => () => { if (previewUrl) URL.revokeObjectURL(previewUrl); }, [previewUrl]);
 
-  function clearField(f) {
-    setErrors(e => { const n = { ...e }; delete n[f]; return n; });
-  }
-
-  function reset() {
-    setCur(""); setNp(""); setCp("");
-    setErrors({});
-    setShowCur(false); setShowNp(false); setShowCp(false);
-    clearTimeout(bannerTimer.current);
-  }
-
-  async function handleSave() {
-    const errs = {};
-    if (!cur)  errs.cur = t("cpwErrCurrentRequired");
-    if (!npOk) errs.np  = np.length < 8 ? t("cpwErrTooShort") : t("cpwErrTooWeak");
-    if (!cpOk) errs.cp  = t("cpwErrMismatch");
-    if (Object.keys(errs).length) { setErrors(errs); return; }
-
-    setLoading(true);
+  const submitUpload = async () => {
+    if (!pendingFile) return;
+    setPhotoBusy(true);
     try {
-      await API.put("/users/me", {
-        currentPassword: cur,
-        password: np,
+      // ProfilePictureUploader owns validation, the upload request and the
+      // toasts. It fires onChange(url) on success, which is applyPhoto.
+      const result = await uploaderRef.current?.uploadFile(pendingFile);
+      if (result) {
+        setUploadOpen(false);
+        setPendingFile(null);
+        setPhotoError("");
+      }
+    } finally {
+      setPhotoBusy(false);
+    }
+  };
+
+  const confirmRemove = async () => {
+    setPhotoBusy(true);
+    try {
+      // Returns true on success and fires onChange(null) => applyPhoto(null).
+      const ok = await uploaderRef.current?.remove();
+      if (ok) {
+        setRemoveOpen(false);
+        setPhotoMenuOpen(false);
+      }
+    } finally {
+      setPhotoBusy(false);
+    }
+  };
+
+  /* ── Profile edit state ── */
+  const [editing, setEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState({ name: "", phone: "" });
+
+  const startEdit = useCallback(() => {
+    setForm({ name: me?.name || user?.name || "", phone: me?.phone || user?.phone || "" });
+    setEditing(true);
+  }, [me, user]);
+
+  const cancelEdit = useCallback(() => {
+    setForm({ name: me?.name || user?.name || "", phone: me?.phone || user?.phone || "" });
+    setEditing(false);
+  }, [me, user]);
+
+  const nameError = editing && !form.name.trim() ? t("asNameRequired", "Name is required.") : "";
+  const phoneError =
+    editing && form.phone.trim() && !PHONE_RE.test(form.phone.trim())
+      ? t("asPhoneInvalid", "Enter a valid phone number.")
+      : "";
+  const canSaveProfile =
+    !saving && !nameError && !phoneError && form.name.trim().length > 0;
+
+  const saveProfile = async () => {
+    if (!canSaveProfile) return;
+    setSaving(true);
+    try {
+      const res = await API.put("/users/me", {
+        name: form.name.trim(),
+        phone: form.phone.trim() || null,
       });
-      toast.success(t("cpwSuccessMsg"));
-      reset();
+      const updated = res?.data?.user;
+      if (updated) {
+        setMe((prev) => (prev ? { ...prev, ...updated } : prev));
+        updateUser({ name: updated.name, phone: updated.phone });
+      } else {
+        const fresh = await API.get("/users/me");
+        setMe(fresh.data);
+        updateUser({ name: fresh.data?.name, phone: fresh.data?.phone });
+      }
+      toast.success(t("asProfileSaved", "Profile updated successfully."));
+      setEditing(false);
+    } catch (err) {
+      toast.error(err?.response?.data?.message || t("asProfileSaveFailed", "Could not save your profile."));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  /* ── Password state ── */
+  const [cur, setCur] = useState("");
+  const [np, setNp] = useState("");
+  const [cp, setCp] = useState("");
+  const [showCur, setShowCur] = useState(false);
+  const [showNp, setShowNp] = useState(false);
+  const [showCp, setShowCp] = useState(false);
+  const [errors, setErrors] = useState({});
+  const [pwLoading, setPwLoading] = useState(false);
+
+  const score = np ? getStrength(np) : 0;
+  const strength = {
+    1: { label: t("cpwStrWeak", "Weak"), cls: "weak", color: "#ef4444" },
+    2: { label: t("cpwStrFair", "Fair"), cls: "fair", color: "#3b82f6" },
+    3: { label: t("cpwStrGood", "Good"), cls: "good", color: "#60a5fa" },
+    4: { label: t("cpwStrStrong", "Strong"), cls: "strong", color: "#22c55e" },
+  }[score] || null;
+
+  const requirements = useMemo(
+    () => [
+      { id: "t1", label: t("cpwTip1", "At least 8 characters"), ok: np.length >= 8 },
+      { id: "t2", label: t("cpwTip2", "Uppercase and lowercase letters"), ok: /[A-Z]/.test(np) && /[a-z]/.test(np) },
+      { id: "t3", label: t("cpwTip3", "Contains a number"), ok: /\d/.test(np) },
+      { id: "t4", label: t("cpwTip4", "Contains a special character"), ok: /[^A-Za-z0-9]/.test(np) },
+    ],
+    [np, t]
+  );
+
+  const npOk = score >= 2 && np.length >= 8;
+  const cpOk = np === cp && cp.length > 0;
+  const canSavePw = cur.length > 0 && npOk && cpOk && !pwLoading;
+
+  const clearPwField = (f) =>
+    setErrors((e) => {
+      const next = { ...e };
+      delete next[f];
+      return next;
+    });
+
+  const resetPw = () => {
+    setCur("");
+    setNp("");
+    setCp("");
+    setErrors({});
+    setShowCur(false);
+    setShowNp(false);
+    setShowCp(false);
+  };
+
+  const submitPassword = async () => {
+    const errs = {};
+    if (!cur) errs.cur = t("cpwErrCurrentRequired", "Please enter your current password");
+    if (!npOk) {
+      errs.np = np.length < 8
+        ? t("cpwErrTooShort", "Minimum 8 characters required")
+        : t("cpwErrTooWeak", "Password is too weak");
+    }
+    if (!cpOk) errs.cp = t("cpwErrMismatch", "Passwords do not match");
+    if (Object.keys(errs).length) {
+      setErrors(errs);
+      return;
+    }
+
+    setPwLoading(true);
+    try {
+      await API.put("/users/me", { currentPassword: cur, password: np });
+      toast.success(t("cpwSuccessMsg", "Password updated successfully!"));
+      resetPw();
     } catch (err) {
       const msg = err?.response?.data?.message || "";
       if (msg.toLowerCase().includes("current")) {
-        setErrors({ cur: t("cpwErrCurrentWrong") });
+        setErrors({ cur: t("cpwErrCurrentWrong", "Current password is incorrect") });
       } else {
-        toast.error(msg || t("failedSave"));
+        toast.error(msg || t("failedSave", "Failed to update password"));
       }
     } finally {
-      setLoading(false);
+      setPwLoading(false);
     }
-  }
+  };
 
-  function segCls(idx) {
-    if (!np || sc < idx) return "as-seg";
-    return `as-seg ${info?.cls || ""}`;
-  }
+  /* Leave a section cleanly so no half-typed state survives the round trip. */
+  const goHub = () => {
+    if (editing) cancelEdit();
+    if (view === "password") resetPw();
+    setView("hub");
+  };
+
+  const openSection = (next) => {
+    if (editing) cancelEdit();
+    setView(next);
+  };
+
+  /* ══ Hub ══════════════════════════════════════════════════════════════ */
+
+  const renderHub = () => (
+    <>
+      <div className="set-hub">
+        {/* My Profile */}
+        <button type="button" className="set-card set-card--profile" onClick={() => openSection("profile")}>
+          <span className="set-card__top">
+            <span className="set-card__avatar">
+              <UserAvatar name={name} src={photo} size={44} radius={44} alt={name} />
+              <span className="set-card__avatar-cam" aria-hidden="true">
+                <MdCameraAlt size={11} />
+              </span>
+            </span>
+            <span className="set-card__icon" aria-hidden="true">
+              <MdPerson size={21} />
+            </span>
+          </span>
+
+          <span className="set-card__meta">
+            <span className="set-card__meta-dot" aria-hidden="true" />
+            {t("asCardProfileMeta", "Personal information")}
+          </span>
+          <span className="set-card__title">{t("asProfileTitle", "My Profile")}</span>
+          <span className="set-card__desc">
+            {t("asCardProfileDesc", "Manage your profile information, profile picture and personal details.")}
+          </span>
+
+          <span className="set-card__spacer" />
+          <span className="set-card__foot">
+            <span className="set-card__cta">
+              {t("asCardProfileCta", "View Profile")}
+              <MdChevronRight size={15} aria-hidden="true" />
+            </span>
+            <span className="set-card__arrow" aria-hidden="true">
+              <MdChevronRight size={18} />
+            </span>
+          </span>
+        </button>
+
+        {/* Change Password */}
+        <button type="button" className="set-card set-card--password" onClick={() => openSection("password")}>
+          <span className="set-card__top">
+            <span className="set-card__icon" aria-hidden="true">
+              <MdLock size={21} />
+            </span>
+          </span>
+
+          <span className="set-card__meta">
+            <span className="set-card__meta-dot" aria-hidden="true" />
+            {t("asCardPasswordMeta", "Account Security")}
+          </span>
+          <span className="set-card__title">{t("cpwChangePassword", "Change Password")}</span>
+          <span className="set-card__desc">
+            {t("asCardPasswordDesc", "Update your account password and keep your account secure.")}
+          </span>
+
+          <span className="set-card__spacer" />
+          <span className="set-card__foot">
+            <span className="set-card__cta">
+              {t("asCardPasswordCta", "Change Password")}
+              <MdChevronRight size={15} aria-hidden="true" />
+            </span>
+            <span className="set-card__status">
+              <span className="set-card__status-dot" aria-hidden="true" />
+              {t("asProtected", "Password Protected")}
+            </span>
+          </span>
+        </button>
+
+        {/* Role & Section Permissions — role-gated, never bypassed */}
+        {isAdminOrSocietyAdmin && (
+          <button type="button" className="set-card set-card--roles" onClick={() => openSection("roles")}>
+            <span className="set-card__top">
+              <span className="set-card__icon" aria-hidden="true">
+                <MdShield size={21} />
+              </span>
+            </span>
+
+            <span className="set-card__meta">
+              <span className="set-card__meta-dot" aria-hidden="true" />
+              {t("asCardRolesMeta", "Access Control")}
+            </span>
+            <span className="set-card__title">{t("asRolesTab", "Role & Section Permissions")}</span>
+            <span className="set-card__desc">
+              {t("asCardRolesDesc", "Manage section-level access and review available permissions.")}
+            </span>
+
+            <span className="set-card__spacer" />
+            <span className="set-card__foot">
+              <span className="set-card__cta">
+                {t("asCardRolesCta", "Manage Permissions")}
+                <MdChevronRight size={15} aria-hidden="true" />
+              </span>
+              {roleLabel && (
+                <span className="set-card__status set-card__status--violet">
+                  <span className="set-card__status-dot" aria-hidden="true" />
+                  {roleLabel}
+                </span>
+              )}
+            </span>
+          </button>
+        )}
+      </div>
+    </>
+  );
+
+  /* ══ My Profile ═══════════════════════════════════════════════════════ */
+
+  /* ══ My Profile ═══════════════════════════════════════════════════════ */
+
+  const renderProfile = () => (
+    <div className="set-pf">
+      {/* ── One workspace. Hero, then logical groups divided by hairlines.
+             No card inside a card. ── */}
+      <div className="set-ws">
+        {/* Identity — the avatar itself is the photo control. */}
+        <div className="set-hero">
+          <div className="set-avatar">
+            <button
+              type="button"
+              className="set-avatar__btn"
+              onClick={openAvatarEditor}
+              aria-label={photo
+                ? t("asAvatarManage", "Change or remove profile photo")
+                : t("asAvatarChange", "Change profile photo")}
+            >
+              <UserAvatar
+                name={name}
+                src={photo}
+                size={104}
+                radius={52}
+                alt={name || t("asProfileTitle", "My Profile")}
+              />
+              <span className="set-avatar__overlay" aria-hidden="true">
+                <span className="set-avatar__cam">
+                  <MdCameraAlt size={18} />
+                </span>
+                <span className="set-avatar__hint">
+                  {photo ? t("asAvatarChange", "Change") : t("asAvatarUpload", "Upload")}
+                </span>
+              </span>
+            </button>
+            <span className="set-avatar__dot" aria-hidden="true" />
+          </div>
+
+          <div className="set-hero__id">
+            <h3 className="set-hero__name">{name || "—"}</h3>
+            <p className="set-hero__mail">
+              <MdEmail size={14} />
+              <span>{email || "—"}</span>
+            </p>
+            <div className="set-hero__chips">
+              {roleLabel && (
+                <span className="set-chip set-chip--role">
+                  <MdShield size={11} />
+                  {roleLabel}
+                </span>
+              )}
+              <span className={`set-chip set-chip--${statusTone}`}>
+                <span className="set-chip__dot" aria-hidden="true" />
+                {approvalLabel}
+              </span>
+              {societyLabel && (
+                <span className="set-chip set-chip--society">
+                  <MdApartment size={11} />
+                  {societyLabel}
+                </span>
+              )}
+            </div>
+          </div>
+
+          <button
+            type="button"
+            className={`set-btn ${editing ? "set-btn--ghost" : "set-btn--primary"}`}
+            onClick={() => (editing ? cancelEdit() : startEdit())}
+          >
+            {editing ? <MdClose size={15} /> : <MdEdit size={15} />}
+            {editing ? t("cancel", "Cancel") : t("asEditProfile", "Edit Profile")}
+          </button>
+        </div>
+
+        {/* ── Personal Information: the only editable surface ── */}
+        <div className="set-group">
+          <div className="set-group__head">
+            <h4 className="set-group__title">{t("asPersonalInfo", "Personal Information")}</h4>
+            {editing && <span className="set-group__tag">{t("asEditingTag", "Editing")}</span>}
+          </div>
+
+          <div className="set-grid set-grid--2">
+            <div className="set-f">
+              <label className="set-f__label" htmlFor="set-name">
+                {t("asFullName", "Full Name")}
+              </label>
+              {editing ? (
+                <div className="set-field">
+                  <span className="set-field__icon" aria-hidden="true"><MdPerson size={16} /></span>
+                  <input
+                    id="set-name"
+                    className={`set-field__input${nameError ? " set-field__input--err" : ""}`}
+                    value={form.name}
+                    onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+                    aria-invalid={nameError ? "true" : undefined}
+                    placeholder={t("asFullNamePh", "Enter your full name")}
+                    autoFocus
+                  />
+                </div>
+              ) : (
+                <p className="set-f__value">{me?.name || t("asNA", "Not provided")}</p>
+              )}
+              {editing && nameError && (
+                <span className="set-f__err">
+                  <ErrorIcon />
+                  {nameError}
+                </span>
+              )}
+            </div>
+
+            <div className="set-f">
+              <label className="set-f__label" htmlFor="set-phone">
+                {t("asPhoneLabel", "Phone Number")}
+              </label>
+              {editing ? (
+                <div className="set-field">
+                  <span className="set-field__icon" aria-hidden="true"><MdPhone size={16} /></span>
+                  <input
+                    id="set-phone"
+                    className={`set-field__input${phoneError ? " set-field__input--err" : ""}`}
+                    value={form.phone}
+                    onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
+                    aria-invalid={phoneError ? "true" : undefined}
+                    placeholder="+91 XXXXX XXXXX"
+                  />
+                </div>
+              ) : (
+                <p className="set-f__value">{me?.phone || t("asNA", "Not provided")}</p>
+              )}
+              {editing && phoneError && (
+                <span className="set-f__err">
+                  <ErrorIcon />
+                  {phoneError}
+                </span>
+              )}
+            </div>
+          </div>
+
+          {editing && (
+            <div className="set-group__foot">
+              <span className="set-group__hint">
+                <MdInfoOutline size={15} />
+                {t("asEmailReadOnly", "Email, role and status are managed by your society admin.")}
+              </span>
+              <span className="set-group__actions">
+                <button type="button" className="set-btn set-btn--ghost" onClick={cancelEdit}>
+                  {t("cancel", "Cancel")}
+                </button>
+                <button
+                  type="button"
+                  className="set-btn set-btn--primary"
+                  onClick={saveProfile}
+                  disabled={saving || !canSaveProfile}
+                >
+                  {saving ? <span className="set-spinner" /> : <MdCheck size={16} />}
+                  {saving ? t("saving", "Saving…") : t("saveChanges", "Save Changes")}
+                </button>
+              </span>
+            </div>
+          )}
+        </div>
+
+        {/* ── Account Information: read-only, label + value cells ── */}
+        <div className="set-group">
+          <div className="set-group__head">
+            <h4 className="set-group__title">{t("asAccountInfo", "Account Information")}</h4>
+          </div>
+
+          <div className="set-grid set-grid--3">
+            <div className="set-cell">
+              <span className="set-cell__label">{t("asEmailLabel", "Email")}</span>
+              <span className="set-cell__value" title={email}>{email || t("asNA", "Not provided")}</span>
+            </div>
+            <div className="set-cell">
+              <span className="set-cell__label">{t("asAllRolesLabel", "All Roles")}</span>
+              <span className="set-cell__value" title={allRolesLabel}>{allRolesLabel}</span>
+            </div>
+            <div className="set-cell">
+              <span className="set-cell__label">{t("asResidentTypeLabel", "Resident Type")}</span>
+              <span className="set-cell__value">{residentTypeLabel}</span>
+            </div>
+            <div className="set-cell">
+              <span className="set-cell__label">{t("asSocietyLabel", "Society")}</span>
+              <span className="set-cell__value">{societyLabel || t("asNotApplicable", "Not applicable")}</span>
+            </div>
+            <div className="set-cell">
+              <span className="set-cell__label">{t("asAccountStatusLabel", "Account Status")}</span>
+              <span className={`set-status set-status--${statusTone}`}>
+                <span className="set-status__dot" aria-hidden="true" />
+                {approvalLabel}
+              </span>
+            </div>
+            <div className="set-cell">
+              <span className="set-cell__label">{t("asUserIdLabel", "User ID")}</span>
+              <span className="set-cell__value set-cell__value--mono">#{me?.id ?? user?.id ?? "—"}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  /* ══ Change Password ══════════════════════════════════════════════════ */
+
+  const renderPassword = () => {
+    const segClass = (idx) =>
+      !np || score < idx ? "set-meter__seg" : `set-meter__seg set-meter__seg--${strength.cls}`;
+
+    /* Reusable field: fixed icon slot on the left, action slot on the right.
+       Both are absolutely centred so text can never overlap an icon. */
+    const pwField = ({ id, label, value, onChange, type, icon, action, error, autoComplete, placeholder }) => (
+      <div className="set-f">
+        <label className="set-f__label" htmlFor={id}>
+          {label}
+          <span className="set-f__req">*</span>
+        </label>
+        <div className="set-field">
+          <span className="set-field__icon" aria-hidden="true">{icon}</span>
+          <input
+            id={id}
+            className={`set-field__input${action ? " has-action" : ""}${
+              error ? " set-field__input--err" : ""
+            }`}
+            type={type}
+            value={value}
+            onChange={onChange}
+            autoComplete={autoComplete}
+            placeholder={placeholder}
+            aria-invalid={error ? "true" : undefined}
+            aria-describedby={error ? `${id}-err` : undefined}
+          />
+          {action}
+        </div>
+        {error && (
+          <span className="set-f__err" id={`${id}-err`} role="alert">
+            <ErrorIcon />
+            {error}
+          </span>
+        )}
+      </div>
+    );
+
+    const eyeBtn = (id, label, open, onClick) => (
+      <button
+        type="button"
+        className="set-field__action"
+        onClick={onClick}
+        aria-label={`${label} — ${open ? t("cpwHidePw", "Hide password") : t("cpwShowPw", "Show password")}`}
+        aria-pressed={open}
+      >
+        <EyeIcon open={open} />
+      </button>
+    );
+
+    return (
+      <div className="set-pw">
+        {/* One workspace, two aligned columns on desktop. */}
+        <div className="set-ws set-ws--split">
+          {/* Left: security status + compact notice */}
+          <aside className="set-pw__aside">
+            <span className="set-pw__badge" aria-hidden="true">
+              <MdSecurity size={20} />
+            </span>
+            <h3 className="set-pw__title">{t("asSecurityTitle", "Security")}</h3>
+            <p className="set-pw__text">
+              {t(
+                "asSecurityBody",
+                "Your password helps protect your account and personal information."
+              )}
+            </p>
+
+            <div className="set-pw__status">
+              <span className="set-pw__status-dot" aria-hidden="true" />
+              <span>{t("asProtected", "Password protected")}</span>
+            </div>
+
+            <div className="set-alert">
+              <MdWarningAmber size={17} className="set-alert__icon" />
+              <div>
+                <p className="set-alert__title">{t("asHelpTitle", "Using a shared device?")}</p>
+                <p className="set-alert__text">
+                  {t("asHelpNote", "Always log out after your session and never save credentials in shared browsers.")}
+                </p>
+              </div>
+            </div>
+          </aside>
+
+          {/* Right: the form */}
+          <div className="set-pw__main">
+            {pwField({
+              id: "set-cur",
+              label: t("cpwCurrentPassword", "Current Password"),
+              value: cur,
+              onChange: (e) => { setCur(e.target.value); clearPwField("cur"); },
+              type: showCur ? "text" : "password",
+              icon: <MdVpnKey size={16} />,
+              placeholder: t("cpwCurrentPasswordPh", "Enter current password"),
+              autoComplete: "current-password",
+              error: errors.cur,
+              action: eyeBtn("set-cur", t("cpwCurrentPassword", "Current Password"), showCur, () => setShowCur((v) => !v)),
+            })}
+
+            {pwField({
+              id: "set-np",
+              label: t("cpwNewPassword", "New Password"),
+              value: np,
+              onChange: (e) => { setNp(e.target.value); clearPwField("np"); },
+              type: showNp ? "text" : "password",
+              icon: <LockIcon size={16} />,
+              placeholder: t("cpwNewPasswordPh", "Enter new password"),
+              autoComplete: "new-password",
+              error: errors.np,
+              action: eyeBtn("set-np", t("cpwNewPassword", "New Password"), showNp, () => setShowNp((v) => !v)),
+            })}
+
+            {/* Strength + requirements */}
+            <div className="set-meter">
+              <div className="set-meter__head">
+                <span className="set-meter__label" id="set-strength-label">
+                  {t("asHealthLabel", "Password Strength")}
+                </span>
+                {np && strength && (
+                  <span className="set-meter__value" style={{ color: strength.color }}>
+                    {strength.label}
+                  </span>
+                )}
+              </div>
+
+              <div
+                className="set-meter__track"
+                data-filled={np ? "true" : "false"}
+                role="meter"
+                aria-valuemin={0}
+                aria-valuemax={4}
+                aria-valuenow={score}
+                aria-valuetext={strength?.label || ""}
+                aria-labelledby="set-strength-label"
+              >
+                <span className={segClass(1)} />
+                <span className={segClass(2)} />
+                <span className={segClass(3)} />
+                <span className={segClass(4)} />
+              </div>
+
+              <span className="set-meter__sublabel">{t("cpwChecklistTitle", "Requirements")}</span>
+              <ul className="set-reqs">
+                {requirements.map((r) => (
+                  <li key={r.id} className={`set-reqs__item${r.ok ? " set-reqs__item--ok" : ""}`}>
+                    <span className="set-reqs__dot" aria-hidden="true"><CheckIcon size={10} /></span>
+                    <span>{r.label}</span>
+                    <span className="set-sr-only">
+                      {r.ok ? t("asReqMet", "met") : t("asReqUnmet", "not met")}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {pwField({
+              id: "set-cp",
+              label: t("cpwConfirmPassword", "Confirm Password"),
+              value: cp,
+              onChange: (e) => { setCp(e.target.value); clearPwField("cp"); },
+              type: showCp ? "text" : "password",
+              icon: <LockIcon size={16} />,
+              placeholder: t("cpwConfirmPasswordPh", "Re-enter new password"),
+              autoComplete: "new-password",
+              error: errors.cp,
+              action: eyeBtn("set-cp", t("cpwConfirmPassword", "Confirm Password"), showCp, () => setShowCp((v) => !v)),
+            })}
+
+            <div className="set-formfoot">
+              <button type="button" className="set-btn set-btn--ghost" onClick={resetPw}>
+                {t("cpwCancelBtn", "Cancel")}
+              </button>
+              <button
+                type="button"
+                className="set-btn set-btn--primary"
+                onClick={submitPassword}
+                disabled={!canSavePw}
+              >
+                {pwLoading ? <span className="set-spinner" /> : <LockIcon size={15} />}
+                {pwLoading ? t("cpwUpdating", "Updating…") : t("cpwUpdateBtn", "Update Password")}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  /* ══ Render ════════════════════════════════════════════════════════════ */
+
+  const inSection = view !== "hub";
+
+  const sectionHead = {
+    profile: {
+      Icon: MdPerson,
+      title: t("asProfileTitle", "My Profile"),
+      desc: t("asSectionProfileDesc", "Manage your personal information and profile picture."),
+    },
+    password: {
+      Icon: MdLock,
+      title: t("cpwChangePassword", "Change Password"),
+      desc: t("asSectionPasswordDesc", "Keep your account secure with a strong password."),
+    },
+    roles: {
+      Icon: MdShield,
+      title: t("asRolesTab", "Role & Section Permissions"),
+      desc: t("asSectionRolesDesc", "Manage section-level access controls."),
+    },
+  }[view];
+
+  const HeadIcon = sectionHead?.Icon;
 
   return (
-    <div className="as-root animate-fadeIn" style={{ maxWidth: 1200 }}>
+    <div className="set-page animate-fadeIn">
+      {/* Drives the modal flows only; renders a hidden input. */}
+      <ProfilePictureUploader
+        ref={uploaderRef}
+        bare
+        name={name}
+        currentUrl={photo}
+        onChange={applyPhoto}
+      />
 
-      {/* ── Page header ── */}
-      <div className="as-header">
-        <div className="as-header-left">
-          <div className="as-header-icon">{shieldIcon(20)}</div>
-          <div className="as-header-titles">
-            <h1 className="as-header-title">{t("settings")}</h1>
-            <p className="as-header-sub">{t("asSubtitle")}</p>
+      <header className="set-head">
+        <div className="set-head__lead">
+          <span className="set-head__icon" aria-hidden="true">
+            <MdSettings size={22} />
+          </span>
+          <div>
+            <h1 className="set-head__title">{t("settings", "Settings")}</h1>
+            <p className="set-head__sub">
+              {t("asSubtitle", "Manage your account, security and access preferences")}
+            </p>
           </div>
         </div>
-        <div className="as-badge">
-          {lockIcon()}
-          <span>{t("asBadge")}</span>
+        <span className="set-head__badge">
+          <span className="set-head__dot" aria-hidden="true" />
+          {t("asProtected", "Account Protected")}
+        </span>
+      </header>
+
+      {!inSection && (
+        <p className="set-head__intro">
+          {t("asHubIntro", "Choose what you want to manage.")}
+        </p>
+      )}
+
+      {loading ? (
+        <div className="set-hub">
+          <div className="set-skeleton set-skeleton--card" />
+          <div className="set-skeleton set-skeleton--card" />
+          <div className="set-skeleton set-skeleton--card" />
         </div>
-      </div>
-
-      {/* ── Tabs ── */}
-      <div className="as-tabs-bar" ref={tabsBarRef} role="tablist">
-        <span
-          className="as-tabs-indicator"
-          aria-hidden="true"
-          style={{
-            left: indicator.left,
-            width: indicator.width,
-            opacity: indicator.width ? 1 : 0,
-          }}
-        />
-        {tabList.map((item, index) => (
-          <button
-            key={item.key}
-            type="button"
-            role="tab"
-            id={`as-tab-${item.key}`}
-            aria-controls={`as-panel-${item.key}`}
-            aria-selected={tab === item.key}
-            tabIndex={tab === item.key ? 0 : -1}
-            className={`as-tab${tab === item.key ? " active" : ""}`}
-            ref={(node) => {
-              tabRefs.current[index] = node;
-            }}
-            onClick={() => handleTabClick(item.key)}
-          >
-            {item.icon}
-            {item.label}
+      ) : inSection ? (
+        <div className="set-section set-section__enter">
+          <button type="button" className="set-back" onClick={goHub}>
+            <MdArrowBack size={16} />
+            {t("asBack", "Back to Settings")}
           </button>
-        ))}
-      </div>
 
-      {/* ── Tab: Profile Picture ── */}
-      {tab === "picture" && (
-        <div
-          className={`as-panel as-panel--${tabDir}`}
-          key={`pp-${tabDir}`}
-          role="tabpanel"
-          id="as-panel-picture"
-          aria-labelledby="as-tab-picture"
-        >
-          <div className="cpw-card animate-scaleIn">
-            <div className="cpw-card-header">
-              <div className="cpw-card-title">
-                {t("ppTitle", "Profile Picture")}
-              </div>
-              <p className="cpw-card-sub">
-                {t("ppSubtitle", "This photo appears on your profile and in admin lists.")}
+          <div className={`set-section__head set-section--${view}`}>
+            {HeadIcon && (
+              <span className="set-section__icon" aria-hidden="true">
+                <HeadIcon size={21} />
+              </span>
+            )}
+            <div>
+              <h2 className="set-section__title">{sectionHead.title}</h2>
+              <p className="set-section__desc">{sectionHead.desc}</p>
+            </div>
+          </div>
+
+          {view === "profile" && renderProfile()}
+          {view === "password" && renderPassword()}
+          {view === "roles" && isAdminOrSocietyAdmin && (
+            <div className="set-roles">
+              <RolePermissions embedded />
+            </div>
+          )}
+        </div>
+      ) : (
+        renderHub()
+      )}
+
+      {/* ── Photo action menu (only when a photo exists) ── */}
+      <GlobalModal
+        isOpen={photoMenuOpen}
+        onClose={() => !photoBusy && setPhotoMenuOpen(false)}
+        title={t("ppTitle", "Profile Photo")}
+        subtitle={t("asPhotoMenuSub", "Update or remove your current profile photo.")}
+        icon={<MdCameraAlt size={19} />}
+        size="sm"
+        footer={
+          <div style={{ display: "flex", gap: 10, width: "100%" }}>
+            <button
+              type="button"
+              className="set-btn set-btn--ghost"
+              style={{ flex: 1 }}
+              onClick={() => setPhotoMenuOpen(false)}
+              disabled={photoBusy}
+            >
+              {t("cancel", "Cancel")}
+            </button>
+            <button
+              type="button"
+              className="set-btn set-btn--primary"
+              style={{ flex: 1 }}
+              onClick={openUpload}
+              disabled={photoBusy}
+            >
+              {photoBusy ? <span className="set-spinner" /> : <MdCloudUpload size={16} />}
+              {t("ppChange", "Change Photo")}
+            </button>
+          </div>
+        }
+      >
+        <div className="set-photomenu">
+          <div className="set-photomenu__preview">
+            <span className="set-photomenu__avatar">
+              <UserAvatar name={name} src={photo} size={56} radius={28} alt={name} />
+            </span>
+            <div className="set-photomenu__meta">
+              <p className="set-photomenu__name">{name || "—"}</p>
+              <p className="set-photomenu__sub">
+                {photo
+                  ? t("asPhotoCurrent", "Current profile photo")
+                  : t("asPhotoNone", "No photo uploaded")}
               </p>
             </div>
-            <ProfilePictureUploader
-              name={me?.name || user?.name}
-              currentUrl={me?.profile_picture}
-              onChange={(url) => {
-                setMe((prev) => (prev ? { ...prev, profile_picture: url } : prev));
-                // Mirror into the auth session so the sidebar/app header pick up
-                // the new photo without a reload.
-                updateUser({ profile_picture: url });
-              }}
-            />
           </div>
-        </div>
-      )}
 
-      {/* ── Tab: Change Password ── */}
-      {tab === "password" && (
-        <div
-          className={`as-panel as-panel--${tabDir}`}
-          key={`pw-${tabDir}`}
-          role="tabpanel"
-          id="as-panel-password"
-          aria-labelledby="as-tab-password"
-        >
-          <div className="as-grid">
-            {/* Side panel */}
-            <aside className="as-side">
-              <div className="as-hero animate-scaleIn">
-                <div className="as-hero-glow" />
-                <div className="as-hero-head">
-                  <div className="as-hero-icon">{shieldIcon(20)}</div>
-                  <div className="as-hero-titles">
-                    <h2 className="as-hero-title">{t("asSecurityTitle")}</h2>
-                    <p className="as-hero-sub">{t("asSecuritySub")}</p>
-                  </div>
-                </div>
-
-                <div className="as-hero-status">
-                  <span className="as-status-dot" />
-                  <span>{t("asProtected")}</span>
-                </div>
-              </div>
-
-              <div className="as-help animate-fadeIn">
-                <div className="as-help-icon">{lockIcon()}</div>
-                <div className="as-help-text">
-                  <p className="as-help-title">{t("asHelpTitle")}</p>
-                  <p className="as-help-note">{t("asHelpNote")}</p>
-                </div>
-              </div>
-            </aside>
-
-            {/* Change password form */}
-            <div className="as-main">
-              <div className="cpw-card animate-scaleIn">
-                <div className="cpw-card-header">
-                  <div className="cpw-header-icon">{lockIcon()}</div>
-                  <div>
-                    <p className="cpw-header-title">{t("cpwChangePassword")}</p>
-                    <p className="cpw-header-sub">{t("cpwChangePasswordSub")}</p>
-                  </div>
-                </div>
-
-                <div className="cpw-body">
-                  <div className="cpw-field">
-                    <label className="cpw-label" htmlFor="cpw-cur">
-                      {t("cpwCurrentPassword")}<span className="cpw-req">*</span>
-                    </label>
-                    <div className="cpw-input-wrap">
-                      <span className="cpw-input-icon">
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
-                          stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/>
-                        </svg>
-                      </span>
-                      <input
-                        id="cpw-cur"
-                        className={`cpw-input${errors.cur ? " cpw-error" : cur ? " cpw-ok" : ""}`}
-                        type={showCur ? "text" : "password"}
-                        placeholder={t("cpwCurrentPasswordPh")}
-                        autoComplete="current-password"
-                        style={{ paddingLeft: 32 }}
-                        value={cur}
-                        onChange={e => { setCur(e.target.value); clearField("cur"); }}
-                        aria-invalid={errors.cur ? "true" : undefined}
-                        aria-describedby={errors.cur ? "cpw-err-cur" : undefined}
-                      />
-                      <button className="cpw-eye-btn" type="button"
-                        onClick={() => setShowCur(v => !v)}
-                        aria-label={`${t("cpwCurrentPassword")} — ${showCur ? t("cpwHidePw") : t("cpwShowPw")}`}
-                        aria-pressed={showCur}>
-                        {eyeIcon(showCur)}
-                      </button>
-                    </div>
-                    {errors.cur && (
-                      <span className="cpw-field-err" id="cpw-err-cur" role="alert" style={{ display: "flex" }}>
-                        {errIcon()}<span>{errors.cur}</span>
-                      </span>
-                    )}
-                  </div>
-
-                  <div className="cpw-divider" />
-
-                  <div className="cpw-field">
-                    <label className="cpw-label" htmlFor="cpw-np">
-                      {t("cpwNewPassword")}<span className="cpw-req">*</span>
-                    </label>
-                    <div className="cpw-input-wrap">
-                      <span className="cpw-input-icon">{lockIcon()}</span>
-                      <input
-                        id="cpw-np"
-                        className={`cpw-input${errors.np ? " cpw-error" : npOk ? " cpw-ok" : ""}`}
-                        type={showNp ? "text" : "password"}
-                        placeholder={t("cpwNewPasswordPh")}
-                        style={{ paddingLeft: 32 }}
-                        autoComplete="new-password"
-                        value={np}
-                        onChange={e => { setNp(e.target.value); clearField("np"); }}
-                        aria-invalid={errors.np ? "true" : undefined}
-                        aria-describedby={errors.np ? "cpw-err-np" : undefined}
-                      />
-                      {npOk && (
-                        <span className="cpw-check-icon" style={{ display: "block", right: 36 }} aria-hidden="true">
-                          {checkIcon()}
-                        </span>
-                      )}
-                      <button className="cpw-eye-btn" type="button"
-                        onClick={() => setShowNp(v => !v)}
-                        aria-label={`${t("cpwNewPassword")} — ${showNp ? t("cpwHidePw") : t("cpwShowPw")}`}
-                        aria-pressed={showNp}>
-                        {eyeIcon(showNp)}
-                      </button>
-                    </div>
-                    {errors.np && (
-                      <span className="cpw-field-err" id="cpw-err-np" role="alert" style={{ display: "flex" }}>
-                        {errIcon()}<span>{errors.np}</span>
-                      </span>
-                    )}
-
-                    {/* Live strength meter + requirements, directly under the field it describes */}
-                    <div className="cpw-live">
-                      <p className="as-meter-label" id="cpw-strength-label">{t("asHealthLabel")}</p>
-                      <div className="cpw-strength-wrap" style={{ opacity: np ? 1 : 0.35 }}
-                        role="meter" aria-valuemin={0} aria-valuemax={4} aria-valuenow={sc}
-                        aria-valuetext={info?.label || ""} aria-labelledby="cpw-strength-label">
-                        <div className={segCls(1)} />
-                        <div className={segCls(2)} />
-                        <div className={segCls(3)} />
-                        <div className={segCls(4)} />
-                        <span className="cpw-str-label" style={{ color: info?.color }}>
-                          {info?.label || ""}
-                        </span>
-                      </div>
-
-                      <p className="as-criteria-title" style={{ marginTop: 12 }}>{t("asChecklistTitle")}</p>
-                      <div className="cpw-tips">
-                        {tips.map(tip => (
-                          <div key={tip.id} className={`cpw-tip-row${tip.ok ? " is-ok" : ""}`}>
-                            <span className={`cpw-tip-dot${tip.ok ? " cpw-tip-ok" : ""}`} aria-hidden="true" />
-                            <span>{tip.label}</span>
-                            <span className="cpw-sr-only">{tip.ok ? "✓" : "✕"}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="cpw-field">
-                    <label className="cpw-label" htmlFor="cpw-cp">
-                      {t("cpwConfirmPassword")}<span className="cpw-req">*</span>
-                    </label>
-                    <div className="cpw-input-wrap">
-                      <span className="cpw-input-icon">{lockIcon()}</span>
-                      <input
-                        id="cpw-cp"
-                        className={`cpw-input${errors.cp ? " cpw-error" : cpOk ? " cpw-ok" : ""}`}
-                        type={showCp ? "text" : "password"}
-                        placeholder={t("cpwConfirmPasswordPh")}
-                        style={{ paddingLeft: 32 }}
-                        autoComplete="new-password"
-                        value={cp}
-                        onChange={e => { setCp(e.target.value); clearField("cp"); }}
-                        aria-invalid={errors.cp ? "true" : undefined}
-                        aria-describedby={errors.cp ? "cpw-err-cp" : undefined}
-                      />
-                      {cpOk && (
-                        <span className="cpw-check-icon" style={{ display: "block", right: 36 }} aria-hidden="true">
-                          {checkIcon()}
-                        </span>
-                      )}
-                      <button className="cpw-eye-btn" type="button"
-                        onClick={() => setShowCp(v => !v)}
-                        aria-label={`${t("cpwConfirmPassword")} — ${showCp ? t("cpwHidePw") : t("cpwShowPw")}`}
-                        aria-pressed={showCp}>
-                        {eyeIcon(showCp)}
-                      </button>
-                    </div>
-                    {errors.cp && (
-                      <span className="cpw-field-err" id="cpw-err-cp" role="alert" style={{ display: "flex" }}>
-                        {errIcon()}<span>{errors.cp}</span>
-                      </span>
-                    )}
-                  </div>
-
-                  <div className="cpw-footer">
-                    <button className="cpw-btn-cancel" type="button" onClick={reset}>
-                      {t("cpwCancelBtn")}
-                    </button>
-                    <button
-                      className="cpw-btn-save"
-                      type="button"
-                      onClick={handleSave}
-                      disabled={!canSave}
-                    >
-                      {loading ? (
-                        <>
-                          <div className="cpw-spinner" style={{ display: "block" }} />
-                          <span>{t("cpwUpdating")}</span>
-                        </>
-                      ) : (
-                        <>
-                          {lockIcon()}
-                          <span>{t("cpwUpdateBtn")}</span>
-                        </>
-                      )}
-                    </button>
-                  </div>
-                </div>
-              </div>
+          {/* Remove only exists while a photo is present. */}
+          {photo && (
+            <div className="set-photomenu__actions">
+              <button
+                type="button"
+                className="set-btn set-btn--danger set-btn--block"
+                onClick={() => setRemoveOpen(true)}
+                disabled={photoBusy}
+              >
+                {photoBusy ? <span className="set-spinner" /> : <MdDeleteOutline size={16} />}
+                {t("ppRemove", "Remove Photo")}
+              </button>
             </div>
-          </div>
+          )}
         </div>
-      )}
+      </GlobalModal>
 
-      {/* ── Tab: Role Permissions ── */}
-      {tab === "roles" && isAdminOrSocietyAdmin && (
+      {/* ── Upload modal ── */}
+      <GlobalModal
+        isOpen={uploadOpen}
+        onClose={() => !photoBusy && closeUpload()}
+        title={t("asUploadTitle", "Upload Profile Photo")}
+        subtitle={t("asUploadSub", "Choose a photo to use across the application.")}
+        icon={<MdCloudUpload size={19} />}
+        size="sm"
+        disableUnsavedWarning
+        footer={
+          <div style={{ display: "flex", gap: 10, width: "100%" }}>
+            <button
+              type="button"
+              className="set-btn set-btn--ghost"
+              style={{ flex: 1 }}
+              onClick={closeUpload}
+              disabled={photoBusy}
+            >
+              {t("cancel", "Cancel")}
+            </button>
+            <button
+              type="button"
+              className="set-btn set-btn--primary"
+              style={{ flex: 1 }}
+              onClick={submitUpload}
+              disabled={!pendingFile || photoBusy}
+            >
+              {photoBusy ? <span className="set-spinner" /> : <MdCloudUpload size={16} />}
+              {photoBusy
+                ? t("asUploading", "Uploading…")
+                : t("asUploadBtn", "Upload Photo")}
+            </button>
+          </div>
+        }
+      >
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept={ACCEPTED_TYPES.join(",")}
+          className="set-sr-only"
+          onChange={(e) => {
+            acceptFile(e.target.files?.[0]);
+            e.target.value = "";
+          }}
+        />
+
         <div
-          className={`as-panel as-panel--${tabDir}`}
-          key={`roles-${tabDir}`}
-          role="tabpanel"
-          id="as-panel-roles"
-          aria-labelledby="as-tab-roles"
+          className={`set-drop${dropActive ? " set-drop--active" : ""}`}
+          role="button"
+          tabIndex={0}
+          onClick={() => fileInputRef.current?.click()}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              fileInputRef.current?.click();
+            }
+          }}
+          onDragOver={(e) => { e.preventDefault(); setDropActive(true); }}
+          onDragLeave={() => setDropActive(false)}
+          onDrop={(e) => {
+            e.preventDefault();
+            setDropActive(false);
+            acceptFile(e.dataTransfer?.files?.[0]);
+          }}
         >
-          <RolePermissions />
+          {previewUrl ? (
+            <img className="set-drop__preview" src={previewUrl} alt="" />
+          ) : (
+            <span className="set-drop__icon" aria-hidden="true"><MdCloudUpload size={22} /></span>
+          )}
+
+          <p className="set-drop__title">
+            {previewUrl
+              ? (pendingFile?.name || t("asUploadChosen", "Photo selected"))
+              : t("asUploadChoose", "Drag & drop or choose a photo")}
+          </p>
+          <p className="set-drop__sub">
+            {t("asUploadSub2", "Your photo appears on your profile and in admin lists.")}
+          </p>
+          <p className="set-drop__formats">{t("ppHint", "JPEG, PNG, WEBP, GIF or HEIC. Max 5MB.")}</p>
         </div>
-      )}
+
+        {photoError && (
+          <span className="set-drop__err" role="alert">
+            <ErrorIcon />
+            {photoError}
+          </span>
+        )}
+      </GlobalModal>
+
+      {/* ── Remove confirmation ── */}
+      <GlobalConfirmDialog
+        isOpen={removeOpen}
+        onClose={() => !photoBusy && setRemoveOpen(false)}
+        onConfirm={confirmRemove}
+        title={t("asRemoveTitle", "Remove Profile Photo?")}
+        message={t(
+          "asRemoveMsg",
+          "Your current profile photo will be removed and your default avatar will be restored."
+        )}
+        confirmLabel={t("ppRemove", "Remove Photo")}
+        cancelLabel={t("cancel", "Cancel")}
+        loading={photoBusy}
+        icon={MdDeleteOutline}
+      />
     </div>
   );
 }

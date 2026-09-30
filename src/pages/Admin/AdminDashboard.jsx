@@ -11,8 +11,9 @@ import {
 import {
   MdReportProblem,
   MdCheckCircle, MdFlashOn, MdApartment,
-  MdRefresh,
+  MdRefresh, MdCalendarToday,
 } from "react-icons/md";
+import UserAvatar, { getInitials } from "../../components/common/UserAvatar";
 import CreditedDebitedChart from "../../components/accounting/CreditedDebitedChart";
 
 /* ── SKELETON LOADER ── */
@@ -20,12 +21,18 @@ function DashboardSkeleton() {
   return (
     <div className="space-y-6 w-full min-w-0 animate-pulse">
       {/* Hero Skeleton */}
-      <div className="bg-card/40 border border-glass-border rounded-2xl p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div className="space-y-2">
-          <div className="h-7 w-48 bg-white/10 rounded-lg" />
-          <div className="h-4 w-64 bg-white/5 rounded-md" />
+      <div className="bg-card/40 border border-glass-border rounded-[18px] p-4 flex flex-wrap items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="w-[54px] h-[54px] bg-white/10 rounded-[17px] shrink-0" />
+          <div className="space-y-2">
+            <div className="h-4 w-40 bg-white/10 rounded" />
+            <div className="h-3 w-56 bg-white/5 rounded" />
+          </div>
         </div>
-        <div className="h-8 w-36 bg-white/10 rounded-full" />
+        <div className="flex items-center gap-2">
+          <div className="h-8 w-32 bg-white/10 rounded-[10px]" />
+          <div className="h-8 w-24 bg-white/10 rounded-[10px]" />
+        </div>
       </div>
 
       {/* KPI Cards Skeleton */}
@@ -167,50 +174,84 @@ export default function AdminDashboard() {
   return (
     <div className="admin-dash space-y-6 w-full min-w-0 max-w-400 mx-auto pb-8">
       {/* ── 1. DASHBOARD HERO HEADER ── */}
-      <div className="bg-card border border-glass-border rounded-2xl p-6 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm">
-        <div className="space-y-1 min-w-0">
-          <div className="flex items-center gap-3 flex-wrap">
-            <h1 className="text-xl md:text-2xl font-bold text-primary tracking-tight">
-              {greeting}, {displayName}
-            </h1>
-            {isCommittee && (
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-blue-500/10 text-blue-400 border border-blue-500/20">
-                ★ {user?.committee_position || user?.designation || t("dashCommitteeMember")}
+      <header className="adh-hero">
+        <span className="adh-hero__aurora" aria-hidden />
+
+        <div className="adh-hero__body">
+          {/* Identity: profile picture, name, greeting, society line */}
+          <div className="adh-identity">
+            <div className="adh-avatar">
+              <span className="adh-avatar__ring" aria-hidden />
+              {user?.profile_picture ? (
+                <UserAvatar
+                  name={user?.name || displayName}
+                  src={user.profile_picture}
+                  className="adh-avatar__photo"
+                  alt={user?.name || displayName}
+                />
+              ) : (
+                <span className="adh-avatar__initials">
+                  {getInitials(user?.name || displayName)}
+                </span>
+              )}
+              <span className="adh-avatar__dot" aria-hidden />
+            </div>
+
+            <div className="adh-identity__text">
+              <h1 className="adh-name">
+                {displayName}
+                {isCommittee && (
+                  <span className="adh-role-chip">
+                    {user?.committee_position || user?.designation || t("dashCommitteeMember")}
+                  </span>
+                )}
+              </h1>
+              <p className="adh-sub">
+                <span className="adh-greet">{greeting}</span>
+                <span aria-hidden>&middot;</span>
+                <span className="adh-sub__txt">
+                  {isCommittee
+                    ? t("dashOverviewFor", {
+                        society: user?.society_name || stats?.societyName || t("dashYourSociety"),
+                      })
+                    : t("dashOverviewToday")}
+                </span>
+              </p>
+            </div>
+          </div>
+
+          {/* Compact clock + live status strip */}
+          <div className="adh-aside">
+            <div className="adh-clock">
+              <span className="adh-clock__ic" aria-hidden>
+                <MdCalendarToday size={14} />
               </span>
-            )}
-          </div>
-          <p className="text-xs md:text-sm text-secondary truncate">
-            {isCommittee
-              ? t("dashOverviewFor", {
-                  society: user?.society_name || stats?.societyName || t("dashYourSociety"),
-                })
-              : t("dashOverviewToday")}
-          </p>
-        </div>
+              <span>
+                {dateTime.toLocaleDateString(dateLocale, {
+                  weekday: "short",
+                  day: "numeric",
+                  month: "short",
+                })}
+              </span>
+              <span className="adh-clock__sep" aria-hidden>
+                |
+              </span>
+              <span className="adh-clock__time">
+                {dateTime.toLocaleTimeString(dateLocale, {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+              </span>
+            </div>
 
-        <div className="flex flex-wrap items-center gap-3 shrink-0">
-          {/* Formatted Date & Time */}
-          <div className="text-xs font-medium text-secondary bg-card-inner-bg px-3.5 py-2 rounded-xl border border-glass-border">
-            {dateTime.toLocaleDateString(dateLocale, {
-              weekday: "long",
-              day: "numeric",
-              month: "short",
-              year: "numeric",
-            })}
-            {" · "}
-            {dateTime.toLocaleTimeString(dateLocale, {
-              hour: "2-digit",
-              minute: "2-digit",
-            })}
-          </div>
-
-          {/* Operational Status Pill */}
-          <div className="inline-flex items-center gap-2 text-xs font-semibold px-3 py-2 rounded-xl bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            {t("dashRunning") || "System Operational"}
+            <div className="adh-status">
+              <span className="adh-status__dot" aria-hidden />
+              <span className="adh-status__label">{t("dashRunning") || "Running"}</span>
+              <span className="adh-status__live">{t("dashLive") || "Live"}</span>
+            </div>
           </div>
         </div>
-      </div>
+      </header>
 
       {/* ── 2. KEY METRICS KPI CARDS (4 COLUMNS) ── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
@@ -369,60 +410,60 @@ export default function AdminDashboard() {
           {t("dashOperationalStatus")}
         </h2>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* Status Item 1: System Status */}
-          <div className="bg-card border border-glass-border rounded-2xl p-5 flex items-center gap-4 shadow-sm">
-            <div className="w-11 h-11 rounded-xl bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 flex items-center justify-center shrink-0">
-              <MdCheckCircle size={22} />
+          <div className="adh-op" style={{ "--op-tint": "#22c55e" }}>
+            <div className="adh-op__ic">
+              <MdCheckCircle size={18} />
             </div>
-            <div className="min-w-0">
-              <div className="text-xs font-semibold uppercase tracking-wider text-secondary">
-                {t("dashSystemStatus") || "System Status"}
+            <div className="adh-op__body">
+              <div className="adh-op__head">
+                <span className="adh-op__label">{t("dashSystemStatus") || "System Status"}</span>
+                <span className="adh-op__tag">{t("dashLive") || "Live"}</span>
               </div>
-              <div className="text-sm font-bold text-primary mt-0.5 inline-flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-emerald-500" />
+              <div className="adh-op__value">
+                <span className="adh-op__dot" aria-hidden />
                 {t("dashRunning") || "Running"}
+                <span className="adh-op__desc">
+                  {t("dashSystemStatusDesc") || "All services operational"}
+                </span>
               </div>
-              <p className="text-xs text-secondary truncate mt-0.5">
-                {t("dashSystemStatusDesc") || "All services operational"}
-              </p>
             </div>
           </div>
 
           {/* Status Item 2: Power Backup */}
-          <div className="bg-card border border-glass-border rounded-2xl p-5 flex items-center gap-4 shadow-sm">
-            <div className="w-11 h-11 rounded-xl bg-blue-500/10 text-blue-500 border border-blue-500/20 flex items-center justify-center shrink-0">
-              <MdFlashOn size={22} />
+          <div className="adh-op" style={{ "--op-tint": "#3b82f6" }}>
+            <div className="adh-op__ic">
+              <MdFlashOn size={18} />
             </div>
-            <div className="min-w-0">
-              <div className="text-xs font-semibold uppercase tracking-wider text-secondary">
-                {t("dashPowerBackup") || "Power Backup"}
+            <div className="adh-op__body">
+              <div className="adh-op__head">
+                <span className="adh-op__label">{t("dashPowerBackup") || "Power Backup"}</span>
+                <span className="adh-op__tag">{t("dashStandby") || "Standby"}</span>
               </div>
-              <div className="text-sm font-bold text-primary mt-0.5 inline-flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-blue-500" />
+              <div className="adh-op__value">
+                <span className="adh-op__dot" aria-hidden />
                 {t("dashActive") || "Active"}
+                <span className="adh-op__desc">
+                  {t("dashPowerBackupDesc") || "Generator available"}
+                </span>
               </div>
-              <p className="text-xs text-secondary truncate mt-0.5">
-                {t("dashPowerBackupDesc") || "Generator available"}
-              </p>
             </div>
           </div>
 
           {/* Status Item 3: Society Info */}
-          <div className="bg-card border border-glass-border rounded-2xl p-5 flex items-center gap-4 shadow-sm">
-            <div className="w-11 h-11 rounded-xl bg-purple-500/10 text-purple-500 border border-purple-500/20 flex items-center justify-center shrink-0">
-              <MdApartment size={22} />
+          <div className="adh-op" style={{ "--op-tint": "#a855f7" }}>
+            <div className="adh-op__ic">
+              <MdApartment size={18} />
             </div>
-            <div className="min-w-0">
-              <div className="text-xs font-semibold uppercase tracking-wider text-secondary">
-                {t("dashSocietyId") || "Society Reference"}
+            <div className="adh-op__body">
+              <div className="adh-op__head">
+                <span className="adh-op__label">{t("dashSocietyId") || "Society Reference"}</span>
               </div>
-              <div className="text-sm font-bold text-primary mt-0.5">
+              <div className="adh-op__value">
                 {t("dashSocietyIdValue", { id: societyId || t("dashNA") })}
+                <span className="adh-op__desc">{t("dashSocietyIdDesc") || "System reference number"}</span>
               </div>
-              <p className="text-xs text-secondary truncate mt-0.5">
-                {t("dashSocietyIdDesc") || "System reference number"}
-              </p>
             </div>
           </div>
         </div>
