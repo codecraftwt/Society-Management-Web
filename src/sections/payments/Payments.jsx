@@ -471,7 +471,7 @@ export default function Payments() {
   if (!booted) return <PaymentsSkeleton />;
 
   return (
-    <div className="space-y-6 w-full min-w-0 max-w-7xl mx-auto pb-8 animate-fadeIn">
+    <div className="dash-kpi-scope space-y-6 w-full min-w-0 max-w-7xl mx-auto pb-8 animate-fadeIn">
       <Index
         source={source}
         onSourceChange={handleSourceChange}

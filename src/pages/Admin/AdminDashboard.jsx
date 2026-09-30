@@ -149,7 +149,7 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="admin-dash space-y-6 w-full min-w-0 max-w-400 mx-auto pb-8">
+    <div className="dash-kpi-scope space-y-6 w-full min-w-0 max-w-400 mx-auto pb-8">
       {/* ── 1. DASHBOARD HERO HEADER ── */}
       <PanelHero societyName={stats?.societyName} />
 

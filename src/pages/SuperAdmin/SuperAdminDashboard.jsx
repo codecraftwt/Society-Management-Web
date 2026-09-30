@@ -74,7 +74,7 @@ export default function SuperAdminDashboard() {
   ], [societies, totalAssigned, totalUnassigned, liveTotals, t]);
 
   return (
-    <div className="sa-page sa-dash-page admin-dash">
+    <div className="sa-page sa-dash-page dash-kpi-scope">
       {/* ── HEADER ── */}
       <div className="sa-dash-header">
         <div className="flex items-center gap-3 min-w-0">

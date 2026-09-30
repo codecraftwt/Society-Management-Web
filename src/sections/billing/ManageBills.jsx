@@ -577,7 +577,7 @@ export default function ManageBills({ variant }) {
   ];
 
   return (
-    <div className="page-root animate-fadeIn">
+    <div className="page-root dash-kpi-scope animate-fadeIn">
 
       {/* ── FEEDBACK NOTIFICATION BANNER (Admin) ── */}
       {!isAccountant && feedbackBanner && (

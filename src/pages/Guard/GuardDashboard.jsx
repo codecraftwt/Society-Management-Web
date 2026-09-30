@@ -444,7 +444,7 @@ export default function GuardDashboard() {
   ).filter(Boolean);
 
   return (
-    <div className="space-y-6 w-full min-w-0 max-w-400 mx-auto pb-8 animate-fadeIn">
+    <div className="dash-kpi-scope space-y-6 w-full min-w-0 max-w-400 mx-auto pb-8 animate-fadeIn">
       {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
           1. DASHBOARD HERO HEADER (MATCHING ADMIN DASHBOARD)
           ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
@@ -615,13 +615,15 @@ export default function GuardDashboard() {
       )}
 
       {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-          4. KEY METRICS KPI CARDS (MATCHING ad-kpi CLASSES & COLORS)
+          4. KEY METRICS KPI CARDS
+          Shares the .dash-kpi-scope tile styling with the Admin dashboard:
+          same padding, palette and glass hover physics.
           ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
         {/* Inside Now */}
         <div
           onClick={() => setActiveTab("INSIDE")}
-          className="ad-kpi ad-kpi--guards cursor-pointer gd-kpi-card"
+          className="ad-kpi ad-kpi--guards cursor-pointer"
         >
           <span className="ad-kpi-val">{stats.inside}</span>
           <span className="ad-kpi-label">{t("gdStatInside", "Visitors Inside")}</span>
@@ -631,7 +633,7 @@ export default function GuardDashboard() {
         {/* Total Today */}
         <div
           onClick={() => setActiveTab("ALL")}
-          className="ad-kpi ad-kpi--residents cursor-pointer gd-kpi-card"
+          className="ad-kpi ad-kpi--residents cursor-pointer"
         >
           <span className="ad-kpi-val">{stats.today}</span>
           <span className="ad-kpi-label">{t("gdStatToday", "Total Today")}</span>
@@ -641,7 +643,7 @@ export default function GuardDashboard() {
         {/* Exited Today */}
         <div
           onClick={() => setActiveTab("ALL")}
-          className="ad-kpi ad-kpi--complaints cursor-pointer gd-kpi-card"
+          className="ad-kpi ad-kpi--complaints cursor-pointer"
         >
           <span className="ad-kpi-val">{stats.exited}</span>
           <span className="ad-kpi-label">{t("gdStatExited", "Exited Today")}</span>
@@ -651,7 +653,7 @@ export default function GuardDashboard() {
         {/* Emergency Count */}
         <div
           onClick={() => setShowEmergencyModal(true)}
-          className="ad-kpi ad-kpi--expense cursor-pointer gd-kpi-card"
+          className="ad-kpi ad-kpi--alerts cursor-pointer"
         >
           <span className="ad-kpi-val">{activeAlerts.length}</span>
           <span className="ad-kpi-label">{t("gdStatAlerts", "Active Alerts")}</span>

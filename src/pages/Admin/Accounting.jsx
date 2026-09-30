@@ -276,7 +276,7 @@ export default function Accounting({ initialTab = "overview" }) {
   }));
 
   return (
-    <div className="space-y-6 w-full min-w-0 max-w-400 mx-auto pb-8">
+    <div className="dash-kpi-scope space-y-6 w-full min-w-0 max-w-400 mx-auto pb-8">
       {/* ── UNIFIED HEADER BAR ── */}
       <div className="flex flex-col gap-3">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">

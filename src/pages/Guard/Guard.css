@@ -82,22 +82,9 @@ html.light.role-theme .gd-glass-card:hover {
   box-shadow: 0 18px 40px -8px rgba(99, 102, 241, 0.14), inset 0 1px 0 0 rgba(255, 255, 255, 1) !important;
 }
 
-/* KPI Card Glass & Interactive Hover Physics */
-html.role-theme .gd-kpi-card {
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
-  backdrop-filter: blur(12px) !important;
-  -webkit-backdrop-filter: blur(12px) !important;
-}
-html.role-theme .gd-kpi-card:hover {
-  transform: translateY(-4px) scale(1.02) !important;
-}
-html.light.role-theme .gd-kpi-card:hover {
-  box-shadow: 0 14px 28px -6px rgba(0, 0, 0, 0.18), inset 0 1px 1px rgba(255, 255, 255, 0.5) !important;
-}
-html.role-theme:not(.light) .gd-kpi-card:hover {
-  box-shadow: 0 14px 28px -6px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
-  border-color: rgba(255, 255, 255, 0.25) !important;
-}
+/* KPI tiles now inherit their glass + hover physics from the shared
+   .dash-kpi-scope block in role-theme.css (section 6d), so they render
+   identically to the Admin dashboard. */
 
 /* Quick Gate Operations — Glassmorphic & Hover Color Cards */
 html.light.role-theme .gd-action--guest {

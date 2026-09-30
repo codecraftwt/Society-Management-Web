@@ -295,7 +295,7 @@ export default function AdminEmergency() {
   }
 
   return (
-    <div className="admin-page admin-root animate-fadeIn space-y-5 max-w-400 mx-auto pb-8">
+    <div className="admin-page admin-root dash-kpi-scope animate-fadeIn space-y-5 max-w-400 mx-auto pb-8">
       {/* ── 1. UNIFIED PAGE HEADER ── */}
       <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3">
         <div className="flex items-center gap-3">
