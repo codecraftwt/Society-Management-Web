@@ -1,4 +1,4 @@
-import { useEffect, useState, useContext, useMemo, useCallback } from "react";
+import { useEffect, useRef, useState, useContext, useMemo, useCallback } from "react";
 import { toast } from "react-toastify";
 import { AuthContext } from "../../context/AuthContext";
 import { useLang } from "../../context/LanguageContext";
@@ -27,6 +27,7 @@ export default function Payments() {
   const [rows, setRows] = useState([]);
   const [pagination, setPagination] = useState({});
   const [loading, setLoading] = useState(true);
+  const [booted, setBooted] = useState(false);
   const [err, setErr] = useState("");
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(20);
@@ -38,6 +39,11 @@ export default function Payments() {
   const [selected, setSelected] = useState(null);
   const [search, setSearch] = useState("");
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+
+  /* Only the newest request is allowed to write state. Without this, clicking
+     two tabs in quick succession can let the slower response win and paint rows
+     that belong to the tab the user is no longer on. */
+  const requestIdRef = useRef(0);
 
   /* ── SuperAdmin society gate ── */
   const [societies, setSocieties] = useState([]);
@@ -73,11 +79,14 @@ export default function Payments() {
 
   const load = async (p = page, src = source, size = limit, currentSocId = societyId) => {
     if (isSuperAdmin && (!currentSocId || currentSocId === "ALL")) {
+      requestIdRef.current += 1;
       setLoading(false);
       setRows([]);
       setPagination({});
       return;
     }
+    const requestId = (requestIdRef.current += 1);
+    let stale = false;
     try {
       setLoading(true);
       setErr("");
@@ -87,13 +96,28 @@ export default function Payments() {
         params.society_id = currentSocId;
       }
       const res = await getPaymentsList(params);
+      if (requestId !== requestIdRef.current) {
+        stale = true;
+        return;
+      }
       setRows(res.data || []);
       setPagination(res.pagination || {});
     } catch (e) {
+      if (requestId !== requestIdRef.current) {
+        stale = true;
+        return;
+      }
       console.error("Failed to load payments", e);
       setErr(t("payLoadFail") || "Failed to load payment records.");
     } finally {
-      setLoading(false);
+      /* A newer request already owns the loading flag. */
+      if (!stale) {
+        setLoading(false);
+        /* The full-page skeleton belongs to the very first fetch only. Re-running
+           it on every source/page change is what made a tab click look like a
+           page reload. */
+        setBooted(true);
+      }
     }
   };
 
@@ -107,21 +131,31 @@ export default function Payments() {
       return;
     }
     const strId = String(val);
+    if (strId === societyId) return;
     setSocietyId(strId);
     localStorage.setItem("superadmin_society_filter", strId);
     window.dispatchEvent(new Event("storage"));
     setPage(1);
-    load(1, source, limit, strId);
   };
 
   const handleSocietyChange = (e) => {
     handleSelectSociety(e.target.value);
   };
 
+  const handleSourceChange = useCallback(
+    (val) => {
+      if (val === source) return;
+      setSource(val);
+      setPage(1);
+    },
+    [source]
+  );
+
+  /* Single owner of the fetch. Anything that changes the result set (source tab,
+     society, and on mount) goes through here exactly once. */
   useEffect(() => {
-    if (!isSuperAdmin || (societyId && societyId !== "ALL")) {
-      load(1, source, limit, societyId);
-    }
+    if (isSuperAdmin && (!societyId || societyId === "ALL")) return;
+    load(1, source, limit, societyId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [source, societyId]);
 
@@ -434,16 +468,13 @@ export default function Payments() {
     );
   }
 
-  if (loading && rows.length === 0) return <PaymentsSkeleton />;
+  if (!booted) return <PaymentsSkeleton />;
 
   return (
     <div className="space-y-6 w-full min-w-0 max-w-7xl mx-auto pb-8 animate-fadeIn">
       <Index
         source={source}
-        onSourceChange={(val) => {
-          setSource(val);
-          setPage(1);
-        }}
+        onSourceChange={handleSourceChange}
         modeFilter={modeFilter}
         onModeFilterChange={setModeFilter}
         search={search}
@@ -466,10 +497,11 @@ export default function Payments() {
         filteredRows={filteredRows}
         stats={stats}
         onReset={() => {
+          /* Source/search/mode are all either client-side filters or effect
+             dependencies, so clearing them needs no extra request. */
           setSource("");
           setModeFilter("ALL");
           setSearch("");
-          load(1, "", limit, societyId);
           setPage(1);
         }}
         currentPage={currentPage}

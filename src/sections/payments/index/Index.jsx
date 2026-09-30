@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import {
   MdOutlinePayments,
   MdRefresh,
@@ -125,10 +125,16 @@ export default function Index({
   onPageSizeChange,
 }) {
   const { t } = useLang();
-  const SOURCE_TABS = SOURCE_TAB_DEFS.map((tab) => ({
-    id: tab.id,
-    label: t(tab.key) || tab.labelFallback,
-  }));
+  /* Memoized so the tab strip keeps a stable `items` identity. Rebuilding it on
+     every render made SlidingTabs re-measure and re-render each time. */
+  const SOURCE_TABS = useMemo(
+    () =>
+      SOURCE_TAB_DEFS.map((tab) => ({
+        id: tab.id,
+        label: t(tab.key) || tab.labelFallback,
+      })),
+    [t]
+  );
 
   const fmtDate = (d) => {
     if (!d) return { date: "—", time: "" };
@@ -245,7 +251,7 @@ export default function Index({
 
           <div className="flex items-center gap-2 shrink-0">
             <Select
-              className="input h-9 text-xs font-bold rounded-xl max-w-[220px]"
+              className="input h-9 text-xs font-bold rounded-xl max-w-55"
               value={societyId}
               onChange={onSocietyChange}
             >
@@ -371,19 +377,15 @@ export default function Index({
           style={{ boxShadow: "var(--shadow-sm)" }}
         >
           {/* Source Sliding Tabs */}
-          <div className="shrink-0 overflow-x-auto">
-            <SlidingTabs
-              value={source}
-              onChange={onSourceChange}
-              items={isSearchOpen ? SOURCE_TABS.filter((tab) => tab.id === source) : SOURCE_TABS}
-            />
+          <div className="min-w-0 max-w-full overflow-x-auto">
+            <SlidingTabs value={source} onChange={onSourceChange} items={SOURCE_TABS} />
           </div>
 
           {/* Right Toolbar: Payment Mode + Expandable Search */}
           <div className="flex items-center gap-2.5 flex-wrap">
             {/* Mode Select */}
             <Select
-              className="input h-9 text-xs font-bold rounded-xl min-w-[130px]"
+              className="input h-9 text-xs font-bold rounded-xl min-w-32.5"
               value={modeFilter}
               onChange={(e) => onModeFilterChange && onModeFilterChange(e.target.value)}
             >
@@ -430,6 +432,25 @@ export default function Index({
             WebkitBackdropFilter: "blur(16px)",
           }}
         >
+          {/* In-place progress: switching a source tab updates the table where it
+              stands instead of tearing the whole page down. */}
+          {loading && (
+            <div
+              className="h-0.5 w-full overflow-hidden"
+              style={{ background: "var(--glass-border)" }}
+              role="status"
+              aria-live="polite"
+            >
+              <div
+                className="h-full w-1/3 rounded-full"
+                style={{
+                  background: "var(--accent)",
+                  animation: "payments-bar 1.1s ease-in-out infinite",
+                }}
+              />
+            </div>
+          )}
+
           {/* Table Header Bar */}
           <div
             className="px-5 py-3 border-b flex items-center justify-between gap-3 bg-card-inner/80"
@@ -478,7 +499,28 @@ export default function Index({
                 </tr>
               </thead>
               <tbody className="divide-y divide-glass">
-                {filteredRows.length === 0 ? (
+                {loading && filteredRows.length === 0 ? (
+                  <tr>
+                    <td colSpan={9}>
+                      <div className="px-6 py-16 flex flex-col items-center justify-center gap-3 text-secondary">
+                        <svg className="animate-spin w-7 h-7 text-accent" viewBox="0 0 24 24" fill="none">
+                          <circle
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="currentColor"
+                            strokeWidth="4"
+                            className="opacity-25"
+                          />
+                          <path fill="currentColor" className="opacity-75" d="M4 12a8 8 0 018-8v8z" />
+                        </svg>
+                        <p className="text-sm font-medium">
+                          {t("payLoading") || "Updating records…"}
+                        </p>
+                      </div>
+                    </td>
+                  </tr>
+                ) : filteredRows.length === 0 ? (
                   <tr>
                     <td colSpan={9}>
                       <EmptyState onReset={onReset} />
@@ -548,7 +590,7 @@ export default function Index({
                               {residentName !== "—" ? residentName.charAt(0).toUpperCase() : "U"}
                             </div>
                             <div className="flex flex-col min-w-0">
-                              <span className="text-primary font-bold text-xs truncate max-w-[150px] leading-tight">
+                              <span className="text-primary font-bold text-xs truncate max-w-37.5 leading-tight">
                                 {residentName}
                               </span>
                               {flatNum !== "—" && (
@@ -563,7 +605,7 @@ export default function Index({
 
                         {/* Description */}
                         <td
-                          className="px-4 py-3 text-primary font-medium max-w-[210px] truncate text-xs"
+                          className="px-4 py-3 text-primary font-medium max-w-52.5 truncate text-xs"
                           title={description}
                         >
                           <span className="truncate block font-semibold">{description}</span>

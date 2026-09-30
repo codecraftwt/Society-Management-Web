@@ -109,6 +109,7 @@ const en = {
   paySubtitle:         "Revenue inflow from bills, maintenance, and amenities. Verified collections automatically update cash book.",
   paySearch:           "Search resident, flat, bill, mode…",
   payEmpty:            "No payments found in this society.",
+  payLoading:          "Updating records…",
   payAllSources:       "All Sources",
   payBills:            "Bills",
   payMaintenance:      "Maintenance",

@@ -18802,3 +18802,10 @@ html.light .as-tab.active {
   font-size: 0.36em;
   box-shadow: 0 2px 8px rgba(160, 90, 255, 0.35);
 }
+
+/* Indeterminate top-of-card progress bar used by the payments register so a
+   filter/sort change updates the table in place instead of blanking the page. */
+@keyframes payments-bar {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(300%); }
+}
