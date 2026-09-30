@@ -371,7 +371,16 @@ export default function ResidentProfile() {
         <div className="relative z-10 flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
           {/* Identity */}
           <div className="flex items-center gap-4 sm:gap-5 min-w-0 flex-1">
-            <div className="rph-avatar">
+            {/* The whole avatar is the hit target so the initials fallback
+                behaves like the photo, and it opens the canonical editable
+                profile rather than a separate read-only page. */}
+            <button
+              type="button"
+              className="rph-avatar"
+              onClick={() => navigate(`${base}/myprofile`)}
+              aria-label={t("menuMyProfile")}
+              title={t("menuMyProfile")}
+            >
               <span className="rph-avatar__ring" aria-hidden />
               {profile?.profile_picture ? (
                 <UserAvatar
@@ -384,7 +393,7 @@ export default function ResidentProfile() {
                 <span className="rph-avatar__initials">{initials}</span>
               )}
               <span className="rph-avatar__dot" aria-hidden />
-            </div>
+            </button>
 
             <div className="min-w-0 flex-1 space-y-2.5">
               <div className="flex items-center gap-2 flex-wrap">

@@ -356,6 +356,26 @@ html.role-theme .adh-avatar {
   display: grid;
   place-items: center;
 }
+/* Avatar becomes a button when the hero opens the profile screen. Reset the
+   UA button chrome and let the existing ring/photo styling show through. */
+html.role-theme .adh-avatar--btn {
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+html.role-theme .adh-avatar--btn .adh-avatar__ring {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+html.role-theme .adh-avatar--btn:hover .adh-avatar__ring {
+  transform: scale(1.06);
+}
+html.role-theme .adh-avatar--btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: 17px;
+}
 html.role-theme .adh-avatar__ring {
   position: absolute;
   inset: 0;

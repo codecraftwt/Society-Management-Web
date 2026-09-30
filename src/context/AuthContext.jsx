@@ -71,17 +71,14 @@ export const AuthProvider = ({ children }) => {
    * Re-read the authoritative profile from /users/me and merge it into the
    * cached session.
    *
-   * The cached user is restored from localStorage on boot, so a photo uploaded
-   * on another device (or a role switch that returned a slim payload) would
-   * stay stale. `force: true` refreshes even when a picture is already cached.
-   * Best-effort: silently gives up on network/auth errors.
+   * Pulls the fresh profile on boot and when forced so a photo uploaded
+   * on another device (or via mobile app) updates everywhere across the web app.
    */
-  const syncProfilePicture = useCallback(async ({ force = false } = {}) => {
+  const syncProfilePicture = useCallback(async () => {
     if (!localStorage.getItem("token")) return null;
 
     const current = normaliseUser(JSON.parse(localStorage.getItem("user")));
     if (!current) return null;
-    if (!force && current.profile_picture) return current.profile_picture;
 
     try {
       const res = await API.get("/users/me");
@@ -89,10 +86,8 @@ export const AuthProvider = ({ children }) => {
       if (!fresh || typeof fresh !== "object") return current.profile_picture ?? null;
 
       const patch = {};
-      ["profile_picture", "name", "email"].forEach((k) => {
+      ["profile_picture", "name", "email", "phone"].forEach((k) => {
         if (fresh[k] === undefined) return;
-        // Only forward real changes so the merged object stays referentially
-        // stable and the calling effect does not re-run forever.
         if (fresh[k] !== current[k]) patch[k] = fresh[k];
       });
       if (Object.keys(patch).length === 0) return current.profile_picture ?? null;
@@ -102,13 +97,13 @@ export const AuthProvider = ({ children }) => {
       setUser(merged);
       return patch.profile_picture ?? null;
     } catch (err) {
-      console.warn("[AuthContext] Profile picture sync skipped:", err?.message);
+      console.warn("[AuthContext] Profile sync skipped:", err?.message);
       return current.profile_picture ?? null;
     }
   }, []);
 
   // Pull the authoritative profile once on boot so a photo uploaded elsewhere
-  // shows up in every panel.
+  // shows up in every panel and in the sidebar.
   useEffect(() => {
     if (localStorage.getItem("token")) {
       syncProfilePicture();

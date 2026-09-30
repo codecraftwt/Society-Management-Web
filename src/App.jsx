@@ -60,6 +60,7 @@ import SocietyAmenities from "./sections/amenity";
 import SocietyDocuments from "./sections/document";
 import ManageProperty from "./pages/Admin/ManageProperty";
 import AdminSetting from "./pages/Admin/AdminSetting";
+import AdminMyProfile from "./pages/Admin/AdminMyProfile";
 import FlatHistory from "./pages/Admin/FlatHistory";
 import MaintenancePage from "./pages/Maintenance/MaintenancePage";
 import RolePermissions from "./pages/Admin/RolePermissions";
@@ -79,6 +80,7 @@ import ResidentAmenity from "./pages/Resident/ResidentAmenity";
 import PaymentMethods from "./pages/Resident/PaymentMethods";
 import PaymentReceipt from "./pages/Resident/PaymentReceipt";
 import MyProfile from "./pages/Resident/MyProfile";
+import ResidentOverview from "./pages/Resident/ResidentOverview";
 import MyHousehold from "./pages/Resident/MyHouseHold";
 import MyVehicles from "./pages/Resident/MyVehicles";
 import MyCollection from "./pages/Resident/MyCollection";
@@ -217,6 +219,11 @@ function App() {
         <Route element={<ProtectedRoute roles={["SOCIETY_ADMIN", "COMMITTEE_MEMBER"]} />}>
           <Route path="/admin" element={<AdminLayout />}>
             <Route index element={<AdminDashboard />} />
+            {/* Personal profile, reachable by every admin/committee member.
+                Intentionally not wrapped in PermissionRoute: a committee
+                member may not hold the "settings" module, but must always be
+                able to open and edit their own profile. */}
+            <Route path="myprofile" element={<AdminMyProfile />} />
             <Route element={<PermissionRoute module="role_permissions" />}>
               <Route path="role-permissions" element={<RolePermissions />} />
             </Route>
@@ -307,6 +314,7 @@ function App() {
             <Route path="notices" element={<ResidentNotices />} />
             <Route path="complaints" element={<ResidentComplaints />} />
             <Route path="myprofile" element={<MyProfile />} />
+            <Route path="overview" element={<ResidentOverview />} />
             <Route path="my-household" element={<MyHousehold />} />
             <Route path="my-documents" element={<MyDocument />} />
             <Route path="preapproval" element={<ResidentPreApproval />} />
@@ -342,6 +350,16 @@ function App() {
             <Route index element={<ResidentProfile />} />
             <Route path="profile" element={<ResidentProfile />} />
             <Route path="myprofile" element={<MyProfile />} />
+            <Route path="overview" element={<ResidentOverview />} />
+            {/*
+              Family members get the same settings hub as residents. The layout
+              already passed settingsPath={`${base}/settings`} to the header gear
+              for every role, so without this route the family gear was a dead
+              link. MySetting mounts the shared SettingsPanel, whose sections are
+              profile / password / notifications / language only, so nothing about
+              role or section permissions is exposed here.
+            */}
+            <Route path="settings" element={<MySetting />} />
             <Route path="notices" element={<ResidentNotices />} />
             <Route path="bills" element={<ResidentBills />} />
             <Route path="complaints" element={<ResidentComplaints />} />

@@ -22,8 +22,12 @@ export default defineConfig([
         sourceType: 'module',
       },
     },
-    rules: {
-      'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]' }],
-    },
+      rules: {
+        // Capitalised identifiers are component/icon references. `argsIgnorePattern`
+        // is needed alongside `varsIgnorePattern` because a component passed as a
+        // prop (e.g. `headerIcon: HeaderIcon`) is a parameter, not a variable, and
+        // core no-unused-vars does not count `<HeaderIcon />` JSX usage.
+        'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]', argsIgnorePattern: '^[A-Z_]' }],
+      },
   },
 ])

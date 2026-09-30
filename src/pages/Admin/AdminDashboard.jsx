@@ -11,9 +11,9 @@ import {
 import {
   MdReportProblem,
   MdCheckCircle, MdFlashOn, MdApartment,
-  MdRefresh, MdCalendarToday,
+  MdRefresh,
 } from "react-icons/md";
-import UserAvatar, { getInitials } from "../../components/common/UserAvatar";
+import PanelHero from "../../components/common/PanelHero";
 import CreditedDebitedChart from "../../components/accounting/CreditedDebitedChart";
 
 /* ── SKELETON LOADER ── */
@@ -68,22 +68,13 @@ function DashboardSkeleton() {
   );
 }
 
-const DATE_LOCALES = { en: "en-IN", hi: "hi-IN", mr: "mr-IN" };
-
-const ROLE_NAME_KEYS = {
-  "Society Admin": "dashSocietyAdminName",
-  Admin: "dashAdminName",
-  "Committee Member": "dashCommitteeMember",
-};
-
 export default function AdminDashboard() {
-  const { t, lang } = useLang();
+  const { t } = useLang();
   const navigate = useNavigate();
 
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [dateTime, setDateTime] = useState(new Date());
 
   const getSocietyId = () => {
     try {
@@ -118,8 +109,6 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     loadDashboardData();
-    const timer = setInterval(() => setDateTime(new Date()), 60000);
-    return () => clearInterval(timer);
   }, []);
 
   const residents = stats?.residents ?? 0;
@@ -136,18 +125,6 @@ export default function AdminDashboard() {
 
   const { user } = useContext(AuthContext);
   const isCommittee = isCommitteeMember(user);
-
-  /* Greeting phrase based on hour */
-  const hour = dateTime.getHours();
-  const greeting = t(
-    hour < 12 ? "dashGoodMorning" : hour < 17 ? "dashGoodAfternoon" : "dashGoodEvening"
-  );
-  const fallbackNameKey = isCommittee ? "dashCommitteeMember" : "dashAdminName";
-  const rawName = user?.name;
-  const displayName = rawName
-    ? (ROLE_NAME_KEYS[rawName] ? t(ROLE_NAME_KEYS[rawName]) : rawName)
-    : t(fallbackNameKey);
-  const dateLocale = DATE_LOCALES[lang] || "en-IN";
 
   if (loading) {
     return <DashboardSkeleton />;
@@ -174,84 +151,7 @@ export default function AdminDashboard() {
   return (
     <div className="admin-dash space-y-6 w-full min-w-0 max-w-400 mx-auto pb-8">
       {/* ── 1. DASHBOARD HERO HEADER ── */}
-      <header className="adh-hero">
-        <span className="adh-hero__aurora" aria-hidden />
-
-        <div className="adh-hero__body">
-          {/* Identity: profile picture, name, greeting, society line */}
-          <div className="adh-identity">
-            <div className="adh-avatar">
-              <span className="adh-avatar__ring" aria-hidden />
-              {user?.profile_picture ? (
-                <UserAvatar
-                  name={user?.name || displayName}
-                  src={user.profile_picture}
-                  className="adh-avatar__photo"
-                  alt={user?.name || displayName}
-                />
-              ) : (
-                <span className="adh-avatar__initials">
-                  {getInitials(user?.name || displayName)}
-                </span>
-              )}
-              <span className="adh-avatar__dot" aria-hidden />
-            </div>
-
-            <div className="adh-identity__text">
-              <h1 className="adh-name">
-                {displayName}
-                {isCommittee && (
-                  <span className="adh-role-chip">
-                    {user?.committee_position || user?.designation || t("dashCommitteeMember")}
-                  </span>
-                )}
-              </h1>
-              <p className="adh-sub">
-                <span className="adh-greet">{greeting}</span>
-                <span aria-hidden>&middot;</span>
-                <span className="adh-sub__txt">
-                  {isCommittee
-                    ? t("dashOverviewFor", {
-                        society: user?.society_name || stats?.societyName || t("dashYourSociety"),
-                      })
-                    : t("dashOverviewToday")}
-                </span>
-              </p>
-            </div>
-          </div>
-
-          {/* Compact clock + live status strip */}
-          <div className="adh-aside">
-            <div className="adh-clock">
-              <span className="adh-clock__ic" aria-hidden>
-                <MdCalendarToday size={14} />
-              </span>
-              <span>
-                {dateTime.toLocaleDateString(dateLocale, {
-                  weekday: "short",
-                  day: "numeric",
-                  month: "short",
-                })}
-              </span>
-              <span className="adh-clock__sep" aria-hidden>
-                |
-              </span>
-              <span className="adh-clock__time">
-                {dateTime.toLocaleTimeString(dateLocale, {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
-              </span>
-            </div>
-
-            <div className="adh-status">
-              <span className="adh-status__dot" aria-hidden />
-              <span className="adh-status__label">{t("dashRunning") || "Running"}</span>
-              <span className="adh-status__live">{t("dashLive") || "Live"}</span>
-            </div>
-          </div>
-        </div>
-      </header>
+      <PanelHero societyName={stats?.societyName} />
 
       {/* ── 2. KEY METRICS KPI CARDS (4 COLUMNS) ── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">

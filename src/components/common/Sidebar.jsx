@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef, useContext } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { createPortal } from "react-dom";
 import {
   MdExpandMore,
+  MdChevronRight,
 } from "react-icons/md";
 import { FaBuilding } from "react-icons/fa";
 import {
@@ -13,6 +14,7 @@ import { useSidebar } from "../../context/SidebarContext";
 import UserAvatar from "./UserAvatar";
 import { AuthContext } from "../../context/AuthContext";
 import { useLang } from "../../context/LanguageContext";
+import { getProfilePath } from "../../constants/app";
 
 const GROUP_I18N = {
   "OVERVIEW": "sbGroupOverview",
@@ -58,25 +60,30 @@ function groupMenuItems(menu) {
 /* ── Active Route Detection ── */
 function isPathActive(locationPath, itemPath, base) {
   if (!itemPath) return false;
-  
-  const normLocation =
-    locationPath.endsWith("/") && locationPath.length > 1
-      ? locationPath.slice(0, -1)
-      : locationPath;
-  const normItem =
-    itemPath.endsWith("/") && itemPath.length > 1
-      ? itemPath.slice(0, -1)
-      : itemPath;
-  const normBase =
-    base && base.endsWith("/") && base.length > 1
-      ? base.slice(0, -1)
-      : base;
 
-  if (normItem === normBase) {
-    return normLocation === normBase;
+  /* A menu item may carry a deep link such as "/guard/settings?section=profile",
+     but useLocation().pathname never contains a query. Comparing the raw strings
+     would mean the item could never highlight, so drop the query from both sides
+     before matching. */
+  const stripQuery = (p) => p.split("?")[0];
+
+  const normLocation = stripQuery(locationPath);
+  const normItem = stripQuery(itemPath);
+
+  const normBase = base && stripQuery(base);
+
+  const trimSlash = (p) =>
+    p && p.endsWith("/") && p.length > 1 ? p.slice(0, -1) : p;
+
+  const loc = trimSlash(normLocation);
+  const item = trimSlash(normItem);
+  const bse = trimSlash(normBase);
+
+  if (item === bse) {
+    return loc === bse;
   }
 
-  return normLocation === normItem || normLocation.startsWith(normItem + "/");
+  return loc === item || loc.startsWith(item + "/");
 }
 
 export default function Sidebar({
@@ -88,6 +95,7 @@ export default function Sidebar({
   defaultOpenGroups = [],
 }) {
   const location = useLocation();
+  const navigate = useNavigate();
   const { collapsed, toggleCollapsed, mobileOpen, closeMobile } = useSidebar();
   const { user } = useContext(AuthContext);
   const { t } = useLang();
@@ -388,23 +396,40 @@ export default function Sidebar({
   };
 
   /* ── Render Profile Block at Bottom ── */
+  /* The whole card is the entry point to the panel's My Profile screen. */
+  const openProfile = () => {
+    if (mobileOpen) closeMobile();
+    navigate(getProfilePath(user));
+  };
+
   const renderProfileFooter = (isMobileDrawer = false) => {
     if (!user) return null;
 
+    const displayName = user.name || "Super Admin";
+    const displayEmail = user.email || "Super Admin Panel";
     const roleTitle = user.activeRole || "SUPER_ADMIN";
 
     if (collapsed && !isMobileDrawer) {
       return (
         <div className="mt-auto pt-3 border-t border-glass-border shrink-0 flex justify-center">
           <div className="relative group/tooltip">
-            <UserAvatar
-              name={user.name}
-              src={user.profile_picture}
-              size={36}
-              className="w-9 h-9 rounded-xl text-xs shadow-md"
-            />
+            <button
+              type="button"
+              onClick={openProfile}
+              className="sbp-rail"
+              aria-label={displayName}
+            >
+              <span className="sbp__ring" aria-hidden>
+                <UserAvatar
+                  name={displayName}
+                  src={user.profile_picture}
+                  className="sbp__photo"
+                  alt={displayName}
+                />
+              </span>
+            </button>
             <div className="fixed left-20 ml-1.5 z-50 hidden group-hover/tooltip:block bg-card border border-glass-border text-primary text-xs font-semibold px-3 py-1.5 rounded-lg shadow-xl whitespace-nowrap pointer-events-none animate-fadeIn">
-              {user.name || "Super Admin"} ({roleTitle})
+              {displayName} ({roleTitle})
             </div>
           </div>
         </div>
@@ -413,18 +438,30 @@ export default function Sidebar({
 
     return (
       <div className={`${isMobileDrawer ? "mt-auto pt-4" : "mt-auto pt-3"} border-t border-glass-border shrink-0`}>
-        <div className={`flex items-center rounded-xl bg-card-inner-bg border border-glass-border hover:border-accent/30 transition-colors ${isMobileDrawer ? "gap-3 p-3" : "gap-3 p-2.5"}`}>
-          <UserAvatar
-            name={user.name}
-            src={user.profile_picture}
-            size={isMobileDrawer ? 40 : 32}
-            className={`rounded-lg font-extrabold shrink-0 shadow-sm ${isMobileDrawer ? "text-sm" : "text-xs"}`}
-          />
-          <div className="min-w-0 flex-1">
-            <p className={`${isMobileDrawer ? "text-sm" : "text-xs"} font-bold text-primary truncate leading-tight`}>{user.name || "Super Admin"}</p>
-            <p className={`${isMobileDrawer ? "text-[11px]" : "text-[10px]"} text-secondary truncate mt-0.5`}>{user.email || "Super Admin Panel"}</p>
-          </div>
-        </div>
+        <button
+          type="button"
+          onClick={openProfile}
+          className={`sbp ${isMobileDrawer ? "sbp--drawer" : ""}`}
+        >
+          <span className="sbp__ring">
+            <UserAvatar
+              name={displayName}
+              src={user.profile_picture}
+              className="sbp__photo"
+              alt={displayName}
+            />
+            <span className="sbp__dot" aria-hidden />
+          </span>
+
+          <span className="sbp__text">
+            <span className="sbp__name">{displayName}</span>
+            <span className="sbp__email">{displayEmail}</span>
+          </span>
+
+          <span className="sbp__go" aria-hidden>
+            <MdChevronRight size={16} />
+          </span>
+        </button>
       </div>
     );
   };

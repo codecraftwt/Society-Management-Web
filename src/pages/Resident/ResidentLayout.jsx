@@ -24,6 +24,7 @@ import {
   MdHome,
   MdRefresh,
   MdEmergency,
+  MdSpaceDashboard,
 } from "react-icons/md";
 import ResidentEmergencyModal from "../../components/resident/ResidentEmergencyModal";
 import SOSModal from "../../components/emergency/SOSModal";
@@ -31,41 +32,21 @@ import { useSidebar } from "../../context/SidebarContext";
 import Sidebar from "../../components/common/Sidebar";
 import AppHeader from "../../components/common/AppHeader";
 import { useRoleTheme } from "../../context/ThemeContext";
+import RoleSwitcher from "../../components/RoleSwitcher";
 import "../Guard/Guard.css";
 import "./Resident.css";
 
-const ROLE_META = {
-  SOCIETY_ADMIN: { label: "Society Admin", icon: "🏢", desc: "Manage your society" },
-  RESIDENT: { label: "Resident", icon: "🏠", desc: "Resident view" },
-  SUPER_ADMIN: { label: "Super Admin", icon: "🛡️", desc: "Platform admin" },
-  ACCOUNTANT: { label: "Accountant", icon: "📊", desc: "Finance & bills" },
-  GUARD: { label: "Guard", icon: "🔐", desc: "Gate & security" },
-  FAMILY_MEMBER: { label: "Family", icon: "👨‍👩‍👧", desc: "Family member" },
-  COMMITTEE_MEMBER: { label: "Committee", icon: "📋", desc: "Committee member" },
-};
-
-const ROUTE_MAP = {
-  SUPER_ADMIN: "/superadmin",
-  SOCIETY_ADMIN: "/admin",
-  COMMITTEE_MEMBER: "/admin",
-  RESIDENT: "/resident",
-  FAMILY_MEMBER: "/family",
-  GUARD: "/guard",
-  ACCOUNTANT: "/accountant",
-};
-
 function ResidentLayoutInner() {
-  const { user, switchRole } = useContext(AuthContext);
+  const { user } = useContext(AuthContext);
   const { t } = useLang();
   useRoleTheme();
   const navigate = useNavigate();
-  const { openMobile, collapsed } = useSidebar();
+  const { collapsed } = useSidebar();
 
   const [alerts, setAlerts] = useState([]);
   const [showEmergency, setShowEmergency] = useState(false);
   const [showSOS, setShowSOS] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
-  const [rsOpen, setRsOpen] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
 
   const isFamilyMember = user?.role === "FAMILY_MEMBER";
@@ -147,9 +128,9 @@ function ResidentLayoutInner() {
       group: "ACTIVITY & VISITORS",
     },
     {
-      label: t("menuMyProfile"),
-      path: `${base}/myprofile`,
-      icon: MdPerson,
+      label: t("menuMyOverview"),
+      path: `${base}/overview`,
+      icon: MdSpaceDashboard,
       group: "SERVICES & PROFILE",
     },
     {
@@ -220,23 +201,14 @@ function ResidentLayoutInner() {
       group: "ACTIVITY & NOTICES",
     },
     {
-      label: t("menuMyProfile"),
-      path: `${base}/myprofile`,
-      icon: MdPerson,
+      label: t("menuMyOverview"),
+      path: `${base}/overview`,
+      icon: MdSpaceDashboard,
       group: "PROFILE",
     },
   ];
 
   const menu = isFamilyMember ? familyMenu : residentMenu;
-
-  /* Close role-switcher on outside click */
-  useEffect(() => {
-    const handler = (e) => {
-      if (!e.target.closest(".rs-wrap")) setRsOpen(false);
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, []);
 
   /* Emergency polling */
   const loadEmergencies = async () => {
@@ -260,109 +232,6 @@ function ResidentLayoutInner() {
     navigate("/login", { replace: true });
   };
 
-  const handleRoleSwitch = async (role) => {
-    if (role === user.activeRole) return;
-    await switchRole(role);
-    navigate(ROUTE_MAP[role] || "/login");
-  };
-
-  /* Role switcher dropdown */
-  const RoleSwitcher = () => {
-    if (!user?.roles || user.roles.length <= 1) return null;
-    return (
-      <div className="rs-wrap" style={{ position: "relative" }}>
-        <button
-          className={`rs-trigger ${rsOpen ? "open" : ""}`}
-          onClick={() => setRsOpen((o) => !o)}
-          title="Switch role"
-        >
-          <span className="rs-active-dot" />
-          <span className="rs-trigger-label rs-trigger-text">
-            {ROLE_META[user.activeRole]?.label ?? user.activeRole}
-          </span>
-          <span className="rs-trigger-label rs-trigger-icon">
-            {ROLE_META[user.activeRole]?.icon ?? "👤"}
-          </span>
-          <span className="rs-trigger-arrow">▼</span>
-        </button>
-
-        <div className={`rs-dropdown ${rsOpen ? "open" : ""}`}>
-          <div className="rs-dropdown-header">Switch role</div>
-          {user.roles.map((role) => {
-            const meta = ROLE_META[role] ?? {
-              label: role,
-              icon: "👤",
-              desc: "",
-            };
-            const isActive = role === user.activeRole;
-            return (
-              <div
-                key={role}
-                className={`rs-option ${isActive ? "active" : ""}`}
-                onClick={() => {
-                  handleRoleSwitch(role);
-                  setRsOpen(false);
-                }}
-              >
-                <div className="rs-option-icon">{meta.icon}</div>
-                <div className="rs-option-info">
-                  <p className="rs-option-name">{meta.label}</p>
-                  {meta.desc && <p className="rs-option-desc">{meta.desc}</p>}
-                </div>
-                <div className="rs-check">
-                  <svg
-                    viewBox="0 0 10 8"
-                    fill="none"
-                    stroke="white"
-                    strokeWidth="2.5"
-                  >
-                    <polyline points="1,4 4,7 9,1" />
-                  </svg>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    );
-  };
-
-  /* Mobile pill bar */
-  const mobileRoleSwitcher = user?.roles?.length > 1 && (
-    <div style={{ marginBottom: "1rem" }}>
-      <p
-        style={{
-          fontSize: "10px",
-          fontWeight: 700,
-          textTransform: "uppercase",
-          letterSpacing: "0.07em",
-          color: "var(--text-muted)",
-          marginBottom: "8px",
-        }}
-      >
-        Active role
-      </p>
-      <div className="rs-mobile-bar">
-        {user.roles.map((role) => {
-          const meta = ROLE_META[role] ?? { label: role, icon: "👤" };
-          const isActive = role === user.activeRole;
-          return (
-            <button
-              key={role}
-              className={`rs-mobile-pill ${isActive ? "active" : ""}`}
-              onClick={() => {
-                handleRoleSwitch(role);
-              }}
-            >
-              <span className="rs-pill-dot" />
-              {meta.icon} {meta.label}
-            </button>
-          );
-        })}
-      </div>
-    </div>
-  );
-
   return (
     <div
       className="h-screen overflow-hidden bg-app flex resident-root"
@@ -374,7 +243,7 @@ function ResidentLayoutInner() {
         brandTitle={<span className="text-accent">{panelLabel}</span>}
         brandSubtitle={user?.society_name || (isFamilyMember ? t("sbViewFamily") : t("sbViewResident"))}
         base={base}
-        drawerExtra={mobileRoleSwitcher}
+        drawerExtra={<RoleSwitcher fullWidth />}
       />
 
       {/* ── MAIN CONTENT ── */}
@@ -428,7 +297,7 @@ function ResidentLayoutInner() {
         />
 
         {/* PAGE CONTENT */}
-        <main className="flex-1 overflow-y-auto overflow-x-clip scrollbar-hide p-4 sm:p-6 lg:p-8">
+        <main className="flex-1 overflow-y-auto overflow-x-clip scrollbar-hide py-4 sm:py-6 lg:py-8 px-3 sm:px-4 lg:px-6">
           <Outlet key={reloadKey} />
         </main>
       </div>

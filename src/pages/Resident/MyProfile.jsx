@@ -1,197 +1,46 @@
-import {
-  MdFamilyRestroom,
-  MdDirectionsCarFilled,
-  MdReportProblem,
-  MdSettings,
-  MdHome,
-  MdArrowForward,
-  MdPerson,
-  MdShield,
-  MdCheckCircle,
-  MdDocumentScanner,
-} from "react-icons/md";
 import { useLocation, useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
-import { toast } from "react-toastify";
-import { useLang } from "../../context/LanguageContext";
-import API from "../../services/api";
-import UserAvatar from "../../components/common/UserAvatar";
+import { MdPerson } from "react-icons/md";
+import SettingsPanel from "../../components/common/SettingsPanel";
 
-function Avatar({ name, src }) {
-  return <UserAvatar name={name} src={src} size={72} radius={18} />;
-}
-
-function ManageCard({ icon, label, onClick, tone = "accent" }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`mp-manage-card mp-manage-card--${tone}`}
-    >
-      <span className="mp-manage-icon">{icon}</span>
-      <span className="mp-manage-label">{label}</span>
-      <MdArrowForward size={14} className="mp-manage-arrow" />
-    </button>
-  );
-}
-
-export default function ResidentDashboard() {
+/**
+ * Resident / family "My Profile" screen.
+ *
+ * This is the canonical editable profile for both roles. It mounts the shared
+ * SettingsPanel profile section, which is the same component the Settings hub
+ * renders for its "My Profile" card, so name, phone and photo editing,
+ * validation, save, cancel and the photo upload / change / remove flow all
+ * come from one implementation and cannot drift apart.
+ *
+ * There is deliberately no redirect to /settings?section=profile. Both routes
+ * mount the section directly, which keeps browser history clean and avoids a
+ * /myprofile -> /settings -> /myprofile bounce.
+ *
+ * The resident-only overview (flat label, household / vehicle / visitor counts,
+ * Quick Management shortcuts) moved to ResidentOverview and lives at
+ * /resident/overview and /family/overview.
+ *
+ * Back behaviour is an explicit destination rather than navigate(-1): the
+ * section is reached from the sidebar and from the dashboard hero avatar, so
+ * browser history cannot be trusted. The base is derived from the actual
+ * pathname so a family member is sent to /family and a resident to /resident,
+ * even if their stored active role disagrees with the panel they are viewing.
+ */
+export default function MyProfile() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
-  const { t } = useLang();
-  const base = pathname.startsWith("/family") ? "/family" : "/resident";
-  const isFamily = pathname.startsWith("/family");
 
-  const [profile, setProfile] = useState(null);
-  const [flatInfo, setFlatInfo] = useState(null);
-  const [stats, setStats] = useState({ members: 0, vehicles: 0, visitors: 0 });
-
-  const loadProfile = async () => {
-    try {
-      const res = await API.get("/users/me");
-      setProfile(res.data);
-    } catch (err) {
-      console.error(err);
-    }
+  const goHome = () => {
+    const base = pathname.startsWith("/family") ? "/family" : "/resident";
+    navigate(base, { replace: true });
   };
-
-  const loadFlat = async () => {
-    try {
-      const res = await API.get("/users/get-flat");
-      const flats = Array.isArray(res.data) ? res.data : [];
-      setFlatInfo(flats.length > 0 ? flats[0] : null);
-    } catch (err) {
-      setFlatInfo(null);
-    }
-  };
-
-  const loadStats = async () => {
-    try {
-      const [householdRes, visitorRes, vehicleRes] = await Promise.all([
-        API.get("/household"),
-        API.get("/visitors/resident"),
-        API.get("/vehicles/my").catch(() => ({ data: [] })),
-      ]);
-
-      const householdData = Array.isArray(householdRes.data)
-        ? householdRes.data
-        : householdRes.data?.data || [];
-
-      const visitorData = Array.isArray(visitorRes.data)
-        ? visitorRes.data
-        : visitorRes.data?.data || [];
-
-      const vehicleData = Array.isArray(vehicleRes.data)
-        ? vehicleRes.data
-        : vehicleRes.data?.data || [];
-
-      setStats({
-        members: householdData.length,
-        vehicles: vehicleData.length,
-        visitors: visitorData.filter((v) => !v.exit_time).length,
-      });
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  useEffect(() => {
-    loadProfile();
-    loadFlat();
-    loadStats();
-  }, []);
-
-  const hasFlat = !!flatInfo;
-
-  const handleEmergencyClick = () => {
-    if (!hasFlat) {
-      toast.warning(t("mpEmergencyNoFlat"));
-      return;
-    }
-    navigate(`${base}/emergency`);
-  };
-
-  const manageCards = isFamily
-    ? []
-    : [
-        { id: "household", icon: <MdFamilyRestroom />, label: t("rdCardHousehold"), tone: "accent", onClick: () => navigate(`${base}/my-household`) },
-        { id: "vehicles", icon: <MdDirectionsCarFilled />, label: t("rdCardVehicles"), tone: "accent", onClick: () => navigate(`${base}/my-vehicles`) },
-        { id: "emergency", icon: <MdReportProblem />, label: t("rdCardEmergency"), tone: "danger", onClick: handleEmergencyClick },
-        { id: "settings", icon: <MdSettings />, label: t("rdCardSettings"), tone: "muted", onClick: () => navigate(`${base}/settings`) },
-        { id: "docs", icon: <MdDocumentScanner />, label: t("rdCardMyDocs"), tone: "muted", onClick: () => navigate(`${base}/my-documents`) },
-      ];
-
-  const flatLabel = hasFlat
-    ? `${t("rdBlock")} ${flatInfo?.block_name || "—"}, ${t("rdFlat")} ${flatInfo?.flat_number || "—"}`
-    : t("rdFlatNotAssigned");
 
   return (
-    <div className="ge-root mp-page animate-fadeIn">
-      <div className="ge-er">
-        <div className="ge-er-left">
-          <div className="ad-page-icon">
-            <MdPerson size={22} />
-          </div>
-          <div>
-            <h2 className="page-title">{t("profileMyProfile")}</h2>
-            <p className="page-subtitle">{flatLabel}</p>
-          </div>
-        </div>
-      </div>
-
-      <div className="bg-card ms-hero">
-        <div className="ms-hero-accent" />
-        <div className="ms-hero-body">
-          <Avatar name={profile?.name} src={profile?.profile_picture} />
-          <div className="ms-hero-info">
-            <h2 className="ms-hero-name">{profile?.name || t("rdDefaultName")}</h2>
-            {profile?.email && <p className="ms-hero-email">{profile.email}</p>}
-            <div className="ms-hero-badges">
-              <span className="ms-badge ms-badge--blue">
-                <MdShield size={11} /> {profile?.resident_type || t("rdRoleBadge")}
-              </span>
-              <span className="ms-badge ms-badge--green">
-                <MdCheckCircle size={11} /> {t("active")}
-              </span>
-              <span className={`ms-badge ${hasFlat ? "ms-badge--muted" : "ms-badge--warn"}`}>
-                <MdHome size={11} /> {flatLabel}
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="ge-stats">
-        <div className="complaint-stat-card complaint-stat-total">
-          <span className="complaint-stat-val">{stats.members}</span>
-          <span className="complaint-stat-label">{t("rdStatHousehold")}</span>
-        </div>
-        <div className="complaint-stat-card complaint-stat-inprogress">
-          <span className="complaint-stat-val">{stats.vehicles}</span>
-          <span className="complaint-stat-label">{t("rdStatVehicles")}</span>
-        </div>
-        <div className="complaint-stat-card complaint-stat-resolved">
-          <span className="complaint-stat-val">{stats.visitors}</span>
-          <span className="complaint-stat-label">{t("mpStatActiveVisitors")}</span>
-        </div>
-      </div>
-
-      {manageCards.length > 0 && (
-        <div className="bg-card mp-manage">
-          <p className="mp-manage-heading">{t("mpManageHeading")}</p>
-          <div className="mp-manage-grid">
-            {manageCards.map((card) => (
-              <ManageCard
-                key={card.id}
-                icon={card.icon}
-                label={card.label}
-                onClick={card.onClick}
-                tone={card.tone}
-              />
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
+    <SettingsPanel
+      initialView="profile"
+      onExit={goHome}
+      backLabel="back"
+      headerTitle="asProfileTitle"
+      headerIcon={MdPerson}
+    />
   );
 }

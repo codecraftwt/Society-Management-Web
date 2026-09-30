@@ -62,8 +62,7 @@ html.light.role-theme .resident-root .header-sos-count {
 
 html.role-theme .resident-root .page-root,
 html.role-theme .resident-root .ra-root,
-html.role-theme .resident-root .rd-root,
-html.role-theme .resident-root .ms-root {
+html.role-theme .resident-root .rd-root {
   max-width: none;
   padding-left: 0;
   padding-right: 0;
@@ -501,11 +500,11 @@ html.role-theme .rd-skeleton {
 
 /* --------------------------------------------------------------------------
    Settings
+   Retained: the resident profile hero + badge base theming, still used by
+   MyProfile.jsx. The old MySetting.jsx tab/form/banner rules were removed
+   when that page moved to the shared AdminSetting.css workspace UI.
    -------------------------------------------------------------------------- */
-html.role-theme .ms-hero,
-html.role-theme .ms-card,
-html.role-theme .ms-form,
-html.role-theme .ms-setting-row {
+html.role-theme .ms-hero {
   background: var(--card-bg) !important;
   border: 1px solid var(--glass-border) !important;
   box-shadow: var(--shadow-sm) !important;
@@ -516,36 +515,12 @@ html.role-theme .ms-hero-accent {
   background: var(--accent) !important;
 }
 
-html.role-theme .ms-hero-name,
-html.role-theme .ms-section-title,
-html.role-theme .ms-setting-label {
+html.role-theme .ms-hero-name {
   color: var(--text-primary) !important;
 }
 
-html.role-theme .ms-hero-email,
-html.role-theme .ms-section-sub,
-html.role-theme .ms-setting-desc,
-html.role-theme .ms-label,
-html.role-theme .ms-loading-text,
-html.role-theme .ms-footer {
+html.role-theme .ms-hero-email {
   color: var(--text-secondary) !important;
-}
-
-html.role-theme .ms-tab {
-  background: var(--card-inner-bg) !important;
-  color: var(--text-secondary) !important;
-  border-color: var(--glass-border) !important;
-}
-
-html.role-theme .ms-tab:hover {
-  color: var(--text-primary) !important;
-}
-
-html.role-theme .ms-tab--active {
-  background: var(--accent) !important;
-  color: #ffffff !important;
-  border-color: var(--accent) !important;
-  box-shadow: 0 4px 14px rgba(var(--acct-purple-rgb), 0.28) !important;
 }
 
 html.role-theme .ms-badge--blue {
@@ -566,23 +541,6 @@ html.role-theme .ms-badge--muted {
   border-color: var(--chip-border) !important;
 }
 
-html.role-theme .ms-input-icon,
-html.role-theme .ms-eye-btn {
-  color: var(--text-secondary) !important;
-}
-
-html.role-theme .ms-banner--success {
-  background: var(--badge-paid-bg) !important;
-  border-color: var(--badge-paid-border) !important;
-  color: var(--badge-paid-color) !important;
-}
-
-html.role-theme .ms-banner--error {
-  background: var(--reject-bg) !important;
-  border-color: var(--reject-border) !important;
-  color: var(--reject-color) !important;
-}
-
 html.role-theme .ms-avatar {
   background: linear-gradient(135deg, var(--accent), #9e58ff) !important;
   color: #ffffff !important;
@@ -593,11 +551,6 @@ html.role-theme .ms-badge--warn {
   background: var(--approval-bg) !important;
   color: var(--approval-color) !important;
   border-color: var(--approval-border) !important;
-}
-
-html.role-theme .ms-section-icon {
-  background: var(--accent-soft) !important;
-  color: var(--accent) !important;
 }
 
 /* --------------------------------------------------------------------------
@@ -719,7 +672,6 @@ html.role-theme .resident-root .rd-er-icon-wrap,
 html.role-theme .resident-root .gc-er-icon,
 html.role-theme .resident-root .ra-er-icon,
 html.role-theme .resident-root .hh-edit-er-icon,
-html.role-theme .resident-root .ms-section-icon,
 html.role-theme .resident-root .preap-header-icon {
   width: 44px;
   height: 44px;
@@ -734,12 +686,6 @@ html.role-theme .resident-root .preap-header-icon {
   justify-content: center;
   filter: none !important;
   animation: none !important;
-}
-
-html.role-theme .resident-root .ms-tab-row {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
 }
 
 html.role-theme .resident-root .filter-pill--active-amber,
@@ -842,6 +788,29 @@ html.role-theme .rph-avatar {
   flex-shrink: 0;
   display: grid;
   place-items: center;
+}
+/* The hero avatar opens the canonical profile, so it is a real button. Reset the
+   UA button chrome and let the existing ring/photo/dot styling show through, so
+   the initials fallback gets the same affordance as a photo. */
+html.role-theme button.rph-avatar {
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+html.role-theme button.rph-avatar .rph-avatar__ring {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+html.role-theme button.rph-avatar:hover .rph-avatar__ring {
+  transform: scale(1.06);
+}
+html.role-theme button.rph-avatar:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: 24px;
 }
 html.role-theme .rph-avatar__ring {
   position: absolute;
@@ -1435,6 +1404,289 @@ html.role-theme .mp-manage-card:hover .mp-manage-arrow {
 @media (max-width: 640px) {
   html.role-theme .mp-manage-grid {
     grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Resident "My Overview" — modernised presentation.
+   Scoped to .ov-page so the shared .ms-* / .mp-* primitives that other panels
+   still rely on keep their existing look. Same markup, same data, same routes.
+   -------------------------------------------------------------------------- */
+html.role-theme .ov-page {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.ov-hero {
+  position: relative;
+  overflow: hidden;
+  border-radius: 20px;
+  padding: 24px 24px 26px;
+  border: 1px solid var(--glass-border);
+  background:
+    radial-gradient(120% 140% at 100% 0%, color-mix(in srgb, var(--accent) 16%, transparent), transparent 62%),
+    radial-gradient(90% 120% at 0% 100%, color-mix(in srgb, #9e58ff 12%, transparent), transparent 60%),
+    var(--card-bg);
+  box-shadow: var(--shadow-sm);
+}
+
+.ov-hero::after {
+  content: "";
+  position: absolute;
+  top: -70px;
+  right: -50px;
+  width: 220px;
+  height: 220px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  pointer-events: none;
+}
+
+.ov-hero__accent {
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--accent), #9e58ff 55%, transparent);
+}
+
+.ov-hero__body {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+
+.ov-hero__frame {
+  position: relative;
+  flex-shrink: 0;
+  padding: 3px;
+  border-radius: 24px;
+  background: linear-gradient(135deg, var(--accent), #9e58ff);
+  box-shadow: 0 10px 26px -10px rgba(var(--acct-purple-rgb), 0.55);
+}
+
+.ov-hero__frame > * {
+  border-radius: 21px !important;
+}
+
+.ov-hero__info {
+  flex: 1;
+  min-width: 0;
+}
+
+.ov-hero__name {
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 780;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+}
+
+.ov-hero__email {
+  margin: 4px 0 0;
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ov-hero__badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 12px;
+}
+
+.ov-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 11px;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  line-height: 1.4;
+  border: 1px solid;
+}
+
+.ov-badge--accent {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-color: rgba(var(--acct-purple-rgb), 0.28);
+}
+.ov-badge--ok {
+  background: var(--badge-paid-bg);
+  color: var(--badge-paid-color);
+  border-color: var(--badge-paid-border);
+}
+.ov-badge--muted {
+  background: var(--chip-bg);
+  color: var(--text-secondary);
+  border-color: var(--chip-border);
+}
+.ov-badge--warn {
+  background: color-mix(in srgb, var(--acct-red, #ef4444) 12%, transparent);
+  color: var(--acct-red, #ef4444);
+  border-color: color-mix(in srgb, var(--acct-red, #ef4444) 30%, transparent);
+}
+
+/* Stat tiles */
+.ov-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.ov-stat {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px;
+  border-radius: 16px;
+  border: 1px solid var(--glass-border);
+  background: var(--card-bg);
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.18s var(--set-ease, ease), border-color 0.18s ease;
+}
+
+.ov-stat:hover {
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--tone) 40%, transparent);
+}
+
+.ov-stat__icon {
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  font-size: 21px;
+  color: var(--tone);
+  background: color-mix(in srgb, var(--tone) 14%, transparent);
+}
+
+.ov-stat__val {
+  font-size: 1.7rem;
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+  color: var(--text-primary);
+}
+
+.ov-stat__label {
+  display: block;
+  margin-top: 3px;
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.ov-manage {
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid var(--glass-border);
+  background: var(--card-bg);
+  box-shadow: var(--shadow-sm);
+}
+
+.ov-manage__heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 14px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.ov-manage__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(168px, 1fr));
+  gap: 12px;
+}
+
+.ov-manage-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  text-align: left;
+  cursor: pointer;
+  background: var(--card-inner-bg);
+  border: 1px solid var(--glass-border);
+  color: var(--text-primary);
+  transition: transform 0.18s var(--set-ease, ease), background 0.18s ease,
+    border-color 0.18s ease;
+}
+
+.ov-manage-card:hover {
+  transform: translateY(-2px);
+  background: var(--row-hover);
+  border-color: rgba(var(--acct-purple-rgb), 0.3);
+}
+
+.ov-manage-card:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.ov-manage-icon {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  font-size: 19px;
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.ov-manage-card--danger .ov-manage-icon {
+  background: color-mix(in srgb, var(--acct-red, #ef4444) 14%, transparent);
+  color: var(--acct-red, #ef4444);
+}
+.ov-manage-card--muted .ov-manage-icon {
+  background: var(--chip-bg);
+  color: var(--text-secondary);
+}
+
+.ov-manage-label {
+  font-size: 0.83rem;
+  font-weight: 600;
+}
+
+.ov-manage-arrow {
+  margin-left: auto;
+  color: var(--text-secondary);
+  opacity: 0;
+  transform: translateX(-4px);
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+.ov-manage-card:hover .ov-manage-arrow {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+@media (max-width: 640px) {
+  html.role-theme .ov-stats {
+    grid-template-columns: 1fr;
+  }
+  html.role-theme .ov-hero__body {
+    gap: 14px;
   }
 }
 

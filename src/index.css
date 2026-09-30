@@ -346,6 +346,354 @@
     box-shadow: inset 0 0 0 1px var(--accent-soft);
   }
 
+  /* === SIDEBAR PROFILE CARD (bottom) ===
+     A whole-card button that opens the panel's My Profile screen. The ring and
+     the accent wash are separate layers so the hover state can animate them
+     independently of the avatar image. */
+  .sbp {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    width: 100%;
+    padding: 0.6rem 0.65rem;
+    border-radius: 1rem;
+    border: 1px solid var(--glass-border);
+    background: linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--accent) 12%, var(--card-inner-bg)) 0%,
+      var(--card-inner-bg) 70%
+    );
+    text-align: left;
+    cursor: pointer;
+    overflow: hidden;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .sbp--drawer {
+    padding: 0.75rem;
+    gap: 0.8rem;
+  }
+  /* Soft accent wash that fades in on hover. */
+  .sbp::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.25s ease;
+    background: radial-gradient(
+      120% 120% at 0% 0%,
+      color-mix(in srgb, var(--accent) 26%, transparent) 0%,
+      transparent 62%
+    );
+  }
+  .sbp:hover {
+    transform: translateY(-1px);
+    border-color: color-mix(in srgb, var(--accent) 45%, var(--glass-border));
+    box-shadow: 0 10px 24px -16px color-mix(in srgb, var(--accent) 80%, transparent);
+  }
+  .sbp:hover::before {
+    opacity: 1;
+  }
+  .sbp:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  .sbp__ring {
+    position: relative;
+    flex-shrink: 0;
+    width: 2.3rem;
+    height: 2.3rem;
+    border-radius: 0.8rem;
+    padding: 2px;
+    display: grid;
+    place-items: center;
+    background: linear-gradient(135deg, var(--accent) 0%, #22d3ee 100%);
+    box-shadow: 0 6px 14px -8px color-mix(in srgb, var(--accent) 90%, transparent);
+  }
+  .sbp--drawer .sbp__ring {
+    width: 2.75rem;
+    height: 2.75rem;
+    border-radius: 0.95rem;
+  }
+  /* Ring radius minus its 2px padding, so photo and ring stay concentric. */
+  .sbp__photo {
+    width: 100%;
+    height: 100%;
+    border-radius: 0.68rem;
+    font-size: 0.7rem;
+    font-weight: 800;
+  }
+  .sbp--drawer .sbp__photo {
+    border-radius: 0.82rem;
+    font-size: 0.8rem;
+  }
+  /* "Active now" dot, ringed so it reads against any avatar colour. */
+  .sbp__dot {
+    position: absolute;
+    right: -3px;
+    bottom: -3px;
+    width: 0.7rem;
+    height: 0.7rem;
+    border-radius: 50%;
+    background: #22c55e;
+    box-shadow: 0 0 0 2px var(--card-inner-bg);
+  }
+
+  .sbp__text {
+    position: relative;
+    min-width: 0;
+    flex: 1;
+    display: block;
+  }
+  .sbp__name {
+    display: block;
+    font-size: 0.8125rem;
+    font-weight: 700;
+    line-height: 1.25;
+    color: var(--text-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .sbp--drawer .sbp__name {
+    font-size: 0.875rem;
+  }
+  .sbp__email {
+    display: block;
+    margin-top: 2px;
+    font-size: 0.6875rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .sbp--drawer .sbp__email {
+    font-size: 0.75rem;
+  }
+  /* Chevron nudges right on hover to signal "this opens something". */
+  .sbp__go {
+    position: relative;
+    flex-shrink: 0;
+    display: grid;
+    place-items: center;
+    color: var(--text-secondary);
+    opacity: 0.55;
+    transform: translateX(0);
+    transition: transform 0.2s ease, opacity 0.2s ease, color 0.2s ease;
+  }
+  .sbp:hover .sbp__go {
+    transform: translateX(3px);
+    opacity: 1;
+    color: var(--accent);
+  }
+
+  /* Collapsed rail: the avatar alone stays the entry point. */
+  .sbp-rail {
+    position: relative;
+    display: block;
+    padding: 0;
+    border: none;
+    background: none;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .sbp-rail:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 3px;
+    border-radius: 0.8rem;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .sbp,
+    .sbp::before,
+    .sbp__go {
+      transition: none;
+    }
+    .sbp:hover {
+      transform: none;
+    }
+    .sbp:hover .sbp__go {
+      transform: none;
+    }
+  }
+
+  /* === PANEL / ROLE SWITCHER ===
+     A popover rather than a native <select>, so each role can carry an icon
+     and a one-line description. The trigger is compact enough to sit inline
+     with the navbar's SOS and notification buttons. */
+  .rsw {
+    position: relative;
+    min-width: 0;
+  }
+  .rsw__trigger {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    width: auto;
+    max-width: 100%;
+    height: 2.25rem;
+    padding: 0 0.6rem;
+    border-radius: 0.75rem;
+    border: 1.5px solid var(--glass-border);
+    background: var(--card-inner-bg);
+    color: var(--text-primary);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .rsw__trigger:hover:not(:disabled) {
+    border-color: color-mix(in srgb, var(--accent) 45%, var(--glass-border));
+  }
+  .rsw__trigger:disabled {
+    opacity: 0.6;
+    cursor: wait;
+  }
+  .rsw__trigger:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+  .rsw__trigger-icon {
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    color: var(--accent);
+  }
+  .rsw__trigger-text {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .rsw__trigger-label {
+    font-size: 0.8125rem;
+  }
+  .rsw__chev {
+    flex-shrink: 0;
+    color: var(--text-secondary);
+    transform: rotate(0deg);
+    transition: transform 0.2s ease;
+  }
+  .rsw__chev.is-open {
+    transform: rotate(180deg);
+  }
+
+  .rsw__menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    z-index: 500;
+    width: max(100%, 15rem);
+    max-width: calc(100vw - 2rem);
+    padding: 0.35rem;
+    border-radius: 1rem;
+    border: 1.5px solid var(--glass-border);
+    background: var(--card-bg, var(--modal-bg, var(--card-inner-bg)));
+    box-shadow: var(--shadow-glass, 0 18px 44px -18px rgba(0, 0, 0, 0.6));
+    backdrop-filter: var(--blur, blur(16px));
+    animation: set-enter 200ms var(--set-ease, ease) both;
+  }
+  .rsw__menu-head {
+    display: block;
+    padding: 0.35rem 0.6rem 0.5rem;
+    font-size: 0.625rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    border-bottom: 1px solid var(--glass-border);
+    margin-bottom: 0.3rem;
+  }
+  .rsw__opt {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    width: 100%;
+    padding: 0.5rem 0.55rem;
+    border: none;
+    border-radius: 0.7rem;
+    background: transparent;
+    color: var(--text-primary);
+    text-align: left;
+    cursor: pointer;
+    transition: background 0.15s ease;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .rsw__opt:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--accent) 12%, transparent);
+  }
+  .rsw__opt:disabled {
+    cursor: wait;
+    opacity: 0.6;
+  }
+  .rsw__opt:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: -2px;
+  }
+  .rsw__opt.is-active {
+    background: color-mix(in srgb, var(--accent) 16%, transparent);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 40%, transparent);
+  }
+  .rsw__opt-icon {
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    width: 1.85rem;
+    height: 1.85rem;
+    border-radius: 0.6rem;
+    background: color-mix(in srgb, var(--accent) 14%, transparent);
+    color: var(--accent);
+  }
+  .rsw__opt.is-active .rsw__opt-icon {
+    background: var(--accent);
+    color: #fff;
+  }
+  .rsw__opt-text {
+    min-width: 0;
+    flex: 1;
+    display: block;
+  }
+  .rsw__opt-label {
+    display: block;
+    font-size: 0.8125rem;
+    font-weight: 700;
+    line-height: 1.3;
+  }
+  .rsw__opt-hint {
+    display: block;
+    margin-top: 1px;
+    font-size: 0.6875rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .rsw__opt-check {
+    flex-shrink: 0;
+    color: var(--accent);
+  }
+  .rsw__error {
+    display: block;
+    margin-top: 0.35rem;
+    font-size: 0.6875rem;
+    color: var(--color-danger, #ef4444);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .rsw__chev,
+    .rsw__opt,
+    .rsw__menu {
+      transition: none;
+      animation: none;
+    }
+  }
+
   /* === BUTTONS === */
   .btn-primary {
     display: flex;
@@ -4625,38 +4973,11 @@
   }
 
   /* ====
-    MY SETTINGS â€” ms-* classes  (dark theme / base)
+    SHARED PROFILE HERO / BADGE BASE
+    Retained: still used by MyProfile.jsx, UserAvatar.jsx and
+    createSocietyAdmin.jsx. Resident.css layers html.role-theme
+    overrides on top of these, so the base rules must stay.
     ==== */
-
-  /* â”€â”€ Page root â”€â”€ */
-  .ms-root {
-    max-width: 680px;
-    margin: 0 auto;
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    padding-bottom: 24px;
-  }
-
-  /* â”€â”€ Loading state â”€â”€ */
-  .ms-loading-state {
-    display: flex; flex-direction: column;
-    align-items: center; gap: 12px;
-    padding: 80px 0;
-    color: #726988;
-  }
-  .ms-loading-text { font-size: 14px; }
-
-  /* â”€â”€ Card wrapper â”€â”€ */
-  .ms-card {
-    padding: 20px 22px;
-  }
-  .ms-card--danger {
-    border-color: rgba(239,68,68,0.25) !important;
-  }
-  .ms-stack { display: flex; flex-direction: column; gap: 14px; }
-
-  /* â”€â”€ Hero â”€â”€ */
   .ms-hero { padding: 20px 22px; position: relative; overflow: hidden; }
   .ms-hero-accent {
     position: absolute; top: 0; left: 0; right: 0; height: 2px;
@@ -4684,8 +5005,6 @@
   .ms-hero-badges {
     display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px;
   }
-
-  /* â”€â”€ Profile badges â”€â”€ */
   .ms-badge {
     display: inline-flex; align-items: center; gap: 5px;
     padding: 3px 10px; border-radius: 999px;
@@ -4703,239 +5022,7 @@
     background: rgba(255,255,255,0.05); color: #726988;
     border-color: rgba(255,255,255,0.10);
   }
-
-  /* â”€â”€ Tab row â”€â”€ */
-  .ms-tab-row {
-    display: flex; gap: 6px; flex-wrap: wrap;
-  }
-  .ms-tab {
-    display: inline-flex; align-items: center; gap: 6px;
-    padding: 7px 14px; border-radius: 999px;
-    font-size: 12px; font-weight: 600; border: 1px solid;
-    cursor: pointer; transition: all 0.2s ease;
-    background: rgba(255,255,255,0.04);
-    color: #726988; border-color: rgba(255,255,255,0.08);
-  }
-  .ms-tab:hover {
-    background: rgba(255,255,255,0.08); color: #A39EB2;
-  }
-  .ms-tab--active {
-    background: rgba(59,130,246,0.15); color: #f6b99c;
-    border-color: rgba(59,130,246,0.30);
-    box-shadow: 0 2px 8px rgba(59,130,246,0.12);
-  }
-  .ms-tab-label { white-space: nowrap; }
-
-  /* â”€â”€ Banners â”€â”€ */
-  .ms-banner {
-    display: flex; align-items: center; gap: 10px;
-    padding: 12px 16px; border-radius: 12px;
-    font-size: 14px; font-weight: 600; border: 1px solid;
-  }
-  .ms-banner--success {
-    background: rgba(34,197,94,0.10); border-color: rgba(34,197,94,0.22);
-    color: #86efac;
-  }
-  .ms-banner--error {
-    background: rgba(239,68,68,0.10); border-color: rgba(239,68,68,0.22);
-    color: #fca5a5;
-  }
-
-  /* â”€â”€ Section er â”€â”€ */
-  .ms-section-er {
-    display: flex; align-items: center; gap: 10px; margin-bottom: 18px;
-  }
-  .ms-section-icon {
-    width: 30px; height: 30px; border-radius: 8px; flex-shrink: 0;
-    display: flex; align-items: center; justify-content: center;
-    background: rgba(59,130,246,0.12); border: 1px solid rgba(59,130,246,0.20);
-  }
-  .ms-section-icon-color { color: #60A5FA; }
-  .ms-section-title {
-    font-size: 14px; font-weight: 700; color: #EDECF0;
-    margin: 0; line-height: 1.2;
-  }
-  .ms-section-sub {
-    font-size: 11px; color: #726988; margin: 2px 0 0;
-  }
-
-  /* â”€â”€ Form grid â”€â”€ */
-  .ms-form {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 14px;
-  }
-  .ms-field { display: flex; flex-direction: column; gap: 6px; }
-  .ms-field--full { grid-column: 1 / -1; }
-  .ms-label {
-    font-size: 11px; font-weight: 600; color: #726988;
-    text-transform: uppercase; letter-spacing: 0.06em;
-  }
-  .ms-label-muted { opacity: 0.5; font-weight: 400; text-transform: none; letter-spacing: 0; }
-
-  /* â”€â”€ Input wraps â”€â”€ */
-  .ms-input-wrap { position: relative; }
-  .ms-input-icon {
-    position: absolute; left: 11px; top: 50%; transform: translateY(-50%);
-    color: #605872; pointer-events: none;
-  }
-  .ms-input { padding-left: 34px !important; height: 42px; }
-  .ms-input--padded-right { padding-right: 40px !important; }
-  .ms-input--disabled { opacity: 0.45; cursor: not-allowed; }
-  .ms-input--error { border-color: rgba(239,68,68,0.5) !important; }
-  .ms-eye-btn {
-    position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
-    background: none; border: none; cursor: pointer;
-    color: #726988; display: flex; align-items: center;
-    transition: color 0.18s;
-  }
-  .ms-eye-btn:hover { color: #A39EB2; }
-  .ms-check-icon {
-    position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
-    color: #4ade80; pointer-events: none;
-  }
   .ms-field-error { font-size: 11px; color: #f87171; margin-top: 2px; }
-
-  /* â”€â”€ Strength bar â”€â”€ */
-  .ms-strength-wrap {
-    display: flex; align-items: center; gap: 5px; margin-top: 6px;
-  }
-  .ms-strength-seg {
-    height: 4px; flex: 1; border-radius: 999px;
-    transition: background 0.3s ease;
-  }
-  .ms-strength--empty  { background: rgba(255,255,255,0.08); }
-  .ms-strength--weak   { background: #ef4444; }
-  .ms-strength--medium { background: #3B82F6; }
-  .ms-strength--strong { background: #22c55e; }
-  .ms-strength-label {
-    font-size: 11px; font-weight: 600; min-width: 44px; text-align: right;
-  }
-
-  /* â”€â”€ Form footer â”€â”€ */
-  .ms-form-footer {
-    grid-column: 1 / -1;
-    display: flex; justify-content: flex-end; padding-top: 4px;
-  }
-  .ms-save-btn { min-width: 140px; justify-content: center; }
-  .ms-save-btn:disabled { opacity: 0.6; cursor: not-allowed; }
-
-  /* â”€â”€ Setting rows (toggle) â”€â”€ */
-  .ms-setting-row {
-    display: flex; align-items: center; justify-content: space-between;
-    gap: 14px; padding: 13px 0;
-    border-bottom: 1px solid rgba(255,255,255,0.06);
-  }
-  .ms-setting-row:last-of-type { border-bottom: none; }
-  .ms-setting-left { display: flex; align-items: center; gap: 12px; min-width: 0; }
-  .ms-setting-icon {
-    width: 32px; height: 32px; border-radius: 8px; flex-shrink: 0;
-    display: flex; align-items: center; justify-content: center;
-    border: 1px solid;
-  }
-  .ms-setting-icon--blue   { background: rgba(59,130,246,0.10);  border-color: rgba(59,130,246,0.20);  color: #f6b99c; }
-  .ms-setting-icon--red    { background: rgba(239,68,68,0.10);   border-color: rgba(239,68,68,0.20);   color: #fca5a5; }
-  .ms-setting-icon--amber  { background: rgba(37,99,235,0.10);  border-color: rgba(37,99,235,0.20);  color: #93C5FD; }
-  .ms-setting-icon--muted  { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.10); color: #726988; }
-  .ms-setting-text { min-width: 0; }
-  .ms-setting-label { font-size: 14px; font-weight: 500; color: #DCDAE1; margin: 0; }
-  .ms-setting-desc  { font-size: 12px; color: #726988; margin: 2px 0 0; }
-
-  /* â”€â”€ Toggle â”€â”€ */
-  .ms-toggle {
-    position: relative; width: 44px; height: 24px;
-    border-radius: 999px; border: none; cursor: pointer;
-    flex-shrink: 0; transition: background 0.25s ease;
-  }
-  .ms-toggle--on  { background: linear-gradient(135deg, #3B82F6, #2563EB); box-shadow: 0 2px 8px rgba(37,99,235,0.4); }
-  .ms-toggle--off { background: rgba(255,255,255,0.10); }
-  .ms-toggle__knob {
-    position: absolute; top: 3px; left: 3px;
-    width: 18px; height: 18px; border-radius: 50%;
-    background: white; box-shadow: 0 1px 4px rgba(0,0,0,0.35);
-    transition: left 0.22s ease;
-  }
-  .ms-toggle__knob--on { left: 23px; }
-
-  /* â”€â”€ Sessions â”€â”€ */
-  .ms-sessions { display: flex; flex-direction: column; gap: 8px; }
-  .ms-session-row {
-    display: flex; align-items: center; justify-content: space-between;
-    gap: 12px; padding: 12px 14px; border-radius: 12px;
-    background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.07);
-  }
-  .ms-session-left { display: flex; align-items: center; gap: 10px; min-width: 0; }
-  .ms-session-dot {
-    width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
-    background: rgba(255,255,255,0.18);
-  }
-  .ms-session-dot--active { background: #4ade80; box-shadow: 0 0 6px #4ade80; }
-  .ms-session-device {
-    font-size: 13px; font-weight: 600; color: #DCDAE1; margin: 0;
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  }
-  .ms-session-meta { font-size: 11px; color: #726988; margin: 0; }
-  .ms-session-badge { font-size: 11px; font-weight: 700; color: #4ade80; flex-shrink: 0; }
-  .ms-revoke-btn {
-    display: flex; align-items: center; gap: 4px;
-    font-size: 11px; font-weight: 600; color: #f87171;
-    background: none; border: none; cursor: pointer;
-    transition: color 0.18s; flex-shrink: 0;
-  }
-  .ms-revoke-btn:hover { color: #fca5a5; }
-
-  /* â”€â”€ Login history rows â”€â”€ */
-  .ms-login-row {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 10px 14px; border-radius: 10px; border: 1px solid;
-    font-size: 12px;
-  }
-  .ms-login-row--success {
-    background: rgba(34,197,94,0.08); border-color: rgba(34,197,94,0.20);
-  }
-  .ms-login-row--fail {
-    background: rgba(239,68,68,0.08); border-color: rgba(239,68,68,0.18);
-  }
-  .ms-login-label {
-    font-weight: 700;
-  }
-  .ms-login-row--success .ms-login-label { color: #86efac; }
-  .ms-login-row--fail    .ms-login-label { color: #fca5a5; }
-  .ms-login-time { color: #726988; }
-
-  /* â”€â”€ Danger zone â”€â”€ */
-  .ms-danger-row {
-    display: flex; align-items: center; justify-content: space-between;
-    gap: 14px; flex-wrap: wrap;
-    padding: 14px 16px; border-radius: 12px;
-    background: rgba(239,68,68,0.06); border: 1px solid rgba(239,68,68,0.18);
-  }
-  .ms-danger-title { font-size: 14px; font-weight: 600; color: #fca5a5; margin: 0; }
-  .ms-danger-sub   { font-size: 12px; color: #726988; margin: 3px 0 0; }
-  .ms-danger-btn   { flex-shrink: 0; font-size: 12px; padding: 7px 16px !important; }
-
-  /* â”€â”€ Footer â”€â”€ */
-  .ms-footer {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 0 2px 8px; font-size: 11px; color: #605872;
-  }
-  .ms-footer-left { display: flex; align-items: center; gap: 5px; }
-
-  /* â”€â”€ Mobile â”€â”€ */
-  @media (max-width: 640px) {
-    .ms-root { gap: 12px; padding-bottom: 16px; }
-    .ms-card { padding: 16px; }
-    .ms-hero { padding: 16px; }
-    .ms-avatar { width: 60px; height: 60px; font-size: 18px; border-radius: 14px; }
-    .ms-hero-name { font-size: 17px; }
-    .ms-form { grid-template-columns: 1fr; gap: 12px; }
-    .ms-field--full { grid-column: 1; }
-    .ms-tab-row { gap: 5px; }
-    .ms-tab { padding: 6px 11px; font-size: 11px; }
-    .ms-session-device { max-width: 140px; }
-    .ms-danger-row { flex-direction: column; align-items: flex-start; }
-    .ms-danger-btn { width: 100%; justify-content: center; }
-  }
 
   .gd-welcome-card {
     background: rgba(2, 6, 23, 0.6);
@@ -9035,39 +9122,6 @@ display: flex;
     color: #2563eb;
   }
 
-  /* ====
-    LANGUAGE ROW inside MySetting card  (dark)
-    ==== */
-  .ms-lang-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 13px 0;
-    border-bottom: 1px solid rgba(255,255,255,0.06);
-    gap: 12px;
-    cursor: pointer;
-    transition: background 0.12s;
-  }
-  .ms-lang-row:last-child { border-bottom: none; }
-  .ms-lang-left {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    flex: 1;
-    min-width: 0;
-  }
-  .ms-lang-icon {
-    width: 32px;
-    height: 32px;
-    border-radius: 9px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    background: rgba(59,130,246,0.10);
-    color: #60A5FA;
-  }
-
 
   /* ====
     PAGINATION â€” dark theme
@@ -12533,9 +12587,20 @@ html.light .cpw-tip-row:not(.is-ok) {
   }
   .rs-option-name { font-size: 12px; }
   .rs-option-desc { display: none; }
-  /* Accountant navbar uses the shared Select-based switcher; keep it
-     from pushing the SOS / notification buttons off screen. */
-  .role-switcher { max-width: 148px; min-width: 0; }
+  /* The accountant navbar switcher sits left of the SOS/alert buttons. Keep the
+     trigger compact, and let the popover span the viewport instead of being
+     clipped by the app shell's overflow-hidden. */
+  .rsw .rsw__menu {
+    position: fixed;
+    top: 62px;
+    left: 12px;
+    right: 12px;
+    width: auto;
+    max-width: none;
+  }
+  .rsw__trigger-label { font-size: 12px; }
+  .rsw--block { max-width: none; }
+  .rsw--block .rsw__trigger { width: 100%; }
 }
 
 

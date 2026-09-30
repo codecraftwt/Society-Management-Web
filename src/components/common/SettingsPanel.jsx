@@ -6,7 +6,9 @@ import {
   MdPerson,
   MdLock,
   MdSecurity,
-  MdShield,
+  MdNotifications,
+  MdLanguage,
+  MdTranslate,
   MdCameraAlt,
   MdEdit,
   MdClose,
@@ -16,31 +18,30 @@ import {
   MdChevronRight,
   MdEmail,
   MdPhone,
-  MdHome,
   MdApartment,
   MdBadge,
-  MdFingerprint,
   MdDeleteOutline,
   MdCloudUpload,
   MdVpnKey,
+  MdWarning,
   MdWarningAmber,
   MdInfoOutline,
 } from "react-icons/md";
 import API from "../../services/api";
 import { useLang } from "../../context/LanguageContext";
 import { useAuthContext } from "../../context/AuthContext";
-import RolePermissions from "./RolePermissions";
-import ProfilePictureUploader from "../../components/common/ProfilePictureUploader";
-import UserAvatar from "../../components/common/UserAvatar";
-import GlobalModal from "../../components/common/GlobalModal";
-import GlobalConfirmDialog from "../../components/common/GlobalConfirmDialog";
-import "./AdminSetting.css";
+import ProfilePictureUploader from "./ProfilePictureUploader";
+import UserAvatar from "./UserAvatar";
+import GlobalModal from "./GlobalModal";
+import GlobalConfirmDialog from "./GlobalConfirmDialog";
+import "../../pages/Admin/AdminSetting.css";
+import "./SettingsSections.css";
 
 /* ── helpers ─────────────────────────────────────────────────────────────── */
 
 const PHONE_RE = /^[+\d][\d\s()-]{5,19}$/;
 const MAX_BYTES = 5 * 1024 * 1024;
-const SECTIONS = ["profile", "password", "roles"];
+const SECTIONS = ["profile", "password", "notifications", "language"];
 const ACCEPTED_TYPES = [
   "image/jpeg",
   "image/png",
@@ -50,7 +51,7 @@ const ACCEPTED_TYPES = [
   "image/heif",
 ];
 
-/** "SOCIETY_ADMIN" -> "Society Admin" */
+/** "RESIDENT" -> "Resident" */
 const titleCaseRole = (r) =>
   String(r || "")
     .toLowerCase()
@@ -59,7 +60,7 @@ const titleCaseRole = (r) =>
     .map((w) => w[0].toUpperCase() + w.slice(1))
     .join(" ");
 
-/** 0-4 score. Mirrors the previous inline implementation exactly. */
+/** 0-4 score. Mirrors the admin implementation exactly. */
 function getStrength(pw) {
   let s = 0;
   if (pw.length >= 8) s += 1;
@@ -115,19 +116,70 @@ function ErrorIcon({ size = 13 }) {
   );
 }
 
-export default function AdminSetting() {
-  const { t } = useLang();
-  const { user, updateUser } = useAuthContext();
+/* Accessible switch for the notification rows. The label is associated with
+   `labelledBy`, so no untranslated ON/OFF text is needed. */
+function Switch({ id, labelledBy, checked, onChange }) {
+  return (
+    <button
+      type="button"
+      id={id}
+      role="switch"
+      aria-checked={checked}
+      aria-labelledby={labelledBy}
+      className={`mset-switch${checked ? " mset-switch--on" : ""}`}
+      onClick={() => onChange(!checked)}
+    >
+      <span className="mset-switch__knob" aria-hidden="true" />
+    </button>
+  );
+}
 
-  /* ── Role gate: unchanged from the previous implementation ── */
-  const userRole = (user?.activeRole || user?.role || "").toUpperCase();
-  const isAdminOrSocietyAdmin = ["SUPER_ADMIN", "SOCIETY_ADMIN", "ADMIN"].includes(userRole);
+/**
+ * Shared account-settings surface used by the resident and guard panels.
+ *
+ * Every panel gets the same hub + detail architecture and the same four
+ * sections (Profile, Password, Notifications, Language). A panel wrapper
+ * supplies only what is genuinely role-specific, via props:
+ *
+ *   accountCells  ({ me, user, t, email, roleLabel, allRolesLabel,
+ *                   societyLabel, statusTone, approvalLabel }) => cell[]
+ *                  Read-only Account Information grid. Omit for the default.
+ *   headerSubtitle / hubIntro / notifsHint
+ *                  Translation keys, so panel copy can differ.
+ *
+ * A panel can also mount it as a standalone single-section screen instead of
+ * the full hub:
+ *
+ *   initialView   Open straight into a section instead of the hub.
+ *   onExit        When given, the back button leaves the screen via this
+ *                 callback rather than returning to the hub.
+ *   backLabel     Translation key for the back button when onExit is used.
+ *   headerTitle   Translation key for the page title.
+ *   headerIcon    Icon component for the page title.
+ *
+ * Society admins also get Role Permissions, but that section is not part of
+ * this component because it depends on society-level permission tables.
+ */
+export default function SettingsPanel({
+  accountCells,
+  headerSubtitle = "asSubtitle",
+  hubIntro = "asHubIntro",
+  notifsHint = "asNotifsHint",
+  initialView = "hub",
+  onExit = null,
+  backLabel = "asBack",
+  headerTitle = "settings",
+  headerIcon: HeaderIcon = MdSettings,
+} = {}) {
+  const { t, lang, changeLang, LANGUAGES } = useLang();
+  const { user, updateUser } = useAuthContext();
 
   /* ?section=profile deep-links straight to one section (e.g. the sidebar
      profile card) instead of dropping the user on the hub first. */
   const [searchParams] = useSearchParams();
   const deepLink = searchParams.get("section");
-  const startView = deepLink && SECTIONS.includes(deepLink) ? deepLink : "hub";
+  const startView =
+    deepLink && SECTIONS.includes(deepLink) ? deepLink : initialView;
 
   /* ── Navigation: hub by default, then one section at a time ── */
   const [view, setView] = useState(startView);
@@ -135,14 +187,22 @@ export default function AdminSetting() {
 
   const [me, setMe] = useState(null);
 
-  /* `loading` starts true, so the effect never needs a synchronous setState —
-     the first update lands after the request settles. */
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
         const res = await API.get("/users/me");
-        if (!cancelled) setMe(res.data);
+        if (!cancelled) {
+          const fresh = res?.data?.user || res?.data;
+          setMe(fresh);
+          if (fresh && typeof fresh === "object") {
+            updateUser({
+              ...(fresh.profile_picture !== undefined ? { profile_picture: fresh.profile_picture } : {}),
+              ...(fresh.name ? { name: fresh.name } : {}),
+              ...(fresh.phone ? { phone: fresh.phone } : {}),
+            });
+          }
+        }
       } catch {
         // Fall back to the auth session; the page still renders.
       } finally {
@@ -152,7 +212,87 @@ export default function AdminSetting() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [updateUser]);
+
+  /* ── Notification preferences ── */
+  const [notifs, setNotifs] = useState({
+    emergencyAlerts: true,
+    visitorEntry: true,
+    complaintUpdates: true,
+    noticeUpdates: true,
+  });
+  const [notifsLoading, setNotifsLoading] = useState(true);
+  const [notifsSaving, setNotifsSaving] = useState(false);
+  const [notifsSaved, setNotifsSaved] = useState(false);
+
+  const loadSettings = useCallback(async () => {
+    try {
+      const res = await API.get("/settings");
+      const d = res.data || {};
+      setNotifs({
+        emergencyAlerts: d.emergency_alerts,
+        visitorEntry: d.visitor_entry,
+        complaintUpdates: d.complaint_updates,
+        noticeUpdates: d.notice_updates,
+      });
+    } catch {
+      toast.error(t("failedSettings", "Could not load your notification preferences."));
+    } finally {
+      setNotifsLoading(false);
+    }
+  }, [t]);
+
+  useEffect(() => {
+    // Inlined rather than calling loadSettings() so the effect body itself
+    // never sets state synchronously; the first update lands after the request.
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await API.get("/settings");
+        const d = res.data || {};
+        if (cancelled) return;
+        setNotifs({
+          emergencyAlerts: d.emergency_alerts,
+          visitorEntry: d.visitor_entry,
+          complaintUpdates: d.complaint_updates,
+          noticeUpdates: d.notice_updates,
+        });
+      } catch {
+        if (!cancelled) {
+          toast.error(t("failedSettings", "Could not load your notification preferences."));
+        }
+      } finally {
+        if (!cancelled) setNotifsLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [t]);
+
+  const activeCount = useMemo(
+    () => Object.values(notifs).filter(Boolean).length,
+    [notifs]
+  );
+
+  const saveSettings = async () => {
+    try {
+      setNotifsSaving(true);
+      await API.put("/settings", {
+        emergency_alerts: notifs.emergencyAlerts,
+        visitor_entry: notifs.visitorEntry,
+        complaint_updates: notifs.complaintUpdates,
+        notice_updates: notifs.noticeUpdates,
+      });
+      await loadSettings();
+      setNotifsSaved(true);
+      setTimeout(() => setNotifsSaved(false), 3000);
+    } catch {
+      toast.error(t("failedSettings", "Could not save your notification preferences."));
+    } finally {
+      setNotifsSaving(false);
+    }
+  };
 
   /* ── Derived profile values ── */
   const name = me?.name || user?.name || "";
@@ -169,7 +309,7 @@ export default function AdminSetting() {
 
   const approvalLabel = me?.approval_status
     ? titleCaseRole(me.approval_status)
-    : titleCaseRole(user?.status) || "Active";
+    : titleCaseRole(user?.status) || t("active", "Active");
   const statusTone =
     (me?.approval_status || user?.status) === "APPROVED" ||
     (me?.approval_status || user?.status) === "ACTIVE" ||
@@ -184,6 +324,56 @@ export default function AdminSetting() {
         ? t("asTenant", "Tenant")
         : titleCaseRole(me.resident_type)
     : t("asNotApplicable", "Not applicable");
+
+  /* Read-only Account Information grid. Panels override this so each role
+     sees the fields that actually apply to it (no "Resident Type" for a
+     guard, for example). */
+  const cells = accountCells
+    ? accountCells({
+        me,
+        user,
+        t,
+        email,
+        roleLabel,
+        allRolesLabel,
+        societyLabel,
+        statusTone,
+        approvalLabel,
+        residentTypeLabel,
+      })
+    : [
+        {
+          key: "email",
+          label: t("asEmailLabel", "Email"),
+          value: email || t("asNA", "Not provided"),
+        },
+        {
+          key: "roles",
+          label: t("asAllRolesLabel", "All Roles"),
+          value: allRolesLabel,
+        },
+        {
+          key: "residentType",
+          label: t("asResidentTypeLabel", "Resident Type"),
+          value: residentTypeLabel,
+        },
+        {
+          key: "society",
+          label: t("asSocietyLabel", "Society"),
+          value: societyLabel || t("asNotApplicable", "Not applicable"),
+        },
+        {
+          key: "status",
+          label: t("asAccountStatusLabel", "Account Status"),
+          status: { tone: statusTone, text: approvalLabel },
+        },
+        {
+          key: "id",
+          label: t("asUserIdLabel", "User ID"),
+          value: `#${me?.id ?? user?.id ?? "—"}`,
+          mono: true,
+        },
+      ];
 
   /* ── Photo flow state ── */
   const uploaderRef = useRef(null);
@@ -405,6 +595,14 @@ export default function AdminSetting() {
     }
   };
 
+  /* ── Language change feedback ── */
+  const [langChanged, setLangChanged] = useState(false);
+  const handleLangChange = (code) => {
+    changeLang(code);
+    setLangChanged(true);
+    setTimeout(() => setLangChanged(false), 3000);
+  };
+
   /* Leave a section cleanly so no half-typed state survives the round trip. */
   const goHub = () => {
     if (editing) cancelEdit();
@@ -417,121 +615,154 @@ export default function AdminSetting() {
     setView(next);
   };
 
+  /* Standalone screens leave via onExit; panel screens fall back to the hub. */
+  const goBack = () => {
+    if (editing) cancelEdit();
+    if (onExit) {
+      onExit();
+      return;
+    }
+    goHub();
+  };
+
   /* ══ Hub ══════════════════════════════════════════════════════════════ */
 
   const renderHub = () => (
-    <>
-      <div className="set-hub">
-        {/* My Profile */}
-        <button type="button" className="set-card set-card--profile" onClick={() => openSection("profile")}>
-          <span className="set-card__top">
-            <span className="set-card__avatar">
-              <UserAvatar name={name} src={photo} size={44} radius={44} alt={name} />
-              <span className="set-card__avatar-cam" aria-hidden="true">
-                <MdCameraAlt size={11} />
-              </span>
-            </span>
-            <span className="set-card__icon" aria-hidden="true">
-              <MdPerson size={21} />
+    <div className="set-hub set-hub--four">
+      {/* My Profile */}
+      <button type="button" className="set-card set-card--profile" onClick={() => openSection("profile")}>
+        <span className="set-card__top">
+          <span className="set-card__avatar">
+            <UserAvatar name={name} src={photo} size={44} radius={44} alt={name} />
+            <span className="set-card__avatar-cam" aria-hidden="true">
+              <MdCameraAlt size={11} />
             </span>
           </span>
+          <span className="set-card__icon" aria-hidden="true">
+            <MdPerson size={21} />
+          </span>
+        </span>
 
-          <span className="set-card__meta">
-            <span className="set-card__meta-dot" aria-hidden="true" />
-            {t("asCardProfileMeta", "Personal information")}
-          </span>
-          <span className="set-card__title">{t("asProfileTitle", "My Profile")}</span>
-          <span className="set-card__desc">
-            {t("asCardProfileDesc", "Manage your profile information, profile picture and personal details.")}
-          </span>
+        <span className="set-card__meta">
+          <span className="set-card__meta-dot" aria-hidden="true" />
+          {t("asCardProfileMeta", "Personal information")}
+        </span>
+        <span className="set-card__title">{t("asProfileTitle", "My Profile")}</span>
+        <span className="set-card__desc">
+          {t("asCardProfileDesc", "Manage your profile information, profile picture and personal details.")}
+        </span>
 
-          <span className="set-card__spacer" />
-          <span className="set-card__foot">
-            <span className="set-card__cta">
-              {t("asCardProfileCta", "View Profile")}
-              <MdChevronRight size={15} aria-hidden="true" />
-            </span>
-            <span className="set-card__arrow" aria-hidden="true">
-              <MdChevronRight size={18} />
-            </span>
+        <span className="set-card__spacer" />
+        <span className="set-card__foot">
+          <span className="set-card__cta">
+            {t("asCardProfileCta", "View Profile")}
+            <MdChevronRight size={15} aria-hidden="true" />
           </span>
-        </button>
+          <span className="set-card__arrow" aria-hidden="true">
+            <MdChevronRight size={18} />
+          </span>
+        </span>
+      </button>
 
-        {/* Change Password */}
-        <button type="button" className="set-card set-card--password" onClick={() => openSection("password")}>
-          <span className="set-card__top">
-            <span className="set-card__icon" aria-hidden="true">
-              <MdLock size={21} />
-            </span>
+      {/* Change Password */}
+      <button type="button" className="set-card set-card--password" onClick={() => openSection("password")}>
+        <span className="set-card__top">
+          <span className="set-card__icon" aria-hidden="true">
+            <MdLock size={21} />
           </span>
+        </span>
 
-          <span className="set-card__meta">
-            <span className="set-card__meta-dot" aria-hidden="true" />
-            {t("asCardPasswordMeta", "Account Security")}
-          </span>
-          <span className="set-card__title">{t("cpwChangePassword", "Change Password")}</span>
-          <span className="set-card__desc">
-            {t("asCardPasswordDesc", "Update your account password and keep your account secure.")}
-          </span>
+        <span className="set-card__meta">
+          <span className="set-card__meta-dot" aria-hidden="true" />
+          {t("asCardPasswordMeta", "Account Security")}
+        </span>
+        <span className="set-card__title">{t("cpwChangePassword", "Change Password")}</span>
+        <span className="set-card__desc">
+          {t("asCardPasswordDesc", "Update your account password and keep your account secure.")}
+        </span>
 
-          <span className="set-card__spacer" />
-          <span className="set-card__foot">
-            <span className="set-card__cta">
-              {t("asCardPasswordCta", "Change Password")}
-              <MdChevronRight size={15} aria-hidden="true" />
-            </span>
-            <span className="set-card__status">
+        <span className="set-card__spacer" />
+        <span className="set-card__foot">
+          <span className="set-card__cta">
+            {t("asCardPasswordCta", "Change Password")}
+            <MdChevronRight size={15} aria-hidden="true" />
+          </span>
+          <span className="set-card__status">
+            <span className="set-card__status-dot" aria-hidden="true" />
+            {t("asProtected", "Password Protected")}
+          </span>
+        </span>
+      </button>
+
+      {/* Notifications */}
+      <button type="button" className="set-card set-card--notifs" onClick={() => openSection("notifications")}>
+        <span className="set-card__top">
+          <span className="set-card__icon" aria-hidden="true">
+            <MdNotifications size={21} />
+          </span>
+        </span>
+
+        <span className="set-card__meta">
+          <span className="set-card__meta-dot" aria-hidden="true" />
+          {t("notificationPrefs", "Notification Preferences")}
+        </span>
+        <span className="set-card__title">{t("asNotifsTitle", "Notifications")}</span>
+        <span className="set-card__desc">
+          {t("asCardNotifsDesc", "Choose which alerts and updates you want to receive from your society.")}
+        </span>
+
+        <span className="set-card__spacer" />
+        <span className="set-card__foot">
+          <span className="set-card__cta">
+            {t("asCardNotifsCta", "Manage Alerts")}
+            <MdChevronRight size={15} aria-hidden="true" />
+          </span>
+          {!notifsLoading && (
+            <span className="set-card__status set-card__status--violet">
               <span className="set-card__status-dot" aria-hidden="true" />
-              {t("asProtected", "Password Protected")}
+              {t("asNotifsCount", { n: activeCount })}
             </span>
+          )}
+        </span>
+      </button>
+
+      {/* Language */}
+      <button type="button" className="set-card set-card--lang" onClick={() => openSection("language")}>
+        <span className="set-card__top">
+          <span className="set-card__icon" aria-hidden="true">
+            <MdLanguage size={21} />
           </span>
-        </button>
+        </span>
 
-        {/* Role & Section Permissions — role-gated, never bypassed */}
-        {isAdminOrSocietyAdmin && (
-          <button type="button" className="set-card set-card--roles" onClick={() => openSection("roles")}>
-            <span className="set-card__top">
-              <span className="set-card__icon" aria-hidden="true">
-                <MdShield size={21} />
-              </span>
-            </span>
+        <span className="set-card__meta">
+          <span className="set-card__meta-dot" aria-hidden="true" />
+          {t("language", "Language")}
+        </span>
+        <span className="set-card__title">{t("asLangTitle", "Language")}</span>
+        <span className="set-card__desc">
+          {t("asCardLangDesc", "Change the display language used across the application.")}
+        </span>
 
-            <span className="set-card__meta">
-              <span className="set-card__meta-dot" aria-hidden="true" />
-              {t("asCardRolesMeta", "Access Control")}
-            </span>
-            <span className="set-card__title">{t("asRolesTab", "Role & Section Permissions")}</span>
-            <span className="set-card__desc">
-              {t("asCardRolesDesc", "Manage section-level access and review available permissions.")}
-            </span>
-
-            <span className="set-card__spacer" />
-            <span className="set-card__foot">
-              <span className="set-card__cta">
-                {t("asCardRolesCta", "Manage Permissions")}
-                <MdChevronRight size={15} aria-hidden="true" />
-              </span>
-              {roleLabel && (
-                <span className="set-card__status set-card__status--violet">
-                  <span className="set-card__status-dot" aria-hidden="true" />
-                  {roleLabel}
-                </span>
-              )}
-            </span>
-          </button>
-        )}
-      </div>
-    </>
+        <span className="set-card__spacer" />
+        <span className="set-card__foot">
+          <span className="set-card__cta">
+            {t("asCardLangCta", "Change Language")}
+            <MdChevronRight size={15} aria-hidden="true" />
+          </span>
+          <span className="set-card__status set-card__status--violet">
+            <span className="set-card__status-dot" aria-hidden="true" />
+            {LANGUAGES.find((l) => l.code === lang)?.nativeLabel || "—"}
+          </span>
+        </span>
+      </button>
+    </div>
   );
-
-  /* ══ My Profile ═══════════════════════════════════════════════════════ */
 
   /* ══ My Profile ═══════════════════════════════════════════════════════ */
 
   const renderProfile = () => (
     <div className="set-pf">
-      {/* ── One workspace. Hero, then logical groups divided by hairlines.
-             No card inside a card. ── */}
+      {/* One workspace. Hero, then logical groups divided by hairlines. */}
       <div className="set-ws">
         {/* Identity — the avatar itself is the photo control. */}
         <div className="set-hero">
@@ -572,7 +803,7 @@ export default function AdminSetting() {
             <div className="set-hero__chips">
               {roleLabel && (
                 <span className="set-chip set-chip--role">
-                  <MdShield size={11} />
+                  <MdBadge size={11} />
                   {roleLabel}
                 </span>
               )}
@@ -608,14 +839,14 @@ export default function AdminSetting() {
 
           <div className="set-grid set-grid--2">
             <div className="set-f">
-              <label className="set-f__label" htmlFor="set-name">
+              <label className="set-f__label" htmlFor="mset-name">
                 {t("asFullName", "Full Name")}
               </label>
               {editing ? (
                 <div className="set-field">
                   <span className="set-field__icon" aria-hidden="true"><MdPerson size={16} /></span>
                   <input
-                    id="set-name"
+                    id="mset-name"
                     className={`set-field__input${nameError ? " set-field__input--err" : ""}`}
                     value={form.name}
                     onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
@@ -636,14 +867,14 @@ export default function AdminSetting() {
             </div>
 
             <div className="set-f">
-              <label className="set-f__label" htmlFor="set-phone">
+              <label className="set-f__label" htmlFor="mset-phone">
                 {t("asPhoneLabel", "Phone Number")}
               </label>
               {editing ? (
                 <div className="set-field">
                   <span className="set-field__icon" aria-hidden="true"><MdPhone size={16} /></span>
                   <input
-                    id="set-phone"
+                    id="mset-phone"
                     className={`set-field__input${phoneError ? " set-field__input--err" : ""}`}
                     value={form.phone}
                     onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
@@ -687,40 +918,31 @@ export default function AdminSetting() {
           )}
         </div>
 
-        {/* ── Account Information: read-only, label + value cells ── */}
+        {/* ── Account Information: read-only ── */}
         <div className="set-group">
           <div className="set-group__head">
             <h4 className="set-group__title">{t("asAccountInfo", "Account Information")}</h4>
           </div>
 
           <div className="set-grid set-grid--3">
-            <div className="set-cell">
-              <span className="set-cell__label">{t("asEmailLabel", "Email")}</span>
-              <span className="set-cell__value" title={email}>{email || t("asNA", "Not provided")}</span>
-            </div>
-            <div className="set-cell">
-              <span className="set-cell__label">{t("asAllRolesLabel", "All Roles")}</span>
-              <span className="set-cell__value" title={allRolesLabel}>{allRolesLabel}</span>
-            </div>
-            <div className="set-cell">
-              <span className="set-cell__label">{t("asResidentTypeLabel", "Resident Type")}</span>
-              <span className="set-cell__value">{residentTypeLabel}</span>
-            </div>
-            <div className="set-cell">
-              <span className="set-cell__label">{t("asSocietyLabel", "Society")}</span>
-              <span className="set-cell__value">{societyLabel || t("asNotApplicable", "Not applicable")}</span>
-            </div>
-            <div className="set-cell">
-              <span className="set-cell__label">{t("asAccountStatusLabel", "Account Status")}</span>
-              <span className={`set-status set-status--${statusTone}`}>
-                <span className="set-status__dot" aria-hidden="true" />
-                {approvalLabel}
-              </span>
-            </div>
-            <div className="set-cell">
-              <span className="set-cell__label">{t("asUserIdLabel", "User ID")}</span>
-              <span className="set-cell__value set-cell__value--mono">#{me?.id ?? user?.id ?? "—"}</span>
-            </div>
+            {cells.map((c) => (
+              <div className="set-cell" key={c.key}>
+                <span className="set-cell__label">{c.label}</span>
+                {c.status ? (
+                  <span className={`set-status set-status--${c.status.tone}`}>
+                    <span className="set-status__dot" aria-hidden="true" />
+                    {c.status.text}
+                  </span>
+                ) : (
+                  <span
+                    className={`set-cell__value${c.mono ? " set-cell__value--mono" : ""}`}
+                    title={typeof c.value === "string" ? c.value : undefined}
+                  >
+                    {c.value}
+                  </span>
+                )}
+              </div>
+            ))}
           </div>
         </div>
       </div>
@@ -733,8 +955,6 @@ export default function AdminSetting() {
     const segClass = (idx) =>
       !np || score < idx ? "set-meter__seg" : `set-meter__seg set-meter__seg--${strength.cls}`;
 
-    /* Reusable field: fixed icon slot on the left, action slot on the right.
-       Both are absolutely centred so text can never overlap an icon. */
     const pwField = ({ id, label, value, onChange, type, icon, action, error, autoComplete, placeholder }) => (
       <div className="set-f">
         <label className="set-f__label" htmlFor={id}>
@@ -767,7 +987,7 @@ export default function AdminSetting() {
       </div>
     );
 
-    const eyeBtn = (id, label, open, onClick) => (
+    const eyeBtn = (label, open, onClick) => (
       <button
         type="button"
         className="set-field__action"
@@ -815,7 +1035,7 @@ export default function AdminSetting() {
           {/* Right: the form */}
           <div className="set-pw__main">
             {pwField({
-              id: "set-cur",
+              id: "mset-cur",
               label: t("cpwCurrentPassword", "Current Password"),
               value: cur,
               onChange: (e) => { setCur(e.target.value); clearPwField("cur"); },
@@ -824,11 +1044,11 @@ export default function AdminSetting() {
               placeholder: t("cpwCurrentPasswordPh", "Enter current password"),
               autoComplete: "current-password",
               error: errors.cur,
-              action: eyeBtn("set-cur", t("cpwCurrentPassword", "Current Password"), showCur, () => setShowCur((v) => !v)),
+              action: eyeBtn(t("cpwCurrentPassword", "Current Password"), showCur, () => setShowCur((v) => !v)),
             })}
 
             {pwField({
-              id: "set-np",
+              id: "mset-np",
               label: t("cpwNewPassword", "New Password"),
               value: np,
               onChange: (e) => { setNp(e.target.value); clearPwField("np"); },
@@ -837,13 +1057,13 @@ export default function AdminSetting() {
               placeholder: t("cpwNewPasswordPh", "Enter new password"),
               autoComplete: "new-password",
               error: errors.np,
-              action: eyeBtn("set-np", t("cpwNewPassword", "New Password"), showNp, () => setShowNp((v) => !v)),
+              action: eyeBtn(t("cpwNewPassword", "New Password"), showNp, () => setShowNp((v) => !v)),
             })}
 
             {/* Strength + requirements */}
             <div className="set-meter">
               <div className="set-meter__head">
-                <span className="set-meter__label" id="set-strength-label">
+                <span className="set-meter__label" id="mset-strength-label">
                   {t("asHealthLabel", "Password Strength")}
                 </span>
                 {np && strength && (
@@ -861,7 +1081,7 @@ export default function AdminSetting() {
                 aria-valuemax={4}
                 aria-valuenow={score}
                 aria-valuetext={strength?.label || ""}
-                aria-labelledby="set-strength-label"
+                aria-labelledby="mset-strength-label"
               >
                 <span className={segClass(1)} />
                 <span className={segClass(2)} />
@@ -884,7 +1104,7 @@ export default function AdminSetting() {
             </div>
 
             {pwField({
-              id: "set-cp",
+              id: "mset-cp",
               label: t("cpwConfirmPassword", "Confirm Password"),
               value: cp,
               onChange: (e) => { setCp(e.target.value); clearPwField("cp"); },
@@ -893,7 +1113,7 @@ export default function AdminSetting() {
               placeholder: t("cpwConfirmPasswordPh", "Re-enter new password"),
               autoComplete: "new-password",
               error: errors.cp,
-              action: eyeBtn("set-cp", t("cpwConfirmPassword", "Confirm Password"), showCp, () => setShowCp((v) => !v)),
+              action: eyeBtn(t("cpwConfirmPassword", "Confirm Password"), showCp, () => setShowCp((v) => !v)),
             })}
 
             <div className="set-formfoot">
@@ -916,6 +1136,181 @@ export default function AdminSetting() {
     );
   };
 
+  /* ══ Notifications ═══════════════════════════════════════════════════ */
+
+  const NOTIF_ROWS = [
+    {
+      key: "emergencyAlerts",
+      Icon: MdWarning,
+      accent: "red",
+      label: t("emergencyAlerts", "Emergency Alerts"),
+      desc: t("emergencyAlertsSub", "Instant alerts for SOS and emergencies"),
+    },
+    {
+      key: "visitorEntry",
+      Icon: MdPerson,
+      accent: "blue",
+      label: t("visitorEntry", "Visitor Entry"),
+      desc: t("visitorEntrySub", "Notify when a visitor checks in or out"),
+    },
+    {
+      key: "complaintUpdates",
+      Icon: MdInfoOutline,
+      accent: "amber",
+      label: t("complaintUpdates", "Complaint Updates"),
+      desc: t("complaintUpdatesSub", "When complaints are assigned or resolved"),
+    },
+    {
+      key: "noticeUpdates",
+      Icon: MdNotifications,
+      accent: "violet",
+      label: t("noticeUpdates", "Notice Updates"),
+      desc: t("noticeUpdatesSub", "Society notices and announcements"),
+    },
+  ];
+
+  const renderNotifications = () => (
+    <div className="mset">
+      <div className="set-ws">
+        {/* Summary */}
+        <div className="mset-sum">
+          <span className="mset-sum__ic" aria-hidden="true"><MdNotifications size={19} /></span>
+          <div className="mset-sum__text">
+            <h3 className="mset-sum__title">{t("notificationPrefs", "Notification Preferences")}</h3>
+            <p className="mset-sum__sub">
+              {t("notificationPrefsSub", "Choose what you want to be notified about")}
+            </p>
+          </div>
+          <span className="mset-sum__count">
+            <b>{activeCount}</b> / {NOTIF_ROWS.length}
+          </span>
+        </div>
+
+        {/* Rows */}
+        <div className="set-group">
+          <div className="set-group__head">
+            <h4 className="set-group__title">{t("asNotifsActiveTitle", "Active Alerts")}</h4>
+          </div>
+
+          {notifsLoading ? (
+            <div className="mset-loading">
+              <span className="set-spinner" />
+              <p>{t("loadingProfile", "Loading…")}</p>
+            </div>
+          ) : (
+            <ul className="mset-list">
+              {NOTIF_ROWS.map((row) => {
+                const labelId = `mset-nf-${row.key}`;
+                return (
+                  <li key={row.key} className="mset-row">
+                    <span className={`mset-row__ic mset-row__ic--${row.accent}`} aria-hidden="true">
+                      <row.Icon size={16} />
+                    </span>
+                    <div className="mset-row__text">
+                      <p className="mset-row__label" id={labelId}>{row.label}</p>
+                      <p className="mset-row__desc">{row.desc}</p>
+                    </div>
+                    <Switch
+                      id={`mset-nf-switch-${row.key}`}
+                      labelledBy={labelId}
+                      checked={!!notifs[row.key]}
+                      onChange={(v) => setNotifs((prev) => ({ ...prev, [row.key]: v }))}
+                    />
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+
+          <div className="set-group__foot">
+            <span className="set-group__hint">
+              <MdInfoOutline size={15} />
+              {t(notifsHint, "Emergency alerts are recommended for every resident.")}
+            </span>
+            <span className="set-group__actions">
+              {notifsSaved && (
+                <span className="mset-saved">
+                  <MdCheckCircle size={15} />
+                  {t("notificationSaved", "Preferences saved")}
+                </span>
+              )}
+              <button
+                type="button"
+                className="set-btn set-btn--primary"
+                onClick={saveSettings}
+                disabled={notifsSaving || notifsLoading}
+              >
+                {notifsSaving ? <span className="set-spinner" /> : <MdCheck size={16} />}
+                {notifsSaving ? t("saving", "Saving…") : t("savePreferences", "Save Preferences")}
+              </button>
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  /* ══ Language ═════════════════════════════════════════════════════════ */
+
+  const renderLanguage = () => (
+    <div className="mset">
+      <div className="set-ws">
+        <div className="mset-sum">
+          <span className="mset-sum__ic" aria-hidden="true"><MdTranslate size={19} /></span>
+          <div className="mset-sum__text">
+            <h3 className="mset-sum__title">{t("language", "Language")}</h3>
+            <p className="mset-sum__sub">{t("languageSub", "Choose your preferred display language")}</p>
+          </div>
+        </div>
+
+        <div className="set-group">
+          <div className="set-group__head">
+            <h4 className="set-group__title">{t("asLangPickTitle", "Select a language")}</h4>
+          </div>
+
+          {langChanged && (
+            <div className="mset-ok">
+              <MdCheckCircle size={16} />
+              <span>{t("languageChanged", "Language updated successfully!")}</span>
+            </div>
+          )}
+
+          <div className="mset-lang-grid" role="radiogroup" aria-label={t("language", "Language")}>
+            {LANGUAGES.map((l) => {
+              const isActive = lang === l.code;
+              return (
+                <button
+                  key={l.code}
+                  type="button"
+                  role="radio"
+                  aria-checked={isActive}
+                  className={`mset-lang${isActive ? " mset-lang--on" : ""}`}
+                  onClick={() => handleLangChange(l.code)}
+                >
+                  <span className="mset-lang__ic" aria-hidden="true">{l.flag}</span>
+                  <span className="mset-lang__text">
+                    <span className="mset-lang__native">{l.nativeLabel}</span>
+                    <span className="mset-lang__en">{l.label}</span>
+                  </span>
+                  <span className="mset-lang__check" aria-hidden="true">
+                    <CheckIcon size={12} />
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="set-group__foot">
+            <span className="set-group__hint">
+              <MdInfoOutline size={15} />
+              {t("languageDesc", "All text will change to the selected language")}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
   /* ══ Render ════════════════════════════════════════════════════════════ */
 
   const inSection = view !== "hub";
@@ -931,10 +1326,15 @@ export default function AdminSetting() {
       title: t("cpwChangePassword", "Change Password"),
       desc: t("asSectionPasswordDesc", "Keep your account secure with a strong password."),
     },
-    roles: {
-      Icon: MdShield,
-      title: t("asRolesTab", "Role & Section Permissions"),
-      desc: t("asSectionRolesDesc", "Manage section-level access controls."),
+    notifications: {
+      Icon: MdNotifications,
+      title: t("asNotifsTitle", "Notifications"),
+      desc: t("asSectionNotifsDesc", "Decide which alerts and updates you receive."),
+    },
+    language: {
+      Icon: MdLanguage,
+      title: t("asLangTitle", "Language"),
+      desc: t("asSectionLangDesc", "Change the display language of the application."),
     },
   }[view];
 
@@ -951,41 +1351,50 @@ export default function AdminSetting() {
         onChange={applyPhoto}
       />
 
-      <header className="set-head">
-        <div className="set-head__lead">
-          <span className="set-head__icon" aria-hidden="true">
-            <MdSettings size={22} />
-          </span>
-          <div>
-            <h1 className="set-head__title">{t("settings", "Settings")}</h1>
-            <p className="set-head__sub">
-              {t("asSubtitle", "Manage your account, security and access preferences")}
-            </p>
-          </div>
-        </div>
-        <span className="set-head__badge">
-          <span className="set-head__dot" aria-hidden="true" />
-          {t("asProtected", "Account Protected")}
-        </span>
-      </header>
-
       {!inSection && (
-        <p className="set-head__intro">
-          {t("asHubIntro", "Choose what you want to manage.")}
-        </p>
+        <>
+          <header className="set-head">
+            <div className="set-head__lead">
+              <span className="set-head__icon" aria-hidden="true">
+                <HeaderIcon size={22} />
+              </span>
+              <div>
+                <h1 className="set-head__title">{t(headerTitle, "Settings")}</h1>
+                <p className="set-head__sub">
+                  {t(headerSubtitle, "Manage your account, security and access preferences")}
+                </p>
+              </div>
+            </div>
+            <span className="set-head__badge">
+              <span className="set-head__dot" aria-hidden="true" />
+              {t("asProtected", "Account Protected")}
+            </span>
+          </header>
+          <p className="set-head__intro">
+            {t(hubIntro, "Choose what you want to manage.")}
+          </p>
+        </>
       )}
 
       {loading ? (
-        <div className="set-hub">
-          <div className="set-skeleton set-skeleton--card" />
-          <div className="set-skeleton set-skeleton--card" />
-          <div className="set-skeleton set-skeleton--card" />
-        </div>
+        inSection ? (
+          <div className="set-section">
+            <div className="set-skeleton set-skeleton--line" style={{ width: "38%" }} />
+            <div className="set-skeleton set-skeleton--block" />
+            <div className="set-skeleton set-skeleton--block" />
+          </div>
+        ) : (
+          <div className="set-hub">
+            <div className="set-skeleton set-skeleton--card" />
+            <div className="set-skeleton set-skeleton--card" />
+            <div className="set-skeleton set-skeleton--card" />
+          </div>
+        )
       ) : inSection ? (
         <div className="set-section set-section__enter">
-          <button type="button" className="set-back" onClick={goHub}>
+          <button type="button" className="set-back" onClick={goBack}>
             <MdArrowBack size={16} />
-            {t("asBack", "Back to Settings")}
+            {onExit ? t(backLabel, "Back") : t("asBack", "Back to Settings")}
           </button>
 
           <div className={`set-section__head set-section--${view}`}>
@@ -1002,11 +1411,8 @@ export default function AdminSetting() {
 
           {view === "profile" && renderProfile()}
           {view === "password" && renderPassword()}
-          {view === "roles" && isAdminOrSocietyAdmin && (
-            <div className="set-roles">
-              <RolePermissions embedded />
-            </div>
-          )}
+          {view === "notifications" && renderNotifications()}
+          {view === "language" && renderLanguage()}
         </div>
       ) : (
         renderHub()

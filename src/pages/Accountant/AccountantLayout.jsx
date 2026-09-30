@@ -198,10 +198,10 @@ function AccountantLayoutInner() {
       module: "society_documents",
     },
     {
-      label: t("ppTitle", "Profile Picture"),
+      label: t("acctMenuSettings", "Settings"),
       path: `${base}/settings`,
       icon: MdSettings,
-      group: "SETTINGS",
+      group: "SUPPORT & SETTINGS",
     },
   ];
 
@@ -231,7 +231,7 @@ function AccountantLayoutInner() {
         }
         brandSubtitle={t("sbViewAccountant")}
         base={base}
-        drawerExtra={<RoleSwitcher />}
+        drawerExtra={<RoleSwitcher fullWidth />}
         defaultOpenGroups={["FINANCE & BILLS"]}
       />
 
@@ -272,10 +272,11 @@ function AccountantLayoutInner() {
             </div>
           }
           onLogout={() => setShowLogoutConfirm(true)}
+          settingsPath={`${base}/settings`}
         />
 
         {/* PAGE CONTENT */}
-        <main className="flex-1 overflow-y-auto overflow-x-clip scrollbar-hide p-4 sm:p-6 lg:p-8">
+        <main className="flex-1 overflow-y-auto overflow-x-clip scrollbar-hide py-4 sm:py-6 lg:py-8 px-3 sm:px-4 lg:px-6">
           <Outlet />
         </main>
       </div>

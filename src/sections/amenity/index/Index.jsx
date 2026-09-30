@@ -6,6 +6,7 @@ import { Spinner, amenityEmoji, PALETTES, isPaidAmenity } from "../amenityHelper
 import SlidingTabs from "../../../components/common/SlidingTabs";
 import ExpandableSearch from "../../../components/common/ExpandableSearch";
 import GlobalButton from "../../../components/common/GlobalButton";
+import PanelHero from "../../../components/common/PanelHero";
 
 function StatusBadge({ status, t }) {
   const cfg = {
@@ -145,6 +146,9 @@ export default function Index({
 
   return (
     <>
+      {/* IDENTITY HERO — matches the dashboard's top section */}
+      <PanelHero clickableAvatar />
+
       {/* HEADER */}
       <div className="ad-page-header flex flex-col md:flex-row items-start md:items-center justify-between gap-4 p-4 sm:p-5 rounded-2xl border"
         style={{

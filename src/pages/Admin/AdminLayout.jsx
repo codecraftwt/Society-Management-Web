@@ -33,20 +33,10 @@ import { useSidebar } from "../../context/SidebarContext";
 import Sidebar from "../../components/common/Sidebar";
 import AppHeader from "../../components/common/AppHeader";
 import { useRoleTheme } from "../../context/ThemeContext";
+import RoleSwitcher from "../../components/RoleSwitcher";
 import "./Admin.css";
 
 import { hasPermission, isCommitteeMember } from "../../utils/permissions";
-
-/* Role meta for role-switcher */
-const ROLE_META = {
-  SOCIETY_ADMIN: { labelKey: "roleSocietyAdmin", icon: "🏢", descKey: "roleSocietyAdminDesc" },
-  RESIDENT: { labelKey: "roleResident", icon: "🏠", descKey: "roleResidentDesc" },
-  SUPER_ADMIN: { labelKey: "roleSuperAdmin", icon: "🛡️", descKey: "roleSuperAdminDesc" },
-  ACCOUNTANT: { labelKey: "roleAccountant", icon: "📊", descKey: "roleAccountantDesc" },
-  GUARD: { labelKey: "roleGuard", icon: "🔐", descKey: "roleGuardDesc" },
-  FAMILY_MEMBER: { labelKey: "roleFamily", icon: "👨‍👩‍👧", descKey: "roleFamilyDesc" },
-  COMMITTEE_MEMBER: { labelKey: "roleCommittee", icon: "📋", descKey: "roleCommitteeDesc" },
-};
 
 function AdminLayoutInner() {
   const navigate = useNavigate();
@@ -58,15 +48,8 @@ function AdminLayoutInner() {
   const [showEmergency, setShowEmergency] = useState(false);
   const [showSOS, setShowSOS] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
-  const [rsOpen, setRsOpen] = useState(false);
 
-  const { user, switchRole, refreshPermissions } = useContext(AuthContext);
-
-  const roleMeta = (role) => {
-    const m = ROLE_META[role];
-    if (!m) return { label: role, icon: "👤", desc: "" };
-    return { label: t(m.labelKey), icon: m.icon, desc: t(m.descKey) };
-  };
+  const { user, refreshPermissions } = useContext(AuthContext);
 
   const base = "/admin";
   const isCommittee = isCommitteeMember(user);
@@ -230,15 +213,6 @@ function AdminLayoutInner() {
     return hasPermission(user, item.module, reqAction);
   });
 
-  /* Close role-switcher on outside click */
-  useEffect(() => {
-    const handler = (e) => {
-      if (!e.target.closest(".rs-wrap")) setRsOpen(false);
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, []);
-
   /* Emergency polling */
   const loadEmergencies = async () => {
     try {
@@ -261,58 +235,6 @@ function AdminLayoutInner() {
     navigate("/login", { replace: true });
   };
 
-  /* Role switch */
-  const handleRoleSwitch = async (role) => {
-    if (role === user?.activeRole) return;
-    await switchRole(role);
-    const routeMap = {
-      SUPER_ADMIN: "/superadmin",
-      SOCIETY_ADMIN: "/admin",
-      COMMITTEE_MEMBER: "/admin",
-      RESIDENT: "/resident",
-      FAMILY_MEMBER: "/family",
-      GUARD: "/guard",
-      ACCOUNTANT: "/accountant",
-    };
-    navigate(routeMap[role] || "/login");
-  };
-
-  /* Mobile role switcher pill bar passed via drawerExtra */
-  const mobileRoleSwitcher = user?.roles?.length > 1 && (
-    <div style={{ marginBottom: "1rem" }}>
-      <p
-        style={{
-          fontSize: "10px",
-          fontWeight: 700,
-          textTransform: "uppercase",
-          letterSpacing: "0.07em",
-          color: "var(--text-muted)",
-          marginBottom: "8px",
-        }}
-      >
-        {t("activeRole")}
-      </p>
-      <div className="rs-mobile-bar">
-        {user.roles.map((role) => {
-          const meta = roleMeta(role);
-          const isActive = role === user.activeRole;
-          return (
-            <button
-              key={role}
-              className={`rs-mobile-pill ${isActive ? "active" : ""}`}
-              onClick={() => {
-                handleRoleSwitch(role);
-              }}
-            >
-              <span className="rs-pill-dot" />
-              {meta.icon} {meta.label}
-            </button>
-          );
-        })}
-      </div>
-    </div>
-  );
-
   return (
     <div
       className="h-screen overflow-hidden bg-app flex admin-root"
@@ -329,7 +251,7 @@ function AdminLayoutInner() {
         }
         brandSubtitle={isCommittee ? (user?.committee_position || user?.designation || t("sbViewCommittee")) : t("sbViewAdmin")}
         base={base}
-        drawerExtra={mobileRoleSwitcher}
+        drawerExtra={<RoleSwitcher fullWidth />}
         defaultOpenGroups={["FINANCE & BILLS"]}
       />
 
@@ -341,61 +263,7 @@ function AdminLayoutInner() {
           actions={
             <>
               {/* ROLE SWITCHER */}
-              {user?.roles?.length > 1 && (
-                <div className="rs-wrap" style={{ position: "relative" }}>
-                  <button
-                    className={`rs-trigger ${rsOpen ? "open" : ""}`}
-                    onClick={() => setRsOpen((o) => !o)}
-                    title={t("switchRole")}
-                  >
-                    <span className="rs-active-dot" />
-                    <span className="rs-trigger-label rs-trigger-text">
-                      {roleMeta(user.activeRole).label}
-                    </span>
-                    <span className="rs-trigger-label rs-trigger-icon">
-                      {roleMeta(user.activeRole).icon}
-                    </span>
-                    <span className="rs-trigger-arrow">▼</span>
-                  </button>
-
-                  <div className={`rs-dropdown ${rsOpen ? "open" : ""}`}>
-                    <div className="rs-dropdown-header">{t("switchRole")}</div>
-
-                    {user.roles.map((role) => {
-                      const meta = roleMeta(role);
-                      const isActive = role === user.activeRole;
-                      return (
-                        <div
-                          key={role}
-                          className={`rs-option ${isActive ? "active" : ""}`}
-                          onClick={() => {
-                            handleRoleSwitch(role);
-                            setRsOpen(false);
-                          }}
-                        >
-                          <div className="rs-option-icon">{meta.icon}</div>
-                          <div className="rs-option-info">
-                            <p className="rs-option-name">{meta.label}</p>
-                            {meta.desc && (
-                              <p className="rs-option-desc">{meta.desc}</p>
-                            )}
-                          </div>
-                          <div className="rs-check">
-                            <svg
-                              viewBox="0 0 10 8"
-                              fill="none"
-                              stroke="white"
-                              strokeWidth="2.5"
-                            >
-                              <polyline points="1,4 4,7 9,1" />
-                            </svg>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
+              <RoleSwitcher />
 
               {/* SOS button — admin & committee can raise a society-wide SOS */}
               {hasPermission(user, "emergency", "trigger") && (
@@ -429,7 +297,7 @@ function AdminLayoutInner() {
         />
 
         {/* PAGE CONTENT */}
-        <main className="flex-1 overflow-y-auto overflow-x-clip scrollbar-hide p-4 sm:p-6 lg:p-8">
+        <main className="flex-1 overflow-y-auto overflow-x-clip scrollbar-hide py-4 sm:py-6 lg:py-8 px-3 sm:px-4 lg:px-6">
           <Outlet />
         </main>
       </div>

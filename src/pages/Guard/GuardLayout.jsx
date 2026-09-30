@@ -34,6 +34,8 @@ function GuardLayoutInner() {
   const { openMobile } = useSidebar();
   useRoleTheme();
 
+  const base = "/guard";
+
   const [alerts, setAlerts] = useState([]);
   const [showEmergency, setShowEmergency] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
@@ -182,7 +184,8 @@ function GuardLayoutInner() {
           </span>
         }
         brandSubtitle={t("sbViewGuard")}
-        base="/guard"
+        base={base}
+        defaultOpenGroups={["SUPPORT & SETTINGS"]}
       />
 
       {/* ── MAIN CONTENT ── */}
@@ -208,10 +211,11 @@ function GuardLayoutInner() {
             </button>
           }
           onLogout={() => setShowLogoutConfirm(true)}
+          settingsPath={`${base}/settings`}
         />
 
         {/* PAGE CONTENT */}
-        <main className="flex-1 overflow-y-auto overflow-x-clip scrollbar-hide p-4 sm:p-6 lg:p-8">
+        <main className="flex-1 overflow-y-auto overflow-x-clip scrollbar-hide py-4 sm:py-6 lg:py-8 px-3 sm:px-4 lg:px-6">
           <Outlet />
         </main>
       </div>
