@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const GRADIENTS = [
   "linear-gradient(135deg, #3B82F6, #2563EB)",
@@ -40,7 +40,13 @@ export default function UserAvatar({
 }) {
   const [failed, setFailed] = useState(false);
 
-  const showImage = Boolean(src) && !failed;
+  const resolvedSrc = typeof src === "string" ? src.trim() : (src?.url || src?.uri || null);
+
+  useEffect(() => {
+    setFailed(false);
+  }, [resolvedSrc]);
+
+  const showImage = Boolean(resolvedSrc) && !failed;
   const base = className.trim();
 
   // Layout is inlined so the component never depends on a global CSS class.
@@ -55,6 +61,7 @@ export default function UserAvatar({
     alignItems: "center",
     justifyContent: "center",
     fontWeight: 800,
+    fontSize: typeof size === "number" ? Math.max(12, Math.round(size * 0.36)) : undefined,
     color: "#fff",
     flexShrink: 0,
     overflow: "hidden",
@@ -66,7 +73,7 @@ export default function UserAvatar({
 
   const content = showImage ? (
     <img
-      src={src}
+      src={resolvedSrc}
       alt={alt || name || "Profile picture"}
       onError={() => setFailed(true)}
       style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}

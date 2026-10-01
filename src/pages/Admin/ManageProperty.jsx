@@ -1379,7 +1379,6 @@ function BlocksTab({
                 >
                   <option value="APARTMENT">🏢 {t("mpTypeApartmentFull")}</option>
                   <option value="ROW_HOUSE">🏡 {t("mpTypeRowHouseFull")}</option>
-                  <option value="COMMERCIAL">🏬 {t("mpTypeCommercialFull")}</option>
                 </Select>
               </div>
             </div>

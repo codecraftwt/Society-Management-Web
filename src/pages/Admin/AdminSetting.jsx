@@ -157,7 +157,7 @@ export default function AdminSetting() {
   /* ── Derived profile values ── */
   const name = me?.name || user?.name || "";
   const email = me?.email || user?.email || "";
-  const photo = me?.profile_picture || null;
+  const photo = me?.profile_picture || user?.profile_picture || null;
   const roleLabel = titleCaseRole(me?.activeRole || user?.activeRole || user?.role);
   const societyLabel = me?.Society?.name || "";
 
@@ -1012,67 +1012,90 @@ export default function AdminSetting() {
         renderHub()
       )}
 
-      {/* ── Photo action menu (only when a photo exists) ── */}
+      {/* ── Photo action modal (when avatar is clicked) ── */}
       <GlobalModal
         isOpen={photoMenuOpen}
         onClose={() => !photoBusy && setPhotoMenuOpen(false)}
-        title={t("ppTitle", "Profile Photo")}
+        title={t("ppTitle", "Profile Picture")}
         subtitle={t("asPhotoMenuSub", "Update or remove your current profile photo.")}
-        icon={<MdCameraAlt size={19} />}
+        icon={<MdCameraAlt size={20} />}
         size="sm"
         footer={
-          <div style={{ display: "flex", gap: 10, width: "100%" }}>
-            <button
-              type="button"
-              className="set-btn set-btn--ghost"
-              style={{ flex: 1 }}
-              onClick={() => setPhotoMenuOpen(false)}
-              disabled={photoBusy}
-            >
-              {t("cancel", "Cancel")}
-            </button>
-            <button
-              type="button"
-              className="set-btn set-btn--primary"
-              style={{ flex: 1 }}
-              onClick={openUpload}
-              disabled={photoBusy}
-            >
-              {photoBusy ? <span className="set-spinner" /> : <MdCloudUpload size={16} />}
-              {t("ppChange", "Change Photo")}
-            </button>
-          </div>
+          <button
+            type="button"
+            className="set-btn set-btn--ghost set-btn--block"
+            onClick={() => setPhotoMenuOpen(false)}
+            disabled={photoBusy}
+          >
+            {t("cancel", "Cancel")}
+          </button>
         }
       >
         <div className="set-photomenu">
-          <div className="set-photomenu__preview">
-            <span className="set-photomenu__avatar">
-              <UserAvatar name={name} src={photo} size={56} radius={28} alt={name} />
-            </span>
+          {/* Showcase Hero Card */}
+          <div className="set-photomenu__hero">
+            <div className="set-photomenu__ring">
+              <div className="set-photomenu__avatar-wrapper">
+                <UserAvatar name={name} src={photo} size={88} radius={44} alt={name} />
+              </div>
+              <div className="set-photomenu__badge" aria-hidden="true">
+                <MdCameraAlt size={14} />
+              </div>
+            </div>
+
             <div className="set-photomenu__meta">
-              <p className="set-photomenu__name">{name || "—"}</p>
-              <p className="set-photomenu__sub">
+              <h4 className="set-photomenu__name">{name || "—"}</h4>
+              <span className={`set-photomenu__status ${photo ? "set-photomenu__status--active" : ""}`}>
+                <span className="set-photomenu__dot" />
                 {photo
                   ? t("asPhotoCurrent", "Current profile photo")
                   : t("asPhotoNone", "No photo uploaded")}
-              </p>
+              </span>
             </div>
           </div>
 
-          {/* Remove only exists while a photo is present. */}
-          {photo && (
-            <div className="set-photomenu__actions">
+          {/* Action Options */}
+          <div className="set-photomenu__options">
+            <button
+              type="button"
+              className="set-photomenu__tile set-photomenu__tile--primary"
+              onClick={openUpload}
+              disabled={photoBusy}
+            >
+              <div className="set-photomenu__tile-icon">
+                {photoBusy ? <span className="set-spinner" /> : <MdCloudUpload size={20} />}
+              </div>
+              <div className="set-photomenu__tile-text">
+                <span className="set-photomenu__tile-title">
+                  {photo ? t("ppChange", "Change Photo") : t("ppUpload", "Upload Photo")}
+                </span>
+                <span className="set-photomenu__tile-sub">
+                  {t("ppHint", "JPEG, PNG, WEBP, GIF or HEIC up to 5MB")}
+                </span>
+              </div>
+              <MdChevronRight size={18} className="set-photomenu__tile-arrow" />
+            </button>
+
+            {photo && (
               <button
                 type="button"
-                className="set-btn set-btn--danger set-btn--block"
+                className="set-photomenu__tile set-photomenu__tile--danger"
                 onClick={() => setRemoveOpen(true)}
                 disabled={photoBusy}
               >
-                {photoBusy ? <span className="set-spinner" /> : <MdDeleteOutline size={16} />}
-                {t("ppRemove", "Remove Photo")}
+                <div className="set-photomenu__tile-icon">
+                  {photoBusy ? <span className="set-spinner" /> : <MdDeleteOutline size={20} />}
+                </div>
+                <div className="set-photomenu__tile-text">
+                  <span className="set-photomenu__tile-title">{t("ppRemove", "Remove Photo")}</span>
+                  <span className="set-photomenu__tile-sub">
+                    {t("ppRemoveHint", "Revert to default initials avatar")}
+                  </span>
+                </div>
+                <MdChevronRight size={18} className="set-photomenu__tile-arrow" />
               </button>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </GlobalModal>
 

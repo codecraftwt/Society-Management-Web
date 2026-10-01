@@ -234,7 +234,6 @@ export default function Blocks() {
             <Select className="input" value={propertyType} onChange={e => setPropertyType(e.target.value)}>
               <option value="Apartments">Apartments / Flats</option>
               <option value="Row Houses">Row Houses / Villas</option>
-              <option value="Commercial">Commercial Complex</option>
             </Select>
           </div>
           <div style={{ display: "flex", alignItems: "flex-end" }}>
