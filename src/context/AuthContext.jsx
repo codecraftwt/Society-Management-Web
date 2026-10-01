@@ -22,6 +22,11 @@ function normaliseUser(raw) {
   return {
     ...raw,
     roles:               raw.roles               ?? [raw.role],
+    // Authoritative panel list from the API. Falls back to the roles array only
+    // for legacy cached sessions that predate the field.
+    availablePanels:     Array.isArray(raw.availablePanels) && raw.availablePanels.length
+                           ? raw.availablePanels
+                           : (raw.roles ?? [raw.role]).filter(Boolean),
     activeRole:          raw.activeRole          ?? raw.role,
     dynamic_permissions: raw.dynamic_permissions ?? raw.permissions ?? null,
     permissions:         raw.permissions         ?? raw.dynamic_permissions ?? null,

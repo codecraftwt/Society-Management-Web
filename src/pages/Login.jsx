@@ -392,13 +392,23 @@ function Login() {
 
   // Panel chooser helpers — committee members & accountants who live in the
   // society also get the Resident panel (mirrors the mobile app).
+  //
+  // The API sends `availablePanels`, which already accounts for whether an
+  // accountant lives in the society (AccountantAssignment.is_society_resident).
+  // The roles array cannot answer this question on its own: it always contains
+  // RESIDENT for an accountant, including one appointed from outside.
   const promptUser = panelPrompt?.user;
   const promptRoles = Array.isArray(promptUser?.roles) && promptUser.roles.length
     ? promptUser.roles
     : [promptUser?.role].filter(Boolean);
-  const promptHasCommittee = promptRoles.includes("COMMITTEE_MEMBER") || promptRoles.includes("COMMITTEE") || promptUser?.role === "COMMITTEE_MEMBER" || promptUser?.role === "COMMITTEE";
-  const promptHasAccountant = promptRoles.includes("ACCOUNTANT") || promptUser?.role === "ACCOUNTANT";
-  const promptHasResident = true;
+  const promptPanels = Array.isArray(promptUser?.availablePanels) && promptUser.availablePanels.length
+    ? promptUser.availablePanels
+    : promptRoles;
+  const promptHasCommittee = promptPanels.includes("COMMITTEE_MEMBER") || promptPanels.includes("COMMITTEE") || promptPanels.includes("SOCIETY_ADMIN");
+  const promptHasAccountant = promptPanels.includes("ACCOUNTANT");
+  const promptHasResident = promptPanels.includes("RESIDENT");
+  // Only offer the chooser when there is genuinely a choice to make.
+  const promptOptionCount = [promptHasAccountant, promptHasCommittee, promptHasResident].filter(Boolean).length;
 
   const ROUTE_MAP = {
     SUPER_ADMIN: "/superadmin",
@@ -450,18 +460,29 @@ function Login() {
 
   const handleVerified = (user, token) => {
     const roles = Array.isArray(user.roles) && user.roles.length ? user.roles : [user.role].filter(Boolean);
-    const isCommittee = roles.includes("COMMITTEE_MEMBER") || roles.includes("COMMITTEE") || user.role === "COMMITTEE_MEMBER" || user.role === "COMMITTEE";
-    const isAccountant = roles.includes("ACCOUNTANT") || user.role === "ACCOUNTANT";
+    // `availablePanels` is the authoritative list — it reflects whether an
+    // accountant actually lives in the society, which `roles` cannot express.
+    const panels = Array.isArray(user.availablePanels) && user.availablePanels.length
+      ? user.availablePanels
+      : roles;
 
-    // Multi-panel users (committee member / accountant) must pick a
-    // panel from a popup first (same as mobile). Login is deferred so PublicRoute does not
-    // redirect away before the popup is shown. Also close the OTP modal so it
-    // does not sit on top of the panel chooser.
-    if (isCommittee || isAccountant) {
-      setStep("credentials");
-      setTempToken(null);
-      setPanelPrompt({ user, token });
-      return;
+    const hasAccountant = panels.includes("ACCOUNTANT");
+    const hasCommittee = panels.includes("COMMITTEE_MEMBER") || panels.includes("COMMITTEE") || panels.includes("SOCIETY_ADMIN");
+    const hasResident = panels.includes("RESIDENT");
+
+    // Management users who also have a second panel pick one from a popup first
+    // (same as mobile). A single-panel user — e.g. an accountant appointed from
+    // outside the society — has nothing to choose, so skip the popup entirely.
+    // Login is deferred so PublicRoute does not redirect away before the popup
+    // is shown. Also close the OTP modal so it does not sit on top.
+    if (hasAccountant || hasCommittee) {
+      const choiceCount = [hasAccountant, hasCommittee, hasResident].filter(Boolean).length;
+      if (choiceCount > 1) {
+        setStep("credentials");
+        setTempToken(null);
+        setPanelPrompt({ user, token });
+        return;
+      }
     }
 
     login(user, token);
@@ -477,6 +498,17 @@ function Login() {
   const enterPanel = async (panelRole) => {
     if (!panelPrompt) return;
     const { user, token } = panelPrompt;
+
+    // Guard the entry point too, not just the buttons. An outsider accountant
+    // is only offered ACCOUNTANT, and the API rejects RESIDENT for them.
+    const panels = Array.isArray(user.availablePanels) && user.availablePanels.length
+      ? user.availablePanels
+      : [];
+    if (panels.length && !panels.includes(panelRole)) {
+      toast.error("You do not have access to that panel.");
+      return;
+    }
+
     login(user, token);
 
     if (panelRole === "SUPER_ADMIN") {
@@ -557,7 +589,7 @@ function Login() {
       )}
 
       {/* Panel Chooser Modal (Residents with Committee or Accountant role) */}
-      {panelPrompt &&
+      {panelPrompt && promptOptionCount > 1 &&
         createPortal(
           <div
             className="animate-fadeIn"

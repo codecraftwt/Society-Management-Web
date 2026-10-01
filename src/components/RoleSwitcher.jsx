@@ -47,7 +47,14 @@ export default function RoleSwitcher({ fullWidth = false }) {
   const [error, setError] = useState(null);
   const wrapRef = useRef(null);
 
-  const roles = user?.roles ?? [];
+  /* Only offer panels the API says this user actually has. `roles` always
+     contains RESIDENT for an accountant (even one appointed from outside the
+     society), so availablePanels is the only safe source — it is derived from
+     AccountantAssignment.is_society_resident server-side. */
+  const available = Array.isArray(user?.availablePanels) && user.availablePanels.length
+    ? user.availablePanels
+    : null;
+  const roles = (available ?? user?.roles ?? []).filter(Boolean);
   const activeRole = user?.activeRole;
 
   /* Dismiss on outside click or Escape. */
@@ -71,7 +78,8 @@ export default function RoleSwitcher({ fullWidth = false }) {
     };
   }, [open]);
 
-  // Only meaningful for users who actually have more than one panel.
+  // Only meaningful for users who actually have more than one panel. An
+  // outsider accountant has exactly one (ACCOUNTANT), so no trigger renders.
   if (!user || roles.length <= 1) return null;
 
   const active = metaFor(activeRole);
@@ -79,6 +87,9 @@ export default function RoleSwitcher({ fullWidth = false }) {
 
   const handleSwitch = async (role) => {
     if (role === activeRole || loading) return;
+
+    // Defence in depth: never offer a switch the API would reject.
+    if (!roles.includes(role)) return;
 
     setLoading(true);
     setError(null);
