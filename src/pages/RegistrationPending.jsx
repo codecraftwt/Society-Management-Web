@@ -19,7 +19,7 @@ const STYLES = `
   .rp-card {
     width: 100%;
     max-width: 420px;
-    background: var(--card-bg, rgba(255,255,255,0.04));
+    background: var(--card-bg);
     border: 1px solid rgba(255,255,255,0.09);
     border-radius: 20px;
     padding: 1.5rem 1.25rem 1.5rem;
@@ -49,7 +49,7 @@ const STYLES = `
   .rp-title {
     font-size: 1.4rem;
     font-weight: 600;
-    color: var(--text-primary, #EDECF0);
+    color: var(--text-primary);
     letter-spacing: -0.02em;
     margin: 0;
   }
@@ -68,7 +68,7 @@ const STYLES = `
   .rp-message {
     font-size: 0.88rem;
     line-height: 1.7;
-    color: var(--text-secondary, #A39EB2);
+    color: var(--text-secondary);
     margin: 0;
     max-width: 340px;
   }
@@ -124,12 +124,12 @@ const STYLES = `
     border: none;
     cursor: pointer;
     font-size: 0.83rem;
-    color: var(--text-secondary, #A39EB2);
+    color: var(--text-secondary);
     text-decoration: underline;
     padding: 0;
     transition: color 0.2s;
   }
-  .rp-btn-ghost:hover { color: var(--text-primary, #EDECF0); }
+  .rp-btn-ghost:hover { color: var(--text-primary); }
   html.light .rp-btn-ghost:hover { color: #38363C; }
 
   .rp-poll-dot {
@@ -149,7 +149,7 @@ const STYLES = `
   }
   .rp-poll-text {
     font-size: 0.78rem;
-    color: var(--text-secondary, #A39EB2);
+    color: var(--text-secondary);
     margin-left: 4px;
   }
 `;

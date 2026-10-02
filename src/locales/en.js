@@ -2141,6 +2141,8 @@ const en = {
   adminMenuManageBills:   "Billing & Invoices",
   adminMenuAmenities:     "Clubhouse & Amenities",
   adminMenuVisitorLogs:   "Visitor Logs",
+  adminMenuParcels:       "Parcels",
+  adminMenuCleaningStaff: "Cleaning Staff",
   adminMenuReports:       "Society Reports",
   adminMenuDocument:      "Society Documents",
   adminMenuFlatHistory:   "Flat History",
@@ -2151,6 +2153,7 @@ const en = {
   adminMenuPayments:      "Payments & Collections",
   guardMenuHelp:          "Help & Contacts",
   saMenuSOS:              "SOS",
+  saMenuParcels:          "Parcels",
   saMenuAccounting:       "Account Management",
   saMenuPayments:         "Payments",
 

@@ -140,7 +140,7 @@ function PhoneInput({ value, onChange, required = false, disabled = false }) {
       display: "flex", alignItems: "center",
       border: "1px solid var(--glass-border)",
       borderRadius: 10, overflow: "hidden",
-      background: disabled ? "rgba(255,255,255,0.02)" : "var(--input-bg, rgba(255,255,255,0.05))",
+      background: disabled ? "rgba(255,255,255,0.02)" : "var(--input-bg)",
       opacity: disabled ? 0.5 : 1,
     }}>
       <div style={{
@@ -536,7 +536,7 @@ export default function Accountant() {
             width: 36, height: 36, borderRadius: "50%",
             background: acc.status === "INACTIVE"
               ? "linear-gradient(135deg, #64748b, #475569)"
-              : "linear-gradient(135deg, var(--accent), #9e58ff)",
+              : "linear-gradient(135deg, var(--accent), var(--accent-light))",
             display: "flex", alignItems: "center", justifyContent: "center",
             fontSize: 13, fontWeight: 800, color: "#fff",
             flexShrink: 0,
@@ -660,7 +660,7 @@ export default function Accountant() {
               height: 44,
               borderRadius: 14,
               flexShrink: 0,
-              background: "linear-gradient(135deg, var(--accent), #9e58ff)",
+              background: "linear-gradient(135deg, var(--accent), var(--accent-light))",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -753,7 +753,7 @@ export default function Accountant() {
             style={{
               padding: "16px 18px",
               borderRadius: 16,
-              background: "var(--card-inner-bg, rgba(255,255,255,0.04))",
+              background: "var(--card-inner-bg)",
               border: "1.5px solid var(--glass-border)",
               display: "flex",
               alignItems: "center",
@@ -788,7 +788,7 @@ export default function Accountant() {
             style={{
               padding: "16px 18px",
               borderRadius: 16,
-              background: "var(--card-inner-bg, rgba(255,255,255,0.04))",
+              background: "var(--card-inner-bg)",
               border: "1.5px solid var(--glass-border)",
               display: "flex",
               alignItems: "center",
@@ -903,7 +903,7 @@ export default function Accountant() {
           {selectedResidentObj && (
             <div style={{
               padding: "12px 14px", borderRadius: 12,
-              background: "var(--card-inner-bg, rgba(255,255,255,0.03))",
+              background: "var(--card-inner-bg)",
               border: "1px solid var(--glass-border)",
               display: "flex", flexDirection: "column", gap: 6,
             }}>

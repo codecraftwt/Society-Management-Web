@@ -114,7 +114,17 @@ export default function DailyHelp() {
     setPassError("");
 
     try {
-      if (isInside) {
+      if (helper.type === "CLEANING_STAFF") {
+        const res = await API.post("/cleaning-staff/scan", {
+          pass_code: code,
+        });
+        const direction = res.data?.data?.direction;
+        if (direction === "IN") {
+          toast.success(res.data?.message || t("dhToastIn", { name: helper.name }, "Checked in {name} successfully"));
+        } else {
+          toast.success(res.data?.message || t("dhToastOut", { name: helper.name }, "Checked out {name} successfully"));
+        }
+      } else if (isInside) {
         // Mark Exit
         const res = await API.put("/visitors/daily-help/exit", {
           phone: helper.phone,
@@ -313,7 +323,7 @@ export default function DailyHelp() {
                               {h.name}
                             </span>
                             <span className="text-[11px] text-secondary">
-                              {t("dhSocietyStaff", "Society Daily Staff")}
+                              {h.type === "CLEANING_STAFF" ? t("dhCleaningStaff", "Society Cleaning Staff") : t("dhSocietyStaff", "Society Daily Staff")}
                             </span>
                           </div>
                         </div>
@@ -402,7 +412,7 @@ export default function DailyHelp() {
                     <div>
                       <span className="ge-mc-name">{h.name}</span>
                       <span className="text-[10px] text-teal-600 font-bold block mt-0.5">
-                        {h.roles || t("dhHouseholdStaff", "Household Staff")}
+                        {h.roles || (h.type === "CLEANING_STAFF" ? t("dhCleaningStaff", "Society Cleaning Staff") : t("dhHouseholdStaff", "Household Staff"))}
                       </span>
                     </div>
                   </div>
@@ -528,7 +538,7 @@ export default function DailyHelp() {
                     {passHelper.name}
                   </p>
                   <p className="text-[11px] font-mono" style={{ color: "var(--text-secondary)" }}>
-                    {passHelper.phone} · {passHelper.flats || t("dhMultipleUnits", "Multiple Units")}
+                    {passHelper.phone} · {passHelper.flats || (passHelper.type === "CLEANING_STAFF" ? "Society Common Area" : t("dhMultipleUnits", "Multiple Units"))}
                   </p>
                 </div>
               </div>

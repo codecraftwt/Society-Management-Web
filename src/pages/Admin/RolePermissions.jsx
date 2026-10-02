@@ -38,6 +38,7 @@ import {
   MdOutlinePersonAdd,
   MdOutlineLocalPolice,
   MdOutlineBadge,
+  MdInventory2,
   MdOutlineEditOff,
   MdPayments,
   MdAttachMoney,
@@ -52,7 +53,7 @@ const MODULE_GROUPS = {
   "Community & Property": ["resident", "property", "parking_slots", "flat_history", "tenant_management"],
   "Finance & Operations": ["manage_bills", "payments", "expenses", "general_ledger", "financial_audit_log", "maintenance", "accounting", "accountant", "amenities"],
   "Communication & Support": ["notice", "complaints", "emergency"],
-  "Security & Logs": ["guard", "visitor_logs"],
+  "Security & Logs": ["guard", "visitor_logs", "parcel"],
   "Reports & Documents": ["reports", "society_documents"],
 };
 
@@ -65,6 +66,7 @@ const MODULE_META = {
   tenant_management: { label: "Tenant Management", icon: MdOutlinePersonAdd, desc: "Review, approve, and manage tenant move-in applications" },
   guard: { label: "Guards", icon: MdOutlineLocalPolice, desc: "Guard accounts, daily rosters, and shift schedules" },
   visitor_logs: { label: "Visitor Logs", icon: MdOutlineBadge, desc: "Gate check-ins, deliveries, guest activity, and entries" },
+  parcel: { label: "Parcels", icon: MdInventory2, desc: "Read-only oversight of society parcel records and gate handovers" },
   notice: { label: "Notices", icon: MdCampaign, desc: "Broadcast, draft, view, and publish society-wide circulars" },
   complaints: { label: "Complaints", icon: MdReportProblem, desc: "Track, discuss, and update maintenance issue tickets" },
   accountant: { label: "Accountant", icon: MdAccountBalance, desc: "Appoint and manage assigned society accountants" },
@@ -83,8 +85,8 @@ const MODULE_META = {
 };
 
 const ROLE_TABS = [
-  { key: "COMMITTEE_MEMBER", label: "Committee Member", icon: FaUserTie, color: "var(--accent, #a05aff)" },
-  { key: "ACCOUNTANT", label: "Accountant", icon: FaCalculator, color: "var(--accent, #a05aff)" },
+  { key: "COMMITTEE_MEMBER", label: "Committee Member", icon: FaUserTie, color: "var(--accent)" },
+  { key: "ACCOUNTANT", label: "Accountant", icon: FaCalculator, color: "var(--accent)" },
 ];
 
 const ROLE_TAB_ITEMS = [
@@ -433,7 +435,7 @@ export default function RolePermissions({ embedded = false }) {
 
           <div className="set-rp__head-right">
             <span className="set-rp__role">
-              <span className="set-rp__role-ic" style={{ background: "var(--accent, #a05aff)" }}>
+              <span className="set-rp__role-ic" style={{ background: "var(--accent)" }}>
                 {selectedRoleMeta?.icon ? <selectedRoleMeta.icon size={12} /> : <FaShieldAlt size={12} />}
               </span>
               <span>{selectedRoleMeta?.label || selectedRole}</span>
@@ -741,7 +743,7 @@ export default function RolePermissions({ embedded = false }) {
             <div
               className="p-6 rounded-2xl w-[92%] max-w-md animate-scaleIn"
               style={{
-                background: "var(--modal-bg, var(--card-bg, #1e293b))",
+                background: "var(--modal-bg)",
                 border: "1.5px solid var(--glass-border)",
                 boxShadow: "0 20px 40px -15px rgba(0,0,0,0.6)",
                 color: "var(--text-primary)",

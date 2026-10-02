@@ -334,7 +334,7 @@ export default function Select({
                       background: isSel
                         ? "var(--accent-soft)"
                         : isHl
-                        ? "var(--row-hover, rgba(255,255,255,0.08))"
+                        ? "var(--row-hover)"
                           : "transparent",
                       color: isSel ? "var(--accent)" : isHl ? "var(--text-primary)" : "var(--text-secondary)",
                       fontWeight: isSel ? 600 : 400,

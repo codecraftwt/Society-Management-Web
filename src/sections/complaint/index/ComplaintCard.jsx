@@ -104,12 +104,12 @@ function ComplaintRowMenu({ c, updatingId, unread, commentCount, onView, onMessa
 /* ── Mobile card ─────────────────────────────────────────────────────────────── */
 export default function MobileComplaintCard({ c, updateStatus, updatingId, t, onOpen, onPhotoClick, unreadMap, commentCount }) {
   const hasUnread = (unreadMap[c.id] || 0) > 0;
-  const attachmentUrl = c.photo_url || c.attachment_url || c.attachment;
+  const societyName = c.Society?.name || c.society_name;
 
   return (
     <div
       onClick={() => onOpen(c, "details")}
-      className={`${styles.mcard} group cursor-pointer transition-all duration-200 hover:shadow-lg hover:border-purple-500/40`}
+      className={`${styles.mcard} group cursor-pointer transition-all duration-200 hover:shadow-xl hover:border-purple-500/50`}
       style={{
         background: "var(--card-bg)",
         border: "1px solid var(--glass-border)",
@@ -119,160 +119,136 @@ export default function MobileComplaintCard({ c, updateStatus, updatingId, t, on
         flexDirection: "column",
         justifyContent: "space-between",
         minHeight: "100%",
+        boxShadow: "0 4px 20px rgba(0, 0, 0, 0.08)",
       }}
     >
       <div className={styles.mcardBody} style={{ padding: "18px", display: "flex", flexDirection: "column", gap: "14px" }}>
         {/* Top: Avatar/Icon + Title + Status Pill */}
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "12px" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "10px", flex: 1, minWidth: 0 }}>
+          <div style={{ display: "flex", alignItems: "flex-start", gap: "12px", flex: 1, minWidth: 0 }}>
             <div
               style={{
-                width: "38px",
-                height: "38px",
+                width: "40px",
+                height: "40px",
                 borderRadius: "12px",
-                background: "linear-gradient(135deg, rgba(160, 90, 255, 0.18), rgba(160, 90, 255, 0.08))",
-                color: "var(--accent, #6B46C1)",
-                border: "1.5px solid rgba(160, 90, 255, 0.28)",
+                background: "linear-gradient(135deg, rgba(239, 68, 68, 0.16), rgba(249, 115, 22, 0.12))",
+                color: "#f87171",
+                border: "1.5px solid rgba(239, 68, 68, 0.3)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
                 flexShrink: 0,
-                boxShadow: "0 2px 8px rgba(160, 90, 255, 0.15)",
+                marginTop: "2px",
+                boxShadow: "0 2px 8px rgba(239, 68, 68, 0.15)",
               }}
             >
               <MdReportProblem size={20} />
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <p
+              <h3
                 style={{
-                  fontSize: "0.95rem",
+                  fontSize: "1rem",
                   fontWeight: 700,
                   color: "var(--text-primary)",
                   margin: 0,
-                  lineHeight: 1.3,
-                  whiteSpace: "nowrap",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
+                  lineHeight: 1.4,
+                  wordBreak: "break-word",
+                  overflowWrap: "anywhere",
                 }}
               >
                 {c.title}
-              </p>
-              <div style={{ display: "flex", alignItems: "center", gap: "6px", marginTop: "3px" }}>
-                <span style={{ fontSize: "11px", color: "var(--text-secondary)", display: "flex", alignItems: "center", gap: "3px" }}>
-                  <MdCalendarToday size={11} style={{ opacity: 0.7 }} /> {formatDate(c.created_at)}
+              </h3>
+              <div style={{ display: "flex", alignItems: "center", gap: "6px", marginTop: "6px" }}>
+                <span
+                  style={{
+                    fontSize: "11px",
+                    fontWeight: 600,
+                    color: "#94a3b8",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "4px",
+                    padding: "2px 8px",
+                    borderRadius: "6px",
+                    background: "rgba(148, 163, 184, 0.1)",
+                    border: "1px solid rgba(148, 163, 184, 0.18)",
+                  }}
+                >
+                  <MdCalendarToday size={11} style={{ opacity: 0.85 }} /> {formatDate(c.created_at)}
                 </span>
               </div>
             </div>
           </div>
-          <StatusPill status={c.status} t={t} />
+          <div style={{ flexShrink: 0 }}>
+            <StatusPill status={c.status} t={t} />
+          </div>
         </div>
 
-        {/* Attachment Button FIRST */}
-        {attachmentUrl && (
-          <div style={{ display: "flex", alignItems: "center", marginTop: "2px" }}>
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onPhotoClick(attachmentUrl, c.title);
-              }}
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "6px",
-                padding: "6px 12px",
-                borderRadius: "8px",
-                fontSize: "12px",
-                fontWeight: 600,
-                background: "rgba(160, 90, 255, 0.12)",
-                border: "1px solid rgba(160, 90, 255, 0.28)",
-                color: "var(--accent, #6B46C1)",
-                cursor: "pointer",
-                transition: "all 0.15s ease",
-              }}
-            >
-              <MdAttachFile size={15} />
-              <span>{t("viewAttachment", "View Attachment")}</span>
-              <MdOpenInNew size={13} style={{ opacity: 0.8 }} />
-            </button>
-          </div>
-        )}
-
-        {/* Description */}
-        {c.description && (
-          <p
-            style={{
-              fontSize: "0.83rem",
-              color: "var(--text-secondary)",
-              lineHeight: 1.5,
-              margin: 0,
-              display: "-webkit-box",
-              WebkitLineClamp: 2,
-              WebkitBoxOrient: "vertical",
-              overflow: "hidden",
-            }}
-          >
-            {c.description}
-          </p>
-        )}
-
-        {/* Resident & Flat Chips */}
-        <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", alignItems: "center" }}>
-          <span
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "5px",
-              padding: "4px 9px",
-              borderRadius: "8px",
-              background: "rgba(160, 90, 255, 0.08)",
-              border: "1px solid rgba(160, 90, 255, 0.18)",
-              color: "var(--text-primary)",
-              fontWeight: 600,
-              fontSize: "11.5px",
-            }}
-          >
-            <MdPerson size={13} style={{ color: "var(--accent)" }} />
-            <span className="truncate" style={{ maxWidth: "120px" }}>{c.User?.name || "Anonymous"}</span>
-          </span>
-
-          <span
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "5px",
-              padding: "4px 9px",
-              borderRadius: "8px",
-              background: "var(--card-inner-bg)",
-              border: "1px solid var(--glass-border)",
-              color: "var(--text-secondary)",
-              fontWeight: 500,
-              fontSize: "11.5px",
-            }}
-          >
-            <MdApartment size={13} style={{ color: "var(--accent)" }} />
-            <span className="truncate" style={{ maxWidth: "140px" }}>{flatLabel(c, t)}</span>
-          </span>
-
-          {c.Society && (
+        {/* Distinct Colorful Badges: Society, Resident, Flat */}
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", alignItems: "center" }}>
+          {/* Highlighted Society Badge */}
+          {societyName && (
             <span
               style={{
                 display: "inline-flex",
                 alignItems: "center",
-                gap: "5px",
-                padding: "4px 9px",
+                gap: "6px",
+                padding: "4px 10px",
                 borderRadius: "8px",
-                background: "var(--card-inner-bg)",
-                border: "1px solid var(--glass-border)",
-                color: "var(--text-secondary)",
-                fontWeight: 500,
-                fontSize: "11.5px",
+                background: "linear-gradient(135deg, rgba(168, 85, 247, 0.18), rgba(139, 92, 246, 0.12))",
+                border: "1px solid rgba(168, 85, 247, 0.38)",
+                color: "#c084fc",
+                fontWeight: 700,
+                fontSize: "12px",
+                boxShadow: "0 2px 6px rgba(168, 85, 247, 0.12)",
               }}
             >
-              <MdPublic size={12} />
-              <span className="truncate" style={{ maxWidth: "110px" }}>{c.Society.name}</span>
+              <MdApartment size={14} style={{ color: "#c084fc" }} />
+              <span>{societyName}</span>
             </span>
           )}
+
+          {/* Resident Badge (Emerald / Cyan) */}
+          <span
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "5px",
+              padding: "4px 10px",
+              borderRadius: "8px",
+              background: "linear-gradient(135deg, rgba(16, 185, 129, 0.16), rgba(5, 150, 105, 0.1))",
+              border: "1px solid rgba(16, 185, 129, 0.35)",
+              color: "#34d399",
+              fontWeight: 600,
+              fontSize: "12px",
+              boxShadow: "0 2px 6px rgba(16, 185, 129, 0.1)",
+            }}
+          >
+            <MdPerson size={14} style={{ color: "#34d399" }} />
+            <span>
+              {c.User?.name || "Anonymous"}
+              {c.User?.resident_type ? ` (${c.User.resident_type})` : ""}
+            </span>
+          </span>
+
+          {/* Flat Badge (Amber / Warm Gold) */}
+          <span
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "5px",
+              padding: "4px 10px",
+              borderRadius: "8px",
+              background: "linear-gradient(135deg, rgba(245, 158, 11, 0.16), rgba(217, 119, 6, 0.1))",
+              border: "1px solid rgba(245, 158, 11, 0.35)",
+              color: "#fbbf24",
+              fontWeight: 600,
+              fontSize: "12px",
+              boxShadow: "0 2px 6px rgba(245, 158, 11, 0.1)",
+            }}
+          >
+            <MdApartment size={14} style={{ color: "#fbbf24" }} />
+            <span>{flatLabel(c, t)}</span>
+          </span>
         </div>
       </div>
 

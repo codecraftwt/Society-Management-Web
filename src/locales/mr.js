@@ -2092,6 +2092,7 @@ const mr = {
   adminMenuManageBills:   "बिल व्यवस्थापन",
   adminMenuAmenities:     "सुविधा",
   adminMenuVisitorLogs:   "अतिथी लॉग",
+  adminMenuParcels:       "पार्सल",
   adminMenuReports:       "अहवाल",
   adminMenuDocument:      "दस्तऐवज",
   adminMenuFlatHistory:   "फ्लॅट इतिहास",
@@ -2102,6 +2103,7 @@ const mr = {
   adminMenuPayments:      "देयके आणि वसुली",
   guardMenuHelp:          "मदत आणि संपर्क",
   saMenuSOS:              "SOS",
+  saMenuParcels:          "पार्सल",
   saMenuAccounting:       "खाते व्यवस्थापन",
   saMenuPayments:         "देयके",
 

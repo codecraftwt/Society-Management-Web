@@ -10,6 +10,10 @@ import {
   MdEdit,
   MdDelete,
   MdOutlineArticle,
+  MdApartment,
+  MdPerson,
+  MdPublic,
+  MdHome,
 } from "react-icons/md";
 
 import Select from "../../../components/common/Select";
@@ -61,7 +65,7 @@ export default function Index({
               height: 44,
               borderRadius: 14,
               flexShrink: 0,
-              background: "linear-gradient(135deg, var(--accent), #9e58ff)",
+              background: "linear-gradient(135deg, var(--accent), var(--accent-light))",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -102,7 +106,7 @@ export default function Index({
               }}
               style={{ height: 40, fontSize: 13, minWidth: 190, maxWidth: 220, borderRadius: "10px" }}
             >
-              <option value="ALL">{t("allSocietiesGlobalView")}</option>
+              <option value="ALL">{t("allSocietiesGlobalView") || "All Societies (Global View)"}</option>
               {societiesList.map((s) => (
                 <option key={s.id} value={s.id}>
                   {s.name}
@@ -137,8 +141,8 @@ export default function Index({
               className="animate-pulse"
               style={{
                 borderRadius: 16,
-                border: "1px solid var(--glass-border, rgba(255, 255, 255, 0.08))",
-                background: "var(--card-bg, #111827)",
+                border: "1px solid var(--glass-border)",
+                background: "var(--card-bg)",
                 padding: 20,
                 minHeight: 180,
                 display: "flex",
@@ -163,8 +167,8 @@ export default function Index({
         <div
           style={{
             borderRadius: 16,
-            border: "1px dashed var(--glass-border, rgba(255, 255, 255, 0.12))",
-            background: "var(--card-bg, #111827)",
+            border: "1px dashed var(--glass-border)",
+            background: "var(--card-bg)",
             padding: "48px 24px",
             textAlign: "center",
             display: "flex",
@@ -180,7 +184,7 @@ export default function Index({
               height: 56,
               borderRadius: 16,
               background: "rgba(160, 90, 255, 0.1)",
-              color: "var(--accent, #3b82f6)",
+              color: "var(--accent)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -217,13 +221,25 @@ export default function Index({
                 n.Society?.name ||
                 societiesList.find((s) => String(s.id) === String(n.society_id))?.name;
 
+              const creatorName = n.created_by_name || n.creator?.name || n.User?.name;
+              const roleLabel =
+                n.created_by_role === "COMMITTEE_MEMBER"
+                  ? (t("noticeRoleCommittee", "Committee") || "Committee")
+                  : n.created_by_role === "SUPER_ADMIN"
+                  ? "Super Admin"
+                  : n.created_by_role === "SOCIETY_ADMIN"
+                  ? (t("noticeRoleAdmin", "Admin") || "Admin")
+                  : n.created_by_role
+                  ? n.created_by_role.replace(/_/g, " ")
+                  : "";
+
               return (
                 <div
                   key={n.id}
                   style={{
                     borderRadius: 16,
-                    border: "1px solid var(--glass-border, rgba(255, 255, 255, 0.08))",
-                    background: "var(--card-bg, #111827)",
+                    border: "1px solid var(--glass-border)",
+                    background: "var(--card-bg)",
                     padding: 20,
                     display: "flex",
                     flexDirection: "column",
@@ -244,7 +260,7 @@ export default function Index({
                           height: 40,
                           borderRadius: 12,
                           background: "rgba(160, 90, 255, 0.12)",
-                          color: "var(--accent, #3b82f6)",
+                          color: "var(--accent)",
                           border: "1px solid rgba(160, 90, 255, 0.2)",
                           display: "flex",
                           alignItems: "center",
@@ -257,11 +273,13 @@ export default function Index({
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <h3
                           style={{
-                            fontSize: "0.95rem",
+                            fontSize: "1rem",
                             fontWeight: 700,
                             color: "var(--text-primary)",
                             margin: 0,
-                            lineHeight: 1.3,
+                            lineHeight: 1.4,
+                            wordBreak: "break-word",
+                            overflowWrap: "anywhere",
                           }}
                         >
                           {n.title}
@@ -271,65 +289,41 @@ export default function Index({
                             display: "flex",
                             alignItems: "center",
                             gap: 6,
-                            marginTop: 4,
+                            marginTop: 6,
                             flexWrap: "wrap",
                           }}
                         >
-                          <div
+                          <span
                             style={{
+                              fontSize: "11px",
+                              fontWeight: 600,
+                              color: "#94a3b8",
                               display: "inline-flex",
                               alignItems: "center",
-                              gap: 4,
-                              fontSize: "0.75rem",
-                              color: "var(--text-secondary)",
+                              gap: "4px",
+                              padding: "2px 8px",
+                              borderRadius: "6px",
+                              background: "rgba(148, 163, 184, 0.1)",
+                              border: "1px solid rgba(148, 163, 184, 0.18)",
                             }}
                           >
-                            <MdSchedule size={13} style={{ opacity: 0.7 }} />
+                            <MdSchedule size={12} style={{ opacity: 0.85 }} />
                             <span>{fmtDate(n.created_at)}</span>
-                          </div>
-
-                          {n.created_by_name && (
-                            <span
-                              style={{
-                                fontSize: "0.7rem",
-                                fontWeight: 600,
-                                padding: "2px 8px",
-                                borderRadius: 6,
-                                background: "rgba(59, 130, 246, 0.12)",
-                                color: "#60a5fa",
-                                border: "1px solid rgba(59, 130, 246, 0.25)",
-                              }}
-                            >
-                              {t("noticeBy", "By: {name} ({role})", { name: n.created_by_name, role: n.created_by_role === "COMMITTEE_MEMBER" ? t("noticeRoleCommittee", "Committee") : t("noticeRoleAdmin", "Admin") })}
-                            </span>
-                          )}
-
-                          {socName && (
-                            <span
-                              style={{
-                                fontSize: "0.7rem",
-                                fontWeight: 600,
-                                padding: "2px 8px",
-                                borderRadius: 6,
-                                background: "rgba(99, 102, 241, 0.12)",
-                                color: "#818cf8",
-                                border: "1px solid rgba(99, 102, 241, 0.25)",
-                              }}
-                            >
-                              {socName}
-                            </span>
-                          )}
+                          </span>
 
                           {n.acknowledgement_required && (
                             <span
                               style={{
-                                fontSize: "0.7rem",
+                                fontSize: "11px",
                                 fontWeight: 700,
                                 padding: "2px 8px",
                                 borderRadius: 6,
-                                background: "rgba(16, 185, 129, 0.12)",
-                                color: "#10b981",
-                                border: "1px solid rgba(16, 185, 129, 0.25)",
+                                background: "rgba(239, 68, 68, 0.12)",
+                                color: "#f87171",
+                                border: "1px solid rgba(239, 68, 68, 0.28)",
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: "3px",
                               }}
                             >
                               {t("noticeAckBadge", "ACK REQUIRED")}
@@ -338,6 +332,98 @@ export default function Index({
                         </div>
                       </div>
                     </div>
+
+                    {/* Highlighted Audience, Society & Creator Badges with Distinct Colors */}
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", alignItems: "center", marginBottom: 12 }}>
+                      {/* Audience Badge */}
+                      {n.target_type === "FLAT" ? (
+                        <span
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "6px",
+                            fontSize: "12px",
+                            fontWeight: 700,
+                            padding: "4px 10px",
+                            borderRadius: "8px",
+                            background: "linear-gradient(135deg, rgba(16, 185, 129, 0.18), rgba(5, 150, 105, 0.12))",
+                            color: "#34d399",
+                            border: "1px solid rgba(16, 185, 129, 0.38)",
+                            boxShadow: "0 2px 6px rgba(16, 185, 129, 0.12)",
+                          }}
+                        >
+                          <MdHome size={14} style={{ color: "#34d399" }} />
+                          <span>
+                            {n.targetFlat
+                              ? `Flat: ${n.targetFlat.Floor?.Block?.name || n.targetFlat.Block?.name ? `${n.targetFlat.Floor?.Block?.name || n.targetFlat.Block?.name} - ` : ""}${n.targetFlat.flat_number}`
+                              : t("noticeTargetFlat", "Specific Flat")}
+                          </span>
+                        </span>
+                      ) : (
+                        <span
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "6px",
+                            fontSize: "12px",
+                            fontWeight: 600,
+                            padding: "4px 10px",
+                            borderRadius: "8px",
+                            background: "linear-gradient(135deg, rgba(168, 85, 247, 0.14), rgba(139, 92, 246, 0.08))",
+                            color: "#c084fc",
+                            border: "1px solid rgba(168, 85, 247, 0.3)",
+                          }}
+                        >
+                          <MdPublic size={14} style={{ color: "#c084fc" }} />
+                          <span>{t("noticeEntireSociety", "Entire Society")}</span>
+                        </span>
+                      )}
+
+                      {socName && (
+                        <span
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "6px",
+                            fontSize: "12px",
+                            fontWeight: 700,
+                            padding: "4px 10px",
+                            borderRadius: "8px",
+                            background: "linear-gradient(135deg, rgba(168, 85, 247, 0.18), rgba(139, 92, 246, 0.12))",
+                            color: "#c084fc",
+                            border: "1px solid rgba(168, 85, 247, 0.38)",
+                            boxShadow: "0 2px 6px rgba(168, 85, 247, 0.12)",
+                          }}
+                        >
+                          <MdApartment size={14} style={{ color: "#c084fc" }} />
+                          <span>{socName}</span>
+                        </span>
+                      )}
+
+                      {creatorName && (
+                        <span
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "6px",
+                            fontSize: "12px",
+                            fontWeight: 600,
+                            padding: "4px 10px",
+                            borderRadius: "8px",
+                            background: "linear-gradient(135deg, rgba(56, 189, 248, 0.16), rgba(14, 165, 233, 0.1))",
+                            color: "#38bdf8",
+                            border: "1px solid rgba(56, 189, 248, 0.35)",
+                            boxShadow: "0 2px 6px rgba(56, 189, 248, 0.12)",
+                          }}
+                        >
+                          <MdPerson size={14} style={{ color: "#38bdf8" }} />
+                          <span>
+                            {t("noticeBy", "By: {name}", { name: creatorName })}{roleLabel ? ` (${roleLabel})` : ""}
+                          </span>
+                        </span>
+                      )}
+                    </div>
+
 
                     {/* Notice Description with Read More */}
                     <div style={{ marginTop: 2 }}>
@@ -356,7 +442,7 @@ export default function Index({
                             type="button"
                             onClick={() => onReadMore(n)}
                             style={{
-                              color: "var(--accent, #a855f7)",
+                              color: "var(--accent)",
                               background: "none",
                               border: "none",
                               padding: 0,
@@ -397,7 +483,7 @@ export default function Index({
                             gap: 6,
                             fontSize: "0.78rem",
                             fontWeight: 600,
-                            color: "var(--accent, #a855f7)",
+                            color: "var(--accent)",
                             background: "rgba(168, 85, 247, 0.12)",
                             border: "1px solid rgba(168, 85, 247, 0.28)",
                             padding: "4px 10px",

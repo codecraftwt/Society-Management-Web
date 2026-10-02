@@ -25,22 +25,28 @@ import {
   MdVpnKey,
   MdWarningAmber,
   MdInfoOutline,
+  MdPalette,
+  MdRefresh,
 } from "react-icons/md";
 import API from "../../services/api";
 import { useLang } from "../../context/LanguageContext";
 import { useAuthContext } from "../../context/AuthContext";
+import { useTheme } from "../../context/ThemeContext";
+import { isValidHexColor } from "../../utils/themeUtils";
 import RolePermissions from "./RolePermissions";
 import ProfilePictureUploader from "../../components/common/ProfilePictureUploader";
 import UserAvatar from "../../components/common/UserAvatar";
 import GlobalModal from "../../components/common/GlobalModal";
 import GlobalConfirmDialog from "../../components/common/GlobalConfirmDialog";
+import GlobalButton from "../../components/common/GlobalButton";
+import ThemeBrandingEditor from "../../components/common/ThemeBrandingEditor";
 import "./AdminSetting.css";
 
 /* ── helpers ─────────────────────────────────────────────────────────────── */
 
 const PHONE_RE = /^[+\d][\d\s()-]{5,19}$/;
 const MAX_BYTES = 5 * 1024 * 1024;
-const SECTIONS = ["profile", "password", "roles"];
+const SECTIONS = ["profile", "password", "roles", "theme"];
 const ACCEPTED_TYPES = [
   "image/jpeg",
   "image/png",
@@ -134,6 +140,66 @@ export default function AdminSetting() {
   const [loading, setLoading] = useState(true);
 
   const [me, setMe] = useState(null);
+
+  const { societyTheme, applySocietyTheme, resetSocietyTheme } = useTheme();
+  const isSocietyAdmin = userRole === "SOCIETY_ADMIN" || (isAdminOrSocietyAdmin && !!(me?.society_id || user?.society_id));
+  const activeSocietyId = me?.society_id || user?.society_id;
+
+  const [themePrimary, setThemePrimary] = useState(societyTheme?.primary || "#a05aff");
+  const [themeAccent, setThemeAccent] = useState(societyTheme?.accent || "#9e58ff");
+  const [themeSaveLoading, setThemeSaveLoading] = useState(false);
+  const [themeResetLoading, setThemeResetLoading] = useState(false);
+
+  useEffect(() => {
+    if (societyTheme?.configured) {
+      if (societyTheme.primary) setThemePrimary(societyTheme.primary);
+      if (societyTheme.accent) setThemeAccent(societyTheme.accent);
+    }
+  }, [societyTheme]);
+
+  const submitSocietyTheme = async () => {
+    if (!activeSocietyId) {
+      toast.error(t("asErrNoSociety", "Society context not found"));
+      return;
+    }
+    if (!isValidHexColor(themePrimary)) {
+      toast.error(t("asErrThemePrimary", "Please choose a valid primary brand color"));
+      return;
+    }
+    if (themeAccent && !isValidHexColor(themeAccent)) {
+      toast.error(t("asErrThemeAccent", "Please choose a valid secondary/accent color"));
+      return;
+    }
+    try {
+      setThemeSaveLoading(true);
+      await API.put(`/societies/${activeSocietyId}/theme`, {
+        primary: themePrimary,
+        accent: themeAccent || themePrimary,
+      });
+      applySocietyTheme({ primary: themePrimary, accent: themeAccent || themePrimary });
+      toast.success(t("asToastThemeSaved", "Society branding updated successfully!"));
+    } catch (err) {
+      toast.error(err.response?.data?.message || t("asErrThemeSave", "Failed to update society branding"));
+    } finally {
+      setThemeSaveLoading(false);
+    }
+  };
+
+  const handleResetSocietyTheme = async () => {
+    if (!activeSocietyId) return;
+    try {
+      setThemeResetLoading(true);
+      await API.post(`/societies/${activeSocietyId}/theme/reset`);
+      resetSocietyTheme();
+      setThemePrimary("#a05aff");
+      setThemeAccent("#9e58ff");
+      toast.success(t("asToastThemeReset", "Theme reset to system default"));
+    } catch (err) {
+      toast.error(err.response?.data?.message || t("asErrThemeReset", "Failed to reset society theme"));
+    } finally {
+      setThemeResetLoading(false);
+    }
+  };
 
   /* `loading` starts true, so the effect never needs a synchronous setState —
      the first update lands after the request settles. */
@@ -515,6 +581,51 @@ export default function AdminSetting() {
                 <span className="set-card__status set-card__status--violet">
                   <span className="set-card__status-dot" aria-hidden="true" />
                   {roleLabel}
+                </span>
+              )}
+            </span>
+          </button>
+        )}
+
+        {/* Theme & Branding — role-gated to society admins with a society context */}
+        {isSocietyAdmin && activeSocietyId && (
+          <button type="button" className="set-card set-card--theme" onClick={() => openSection("theme")}>
+            <span className="set-card__top">
+              <span className="set-card__icon" aria-hidden="true">
+                <MdPalette size={21} />
+              </span>
+            </span>
+
+            <span className="set-card__meta">
+              <span className="set-card__meta-dot" aria-hidden="true" />
+              {t("asCardThemeMeta", "Appearance & Brand")}
+            </span>
+            <span className="set-card__title">{t("asThemeTab", "Theme & Branding")}</span>
+            <span className="set-card__desc">
+              {t("asCardThemeDesc", "Customize your society brand colors, buttons, badges and visual theme.")}
+            </span>
+
+            <span className="set-card__spacer" />
+            <span className="set-card__foot">
+              <span className="set-card__cta">
+                {t("asCardThemeCta", "Customize Branding")}
+                <MdChevronRight size={15} aria-hidden="true" />
+              </span>
+              {societyLabel && (
+                <span
+                  className="set-card__status"
+                  style={{
+                    color: "var(--accent)",
+                    borderColor: "rgba(var(--accent-rgb, 160, 90, 255), 0.3)",
+                    background: "rgba(var(--accent-rgb, 160, 90, 255), 0.12)",
+                  }}
+                >
+                  <span
+                    className="set-card__status-dot"
+                    style={{ background: "var(--accent)" }}
+                    aria-hidden="true"
+                  />
+                  {societyLabel}
                 </span>
               )}
             </span>
@@ -916,6 +1027,47 @@ export default function AdminSetting() {
     );
   };
 
+  /* ══ Theme & Branding ═══════════════════════════════════════════════ */
+
+  const renderTheme = () => (
+    <div className="set-pf">
+      <div className="set-ws" style={{ padding: "24px" }}>
+        <ThemeBrandingEditor
+          primaryColor={themePrimary}
+          accentColor={themeAccent}
+          onChangePrimary={setThemePrimary}
+          onChangeAccent={setThemeAccent}
+          onApplyPreset={(p) => {
+            setThemePrimary(p.primary);
+            setThemeAccent(p.accent);
+          }}
+          societyName={societyLabel || "Your Society"}
+        />
+
+        <div className="flex items-center justify-between mt-6 pt-5 border-t border-[var(--glass-border)] flex-wrap gap-3">
+          <GlobalButton
+            variant="secondary"
+            icon={MdRefresh}
+            onClick={handleResetSocietyTheme}
+            loading={themeResetLoading}
+            title="Revert to default application theme"
+          >
+            {t("asResetToDefault", "Reset to Society Default")}
+          </GlobalButton>
+
+          <GlobalButton
+            variant="primary"
+            onClick={submitSocietyTheme}
+            loading={themeSaveLoading}
+            disabled={!isValidHexColor(themePrimary) || themeResetLoading}
+          >
+            {t("asSaveThemeBtn", "Apply Brand Colors")}
+          </GlobalButton>
+        </div>
+      </div>
+    </div>
+  );
+
   /* ══ Render ════════════════════════════════════════════════════════════ */
 
   const inSection = view !== "hub";
@@ -935,6 +1087,11 @@ export default function AdminSetting() {
       Icon: MdShield,
       title: t("asRolesTab", "Role & Section Permissions"),
       desc: t("asSectionRolesDesc", "Manage section-level access controls."),
+    },
+    theme: {
+      Icon: MdPalette,
+      title: t("asThemeTab", "Theme & Branding"),
+      desc: t("asSectionThemeDesc", "Configure society-wide custom brand colors and live visual styling."),
     },
   }[view];
 
@@ -995,8 +1152,8 @@ export default function AdminSetting() {
               </span>
             )}
             <div>
-              <h2 className="set-section__title">{sectionHead.title}</h2>
-              <p className="set-section__desc">{sectionHead.desc}</p>
+              <h2 className="set-section__title">{sectionHead?.title}</h2>
+              <p className="set-section__desc">{sectionHead?.desc}</p>
             </div>
           </div>
 
@@ -1007,6 +1164,7 @@ export default function AdminSetting() {
               <RolePermissions embedded />
             </div>
           )}
+          {view === "theme" && isSocietyAdmin && renderTheme()}
         </div>
       ) : (
         renderHub()

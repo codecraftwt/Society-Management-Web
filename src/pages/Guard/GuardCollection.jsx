@@ -23,6 +23,7 @@ import {
 } from "react-icons/md";
 import { toast } from "react-toastify";
 import SlidingTabs from "../../components/common/SlidingTabs";
+import StatCard from "../../components/common/StatCard";
 import ExpandableSearch from "../../components/common/ExpandableSearch";
 import Modal from "../../components/Modal";
 
@@ -304,28 +305,31 @@ const [totalPages, setTotalPages] = useState(1);
         </div>
       </div>
 
-      {/* ── STATS CARDS (Admin Dashboard ad-kpi Style) ── */}
+      {/* ── STATS CARDS (StatCard) ── */}
+      {/* Migrated from .ad-kpi. `mod` named a palette variant and was
+          interpolated into the className; it is now a semantic `tone` chosen
+          from the parcel lifecycle (total / expected / at gate / collected /
+          cancelled). The hardcoded ring-white/40 selected ring and the inline
+          cursor/userSelect styling now come from `selected` and `interactive`,
+          and these cards are real buttons rather than divs with onClick. */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
         {[
-          { key: "ALL", mod: "total", label: t("gcTotalParcels") || "Total parcels", count: counts.ALL },
-          { key: "EXPECTED", mod: "expected", label: t("gcCountExpected") || "Expected", count: counts.EXPECTED },
-          { key: "AT_GATE", mod: "gate", label: t("gcCountAtGate") || "At gate", count: counts.AT_GATE },
-          { key: "COLLECTED", mod: "collected", label: t("gcCountCollected") || "Collected", count: counts.COLLECTED },
-          { key: "CANCELLED", mod: "cancelled", label: t("gcCountCancelled") || "Cancelled", count: counts.CANCELLED },
-        ].map((s) => {
-          const isSelected = tab === s.key;
-          return (
-            <div
-              key={s.key}
-              onClick={() => { setTab(s.key); setPage(1); }}
-              className={`ad-kpi ad-kpi--${s.mod} ${isSelected ? "ring-2 ring-white/40 shadow-md scale-[1.02]" : "hover:opacity-95"}`}
-              style={{ cursor: "pointer", userSelect: "none" }}
-            >
-              <span className="ad-kpi-val">{s.count}</span>
-              <span className="ad-kpi-label">{s.label}</span>
-            </div>
-          );
-        })}
+          { key: "ALL", tone: "brand", label: t("gcTotalParcels") || "Total parcels", count: counts.ALL },
+          { key: "EXPECTED", tone: "info", label: t("gcCountExpected") || "Expected", count: counts.EXPECTED },
+          { key: "AT_GATE", tone: "warning", label: t("gcCountAtGate") || "At gate", count: counts.AT_GATE },
+          { key: "COLLECTED", tone: "success", label: t("gcCountCollected") || "Collected", count: counts.COLLECTED },
+          { key: "CANCELLED", tone: "danger", label: t("gcCountCancelled") || "Cancelled", count: counts.CANCELLED },
+        ].map((s) => (
+          <StatCard
+            key={s.key}
+            tone={s.tone}
+            interactive
+            selected={tab === s.key}
+            onClick={() => { setTab(s.key); setPage(1); }}
+            value={s.count}
+            label={s.label}
+          />
+        ))}
       </div>
 
       {/* ── TOOLBAR: Tabs on left, Search on right ── */}

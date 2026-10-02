@@ -2087,12 +2087,12 @@ html.dark .home-steps-section {
 
 html.dark .home-step-node {
   background-color: #111827;
-  border-color: #2563eb;
+  border-color: var(--accent);
   color: #60a5fa;
 }
 
 html.dark .home-step-item:hover .home-step-node {
-  background-color: #2563eb;
+  background-color: var(--accent);
   color: #ffffff;
 }
 

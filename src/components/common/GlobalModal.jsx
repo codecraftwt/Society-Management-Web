@@ -208,8 +208,8 @@ function ModalShell({
           display: "flex",
           flexDirection: "column",
           borderRadius: 20,
-          background: "var(--modal-bg, var(--card-bg, #0f172a))",
-          border: "1.5px solid var(--glass-border, rgba(255, 255, 255, 0.12))",
+          background: "var(--modal-bg)",
+          border: "1.5px solid var(--glass-border)",
           boxShadow: "0 24px 64px rgba(0, 0, 0, 0.5), 0 0 20px rgba(37, 99, 235, 0.15)",
           overflow: "hidden",
           animation: "adminModalPopIn 0.28s cubic-bezier(0.16, 1, 0.3, 1)",
@@ -301,8 +301,8 @@ function ModalShell({
               width: "min(400px, 100%)",
               borderRadius: 20,
               padding: "26px 24px",
-              background: "var(--modal-bg, var(--card-bg, #0f172a))",
-              border: "1.5px solid var(--glass-border, rgba(255, 255, 255, 0.12))",
+              background: "var(--modal-bg)",
+              border: "1.5px solid var(--glass-border)",
               boxShadow: "0 24px 64px rgba(0, 0, 0, 0.5)",
               textAlign: "center",
             }}
@@ -327,7 +327,7 @@ function ModalShell({
                 margin: 0,
                 fontSize: 17,
                 fontWeight: 800,
-                color: "var(--text-primary, #e2e8f0)",
+                color: "var(--text-primary)",
               }}
             >
               {t("cdTitle", "Discard unsaved changes?")}
@@ -337,7 +337,7 @@ function ModalShell({
                 margin: "8px 0 0",
                 fontSize: 13,
                 lineHeight: 1.6,
-                color: "var(--text-secondary, #94a3b8)",
+                color: "var(--text-secondary)",
               }}
             >
               {t("cdMessage", "You have unsaved changes in this form. If you close now they will be lost.")}
@@ -350,9 +350,9 @@ function ModalShell({
                   flex: 1,
                   height: 42,
                   borderRadius: 12,
-                  border: "1.5px solid var(--glass-border, rgba(255,255,255,0.12))",
+                  border: "1.5px solid var(--glass-border)",
                   background: "transparent",
-                  color: "var(--text-primary, #e2e8f0)",
+                  color: "var(--text-primary)",
                   fontWeight: 700,
                   fontSize: 14,
                   cursor: "pointer",

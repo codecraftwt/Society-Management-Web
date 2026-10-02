@@ -533,7 +533,7 @@ export default function Complaint() {
     flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 5,
     padding: "7px 8px", borderRadius: 8, border: "none", cursor: "pointer",
     fontSize: 12, fontWeight: 600, transition: "all 0.15s",
-    background: drawerTab === key ? "var(--accent,#6B46C1)" : "transparent",
+    background: drawerTab === key ? "var(--accent)" : "transparent",
     color: drawerTab === key ? "#fff" : "var(--text-secondary)",
     boxShadow: drawerTab === key ? "0 2px 8px rgba(107,70,193,0.35)" : "none",
   });
@@ -549,7 +549,7 @@ export default function Complaint() {
               height: 44,
               borderRadius: 14,
               flexShrink: 0,
-              background: "linear-gradient(135deg, var(--accent), #9e58ff)",
+              background: "linear-gradient(135deg, var(--accent), var(--accent-light))",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",

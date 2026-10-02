@@ -6,6 +6,7 @@ import { AuthProvider } from "./context/AuthContext";
 import { ThemeProvider } from "./context/ThemeContext";
 import "./index.css";
 import "./light.css";
+import "./theme/card-tokens.css";
 
 /*
   LanguageProvider is NO LONGER here.

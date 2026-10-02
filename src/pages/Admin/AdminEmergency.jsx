@@ -9,6 +9,7 @@ import Select from "../../components/common/Select";
 import SlidingTabs from "../../components/common/SlidingTabs";
 import ExpandableSearch from "../../components/common/ExpandableSearch";
 import GlobalModal from "../../components/common/GlobalModal";
+import StatCard from "../../components/common/StatCard";
 import SOSModal from "../../components/emergency/SOSModal";
 import {
   MdSecurity,
@@ -305,7 +306,7 @@ export default function AdminEmergency() {
               height: 44,
               borderRadius: 14,
               flexShrink: 0,
-              background: "linear-gradient(135deg, var(--accent), #9e58ff)",
+              background: "linear-gradient(135deg, var(--accent), var(--accent-light))",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -402,32 +403,42 @@ export default function AdminEmergency() {
       </div>
 
       {/* ── 2. KEY METRICS KPI CARDS ── */}
+      {/* Migrated from .ad-kpi in Phase 2 batch 2A. Unlike /admin these
+          descriptions are NOT wrapped in `hidden lg:block`, so they stay
+          visible at every breakpoint. Tones are remapped by meaning: "Active"
+          emergencies become `danger` and "Resolved" becomes `success`. */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="ad-kpi ad-kpi--residents">
-          <span className="ad-kpi-val">{metrics.total}</span>
-          <span className="ad-kpi-label">{t("sosKpiTotalTitle")}</span>
-          <span className="ad-kpi-desc">{t("sosAllEmergencies")}</span>
-        </div>
+        <StatCard
+          variant="sheen"
+          tone="neutral"
+          value={metrics.total}
+          label={t("sosKpiTotalTitle")}
+          description={t("sosAllEmergencies")}
+        />
 
-        <div className="ad-kpi ad-kpi--complaints">
-          <span className="ad-kpi-val">{metrics.active}</span>
-          <span className="ad-kpi-label">{t("sosKpiActiveTitle")}</span>
-          <span className="ad-kpi-desc">
-            {metrics.active > 0 ? t("sosKpiActiveDesc") : t("sosKpiNoActiveDesc")}
-          </span>
-        </div>
+        <StatCard
+          variant="sheen"
+          tone="danger"
+          value={metrics.active}
+          label={t("sosKpiActiveTitle")}
+          description={metrics.active > 0 ? t("sosKpiActiveDesc") : t("sosKpiNoActiveDesc")}
+        />
 
-        <div className="ad-kpi ad-kpi--guards">
-          <span className="ad-kpi-val">{metrics.resolved}</span>
-          <span className="ad-kpi-label">{t("sosKpiResolvedTitle")}</span>
-          <span className="ad-kpi-desc">{t("sosKpiResolvedDesc")}</span>
-        </div>
+        <StatCard
+          variant="sheen"
+          tone="success"
+          value={metrics.resolved}
+          label={t("sosKpiResolvedTitle")}
+          description={t("sosKpiResolvedDesc")}
+        />
 
-        <div className="ad-kpi ad-kpi--flats">
-          <span className="ad-kpi-val">{metrics.totalAcks}</span>
-          <span className="ad-kpi-label">{t("sosKpiAcksTitle")}</span>
-          <span className="ad-kpi-desc">{t("sosKpiAcksDesc")}</span>
-        </div>
+        <StatCard
+          variant="sheen"
+          tone="info"
+          value={metrics.totalAcks}
+          label={t("sosKpiAcksTitle")}
+          description={t("sosKpiAcksDesc")}
+        />
       </div>
 
       {/* ── ALERTS CARDS GRID ── */}
@@ -741,7 +752,7 @@ export default function AdminEmergency() {
                     height: 40,
                     borderRadius: 12,
                     background: "rgba(160, 90, 255, 0.18)",
-                    color: "var(--accent, #a05aff)",
+                    color: "var(--accent)",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",

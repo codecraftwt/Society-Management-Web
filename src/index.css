@@ -1,5 +1,42 @@
+  /* ============================================================================
+   * GLOBAL COLOUR SYSTEM - single source of truth for the Web app.
+   *
+   * Five scopes, resolved by CSS specificity (NOT source order):
+   *
+   *   TIER 1  @theme                 static Tailwind ramp remaps + --color-*
+   *   TIER 2  :root                  public / fallback scope      accent #2563EB
+   *   TIER 3  html.role-theme        authenticated scope          accent #a05aff
+   *   TIER 4  html.light             public light scope           accent #2563EB
+   *   TIER 5  html.light.role-theme  authenticated light          accent #a05aff
+   *
+   * Two intentional brand identities:
+   *   blue   #2563eb  -> public / landing / login / register
+   *   purple #a05aff  -> authenticated panels
+   *
+   * Verified against the production bundle:
+   *   - :root and html.light sit LATER in source than html.role-theme, but
+   *     html.role-theme is (0,1,1) vs :root (0,1,0), so role-theme wins on
+   *     specificity. Authenticated dark mode IS purple. This is intended.
+   *   - Tailwind emits @layer theme/base/utilities; all authored rules here
+   *     are unlayered and therefore beat Tailwind at equal specificity.
+   *
+   * RULES FOR ANY EDIT HERE:
+   *   1. A substitution must resolve to the EXACT same value in the EXACT
+   *      same scope. Value equality alone is not enough (see --accent).
+   *   2. It must also carry the SAME semantic purpose.
+   *   3. If either fails, leave the literal and log it in the exception
+   *      register. Never invent a token to force a match.
+   *   4. Do not add society-* / theme-* / dynamic-* token names. This layer
+   *      is ready for a future runtime theme, but no runtime theme exists.
+   * ========================================================================== */
+
   @import "tailwindcss";
 
+  /* TIER 1 - Tailwind v4 ramp remaps. FROZEN: ~400 utility classes
+     (bg-accent / text-primary / border-primary / bg-orange-500 ...) resolve
+     to these STATIC hexes and deliberately do NOT track var(--accent).
+     Do not repoint --color-accent/--color-primary at var(--accent); that
+     would repaint ~400 usages across the authenticated panels. */
   @theme {
     /* 8-color card/profile palette (client-provided). Tailwind utilities like
        text-blue-400, bg-purple-500/10, border-teal-300 etc. resolve to these
@@ -137,6 +174,13 @@
   }
 
 
+  /* TIER 2 - public / fallback scope. Overridden by TIER 3/4/5 where they
+     apply. Accent here is BLUE (#2563EB); the authenticated scopes in
+     theme/role-theme.css repoint --accent to purple. A blue literal in an
+     authenticated panel is therefore a BUG, not a cleanup target.
+     NOTE: these status tokens are deliberately DIFFERENT from the Tailwind
+     aliases above (--success #2FC27E vs --color-success #24B04D). Both are
+     in use; neither is a duplicate. */
   :root {
     --bg-main:
       radial-gradient(
@@ -274,7 +318,7 @@
 
   /* === LAYOUT === */
   .main-content-layout {
-    margin-left: var(--sidebar-w, 256px);
+    margin-left: var(--sidebar-w);
     transition: margin-left 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     min-width: 0;
     flex: 1;
@@ -593,9 +637,9 @@
     padding: 0.35rem;
     border-radius: 1rem;
     border: 1.5px solid var(--glass-border);
-    background: var(--card-bg, var(--modal-bg, var(--card-inner-bg)));
-    box-shadow: var(--shadow-glass, 0 18px 44px -18px rgba(0, 0, 0, 0.6));
-    backdrop-filter: var(--blur, blur(16px));
+    background: var(--card-bg);
+    box-shadow: var(--shadow-glass);
+    backdrop-filter: var(--blur);
     animation: set-enter 200ms var(--set-ease, ease) both;
   }
   .rsw__menu-head {
@@ -884,11 +928,11 @@
     width: 100%;
   }
   thead {
-    background: var(--card-inner-bg, #24212C);
-    color: var(--text-primary, #FFFFFF);
+    background: var(--card-inner-bg);
+    color: var(--text-primary);
   }
   thead th {
-    color: var(--text-secondary, #E8E5EE);
+    color: var(--text-secondary);
     font-weight: 600;
     font-size: 0.75rem;
     text-transform: uppercase;
@@ -896,8 +940,8 @@
     padding: 0.75rem;
   }
   tbody tr {
-    border-bottom: 1px solid var(--glass-border, rgba(255, 255, 255, 0.06));
-    background: var(--card-bg, transparent);
+    border-bottom: 1px solid var(--glass-border);
+    background: var(--card-bg);
     color: var(--text-primary);
   }
   html:not(.light) tbody tr:nth-child(odd) {
@@ -911,7 +955,7 @@
   }
   tbody td {
     padding: 0.75rem;
-    color: var(--text-primary, #FFFFFF);
+    color: var(--text-primary);
     font-size: 0.875rem;
   }
 
@@ -2822,7 +2866,7 @@
   .data-table tbody tr {
     cursor: pointer;
     transition: background 0.15s;
-    background: var(--card-bg, transparent);
+    background: var(--card-bg);
     color: var(--text-primary);
   }
   html:not(.light) .data-table tbody tr:nth-child(odd) {
@@ -3124,18 +3168,7 @@
     color: var(--text-secondary);
   }
 
-  .complaint-card {
-    background: var(--card-bg);
-    border: 1.5px solid var(--glass-border);
-    border-radius: 18px;
-    overflow: hidden;
-    cursor: pointer;
-    box-shadow: var(--shadow-sm);
-    transition: box-shadow 0.2s;
-  }
-  .complaint-card__body {
-    padding: 14px 16px;
-  }
+
 
   .resident-block {
     background: var(--chip-bg);
@@ -3515,12 +3548,6 @@
       width: 38px;
       height: 38px;
       border-radius: 10px;
-    }
-    .complaint-card {
-      border-radius: 14px;
-    }
-    .complaint-card__body {
-      padding: 12px 14px;
     }
     .filter-strip {
       border-radius: 12px;
@@ -5059,22 +5086,10 @@
   .gd-shift-dates { font-size: 12px; color: #A39EB2; margin: 0; }
   .gd-no-shift    { font-size: 13px; font-weight: 600; color: #93C5FD; }
 
-  .gd-stat-card {
-    background: rgba(2, 6, 23, 0.6);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 16px;
-    padding: 18px 20px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-  }
-  .gd-stat-title { font-size: 12px; font-weight: 600; color: #A39EB2; margin: 0 0 8px; }
-  .gd-stat-val   { font-size: 30px; font-weight: 800; color: #F9F8FA; letter-spacing: -0.04em; line-height: 1; margin: 0; }
-
   @media (max-width: 640px) {
     .gd-welcome-inner { padding: 16px 18px; }
     .gd-welcome-title { font-size: 17px; }
     .gd-shift-card    { padding: 14px 18px; }
-    .gd-stat-card     { padding: 14px 16px; }
-    .gd-stat-val      { font-size: 26px; }
   }
 
   /* ════════════════════════════════════════════════════════
@@ -8036,7 +8051,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: var(--accent-soft, rgba(99,102,241,0.15));
+    background: var(--accent-soft);
     color: var(--accent);
     flex-shrink: 0;
   }
@@ -8161,7 +8176,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: var(--accent-soft, rgba(99,102,241,0.15));
+    background: var(--accent-soft);
     color: var(--accent);
     flex-shrink: 0;
   }
@@ -8377,7 +8392,7 @@ display: flex;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: var(--accent-soft, rgba(99,102,241,0.12));
+    background: var(--accent-soft);
     color: var(--accent);
     flex-shrink: 0;
   }
@@ -8450,7 +8465,7 @@ display: flex;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: var(--accent-soft, rgba(99,102,241,0.15));
+    background: var(--accent-soft);
     color: var(--accent);
     font-weight: 700;
     font-size: 0.85rem;
@@ -8553,7 +8568,7 @@ display: flex;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: var(--accent-soft, rgba(99,102,241,0.15));
+    background: var(--accent-soft);
     color: var(--accent);
     flex-shrink: 0;
   }
@@ -8577,7 +8592,7 @@ display: flex;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: var(--card-inner-bg, rgba(255,255,255,0.05));
+    background: var(--card-inner-bg);
     border: 1px solid var(--glass-border);
     color: var(--text-secondary);
     cursor: pointer;
@@ -8603,7 +8618,7 @@ display: flex;
     border-radius: 9px;
     font-size: 0.82rem;
     font-weight: 500;
-    background: var(--card-inner-bg, rgba(255,255,255,0.05));
+    background: var(--card-inner-bg);
     border: 1px solid var(--glass-border);
     color: var(--text-secondary);
     cursor: pointer;
@@ -8719,7 +8734,7 @@ display: flex;
     padding: 0 14px;
     border-radius: 10px;
     font-size: 0.85rem;
-    background: var(--card-inner-bg, rgba(255,255,255,0.05));
+    background: var(--card-inner-bg);
     border: 1.5px solid var(--glass-border);
     color: var(--text-primary);
     outline: none;
@@ -8768,7 +8783,7 @@ display: flex;
     height: 36px;
     padding: 0 12px;
     border-radius: 9px;
-    background: var(--card-inner-bg, rgba(255,255,255,0.05));
+    background: var(--card-inner-bg);
     border: 1px solid var(--glass-border);
     min-width: 160px;
   }
@@ -8800,7 +8815,7 @@ display: flex;
   .soc-skeleton-row {
     height: 52px;
     border-radius: 10px;
-    background: var(--card-inner-bg, rgba(255,255,255,0.04));
+    background: var(--card-inner-bg);
     animation: sa-pulse 1.5s ease-in-out infinite;
   }
 
@@ -8825,7 +8840,7 @@ display: flex;
     text-transform: uppercase;
     letter-spacing: 0.06em;
     color: var(--text-secondary);
-    background: var(--card-inner-bg, rgba(255,255,255,0.03));
+    background: var(--card-inner-bg);
     text-align: left;
     border-bottom: 1px solid var(--glass-border);
     white-space: nowrap;
@@ -8879,7 +8894,7 @@ display: flex;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: var(--accent-soft, rgba(99,102,241,0.12));
+    background: var(--accent-soft);
     color: var(--accent);
     flex-shrink: 0;
   }
@@ -9161,7 +9176,7 @@ display: flex;
   .pagination-size-label {
     font-size: 12px;
     font-weight: 600;
-    color: var(--text-secondary, #726988);
+    color: var(--text-secondary);
     white-space: nowrap;
   }
 
@@ -9294,8 +9309,8 @@ display: flex;
     min-height: 0;
     width: 100%;
     background:
-      radial-gradient(circle at 20% 20%, var(--accent-soft, rgba(37,99,235,0.06)) 0, transparent 38%),
-      radial-gradient(circle at 85% 70%, var(--accent-soft, rgba(37,99,235,0.06)) 0, transparent 40%),
+      radial-gradient(circle at 20% 20%, var(--accent-soft) 0, transparent 38%),
+      radial-gradient(circle at 85% 70%, var(--accent-soft) 0, transparent 40%),
       var(--card-inner-bg);
   }
 
@@ -9314,7 +9329,7 @@ display: flex;
     font-weight: 700;
     margin-bottom: 3px;
     padding-left: 4px;
-    color: var(--text-tertiary, var(--text-secondary));
+    color: var(--text-tertiary);
   }
   .chat-panel__sender--admin { color: var(--accent); }
 
@@ -9382,7 +9397,7 @@ display: flex;
     padding: 8px 12px;
     overflow-y: auto;
     border-radius: 10px;
-    background: var(--input-bg, var(--card-bg));
+    background: var(--input-bg);
     border: 1px solid var(--glass-border);
     color: var(--text-primary);
     outline: none;
@@ -12411,7 +12426,7 @@ html.light .cpw-tip-row:not(.is-ok) {
   z-index: 300;
   min-width: 235px;
   padding: 5px;
-  border-radius: var(--radius-dropdown, 12px);
+  border-radius: var(--radius-dropdown);
   border: 1px solid var(--glass-border);
   background: var(--card-bg);
   backdrop-filter: var(--blur);
@@ -14294,7 +14309,7 @@ html.light .cpw-tip-row:not(.is-ok) {
 
 .sa-page-title {
   margin: 0;
-  font-family: var(--font-heading, inherit);
+  font-family: var(--font-heading);
   font-size: clamp(1.35rem, 1.1rem + 1vw, 1.8rem);
   font-weight: 700;
   letter-spacing: -0.015em;
@@ -15550,8 +15565,8 @@ select.input {
   border-color: var(--input-border);
 }
 select option {
-  background-color: var(--card-bg, #1B1B22);
-  color: var(--text-primary, #ffffff);
+  background-color: var(--card-bg);
+  color: var(--text-primary);
 }
 html.light select option,
 html.light option {
@@ -15564,7 +15579,7 @@ html:not(.light) option {
   color: #f1f5f9 !important;
 }
 select option:checked {
-  background-color: var(--accent, #3B82F6);
+  background-color: var(--accent);
   color: #fff;
 }
 
@@ -16201,7 +16216,7 @@ select option:checked {
   z-index: 1300;
   min-width: 196px;
   padding: 6px;
-  border-radius: var(--radius-dropdown, 12px);
+  border-radius: var(--radius-dropdown);
   background: var(--card-bg);
   border: 1px solid var(--glass-border);
   box-shadow: 0 14px 40px -12px rgba(0, 0, 0, 0.45);
@@ -17421,14 +17436,14 @@ html.light div[style*="position: fixed"] > div[style*="maxWidth"] {
   border-color: rgba(255, 255, 255, 0.2);
 }
 .ps-vehicle-mode-btn--active-car {
-  background: var(--accent, #8b5cf6) !important;
-  border-color: var(--accent, #8b5cf6) !important;
+  background: var(--accent) !important;
+  border-color: var(--accent) !important;
   color: #ffffff !important;
   box-shadow: 0 4px 12px rgba(var(--acct-purple-rgb, 139, 92, 246), 0.28);
 }
 .ps-vehicle-mode-btn--active-bike {
-  background: var(--accent, #8b5cf6) !important;
-  border-color: var(--accent, #8b5cf6) !important;
+  background: var(--accent) !important;
+  border-color: var(--accent) !important;
   color: #ffffff !important;
   box-shadow: 0 4px 12px rgba(var(--acct-purple-rgb, 139, 92, 246), 0.28);
 }
@@ -17438,8 +17453,8 @@ html.light div[style*="position: fixed"] > div[style*="maxWidth"] {
    ========================================================================== */
 
 .global-table-container {
-  background: var(--card-bg, #111827);
-  border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.08));
+  background: var(--card-bg);
+  border: 1px solid var(--glass-border);
   border-radius: 16px;
   overflow: hidden;
 }
@@ -17451,22 +17466,22 @@ html.light div[style*="position: fixed"] > div[style*="maxWidth"] {
 }
 
 .global-table-th {
-  background: var(--card-inner-bg, rgba(255, 255, 255, 0.03));
-  color: var(--text-tertiary, #94a3b8) !important;
+  background: var(--card-inner-bg);
+  color: var(--text-tertiary) !important;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   font-size: 0.74rem;
-  border-bottom: 1px solid var(--glass-border, rgba(255, 255, 255, 0.08));
+  border-bottom: 1px solid var(--glass-border);
 }
 
 .global-table-td {
-  color: var(--text-primary, #f8fafc) !important;
-  border-bottom: 1px solid var(--glass-border, rgba(255, 255, 255, 0.06));
+  color: var(--text-primary) !important;
+  border-bottom: 1px solid var(--glass-border);
 }
 
 .global-table-row:hover td {
-  background: var(--row-hover, rgba(255, 255, 255, 0.035)) !important;
+  background: var(--row-hover) !important;
 }
 
 .global-btn {
@@ -18015,7 +18030,7 @@ html.light .sel-menu-scroll::-webkit-scrollbar-thumb {
   justify-content: center;
   background: linear-gradient(135deg, rgba(99,102,241,0.22), rgba(99,102,241,0.08));
   border: 1px solid rgba(99,102,241,0.35);
-  color: var(--accent, #818cf8);
+  color: var(--accent);
   flex-shrink: 0;
   box-shadow: 0 6px 18px -8px rgba(99,102,241,0.55);
 }
@@ -18751,7 +18766,7 @@ html.light .as-tab.active {
   border-radius: 10px;
   border: 1px solid var(--border-color, rgba(59, 130, 246, 0.25));
   background: rgba(59, 130, 246, 0.1);
-  color: var(--text-primary, #1e293b);
+  color: var(--text-primary);
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
@@ -18769,7 +18784,7 @@ html.light .as-tab.active {
   width: 100%;
   margin: 0;
   font-size: 11px;
-  color: var(--text-secondary, #64748b);
+  color: var(--text-secondary);
 }
 .pp-uploader__input { display: none; }
 
@@ -18785,7 +18800,7 @@ html.light .as-tab.active {
   margin: 0 0 4px;
   font-size: 14px;
   font-weight: 700;
-  color: var(--text-primary, #1e293b);
+  color: var(--text-primary);
 }
 .gs-avatar {
   width: 72px; height: 72px; border-radius: 18px;

@@ -4,7 +4,7 @@ import { useLang } from "../../context/LanguageContext";
 import { toast } from "react-toastify";
 import API from "../../services/api";
 import {
-  MdAdd, MdApartment, MdHomeWork, MdWarning
+  MdAdd, MdApartment, MdHomeWork, MdWarning, MdPalette, MdRefresh
 } from "react-icons/md";
 import { FaBuilding, FaUserShield } from "react-icons/fa";
 import Select from "../../components/common/Select";
@@ -16,6 +16,8 @@ import GlobalModal from "../../components/common/GlobalModal";
 import GlobalConfirmDialog from "../../components/common/GlobalConfirmDialog";
 import ExpandableSearch from "../../components/common/ExpandableSearch";
 import SlidingTabs from "../../components/common/SlidingTabs";
+import ThemeBrandingEditor from "../../components/common/ThemeBrandingEditor";
+import { isValidHexColor } from "../../utils/themeUtils";
 
 const DEFAULT_PASSWORD = "Admin@123";
 
@@ -53,11 +55,81 @@ export default function Societies() {
   const [isEditMode, setIsEditMode] = useState(false);
   const [saveLoading, setSaveLoading] = useState(false);
 
+  // Theme Customization Modal states
+  const [showThemeModal, setShowThemeModal] = useState(false);
+  const [themeSociety, setThemeSociety] = useState(null);
+  const [primaryColor, setPrimaryColor] = useState("#a05aff");
+  const [accentColor, setAccentColor] = useState("#9e58ff");
+  const [themeLoading, setThemeLoading] = useState(false);
+  const [themeSaveLoading, setThemeSaveLoading] = useState(false);
+  const [themeResetLoading, setThemeResetLoading] = useState(false);
+
   // Delete Confirm Dialog state
   const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, id: null, loading: false });
 
   // Society detail modal state
   const [detailSociety, setDetailSociety] = useState(null);
+
+  const openThemeModal = useCallback(async (s) => {
+    setThemeSociety(s);
+    setShowThemeModal(true);
+    setThemeLoading(true);
+    try {
+      const res = await API.get(`/societies/${s.id}/theme`);
+      if (res.data?.success && res.data.configured) {
+        setPrimaryColor(res.data.theme.primary || "#a05aff");
+        setAccentColor(res.data.theme.accent || "#9e58ff");
+      } else {
+        setPrimaryColor("#a05aff");
+        setAccentColor("#9e58ff");
+      }
+    } catch {
+      setPrimaryColor("#a05aff");
+      setAccentColor("#9e58ff");
+    } finally {
+      setThemeLoading(false);
+    }
+  }, []);
+
+  const saveSocietyTheme = async () => {
+    if (!themeSociety) return;
+    if (!isValidHexColor(primaryColor)) {
+      toast.error("Please enter a valid primary HEX color (e.g. #7c3aed)");
+      return;
+    }
+    if (accentColor && !isValidHexColor(accentColor)) {
+      toast.error("Please enter a valid accent HEX color (e.g. #8b5cf6)");
+      return;
+    }
+    try {
+      setThemeSaveLoading(true);
+      await API.put(`/societies/${themeSociety.id}/theme`, {
+        primary: primaryColor,
+        accent: accentColor || primaryColor,
+      });
+      toast.success(t("saToastThemeSaved", "Society branding saved successfully"));
+      setShowThemeModal(false);
+    } catch (err) {
+      toast.error(err.response?.data?.message || t("saErrSaveTheme", "Failed to save society theme"));
+    } finally {
+      setThemeSaveLoading(false);
+    }
+  };
+
+  const handleResetTheme = async () => {
+    if (!themeSociety) return;
+    try {
+      setThemeResetLoading(true);
+      await API.post(`/societies/${themeSociety.id}/theme/reset`);
+      setPrimaryColor("#a05aff");
+      setAccentColor("#9e58ff");
+      toast.success(t("saToastThemeReset", "Theme reset to system default"));
+    } catch (err) {
+      toast.error(err.response?.data?.message || t("saErrResetTheme", "Failed to reset theme"));
+    } finally {
+      setThemeResetLoading(false);
+    }
+  };
 
   const loadSocieties = useCallback(async () => {
     try {
@@ -173,7 +245,7 @@ export default function Societies() {
               height: 44,
               borderRadius: 14,
               flexShrink: 0,
-              background: "linear-gradient(135deg, var(--accent), #9e58ff)",
+              background: "linear-gradient(135deg, var(--accent), var(--accent-light))",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -315,6 +387,7 @@ export default function Societies() {
                     t={t}
                     onEditAdmin={() => openAdminModal(s)}
                     onManage={() => navigate(`/superadmin/society/${s.id}/blocks`)}
+                    onCustomizeTheme={() => openThemeModal(s)}
                     onDelete={() => setDeleteConfirm({ isOpen: true, id: s.id, loading: false })}
                   />
                 </div>
@@ -385,6 +458,77 @@ export default function Societies() {
               style={{ opacity: 0.6, cursor: "default" }} />
             <p className="sa-hint">{t("saPasswordHint")}</p>
           </div>
+        </div>
+      </GlobalModal>
+
+      {/* ── THEME CUSTOMIZATION MODAL ── */}
+      <GlobalModal
+        isOpen={showThemeModal}
+        onClose={() => setShowThemeModal(false)}
+        title={t("saThemeModalTitle", "Society Branding & Theme")}
+        subtitle={
+          themeSociety
+            ? `${themeSociety.name} · Custom brand color tokens`
+            : t("saThemeModalSub", "Configure society-specific brand palette")
+        }
+        icon={MdPalette}
+        size="lg"
+        showFooter
+        submitLabel={t("saThemeSaveBtn", "Save Theme")}
+        cancelLabel={t("cancel")}
+        onSubmit={saveSocietyTheme}
+        submitLoading={themeSaveLoading}
+        submitDisabled={themeSaveLoading || !isValidHexColor(primaryColor)}
+        footer={
+          <div className="flex items-center justify-between w-full gap-3">
+            <GlobalButton
+              variant="secondary"
+              icon={MdRefresh}
+              onClick={handleResetTheme}
+              loading={themeResetLoading}
+              title="Revert to default application theme"
+            >
+              {t("saResetToDefault", "Reset to Default")}
+            </GlobalButton>
+            <div className="flex items-center gap-2">
+              <GlobalButton
+                variant="secondary"
+                onClick={() => setShowThemeModal(false)}
+                disabled={themeSaveLoading || themeResetLoading}
+              >
+                {t("cancel", "Cancel")}
+              </GlobalButton>
+              <GlobalButton
+                variant="primary"
+                onClick={saveSocietyTheme}
+                loading={themeSaveLoading}
+                disabled={!isValidHexColor(primaryColor) || themeResetLoading}
+              >
+                {t("saSaveTheme", "Save Theme")}
+              </GlobalButton>
+            </div>
+          </div>
+        }
+      >
+        <div className="py-2">
+          {themeLoading ? (
+            <div className="flex flex-col items-center justify-center py-10 gap-2">
+              <div className="w-8 h-8 rounded-full border-2 border-[var(--accent)] border-t-transparent animate-spin" />
+              <p className="text-xs text-secondary">Loading society branding configuration…</p>
+            </div>
+          ) : (
+            <ThemeBrandingEditor
+              primaryColor={primaryColor}
+              accentColor={accentColor}
+              onChangePrimary={setPrimaryColor}
+              onChangeAccent={setAccentColor}
+              onApplyPreset={(p) => {
+                setPrimaryColor(p.primary);
+                setAccentColor(p.accent);
+              }}
+              societyName={themeSociety?.name || "Society"}
+            />
+          )}
         </div>
       </GlobalModal>
 

@@ -100,7 +100,10 @@ export default function DrawerDetail({ selected, t, updateStatus, updatingId, on
         <div className={styles.valueRow}>
           <span className={styles.valueRowIcon}><MdPerson size={17} /></span>
           <div className={styles.valueText}>
-            <div className={styles.valueTitle}>{selected.User?.name || "NA"}</div>
+            <div className={styles.valueTitle}>
+              {selected.User?.name || "NA"}
+              {selected.User?.resident_type ? ` (${selected.User.resident_type})` : ""}
+            </div>
             <div className={styles.valueSub}>{selected.User?.email || ""}</div>
           </div>
         </div>
@@ -160,7 +163,7 @@ export default function DrawerDetail({ selected, t, updateStatus, updatingId, on
                 fontWeight: 600,
                 background: "rgba(160, 90, 255, 0.12)",
                 border: "1px solid rgba(160, 90, 255, 0.3)",
-                color: "var(--accent, #6B46C1)",
+                color: "var(--accent)",
                 cursor: "pointer",
               }}
             >

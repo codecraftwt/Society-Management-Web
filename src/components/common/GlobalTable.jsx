@@ -25,6 +25,8 @@ import { useLang } from "../../context/LanguageContext";
  * - onPageSizeChange: (newSize) => void
  * - onRowClick: (row, index) => void
  * - rowKey: string | ((row, index) => string|number)
+ * - rowClassName: string | ((row, index) => string)
+ * - rowStyle: object | ((row, index) => object)
  * - compact: boolean
  * - className: string
  * - style: object
@@ -46,6 +48,8 @@ export default function GlobalTable({
   onPageSizeChange = null,
   onRowClick = null,
   rowKey = "id",
+  rowClassName = null,
+  rowStyle = null,
   compact = false,
   className = "",
   style = {},
@@ -64,8 +68,8 @@ export default function GlobalTable({
       className={`global-table-container bg-card ${className}`}
       style={{
         borderRadius: 16,
-        border: "1px solid var(--glass-border, rgba(255, 255, 255, 0.08))",
-        background: "var(--card-bg, #111827)",
+        border: "1px solid var(--glass-border)",
+        background: "var(--card-bg)",
         overflow: "hidden",
         boxShadow: "0 4px 20px rgba(0, 0, 0, 0.15)",
         ...style,
@@ -93,8 +97,8 @@ export default function GlobalTable({
           <thead>
             <tr
               style={{
-                background: "var(--card-inner-bg, rgba(255, 255, 255, 0.03))",
-                borderBottom: "1px solid var(--glass-border, rgba(255, 255, 255, 0.08))",
+                background: "var(--card-inner-bg)",
+                borderBottom: "1px solid var(--glass-border)",
               }}
             >
               {columns.map((col, idx) => {
@@ -110,8 +114,8 @@ export default function GlobalTable({
                       fontWeight: 700,
                       letterSpacing: "0.06em",
                       textTransform: "uppercase",
-                      color: "var(--text-tertiary, #94a3b8)",
-                      borderBottom: "1px solid var(--glass-border, rgba(255, 255, 255, 0.08))",
+                      color: "var(--text-tertiary)",
+                      borderBottom: "1px solid var(--glass-border)",
                       whiteSpace: "nowrap",
                       width: col.width,
                     }}
@@ -131,7 +135,7 @@ export default function GlobalTable({
                 <tr
                   key={`skeleton-${rIdx}`}
                   style={{
-                    borderBottom: "1px solid var(--glass-border, rgba(255, 255, 255, 0.05))",
+                    borderBottom: "1px solid var(--glass-border)",
                   }}
                 >
                   {columns.map((col, cIdx) => (
@@ -140,14 +144,14 @@ export default function GlobalTable({
                       className={col.hiddenMobile ? "hidden md:table-cell" : ""}
                       style={{
                         padding: compact ? "12px 14px" : "16px 18px",
-                        borderBottom: "1px solid var(--glass-border, rgba(255, 255, 255, 0.05))",
+                        borderBottom: "1px solid var(--glass-border)",
                       }}
                     >
                       <div
                         style={{
                           height: 14,
                           borderRadius: 6,
-                          background: "var(--card-inner-bg, rgba(255, 255, 255, 0.08))",
+                          background: "var(--card-inner-bg)",
                           animation: "pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite",
                           width: cIdx === 0 ? "35%" : cIdx === 1 ? "80%" : "60%",
                         }}
@@ -180,12 +184,12 @@ export default function GlobalTable({
                         width: 52,
                         height: 52,
                         borderRadius: "50%",
-                        background: "var(--card-inner-bg, rgba(255, 255, 255, 0.04))",
-                        border: "1px solid var(--glass-border, rgba(255, 255, 255, 0.08))",
+                        background: "var(--card-inner-bg)",
+                        border: "1px solid var(--glass-border)",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
-                        color: "var(--text-tertiary, #94a3b8)",
+                        color: "var(--text-tertiary)",
                         opacity: 0.8,
                       }}
                     >
@@ -226,15 +230,18 @@ export default function GlobalTable({
               // Data Rows
               data.map((row, rIdx) => {
                 const isClickable = typeof onRowClick === "function";
+                const customClass = typeof rowClassName === "function" ? rowClassName(row, rIdx) : (rowClassName || "");
+                const customStyle = typeof rowStyle === "function" ? rowStyle(row, rIdx) : (rowStyle || {});
                 return (
                   <tr
                     key={getRowKey(row, rIdx)}
                     onClick={isClickable ? () => onRowClick(row, rIdx) : undefined}
-                    className="global-table-row transition-colors"
+                    className={`global-table-row transition-colors ${customClass}`.trim()}
                     style={{
                       cursor: isClickable ? "pointer" : "default",
-                      borderBottom: "1px solid var(--glass-border, rgba(255, 255, 255, 0.06))",
+                      borderBottom: "1px solid var(--glass-border)",
                       transition: "background 0.15s ease",
+                      ...customStyle,
                     }}
                   >
                     {columns.map((col, cIdx) => {
@@ -253,7 +260,7 @@ export default function GlobalTable({
                             padding: compact ? "10px 14px" : "14px 18px",
                             textAlign: align,
                             color: "var(--text-primary)",
-                            borderBottom: "1px solid var(--glass-border, rgba(255, 255, 255, 0.06))",
+                            borderBottom: "1px solid var(--glass-border)",
                             verticalAlign: "middle",
                           }}
                         >
@@ -280,14 +287,14 @@ export default function GlobalTable({
             flexWrap: "wrap",
             gap: 12,
             padding: "12px 18px",
-            borderTop: "1px solid var(--glass-border, rgba(255, 255, 255, 0.08))",
-            background: "var(--card-inner-bg, rgba(255, 255, 255, 0.02))",
+            borderTop: "1px solid var(--glass-border)",
+            background: "var(--card-inner-bg)",
           }}
         >
           <div
             style={{
               fontSize: "0.8rem",
-              color: "var(--text-secondary, #94a3b8)",
+              color: "var(--text-secondary)",
             }}
           >
             {totalItems != null ? (

@@ -26,7 +26,7 @@ function useIsMobile() {
 function Spinner({ small = false }) {
   const s = small ? 14 : 20;
   return (
-    <svg style={{ color: "var(--accent,#6B46C1)", margin: "0 auto", width: s, height: s }} viewBox="0 0 24 24" fill="none">
+    <svg style={{ color: "var(--accent)", margin: "0 auto", width: s, height: s }} viewBox="0 0 24 24" fill="none">
       <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" style={{ opacity: 0.25 }} />
       <path fill="currentColor" style={{ opacity: 0.75 }} d="M4 12a8 8 0 018-8v8z" />
     </svg>
@@ -65,13 +65,13 @@ function FilterSheet({
   return createPortal(
     <div style={{ position: "fixed", inset: 0, zIndex: 9999, display: "flex", flexDirection: "column", justifyContent: isMobile ? "flex-end" : "center", alignItems: "center", padding: isMobile ? 0 : 20 }}>
       <div onClick={onClose} style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.55)", backdropFilter: "blur(4px)" }} />
-      <div style={{ position: "relative", zIndex: 1, width: "100%", maxWidth: isMobile ? "100%" : 460, background: "var(--modal-bg,var(--card-bg,#2E2A36))", border: "1.5px solid var(--glass-border)", borderRadius: isMobile ? "20px 20px 0 0" : "18px", boxShadow: "0 20px 50px rgba(0,0,0,0.45)", maxHeight: isMobile ? "88vh" : "90vh", overflowY: "auto" }}>
+      <div style={{ position: "relative", zIndex: 1, width: "100%", maxWidth: isMobile ? "100%" : 460, background: "var(--modal-bg)", border: "1.5px solid var(--glass-border)", borderRadius: isMobile ? "20px 20px 0 0" : "18px", boxShadow: "0 20px 50px rgba(0,0,0,0.45)", maxHeight: isMobile ? "88vh" : "90vh", overflowY: "auto" }}>
         {isMobile && <div style={{ display: "flex", justifyContent: "center", padding: "10px 0 6px" }}><div style={{ width: 36, height: 4, borderRadius: 99, background: "var(--glass-border)" }} /></div>}
         <div style={{ padding: "12px 18px", display: "flex", alignItems: "center", gap: 8, borderBottom: "1px solid var(--glass-border)" }}>
-          <MdFilterList size={16} style={{ color: "var(--accent,#6B46C1)" }} />
+          <MdFilterList size={16} style={{ color: "var(--accent)" }} />
           <span style={{ fontSize: 14, fontWeight: 700, color: "var(--text-primary)", flex: 1 }}>{labels.filtersTitle}</span>
-          {applied && <button onClick={() => { onClear(); onClose(); }} style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, fontWeight: 700, color: "var(--accent,#6B46C1)", background: "none", border: "none", cursor: "pointer" }}><MdClose size={13} /> {labels.clear}</button>}
-          <button onClick={onClose} style={{ width: 28, height: 28, borderRadius: 8, background: "var(--card-inner-bg,rgba(255,255,255,0.06))", border: "1px solid var(--glass-border)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "var(--text-secondary)" }}><MdClose size={15} /></button>
+          {applied && <button onClick={() => { onClear(); onClose(); }} style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, fontWeight: 700, color: "var(--accent)", background: "none", border: "none", cursor: "pointer" }}><MdClose size={13} /> {labels.clear}</button>}
+          <button onClick={onClose} style={{ width: 28, height: 28, borderRadius: 8, background: "var(--card-inner-bg)", border: "1px solid var(--glass-border)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "var(--text-secondary)" }}><MdClose size={15} /></button>
         </div>
         <div style={{ padding: "16px 18px", display: "flex", flexDirection: "column", gap: 14 }}>
           <div>

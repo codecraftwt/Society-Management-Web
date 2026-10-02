@@ -215,7 +215,7 @@ export default function ReportFilterSheet({
         position: "relative", zIndex: 1,
         width: "100%",
         maxWidth: isMobile ? "100%" : 460,
-        background: "var(--modal-bg, var(--card-bg, #2E2A36))",
+        background: "var(--modal-bg)",
         border: "1.5px solid var(--glass-border)",
         borderRadius: isMobile ? "20px 20px 0 0" : 20,
         boxShadow: "0 24px 64px rgba(0,0,0,0.45)",
@@ -235,7 +235,7 @@ export default function ReportFilterSheet({
           display: "flex", alignItems: "center", gap: 8,
           borderBottom: "1px solid var(--glass-border)",
         }}>
-          <MdFilterList size={18} style={{ color: "var(--accent,#6B46C1)" }} />
+          <MdFilterList size={18} style={{ color: "var(--accent)" }} />
           <span style={{ fontSize: 14, fontWeight: 700, color: "var(--text-primary)", flex: 1 }}>
             {title}
           </span>
@@ -243,14 +243,14 @@ export default function ReportFilterSheet({
             <button onClick={() => { onClear(); onClose(); }} style={{
               display: "flex", alignItems: "center", gap: 4,
               fontSize: 11, fontWeight: 700,
-              color: "var(--accent,#6B46C1)", background: "none", border: "none", cursor: "pointer",
+              color: "var(--accent)", background: "none", border: "none", cursor: "pointer",
             }}>
               <MdClose size={13} /> {clearBtn}
             </button>
           )}
           <button onClick={requestClose} style={{
             width: 28, height: 28, borderRadius: 8, flexShrink: 0,
-            background: "var(--card-inner-bg, rgba(255,255,255,0.06))",
+            background: "var(--card-inner-bg)",
             border: "1px solid var(--glass-border)",
             display: "flex", alignItems: "center", justifyContent: "center",
             cursor: "pointer", color: "var(--text-secondary)", marginLeft: 2,

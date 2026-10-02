@@ -8,6 +8,7 @@ import {
 import DashboardAnalytics from "../../components/super-admin/DashboardAnalytics";
 import GlobalButton from "../../components/common/GlobalButton";
 import UserAvatar from "../../components/common/UserAvatar";
+import StatCard from "../../components/common/StatCard";
 import { useAuthContext } from "../../context/AuthContext";
 
 export default function SuperAdminDashboard() {
@@ -46,13 +47,13 @@ export default function SuperAdminDashboard() {
     {
       label: t("saStatTotal"),
       value: societies.length,
-      variant: "ad-kpi--residents",
+      tone: "brand",
       desc: t("saDashSocRegist", { count: societies.length }, "{count} societies registered"),
     },
     {
       label: t("saDashStatResidents", "Total Residents"),
       value: liveTotals.totalResidents || "–",
-      variant: "ad-kpi--guards",
+      tone: "info",
       desc: t(
         "saDashStatResidentsDesc",
         { owners: liveTotals.totalOwners || 0, tenants: liveTotals.totalTenants || 0 },
@@ -62,13 +63,13 @@ export default function SuperAdminDashboard() {
     {
       label: t("saStatAssigned"),
       value: totalAssigned,
-      variant: "ad-kpi--complaints",
+      tone: "success",
       desc: t("saDashPendingDesc", { count: totalUnassigned }, "{count} pending assignment"),
     },
     {
       label: t("saDashStatPending", "Pending Config"),
       value: totalUnassigned,
-      variant: "ad-kpi--flats",
+      tone: "warning",
       desc: t("saDashAssignedDesc", { count: totalAssigned }, "{count} societies with active admin"),
     },
   ], [societies, totalAssigned, totalUnassigned, liveTotals, t]);
@@ -102,11 +103,17 @@ export default function SuperAdminDashboard() {
       {/* ── KPI CARDS ── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
         {stats.map((stat) => (
-          <div key={stat.label} className={`ad-kpi ${stat.variant}`}>
-            <span className="ad-kpi-val">{stat.value}</span>
-            <span className="ad-kpi-label">{stat.label}</span>
-            <span className="ad-kpi-desc hidden lg:block">{stat.desc}</span>
-          </div>
+          /* Migrated from .ad-kpi in Phase 2 batch 2A. The variant names were
+             reused across pages with unrelated meanings — ad-kpi--residents is
+             "Total Societies" here — so tones are mapped per page by meaning. */
+          <StatCard
+            key={stat.label}
+            variant="sheen"
+            tone={stat.tone}
+            value={stat.value}
+            label={stat.label}
+            description={<span className="hidden lg:block">{stat.desc}</span>}
+          />
         ))}
       </div>
 

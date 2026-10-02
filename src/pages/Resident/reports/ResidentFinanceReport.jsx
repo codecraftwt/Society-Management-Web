@@ -26,7 +26,7 @@ function useIsMobile() {
 /* ── Spinner ── */
 function Spinner() {
   return (
-    <svg style={{ color: "var(--accent,#6B46C1)", margin: "0 auto", width: 20, height: 20 }} viewBox="0 0 24 24" fill="none">
+    <svg style={{ color: "var(--accent)", margin: "0 auto", width: 20, height: 20 }} viewBox="0 0 24 24" fill="none">
       <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" style={{ opacity: 0.25 }} />
       <path fill="currentColor" style={{ opacity: 0.75 }} d="M4 12a8 8 0 018-8v8z" />
     </svg>
@@ -180,7 +180,7 @@ export default function ResidentFinanceReport() {
       {/* ── HEADER ── */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <button onClick={() => navigate(-1)} style={{ width: 36, height: 36, borderRadius: 10, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", background: "var(--card-inner-bg, rgba(255,255,255,0.06))", border: "1px solid var(--glass-border)", cursor: "pointer", color: "var(--text-secondary)" }}>
+          <button onClick={() => navigate(-1)} style={{ width: 36, height: 36, borderRadius: 10, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", background: "var(--card-inner-bg)", border: "1px solid var(--glass-border)", cursor: "pointer", color: "var(--text-secondary)" }}>
             <MdArrowBack size={17} />
           </button>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -201,7 +201,7 @@ export default function ResidentFinanceReport() {
           <button onClick={handlePDF} className="btn-export" style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 13px", fontSize: 12, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}>
             <MdPictureAsPdf size={14} /> {t("reportPDF")}
           </button>
-          <button onClick={() => setShowFilters(true)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 13px", borderRadius: 10, fontSize: 12, fontWeight: 700, background: applied ? "rgba(107,70,193,0.15)" : "var(--card-inner-bg, rgba(255,255,255,0.06))", color: applied ? "#9F87D7" : "var(--text-secondary)", border: applied ? "1px solid rgba(107,70,193,0.35)" : "1px solid var(--glass-border)", cursor: "pointer", position: "relative", whiteSpace: "nowrap" }}>
+          <button onClick={() => setShowFilters(true)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 13px", borderRadius: 10, fontSize: 12, fontWeight: 700, background: applied ? "rgba(107,70,193,0.15)" : "var(--card-inner-bg)", color: applied ? "#9F87D7" : "var(--text-secondary)", border: applied ? "1px solid rgba(107,70,193,0.35)" : "1px solid var(--glass-border)", cursor: "pointer", position: "relative", whiteSpace: "nowrap" }}>
             <MdFilterList size={14} /> {t("reportFilters")}
             {applied && <span style={{ position: "absolute", top: -3, right: -3, width: 8, height: 8, borderRadius: "50%", background: "#6B46C1", boxShadow: "0 0 6px rgba(107,70,193,0.6)" }} />}
           </button>
@@ -254,7 +254,7 @@ export default function ResidentFinanceReport() {
             <MdOutlineInbox size={48} style={{ opacity: 0.2 }} />
             <p style={{ fontSize: 13, margin: 0 }}>{t("rfrNoBills")}</p>
             {applied && (
-              <button onClick={clearFilter} style={{ fontSize: 12, color: "var(--accent,#6B46C1)", background: "none", border: "none", cursor: "pointer", fontWeight: 600 }}>
+              <button onClick={clearFilter} style={{ fontSize: 12, color: "var(--accent)", background: "none", border: "none", cursor: "pointer", fontWeight: 600 }}>
                 {t("reportClearFilters")}
               </button>
             )}

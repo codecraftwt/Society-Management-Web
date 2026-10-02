@@ -60,7 +60,7 @@ export default function GlobalBadge({
     },
     neutral: {
       background: "rgba(148, 163, 184, 0.12)",
-      color: "var(--text-secondary, #94a3b8)",
+      color: "var(--text-secondary)",
       border: "1px solid rgba(148, 163, 184, 0.25)",
     },
   };

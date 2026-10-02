@@ -25,7 +25,7 @@ export default function SuccessAnimation({ size = 180, caption = "", style = {} 
             margin: 0,
             fontSize: 14,
             fontWeight: 700,
-            color: "var(--text-primary, #f8fafc)",
+            color: "var(--text-primary)",
             textAlign: "center",
           }}
         >

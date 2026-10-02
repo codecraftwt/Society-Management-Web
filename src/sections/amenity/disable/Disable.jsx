@@ -99,7 +99,7 @@ export default function Disable({ isOpen, amenity, onClose, onConfirm }) {
             {/* Toggle with smooth animation */}
             <div
               onClick={() => setNotifyResidents(p => !p)}
-              style={{ width: 40, height: 22, borderRadius: 99, position: "relative", cursor: "pointer", background: notifyResidents ? "var(--accent, #6366f1)" : "var(--glass-border)", transition: "background 0.25s ease", flexShrink: 0, boxShadow: notifyResidents ? "0 0 0 3px var(--accent-soft)" : "none" }}
+              style={{ width: 40, height: 22, borderRadius: 99, position: "relative", cursor: "pointer", background: notifyResidents ? "var(--accent)" : "var(--glass-border)", transition: "background 0.25s ease", flexShrink: 0, boxShadow: notifyResidents ? "0 0 0 3px var(--accent-soft)" : "none" }}
             >
               <div style={{ position: "absolute", top: 3, width: 16, height: 16, borderRadius: "50%", background: "#fff", boxShadow: "0 1px 4px rgba(0,0,0,0.25)", left: notifyResidents ? 21 : 3, transition: "left 0.25s ease" }} />
             </div>

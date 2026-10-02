@@ -34,7 +34,7 @@ function FilterRow({ label, active, onClick }) {
       style={{
         display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%",
         padding: "8px 10px", borderRadius: 10, border: "none", cursor: "pointer",
-        background: active ? "var(--accent-soft, rgba(99,102,241,0.16))" : hov ? "var(--card-inner-bg, rgba(255,255,255,0.06))" : "transparent",
+        background: active ? "var(--accent-soft)" : hov ? "var(--card-inner-bg)" : "transparent",
         color: "var(--text-primary)", fontSize: 13, fontWeight: active ? 700 : 500,
       }}>
       <span>{label}</span>
@@ -152,8 +152,8 @@ export default function Index({
       {/* HEADER */}
       <div className="ad-page-header flex flex-col md:flex-row items-start md:items-center justify-between gap-4 p-4 sm:p-5 rounded-2xl border"
         style={{
-          background: "var(--card-bg, rgba(15, 23, 42, 0.6))",
-          borderColor: "var(--glass-border, rgba(255, 255, 255, 0.1))",
+          background: "var(--card-bg)",
+          borderColor: "var(--glass-border)",
           backdropFilter: "blur(16px)",
           WebkitBackdropFilter: "blur(16px)",
         }}>
@@ -161,7 +161,7 @@ export default function Index({
           <div
             className="w-10 h-10 rounded-xl flex items-center justify-center text-accent shrink-0"
             style={{
-              background: "var(--accent-soft, rgba(99,102,241,0.18))",
+              background: "var(--accent-soft)",
               border: "1px solid var(--accent-light, #818cf8)",
             }}
           >
@@ -173,8 +173,8 @@ export default function Index({
               <span
                 className="text-xs font-semibold px-2 py-0.5 rounded-full"
                 style={{
-                  background: "var(--accent-soft, rgba(99,102,241,0.18))",
-                  color: "var(--accent, #818cf8)",
+                  background: "var(--accent-soft)",
+                  color: "var(--accent)",
                 }}
               >
                 {activeTab === "AMENITIES" ? amenities.length : bStats.total}
@@ -200,7 +200,7 @@ export default function Index({
                   padding: "0 14px", borderRadius: 12, cursor: "pointer", whiteSpace: "nowrap",
                   fontSize: 12.5, fontWeight: 600, color: "var(--text-primary)",
                   border: activeFilterCount ? "1.5px solid var(--accent-light, #818cf8)" : "1.5px solid var(--glass-border)",
-                  background: activeFilterCount ? "var(--accent-soft, rgba(99,102,241,0.18))" : "var(--card-inner-bg, rgba(255,255,255,0.06))",
+                  background: activeFilterCount ? "var(--accent-soft)" : "var(--card-inner-bg)",
                   transition: "all 0.15s",
                 }}>
                 <MdFilterAlt size={15} style={{ color: "var(--accent)" }} />

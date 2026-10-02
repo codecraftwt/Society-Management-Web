@@ -16,7 +16,7 @@ import {
   MdChevronLeft, MdChevronRight,
   MdChat, MdSend, MdReportProblem, MdImage, MdOpenInNew, MdAttachFile,
   MdCheckCircle, MdSchedule, MdPending,
-  MdEdit,
+  MdEdit, MdPerson, MdHome,
 } from "react-icons/md";
 import Select from "../../components/common/Select";
 import useUnsavedDirty from "../../hooks/useUnsavedDirty";
@@ -642,6 +642,49 @@ function ComplaintDrawer({ complaint, onClose, currentUser, t, defaultTab = "det
                   </div>
                 </div>
               )}
+
+              {/* Raised By section */}
+              {complaint.User?.name && (
+                <div style={{ margin: 0 }}>
+                  <div className="detail-drawer__label">Raised By</div>
+                  <div className="info-row" style={{ borderRadius: 12, padding: "10px 14px", margin: 0, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <MdPerson size={16} style={{ color: "var(--accent)" }} />
+                      <span style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)" }}>
+                        {complaint.User.id === currentUser?.id ? `${complaint.User.name} (You)` : complaint.User.name}
+                      </span>
+                    </div>
+                    {complaint.User.resident_type && (
+                      <span style={{
+                        fontSize: 10,
+                        fontWeight: 700,
+                        textTransform: "uppercase",
+                        padding: "2px 8px",
+                        borderRadius: 6,
+                        background: complaint.User.resident_type === "TENANT" ? "rgba(245, 158, 11, 0.15)" : "rgba(99, 102, 241, 0.15)",
+                        color: complaint.User.resident_type === "TENANT" ? "#f59e0b" : "var(--accent)",
+                      }}>
+                        {complaint.User.resident_type}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Unit / Flat section */}
+              {complaint.Flat && (
+                <div style={{ margin: 0 }}>
+                  <div className="detail-drawer__label">Unit / Flat</div>
+                  <div className="info-row" style={{ borderRadius: 12, padding: "10px 14px", margin: 0, display: "flex", alignItems: "center", gap: 8 }}>
+                    <MdHome size={16} style={{ color: "var(--accent)" }} />
+                    <span style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)" }}>
+                      {complaint.Flat?.Floor?.Block?.name ? `Wing ${complaint.Flat.Floor.Block.name} • ` : ""}
+                      {complaint.Flat?.Floor?.floor_number != null ? `Floor ${complaint.Flat.Floor.floor_number} • ` : ""}
+                      Unit {complaint.Flat.flat_number}
+                    </span>
+                  </div>
+                </div>
+              )}
               {complaint.photo_url && (
                 <div style={{ margin: 0 }}>
                   <div className="detail-drawer__label">{t("adminCompAttachedPhoto")}</div>
@@ -771,8 +814,7 @@ function CameraPortal({ cameraError, cameraReady, cameraMode, videoRef, onFlip, 
   );
 }
 
-// ─── MobileComplaintCard ──────────────────────────────────────────────────────
-function MobileComplaintCard({ c, unreadMap, confirmDeleteId, deletingId, onOpen, onPhotoOpen, onDelete, onCancelDelete, statusLabel, statusCfg, t }) {
+function MobileComplaintCard({ c, authUser, unreadMap, confirmDeleteId, deletingId, onOpen, onPhotoOpen, onDelete, onCancelDelete, statusLabel, statusCfg, t }) {
   const sc     = statusCfg[c.status] || statusCfg.PENDING;
   const unread = unreadMap[c.id] || 0;
   return (
@@ -816,7 +858,7 @@ function MobileComplaintCard({ c, unreadMap, confirmDeleteId, deletingId, onOpen
         {c.description && (
           <p style={{ fontSize: 12, color: "var(--text-secondary)", margin: 0, lineHeight: 1.5,
             overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>
-            {c.description}
+          {c.description}
           </p>
         )}
         {c.photo_url && (
@@ -830,6 +872,48 @@ function MobileComplaintCard({ c, unreadMap, confirmDeleteId, deletingId, onOpen
             <MdOpenInNew size={12} />
           </button>
         )}
+
+        {/* Creator / Tenant / Unit info */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 6, flexWrap: "wrap", fontSize: 11 }}>
+          {c.User?.name ? (
+            <div style={{ display: "flex", alignItems: "center", gap: 5, color: "var(--text-secondary)" }}>
+              <MdPerson size={13} style={{ color: "var(--accent)" }} />
+              <span style={{ fontWeight: 600, color: c.User.id === authUser?.id ? "var(--text-secondary)" : "var(--text-primary)" }}>
+                {c.User.id === authUser?.id ? "By You" : `By ${c.User.name}`}
+              </span>
+              {c.User.resident_type && (
+                <span style={{
+                  fontSize: 9,
+                  fontWeight: 700,
+                  textTransform: "uppercase",
+                  padding: "1px 6px",
+                  borderRadius: 4,
+                  background: c.User.resident_type === "TENANT" ? "rgba(245, 158, 11, 0.15)" : "rgba(99, 102, 241, 0.12)",
+                  color: c.User.resident_type === "TENANT" ? "#f59e0b" : "var(--accent)",
+                }}>
+                  {c.User.resident_type}
+                </span>
+              )}
+            </div>
+          ) : (
+            <div />
+          )}
+
+          {c.Flat?.flat_number && (
+            <span style={{
+              fontSize: 10,
+              fontWeight: 700,
+              padding: "2px 6px",
+              borderRadius: 6,
+              background: "var(--card-inner-bg)",
+              border: "1px solid var(--glass-border)",
+              color: "var(--text-tertiary)",
+              marginLeft: "auto",
+            }}>
+              Unit {c.Flat.flat_number}
+            </span>
+          )}
+        </div>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between",
           paddingTop: 6, borderTop: "1px solid var(--glass-border)" }} onClick={e => e.stopPropagation()}>
           {c.created_at && (
@@ -898,7 +982,16 @@ const { t }              = useLang();
   });
   const hasEligibleFlat = eligibleFlats.length > 0;
 
-  const MAX_DESC = 300;
+  const MAX_WORDS = 700;
+  const countWords = (text) => {
+    if (!text || !text.trim()) return 0;
+    return text.trim().split(/\s+/).filter(Boolean).length;
+  };
+  const getComplaintDescError = (text) => {
+    if (!text || !text.trim()) return "Description cannot be empty.";
+    if (countWords(text) > MAX_WORDS) return `Description must be at most ${MAX_WORDS} words.`;
+    return null;
+  };
 
   const [complaints,  setComplaints]  = useState([]);
   const [counts,      setCounts]      = useState({ ALL: 0, PENDING: 0, IN_PROGRESS: 0, RESOLVED: 0 });
@@ -1207,7 +1300,7 @@ const { t }              = useLang();
     const titleErr = getTitleError(formData.title, "Complaint title");
     if (titleErr) { setErrorMsg(titleErr); return; }
 
-    const descErr = getDescriptionError(formData.description, "Description", 300);
+    const descErr = getComplaintDescError(formData.description);
     if (descErr) { setErrorMsg(descErr); return; }
 
     try {
@@ -1470,8 +1563,9 @@ const { t }              = useLang();
                   <input className={`input ${fieldErrors.title ? "border-red-500" : ""}`} style={{ height: 46 }} placeholder={t("compTitlePlaceholder")}
                     value={formData.title} maxLength={100}
                     onChange={e => {
-                      setFormData({ ...formData, title: e.target.value });
-                      if (fieldErrors.title) setFieldErrors(p => ({ ...p, title: getTitleError(e.target.value, "Complaint title") }));
+                      const val = e.target.value.slice(0, 100);
+                      setFormData(prev => ({ ...prev, title: val }));
+                      if (fieldErrors.title) setFieldErrors(p => ({ ...p, title: getTitleError(val, "Complaint title") }));
                     }}
                     onBlur={e => setFieldErrors(p => ({ ...p, title: getTitleError(e.target.value, "Complaint title") }))}
                     required />
@@ -1483,20 +1577,35 @@ const { t }              = useLang();
 
                 {/* Description */}
                 <div>
-                  <textarea className={`input ${fieldErrors.description ? "border-red-500" : ""}`} style={{ resize: "none", minHeight: 90 }} rows={4}
-                    placeholder={t("compDescPlaceholder")} value={formData.description}
+                  <textarea
+                    className={`input ${fieldErrors.description ? "border-red-500" : ""}`}
+                    style={{ resize: "none", minHeight: 110 }}
+                    rows={4}
+                    placeholder={t("compDescPlaceholder")}
+                    value={formData.description}
                     onChange={e => {
-                      if (e.target.value.length <= MAX_DESC) {
-                        setFormData({ ...formData, description: e.target.value });
-                        if (fieldErrors.description) setFieldErrors(p => ({ ...p, description: getDescriptionError(e.target.value, "Description", 300) }));
+                      const text = e.target.value;
+                      const words = countWords(text);
+                      if (words <= MAX_WORDS || text.length < formData.description.length) {
+                        setFormData(prev => ({ ...prev, description: text }));
+                        if (fieldErrors.description) setFieldErrors(p => ({ ...p, description: getComplaintDescError(text) }));
+                      } else {
+                        const trimmed = text.trim().split(/\s+/).slice(0, MAX_WORDS).join(" ");
+                        setFormData(prev => ({ ...prev, description: trimmed }));
+                        if (fieldErrors.description) setFieldErrors(p => ({ ...p, description: null }));
                       }
                     }}
-                    onBlur={e => setFieldErrors(p => ({ ...p, description: getDescriptionError(e.target.value, "Description", 300) }))}
-                    required />
+                    onBlur={e => setFieldErrors(p => ({ ...p, description: getComplaintDescError(e.target.value) }))}
+                    required
+                  />
                   <FieldError error={fieldErrors.description} />
-                  <p style={{ fontSize: 11, marginTop: 4, textAlign: "right",
-                    color: formData.description.length >= MAX_DESC ? "var(--stat-red-color)" : "var(--text-secondary)" }}>
-                    {formData.description.length}/{MAX_DESC}
+                  <p style={{
+                    fontSize: 11,
+                    marginTop: 4,
+                    textAlign: "right",
+                    color: countWords(formData.description) >= MAX_WORDS ? "var(--stat-red-color)" : "var(--text-secondary)"
+                  }}>
+                    {countWords(formData.description)}/{MAX_WORDS} words
                   </p>
                 </div>
 
@@ -1676,7 +1785,7 @@ const { t }              = useLang();
                   {complaints.map((c, idx) => (
                     <div key={c.id} className="animate-fadeIn" style={{ animationDelay: `${idx * 40}ms` }}>
                       <MobileComplaintCard
-                        c={c} unreadMap={unreadMap} confirmDeleteId={confirmDeleteId} deletingId={deletingId}
+                        c={c} authUser={authUser} unreadMap={unreadMap} confirmDeleteId={confirmDeleteId} deletingId={deletingId}
                         onOpen={openDrawer} onPhotoOpen={url => setLightboxUrl(url)}
                         onDelete={handleDelete} onCancelDelete={() => setConfirmDeleteId(null)}
                         statusLabel={statusLabel} statusCfg={statusCfg} t={t}
@@ -1692,7 +1801,7 @@ const { t }              = useLang();
                     {complaints.map((c, idx) => (
                       <div key={c.id} className="animate-fadeIn" style={{ animationDelay: `${idx * 40}ms` }}>
                         <MobileComplaintCard
-                          c={c} unreadMap={unreadMap} confirmDeleteId={confirmDeleteId} deletingId={deletingId}
+                          c={c} authUser={authUser} unreadMap={unreadMap} confirmDeleteId={confirmDeleteId} deletingId={deletingId}
                           onOpen={openDrawer} onPhotoOpen={url => setLightboxUrl(url)}
                           onDelete={handleDelete} onCancelDelete={() => setConfirmDeleteId(null)}
                           statusLabel={statusLabel} statusCfg={statusCfg} t={t}

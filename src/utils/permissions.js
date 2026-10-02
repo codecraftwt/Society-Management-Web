@@ -74,6 +74,15 @@ export const PERMISSIONS = {
     FAMILY_MEMBER: ['view_own', 'create', 'approve', 'reject'],
     GUARD: ['view', 'create', 'checkin', 'checkout'],
   },
+  parcel: {
+    ADMIN: ['view'],
+    SOCIETY_ADMIN: ['view'],
+    COMMITTEE_MEMBER: [],
+    ACCOUNTANT: [],
+    RESIDENT: [],
+    FAMILY_MEMBER: [],
+    GUARD: [],
+  },
   notice: {
     ADMIN: ['view', 'create', 'edit', 'delete'],
     SOCIETY_ADMIN: ['view', 'create', 'edit', 'delete'],
@@ -151,6 +160,19 @@ export const PERMISSIONS = {
     SOCIETY_ADMIN: ['view', 'export'],
     COMMITTEE_MEMBER: ['view', 'export'],
     ACCOUNTANT: ['view', 'export'],
+    RESIDENT: [],
+    FAMILY_MEMBER: [],
+    GUARD: [],
+  },
+  /* Cleaning staff is an ops module the society owns. Mirrors the backend
+     permissionController `cleaning_staff` module actions: admin + committee get
+     full CRUD / passes / attendance, everyone else gets nothing. Guards are
+     deliberately excluded — they may only scan at the gate, never manage. */
+  cleaning_staff: {
+    ADMIN: ['view', 'create', 'edit', 'status', 'create_passes', 'edit_passes', 'edit_attendance', 'scan'],
+    SOCIETY_ADMIN: ['view', 'create', 'edit', 'status', 'create_passes', 'edit_passes', 'edit_attendance', 'scan'],
+    COMMITTEE_MEMBER: ['view', 'create', 'edit', 'status', 'create_passes', 'edit_passes', 'edit_attendance', 'scan'],
+    ACCOUNTANT: [],
     RESIDENT: [],
     FAMILY_MEMBER: [],
     GUARD: [],

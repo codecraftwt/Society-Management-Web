@@ -1116,14 +1116,14 @@ html.light {
     border-color: #CBD5E1;
   }
   .ps-vehicle-mode-btn--active-car {
-    background: var(--accent, #8b5cf6) !important;
-    border-color: var(--accent, #8b5cf6) !important;
+    background: var(--accent) !important;
+    border-color: var(--accent) !important;
     color: #ffffff !important;
     box-shadow: 0 4px 12px rgba(var(--acct-purple-rgb, 139, 92, 246), 0.22);
   }
   .ps-vehicle-mode-btn--active-bike {
-    background: var(--accent, #8b5cf6) !important;
-    border-color: var(--accent, #8b5cf6) !important;
+    background: var(--accent) !important;
+    border-color: var(--accent) !important;
     color: #ffffff !important;
     box-shadow: 0 4px 12px rgba(var(--acct-purple-rgb, 139, 92, 246), 0.22);
   }

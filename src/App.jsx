@@ -58,11 +58,14 @@ import FinancialReport from "./pages/Admin/reports/FinancialReport";
 import ExpenseReport from "./pages/Admin/reports/ExpenseReport";
 import SocietyAmenities from "./sections/amenity";
 import SocietyDocuments from "./sections/document";
+import SocietyParcels from "./sections/parcel";
+import CleaningStaff from "./sections/cleaning-staff";
 import ManageProperty from "./pages/Admin/ManageProperty";
 import AdminSetting from "./pages/Admin/AdminSetting";
 import AdminMyProfile from "./pages/Admin/AdminMyProfile";
 import FlatHistory from "./pages/Admin/FlatHistory";
 import MaintenancePage from "./pages/Maintenance/MaintenancePage";
+import Parcels from './sections/parcel';
 import RolePermissions from "./pages/Admin/RolePermissions";
 import AdminEmergency from "./pages/Admin/AdminEmergency";
 
@@ -182,9 +185,11 @@ function App() {
             <Route path="reports" element={<SuperAdminReports />} />
             <Route path="amenities" element={<SocietyAmenities />} />
             <Route path="society_documents" element={<SocietyDocuments />} />
+            <Route path="parcels" element={<SocietyParcels />} />
             <Route path="assign-flat" element={<AssignFlat />} />
             <Route path="assign-parking-slot" element={<AssignParkingSlot />} />
             <Route path="settings" element={<AdminSetting />} />
+            <Route path='parcel-management' element={<Parcels />} />
             <Route path="flat-history" element={<FlatHistory />} />
             <Route path="role-permissions" element={<RolePermissions />} />
             <Route path="reports/complaints" element={<SuperAdminComplaintReport />} />
@@ -278,6 +283,9 @@ function App() {
             <Route element={<PermissionRoute module="visitor_logs" />}>
               <Route path="visitor-logs" element={<VisitorLogs />} />
             </Route>
+            <Route element={<PermissionRoute module="parcel" />}>
+              <Route path="parcels" element={<SocietyParcels />} />
+            </Route>
             <Route element={<PermissionRoute module="settings" />}>
               <Route path="settings" element={<AdminSetting />} />
             </Route>
@@ -299,6 +307,9 @@ function App() {
             </Route>
             <Route element={<PermissionRoute module="tenant_management" />}>
               <Route path="tenant-management" element={<TenantManagement />} />
+            </Route>
+            <Route element={<PermissionRoute module="cleaning_staff" />}>
+              <Route path="cleaning-staff" element={<CleaningStaff />} />
             </Route>
           </Route>
         </Route>
@@ -472,3 +483,4 @@ function App() {
 }
 
 export default App;
+

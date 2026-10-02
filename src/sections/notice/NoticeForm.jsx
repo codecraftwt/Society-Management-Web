@@ -1,9 +1,11 @@
-import { useMemo } from "react";
+import { useMemo, useState, useEffect, useContext } from "react";
 import { toast } from "react-toastify";
-import { MdAttachFile, MdClose } from "react-icons/md";
+import { MdAttachFile, MdClose, MdPublic, MdHome } from "react-icons/md";
 
 import { useLang } from "../../context/LanguageContext";
+import { AuthContext } from "../../context/AuthContext";
 import { BASE_URL } from "../../config/apiConfig";
+import API from "../../services/api";
 import Select from "../../components/common/Select";
 
 const IMAGE_EXTS = ["png", "jpg", "jpeg", "gif", "webp", "svg", "bmp", "avif"];
@@ -39,6 +41,43 @@ export default function NoticeForm({
   existingFileUrl,
 }) {
   const { t } = useLang();
+  const { user } = useContext(AuthContext);
+
+  const [flatsList, setFlatsList] = useState([]);
+  const [loadingFlats, setLoadingFlats] = useState(false);
+
+  const activeSocId = isSuperAdmin ? form.society_id : user?.society_id;
+
+  useEffect(() => {
+    let isMounted = true;
+    if (activeSocId && form.target_type === "FLAT") {
+      setLoadingFlats(true);
+      API.get("/flats", {
+        headers: { "x-society-id": activeSocId },
+      })
+        .then((res) => {
+          if (isMounted) {
+            const list = Array.isArray(res.data)
+              ? res.data
+              : Array.isArray(res.data?.flats)
+              ? res.data.flats
+              : Array.isArray(res.data?.data)
+              ? res.data.data
+              : [];
+            setFlatsList(list);
+          }
+        })
+        .catch((err) => {
+          console.error("Error fetching flats for notice audience:", err);
+        })
+        .finally(() => {
+          if (isMounted) setLoadingFlats(false);
+        });
+    }
+    return () => {
+      isMounted = false;
+    };
+  }, [activeSocId, form.target_type]);
 
   const newPreviewUrl = useMemo(() => {
     if (!file || !file.type?.startsWith("image/")) return null;
@@ -83,6 +122,103 @@ export default function NoticeForm({
         </div>
       )}
 
+      {/* ── Audience Selector ── */}
+      <div>
+        <label className="sa-label">{t("noticeAudience", "Audience / Visibility")}</label>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 4 }}>
+          <button
+            type="button"
+            onClick={() => setForm({ ...form, target_type: "SOCIETY", target_flat_id: "" })}
+            style={{
+              padding: "10px 14px",
+              borderRadius: 10,
+              border: form.target_type === "SOCIETY" || !form.target_type
+                ? "2px solid var(--accent, #9e58ff)"
+                : "1px solid var(--glass-border)",
+              background: form.target_type === "SOCIETY" || !form.target_type
+                ? "rgba(160, 90, 255, 0.12)"
+                : "var(--card-inner-bg)",
+              color: form.target_type === "SOCIETY" || !form.target_type
+                ? "var(--accent, #9e58ff)"
+                : "var(--text-secondary)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 8,
+              fontSize: "0.88rem",
+              fontWeight: 700,
+              cursor: "pointer",
+              transition: "all 0.2s ease",
+            }}
+          >
+            <MdPublic size={18} />
+            <span>{t("noticeAudienceSociety", "Entire Society")}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setForm({ ...form, target_type: "FLAT" })}
+            style={{
+              padding: "10px 14px",
+              borderRadius: 10,
+              border: form.target_type === "FLAT"
+                ? "2px solid #10b981"
+                : "1px solid var(--glass-border)",
+              background: form.target_type === "FLAT"
+                ? "rgba(16, 185, 129, 0.12)"
+                : "var(--card-inner-bg)",
+              color: form.target_type === "FLAT" ? "#10b981" : "var(--text-secondary)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 8,
+              fontSize: "0.88rem",
+              fontWeight: 700,
+              cursor: "pointer",
+              transition: "all 0.2s ease",
+            }}
+          >
+            <MdHome size={18} />
+            <span>{t("noticeAudienceFlat", "Specific Flat")}</span>
+          </button>
+        </div>
+      </div>
+
+      {/* ── Flat Selector (when Specific Flat selected) ── */}
+      {form.target_type === "FLAT" && (
+        <div style={{ marginTop: 2, padding: "12px", borderRadius: 10, background: "rgba(16, 185, 129, 0.05)", border: "1px solid rgba(16, 185, 129, 0.2)" }}>
+          <label className="sa-label" style={{ color: "#10b981" }}>
+            {t("noticeTargetFlatLabel", "Target Flat (Owner & Tenant will receive this notice)")} *
+          </label>
+          <Select
+            className="input"
+            value={form.target_flat_id || ""}
+            required
+            onChange={(e) => setForm({ ...form, target_flat_id: e.target.value })}
+            style={{ marginTop: 4 }}
+          >
+            <option value="">
+              {loadingFlats
+                ? t("noticeLoadingFlats", "Loading flats...")
+                : t("noticeSelectFlat", "-- Select Target Flat --")}
+            </option>
+            {flatsList.map((f) => {
+              const blockName = f.Floor?.Block?.name || f.Block?.name || "";
+              const ownerName = f.User?.name || "";
+              const label = `${blockName ? `${blockName} - ` : ""}Flat ${f.flat_number}${ownerName ? ` (Owner: ${ownerName})` : ""}`;
+              return (
+                <option key={f.id} value={f.id}>
+                  {label}
+                </option>
+              );
+            })}
+          </Select>
+          <p style={{ fontSize: "0.76rem", color: "var(--text-secondary)", margin: "6px 0 0 4px" }}>
+            {t("noticeTargetFlatHint", "Only authorized residents/tenants of this flat and society admins can see this notice.")}
+          </p>
+        </div>
+      )}
+
       <div>
         <label className="sa-label">{t("noticeTitleLabel")}</label>
         <input
@@ -106,6 +242,7 @@ export default function NoticeForm({
           onChange={(e) => setForm({ ...form, description: e.target.value })}
         />
       </div>
+
 
       {/* Acknowledgement Required Checkbox */}
       <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 4, padding: "12px", borderRadius: 10, background: "rgba(160,90,255,0.06)", border: "1px solid rgba(160,90,255,0.15)" }}>

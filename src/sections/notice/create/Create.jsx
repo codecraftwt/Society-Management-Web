@@ -26,6 +26,8 @@ export default function Create({
     description: "",
     society_id: defaultSocietyId,
     acknowledgement_required: false,
+    target_type: "SOCIETY",
+    target_flat_id: "",
   }));
 
   const handleSubmit = async (e) => {
@@ -35,6 +37,10 @@ export default function Create({
     const descErr = getDescriptionError(form.description, "Description");
     if (descErr) { toast.error(descErr); return; }
     if (isSuperAdmin && !form.society_id) { toast.error(t("noticeSelectSocietyErr", "Please select a society.")); return; }
+    if (form.target_type === "FLAT" && !form.target_flat_id) {
+      toast.error(t("noticeSelectFlatErr", "Please select a target flat."));
+      return;
+    }
 
     setSubmitting(true);
     try {
@@ -42,6 +48,10 @@ export default function Create({
       formData.append("title", form.title.trim());
       formData.append("description", form.description.trim());
       formData.append("acknowledgement_required", form.acknowledgement_required ? "true" : "false");
+      formData.append("target_type", form.target_type || "SOCIETY");
+      if (form.target_type === "FLAT" && form.target_flat_id) {
+        formData.append("target_flat_id", form.target_flat_id);
+      }
 
       const targetSocId = isSuperAdmin ? (form.society_id || defaultSocietyId) : user?.society_id;
       if (targetSocId) formData.append("society_id", targetSocId);
@@ -51,7 +61,14 @@ export default function Create({
         headers: { "Content-Type": "multipart/form-data" },
       });
 
-      setForm({ title: "", description: "", society_id: "", acknowledgement_required: false });
+      setForm({
+        title: "",
+        description: "",
+        society_id: "",
+        acknowledgement_required: false,
+        target_type: "SOCIETY",
+        target_flat_id: "",
+      });
       setFile(null);
       onClose();
       onCreated();

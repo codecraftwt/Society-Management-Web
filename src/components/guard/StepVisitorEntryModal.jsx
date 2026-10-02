@@ -411,7 +411,7 @@ export default function StepVisitorEntryModal({
             <div
               className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl text-white flex items-center justify-center shadow-md shrink-0"
               style={{
-                background: "var(--accent, #2563EB)",
+                background: "var(--accent)",
                 boxShadow: "0 8px 20px rgba(var(--acct-purple-rgb), 0.14)",
               }}
             >
@@ -426,7 +426,7 @@ export default function StepVisitorEntryModal({
                 <span
                   className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider border"
                   style={{
-                    color: "var(--accent, #2563EB)",
+                    color: "var(--accent)",
                     borderColor: "rgba(var(--acct-purple-rgb), 0.2)",
                     background: "transparent",
                   }}
@@ -462,7 +462,7 @@ export default function StepVisitorEntryModal({
               style={{
                 width: `${((currentStep - 1) / (steps.length - 1)) * 100}%`,
                 maxWidth: "calc(100% - 40px)",
-                background: "var(--accent, #2563EB)",
+                background: "var(--accent)",
               }}
             />
 
@@ -486,7 +486,7 @@ export default function StepVisitorEntryModal({
                       isCurrent ? "text-white scale-105" : isDone ? "text-white" : "bg-card border-2 border-glass-border text-secondary"
                     }`}
                     style={{
-                      background: isCurrent ? "var(--accent, #2563EB)" : isDone ? "#10B981" : undefined,
+                      background: isCurrent ? "var(--accent)" : isDone ? "#10B981" : undefined,
                       boxShadow: isCurrent ? "0 6px 18px rgba(var(--acct-purple-rgb), 0.2)" : undefined,
                     }}
                   >
@@ -496,7 +496,7 @@ export default function StepVisitorEntryModal({
                     className={`text-[10px] mt-1 tracking-tight ${
                       isCurrent ? "font-bold" : isDone ? "text-primary font-semibold" : "text-secondary font-medium"
                     }`}
-                    style={{ color: isCurrent ? "var(--accent, #2563EB)" : undefined }}
+                    style={{ color: isCurrent ? "var(--accent)" : undefined }}
                   >
                     {s.label}
                   </span>
@@ -539,12 +539,12 @@ export default function StepVisitorEntryModal({
                             if (errors.brand) setErrors((prev) => ({ ...prev, brand: null }));
                           }}
                           className={`p-2.5 rounded-xl border text-center font-bold text-xs transition-all duration-150 flex items-center justify-center gap-2 cursor-pointer ${isSel ? "shadow-xs" : "border-glass-border hover:border-gray-300 dark:hover:border-gray-600 bg-card text-primary"}`}
-                          style={isSel ? { borderColor: "var(--accent, #2563EB)", color: "var(--accent, #2563EB)", background: "transparent" } : {}}
+                          style={isSel ? { borderColor: "var(--accent)", color: "var(--accent)", background: "transparent" } : {}}
                         >
                           <span
                             className="w-5 h-5 rounded-md flex items-center justify-center text-[10px] font-black shrink-0"
                             style={{
-                              backgroundColor: isSel ? "var(--accent, #2563EB)" : "rgba(100, 116, 139, 0.15)",
+                              backgroundColor: isSel ? "var(--accent)" : "rgba(100, 116, 139, 0.15)",
                               color: isSel ? "#FFFFFF" : "var(--text-primary)",
                             }}
                           >
@@ -693,7 +693,7 @@ export default function StepVisitorEntryModal({
                             key={vt.type}
                             onClick={() => setVehicleType(vt.type)}
                           className={`flex-1 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${isVtSel ? "text-white shadow-xs" : "text-secondary hover:text-primary"}`}
-                          style={isVtSel ? { background: "var(--accent, #2563EB)", color: "#fff" } : {}}
+                          style={isVtSel ? { background: "var(--accent)", color: "#fff" } : {}}
                           >
                             <vt.icon size={16} />
                             <span>{vt.label}</span>
@@ -751,7 +751,7 @@ export default function StepVisitorEntryModal({
                 <span
                   className="text-[11px] font-bold px-2.5 py-0.5 rounded-full border"
                     style={{
-                      color: "var(--accent, #2563EB)",
+                      color: "var(--accent)",
                       borderColor: "rgba(var(--acct-purple-rgb), 0.2)",
                       background: "transparent",
                     }}
@@ -764,7 +764,7 @@ export default function StepVisitorEntryModal({
                 <div className="py-12 text-center text-secondary space-y-2">
                   <div
                     className="w-6 h-6 border-2 border-t-transparent rounded-full animate-spin mx-auto"
-                    style={{ borderColor: "var(--accent, #2563EB)", borderTopColor: "transparent" }}
+                    style={{ borderColor: "var(--accent)", borderTopColor: "transparent" }}
                   />
                   <p className="text-xs font-medium">{t("sgeLoadingBlocks", "Loading society blocks...")}</p>
                 </div>
@@ -783,7 +783,7 @@ export default function StepVisitorEntryModal({
                         className={`group p-3.5 rounded-2xl border transition-all duration-150 cursor-pointer flex items-center justify-between`}
                         style={
                           isSelected
-                            ? { borderColor: "var(--accent, #2563EB)", background: "var(--accent-soft, rgba(99,102,241,0.08))", boxShadow: "var(--shadow-sm)" }
+                            ? { borderColor: "var(--accent)", background: "var(--accent-soft)", boxShadow: "var(--shadow-sm)" }
                             : {}
                         }
                       >
@@ -791,8 +791,8 @@ export default function StepVisitorEntryModal({
                           <div
                             className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
                             style={{
-                              background: isSelected ? "var(--accent-soft, rgba(99,102,241,0.08))" : "rgba(99,102,241,0.06)",
-                              color: isSelected ? "var(--accent, #2563EB)" : "var(--text-primary)",
+                              background: isSelected ? "var(--accent-soft)" : "rgba(99,102,241,0.06)",
+                              color: isSelected ? "var(--accent)" : "var(--text-primary)",
                             }}
                           >
                             <MdApartment size={20} />
@@ -800,7 +800,7 @@ export default function StepVisitorEntryModal({
                           <div>
                             <h5
                               className="text-xs font-bold transition-colors"
-                              style={{ color: isSelected ? "var(--accent, #2563EB)" : undefined }}
+                              style={{ color: isSelected ? "var(--accent)" : undefined }}
                             >
                               {b.name}
                             </h5>
@@ -830,8 +830,8 @@ export default function StepVisitorEntryModal({
                     <span
                       className="px-2 py-0.5 rounded-md text-[10px] font-bold"
                     style={{
-                      background: "var(--accent-soft, rgba(99,102,241,0.08))",
-                      color: "var(--accent, #2563EB)",
+                      background: "var(--accent-soft)",
+                      color: "var(--accent)",
                     }}
                     >
                       {filteredFlats.length} Units
@@ -864,7 +864,7 @@ export default function StepVisitorEntryModal({
                       type="button"
                       onClick={() => setSelectedFloorId(fl.id)}
                         className={`px-3 py-1 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${selectedFloorId === fl.id ? "text-white shadow-xs" : "bg-card-inner-bg border border-glass-border text-secondary hover:text-primary"}`}
-                      style={selectedFloorId === fl.id ? { background: "var(--accent, #2563EB)", color: "#fff" } : {}}
+                      style={selectedFloorId === fl.id ? { background: "var(--accent)", color: "#fff" } : {}}
                     >
                       Floor {fl.floor_number}
                     </button>
@@ -883,9 +883,9 @@ export default function StepVisitorEntryModal({
                       key={flat.id}
                       onClick={() => handleSelectFlat(flat)}
                       className={`p-2.5 rounded-2xl border text-center transition-all duration-150 flex flex-col items-center justify-center gap-0.5 cursor-pointer ${isSel ? "text-white shadow-xs" : "border-glass-border bg-card-inner-bg text-primary hover:border-blue-500/50"}`}
-                      style={isSel ? { borderColor: "var(--accent, #2563EB)", background: "var(--accent, #2563EB)", color: "#fff" } : {}}
+                      style={isSel ? { borderColor: "var(--accent)", background: "var(--accent)", color: "#fff" } : {}}
                     >
-                      <MdMeetingRoom size={18} style={{ color: isSel ? "#fff" : "var(--accent, #2563EB)" }} />
+                      <MdMeetingRoom size={18} style={{ color: isSel ? "#fff" : "var(--accent)" }} />
                       <span className="text-xs font-bold tracking-tight">
                         {flat.flat_number}
                       </span>
@@ -930,7 +930,7 @@ export default function StepVisitorEntryModal({
                   </div>
                   <span
                     className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider"
-                    style={{ background: "var(--accent, #2563EB)", color: "#fff" }}
+                    style={{ background: "var(--accent)", color: "#fff" }}
                   >
                     {purpose.toUpperCase()}
                   </span>
@@ -942,7 +942,7 @@ export default function StepVisitorEntryModal({
                       {t("sgeDestinationFlat", "Destination Flat")}
                     </span>
                     <span className="text-xs font-bold text-primary flex items-center gap-1 mt-0.5">
-                      <MdMeetingRoom style={{ color: "var(--accent, #2563EB)" }} />
+                      <MdMeetingRoom style={{ color: "var(--accent)" }} />
                       {selectedBlock?.name} • Flat {selectedFlat?.flat_number}
                     </span>
                   </div>
@@ -951,7 +951,7 @@ export default function StepVisitorEntryModal({
                       {t("sgeContactMobile", "Contact Mobile")}
                     </span>
                     <span className="text-xs font-mono font-bold text-primary flex items-center gap-1 mt-0.5">
-                      <MdPhone style={{ color: "var(--accent, #2563EB)" }} />
+                      <MdPhone style={{ color: "var(--accent)" }} />
                       {mobile || t("sgeNotProvided", "Not Provided")}
                     </span>
                   </div>

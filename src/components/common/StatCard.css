@@ -1,0 +1,401 @@
+/* ============================================================================
+ * StatCard  —  global statistical card shell
+ * ----------------------------------------------------------------------------
+ * Visual source of truth: the `.stat-card` tiles of
+ * /superadmin/manage-bills and /admin/payments, NOT the legacy .ad-kpi tile.
+ *   role-theme.css:575-606   geometry + corner blob + white value/label
+ *   role-theme.css:608-615   icon chip
+ *   role-theme.css:617-674   TIER "Dark Corona": flat #22252e tile, 2px tone
+ *                            border, white value, tone-coloured caption
+ *   role-theme.css:676-697   light tier: saturated tone gradient tile,
+ *                            border: none, soft shadow, all-white type
+ *   role-theme.css:2623-2667 scoped geometry + <=1023px responsive
+ *   role-theme.css:2679-2731 glass hover (shine sweep, blob scale, tone glow)
+ *
+ * Both tiers are driven entirely by tokens in theme/card-tokens.css, so this
+ * file never branches on `html.light` itself:
+ *   dark  → --ui-card-tone-surface is a flat opaque tile; the tone shows in
+ *           the 2px border and the caption
+ *   light → --ui-card-tone-surface is a 135deg tone gradient and every glyph
+ *           turns white via the --ui-card-ink-* tokens
+ *
+ * DESIGN NOTE — pseudo-element ownership
+ *   ::after is reserved for the shine sweep and is only emitted by
+ *   variant="sheen". The corner blob is a REAL element
+ *   (.ui-stat-card__blob) rather than a pseudo-element, for two reasons:
+ *     1. .doc-decent-card (Document.css:98-110) already solves it this way,
+ *        and it avoids the ::before/::after collision that exists between
+ *        .ad-kpi and .stat-card in role-theme.css.
+ *     2. The blob sits at z-index:-1 under `isolation: isolate`, so consumer
+ *        children need no z-index juggling and absolutely-positioned
+ *        children are unaffected. .doc-decent-card has to force
+ *        `> *:not(.doc-card-blob) { z-index: 1 }` (Document.css:61-64)
+ *        precisely because it took the pseudo-element route.
+ *
+ * NO !important is used anywhere in this file. Every token name is new, so no
+ * existing selector can collide with these rules.
+ * ========================================================================== */
+
+/* ── BASE ─────────────────────────────────────────────────────────────── */
+
+.ui-stat-card {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: var(--ui-card-gap);
+  min-width: 0;
+  padding: var(--ui-card-padding);
+  border-radius: var(--ui-card-radius);
+  background: var(--ui-card-tone-surface, var(--ui-card-bg));
+  border: var(--ui-card-stat-border-width, var(--ui-card-border-width)) solid
+    var(--ui-card-stat-border-color, var(--ui-card-tone-border, var(--ui-card-border)));
+  box-shadow: var(--ui-card-shadow);
+  color: var(--ui-card-ink-value, var(--text-primary));
+  font-family: inherit;
+  text-align: left;
+
+  transition-property: transform, box-shadow, border-color, background;
+  transition-duration: var(--ui-card-duration);
+  transition-timing-function: var(--ui-card-ease);
+}
+
+/* Native <button> resets that would otherwise leak in */
+button.ui-stat-card {
+  appearance: none;
+  width: 100%;
+  margin: 0;
+  cursor: pointer;
+}
+
+/* ── CORNER BLOB ──────────────────────────────────────────────────────── */
+
+.ui-stat-card__blob {
+  position: absolute;
+  right: -20px;
+  top: -20px;
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  background: var(--ui-card-blob-bg);
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* ── CHILDREN ─────────────────────────────────────────────────────────── */
+
+.ui-stat-card__icon {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--ui-card-icon-size);
+  height: var(--ui-card-icon-size);
+  flex-shrink: 0;
+  border-radius: var(--ui-card-icon-radius);
+  color: var(--ui-card-ink-icon, var(--ui-card-tone-color, var(--accent)));
+  background: color-mix(in srgb, currentColor 18%, transparent);
+  border: 1px solid var(--ui-card-tone-border, transparent);
+}
+
+.ui-stat-card__value {
+  position: relative;
+  display: block;
+  font-size: var(--ui-card-value-size);
+  font-weight: var(--ui-card-value-weight);
+  letter-spacing: var(--ui-card-value-tracking);
+  line-height: var(--ui-card-value-line);
+  color: var(--ui-card-ink-value, var(--text-primary));
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.ui-stat-card__label {
+  position: relative;
+  display: block;
+  font-size: var(--ui-card-label-size);
+  font-weight: var(--ui-card-label-weight);
+  letter-spacing: var(--ui-card-label-tracking);
+  text-transform: uppercase;
+  color: var(--ui-card-ink-label, var(--ui-card-tone-color, var(--text-secondary)));
+  overflow-wrap: anywhere;
+}
+
+.ui-stat-card__desc {
+  position: relative;
+  display: block;
+  font-size: var(--ui-card-desc-size);
+  color: var(--ui-card-ink-desc, var(--text-secondary));
+  overflow-wrap: anywhere;
+}
+
+/* ── LAYOUTS ───────────────────────────────────────────────────────────── */
+
+/* stacked is the default and needs no rules: the base .ui-stat-card is already
+ * a flex column placing icon, value, label, description top to bottom. */
+
+/* inline = the compact horizontal tile used by dense summary rows
+ * (Resident.css .ov-stat). The icon moves to the leading edge and the value /
+ * label / description stack beside it.
+ *
+ * Implemented as a two-column grid rather than flex + a wrapper element so the
+ * rendered DOM stays flat: the corner blob is absolutely positioned and out of
+ * flow, and the value/label/description keep their existing sibling order.
+ * `--has-icon` is emitted from JSX instead of relying on `:has()` so the
+ * icon-less case does not depend on selector support. */
+.ui-stat-card--layout-inline {
+  display: grid;
+  align-items: center;
+  column-gap: 14px;
+  row-gap: 0;
+  justify-content: stretch;
+  padding: 18px;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas:
+    "value"
+    "label"
+    "desc";
+}
+
+.ui-stat-card--layout-inline.ui-stat-card--has-icon {
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-areas:
+    "icon value"
+    "icon label"
+    "icon desc";
+}
+
+.ui-stat-card--layout-inline .ui-stat-card__icon {
+  grid-area: icon;
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  font-size: 21px;
+}
+
+.ui-stat-card--layout-inline .ui-stat-card__value {
+  grid-area: value;
+  font-size: 1.7rem;
+}
+
+.ui-stat-card--layout-inline .ui-stat-card__label {
+  grid-area: label;
+  margin-top: 3px;
+  font-size: 0.74rem;
+  text-transform: none;
+  letter-spacing: normal;
+  color: var(--ui-card-ink-desc, var(--text-secondary));
+}
+
+.ui-stat-card--layout-inline .ui-stat-card__desc {
+  grid-area: desc;
+  margin-top: 2px;
+}
+
+/* ── TONES ────────────────────────────────────────────────────────────── */
+
+.ui-stat-card--tone-neutral {
+  --ui-card-tone-color: var(--ui-card-tone-neutral-color);
+  --ui-card-tone-bg: var(--ui-card-tone-neutral-bg);
+  --ui-card-tone-border: var(--ui-card-tone-neutral-border);
+  --ui-card-tone-surface: var(--ui-card-tone-neutral-surface);
+  --ui-card-ink-value: var(--ui-card-tone-neutral-color);
+  --ui-card-ink-label: var(--ui-card-tone-neutral-color);
+  --ui-card-ink-icon: var(--ui-card-tone-neutral-color);
+  --ui-card-ink-desc: var(--ui-card-tone-neutral-color);
+}
+.ui-stat-card--tone-brand {
+  --ui-card-tone-color: var(--ui-card-tone-brand-color);
+  --ui-card-tone-bg: var(--ui-card-tone-brand-bg);
+  --ui-card-tone-border: var(--ui-card-tone-brand-border);
+  --ui-card-tone-surface: var(--ui-card-tone-brand-surface);
+  --ui-card-ink-value: var(--ui-card-tone-brand-color);
+  --ui-card-ink-label: var(--ui-card-tone-brand-color);
+  --ui-card-ink-icon: var(--ui-card-tone-brand-color);
+  --ui-card-ink-desc: var(--ui-card-tone-brand-color);
+}
+.ui-stat-card--tone-success {
+  --ui-card-tone-color: var(--ui-card-tone-success-color);
+  --ui-card-tone-bg: var(--ui-card-tone-success-bg);
+  --ui-card-tone-border: var(--ui-card-tone-success-border);
+  --ui-card-tone-surface: var(--ui-card-tone-success-surface);
+  --ui-card-ink-value: var(--ui-card-tone-success-color);
+  --ui-card-ink-label: var(--ui-card-tone-success-color);
+  --ui-card-ink-icon: var(--ui-card-tone-success-color);
+  --ui-card-ink-desc: var(--ui-card-tone-success-color);
+}
+.ui-stat-card--tone-warning {
+  --ui-card-tone-color: var(--ui-card-tone-warning-color);
+  --ui-card-tone-bg: var(--ui-card-tone-warning-bg);
+  --ui-card-tone-border: var(--ui-card-tone-warning-border);
+  --ui-card-tone-surface: var(--ui-card-tone-warning-surface);
+  --ui-card-ink-value: var(--ui-card-tone-warning-color);
+  --ui-card-ink-label: var(--ui-card-tone-warning-color);
+  --ui-card-ink-icon: var(--ui-card-tone-warning-color);
+  --ui-card-ink-desc: var(--ui-card-tone-warning-color);
+}
+.ui-stat-card--tone-danger {
+  --ui-card-tone-color: var(--ui-card-tone-danger-color);
+  --ui-card-tone-bg: var(--ui-card-tone-danger-bg);
+  --ui-card-tone-border: var(--ui-card-tone-danger-border);
+  --ui-card-tone-surface: var(--ui-card-tone-danger-surface);
+  --ui-card-ink-value: var(--ui-card-tone-danger-color);
+  --ui-card-ink-label: var(--ui-card-tone-danger-color);
+  --ui-card-ink-icon: var(--ui-card-tone-danger-color);
+  --ui-card-ink-desc: var(--ui-card-tone-danger-color);
+}
+.ui-stat-card--tone-info {
+  --ui-card-tone-color: var(--ui-card-tone-info-color);
+  --ui-card-tone-bg: var(--ui-card-tone-info-bg);
+  --ui-card-tone-border: var(--ui-card-tone-info-border);
+  --ui-card-tone-surface: var(--ui-card-tone-info-surface);
+  --ui-card-ink-value: var(--ui-card-tone-info-color);
+  --ui-card-ink-label: var(--ui-card-tone-info-color);
+  --ui-card-ink-icon: var(--ui-card-tone-info-color);
+  --ui-card-ink-desc: var(--ui-card-tone-info-color);
+}
+
+/* ── VARIANTS ─────────────────────────────────────────────────────────── */
+
+/* base = the plain /admin surface with the corner blob. Hover lifts and tints
+ * the border with the card's own tone. This is deliberately not tied to
+ * `interactive`, because a non-clickable card can still have a hover
+ * treatment (Resident.css .ov-stat:hover did exactly that); `interactive` only
+ * adds cursor:pointer. */
+.ui-stat-card--variant-base:hover {
+  transform: translateY(var(--ui-card-lift-record));
+  border-color: color-mix(in srgb, var(--ui-card-tone-color, var(--accent)) 40%, var(--ui-card-border));
+}
+
+/* sheen = the .ad-kpi / .stat-card dashboard treatment, promoted to a
+   named variant. ::after is claimed here and only here. */
+.ui-stat-card--variant-sheen::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 55%;
+  height: 100%;
+  background: linear-gradient(
+    100deg,
+    transparent,
+    var(--ui-card-sheen-bg),
+    transparent
+  );
+  transform: translateX(-90%) skewX(-18deg);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.ui-stat-card--variant-sheen:hover::after {
+  animation: uiCardShine 0.75s ease forwards;
+}
+
+.ui-stat-card--variant-sheen:hover {
+  transform: translateY(var(--ui-card-lift)) scale(var(--ui-card-lift-scale));
+  border-color: var(--ui-card-tone-color, var(--accent));
+  box-shadow: 0 6px 18px -4px
+      color-mix(in srgb, var(--ui-card-tone-color, var(--accent)) 45%, transparent),
+    inset 0 1px 0 var(--ui-card-sheen-inset, rgba(255, 255, 255, 0.16));
+}
+
+.ui-stat-card--variant-sheen:hover .ui-stat-card__blob {
+  transform: scale(1.45);
+  opacity: 0.26;
+}
+
+.ui-stat-card__blob {
+  transition: transform 0.45s var(--ui-card-ease), opacity 0.45s;
+}
+
+/* ── STATES ───────────────────────────────────────────────────────────── */
+
+.ui-stat-card--interactive {
+  cursor: pointer;
+}
+
+.ui-stat-card--interactive:hover {
+  transform: translateY(var(--ui-card-lift-record));
+  border-color: var(--ui-card-tone-color, var(--accent));
+}
+
+.ui-stat-card--selected {
+  border-color: var(--ui-card-tone-color, var(--accent));
+  box-shadow: var(--ui-card-selected-ring),
+    0 6px 18px -4px color-mix(in srgb, var(--ui-card-tone-color, var(--accent)) 45%, transparent),
+    var(--ui-card-shadow);
+}
+
+.ui-stat-card--disabled,
+.ui-stat-card:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* ── FOCUS ────────────────────────────────────────────────────────────── */
+
+.ui-stat-card:focus-visible {
+  outline: var(--ui-card-focus-width) solid var(--ui-card-focus-outline);
+  outline-offset: var(--ui-card-focus-offset);
+}
+
+/* ── RESPONSIVE ──────────────────────────────────────────────────────────
+     Matches role-theme.css:2655-2667. The reference hides .ad-kpi-desc below
+     lg via a JSX class; here it is scaled down instead so no content is
+     lost to a screen size.
+
+     layout="inline" is deliberately excluded: its reference (.ov-stat) does
+     not reduce its type or icon size at small widths, it only collapses the
+     parent grid to one column. Overriding these would shrink inline tiles
+     that the original kept at full size. */
+
+@media (max-width: 1023px) {
+  .ui-stat-card:not(.ui-stat-card--layout-inline) {
+    padding: var(--ui-card-padding-compact);
+  }
+  .ui-stat-card:not(.ui-stat-card--layout-inline) .ui-stat-card__value {
+    font-size: 22px;
+  }
+  .ui-stat-card:not(.ui-stat-card--layout-inline) .ui-stat-card__label {
+    font-size: 10px;
+  }
+  .ui-stat-card:not(.ui-stat-card--layout-inline) .ui-stat-card__desc {
+    font-size: 10px;
+  }
+  .ui-stat-card:not(.ui-stat-card--layout-inline) .ui-stat-card__icon {
+    width: 30px;
+    height: 30px;
+    border-radius: 9px;
+  }
+}
+
+@media (max-width: 639px) {
+  .ui-stat-card:not(.ui-stat-card--layout-inline) .ui-stat-card__value {
+    font-size: 20px;
+  }
+}
+
+/* ── REDUCED MOTION ──────────────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  .ui-stat-card,
+  .ui-stat-card__blob {
+    transition-duration: 0.01ms;
+  }
+  .ui-stat-card--variant-base:hover,
+  .ui-stat-card--interactive:hover,
+  .ui-stat-card--variant-sheen:hover {
+    transform: none;
+  }
+  .ui-stat-card--variant-sheen:hover .ui-stat-card__blob {
+    transform: none;
+  }
+  .ui-stat-card--variant-sheen:hover::after {
+    animation: none;
+    opacity: 0;
+  }
+}

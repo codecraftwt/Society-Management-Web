@@ -387,8 +387,8 @@ function AreaAssignModal({
           display: "flex",
           flexDirection: "column",
           borderRadius: isMobile ? 16 : 20,
-          background: "var(--modal-bg, var(--card-bg, #0f172a))",
-          border: "1.5px solid var(--glass-border, rgba(255, 255, 255, 0.12))",
+          background: "var(--modal-bg)",
+          border: "1.5px solid var(--glass-border)",
           boxShadow: "0 24px 64px rgba(0, 0, 0, 0.5), 0 0 20px rgba(var(--acct-purple-rgb), 0.22)",
           overflow: "hidden",
           animation: "adminModalPopIn 0.28s cubic-bezier(0.16, 1, 0.3, 1)",
@@ -1747,7 +1747,7 @@ function BlocksTab({
                           <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 8 }}>
                             <button
                               onClick={() => setSelectedBlock(selectedBlock?.id === b.id ? null : b)}
-                              style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "5px 12px", borderRadius: 8, fontSize: 12, fontWeight: 600, background: "rgba(107,70,193,0.12)", color: "var(--accent, #6B46C1)", border: "1px solid rgba(107,70,193,0.25)", cursor: "pointer" }}
+                              style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "5px 12px", borderRadius: 8, fontSize: 12, fontWeight: 600, background: "rgba(107,70,193,0.12)", color: "var(--accent)", border: "1px solid rgba(107,70,193,0.25)", cursor: "pointer" }}
                             >
                               {isRowHouse ? <MdHomeWork size={13} /> : <MdLayers size={13} />}
                               {selectedBlock?.id === b.id ? t("mpHide") : (isRowHouse ? t("mpHouses") : t("mpFloors"))}

@@ -137,7 +137,7 @@ export default function DateRangeFilter({
         onClick={() => setOpen((prev) => !prev)}
         className={`flex items-center gap-2 h-10.5 px-3.5 rounded-xl border text-xs font-semibold transition-all cursor-pointer select-none ${
           isActive
-            ? "border-(--accent) bg-(--accent-soft,rgba(160,90,255,0.12)) text-(--text-primary) shadow-sm"
+            ? "border-(--accent) bg-(--accent-soft) text-(--text-primary) shadow-sm"
             : "border-(--glass-border) bg-(--card-inner-bg) text-(--text-secondary) hover:text-(--text-primary) hover:border-(--accent)/50"
         }`}
         aria-expanded={open}
@@ -167,7 +167,7 @@ export default function DateRangeFilter({
       {open && (
         <div
           ref={popoverRef}
-          className="absolute z-50 mt-2 p-4 rounded-2xl shadow-2xl border border-(--glass-border) bg-(--card-bg,#1e1e2d) animate-scaleIn"
+          className="absolute z-50 mt-2 p-4 rounded-2xl shadow-2xl border border-(--glass-border) bg-(--card-bg) animate-scaleIn"
           style={{
             minWidth: 290,
             maxWidth: 320,
@@ -257,7 +257,7 @@ export default function DateRangeFilter({
             <button
               type="button"
               onClick={() => handleApply()}
-              className="flex-1 py-1.5 rounded-lg text-xs font-semibold bg-(--accent,#a05aff) text-white hover:opacity-90 transition cursor-pointer flex items-center justify-center gap-1 shadow-sm"
+              className="flex-1 py-1.5 rounded-lg text-xs font-semibold bg-(--accent) text-white hover:opacity-90 transition cursor-pointer flex items-center justify-center gap-1 shadow-sm"
             >
               <MdCheck size={14} /> {t("dateRangeApply")}
             </button>

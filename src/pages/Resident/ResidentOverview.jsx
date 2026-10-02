@@ -18,6 +18,7 @@ import { toast } from "react-toastify";
 import { useLang } from "../../context/LanguageContext";
 import API from "../../services/api";
 import UserAvatar from "../../components/common/UserAvatar";
+import StatCard from "../../components/common/StatCard";
 
 /**
  * Resident "My Overview" screen.
@@ -37,18 +38,6 @@ import UserAvatar from "../../components/common/UserAvatar";
  */
 function Avatar({ name, src }) {
   return <UserAvatar name={name} src={src} size={78} radius={21} alt={name || "Profile picture"} />;
-}
-
-function StatTile({ icon, value, label, tone }) {
-  return (
-    <div className="ov-stat" style={{ "--tone": tone }}>
-      <span className="ov-stat__icon">{icon}</span>
-      <span>
-        <span className="ov-stat__val">{value}</span>
-        <span className="ov-stat__label">{label}</span>
-      </span>
-    </div>
-  );
 }
 
 function ManageCard({ icon, label, onClick, tone = "accent" }) {
@@ -194,23 +183,26 @@ export default function ResidentOverview() {
       </div>
 
       <div className="ov-stats">
-        <StatTile
+        <StatCard
+          layout="inline"
           icon={<MdFamilyRestroom />}
           value={stats.members}
           label={t("rdStatHousehold")}
-          tone="#3B82F6"
+          tone="info"
         />
-        <StatTile
+        <StatCard
+          layout="inline"
           icon={<MdDirectionsCarFilled />}
           value={stats.vehicles}
           label={t("rdStatVehicles")}
-          tone="#10B981"
+          tone="success"
         />
-        <StatTile
+        <StatCard
+          layout="inline"
           icon={<MdPeopleAlt />}
           value={stats.visitors}
           label={t("mpStatActiveVisitors")}
-          tone="#F59E0B"
+          tone="warning"
         />
       </div>
 

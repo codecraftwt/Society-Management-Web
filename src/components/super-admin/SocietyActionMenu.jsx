@@ -1,18 +1,26 @@
 import { useState, useEffect, useRef } from "react";
-import { MdMoreVert, MdManageAccounts, MdDelete } from "react-icons/md";
+import { MdMoreVert, MdManageAccounts, MdDelete, MdPalette } from "react-icons/md";
 import { BiSolidEdit } from "react-icons/bi";
 
 /**
  * SocietyActionMenu
  *
  * Props:
- *   onEditAdmin  – called when "Edit Admin" / "Assign Admin" is clicked
- *   onManage     – called when "Manage" is clicked
- *   onDelete     – called when "Delete" is clicked
- *   hasAdmin     – boolean, changes label between Edit / Assign
- *   t            – translation function
+ *   onEditAdmin      – called when "Edit Admin" / "Assign Admin" is clicked
+ *   onManage         – called when "Manage" is clicked
+ *   onCustomizeTheme – called when "Customize Theme" is clicked
+ *   onDelete         – called when "Delete" is clicked
+ *   hasAdmin         – boolean, changes label between Edit / Assign
+ *   t                – translation function
  */
-export default function SocietyActionMenu({ onEditAdmin, onManage, onDelete, hasAdmin, t }) {
+export default function SocietyActionMenu({
+  onEditAdmin,
+  onManage,
+  onCustomizeTheme,
+  onDelete,
+  hasAdmin,
+  t,
+}) {
   const [open, setOpen] = useState(false);
   const menuRef = useRef(null);
 
@@ -39,7 +47,7 @@ export default function SocietyActionMenu({ onEditAdmin, onManage, onDelete, has
   const handleItem = (fn) => (e) => {
     e.stopPropagation();
     setOpen(false);
-    fn();
+    if (fn) fn();
   };
 
   return (
@@ -80,6 +88,17 @@ export default function SocietyActionMenu({ onEditAdmin, onManage, onDelete, has
             <MdManageAccounts size={15} />
             {t("saManageBtn")}
           </button>
+
+          {onCustomizeTheme && (
+            <button
+              role="menuitem"
+              className="sa-action-item"
+              onClick={handleItem(onCustomizeTheme)}
+            >
+              <MdPalette size={15} />
+              {t("saCustomizeTheme", "Theme & Branding")}
+            </button>
+          )}
 
           <div className="sa-action-divider" />
 

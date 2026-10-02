@@ -1,0 +1,459 @@
+/* ----------------------------------------------------------------------
+ * Cleaning Staff — section styles
+ *
+ * Scope is intentionally kept to `.cs-*` class names so this stylesheet can be
+ * lifted into a future shared/global card + table standardisation without
+ * colliding with any other section.
+ *
+ * Theming: every colour resolves through an existing theme token
+ * (--card-bg, --text-primary, --accent, --border/--glass-border, …) so the
+ * section follows light/dark, role theme and society branding automatically.
+ * The only literal colours here are semantic status hues used sparingly for
+ * badges/dots, matching the palette GlobalBadge already ships.
+ * ────────────────────────────────────────────────────────────────────────── */
+
+.cs-root {
+  min-width: 0;
+  width: 100%;
+}
+
+/* ── KPI cards ─────────────────────────────────────────────────────────── */
+/* Mirrors the existing .ad-kpi dashboard tile language (radius, label/desc
+   hierarchy) but is scoped here and token-driven so it can migrate cleanly. */
+
+.cs-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
+@media (max-width: 1024px) {
+  .cs-kpi-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 480px) {
+  .cs-kpi-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+}
+
+.cs-kpi {
+  position: relative;
+  overflow: hidden;
+  min-width: 0;
+  padding: 14px 14px 15px;
+  border-radius: 16px;
+  background: var(--card-bg);
+  border: 1px solid var(--card-inner-border, var(--glass-border));
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+}
+
+/* Accent rail uses the active society/role accent, not a fixed brand colour. */
+.cs-kpi::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 4px;
+  background: var(--cs-kpi-accent, var(--accent));
+}
+
+.cs-kpi__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.cs-kpi__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  flex-shrink: 0;
+  color: var(--cs-kpi-accent, var(--accent));
+  background: var(--accent-soft, rgba(37, 99, 235, 0.1));
+}
+
+.cs-kpi__label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cs-kpi__value {
+  position: relative;
+  font-size: 26px;
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.04em;
+  color: var(--text-primary);
+}
+
+.cs-kpi__desc {
+  margin-top: 5px;
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--text-tertiary, var(--text-secondary));
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+/* Skeleton shimmer while the first payload is in flight. */
+.cs-kpi__value--skeleton {
+  color: transparent;
+  border-radius: 6px;
+  background: linear-gradient(
+    90deg,
+    var(--card-inner-bg, rgba(148, 163, 184, 0.12)) 25%,
+    var(--glass-border, rgba(148, 163, 184, 0.24)) 37%,
+    var(--card-inner-bg, rgba(148, 163, 184, 0.12)) 63%
+  );
+  background-size: 400% 100%;
+  animation: cs-shimmer 1.3s ease-in-out infinite;
+  user-select: none;
+}
+
+@keyframes cs-shimmer {
+  0% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0 50%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cs-kpi__value--skeleton {
+    animation: none;
+  }
+}
+
+/* ── Avatar cell in the staff table ────────────────────────────────────── */
+
+.cs-photo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.cs-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* ── Pass code chip ────────────────────────────────────────────────────── */
+
+.cs-passcode {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 9px;
+  border-radius: 8px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  color: var(--text-primary);
+  background: var(--card-inner-bg, rgba(148, 163, 184, 0.12));
+  border: 1px solid var(--card-inner-border, var(--glass-border));
+}
+
+.cs-passcode__copy {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  padding: 2px;
+  border-radius: 5px;
+  cursor: pointer;
+  color: var(--text-secondary);
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.cs-passcode__copy:hover:not(:disabled) {
+  background: var(--accent-soft, rgba(37, 99, 235, 0.12));
+  color: var(--accent);
+}
+
+.cs-passcode__copy:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* ── Detail header ─────────────────────────────────────────────────────── */
+
+.cs-detail-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.cs-detail-head__text {
+  min-width: 0;
+  flex: 1 1 180px;
+}
+
+.cs-detail-head__name {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+}
+
+.cs-detail-head__sub {
+  margin: 3px 0 0;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+/* ── Definition list used across the Basic tab ─────────────────────────── */
+
+.cs-dl {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 12px 18px;
+  margin: 0;
+}
+
+.cs-dl__item {
+  min-width: 0;
+}
+
+.cs-dl__label {
+  margin: 0 0 3px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-tertiary, var(--text-secondary));
+}
+
+.cs-dl__value {
+  margin: 0;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+}
+
+/* ── Form helpers ──────────────────────────────────────────────────────── */
+
+.cs-section-title {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0 0 2px;
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.cs-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+@media (max-width: 620px) {
+  .cs-grid-2 {
+    grid-template-columns: 1fr;
+  }
+}
+
+.cs-field {
+  min-width: 0;
+}
+
+.cs-error {
+  margin: 4px 0 0;
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: var(--danger, #ef4444);
+}
+
+/* Assignment repeater rows (AREA / TASK pairs). */
+.cs-assign-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1.2fr) auto;
+  gap: 8px;
+  align-items: start;
+  padding: 10px;
+  border-radius: 12px;
+  background: var(--card-inner-bg, rgba(148, 163, 184, 0.08));
+  border: 1px solid var(--card-inner-border, var(--glass-border));
+}
+
+@media (max-width: 620px) {
+  .cs-assign-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+.cs-assign-row__remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  border: 1px solid var(--card-inner-border, var(--glass-border));
+  background: var(--card-bg);
+  color: var(--danger, #ef4444);
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.cs-assign-row__remove:hover:not(:disabled) {
+  background: rgba(239, 68, 68, 0.12);
+  border-color: rgba(239, 68, 68, 0.4);
+}
+
+.cs-assign-row__remove:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* Photo picker (create only — the backend has no upload on PUT). */
+.cs-photo-picker {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.cs-photo-drop {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 96px;
+  height: 96px;
+  border-radius: 18px;
+  border: 2px dashed var(--card-inner-border, var(--glass-border));
+  background: var(--card-inner-bg, rgba(148, 163, 184, 0.08));
+  color: var(--text-secondary);
+  cursor: pointer;
+  overflow: hidden;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.cs-photo-drop:hover:not(:disabled) {
+  border-color: var(--accent);
+  background: var(--accent-soft, rgba(37, 99, 235, 0.1));
+}
+
+.cs-photo-drop:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.cs-photo-drop img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* ── Toolbar / filter row ──────────────────────────────────────────────── */
+
+.cs-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.cs-toolbar__actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+/* Small helper text under a filter control. */
+.cs-hint {
+  margin: 6px 0 0;
+  font-size: 0.74rem;
+  color: var(--text-tertiary, var(--text-secondary));
+}
+
+/* Read-only notice explaining a backend-enforced rule. */
+.cs-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 9px 11px;
+  border-radius: 10px;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  background: var(--accent-soft, rgba(37, 99, 235, 0.08));
+  border: 1px solid var(--card-inner-border, var(--glass-border));
+}
+
+/* Table wrapper: allows the shared GlobalTable to scroll instead of forcing
+   the page wider on small screens. */
+.cs-table-scroll {
+  min-width: 0;
+  width: 100%;
+  overflow-x: auto;
+}
+
+/* ── Attendance summary strip ──────────────────────────────────────────── */
+
+.cs-inline-stats {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.cs-inline-stat {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: 9px;
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: var(--card-inner-bg, rgba(148, 163, 184, 0.1));
+  border: 1px solid var(--card-inner-border, var(--glass-border));
+}
+
+.cs-inline-stat strong {
+  font-size: 0.88rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}

@@ -32,6 +32,7 @@ import {
   FaTools,
 } from "react-icons/fa";
 import GuardEmergencyModal from "../../components/guard/GuardEmergencyModal";
+import StatCard from "../../components/common/StatCard";
 
 /* ─────────────────────────────────────────────────────────────
    Helper Functions
@@ -109,7 +110,7 @@ const getVisitorTypeMeta = (type, t) => {
       return {
         label: t("gdTypeGuest", "Guest"),
         icon: FaUserFriends,
-        color: "var(--accent, #3b82f6)",
+        color: "var(--accent)",
         bg: "rgba(59, 130, 246, 0.12)",
         border: "rgba(59, 130, 246, 0.25)",
       };
@@ -619,48 +620,69 @@ export default function GuardDashboard() {
           Shares the .dash-kpi-scope tile styling with the Admin dashboard:
           same padding, palette and glass hover physics.
           ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+      {/* Migrated from .ad-kpi in Phase 2 batch 2A. Inside .dash-kpi-scope the
+          scoped palette gave --guards/--residents/--complaints/--alerts blue,
+          cyan, pink and lavender. Tones are remapped by meaning: notably
+          "Active Alerts" becomes `danger`, which is what an emergency count
+          should read as. All four are now real buttons, not click-only divs. */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
         {/* Inside Now */}
-        <div
+        <StatCard
+          variant="sheen"
+          tone="success"
           onClick={() => setActiveTab("INSIDE")}
-          className="ad-kpi ad-kpi--guards cursor-pointer"
-        >
-          <span className="ad-kpi-val">{stats.inside}</span>
-          <span className="ad-kpi-label">{t("gdStatInside", "Visitors Inside")}</span>
-          <span className="ad-kpi-desc hidden lg:block">{t("gdKpiInsideDesc", "Active on society premises")}</span>
-        </div>
+          value={stats.inside}
+          label={t("gdStatInside", "Visitors Inside")}
+          description={
+            <span className="hidden lg:block">
+              {t("gdKpiInsideDesc", "Active on society premises")}
+            </span>
+          }
+        />
 
         {/* Total Today */}
-        <div
+        <StatCard
+          variant="sheen"
+          tone="brand"
           onClick={() => setActiveTab("ALL")}
-          className="ad-kpi ad-kpi--residents cursor-pointer"
-        >
-          <span className="ad-kpi-val">{stats.today}</span>
-          <span className="ad-kpi-label">{t("gdStatToday", "Total Today")}</span>
-          <span className="ad-kpi-desc hidden lg:block">{t("gdKpiTodayDesc", "All visitor entries today")}</span>
-        </div>
+          value={stats.today}
+          label={t("gdStatToday", "Total Today")}
+          description={
+            <span className="hidden lg:block">
+              {t("gdKpiTodayDesc", "All visitor entries today")}
+            </span>
+          }
+        />
 
         {/* Exited Today */}
-        <div
+        <StatCard
+          variant="sheen"
+          tone="info"
           onClick={() => setActiveTab("ALL")}
-          className="ad-kpi ad-kpi--complaints cursor-pointer"
-        >
-          <span className="ad-kpi-val">{stats.exited}</span>
-          <span className="ad-kpi-label">{t("gdStatExited", "Exited Today")}</span>
-          <span className="ad-kpi-desc hidden lg:block">{t("gdKpiExitedDesc", "Departed via gate checkout")}</span>
-        </div>
+          value={stats.exited}
+          label={t("gdStatExited", "Exited Today")}
+          description={
+            <span className="hidden lg:block">
+              {t("gdKpiExitedDesc", "Departed via gate checkout")}
+            </span>
+          }
+        />
 
         {/* Emergency Count */}
-        <div
+        <StatCard
+          variant="sheen"
+          tone="danger"
           onClick={() => setShowEmergencyModal(true)}
-          className="ad-kpi ad-kpi--alerts cursor-pointer"
-        >
-          <span className="ad-kpi-val">{activeAlerts.length}</span>
-          <span className="ad-kpi-label">{t("gdStatAlerts", "Active Alerts")}</span>
-          <span className="ad-kpi-desc hidden lg:block">
-            {activeAlerts.length > 0 ? t("gdKpiAlertsAttention", "Immediate attention needed") : t("gdKpiAlertsNormal", "All systems normal")}
-          </span>
-        </div>
+          value={activeAlerts.length}
+          label={t("gdStatAlerts", "Active Alerts")}
+          description={
+            <span className="hidden lg:block">
+              {activeAlerts.length > 0
+                ? t("gdKpiAlertsAttention", "Immediate attention needed")
+                : t("gdKpiAlertsNormal", "All systems normal")}
+            </span>
+          }
+        />
       </div>
 
       {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

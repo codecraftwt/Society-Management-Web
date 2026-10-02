@@ -45,6 +45,7 @@ import { useLang } from "../../context/LanguageContext";
 import { hasPermission, isAdmin } from "../../utils/permissions";
 import API from "../../services/api";
 import SlidingTabs from "../../components/common/SlidingTabs";
+import StatCard from "../../components/common/StatCard";
 import ExpandableSearch from "../../components/common/ExpandableSearch";
 import Select from "../../components/common/Select";
 import useUnsavedDirty from "../../hooks/useUnsavedDirty";
@@ -288,7 +289,7 @@ export default function Accounting({ initialTab = "overview" }) {
                 height: 44,
                 borderRadius: 14,
                 flexShrink: 0,
-                background: "linear-gradient(135deg, var(--accent), #9e58ff)",
+                background: "linear-gradient(135deg, var(--accent), var(--accent-light))",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -321,7 +322,7 @@ export default function Accounting({ initialTab = "overview" }) {
                 className="text-xs font-semibold"
                 style={{
                   height: 38,
-                  background: "var(--card-inner-bg, rgba(255,255,255,0.04))",
+                  background: "var(--card-inner-bg)",
                   borderColor: "var(--glass-border)",
                   color: "var(--text-primary)",
                   borderRadius: 12,
@@ -345,7 +346,7 @@ export default function Accounting({ initialTab = "overview" }) {
               style={{
                 width: 38,
                 height: 38,
-                background: "var(--card-inner-bg, rgba(255,255,255,0.04))",
+                background: "var(--card-inner-bg)",
                 borderColor: "var(--glass-border)",
                 color: "var(--text-primary)",
               }}
@@ -354,7 +355,7 @@ export default function Accounting({ initialTab = "overview" }) {
                 e.currentTarget.style.borderColor = "var(--accent-light, #818cf8)";
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.background = "var(--card-inner-bg, rgba(255,255,255,0.04))";
+                e.currentTarget.style.background = "var(--card-inner-bg)";
                 e.currentTarget.style.borderColor = "var(--glass-border)";
               }}
             >
@@ -440,42 +441,71 @@ function OverviewTab({ b, months, year, onOpenTab }) {
   return (
     <div className="space-y-6">
       {/* ── Dashboard KPI Cards ── */}
+      {/* Migrated from .ad-kpi in Phase 2 batch 2A. /admin/accounting keeps its
+          own 7-variant palette (role-theme.css section 6b) that is disjoint
+          from the /admin scoped set; all of it is replaced by semantic tones,
+          so the cash book now reads as income / expense / balance rather than
+          by variant name. */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
         {/* 1. Opening Balance */}
-        <div className="ad-kpi ad-kpi--opening">
-          <span className="ad-kpi-val">{CURRENCY(b.opening_balance)}</span>
-          <span className="ad-kpi-label">{t("accOpeningBalance")}</span>
-          <span className="ad-kpi-desc hidden lg:block">
-            {b.opening_balance_effective_date ? t("accEffectiveOn", { date: b.opening_balance_effective_date }) : t("accInitialBalanceReserve")}
-          </span>
-        </div>
+        <StatCard
+          variant="sheen"
+          tone="neutral"
+          value={CURRENCY(b.opening_balance)}
+          label={t("accOpeningBalance")}
+          description={
+            <span className="hidden lg:block">
+              {b.opening_balance_effective_date
+                ? t("accEffectiveOn", { date: b.opening_balance_effective_date })
+                : t("accInitialBalanceReserve")}
+            </span>
+          }
+        />
 
         {/* 2. Total Income */}
-        <div className="ad-kpi ad-kpi--income">
-          <span className="ad-kpi-val">{CURRENCY(b.total_income ?? b.total_credit)}</span>
-          <span className="ad-kpi-label">{t("accTotalIncome")}</span>
-          <span className="ad-kpi-desc hidden lg:block">
-            {t("accBillsMaintAmenities", { bills: CURRENCY(b.bill_income), maint: CURRENCY(b.maintenance_income), amenities: CURRENCY(b.amenity_income) })}
-          </span>
-        </div>
+        <StatCard
+          variant="sheen"
+          tone="success"
+          value={CURRENCY(b.total_income ?? b.total_credit)}
+          label={t("accTotalIncome")}
+          description={
+            <span className="hidden lg:block">
+              {t("accBillsMaintAmenities", {
+                bills: CURRENCY(b.bill_income),
+                maint: CURRENCY(b.maintenance_income),
+                amenities: CURRENCY(b.amenity_income),
+              })}
+            </span>
+          }
+        />
 
         {/* 3. Total Expenses */}
-        <div className="ad-kpi ad-kpi--expense">
-          <span className="ad-kpi-val">{CURRENCY(b.total_expenses ?? b.total_debit)}</span>
-          <span className="ad-kpi-label">{t("accTotalExpenses")}</span>
-          <span className="ad-kpi-desc hidden lg:block">
-            {b.void_reversals ? t("accIncludesVoid", { amount: CURRENCY(b.void_reversals) }) : t("accMoneyOut")}
-          </span>
-        </div>
+        <StatCard
+          variant="sheen"
+          tone="danger"
+          value={CURRENCY(b.total_expenses ?? b.total_debit)}
+          label={t("accTotalExpenses")}
+          description={
+            <span className="hidden lg:block">
+              {b.void_reversals
+                ? t("accIncludesVoid", { amount: CURRENCY(b.void_reversals) })
+                : t("accMoneyOut")}
+            </span>
+          }
+        />
 
         {/* 4. Current Balance */}
-        <div className="ad-kpi ad-kpi--balance">
-          <span className="ad-kpi-val">{CURRENCY(b.current_balance)}</span>
-          <span className="ad-kpi-label">{t("accCurrentBalance")}</span>
-          <span className="ad-kpi-desc hidden lg:block">
-            {t("accRunningCashPosition", { society: b.society_name || t("accSocietyName") })}
-          </span>
-        </div>
+        <StatCard
+          variant="sheen"
+          tone="brand"
+          value={CURRENCY(b.current_balance)}
+          label={t("accCurrentBalance")}
+          description={
+            <span className="hidden lg:block">
+              {t("accRunningCashPosition", { society: b.society_name || t("accSocietyName") })}
+            </span>
+          }
+        />
       </div>
 
       {/* Income breakdown */}
@@ -497,26 +527,33 @@ function OverviewTab({ b, months, year, onOpenTab }) {
           </span>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-          {/* Utility & Flat Bills */}
-          <div className="ad-kpi ad-kpi--bills">
-            <span className="ad-kpi-val">{CURRENCY(b.bill_income)}</span>
-            <span className="ad-kpi-label">{t("accUtilityFlatBills")}</span>
-            <span className="ad-kpi-desc hidden lg:block">{t("accUtilityDesc")}</span>
-          </div>
+          {/* Three peer income categories. Distinct tones preserve the original's three
+            visually separate cards while staying theme-aware. */}
+          <StatCard
+            variant="sheen"
+            tone="info"
+            value={CURRENCY(b.bill_income)}
+            label={t("accUtilityFlatBills")}
+            description={<span className="hidden lg:block">{t("accUtilityDesc")}</span>}
+          />
 
           {/* Maintenance Fees */}
-          <div className="ad-kpi ad-kpi--maintenance">
-            <span className="ad-kpi-val">{CURRENCY(b.maintenance_income)}</span>
-            <span className="ad-kpi-label">{t("accMaintenanceFees")}</span>
-            <span className="ad-kpi-desc hidden lg:block">{t("accMaintenanceDesc")}</span>
-          </div>
+          <StatCard
+            variant="sheen"
+            tone="success"
+            value={CURRENCY(b.maintenance_income)}
+            label={t("accMaintenanceFees")}
+            description={<span className="hidden lg:block">{t("accMaintenanceDesc")}</span>}
+          />
 
           {/* Amenity Bookings */}
-          <div className="ad-kpi ad-kpi--amenity">
-            <span className="ad-kpi-val">{CURRENCY(b.amenity_income)}</span>
-            <span className="ad-kpi-label">{t("accAmenityBookings")}</span>
-            <span className="ad-kpi-desc hidden lg:block">{t("accAmenityDesc")}</span>
-          </div>
+          <StatCard
+            variant="sheen"
+            tone="brand"
+            value={CURRENCY(b.amenity_income)}
+            label={t("accAmenityBookings")}
+            description={<span className="hidden lg:block">{t("accAmenityDesc")}</span>}
+          />
         </div>
       </div>
 
@@ -919,42 +956,54 @@ function LedgerTab({ b, onNeedsBalance }) {
       {/* ── Cash Book Dashboard KPI Cards ── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
         {/* Net Live Balance */}
-        <div className="ad-kpi ad-kpi--balance">
-          <span className="ad-kpi-val">{CURRENCY(b?.current_balance)}</span>
-          <span className="ad-kpi-label">{t("accNetLiveBalance")}</span>
-          <span className="ad-kpi-desc hidden lg:block">{t("accCashPositionDesc")}</span>
-        </div>
+        <StatCard
+          variant="sheen"
+          tone="brand"
+          value={CURRENCY(b?.current_balance)}
+          label={t("accNetLiveBalance")}
+          description={<span className="hidden lg:block">{t("accCashPositionDesc")}</span>}
+        />
 
         {/* Total Inflows */}
-        <div className="ad-kpi ad-kpi--income">
-          <span className="ad-kpi-val">{CURRENCY(b?.total_income ?? b?.total_credit)}</span>
-          <span className="ad-kpi-label">{t("accTotalInflows")}</span>
-          <span className="ad-kpi-desc hidden lg:block">{t("accInflowsDesc")}</span>
-        </div>
+        <StatCard
+          variant="sheen"
+          tone="success"
+          value={CURRENCY(b?.total_income ?? b?.total_credit)}
+          label={t("accTotalInflows")}
+          description={<span className="hidden lg:block">{t("accInflowsDesc")}</span>}
+        />
 
         {/* Total Outflows */}
-        <div className="ad-kpi ad-kpi--expense">
-          <span className="ad-kpi-val">{CURRENCY(b?.total_expenses ?? b?.total_debit)}</span>
-          <span className="ad-kpi-label">{t("accTotalOutflows")}</span>
-          <span className="ad-kpi-desc hidden lg:block">{t("accOutflowsDesc")}</span>
-        </div>
+        <StatCard
+          variant="sheen"
+          tone="danger"
+          value={CURRENCY(b?.total_expenses ?? b?.total_debit)}
+          label={t("accTotalOutflows")}
+          description={<span className="hidden lg:block">{t("accOutflowsDesc")}</span>}
+        />
 
         {/* Opening Balance */}
-        <div className="ad-kpi ad-kpi--opening">
-          <span className="ad-kpi-val">{CURRENCY(b?.opening_balance)}</span>
-          <span className="ad-kpi-label">{t("accOpeningBalance")}</span>
-          <span className="ad-kpi-desc hidden lg:block">
-            {b?.opening_balance_effective_date ? t("accEffectiveOn", { date: b.opening_balance_effective_date }) : t("accInitialStartingReserve")}
-          </span>
-        </div>
+        <StatCard
+          variant="sheen"
+          tone="neutral"
+          value={CURRENCY(b?.opening_balance)}
+          label={t("accOpeningBalance")}
+          description={
+            <span className="hidden lg:block">
+              {b?.opening_balance_effective_date
+                ? t("accEffectiveOn", { date: b.opening_balance_effective_date })
+                : t("accInitialStartingReserve")}
+            </span>
+          }
+        />
       </div>
 
       {/* ── Main Ledger Card ── */}
       <div
         className="rounded-2xl p-6 shadow-sm space-y-5 border"
         style={{
-          background: "var(--card-bg, rgba(15, 23, 42, 0.6))",
-          borderColor: "var(--glass-border, rgba(255, 255, 255, 0.1))",
+          background: "var(--card-bg)",
+          borderColor: "var(--glass-border)",
           backdropFilter: "blur(16px)",
           WebkitBackdropFilter: "blur(16px)",
         }}
@@ -986,9 +1035,9 @@ function LedgerTab({ b, onNeedsBalance }) {
               className="btn-soft flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold border transition-colors cursor-pointer"
               style={{
                 height: 38,
-                background: "var(--card-inner-bg, rgba(255,255,255,0.04))",
-                borderColor: activeFilterCount > 0 ? "var(--accent, #818cf8)" : "var(--glass-border)",
-                color: activeFilterCount > 0 ? "var(--accent, #818cf8)" : "var(--text-primary)",
+                background: "var(--card-inner-bg)",
+                borderColor: activeFilterCount > 0 ? "var(--accent)" : "var(--glass-border)",
+                color: activeFilterCount > 0 ? "var(--accent)" : "var(--text-primary)",
               }}
             >
               <MdFilterList size={16} className={activeFilterCount > 0 ? "text-accent" : "text-secondary"} />
@@ -1265,25 +1314,31 @@ function ExpensesTab({ isDeleteAllowed }) {
       {totals && (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
           {/* Total Recorded Amount */}
-          <div className="ad-kpi ad-kpi--bills">
-            <span className="ad-kpi-val">{CURRENCY(totals.grand_total)}</span>
-            <span className="ad-kpi-label">{t("accTotalRecorded")}</span>
-            <span className="ad-kpi-desc hidden lg:block">{t("accAcrossAllRecords")}</span>
-          </div>
+          <StatCard
+            variant="sheen"
+            tone="neutral"
+            value={CURRENCY(totals.grand_total)}
+            label={t("accTotalRecorded")}
+            description={<span className="hidden lg:block">{t("accAcrossAllRecords")}</span>}
+          />
 
           {/* Active Debited Outflow */}
-          <div className="ad-kpi ad-kpi--expense">
-            <span className="ad-kpi-val">{CURRENCY(totals.posted_total)}</span>
-            <span className="ad-kpi-label">{t("accActiveOutflow")}</span>
-            <span className="ad-kpi-desc hidden lg:block">{t("accDeductedFromBalance")}</span>
-          </div>
+          <StatCard
+            variant="sheen"
+            tone="danger"
+            value={CURRENCY(totals.posted_total)}
+            label={t("accActiveOutflow")}
+            description={<span className="hidden lg:block">{t("accDeductedFromBalance")}</span>}
+          />
 
           {/* Voided Records */}
-          <div className="ad-kpi ad-kpi--amenity">
-            <span className="ad-kpi-val">{totals.void_count || 0}</span>
-            <span className="ad-kpi-label">{t("accVoidedRecords")}</span>
-            <span className="ad-kpi-desc hidden lg:block">{t("accAuditedReversals")}</span>
-          </div>
+          <StatCard
+            variant="sheen"
+            tone="warning"
+            value={totals.void_count || 0}
+            label={t("accVoidedRecords")}
+            description={<span className="hidden lg:block">{t("accAuditedReversals")}</span>}
+          />
         </div>
       )}
 
@@ -1291,8 +1346,8 @@ function ExpensesTab({ isDeleteAllowed }) {
       <div
         className="rounded-2xl p-6 shadow-sm space-y-6 border"
         style={{
-          background: "var(--card-bg, rgba(15, 23, 42, 0.6))",
-          borderColor: "var(--glass-border, rgba(255, 255, 255, 0.1))",
+          background: "var(--card-bg)",
+          borderColor: "var(--glass-border)",
           backdropFilter: "blur(16px)",
           WebkitBackdropFilter: "blur(16px)",
         }}
@@ -1735,23 +1790,31 @@ function OpeningTab({ b, isManageOpening, onChanged }) {
 
         {/* ── KPI Cards for Opening Balance (Inside the card) ── */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-          <div className="ad-kpi ad-kpi--opening">
-            <span className="ad-kpi-val">{CURRENCY(b.opening_balance)}</span>
-            <span className="ad-kpi-label">{t("accCurrentOpening")}</span>
-            <span className="ad-kpi-desc">{t("accCarryOverBaseline")}</span>
-          </div>
-          <div className="ad-kpi ad-kpi--balance">
-            <span className="ad-kpi-val">{b.opening_balance_effective_date || t("accNotSet")}</span>
-            <span className="ad-kpi-label">{t("accEffectiveDate")}</span>
-            <span className="ad-kpi-desc">{t("accDateOfCarryOver")}</span>
-          </div>
-          <div className="ad-kpi ad-kpi--income">
-            <span className="ad-kpi-val">{b.opening_balance ? t("accConfigured") : t("accPendingSetup")}</span>
-            <span className="ad-kpi-label">{t("accSetupStatus")}</span>
-            <span className="ad-kpi-desc">
-              {b.opening_balance_set_at ? new Date(b.opening_balance_set_at).toLocaleDateString() : t("accNoRecordYet")}
-            </span>
-          </div>
+          <StatCard
+            variant="sheen"
+            tone="neutral"
+            value={CURRENCY(b.opening_balance)}
+            label={t("accCurrentOpening")}
+            description={t("accCarryOverBaseline")}
+          />
+          <StatCard
+            variant="sheen"
+            tone="info"
+            value={b.opening_balance_effective_date || t("accNotSet")}
+            label={t("accEffectiveDate")}
+            description={t("accDateOfCarryOver")}
+          />
+          <StatCard
+            variant="sheen"
+            tone="brand"
+            value={b.opening_balance ? t("accConfigured") : t("accPendingSetup")}
+            label={t("accSetupStatus")}
+            description={
+              b.opening_balance_set_at
+                ? new Date(b.opening_balance_set_at).toLocaleDateString()
+                : t("accNoRecordYet")
+            }
+          />
         </div>
 
         {!isManageOpening && (
@@ -2097,7 +2160,7 @@ function AuditDetailsModal({ row, societyName, onClose }) {
           <div className="flex items-center gap-3">
             <div
               className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border"
-              style={{ background: "var(--card-bg, rgba(0,0,0,0.2))", borderColor: activeTone.border, color: activeTone.text }}
+              style={{ background: "var(--card-bg)", borderColor: activeTone.border, color: activeTone.text }}
             >
               <MdHistoryEdu size={22} />
             </div>
@@ -2310,8 +2373,8 @@ function AuditLogTab({ societyName }) {
     <div
       className="rounded-2xl shadow-sm p-6 space-y-6 border"
       style={{
-        background: "var(--card-bg, rgba(15, 23, 42, 0.6))",
-        borderColor: "var(--glass-border, rgba(255, 255, 255, 0.1))",
+        background: "var(--card-bg)",
+        borderColor: "var(--glass-border)",
         backdropFilter: "blur(16px)",
         WebkitBackdropFilter: "blur(16px)",
       }}
@@ -2352,7 +2415,7 @@ function AuditLogTab({ societyName }) {
               <div
                 className="absolute right-0 top-full mt-2 w-48 rounded-xl border shadow-xl p-1.5 z-50 animate-scaleIn"
                 style={{
-                  background: "var(--modal-bg, #0f172a)",
+                  background: "var(--modal-bg)",
                   borderColor: "var(--glass-border)",
                   backdropFilter: "blur(16px)",
                 }}
@@ -2382,7 +2445,7 @@ function AuditLogTab({ societyName }) {
             style={{
               width: 38,
               height: 38,
-              background: "var(--card-inner-bg, rgba(255,255,255,0.04))",
+              background: "var(--card-inner-bg)",
               borderColor: "var(--glass-border)",
               color: "var(--text-primary)",
             }}
@@ -2462,7 +2525,7 @@ function AuditLogTab({ societyName }) {
                       onClick={() => setSelected(r)}
                       className="p-2 rounded-xl text-accent transition-all cursor-pointer"
                       style={{
-                        background: "var(--accent-soft, rgba(99,102,241,0.18))",
+                        background: "var(--accent-soft)",
                         border: "1px solid var(--accent-light, #818cf8)",
                       }}
                       title={t("accViewAuditTip")}

@@ -28,7 +28,7 @@ function DocumentUploadField({ label, icon: Icon, accept, file, onChange }) {
         onClick={() => inputRef.current?.click()}
         className="rounded-xl border-2 border-dashed p-3 flex items-center gap-3 cursor-pointer transition-all"
         style={{
-          background: file ? "rgba(34,197,94,0.1)" : "var(--card-inner-bg, rgba(255,255,255,0.03))",
+          background: file ? "rgba(34,197,94,0.1)" : "var(--card-inner-bg)",
           borderColor: file ? "rgba(34,197,94,0.5)" : "var(--divider, rgba(255,255,255,0.1))"
         }}
       >
@@ -36,7 +36,7 @@ function DocumentUploadField({ label, icon: Icon, accept, file, onChange }) {
           {file ? <MdCheck size={18} /> : <Icon size={18} />}
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-xs font-semibold truncate" style={{ color: file ? "#4ade80" : "var(--text-primary, #fff)" }}>
+          <p className="text-xs font-semibold truncate" style={{ color: file ? "#4ade80" : "var(--text-primary)" }}>
             {file ? file.name : t("rpropClickUpload")}
           </p>
         </div>
@@ -229,9 +229,9 @@ export default function MyProperties() {
      Styles
   ───────────────────────────────────────── */
   const inputStyle = {
-    background:   "var(--input-bg, #ffffff)",
+    background:   "var(--input-bg)",
     border:       "1px solid var(--divider, rgba(0,0,0,0.12))",
-    color:        "var(--text-primary, #111827)",
+    color:        "var(--text-primary)",
     padding:      "10px 12px",
     borderRadius: "8px",
     outline:      "none",
@@ -404,14 +404,14 @@ export default function MyProperties() {
         >
           <div
             className="rounded-2xl w-full max-w-2xl max-h-[85vh] overflow-y-auto shadow-2xl animate-scaleIn"
-            style={{ background: "var(--card-bg, #1e1e2d)", border: "1px solid var(--divider, rgba(255,255,255,0.1))" }}
+            style={{ background: "var(--card-bg)", border: "1px solid var(--divider, rgba(255,255,255,0.1))" }}
             onClick={(e) => e.stopPropagation()}
           >
             <div
               className="sticky top-0 z-10 flex justify-between items-center p-5 border-b"
-              style={{ background: "var(--card-bg, #1e1e2d)", borderColor: "var(--divider, rgba(255,255,255,0.1))" }}
+              style={{ background: "var(--card-bg)", borderColor: "var(--divider, rgba(255,255,255,0.1))" }}
             >
-              <h3 className="text-lg font-bold" style={{ color: "var(--text-primary, #fff)" }}>{t("rpropAddTenantDetails")}</h3>
+              <h3 className="text-lg font-bold" style={{ color: "var(--text-primary)" }}>{t("rpropAddTenantDetails")}</h3>
               <button type="button" onClick={requestCloseAddTenant} className="text-secondary hover:opacity-80 transition">
                 <MdClose size={22} />
               </button>
@@ -419,7 +419,7 @@ export default function MyProperties() {
 
             <form onSubmit={handleAddTenant} className="p-6 space-y-5">
               {/* Personal Info */}
-              <div style={{ background: "var(--card-inner-bg, rgba(255,255,255,0.02))", padding: "14px", borderRadius: "12px", border: "1px solid var(--divider, rgba(255,255,255,0.05))" }}>
+              <div style={{ background: "var(--card-inner-bg)", padding: "14px", borderRadius: "12px", border: "1px solid var(--divider, rgba(255,255,255,0.05))" }}>
                 <h4 className="text-sm font-bold text-blue-400 mb-3 uppercase tracking-wider">{t("rpropPersonalInfo")}</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <div><label className="text-[10px] text-secondary font-semibold uppercase block mb-1">{t("rpropFullName")}</label><input required style={inputStyle} value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} /></div>
@@ -430,7 +430,7 @@ export default function MyProperties() {
               </div>
 
               {/* Lease & Occupancy */}
-              <div style={{ background: "var(--card-inner-bg, rgba(255,255,255,0.02))", padding: "14px", borderRadius: "12px", border: "1px solid var(--divider, rgba(255,255,255,0.05))" }}>
+              <div style={{ background: "var(--card-inner-bg)", padding: "14px", borderRadius: "12px", border: "1px solid var(--divider, rgba(255,255,255,0.05))" }}>
                 <h4 className="text-sm font-bold text-blue-400 mb-3 uppercase tracking-wider">{t("rpropLeaseOccupancy")}</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <div><label className="text-[10px] text-secondary font-semibold uppercase block mb-1">{t("rpropLeaseStart")}</label><input required type="date" style={inputStyle} value={formData.move_in_date} onChange={(e) => setFormData({ ...formData, move_in_date: e.target.value })} /></div>
@@ -439,7 +439,7 @@ export default function MyProperties() {
               </div>
 
               {/* KYC Documents */}
-              <div style={{ background: "var(--card-inner-bg, rgba(255,255,255,0.02))", padding: "14px", borderRadius: "12px", border: "1px solid var(--divider, rgba(255,255,255,0.05))" }}>
+              <div style={{ background: "var(--card-inner-bg)", padding: "14px", borderRadius: "12px", border: "1px solid var(--divider, rgba(255,255,255,0.05))" }}>
                 <h4 className="text-sm font-bold text-blue-400 mb-2 uppercase tracking-wider">{t("rpropKYCDocs")}</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <DocumentUploadField label={t("rpropAadhar")} icon={MdBadge}     accept="application/pdf,image/*" file={aadharFile} onChange={setAadharFile} />
@@ -479,11 +479,11 @@ export default function MyProperties() {
         >
           <div
             className="rounded-2xl w-full max-w-md shadow-2xl animate-scaleIn"
-            style={{ background: "var(--card-bg, #1e1e2d)", border: "1px solid var(--divider, rgba(255,255,255,0.1))" }}
+            style={{ background: "var(--card-bg)", border: "1px solid var(--divider, rgba(255,255,255,0.1))" }}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex justify-between items-center p-5 border-b" style={{ borderColor: "var(--divider, rgba(255,255,255,0.1))" }}>
-              <h3 className="text-lg font-bold" style={{ color: "var(--text-primary, #fff)" }}>{t("rpropTenantProfile")}</h3>
+              <h3 className="text-lg font-bold" style={{ color: "var(--text-primary)" }}>{t("rpropTenantProfile")}</h3>
               <button type="button" onClick={() => { setViewTenantData(null); setIsRenewing(false); }} className="text-secondary hover:opacity-80 transition">
                 <MdClose size={22} />
               </button>

@@ -238,7 +238,7 @@ export default function PaymentDetailsModal({ row, onClose }) {
               onClick={onClose}
               className="px-4 py-1.5 rounded-lg text-xs font-bold bg-primary text-primary-contrast hover:opacity-90 transition-opacity cursor-pointer"
               style={{
-                backgroundColor: "var(--accent, #6366f1)",
+                backgroundColor: "var(--accent)",
                 color: "#ffffff",
               }}
             >

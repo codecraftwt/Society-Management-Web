@@ -380,7 +380,7 @@ export function BillDetailsModal({ viewBill, onClose, handleConfirmPayment, conf
             <div
               className="p-4 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3"
               style={{
-                background: "var(--card-inner-bg, rgba(255,255,255,0.04))",
+                background: "var(--card-inner-bg)",
                 borderColor: "var(--glass-border)",
               }}
             >
@@ -573,7 +573,7 @@ export function BulkModals({
             <div
               className="animate-scaleIn"
               style={{
-                background: "var(--card-bg, #1e293b)",
+                background: "var(--card-bg)",
                 border: "1.5px solid var(--glass-border)",
                 borderRadius: 22,
                 maxWidth: 480,
@@ -611,7 +611,7 @@ export function BulkModals({
 
               <div
                 style={{
-                  background: "var(--card-inner-bg, rgba(255,255,255,0.03))",
+                  background: "var(--card-inner-bg)",
                   borderRadius: 14,
                   padding: "16px 18px",
                   border: "1px solid var(--glass-border)",
@@ -627,7 +627,7 @@ export function BulkModals({
                 </div>
                 <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13 }}>
                   <span style={{ color: "var(--text-secondary)" }}>Total Amount:</span>
-                  <strong style={{ color: "var(--accent, #818cf8)", fontSize: 15 }}>₹{selectedApprovableAmount.toLocaleString("en-IN")}</strong>
+                  <strong style={{ color: "var(--accent)", fontSize: 15 }}>₹{selectedApprovableAmount.toLocaleString("en-IN")}</strong>
                 </div>
                 {selectedPending?.length > 0 && (
                   <div
@@ -713,7 +713,7 @@ export function BulkModals({
             <div
               className="animate-scaleIn"
               style={{
-                background: "var(--card-bg, #1e293b)",
+                background: "var(--card-bg)",
                 border: "1.5px solid var(--glass-border)",
                 borderRadius: 22,
                 maxWidth: 480,
@@ -751,7 +751,7 @@ export function BulkModals({
 
               <div
                 style={{
-                  background: "var(--card-inner-bg, rgba(255,255,255,0.03))",
+                  background: "var(--card-inner-bg)",
                   borderRadius: 14,
                   padding: "16px 18px",
                   border: "1px solid var(--glass-border)",

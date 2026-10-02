@@ -29,7 +29,7 @@ function useIsMobile() {
 /* ── Spinner ── */
 function Spinner() {
   return (
-    <svg style={{ color: "var(--accent,#6B46C1)", margin: "0 auto", width: 20, height: 20 }} viewBox="0 0 24 24" fill="none">
+    <svg style={{ color: "var(--accent)", margin: "0 auto", width: 20, height: 20 }} viewBox="0 0 24 24" fill="none">
       <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" style={{ opacity: 0.25 }} />
       <path fill="currentColor" style={{ opacity: 0.75 }} d="M4 12a8 8 0 018-8v8z" />
     </svg>
@@ -185,7 +185,7 @@ export default function ResidentVisitorReport() {
       {/* ── HEADER ── */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <button onClick={() => navigate(-1)} style={{ width: 36, height: 36, borderRadius: 10, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", background: "var(--card-inner-bg, rgba(255,255,255,0.06))", border: "1px solid var(--glass-border)", cursor: "pointer", color: "var(--text-secondary)" }}>
+          <button onClick={() => navigate(-1)} style={{ width: 36, height: 36, borderRadius: 10, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", background: "var(--card-inner-bg)", border: "1px solid var(--glass-border)", cursor: "pointer", color: "var(--text-secondary)" }}>
             <MdArrowBack size={17} />
           </button>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -206,7 +206,7 @@ export default function ResidentVisitorReport() {
           <button onClick={handlePDF} className="btn-export" style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 13px", fontSize: 12, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}>
             <MdPictureAsPdf size={14} /> {t("reportPDF")}
           </button>
-          <button onClick={() => setShowFilters(true)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 13px", borderRadius: 10, fontSize: 12, fontWeight: 700, background: applied ? "rgba(107,70,193,0.15)" : "var(--card-inner-bg, rgba(255,255,255,0.06))", color: applied ? "#9F87D7" : "var(--text-secondary)", border: applied ? "1px solid rgba(107,70,193,0.35)" : "1px solid var(--glass-border)", cursor: "pointer", position: "relative", whiteSpace: "nowrap" }}>
+          <button onClick={() => setShowFilters(true)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 13px", borderRadius: 10, fontSize: 12, fontWeight: 700, background: applied ? "rgba(107,70,193,0.15)" : "var(--card-inner-bg)", color: applied ? "#9F87D7" : "var(--text-secondary)", border: applied ? "1px solid rgba(107,70,193,0.35)" : "1px solid var(--glass-border)", cursor: "pointer", position: "relative", whiteSpace: "nowrap" }}>
             <MdFilterList size={14} /> {t("reportFilters")}
             {applied && <span style={{ position: "absolute", top: -3, right: -3, width: 8, height: 8, borderRadius: "50%", background: "#6B46C1", boxShadow: "0 0 6px rgba(107,70,193,0.6)" }} />}
           </button>
@@ -259,7 +259,7 @@ export default function ResidentVisitorReport() {
             <MdOutlineInbox size={48} style={{ opacity: 0.2 }} />
             <p style={{ fontSize: 13, margin: 0 }}>{t("rvNoVisitors")}</p>
             {applied && (
-              <button onClick={clearFilter} style={{ fontSize: 12, color: "var(--accent,#6B46C1)", background: "none", border: "none", cursor: "pointer", fontWeight: 600 }}>
+              <button onClick={clearFilter} style={{ fontSize: 12, color: "var(--accent)", background: "none", border: "none", cursor: "pointer", fontWeight: 600 }}>
                 {t("reportClearFilters")}
               </button>
             )}
@@ -280,12 +280,12 @@ export default function ResidentVisitorReport() {
                     </div>
                     {v.purpose && (
                       <div style={{ marginBottom: 8 }}>
-                        <span style={{ fontSize: 11, fontWeight: 600, padding: "3px 8px", borderRadius: 6, background: "var(--card-inner-bg, rgba(255,255,255,0.06))", border: "1px solid var(--glass-border)", color: "var(--text-secondary)" }}>{v.purpose}</span>
+                        <span style={{ fontSize: 11, fontWeight: 600, padding: "3px 8px", borderRadius: 6, background: "var(--card-inner-bg)", border: "1px solid var(--glass-border)", color: "var(--text-secondary)" }}>{v.purpose}</span>
                       </div>
                     )}
                     <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                      {v.mobile && <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: "var(--text-secondary)" }}><MdPhone size={12} style={{ color: "var(--accent,#6B46C1)", flexShrink: 0 }} />{v.mobile}</span>}
-                      {v.vehicle_number && <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: "var(--text-secondary)" }}><MdDirectionsCar size={12} style={{ color: "var(--accent,#6B46C1)", flexShrink: 0 }} />{v.vehicle_number}</span>}
+                      {v.mobile && <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: "var(--text-secondary)" }}><MdPhone size={12} style={{ color: "var(--accent)", flexShrink: 0 }} />{v.mobile}</span>}
+                      {v.vehicle_number && <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: "var(--text-secondary)" }}><MdDirectionsCar size={12} style={{ color: "var(--accent)", flexShrink: 0 }} />{v.vehicle_number}</span>}
                       <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: "var(--text-secondary)", opacity: 0.75 }}><MdAccessTime size={11} style={{ flexShrink: 0 }} />{formatDateShort(v.entry_time)}</span>
                     </div>
                   </div>

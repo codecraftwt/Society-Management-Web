@@ -823,7 +823,7 @@ const navigate = useNavigate();
                   </div>
                   {isDisabled ? (
                     <button type="button" disabled className="ra-book-btn"
-                      style={{ opacity: 0.38, cursor: "not-allowed", background: "var(--card-inner-bg,rgba(0,0,0,0.04))" }}>
+                      style={{ opacity: 0.38, cursor: "not-allowed", background: "var(--card-inner-bg)" }}>
                       <span>{t("amenBookingUnavailable")}</span>
                     </button>
                   ) : (

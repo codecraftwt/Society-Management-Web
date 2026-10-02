@@ -369,19 +369,26 @@ export default function ResidentVisitors() {
                           <StatusBadge exitTime={v.exit_time} t={t} />
                         </div>
                         
-                        <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                          <span className={`inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full border ${pConfig.bg} ${pConfig.color} font-medium`}>
-                            <PurposeIcon size={12} />
-                            {pConfig.label}
-                          </span>
-                          <span className="inline-block bg-blue-500/15 text-blue-400 text-[11px] px-2 py-0.5 rounded-full border border-blue-500/25">
-                            {t("rdFlat")}: {v.Flat?.flat_number || "—"}
-                          </span>
-                        </div>
+                         <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                           <span className={`inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full border ${pConfig.bg} ${pConfig.color} font-medium`}>
+                             <PurposeIcon size={12} />
+                             {pConfig.label}
+                           </span>
+                           <span className="inline-block bg-blue-500/15 text-blue-400 text-[11px] px-2 py-0.5 rounded-full border border-blue-500/25">
+                             {t("rdFlat")}: {v.Flat?.flat_number || "—"}
+                           </span>
+                         </div>
 
-                        <p className="text-[11px] text-secondary/50 mt-1 flex items-center gap-1">
-                          <MdAccessTime size={11} /> {timeAgo(v.entry_time)}
-                        </p>
+                         <p className="text-[11px] text-secondary/50 mt-1 flex items-center gap-1 flex-wrap">
+                           <span className="flex items-center gap-1">
+                             <MdLogin size={11} className="text-green-400" /> {timeAgo(v.entry_time)}
+                           </span>
+                           {v.exit_time && (
+                             <span className="flex items-center gap-1">
+                               <MdLogout size={11} className="text-red-400" /> {timeAgo(v.exit_time)}
+                             </span>
+                           )}
+                         </p>
                       </div>
                       <div
                         className="text-secondary shrink-0 transition-transform duration-200"
@@ -460,6 +467,7 @@ export default function ResidentVisitors() {
                     <th>{t("vrPurpose") || "Type / Purpose"}</th>
                     <th>{t("rdFlat")}</th>
                     <th>{t("vrEntry")}</th>
+                    <th>{t("vrExit") || t("visExitTime") || "Out Time"}</th>
                     <th>{t("billStatusCol")}</th>
                     <th style={{ width: 40 }}></th>
                   </tr>
@@ -496,6 +504,7 @@ export default function ResidentVisitors() {
                             </span>
                           </td>
                           <td className="p-3 text-secondary text-xs whitespace-nowrap">{formatDate(v.entry_time)}</td>
+                          <td className="p-3 text-secondary text-xs whitespace-nowrap">{v.exit_time ? formatDate(v.exit_time) : "—"}</td>
                           <td className="p-3"><StatusBadge exitTime={v.exit_time} t={t} /></td>
                           <td className="p-3">
                             <div

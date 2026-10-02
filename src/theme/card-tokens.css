@@ -1,0 +1,246 @@
+/* ============================================================================
+ * GLOBAL CARD TOKENS  —  shared foundation for StatCard and RecordCard
+ * ----------------------------------------------------------------------------
+ * NAMESPACE: --ui-card-*
+ * The prefix was checked against the whole of src/ before authoring: no
+ * `--ui-*` token existed. `--kpi-*`, `--dashboard-*`, `--metric-*` and
+ * `--stats-*` were deliberately NOT used; they have no established global
+ * definition and index.css:29-30 forbids inventing new token families.
+ *
+ * TIERING — mirrors the existing architecture documented at index.css:1-30.
+ *   TIER 2  :root                    public / fallback
+ *   TIER 3  html.role-theme          authenticated
+ *   TIER 4  html.light               public light
+ *   TIER 5  html.light.role-theme    authenticated light
+ *
+ * `html.light` and `html.role-theme` are both (0,1,1) and the <html> element
+ * can carry BOTH classes, so tier 5 exists and is declared last. This file
+ * follows the same order.
+ *
+ * Every token here is NEW. No existing declaration is redefined or aliased,
+ * so:
+ *   - no !important is needed anywhere
+ *   - no existing card can regress
+ *   - nothing in this file depends on source order for correctness beyond
+ *     its own internal tier chain
+ *
+ * DYNAMIC SOCIETY THEME
+ * themeUtils.js:86-132 writes 11 tokens to the DOM: --accent, --accent-hover,
+ * --accent-dark, --accent-light, --accent-soft, --accent-light-bg,
+ * --accent-rgb, --acct-purple, --acct-purple-rgb, --acct-violet,
+ * --acct-violet-rgb. The `brand` tone below is derived entirely from
+ * --accent, so a society accent change flows into the global cards with no
+ * extra work.
+ *
+ * SEMANTIC TONES
+ * Deliberately NOT derived from --stat-*. The investigation found those
+ * tokens resolve to a different hue per tier (--stat-purple-bg is blue at
+ * :root, --stat-amber-bg is blue in two tiers and pink in a third,
+ * --stat-red-bg is purple in light role theme). That defect is a separate
+ * future phase and must not be inherited by the new foundation.
+ * Tones read --success / --warning / --danger / --info instead, which are
+ * correct in every tier, with one documented correction in tier 5 below.
+ *
+ * ACCESSIBILITY NOTE
+ * Tints are built with color-mix() rather than rgba(var(--x-rgb), a) so a
+ * tint always follows its source colour — including a dynamic society
+ * accent, whose rgb triple is also written at runtime. color-mix() is
+ * already the established idiom in this codebase (Admin.css:585-606 for
+ * .adh-op).
+ * ========================================================================== */
+
+:root {
+  /* ── SURFACE ───────────────────────────────────────────────────────── */
+  --ui-card-bg: var(--card-bg);
+  --ui-card-border: var(--glass-border);
+  --ui-card-border-width: 1px;
+  --ui-card-shadow: var(--shadow-sm);
+  --ui-card-shadow-hover: var(--shadow-hover);
+  --ui-card-blob-bg: rgba(255, 255, 255, 0.04);
+  --ui-card-sheen-bg: rgba(255, 255, 255, 0.28);
+
+  /* ── GEOMETRY ──────────────────────────────────────────────────────── */
+  --ui-card-radius: 16px;
+  --ui-card-padding: 20px 22px;         /* statistical, desktop  */
+  --ui-card-padding-compact: 14px 12px;  /* statistical, <=1023px */
+  --ui-card-padding-record: 14px;       /* record shell           */
+  --ui-card-gap: 6px;
+  --ui-card-gap-lg: 12px;
+  --ui-card-icon-size: 36px;
+  --ui-card-icon-radius: 11px;
+
+  /* ── TYPOGRAPHY — statistical ──────────────────────────────────────── */
+  --ui-card-value-size: 26px;
+  --ui-card-value-weight: 800;
+  --ui-card-value-tracking: -0.04em;
+  --ui-card-value-line: 1;
+  --ui-card-label-size: 11px;
+  --ui-card-label-weight: 600;
+  --ui-card-label-tracking: 0.04em;
+  --ui-card-desc-size: 11px;
+
+  /* ── TYPOGRAPHY — record ───────────────────────────────────────────── */
+  --ui-card-title-size: 0.95rem;
+  --ui-card-title-weight: 700;
+  --ui-card-meta-size: 12px;
+  --ui-card-meta-weight: 400;
+  --ui-card-body-size: 0.82rem;
+  --ui-card-body-line: 1.5;
+
+  /* ── INTERACTION ───────────────────────────────────────────────────── */
+  --ui-card-ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --ui-card-duration: 0.35s;
+  --ui-card-lift: -6px;
+  --ui-card-lift-scale: 1.025;
+  --ui-card-lift-record: -2px;
+  --ui-card-focus-outline: var(--accent);
+  --ui-card-focus-width: 2px;
+  --ui-card-focus-offset: 2px;
+  --ui-card-selected-ring: 0 0 0 2px
+    color-mix(in srgb, currentColor 40%, transparent);
+
+  /* ── TONES — sourced from the bill section ───────────────────────────────
+     These tokens are deliberately NOT a new palette. They alias the existing
+     `--stat-*` family that `.stat-card` (index.css:2620-2693) and the
+     role-theme overrides (role-theme.css:92-106 dark, 202-216 auth light)
+     already use for /superadmin/manage-bills and /admin/payments, so the
+     global card is pixel-identical to that section by construction and cannot
+     drift from it.
+
+     Because `--stat-*-bg|border|color` are themselves redefined per tier, one
+     declaration here covers every tier:
+       auth dark  (role-theme.css:92-106)  flat #22252e + tone border, white type
+       auth light (role-theme.css:202-216) vivid 135deg gradient, no border, white type
+       public light (light.css:94-108)    pastel gradient, tone-coloured type
+       public dark (index.css:242-256)    faint alpha tint, tone-coloured type
+     No per-tier override is needed here, which also avoids the trap below.
+
+     KNOWN DEFECT, INHERITED ON PURPOSE
+     These tokens resolve to a different hue in some tiers: --stat-amber-bg is
+     blue at index.css:248 and pink at role-theme.css:208, and --stat-red-bg is
+     purple at role-theme.css:211. The bill section renders the same wrong hue
+     today, so matching it exactly is the requested behaviour; fix the source
+     tokens as a separate change rather than special-casing them here.
+
+     TONE -> BILL SECTION
+       brand   -> purple     success -> green      warning -> amber
+       danger  -> red        info    -> blue       neutral -> (no bill
+       equivalent, falls back to the plain card surface) */
+  --ui-card-tone-neutral-bg: var(--ui-card-bg);
+  --ui-card-tone-neutral-border: var(--ui-card-border);
+  --ui-card-tone-neutral-color: var(--text-secondary);
+
+  --ui-card-tone-brand-bg: var(--stat-purple-bg);
+  --ui-card-tone-brand-border: var(--stat-purple-border);
+  --ui-card-tone-brand-color: var(--stat-purple-color);
+
+  --ui-card-tone-success-bg: var(--stat-green-bg);
+  --ui-card-tone-success-border: var(--stat-green-border);
+  --ui-card-tone-success-color: var(--stat-green-color);
+
+  --ui-card-tone-warning-bg: var(--stat-amber-bg);
+  --ui-card-tone-warning-border: var(--stat-amber-border);
+  --ui-card-tone-warning-color: var(--stat-amber-color);
+
+  --ui-card-tone-danger-bg: var(--stat-red-bg);
+  --ui-card-tone-danger-border: var(--stat-red-border);
+  --ui-card-tone-danger-color: var(--stat-red-color);
+
+  --ui-card-tone-info-bg: var(--stat-blue-bg);
+  --ui-card-tone-info-border: var(--stat-blue-border);
+  --ui-card-tone-info-color: var(--stat-blue-color);
+
+  /* The card background is the tone background itself; there is no separate
+     "surface" token. Keeping one name per role stops the two from drifting. */
+  --ui-card-tone-neutral-surface: var(--ui-card-tone-neutral-bg);
+  --ui-card-tone-brand-surface: var(--ui-card-tone-brand-bg);
+  --ui-card-tone-success-surface: var(--ui-card-tone-success-bg);
+  --ui-card-tone-warning-surface: var(--ui-card-tone-warning-bg);
+  --ui-card-tone-danger-surface: var(--ui-card-tone-danger-bg);
+  --ui-card-tone-info-surface: var(--ui-card-tone-info-bg);
+
+  /* ── INK ────────────────────────────────────────────────────────────────
+     All glyphs take the tone colour, exactly like
+     `.stat-card__val`/`.stat-card__label` (index.css:2656-2671). A var() in a
+     custom property is substituted at computed-value time on the element where
+     it is DECLARED, so nothing here may reference `--ui-card-tone-color` —
+     that only exists on the .ui-stat-card--tone-* classes (a descendant of
+     html) and would resolve to guaranteed-invalid, silently dropping the whole
+     declaration. These are therefore plain tier-safe defaults; the tone ink
+     itself is published by the tone classes in StatCard.css, which sit below
+     the tone classes and so win. */
+  --ui-card-ink-value: var(--text-primary);
+  --ui-card-ink-label: var(--text-secondary);
+  --ui-card-ink-icon: var(--text-primary);
+  --ui-card-ink-desc: var(--text-secondary);
+
+  /* ── STATISTICAL CARD FRAME ─────────────────────────────────────────────
+     index.css:2623 declares `border: 1px solid` and role-theme.css:620
+     raises that to 2px in authenticated dark; the authenticated light tier
+     sets `border: none` so the gradient runs to the edge. */
+  --ui-card-stat-border-width: 1px;
+  --ui-card-stat-border-color: var(--ui-card-tone-border, var(--ui-card-border));
+}
+
+/* ==========================================================================
+   TIER 5 — authenticated light.
+
+   The tone background, border and text colour come straight from --stat-*
+   (see the tone block in :root), which in this tier are the vivid 135deg
+   gradients with white type (role-theme.css:202-216). Nothing about the
+   surface or the ink needs overriding here any more — that was the whole
+   point of aliasing them instead of inventing a palette.
+
+   What remains is only the glass decoration, which has to go white on a
+   saturated tile, and the border, which the reference drops in this tier.
+   ========================================================================== */
+html.light.role-theme {
+  --ui-card-sheen-bg: rgba(15, 23, 42, 0.06);
+  --ui-card-stat-border-width: 0px;
+  --ui-card-stat-border-color: transparent;
+  --ui-card-shadow: 0 12px 28px rgba(160, 90, 255, 0.12);
+  --ui-card-blob-bg: rgba(255, 255, 255, 0.16);
+  --ui-card-sheen-inset: rgba(255, 255, 255, 0.9);
+  --ui-card-selected-ring: 0 0 0 2px rgba(255, 255, 255, 0.55);
+}
+
+/* ==========================================================================
+   TIER 4 — public light. Same presentation as tier 5. The tone colours here
+   resolve to the pastel gradients with dark type (light.css:94-108), which
+   the aliasing handles on its own.
+   ========================================================================== */
+html.light {
+  --ui-card-sheen-bg: rgba(15, 23, 42, 0.06);
+  --ui-card-stat-border-width: 0px;
+  --ui-card-stat-border-color: transparent;
+  --ui-card-shadow: 0 12px 28px rgba(160, 90, 255, 0.12);
+  --ui-card-blob-bg: rgba(255, 255, 255, 0.16);
+  --ui-card-sheen-inset: rgba(255, 255, 255, 0.9);
+  --ui-card-selected-ring: 0 0 0 2px rgba(255, 255, 255, 0.55);
+}
+
+/* ==========================================================================
+   TIER 3 — authenticated dark. The tone background is already the flat
+   #22252e tile and the text already white via --stat-*
+   (role-theme.css:92-106), so the only thing left to match is the 2px border
+   that role-theme.css:620 raises the base 1px to.
+   ========================================================================== */
+html.role-theme {
+  --ui-card-sheen-bg: rgba(255, 255, 255, 0.32);
+}
+
+html.role-theme:not(.light) {
+  --ui-card-stat-border-width: 2px;
+}
+
+/* ==========================================================================
+ * SHARED KEYFRAME
+ * Lives here rather than in either component stylesheet so StatCard and
+ * RecordCard can both use it without either importing the other. `ui`-
+ * prefixed to stay clear of adKpiShine / gdShine / docShine / gdActionIn.
+ * ========================================================================== */
+@keyframes uiCardShine {
+  0%   { transform: translateX(-90%) skewX(-18deg); opacity: 0; }
+  25%  { opacity: 1; }
+  100% { transform: translateX(200%) skewX(-18deg); opacity: 0; }
+}

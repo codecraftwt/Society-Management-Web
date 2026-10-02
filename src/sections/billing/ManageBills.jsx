@@ -616,7 +616,7 @@ export default function ManageBills({ variant }) {
       {isAccountant ? (
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div style={{ width: 44, height: 44, borderRadius: 14, flexShrink: 0, background: "linear-gradient(135deg, var(--accent), #9e58ff)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 8px 20px rgba(158, 88, 255, 0.3)", color: "#ffffff" }}>
+            <div style={{ width: 44, height: 44, borderRadius: 14, flexShrink: 0, background: "linear-gradient(135deg, var(--accent), var(--accent-light))", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 8px 20px rgba(158, 88, 255, 0.3)", color: "#ffffff" }}>
               <MdReceiptLong size={22} color="#fff" />
             </div>
             <div>
@@ -637,7 +637,7 @@ export default function ManageBills({ variant }) {
       ) : (
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 mb-5">
           <div className="flex items-center gap-3">
-            <div style={{ width: 44, height: 44, borderRadius: 14, flexShrink: 0, background: "linear-gradient(135deg, var(--accent), #9e58ff)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 8px 20px rgba(158, 88, 255, 0.3)", color: "#ffffff" }}>
+            <div style={{ width: 44, height: 44, borderRadius: 14, flexShrink: 0, background: "linear-gradient(135deg, var(--accent), var(--accent-light))", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 8px 20px rgba(158, 88, 255, 0.3)", color: "#ffffff" }}>
               <MdReceiptLong size={22} color="#fff" />
             </div>
             <div>
@@ -802,8 +802,8 @@ export default function ManageBills({ variant }) {
                     style={{
                       fontSize: 12,
                       fontWeight: 700,
-                      background: "var(--accent-soft, rgba(99,102,241,0.18))",
-                      color: "var(--accent, #818cf8)",
+                      background: "var(--accent-soft)",
+                      color: "var(--accent)",
                       padding: "6px 12px",
                       borderRadius: 10,
                       display: "inline-flex",
@@ -930,7 +930,7 @@ export default function ManageBills({ variant }) {
                       width: 32,
                       height: 32,
                       borderRadius: 10,
-                      background: "var(--card-inner-bg, rgba(255,255,255,0.06))",
+                      background: "var(--card-inner-bg)",
                       border: "1px solid var(--glass-border)",
                       color: "var(--text-secondary)",
                       cursor: "pointer",
@@ -1029,7 +1029,7 @@ export default function ManageBills({ variant }) {
                     className="bill-card animate-fadeIn transition-all"
                     style={{
                       animationDelay: `${i * 30}ms`,
-                      border: isSelected ? "1.5px solid var(--accent, #6366f1)" : undefined,
+                      border: isSelected ? "1.5px solid var(--accent)" : undefined,
                       boxShadow: isSelected ? "0 0 16px rgba(99,102,241,0.25)" : undefined,
                     }}
                   >

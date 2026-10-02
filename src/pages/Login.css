@@ -369,7 +369,7 @@ html.light .form {
 }
 
 html.light .form:hover {
-  border-color: #2563eb;
+  border-color: var(--accent);
   box-shadow: 0 25px 60px rgba(0, 0, 0, 0.12), 0 0 25px rgba(37, 99, 235, 0.2);
 }
 
@@ -390,7 +390,7 @@ html.light .field:focus-within {
 }
 
 html.light .input-icon {
-  fill: #2563eb;
+  fill: var(--accent);
 }
 
 html.light .input-field {
@@ -639,7 +639,7 @@ html.light .button3 {
 }
 
 html.light .otp-resend-btn {
-  color: #2563eb;
+  color: var(--accent);
 }
 
 html.light .otp-resend-btn:hover:not(:disabled) {
@@ -668,7 +668,7 @@ html.light .otp-shield-icon {
 }
 
 html.light .otp-shield-icon svg {
-  color: #2563eb;
+  color: var(--accent);
 }
 
 html.light .otp-title {
@@ -685,11 +685,11 @@ html.light .otp-email-badge {
 }
 
 html.light .otp-email-badge svg {
-  color: #2563eb;
+  color: var(--accent);
 }
 
 html.light .otp-email-badge span {
-  color: #2563eb;
+  color: var(--accent);
 }
 
 html.light .otp-timer-track circle:first-child {
@@ -709,13 +709,13 @@ html.light .otp-input {
 }
 
 html.light .otp-input:focus {
-  border-color: #2563eb;
+  border-color: var(--accent);
   background: #ffffff;
   box-shadow: inset 1px 3px 6px rgba(0, 0, 0, 0.06), 0 0 0 3px rgba(37, 99, 235, 0.12);
 }
 
 html.light .otp-input.filled {
-  border-color: #2563eb;
+  border-color: var(--accent);
   background: rgba(37, 99, 235, 0.06);
 }
 
@@ -729,7 +729,7 @@ html.light .otp-progress-dot {
 }
 
 html.light .otp-progress-dot.filled {
-  background: #2563eb;
+  background: var(--accent);
 }
 
 html.light .otp-cancel-btn {
@@ -742,7 +742,7 @@ html.light .otp-cancel-btn:hover {
 }
 
 .login-panel-option:hover {
-  border-color: var(--accent, #2563eb) !important;
+  border-color: var(--accent) !important;
   box-shadow: 0 6px 18px -6px rgba(37, 99, 235, 0.35);
   transform: translateY(-1px);
 }
@@ -943,7 +943,7 @@ html.light .rejection-contact-box {
 }
 
 html.light .rejection-contact-label {
-  color: #2563eb;
+  color: var(--accent);
 }
 
 html.light .rejection-contact-name {
@@ -951,5 +951,5 @@ html.light .rejection-contact-name {
 }
 
 html.light .rejection-contact-link {
-  color: #2563eb;
+  color: var(--accent);
 }

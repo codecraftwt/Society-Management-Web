@@ -14,6 +14,8 @@ import {
   MdRefresh,
 } from "react-icons/md";
 import PanelHero from "../../components/common/PanelHero";
+import StatCard from "../../components/common/StatCard";
+import RecordCard from "../../components/common/RecordCard";
 import CreditedDebitedChart from "../../components/accounting/CreditedDebitedChart";
 
 /* ── SKELETON LOADER ── */
@@ -154,34 +156,62 @@ export default function AdminDashboard() {
       <PanelHero societyName={stats?.societyName} />
 
       {/* ── 2. KEY METRICS KPI CARDS (4 COLUMNS) ── */}
+      {/* Migrated from .ad-kpi in Phase 2 batch 2A. The scoped palette at
+          role-theme.css:2440-2450 (cyan / blue / pink / lavender) was replaced
+          by semantic tones so the cards now follow role, light and the
+          society accent. variant="sheen" reproduces the ::before corner blob
+          and ::after shine that .dash-kpi-scope applied to all four cards.
+          The descriptions keep their original `hidden lg:block` wrapper so
+          their below-lg visibility is unchanged. */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
-        <div className="ad-kpi ad-kpi--residents">
-          <span className="ad-kpi-val">{residents}</span>
-          <span className="ad-kpi-label">{t("dashResidents") || "Residents"}</span>
-          <span className="ad-kpi-desc hidden lg:block">{t("dashResidentsDesc") || "Active members living in society"}</span>
-        </div>
+        <StatCard
+          variant="sheen"
+          tone="brand"
+          value={residents}
+          label={t("dashResidents") || "Residents"}
+          description={
+            <span className="hidden lg:block">
+              {t("dashResidentsDesc") || "Active members living in society"}
+            </span>
+          }
+        />
 
-        <div className="ad-kpi ad-kpi--guards">
-          <span className="ad-kpi-val">{guards}</span>
-          <span className="ad-kpi-label">{t("dashGuards") || "Guards"}</span>
-          <span className="ad-kpi-desc hidden lg:block">{t("dashGuardsDesc") || "On-duty security personnel"}</span>
-        </div>
+        <StatCard
+          variant="sheen"
+          tone="success"
+          value={guards}
+          label={t("dashGuards") || "Guards"}
+          description={
+            <span className="hidden lg:block">
+              {t("dashGuardsDesc") || "On-duty security personnel"}
+            </span>
+          }
+        />
 
-        <div
+        <StatCard
+          variant="sheen"
+          tone="warning"
+          value={openComplaints}
+          label={t("dashOpenComplaints") || "Open Complaints"}
           onClick={() => navigate("/admin/complaints")}
-          className="ad-kpi ad-kpi--complaints"
-          style={{ cursor: "pointer" }}
-        >
-          <span className="ad-kpi-val">{openComplaints}</span>
-          <span className="ad-kpi-label">{t("dashOpenComplaints") || "Open Complaints"}</span>
-          <span className="ad-kpi-desc hidden lg:block">{isCommittee ? t("dashCommitteeReview") : t("dashComplaintsDesc")}</span>
-        </div>
+          description={
+            <span className="hidden lg:block">
+              {isCommittee ? t("dashCommitteeReview") : t("dashComplaintsDesc")}
+            </span>
+          }
+        />
 
-        <div className="ad-kpi ad-kpi--flats">
-          <span className="ad-kpi-val">{totalFlats}</span>
-          <span className="ad-kpi-label">{t("dashTotalFlats") || "Total Flats"}</span>
-          <span className="ad-kpi-desc hidden lg:block">{t("dashTotalFlatsDesc") || "Across all blocks & floors"}</span>
-        </div>
+        <StatCard
+          variant="sheen"
+          tone="info"
+          value={totalFlats}
+          label={t("dashTotalFlats") || "Total Flats"}
+          description={
+            <span className="hidden lg:block">
+              {t("dashTotalFlatsDesc") || "Across all blocks & floors"}
+            </span>
+          }
+        />
       </div>
 
       {/* ── 3. MAIN ANALYTICS CHARTS (2 COLUMNS) ── */}
@@ -312,60 +342,36 @@ export default function AdminDashboard() {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* Status Item 1: System Status */}
-          <div className="adh-op" style={{ "--op-tint": "#22c55e" }}>
-            <div className="adh-op__ic">
-              <MdCheckCircle size={18} />
-            </div>
-            <div className="adh-op__body">
-              <div className="adh-op__head">
-                <span className="adh-op__label">{t("dashSystemStatus") || "System Status"}</span>
-                <span className="adh-op__tag">{t("dashLive") || "Live"}</span>
-              </div>
-              <div className="adh-op__value">
-                <span className="adh-op__dot" aria-hidden />
-                {t("dashRunning") || "Running"}
-                <span className="adh-op__desc">
-                  {t("dashSystemStatusDesc") || "All services operational"}
-                </span>
-              </div>
-            </div>
-          </div>
+          <RecordCard
+            icon={MdCheckCircle}
+            tone="success"
+            title={t("dashSystemStatus") || "System Status"}
+            badge={t("dashLive") || "Live"}
+            description={t("dashRunning") || "Running"}
+          >
+            {t("dashSystemStatusDesc") || "All services operational"}
+          </RecordCard>
 
           {/* Status Item 2: Power Backup */}
-          <div className="adh-op" style={{ "--op-tint": "#3b82f6" }}>
-            <div className="adh-op__ic">
-              <MdFlashOn size={18} />
-            </div>
-            <div className="adh-op__body">
-              <div className="adh-op__head">
-                <span className="adh-op__label">{t("dashPowerBackup") || "Power Backup"}</span>
-                <span className="adh-op__tag">{t("dashStandby") || "Standby"}</span>
-              </div>
-              <div className="adh-op__value">
-                <span className="adh-op__dot" aria-hidden />
-                {t("dashActive") || "Active"}
-                <span className="adh-op__desc">
-                  {t("dashPowerBackupDesc") || "Generator available"}
-                </span>
-              </div>
-            </div>
-          </div>
+          <RecordCard
+            icon={MdFlashOn}
+            tone="info"
+            title={t("dashPowerBackup") || "Power Backup"}
+            badge={t("dashStandby") || "Standby"}
+            description={t("dashActive") || "Active"}
+          >
+            {t("dashPowerBackupDesc") || "Generator available"}
+          </RecordCard>
 
           {/* Status Item 3: Society Info */}
-          <div className="adh-op" style={{ "--op-tint": "#a855f7" }}>
-            <div className="adh-op__ic">
-              <MdApartment size={18} />
-            </div>
-            <div className="adh-op__body">
-              <div className="adh-op__head">
-                <span className="adh-op__label">{t("dashSocietyId") || "Society Reference"}</span>
-              </div>
-              <div className="adh-op__value">
-                {t("dashSocietyIdValue", { id: societyId || t("dashNA") })}
-                <span className="adh-op__desc">{t("dashSocietyIdDesc") || "System reference number"}</span>
-              </div>
-            </div>
-          </div>
+          <RecordCard
+            icon={MdApartment}
+            tone="brand"
+            title={t("dashSocietyId") || "Society Reference"}
+            description={t("dashSocietyIdValue", { id: societyId || t("dashNA") })}
+          >
+            {t("dashSocietyIdDesc") || "System reference number"}
+          </RecordCard>
         </div>
       </div>
     </div>

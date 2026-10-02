@@ -49,7 +49,7 @@ export default function Create({
         {/* Modal Header */}
         <div style={{ padding: "20px 24px 0", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <div style={{ width: 38, height: 38, borderRadius: 10, background: "var(--accent-soft, rgba(99,102,241,0.18))", border: "1px solid var(--accent-light, #818cf8)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>
+            <div style={{ width: 38, height: 38, borderRadius: 10, background: "var(--accent-soft)", border: "1px solid var(--accent-light, #818cf8)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>
               {editingAmenity ? "✏️" : "✨"}
             </div>
             <div>
@@ -87,7 +87,7 @@ export default function Create({
               style={{ display: "flex", alignItems: "center", gap: 12, minHeight: 48, padding: "0 14px", borderRadius: 12, cursor: "pointer", background: "var(--card-inner-bg)", border: "1.5px solid var(--glass-border)", gridColumn: isMobile ? "1" : "span 2" }}
             >
               {/* toggle track */}
-              <div style={{ width: 40, height: 22, borderRadius: 99, position: "relative", flexShrink: 0, background: form.requires_approval ? "var(--accent, #6366f1)" : "var(--glass-border)", transition: "background 0.25s ease", boxShadow: form.requires_approval ? "0 0 0 3px var(--accent-soft)" : "none" }}>
+              <div style={{ width: 40, height: 22, borderRadius: 99, position: "relative", flexShrink: 0, background: form.requires_approval ? "var(--accent)" : "var(--glass-border)", transition: "background 0.25s ease", boxShadow: form.requires_approval ? "0 0 0 3px var(--accent-soft)" : "none" }}>
                 <div style={{ position: "absolute", top: 3, width: 16, height: 16, borderRadius: "50%", background: "#fff", boxShadow: "0 1px 4px rgba(0,0,0,0.25)", left: form.requires_approval ? 21 : 3, transition: "left 0.25s ease" }} />
               </div>
               <div>

@@ -38,9 +38,9 @@ html.role-theme .mc-field:focus {
 html.role-theme input.mc-date,
 html.role-theme input[type="date"] {
   color-scheme: dark;
-  background-color: var(--card-inner-bg, rgba(255, 255, 255, 0.05));
-  border: 1.5px solid var(--glass-border, rgba(255, 255, 255, 0.12));
-  color: var(--text-primary, #ffffff);
+  background-color: var(--card-inner-bg);
+  border: 1.5px solid var(--glass-border);
+  color: var(--text-primary);
   border-radius: 12px;
   padding: 8px 14px;
   font-size: 13px;
@@ -60,7 +60,7 @@ html.light.role-theme input[type="date"] {
 html.role-theme input.mc-date:focus,
 html.role-theme input[type="date"]:focus {
   outline: none;
-  border-color: var(--accent, #818cf8);
+  border-color: var(--accent);
   box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25);
 }
 
@@ -184,8 +184,8 @@ html.role-theme select {
 }
 html.role-theme select option,
 html.role-theme option {
-  background-color: var(--card-bg, #1e222d);
-  color: var(--text-primary, #ffffff);
+  background-color: var(--card-bg);
+  color: var(--text-primary);
 }
 html.light.role-theme select,
 html.light.role-theme select.input,
@@ -244,8 +244,6 @@ html.light.role-theme .admin-root .bg-red-600 .text-white,
 html.light.role-theme .admin-root .bg-red-600 *:not(.header-sos-count),
 html.light.role-theme .admin-root .rounded-full.text-white,
 html.light.role-theme .admin-root button.text-white,
-html.light.role-theme .admin-root .ad-kpi-val,
-html.light.role-theme .admin-root .ad-kpi-label,
 html.light.role-theme .admin-root .complaint-stat-val,
 html.light.role-theme .admin-root .complaint-stat-label {
   color: #ffffff !important;
@@ -325,7 +323,6 @@ html.light.role-theme .adh-hero__aurora { background: color-mix(in srgb, var(--a
 @media (prefers-reduced-motion: reduce) {
   html.role-theme .adh-hero__aurora,
   html.role-theme .adh-avatar__dot::after,
-  html.role-theme .adh-op__dot::after,
   html.role-theme .adh-status__dot::after {
     animation: none;
   }
@@ -571,227 +568,6 @@ html.role-theme .adh-status__live {
 }
 
 /* --------------------------------------------------------------------------
-   Dashboard operational status cards
-   -------------------------------------------------------------------------- */
-html.role-theme .adh-op {
-  position: relative;
-  overflow: hidden;
-  border-radius: 14px;
-  padding: 11px 13px;
-  display: flex;
-  align-items: center;
-  gap: 11px;
-  min-width: 0;
-  background: color-mix(in srgb, var(--card-inner-bg) 60%, transparent);
-  border: 1px solid var(--glass-border);
-  transition: border-color 0.22s ease, box-shadow 0.22s ease, transform 0.22s ease;
-}
-html.role-theme .adh-op:hover {
-  transform: translateY(-1px);
-  border-color: color-mix(in srgb, var(--op-tint) 40%, transparent);
-  box-shadow: 0 12px 24px -20px color-mix(in srgb, var(--op-tint) 90%, transparent);
-}
-
-html.role-theme .adh-op__ic {
-  position: relative;
-  z-index: 1;
-  width: 36px;
-  height: 36px;
-  flex-shrink: 0;
-  border-radius: 11px;
-  display: grid;
-  place-items: center;
-  color: #fff;
-  background: linear-gradient(135deg, var(--op-tint), color-mix(in srgb, var(--op-tint) 52%, #05070f));
-  box-shadow: 0 8px 16px -12px color-mix(in srgb, var(--op-tint) 95%, transparent);
-}
-html.role-theme .adh-op__body {
-  min-width: 0;
-  flex: 1;
-}
-html.role-theme .adh-op__head {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-width: 0;
-}
-html.role-theme .adh-op__label {
-  font-size: 0.63rem;
-  font-weight: 800;
-  letter-spacing: 0.11em;
-  text-transform: uppercase;
-  color: var(--text-secondary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-html.role-theme .adh-op__tag {
-  margin-left: auto;
-  flex-shrink: 0;
-  padding: 2px 7px;
-  border-radius: 6px;
-  font-size: 8.5px;
-  font-weight: 900;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--op-tint);
-  background: color-mix(in srgb, var(--op-tint) 15%, transparent);
-}
-html.role-theme .adh-op__value {
-  display: flex;
-  align-items: baseline;
-  gap: 6px;
-  min-width: 0;
-  margin-top: 2px;
-  font-size: 0.85rem;
-  font-weight: 800;
-  letter-spacing: -0.01em;
-  color: var(--text-primary);
-}
-html.role-theme .adh-op__desc {
-  font-size: 0.7rem;
-  font-weight: 600;
-  color: var(--text-secondary);
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-html.role-theme .adh-op__dot {
-  position: relative;
-  align-self: center;
-  width: 7px;
-  height: 7px;
-  flex-shrink: 0;
-  border-radius: 50%;
-  background: var(--op-tint);
-}
-
-/* --------------------------------------------------------------------------
-   Dashboard KPI tiles
-   -------------------------------------------------------------------------- */
-html.role-theme .ad-kpi {
-  position: relative;
-  overflow: hidden;
-  border-radius: 16px;
-  padding: 16px 18px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  box-shadow: var(--shadow-sm) !important;
-  cursor: inherit;
-}
-
-html.role-theme .ad-kpi::after {
-  content: "";
-  position: absolute;
-  width: 88px;
-  height: 88px;
-  border-radius: 50%;
-  right: -18px;
-  top: -18px;
-  background: rgba(255, 255, 255, 0.16);
-  pointer-events: none;
-}
-
-html.role-theme .ad-kpi-val,
-html.role-theme .ad-kpi-label,
-html.role-theme .ad-kpi-desc {
-  position: relative;
-  z-index: 1;
-  box-shadow: none !important;
-  text-shadow: none !important;
-}
-
-html.role-theme .ad-kpi-val {
-  font-size: 26px;
-  font-weight: 800;
-  letter-spacing: -0.04em;
-  line-height: 1;
-}
-
-html.role-theme .ad-kpi-label {
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
-}
-
-html.role-theme .ad-kpi-desc {
-  font-size: 11px;
-}
-
-@media (max-width: 1023px) {
-  html.role-theme .admin-root .ad-kpi {
-    padding: 14px 12px;
-    min-width: 0;
-  }
-  html.role-theme .admin-root .ad-kpi-val {
-    font-size: 22px;
-  }
-  html.role-theme .admin-root .ad-kpi-label {
-    font-size: 10px;
-    line-height: 1.3;
-  }
-}
-
-html.role-theme:not(.light) .ad-kpi {
-  background: #22252e !important;
-  border: 2px solid var(--glass-border) !important;
-}
-html.role-theme:not(.light) .ad-kpi::after {
-  background: rgba(255, 255, 255, 0.04);
-}
-html.role-theme:not(.light) .ad-kpi--residents,
-html.role-theme:not(.light) .ad-kpi--balance,
-html.role-theme:not(.light) .ad-kpi--amenity { border-color: rgba(var(--acct-purple-rgb), 0.4) !important; }
-html.role-theme:not(.light) .ad-kpi--guards,
-html.role-theme:not(.light) .ad-kpi--income,
-html.role-theme:not(.light) .ad-kpi--maintenance { border-color: rgba(var(--acct-green-rgb), 0.35) !important; }
-html.role-theme:not(.light) .ad-kpi--complaints,
-html.role-theme:not(.light) .ad-kpi--opening,
-html.role-theme:not(.light) .ad-kpi--bills { border-color: rgba(var(--acct-cyan-rgb), 0.35) !important; }
-html.role-theme:not(.light) .ad-kpi--flats,
-html.role-theme:not(.light) .ad-kpi--expense { border-color: rgba(239, 68, 68, 0.4) !important; }
-
-html.role-theme:not(.light) .ad-kpi-val { color: #ffffff; }
-html.role-theme:not(.light) .ad-kpi--residents .ad-kpi-label,
-html.role-theme:not(.light) .ad-kpi--balance .ad-kpi-label,
-html.role-theme:not(.light) .ad-kpi--amenity .ad-kpi-label { color: var(--acct-purple); }
-html.role-theme:not(.light) .ad-kpi--guards .ad-kpi-label,
-html.role-theme:not(.light) .ad-kpi--income .ad-kpi-label,
-html.role-theme:not(.light) .ad-kpi--maintenance .ad-kpi-label { color: var(--acct-teal); }
-html.role-theme:not(.light) .ad-kpi--complaints .ad-kpi-label,
-html.role-theme:not(.light) .ad-kpi--opening .ad-kpi-label,
-html.role-theme:not(.light) .ad-kpi--bills .ad-kpi-label { color: var(--acct-cyan); }
-html.role-theme:not(.light) .ad-kpi--flats .ad-kpi-label { color: var(--acct-violet); }
-html.role-theme:not(.light) .ad-kpi--expense .ad-kpi-label { color: #f87171; }
-html.role-theme:not(.light) .ad-kpi-desc { color: var(--text-secondary); }
-
-html.light.role-theme .ad-kpi--residents,
-html.light.role-theme .ad-kpi--balance,
-html.light.role-theme .ad-kpi--amenity { background: var(--stat-purple-bg); border: none; }
-html.light.role-theme .ad-kpi--guards,
-html.light.role-theme .ad-kpi--income,
-html.light.role-theme .ad-kpi--maintenance { background: var(--stat-green-bg); border: none; }
-html.light.role-theme .ad-kpi--complaints,
-html.light.role-theme .ad-kpi--opening,
-html.light.role-theme .ad-kpi--bills { background: var(--stat-blue-bg); border: none; }
-html.light.role-theme .ad-kpi--flats,
-html.light.role-theme .ad-kpi--expense { background: var(--stat-red-bg); border: none; }
-
-html.light.role-theme .ad-kpi-val,
-html.light.role-theme .ad-kpi-label,
-html.light.role-theme .ad-kpi-desc {
-  color: #ffffff !important;
-}
-
-html.role-theme .ad-kpi:hover {
-  transform: none !important;
-  box-shadow: var(--shadow-sm) !important;
-}
-
-/* --------------------------------------------------------------------------
    Complaint / property KPI cards
    -------------------------------------------------------------------------- */
 html.role-theme .admin-root .complaint-stat-card {
@@ -1020,7 +796,7 @@ html.role-theme .admin-root .ad-page-icon {
   height: 44px;
   border-radius: 14px;
   flex-shrink: 0;
-  background: linear-gradient(135deg, var(--accent), #9e58ff);
+  background: linear-gradient(135deg, var(--accent), var(--accent-light));
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1054,7 +830,7 @@ html.role-theme .admin-root .fh-page-icon-box {
   width: 44px;
   height: 44px;
   border-radius: 14px;
-  background: linear-gradient(135deg, var(--accent), #9e58ff) !important;
+  background: linear-gradient(135deg, var(--accent), var(--accent-light)) !important;
   border: none !important;
   color: #ffffff !important;
   box-shadow: 0 8px 20px rgba(var(--acct-purple-rgb), 0.3);
@@ -1509,8 +1285,8 @@ html.role-theme .flat-history-page .fh-card-avatar--vac {
   height: 30px;
   padding: 0;
   border-radius: 999px;
-  border: 1px solid var(--card-inner-border, rgba(255, 255, 255, 0.08));
-  background: var(--card-inner-bg, transparent);
+  border: 1px solid var(--card-inner-border);
+  background: var(--card-inner-bg);
   color: var(--text-secondary);
   cursor: pointer;
   transition: color 0.2s ease, background 0.2s ease, opacity 0.2s ease;
@@ -1518,7 +1294,7 @@ html.role-theme .flat-history-page .fh-card-avatar--vac {
 
 .flat-history-page .fh-block-nav:hover:not(:disabled) {
   color: var(--text-primary);
-  background: var(--card-inner-border, rgba(255, 255, 255, 0.12));
+  background: var(--card-inner-border);
 }
 
 .flat-history-page .fh-block-nav:disabled {
@@ -1760,7 +1536,7 @@ html.role-theme .admin-root .ps-header-icon-box {
   width: 44px;
   height: 44px;
   border-radius: 14px;
-  background: linear-gradient(135deg, var(--accent), #9e58ff) !important;
+  background: linear-gradient(135deg, var(--accent), var(--accent-light)) !important;
   border: none !important;
   color: #ffffff !important;
   box-shadow: 0 8px 20px rgba(var(--acct-purple-rgb), 0.3);
@@ -2282,7 +2058,7 @@ html.role-theme:not(.light) .parking-management-page :is(.ps-slot-card, .ps-dece
   box-shadow: 0 12px 30px rgba(25, 135, 84, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
 }
 html.role-theme:not(.light) .parking-management-page :is(.ps-slot-card, .ps-decent-card):is(.ps-slot-card--occupied, .ps-decent-card--occupied):hover {
-  border-color: #a05aff !important;
+  border-color: var(--accent) !important;
   box-shadow: 0 12px 30px rgba(160, 90, 255, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
 }
 
@@ -2408,7 +2184,7 @@ html.light.role-theme .parking-management-page .slot-owner-edit-btn:hover:not(:d
 }
 
 .parking-slot-modal.fh-modal-box {
-  background: var(--modal-bg, var(--card-bg)) !important;
+  background: var(--modal-bg) !important;
   border: 1px solid var(--glass-border) !important;
   border-radius: 20px !important;
   box-shadow: 0 24px 64px rgba(0, 0, 0, 0.42), 0 0 20px rgba(var(--acct-purple-rgb), 0.12) !important;
@@ -2670,7 +2446,7 @@ html.role-theme .gt-shift-card--active {
 }
 
 html.role-theme .gt-live-pill {
-  animation: gtBlink 1.6s ease-in-out infinite;
+  /* steady live pill with no blinking */
 }
 html.role-theme .gt-live-dot {
   width: 7px;
@@ -2678,14 +2454,13 @@ html.role-theme .gt-live-dot {
   border-radius: 50%;
   background: currentColor;
   box-shadow: 0 0 0 3px color-mix(in srgb, currentColor 28%, transparent);
-  animation: gtBlink 1.6s ease-in-out infinite;
 }
 html.role-theme .gt-pill-dot {
-  width: 5px;
-  height: 5px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
   background: #ffffff;
-  animation: gtBlink 1.1s ease-in-out infinite;
+  box-shadow: 0 0 4px rgba(255, 255, 255, 0.8);
 }
 
 html.role-theme .gt-time-group select:focus,
@@ -2694,3 +2469,156 @@ html.role-theme .gt-time-group select:focus-visible {
   box-shadow: 0 0 0 3px var(--accent-soft) !important;
   outline: none;
 }
+
+/* ── Active Guard Highlighting & On-Duty Banner ── */
+
+/* Active Guard Row in Table */
+html.role-theme .gt-row--active-guard {
+  background: linear-gradient(90deg, rgba(16, 185, 129, 0.14) 0%, rgba(16, 185, 129, 0.04) 65%, transparent 100%) !important;
+  box-shadow: inset 4px 0 0 #10b981 !important;
+  position: relative;
+}
+
+html.role-theme .gt-row--active-guard:hover {
+  background: linear-gradient(90deg, rgba(16, 185, 129, 0.20) 0%, rgba(16, 185, 129, 0.07) 65%, transparent 100%) !important;
+}
+
+html.light.role-theme .gt-row--active-guard {
+  background: linear-gradient(90deg, rgba(16, 185, 129, 0.16) 0%, rgba(16, 185, 129, 0.05) 65%, transparent 100%) !important;
+  box-shadow: inset 4px 0 0 #059669 !important;
+}
+
+html.light.role-theme .gt-row--active-guard:hover {
+  background: linear-gradient(90deg, rgba(16, 185, 129, 0.22) 0%, rgba(16, 185, 129, 0.09) 65%, transparent 100%) !important;
+}
+
+/* Active Guard Avatar Container with Glowing Ring & Dot */
+html.role-theme .gt-avatar-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+html.role-theme .gt-avatar-wrap--active .guard-row-avatar {
+  box-shadow: 0 0 0 2.5px #10b981, 0 0 14px rgba(16, 185, 129, 0.55);
+}
+
+html.role-theme .gt-avatar-dot--active {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #10b981;
+  border: 2px solid var(--card-bg, #1e222d);
+  box-shadow: 0 0 8px #10b981;
+  z-index: 3;
+}
+
+/* Highly Noticeable & Attractive ON-DUTY Badge */
+html.role-theme .gt-onduty-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3.5px 12px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  color: #ffffff !important;
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.45);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+html.light.role-theme .gt-onduty-badge {
+  background: linear-gradient(135deg, #10b981 0%, #047857 100%);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  color: #ffffff !important;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+}
+
+html.role-theme .gt-onduty-badge__dot {
+  width: 6.5px;
+  height: 6.5px;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 0 6px rgba(255, 255, 255, 0.9);
+  flex-shrink: 0;
+}
+
+/* Active Duty Showcase Section */
+html.role-theme .gt-duty-hero {
+  position: relative;
+  overflow: hidden;
+  border-radius: 18px;
+  padding: 16px 20px;
+  border: 1.5px solid rgba(16, 185, 129, 0.4);
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.16) 0%, rgba(16, 185, 129, 0.04) 60%, var(--card-bg) 100%);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 8px 24px -10px rgba(16, 185, 129, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+html.light.role-theme .gt-duty-hero {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.16) 0%, rgba(16, 185, 129, 0.05) 60%, #ffffff 100%);
+  border-color: rgba(16, 185, 129, 0.45);
+  box-shadow: 0 8px 24px -10px rgba(16, 185, 129, 0.25);
+}
+
+html.role-theme .gt-duty-guard-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 16px;
+  border-radius: 14px;
+  background: var(--card-inner-bg);
+  border: 1.5px solid rgba(16, 185, 129, 0.35);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+html.role-theme .gt-duty-guard-card:hover {
+  transform: translateY(-2px);
+  border-color: #10b981;
+}
+
+/* Filter Tabs */
+html.role-theme .gt-filter-pill {
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  border: 1.5px solid var(--glass-border);
+  background: var(--card-inner-bg);
+  color: var(--text-secondary);
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+html.role-theme .gt-filter-pill:hover {
+  border-color: var(--accent);
+  color: var(--text-primary);
+}
+
+html.role-theme .gt-filter-pill--active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #ffffff !important;
+  box-shadow: 0 4px 12px rgba(160, 90, 255, 0.3);
+}
+
+html.role-theme .gt-filter-pill--active-green {
+  background: #10b981 !important;
+  border-color: #10b981 !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35) !important;
+}
+
+

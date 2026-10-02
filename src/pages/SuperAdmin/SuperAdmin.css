@@ -247,7 +247,7 @@ html.light.role-theme .sa-btn-ghost:hover {
   gap: 12px;
   color: var(--accent);
   padding-bottom: 4px;
-  border-bottom: 1px solid var(--glass-border, rgba(255,255,255,0.08));
+  border-bottom: 1px solid var(--glass-border);
 }
 .sa-section-title {
   font-size: 1rem;
@@ -261,75 +261,6 @@ html.light.role-theme .sa-btn-ghost:hover {
   margin: 2px 0 0;
 }
 
-/* ── KPI cards ── */
-.sa-kpi-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 16px;
-}
-@media (min-width: 900px) {
-  .sa-kpi-grid { grid-template-columns: repeat(4, 1fr); }
-}
-.sa-kpi-card {
-  position: relative;
-  display: flex;
-  align-items: flex-start;
-  gap: 14px;
-  padding: 20px 18px;
-  border-radius: 16px;
-  background: var(--card-bg);
-  border: 1px solid var(--glass-border);
-  overflow: hidden;
-  box-shadow: var(--shadow-sm);
-  transition: none;
-}
-.sa-kpi-card:hover {
-  transform: none;
-  box-shadow: var(--shadow-sm);
-}
-.sa-kpi-icon-wrap {
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  background: var(--kpi-bg, rgba(96,165,250,0.12));
-  color: var(--kpi-c, var(--accent));
-}
-.sa-kpi-body { flex: 1; min-width: 0; }
-.sa-kpi-label {
-  font-size: 0.7rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--text-secondary);
-  margin: 0;
-}
-.sa-kpi-value {
-  font-size: 1.7rem;
-  font-weight: 800;
-  color: var(--text-primary);
-  line-height: 1.1;
-  margin: 4px 0 2px;
-  letter-spacing: -0.02em;
-}
-.sa-kpi-desc {
-  font-size: 0.68rem;
-  color: var(--text-secondary);
-  opacity: 0.75;
-  margin: 0;
-}
-.sa-kpi-glow {
-  position: absolute;
-  top: -30px; right: -30px;
-  width: 100px; height: 100px;
-  border-radius: 50%;
-  background: var(--kpi-c, var(--accent));
-  opacity: 0.06;
-  pointer-events: none;
-}
 
 /* ── Analytics grid ── */
 .sa-analytics-grid {
@@ -350,7 +281,7 @@ html.light.role-theme .sa-btn-ghost:hover {
 /* ── Chart card ── */
 .sa-chart-card {
   background: var(--card-bg);
-  border: 1px solid var(--glass-border, rgba(255,255,255,0.08));
+  border: 1px solid var(--glass-border);
   border-radius: 16px;
   padding: 20px;
   display: flex;
@@ -436,7 +367,7 @@ html.light.role-theme .sa-btn-ghost:hover {
 .sa-occ-bar-track {
   height: 6px;
   border-radius: 999px;
-  background: var(--glass-border, rgba(255,255,255,0.08));
+  background: var(--glass-border);
   overflow: hidden;
 }
 .sa-occ-bar-fill {
@@ -467,7 +398,7 @@ html.light.role-theme .sa-btn-ghost:hover {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  background: var(--glass-border, rgba(255,255,255,0.06));
+  background: var(--glass-border);
   color: var(--text-secondary);
 }
 .sa-top-rank-1 { background: var(--accent-soft); color: var(--accent); }
@@ -485,7 +416,7 @@ html.light.role-theme .sa-btn-ghost:hover {
 .sa-top-bar-track {
   height: 5px;
   border-radius: 999px;
-  background: var(--glass-border, rgba(255,255,255,0.08));
+  background: var(--glass-border);
   overflow: hidden;
 }
 .sa-top-bar-fill {
@@ -514,7 +445,7 @@ html.light.role-theme .sa-btn-ghost:hover {
 }
 .sa-society-card {
   background: var(--card-bg);
-  border: 1px solid var(--glass-border, rgba(255,255,255,0.08));
+  border: 1px solid var(--glass-border);
   border-radius: 16px;
   padding: 18px;
   display: flex;
@@ -575,7 +506,7 @@ html.light.role-theme .sa-btn-ghost:hover {
 }
 .sa-soc-divider {
   height: 1px;
-  background: var(--glass-border, rgba(255,255,255,0.07));
+  background: var(--glass-border);
   margin: 0 -2px;
 }
 .sa-soc-row {
@@ -654,7 +585,7 @@ html.light.role-theme .sa-btn-ghost:hover {
   transition: all 0.15s;
 }
 .sa-action-dots:hover {
-  background: var(--glass-border, rgba(255,255,255,0.08));
+  background: var(--glass-border);
   border-color: var(--glass-border);
   color: var(--text-primary);
 }
@@ -665,7 +596,7 @@ html.light.role-theme .sa-btn-ghost:hover {
   z-index: 4000;
   min-width: 120px;
   background: var(--card-bg);
-  border: 1px solid var(--glass-border, rgba(255,255,255,0.1));
+  border: 1px solid var(--glass-border);
   border-radius: 12px;
   padding: 6px;
   box-shadow: 0 12px 32px rgba(0,0,0,0.35);
@@ -705,13 +636,13 @@ html.light.role-theme .sa-action-dropdown {
   transition: background 0.12s;
 }
 .sa-action-item:hover {
-  background: var(--glass-border, rgba(255,255,255,0.07));
+  background: var(--glass-border);
 }
       .sa-action-item-danger { color: #EF4444; }
       .sa-action-item-danger:hover { background: rgba(239,68,68,0.1); }
       /* Rejected registrations cannot be assigned a flat until re-approved. */
       .sa-action-item-disabled {
-        color: var(--text-secondary, #a3a3a3);
+        color: var(--text-secondary);
         opacity: 0.5;
         cursor: not-allowed;
       }
@@ -720,7 +651,7 @@ html.light.role-theme .sa-action-dropdown {
       }
 .sa-action-divider {
   height: 1px;
-  background: var(--glass-border, rgba(255,255,255,0.07));
+  background: var(--glass-border);
   margin: 4px 0;
 }
 
@@ -751,87 +682,6 @@ html.light.role-theme .sa-pill-inner::before {
   background: radial-gradient(circle 60px at 0% 100%, rgba(var(--acct-cyan-rgb), 0.14), rgba(var(--acct-purple-rgb), 0.08), transparent);
 }
 
-/* --------------------------------------------------------------------------
-   KPI tiles — Accountant / Guard pattern
-   Light: pastel fills + white text + corner circle
-   Dark: solid Corona + colored labels
-   -------------------------------------------------------------------------- */
-html.role-theme .sa-kpi-card::after {
-  content: "";
-  position: absolute;
-  width: 88px;
-  height: 88px;
-  border-radius: 50%;
-  right: -18px;
-  top: -18px;
-  background: rgba(255, 255, 255, 0.16);
-  pointer-events: none;
-}
-
-html.role-theme .sa-kpi-glow {
-  display: none;
-}
-
-html.role-theme .sa-kpi-label,
-html.role-theme .sa-kpi-value,
-html.role-theme .sa-kpi-desc,
-html.role-theme .sa-kpi-icon-wrap {
-  position: relative;
-  z-index: 1;
-  box-shadow: none !important;
-  text-shadow: none !important;
-}
-
-html.role-theme:not(.light) .sa-kpi-card {
-  background: #22252e !important;
-  border: 2px solid var(--glass-border) !important;
-}
-
-html.role-theme:not(.light) .sa-kpi-card::after {
-  background: rgba(255, 255, 255, 0.04);
-}
-
-html.role-theme:not(.light) .sa-kpi-value {
-  color: #ffffff !important;
-}
-
-html.role-theme:not(.light) .sa-kpi-label,
-html.role-theme:not(.light) .sa-kpi-icon-wrap {
-  color: var(--kpi-c, var(--accent)) !important;
-  background: transparent;
-}
-
-html.role-theme:not(.light) .sa-kpi-desc {
-  color: var(--text-secondary) !important;
-}
-
-html.light.role-theme .sa-kpi-grid .sa-kpi-card:nth-child(1) {
-  background: var(--stat-purple-bg) !important;
-  border: none !important;
-}
-html.light.role-theme .sa-kpi-grid .sa-kpi-card:nth-child(2) {
-  background: var(--stat-green-bg) !important;
-  border: none !important;
-}
-html.light.role-theme .sa-kpi-grid .sa-kpi-card:nth-child(3) {
-  background: var(--stat-purple-bg) !important;
-  border: none !important;
-}
-html.light.role-theme .sa-kpi-grid .sa-kpi-card:nth-child(4) {
-  background: var(--stat-blue-bg) !important;
-  border: none !important;
-}
-
-html.light.role-theme .sa-kpi-value,
-html.light.role-theme .sa-kpi-label,
-html.light.role-theme .sa-kpi-desc {
-  color: #ffffff !important;
-}
-
-html.light.role-theme .sa-kpi-icon-wrap {
-  background: rgba(255, 255, 255, 0.18) !important;
-  color: #ffffff !important;
-}
 
 html.light.role-theme .sa-root .text-white,
 html.light.role-theme .sa-root .hover\:text-white:hover {
@@ -840,9 +690,6 @@ html.light.role-theme .sa-root .hover\:text-white:hover {
 
 html.light.role-theme .sa-root .btn-primary,
 html.light.role-theme .sa-root .btn-primary *,
-html.light.role-theme .sa-root .sa-kpi-val,
-html.light.role-theme .sa-root .sa-kpi-value,
-html.light.role-theme .sa-root .sa-kpi-label,
 html.light.role-theme .sa-root button.text-white {
   color: #ffffff !important;
 }
@@ -871,8 +718,8 @@ html.light.role-theme .sa-root button.text-white {
   display: flex;
   align-items: center;
   gap: 18px;
-  border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.1));
-  background: var(--card-inner-bg, rgba(255, 255, 255, 0.04));
+  border: 1px solid var(--glass-border);
+  background: var(--card-inner-bg);
 }
 .sd-hero::before {
   content: "";
@@ -892,7 +739,7 @@ html.light.role-theme .sa-root button.text-white {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, var(--accent), #9e58ff);
+  background: linear-gradient(135deg, var(--accent), var(--accent-light));
   box-shadow: 0 10px 24px rgba(158, 88, 255, 0.35);
   color: #fff;
 }
@@ -1003,8 +850,8 @@ html.light.role-theme .sa-root button.text-white {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.08));
-  background: var(--card-inner-bg, rgba(255, 255, 255, 0.04));
+  border: 1px solid var(--glass-border);
+  background: var(--card-inner-bg);
   transition: transform 0.18s, border-color 0.18s, box-shadow 0.18s;
 }
 .sd-stat:hover {
@@ -1048,7 +895,7 @@ html.light.role-theme .sa-root button.text-white {
   font-size: 0.68rem;
   color: var(--text-secondary);
   opacity: 0.8;
-  border-top: 1px dashed var(--glass-border, rgba(255,255,255,0.1));
+  border-top: 1px dashed var(--glass-border);
   padding-top: 7px;
   margin-top: auto;
 }
@@ -1060,8 +907,8 @@ html.light.role-theme .sa-root button.text-white {
   gap: 14px;
   padding: 14px 16px;
   border-radius: 16px;
-  border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.09));
-  background: var(--card-inner-bg, rgba(255, 255, 255, 0.04));
+  border: 1px solid var(--glass-border);
+  background: var(--card-inner-bg);
 }
 .sd-admin-avatar {
   width: 46px;
@@ -1073,7 +920,7 @@ html.light.role-theme .sa-root button.text-white {
   justify-content: center;
   font-size: 1.05rem;
   font-weight: 800;
-  background: linear-gradient(135deg, var(--accent), #9e58ff);
+  background: linear-gradient(135deg, var(--accent), var(--accent-light));
   color: #fff;
   box-shadow: 0 8px 18px rgba(158, 88, 255, 0.3);
 }
@@ -1125,7 +972,7 @@ html.light.role-theme .sa-root button.text-white {
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  border: 3px solid var(--glass-border, rgba(255, 255, 255, 0.12));
+  border: 3px solid var(--glass-border);
   border-top-color: var(--accent);
   animation: spin 0.7s linear infinite;
 }

@@ -78,7 +78,7 @@ export default function GlobalConfirmDialog({
           style={{
             fontSize: "0.92rem",
             lineHeight: 1.55,
-            color: "var(--text-secondary, #94a3b8)",
+            color: "var(--text-secondary)",
             margin: 0,
           }}
         >

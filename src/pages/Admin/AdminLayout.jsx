@@ -23,6 +23,8 @@ import {
   MdAttachMoney,
   MdListAlt,
   MdHistory,
+  MdInventory2,
+  MdCleaningServices,
 } from "react-icons/md";
 import NotificationBell from "../../components/common/NotificationBell";
 import ThemeToggle from "../../components/common/ThemeToggle";
@@ -127,6 +129,20 @@ function AdminLayoutInner() {
       icon: MdCampaign,
       group: "SECURITY & LOGS",
       module: "visitor_logs",
+    },
+    {
+      label: t("adminMenuCleaningStaff") || "Cleaning Staff",
+      path: `${base}/cleaning-staff`,
+      icon: MdCleaningServices,
+      group: "SECURITY & LOGS",
+      module: "cleaning_staff",
+    },
+    {
+      label: t("adminMenuParcels"),
+      path: `${base}/parcels`,
+      icon: MdInventory2,
+      group: "SECURITY & LOGS",
+      module: "parcel",
     },
     {
       label: t("adminMenuNotices"),

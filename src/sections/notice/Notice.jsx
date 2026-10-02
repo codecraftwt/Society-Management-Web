@@ -590,7 +590,7 @@ export default function Notice() {
                     gap: 6,
                     fontSize: "0.82rem",
                     fontWeight: 600,
-                    color: "var(--accent, #a855f7)",
+                    color: "var(--accent)",
                     background: "rgba(168, 85, 247, 0.12)",
                     border: "1px solid rgba(168, 85, 247, 0.28)",
                     padding: "6px 14px",

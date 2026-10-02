@@ -27,6 +27,7 @@ import {
 } from "react-icons/md";
 import Modal from "../../components/Modal";
 import SlidingTabs from "../../components/common/SlidingTabs";
+import StatCard from "../../components/common/StatCard";
 import ExpandableSearch from "../../components/common/ExpandableSearch";
 import DateRangeFilter from "../../components/common/DateRangeFilter";
 import { toast } from "react-toastify";
@@ -495,25 +496,22 @@ export default function MyCollection() {
       {/* ── STATS CARDS (Admin Dashboard Aesthetic) ── */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
         {[
-          { key: "ALL", mod: "total", label: t("gcTotalParcels") || t("parcelStatTotal") || "Total parcels", count: counts.total },
-          { key: "EXPECTED", mod: "expected", label: t("parcelExpected") || "Expected", count: counts.expected },
-          { key: "AT_GATE", mod: "gate", label: t("parcelAtGate") || "At gate", count: counts.atGate },
-          { key: "COLLECTED", mod: "collected", label: t("parcelCollected") || "Collected", count: counts.collected },
-          { key: "CANCELLED", mod: "cancelled", label: t("parcelCancelled") || "Cancelled", count: counts.cancelled },
-        ].map((s) => {
-          const isSelected = tab === s.key;
-          return (
-            <div
-              key={s.key}
-              onClick={() => setTab(s.key)}
-              className={`ad-kpi ad-kpi--${s.mod} ${isSelected ? "ring-2 ring-white/40 shadow-md scale-[1.02]" : "hover:opacity-95"}`}
-              style={{ cursor: "pointer", userSelect: "none" }}
-            >
-              <span className="ad-kpi-val">{s.count}</span>
-              <span className="ad-kpi-label">{s.label}</span>
-            </div>
-          );
-        })}
+          { key: "ALL", tone: "brand", label: t("gcTotalParcels") || t("parcelStatTotal") || "Total parcels", count: counts.total },
+          { key: "EXPECTED", tone: "info", label: t("parcelExpected") || "Expected", count: counts.expected },
+          { key: "AT_GATE", tone: "warning", label: t("parcelAtGate") || "At gate", count: counts.atGate },
+          { key: "COLLECTED", tone: "success", label: t("parcelCollected") || "Collected", count: counts.collected },
+          { key: "CANCELLED", tone: "danger", label: t("parcelCancelled") || "Cancelled", count: counts.cancelled },
+        ].map((s) => (
+          <StatCard
+            key={s.key}
+            tone={s.tone}
+            interactive
+            selected={tab === s.key}
+            onClick={() => setTab(s.key)}
+            value={s.count}
+            label={s.label}
+          />
+        ))}
       </div>
 
       {!checkingFlat && !hasEligibleFlat && (

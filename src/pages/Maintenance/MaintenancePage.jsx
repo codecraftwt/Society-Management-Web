@@ -617,8 +617,8 @@ function GenerateModal({ configs, onClose, onGenerated }) {
         style={{
           width: "100%",
           maxWidth: 780,
-          background: "var(--card-bg, #0f172a)",
-          border: "1px solid var(--glass-border, rgba(255,255,255,0.12))",
+          background: "var(--card-bg)",
+          border: "1px solid var(--glass-border)",
           borderRadius: 22,
           maxHeight: "90vh",
           overflowY: "auto",
@@ -632,7 +632,7 @@ function GenerateModal({ configs, onClose, onGenerated }) {
         {/* Header */}
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", padding: "22px 26px 0", flexShrink: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-            <div style={{ width: 44, height: 44, borderRadius: 14, background: "linear-gradient(135deg, var(--accent), #9e58ff)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 6px 20px rgba(160,90,255,0.35)", flexShrink: 0 }}>
+            <div style={{ width: 44, height: 44, borderRadius: 14, background: "linear-gradient(135deg, var(--accent), var(--accent-light))", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 6px 20px rgba(160,90,255,0.35)", flexShrink: 0 }}>
               <MdReceiptLong size={24} color="#fff" />
             </div>
             <div>
@@ -646,13 +646,13 @@ function GenerateModal({ configs, onClose, onGenerated }) {
           </div>
           <button
             onClick={requestClose}
-            style={{ width: 34, height: 34, borderRadius: 10, border: "1px solid var(--glass-border, rgba(255,255,255,0.12))", background: "var(--card-inner-bg, rgba(255,255,255,0.06))", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-secondary)" }}
+            style={{ width: 34, height: 34, borderRadius: 10, border: "1px solid var(--glass-border)", background: "var(--card-inner-bg)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-secondary)" }}
           >
             <MdClose size={17} />
           </button>
         </div>
 
-        <div style={{ height: 1, background: "var(--glass-border, rgba(255,255,255,0.08))", margin: "16px 0 0" }} />
+        <div style={{ height: 1, background: "var(--glass-border)", margin: "16px 0 0" }} />
 
         <div style={{ padding: "20px 26px 26px", display: "flex", flexDirection: "column", gap: 18, overflowY: "auto" }}>
           {/* Top Inputs: Issue Date & Due Date */}
@@ -734,7 +734,7 @@ function GenerateModal({ configs, onClose, onGenerated }) {
           {/* ── Eligible Residents Preview Section ── */}
           <div
             style={{
-              background: "var(--card-inner-bg, rgba(255,255,255,0.02))",
+              background: "var(--card-inner-bg)",
               borderRadius: 16,
               border: "1px solid var(--glass-border)",
               padding: "16px 18px",
@@ -1136,8 +1136,8 @@ function BillsTab({ billingMonth, setBillingMonth, onView, configs = [] }) {
       <div
         className="p-3 sm:p-4 rounded-2xl border flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3.5"
         style={{
-          background: "var(--card-bg, rgba(15, 23, 42, 0.6))",
-          borderColor: "var(--glass-border, rgba(255, 255, 255, 0.1))",
+          background: "var(--card-bg)",
+          borderColor: "var(--glass-border)",
           backdropFilter: "blur(16px)",
           WebkitBackdropFilter: "blur(16px)",
         }}
@@ -1162,7 +1162,7 @@ function BillsTab({ billingMonth, setBillingMonth, onView, configs = [] }) {
           <div
             className="flex items-center gap-1.5 border rounded-xl px-2.5 py-1"
             style={{
-              background: "var(--card-inner-bg, rgba(255,255,255,0.04))",
+              background: "var(--card-inner-bg)",
               borderColor: "var(--glass-border)",
               height: 36,
             }}
@@ -1175,7 +1175,7 @@ function BillsTab({ billingMonth, setBillingMonth, onView, configs = [] }) {
               style={{ color: "var(--text-primary)" }}
             >
               {monthOptions.map((m) => (
-                <option key={m.value} value={m.value} style={{ background: "var(--card-bg, #0f172a)", color: "var(--text-primary, #ffffff)" }}>
+                <option key={m.value} value={m.value} style={{ background: "var(--card-bg)", color: "var(--text-primary)" }}>
                   {m.label}
                 </option>
               ))}
@@ -1189,7 +1189,7 @@ function BillsTab({ billingMonth, setBillingMonth, onView, configs = [] }) {
               style={{ color: "var(--text-primary)" }}
             >
               {yearOptions.map((y) => (
-                <option key={y.value} value={y.value} style={{ background: "var(--card-bg, #0f172a)", color: "var(--text-primary, #ffffff)" }}>
+                <option key={y.value} value={y.value} style={{ background: "var(--card-bg)", color: "var(--text-primary)" }}>
                   {y.label}
                 </option>
               ))}
@@ -1203,12 +1203,12 @@ function BillsTab({ billingMonth, setBillingMonth, onView, configs = [] }) {
             className="inline-flex items-center gap-1.5 px-3 rounded-xl text-xs font-bold border transition-all cursor-pointer select-none"
             style={{
               height: 36,
-              background: mode === "custom" ? "var(--accent-soft, rgba(99,102,241,0.18))" : "var(--card-inner-bg, rgba(255,255,255,0.04))",
-              borderColor: mode === "custom" ? "var(--accent, #818cf8)" : "var(--glass-border)",
-              color: mode === "custom" ? "var(--accent, #818cf8)" : "var(--text-secondary)",
+              background: mode === "custom" ? "var(--accent-soft)" : "var(--card-inner-bg)",
+              borderColor: mode === "custom" ? "var(--accent)" : "var(--glass-border)",
+              color: mode === "custom" ? "var(--accent)" : "var(--text-secondary)",
             }}
           >
-            <MdCalendarToday size={14} style={{ color: mode === "custom" ? "var(--accent, #818cf8)" : "var(--text-secondary)" }} />
+            <MdCalendarToday size={14} style={{ color: mode === "custom" ? "var(--accent)" : "var(--text-secondary)" }} />
             <span className="truncate max-w-45">
               {mode === "custom" ? customPeriodLabel : t("mntCustomPeriod")}
             </span>
@@ -1225,7 +1225,7 @@ function BillsTab({ billingMonth, setBillingMonth, onView, configs = [] }) {
                 borderRadius: 11,
                 fontSize: 12,
                 fontWeight: 600,
-                background: "var(--card-inner-bg, rgba(255,255,255,0.04))",
+                background: "var(--card-inner-bg)",
                 borderColor: "var(--glass-border)",
               }}
               className="w-full"
@@ -1241,7 +1241,7 @@ function BillsTab({ billingMonth, setBillingMonth, onView, configs = [] }) {
             style={{
               width: 36,
               height: 36,
-              background: "var(--card-inner-bg, rgba(255,255,255,0.04))",
+              background: "var(--card-inner-bg)",
               borderColor: "var(--glass-border)",
               color: "var(--text-primary)",
             }}
@@ -1250,7 +1250,7 @@ function BillsTab({ billingMonth, setBillingMonth, onView, configs = [] }) {
               e.currentTarget.style.borderColor = "var(--accent-light, #818cf8)";
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.background = "var(--card-inner-bg, rgba(255,255,255,0.04))";
+              e.currentTarget.style.background = "var(--card-inner-bg)";
               e.currentTarget.style.borderColor = "var(--glass-border)";
             }}
           >
@@ -1672,7 +1672,7 @@ export default function MaintenancePage() {
               height: 44,
               borderRadius: 14,
               flexShrink: 0,
-              background: "linear-gradient(135deg, var(--accent), #9e58ff)",
+              background: "linear-gradient(135deg, var(--accent), var(--accent-light))",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -1816,7 +1816,7 @@ export default function MaintenancePage() {
             maxHeight: "90vh",
             display: "flex",
             flexDirection: "column",
-            boxShadow: "var(--shadow-glass, 0 18px 50px rgba(0,0,0,0.5))",
+            boxShadow: "var(--shadow-glass)",
             animation: "adminModalPopIn 0.28s cubic-bezier(0.16, 1, 0.3, 1)",
           }}
         >
@@ -1932,8 +1932,8 @@ function BillDetailModal({ id, onClose }) {
         style={{
           width: "100%",
           maxWidth: 480,
-          background: "var(--card-bg, #0f172a)",
-          border: "1px solid var(--glass-border, rgba(255,255,255,0.12))",
+          background: "var(--card-bg)",
+          border: "1px solid var(--glass-border)",
           borderRadius: 20,
           maxHeight: "90vh",
           overflowY: "auto",
@@ -1959,13 +1959,13 @@ function BillDetailModal({ id, onClose }) {
           </div>
           <button
             onClick={onClose}
-            style={{ width: 34, height: 34, borderRadius: 10, border: "1px solid var(--glass-border, rgba(255,255,255,0.12))", background: "var(--card-inner-bg, rgba(255,255,255,0.06))", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-secondary)" }}
+            style={{ width: 34, height: 34, borderRadius: 10, border: "1px solid var(--glass-border)", background: "var(--card-inner-bg)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-secondary)" }}
           >
             <MdClose size={17} />
           </button>
         </div>
 
-        <div style={{ height: 1, background: "var(--glass-border, rgba(255,255,255,0.08))", margin: "16px 0 0" }} />
+        <div style={{ height: 1, background: "var(--glass-border)", margin: "16px 0 0" }} />
 
         <div style={{ padding: "20px 24px 28px" }}>
           {loading ? (

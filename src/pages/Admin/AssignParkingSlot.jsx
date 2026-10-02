@@ -345,7 +345,7 @@ function ResidentEntryPanel({ slots, onCreated, t }) {
                 {isExpanded && (
                   <div className="px-4 pb-4 pt-0 animate-fadeIn">
                     <div className="p-3.5 rounded-xl space-y-3"
-                      style={{ background: "var(--card-inner-bg,rgba(0,0,0,0.04))", border: "1px solid var(--glass-border)" }}>
+                      style={{ background: "var(--card-inner-bg)", border: "1px solid var(--glass-border)" }}>
 
                       {/* Slot selector */}
                       <div>
@@ -659,7 +659,7 @@ function ResidentRequestsPanel({ allSlots, onSlotAssigned }) {
                 {isPending && isExpanded && (
                   <div className="px-4 pb-4 pt-0 animate-fadeIn">
                     <div className="p-3.5 rounded-xl space-y-3"
-                      style={{ background: "var(--card-inner-bg,rgba(0,0,0,0.04))", border: "1px solid var(--glass-border)" }}>
+                      style={{ background: "var(--card-inner-bg)", border: "1px solid var(--glass-border)" }}>
                       <div>
                         <label className="text-xs font-bold uppercase tracking-wider mb-1.5 flex items-center justify-between"
                           style={{ color: "var(--text-secondary)" }}>

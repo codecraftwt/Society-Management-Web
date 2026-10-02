@@ -2180,6 +2180,7 @@ const hi = {
   adminMenuManageBills:   "बिल प्रबंधन",
   adminMenuAmenities:     "सुविधाएं",
   adminMenuVisitorLogs:   "विज़िटर लॉग",
+  adminMenuParcels:       "पार्सल",
   adminMenuReports:       "रिपोर्ट",
   adminMenuDocument:      "दस्तावेज़",
   adminMenuFlatHistory:   "फ्लैट इतिहास",
@@ -2190,6 +2191,7 @@ const hi = {
   adminMenuPayments:      "भुगतान और संग्रह",
   guardMenuHelp:          "सहायता और संपर्क",
   saMenuSOS:              "SOS",
+  saMenuParcels:          "पार्सल",
   saMenuAccounting:       "खाता प्रबंधन",
   saMenuPayments:         "भुगतान",
 

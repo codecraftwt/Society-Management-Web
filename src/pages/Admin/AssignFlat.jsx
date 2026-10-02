@@ -110,15 +110,15 @@ function StepIndicator({ step, total, labels }) {
                 style={{
                   width: 30, height: 30, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center",
                   fontSize: 12, fontWeight: 800, transition: "all 0.3s",
-                  background: done ? "#34d399" : active ? "linear-gradient(135deg, var(--accent, #6B46C1), #8b5cf6)" : "var(--card-inner-bg, rgba(148, 163, 184, 0.15))",
-                  border: `2px solid ${done ? "#34d399" : active ? "var(--accent, #6B46C1)" : "var(--glass-border, rgba(148, 163, 184, 0.35))"}`,
+                  background: done ? "#34d399" : active ? "linear-gradient(135deg, var(--accent), #8b5cf6)" : "var(--card-inner-bg)",
+                  border: `2px solid ${done ? "#34d399" : active ? "var(--accent)" : "var(--glass-border)"}`,
                   color: done || active ? "#fff" : "var(--text-secondary)",
                   boxShadow: active ? "0 4px 12px rgba(107,70,193,0.35)" : "none",
                 }}
               >
                 {done ? <MdCheckCircle size={15} /> : num}
               </div>
-              <span style={{ fontSize: 10, fontWeight: 700, color: active ? "var(--accent, #9F87D7)" : done ? "#34d399" : "var(--text-secondary)", whiteSpace: "nowrap", textTransform: "uppercase", letterSpacing: "0.04em" }}>
+              <span style={{ fontSize: 10, fontWeight: 700, color: active ? "var(--accent)" : done ? "#34d399" : "var(--text-secondary)", whiteSpace: "nowrap", textTransform: "uppercase", letterSpacing: "0.04em" }}>
                 {label}
               </span>
             </div>
@@ -147,7 +147,7 @@ function SelectionCard({ icon, title, subtitle, selected, onClick, color = "#5B8
       style={{
         width: "100%", padding: "14px 16px", borderRadius: 12, cursor: "pointer",
         textAlign: "left", transition: "all 0.18s", display: "flex", alignItems: "center", gap: 12,
-        background: selected ? colorBg : "var(--card-inner-bg, rgba(255,255,255,0.04))",
+        background: selected ? colorBg : "var(--card-inner-bg)",
         border: `2px solid ${selected ? color : "rgba(255,255,255,0.08)"}`,
         outline: "none",
       }}
@@ -351,8 +351,8 @@ function AssignWizard({ onClose, onSuccess }) {
   const modalShellStyle = {
     width: "100%",
     maxWidth: 560,
-    background: "var(--card-bg, #0f172a)",
-    border: "1.5px solid var(--glass-border, rgba(255,255,255,0.12))",
+    background: "var(--card-bg)",
+    border: "1.5px solid var(--glass-border)",
     borderRadius: 20,
     maxHeight: "90vh",
     overflowY: "auto",
@@ -367,7 +367,7 @@ function AssignWizard({ onClose, onSuccess }) {
     <>
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", padding: "20px 24px 0" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <div style={{ width: 42, height: 42, borderRadius: 12, background: "linear-gradient(135deg, var(--accent), #9e58ff)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 6px 18px rgba(160,90,255,0.35)", flexShrink: 0 }}>
+          <div style={{ width: 42, height: 42, borderRadius: 12, background: "linear-gradient(135deg, var(--accent), var(--accent-light))", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 6px 18px rgba(160,90,255,0.35)", flexShrink: 0 }}>
             <MdHome size={22} color="#fff" />
           </div>
           <div>
@@ -380,12 +380,12 @@ function AssignWizard({ onClose, onSuccess }) {
         <button
           type="button"
           onClick={onClose}
-          style={{ width: 34, height: 34, borderRadius: 10, border: "1px solid var(--glass-border, rgba(255,255,255,0.12))", background: "var(--card-inner-bg, rgba(255,255,255,0.06))", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-secondary)" }}
+          style={{ width: 34, height: 34, borderRadius: 10, border: "1px solid var(--glass-border)", background: "var(--card-inner-bg)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-secondary)" }}
         >
           <MdClose size={17} />
         </button>
       </div>
-      <div style={{ height: 1, background: "var(--glass-border, rgba(255,255,255,0.08))", margin: "16px 0 0" }} />
+      <div style={{ height: 1, background: "var(--glass-border)", margin: "16px 0 0" }} />
     </>
   );
 
@@ -479,7 +479,7 @@ function AssignWizard({ onClose, onSuccess }) {
                   style={{
                     padding: "16px 10px", borderRadius: 12, cursor: "pointer",
                     textAlign: "center", transition: "all 0.18s", outline: "none",
-                    background: String(selectedFloorId) === String(floor.id) ? "rgba(91,141,239,0.12)" : "var(--card-inner-bg, rgba(255,255,255,0.04))",
+                    background: String(selectedFloorId) === String(floor.id) ? "rgba(91,141,239,0.12)" : "var(--card-inner-bg)",
                     border: `2px solid ${String(selectedFloorId) === String(floor.id) ? "#5B8DEF" : "rgba(255,255,255,0.08)"}`,
                   }}
                 >
@@ -511,7 +511,7 @@ function AssignWizard({ onClose, onSuccess }) {
                     style={{
                       padding: "14px 10px", borderRadius: 12, cursor: "pointer",
                       textAlign: "center", transition: "all 0.18s", outline: "none",
-                      background: isSelected ? (isApartment ? "rgba(91,141,239,0.12)" : "rgba(16,185,129,0.12)") : "var(--card-inner-bg, rgba(255,255,255,0.04))",
+                      background: isSelected ? (isApartment ? "rgba(91,141,239,0.12)" : "rgba(16,185,129,0.12)") : "var(--card-inner-bg)",
                       border: `2px solid ${isSelected ? (isApartment ? "#5B8DEF" : "#10b981") : "rgba(255,255,255,0.08)"}`,
                     }}
                   >
@@ -536,7 +536,7 @@ function AssignWizard({ onClose, onSuccess }) {
                     <button key={opt} type="button" onClick={() => setFlatType(opt)} style={{
                       flex: 1, padding: "10px 4px", borderRadius: 10, cursor: "pointer",
                       fontSize: 13, fontWeight: 700, transition: "all 0.18s", outline: "none",
-                      background: active ? s.bg : "var(--card-inner-bg, rgba(255,255,255,0.04))",
+                      background: active ? s.bg : "var(--card-inner-bg)",
                       border: `2px solid ${active ? s.border : "rgba(255,255,255,0.08)"}`,
                       color: active ? s.color : "var(--text-secondary)",
                     }}>{opt}</button>
@@ -553,7 +553,7 @@ function AssignWizard({ onClose, onSuccess }) {
         <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
 
           <div style={{ background: "rgba(160,90,255,0.06)", border: "1px solid rgba(160,90,255,0.2)", borderRadius: 14, padding: "14px 16px" }}>
-            <p style={{ fontSize: 11, fontWeight: 800, color: "var(--accent, #9F87D7)", textTransform: "uppercase", letterSpacing: "0.06em", margin: "0 0 8px" }}>{t("afSelectedUnit")}</p>
+            <p style={{ fontSize: 11, fontWeight: 800, color: "var(--accent)", textTransform: "uppercase", letterSpacing: "0.06em", margin: "0 0 8px" }}>{t("afSelectedUnit")}</p>
             <SummaryRow label={t("afPropType")} value={isApartment ? t("afApartmentTitle") : t("afRowHouseTitle")} icon={isApartment ? <MdApartment size={15} color="var(--accent)" /> : <MdHomeWork size={15} color="#10b981" />} />
             <SummaryRow label={t("afPhaseBlock")} value={t("afBlockName", { name: selectedBlock?.name })} icon={<MdBusiness size={15} />} />
             {isApartment && <SummaryRow label={t("afFloor")} value={t("afFloorName", { number: selectedFloor?.number })} icon={<MdLayers size={15} />} />}
@@ -605,20 +605,20 @@ function AssignWizard({ onClose, onSuccess }) {
                       transition: "all 0.16s ease",
                       outline: "none",
                       textAlign: "left",
-                      background: isSelected ? "rgba(160,90,255,0.12)" : "var(--card-inner-bg, rgba(255,255,255,0.04))",
-                      border: `1.5px solid ${isSelected ? "var(--accent, #a05aff)" : "var(--glass-border, rgba(255,255,255,0.08))"}`,
+                      background: isSelected ? "rgba(160,90,255,0.12)" : "var(--card-inner-bg)",
+                      border: `1.5px solid ${isSelected ? "var(--accent)" : "var(--glass-border)"}`,
                     }}
                   >
                     <div style={{
                       width: 36, height: 36, borderRadius: "50%", flexShrink: 0,
-                      background: isSelected ? "linear-gradient(135deg, var(--accent, #6B46C1), #8b5cf6)" : "rgba(160,90,255,0.14)",
+                      background: isSelected ? "linear-gradient(135deg, var(--accent), #8b5cf6)" : "rgba(160,90,255,0.14)",
                       display: "flex", alignItems: "center", justifyContent: "center",
                       fontSize: 13, fontWeight: 800, color: "#fff",
                     }}>
                       {r.name?.charAt(0)?.toUpperCase()}
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: isSelected ? "var(--accent, #a05aff)" : "var(--text-primary)" }}>{r.name}</p>
+                      <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: isSelected ? "var(--accent)" : "var(--text-primary)" }}>{r.name}</p>
                       <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 2, flexWrap: "wrap" }}>
                         {r.email && <span style={{ fontSize: 11, color: "var(--text-secondary)" }}>{r.email}</span>}
                         {r.phone && <span style={{ fontSize: 11, color: "var(--text-secondary)", display: "flex", alignItems: "center", gap: 3 }}><MdPhone size={11} /> {r.phone}</span>}
@@ -626,8 +626,8 @@ function AssignWizard({ onClose, onSuccess }) {
                     </div>
                     <div style={{
                       width: 20, height: 20, borderRadius: "50%", flexShrink: 0,
-                      background: isSelected ? "var(--accent, #a05aff)" : "transparent",
-                      border: `2px solid ${isSelected ? "var(--accent, #a05aff)" : "var(--glass-border, rgba(255,255,255,0.2))"}`,
+                      background: isSelected ? "var(--accent)" : "transparent",
+                      border: `2px solid ${isSelected ? "var(--accent)" : "var(--glass-border)"}`,
                       display: "flex", alignItems: "center", justifyContent: "center",
                     }}>
                       {isSelected && <MdCheck size={13} color="#fff" />}
@@ -660,7 +660,7 @@ function AssignWizard({ onClose, onSuccess }) {
       )}
 
       {/* Buttons */}
-      <div style={{ display: "flex", gap: 10, paddingTop: 16, borderTop: "1px solid var(--glass-border, rgba(255,255,255,0.08))", marginTop: 20 }}>
+      <div style={{ display: "flex", gap: 10, paddingTop: 16, borderTop: "1px solid var(--glass-border)", marginTop: 20 }}>
         {step > 1 && (
           <button type="button" onClick={goBack} className="sa-btn sa-btn-ghost">
             <MdArrowBack size={15} /> {t("afBack")}

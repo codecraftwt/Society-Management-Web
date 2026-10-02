@@ -17,6 +17,7 @@ import {
   MdAttachMoney,
   MdListAlt,
   MdHistory,
+  MdInventory2,
 } from "react-icons/md";
 import { FaBuilding, FaUsers, FaUserShield, FaParking } from "react-icons/fa";
 import ThemeToggle from "../../components/common/ThemeToggle";
@@ -96,6 +97,12 @@ function SuperAdminLayoutInner() {
       label: t("saMenuVisitorLogs") || "Visitor Logs",
       path: `${base}/visitor-logs`,
       icon: MdVerified,
+      group: "OPERATIONS & SECURITY",
+    },
+    {
+      label: t("saMenuParcels") || "Parcels",
+      path: `${base}/parcels`,
+      icon: MdInventory2,
       group: "OPERATIONS & SECURITY",
     },
     {

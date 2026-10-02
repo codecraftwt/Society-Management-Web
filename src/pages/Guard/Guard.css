@@ -901,92 +901,6 @@ html.role-theme .gd-emergency-desc::-webkit-scrollbar {
   display: none;
 }
 
-html.role-theme .gd-stat-card {
-  position: relative;
-  overflow: hidden;
-  border-radius: 16px;
-  box-shadow: var(--shadow-sm) !important;
-  backdrop-filter: none !important;
-  filter: none !important;
-}
-
-html.role-theme .gd-stat-card::after {
-  content: "" !important;
-  display: block !important;
-  position: absolute;
-  width: 88px;
-  height: 88px;
-  border-radius: 50%;
-  right: -18px;
-  top: -18px;
-  background: rgba(255, 255, 255, 0.16);
-  pointer-events: none;
-  box-shadow: none !important;
-}
-
-html.role-theme .gd-stat-title,
-html.role-theme .gd-stat-val {
-  position: relative;
-  z-index: 1;
-  box-shadow: none !important;
-  text-shadow: none !important;
-}
-
-html.role-theme .gd-stat-card:hover {
-  box-shadow: var(--shadow-sm) !important;
-  transform: none !important;
-}
-
-html.role-theme:not(.light) .gd-stat-card {
-  background: #22252e !important;
-  border: 2px solid var(--glass-border) !important;
-}
-
-html.role-theme:not(.light) .gd-stat-card::after {
-  background: rgba(255, 255, 255, 0.04);
-}
-
-html.role-theme:not(.light) .gd-stat-card--today {
-  border-color: rgba(var(--acct-purple-rgb), 0.4) !important;
-}
-html.role-theme:not(.light) .gd-stat-card--inside {
-  border-color: rgba(var(--acct-cyan-rgb), 0.35) !important;
-}
-html.role-theme:not(.light) .gd-stat-card--exited {
-  border-color: rgba(var(--acct-green-rgb), 0.35) !important;
-}
-
-html.role-theme:not(.light) .gd-stat-val {
-  color: #ffffff !important;
-}
-html.role-theme:not(.light) .gd-stat-card--today .gd-stat-title {
-  color: var(--acct-purple) !important;
-}
-html.role-theme:not(.light) .gd-stat-card--inside .gd-stat-title {
-  color: var(--acct-cyan) !important;
-}
-html.role-theme:not(.light) .gd-stat-card--exited .gd-stat-title {
-  color: var(--acct-teal) !important;
-}
-
-html.light.role-theme .gd-stat-card--today {
-  background: var(--stat-purple-bg) !important;
-  border: none !important;
-}
-html.light.role-theme .gd-stat-card--inside {
-  background: var(--stat-blue-bg) !important;
-  border: none !important;
-}
-html.light.role-theme .gd-stat-card--exited {
-  background: var(--stat-green-bg) !important;
-  border: none !important;
-}
-
-html.light.role-theme .gd-stat-card .gd-stat-val,
-html.light.role-theme .gd-stat-card .gd-stat-title {
-  color: #ffffff !important;
-}
-
 /* --------------------------------------------------------------------------
    Collection — header + KPI tiles + parcel cards
    -------------------------------------------------------------------------- */
@@ -1173,7 +1087,7 @@ html.role-theme .gc-head {
 }
 
 html.role-theme .gc-head-icon {
-  background: linear-gradient(135deg, var(--accent), #9e58ff) !important;
+  background: linear-gradient(135deg, var(--accent), var(--accent-light)) !important;
   color: #ffffff !important;
   border: none !important;
   box-shadow: 0 6px 14px rgba(var(--acct-purple-rgb), 0.28) !important;
@@ -1633,7 +1547,7 @@ html.role-theme .gh-emerg-desc {
 }
 
 html.role-theme .gh-page-icon-wrap {
-  background: linear-gradient(135deg, var(--accent), #9e58ff) !important;
+  background: linear-gradient(135deg, var(--accent), var(--accent-light)) !important;
   border: none !important;
   color: #ffffff !important;
   box-shadow: 0 8px 20px rgba(var(--acct-purple-rgb), 0.3) !important;
@@ -1858,7 +1772,7 @@ html.role-theme .gh-avatar--purple {
 }
 
 html.role-theme .gh-guide-step-num {
-  background: linear-gradient(135deg, var(--accent), #9e58ff) !important;
+  background: linear-gradient(135deg, var(--accent), var(--accent-light)) !important;
   color: #ffffff !important;
   border: none !important;
   box-shadow: 0 6px 14px rgba(var(--acct-purple-rgb), 0.28) !important;
@@ -2728,7 +2642,7 @@ html.role-theme .gs-avatar {
   font-size: 18px;
   font-weight: 800;
   color: #ffffff;
-  background: linear-gradient(135deg, var(--accent), #9e58ff);
+  background: linear-gradient(135deg, var(--accent), var(--accent-light));
   box-shadow: 0 8px 20px rgba(var(--acct-purple-rgb), 0.3);
 }
 
@@ -3045,55 +2959,4 @@ html.role-theme .eh-type--other {
   background: rgba(var(--acct-cyan-rgb), 0.16);
   color: var(--acct-cyan);
   border-color: rgba(var(--acct-cyan-rgb), 0.32);
-}
-
-/* --------------------------------------------------------------------------
-   Visitor logs — KPI stat card icon + info layout
-   -------------------------------------------------------------------------- */
-html.role-theme .ad-kpi:has(.ad-kpi-info) {
-  flex-direction: row;
-  align-items: center;
-  justify-content: flex-start;
-  gap: 12px;
-}
-
-html.role-theme .ad-kpi-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 42px;
-  height: 42px;
-  border-radius: 13px;
-  background: rgba(255, 255, 255, 0.14);
-  border: 1px solid rgba(255, 255, 255, 0.22);
-  color: #ffffff;
-  flex-shrink: 0;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18);
-}
-
-html.light.role-theme .ad-kpi-icon {
-  background: rgba(255, 255, 255, 0.22);
-  border-color: rgba(255, 255, 255, 0.4);
-}
-
-html.role-theme .ad-kpi-info {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  flex: 1;
-  min-width: 0;
-}
-
-html.role-theme .ad-kpi-info .ad-kpi-val {
-  margin: 0;
-  line-height: 1;
-  display: block;
-}
-
-html.role-theme .ad-kpi-info .ad-kpi-label {
-  display: block;
-  line-height: 1.35;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }

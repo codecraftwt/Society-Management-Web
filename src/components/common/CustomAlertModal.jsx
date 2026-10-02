@@ -193,11 +193,11 @@ export default function CustomAlertModal({ config, onClose }) {
         style={{
           width: "100%",
           maxWidth: "430px",
-          backgroundColor: "var(--modal-bg, var(--card-bg, #0f172a))",
-          color: "var(--text-primary, #ffffff)",
+          backgroundColor: "var(--modal-bg)",
+          color: "var(--text-primary)",
           borderRadius: "24px",
           padding: "26px 24px 22px",
-          border: "1.5px solid var(--glass-border, rgba(255, 255, 255, 0.12))",
+          border: "1.5px solid var(--glass-border)",
           boxShadow: `0 24px 60px -12px rgba(0, 0, 0, 0.65), 0 0 34px ${currentVariant.glowColor}`,
           animation: isSuccess
             ? "customAlertSpringPop 0.5s cubic-bezier(0.16, 1, 0.3, 1) both"
@@ -229,8 +229,8 @@ export default function CustomAlertModal({ config, onClose }) {
             top: "16px",
             right: "16px",
             background: "rgba(255, 255, 255, 0.05)",
-            border: "1px solid var(--glass-border, rgba(255, 255, 255, 0.1))",
-            color: "var(--text-secondary, #94a3b8)",
+            border: "1px solid var(--glass-border)",
+            color: "var(--text-secondary)",
             cursor: "pointer",
             padding: "6px",
             borderRadius: "10px",
@@ -240,11 +240,11 @@ export default function CustomAlertModal({ config, onClose }) {
             transition: "all 0.2s ease",
           }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.color = "var(--text-primary, #ffffff)";
+            e.currentTarget.style.color = "var(--text-primary)";
             e.currentTarget.style.backgroundColor = "rgba(255, 255, 255, 0.12)";
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.color = "var(--text-secondary, #94a3b8)";
+            e.currentTarget.style.color = "var(--text-secondary)";
             e.currentTarget.style.backgroundColor = "rgba(255, 255, 255, 0.05)";
           }}
         >

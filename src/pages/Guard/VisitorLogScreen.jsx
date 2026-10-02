@@ -20,6 +20,7 @@ import GlobalTable from "../../components/common/GlobalTable";
 import GlobalBadge from "../../components/common/GlobalBadge";
 import GlobalButton from "../../components/common/GlobalButton";
 import SlidingTabs from "../../components/common/SlidingTabs";
+import StatCard from "../../components/common/StatCard";
 import ExpandableSearch from "../../components/common/ExpandableSearch";
 
 function useDebounce(value, delay = 500) {
@@ -279,51 +280,45 @@ const [totalPages, setTotalPages] = useState(1);
       </div>
 
       {/* ── KPI Stat Summary Cards (Clickable Filter Shortcuts) ── */}
+      {/* Migrated from .ad-kpi + .ad-kpi-icon + .ad-kpi-info. The old markup
+          put the icon beside a value/label block, which is exactly StatCard's
+          inline layout, and the selection state was hardcoded per card
+          (ring-blue-500/50 / ring-cyan-500/50 / ring-emerald-500/50). The
+          tone-aware `selected` ring now derives from each card's tone.
+          These were divs with onClick and are now real buttons. */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <div
+        <StatCard
+          layout="inline"
+          icon={<MdHistory size={20} />}
+          tone="brand"
+          interactive
+          selected={tab === "ALL"}
           onClick={() => handleTabChange("ALL")}
-          className={`ad-kpi ad-kpi--total cursor-pointer transition-all ${
-            tab === "ALL" ? "ring-2 ring-blue-500/50 scale-[1.02]" : "hover:opacity-90"
-          }`}
-        >
-          <div className="ad-kpi-icon">
-            <MdHistory size={20} />
-          </div>
-          <div className="ad-kpi-info">
-            <span className="ad-kpi-val">{counts.ALL}</span>
-            <span className="ad-kpi-label">{t("vlsStatTotal", "Total Visitor Logs")}</span>
-          </div>
-        </div>
+          value={counts.ALL}
+          label={t("vlsStatTotal", "Total Visitor Logs")}
+        />
 
-        <div
+        <StatCard
+          layout="inline"
+          icon={<MdDirectionsWalk size={20} />}
+          tone="success"
+          interactive
+          selected={tab === "IN"}
           onClick={() => handleTabChange("IN")}
-          className={`ad-kpi ad-kpi--gate cursor-pointer transition-all ${
-            tab === "IN" ? "ring-2 ring-cyan-500/50 scale-[1.02]" : "hover:opacity-90"
-          }`}
-        >
-          <div className="ad-kpi-icon">
-            <MdDirectionsWalk size={20} />
-          </div>
-          <div className="ad-kpi-info">
-            <span className="ad-kpi-val">{counts.IN}</span>
-            <span className="ad-kpi-label">{t("vlsStatInside", "Currently Inside")}</span>
-          </div>
-        </div>
+          value={counts.IN}
+          label={t("vlsStatInside", "Currently Inside")}
+        />
 
-        <div
+        <StatCard
+          layout="inline"
+          icon={<MdLogout size={20} />}
+          tone="info"
+          interactive
+          selected={tab === "OUT"}
           onClick={() => handleTabChange("OUT")}
-          className={`ad-kpi ad-kpi--collected cursor-pointer transition-all ${
-            tab === "OUT" ? "ring-2 ring-emerald-500/50 scale-[1.02]" : "hover:opacity-90"
-          }`}
-        >
-          <div className="ad-kpi-icon">
-            <MdLogout size={20} />
-          </div>
-          <div className="ad-kpi-info">
-            <span className="ad-kpi-val">{counts.OUT}</span>
-            <span className="ad-kpi-label">{t("vlsStatOut", "Exit History (Left)")}</span>
-          </div>
-        </div>
+          value={counts.OUT}
+          label={t("vlsStatOut", "Exit History (Left)")}
+        />
       </div>
 
       {/* ── Filter Toolbar ── */}

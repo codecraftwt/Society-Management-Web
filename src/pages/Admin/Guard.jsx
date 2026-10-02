@@ -7,6 +7,7 @@ import {
   MdVisibility, MdVisibilityOff,
   MdSecurity, MdSchedule, MdCalendarToday, MdCalendarMonth,
   MdWbSunny, MdNightsStay, MdBrightness5, MdEdit, MdApartment, MdLock,
+  MdCloudUpload,
 } from "react-icons/md";
 import Select from "../../components/common/Select";
 import GlobalButton from "../../components/common/GlobalButton";
@@ -90,7 +91,7 @@ function TimeInput12({ value, onChange, disabled }) {
   };
   const selStyle = {
     height: 40, fontSize: 13.5, fontWeight: 600, borderRadius: 10,
-    background: "var(--card-inner-bg, rgba(255,255,255,0.04))",
+    background: "var(--card-inner-bg)",
     border: "1.5px solid var(--glass-border)", color: "var(--text-primary)",
     padding: "0 6px", outline: "none", cursor: "pointer",
     boxShadow: "0 2px 6px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.06)",
@@ -211,8 +212,19 @@ export default function Guard() {
     : user?.society_id;
   const [formData, setFormData] = useState({ name: "", email: "", password: "", society_id: "" });
   const [photoFile, setPhotoFile] = useState(null);
+  const [photoPreview, setPhotoPreview] = useState(null);
   const [editingId, setEditingId] = useState(null);
   const [submitLoading, setSubmitLoading] = useState(false);
+
+  useEffect(() => {
+    if (!photoFile) {
+      setPhotoPreview(null);
+      return;
+    }
+    const objectUrl = URL.createObjectURL(photoFile);
+    setPhotoPreview(objectUrl);
+    return () => URL.revokeObjectURL(objectUrl);
+  }, [photoFile]);
 
   // Delete Confirm Dialog state
   const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, id: null, societyId: null, loading: false });
@@ -310,6 +322,41 @@ export default function Guard() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [timingsSocietyId]);
 
+  /* ── TIMEZONE & CURRENT TIME TRACKING ── */
+  const [currentMinutes, setCurrentMinutes] = useState(() => {
+    try {
+      const parts = new Intl.DateTimeFormat("en-GB", {
+        timeZone: APP_TIMEZONE,
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+      }).format(new Date()).split(":").map(Number);
+      return parts[0] * 60 + parts[1];
+    } catch {
+      const now = new Date();
+      return now.getHours() * 60 + now.getMinutes();
+    }
+  });
+
+  useEffect(() => {
+    const updateTime = () => {
+      try {
+        const parts = new Intl.DateTimeFormat("en-GB", {
+          timeZone: APP_TIMEZONE,
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: false,
+        }).format(new Date()).split(":").map(Number);
+        setCurrentMinutes(parts[0] * 60 + parts[1]);
+      } catch {
+        const now = new Date();
+        setCurrentMinutes(now.getHours() * 60 + now.getMinutes());
+      }
+    };
+    const interval = setInterval(updateTime, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
   const isValidHHmm = (v) => /^([01]\d|2[0-3]):[0-5]\d$/.test(v);
 
   const toMins = (v) => {
@@ -319,11 +366,10 @@ export default function Guard() {
 
   const isActiveNow = (s, e) => {
     if (!s || !e || !isValidHHmm(s) || !isValidHHmm(e)) return false;
-    const now = new Date().getHours() * 60 + new Date().getMinutes();
     const a = toMins(s), b = toMins(e);
     if (a === b) return true;
-    if (a < b) return now >= a && now < b;
-    return now >= a || now < b;
+    if (a < b) return currentMinutes >= a && currentMinutes < b;
+    return currentMinutes >= a || currentMinutes < b;
   };
 
   const durationLabel = (s, e) => {
@@ -337,6 +383,68 @@ export default function Guard() {
   const activeShift = timingsLoading || !shiftTimings
     ? null
     : SHIFT_WINDOWS.find((w) => isActiveNow(shiftTimings[w.type]?.start, shiftTimings[w.type]?.end)) || null;
+
+  /* Helper to get today's shift for a guard */
+  const getGuardTodayShift = (guardId) => {
+    return shiftForToday(guardShifts[guardId] || [], todayISO);
+  };
+
+  /* Helper to check if a guard is active on the current active shift right now */
+  const isGuardOnCurrentShift = (guardId) => {
+    if (!activeShift) return false;
+    const shift = getGuardTodayShift(guardId);
+    return shift?.shift_type === activeShift.type;
+  };
+
+  /* Guards actively on duty right now on the current shift */
+  const activeGuards = useMemo(() => {
+    if (!activeShift) return [];
+    return guards.filter((g) => isGuardOnCurrentShift(g.id));
+  }, [guards, guardShifts, todayISO, activeShift, currentMinutes]);
+
+  /* Guards scheduled for any shift today */
+  const todayGuards = useMemo(() => {
+    return guards.filter((g) => Boolean(getGuardTodayShift(g.id)));
+  }, [guards, guardShifts, todayISO]);
+
+  /* Guards off duty today */
+  const offDutyGuards = useMemo(() => {
+    return guards.filter((g) => !getGuardTodayShift(g.id));
+  }, [guards, guardShifts, todayISO]);
+
+  /* Filter tab & search query */
+  const [filterTab, setFilterTab] = useState("ALL"); // "ALL" | "ON_DUTY" | "TODAY" | "OFF_DUTY"
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const filteredGuards = useMemo(() => {
+    let list = guards;
+    if (filterTab === "ON_DUTY") {
+      list = activeGuards;
+    } else if (filterTab === "TODAY") {
+      list = todayGuards;
+    } else if (filterTab === "OFF_DUTY") {
+      list = offDutyGuards;
+    }
+
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      list = list.filter((g) =>
+        (g.name && g.name.toLowerCase().includes(q)) ||
+        (g.email && g.email.toLowerCase().includes(q))
+      );
+    }
+
+    // Always prioritize active on-duty guards at position #1 in records
+    return [...list].sort((a, b) => {
+      const aActive = isGuardOnCurrentShift(a.id) ? 1 : 0;
+      const bActive = isGuardOnCurrentShift(b.id) ? 1 : 0;
+      if (aActive !== bActive) return bActive - aActive;
+      const aToday = getGuardTodayShift(a.id) ? 1 : 0;
+      const bToday = getGuardTodayShift(b.id) ? 1 : 0;
+      if (aToday !== bToday) return bToday - aToday;
+      return (a.name || "").localeCompare(b.name || "");
+    });
+  }, [guards, filterTab, searchQuery, activeGuards, todayGuards, offDutyGuards, guardShifts, todayISO, activeShift, currentMinutes]);
 
   const timingsHaveOverlap = () => {
     if (!shiftTimings) return false;
@@ -436,7 +544,7 @@ export default function Guard() {
       return;
     }
     setEditingId(null);
-    setFormData({ name: "", email: "", password: "", society_id: filterSocietyId === "ALL" ? "" : filterSocietyId });
+    setFormData({ name: "", email: "", password: "Admin@123", society_id: filterSocietyId === "ALL" ? "" : filterSocietyId });
     setPhotoFile(null);
     setShowGuardModal(true);
   };
@@ -453,6 +561,8 @@ export default function Guard() {
       password: "",
       society_id: g.society_id || "",
     });
+    setPhotoFile(null);
+    setPhotoPreview(g.profile_picture || null);
     setShowGuardModal(true);
   };
 
@@ -475,12 +585,22 @@ export default function Guard() {
     try {
       setSubmitLoading(true);
       if (editingId) {
-        await API.put(`/guards/${editingId}`, {
+        const updatePayload = {
           name: formData.name.trim(),
           email: formData.email.trim(),
           ...(formData.password ? { password: formData.password } : {}),
           ...(isSuperAdmin && formData.society_id ? { society_id: formData.society_id } : {}),
-        });
+        };
+        if (photoFile) {
+          const fd = new FormData();
+          Object.entries(updatePayload).forEach(([key, value]) => {
+            if (value !== undefined && value !== null) fd.append(key, String(value));
+          });
+          fd.append("photo", photoFile);
+          await API.put(`/guards/${editingId}`, fd);
+        } else {
+          await API.put(`/guards/${editingId}`, updatePayload);
+        }
       } else {
         const payload = {
           name: formData.name.trim(),
@@ -676,16 +796,30 @@ export default function Guard() {
     {
       key: "guard",
       header: t("guardColGuard") || "Guard",
-      render: (g) => (
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <Avatar name={g.name} src={g.profile_picture} size={36} />
-          <div>
-            <span style={{ fontSize: "0.88rem", fontWeight: 700, color: "var(--text-primary)" }}>
-              {g.name}
-            </span>
+      render: (g) => {
+        const onDuty = isGuardOnCurrentShift(g.id);
+        return (
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <div className={`gt-avatar-wrap ${onDuty ? "gt-avatar-wrap--active" : ""}`}>
+              <Avatar name={g.name} src={g.profile_picture} size={36} />
+              {onDuty && <span className="gt-avatar-dot--active" title={t("guardOnDutyNow", "On Duty Now")} />}
+            </div>
+            <div>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                <span style={{ fontSize: "0.88rem", fontWeight: 700, color: "var(--text-primary)" }}>
+                  {g.name}
+                </span>
+                {onDuty && (
+                  <span className="gt-onduty-badge" style={{ fontSize: 9.5, padding: "2px 7px" }}>
+                    <span className="gt-onduty-badge__dot" style={{ width: 5, height: 5 }} />
+                    {t("guardOnDutyNow", "ON DUTY")}
+                  </span>
+                )}
+              </div>
+            </div>
           </div>
-        </div>
-      ),
+        );
+      },
     },
     {
       key: "email",
@@ -720,12 +854,11 @@ export default function Guard() {
         }]
       : []),
     {
-      /* Only the assignment covering today. Listing every assignment here is
-         what made the row grow without bound. */
+      /* Only the assignment covering today */
       key: "shift",
       header: t("guardColShift") || "Shift",
       render: (g) => {
-        const todayShift = shiftForToday(guardShifts[g.id] || [], todayISO);
+        const todayShift = getGuardTodayShift(g.id);
         if (!todayShift) {
           return (
             <span style={{ fontSize: "0.8rem", color: "var(--text-tertiary)", fontStyle: "italic" }}>
@@ -733,18 +866,7 @@ export default function Guard() {
             </span>
           );
         }
-        return (
-          <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-            <ShiftBadge type={todayShift.shift_type} t={t} />
-            <span style={{
-              fontSize: 10, fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase",
-              padding: "3px 9px", borderRadius: 999,
-              background: "rgba(16,185,129,0.15)", color: "#34d399",
-            }}>
-              {t("guardShiftStatusToday", "Today")}
-            </span>
-          </div>
-        );
+        return <ShiftBadge type={todayShift.shift_type} t={t} />;
       },
     },
     {
@@ -752,16 +874,24 @@ export default function Guard() {
       header: t("guardColSchedule") || "Schedule",
       hiddenMobile: true,
       render: (g) => {
-        const todayShift = shiftForToday(guardShifts[g.id] || [], todayISO);
+        const todayShift = getGuardTodayShift(g.id);
         if (!todayShift) {
           return (
             <span style={{ fontSize: "0.8rem", color: "var(--text-tertiary)", opacity: 0.6 }}>—</span>
           );
         }
+        const timing = shiftTimings?.[todayShift.shift_type];
         return (
-          <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: "0.8rem", color: "var(--text-secondary)" }}>
-            <MdCalendarToday size={11} style={{ opacity: 0.7, flexShrink: 0 }} />
-            <span style={{ whiteSpace: "nowrap" }}>{formatShiftRange(todayShift)}</span>
+          <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: "0.8rem", color: "var(--text-secondary)" }}>
+              <MdCalendarToday size={11} style={{ opacity: 0.7, flexShrink: 0 }} />
+              <span style={{ whiteSpace: "nowrap" }}>{formatShiftRange(todayShift)}</span>
+            </div>
+            {timing && (
+              <span style={{ fontSize: "0.72rem", color: "var(--text-tertiary)", fontWeight: 600 }}>
+                {fmtTime12h(timing.start)} – {fmtTime12h(timing.end)}
+              </span>
+            )}
           </div>
         );
       },
@@ -818,7 +948,7 @@ export default function Guard() {
               height: 44,
               borderRadius: 14,
               flexShrink: 0,
-              background: "linear-gradient(135deg, var(--accent), #9e58ff)",
+              background: "linear-gradient(135deg, var(--accent), var(--accent-light))",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -874,7 +1004,7 @@ export default function Guard() {
           marginTop: 14,
           borderRadius: 16,
           border: "1px solid var(--glass-border)",
-          background: "var(--card-bg, rgba(255,255,255,0.03))",
+          background: "var(--card-bg)",
           backdropFilter: "blur(12px)",
           padding: 16,
         }}>
@@ -949,7 +1079,7 @@ export default function Guard() {
                       padding: "16px 14px",
                       borderRadius: 18,
                       textAlign: "center",
-                      background: `linear-gradient(150deg, ${accent}1F 0%, ${accent}0A 55%, var(--card-bg, rgba(255,255,255,0.02)) 100%)`,
+                      background: `linear-gradient(150deg, ${accent}1F 0%, ${accent}0A 55%, var(--card-bg) 100%)`,
                       border: `1.5px solid ${active ? accent : `${accent}3D`}`,
                       boxShadow: active
                         ? `0 14px 32px -10px ${glow}, inset 0 1px 0 rgba(255,255,255,0.12)`
@@ -982,7 +1112,7 @@ export default function Guard() {
                         <span style={{
                           fontSize: 15, fontWeight: 800, color: "var(--text-primary)",
                           fontVariantNumeric: "tabular-nums",
-                          background: "var(--card-inner-bg, rgba(255,255,255,0.05))",
+                          background: "var(--card-inner-bg)",
                           border: "1px solid var(--glass-border)",
                           padding: "3px 9px", borderRadius: 8,
                         }}>
@@ -992,7 +1122,7 @@ export default function Guard() {
                         <span style={{
                           fontSize: 15, fontWeight: 800, color: "var(--text-primary)",
                           fontVariantNumeric: "tabular-nums",
-                          background: "var(--card-inner-bg, rgba(255,255,255,0.05))",
+                          background: "var(--card-inner-bg)",
                           border: "1px solid var(--glass-border)",
                           padding: "3px 9px", borderRadius: 8,
                         }}>
@@ -1002,20 +1132,40 @@ export default function Guard() {
                     </div>
 
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "center", marginTop: 2, minHeight: 20 }}>
-                      {active ? (
-                        <span style={{
-                          display: "inline-flex", alignItems: "center", gap: 5,
-                          padding: "3px 10px", borderRadius: 999, fontSize: 10,
-                          fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase",
-                          background: accent, color: "#ffffff", boxShadow: `0 4px 12px ${glow}`,
-                        }}>
-                          <span className="gt-pill-dot" /> {t("guardActiveNowPill", "Active Now")}
-                        </span>
-                      ) : (
-                        <span style={{ fontSize: 10.5, fontWeight: 700, color: "var(--text-tertiary)", letterSpacing: "0.05em" }}>
-                          {r ? t("guardDurationShift", "{duration} shift", { duration: durationLabel(r.start, r.end) }) : "—"}
-                        </span>
-                      )}
+                      {(() => {
+                        const shiftGuardCount = guards.filter(g => getGuardTodayShift(g.id)?.shift_type === type).length;
+                        if (active) {
+                          return (
+                            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3 }}>
+                              <span style={{
+                                display: "inline-flex", alignItems: "center", gap: 5,
+                                padding: "3px 10px", borderRadius: 999, fontSize: 10,
+                                fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase",
+                                background: accent, color: "#ffffff", boxShadow: `0 4px 12px ${glow}`,
+                              }}>
+                                <span className="gt-pill-dot" /> {t("guardActiveNowPill", "Active Now")}
+                              </span>
+                              <span style={{ fontSize: 10.5, fontWeight: 700, color: shiftGuardCount > 0 ? accent : "#f59e0b", marginTop: 2 }}>
+                                {shiftGuardCount > 0
+                                  ? t("guardCountOnDuty", "{count} Guard(s) On Duty", { count: shiftGuardCount })
+                                  : t("guardUnattended", "Unassigned")}
+                              </span>
+                            </div>
+                          );
+                        }
+                        return (
+                          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
+                            <span style={{ fontSize: 10.5, fontWeight: 700, color: "var(--text-tertiary)", letterSpacing: "0.05em" }}>
+                              {r ? t("guardDurationShift", "{duration} shift", { duration: durationLabel(r.start, r.end) }) : "—"}
+                            </span>
+                            {shiftGuardCount > 0 && (
+                              <span style={{ fontSize: 10, fontWeight: 600, color: "var(--text-secondary)" }}>
+                                {t("guardAssignedTodayCount", "{count} assigned today", { count: shiftGuardCount })}
+                              </span>
+                            )}
+                          </div>
+                        );
+                      })()}
                     </div>
                   </div>
                 );
@@ -1031,12 +1181,72 @@ export default function Guard() {
         </div>
       )}
 
+      {/* ── FILTER TABS & SEARCH BAR ── */}
+      <div style={{
+        marginTop: 14,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        flexWrap: "wrap",
+        gap: 12,
+      }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+          <button
+            type="button"
+            className={`gt-filter-pill ${filterTab === "ALL" ? "gt-filter-pill--active" : ""}`}
+            onClick={() => setFilterTab("ALL")}
+          >
+            {t("guardFilterAll", "All Guards")} ({guards.length})
+          </button>
+          <button
+            type="button"
+            className={`gt-filter-pill ${filterTab === "ON_DUTY" ? "gt-filter-pill--active-green" : ""}`}
+            onClick={() => setFilterTab("ON_DUTY")}
+          >
+            <span className="gt-live-dot" style={{ color: filterTab === "ON_DUTY" ? "#fff" : "#10b981" }} />
+            {t("guardFilterOnDuty", "On Duty Now")} ({activeGuards.length})
+          </button>
+          <button
+            type="button"
+            className={`gt-filter-pill ${filterTab === "TODAY" ? "gt-filter-pill--active" : ""}`}
+            onClick={() => setFilterTab("TODAY")}
+          >
+            {t("guardFilterToday", "Scheduled Today")} ({todayGuards.length})
+          </button>
+          <button
+            type="button"
+            className={`gt-filter-pill ${filterTab === "OFF_DUTY" ? "gt-filter-pill--active" : ""}`}
+            onClick={() => setFilterTab("OFF_DUTY")}
+          >
+            {t("guardFilterOffDuty", "Off Duty")} ({offDutyGuards.length})
+          </button>
+        </div>
+
+        <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 220 }}>
+          <input
+            type="text"
+            placeholder={t("guardSearchPlaceholder", "Search guards by name, email...")}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="input"
+            style={{ height: 36, fontSize: 12, borderRadius: 10, padding: "0 12px", width: "100%" }}
+          />
+        </div>
+      </div>
+
       {/* ── GUARD LIST TABLE ── */}
       <GlobalTable
         columns={columns}
-        data={guards}
+        data={filteredGuards}
+        rowClassName={(g) => isGuardOnCurrentShift(g.id) ? "gt-row--active-guard" : ""}
         loading={loading}
-        emptyMessage={t("guardEmpty") || "No security guards registered yet."}
+        emptyMessage={
+          filterTab === "ON_DUTY"
+            ? t("guardEmptyOnDuty", "No security guards on duty right now.")
+            : filterTab === "TODAY"
+            ? t("guardEmptyToday", "No guards scheduled for shifts today.")
+            : t("guardEmpty") || "No security guards registered yet."
+        }
         emptyIcon={MdSecurity}
         emptyAction={
           canCreateGuard ? (
@@ -1117,17 +1327,79 @@ export default function Guard() {
             </div>
           </div>
 
+          {!editingId ? (
+            <div>
+              <SectionLabel>{t("guardDefaultPasswordLabel", "Default Initial Password")}</SectionLabel>
+              <div style={{ position: "relative" }}>
+                <MdLock size={15} style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "var(--text-secondary)" }} />
+                <input
+                  type="text"
+                  value="Admin@123"
+                  disabled
+                  readOnly
+                  className="input"
+                  style={{
+                    paddingLeft: 36,
+                    height: 38,
+                    fontSize: 13,
+                    fontWeight: 700,
+                    color: "var(--text-primary)",
+                    background: "var(--card-inner-bg)",
+                    cursor: "not-allowed",
+                    letterSpacing: "0.04em",
+                    border: "1.5px solid var(--glass-border)",
+                    opacity: 0.95,
+                  }}
+                />
+                <span style={{
+                  position: "absolute",
+                  right: 10,
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  fontSize: 9.5,
+                  fontWeight: 800,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.05em",
+                  padding: "2px 7px",
+                  borderRadius: 5,
+                  background: "rgba(16, 185, 129, 0.15)",
+                  color: "#10b981",
+                  border: "1px solid rgba(16, 185, 129, 0.3)",
+                }}>
+                  {t("guardFixedDefault", "Fixed Default")}
+                </span>
+              </div>
+
+              {/* Compact Security Advisory Note */}
+              <div style={{
+                marginTop: 6,
+                padding: "6px 10px",
+                borderRadius: 8,
+                background: "rgba(245, 158, 11, 0.07)",
+                border: "1px solid rgba(245, 158, 11, 0.2)",
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+              }}>
+                <span style={{ fontSize: 12, lineHeight: 1, flexShrink: 0 }}>💡</span>
+                <p style={{ margin: 0, fontSize: 10.5, lineHeight: 1.35, color: "var(--text-secondary)" }}>
+                  <strong style={{ color: "#f59e0b" }}>{t("guardPasswordNoteTitle", "Note:")} </strong>
+                  {t("guardPasswordNoteDesc", "Guard will use Admin@123 to log in. Please advise them to change password on their own panel after first login.")}
+                </p>
+              </div>
+            </div>
+          ) : (
           <div>
-            <SectionLabel>{editingId ? t("guardPasswordNew", "New Password (Leave blank to keep)") : t("guardPassword")}</SectionLabel>
+            <SectionLabel>{t("guardPasswordNew", "New Password (Leave blank to keep current password)")}</SectionLabel>
             <div style={{ position: "relative" }}>
+              <MdLock size={15} style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "var(--text-secondary)" }} />
               <input
                 type={showPassword ? "text" : "password"}
-                placeholder={editingId ? t("guardPasswordKeepPlaceholder", "Leave blank to keep current password") : t("guardPassword")}
+                placeholder={t("guardPasswordKeepPlaceholder", "Leave blank to keep current password")}
                 value={formData.password}
                 onChange={e => setFormData({ ...formData, password: e.target.value })}
-                required={!editingId}
                 className="input"
-                style={{ paddingRight: 40 }}
+                style={{ paddingLeft: 36, paddingRight: 40, height: 38 }}
               />
               <button
                 type="button"
@@ -1141,25 +1413,119 @@ export default function Guard() {
                 {showPassword ? <MdVisibilityOff size={17} /> : <MdVisibility size={17} />}
               </button>
             </div>
+            <p style={{ margin: "4px 0 0 0", fontSize: 10.5, color: "var(--text-tertiary)" }}>
+              Only enter if you want to change the password. If left empty, current password remains unchanged.
+            </p>
           </div>
-
-          {!editingId && (
-            <div>
-              <SectionLabel>{`${t("ppTitle")} (${t("ppOptional")})`}</SectionLabel>
-              <input
-                type="file"
-                accept="image/jpeg,image/png,image/webp,image/gif,image/heic,image/heif"
-                onChange={e => setPhotoFile(e.target.files?.[0] || null)}
-                className="input"
-                style={{ paddingTop: 9, paddingBottom: 9 }}
-              />
-              {photoFile && (
-                <p style={{ fontSize: 11, color: "var(--text-secondary)", marginTop: 6 }}>
-                  {photoFile.name} · {(photoFile.size / 1024).toFixed(1)} KB
-                </p>
-              )}
-            </div>
           )}
+
+          <div>
+            <SectionLabel>{`${t("ppTitle", "Profile Picture")} (${t("ppOptional", "Optional")})`}</SectionLabel>
+            {photoPreview ? (
+              <div style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+                padding: "8px 12px",
+                borderRadius: 10,
+                background: "var(--card-inner-bg)",
+                border: "1.5px solid var(--glass-border)",
+              }}>
+                <div style={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: 10,
+                  overflow: "hidden",
+                  border: "1.5px solid var(--accent)",
+                  flexShrink: 0,
+                }}>
+                  <img
+                    src={photoPreview}
+                    alt="Guard Preview"
+                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                  />
+                </div>
+                <div style={{ minWidth: 0, flex: 1 }}>
+                  <p style={{ margin: 0, fontSize: 12, fontWeight: 700, color: "var(--text-primary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {photoFile?.name || (editingId ? "Current photo" : "Selected photo")}
+                  </p>
+                  <p style={{ margin: "1px 0 0 0", fontSize: 10, color: "var(--text-tertiary)" }}>
+                    {photoFile ? `${(photoFile.size / 1024).toFixed(1)} KB` : (editingId ? "Uploaded" : "")}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => { setPhotoFile(null); if (!editingId) setPhotoPreview(null); else setPhotoPreview(g?.profile_picture || null); }}
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 3,
+                    padding: "4px 8px",
+                    borderRadius: 6,
+                    fontSize: 11,
+                    fontWeight: 700,
+                    cursor: "pointer",
+                    border: "1px solid rgba(239, 68, 68, 0.3)",
+                    background: "rgba(239, 68, 68, 0.1)",
+                    color: "#ef4444",
+                  }}
+                >
+                  <MdDelete size={13} />
+                  {t("remove", "Remove")}
+                </button>
+              </div>
+            ) : (
+              <label
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                  padding: "8px 12px",
+                  borderRadius: 10,
+                  border: "1.5px dashed var(--glass-border)",
+                  background: "color-mix(in srgb, var(--card-inner-bg) 60%, transparent)",
+                  cursor: "pointer",
+                  transition: "all 0.2s ease",
+                }}
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  const file = e.dataTransfer.files?.[0];
+                  if (file && file.type.startsWith("image/")) {
+                    setPhotoFile(file);
+                  }
+                }}
+              >
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/gif,image/heic,image/heif"
+                  onChange={(e) => setPhotoFile(e.target.files?.[0] || null)}
+                  style={{ display: "none" }}
+                />
+                <div style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: 8,
+                  background: "var(--accent-soft, rgba(160, 90, 255, 0.15))",
+                  color: "var(--accent)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  flexShrink: 0,
+                }}>
+                  <MdCloudUpload size={18} />
+                </div>
+                <div style={{ minWidth: 0, flex: 1 }}>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text-primary)" }}>
+                    {t("guardUploadClickOrDrag", "Click to upload or drag photo")}
+                  </span>
+                  <p style={{ margin: "1px 0 0 0", fontSize: 10, color: "var(--text-tertiary)" }}>
+                    PNG, JPG, WEBP (Max 5MB)
+                  </p>
+                </div>
+              </label>
+            )}
+          </div>
         </form>
       </GlobalModal>
 
@@ -1278,8 +1644,8 @@ export default function Guard() {
                     gap: 12,
                     padding: "12px 14px",
                     borderRadius: 14,
-                    background: isToday ? "rgba(37,99,235,0.10)" : "var(--card-inner-bg, rgba(255,255,255,0.04))",
-                    border: `1px solid ${isToday ? "var(--accent, #2563eb)55" : "var(--glass-border)"}`,
+                    background: isToday ? "rgba(37,99,235,0.10)" : "var(--card-inner-bg)",
+                    border: `1px solid ${isToday ? "var(--accent)55" : "var(--glass-border)"}`,
                   }}
                 >
                   <div style={{ minWidth: 0, flex: 1 }}>
