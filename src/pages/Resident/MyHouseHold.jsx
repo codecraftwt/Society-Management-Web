@@ -18,6 +18,7 @@ import ExpandableSearch from "../../components/common/ExpandableSearch";
 import SlidingTabs from "../../components/common/SlidingTabs";
 import useUnsavedDirty from "../../hooks/useUnsavedDirty";
 import ConfirmDiscard from "../../components/common/ConfirmDiscard";
+import StatCard from "../../components/common/StatCard";
 
 /* Daily Help classification — mirrors backend utils/dailyHelpUtils.js.
    A member is a helper when `work` is set, `relation` is a standard helper
@@ -1299,18 +1300,9 @@ export default function MyHouseHold() {
         )}
 
         <div className="ge-stats">
-          <div className="complaint-stat-card complaint-stat-total">
-            <span className="complaint-stat-val">{familyMembers.length}</span>
-            <span className="complaint-stat-label">{t("hhTabFamily")}</span>
-          </div>
-          <div className="complaint-stat-card complaint-stat-inprogress">
-            <span className="complaint-stat-val">{helpMembers.length}</span>
-            <span className="complaint-stat-label">{t("hhTabHelp")}</span>
-          </div>
-          <div className="complaint-stat-card complaint-stat-resolved">
-            <span className="complaint-stat-val">{adminCount}</span>
-            <span className="complaint-stat-label">{t("hhAdmins")}</span>
-          </div>
+          <StatCard tone="brand" value={familyMembers.length} label={t("hhTabFamily")} />
+          <StatCard tone="warning" value={helpMembers.length} label={t("hhTabHelp")} />
+          <StatCard tone="success" value={adminCount} label={t("hhAdmins")} />
         </div>
 
         <div className="ge-toolbar">

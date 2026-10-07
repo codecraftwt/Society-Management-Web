@@ -10,6 +10,7 @@ import { AuthContext } from "../../context/AuthContext";
 import ExpandableSearch from "../../components/common/ExpandableSearch";
 import SlidingTabs from "../../components/common/SlidingTabs";
 import Pagination from "../../components/common/Pagination";
+import StatCard from "../../components/common/StatCard";
 
 import {
   MdPerson, MdEmail, MdPhone, MdBusiness,
@@ -88,17 +89,19 @@ function AccountantSkeleton() {
 
 /* Stat cards skeleton */
 function StatCardsSkeleton() {
-  const colors = ["purple", "green", "amber", "red"];
+  const tones = ["brand", "success", "warning", "danger"];
   return (
     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-      {colors.map((color) => (
-        <div key={color} className={`stat-card stat-card--${color}`} style={{ border: "none", opacity: 0.55 }}>
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            <SkeletonBlock width={44} height={22} radius={6} />
-            <SkeletonBlock width={72} height={11} radius={4} />
-          </div>
-          <SkeletonBlock width={36} height={36} radius={10} />
-        </div>
+      {tones.map((tone) => (
+        <StatCard
+          key={tone}
+          tone={tone}
+          layout="inline"
+          value={<SkeletonBlock width={44} height={22} radius={6} />}
+          label={<SkeletonBlock width={72} height={11} radius={4} />}
+          icon={<SkeletonBlock width={36} height={36} radius={10} />}
+          style={{ border: "none", opacity: 0.55 }}
+        />
       ))}
     </div>
   );
@@ -240,10 +243,10 @@ const navigate = useNavigate();
   const handleClearFilters  = () => { setSearch(""); setFilter("ALL"); };
 
   const STATS = [
-    { label: t("billStatTotal"),   val: counts.total,   icon: <MdOutlineReceiptLong size={20} />, color: "purple" },
-    { label: t("billStatPaid"),    val: counts.paid,    icon: <MdOutlineCheckCircle size={20} />, color: "green"  },
-    { label: t("billStatPending"), val: counts.pending, icon: <MdOutlineSchedule size={20} />, color: "amber"  },
-    { label: t("resBillDue"),      val: `₹${counts.due.toLocaleString("en-IN")}`, icon: <MdOutlineCurrencyRupee size={20} />, color: "red" },
+    { label: t("billStatTotal"),   val: counts.total,   icon: <MdOutlineReceiptLong size={20} />, tone: "brand" },
+    { label: t("billStatPaid"),    val: counts.paid,    icon: <MdOutlineCheckCircle size={20} />, tone: "success" },
+    { label: t("billStatPending"), val: counts.pending, icon: <MdOutlineSchedule size={20} />, tone: "warning" },
+    { label: t("resBillDue"),      val: `₹${counts.due.toLocaleString("en-IN")}`, icon: <MdOutlineCurrencyRupee size={20} />, tone: "danger" },
   ];
 
   const slidingFilterItems = [
@@ -322,14 +325,15 @@ const navigate = useNavigate();
         : counts.total > 0 && (
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {STATS.map((s, i) => (
-              <div key={i} className={`stat-card stat-card--${s.color}`}
-                style={{ border: "none", animationDelay: `${i * 60}ms` }}>
-                <div>
-                  <div className="stat-card__val">{s.val}</div>
-                  <div className="stat-card__label">{s.label}</div>
-                </div>
-                <div className="stat-card__icon">{s.icon}</div>
-              </div>
+              <StatCard
+                key={i}
+                tone={s.tone}
+                layout="inline"
+                icon={s.icon}
+                value={s.val}
+                label={s.label}
+                style={{ border: "none", animationDelay: `${i * 60}ms` }}
+              />
             ))}
           </div>
         )

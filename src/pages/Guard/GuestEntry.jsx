@@ -16,6 +16,7 @@ import SlidingTabs from "../../components/common/SlidingTabs";
 import ExpandableSearch from "../../components/common/ExpandableSearch";
 import Pagination from "../../components/common/Pagination";
 import StepVisitorEntryModal from "../../components/guard/StepVisitorEntryModal";
+import StatCard from "../../components/common/StatCard";
 
 function useDebounce(value, delay = 500) {
   const [d, setD] = useState(value);
@@ -174,33 +175,30 @@ export default function GuestEntry() {
 
       {/* ── STAT CARDS ── */}
       <div className="ge-stats">
-        <div
+        <StatCard
+          tone="brand"
+          interactive
+          selected={filter === "ALL"}
           onClick={() => handleFilterChange("ALL")}
-          className={`complaint-stat-card complaint-stat-total cursor-pointer ${
-            filter === "ALL" ? "ring-2 ring-blue-500 shadow-md" : ""
-          }`}
-        >
-          <span className="complaint-stat-val text-blue-600">{counts.ALL}</span>
-          <span className="complaint-stat-label">{t("geStatTotal", "Total Guests")}</span>
-        </div>
-        <div
+          value={counts.ALL}
+          label={t("geStatTotal", "Total Guests")}
+        />
+        <StatCard
+          tone="info"
+          interactive
+          selected={filter === "IN"}
           onClick={() => handleFilterChange("IN")}
-          className={`complaint-stat-card complaint-stat-inprogress cursor-pointer ${
-            filter === "IN" ? "ring-2 ring-emerald-500 shadow-md" : ""
-          }`}
-        >
-          <span className="complaint-stat-val text-emerald-600">{counts.IN}</span>
-          <span className="complaint-stat-label">{t("geStatInside", "Inside Premises")}</span>
-        </div>
-        <div
+          value={counts.IN}
+          label={t("geStatInside", "Inside Premises")}
+        />
+        <StatCard
+          tone="success"
+          interactive
+          selected={filter === "OUT"}
           onClick={() => handleFilterChange("OUT")}
-          className={`complaint-stat-card complaint-stat-resolved cursor-pointer ${
-            filter === "OUT" ? "ring-2 ring-gray-500 shadow-md" : ""
-          }`}
-        >
-          <span className="complaint-stat-val text-gray-500">{counts.OUT}</span>
-          <span className="complaint-stat-label">{t("geStatExited", "Departed")}</span>
-        </div>
+          value={counts.OUT}
+          label={t("geStatExited", "Departed")}
+        />
       </div>
 
       {/* ── SEARCH + FILTER ── */}

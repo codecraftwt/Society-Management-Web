@@ -8,7 +8,16 @@ import {
 } from "react-icons/md";
 import { FaBuilding } from "react-icons/fa";
 import GlobalBadge from "../../components/common/GlobalBadge";
+import StatCard from "../../components/common/StatCard";
 import { hasPermission } from "../../utils/permissions";
+
+const STAT_CARD_TONES = {
+  purple: "brand",
+  blue: "info",
+  green: "success",
+  amber: "warning",
+  red: "danger",
+};
 
 export function Spinner({ size = 16 }) {
   return (
@@ -275,28 +284,18 @@ export function AccountantRowActions({
 export function StatCards({ isMobile, stats }) {
   return (
     <div className={`grid gap-3 ${isMobile ? "grid-cols-2" : "grid-cols-4"}`}>
-      {stats.map((s, i) => {
-        const Icon = s.Icon;
-        return (
-          <div key={i} className={`${isMobile ? "stat-card--mobile" : "stat-card"} stat-card--${s.color} ${s.extra}`}>
-            {isMobile ? (
-              <>
-                <div className="stat-card__icon mb-1"><Icon size={20} /></div>
-                <div className="stat-card__val">{s.val}</div>
-                <div className="stat-card__label">{s.label}</div>
-              </>
-            ) : (
-              <>
-                <div>
-                  <div className="stat-card__val">{s.val}</div>
-                  <div className="stat-card__label">{s.label}</div>
-                </div>
-                <div className="stat-card__icon"><Icon size={20} /></div>
-              </>
-            )}
-          </div>
-        );
-      })}
+      {stats.map((s, i) => (
+        <StatCard
+          key={i}
+          variant="sheen"
+          layout={isMobile ? "stacked" : "inline"}
+          icon={s.Icon}
+          value={s.val}
+          label={s.label}
+          tone={STAT_CARD_TONES[s.color] || "neutral"}
+          className={s.extra}
+        />
+      ))}
     </div>
   );
 }

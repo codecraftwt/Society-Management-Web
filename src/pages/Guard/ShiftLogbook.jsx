@@ -21,6 +21,7 @@ import { toast } from "react-toastify";
 import SlidingTabs from "../../components/common/SlidingTabs";
 import ExpandableSearch from "../../components/common/ExpandableSearch";
 import GlobalModal from "../../components/common/GlobalModal";
+import StatCard from "../../components/common/StatCard";
 
 function Spinner({ size = 16 }) {
   return (
@@ -226,50 +227,38 @@ export default function ShiftLogbook() {
 
       {/* ── KPI STAT CARDS ── */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
-        <div
+        <StatCard
+          layout="inline"
+          icon={MdBookmark}
+          tone="brand"
+          interactive
+          selected={filter === "ALL"}
           onClick={() => setFilter("ALL")}
-          className={`complaint-stat-card complaint-stat-total cursor-pointer transition-all ${
-            filter === "ALL" ? "ring-2 ring-indigo-500 shadow-md scale-101" : ""
-          }`}
-        >
-          <div className="flex items-center justify-between">
-            <span className="complaint-stat-val text-indigo-600">{counts.total}</span>
-            <div className="w-9 h-9 rounded-xl bg-indigo-500/10 text-indigo-600 flex items-center justify-center font-bold">
-              <MdBookmark size={18} />
-            </div>
-          </div>
-          <span className="complaint-stat-label">{t("lgStatTotal", "Total Logbook Records")}</span>
-        </div>
+          value={counts.total}
+          label={t("lgStatTotal", "Total Logbook Records")}
+        />
 
-        <div
+        <StatCard
+          layout="inline"
+          icon={MdFlag}
+          tone="info"
+          interactive
+          selected={filter === "IMPORTANT"}
           onClick={() => setFilter("IMPORTANT")}
-          className={`complaint-stat-card complaint-stat-inprogress cursor-pointer transition-all ${
-            filter === "IMPORTANT" ? "ring-2 ring-rose-500 shadow-md scale-101" : ""
-          }`}
-        >
-          <div className="flex items-center justify-between">
-            <span className="complaint-stat-val text-rose-600">{counts.important}</span>
-            <div className="w-9 h-9 rounded-xl bg-rose-500/10 text-rose-600 flex items-center justify-center font-bold">
-              <MdFlag size={18} />
-            </div>
-          </div>
-          <span className="complaint-stat-label">{t("lgStatImportant", "Important Action Flags")}</span>
-        </div>
+          value={counts.important}
+          label={t("lgStatImportant", "Important Action Flags")}
+        />
 
-        <div
+        <StatCard
+          layout="inline"
+          icon={MdToday}
+          tone="success"
+          interactive
+          selected={filter === "TODAY"}
           onClick={() => setFilter("TODAY")}
-          className={`complaint-stat-card complaint-stat-resolved cursor-pointer transition-all ${
-            filter === "TODAY" ? "ring-2 ring-emerald-500 shadow-md scale-101" : ""
-          }`}
-        >
-          <div className="flex items-center justify-between">
-            <span className="complaint-stat-val text-emerald-600">{counts.today}</span>
-            <div className="w-9 h-9 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center font-bold">
-              <MdToday size={18} />
-            </div>
-          </div>
-          <span className="complaint-stat-label">{t("lgStatToday", "Added Today")}</span>
-        </div>
+          value={counts.today}
+          label={t("lgStatToday", "Added Today")}
+        />
       </div>
 
       {/* ── SEARCH & FILTER TOOLBAR WITH TOGGLE SEARCH BAR ── */}

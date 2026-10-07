@@ -186,7 +186,7 @@ hatch avoids invalid HTML but is worse for assistive tech than today's plain
 | --- | --- | --- | --- |
 | `.ad-kpi` | 8 files → **7 remaining** | ~273 rules, heavy `!important` + tier | IN PROGRESS (2A: `/admin` done) |
 | `.stat-card` | 29 files | 101 rules, 70 tier-gated (`index.css`, `role-theme.css`) | NEEDS DECISION |
-| `.complaint-stat-card` | 17 files | 33 rules, 19 tier-gated (4 files) | NEEDS DECISION |
+| `.complaint-stat-card` | **0 files** — **PURGED** 2026-10-06 (Phase 3) | 33 rules removed (`index.css`, `Resident.css`, `Admin.css`, `Guard.css`) | MIGRATED (Phase 3) |
 | `.sd-stat` | 1 file | clean | REJECTED (fit) |
 | `.ov-stat` | 0 — migrated in batch 1 | `.ov-stat*` removed from `Resident.css` | MIGRATED |
 | `.cs-kpi` | 1 file (`cleaning-staff/index/Index.jsx`) | `CleaningStaff.css` only, 0 tier-gated, 0 `!important`; uses `--cs-kpi-accent` inline per-instance (14+ arbitrary colours) | KEEP — per-instance palette is not mappable to 6 semantic tones |

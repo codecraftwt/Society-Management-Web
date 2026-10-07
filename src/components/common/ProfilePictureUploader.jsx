@@ -4,6 +4,7 @@ import { toast } from "react-toastify";
 import { useLang } from "../../context/LanguageContext";
 import { uploadMyProfilePicture, removeMyProfilePicture } from "../../services/userService";
 import UserAvatar from "./UserAvatar";
+import ProfilePictureCropModal from "./ProfilePictureCropModal";
 
 const MAX_BYTES = 5 * 1024 * 1024;
 const ACCEPTED = [
@@ -18,25 +19,19 @@ const ACCEPTED = [
 /**
  * ProfilePictureUploader
  *
- * Default mode renders the avatar + Change/Remove buttons.
+ * Single authoritative component for profile picture uploads across the web app.
  *
- * Pass `bare` to render ONLY the hidden file input and drive everything through
- * the ref (used by AdminSetting, where the avatar itself is the entry point and
- * the buttons live inside modals). Upload/remove/validation logic is identical
- * in both modes — this component stays the single implementation.
- *
- * Ref API (bare mode):
- *   pick()               → open the native file picker
- *   uploadFile(file)     → validate + upload, resolves to the new url or null
- *   remove()             → remove via the API, resolves to the new url or null
- *   isBusy               → true while a request is in flight
- *   validate(file)       → returns an error translation key, or null if valid
+ * Supports:
+ *  - Direct API upload (Settings page) or File selection callback (Guard/Staff forms)
+ *  - Interactive Crop Modal (Full Image or Crop Area with move & zoom controls)
+ *  - Avatar preview & validation
  */
 const ProfilePictureUploader = forwardRef(function ProfilePictureUploader(
   {
     name,
     currentUrl,
     onChange,
+    onFileSelect,
     size = 72,
     showAvatar = true,
     actionsOnly = false,
@@ -50,6 +45,9 @@ const ProfilePictureUploader = forwardRef(function ProfilePictureUploader(
   const [preview, setPreview] = useState(null);
   const [busy, setBusy] = useState(false);
 
+  // Crop Modal state
+  const [cropFile, setCropFile] = useState(null);
+
   useEffect(() => {
     return () => {
       if (previewRef.current) URL.revokeObjectURL(previewRef.current);
@@ -60,10 +58,9 @@ const ProfilePictureUploader = forwardRef(function ProfilePictureUploader(
 
   /**
    * Returns an i18n key when the file is unacceptable, otherwise null.
-   * The caller decides how to surface it (toast, inline error) so the
-   * validation message is never duplicated.
    */
   const validate = (file) => {
+    if (!file) return "ppErrType";
     if (!ACCEPTED.includes(file.type)) return "ppErrType";
     if (file.size > MAX_BYTES) return "ppErrSize";
     return null;
@@ -88,11 +85,18 @@ const ProfilePictureUploader = forwardRef(function ProfilePictureUploader(
       return;
     }
 
-    if (previewRef.current) URL.revokeObjectURL(previewRef.current);
-    const url = URL.createObjectURL(file);
-    previewRef.current = url;
-    setPreview(url);
-    upload(file);
+    // Open Crop / Preview Modal
+    setCropFile(file);
+  };
+
+  const openCropModal = (file) => {
+    if (!file) return;
+    const problem = validate(file);
+    if (problem) {
+      showValidationError(problem);
+      return;
+    }
+    setCropFile(file);
   };
 
   const upload = async (file) => {
@@ -113,10 +117,23 @@ const ProfilePictureUploader = forwardRef(function ProfilePictureUploader(
     }
   };
 
-  /**
-   * Upload without touching the internal preview. Used by the dropzone in
-   * AdminSetting, which owns its own preview inside the upload modal.
-   */
+  const handleCropSave = async (finalFile) => {
+    if (!finalFile) return;
+
+    if (previewRef.current) URL.revokeObjectURL(previewRef.current);
+    const url = URL.createObjectURL(finalFile);
+    previewRef.current = url;
+    setPreview(url);
+
+    if (onFileSelect) {
+      // Form mode (e.g. Guard form or Staff form)
+      onFileSelect(finalFile, url);
+    } else {
+      // Direct API upload mode (Settings)
+      await upload(finalFile);
+    }
+  };
+
   const uploadFile = async (file) => {
     if (!file) return null;
     const problem = validate(file);
@@ -130,11 +147,14 @@ const ProfilePictureUploader = forwardRef(function ProfilePictureUploader(
   const handleRemove = async () => {
     setBusy(true);
     try {
-      await removeMyProfilePicture();
+      if (!onFileSelect) {
+        await removeMyProfilePicture();
+      }
       if (previewRef.current) URL.revokeObjectURL(previewRef.current);
       previewRef.current = null;
       setPreview(null);
       onChange?.(null);
+      onFileSelect?.(null, null);
       toast.success(t("ppRemoveSuccess", "Profile picture removed."));
       return true;
     } catch (err) {
@@ -147,6 +167,7 @@ const ProfilePictureUploader = forwardRef(function ProfilePictureUploader(
 
   useImperativeHandle(ref, () => ({
     pick: () => inputRef.current?.click(),
+    openCropModal,
     uploadFile,
     remove: handleRemove,
     validate,
@@ -155,22 +176,34 @@ const ProfilePictureUploader = forwardRef(function ProfilePictureUploader(
 
   if (bare) {
     return (
-      <input
-        ref={inputRef}
-        type="file"
-        accept={ACCEPTED.join(",")}
-        onChange={handlePick}
-        className="pp-uploader__input"
-        aria-hidden="true"
-        tabIndex={-1}
-      />
+      <>
+        <input
+          ref={inputRef}
+          type="file"
+          accept={ACCEPTED.join(",")}
+          onChange={handlePick}
+          className="pp-uploader__input"
+          aria-hidden="true"
+          tabIndex={-1}
+        />
+        {cropFile && (
+          <ProfilePictureCropModal
+            isOpen={Boolean(cropFile)}
+            onClose={() => setCropFile(null)}
+            file={cropFile}
+            onSave={handleCropSave}
+            onPickAnother={() => {
+              setCropFile(null);
+              setTimeout(() => inputRef.current?.click(), 100);
+            }}
+          />
+        )}
+      </>
     );
   }
 
   return (
     <div className={`pp-uploader${actionsOnly ? " pp-uploader--actions" : ""}`}>
-      {/* The settings page renders its own centred, ringed avatar and passes
-          showAvatar={false}, so the photo is not shown twice. */}
       {showAvatar && <UserAvatar name={name} src={displayed} size={size} radius={18} />}
       <div className="pp-uploader__actions">
         <button
@@ -207,6 +240,19 @@ const ProfilePictureUploader = forwardRef(function ProfilePictureUploader(
         onChange={handlePick}
         className="pp-uploader__input"
       />
+
+      {cropFile && (
+        <ProfilePictureCropModal
+          isOpen={Boolean(cropFile)}
+          onClose={() => setCropFile(null)}
+          file={cropFile}
+          onSave={handleCropSave}
+          onPickAnother={() => {
+            setCropFile(null);
+            setTimeout(() => inputRef.current?.click(), 100);
+          }}
+        />
+      )}
     </div>
   );
 });

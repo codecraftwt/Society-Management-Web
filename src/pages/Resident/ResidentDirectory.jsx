@@ -3,6 +3,7 @@ import API from "../../services/api";
 import { useLang } from "../../context/LanguageContext";
 import ExpandableSearch from "../../components/common/ExpandableSearch";
 import SlidingTabs from "../../components/common/SlidingTabs";
+import StatCard from "../../components/common/StatCard";
 import {
   MdPeople,
   MdPhone,
@@ -173,18 +174,21 @@ export default function ResidentDirectory() {
           marginBottom: "20px",
         }}
       >
-        <div className="complaint-stat-card complaint-stat-total">
-          <span className="complaint-stat-val">{neighbours.length}</span>
-          <span className="complaint-stat-label">{t("dirTotalNeighbours")}</span>
-        </div>
-        <div className="complaint-stat-card complaint-stat-inprogress">
-          <span className="complaint-stat-val">{blocks.length || 1}</span>
-          <span className="complaint-stat-label">{t("dirSocietyBlocks")}</span>
-        </div>
-        <div className="complaint-stat-card complaint-stat-resolved">
-          <span className="complaint-stat-val">{filtered.length}</span>
-          <span className="complaint-stat-label">{t("dirActiveMatches")}</span>
-        </div>
+        <StatCard
+          tone="brand"
+          value={neighbours.length}
+          label={t("dirTotalNeighbours")}
+        />
+        <StatCard
+          tone="warning"
+          value={blocks.length || 1}
+          label={t("dirSocietyBlocks")}
+        />
+        <StatCard
+          tone="success"
+          value={filtered.length}
+          label={t("dirActiveMatches")}
+        />
       </div>
 
       {/* Filter Tabs & Expandable Search */}

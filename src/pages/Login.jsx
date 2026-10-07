@@ -20,7 +20,13 @@ import {
   HiOutlineArrowLeft,
   HiOutlinePhone
 } from "react-icons/hi2";
-import { MdHome, MdGroups, MdAccountBalance } from "react-icons/md";
+import {
+  MdHome,
+  MdGroups,
+  MdAccountBalance,
+  MdAdminPanelSettings,
+  MdSupervisorAccount,
+} from "react-icons/md";
 
 import ThemeToggle from "../components/common/ThemeToggle";
 import { useLang } from "../context/LanguageContext";
@@ -390,7 +396,7 @@ function Login() {
   const [panelPrompt, setPanelPrompt] = useState(null);
   const [rejection, setRejection] = useState(null);
 
-  // Panel chooser helpers — committee members & accountants who live in the
+  // Panel chooser helpers — society admins, committee members & accountants who live in the
   // society also get the Resident panel (mirrors the mobile app).
   //
   // The API sends `availablePanels`, which already accounts for whether an
@@ -404,11 +410,27 @@ function Login() {
   const promptPanels = Array.isArray(promptUser?.availablePanels) && promptUser.availablePanels.length
     ? promptUser.availablePanels
     : promptRoles;
-  const promptHasCommittee = promptPanels.includes("COMMITTEE_MEMBER") || promptPanels.includes("COMMITTEE") || promptPanels.includes("SOCIETY_ADMIN");
+  const promptHasSuperAdmin = promptPanels.includes("SUPER_ADMIN");
+  const promptHasSocietyAdmin = promptPanels.includes("SOCIETY_ADMIN");
+  const promptHasCommittee = !promptHasSocietyAdmin && (promptPanels.includes("COMMITTEE_MEMBER") || promptPanels.includes("COMMITTEE"));
   const promptHasAccountant = promptPanels.includes("ACCOUNTANT");
-  const promptHasResident = promptPanels.includes("RESIDENT");
+
+  // Determine if the user is a resident of the society:
+  // For society admin / management, verify genuine residency before offering resident panel
+  const isPromptUserResident =
+    promptUser?.is_society_resident === true ||
+    (promptUser?.resident_type && ["OWNER", "TENANT"].includes(String(promptUser.resident_type).toUpperCase())) ||
+    (!promptHasSocietyAdmin && !promptHasSuperAdmin && promptPanels.includes("RESIDENT"));
+
+  const promptHasResident = promptPanels.includes("RESIDENT") && isPromptUserResident;
   // Only offer the chooser when there is genuinely a choice to make.
-  const promptOptionCount = [promptHasAccountant, promptHasCommittee, promptHasResident].filter(Boolean).length;
+  const promptOptionCount = [
+    promptHasSuperAdmin,
+    promptHasSocietyAdmin,
+    promptHasCommittee,
+    promptHasAccountant,
+    promptHasResident,
+  ].filter(Boolean).length;
 
   const ROUTE_MAP = {
     SUPER_ADMIN: "/superadmin",
@@ -461,28 +483,49 @@ function Login() {
   const handleVerified = (user, token) => {
     const roles = Array.isArray(user.roles) && user.roles.length ? user.roles : [user.role].filter(Boolean);
     // `availablePanels` is the authoritative list — it reflects whether an
-    // accountant actually lives in the society, which `roles` cannot express.
+    // accountant or admin actually lives in the society, which `roles` cannot express.
     const panels = Array.isArray(user.availablePanels) && user.availablePanels.length
       ? user.availablePanels
       : roles;
 
+    const hasSuperAdmin = panels.includes("SUPER_ADMIN");
+    const hasSocietyAdmin = panels.includes("SOCIETY_ADMIN");
+    const hasCommittee = !hasSocietyAdmin && (panels.includes("COMMITTEE_MEMBER") || panels.includes("COMMITTEE"));
     const hasAccountant = panels.includes("ACCOUNTANT");
-    const hasCommittee = panels.includes("COMMITTEE_MEMBER") || panels.includes("COMMITTEE") || panels.includes("SOCIETY_ADMIN");
-    const hasResident = panels.includes("RESIDENT");
+
+    // Before offering the Resident panel, verify that the user is genuinely a resident of the society.
+    // A Society Admin who is not a resident must not see the panel chooser popup!
+    const isResidentOfSociety =
+      user.is_society_resident === true ||
+      (user.resident_type && ["OWNER", "TENANT"].includes(String(user.resident_type).toUpperCase())) ||
+      (!hasSocietyAdmin && !hasSuperAdmin && panels.includes("RESIDENT"));
+
+    const hasResident = panels.includes("RESIDENT") && isResidentOfSociety;
 
     // Management users who also have a second panel pick one from a popup first
     // (same as mobile). A single-panel user — e.g. an accountant appointed from
-    // outside the society — has nothing to choose, so skip the popup entirely.
+    // outside the society, or a non-resident society admin — has nothing to choose,
+    // so skip the popup entirely.
     // Login is deferred so PublicRoute does not redirect away before the popup
     // is shown. Also close the OTP modal so it does not sit on top.
-    if (hasAccountant || hasCommittee) {
-      const choiceCount = [hasAccountant, hasCommittee, hasResident].filter(Boolean).length;
-      if (choiceCount > 1) {
-        setStep("credentials");
-        setTempToken(null);
-        setPanelPrompt({ user, token });
-        return;
-      }
+    const choiceCount = [
+      hasSuperAdmin,
+      hasSocietyAdmin,
+      hasCommittee,
+      hasAccountant,
+      hasResident,
+    ].filter(Boolean).length;
+
+    if (choiceCount > 1) {
+      setStep("credentials");
+      setTempToken(null);
+      setPanelPrompt({ user, token });
+      return;
+    }
+
+    // If non-resident society admin, ensure activeRole is SOCIETY_ADMIN
+    if (hasSocietyAdmin && !hasResident) {
+      user.activeRole = "SOCIETY_ADMIN";
     }
 
     login(user, token);
@@ -635,7 +678,13 @@ function Login() {
                       flexShrink: 0,
                     }}
                   >
-                    <MdGroups size={24} />
+                    {promptHasSocietyAdmin ? (
+                      <MdAdminPanelSettings size={24} />
+                    ) : promptHasSuperAdmin ? (
+                      <MdSupervisorAccount size={24} />
+                    ) : (
+                      <MdGroups size={24} />
+                    )}
                   </div>
                   <div>
                     <h3 style={{ fontSize: 17, fontWeight: 800, margin: 0, color: "var(--text-primary)" }}>Select Panel</h3>
@@ -667,10 +716,10 @@ function Login() {
               </div>
 
               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                {promptHasAccountant && (
+                {promptHasSuperAdmin && (
                   <button
                     type="button"
-                    onClick={() => enterPanel("ACCOUNTANT")}
+                    onClick={() => enterPanel("SUPER_ADMIN")}
                     style={{
                       display: "flex",
                       alignItems: "center",
@@ -691,19 +740,61 @@ function Login() {
                         height: 42,
                         minWidth: 42,
                         borderRadius: 12,
-                        background: "rgba(16,185,129,0.12)",
-                        color: "#10b981",
+                        background: "rgba(245,158,11,0.12)",
+                        color: "#f59e0b",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
                       }}
                     >
-                      <MdAccountBalance size={22} />
+                      <MdSupervisorAccount size={22} />
                     </div>
                     <div style={{ minWidth: 0, flex: 1 }}>
-                      <p style={{ fontSize: 14, fontWeight: 800, margin: 0, color: "var(--text-primary)" }}>Accountant Panel</p>
+                      <p style={{ fontSize: 14, fontWeight: 800, margin: 0, color: "var(--text-primary)" }}>Super Admin Panel</p>
                       <p style={{ fontSize: 11, margin: "2px 0 0", color: "var(--text-secondary)" }}>
-                        Manage bills, payments, expenses & society finance
+                        Platform-wide control & multi-society management
+                      </p>
+                    </div>
+                  </button>
+                )}
+
+                {promptHasSocietyAdmin && (
+                  <button
+                    type="button"
+                    onClick={() => enterPanel("SOCIETY_ADMIN")}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 14,
+                      padding: "14px 16px",
+                      borderRadius: 16,
+                      background: "var(--card-inner-bg)",
+                      border: "1px solid var(--glass-border)",
+                      cursor: "pointer",
+                      transition: "all 0.2s",
+                      textAlign: "left",
+                    }}
+                    className="login-panel-option"
+                  >
+                    <div
+                      style={{
+                        width: 42,
+                        height: 42,
+                        minWidth: 42,
+                        borderRadius: 12,
+                        background: "rgba(59,130,246,0.12)",
+                        color: "#3b82f6",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <MdAdminPanelSettings size={22} />
+                    </div>
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                      <p style={{ fontSize: 14, fontWeight: 800, margin: 0, color: "var(--text-primary)" }}>Society Admin Panel</p>
+                      <p style={{ fontSize: 11, margin: "2px 0 0", color: "var(--text-secondary)" }}>
+                        Full society management, flats, staff & settings
                       </p>
                     </div>
                   </button>
@@ -743,9 +834,51 @@ function Login() {
                       <MdGroups size={22} />
                     </div>
                     <div style={{ minWidth: 0, flex: 1 }}>
-                      <p style={{ fontSize: 14, fontWeight: 800, margin: 0, color: "var(--text-primary)" }}>Committee Panel</p>
+                      <p style={{ fontSize: 14, fontWeight: 800, margin: 0, color: "var(--text-primary)" }}>Committee Member Panel</p>
                       <p style={{ fontSize: 11, margin: "2px 0 0", color: "var(--text-secondary)" }}>
                         Manage notices, complaints & society operations
+                      </p>
+                    </div>
+                  </button>
+                )}
+
+                {promptHasAccountant && (
+                  <button
+                    type="button"
+                    onClick={() => enterPanel("ACCOUNTANT")}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 14,
+                      padding: "14px 16px",
+                      borderRadius: 16,
+                      background: "var(--card-inner-bg)",
+                      border: "1px solid var(--glass-border)",
+                      cursor: "pointer",
+                      transition: "all 0.2s",
+                      textAlign: "left",
+                    }}
+                    className="login-panel-option"
+                  >
+                    <div
+                      style={{
+                        width: 42,
+                        height: 42,
+                        minWidth: 42,
+                        borderRadius: 12,
+                        background: "rgba(16,185,129,0.12)",
+                        color: "#10b981",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <MdAccountBalance size={22} />
+                    </div>
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                      <p style={{ fontSize: 14, fontWeight: 800, margin: 0, color: "var(--text-primary)" }}>Accountant Panel</p>
+                      <p style={{ fontSize: 11, margin: "2px 0 0", color: "var(--text-secondary)" }}>
+                        Manage bills, payments, expenses & society finance
                       </p>
                     </div>
                   </button>

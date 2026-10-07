@@ -14,6 +14,7 @@ import SlidingTabs from "../../components/common/SlidingTabs";
 import ExpandableSearch from "../../components/common/ExpandableSearch";
 import useUnsavedDirty from "../../hooks/useUnsavedDirty";
 import ConfirmDiscard from "../../components/common/ConfirmDiscard";
+import StatCard from "../../components/common/StatCard";
 
 import Pagination from "../../components/common/Pagination";
 
@@ -372,18 +373,9 @@ export default function MyEmergency() {
       )}
 
       <div className="ge-stats">
-        <div className="complaint-stat-card complaint-stat-total">
-          <span className="complaint-stat-val">{counts.ALL}</span>
-          <span className="complaint-stat-label">{t("emergencyStatTotal")}</span>
-        </div>
-        <div className="complaint-stat-card complaint-stat-inprogress">
-          <span className="complaint-stat-val">{counts.ACTIVE}</span>
-          <span className="complaint-stat-label">{t("emergencyStatActive")}</span>
-        </div>
-        <div className="complaint-stat-card complaint-stat-resolved">
-          <span className="complaint-stat-val">{counts.RESOLVED}</span>
-          <span className="complaint-stat-label">{t("emergencyStatResolved")}</span>
-        </div>
+        <StatCard tone="brand" value={counts.ALL} label={t("emergencyStatTotal")} />
+        <StatCard tone="warning" value={counts.ACTIVE} label={t("emergencyStatActive")} />
+        <StatCard tone="success" value={counts.RESOLVED} label={t("emergencyStatResolved")} />
       </div>
 
       <div className="ge-toolbar">

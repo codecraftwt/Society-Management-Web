@@ -11,6 +11,7 @@ import {
   MdReceiptLong,
 } from "react-icons/md";
 import { useLang } from "../../context/LanguageContext";
+import StatCard from "../../components/common/StatCard";
 import CreditedDebitedChart from "../../components/accounting/CreditedDebitedChart";
 
 const toArray = (data) => {
@@ -34,21 +35,6 @@ const formatDate = (value) => {
   if (Number.isNaN(date.getTime())) return "—";
   return date.toLocaleDateString("en-IN", { day: "2-digit", month: "short" });
 };
-
-function StatCard({ icon: Icon, value, label, tone, caption }) {
-  return (
-    <div className={`stat-card stat-card--${tone}`}>
-      <div>
-        <div className="stat-card__val">{value}</div>
-        <div className="stat-card__label">{label}</div>
-        {caption ? <div className="mt-1 text-[11px] leading-5 opacity-70">{caption}</div> : null}
-      </div>
-      <div className="stat-card__icon">
-        <Icon size={20} />
-      </div>
-    </div>
-  );
-}
 
 export default function AccountDashboard() {
   const { t } = useLang();
@@ -131,32 +117,36 @@ export default function AccountDashboard() {
       {hasStats && (
         <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 xl:gap-4">
           <StatCard
+            layout="inline"
             icon={MdTrendingUp}
             value={formatCurrency(stats.monthlyCollected)}
             label={t("acctDashThisMonth")}
-            tone="green"
-            caption={`${stats.monthlyTransactions} ${(t("acctDashTransactions") || "transactions this month").toLowerCase()}`}
+            tone="success"
+            description={`${stats.monthlyTransactions} ${(t("acctDashTransactions") || "transactions this month").toLowerCase()}`}
           />
           <StatCard
+            layout="inline"
             icon={MdCheckCircle}
             value={stats.paidBills}
             label={t("acctDashPaidBills")}
-            tone="blue"
-            caption={`${stats.paidRate}% ${t("acctDashPaidRate") || "of bills cleared"}`}
+            tone="info"
+            description={`${stats.paidRate}% ${t("acctDashPaidRate") || "of bills cleared"}`}
           />
           <StatCard
+            layout="inline"
             icon={MdSchedule}
             value={stats.pendingBills}
             label={t("acctDashPendingBills")}
-            tone="amber"
-            caption={`${t("acctDashTotalDue") || "Due amount"} ${formatCurrency(stats.totalDue)}`}
+            tone="warning"
+            description={`${t("acctDashTotalDue") || "Due amount"} ${formatCurrency(stats.totalDue)}`}
           />
           <StatCard
+            layout="inline"
             icon={MdReceiptLong}
             value={formatCurrency(stats.totalCollectedAll)}
             label={t("acctDashTotalCollected")}
-            tone="red"
-            caption={`${t("acctDashAwaiting") || "Awaiting confirmation"}: ${stats.awaitingConfirm}`}
+            tone="danger"
+            description={`${t("acctDashAwaiting") || "Awaiting confirmation"}: ${stats.awaitingConfirm}`}
           />
         </div>
       )}

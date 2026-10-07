@@ -14,6 +14,7 @@ import {
   MdPhone, MdDirectionsCar, MdAccessTime,
 } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
+import StatCard from "../../../components/common/StatCard";
 
 /* ── Mobile hook ── */
 function useIsMobile() {
@@ -152,9 +153,9 @@ export default function ResidentVisitorReport() {
   });
 
   const statCards = [
-    { label: t("vrStatTotal"),  val: stats.total,  color: "purple" },
-    { label: t("rvInside"),     val: stats.inside, color: "green"  },
-    { label: t("rvLeft"),       val: stats.left,   color: "amber"  },
+    { label: t("vrStatTotal"),  val: stats.total,  tone: "brand" },
+    { label: t("rvInside"),     val: stats.inside, tone: "success" },
+    { label: t("rvLeft"),       val: stats.left,   tone: "warning" },
   ];
 
   const bleed = isMobile ? {
@@ -217,13 +218,13 @@ export default function ResidentVisitorReport() {
       {!loading && visitors.length > 0 && (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
           {statCards.map((s, i) => (
-            <div key={i} className={`stat-card stat-card--${s.color}`}
-              style={{ borderRadius: isMobile ? 14 : 18, padding: isMobile ? "12px 14px" : "16px 18px" }}>
-              <div>
-                <div className="stat-card__val">{s.val}</div>
-                <div className="stat-card__label">{s.label}</div>
-              </div>
-            </div>
+            <StatCard
+              key={i}
+              value={s.val}
+              label={s.label}
+              tone={s.tone}
+              style={{ borderRadius: isMobile ? 14 : 18, padding: isMobile ? "12px 14px" : "16px 18px" }}
+            />
           ))}
         </div>
       )}

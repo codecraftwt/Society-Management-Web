@@ -21,6 +21,7 @@ import {
 import Select from "../../components/common/Select";
 import useUnsavedDirty from "../../hooks/useUnsavedDirty";
 import ConfirmDiscard from "../../components/common/ConfirmDiscard";
+import StatCard from "../../components/common/StatCard";
 
 import Pagination from "../../components/common/Pagination";
 
@@ -111,10 +112,13 @@ function StatCardsSkeleton({ isMobile }) {
   return (
     <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(4, 1fr)", gap: isMobile ? 10 : 12 }}>
       {[...Array(4)].map((_, i) => (
-        <div key={i} className="complaint-stat-card complaint-stat-total" style={{ opacity: 0.5 }}>
-          <SkeletonBlock width={40} height={26} style={{ marginBottom: 4 }} />
-          <SkeletonBlock width={80} height={11} />
-        </div>
+        <StatCard
+          key={i}
+          value={<SkeletonBlock width={40} height={26} style={{ marginBottom: 4 }} />}
+          label={<SkeletonBlock width={80} height={11} />}
+          tone="neutral"
+          style={{ opacity: 0.5 }}
+        />
       ))}
     </div>
   );
@@ -1695,15 +1699,17 @@ const { t }              = useLang();
           : counts.ALL > 0 && (
             <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(4, 1fr)", gap: isMobile ? 10 : 12 }}>
               {[
-                { label: t("compStatTotal"),      count: counts.ALL,         cls: "complaint-stat-total"      },
-                { label: t("compStatusPending"),  count: counts.PENDING,     cls: "complaint-stat-pending"    },
-                { label: t("compTabInProgress"),  count: counts.IN_PROGRESS, cls: "complaint-stat-inprogress" },
-                { label: t("compStatusResolved"), count: counts.RESOLVED,    cls: "complaint-stat-resolved"   },
+                { label: t("compStatTotal"),      count: counts.ALL,         tone: "brand"   },
+                { label: t("compStatusPending"),  count: counts.PENDING,     tone: "info"    },
+                { label: t("compTabInProgress"),  count: counts.IN_PROGRESS, tone: "warning" },
+                { label: t("compStatusResolved"), count: counts.RESOLVED,    tone: "success" },
               ].map((s) => (
-                <div key={s.label} className={`complaint-stat-card ${s.cls}`}>
-                  <span className="complaint-stat-val">{s.count}</span>
-                  <span className="complaint-stat-label">{s.label}</span>
-                </div>
+                <StatCard
+                  key={s.label}
+                  value={s.count}
+                  label={s.label}
+                  tone={s.tone}
+                />
               ))}
             </div>
           )

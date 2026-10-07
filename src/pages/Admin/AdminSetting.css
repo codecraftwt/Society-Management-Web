@@ -439,16 +439,36 @@ html.light .set-card {
   --set-tint: color-mix(in srgb, var(--accent) 22%, transparent);
 }
 
+.set-card--location {
+  --set-icon: #10b981;
+  --set-tint: color-mix(in srgb, #10b981 16%, transparent);
+}
+
+.set-card__status--emerald {
+  background: color-mix(in srgb, #10b981 12%, transparent);
+  border-color: color-mix(in srgb, #10b981 26%, transparent);
+  color: #34d399;
+}
+.set-card__status--emerald .set-card__status-dot { background: #10b981; }
+
 .set-section--theme .set-section__icon {
   color: var(--accent);
   background: color-mix(in srgb, var(--accent) 15%, transparent);
   border-color: color-mix(in srgb, var(--accent) 28%, transparent);
 }
 
+.set-section--location .set-section__icon {
+  color: #10b981;
+  background: color-mix(in srgb, #10b981 14%, transparent);
+  border-color: color-mix(in srgb, #10b981 28%, transparent);
+}
+
 /* ── 4. Section Shell ────────────────────────────────────────────────────── */
 .set-section { display: flex; flex-direction: column; gap: 14px; }
 /* Embedded permissions host: fills the section so its own grid controls the layout. */
 .set-roles { width: 100%; }
+/* Same for the location section, which owns a two-column split internally. */
+.set-loc-section { width: 100%; }
 
 .set-section__enter { animation: set-enter 220ms var(--set-ease) both; }
 @keyframes set-enter {

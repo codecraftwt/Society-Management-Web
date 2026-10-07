@@ -15,6 +15,10 @@ import {
   HiOutlineSparkles,
   HiOutlineArrowRight,
   HiOutlineCheckCircle,
+  HiOutlineMegaphone,
+  HiOutlineCog6Tooth,
+  HiOutlineFolder,
+  HiOutlineClock,
   HiBars3,
   HiOutlineXMark
 } from "react-icons/hi2";
@@ -271,70 +275,330 @@ const Home = () => {
       </nav>
 
       <main id="main-content">
-      {/* ==========================================================================
-         2. HERO BANNER SECTION
+        {/* ==========================================================================
+         2. HERO BANNER SECTION (Natural Direct Alignment + Open View of Campus)
          ========================================================================== */}
-      <section className="home-hero-section">
-        <div className="home-hero-bg-photo">
-          <SafeImage
-            src={homeBannerImg}
-            alt={t("homeAltHero")}
-            className="home-hero-full-img"
-            fallbackIcon={HiOutlineBuildingOffice2}
-            fallbackGradient="linear-gradient(135deg, #1e3a8a 0%, #0f172a 100%)"
-          />
-        </div>
+        <section className="home-hero-section">
+          <div className="home-hero-bg-photo">
+            <SafeImage
+              src={homeBannerImg}
+              alt={t("homeAltHero")}
+              className="home-hero-full-img"
+              fallbackIcon={HiOutlineBuildingOffice2}
+              fallbackGradient="linear-gradient(135deg, #1e3a8a 0%, #0f172a 100%)"
+            />
+          </div>
 
-        <div className="home-hero-copy">
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-            className="home-hero-copy-inner"
-          >
-            <div className="home-eyebrow-badge">
-              {t("homeEyebrow")}
-            </div>
+          {/* Directional gradient mask */}
+          <div className="home-hero-gradient-mask" aria-hidden="true" />
 
-            <h1 className="home-hero-title">
-              {t("homeHeroTitle1")}<br />
-              {t("homeHeroTitle2")}<br />
-              {t("homeHeroTitle3")}
-            </h1>
-
-            <p className="home-hero-subtitle">
-              {t("homeHeroSubtitle")}
-            </p>
-
-            <div className="home-hero-actions">
-              <button
-                onClick={goToApp}
-                className="home-btn-hero-primary"
+          <div className="home-container home-hero-container">
+            <div className="home-hero-layout">
+              {/* Left Side: Direct clean typography (no awkward enclosing box) */}
+              <motion.div
+                initial={{ opacity: 0, x: -25 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+                className="home-hero-content-direct"
               >
-                {loggedIn ? t("homeDashboard") : t("homeGetStarted")}
-              </button>
+                <div className="home-eyebrow-badge">
+                  <HiOutlineSparkles className="home-eyebrow-icon" />
+                  <span>{t("homeEyebrow")}</span>
+                </div>
 
-              <button
-                onClick={() => scrollToSection("features")}
-                className="home-btn-hero-secondary"
+                <h1 className="home-hero-title">
+                  <span className="home-grad-text--white">{t("homeHeroTitle1")}</span><br />
+                  <span className="home-grad-text--blue">{t("homeHeroTitle2")}</span><br />
+                  <span className="home-grad-text--cyan">{t("homeHeroTitle3")}</span>
+                </h1>
+
+                <p className="home-hero-subtitle">
+                  {t("homeHeroSubtitle")}
+                </p>
+
+                <div className="home-hero-actions">
+                  <button
+                    onClick={goToApp}
+                    className="home-btn-hero-primary"
+                  >
+                    {loggedIn ? t("homeDashboard") : t("homeGetStarted")}
+                    <HiOutlineArrowRight className="home-hero-btn-arrow" />
+                  </button>
+
+                  <button
+                    onClick={() => scrollToSection("features")}
+                    className="home-btn-hero-secondary"
+                  >
+                    {t("homeExplore")}
+                  </button>
+                </div>
+
+                {/* Micro-Trust Chips */}
+                <div className="home-hero-chips">
+                  <div className="home-hero-chip">
+                    <HiOutlineCheckCircle className="home-hero-chip-icon" />
+                    <span>{t("homeHeroChip1")}</span>
+                  </div>
+                  <div className="home-hero-chip">
+                    <HiOutlineCheckCircle className="home-hero-chip-icon" />
+                    <span>{t("homeHeroChip2")}</span>
+                  </div>
+                </div>
+              </motion.div>
+
+              {/* Right Side: Interactive Floating Status Badge */}
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                transition={{ duration: 0.8, delay: 0.25, ease: [0.22, 1, 0.36, 1] }}
+                className="home-hero-floating-stat"
               >
-                {t("homeExplore")}
-              </button>
+                <div className="home-hero-stat-badge">
+                  <span className="home-hero-stat-pulse" />
+                  <div className="home-hero-stat-text">
+                    <strong>{t("homeHeroStatTitle")}</strong>
+                    <span>{t("homeHeroStatSubtitle")}</span>
+                  </div>
+                </div>
+              </motion.div>
             </div>
-          </motion.div>
-        </div>
-      </section>
+          </div>
+        </section>
 
-      {/* ==========================================================================
-         3. PILLARS / PLATFORM OVERVIEW SECTION (PPT SLIDE 1 - SOFT SLATE BG)
+        {/* ==========================================================================
+         3. PILLARS / PLATFORM OVERVIEW SECTION (Multi-Language Supported)
          ========================================================================== */}
-      <section className="home-pillars-section home-glass-section" id="features">
-        <div className="home-glass-bg" aria-hidden="true">
-          <img src={featuresBgImg} alt="" />
-        </div>
-        <div className="home-glass-frost" aria-hidden="true" />
-        <div className="home-container">
-          <div className="home-pillars-panel">
+        <section className="home-pillars-section home-glass-section" id="features">
+          <div className="home-glass-bg" aria-hidden="true">
+            <img src={featuresBgImg} alt="" />
+          </div>
+          <div className="home-glass-frost" aria-hidden="true" />
+          <div className="home-container">
+            <div className="home-pillars-panel">
+              <motion.div
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.2 }}
+                transition={{ duration: 0.6, delay: 0.1 }}
+                className="home-section-header"
+              >
+                <span className="home-section-tag">{t("homeNavFeatures")}</span>
+                <h2 className="home-section-title">
+                  {t("homeSection1Title")}
+                </h2>
+              </motion.div>
+
+              <div className="home-pillars-grid">
+                {[
+                  {
+                    icon: HiOutlineUsers,
+                    title: t("homePillar1Title"),
+                    desc: t("homePillar1Desc"),
+                    color: "#0284c7",
+                    colorClass: "home-pillar-card--residents"
+                  },
+                  {
+                    icon: HiOutlineCreditCard,
+                    title: t("homePillar2Title"),
+                    desc: t("homePillar2Desc"),
+                    color: "#10b981",
+                    colorClass: "home-pillar-card--accounting"
+                  },
+                  {
+                    icon: HiOutlineShieldCheck,
+                    title: t("homePillar3Title"),
+                    desc: t("homePillar3Desc"),
+                    color: "#0d9488",
+                    colorClass: "home-pillar-card--security"
+                  },
+                  {
+                    icon: HiOutlineChatBubbleLeftRight,
+                    title: t("homePillar4Title"),
+                    desc: t("homePillar4Desc"),
+                    color: "#7c3aed",
+                    colorClass: "home-pillar-card--complaints"
+                  }
+                ].map((pillar, idx) => {
+                  const IconComp = pillar.icon;
+                  return (
+                    <motion.div
+                      key={idx}
+                      initial={{ opacity: 0, y: 40 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true, amount: 0.2 }}
+                      transition={{ duration: 0.5, delay: 0.15 + idx * 0.08 }}
+                      className={`home-pillar-card ${pillar.colorClass}`}
+                      style={{ "--c": pillar.color, animationDelay: `${idx * 60}ms` }}
+                    >
+                      {/* Decorative Orb Blob */}
+                      <span className="home-card-blob" aria-hidden="true" />
+                      
+                      <div className="home-pillar-content">
+                        <div className="home-pillar-top-row">
+                          <div className="home-pillar-icon-box">
+                            <IconComp />
+                          </div>
+                        </div>
+
+                        <div className="home-pillar-title-row">
+                          <h3 className="home-pillar-title">{pillar.title}</h3>
+                          <span className="home-card-arrow" aria-hidden="true">
+                            <HiOutlineArrowRight />
+                          </span>
+                        </div>
+
+                        <p className="home-pillar-desc">{pillar.desc}</p>
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ==========================================================================
+         4. EFFICIENT ADMINISTRATION SHOWCASE (Multi-Language Supported)
+         ========================================================================== */}
+        <section className="home-admin-section home-glass-section" id="how-it-works">
+          <div className="home-glass-bg" aria-hidden="true">
+            <img src={howItWorksBgImg} alt="" />
+          </div>
+          <div className="home-glass-frost" aria-hidden="true" />
+          <div className="home-container">
+            <div className="home-admin-grid">
+              {/* Left Visual */}
+              <motion.div
+                initial={{ opacity: 0, x: -40 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true, amount: 0.2 }}
+                transition={{ duration: 0.6, delay: 0.2 }}
+                className="home-admin-visual"
+              >
+                <div className="home-admin-image-box">
+                  <span className="home-admin-image-glow" aria-hidden="true" />
+                  <SafeImage
+                    src={guardImg}
+                    alt={t("homeAltAdmin")}
+                    className="home-admin-img"
+                    fallbackIcon={HiOutlineUsers}
+                  />
+                  <div className="home-admin-image-overlay-badge">
+                    <span className="home-admin-pulse-dot" />
+                    <span>{t("homeBrandTitle")}</span>
+                  </div>
+                </div>
+              </motion.div>
+
+              {/* Right Features — Modern 2x4 Capability Tiles */}
+              <motion.div
+                initial={{ opacity: 0, x: 40 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true, amount: 0.2 }}
+                transition={{ duration: 0.6, delay: 0.2 }}
+                className="home-admin-right-pane"
+              >
+                <span className="home-section-tag">{t("homeNavHowItWorks")}</span>
+                <h2 className="home-section-title" style={{ textAlign: "left" }}>
+                  {t("homeSection2Title")}
+                </h2>
+                <p className="home-section-subtitle" style={{ textAlign: "left", marginBottom: "1.75rem" }}>
+                  {t("homeSection2Subtitle")}
+                </p>
+
+                <div className="home-admin-capabilities-grid">
+                  {[
+                    {
+                      icon: HiOutlineMegaphone,
+                      title: t("homeAdminF1"),
+                      desc: t("homeAdminF1Desc"),
+                      color: "#0284c7"
+                    },
+                    {
+                      icon: HiOutlineCog6Tooth,
+                      title: t("homeAdminF2"),
+                      desc: t("homeAdminF2Desc"),
+                      color: "#7c3aed"
+                    },
+                    {
+                      icon: HiOutlineBuildingOffice2,
+                      title: t("homeAdminF3"),
+                      desc: t("homeAdminF3Desc"),
+                      color: "#0d9488"
+                    },
+                    {
+                      icon: HiOutlineCreditCard,
+                      title: t("homeAdminF4"),
+                      desc: t("homeAdminF4Desc"),
+                      color: "#10b981"
+                    },
+                    {
+                      icon: HiOutlineBuildingStorefront,
+                      title: t("homeAdminF5"),
+                      desc: t("homeAdminF5Desc"),
+                      color: "#ea580c"
+                    },
+                    {
+                      icon: HiOutlineClock,
+                      title: t("homeAdminF6"),
+                      desc: t("homeAdminF6Desc"),
+                      color: "#e11d48"
+                    },
+                    {
+                      icon: HiOutlineFolder,
+                      title: t("homeAdminF7"),
+                      desc: t("homeAdminF7Desc"),
+                      color: "#4f46e5"
+                    },
+                    {
+                      icon: HiOutlineChatBubbleLeftRight,
+                      title: t("homeAdminF8"),
+                      desc: t("homeAdminF8Desc"),
+                      color: "#db2777"
+                    }
+                  ].map((cap, cIdx) => {
+                    const CapIcon = cap.icon;
+                    return (
+                      <motion.div
+                        key={cIdx}
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true, amount: 0.2 }}
+                        transition={{ duration: 0.35, delay: 0.1 + cIdx * 0.04 }}
+                        className="home-admin-cap-card"
+                        style={{ "--c": cap.color, animationDelay: `${cIdx * 50}ms` }}
+                      >
+                        <span className="home-card-blob" aria-hidden="true" />
+                        <div className="home-admin-cap-icon-box">
+                          <CapIcon />
+                        </div>
+                        <div className="home-admin-cap-info">
+                          <div className="home-admin-cap-title-row">
+                            <h4 className="home-admin-cap-title">{cap.title}</h4>
+                            <span className="home-card-arrow" aria-hidden="true">
+                              <HiOutlineArrowRight />
+                            </span>
+                          </div>
+                          <p className="home-admin-cap-desc">{cap.desc}</p>
+                        </div>
+                      </motion.div>
+                    );
+                  })}
+                </div>
+              </motion.div>
+            </div>
+          </div>
+        </section>
+
+        {/* ==========================================================================
+         6. ROLE SECTION
+         ========================================================================== */}
+        <section className="home-roles-section home-glass-section" id="roles">
+          <div className="home-glass-bg" aria-hidden="true">
+            <img src={userRolesBgImg} alt="" />
+          </div>
+          <div className="home-glass-frost" aria-hidden="true" />
+          <div className="home-container">
             <motion.div
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -342,290 +606,169 @@ const Home = () => {
               transition={{ duration: 0.6, delay: 0.1 }}
               className="home-section-header"
             >
+              <span className="home-section-tag">{t("homeRolesTag")}</span>
               <h2 className="home-section-title">
-                {t("homeSection1Title")}
+                {t("homeSection3Title")}
               </h2>
+              <p className="home-section-subtitle">
+                {t("homeSection3Subtitle")}
+              </p>
             </motion.div>
 
-            <div className="home-pillars-grid">
+            <div className="home-roles-grid">
               {[
                 {
+                  img: adminImg,
+                  icon: HiOutlineBriefcase,
+                  title: t("homeRole1Title"),
+                  desc: t("homeRole1Desc"),
+                  color: "#0d9488",
+                  colorClass: "home-role-card--admin"
+                },
+                {
+                  img: committeeImg,
+                  icon: HiOutlineUserGroup,
+                  title: t("homeRole2Title"),
+                  desc: t("homeRole2Desc"),
+                  color: "#7c3aed",
+                  colorClass: "home-role-card--committee"
+                },
+                {
+                  img: residentImg,
                   icon: HiOutlineUsers,
-                  title: t("homePillar1Title"),
-                  desc: t("homePillar1Desc")
+                  title: t("homeRole3Title"),
+                  desc: t("homeRole3Desc"),
+                  color: "#0284c7",
+                  colorClass: "home-role-card--resident"
                 },
                 {
-                  icon: HiOutlineCreditCard,
-                  title: t("homePillar2Title"),
-                  desc: t("homePillar2Desc")
+                  img: securityGuardImg,
+                  icon: HiOutlineLockClosed,
+                  title: t("homeRole4Title"),
+                  desc: t("homeRole4Desc"),
+                  color: "#ea580c",
+                  colorClass: "home-role-card--guard"
                 },
                 {
-                  icon: HiOutlineShieldCheck,
-                  title: t("homePillar3Title"),
-                  desc: t("homePillar3Desc")
+                  img: accountantImg,
+                  icon: HiOutlineCalculator,
+                  title: t("homeRole5Title"),
+                  desc: t("homeRole5Desc"),
+                  color: "#4f46e5",
+                  colorClass: "home-role-card--accountant"
                 },
                 {
-                  icon: HiOutlineChatBubbleLeftRight,
-                  title: t("homePillar4Title"),
-                  desc: t("homePillar4Desc")
+                  img: adminImg,
+                  icon: HiOutlineBuildingStorefront,
+                  title: t("homeRole6Title"),
+                  desc: t("homeRole6Desc"),
+                  color: "#059669",
+                  colorClass: "home-role-card--facility"
                 }
-              ].map((pillar, idx) => {
-                const IconComp = pillar.icon;
+              ].map((role, rIdx) => {
+                const RoleIcon = role.icon;
                 return (
                   <motion.div
-                    key={idx}
-                    initial={{ opacity: 0, y: 40 }}
+                    key={rIdx}
+                    initial={{ opacity: 0, y: 30 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true, amount: 0.2 }}
-                    transition={{ duration: 0.5, delay: 0.2 + idx * 0.1 }}
-                    className="home-pillar-card"
+                    transition={{ duration: 0.45, delay: rIdx * 0.08 }}
+                    className={`home-role-card ${role.colorClass}`}
+                    style={{ "--c": role.color, animationDelay: `${rIdx * 60}ms` }}
                   >
-                    <div className="home-pillar-content">
-                      <div className="home-pillar-icon-box">
-                        <IconComp />
+                    {/* Decorative Orb Blob */}
+                    <span className="home-card-blob" aria-hidden="true" />
+
+                    {/* Left Side Info */}
+                    <div className="home-role-content-left">
+                      <div className="home-role-head">
+                        <div className="home-role-badge"><RoleIcon /></div>
+                        <h3 className="home-role-title">{role.title}</h3>
+                        <span className="home-card-arrow" aria-hidden="true">
+                          <HiOutlineArrowRight />
+                        </span>
                       </div>
-                      <h3 className="home-pillar-title">{pillar.title}</h3>
-                      <p className="home-pillar-desc">{pillar.desc}</p>
+                      <p className="home-role-desc">{role.desc}</p>
+                    </div>
+
+                    {/* Right Side Image */}
+                    <div className="home-role-image-right">
+                      <SafeImage
+                        src={role.img}
+                        alt={role.title}
+                        className="home-role-img"
+                        fallbackIcon={RoleIcon}
+                      />
                     </div>
                   </motion.div>
                 );
               })}
             </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* ==========================================================================
-         4. EFFICIENT ADMINISTRATION SHOWCASE SECTION
-         ========================================================================== */}
-      <section className="home-admin-section home-glass-section" id="how-it-works">
-        <div className="home-glass-bg" aria-hidden="true">
-          <img src={howItWorksBgImg} alt="" />
-        </div>
-        <div className="home-glass-frost" aria-hidden="true" />
-        <div className="home-container">
-          <div className="home-admin-grid">
-            {/* Left Visual */}
-            <motion.div
-              initial={{ opacity: 0, x: -40 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true, amount: 0.2 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-              className="home-admin-visual"
-            >
-              <div className="home-admin-image-box">
-                <SafeImage
-                  src={guardImg}
-                  alt={t("homeAltAdmin")}
-                  className="home-admin-img"
-                  fallbackIcon={HiOutlineUsers}
-                />
-              </div>
-            </motion.div>
-
-            {/* Right Features */}
-            <motion.div
-              initial={{ opacity: 0, x: 40 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true, amount: 0.2 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-            >
-              <h2 className="home-section-title" style={{ textAlign: "left" }}>
-                {t("homeSection2Title")}
-              </h2>
-              <p className="home-section-subtitle" style={{ textAlign: "left" }}>
-                {t("homeSection2Subtitle")}
-              </p>
-
-              <div className="home-admin-features">
-                {[
-                  t("homeAdminF1"),
-                  t("homeAdminF2"),
-                  t("homeAdminF3"),
-                  t("homeAdminF4"),
-                  t("homeAdminF5"),
-                  t("homeAdminF6"),
-                  t("homeAdminF7"),
-                  t("homeAdminF8")
-                ].map((feature, fIdx) => (
-                  <motion.div
-                    key={fIdx}
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true, amount: 0.2 }}
-                    transition={{ duration: 0.4, delay: 0.3 + fIdx * 0.05 }}
-                    className="home-admin-feature-item"
-                  >
-                    <span className="home-bullet-dot">•</span>
-                    <span>{feature}</span>
-                  </motion.div>
-                ))}
-              </div>
-            </motion.div>
-          </div>
-        </div>
-      </section>
-
-      {/* ==========================================================================
-         6. ROLE SECTION
-         ========================================================================== */}
-      <section className="home-roles-section home-glass-section" id="roles">
-        <div className="home-glass-bg" aria-hidden="true">
-          <img src={userRolesBgImg} alt="" />
-        </div>
-        <div className="home-glass-frost" aria-hidden="true" />
-        <div className="home-container">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.2 }}
-            transition={{ duration: 0.6, delay: 0.1 }}
-            className="home-section-header"
-          >
-            <span className="home-section-tag">{t("homeRolesTag")}</span>
-            <h2 className="home-section-title">
-              {t("homeSection3Title")}
-            </h2>
-            <p className="home-section-subtitle">
-              {t("homeSection3Subtitle")}
-            </p>
-          </motion.div>
-
-          <div className="home-roles-grid">
-            {[
-              {
-                img: adminImg,
-                icon: HiOutlineBriefcase,
-                title: t("homeRole1Title"),
-                desc: t("homeRole1Desc")
-              },
-              {
-                img: committeeImg,
-                icon: HiOutlineUserGroup,
-                title: t("homeRole2Title"),
-                desc: t("homeRole2Desc")
-              },
-              {
-                img: residentImg,
-                icon: HiOutlineUsers,
-                title: t("homeRole3Title"),
-                desc: t("homeRole3Desc")
-              },
-              {
-                img: securityGuardImg,
-                icon: HiOutlineLockClosed,
-                title: t("homeRole4Title"),
-                desc: t("homeRole4Desc")
-              },
-              {
-                img: accountantImg,
-                icon: HiOutlineCalculator,
-                title: t("homeRole5Title"),
-                desc: t("homeRole5Desc")
-              },
-              {
-                img: adminImg,
-                icon: HiOutlineBuildingStorefront,
-                title: t("homeRole6Title"),
-                desc: t("homeRole6Desc")
-              }
-            ].map((role, rIdx) => {
-              const RoleIcon = role.icon;
-              return (
-                <motion.div
-                  key={rIdx}
-                  initial={{ opacity: 0, y: 30 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, amount: 0.2 }}
-                  transition={{ duration: 0.45, delay: rIdx * 0.08 }}
-                  className="home-role-card"
-                >
-                  {/* Left Side Info */}
-                  <div className="home-role-content-left">
-                    <div className="home-role-head">
-                      <div className="home-role-badge"><RoleIcon /></div>
-                      <h3 className="home-role-title">{role.title}</h3>
-                    </div>
-                    <p className="home-role-desc">{role.desc}</p>
-                  </div>
-
-                  {/* Right Side Image */}
-                  <div className="home-role-image-right">
-                    <SafeImage
-                      src={role.img}
-                      alt={role.title}
-                      className="home-role-img"
-                      fallbackIcon={RoleIcon}
-                    />
-                  </div>
-                </motion.div>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
-      {/* ==========================================================================
+        {/* ==========================================================================
          7. CALL TO ACTION (CTA) BANNER (PPT SLIDE 5 - MODERN LUXURY REDESIGN)
          ========================================================================== */}
-      <motion.section
-        initial="hidden"
-        whileInView="visible"
-        viewport={{ once: true, amount: 0.2 }}
-        variants={slideVariants}
-        className="home-cta-section"
-      >
-        <div className="home-container">
-          <div className="home-cta-banner">
-            {/* Ambient Glow Orbs */}
-            <div className="home-cta-glow-orb orb-1"></div>
-            <div className="home-cta-glow-orb orb-2"></div>
+        <motion.section
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.2 }}
+          variants={slideVariants}
+          className="home-cta-section"
+        >
+          <div className="home-container">
+            <div className="home-cta-banner">
+              {/* Ambient Glow Orbs */}
+              <div className="home-cta-glow-orb orb-1"></div>
+              <div className="home-cta-glow-orb orb-2"></div>
 
-            <SafeImage
-              src={homeBannerImg}
-              alt={t("homeAltCta")}
-              className="home-cta-bg-image"
-              fallbackIcon={HiOutlineBuildingOffice2}
-            />
+              <SafeImage
+                src={homeBannerImg}
+                alt={t("homeAltCta")}
+                className="home-cta-bg-image"
+                fallbackIcon={HiOutlineBuildingOffice2}
+              />
 
-            <div className="home-cta-content">
-              <div className="home-cta-badge">
-                <HiOutlineSparkles className="home-cta-sparkle-icon" /> {t("homeCtaBadge")}
-              </div>
+              <div className="home-cta-content">
+                <div className="home-cta-badge">
+                  <HiOutlineSparkles className="home-cta-sparkle-icon" /> {t("homeCtaBadge")}
+                </div>
 
-              <h2 className="home-cta-title">
-                {t("homeCtaTitle1")}<br />{t("homeCtaTitle2")}
-              </h2>
+                <h2 className="home-cta-title">
+                  {t("homeCtaTitle1")}<br />{t("homeCtaTitle2")}
+                </h2>
 
-              <p className="home-cta-subtitle">
-                {t("homeCtaSubtitle")}
-              </p>
+                <p className="home-cta-subtitle">
+                  {t("homeCtaSubtitle")}
+                </p>
 
-              <div className="home-cta-pills">
-                <span className="home-cta-pill"><HiOutlineCheckCircle /> {t("homeCtaPill1")}</span>
-                <span className="home-cta-pill"><HiOutlineCheckCircle /> {t("homeCtaPill2")}</span>
-                <span className="home-cta-pill"><HiOutlineCheckCircle /> {t("homeCtaPill3")}</span>
-              </div>
+                <div className="home-cta-pills">
+                  <span className="home-cta-pill"><HiOutlineCheckCircle /> {t("homeCtaPill1")}</span>
+                  <span className="home-cta-pill"><HiOutlineCheckCircle /> {t("homeCtaPill2")}</span>
+                  <span className="home-cta-pill"><HiOutlineCheckCircle /> {t("homeCtaPill3")}</span>
+                </div>
 
-              <div className="home-cta-buttons">
-                <button
-                  onClick={goToApp}
-                  className="home-cta-btn-primary"
-                >
-                  {loggedIn ? t("homeDashboard") : t("homeGetStartedNow")} <HiOutlineArrowRight className="home-cta-arrow" />
-                </button>
+                <div className="home-cta-buttons">
+                  <button
+                    onClick={goToApp}
+                    className="home-cta-btn-primary"
+                  >
+                    {loggedIn ? t("homeDashboard") : t("homeGetStartedNow")} <HiOutlineArrowRight className="home-cta-arrow" />
+                  </button>
 
-                <button
-                  onClick={() => scrollToSection("features")}
-                  className="home-cta-btn-glass"
-                >
-                  {t("homeExplore")}
-                </button>
+                  <button
+                    onClick={() => scrollToSection("features")}
+                    className="home-cta-btn-glass"
+                  >
+                    {t("homeExplore")}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      </motion.section>
+        </motion.section>
       </main>
 
       {/* ==========================================================================

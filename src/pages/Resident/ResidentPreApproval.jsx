@@ -19,6 +19,7 @@ import Select from "../../components/common/Select";
 import { jsPDF } from "jspdf";
 import Pagination from "../../components/common/Pagination";
 import { getTitleError, getMobileError, getVehicleNumberError } from "../../utils/validators";
+import StatCard from "../../components/common/StatCard";
 
 /* ── IST date helpers ── */
 const getTodayIST = () =>
@@ -468,22 +469,26 @@ export default function ResidentPreApproval() {
 
       {/* ── STATS CARDS ── */}
       <div className="ge-stats">
-        <div className="complaint-stat-card complaint-stat-total">
-          <span className="complaint-stat-val">{counts.total}</span>
-          <span className="complaint-stat-label">{t("preapStatTotal")}</span>
-        </div>
-        <div className="complaint-stat-card complaint-stat-inprogress">
-          <span className="complaint-stat-val">{counts.today}</span>
-          <span className="complaint-stat-label">{t("preapStatToday")}</span>
-        </div>
-        <div className="complaint-stat-card complaint-stat-resolved">
-          <span className="complaint-stat-val">{counts.active}</span>
-          <span className="complaint-stat-label">{t("preapStatActive")}</span>
-        </div>
-        <div className="complaint-stat-card complaint-stat-resolved" style={{ borderLeftColor: "#8b5cf6" }}>
-          <span className="complaint-stat-val">{counts.used}</span>
-          <span className="complaint-stat-label">{t("preapStatUsed")}</span>
-        </div>
+        <StatCard
+          tone="brand"
+          value={counts.total}
+          label={t("preapStatTotal")}
+        />
+        <StatCard
+          tone="warning"
+          value={counts.today}
+          label={t("preapStatToday")}
+        />
+        <StatCard
+          tone="success"
+          value={counts.active}
+          label={t("preapStatActive")}
+        />
+        <StatCard
+          tone="info"
+          value={counts.used}
+          label={t("preapStatUsed")}
+        />
       </div>
 
       {/* ── LIVE IST CLOCK ── */}

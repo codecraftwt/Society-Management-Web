@@ -15,6 +15,7 @@ import {
 import Select from "../../../components/common/Select";
 
 import Pagination from "../../../components/common/Pagination";
+import StatCard from "../../../components/common/StatCard";
 
 function useIsMobile() {
   const [m, setM] = useState(() => typeof window !== "undefined" && window.innerWidth < 768);
@@ -255,14 +256,18 @@ const [totalPages, setTotalPages] = useState(1);
       {!loading && counts.total > 0 && (
         <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(4,1fr)", gap: 10 }}>
           {[
-            { label: t("compStatTotal"), val: counts.total, color: "purple" },
-            { label: t("rptOpen"), val: counts.open, color: "amber" },
-            { label: t("compTabInProgress"), val: counts.progress, color: "amber" },
-            { label: t("compStatusResolved"), val: counts.resolved, color: "green" },
+            { label: t("compStatTotal"), val: counts.total, tone: "brand" },
+            { label: t("rptOpen"), val: counts.open, tone: "warning" },
+            { label: t("compTabInProgress"), val: counts.progress, tone: "warning" },
+            { label: t("compStatusResolved"), val: counts.resolved, tone: "success" },
           ].map((s, i) => (
-            <div key={i} className={`stat-card stat-card--${s.color}`} style={{ borderRadius: isMobile ? 14 : 18, padding: isMobile ? "12px 14px" : "16px 18px" }}>
-              <div><div className="stat-card__val">{s.val}</div><div className="stat-card__label">{s.label}</div></div>
-            </div>
+            <StatCard
+              key={i}
+              value={s.val}
+              label={s.label}
+              tone={s.tone}
+              style={{ borderRadius: isMobile ? 14 : 18, padding: isMobile ? "12px 14px" : "16px 18px" }}
+            />
           ))}
         </div>
       )}

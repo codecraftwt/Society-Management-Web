@@ -23,6 +23,7 @@ import {
   MdOutlineTimer,
   MdHistoryEdu,
   MdChevronRight,
+  MdFingerprint,
 } from "react-icons/md";
 import {
   FaUserFriends,
@@ -32,6 +33,7 @@ import {
   FaTools,
 } from "react-icons/fa";
 import GuardEmergencyModal from "../../components/guard/GuardEmergencyModal";
+import GuardPunchModal from "../../components/guard/GuardPunchModal";
 import StatCard from "../../components/common/StatCard";
 
 /* ─────────────────────────────────────────────────────────────
@@ -148,6 +150,7 @@ export default function GuardDashboard() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const searchInputRef = useRef(null);
   const [showEmergencyModal, setShowEmergencyModal] = useState(false);
+  const [punchModal, setPunchModal] = useState({ open: false, mode: "PUNCH_IN" });
 
   // Exit Modal State
   const [exitTarget, setExitTarget] = useState(null);
@@ -517,6 +520,44 @@ export default function GuardDashboard() {
             </span>
           </div>
 
+          {/* Attendance Punch Action Button */}
+          {shift?.attendance?.status === "PUNCHED_IN" ? (
+            <button
+              onClick={() => setPunchModal({ open: true, mode: "PUNCH_OUT" })}
+              className="inline-flex items-center gap-2 text-xs font-bold px-3.5 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white shadow-md transition-[transform,background-color,box-shadow] duration-200 ease-out hover:shadow-lg active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-300 motion-reduce:transition-none"
+            >
+              <MdLogout size={16} />
+              <span>{t("gdPunchOutBtn", "Punch Out")}</span>
+            </button>
+          ) : shift?.attendance?.status === "PUNCHED_OUT" ? (
+            <div className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl bg-blue-500/15 border border-blue-500/30 text-blue-500">
+              <MdCheckCircle size={15} />
+              <span>
+                {t("gdShiftDone", "Shift Done")}
+                {shift.attendance?.worked_minutes != null
+                  ? ` (${Math.floor(shift.attendance.worked_minutes / 60)}h ${shift.attendance.worked_minutes % 60}m)`
+                  : ""}
+              </span>
+            </div>
+          ) : !isOnDuty ? (
+            <button
+              disabled
+              className="inline-flex items-center gap-2 text-xs font-semibold px-3.5 py-2 rounded-xl bg-card-inner-bg/80 border border-glass-border text-secondary/50 cursor-not-allowed opacity-60 transition-colors duration-200 motion-reduce:transition-none"
+              title={t("gdOffDutyPunchDisabled", "Off Duty - Punch In is only available during your shift window")}
+            >
+              <MdFingerprint size={16} />
+              <span>{t("gdPunchInBtn", "Punch In")}</span>
+            </button>
+          ) : (
+            <button
+              onClick={() => setPunchModal({ open: true, mode: "PUNCH_IN" })}
+              className="inline-flex items-center gap-2 text-xs font-bold px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white shadow-md transition-[transform,background-color,box-shadow] duration-200 ease-out hover:shadow-lg active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300 motion-reduce:transition-none"
+            >
+              <MdFingerprint size={16} />
+              <span>{t("gdPunchInBtn", "Punch In")}</span>
+            </button>
+          )}
+
           {/* Refresh Button */}
           <button
             onClick={() => loadDashboardData(true)}
@@ -528,6 +569,40 @@ export default function GuardDashboard() {
           </button>
         </div>
       </div>
+
+      {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+          2. ATTENDANCE REQUIRED CHECK-IN BANNER (IF ON DUTY & NOT PUNCHED IN)
+          ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+      {shift && isOnDuty && (!shift?.attendance || shift?.attendance?.status === "NOT_PUNCHED_IN") && (
+        <div className="gd-glass-card bg-emerald-500/10 border border-emerald-500/30 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm animate-fadeIn">
+          <div className="flex items-center gap-3.5">
+            <div className="w-11 h-11 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-md">
+              <MdFingerprint size={26} />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-[11px] font-bold tracking-wider uppercase bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-md">
+                  {t("gdDutyCheckIn", "Duty Check-In Required")}
+                </span>
+                <span className="font-bold text-sm sm:text-base text-primary">
+                  {shift.shift_type} {t("gdShiftActiveTitle", "Shift is Active")}
+                </span>
+              </div>
+              <p className="text-xs text-secondary mt-1">
+                {t("gdPunchInPrompt", "Please complete your punch-in attendance with GPS and selfie photo to begin your security duties.")}
+              </p>
+            </div>
+          </div>
+
+          <button
+            onClick={() => setPunchModal({ open: true, mode: "PUNCH_IN" })}
+            className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md transition-[transform,background-color,box-shadow] duration-200 ease-out hover:shadow-lg active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300 motion-reduce:transition-none flex items-center justify-center gap-2 shrink-0"
+          >
+            <MdFingerprint size={18} />
+            <span>{t("gdPunchInNow", "Punch In Now")}</span>
+          </button>
+        </div>
+      )}
 
       {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
           2. ACTIVE EMERGENCY & SOS BANNER (IF ACTIVE)
@@ -1183,7 +1258,18 @@ export default function GuardDashboard() {
       )}
 
       {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-          8. EMERGENCY / SOS MODAL
+          8. ATTENDANCE PUNCH MODAL (IN / OUT)
+          ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+      <GuardPunchModal
+        isOpen={punchModal.open}
+        mode={punchModal.mode}
+        isOnDuty={isOnDuty}
+        onClose={() => setPunchModal({ open: false, mode: "PUNCH_IN" })}
+        onSuccess={() => loadDashboardData(true)}
+      />
+
+      {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+          9. EMERGENCY / SOS MODAL
           ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
       <GuardEmergencyModal
         alerts={activeAlerts}

@@ -27,6 +27,7 @@ import ExpandableSearch from "../../../components/common/ExpandableSearch";
 import Pagination from "../../../components/common/Pagination";
 import Select from "../../../components/common/Select";
 import GlobalButton from "../../../components/common/GlobalButton";
+import StatCard from "../../../components/common/StatCard";
 import {
   CURRENCY,
   amenityDescription,
@@ -193,28 +194,28 @@ export default function Index({
       title: "Total Inflows",
       val: CURRENCY(stats?.totalAmt || 0),
       count: `${stats?.totalCount || 0} txn`,
-      tone: "green",
+      tone: "success",
       icon: MdAccountBalanceWallet,
     },
     {
       title: "Maintenance",
       val: CURRENCY(stats?.maintAmt || 0),
       count: `${stats?.maintCount || 0} bills`,
-      tone: "blue",
+      tone: "info",
       icon: MdBuild,
     },
     {
       title: "Society Bills",
       val: CURRENCY(stats?.billAmt || 0),
       count: `${stats?.billCount || 0} bills`,
-      tone: "purple",
+      tone: "brand",
       icon: MdReceiptLong,
     },
     {
       title: "Amenity Bookings",
       val: CURRENCY(stats?.amenityAmt || 0),
       count: `${stats?.amenityCount || 0} bookings`,
-      tone: "amber",
+      tone: "warning",
       icon: MdSportsTennis,
     },
   ];
@@ -346,27 +347,21 @@ export default function Index({
           className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3 mb-6 sm:mb-7"
           style={{ padding: "2px", margin: "0 -2px 1.5rem -2px" }}
         >
-          {kpis.map((kpi, idx) => {
-            const Icon = kpi.icon;
-            return (
-              <div
-                key={kpi.title}
-                className={`stat-card stat-card--${kpi.tone}`}
-                style={{ animationDelay: `${idx * 50}ms` }}
-              >
-                <div>
-                  <div className="stat-card__val">{kpi.val}</div>
-                  <div className="stat-card__label">
-                    {kpi.title}
-                    <span className="block text-[10px] opacity-70 mt-0.5">{kpi.count}</span>
-                  </div>
-                </div>
-                <div className="stat-card__icon">
-                  <Icon size={20} />
-                </div>
-              </div>
-            );
-          })}
+          {kpis.map((kpi, idx) => (
+            <StatCard
+              key={kpi.title}
+              variant="sheen"
+              layout="inline"
+              icon={kpi.icon}
+              value={kpi.val}
+              label={kpi.title}
+              tone={kpi.tone}
+              description={
+                <span className="block text-[10px] opacity-70 mt-0.5">{kpi.count}</span>
+              }
+              style={{ animationDelay: `${idx * 50}ms` }}
+            />
+          ))}
         </div>
       )}
 

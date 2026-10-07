@@ -11,6 +11,7 @@ import {
   MdCheckCircle, MdSchedule, MdArrowBack,
 } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
+import StatCard from "../../../components/common/StatCard";
 
 /* ── Mobile hook ── */
 function useIsMobile() {
@@ -144,13 +145,12 @@ export default function ResidentFinanceReport() {
   });
 
   const statCards = [
-    { label: t("billStatTotal"),   val: stats.total,               color: "purple" },
-    { label: t("billStatPaid"),    val: stats.paid,                color: "green"  },
-    { label: t("billStatPending"), val: stats.pending,             color: "amber"  },
-    { label: t("finStatCollected"),val: fmtINR(stats.collected),   color: "green"  },
-    { label: t("finStatDue"),      val: fmtINR(stats.due),         color: "amber"  },
+    { label: t("billStatTotal"),   val: stats.total,               tone: "brand" },
+    { label: t("billStatPaid"),    val: stats.paid,                tone: "success" },
+    { label: t("billStatPending"), val: stats.pending,             tone: "warning" },
+    { label: t("finStatCollected"),val: fmtINR(stats.collected),   tone: "success" },
+    { label: t("finStatDue"),      val: fmtINR(stats.due),         tone: "warning" },
   ];
-  const statColors = ["purple", "green", "amber", "green", "amber"];
 
   const bleed = isMobile ? {
     marginLeft: "calc(-1 * var(--page-padding, 16px))",
@@ -212,13 +212,13 @@ export default function ResidentFinanceReport() {
       {!loading && bills.length > 0 && (
         <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(5, 1fr)", gap: 10 }}>
           {statCards.map((s, i) => (
-            <div key={i} className={`stat-card stat-card--${statColors[i]}`}
-              style={{ borderRadius: isMobile ? 14 : 18, padding: isMobile ? "12px 14px" : "16px 18px", ...(isMobile && i === 4 ? { gridColumn: "1 / -1" } : {}) }}>
-              <div>
-                <div className="stat-card__val" style={{ fontSize: typeof s.val === "string" && s.val.startsWith("₹") ? (isMobile ? 15 : 18) : undefined }}>{s.val}</div>
-                <div className="stat-card__label">{s.label}</div>
-              </div>
-            </div>
+            <StatCard
+              key={i}
+              tone={s.tone}
+              value={<span style={{ fontSize: typeof s.val === "string" && s.val.startsWith("₹") ? (isMobile ? 15 : 18) : undefined }}>{s.val}</span>}
+              label={s.label}
+              style={{ borderRadius: isMobile ? 14 : 18, padding: isMobile ? "12px 14px" : "16px 18px", ...(isMobile && i === 4 ? { gridColumn: "1 / -1" } : {}) }}
+            />
           ))}
         </div>
       )}

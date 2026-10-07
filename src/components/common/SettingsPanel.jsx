@@ -417,16 +417,10 @@ export default function SettingsPanel({
 
   const acceptFile = (file) => {
     if (!file) return;
-    if (!ACCEPTED_TYPES.includes(file.type)) {
-      setPhotoError(t("ppErrType", "Please choose a JPEG, PNG, WEBP, GIF, HEIC or HEIF image."));
-      return;
-    }
-    if (file.size > MAX_BYTES) {
-      setPhotoError(t("ppErrSize", "Image is too large. Maximum size is 5MB."));
-      return;
-    }
+    setUploadOpen(false);
+    setPendingFile(null);
     setPhotoError("");
-    setPendingFile(file);
+    uploaderRef.current?.openCropModal(file);
   };
 
   const previewUrl = useMemo(

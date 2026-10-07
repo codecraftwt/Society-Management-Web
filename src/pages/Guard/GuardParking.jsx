@@ -744,65 +744,49 @@ export default function GuardParking() {
       {/* ── KPI STAT CARDS ── */}
       {!initialLoad && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-          <div
+          <StatCard
+            layout="inline"
+            icon={MdLocalParking}
+            tone="brand"
+            interactive
+            selected={activeTab === "ALL"}
             onClick={() => handleTabChange("ALL")}
-            className={`complaint-stat-card complaint-stat-total cursor-pointer transition-all ${
-              activeTab === "ALL" ? "ring-2 ring-indigo-500 shadow-md scale-101" : ""
-            }`}
-          >
-            <div className="flex items-center justify-between">
-              <span className="complaint-stat-val text-indigo-600">{counts.ALL}</span>
-              <div className="w-8 h-8 rounded-xl bg-indigo-500/10 text-indigo-600 flex items-center justify-center font-bold">
-                <MdLocalParking size={18} />
-              </div>
-            </div>
-            <span className="complaint-stat-label">{t("gpStatTotalLogs", "Total Parking Logs")}</span>
-          </div>
+            value={counts.ALL}
+            label={t("gpStatTotalLogs", "Total Parking Logs")}
+          />
 
-          <div
+          <StatCard
+            layout="inline"
+            icon={MdWarning}
+            tone="info"
+            interactive
+            selected={activeTab === "PENDING"}
             onClick={() => handleTabChange("PENDING")}
-            className={`complaint-stat-card complaint-stat-inprogress cursor-pointer transition-all ${
-              activeTab === "PENDING" ? "ring-2 ring-amber-500 shadow-md scale-101" : ""
-            }`}
-          >
-            <div className="flex items-center justify-between">
-              <span className="complaint-stat-val text-amber-500">{counts.PENDING}</span>
-              <div className="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center font-bold">
-                <MdWarning size={18} />
-              </div>
-            </div>
-            <span className="complaint-stat-label">{t("gpStatPending", "Pending Approval")}</span>
-          </div>
+            value={counts.PENDING}
+            label={t("gpStatPending", "Pending Approval")}
+          />
 
-          <div
+          <StatCard
+            layout="inline"
+            icon={MdCheckCircle}
+            tone="success"
+            interactive
+            selected={activeTab === "APPROVED"}
             onClick={() => handleTabChange("APPROVED")}
-            className={`complaint-stat-card complaint-stat-resolved cursor-pointer transition-all ${
-              activeTab === "APPROVED" ? "ring-2 ring-emerald-500 shadow-md scale-101" : ""
-            }`}
-          >
-            <div className="flex items-center justify-between">
-              <span className="complaint-stat-val text-emerald-600">{counts.APPROVED}</span>
-              <div className="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center font-bold">
-                <MdCheckCircle size={18} />
-              </div>
-            </div>
-            <span className="complaint-stat-label">{t("gpStatParked", "Currently Parked")}</span>
-          </div>
+            value={counts.APPROVED}
+            label={t("gpStatParked", "Currently Parked")}
+          />
 
-          <div
+          <StatCard
+            layout="inline"
+            icon={MdDone}
+            tone="success"
+            interactive
+            selected={activeTab === "COMPLETED"}
             onClick={() => handleTabChange("COMPLETED")}
-            className={`complaint-stat-card complaint-stat-resolved cursor-pointer transition-all ${
-              activeTab === "COMPLETED" ? "ring-2 ring-purple-500 shadow-md scale-101" : ""
-            }`}
-          >
-            <div className="flex items-center justify-between">
-              <span className="complaint-stat-val text-purple-600">{counts.COMPLETED}</span>
-              <div className="w-8 h-8 rounded-xl bg-purple-500/10 text-purple-600 flex items-center justify-center font-bold">
-                <MdDone size={18} />
-              </div>
-            </div>
-            <span className="complaint-stat-label">{t("gpStatExited", "Exited / Completed")}</span>
-          </div>
+            value={counts.COMPLETED}
+            label={t("gpStatExited", "Exited / Completed")}
+          />
         </div>
       )}
 

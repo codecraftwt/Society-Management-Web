@@ -6,6 +6,7 @@ import Pagination from "../../components/common/Pagination";
   import DatePicker from "react-datepicker";
   import "react-datepicker/dist/react-datepicker.css";
   import Modal from "../../components/Modal";
+  import StatCard from "../../components/common/StatCard";
   import SlidingTabs from "../../components/common/SlidingTabs";
   import ExpandableSearch from "../../components/common/ExpandableSearch";
   import { QRCodeCanvas } from "qrcode.react";
@@ -873,22 +874,26 @@ const navigate = useNavigate();
 
             {!initialLoad && counts.ALL > 0 && (
               <div className="ge-stats ra-booking-stats">
-                <div className="complaint-stat-card complaint-stat-total">
-                  <span className="complaint-stat-val">{counts.ALL}</span>
-                  <span className="complaint-stat-label">{t("geFilterAll") || "All"}</span>
-                </div>
-                <div className="complaint-stat-card complaint-stat-pending">
-                  <span className="complaint-stat-val">{(counts.PAYMENT_PENDING || 0) + (counts.PENDING || 0)}</span>
-                  <span className="complaint-stat-label">{t("amenPending")}</span>
-                </div>
-                <div className="complaint-stat-card complaint-stat-resolved">
-                  <span className="complaint-stat-val">{counts.APPROVED || 0}</span>
-                  <span className="complaint-stat-label">{statusDisplayLabel("APPROVED")}</span>
-                </div>
-                <div className="complaint-stat-card complaint-stat-inprogress">
-                  <span className="complaint-stat-val">{(counts.CANCELLED || 0) + (counts.REJECTED || 0)}</span>
-                  <span className="complaint-stat-label">{statusDisplayLabel("CANCELLED")}</span>
-                </div>
+                <StatCard
+                  tone="brand"
+                  value={counts.ALL}
+                  label={t("geFilterAll") || "All"}
+                />
+                <StatCard
+                  tone="info"
+                  value={(counts.PAYMENT_PENDING || 0) + (counts.PENDING || 0)}
+                  label={t("amenPending")}
+                />
+                <StatCard
+                  tone="success"
+                  value={counts.APPROVED || 0}
+                  label={statusDisplayLabel("APPROVED")}
+                />
+                <StatCard
+                  tone="danger"
+                  value={(counts.CANCELLED || 0) + (counts.REJECTED || 0)}
+                  label={statusDisplayLabel("CANCELLED")}
+                />
               </div>
             )}
 

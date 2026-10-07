@@ -16,6 +16,7 @@ import { FaParking } from "react-icons/fa";
 import SlidingTabs from "../../components/common/SlidingTabs";
 import GlobalButton from "../../components/common/GlobalButton";
 import GlobalConfirmDialog from "../../components/common/GlobalConfirmDialog";
+import StatCard from "../../components/common/StatCard";
 import Select from "../../components/common/Select";
 
 function Spinner({ size = 16 }) {
@@ -568,18 +569,9 @@ export default function MyVehicles() {
       </div>
 
       <div className="ge-stats">
-        <div className="complaint-stat-card complaint-stat-total">
-          <span className="complaint-stat-val">{vehicles.length}</span>
-          <span className="complaint-stat-label">{t("vehTitle")}</span>
-        </div>
-        <div className="complaint-stat-card complaint-stat-pending">
-          <span className="complaint-stat-val">{allocatedSlots.length}</span>
-          <span className="complaint-stat-label">{t("vehStatSlots")}</span>
-        </div>
-        <div className="complaint-stat-card complaint-stat-inprogress">
-          <span className="complaint-stat-val">{pendingCount}</span>
-          <span className="complaint-stat-label">{t("vehStatPending")}</span>
-        </div>
+        <StatCard tone="brand" value={vehicles.length} label={t("vehTitle")} />
+        <StatCard tone="info" value={allocatedSlots.length} label={t("vehStatSlots")} />
+        <StatCard tone="warning" value={pendingCount} label={t("vehStatPending")} />
       </div>
 
       {residentProfile && declaredVehicleCount > 0 && (

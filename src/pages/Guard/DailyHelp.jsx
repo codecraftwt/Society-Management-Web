@@ -17,6 +17,7 @@ import {
   MdLock,
 } from "react-icons/md";
 import { FaHandshake } from "react-icons/fa";
+import StatCard from "../../components/common/StatCard";
 import { toast } from "react-toastify";
 import SlidingTabs from "../../components/common/SlidingTabs";
 import ExpandableSearch from "../../components/common/ExpandableSearch";
@@ -219,33 +220,30 @@ export default function DailyHelp() {
 
       {/* ── KPI STAT CARDS ── */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
-        <div
+        <StatCard
+          tone="brand"
+          interactive
+          selected={filter === "ALL"}
           onClick={() => setFilter("ALL")}
-          className={`complaint-stat-card complaint-stat-total cursor-pointer transition-all ${
-            filter === "ALL" ? "ring-2 ring-teal-500 shadow-md scale-101" : ""
-          }`}
-        >
-          <span className="complaint-stat-val text-teal-600">{counts.total}</span>
-          <span className="complaint-stat-label">{t("dhStatTotal", "Total Helpers Registered")}</span>
-        </div>
-        <div
+          value={counts.total}
+          label={t("dhStatTotal", "Total Helpers Registered")}
+        />
+        <StatCard
+          tone="info"
+          interactive
+          selected={filter === "INSIDE"}
           onClick={() => setFilter("INSIDE")}
-          className={`complaint-stat-card complaint-stat-inprogress cursor-pointer transition-all ${
-            filter === "INSIDE" ? "ring-2 ring-emerald-500 shadow-md scale-101" : ""
-          }`}
-        >
-          <span className="complaint-stat-val text-emerald-600">{counts.inside}</span>
-          <span className="complaint-stat-label">{t("dhStatInside", "Currently Inside Gate")}</span>
-        </div>
-        <div
+          value={counts.inside}
+          label={t("dhStatInside", "Currently Inside Gate")}
+        />
+        <StatCard
+          tone="success"
+          interactive
+          selected={filter === "OUTSIDE"}
           onClick={() => setFilter("OUTSIDE")}
-          className={`complaint-stat-card complaint-stat-resolved cursor-pointer transition-all ${
-            filter === "OUTSIDE" ? "ring-2 ring-gray-400 shadow-md scale-101" : ""
-          }`}
-        >
-          <span className="complaint-stat-val text-gray-500">{counts.outside}</span>
-          <span className="complaint-stat-label">{t("dhStatExited", "Checked Out / Outside")}</span>
-        </div>
+          value={counts.outside}
+          label={t("dhStatExited", "Checked Out / Outside")}
+        />
       </div>
 
       {/* ── SEARCH & FILTER TOOLBAR ── */}

@@ -4,6 +4,7 @@ import { toast } from "react-toastify";
 
 import { useLang } from "../../context/LanguageContext";
 import UserAvatar from "../../components/common/UserAvatar";
+import ProfilePictureUploader from "../../components/common/ProfilePictureUploader";
 import {
   getNameError,
   getMobileError,
@@ -109,55 +110,23 @@ export default function CleaningStaffForm({
 
         <div className="cs-photo-picker" style={{ marginTop: 10 }}>
           {isCreate ? (
-            <>
-              <button
-                type="button"
-                className="cs-photo-drop"
-                onClick={() => fileInputRef.current?.click()}
-                aria-label={t("csUploadPhoto", "Upload photo")}
-              >
-                {shownPhoto ? (
-                  <img src={shownPhoto} alt="" />
-                ) : (
-                  <>
-                    <MdPhotoCamera size={22} />
-                    <span style={{ fontSize: 10, fontWeight: 700 }}>ADD</span>
-                  </>
-                )}
-              </button>
-              <div style={{ minWidth: 0, flex: "1 1 200px" }}>
-                <p className="cs-hint" style={{ marginTop: 0 }}>
-                  {photoFile
-                    ? t("csPhotoSelected", "Photo ready to upload.")
-                    : t("csPhotoHint", "JPEG, PNG, WEBP, GIF or HEIC. Max 5MB.")}
-                </p>
-                {photoFile && (
-                  <button
-                    type="button"
-                    className="cs-passcode__copy"
-                    onClick={clearPhoto}
-                    style={{ marginTop: 4 }}
-                    aria-label={t("csRemovePhoto", "Remove photo")}
-                  >
-                    <MdDelete size={14} />
-                    <span style={{ fontSize: 11, fontWeight: 700 }}>
-                      {t("csRemovePhoto", "Remove")}
-                    </span>
-                  </button>
-                )}
-              </div>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept={ACCEPTED_MIME.join(",")}
-                onChange={pickPhoto}
-                style={{ display: "none" }}
-                aria-hidden="true"
-                tabIndex={-1}
-              />
-            </>
+            <ProfilePictureUploader
+              name={form.name || "Staff"}
+              currentUrl={shownPhoto}
+              onFileSelect={(file, previewUrl) => {
+                if (file) {
+                  setPhotoFile(file);
+                  if (photoPreview) URL.revokeObjectURL(photoPreview);
+                  setPhotoPreview(previewUrl);
+                } else {
+                  clearPhoto();
+                }
+              }}
+              size={64}
+              showAvatar
+            />
           ) : (
-            <>
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
               <UserAvatar name={form.name} src={shownPhoto} size={72} radius={16} />
               <p className="cs-hint" style={{ marginTop: 0 }}>
                 {t(
@@ -165,7 +134,7 @@ export default function CleaningStaffForm({
                   "The photo is set when the staff record is created and cannot be changed here."
                 )}
               </p>
-            </>
+            </div>
           )}
         </div>
       </div>

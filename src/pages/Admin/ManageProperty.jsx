@@ -19,6 +19,7 @@ import SlidingTabs from "../../components/common/SlidingTabs";
 import ExpandableSearch from "../../components/common/ExpandableSearch";
 import GlobalButton from "../../components/common/GlobalButton";
 import GlobalModal from "../../components/common/GlobalModal";
+import StatCard from "../../components/common/StatCard";
 import { getTitleError, getNumberError, getPositiveAmountError } from "../../utils/validators";
 import "./Admin.css";
 
@@ -2199,14 +2200,11 @@ function FlatsTab({
       {!loading && (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: isMobile ? 8 : 12 }}>
           {[
-            { label: t("mpTotal") || "Total",       val: counts.ALL,      cls: "complaint-stat-total"    },
-            { label: t("mpOccupied") || "Occupied",  val: counts.OCCUPIED, cls: "complaint-stat-resolved" },
-            { label: t("mpVacant") || "Vacant",      val: counts.VACANT,   cls: "complaint-stat-pending"  },
+            { label: t("mpTotal") || "Total",       val: counts.ALL,      tone: "brand"   },
+            { label: t("mpOccupied") || "Occupied",  val: counts.OCCUPIED, tone: "success" },
+            { label: t("mpVacant") || "Vacant",      val: counts.VACANT,   tone: "info"    },
           ].map(s => (
-            <div key={s.label} className={`complaint-stat-card ${s.cls}`} style={{ padding: isMobile ? "10px 12px" : "12px 16px", borderRadius: 14 }}>
-              <span className="complaint-stat-val" style={{ fontSize: isMobile ? 20 : 24 }}>{s.val}</span>
-              <span className="complaint-stat-label">{s.label}</span>
-            </div>
+            <StatCard key={s.label} tone={s.tone} value={s.val} label={s.label} />
           ))}
         </div>
       )}

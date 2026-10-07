@@ -14,6 +14,7 @@ import {
 import GlobalBadge from "../../components/common/GlobalBadge";
 
 import Pagination from "../../components/common/Pagination";
+import StatCard from "../../components/common/StatCard";
 
 function useDebounce(value, delay = 500) {
   const [debounced, setDebounced] = useState(value);
@@ -244,18 +245,21 @@ export default function ResidentVisitors() {
       </div>
 
       <div className="ge-stats">
-        <div className="complaint-stat-card complaint-stat-total">
-          <span className="complaint-stat-val">{counts.ALL}</span>
-          <span className="complaint-stat-label">{t("visStatTotal")}</span>
-        </div>
-        <div className="complaint-stat-card complaint-stat-inprogress">
-          <span className="complaint-stat-val">{counts.INSIDE}</span>
-          <span className="complaint-stat-label">{t("visTabInside")}</span>
-        </div>
-        <div className="complaint-stat-card complaint-stat-resolved">
-          <span className="complaint-stat-val">{counts.LEFT}</span>
-          <span className="complaint-stat-label">{t("visTabLeft")}</span>
-        </div>
+        <StatCard
+          tone="brand"
+          value={counts.ALL}
+          label={t("visStatTotal")}
+        />
+        <StatCard
+          tone="warning"
+          value={counts.INSIDE}
+          label={t("visTabInside")}
+        />
+        <StatCard
+          tone="success"
+          value={counts.LEFT}
+          label={t("visTabLeft")}
+        />
       </div>
 
       {/* ── Toolbar: Status Tabs & Search ── */}

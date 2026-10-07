@@ -7,18 +7,22 @@ import {
   MdVisibility, MdVisibilityOff,
   MdSecurity, MdSchedule, MdCalendarToday, MdCalendarMonth,
   MdWbSunny, MdNightsStay, MdBrightness5, MdEdit, MdApartment, MdLock,
-  MdCloudUpload,
+  MdCloudUpload, MdFingerprint, MdAccessTime, MdLocationOn, MdCheckCircle,
+  MdCameraAlt, MdRefresh, MdFilterList, MdToday, MdZoomIn, MdPhone,
 } from "react-icons/md";
 import Select from "../../components/common/Select";
+import SlidingTabs from "../../components/common/SlidingTabs";
 import GlobalButton from "../../components/common/GlobalButton";
 import GlobalModal from "../../components/common/GlobalModal";
 import GlobalTable from "../../components/common/GlobalTable";
 import UserAvatar from "../../components/common/UserAvatar";
+import ProfilePictureUploader from "../../components/common/ProfilePictureUploader";
 import GlobalBadge from "../../components/common/GlobalBadge";
 import GlobalConfirmDialog from "../../components/common/GlobalConfirmDialog";
 import { isCommitteeMember, hasPermission } from "../../utils/permissions";
 import { getTitleError, getEmailError } from "../../utils/validators";
 import {
+  APP_TIMEZONE,
   getTodayISO, shiftStatus, shiftForToday, isShiftEditable,
   sortShiftsForDisplay, formatShiftRange,
   SHIFT_TODAY, SHIFT_UPCOMING, SHIFT_COMPLETED,
@@ -170,6 +174,19 @@ export default function Guard() {
      value itself is always resolved in the app timezone (see utils/guardShifts),
      the timer only decides when to recompute it. */
   const [todayISO, setTodayISO] = useState(() => getTodayISO());
+
+  /* ── MAIN TAB SWITCHER (ROSTER vs ATTENDANCE) ── */
+  const [mainTab, setMainTab] = useState("ROSTER"); // "ROSTER" | "ATTENDANCE"
+
+  /* ── ATTENDANCE STATE ── */
+  const [attendanceList, setAttendanceList] = useState([]);
+  const [attendanceTotal, setAttendanceTotal] = useState(0);
+  const [attendanceLoading, setAttendanceLoading] = useState(false);
+  const [attendanceDate, setAttendanceDate] = useState(() => getTodayISO());
+  const [attendanceGuardFilter, setAttendanceGuardFilter] = useState("ALL");
+  const [attendanceStatusFilter, setAttendanceStatusFilter] = useState("ALL");
+  const [attendanceSummary, setAttendanceSummary] = useState({ total: 0, punched_in: 0, punched_out: 0 });
+  const [selectedSelfie, setSelectedSelfie] = useState(null);
   useEffect(() => {
     let timer;
     const scheduleRollover = () => {
@@ -288,6 +305,62 @@ export default function Guard() {
   useEffect(() => {
     fetchGuards();
   }, [isSuperAdmin, filterSocietyId]);
+
+  /* ── FETCH ATTENDANCE LIST & SUMMARY ── */
+  const fetchAttendance = async () => {
+    setAttendanceLoading(true);
+    try {
+      const params = {
+        limit: 100,
+      };
+      if (attendanceDate) params.date = attendanceDate;
+      if (attendanceGuardFilter && attendanceGuardFilter !== "ALL") params.guard_id = attendanceGuardFilter;
+      if (attendanceStatusFilter && attendanceStatusFilter !== "ALL") params.status = attendanceStatusFilter;
+      if (isSuperAdmin && filterSocietyId && filterSocietyId !== "ALL") {
+        params.society_id = filterSocietyId;
+      }
+
+      const res = await API.get("/guard-attendance", { params });
+      const items = Array.isArray(res.data?.data) ? res.data.data : [];
+      setAttendanceList(items);
+      setAttendanceTotal(res.data?.total || items.length);
+    } catch (err) {
+      console.error("Failed to fetch guard attendance:", err);
+      setAttendanceList([]);
+      setAttendanceTotal(0);
+    } finally {
+      setAttendanceLoading(false);
+    }
+  };
+
+  const fetchAttendanceSummary = async () => {
+    try {
+      const params = {};
+      if (isSuperAdmin && filterSocietyId && filterSocietyId !== "ALL") {
+        params.society_id = filterSocietyId;
+      }
+      const res = await API.get("/guard-attendance/summary/today", { params });
+      if (res.data?.success) {
+        setAttendanceSummary({
+          total: res.data.total || 0,
+          punched_in: res.data.punched_in || 0,
+          punched_out: res.data.punched_out || 0,
+        });
+      }
+    } catch (err) {
+      console.error("Failed to fetch today summary:", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchAttendanceSummary();
+  }, [filterSocietyId, isSuperAdmin]);
+
+  useEffect(() => {
+    if (mainTab === "ATTENDANCE") {
+      fetchAttendance();
+    }
+  }, [mainTab, filterSocietyId, attendanceDate, attendanceGuardFilter, attendanceStatusFilter]);
 
   /* ── SOCIETY SHIFT TIMINGS ── */
   const fetchTimings = async (societyId) => {
@@ -749,6 +822,246 @@ export default function Guard() {
     return "neutral";
   };
 
+  const formatAttendanceTime = (dt) => {
+    if (!dt) return "—";
+    try {
+      const d = new Date(dt);
+      return d.toLocaleTimeString("en-IN", {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: true,
+        timeZone: APP_TIMEZONE,
+      });
+    } catch {
+      return dt;
+    }
+  };
+
+  const formatWorkedDuration = (minutes) => {
+    if (minutes === null || minutes === undefined) return "—";
+    const h = Math.floor(minutes / 60);
+    const m = minutes % 60;
+    if (h === 0) return `${m}m`;
+    return `${h}h ${m}m`;
+  };
+
+  /* ── ATTENDANCE TABLE COLUMNS ── */
+  const attendanceColumns = [
+    {
+      key: "guard",
+      header: t("guardColGuard", "Guard"),
+      render: (row) => {
+        const g = row.guard || {};
+        return (
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <div className="gt-avatar-wrap">
+              <Avatar name={g.name} src={g.profile_picture} size={36} />
+            </div>
+            <div>
+              <div style={{ fontSize: "0.88rem", fontWeight: 700, color: "var(--text-primary)" }}>
+                {g.name || "Guard"}
+              </div>
+              {g.phone && (
+                <div style={{ display: "flex", alignItems: "center", gap: 4, fontSize: "0.75rem", color: "var(--text-secondary)", marginTop: 2 }}>
+                  <MdPhone size={11} /> {g.phone}
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      },
+    },
+    ...(isSuperAdmin
+      ? [{
+          key: "society",
+          header: t("guardColSociety", "Society"),
+          hiddenMobile: true,
+          render: (row) => {
+            const socName = row.society?.name || t("guardUnknownSociety", "Society");
+            return (
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <MdApartment size={13} style={{ color: "var(--accent)", opacity: 0.8 }} />
+                <span style={{ fontSize: "0.84rem", fontWeight: 600, color: "var(--text-primary)" }}>
+                  {socName}
+                </span>
+              </div>
+            );
+          },
+        }]
+      : []),
+    {
+      key: "date_shift",
+      header: t("guardColDateShift", "Date & Shift"),
+      render: (row) => {
+        const shiftType = row.shift?.shift_type || "MORNING";
+        return (
+          <div style={{ display: "flex", flexDirection: "column", gap: 4, alignItems: "flex-start" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: "0.8rem", fontWeight: 600, color: "var(--text-primary)" }}>
+              <MdToday size={13} style={{ color: "var(--text-secondary)" }} />
+              {row.attendance_date}
+            </div>
+            <ShiftBadge type={shiftType} t={t} />
+          </div>
+        );
+      },
+    },
+    {
+      key: "punch_in",
+      header: t("guardColPunchIn", "Punch In"),
+      render: (row) => (
+        <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: "0.86rem", fontWeight: 700, color: "#10b981" }}>
+            <MdAccessTime size={13} />
+            {formatAttendanceTime(row.punch_in)}
+          </div>
+          {row.punch_in_distance !== null && row.punch_in_distance !== undefined && (
+            <div style={{ display: "flex", alignItems: "center", gap: 4, fontSize: "0.74rem", color: "var(--text-tertiary)" }}>
+              <MdLocationOn size={11} style={{ color: "#10b981" }} />
+              <span>{Math.round(Number(row.punch_in_distance))}m from center</span>
+              
+            </div>
+          )}
+        </div>
+      ),
+    },
+    {
+      key: "selfie",
+      header: t("guardColSelfie", "Selfie"),
+      render: (row) => {
+        const selfieUrl = row.punch_in_selfie_url;
+        if (!selfieUrl) {
+          return <span style={{ fontSize: "0.78rem", color: "var(--text-tertiary)", fontStyle: "italic" }}>No photo</span>;
+        }
+        return (
+          <div
+            onClick={() => setSelectedSelfie(row)}
+            title={t("guardClickToViewSelfie", "Click to enlarge selfie & verification data")}
+            style={{
+              width: 38,
+              height: 38,
+              borderRadius: 10,
+              overflow: "hidden",
+              cursor: "pointer",
+              position: "relative",
+              border: "1.5px solid rgba(16, 185, 129, 0.4)",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+              transition: "transform 0.2s, box-shadow 0.2s",
+            }}
+          >
+            <img
+              src={selfieUrl}
+              alt="Guard Punch In Selfie"
+              style={{ width: "100%", height: "100%", objectFit: "cover" }}
+            />
+            <div style={{
+              position: "absolute",
+              inset: 0,
+              background: "rgba(0,0,0,0.25)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              opacity: 0,
+              transition: "opacity 0.2s",
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.opacity = "1"; }}
+            onMouseLeave={(e) => { e.currentTarget.style.opacity = "0"; }}
+            >
+              <MdZoomIn size={16} color="#ffffff" />
+            </div>
+          </div>
+        );
+      },
+    },
+    {
+      key: "punch_out",
+      header: t("guardColPunchOut", "Punch Out"),
+      render: (row) => {
+        if (!row.punch_out) {
+          return (
+            <span style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 4,
+              fontSize: "0.76rem",
+              fontWeight: 700,
+              color: "#f59e0b",
+              background: "rgba(245, 158, 11, 0.12)",
+              padding: "3px 8px",
+              borderRadius: 6,
+              border: "1px solid rgba(245, 158, 11, 0.25)",
+            }}>
+              <span style={{ width: 5, height: 5, borderRadius: "50%", background: "#f59e0b", animation: "pulse 1.5s infinite" }} />
+              {t("guardInProgress", "On Duty")}
+            </span>
+          );
+        }
+        return (
+          <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: "0.86rem", fontWeight: 700, color: "var(--text-primary)" }}>
+              <MdAccessTime size={13} style={{ color: "var(--text-secondary)" }} />
+              {formatAttendanceTime(row.punch_out)}
+            </div>
+            {row.punch_out_distance !== null && row.punch_out_distance !== undefined && (
+              <div style={{ display: "flex", alignItems: "center", gap: 4, fontSize: "0.74rem", color: "var(--text-tertiary)" }}>
+                <MdLocationOn size={11} />
+                <span>{Math.round(Number(row.punch_out_distance))}m from center</span>
+              </div>
+            )}
+          </div>
+        );
+      },
+    },
+    {
+      key: "duration",
+      header: t("guardColDuration", "Worked Duration"),
+      render: (row) => {
+        if (row.worked_minutes !== null && row.worked_minutes !== undefined) {
+          return (
+            <span style={{ fontSize: "0.84rem", fontWeight: 700, color: "var(--text-primary)" }}>
+              {formatWorkedDuration(row.worked_minutes)}
+            </span>
+          );
+        }
+        if (row.punch_in && !row.punch_out) {
+          const diffMin = Math.max(0, Math.round((Date.now() - new Date(row.punch_in).getTime()) / 60000));
+          return (
+            <span style={{ fontSize: "0.82rem", fontWeight: 600, color: "#10b981" }}>
+              {formatWorkedDuration(diffMin)} (active)
+            </span>
+          );
+        }
+        return <span style={{ color: "var(--text-tertiary)" }}>—</span>;
+      },
+    },
+    {
+      key: "status",
+      header: t("guardColStatus", "Status"),
+      align: "right",
+      render: (row) => {
+        if (row.status === "PUNCHED_IN") {
+          return (
+            <GlobalBadge variant="success" icon={MdCheckCircle} size="sm">
+              {t("guardStatusOnDuty", "On Duty")}
+            </GlobalBadge>
+          );
+        }
+        if (row.status === "PUNCHED_OUT") {
+          return (
+            <GlobalBadge variant="neutral" size="sm">
+              {t("guardStatusCompleted", "Punched Out")}
+            </GlobalBadge>
+          );
+        }
+        return (
+          <GlobalBadge variant="info" size="sm">
+            {row.status || "Recorded"}
+          </GlobalBadge>
+        );
+      },
+    },
+  ];
+
   const handleShiftSubmit = async (e) => {
     if (e) e.preventDefault();
     if (!shiftForm.shift_type || !shiftForm.start_date || !shiftForm.end_date) {
@@ -913,6 +1226,19 @@ export default function Guard() {
               {t("guardEditBtn", "Edit")}
             </GlobalButton>
           )}
+          {/* View Attendance Log for this guard */}
+          <GlobalButton
+            variant="secondary"
+            size="sm"
+            icon={MdFingerprint}
+            onClick={() => {
+              setAttendanceGuardFilter(String(g.id));
+              setMainTab("ATTENDANCE");
+            }}
+            title={t("guardViewAttendance", "View Attendance")}
+          >
+            {t("guardAttendanceBtn", "Attendance")}
+          </GlobalButton>
           {/* The single shift-related action on the row. Editing happens inside
               the modal, where a completed assignment can be recognised. */}
           <GlobalButton
@@ -960,15 +1286,57 @@ export default function Guard() {
           </div>
           <div>
             <h2 className="text-lg font-semibold" style={{ letterSpacing: "-0.02em", margin: 0 }}>
-              {t("guardTitle")}
+              {t("guardTitle", "Security & Guard Management")}
             </h2>
             <p className="text-secondary text-xs mt-0.5">
-              {guards.length} {t("guardRegistered")}
+              {guards.length} {t("guardRegistered", "Guards Registered")} • {attendanceSummary.punched_in} {t("guardOnDutyNow", "On Duty Now")}
             </p>
           </div>
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+          {/* Main Sub-Tab Switcher */}
+          <SlidingTabs
+            value={mainTab}
+            onChange={(tab) => {
+              setMainTab(tab);
+              if (tab === "ATTENDANCE") {
+                fetchAttendance();
+                fetchAttendanceSummary();
+              }
+            }}
+            items={[
+              {
+                id: "ROSTER",
+                icon: <MdSecurity size={15} />,
+                label: t("guardTabRoster", "Guards & Shift Roster"),
+                badge: guards.length,
+              },
+              {
+                id: "ATTENDANCE",
+                icon: <MdFingerprint size={16} />,
+                label: t("guardTabAttendance", "Attendance Records"),
+                extra: attendanceSummary.punched_in > 0 ? (
+                  <span style={{
+                    fontSize: 10,
+                    fontWeight: 800,
+                    padding: "1px 6px",
+                    borderRadius: 999,
+                    background: mainTab === "ATTENDANCE" ? "#10b981" : "rgba(16, 185, 129, 0.2)",
+                    color: mainTab === "ATTENDANCE" ? "#fff" : "#10b981",
+                    border: mainTab === "ATTENDANCE" ? "none" : "1px solid rgba(16, 185, 129, 0.4)",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 3,
+                  }}>
+                    <span style={{ width: 4, height: 4, borderRadius: "50%", background: "currentColor" }} />
+                    {attendanceSummary.punched_in} Active
+                  </span>
+                ) : null,
+              },
+            ]}
+          />
+
           {isSuperAdmin && (
             <Select
               className="input"
@@ -978,14 +1346,14 @@ export default function Guard() {
                 setFilterSocietyId(val);
                 localStorage.setItem("superadmin_society_filter", val);
               }}
-              style={{ height: 40, fontSize: 13, minWidth: 200 }}
+              style={{ height: 40, fontSize: 13, minWidth: 190 }}
             >
               <option value="ALL">{t("allSocietiesGlobalView")}</option>
               {societiesList.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
             </Select>
           )}
 
-          {canCreateGuard && (
+          {canCreateGuard && mainTab === "ROSTER" && (
             <GlobalButton
               variant="add"
               icon={MdAdd}
@@ -998,6 +1366,8 @@ export default function Guard() {
         </div>
       </div>
 
+{mainTab === "ROSTER" ? (
+        <>
       {/* ── SOCIETY SHIFT TIMINGS CONFIG ── */}
       {canShiftGuard && (
         <div style={{
@@ -1191,35 +1561,21 @@ export default function Guard() {
         gap: 12,
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-          <button
-            type="button"
-            className={`gt-filter-pill ${filterTab === "ALL" ? "gt-filter-pill--active" : ""}`}
-            onClick={() => setFilterTab("ALL")}
-          >
-            {t("guardFilterAll", "All Guards")} ({guards.length})
-          </button>
-          <button
-            type="button"
-            className={`gt-filter-pill ${filterTab === "ON_DUTY" ? "gt-filter-pill--active-green" : ""}`}
-            onClick={() => setFilterTab("ON_DUTY")}
-          >
-            <span className="gt-live-dot" style={{ color: filterTab === "ON_DUTY" ? "#fff" : "#10b981" }} />
-            {t("guardFilterOnDuty", "On Duty Now")} ({activeGuards.length})
-          </button>
-          <button
-            type="button"
-            className={`gt-filter-pill ${filterTab === "TODAY" ? "gt-filter-pill--active" : ""}`}
-            onClick={() => setFilterTab("TODAY")}
-          >
-            {t("guardFilterToday", "Scheduled Today")} ({todayGuards.length})
-          </button>
-          <button
-            type="button"
-            className={`gt-filter-pill ${filterTab === "OFF_DUTY" ? "gt-filter-pill--active" : ""}`}
-            onClick={() => setFilterTab("OFF_DUTY")}
-          >
-            {t("guardFilterOffDuty", "Off Duty")} ({offDutyGuards.length})
-          </button>
+          <SlidingTabs
+            value={filterTab}
+            onChange={setFilterTab}
+            items={[
+              { id: "ALL", label: t("guardFilterAll", "All Guards"), badge: guards.length },
+              {
+                id: "ON_DUTY",
+                icon: <span className="gt-live-dot" style={{ color: filterTab === "ON_DUTY" ? "#fff" : "#10b981" }} />,
+                label: t("guardFilterOnDuty", "On Duty Now"),
+                badge: activeGuards.length,
+              },
+              { id: "TODAY", label: t("guardFilterToday", "Scheduled Today"), badge: todayGuards.length },
+              { id: "OFF_DUTY", label: t("guardFilterOffDuty", "Off Duty"), badge: offDutyGuards.length },
+            ]}
+          />
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 220 }}>
@@ -1261,6 +1617,254 @@ export default function Guard() {
           ) : null
         }
       />
+        </>
+      ) : (
+        /* ── ATTENDANCE VIEW ── */
+        <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 16 }}>
+          {/* Summary KPI Cards */}
+          <div style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))",
+            gap: 14,
+          }}>
+            {/* Total Checked-In Today */}
+            <div style={{
+              padding: 16,
+              borderRadius: 16,
+              background: "var(--card-bg)",
+              border: "1px solid var(--glass-border)",
+              backdropFilter: "blur(12px)",
+              display: "flex",
+              alignItems: "center",
+              gap: 14,
+            }}>
+              <div style={{
+                width: 44,
+                height: 44,
+                borderRadius: 12,
+                background: "rgba(158, 88, 255, 0.15)",
+                border: "1px solid rgba(158, 88, 255, 0.3)",
+                color: "var(--accent)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                flexShrink: 0,
+              }}>
+                <MdFingerprint size={22} />
+              </div>
+              <div>
+                <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--text-secondary)" }}>
+                  {t("guardKpiTotalToday", "Today's Check-ins")}
+                </div>
+                <div style={{ fontSize: 22, fontWeight: 800, color: "var(--text-primary)", marginTop: 2 }}>
+                  {attendanceSummary.total}
+                </div>
+              </div>
+            </div>
+
+            {/* Currently On Duty */}
+            <div style={{
+              padding: 16,
+              borderRadius: 16,
+              background: "linear-gradient(135deg, rgba(16, 185, 129, 0.12), var(--card-bg))",
+              border: "1.5px solid rgba(16, 185, 129, 0.35)",
+              backdropFilter: "blur(12px)",
+              display: "flex",
+              alignItems: "center",
+              gap: 14,
+            }}>
+              <div style={{
+                width: 44,
+                height: 44,
+                borderRadius: 12,
+                background: "#10b981",
+                color: "#ffffff",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                flexShrink: 0,
+                boxShadow: "0 6px 16px rgba(16, 185, 129, 0.35)",
+              }}>
+                <MdSecurity size={22} />
+              </div>
+              <div>
+                <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", color: "#10b981" }}>
+                  {t("guardKpiOnDuty", "Currently On Duty")}
+                </div>
+                <div style={{ fontSize: 22, fontWeight: 800, color: "var(--text-primary)", marginTop: 2, display: "flex", alignItems: "center", gap: 6 }}>
+                  {attendanceSummary.punched_in}
+                  <span style={{ fontSize: 11, fontWeight: 700, color: "#10b981", background: "rgba(16, 185, 129, 0.15)", padding: "2px 7px", borderRadius: 999 }}>
+                    Active
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Shifts Completed */}
+            <div style={{
+              padding: 16,
+              borderRadius: 16,
+              background: "var(--card-bg)",
+              border: "1px solid var(--glass-border)",
+              backdropFilter: "blur(12px)",
+              display: "flex",
+              alignItems: "center",
+              gap: 14,
+            }}>
+              <div style={{
+                width: 44,
+                height: 44,
+                borderRadius: 12,
+                background: "rgba(59, 130, 246, 0.15)",
+                border: "1px solid rgba(59, 130, 246, 0.3)",
+                color: "#3b82f6",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                flexShrink: 0,
+              }}>
+                <MdCheckCircle size={22} />
+              </div>
+              <div>
+                <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--text-secondary)" }}>
+                  {t("guardKpiCompleted", "Shifts Completed")}
+                </div>
+                <div style={{ fontSize: 22, fontWeight: 800, color: "var(--text-primary)", marginTop: 2 }}>
+                  {attendanceSummary.punched_out}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Attendance Filters Bar */}
+          <div style={{
+            padding: 14,
+            borderRadius: 16,
+            background: "var(--card-bg)",
+            border: "1px solid var(--glass-border)",
+            backdropFilter: "blur(12px)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            flexWrap: "wrap",
+            gap: 12,
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+              {/* Date Filter */}
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text-secondary)" }}>
+                  {t("guardFilterDate", "Date:")}
+                </span>
+                <input
+                  type="date"
+                  value={attendanceDate}
+                  onChange={(e) => setAttendanceDate(e.target.value)}
+                  className="input"
+                  style={{ height: 36, fontSize: 12, borderRadius: 8, padding: "0 8px", width: "auto" }}
+                />
+                {attendanceDate !== todayISO && (
+                  <button
+                    type="button"
+                    onClick={() => setAttendanceDate(todayISO)}
+                    style={{
+                      border: "none",
+                      background: "rgba(158, 88, 255, 0.15)",
+                      color: "var(--accent)",
+                      fontSize: 11,
+                      fontWeight: 700,
+                      padding: "5px 9px",
+                      borderRadius: 6,
+                      cursor: "pointer",
+                    }}
+                  >
+                    {t("today", "Today")}
+                  </button>
+                )}
+                {attendanceDate && (
+                  <button
+                    type="button"
+                    onClick={() => setAttendanceDate("")}
+                    title="Clear date filter to view all history"
+                    style={{
+                      border: "none",
+                      background: "var(--card-inner-bg)",
+                      color: "var(--text-tertiary)",
+                      fontSize: 11,
+                      fontWeight: 600,
+                      padding: "5px 8px",
+                      borderRadius: 6,
+                      cursor: "pointer",
+                    }}
+                  >
+                    {t("allDates", "All Dates")}
+                  </button>
+                )}
+              </div>
+
+              {/* Guard Filter */}
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text-secondary)" }}>
+                  {t("guardColGuard", "Guard:")}
+                </span>
+                <Select
+                  className="input"
+                  value={attendanceGuardFilter}
+                  onChange={(e) => setAttendanceGuardFilter(e.target.value)}
+                  style={{ height: 36, fontSize: 12, borderRadius: 8, minWidth: 140 }}
+                >
+                  <option value="ALL">{t("allGuards", "All Guards")}</option>
+                  {guards.map((g) => (
+                    <option key={g.id} value={g.id}>
+                      {g.name}
+                    </option>
+                  ))}
+                </Select>
+              </div>
+
+              {/* Status Filter */}
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text-secondary)" }}>
+                  {t("guardColStatus", "Status:")}
+                </span>
+                <Select
+                  className="input"
+                  value={attendanceStatusFilter}
+                  onChange={(e) => setAttendanceStatusFilter(e.target.value)}
+                  style={{ height: 36, fontSize: 12, borderRadius: 8, minWidth: 130 }}
+                >
+                  <option value="ALL">{t("allStatuses", "All Statuses")}</option>
+                  <option value="PUNCHED_IN">{t("guardStatusOnDuty", "On Duty (Punched In)")}</option>
+                  <option value="PUNCHED_OUT">{t("guardStatusCompleted", "Punched Out")}</option>
+                </Select>
+              </div>
+            </div>
+
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <GlobalButton
+                variant="secondary"
+                size="sm"
+                icon={MdRefresh}
+                onClick={() => {
+                  fetchAttendance();
+                  fetchAttendanceSummary();
+                }}
+                disabled={attendanceLoading}
+              >
+                {t("refresh", "Refresh")}
+              </GlobalButton>
+            </div>
+          </div>
+
+          {/* Attendance Table */}
+          <GlobalTable
+            columns={attendanceColumns}
+            data={attendanceList}
+            loading={attendanceLoading}
+            emptyMessage={t("guardAttendanceEmpty", "No attendance records found for the selected filters.")}
+            emptyIcon={MdFingerprint}
+          />
+        </div>
+      )}
 
       {/* ── ADD / EDIT GUARD MODAL ── */}
       <GlobalModal
@@ -1421,110 +2025,16 @@ export default function Guard() {
 
           <div>
             <SectionLabel>{`${t("ppTitle", "Profile Picture")} (${t("ppOptional", "Optional")})`}</SectionLabel>
-            {photoPreview ? (
-              <div style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 10,
-                padding: "8px 12px",
-                borderRadius: 10,
-                background: "var(--card-inner-bg)",
-                border: "1.5px solid var(--glass-border)",
-              }}>
-                <div style={{
-                  width: 36,
-                  height: 36,
-                  borderRadius: 10,
-                  overflow: "hidden",
-                  border: "1.5px solid var(--accent)",
-                  flexShrink: 0,
-                }}>
-                  <img
-                    src={photoPreview}
-                    alt="Guard Preview"
-                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                  />
-                </div>
-                <div style={{ minWidth: 0, flex: 1 }}>
-                  <p style={{ margin: 0, fontSize: 12, fontWeight: 700, color: "var(--text-primary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                    {photoFile?.name || (editingId ? "Current photo" : "Selected photo")}
-                  </p>
-                  <p style={{ margin: "1px 0 0 0", fontSize: 10, color: "var(--text-tertiary)" }}>
-                    {photoFile ? `${(photoFile.size / 1024).toFixed(1)} KB` : (editingId ? "Uploaded" : "")}
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => { setPhotoFile(null); if (!editingId) setPhotoPreview(null); else setPhotoPreview(g?.profile_picture || null); }}
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: 3,
-                    padding: "4px 8px",
-                    borderRadius: 6,
-                    fontSize: 11,
-                    fontWeight: 700,
-                    cursor: "pointer",
-                    border: "1px solid rgba(239, 68, 68, 0.3)",
-                    background: "rgba(239, 68, 68, 0.1)",
-                    color: "#ef4444",
-                  }}
-                >
-                  <MdDelete size={13} />
-                  {t("remove", "Remove")}
-                </button>
-              </div>
-            ) : (
-              <label
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 10,
-                  padding: "8px 12px",
-                  borderRadius: 10,
-                  border: "1.5px dashed var(--glass-border)",
-                  background: "color-mix(in srgb, var(--card-inner-bg) 60%, transparent)",
-                  cursor: "pointer",
-                  transition: "all 0.2s ease",
-                }}
-                onDragOver={(e) => e.preventDefault()}
-                onDrop={(e) => {
-                  e.preventDefault();
-                  const file = e.dataTransfer.files?.[0];
-                  if (file && file.type.startsWith("image/")) {
-                    setPhotoFile(file);
-                  }
-                }}
-              >
-                <input
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp,image/gif,image/heic,image/heif"
-                  onChange={(e) => setPhotoFile(e.target.files?.[0] || null)}
-                  style={{ display: "none" }}
-                />
-                <div style={{
-                  width: 32,
-                  height: 32,
-                  borderRadius: 8,
-                  background: "var(--accent-soft, rgba(160, 90, 255, 0.15))",
-                  color: "var(--accent)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  flexShrink: 0,
-                }}>
-                  <MdCloudUpload size={18} />
-                </div>
-                <div style={{ minWidth: 0, flex: 1 }}>
-                  <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text-primary)" }}>
-                    {t("guardUploadClickOrDrag", "Click to upload or drag photo")}
-                  </span>
-                  <p style={{ margin: "1px 0 0 0", fontSize: 10, color: "var(--text-tertiary)" }}>
-                    PNG, JPG, WEBP (Max 5MB)
-                  </p>
-                </div>
-              </label>
-            )}
+            <ProfilePictureUploader
+              name={formData.name || "Guard"}
+              currentUrl={photoPreview}
+              onFileSelect={(file, previewUrl) => {
+                setPhotoFile(file);
+                setPhotoPreview(previewUrl);
+              }}
+              size={64}
+              showAvatar
+            />
           </div>
         </form>
       </GlobalModal>
@@ -1807,6 +2317,92 @@ export default function Guard() {
             </GlobalButton>
           </div>
         </div>
+      </GlobalModal>
+
+      {/* ── SELFIE LIGHTBOX & VERIFICATION MODAL ── */}
+      <GlobalModal
+        isOpen={Boolean(selectedSelfie)}
+        onClose={() => setSelectedSelfie(null)}
+        title={t("guardVerificationTitle", "Punch-In Verification")}
+        subtitle={selectedSelfie?.guard?.name ? `Live Capture: ${selectedSelfie.guard.name}` : "Security Verification Details"}
+        icon={MdCameraAlt}
+        size="md"
+      >
+        {selectedSelfie && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            {/* Selfie Photo Preview */}
+            <div style={{
+              width: "100%",
+              maxHeight: 360,
+              borderRadius: 16,
+              overflow: "hidden",
+              border: "1.5px solid rgba(16, 185, 129, 0.4)",
+              background: "#000",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              boxShadow: "0 8px 24px rgba(0,0,0,0.3)",
+            }}>
+              {selectedSelfie.punch_in_selfie_url ? (
+                <img
+                  src={selectedSelfie.punch_in_selfie_url}
+                  alt="Punch-in Verification Selfie"
+                  style={{ width: "100%", height: "100%", maxHeight: 360, objectFit: "contain" }}
+                />
+              ) : (
+                <div style={{ padding: 40, color: "var(--text-tertiary)" }}>No photo captured</div>
+              )}
+            </div>
+
+            {/* Verification Metadata Grid */}
+            <div style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+              gap: 10,
+              padding: 14,
+              borderRadius: 12,
+              background: "var(--card-inner-bg)",
+              border: "1px solid var(--glass-border)",
+            }}>
+              <div>
+                <SectionLabel>{t("guardColGuard", "Guard Name")}</SectionLabel>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text-primary)" }}>
+                  {selectedSelfie.guard?.name || "—"}
+                </div>
+              </div>
+
+              <div>
+                <SectionLabel>{t("guardColDate", "Date & Time")}</SectionLabel>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text-primary)" }}>
+                  {selectedSelfie.attendance_date} ({formatAttendanceTime(selectedSelfie.punch_in)})
+                </div>
+              </div>
+
+              <div>
+                <SectionLabel>{t("guardGeofenceDist", "Geofence Distance")}</SectionLabel>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "#10b981", display: "flex", alignItems: "center", gap: 4 }}>
+                  <MdLocationOn size={14} />
+                  {selectedSelfie.punch_in_distance !== null ? `${Math.round(Number(selectedSelfie.punch_in_distance))}m from center` : "Verified"}
+                </div>
+              </div>
+
+              <div>
+                <SectionLabel>{t("guardGpsAccuracy", "GPS Coordinates")}</SectionLabel>
+                <div style={{ fontSize: 11.5, fontWeight: 600, color: "var(--text-secondary)" }}>
+                  {selectedSelfie.punch_in_lat && selectedSelfie.punch_in_lng
+                    ? `${Number(selectedSelfie.punch_in_lat).toFixed(5)}, ${Number(selectedSelfie.punch_in_lng).toFixed(5)}`
+                    : "—"}
+                </div>
+              </div>
+            </div>
+
+            <div style={{ display: "flex", justifyContent: "flex-end" }}>
+              <GlobalButton variant="secondary" onClick={() => setSelectedSelfie(null)}>
+                {t("close", "Close")}
+              </GlobalButton>
+            </div>
+          </div>
+        )}
       </GlobalModal>
 
       {/* ── DELETE CONFIRM DIALOG ── */}

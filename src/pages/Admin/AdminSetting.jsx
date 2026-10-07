@@ -26,6 +26,7 @@ import {
   MdWarningAmber,
   MdInfoOutline,
   MdPalette,
+  MdPlace,
   MdRefresh,
 } from "react-icons/md";
 import API from "../../services/api";
@@ -40,13 +41,14 @@ import GlobalModal from "../../components/common/GlobalModal";
 import GlobalConfirmDialog from "../../components/common/GlobalConfirmDialog";
 import GlobalButton from "../../components/common/GlobalButton";
 import ThemeBrandingEditor from "../../components/common/ThemeBrandingEditor";
+import SocietyLocationSettings from "../../components/common/SocietyLocationSettings";
 import "./AdminSetting.css";
 
 /* ── helpers ─────────────────────────────────────────────────────────────── */
 
 const PHONE_RE = /^[+\d][\d\s()-]{5,19}$/;
 const MAX_BYTES = 5 * 1024 * 1024;
-const SECTIONS = ["profile", "password", "roles", "theme"];
+const SECTIONS = ["profile", "password", "roles", "theme", "location"];
 const ACCEPTED_TYPES = [
   "image/jpeg",
   "image/png",
@@ -144,6 +146,12 @@ export default function AdminSetting() {
   const { societyTheme, applySocietyTheme, resetSocietyTheme } = useTheme();
   const isSocietyAdmin = userRole === "SOCIETY_ADMIN" || (isAdminOrSocietyAdmin && !!(me?.society_id || user?.society_id));
   const activeSocietyId = me?.society_id || user?.society_id;
+
+  /* The Society Location section is restricted to a SOCIETY_ADMIN acting on
+     their own society. `isSocietyAdmin` above also admits SUPER_ADMIN/ADMIN
+     who happen to have a society_id, so this gate is deliberately strict:
+     exact role match, and a society of their own to edit. */
+  const canManageLocation = userRole === "SOCIETY_ADMIN" && !!activeSocietyId;
 
   const [themePrimary, setThemePrimary] = useState(societyTheme?.primary || "#a05aff");
   const [themeAccent, setThemeAccent] = useState(societyTheme?.accent || "#9e58ff");
@@ -293,16 +301,10 @@ export default function AdminSetting() {
 
   const acceptFile = (file) => {
     if (!file) return;
-    if (!ACCEPTED_TYPES.includes(file.type)) {
-      setPhotoError(t("ppErrType", "Please choose a JPEG, PNG, WEBP, GIF, HEIC or HEIF image."));
-      return;
-    }
-    if (file.size > MAX_BYTES) {
-      setPhotoError(t("ppErrSize", "Image is too large. Maximum size is 5MB."));
-      return;
-    }
+    setUploadOpen(false);
+    setPendingFile(null);
     setPhotoError("");
-    setPendingFile(file);
+    uploaderRef.current?.openCropModal(file);
   };
 
   const previewUrl = useMemo(
@@ -628,6 +630,40 @@ export default function AdminSetting() {
                   {societyLabel}
                 </span>
               )}
+            </span>
+          </button>
+        )}
+
+        {/* Society Location — strictly SOCIETY_ADMIN, and only for the society they
+            belong to. The geofence is per-society and is scoped by the API to
+            the caller's own society, so nobody else is offered this card. */}
+        {canManageLocation && (
+          <button type="button" className="set-card set-card--location" onClick={() => openSection("location")}>
+            <span className="set-card__top">
+              <span className="set-card__icon" aria-hidden="true">
+                <MdPlace size={21} />
+              </span>
+            </span>
+
+            <span className="set-card__meta">
+              <span className="set-card__meta-dot" aria-hidden="true" />
+              {t("asCardLocationMeta", "Maps & Geofencing")}
+            </span>
+            <span className="set-card__title">{t("asLocationTab", "Society Location")}</span>
+            <span className="set-card__desc">
+              {t("asCardLocationDesc", "Set your society's map location and the punch-in radius for guards.")}
+            </span>
+
+            <span className="set-card__spacer" />
+            <span className="set-card__foot">
+              <span className="set-card__cta">
+                {t("asCardLocationCta", "Configure Location")}
+                <MdChevronRight size={15} aria-hidden="true" />
+              </span>
+              <span className="set-card__status set-card__status--emerald">
+                <span className="set-card__status-dot" aria-hidden="true" />
+                {t("asLocationStatus", "Geofence")}
+              </span>
             </span>
           </button>
         )}
@@ -1070,7 +1106,19 @@ export default function AdminSetting() {
 
   /* ══ Render ════════════════════════════════════════════════════════════ */
 
-  const inSection = view !== "hub";
+  /* Role-gated sections can be deep-linked (?section=location) before the
+     profile request resolves the caller's role. Resolving the request against
+     the role as soon as it is known keeps a non-admin off a section whose body
+     would render nothing, without a redirecting effect. Sections that are not
+     gated here map to `undefined` and are left alone. */
+  const canOpenView = {
+    roles: isAdminOrSocietyAdmin,
+    theme: isSocietyAdmin && !!activeSocietyId,
+    location: canManageLocation,
+  }[view];
+
+  const currentView = !loading && canOpenView === false ? "hub" : view;
+  const inSection = currentView !== "hub";
 
   const sectionHead = {
     profile: {
@@ -1093,7 +1141,12 @@ export default function AdminSetting() {
       title: t("asThemeTab", "Theme & Branding"),
       desc: t("asSectionThemeDesc", "Configure society-wide custom brand colors and live visual styling."),
     },
-  }[view];
+    location: {
+      Icon: MdPlace,
+      title: t("asLocationTab", "Society Location"),
+      desc: t("asSectionLocationDesc", "Mark your society on the map and set the guard punch-in radius."),
+    },
+  }[currentView];
 
   const HeadIcon = sectionHead?.Icon;
 
@@ -1145,7 +1198,7 @@ export default function AdminSetting() {
             {t("asBack", "Back to Settings")}
           </button>
 
-          <div className={`set-section__head set-section--${view}`}>
+          <div className={`set-section__head set-section--${currentView}`}>
             {HeadIcon && (
               <span className="set-section__icon" aria-hidden="true">
                 <HeadIcon size={21} />
@@ -1157,14 +1210,19 @@ export default function AdminSetting() {
             </div>
           </div>
 
-          {view === "profile" && renderProfile()}
-          {view === "password" && renderPassword()}
-          {view === "roles" && isAdminOrSocietyAdmin && (
+          {currentView === "profile" && renderProfile()}
+          {currentView === "password" && renderPassword()}
+          {currentView === "roles" && isAdminOrSocietyAdmin && (
             <div className="set-roles">
               <RolePermissions embedded />
             </div>
           )}
-          {view === "theme" && isSocietyAdmin && renderTheme()}
+          {currentView === "theme" && isSocietyAdmin && renderTheme()}
+          {currentView === "location" && canManageLocation && (
+            <div className="set-loc-section">
+              <SocietyLocationSettings />
+            </div>
+          )}
         </div>
       ) : (
         renderHub()

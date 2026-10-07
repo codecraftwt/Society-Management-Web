@@ -16,6 +16,7 @@ import Select from "../../../components/common/Select";
 import ConfirmDiscard from "../../../components/common/ConfirmDiscard";
 
 import Pagination from "../../../components/common/Pagination";
+import StatCard from "../../../components/common/StatCard";
 
 function useIsMobile() {
   const [m, setM] = useState(() => typeof window !== "undefined" && window.innerWidth < 768);
@@ -303,10 +304,10 @@ export default function ResidentComplaintReport() {
   };
 
   const statCards = [
-    { label: t("compStatTotal"),     val: stats.total,      color: "purple" },
-    { label: t("crStatOpen"),        val: stats.open,       color: "amber" },
-    { label: t("compTabInProgress"), val: stats.inProgress, color: "blue" },
-    { label: t("compStatusResolved"), val: stats.resolved,  color: "green" },
+    { label: t("compStatTotal"),     val: stats.total,      tone: "brand" },
+    { label: t("crStatOpen"),        val: stats.open,       tone: "warning" },
+    { label: t("compTabInProgress"), val: stats.inProgress, tone: "info" },
+    { label: t("compStatusResolved"), val: stats.resolved,  tone: "success" },
   ];
   const cfgColors = { OPEN: "#f87171", IN_PROGRESS: "var(--warning)", RESOLVED: "#4ade80" };
 
@@ -335,9 +336,13 @@ export default function ResidentComplaintReport() {
       {!loading && stats.total > 0 && (
         <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(4,1fr)", gap: 10 }}>
           {statCards.map((s, i) => (
-            <div key={i} className={`stat-card stat-card--${s.color}`} style={{ borderRadius: isMobile ? 14 : 18, padding: isMobile ? "12px 14px" : "16px 18px" }}>
-              <div><div className="stat-card__val">{s.val}</div><div className="stat-card__label">{s.label}</div></div>
-            </div>
+            <StatCard
+              key={i}
+              value={s.val}
+              label={s.label}
+              tone={s.tone}
+              style={{ borderRadius: isMobile ? 14 : 18, padding: isMobile ? "12px 14px" : "16px 18px" }}
+            />
           ))}
         </div>
       )}

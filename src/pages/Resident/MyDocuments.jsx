@@ -8,6 +8,7 @@ import ConfirmDiscard from "../../components/common/ConfirmDiscard";
 import { useLang } from "../../context/LanguageContext";
 import API from "../../services/api";
 import { BASE_URL } from "../../config/apiConfig";
+import StatCard from "../../components/common/StatCard";
 
 const CATEGORY_MAP = {
   aadhar: {
@@ -641,18 +642,21 @@ export default function MyDocuments() {
       </div>
 
       <div className="ge-stats">
-        <div className="complaint-stat-card complaint-stat-total">
-          <span className="complaint-stat-val">{docs ? uploadedCount : "—"}</span>
-          <span className="complaint-stat-label">{t("mdStatUploaded")}</span>
-        </div>
-        <div className="complaint-stat-card complaint-stat-inprogress">
-          <span className="complaint-stat-val">{docs ? pendingCount : "—"}</span>
-          <span className="complaint-stat-label">{t("mdStatPending")}</span>
-        </div>
-        <div className="complaint-stat-card complaint-stat-resolved">
-          <span className="complaint-stat-val">{totalDocs}</span>
-          <span className="complaint-stat-label">{t("mdStatRequired")}</span>
-        </div>
+        <StatCard
+          tone="brand"
+          value={docs ? uploadedCount : "—"}
+          label={t("mdStatUploaded")}
+        />
+        <StatCard
+          tone="warning"
+          value={docs ? pendingCount : "—"}
+          label={t("mdStatPending")}
+        />
+        <StatCard
+          tone="info"
+          value={totalDocs}
+          label={t("mdStatRequired")}
+        />
       </div>
 
       <div className="ge-toolbar">
