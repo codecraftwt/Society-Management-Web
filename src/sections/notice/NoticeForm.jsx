@@ -202,16 +202,37 @@ export default function NoticeForm({
                 ? t("noticeLoadingFlats", "Loading flats...")
                 : t("noticeSelectFlat", "-- Select Target Flat --")}
             </option>
-            {flatsList.map((f) => {
-              const blockName = f.Floor?.Block?.name || f.Block?.name || "";
-              const ownerName = f.User?.name || "";
-              const label = `${blockName ? `${blockName} - ` : ""}Flat ${f.flat_number}${ownerName ? ` (Owner: ${ownerName})` : ""}`;
-              return (
-                <option key={f.id} value={f.id}>
-                  {label}
-                </option>
-              );
-            })}
+            {flatsList
+              .filter((f) => {
+                const hasOwner = Boolean(f.resident_id || f.User?.name);
+                const hasMembership = Boolean(f.FlatMemberships && f.FlatMemberships.length > 0);
+                return hasOwner || hasMembership;
+              })
+              .map((f) => {
+                const blockName = f.Floor?.Block?.name || f.Block?.name || "";
+                const tenantMembership = f.FlatMemberships?.find(
+                  (m) => m.member_type === "TENANT" && m.is_active !== false && (m.User?.name || m.user?.name)
+                );
+                const tenantUser = f.User?.resident_type === "TENANT" ? f.User : null;
+                const tenantName = tenantMembership?.User?.name || tenantMembership?.user?.name || tenantUser?.name;
+                const ownerName = f.User?.resident_type !== "TENANT" ? f.User?.name : "";
+
+                let occupantLabel = "";
+                if (tenantName) {
+                  occupantLabel = ` (Tenant: ${tenantName})`;
+                } else if (ownerName) {
+                  occupantLabel = ` (Owner: ${ownerName})`;
+                } else if (f.User?.name) {
+                  occupantLabel = ` (Resident: ${f.User.name})`;
+                }
+
+                const label = `${blockName ? `${blockName} - ` : ""}Flat ${f.flat_number}${occupantLabel}`;
+                return (
+                  <option key={f.id} value={f.id}>
+                    {label}
+                  </option>
+                );
+              })}
           </Select>
           <p style={{ fontSize: "0.76rem", color: "var(--text-secondary)", margin: "6px 0 0 4px" }}>
             {t("noticeTargetFlatHint", "Only authorized residents/tenants of this flat and society admins can see this notice.")}

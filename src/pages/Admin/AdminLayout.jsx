@@ -152,6 +152,13 @@ function AdminLayoutInner() {
       module: "notice",
     },
     {
+      label: t("adminMenuEvents", "Events"),
+      path: `${base}/events`,
+      icon: MdCampaign,
+      group: "COMMUNICATION",
+      module: "events",
+    },
+    {
       label: t("adminMenuComplaints"),
       path: `${base}/complaints`,
       icon: MdReportProblem,

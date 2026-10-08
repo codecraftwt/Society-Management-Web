@@ -185,9 +185,14 @@ export default function DashboardAnalytics({ societies, loading, onDataLoaded })
       entry.residents += 1;
       totalResidents += 1;
       const rt = (r.resident_type || "").toUpperCase();
-      if (rt === "OWNER") { entry.owners += 1; totalOwners += 1; }
-      else if (rt === "TENANT") { entry.tenants += 1; totalTenants += 1; }
-      else { entry.other += 1; totalOther += 1; }
+      if (rt === "TENANT") {
+        entry.tenants += 1;
+        totalTenants += 1;
+      } else {
+        // All resident accounts by default are owners
+        entry.owners += 1;
+        totalOwners += 1;
+      }
     });
 
     const residentData = Object.values(societyMap)

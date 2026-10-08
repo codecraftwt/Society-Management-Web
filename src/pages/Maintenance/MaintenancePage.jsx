@@ -1707,7 +1707,7 @@ export default function MaintenancePage() {
   return (
     <div className="flex flex-col gap-4">
       {/* ── UNIFIED HEADER BAR ── */}
-      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3 mb-2">
+      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3 mb-1">
         <div className="flex items-center gap-3">
           <div
             style={{
@@ -1734,25 +1734,10 @@ export default function MaintenancePage() {
             </p>
           </div>
         </div>
-
-        <div className="flex items-center gap-2.5 flex-nowrap shrink-0 overflow-x-auto max-w-full pb-1" style={{ scrollbarWidth: "none" }}>
-          {canEdit && (
-            <GlobalButton
-              variant="add"
-              icon={MdAdd}
-              borderDraw
-              onClick={openAdd}
-              className="shrink-0 mb-btn-no-shadow"
-              style={{ fontWeight: 700 }}
-            >
-              {t("mntHeaderNewConfig")}
-            </GlobalButton>
-          )}
-        </div>
       </div>
 
-      {/* Tabs + Society Select */}
-      <div className="flex items-center justify-between gap-3 flex-wrap sm:flex-nowrap w-full">
+      {/* ── CONTROLS TOOLBAR: Toggle Buttons, Society Dropdown, Generate Bills, New Configuration in one row ── */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 w-full my-1">
         <div className="flex items-center overflow-x-auto max-w-full pb-0.5" style={{ scrollbarWidth: "none" }}>
           <SlidingTabs
             value={tab}
@@ -1764,19 +1749,57 @@ export default function MaintenancePage() {
           />
         </div>
 
-        {isSuperAdmin && (
-          <div className="flex items-center gap-2.5 shrink-0">
+        <div className="flex items-center gap-2.5 flex-wrap sm:flex-nowrap shrink-0 overflow-x-auto max-w-full pb-1" style={{ scrollbarWidth: "none" }}>
+          {isSuperAdmin && (
             <Select
-              className="input"
+              className="text-xs font-semibold"
               placeholder={t("mntSelectSociety")}
               value={societyId}
               onChange={handleSocietyChange}
-              style={{ height: 40, fontSize: 13, minWidth: 200 }}
+              style={{
+                height: 38,
+                fontSize: 13,
+                minWidth: 180,
+                background: "var(--card-inner-bg)",
+                borderColor: "var(--glass-border)",
+                color: "var(--text-primary)",
+                borderRadius: 12,
+              }}
             >
-              {societies.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+              {societies.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name}
+                </option>
+              ))}
             </Select>
-          </div>
-        )}
+          )}
+
+          {canEdit && (
+            <GlobalButton
+              variant="add"
+              icon={MdBuild}
+              borderDraw
+              onClick={() => setShowGenerate(true)}
+              className="shrink-0 mb-btn-no-shadow"
+              style={{ fontWeight: 700 }}
+            >
+              {t("mntGenerateBills")}
+            </GlobalButton>
+          )}
+
+          {canEdit && (
+            <GlobalButton
+              variant="primary"
+              icon={MdAdd}
+              borderDraw
+              onClick={openAdd}
+              className="shrink-0 mb-btn-no-shadow"
+              style={{ fontWeight: 700 }}
+            >
+              {t("mntHeaderNewConfig")}
+            </GlobalButton>
+          )}
+        </div>
       </div>
 
       {isSuperAdmin && !societyId && (
@@ -1791,22 +1814,6 @@ export default function MaintenancePage() {
       {!(isSuperAdmin && !societyId) && (<>
       {tab === "config" ? (
         <div className="flex flex-col gap-4">
-          <div className="flex sm:items-center justify-between flex-col sm:flex-row gap-2">
-            <p className="text-sm text-secondary">{t("mntConfigsSummary", { count: configs.length, active: activeCount })}</p>
-            {canEdit && (
-              <GlobalButton
-                variant="add"
-                icon={MdBuild}
-                borderDraw
-                onClick={() => setShowGenerate(true)}
-                className="shrink-0"
-                style={{ fontWeight: 700 }}
-              >
-                {t("mntGenerateBills")}
-              </GlobalButton>
-            )}
-          </div>
-
           {loading ? (
             <div className="flex justify-center py-16"><Spinner size={28} /></div>
           ) : configs.length === 0 ? (

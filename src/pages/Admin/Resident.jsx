@@ -26,6 +26,7 @@ import { useCustomAlert } from "../../context/CustomAlertContext";
 import Pagination from "../../components/common/Pagination";
 import UserAvatar from "../../components/common/UserAvatar";
 import StatCard from "../../components/common/StatCard";
+import ProfilePictureUploader from "../../components/common/ProfilePictureUploader";
 
 /* ─────────────────────────────────────────
    HELPERS
@@ -3190,66 +3191,77 @@ const [totalPages, setTotalPages] = useState(1);
 
                 {/* STEP 1: Personal & Account Details */}
                 {formStep === 1 && (
-                  <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
                     {isSuperAdmin && (
-                      <Field label={t("rcaSociety")} required>
-                        <Select
-                          className="input w-full"
-                          value={formSocietyId}
-                          onChange={(e) => setFormSocietyId(e.target.value)}
-                          disabled={!!editingId}
-                          required
-                        >
-                          <option value="">{t("rcaSelectSociety")}</option>
-                          {societiesList.map((s) => (
-                            <option key={s.id} value={s.id}>{s.name}</option>
-                          ))}
-                        </Select>
-                        {editingId && (
-                          <p style={{ fontSize: 10, color: "var(--text-secondary)", marginTop: 4 }}>
-                            {t("rcaSocietyLocked")}
-                          </p>
-                        )}
-                      </Field>
+                      <div className="p-3.5 rounded-xl border border-glass bg-card-inner">
+                        <Field label={t("rcaSociety")} required>
+                          <Select
+                            className="input w-full"
+                            value={formSocietyId}
+                            onChange={(e) => setFormSocietyId(e.target.value)}
+                            disabled={!!editingId}
+                            required
+                          >
+                            <option value="">{t("rcaSelectSociety")}</option>
+                            {societiesList.map((s) => (
+                              <option key={s.id} value={s.id}>{s.name}</option>
+                            ))}
+                          </Select>
+                          {editingId && (
+                            <p style={{ fontSize: 11, color: "var(--text-secondary)", marginTop: 4 }}>
+                              {t("rcaSocietyLocked")}
+                            </p>
+                          )}
+                        </Field>
+                      </div>
                     )}
 
-                    <SectionDivider icon={MdPerson} label={t("personalInfo")} />
-                    <Field label={t("residentName")} required>
-                      <input className="input w-full" placeholder={t("rcaNamePlaceholder")} value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} required />
-                    </Field>
-                    <Field label={t("residentEmail")} required>
-                      <input className="input w-full" placeholder={t("rcaEmailPlaceholder")} type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} required disabled={!!editingId} style={editingId ? { opacity: 0.6, cursor: "not-allowed" } : {}} />
-                    </Field>
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                    <SectionDivider icon={MdPerson} label={t("personalInfo", "Personal Information")} />
+                    
+                    {/* Profile Picture Upload Box */}
+                    <div className="p-4 rounded-xl border border-glass bg-card-inner flex flex-col gap-2">
+                      <label className="text-xs font-semibold text-secondary">{t("profilePicture", "Profile Photo (Optional)")}</label>
+                      <ProfilePictureUploader
+                        name={formData.name || "Resident"}
+                        currentUrl={formData.profile_picture_url || formData.profile_picture}
+                        onFileSelect={(file, previewUrl) => {
+                          setFormData((prev) => ({
+                            ...prev,
+                            profile_picture_file: file,
+                            profile_picture_url: previewUrl,
+                          }));
+                        }}
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                      <Field label={t("residentName")} required>
+                        <input className="input w-full" placeholder={t("rcaNamePlaceholder")} value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} required />
+                      </Field>
+                      <Field label={t("residentEmail")} required>
+                        <input className="input w-full" placeholder={t("rcaEmailPlaceholder")} type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} required disabled={!!editingId} style={editingId ? { opacity: 0.6, cursor: "not-allowed" } : {}} />
+                      </Field>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                       <Field label={t("rcaPhone")}>
                         <input className="input w-full" placeholder={t("rcaPhonePlaceholder")} type="tel" value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} />
                       </Field>
                       {!editingId && (
                         <Field label={t("residentPassword")} required>
-                          <div style={{ position: "relative" }}>
+                          <div className="relative flex items-center">
                             <input
                               className="input w-full"
-                              placeholder={t("rcaPasswordPlaceholder") || DEFAULT_RESIDENT_PASSWORD}
-                              type={showPassword ? "text" : "password"}
-                              value={formData.password}
-                              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                              required
-                              style={{ paddingRight: 40 }}
+                              value={DEFAULT_RESIDENT_PASSWORD}
+                              readOnly
+                              disabled
+                              style={{ opacity: 0.8, cursor: "not-allowed", backgroundColor: "var(--card-inner-bg)", fontWeight: 700, letterSpacing: "0.02em" }}
                             />
-                            <button
-                              type="button"
-                              onClick={() => setShowPassword((p) => !p)}
-                              aria-label={showPassword ? t("rcaHidePassword") : t("rcaShowPassword")}
-                              style={{
-                                position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)",
-                                background: "none", border: "none", cursor: "pointer",
-                                color: "var(--text-secondary)", display: "flex", alignItems: "center", padding: 0,
-                              }}
-                            >
-                              {showPassword ? <MdVisibilityOff size={17} /> : <MdVisibility size={17} />}
-                            </button>
+                            <span className="absolute right-3 text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-500/15 text-emerald-500 border border-emerald-500/30 pointer-events-none">
+                              Default
+                            </span>
                           </div>
-                          <p style={{ fontSize: 11, color: "var(--text-secondary)", marginTop: 4, opacity: 0.75 }}>
+                          <p style={{ fontSize: 11, color: "var(--text-secondary)", marginTop: 4, opacity: 0.85 }}>
                             {t("resPasswordHint", "Default: Admin@123 (Resident can change password after login)")}
                           </p>
                         </Field>
@@ -3354,16 +3366,29 @@ const [totalPages, setTotalPages] = useState(1);
                 )}
 
                 {/* Footer Controls */}
-                <div style={{ display: "flex", gap: 10, paddingTop: 8, borderTop: "1px solid var(--glass-border)", marginTop: 8 }}>
-                  {formStep > 1 && (
-                    <button type="button" onClick={() => { setFormError(""); setFormStep(s => s - 1); }} className="sa-btn sa-btn-ghost">
-                      <MdArrowBack size={15} /> {t("rcaBack")}
-                    </button>
-                  )}
-                  <button type="button" onClick={requestCloseForm} className="sa-btn sa-btn-ghost">
-                    {t("cancel")}
-                  </button>
-                  <div style={{ flex: 1 }} />
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, paddingTop: 16, borderTop: "1px solid var(--glass-border)", marginTop: 8 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    {formStep > 1 && (
+                      <GlobalButton
+                        type="button"
+                        variant="secondary"
+                        size="sm"
+                        icon={MdArrowBack}
+                        onClick={() => { setFormError(""); setFormStep(s => s - 1); }}
+                      >
+                        {t("rcaBack", "Back")}
+                      </GlobalButton>
+                    )}
+                    <GlobalButton
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      icon={MdClose}
+                      onClick={requestCloseForm}
+                    >
+                      {t("cancel", "Cancel")}
+                    </GlobalButton>
+                  </div>
                   {formStep < 3 ? (
                     <GlobalButton
                       type="button"

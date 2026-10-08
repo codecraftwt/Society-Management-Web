@@ -37,14 +37,14 @@ const PartyCard = ({ icon: Icon, title, person, fallback, tone = "default" }) =>
 
   return (
     <div
-      className="flex items-center gap-3 p-3 rounded-xl transition-all"
+      className="flex items-start gap-3 p-3.5 rounded-xl transition-all"
       style={{
         background: "var(--card-inner-bg)",
         border: "1px solid var(--glass-border)",
       }}
     >
       <div
-        className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+        className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 mt-0.5"
         style={{
           background: toneConfig.bg,
           border: `1px solid ${toneConfig.border}`,
@@ -54,12 +54,12 @@ const PartyCard = ({ icon: Icon, title, person, fallback, tone = "default" }) =>
         <Icon size={16} />
       </div>
       <div className="min-w-0 flex-1">
-        <p className="text-[10px] font-bold uppercase tracking-wider text-tertiary" style={{ margin: 0 }}>
+        <p className="text-[10.5px] font-bold uppercase tracking-wider text-tertiary" style={{ margin: 0 }}>
           {title}
         </p>
         {person ? (
-          <div className="flex items-center justify-between gap-2 mt-0.5">
-            <span className="text-xs font-bold text-primary truncate">{person.name}</span>
+          <div className="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-0.5 mt-1">
+            <span className="text-xs font-bold text-primary break-words">{person.name}</span>
             {person.phone && (
               <span className="text-[11px] font-medium text-secondary shrink-0">{person.phone}</span>
             )}
@@ -178,7 +178,7 @@ export default function ParcelDetailModal({ parcel, onClose }) {
       onClick={onClose}
     >
       <div
-        className="w-full max-w-lg rounded-3xl animate-scaleIn bg-card border overflow-hidden flex flex-col max-h-[90vh] shadow-2xl"
+        className="w-full max-w-3xl rounded-2xl animate-scaleIn bg-card border overflow-hidden flex flex-col max-h-[92vh] shadow-2xl"
         style={{
           borderColor: "var(--glass-border)",
           boxShadow: "0 25px 60px -15px rgba(0,0,0,0.6)",
@@ -190,34 +190,34 @@ export default function ParcelDetailModal({ parcel, onClose }) {
       >
         {/* ── Header ── */}
         <div
-          className="p-5 border-b relative shrink-0"
+          className="px-5 py-4 border-b relative shrink-0"
           style={{
             borderColor: "var(--glass-border)",
             background: `linear-gradient(135deg, ${meta.accent}14 0%, transparent 100%)`,
           }}
         >
-          <div className="flex items-start justify-between gap-3">
+          <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-3 min-w-0">
               <div
-                className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-sm"
+                className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-sm"
                 style={{
                   background: `linear-gradient(135deg, ${meta.accent}25, ${meta.accent}15)`,
                   border: `1.5px solid ${meta.accent}40`,
                   color: meta.accent,
                 }}
               >
-                <MdLocalShipping size={24} />
+                <MdLocalShipping size={20} />
               </div>
               <div className="min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <h2 className="text-base font-bold text-primary truncate" style={{ margin: 0 }}>
+                  <h2 className="text-base font-bold text-primary truncate m-0">
                     {detail.courier_name || "Parcel Delivery"}
                   </h2>
                   <GlobalBadge variant={meta.variant} dot size="sm">
                     {meta.label}
                   </GlobalBadge>
                 </div>
-                <div className="flex items-center gap-2 flex-wrap text-xs text-secondary mt-1">
+                <div className="flex items-center gap-2 flex-wrap text-xs text-secondary mt-0.5">
                   <span className="font-semibold text-primary">Parcel #{detail.id}</span>
                   {detail.Society?.name && (
                     <span
@@ -232,6 +232,11 @@ export default function ParcelDetailModal({ parcel, onClose }) {
                       <span className="truncate">{detail.Society.name}</span>
                     </span>
                   )}
+                  <span className="text-tertiary">•</span>
+                  <span className="flex items-center gap-1 text-tertiary">
+                    <MdAccessTime size={12} />
+                    {formatDate(detail.createdAt || detail.created_at)}
+                  </span>
                 </div>
               </div>
             </div>
@@ -239,199 +244,182 @@ export default function ParcelDetailModal({ parcel, onClose }) {
             <button
               type="button"
               onClick={onClose}
-              className="p-2 rounded-xl text-secondary hover:text-primary hover:bg-card-inner transition-colors cursor-pointer"
+              className="p-1.5 rounded-xl text-secondary hover:text-primary hover:bg-card-inner transition-colors cursor-pointer"
               title="Close"
               aria-label="Close"
             >
               <MdClose size={18} />
             </button>
           </div>
-
-          {/* Destination Unit & Logged Banner */}
-          <div className="mt-4 p-3.5 rounded-2xl bg-card-inner border border-glass flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3 min-w-0">
-              <div
-                className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-                style={{
-                  background: "rgba(124, 58, 237, 0.12)",
-                  border: "1px solid rgba(124, 58, 237, 0.25)",
-                  color: "var(--accent)",
-                }}
-              >
-                <MdMeetingRoom size={20} />
-              </div>
-              <div className="min-w-0">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-tertiary m-0">
-                  Flat / Unit Destination
-                </p>
-                <p className="text-sm font-extrabold text-primary m-0 mt-0.5">
-                  {getUnitLabel(detail)}
-                </p>
-              </div>
-            </div>
-
-            <div className="text-right shrink-0">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-tertiary m-0">
-                Logged Date
-              </p>
-              <p className="text-xs font-semibold text-secondary m-0 mt-0.5 flex items-center gap-1 justify-end">
-                <MdAccessTime size={13} className="text-tertiary" />
-                <span>{formatDate(detail.createdAt || detail.created_at)}</span>
-              </p>
-            </div>
-          </div>
         </div>
 
-        {/* ── Scrollable Body ── */}
-        <div className="p-5 space-y-5 overflow-y-auto">
+        {/* ── Body (Two Column Grid) ── */}
+        <div className="p-5 overflow-y-auto">
           {/* Cancelled Banner */}
           {isCancelled && (
             <div
-              className="flex items-center gap-2.5 rounded-2xl px-4 py-3"
+              className="flex items-center gap-2.5 rounded-xl px-3.5 py-2.5 mb-4"
               style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.25)" }}
             >
-              <MdInfo size={18} className="text-red-500 shrink-0" />
+              <MdInfo size={16} className="text-red-500 shrink-0" />
               <p className="text-xs font-medium text-red-400 m-0">
                 This parcel was cancelled and was not received/handed over at the gate.
               </p>
             </div>
           )}
 
-          {/* ── Timeline Section ── */}
-          <div>
-            <p className="text-[11px] font-extrabold uppercase tracking-wider text-tertiary mb-3">
-              Parcel Journey
-            </p>
-            <div className="relative pl-6 space-y-4">
-              {/* Connecting Line */}
-              <div
-                className="absolute top-3 bottom-3 left-2.5 w-[2px] -translate-x-1/2"
-                style={{ background: "var(--glass-border)" }}
-              />
-
-              {steps.map((s, idx) => {
-                const Icon = s.icon;
-                return (
-                  <div key={idx} className="relative flex items-start gap-3">
-                    {/* Node Dot */}
-                    <div
-                      className="absolute -left-6 top-0.5 w-5 h-5 rounded-full flex items-center justify-center shrink-0 -translate-x-1/2"
-                      style={{
-                        background: s.done ? meta.accent : "var(--card-inner-bg)",
-                        border: `2px solid ${s.done ? meta.accent : "var(--glass-border)"}`,
-                        color: s.done ? "#ffffff" : "var(--text-tertiary)",
-                        boxShadow: s.done ? `0 0 10px ${meta.accent}66` : "none",
-                      }}
-                    >
-                      <Icon size={11} />
-                    </div>
-
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center justify-between gap-2">
-                        <span
-                          className={`text-xs font-bold ${
-                            s.done ? "text-primary" : "text-tertiary"
-                          }`}
-                        >
-                          {s.title}
-                        </span>
-                        {s.time && (
-                          <span className="text-[10px] text-tertiary font-medium shrink-0">
-                            {s.time}
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-[11px] text-secondary mt-0.5 m-0 leading-relaxed">
-                        {s.subtitle}
-                      </p>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          <div className="border-t" style={{ borderColor: "var(--glass-border)" }} />
-
-          {/* ── People Involved Section ── */}
-          <div>
-            <p className="text-[11px] font-extrabold uppercase tracking-wider text-tertiary mb-3">
-              People Involved
-            </p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-              {/* If requester and resident are same, show one unified card */}
-              {isSamePerson || (!requester && resident) ? (
-                <PartyCard
-                  icon={MdPerson}
-                  title="Resident / Recipient"
-                  person={resident}
-                  tone="resident"
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-5 items-start">
+            {/* Left Column: Timeline (5 cols) */}
+            <div className="md:col-span-5 bg-card-inner border border-glass p-3.5 rounded-xl">
+              <p className="text-[10.5px] font-extrabold uppercase tracking-wider text-tertiary mb-3 m-0">
+                Parcel Journey
+              </p>
+              <div className="relative pl-5 space-y-3">
+                {/* Connecting Line */}
+                <div
+                  className="absolute top-2.5 bottom-2.5 left-2 w-[2px] -translate-x-1/2"
+                  style={{ background: "var(--glass-border)" }}
                 />
-              ) : (
-                <>
+
+                {steps.map((s, idx) => {
+                  const Icon = s.icon;
+                  return (
+                    <div key={idx} className="relative flex items-start gap-2.5">
+                      {/* Node Dot */}
+                      <div
+                        className="absolute -left-5 top-0.5 w-4 h-4 rounded-full flex items-center justify-center shrink-0 -translate-x-1/2"
+                        style={{
+                          background: s.done ? meta.accent : "var(--card-bg)",
+                          border: `2px solid ${s.done ? meta.accent : "var(--glass-border)"}`,
+                          color: s.done ? "#ffffff" : "var(--text-tertiary)",
+                          boxShadow: s.done ? `0 0 8px ${meta.accent}66` : "none",
+                        }}
+                      >
+                        <Icon size={9} />
+                      </div>
+
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center justify-between gap-1">
+                          <span
+                            className={`text-xs font-bold ${
+                              s.done ? "text-primary" : "text-tertiary"
+                            }`}
+                          >
+                            {s.title}
+                          </span>
+                          {s.time && (
+                            <span className="text-[9.5px] text-tertiary font-medium shrink-0">
+                              {s.time}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-[10.5px] text-secondary mt-0.5 m-0 leading-tight">
+                          {s.subtitle}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Right Column: Destination Unit & People (7 cols) */}
+            <div className="md:col-span-7 space-y-3">
+              {/* Unit Card */}
+              <div className="p-3 rounded-xl bg-card-inner border border-glass flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div
+                    className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+                    style={{
+                      background: "rgba(124, 58, 237, 0.12)",
+                      border: "1px solid rgba(124, 58, 237, 0.25)",
+                      color: "var(--accent)",
+                    }}
+                  >
+                    <MdMeetingRoom size={16} />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[9.5px] font-bold uppercase tracking-wider text-tertiary m-0">
+                      Destination Unit
+                    </p>
+                    <p className="text-xs font-extrabold text-primary m-0 mt-0.5 break-words">
+                      {getUnitLabel(detail)}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* People Cards */}
+              <div className="space-y-2">
+                {isSamePerson || (!requester && resident) ? (
                   <PartyCard
                     icon={MdPerson}
-                    title="Resident (Unit Owner)"
+                    title="Resident / Recipient"
                     person={resident}
-                    fallback="No resident on record"
                     tone="resident"
                   />
+                ) : (
+                  <>
+                    <PartyCard
+                      icon={MdPerson}
+                      title="Resident (Unit Owner)"
+                      person={resident}
+                      fallback="No resident on record"
+                      tone="resident"
+                    />
+                    <PartyCard
+                      icon={MdPerson}
+                      title="Requested By"
+                      person={requester}
+                      tone="requester"
+                    />
+                  </>
+                )}
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   <PartyCard
-                    icon={MdPerson}
-                    title="Requested By"
-                    person={requester}
-                    tone="requester"
+                    icon={FaUserShield}
+                    title="Gate In By"
+                    person={arrivalGuard}
+                    fallback={isAtGate || isCollected ? "Gate Staff" : "Awaiting arrival"}
+                    tone="arrival"
                   />
-                </>
+                  <PartyCard
+                    icon={FaRegHandPaper}
+                    title="Handed Over By"
+                    person={deliveryGuard}
+                    fallback={isCollected ? "Gate Staff" : "Pending collection"}
+                    tone="delivery"
+                  />
+                </div>
+              </div>
+
+              {/* Optional Photo */}
+              {detail.image && (
+                <div className="pt-1">
+                  <a href={detail.image} target="_blank" rel="noreferrer" className="inline-block group">
+                    <img
+                      src={detail.image}
+                      alt={`Parcel from ${detail.courier_name || "courier"}`}
+                      className="rounded-xl border max-h-32 object-cover group-hover:opacity-95 transition-opacity"
+                      style={{ borderColor: "var(--glass-border)" }}
+                    />
+                  </a>
+                </div>
               )}
-
-              {/* Arrival Guard */}
-              <PartyCard
-                icon={FaUserShield}
-                title="Received at Gate By"
-                person={arrivalGuard}
-                fallback={isAtGate || isCollected ? "Gate Staff" : "Awaiting arrival"}
-                tone="arrival"
-              />
-
-              {/* Delivery Guard */}
-              <PartyCard
-                icon={FaRegHandPaper}
-                title="Handed Over By"
-                person={deliveryGuard}
-                fallback={isCollected ? "Gate Staff" : "Pending collection"}
-                tone="delivery"
-              />
             </div>
           </div>
-
-          {/* Optional Image */}
-          {detail.image ? (
-            <div>
-              <p className="text-[11px] font-extrabold uppercase tracking-wider text-tertiary mb-2">
-                Parcel Photo
-              </p>
-              <a href={detail.image} target="_blank" rel="noreferrer" className="inline-block group">
-                <img
-                  src={detail.image}
-                  alt={`Parcel from ${detail.courier_name || "courier"}`}
-                  className="rounded-2xl border max-h-48 object-cover group-hover:opacity-95 transition-opacity"
-                  style={{ borderColor: "var(--glass-border)" }}
-                />
-              </a>
-            </div>
-          ) : null}
         </div>
 
         {/* ── Footer ── */}
         <div
-          className="px-5 py-3.5 border-t shrink-0 flex items-center justify-end"
+          className="px-5 py-3 border-t shrink-0 flex items-center justify-end"
           style={{ borderColor: "var(--glass-border)" }}
         >
           <button
             type="button"
             onClick={onClose}
-            className="px-5 py-2 rounded-xl text-xs font-bold text-white transition-transform hover:scale-[1.02] active:scale-[0.98] cursor-pointer shadow-md"
+            className="px-4 py-1.5 rounded-xl text-xs font-bold text-white transition-transform hover:scale-[1.02] active:scale-[0.98] cursor-pointer shadow-md"
             style={{
               background: "linear-gradient(135deg, var(--accent), var(--accent-light))",
             }}

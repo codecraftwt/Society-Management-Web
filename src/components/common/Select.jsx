@@ -92,13 +92,21 @@ export default function Select({
     const el = (anchorRef && anchorRef.current) || triggerRef.current;
     if (!el) return null;
     const r = el.getBoundingClientRect();
-    const estH = Math.min(filtered.length * 36 + (showSearch ? 50 : 0) + 14, 350);
-    const menuW = Math.min(Math.max(r.width, 150), window.innerWidth - 16);
-    let top = r.bottom + 6;
-    if (top + estH > window.innerHeight - 8) top = Math.max(8, r.top - estH - 6);
+    const menuW = Math.min(Math.max(r.width, 160), window.innerWidth - 16);
     const left = Math.max(8, Math.min(r.left, window.innerWidth - menuW - 8));
-    return { top, left, width: menuW };
-  }, [filtered.length, showSearch, anchorRef]);
+
+    const spaceBelow = window.innerHeight - r.bottom - 12;
+    const spaceAbove = r.top - 12;
+    const openUp = spaceBelow < 180 && spaceAbove > spaceBelow;
+
+    const availableHeight = Math.max(100, openUp ? spaceAbove : spaceBelow);
+    const maxHeight = Math.max(120, Math.min(availableHeight - (showSearch ? 50 : 0) - 16, 300));
+    const totalMenuHeight = maxHeight + (showSearch ? 50 : 0) + 14;
+
+    let top = openUp ? Math.max(8, r.top - totalMenuHeight - 6) : r.bottom + 6;
+
+    return { top, left, width: menuW, maxHeight, openUp };
+  }, [showSearch, anchorRef]);
 
   useEffect(() => {
     if (!open) return;
@@ -305,7 +313,7 @@ export default function Select({
                 />
               </div>
             )}
-            <div className="sel-menu-scroll" style={{ maxHeight: 380, overflowY: "auto", padding: "4px 0" }}>
+            <div className="sel-menu-scroll" style={{ maxHeight: pos?.maxHeight || 280, overflowY: "auto", padding: "4px 0" }}>
               {filtered.length === 0 && (
                 <div style={{ padding: "12px 14px", fontSize: 13, color: "var(--text-secondary)" }}>
                   No options

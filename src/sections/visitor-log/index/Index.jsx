@@ -106,6 +106,16 @@ export default function Index({
       ),
     },
     {
+      key: "owner",
+      header: t("vlColOwner") || "Owner / Resident",
+      hiddenMobile: true,
+      render: (v) => (
+        <span style={{ color: "var(--text-primary)", fontWeight: 600, fontSize: "0.85rem" }}>
+          {v.owner || "—"}
+        </span>
+      ),
+    },
+    {
       key: "purpose",
       header: t("vlColPurpose") || "Purpose",
       hiddenMobile: true,

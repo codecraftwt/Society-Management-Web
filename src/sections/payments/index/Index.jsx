@@ -222,63 +222,8 @@ export default function Index({
 
   return (
     <div className="space-y-5">
-      {/* ── SUPER ADMIN CONTEXT BAR (IF SUPER ADMIN) ── */}
-      {isSuperAdmin && societyId && societyId !== "ALL" && (
-        <div
-          className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 sm:px-5 rounded-2xl bg-card border border-glass"
-          style={{ boxShadow: "var(--shadow-sm)" }}
-        >
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-emerald-500/12 border border-emerald-500/25 text-emerald-500">
-              <FaBuilding size={16} />
-            </div>
-            <div className="min-w-0">
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-xs font-semibold text-secondary uppercase tracking-wider">
-                  Active Society:
-                </span>
-                <span className="text-sm font-bold text-primary truncate">
-                  {workingSocietyName || `Society #${societyId}`}
-                </span>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/12 text-emerald-500 border border-emerald-500/25">
-                  Connected
-                </span>
-              </div>
-              <p className="text-[11px] text-secondary mt-0.5 truncate">
-                Viewing payment records & live financial inflow
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2 shrink-0">
-            <Select
-              className="input h-9 text-xs font-bold rounded-xl max-w-55"
-              value={societyId}
-              onChange={onSocietyChange}
-            >
-              {societies.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name}
-                </option>
-              ))}
-            </Select>
-
-            <GlobalButton
-              variant="secondary"
-              size="sm"
-              icon={MdSwapHoriz}
-              onClick={() => onSelectSociety && onSelectSociety("ALL")}
-              className="whitespace-nowrap"
-              title="Switch to another society"
-            >
-              Change Society
-            </GlobalButton>
-          </div>
-        </div>
-      )}
-
       {/* ── UNIFIED HEADER BAR ── */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
         <div className="flex items-center gap-3.5">
           <div
             style={{
@@ -308,15 +253,34 @@ export default function Index({
                 {totalCount} Total
               </span>
             </div>
-            <p className="text-secondary text-xs mt-0.5">
-              {t("paySubtitle") ||
-                "Live inflow register, verified bill receipts, maintenance and amenity payments"}
-            </p>
           </div>
         </div>
 
-        {/* Action Controls Toolbar */}
-        <div className="flex items-center gap-2.5 flex-wrap shrink-0">
+        {/* Action Controls Toolbar: Society Dropdown + Export CSV + Refresh */}
+        <div className="flex items-center gap-2.5 flex-wrap sm:flex-nowrap shrink-0">
+          {isSuperAdmin && societies.length > 0 && (
+            <Select
+              className="text-xs font-semibold"
+              value={societyId}
+              onChange={onSocietyChange}
+              style={{
+                height: 38,
+                fontSize: 13,
+                minWidth: 180,
+                background: "var(--card-inner-bg)",
+                borderColor: "var(--glass-border)",
+                color: "var(--text-primary)",
+                borderRadius: 12,
+              }}
+            >
+              {societies.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name}
+                </option>
+              ))}
+            </Select>
+          )}
+
           <GlobalButton
             variant="secondary"
             size="sm"

@@ -38,6 +38,7 @@ import SuperAdminVisitorReport from "./pages/SuperAdmin/reports/VisitorReport";
 import SuperAdminComplaintReport from "./pages/SuperAdmin/reports/ComplaintReport";
 import SuperAdminFinancialReport from "./pages/SuperAdmin/reports/FinancialReport";
 import SuperAdminExpenseReport from "./pages/SuperAdmin/reports/ExpenseReport";
+import SocietyThemeBrandingPage from "./pages/SuperAdmin/SocietyThemeBrandingPage";
 
 /* === SOCIETY ADMIN (FULL ACCESS) === */
 import AdminLayout from "./pages/Admin/AdminLayout";
@@ -47,6 +48,8 @@ import AssignFlat from "./pages/Admin/AssignFlat";
 import AssignParkingSlot from "./pages/Admin/AssignParkingSlot";
 import Guard from "./pages/Admin/Guard";
 import Notice from "./sections/notice";
+import Events from "./sections/events";
+import EventManagement from "./pages/Admin/EventManagement";
 import SocietyComplaints from "./sections/complaint";
 import Accountant from "./pages/Admin/Accountant";
 import ManageBill from "./sections/billing";
@@ -76,6 +79,7 @@ import ResidentBills from "./pages/Resident/ResidentBills";
 import ResidentVisitors from "./pages/Resident/ResidentVisitors";
 import ResidentReports from "./pages/Resident/ResidentReports";
 import ResidentNotices from "./pages/Resident/ResidentNotices";
+import ResidentEvents from "./pages/Resident/ResidentEvents";
 import ResidentComplaints from "./pages/Resident/ResidentComplaints";
 import ResidentPreApproval from "./pages/Resident/ResidentPreApproval";
 import ResidentParking from "./pages/Resident/ResidentParking";
@@ -171,6 +175,7 @@ function App() {
           <Route path="/superadmin" element={<SuperAdminLayout />}>
             <Route index element={<SuperAdminDashboard />} />
             <Route path="societies" element={<Socities />} />
+            <Route path="society-theme" element={<SocietyThemeBrandingPage />} />
             <Route path="society/:societyId/blocks" element={<Blocks />} />
             <Route path="floor/:floorId/flats" element={<Flats />} />
             <Route path="create-admin" element={<CreateSocietyAdmin />} />
@@ -205,6 +210,7 @@ function App() {
             <Route path="tenant-management" element={<TenantManagement />} />
             <Route path="emergency" element={<AdminEmergency />} />
             <Route path="maintenance" element={<MaintenancePage />} />
+            <Route path="events" element={<EventManagement />} />
             <Route
               path="superadmin-reports/visitor-report"
               element={<SuperAdminVisitorReport />}
@@ -268,6 +274,9 @@ function App() {
             <Route element={<PermissionRoute module="notice" />}>
               <Route path="notice" element={<Notice />} />
             </Route>
+            <Route element={<PermissionRoute module="events" />}>
+              <Route path="events" element={<EventManagement />} />
+            </Route>
             <Route element={<PermissionRoute module="complaints" />}>
               <Route path="complaints" element={<SocietyComplaints />} />
             </Route>
@@ -323,6 +332,7 @@ function App() {
             <Route path="visitors" element={<ResidentVisitors />} />
             <Route path="reports" element={<ResidentReports />} />
             <Route path="notices" element={<ResidentNotices />} />
+            <Route path="events" element={<ResidentEvents />} />
             <Route path="complaints" element={<ResidentComplaints />} />
             <Route path="myprofile" element={<MyProfile />} />
             <Route path="overview" element={<ResidentOverview />} />

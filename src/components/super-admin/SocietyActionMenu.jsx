@@ -22,6 +22,7 @@ export default function SocietyActionMenu({
   t,
 }) {
   const [open, setOpen] = useState(false);
+  const [openUpward, setOpenUpward] = useState(false);
   const menuRef = useRef(null);
 
   // Close on outside click
@@ -44,6 +45,16 @@ export default function SocietyActionMenu({
     return () => document.removeEventListener("keydown", handler);
   }, [open]);
 
+  const toggleMenu = (e) => {
+    e.stopPropagation();
+    if (!open && menuRef.current) {
+      const rect = menuRef.current.getBoundingClientRect();
+      const spaceBelow = window.innerHeight - rect.bottom;
+      setOpenUpward(spaceBelow < 220);
+    }
+    setOpen((p) => !p);
+  };
+
   const handleItem = (fn) => (e) => {
     e.stopPropagation();
     setOpen(false);
@@ -58,10 +69,7 @@ export default function SocietyActionMenu({
     >
       <button
         className="sa-action-dots"
-        onClick={(e) => {
-          e.stopPropagation();
-          setOpen((p) => !p);
-        }}
+        onClick={toggleMenu}
         aria-label={t("saSocActionsAria", "Society actions")}
         aria-haspopup="menu"
         aria-expanded={open}
@@ -70,7 +78,11 @@ export default function SocietyActionMenu({
       </button>
 
       {open && (
-        <div className="sa-action-dropdown" role="menu">
+        <div
+          className="sa-action-dropdown"
+          role="menu"
+          style={openUpward ? { top: "auto", bottom: "calc(100% + 6px)" } : {}}
+        >
           <button
             role="menuitem"
             className="sa-action-item"

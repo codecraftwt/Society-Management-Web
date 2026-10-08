@@ -10,6 +10,11 @@ import {
   MdClose,
   MdImage,
   MdRotateRight,
+  MdRotateLeft,
+  MdFlip,
+  MdRadioButtonUnchecked,
+  MdCropSquare,
+  MdCenterFocusStrong,
 } from "react-icons/md";
 import GlobalModal from "./GlobalModal";
 import GlobalButton from "./GlobalButton";
@@ -22,10 +27,10 @@ import "./ProfilePictureCropModal.css";
  *
  * Provides a sleek, interactive, touch & mouse friendly crop modal.
  * Features:
- *  - Mode Switcher: Full Image vs Crop Area
- *  - Perfect 1:1 Circular Crop Window with glowing accent border & alignment guides
- *  - Smooth Pan & Zoom slider controls + 90° Rotation + Reset button
- *  - Dual Live Avatar Preview (Full Profile & Compact Navbar size)
+ *  - Shape Switcher: Circle (1:1), Square (1:1), Full Image
+ *  - Interactive Canvas: Pan, Smooth Zoom (slider + mouse wheel + pinch), 90° Rotate Left/Right, Flip Horizontal
+ *  - Reset & Center Focus
+ *  - Dual Live Avatar Preview (Full Profile 54px & Compact Navbar 32px)
  *  - Actions: Choose Another, Cancel, Save Photo
  */
 export default function ProfilePictureCropModal({
@@ -37,17 +42,19 @@ export default function ProfilePictureCropModal({
 }) {
   const { t } = useLang();
 
-  // Mode: "FULL" (Original aspect ratio) or "CROP" (Interactive crop area)
+  // Mode: "FULL" (Original aspect ratio) or "CROP"
   const [mode, setMode] = useState("CROP"); // "FULL" | "CROP"
+  const [shape, setShape] = useState("CIRCLE"); // "CIRCLE" | "SQUARE"
 
   // Image source & loaded state
   const [imageObj, setImageObj] = useState(null);
   const [imageUrl, setImageUrl] = useState(null);
 
-  // Transform states for cropping (pan, zoom, rotation)
+  // Transform states for cropping (pan, zoom, rotation, flip)
   const [scale, setScale] = useState(1);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const [rotation, setRotation] = useState(0); // 0, 90, 180, 270
+  const [flipH, setFlipH] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const dragStartRef = useRef({ x: 0, y: 0 });
 
@@ -76,6 +83,7 @@ export default function ProfilePictureCropModal({
       setOffset({ x: 0, y: 0 });
       setScale(1);
       setRotation(0);
+      setFlipH(false);
     };
     img.src = url;
 
@@ -83,6 +91,22 @@ export default function ProfilePictureCropModal({
       URL.revokeObjectURL(url);
     };
   }, [file]);
+
+  // Wheel zoom handler
+  const handleWheel = useCallback((e) => {
+    if (mode !== "CROP") return;
+    e.preventDefault();
+    const delta = e.deltaY < 0 ? 0.08 : -0.08;
+    setScale((prev) => Math.min(Math.max(0.4, Number((prev + delta).toFixed(2))), 3.5));
+  }, [mode]);
+
+  // Attach wheel listener with passive: false
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    canvas.addEventListener("wheel", handleWheel, { passive: false });
+    return () => canvas.removeEventListener("wheel", handleWheel);
+  }, [handleWheel]);
 
   // Render Canvas in Crop Mode
   const renderCanvas = useCallback(() => {
@@ -120,86 +144,99 @@ export default function ProfilePictureCropModal({
     ctx.save();
     // Move origin to center of canvas + offset
     ctx.translate(width / 2 + offset.x, height / 2 + offset.y);
-    ctx.scale(scale, scale);
+    ctx.scale(scale * (flipH ? -1 : 1), scale);
     ctx.rotate((rotation * Math.PI) / 180);
     ctx.drawImage(imageObj, -rawDrawW / 2, -rawDrawH / 2, rawDrawW, rawDrawH);
     ctx.restore();
 
-    // Render Overlay Mask (Cinematic dark background with circular cutout)
+    // Render Overlay Mask (Dark background ONLY OUTSIDE the crop shape)
     ctx.save();
-    ctx.fillStyle = "rgba(8, 10, 16, 0.78)";
-    ctx.fillRect(0, 0, width, height);
-
-    // Create circular clear window in center (exact 1:1 circle)
-    ctx.globalCompositeOperation = "destination-out";
+    ctx.fillStyle = "rgba(10, 12, 20, 0.62)";
     ctx.beginPath();
-    const radius = Math.min(width, height) * 0.40;
-    ctx.arc(width / 2, height / 2, radius, 0, Math.PI * 2);
-    ctx.fill();
+    ctx.rect(0, 0, width, height);
 
-    // Draw alignment guides (rule of thirds inside circle) when dragging
+    const radius = Math.min(width, height) * 0.40;
+    if (shape === "CIRCLE") {
+      ctx.arc(width / 2, height / 2, radius, 0, Math.PI * 2, true);
+    } else {
+      const boxSize = radius * 2;
+      if (typeof ctx.roundRect === "function") {
+        ctx.roundRect(width / 2 - radius, height / 2 - radius, boxSize, boxSize, 20);
+      } else {
+        ctx.rect(width / 2 - radius, height / 2 - radius, boxSize, boxSize);
+      }
+    }
+    ctx.fill("evenodd");
+    ctx.restore();
+
+    // Draw alignment guides (rule of thirds inside window when dragging)
     if (isDragging) {
-      ctx.globalCompositeOperation = "source-over";
       ctx.save();
       ctx.beginPath();
-      ctx.arc(width / 2, height / 2, radius, 0, Math.PI * 2);
+      if (shape === "CIRCLE") {
+        ctx.arc(width / 2, height / 2, radius, 0, Math.PI * 2);
+      } else {
+        const boxSize = radius * 2;
+        if (typeof ctx.roundRect === "function") {
+          ctx.roundRect(width / 2 - radius, height / 2 - radius, boxSize, boxSize, 20);
+        } else {
+          ctx.rect(width / 2 - radius, height / 2 - radius, boxSize, boxSize);
+        }
+      }
       ctx.clip();
 
-      ctx.strokeStyle = "rgba(255, 255, 255, 0.18)";
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.35)";
       ctx.lineWidth = 1;
       ctx.setLineDash([4, 4]);
 
-      const d = radius * 2;
-      const x0 = width / 2 - radius;
-      const y0 = height / 2 - radius;
+      const left = width / 2 - radius;
+      const top = height / 2 - radius;
+      const size = radius * 2;
 
-      // Third lines
       ctx.beginPath();
-      ctx.moveTo(x0 + d / 3, y0);
-      ctx.lineTo(x0 + d / 3, y0 + d);
-      ctx.moveTo(x0 + (2 * d) / 3, y0);
-      ctx.lineTo(x0 + (2 * d) / 3, y0 + d);
-      ctx.moveTo(x0, y0 + d / 3);
-      ctx.lineTo(x0 + d, y0 + d / 3);
-      ctx.moveTo(x0, y0 + (2 * d) / 3);
-      ctx.lineTo(x0 + d, y0 + (2 * d) / 3);
+      ctx.moveTo(left + size / 3, top);
+      ctx.lineTo(left + size / 3, top + size);
+      ctx.moveTo(left + (size * 2) / 3, top);
+      ctx.lineTo(left + (size * 2) / 3, top + size);
+
+      ctx.moveTo(left, top + size / 3);
+      ctx.lineTo(left + size, top + size / 3);
+      ctx.moveTo(left, top + (size * 2) / 3);
+      ctx.lineTo(left + size, top + (size * 2) / 3);
       ctx.stroke();
       ctx.restore();
     }
 
-    // Draw circular border ring with accent glow
-    ctx.globalCompositeOperation = "source-over";
+    // Draw Outer Crop Window Glowing Border
+    ctx.save();
+    ctx.strokeStyle = "rgba(168, 85, 247, 0.95)";
+    ctx.lineWidth = 2.5;
+    ctx.shadowColor = "rgba(168, 85, 247, 0.6)";
+    ctx.shadowBlur = 12;
     ctx.beginPath();
-    ctx.arc(width / 2, height / 2, radius, 0, Math.PI * 2);
-    ctx.strokeStyle = "#a05aff";
-    ctx.lineWidth = 3.5;
-    ctx.shadowColor = "rgba(160, 90, 255, 0.75)";
-    ctx.shadowBlur = 14;
+    if (shape === "CIRCLE") {
+      ctx.arc(width / 2, height / 2, radius, 0, Math.PI * 2);
+    } else {
+      const boxSize = radius * 2;
+      if (typeof ctx.roundRect === "function") {
+        ctx.roundRect(width / 2 - radius, height / 2 - radius, boxSize, boxSize, 20);
+      } else {
+        ctx.rect(width / 2 - radius, height / 2 - radius, boxSize, boxSize);
+      }
+    }
     ctx.stroke();
-
-    // Draw subtle 4-cardinal tick marks on the border
-    ctx.lineWidth = 2;
-    ctx.strokeStyle = "rgba(255, 255, 255, 0.85)";
-    ctx.shadowBlur = 0;
-    const tickLen = 6;
-
-    ctx.beginPath();
-    // Top
-    ctx.moveTo(width / 2, height / 2 - radius - tickLen);
-    ctx.lineTo(width / 2, height / 2 - radius + tickLen);
-    // Bottom
-    ctx.moveTo(width / 2, height / 2 + radius - tickLen);
-    ctx.lineTo(width / 2, height / 2 + radius + tickLen);
-    // Left
-    ctx.moveTo(width / 2 - radius - tickLen, height / 2);
-    ctx.lineTo(width / 2 - radius + tickLen, height / 2);
-    // Right
-    ctx.moveTo(width / 2 + radius - tickLen, height / 2);
-    ctx.lineTo(width / 2 + radius + tickLen, height / 2);
-    ctx.stroke();
-
     ctx.restore();
-  }, [imageObj, scale, offset, rotation, isDragging]);
+
+    // Render Center Point Crosshair
+    ctx.save();
+    ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
+    ctx.shadowColor = "rgba(0, 0, 0, 0.6)";
+    ctx.shadowBlur = 4;
+    ctx.beginPath();
+    ctx.arc(width / 2, height / 2, 2.5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }, [imageObj, offset, scale, rotation, flipH, isDragging, shape]);
 
   // Re-render canvas whenever transform or image changes
   useEffect(() => {
@@ -249,14 +286,14 @@ export default function ProfilePictureCropModal({
 
     ctx.save();
     ctx.translate(size / 2 + offset.x * (size / 340), size / 2 + offset.y * (size / 340));
-    ctx.scale(scale, scale);
+    ctx.scale(scale * (flipH ? -1 : 1), scale);
     ctx.rotate((rotation * Math.PI) / 180);
     ctx.drawImage(imageObj, -rawDrawW / 2, -rawDrawH / 2, rawDrawW, rawDrawH);
     ctx.restore();
 
     const dataUrl = offscreen.toDataURL("image/png");
     setPreviewAvatarUrl(dataUrl);
-  }, [imageObj, imageUrl, mode, scale, offset, rotation]);
+  }, [imageObj, imageUrl, mode, scale, offset, rotation, flipH]);
 
   // Mouse & Touch Dragging Handlers
   const handlePointerDown = (e) => {
@@ -281,14 +318,18 @@ export default function ProfilePictureCropModal({
     setIsDragging(false);
   };
 
-  // Zoom controls
+  // Zoom and transform controls
   const handleZoomIn = () => setScale((s) => Math.min(3.5, Number((s + 0.15).toFixed(2))));
   const handleZoomOut = () => setScale((s) => Math.max(0.4, Number((s - 0.15).toFixed(2))));
-  const handleRotate = () => setRotation((r) => (r + 90) % 360);
+  const handleRotateRight = () => setRotation((r) => (r + 90) % 360);
+  const handleRotateLeft = () => setRotation((r) => (r - 90 + 360) % 360);
+  const handleFlipH = () => setFlipH((f) => !f);
+  const handleCenter = () => setOffset({ x: 0, y: 0 });
   const handleResetTransform = () => {
     setScale(1);
     setOffset({ x: 0, y: 0 });
     setRotation(0);
+    setFlipH(false);
   };
 
   // Export / Save Handler
@@ -296,15 +337,13 @@ export default function ProfilePictureCropModal({
     if (!file || !imageObj) return;
 
     if (mode === "FULL") {
-      // Pass original raw file
       onSave(file);
       onClose();
       return;
     }
 
-    // Export cropped canvas image to File
     const exportCanvas = document.createElement("canvas");
-    const outputSize = 512; // High resolution square export
+    const outputSize = 512;
     exportCanvas.width = outputSize;
     exportCanvas.height = outputSize;
     const ctx = exportCanvas.getContext("2d");
@@ -334,16 +373,19 @@ export default function ProfilePictureCropModal({
     const rawDrawH = isRotated90or270 ? baseW : baseH;
 
     ctx.save();
-    // Clip circular output
     ctx.beginPath();
-    ctx.arc(outputSize / 2, outputSize / 2, outputSize / 2, 0, Math.PI * 2);
+    if (shape === "CIRCLE") {
+      ctx.arc(outputSize / 2, outputSize / 2, outputSize / 2, 0, Math.PI * 2);
+    } else {
+      ctx.roundRect(0, 0, outputSize, outputSize, 32);
+    }
     ctx.clip();
 
     ctx.translate(
       outputSize / 2 + offset.x * (outputSize / 340),
       outputSize / 2 + offset.y * (outputSize / 340)
     );
-    ctx.scale(scale, scale);
+    ctx.scale(scale * (flipH ? -1 : 1), scale);
     ctx.rotate((rotation * Math.PI) / 180);
     ctx.drawImage(imageObj, -rawDrawW / 2, -rawDrawH / 2, rawDrawW, rawDrawH);
     ctx.restore();
@@ -377,28 +419,61 @@ export default function ProfilePictureCropModal({
       size="md"
     >
       <div className="pp-modal-wrap">
-        {/* Mode Selector Segmented Control */}
-        <div className="pp-mode-tabs">
-          <button
-            type="button"
-            onClick={() => setMode("FULL")}
-            className={`pp-mode-tab ${mode === "FULL" ? "active" : ""}`}
-          >
-            <MdImage size={17} />
-            <span>{t("ppModeFull", "Full Image")}</span>
-          </button>
+        {/* Mode & Shape Segmented Controls */}
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-2.5">
+          <div className="pp-mode-tabs w-full sm:w-auto">
+            <button
+              type="button"
+              onClick={() => setMode("CROP")}
+              className={`pp-mode-tab ${mode === "CROP" ? "active" : ""}`}
+            >
+              <MdCrop size={17} />
+              <span>{t("ppModeCrop", "Crop Area")}</span>
+            </button>
 
-          <button
-            type="button"
-            onClick={() => setMode("CROP")}
-            className={`pp-mode-tab ${mode === "CROP" ? "active" : ""}`}
-          >
-            <MdCrop size={17} />
-            <span>{t("ppModeCrop", "Crop Area")}</span>
-          </button>
+            <button
+              type="button"
+              onClick={() => setMode("FULL")}
+              className={`pp-mode-tab ${mode === "FULL" ? "active" : ""}`}
+            >
+              <MdImage size={17} />
+              <span>{t("ppModeFull", "Full Image")}</span>
+            </button>
+          </div>
+
+          {mode === "CROP" && (
+            <div className="flex items-center gap-1.5 p-1 rounded-xl bg-card-inner border border-glass">
+              <button
+                type="button"
+                onClick={() => setShape("CIRCLE")}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+                  shape === "CIRCLE"
+                    ? "bg-accent text-white shadow-sm"
+                    : "text-secondary hover:text-primary"
+                }`}
+                title="Circular Crop"
+              >
+                <MdRadioButtonUnchecked size={15} />
+                <span>Circle</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setShape("SQUARE")}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+                  shape === "SQUARE"
+                    ? "bg-accent text-white shadow-sm"
+                    : "text-secondary hover:text-primary"
+                }`}
+                title="Square Crop"
+              >
+                <MdCropSquare size={15} />
+                <span>Square</span>
+              </button>
+            </div>
+          )}
         </div>
 
-        {/* Canvas & Viewport Box (Square 340x340 for 100% Perfect Circle) */}
+        {/* Canvas & Viewport Box */}
         <div className="pp-canvas-box">
           {mode === "FULL" ? (
             <img
@@ -429,7 +504,7 @@ export default function ProfilePictureCropModal({
           {/* Hint Badge */}
           {mode === "CROP" && (
             <div className="pp-hint-pill">
-              💡 {t("ppDragZoomHint", "Drag to position • Use controls to zoom & rotate")}
+              💡 {t("ppDragZoomHint", "Drag to position • Scroll or slider to zoom")}
             </div>
           )}
         </div>
@@ -437,6 +512,7 @@ export default function ProfilePictureCropModal({
         {/* Interactive Controls Bar (Crop Mode Only) */}
         {mode === "CROP" && (
           <div className="pp-control-bar">
+            {/* Zoom Slider */}
             <div className="pp-slider-group">
               <button
                 type="button"
@@ -472,14 +548,42 @@ export default function ProfilePictureCropModal({
               </span>
             </div>
 
-            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            {/* Quick Actions (Rotate L/R, Flip, Center, Reset) */}
+            <div className="flex items-center gap-1.5 shrink-0 flex-wrap">
               <button
                 type="button"
-                onClick={handleRotate}
-                title={t("ppRotate", "Rotate 90°")}
+                onClick={handleRotateLeft}
+                title="Rotate Left 90°"
                 className="pp-btn-icon"
               >
-                <MdRotateRight size={18} />
+                <MdRotateLeft size={17} />
+              </button>
+
+              <button
+                type="button"
+                onClick={handleRotateRight}
+                title={t("ppRotate", "Rotate Right 90°")}
+                className="pp-btn-icon"
+              >
+                <MdRotateRight size={17} />
+              </button>
+
+              <button
+                type="button"
+                onClick={handleFlipH}
+                title="Flip Horizontal"
+                className={`pp-btn-icon ${flipH ? "text-accent border-accent" : ""}`}
+              >
+                <MdFlip size={17} />
+              </button>
+
+              <button
+                type="button"
+                onClick={handleCenter}
+                title="Center Photo"
+                className="pp-btn-icon"
+              >
+                <MdCenterFocusStrong size={17} />
               </button>
 
               <button
@@ -499,10 +603,10 @@ export default function ProfilePictureCropModal({
         <div className="pp-preview-card">
           <div className="pp-preview-avatars">
             <div className="pp-avatar-ring-large" title={t("ppProfilePreview", "Profile Preview")}>
-              <UserAvatar name="Preview" src={previewAvatarUrl} size={54} radius={999} />
+              <UserAvatar name="Preview" src={previewAvatarUrl} size={54} radius={shape === "CIRCLE" ? 999 : 14} />
             </div>
             <div className="pp-avatar-ring-small" title={t("ppNavbarPreview", "Navbar Preview")}>
-              <UserAvatar name="Preview" src={previewAvatarUrl} size={32} radius={999} />
+              <UserAvatar name="Preview" src={previewAvatarUrl} size={32} radius={shape === "CIRCLE" ? 999 : 8} />
             </div>
           </div>
 
@@ -511,7 +615,7 @@ export default function ProfilePictureCropModal({
               ✨ {t("ppLivePreviewTitle", "Live Avatar Preview")}
             </div>
             <div className="pp-preview-sub">
-              {t("ppLivePreviewSubtitle", "Preview how your photo appears in your profile header and navigation bar.")}
+              {t("ppLivePreviewSubtitle", "Real-time preview across resident directory, mobile app cards, and navigation.")}
             </div>
           </div>
         </div>
@@ -551,4 +655,3 @@ export default function ProfilePictureCropModal({
     </GlobalModal>
   );
 }
-

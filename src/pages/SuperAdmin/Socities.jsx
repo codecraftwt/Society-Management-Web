@@ -70,26 +70,10 @@ export default function Societies() {
   // Society detail modal state
   const [detailSociety, setDetailSociety] = useState(null);
 
-  const openThemeModal = useCallback(async (s) => {
-    setThemeSociety(s);
-    setShowThemeModal(true);
-    setThemeLoading(true);
-    try {
-      const res = await API.get(`/societies/${s.id}/theme`);
-      if (res.data?.success && res.data.configured) {
-        setPrimaryColor(res.data.theme.primary || "#a05aff");
-        setAccentColor(res.data.theme.accent || "#9e58ff");
-      } else {
-        setPrimaryColor("#a05aff");
-        setAccentColor("#9e58ff");
-      }
-    } catch {
-      setPrimaryColor("#a05aff");
-      setAccentColor("#9e58ff");
-    } finally {
-      setThemeLoading(false);
-    }
-  }, []);
+  const openThemeModal = useCallback((s) => {
+    const url = `/superadmin/society-theme?societyId=${s.id}&societyName=${encodeURIComponent(s.name)}`;
+    navigate(url);
+  }, [navigate]);
 
   const saveSocietyTheme = async () => {
     if (!themeSociety) return;

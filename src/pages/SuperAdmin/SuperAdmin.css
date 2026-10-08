@@ -594,7 +594,8 @@ html.light.role-theme .sa-btn-ghost:hover {
   top: calc(100% + 6px);
   right: 0;
   z-index: 4000;
-  min-width: 120px;
+  min-width: 170px;
+  width: max-content;
   background: var(--card-bg);
   border: 1px solid var(--glass-border);
   border-radius: 12px;
@@ -619,6 +620,16 @@ html.light.role-theme .sa-action-dropdown {
   border-color: var(--glass-border);
   box-shadow: var(--shadow-md);
 }
+
+.sa-modal-icon {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+.sa-modal-icon svg {
+  display: block !important;
+  margin: auto !important;
+}
 .sa-action-item {
   display: flex;
   align-items: center;
@@ -633,6 +644,7 @@ html.light.role-theme .sa-action-dropdown {
   font-weight: 500;
   cursor: pointer;
   text-align: left;
+  white-space: nowrap;
   transition: background 0.12s;
 }
 .sa-action-item:hover {

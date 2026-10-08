@@ -19,6 +19,7 @@ const formatVisitor = (v) => {
   const block = flat?.Floor?.Block?.name || flat?.Block?.name || "";
   const floor = flat?.Floor?.floor_number;
   const flatNo = flat?.flat_number || "NA";
+  const ownerName = flat?.User?.name || v.resident_name || v.owner_name || v.resident?.name || "—";
 
   const flatLabel = [
     block,
@@ -31,6 +32,7 @@ const formatVisitor = (v) => {
     name:    v.visitor_name,
     mobile:  v.mobile || "—",
     flat:    flatLabel,
+    owner:   ownerName,
     purpose: v.purpose,
     date:    new Date(v.entry_time).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }),
     intime:  new Date(v.entry_time).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }),

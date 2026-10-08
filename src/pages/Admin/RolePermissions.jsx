@@ -52,7 +52,7 @@ const MODULE_GROUPS = {
   "Overview & Administration": ["dashboard", "settings"],
   "Community & Property": ["resident", "property", "parking_slots", "flat_history", "tenant_management"],
   "Finance & Operations": ["manage_bills", "payments", "expenses", "general_ledger", "financial_audit_log", "maintenance", "accounting", "accountant", "amenities"],
-  "Communication & Support": ["notice", "complaints", "emergency"],
+  "Communication & Support": ["notice", "events", "complaints", "emergency"],
   "Security & Logs": ["guard", "visitor_logs", "parcel"],
   "Reports & Documents": ["reports", "society_documents"],
 };
@@ -68,6 +68,7 @@ const MODULE_META = {
   visitor_logs: { label: "Visitor Logs", icon: MdOutlineBadge, desc: "Gate check-ins, deliveries, guest activity, and entries" },
   parcel: { label: "Parcels", icon: MdInventory2, desc: "Read-only oversight of society parcel records and gate handovers" },
   notice: { label: "Notices", icon: MdCampaign, desc: "Broadcast, draft, view, and publish society-wide circulars" },
+  events: { label: "Events", icon: MdCampaign, desc: "Publish and showcase society events, photo galleries, and video highlights" },
   complaints: { label: "Complaints", icon: MdReportProblem, desc: "Track, discuss, and update maintenance issue tickets" },
   accountant: { label: "Accountant", icon: MdAccountBalance, desc: "Appoint and manage assigned society accountants" },
   manage_bills: { label: "Manage Bills", icon: MdOutlineReceiptLong, desc: "Create, distribute, and collect utility & maintenance dues" },

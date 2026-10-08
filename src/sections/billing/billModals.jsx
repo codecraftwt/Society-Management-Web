@@ -40,9 +40,9 @@ export function BillCreateModal({ variant, isOpen, onClose, formData, setFormDat
                 value={formData.flat_id}
                 onChange={e => setFormData({ ...formData, flat_id: e.target.value })}>
                 <option value="">{t("billChooseFlat") || "Choose Flat"}</option>
-                {flats.map(f => (
+                {(flats || []).filter(f => f.User?.name || f.resident_id || f.resident_name).map(f => (
                   <option key={f.id} value={f.id}>
-                    {f.flat_number} ({f.Block?.name}) – {f.User?.name || t("billNoResident") || "No Resident"}
+                    {f.flat_number}{f.Block?.name ? ` (${f.Block.name})` : ""} – {f.User?.name || f.resident_name || "Resident"}
                   </option>
                 ))}
               </Select>
@@ -191,9 +191,9 @@ export function BillCreateModal({ variant, isOpen, onClose, formData, setFormDat
               value={formData.flat_id}
               onChange={e => setFormData({ ...formData, flat_id: e.target.value })}>
               <option value="">{t("billChooseFlat") || "Choose Flat"}</option>
-              {flats.map(f => (
+              {(flats || []).filter(f => f.User?.name || f.resident_id || f.resident_name).map(f => (
                 <option key={f.id} value={f.id}>
-                  {f.flat_number} ({f.Block?.name}){" – "}{f.User?.name || t("billNoResident") || "No Resident"}
+                  {f.flat_number}{f.Block?.name ? ` (${f.Block.name})` : ""} – {f.User?.name || f.resident_name || "Resident"}
                 </option>
               ))}
             </Select>

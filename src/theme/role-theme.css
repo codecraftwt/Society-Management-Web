@@ -1037,6 +1037,9 @@ html.role-theme .sa-modal-icon,
 html.light.role-theme .sa-modal-icon {
   width: 44px;
   height: 44px;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
   border-radius: 14px;
   background: linear-gradient(135deg, var(--accent), var(--accent-light)) !important;
   color: #ffffff !important;

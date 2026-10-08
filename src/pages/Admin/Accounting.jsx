@@ -309,8 +309,32 @@ export default function Accounting({ initialTab = "overview" }) {
             </div>
           </div>
 
-          {/* Year dropdown + Reload button */}
-          <div className="flex items-center gap-2.5 shrink-0">
+          {/* Society dropdown (SuperAdmin) + Year dropdown + Reload button */}
+          <div className="flex items-center gap-2.5 shrink-0 flex-wrap sm:flex-nowrap">
+            {isSuperAdmin && (
+              <Select
+                className="text-xs font-semibold"
+                placeholder={t("accSelectSociety")}
+                value={societyId}
+                onChange={handleSocietyChange}
+                style={{
+                  height: 38,
+                  fontSize: 13,
+                  minWidth: 180,
+                  background: "var(--card-inner-bg)",
+                  borderColor: "var(--glass-border)",
+                  color: "var(--text-primary)",
+                  borderRadius: 12,
+                }}
+              >
+                {societies.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name}
+                  </option>
+                ))}
+              </Select>
+            )}
+
             <div style={{ width: 125 }}>
               <Select
                 value={year}
@@ -364,7 +388,7 @@ export default function Accounting({ initialTab = "overview" }) {
           </div>
         </div>
 
-        {/* Toggle buttons (SlidingTabs) + Society Select on their own line */}
+        {/* Toggle buttons (SlidingTabs) on their own line */}
         <div className="flex items-center justify-between gap-3 flex-wrap sm:flex-nowrap w-full">
           <div className="flex items-center overflow-x-auto max-w-full pb-0.5" style={{ scrollbarWidth: "none" }}>
             <SlidingTabs
@@ -373,20 +397,6 @@ export default function Accounting({ initialTab = "overview" }) {
               onChange={setTab}
             />
           </div>
-
-          {isSuperAdmin && (
-            <div className="flex items-center gap-2.5 shrink-0">
-              <Select
-                className="input"
-                placeholder={t("accSelectSociety")}
-                value={societyId}
-                onChange={handleSocietyChange}
-                style={{ height: 40, fontSize: 13, minWidth: 200 }}
-              >
-                {societies.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-              </Select>
-            </div>
-          )}
         </div>
       </div>
 

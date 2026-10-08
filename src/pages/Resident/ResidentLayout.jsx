@@ -98,6 +98,12 @@ function ResidentLayoutInner() {
       group: "ACTIVITY & VISITORS",
     },
     {
+      label: t("menuEvents", "Events"),
+      path: `${base}/events`,
+      icon: MdCampaign,
+      group: "ACTIVITY & VISITORS",
+    },
+    {
       label: t("menuReports"),
       path: `${base}/reports`,
       icon: MdAssignment,

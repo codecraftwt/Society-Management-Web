@@ -231,6 +231,15 @@ export const PERMISSIONS = {
     FAMILY_MEMBER: ['view', 'edit_profile'],
     GUARD: ['view', 'edit_profile'],
   },
+  events: {
+    ADMIN: ['view', 'create', 'edit', 'delete'],
+    SOCIETY_ADMIN: ['view', 'create', 'edit', 'delete'],
+    COMMITTEE_MEMBER: ['view', 'create', 'edit', 'delete'],
+    ACCOUNTANT: [],
+    RESIDENT: ['view'],
+    FAMILY_MEMBER: ['view'],
+    GUARD: [],
+  },
 };
 
 /**

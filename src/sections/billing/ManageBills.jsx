@@ -237,7 +237,7 @@ export default function ManageBills({ variant }) {
   const loadFlats = async (targetSocId = filterSocietyId) => {
     try {
       const headers = (isSuperAdmin && targetSocId) ? { "x-society-id": targetSocId } : {};
-      const res = await API.get("/flats/assigned", { headers });
+      const res = await API.get("/flats/assigned?limit=1000", { headers });
       const d = res.data;
       setFlats(Array.isArray(d) ? d : (d?.data || d?.flats || []));
     } catch (e) { console.error(e); }

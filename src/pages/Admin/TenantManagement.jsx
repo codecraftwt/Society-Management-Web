@@ -520,21 +520,21 @@ export default function TenantManagement() {
         <StatCard
           tone="success"
           value={tabCounts.APPROVED || 0}
-          label={t("tmApproved") || "Approved"}
+          label={t("tmTabApproved") || "Approved"}
           icon={MdCheckCircle}
           subtext="Approved & active"
         />
         <StatCard
           tone="danger"
           value={tabCounts.REJECTED || 0}
-          label={t("tmRejected") || "Rejected"}
+          label={t("tmTabRejected") || "Rejected"}
           icon={MdCancel}
           subtext="Declined requests"
         />
         <StatCard
           tone="info"
           value={tabCounts.LIVING || 0}
-          label={t("tmLiving") || "Living"}
+          label={t("tmTabLiving") || "Living"}
           icon={MdHome}
           subtext="Currently residing"
         />

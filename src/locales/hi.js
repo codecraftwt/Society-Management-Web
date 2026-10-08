@@ -13,6 +13,25 @@ const hi = {
   active: "सक्रिय",
   since: "से",
 
+  // Events
+  events: "कार्यक्रम",
+  menuEvents: "कार्यक्रम",
+  adminMenuEvents: "कार्यक्रम",
+  eventTitle: "कार्यक्रम का शीर्षक",
+  eventTitleRequired: "कार्यक्रम का शीर्षक आवश्यक है",
+  eventFormTitle: "नया कार्यक्रम बनाएं",
+  eventFormEditTitle: "कार्यक्रम संपादित करें",
+  eventPhotos: "फ़ोटो",
+  eventVideos: "वीडियो",
+  eventDate: "कार्यक्रम तिथि",
+  eventTime: "कार्यक्रम समय",
+  eventLocation: "स्थान",
+  eventActive: "कार्यक्रम प्रकाशित करें",
+  eventCreatedOk: "कार्यक्रम सफलतापूर्वक बनाया गया",
+  eventUpdatedOk: "कार्यक्रम सफलतापूर्वक अपडेट किया गया",
+  eventDeletedOk: "कार्यक्रम सफलतापूर्वक हटा दिया गया",
+  eventConfirmDelete: "क्या आप वाकई इस कार्यक्रम को हटाना चाहते हैं?",
+
   // Tabs
   tabProfile: "प्रोफ़ाइल",
   tabSecurity: "सुरक्षा",
@@ -4099,16 +4118,27 @@ cpwSuccessMsg:            "पासवर्ड सफलतापूर्व�
   resRoleTenant: "किरायेदार (Tenant)",
 
   // Super Admin sidebar menu
+  saMenuDashboard: "डैशबोर्ड",
+  saMenuSocieties: "सोसायटियाँ",
+  saMenuAllResidents: "सभी निवासी",
+  saMenuTenantApprovals: "किरायेदार अनुमोदन",
   saMenuAllComplaints: "सभी शिकायतें",
   saMenuAllNotices: "सभी नोटिस",
+  saMenuEvents: "इवेंट प्रबंधन",
   saMenuManageGuards: "गार्ड प्रबंधित करें",
   saMenuVisitorLogs: "विज़िटर लॉग्स",
+  saMenuParcels: "पार्सल",
+  saMenuSOS: "आपातकालीन अलर्ट",
   saMenuAccountant: "अकाउंटेंट/वित्त",
+  saMenuAccounting: "अकाउंटिंग",
+  saMenuPayments: "भुगतान",
   saMenuManageBills: "बिल प्रबंधित करें",
   saMenuMaintenance: "रखरखाव",
   saMenuParking: "पार्किंग प्रबंधन",
   saMenuSystemReports: "सिस्टम रिपोर्ट",
   allSocietiesGlobal: "सभी सोसायटियाँ (ग्लोबल)",
+  tmTotalTenants: "कुल किरायेदार",
+  tmLiving: "वर्तमान में रह रहे",
 
   // Complaints
   showingComplaintsAllSocieties: "सभी सोसायटियों से शिकायतें दिखाई जा रही हैं",

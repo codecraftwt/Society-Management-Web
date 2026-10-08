@@ -6,7 +6,6 @@ import { hasPermission } from "../../utils/permissions";
 import { toast } from "react-toastify";
 import { useLang } from "../../context/LanguageContext";
 import Select from "../../components/common/Select";
-import SlidingTabs from "../../components/common/SlidingTabs";
 import ExpandableSearch from "../../components/common/ExpandableSearch";
 import GlobalModal from "../../components/common/GlobalModal";
 import StatCard from "../../components/common/StatCard";
@@ -327,16 +326,16 @@ export default function AdminEmergency() {
         </div>
 
         <div className="flex items-center gap-2.5 flex-nowrap shrink-0 overflow-x-auto max-w-full pb-1" style={{ scrollbarWidth: "none" }}>
-          {/* Status Sliding Tabs */}
-          <SlidingTabs
+          {/* Status Filter */}
+          <Select
             value={statusFilter}
-            onChange={(val) => setStatusFilter(val)}
-            items={[
-              { id: "ALL", label: t("sosStatusAll"), badge: metrics.total },
-              { id: "ACTIVE", label: t("sosStatusActive"), badge: metrics.active },
-              { id: "RESOLVED", label: t("sosStatusResolved"), badge: metrics.resolved },
-            ]}
-          />
+            onChange={(e) => setStatusFilter(e.target.value)}
+            style={{ height: 42, minHeight: 42, fontSize: 13, borderRadius: 12, minWidth: 140 }}
+          >
+            <option value="ALL">{t("sosStatusAll", "All Status")} ({metrics.total})</option>
+            <option value="ACTIVE">{t("sosStatusActive", "Active")} ({metrics.active})</option>
+            <option value="RESOLVED">{t("sosStatusResolved", "Resolved")} ({metrics.resolved})</option>
+          </Select>
 
           {/* Expandable Search */}
           <ExpandableSearch

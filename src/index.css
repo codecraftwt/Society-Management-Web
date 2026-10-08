@@ -3168,6 +3168,223 @@
     color: var(--text-secondary);
   }
 
+  /* ── Chat & Discussion Panel ── */
+  .chat-panel {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+    background: transparent;
+  }
+  .chat-panel__header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    background: var(--card-inner-bg);
+    border-bottom: 1px solid var(--glass-border);
+    flex-shrink: 0;
+  }
+  .chat-panel__header-icon {
+    color: var(--accent);
+  }
+  .chat-panel__header-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+  .chat-panel__count {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 7px;
+    border-radius: 999px;
+    background: var(--accent-soft, rgba(160, 90, 255, 0.15));
+    color: var(--accent);
+    border: 1px solid rgba(160, 90, 255, 0.25);
+  }
+  .chat-clear-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    border-radius: 7px;
+    font-size: 11px;
+    font-weight: 600;
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+    border: 1px solid rgba(239, 68, 68, 0.25);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .chat-clear-btn:hover {
+    background: #ef4444;
+    color: #ffffff;
+  }
+  .chat-panel__messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-height: 0;
+  }
+  .chat-panel__empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    min-height: 140px;
+    font-size: 12.5px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    text-align: center;
+    font-style: italic;
+  }
+  .chat-panel__bubble-wrap--mine {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 3px;
+    max-width: 85%;
+    align-self: flex-end;
+  }
+  .chat-panel__bubble-wrap--theirs {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 3px;
+    max-width: 85%;
+    align-self: flex-start;
+  }
+  .chat-panel__sender {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-secondary);
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding-left: 4px;
+  }
+  .chat-panel__sender--admin {
+    color: var(--accent);
+  }
+  .chat-panel__admin-badge {
+    font-size: 9px;
+    font-weight: 700;
+    padding: 1px 5px;
+    border-radius: 4px;
+    background: var(--accent-soft, rgba(160, 90, 255, 0.15));
+    color: var(--accent);
+    border: 1px solid rgba(160, 90, 255, 0.3);
+    text-transform: uppercase;
+  }
+  .chat-panel__bubble {
+    padding: 9px 13px;
+    border-radius: 14px;
+    font-size: 13px;
+    line-height: 1.45;
+    word-break: break-word;
+    position: relative;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  }
+  .chat-panel__bubble--mine {
+    background: var(--accent);
+    color: #ffffff;
+    border-bottom-right-radius: 3px;
+    border: 1px solid color-mix(in srgb, var(--accent) 80%, white);
+  }
+  .chat-panel__bubble--theirs {
+    background: var(--card-inner-bg);
+    color: var(--text-primary);
+    border: 1px solid var(--glass-border);
+    border-bottom-left-radius: 3px;
+  }
+  .chat-panel__bubble--optimistic {
+    opacity: 0.75;
+  }
+  .chat-msg-delete-btn {
+    width: 22px;
+    height: 22px;
+    border-radius: 6px;
+    background: rgba(239, 68, 68, 0.12);
+    border: none;
+    color: #ef4444;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.6;
+    transition: opacity 0.15s, transform 0.15s;
+    flex-shrink: 0;
+  }
+  .chat-msg-delete-btn:hover {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+  .chat-panel__timestamp {
+    font-size: 10px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    opacity: 0.75;
+    padding: 0 4px;
+  }
+  .chat-panel__input-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    background: var(--card-inner-bg);
+    border-top: 1px solid var(--glass-border);
+    flex-shrink: 0;
+  }
+  .chat-panel__textarea {
+    flex: 1;
+    min-height: 38px;
+    max-height: 100px;
+    padding: 8px 12px;
+    border-radius: 12px;
+    background: var(--card-bg);
+    border: 1px solid var(--glass-border);
+    color: var(--text-primary);
+    font-size: 13px;
+    resize: none;
+    outline: none;
+    font-family: inherit;
+    line-height: 1.4;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .chat-panel__textarea:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px var(--accent-soft, rgba(160, 90, 255, 0.15));
+  }
+  .chat-panel__send-btn {
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .chat-panel__send-btn--active {
+    background: var(--accent);
+    color: #ffffff;
+    box-shadow: 0 4px 12px color-mix(in srgb, var(--accent) 35%, transparent);
+  }
+  .chat-panel__send-btn--active:hover {
+    transform: scale(1.05);
+  }
+  .chat-panel__send-btn--inactive {
+    background: var(--card-inner-bg);
+    color: var(--text-secondary);
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
 
 
   .resident-block {
@@ -4969,15 +5186,15 @@ html.light .sa-btn-ghost:hover:not(:disabled) {
 .modal-content,
 .modal-pop,
 .modal-container,
-div[style*="position: fixed"] > div[style*="max-width"],
-div[style*="position: fixed"] > div[style*="maxWidth"] {
+div[style*="position: fixed"]:not(.media-lightbox-overlay) > div[style*="max-width"],
+div[style*="position: fixed"]:not(.media-lightbox-overlay) > div[style*="maxWidth"] {
   animation: popupScaleIn 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
 }
 
 /* 4. Modal Light Theme Matching Home Page */
 html.light .sa-modal,
-html.light div[style*="position: fixed"] > div[style*="max-width"],
-html.light div[style*="position: fixed"] > div[style*="maxWidth"] {
+html.light div[style*="position: fixed"]:not(.media-lightbox-overlay) > div[style*="max-width"],
+html.light div[style*="position: fixed"]:not(.media-lightbox-overlay) > div[style*="maxWidth"] {
   background: #ffffff !important;
   border: 1px solid rgba(15, 23, 42, 0.12) !important;
   color: #0f172a !important;

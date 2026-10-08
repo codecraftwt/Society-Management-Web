@@ -743,17 +743,70 @@ function ResidentRequestsPanel({ allSlots, onSlotAssigned }) {
 
 
 
-/* ═══════════════════════════════════════════
-   Main
-═══════════════════════════════════════════ */
 export default function AssignParkingSlot({ hideHeader = false, societyId } = {}) {
   const { t } = useLang();
   const { user } = useAuthContext();
+  const isSuperAdmin = user?.role === "SUPER_ADMIN";
   const { showUnauthorized, showError } = useCustomAlert();
   const isCommittee = isCommitteeMember(user);
 
   const [mainTab, setMainTab] = useState("slots");
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+
+  /* SuperAdmin society filter */
+  const [filterSocietyId, setFilterSocietyId] = useState(() => {
+    if (societyId) return societyId;
+    const stored = localStorage.getItem("superadmin_society_filter");
+    return stored && stored !== "ALL" ? stored : "";
+  });
+  const [societiesList, setSocietiesList] = useState([]);
+
+  /* Wing filter & lists */
+  const [wingFilter, setWingFilter] = useState("ALL");
+  const [wingsList, setWingsList] = useState([]);
+  const [createWingsList, setCreateWingsList] = useState([]);
+
+  useEffect(() => {
+    if (isSuperAdmin) {
+      API.get("/societies")
+        .then((res) => {
+          const d = res.data;
+          const list = Array.isArray(d) ? d : Array.isArray(d?.data) ? d.data : Array.isArray(d?.societies) ? d.societies : [];
+          setSocietiesList(list);
+        })
+        .catch(console.error);
+    }
+  }, [isSuperAdmin]);
+
+  const activeSocietyId = isSuperAdmin ? filterSocietyId : user?.society_id;
+
+  useEffect(() => {
+    if (activeSocietyId) {
+      API.get(`/blocks/${activeSocietyId}`)
+        .then((res) => {
+          const list = Array.isArray(res.data) ? res.data : Array.isArray(res.data?.data) ? res.data.data : [];
+          setWingsList(list);
+        })
+        .catch(() => setWingsList([]));
+    } else {
+      setWingsList([]);
+      setWingFilter("ALL");
+    }
+  }, [activeSocietyId]);
+
+  const loadWingsForSociety = useCallback(async (socId) => {
+    if (!socId) {
+      setCreateWingsList([]);
+      return;
+    }
+    try {
+      const res = await API.get(`/blocks/${socId}`);
+      const list = Array.isArray(res.data) ? res.data : Array.isArray(res.data?.data) ? res.data.data : [];
+      setCreateWingsList(list);
+    } catch {
+      setCreateWingsList([]);
+    }
+  }, []);
 
   /* Slots list */
   const [slots, setSlots] = useState([]);
@@ -766,7 +819,7 @@ export default function AssignParkingSlot({ hideHeader = false, societyId } = {}
   const [limit, setLimit] = useState(12);
   const limitRef = useRef(limit);
   limitRef.current = limit;
-const [totalPages, setTotalPages] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
 
   /* Filters */
@@ -780,12 +833,27 @@ const [totalPages, setTotalPages] = useState(1);
 
   /* Create form */
   const [showForm, setShowForm] = useState(false);
+  const [showAllSlotsPreview, setShowAllSlotsPreview] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [form, setForm] = useState({ prefix: "", start_number: "", count: "", vehicle_type: "CAR", parking_floor: "P1" });
+  const [form, setForm] = useState({
+    society_id: "",
+    wing: "",
+    prefix: "",
+    start_number: "",
+    count: "",
+    vehicle_type: "CAR",
+    parking_floor: "P1",
+  });
 
   /* Edit slot */
   const [editSlot, setEditSlot] = useState(null);
-  const [editForm, setEditForm] = useState({ slot_number: "", parking_floor: "", vehicle_type: "CAR", parking_type: "DEFAULT" });
+  const [editForm, setEditForm] = useState({
+    slot_number: "",
+    parking_floor: "",
+    vehicle_type: "CAR",
+    parking_type: "DEFAULT",
+    wing: "",
+  });
   const [editSubmitting, setEditSubmitting] = useState(false);
 
   /* Unsaved-changes guard (create + edit slot forms) */
@@ -793,7 +861,10 @@ const [totalPages, setTotalPages] = useState(1);
   const dirtyRef = useUnsavedDirty(showForm || !!editSlot);
   const requestCloseForm = () => {
     if (dirtyRef.current) setConfirmDiscard(true);
-    else setShowForm(false);
+    else {
+      setShowAllSlotsPreview(false);
+      setShowForm(false);
+    }
   };
   const requestCloseEdit = () => {
     if (dirtyRef.current) setConfirmDiscard(true);
@@ -806,6 +877,27 @@ const [totalPages, setTotalPages] = useState(1);
       showUnauthorized(t("parkNoPermissionCreate"));
       return;
     }
+    const initialSocId = isSuperAdmin
+      ? (filterSocietyId || (societiesList[0]?.id ? String(societiesList[0]?.id) : ""))
+      : (user?.society_id ? String(user?.society_id) : "");
+
+    setForm({
+      society_id: initialSocId,
+      wing: "",
+      prefix: "",
+      start_number: "",
+      count: "",
+      vehicle_type: "CAR",
+      parking_floor: "P1",
+    });
+
+    if (initialSocId) {
+      loadWingsForSociety(initialSocId);
+    } else {
+      setCreateWingsList([]);
+    }
+
+    setShowAllSlotsPreview(false);
     setShowForm(true);
     setConfirmDel(null);
   };
@@ -836,6 +928,11 @@ const [totalPages, setTotalPages] = useState(1);
       return;
     }
 
+    if (isSuperAdmin && !form.society_id) {
+      showError(t("selectSocietyRequired") || "Please select a society");
+      return;
+    }
+
     const floorErr = localizedRequiredError(form.parking_floor, t("parkFloorLevel"), t);
     if (floorErr) { showError(floorErr); return; }
 
@@ -851,11 +948,21 @@ const [totalPages, setTotalPages] = useState(1);
     setSubmitting(true);
     try {
       await API.post("/parking-slots", form);
-      setForm({ prefix: "", start_number: "", count: "", vehicle_type: "CAR", parking_floor: "P1" });
+      const resetSocId = isSuperAdmin ? (filterSocietyId || "") : (user?.society_id || "");
+      setForm({
+        society_id: resetSocId,
+        wing: "",
+        prefix: "",
+        start_number: "",
+        count: "",
+        vehicle_type: "CAR",
+        parking_floor: "P1",
+      });
       setShowForm(false);
-      loadSlots(1, vehicleFilter, debouncedSearch, statusFilter);
+      loadSlots(1, vehicleFilter, debouncedSearch, statusFilter, wingFilter);
       loadAllSlots();
       loadPendingResidentCount();
+      loadOwnerSlots();
     } catch (e) { console.error(e); }
     finally { setSubmitting(false); }
   };
@@ -873,7 +980,7 @@ const [totalPages, setTotalPages] = useState(1);
       await API.delete(`/parking-slots/${id}`);
       setConfirmDel(null);
       const newPage = slots.length === 1 && page > 1 ? page - 1 : page;
-      loadSlots(newPage, vehicleFilter, debouncedSearch, statusFilter);
+      loadSlots(newPage, vehicleFilter, debouncedSearch, statusFilter, wingFilter);
       loadAllSlots();
       loadOwnerSlots();
     } catch (e) { console.error(e); }
@@ -894,6 +1001,7 @@ const [totalPages, setTotalPages] = useState(1);
       parking_floor: slot.parking_floor || "",
       vehicle_type: slot.vehicle_type || "CAR",
       parking_type: slot.parking_type || "DEFAULT",
+      wing: slot.wing || "",
     });
     setEditError("");
   };
@@ -975,12 +1083,18 @@ const [totalPages, setTotalPages] = useState(1);
     const pfx = (form.prefix || "").trim();
     const firstSlot = `${pfx}${start}`;
     const lastSlot = `${pfx}${start + cnt - 1}`;
+    const allSlotNumbers = [];
+    for (let i = 0; i < cnt; i++) {
+      allSlotNumbers.push(`${pfx}${start + i}`);
+    }
     return {
       firstSlot,
       lastSlot,
       cnt,
       floor: form.parking_floor || "P1",
-      type: form.vehicle_type === "CAR" ? t("parkCar") : t("parkBike"),
+      wing: form.wing || null,
+      type: form.vehicle_type === "CAR" ? (t("parkCar") || "Car") : (t("parkBike") || "Bike"),
+      allSlotNumbers,
     };
   }, [form, t]);
 
@@ -1014,23 +1128,27 @@ const [totalPages, setTotalPages] = useState(1);
   /* ────────────────────────────
      LOADERS
   ──────────────────────────── */
+  const headers = useMemo(() => {
+    return (isSuperAdmin && filterSocietyId) ? { "x-society-id": filterSocietyId } : {};
+  }, [isSuperAdmin, filterSocietyId]);
+
   const loadFlats = useCallback(async () => {
     try {
-      const res = await API.get("/flats");
+      const res = await API.get("/flats", { headers });
       const list = Array.isArray(res.data) ? res.data : Array.isArray(res.data?.data) ? res.data.data : [];
       setFlats(list);
     } catch (e) { console.error(e); }
-  }, []);
+  }, [headers]);
 
   const loadAllSlots = useCallback(async () => {
     try {
-      const res = await API.get("/parking-slots?limit=200");
+      const res = await API.get("/parking-slots?limit=200", { headers });
       const d = res.data;
       setAllSlots(Array.isArray(d) ? d : d?.data || []);
     } catch (e) { console.error(e); }
-  }, []);
+  }, [headers]);
 
-  const loadSlots = useCallback(async (pageNum, vFilter, currentSearch, statusF = "ALL", isInitial = false) => {
+  const loadSlots = useCallback(async (pageNum, vFilter, currentSearch, statusF = "ALL", wingF = wingFilter, isInitial = false) => {
     if (isInitial) setInitialLoad(true);
     else setFetching(true);
     try {
@@ -1039,11 +1157,13 @@ const [totalPages, setTotalPages] = useState(1);
       const params = new URLSearchParams({
         page: pageNum,
         limit: limitRef.current,
+        ...(filterSocietyId ? { society_id: filterSocietyId } : {}),
         ...(vFilter !== "ALL" ? { vehicle_type: vFilter } : {}),
         ...(apiStatus !== "ALL" ? { status: apiStatus } : {}),
+        ...(wingF && wingF !== "ALL" ? { wing: wingF } : {}),
         ...(currentSearch ? { search: currentSearch } : {}),
       });
-      const res = await API.get(`/parking-slots?${params}`);
+      const res = await API.get(`/parking-slots?${params}`, { headers });
       setSlots(res.data.data || []);
       setStats(res.data.stats || { total: 0, cars: 0, bikes: 0, available: 0, occupied: 0 });
       setTotalPages(res.data.pagination.totalPages);
@@ -1051,39 +1171,39 @@ const [totalPages, setTotalPages] = useState(1);
       setPage(pageNum);
     } catch (e) { console.error(e); }
     finally { setInitialLoad(false); setFetching(false); }
-  }, []);
+  }, [filterSocietyId, headers, wingFilter]);
 
   const loadPendingResidentCount = useCallback(async () => {
     try {
-      const res = await API.get("/parking?parking_type=RESIDENT&filter=PENDING&limit=1");
+      const res = await API.get("/parking?parking_type=RESIDENT&filter=PENDING&limit=1", { headers });
       setPendingResidentCount(res.data?.counts?.PENDING || 0);
     } catch (e) { /* silent */ }
-  }, []);
+  }, [headers]);
 
   const loadOwnerSlots = useCallback(async (showLoader = false) => {
     if (showLoader) setOwnerLoading(true);
     try {
-      const res = await API.get("/parking-slots", { params: { limit: 1000 } });
+      const res = await API.get("/parking-slots", { params: { limit: 1000, ...(filterSocietyId ? { society_id: filterSocietyId } : {}) }, headers });
       setOwnerSlots(Array.isArray(res.data?.data) ? res.data.data : []);
     } catch (e) { console.error(e); setOwnerSlots([]); }
     finally { setOwnerLoading(false); }
-  }, []);
+  }, [filterSocietyId, headers]);
 
   useEffect(() => { loadOwnerSlots(true); }, [loadOwnerSlots]);
 
   useEffect(() => {
-    loadSlots(1, "ALL", "", "ALL", true);
+    loadSlots(1, "ALL", "", "ALL", wingFilter, true);
     loadAllSlots();
     loadFlats();
     loadPendingResidentCount();
-  }, []);
+  }, [filterSocietyId]);
 
   useEffect(() => {
     if (initialLoad) return;
-    loadSlots(1, vehicleFilter, debouncedSearch, statusFilter);
-  }, [debouncedSearch, vehicleFilter, statusFilter]);
+    loadSlots(1, vehicleFilter, debouncedSearch, statusFilter, wingFilter);
+  }, [debouncedSearch, vehicleFilter, statusFilter, wingFilter, filterSocietyId]);
 
-  const handlePageChange = (p) => loadSlots(p, vehicleFilter, debouncedSearch, statusFilter);
+  const handlePageChange = (p) => loadSlots(p, vehicleFilter, debouncedSearch, statusFilter, wingFilter);
   const handleFilterChange = (key) => {
     if (key === "AVAILABLE" || key === "OCCUPIED") {
       setStatusFilter(key);
@@ -1098,10 +1218,32 @@ const [totalPages, setTotalPages] = useState(1);
   const refreshAll = () => {
     loadAllSlots();
     loadFlats();
-    loadSlots(page, vehicleFilter, debouncedSearch, statusFilter);
+    loadSlots(page, vehicleFilter, debouncedSearch, statusFilter, wingFilter);
     loadPendingResidentCount();
     loadOwnerSlots();
   };
+
+  const getWingLabel = (s) => {
+    if (!s) return null;
+    const name = s.wing || s.block_name || s.Block?.name || s.Flat?.Block?.name || s.Flat?.Floor?.Block?.name || s.flat?.Block?.name || s.Flat?.block_name;
+    if (!name) return null;
+    return /^(wing|block|tower)/i.test(name) ? name : `Wing ${name}`;
+  };
+
+  /* Distinct list of wings for filtering */
+  const availableWings = useMemo(() => {
+    const map = new Map();
+    wingsList.forEach((w) => {
+      if (w.name) map.set(w.name, w.name);
+    });
+    slots.forEach((s) => {
+      if (s.wing) map.set(s.wing, s.wing);
+    });
+    allSlots.forEach((s) => {
+      if (s.wing) map.set(s.wing, s.wing);
+    });
+    return Array.from(map.values());
+  }, [wingsList, slots, allSlots]);
 
   const filterTabs = [
     { key: "ALL", label: t("parkTabAll") || "All", icon: <FaParking size={12} />, count: stats.total },
@@ -1133,10 +1275,15 @@ const [totalPages, setTotalPages] = useState(1);
     if (ownerAlloc === "NO_VEHICLE" && s.vehicle) return false;
     if (ownerAlloc === "ALLOCATED" && !s.resident && !s.flat_number) return false;
     if (ownerAlloc === "FREE" && s.status !== "AVAILABLE") return false;
+    if (wingFilter !== "ALL") {
+      const slotWing = s.wing || s.block_name || s.Flat?.Block?.name;
+      if (slotWing !== wingFilter) return false;
+    }
     if (ownerQ) {
       const hay = [
         s.slot_number,
         s.parking_floor,
+        s.wing,
         s.flat_number,
         s.resident?.name,
         s.resident?.email,
@@ -1181,6 +1328,24 @@ const [totalPages, setTotalPages] = useState(1);
         )}
 
         <div className="ps-page-toolbar flex items-center gap-2.5 flex-nowrap shrink-0 overflow-x-auto max-w-full">
+          {isSuperAdmin && (
+            <Select
+              className="input"
+              style={{ minWidth: 150, height: 38, padding: "6px 12px", borderRadius: 10, fontSize: 13 }}
+              value={filterSocietyId}
+              onChange={(e) => {
+                const val = e.target.value;
+                setFilterSocietyId(val);
+                localStorage.setItem("superadmin_society_filter", val || "ALL");
+              }}
+            >
+              <option value="">{t("allSocieties") || "All Societies"}</option>
+              {societiesList.map((s) => (
+                <option key={s.id} value={s.id}>{s.name}</option>
+              ))}
+            </Select>
+          )}
+
           {!isCommittee && mainTab === "slots" && (
             <GlobalButton
               variant="add"
@@ -1274,6 +1439,20 @@ const [totalPages, setTotalPages] = useState(1);
                   ownerAlloc,
                   setOwnerAlloc
                 )}
+
+                {availableWings.length > 0 && (
+                  <Select
+                    className="input"
+                    style={{ minWidth: 135, height: 36, padding: "4px 12px", borderRadius: 10, fontSize: 12, fontWeight: 600 }}
+                    value={wingFilter}
+                    onChange={(e) => setWingFilter(e.target.value)}
+                  >
+                    <option value="ALL">{t("allWings") || "All Wings"}</option>
+                    {availableWings.map((w) => (
+                      <option key={w} value={w}>{/^(wing|block|tower)/i.test(w) ? w : `Wing ${w}`}</option>
+                    ))}
+                  </Select>
+                )}
               </div>
             </div>
           </div>
@@ -1335,6 +1514,7 @@ const [totalPages, setTotalPages] = useState(1);
                       <span className="ps-slot-meta">
                         {s.parking_floor ? t("parkFloorValue", { floor: s.parking_floor }) : t("parkGroundFloor")} ·{" "}
                         {isCar ? t("parkCar") : t("parkBike")}
+                        {getWingLabel(s) ? ` · ${getWingLabel(s)}` : ""}
                       </span>
 
                       {/* Middle Details */}
@@ -1439,16 +1619,36 @@ const [totalPages, setTotalPages] = useState(1);
           <div className="ps-slots-container space-y-4">
             {/* Filter and Count Bar */}
             <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-xl bg-card border border-glass">
-              <SlidingTabs
-                value={activeFilter}
-                onChange={handleFilterChange}
-                items={filterTabs.map((filter) => ({
-                  id: filter.key,
-                  label: filter.label,
-                  icon: filter.icon,
-                  badge: filter.count,
-                }))}
-              />
+              <div className="flex items-center gap-2.5 flex-wrap">
+                <SlidingTabs
+                  value={activeFilter}
+                  onChange={handleFilterChange}
+                  items={filterTabs.map((filter) => ({
+                    id: filter.key,
+                    label: filter.label,
+                    icon: filter.icon,
+                    badge: filter.count,
+                  }))}
+                />
+
+                {availableWings.length > 0 && (
+                  <Select
+                    className="input"
+                    style={{ minWidth: 135, height: 36, padding: "4px 12px", borderRadius: 10, fontSize: 12, fontWeight: 600 }}
+                    value={wingFilter}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setWingFilter(val);
+                      setPage(1);
+                    }}
+                  >
+                    <option value="ALL">{t("allWings") || "All Wings"}</option>
+                    {availableWings.map((w) => (
+                      <option key={w} value={w}>{/^(wing|block|tower)/i.test(w) ? w : `Wing ${w}`}</option>
+                    ))}
+                  </Select>
+                )}
+              </div>
 
               {!initialLoad && (
                 <span className="text-xs text-secondary font-medium">
@@ -1534,6 +1734,7 @@ const [totalPages, setTotalPages] = useState(1);
                           <span className="ps-slot-meta">
                             {slot.parking_floor ? t("parkFloorValue", { floor: slot.parking_floor }) : t("parkGround")} ·{" "}
                             {isCar ? t("parkCar") : t("parkBike")}
+                            {getWingLabel(slot) ? ` · ${getWingLabel(slot)}` : ""}
                           </span>
                         }
                         badge={<StatusBadge status={slot.status} t={t} />}
@@ -1670,6 +1871,17 @@ const [totalPages, setTotalPages] = useState(1);
                       <p className="parking-slot-detail-copy">
                         {t("parkSlotAvailableCopy")}
                       </p>
+
+                      <div className="parking-slot-detail-grid mt-3 w-full">
+                        <section className="parking-slot-detail-card">
+                          <span className="parking-slot-detail-label">{t("wing") || "Wing / Block"}</span>
+                          <p className="parking-slot-detail-value">{getWingLabel(detailSlot) || "—"}</p>
+                        </section>
+                        <section className="parking-slot-detail-card">
+                          <span className="parking-slot-detail-label">{t("parkFloorLevel") || "Floor"}</span>
+                          <p className="parking-slot-detail-value">{detailSlot.parking_floor ? t("parkFloorValue", { floor: detailSlot.parking_floor }) : t("parkGroundFloor") || "Ground"}</p>
+                        </section>
+                      </div>
                     </div>
                   ) : (
                     <>
@@ -1693,6 +1905,14 @@ const [totalPages, setTotalPages] = useState(1);
                           <p className="parking-slot-detail-value">
                             {detailSlot.flat_number ? t("parkFlatNumber", { number: detailSlot.flat_number }) : "—"}
                           </p>
+                        </section>
+                        <section className="parking-slot-detail-card">
+                          <span className="parking-slot-detail-label">{t("wing") || "Wing / Block"}</span>
+                          <p className="parking-slot-detail-value">{getWingLabel(detailSlot) || "—"}</p>
+                        </section>
+                        <section className="parking-slot-detail-card">
+                          <span className="parking-slot-detail-label">{t("parkFloorLevel") || "Floor"}</span>
+                          <p className="parking-slot-detail-value">{detailSlot.parking_floor ? t("parkFloorValue", { floor: detailSlot.parking_floor }) : t("parkGroundFloor") || "Ground"}</p>
                         </section>
                         <section className="parking-slot-detail-card">
                           <span className="parking-slot-detail-label">{t("parkAllocationType")}</span>
@@ -1751,6 +1971,66 @@ const [totalPages, setTotalPages] = useState(1);
         }
       >
         <form id="create-parking-slots-form" onSubmit={handleSubmit} className="flex flex-col gap-4">
+          {/* Step 1 for SuperAdmin: Society Selection */}
+          {isSuperAdmin && (
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-semibold text-secondary">
+                {t("society") || "Society"} <span className="text-red-400">*</span>
+              </label>
+              <Select
+                className="input w-full"
+                style={{ height: 42, borderRadius: 12, padding: "0 14px", fontSize: 13, fontWeight: 500 }}
+                value={form.society_id}
+                required
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setForm({ ...form, society_id: val, wing: "" });
+                  loadWingsForSociety(val);
+                }}
+              >
+                <option value="">{t("selectSociety") || "Select Society"}</option>
+                {societiesList.map((s) => (
+                  <option key={s.id} value={s.id}>{s.name}</option>
+                ))}
+              </Select>
+            </div>
+          )}
+
+          {/* Wing Selection (For SuperAdmin and Society Admin) */}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-semibold text-secondary">
+              {t("wing") || "Wing / Block Name"}
+            </label>
+            {(createWingsList.length > 0 || wingsList.length > 0) ? (
+              <Select
+                className="input w-full"
+                style={{ height: 42, borderRadius: 12, padding: "0 14px", fontSize: 13, fontWeight: 500 }}
+                value={form.wing || ""}
+                onChange={(e) => setForm({ ...form, wing: e.target.value })}
+              >
+                <option value="">{t("selectWing") || "Select Wing"}</option>
+                {(createWingsList.length > 0 ? createWingsList : wingsList).map((w) => (
+                  <option key={w.id || w.name} value={w.name}>{w.name}</option>
+                ))}
+              </Select>
+            ) : (
+              <input
+                className="input w-full"
+                style={{
+                  height: 42,
+                  borderRadius: 12,
+                  padding: "0 14px",
+                  fontSize: 13,
+                  fontWeight: 500,
+                  boxSizing: "border-box",
+                }}
+                placeholder={t("parkWingPlaceholder") || "e.g. Wing A, Block B"}
+                value={form.wing || ""}
+                onChange={(e) => setForm({ ...form, wing: e.target.value })}
+              />
+            )}
+          </div>
+
           {/* Vehicle Type Toggle */}
           <div className="flex flex-col gap-1.5">
             <label className="text-xs font-semibold text-secondary uppercase tracking-wider">
@@ -1878,30 +2158,93 @@ const [totalPages, setTotalPages] = useState(1);
             </div>
           </div>
 
-          {/* Live Preview Banner */}
+          {/* Live Preview Banner & All Slots Viewer */}
           {generatedPreview && (
-            <div
-              className="rounded-xl p-3.5 text-xs flex items-center justify-between gap-3 animate-fadeIn mt-1"
-              style={{
-                background: "rgba(59, 130, 246, 0.08)",
-                border: "1px solid rgba(59, 130, 246, 0.28)",
-                color: "var(--accent)",
-              }}
-            >
-              <div className="flex items-center gap-2 min-w-0">
-                <span
-                  className="px-2 py-0.5 rounded-md font-extrabold uppercase text-[10px] shrink-0"
-                  style={{ background: "rgba(59, 130, 246, 0.22)", color: "var(--accent)" }}
-                >
-                  {t("parkPreview")}
-                </span>
-                <span className="truncate font-semibold text-primary">
-                  {t("parkSlotsRange", { first: generatedPreview.firstSlot, last: generatedPreview.lastSlot })}
-                </span>
+            <div className="flex flex-col gap-2.5 animate-fadeIn mt-1">
+              <div
+                className="rounded-xl p-3.5 text-xs flex flex-wrap items-center justify-between gap-3"
+                style={{
+                  background: "rgba(59, 130, 246, 0.08)",
+                  border: "1px solid rgba(59, 130, 246, 0.28)",
+                  color: "var(--accent)",
+                }}
+              >
+                <div className="flex items-center gap-2 min-w-0 flex-1">
+                  <span
+                    className="px-2 py-0.5 rounded-md font-extrabold uppercase text-[10px] shrink-0"
+                    style={{ background: "rgba(59, 130, 246, 0.22)", color: "var(--accent)" }}
+                  >
+                    {t("parkPreview") || "Preview"}
+                  </span>
+                  <span className="truncate font-semibold text-primary">
+                    {t("parkSlotsRange", { first: generatedPreview.firstSlot, last: generatedPreview.lastSlot })}
+                    {generatedPreview.wing ? ` (${generatedPreview.wing})` : ""}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2.5 shrink-0">
+                  <span className="font-bold text-accent">
+                    {t("parkPreviewCount", { count: generatedPreview.cnt, type: generatedPreview.type })}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setShowAllSlotsPreview(!showAllSlotsPreview)}
+                    className="px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer inline-flex items-center gap-1 border shadow-xs"
+                    style={{
+                      background: showAllSlotsPreview ? "var(--accent)" : "rgba(255, 255, 255, 0.08)",
+                      color: showAllSlotsPreview ? "#ffffff" : "var(--text-primary)",
+                      borderColor: showAllSlotsPreview ? "var(--accent)" : "var(--glass-border)",
+                    }}
+                  >
+                    {showAllSlotsPreview ? (t("hideAllSlots") || "Hide All Slots") : (t("showAllSlots") || "Show All Slots")}
+                  </button>
+                </div>
               </div>
-              <span className="font-bold shrink-0 text-accent">
-                {t("parkPreviewCount", { count: generatedPreview.cnt, type: generatedPreview.type })}
-              </span>
+
+              {/* All Slots Grid Preview */}
+              {showAllSlotsPreview && (
+                <div
+                  className="rounded-xl p-3 border flex flex-col gap-2.5 animate-fadeIn"
+                  style={{
+                    background: "var(--card-inner-bg)",
+                    borderColor: "var(--glass-border)",
+                    maxHeight: 220,
+                    overflowY: "auto",
+                  }}
+                >
+                  <div className="flex items-center justify-between px-1">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-secondary">
+                      {t("allSlotsToCreate") || "All Slots to be Created"} ({generatedPreview.allSlotNumbers.length})
+                    </span>
+                    <span className="text-[11px] text-tertiary">
+                      Level: {generatedPreview.floor} {generatedPreview.wing ? `· ${generatedPreview.wing}` : ""}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                    {generatedPreview.allSlotNumbers.map((slotNum, idx) => (
+                      <div
+                        key={slotNum + idx}
+                        className="flex items-center gap-2 p-2 rounded-lg border text-xs font-semibold transition-all"
+                        style={{
+                          background: "var(--card-bg)",
+                          borderColor: "var(--glass-border)",
+                        }}
+                      >
+                        <span
+                          className="w-6 h-6 rounded-md flex items-center justify-center shrink-0"
+                          style={{
+                            background: form.vehicle_type === "CAR" ? "rgba(59, 130, 246, 0.15)" : "rgba(168, 85, 247, 0.15)",
+                            color: form.vehicle_type === "CAR" ? "#60a5fa" : "#c084fc",
+                          }}
+                        >
+                          {form.vehicle_type === "CAR" ? <MdDirectionsCar size={13} /> : <MdTwoWheeler size={13} />}
+                        </span>
+                        <span className="text-primary font-mono font-bold truncate">{slotNum}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </form>
@@ -2038,6 +2381,41 @@ const [totalPages, setTotalPages] = useState(1);
                 onChange={(e) => setEditForm({ ...editForm, parking_floor: e.target.value })}
               />
             </div>
+          </div>
+
+          {/* Wing / Block Selection */}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-semibold text-secondary">
+              {t("wing") || "Wing / Block"}
+            </label>
+            {wingsList.length > 0 ? (
+              <Select
+                className="input w-full"
+                style={{ height: 42, borderRadius: 12, padding: "0 14px", fontSize: 13, fontWeight: 500 }}
+                value={editForm.wing || ""}
+                onChange={(e) => setEditForm({ ...editForm, wing: e.target.value })}
+              >
+                <option value="">{t("selectWing") || "Select Wing"}</option>
+                {wingsList.map((w) => (
+                  <option key={w.id || w.name} value={w.name}>{w.name}</option>
+                ))}
+              </Select>
+            ) : (
+              <input
+                className="input w-full"
+                style={{
+                  height: 42,
+                  borderRadius: 12,
+                  padding: "0 14px",
+                  fontSize: 13,
+                  fontWeight: 500,
+                  boxSizing: "border-box",
+                }}
+                placeholder={t("parkWingPlaceholder") || "e.g. Wing A, Block B"}
+                value={editForm.wing || ""}
+                onChange={(e) => setEditForm({ ...editForm, wing: e.target.value })}
+              />
+            )}
           </div>
 
           {/* Allocated Flat Dropdown / Viewer */}

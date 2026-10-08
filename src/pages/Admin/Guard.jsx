@@ -314,7 +314,7 @@ export default function Guard() {
       const params = {
         limit: 100,
       };
-      if (attendanceDate) params.date = attendanceDate;
+      if (attendanceDate && attendanceDate !== "ALL") params.date = attendanceDate;
       if (attendanceGuardFilter && attendanceGuardFilter !== "ALL") params.guard_id = attendanceGuardFilter;
       if (attendanceStatusFilter && attendanceStatusFilter !== "ALL") params.status = attendanceStatusFilter;
       if (isSuperAdmin && filterSocietyId && filterSocietyId !== "ALL") {
@@ -1373,29 +1373,29 @@ export default function Guard() {
       {/* ── SOCIETY SHIFT TIMINGS CONFIG ── */}
       {canShiftGuard && (
         <div style={{
-          marginTop: 14,
-          borderRadius: 16,
+          marginTop: 12,
+          borderRadius: 14,
           border: "1px solid var(--glass-border)",
           background: "var(--card-bg)",
           backdropFilter: "blur(12px)",
-          padding: 16,
+          padding: "12px 14px",
         }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, flexWrap: "wrap" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <div style={{
-                width: 34, height: 34, borderRadius: 10, flexShrink: 0,
+                width: 28, height: 28, borderRadius: 8, flexShrink: 0,
                 display: "flex", alignItems: "center", justifyContent: "center",
                 background: "linear-gradient(135deg, rgba(160,90,255,0.2), rgba(16,185,129,0.15))",
                 border: "1px solid rgba(160,90,255,0.3)", color: "var(--accent)",
-                boxShadow: "0 0 18px rgba(160,90,255,0.15)",
+                boxShadow: "0 0 12px rgba(160,90,255,0.15)",
               }}>
-                <MdSchedule size={18} />
+                <MdSchedule size={15} />
               </div>
               <div>
-                <div style={{ fontSize: 14, fontWeight: 800, color: "var(--text-primary)", letterSpacing: "0.01em" }}>
+                <div style={{ fontSize: 13, fontWeight: 800, color: "var(--text-primary)", letterSpacing: "0.01em" }}>
                   {t("guardShiftTimingsTitle") || "Guard Shift Timings"}
                 </div>
-                <div style={{ fontSize: 11, color: "var(--text-secondary)", marginTop: 1 }}>
+                <div style={{ fontSize: 10.5, color: "var(--text-secondary)", marginTop: 1 }}>
                   {isSuperAdmin
                     ? (timingsSocietyId
                         ? t("guardTimingsCfgSelected", "Configure shift windows for the selected society.")
@@ -1406,12 +1406,12 @@ export default function Guard() {
             </div>
 
             {timingsSocietyId && (
-              <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                 {activeShift && (
                   <div className="gt-live-pill" style={{
-                    display: "inline-flex", alignItems: "center", gap: 6,
-                    padding: "6px 12px", borderRadius: 999, fontSize: 11,
-                    fontWeight: 800, letterSpacing: "0.06em", textTransform: "uppercase",
+                    display: "inline-flex", alignItems: "center", gap: 5,
+                    padding: "4px 10px", borderRadius: 999, fontSize: 10,
+                    fontWeight: 800, letterSpacing: "0.05em", textTransform: "uppercase",
                     background: activeShift.tint, border: `1px solid ${activeShift.accent}44`,
                     color: activeShift.accent,
                   }}>
@@ -1425,6 +1425,7 @@ export default function Guard() {
                   icon={MdEdit}
                   onClick={() => setShowTimingsModal(true)}
                   disabled={timingsLoading || timingsSaving}
+                  style={{ height: 30, fontSize: 12, padding: "0 10px" }}
                 >
                   {t("guardShiftTimingsEdit") || "Edit Shift Timings"}
                 </GlobalButton>
@@ -1433,7 +1434,7 @@ export default function Guard() {
           </div>
 
           {timingsSocietyId ? (
-            <div style={{ marginTop: 16, display: "grid", gap: 14, gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))" }}>
+            <div style={{ marginTop: 10, display: "grid", gap: 10, gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))" }}>
               {SHIFT_WINDOWS.map(({ type, label, icon, accent, glow }, ci) => {
                 const ShiftIcon = icon;
                 const r = shiftTimings?.[type];
@@ -1447,63 +1448,63 @@ export default function Guard() {
                       overflow: "hidden",
                       display: "flex",
                       flexDirection: "column",
-                      gap: 10,
-                      padding: "16px 14px",
-                      borderRadius: 18,
+                      gap: 6,
+                      padding: "10px 10px",
+                      borderRadius: 12,
                       textAlign: "center",
                       background: `linear-gradient(150deg, ${accent}1F 0%, ${accent}0A 55%, var(--card-bg) 100%)`,
                       border: `1.5px solid ${active ? accent : `${accent}3D`}`,
                       boxShadow: active
-                        ? `0 14px 32px -10px ${glow}, inset 0 1px 0 rgba(255,255,255,0.12)`
-                        : `0 4px 18px ${glow}, inset 0 1px 0 rgba(255,255,255,0.06)`,
+                        ? `0 10px 24px -8px ${glow}, inset 0 1px 0 rgba(255,255,255,0.12)`
+                        : `0 3px 12px ${glow}, inset 0 1px 0 rgba(255,255,255,0.06)`,
                       animationDelay: `${ci * 70}ms`,
                     }}
                   >
                     <div style={{
-                      position: "absolute", top: -24, right: -24, width: 84, height: 84,
+                      position: "absolute", top: -20, right: -20, width: 60, height: 60,
                       borderRadius: "50%", background: `${accent}1A`, pointerEvents: "none",
                     }} />
 
-                    <div style={{ display: "flex", justifyContent: "center", marginTop: 2 }}>
+                    <div style={{ display: "flex", justifyContent: "center", marginTop: 1 }}>
                       <div style={{
-                        width: 42, height: 42, borderRadius: 13,
+                        width: 30, height: 30, borderRadius: 9,
                         display: "flex", alignItems: "center", justifyContent: "center",
                         background: `linear-gradient(135deg, ${accent}30, ${accent}12)`,
                         border: `1px solid ${accent}45`, color: accent,
-                        boxShadow: `0 6px 16px -6px ${glow}`,
+                        boxShadow: `0 4px 12px -4px ${glow}`,
                       }}>
-                        <ShiftIcon size={20} />
+                        <ShiftIcon size={16} />
                       </div>
                     </div>
 
                     <div>
-                      <div style={{ fontSize: 12.5, fontWeight: 800, letterSpacing: "0.04em", textTransform: "uppercase", color: "var(--text-primary)" }}>
+                      <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.04em", textTransform: "uppercase", color: "var(--text-primary)" }}>
                         {label}
                       </div>
-                      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginTop: 6 }}>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 5, marginTop: 4 }}>
                         <span style={{
-                          fontSize: 15, fontWeight: 800, color: "var(--text-primary)",
+                          fontSize: 12, fontWeight: 800, color: "var(--text-primary)",
                           fontVariantNumeric: "tabular-nums",
                           background: "var(--card-inner-bg)",
                           border: "1px solid var(--glass-border)",
-                          padding: "3px 9px", borderRadius: 8,
+                          padding: "2px 6px", borderRadius: 6,
                         }}>
                           {r ? fmtTime12h(r.start) : "…"}
                         </span>
-                        <span style={{ color: accent, fontWeight: 800, fontSize: 14 }}>→</span>
+                        <span style={{ color: accent, fontWeight: 800, fontSize: 11 }}>→</span>
                         <span style={{
-                          fontSize: 15, fontWeight: 800, color: "var(--text-primary)",
+                          fontSize: 12, fontWeight: 800, color: "var(--text-primary)",
                           fontVariantNumeric: "tabular-nums",
                           background: "var(--card-inner-bg)",
                           border: "1px solid var(--glass-border)",
-                          padding: "3px 9px", borderRadius: 8,
+                          padding: "2px 6px", borderRadius: 6,
                         }}>
                           {r ? fmtTime12h(r.end) : "…"}
                         </span>
                       </div>
                     </div>
 
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", marginTop: 2, minHeight: 20 }}>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", marginTop: 1, minHeight: 18 }}>
                       {(() => {
                         const shiftGuardCount = guards.filter(g => getGuardTodayShift(g.id)?.shift_type === type).length;
                         if (active) {
@@ -1772,8 +1773,24 @@ export default function Guard() {
             columns={attendanceColumns}
             data={attendanceList}
             loading={attendanceLoading}
-            emptyMessage={t("guardAttendanceEmpty", "No attendance records found for the selected filters.")}
+            emptyMessage={
+              attendanceDate
+                ? `No attendance punch-ins recorded for ${attendanceDate}.`
+                : t("guardAttendanceEmpty", "No attendance records found for the selected filters.")
+            }
             emptyIcon={MdFingerprint}
+            emptyAction={
+              attendanceDate ? (
+                <GlobalButton
+                  variant="secondary"
+                  size="sm"
+                  icon={MdRefresh}
+                  onClick={() => setAttendanceDate("")}
+                >
+                  View All Dates
+                </GlobalButton>
+              ) : null
+            }
           />
         </div>
       )}
