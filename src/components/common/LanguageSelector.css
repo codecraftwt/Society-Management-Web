@@ -1,0 +1,163 @@
+/* ============================================================================
+   LanguageSelector.css — Global Language Selector Dropdown Styling
+   ============================================================================ */
+
+.lang-selector {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+/* ── Trigger Button ── */
+.lang-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 38px;
+  padding: 0 12px;
+  border-radius: 12px;
+  background: var(--card-inner-bg, rgba(255, 255, 255, 0.05));
+  border: 1.5px solid var(--glass-border, rgba(255, 255, 255, 0.12));
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: var(--shadow-sm, 0 2px 6px rgba(0, 0, 0, 0.04));
+  user-select: none;
+}
+
+.lang-trigger:hover {
+  border-color: var(--accent, #a05aff);
+  background: var(--card-inner-bg-hover, rgba(255, 255, 255, 0.08));
+  color: var(--text-primary);
+  transform: translateY(-1px);
+}
+
+.lang-trigger:focus-visible {
+  outline: 2px solid var(--accent, #a05aff);
+  outline-offset: 2px;
+}
+
+/* Compact Mode (Top Navbar) */
+.lang-trigger--compact {
+  height: 36px;
+  padding: 0 9px;
+  gap: 5px;
+  border-radius: 11px;
+}
+
+.lang-globe {
+  color: var(--accent, #a05aff);
+  flex-shrink: 0;
+}
+
+.lang-flag {
+  font-size: 14px;
+  line-height: 1;
+}
+
+.lang-current {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.lang-chevron {
+  color: var(--text-secondary);
+  transition: transform 0.25s ease;
+  flex-shrink: 0;
+}
+
+.lang-chevron--open {
+  transform: rotate(180deg);
+  color: var(--accent, #a05aff);
+}
+
+/* ── Dropdown Menu ── */
+.lang-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 1000;
+  min-width: 190px;
+  margin: 0;
+  padding: 6px;
+  list-style: none;
+  border-radius: 14px;
+  background: var(--card-bg, #181924);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1.5px solid var(--glass-border, rgba(255, 255, 255, 0.12));
+  box-shadow: 0 14px 35px -6px rgba(0, 0, 0, 0.35), 0 4px 12px rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+html.light .lang-dropdown,
+html.light.role-theme .lang-dropdown {
+  background: rgba(255, 255, 255, 0.98);
+  border-color: rgba(226, 232, 240, 0.95);
+  box-shadow: 0 12px 30px -4px rgba(0, 0, 0, 0.12), 0 4px 10px rgba(0, 0, 0, 0.05);
+}
+
+/* ── Options ── */
+.lang-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  border-radius: 10px;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.lang-option:hover {
+  background: var(--card-inner-bg-hover, rgba(255, 255, 255, 0.07));
+  color: var(--text-primary);
+}
+
+html.light .lang-option:hover,
+html.light.role-theme .lang-option:hover {
+  background: rgba(241, 245, 249, 0.95);
+}
+
+.lang-option--active {
+  background: var(--accent-soft, rgba(160, 90, 255, 0.12)) !important;
+  color: var(--accent, #a05aff) !important;
+  font-weight: 650;
+}
+
+.lang-opt-flag {
+  font-size: 15px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.lang-opt-native {
+  font-weight: 650;
+  color: var(--text-primary);
+}
+
+.lang-option--active .lang-opt-native {
+  color: var(--accent, #a05aff);
+}
+
+.lang-opt-english {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-left: auto;
+  opacity: 0.75;
+}
+
+.lang-opt-check {
+  color: var(--accent, #a05aff);
+  flex-shrink: 0;
+  margin-left: 4px;
+}

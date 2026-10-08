@@ -1,0 +1,844 @@
+/* ==========================================================================
+   Guard Help & Contacts Styles (GuardHelpContacts.css)
+   ========================================================================== */
+
+/* ── Container ── */
+.gh-root {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding-bottom: 2rem;
+}
+
+/* ── Emergency Banner ── */
+.gh-emerg-banner {
+  display: flex;
+  flex-direction: column;
+  sm-flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  border-radius: 1rem;
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.12), rgba(249, 115, 22, 0.08));
+  border: 1px solid rgba(239, 68, 68, 0.28);
+  box-shadow: 0 4px 16px rgba(239, 68, 68, 0.08);
+}
+
+@media (min-width: 640px) {
+  .gh-emerg-banner {
+    flex-direction: row;
+  }
+}
+
+.gh-emerg-banner-left {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.gh-emerg-banner-pulse {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 50%;
+  background: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+  flex-shrink: 0;
+  animation: pulse-ring 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse-ring {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
+  }
+  50% {
+    transform: scale(1.06);
+    box-shadow: 0 0 0 6px rgba(239, 68, 68, 0);
+  }
+}
+
+.gh-emerg-banner-text {
+  font-size: 0.875rem;
+  color: var(--text-primary, #1e293b);
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.gh-emerg-highlight {
+  font-weight: 800;
+  color: #ef4444;
+  font-size: 1rem;
+  letter-spacing: 0.02em;
+}
+
+.gh-emerg-dial-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: 0.75rem;
+  background: #ef4444;
+  color: #ffffff !important;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.35);
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.gh-emerg-dial-btn:hover {
+  background: #dc2626;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(239, 68, 68, 0.45);
+}
+
+.gh-emerg-dial-btn:active {
+  transform: scale(0.97);
+}
+
+/* ── Tab Content ── */
+.gh-tab-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* ── Section Label ── */
+.gh-section-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-secondary, #64748b);
+  margin-bottom: 0.25rem;
+}
+
+/* ── Emergency Numbers Grid ── */
+.gh-emerg-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+@media (min-width: 640px) {
+  .gh-emerg-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .gh-emerg-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* ── Emergency Card ── */
+.gh-emerg-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 1.25rem;
+  border-radius: 1rem;
+  background: var(--card-bg, #ffffff);
+  border: 1px solid var(--border-color, rgba(226, 232, 240, 0.8));
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+}
+
+.gh-emerg-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  border-color: var(--card-border-hover, rgba(148, 163, 184, 0.4));
+}
+
+.gh-emerg-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3.5px;
+  background: currentColor;
+  opacity: 0.9;
+}
+
+.gh-emerg-icon-wrap {
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.875rem;
+  transition: transform 0.2s ease;
+}
+
+.gh-emerg-card:hover .gh-emerg-icon-wrap {
+  transform: scale(1.08);
+}
+
+.gh-emerg-info {
+  margin-bottom: 1rem;
+}
+
+.gh-emerg-label {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin: 0 0 0.25rem 0;
+}
+
+.gh-emerg-number {
+  font-size: 1.875rem;
+  font-weight: 800;
+  font-family: var(--font-mono, monospace, sans-serif);
+  line-height: 1.1;
+  color: var(--text-primary, #0f172a);
+  margin: 0 0 0.375rem 0;
+}
+
+.gh-emerg-desc {
+  font-size: 0.75rem;
+  color: var(--text-secondary, #64748b);
+  margin: 0;
+  line-height: 1.4;
+}
+
+.gh-call-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.5625rem 0.875rem;
+  border-radius: 0.625rem;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+}
+
+.gh-call-btn:active {
+  transform: scale(0.98);
+}
+
+/* Tone Colors */
+.gh-emerg-card--blue {
+  color: #2563eb;
+}
+.gh-emerg-card--blue .gh-emerg-icon-wrap {
+  background: rgba(37, 99, 235, 0.12);
+  color: #2563eb;
+}
+.gh-emerg-card--blue .gh-emerg-label {
+  color: #2563eb;
+}
+.gh-emerg-card--blue .gh-call-btn {
+  background: rgba(37, 99, 235, 0.1);
+  color: #2563eb;
+  border-color: rgba(37, 99, 235, 0.25);
+}
+.gh-emerg-card--blue .gh-call-btn:hover {
+  background: #2563eb;
+  color: #ffffff;
+}
+
+.gh-emerg-card--red {
+  color: #ef4444;
+}
+.gh-emerg-card--red .gh-emerg-icon-wrap {
+  background: rgba(239, 68, 68, 0.12);
+  color: #ef4444;
+}
+.gh-emerg-card--red .gh-emerg-label {
+  color: #ef4444;
+}
+.gh-emerg-card--red .gh-call-btn {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  border-color: rgba(239, 68, 68, 0.25);
+}
+.gh-emerg-card--red .gh-call-btn:hover {
+  background: #ef4444;
+  color: #ffffff;
+}
+
+.gh-emerg-card--green {
+  color: #10b981;
+}
+.gh-emerg-card--green .gh-emerg-icon-wrap {
+  background: rgba(16, 185, 129, 0.12);
+  color: #10b981;
+}
+.gh-emerg-card--green .gh-emerg-label {
+  color: #10b981;
+}
+.gh-emerg-card--green .gh-call-btn {
+  background: rgba(16, 185, 129, 0.1);
+  color: #10b981;
+  border-color: rgba(16, 185, 129, 0.25);
+}
+.gh-emerg-card--green .gh-call-btn:hover {
+  background: #10b981;
+  color: #ffffff;
+}
+
+.gh-emerg-card--purple {
+  color: #8b5cf6;
+}
+.gh-emerg-card--purple .gh-emerg-icon-wrap {
+  background: rgba(139, 92, 246, 0.12);
+  color: #8b5cf6;
+}
+.gh-emerg-card--purple .gh-emerg-label {
+  color: #8b5cf6;
+}
+.gh-emerg-card--purple .gh-call-btn {
+  background: rgba(139, 92, 246, 0.1);
+  color: #8b5cf6;
+  border-color: rgba(139, 92, 246, 0.25);
+}
+.gh-emerg-card--purple .gh-call-btn:hover {
+  background: #8b5cf6;
+  color: #ffffff;
+}
+
+/* ── Society Contacts List / Grid ── */
+.gh-contacts-list {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+@media (min-width: 640px) {
+  .gh-contacts-list {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .gh-contacts-list {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.gh-contact-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1.125rem;
+  border-radius: 1rem;
+  background: var(--card-bg, #ffffff);
+  border: 1px solid var(--border-color, rgba(226, 232, 240, 0.8));
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+  transition: all 0.2s ease;
+}
+
+.gh-contact-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+  border-color: var(--accent-light, #93c5fd);
+}
+
+.gh-avatar {
+  width: 2.875rem;
+  height: 2.875rem;
+  border-radius: 0.875rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9375rem;
+  font-weight: 800;
+  flex-shrink: 0;
+  border: 1px solid transparent;
+}
+
+.gh-avatar--blue {
+  background: rgba(59, 130, 246, 0.12);
+  color: #3b82f6;
+  border-color: rgba(59, 130, 246, 0.25);
+}
+
+.gh-avatar--amber {
+  background: rgba(245, 158, 11, 0.12);
+  color: #d97706;
+  border-color: rgba(245, 158, 11, 0.25);
+}
+
+.gh-avatar--green {
+  background: rgba(16, 185, 129, 0.12);
+  color: #10b981;
+  border-color: rgba(16, 185, 129, 0.25);
+}
+
+.gh-avatar--purple {
+  background: rgba(139, 92, 246, 0.12);
+  color: #8b5cf6;
+  border-color: rgba(139, 92, 246, 0.25);
+}
+
+.gh-contact-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.gh-contact-name {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--text-primary, #0f172a);
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.gh-contact-role {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-secondary, #64748b);
+  margin: 0.125rem 0 0.625rem 0;
+  text-transform: capitalize;
+}
+
+.gh-contact-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.gh-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.3125rem 0.625rem;
+  border-radius: 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.15s ease;
+  border: 1px solid transparent;
+}
+
+.gh-action-btn:hover {
+  transform: translateY(-1px);
+}
+
+.gh-action-btn:active {
+  transform: scale(0.96);
+}
+
+.gh-action-btn--phone {
+  background: rgba(59, 130, 246, 0.1);
+  color: #2563eb;
+  border-color: rgba(59, 130, 246, 0.2);
+}
+.gh-action-btn--phone:hover {
+  background: #2563eb;
+  color: #ffffff;
+}
+
+.gh-action-btn--whatsapp {
+  background: rgba(37, 211, 102, 0.12);
+  color: #16a34a;
+  border-color: rgba(37, 211, 102, 0.25);
+}
+.gh-action-btn--whatsapp:hover {
+  background: #16a34a;
+  color: #ffffff;
+}
+
+.gh-action-btn--email {
+  background: rgba(100, 116, 139, 0.1);
+  color: var(--text-secondary, #64748b);
+  border-color: rgba(100, 116, 139, 0.2);
+}
+.gh-action-btn--email:hover {
+  background: var(--text-secondary, #64748b);
+  color: #ffffff;
+}
+
+/* ── Support Card Banner ── */
+.gh-support-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.25rem 1.5rem;
+  border-radius: 1rem;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.08), rgba(168, 85, 247, 0.06));
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  margin-top: 0.5rem;
+}
+
+@media (min-width: 640px) {
+  .gh-support-card {
+    flex-direction: row;
+    align-items: center;
+  }
+}
+
+.gh-support-icon {
+  color: #6366f1;
+  flex-shrink: 0;
+}
+
+.gh-support-title {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--text-primary, #0f172a);
+  margin: 0 0 0.125rem 0;
+}
+
+.gh-support-sub {
+  font-size: 0.8125rem;
+  color: var(--text-secondary, #64748b);
+  margin: 0;
+}
+
+.gh-support-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5625rem 1rem;
+  border-radius: 0.625rem;
+  background: #6366f1;
+  color: #ffffff !important;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  text-decoration: none;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.gh-support-btn:hover {
+  background: #4f46e5;
+  transform: translateY(-1px);
+}
+
+/* ── FAQ Section ── */
+.gh-faq-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.gh-faq-item {
+  border-radius: 0.875rem;
+  background: var(--card-bg, #ffffff);
+  border: 1px solid var(--border-color, rgba(226, 232, 240, 0.8));
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.02);
+  transition: all 0.2s ease;
+  overflow: hidden;
+}
+
+.gh-faq-item--open {
+  border-color: var(--accent, #6366f1);
+  box-shadow: 0 4px 14px rgba(99, 102, 241, 0.1);
+}
+
+.gh-faq-question {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.125rem 1.25rem;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--text-primary, #0f172a);
+  transition: color 0.15s ease;
+}
+
+.gh-faq-question:hover {
+  color: var(--accent, #6366f1);
+}
+
+.gh-faq-chevron {
+  color: var(--text-secondary, #64748b);
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+}
+
+.gh-faq-item--open .gh-faq-chevron {
+  color: var(--accent, #6366f1);
+}
+
+.gh-faq-answer {
+  padding: 0 1.25rem 1.25rem 1.25rem;
+  border-top: 1px dashed var(--border-color, rgba(226, 232, 240, 0.6));
+  margin-top: -0.25rem;
+  padding-top: 0.875rem;
+}
+
+.gh-faq-answer p {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: var(--text-secondary, #475569);
+}
+
+/* ── Quick Guide Section ── */
+.gh-guide-intro {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  padding: 1rem 1.25rem;
+  border-radius: 0.875rem;
+  background: var(--accent-soft, rgba(99, 102, 241, 0.08));
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  color: var(--text-primary, #0f172a);
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+.gh-guide-intro-icon {
+  color: var(--accent, #6366f1);
+  flex-shrink: 0;
+}
+
+.gh-guide-steps {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+@media (min-width: 640px) {
+  .gh-guide-steps {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .gh-guide-steps {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.gh-guide-step {
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+  padding: 1.25rem;
+  border-radius: 1rem;
+  background: var(--card-bg, #ffffff);
+  border: 1px solid var(--border-color, rgba(226, 232, 240, 0.8));
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+  transition: all 0.2s ease;
+}
+
+.gh-guide-step:hover {
+  transform: translateY(-2px);
+  border-color: var(--accent, #6366f1);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+}
+
+.gh-guide-step-num {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 0.625rem;
+  background: linear-gradient(135deg, var(--accent, #6366f1), var(--accent-light, #818cf8));
+  color: #ffffff;
+  font-size: 0.9375rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 3px 10px rgba(99, 102, 241, 0.3);
+}
+
+.gh-guide-step-title {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--text-primary, #0f172a);
+  margin: 0 0 0.375rem 0;
+}
+
+.gh-guide-step-desc {
+  font-size: 0.8125rem;
+  color: var(--text-secondary, #64748b);
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* ── Shift Checklist ── */
+.gh-shift-tips {
+  padding: 1.25rem 1.5rem;
+  border-radius: 1rem;
+  background: var(--card-bg, #ffffff);
+  border: 1px solid var(--border-color, rgba(226, 232, 240, 0.8));
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+}
+
+.gh-shift-tips-title {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--text-primary, #0f172a);
+  margin: 0 0 1rem 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.gh-checklist-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.625rem 0;
+  border-bottom: 1px solid var(--border-color, rgba(226, 232, 240, 0.6));
+  font-size: 0.875rem;
+  color: var(--text-secondary, #475569);
+}
+
+.gh-checklist-item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.gh-checklist-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: var(--accent, #6366f1);
+  flex-shrink: 0;
+}
+
+/* ── Dos & Don'ts ── */
+.gh-dos-donts {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+@media (min-width: 640px) {
+  .gh-dos-donts {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.gh-do-card {
+  padding: 1.25rem;
+  border-radius: 1rem;
+  background: rgba(16, 185, 129, 0.05);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+}
+
+.gh-dont-card {
+  padding: 1.25rem;
+  border-radius: 1rem;
+  background: rgba(239, 68, 68, 0.05);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+}
+
+.gh-do-title {
+  font-size: 0.9375rem;
+  font-weight: 800;
+  color: #10b981;
+  margin: 0 0 0.875rem 0;
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.gh-dont-title {
+  font-size: 0.9375rem;
+  font-weight: 800;
+  color: #ef4444;
+  margin: 0 0 0.875rem 0;
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.gh-do-item,
+.gh-dont-item {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.4375rem 0;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--text-primary, #1e293b);
+}
+
+.gh-do-dot {
+  width: 0.375rem;
+  height: 0.375rem;
+  border-radius: 50%;
+  background: #10b981;
+  flex-shrink: 0;
+}
+
+.gh-dont-dot {
+  width: 0.375rem;
+  height: 0.375rem;
+  border-radius: 50%;
+  background: #ef4444;
+  flex-shrink: 0;
+}
+
+/* ── Empty State ── */
+.gh-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1.5rem;
+  border-radius: 1rem;
+  background: var(--card-bg, #ffffff);
+  border: 1px dashed var(--border-color, rgba(226, 232, 240, 0.8));
+  text-align: center;
+}
+
+.gh-empty-icon {
+  color: var(--text-secondary, #94a3b8);
+  margin-bottom: 0.75rem;
+  opacity: 0.6;
+}
+
+.gh-empty-text {
+  font-size: 0.875rem;
+  color: var(--text-secondary, #64748b);
+  margin: 0;
+  font-weight: 500;
+}
+
+/* ── Skeleton ── */
+.rd-skeleton {
+  background: linear-gradient(90deg, rgba(200, 200, 200, 0.2) 25%, rgba(200, 200, 200, 0.35) 50%, rgba(200, 200, 200, 0.2) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}

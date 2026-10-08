@@ -1,0 +1,479 @@
+/* ============================================================================
+ * GLOBAL QUICK LINK THEMES — COMPONENT-SCOPED CSS
+ * ----------------------------------------------------------------------------
+ * 10 Genuinely Different Design Treatments for QuickLinks (.quick-link):
+ *   1. default     (Current / Default — Original clean quick link design)
+ *   2. solid       (Colorful Solid — Bold vibrant semantic-tone tile)
+ *   3. glass       (Glass Morphism — Translucent frosted glass with backdrop-blur)
+ *   4. aurora      (Aurora Glass — Radiant soft aura bloom behind quick link)
+ *   5. floating    (Floating 3D — Elevated surface with 3D perspective hover lift)
+ *   6. neon        (Neon Glass — Illuminated glowing border on dark glass)
+ *   7. gradient    (Gradient Glass — Modern smooth color gradient flow)
+ *   8. neumorphic  (Neumorphic — Soft tactile pillowed surface & press depth)
+ *   9. accent-rail (Accent Rail — Strong 5px semantic-color indicator side rail)
+ *  10. minimal     (Minimal Premium — Clean ultra-flat typography-focused tile)
+ *
+ * CRITICAL ARCHITECTURAL RULE:
+ * Every selector MUST be strictly scoped to `.quick-link`.
+ * Scoped properly to prevent global theme inheritance from overriding specific link variants.
+ * ========================================================================== */
+
+/* ── BASE QUICK LINK COMPONENT SHELL ──────────────────────────────────── */
+.quick-link {
+  --ql-color: var(--gd-c, var(--accent, #9e58ff));
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px 18px;
+  border-radius: 16px;
+  cursor: pointer;
+  text-decoration: none;
+  font-family: inherit;
+  text-align: left;
+  background: var(--card-bg, #1a1d26);
+  border: 1.5px solid var(--glass-border, rgba(255, 255, 255, 0.1));
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.16);
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+    background 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.quick-link__blob {
+  position: absolute;
+  top: -24px;
+  right: -24px;
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--ql-color) 20%, transparent);
+  pointer-events: none;
+  transition: transform 0.45s ease, opacity 0.45s ease;
+  z-index: 0;
+}
+
+.quick-link__badge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 2;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+}
+
+.quick-link__icon {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  color: var(--ql-color);
+  background: color-mix(in srgb, var(--ql-color) 18%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ql-color) 35%, transparent);
+  transition: transform 0.25s ease;
+}
+
+.quick-link__body {
+  position: relative;
+  z-index: 1;
+  margin-top: auto;
+}
+
+.quick-link__title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.quick-link__title {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--text-primary, #ffffff);
+  line-height: 1.25;
+  margin: 0;
+}
+
+.quick-link__arrow {
+  color: var(--text-secondary, rgba(255, 255, 255, 0.6));
+  transition: transform 0.25s ease, color 0.25s ease;
+  flex-shrink: 0;
+}
+
+.quick-link__desc {
+  font-size: 11px;
+  color: var(--text-secondary, rgba(255, 255, 255, 0.65));
+  margin-top: 2px;
+  margin-bottom: 0;
+  line-height: 1.35;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+html.light .quick-link .quick-link__title {
+  color: var(--text-primary, #0f172a);
+}
+html.light .quick-link .quick-link__desc {
+  color: var(--text-secondary, #475569);
+}
+html.light .quick-link .quick-link__arrow {
+  color: var(--text-secondary, #64748b);
+}
+
+/* ── 1. DEFAULT / CURRENT ─────────────────────────────────────────────── */
+.quick-link.quick-link-style-default,
+html.quick-link-style-default .quick-link:not([class*="quick-link-style-"]) {
+  background: var(--card-bg, #1a1d26) !important;
+  border: 1.5px solid color-mix(in srgb, var(--ql-color) 35%, var(--glass-border)) !important;
+}
+.quick-link.quick-link-style-default:hover,
+html.quick-link-style-default .quick-link:not([class*="quick-link-style-"]):hover {
+  transform: translateY(-4px) !important;
+  border-color: color-mix(in srgb, var(--ql-color) 70%, var(--glass-border)) !important;
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.28) !important;
+}
+.quick-link.quick-link-style-default:hover .quick-link__arrow,
+html.quick-link-style-default .quick-link:not([class*="quick-link-style-"]):hover .quick-link__arrow {
+  color: var(--ql-color) !important;
+  transform: translateX(3px) !important;
+}
+html.light .quick-link.quick-link-style-default,
+html.light.quick-link-style-default .quick-link:not([class*="quick-link-style-"]) {
+  background: #ffffff !important;
+  border-color: color-mix(in srgb, var(--ql-color) 35%, #e2e8f0) !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.05) !important;
+}
+
+/* ── 2. COLORFUL SOLID ────────────────────────────────────────────────── */
+.quick-link.quick-link-style-solid,
+html.quick-link-style-solid .quick-link:not([class*="quick-link-style-"]) {
+  background: var(--ql-color, var(--accent, #6366f1)) !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.35) !important;
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--ql-color, var(--accent, #6366f1)) 45%, transparent) !important;
+}
+.quick-link.quick-link-style-solid .quick-link__title,
+html.quick-link-style-solid .quick-link:not([class*="quick-link-style-"]) .quick-link__title,
+html.light .quick-link.quick-link-style-solid .quick-link__title,
+html.light.quick-link-style-solid .quick-link:not([class*="quick-link-style-"]) .quick-link__title {
+  color: #ffffff !important;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.25) !important;
+}
+.quick-link.quick-link-style-solid .quick-link__desc,
+html.quick-link-style-solid .quick-link:not([class*="quick-link-style-"]) .quick-link__desc,
+html.light .quick-link.quick-link-style-solid .quick-link__desc,
+html.light.quick-link-style-solid .quick-link:not([class*="quick-link-style-"]) .quick-link__desc {
+  color: rgba(255, 255, 255, 0.92) !important;
+}
+.quick-link.quick-link-style-solid .quick-link__arrow,
+html.quick-link-style-solid .quick-link:not([class*="quick-link-style-"]) .quick-link__arrow,
+html.light .quick-link.quick-link-style-solid .quick-link__arrow,
+html.light.quick-link-style-solid .quick-link:not([class*="quick-link-style-"]) .quick-link__arrow {
+  color: rgba(255, 255, 255, 0.95) !important;
+}
+.quick-link.quick-link-style-solid .quick-link__icon,
+html.quick-link-style-solid .quick-link:not([class*="quick-link-style-"]) .quick-link__icon,
+html.light .quick-link.quick-link-style-solid .quick-link__icon,
+html.light.quick-link-style-solid .quick-link:not([class*="quick-link-style-"]) .quick-link__icon {
+  background: rgba(255, 255, 255, 0.24) !important;
+  color: #ffffff !important;
+  border-color: rgba(255, 255, 255, 0.4) !important;
+}
+.quick-link.quick-link-style-solid .quick-link__blob,
+html.quick-link-style-solid .quick-link:not([class*="quick-link-style-"]) .quick-link__blob {
+  background: rgba(255, 255, 255, 0.18) !important;
+}
+.quick-link.quick-link-style-solid:hover,
+html.quick-link-style-solid .quick-link:not([class*="quick-link-style-"]):hover {
+  transform: translateY(-4px) scale(1.02) !important;
+  box-shadow: 0 14px 34px color-mix(in srgb, var(--ql-color, var(--accent, #6366f1)) 60%, transparent) !important;
+}
+html.light .quick-link.quick-link-style-solid,
+html.light.quick-link-style-solid .quick-link:not([class*="quick-link-style-"]) {
+  background: var(--ql-color, var(--accent, #6366f1)) !important;
+  border-color: rgba(255, 255, 255, 0.4) !important;
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--ql-color, var(--accent, #6366f1)) 35%, transparent) !important;
+}
+
+/* ── 3. GLASS MORPHISM ────────────────────────────────────────────────── */
+.quick-link.quick-link-style-glass,
+.quick-link.quick-link-style-glass-tile,
+html.quick-link-style-glass .quick-link:not([class*="quick-link-style-"]),
+html.quick-link-style-glass-tile .quick-link:not([class*="quick-link-style-"]) {
+  background: radial-gradient(
+      circle at 85% 15%,
+      color-mix(in srgb, var(--ql-color) 20%, transparent) 0%,
+      transparent 65%
+    ),
+    rgba(22, 25, 34, 0.78) !important;
+  backdrop-filter: blur(18px) !important;
+  -webkit-backdrop-filter: blur(18px) !important;
+  border: 1.5px solid color-mix(in srgb, var(--ql-color) 45%, var(--glass-border)) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.16) !important;
+}
+.quick-link.quick-link-style-glass:hover,
+.quick-link.quick-link-style-glass-tile:hover,
+html.quick-link-style-glass .quick-link:not([class*="quick-link-style-"]):hover,
+html.quick-link-style-glass-tile .quick-link:not([class*="quick-link-style-"]):hover {
+  transform: translateY(-4px) !important;
+  border-color: var(--ql-color) !important;
+  box-shadow: 0 14px 34px -4px color-mix(in srgb, var(--ql-color) 45%, transparent),
+    0 0 16px color-mix(in srgb, var(--ql-color) 25%, transparent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.25) !important;
+}
+html.light .quick-link.quick-link-style-glass,
+html.light .quick-link.quick-link-style-glass-tile,
+html.light.quick-link-style-glass .quick-link:not([class*="quick-link-style-"]),
+html.light.quick-link-style-glass-tile .quick-link:not([class*="quick-link-style-"]) {
+  background: radial-gradient(
+      circle at 85% 15%,
+      color-mix(in srgb, var(--ql-color) 16%, transparent) 0%,
+      transparent 65%
+    ),
+    rgba(255, 255, 255, 0.88) !important;
+  backdrop-filter: blur(18px) !important;
+  -webkit-backdrop-filter: blur(18px) !important;
+  border-color: color-mix(in srgb, var(--ql-color) 40%, rgba(0, 0, 0, 0.1)) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06), inset 0 1px 0 #ffffff !important;
+}
+
+/* ── 4. AURORA GLASS ──────────────────────────────────────────────────── */
+.quick-link.quick-link-style-aurora,
+.quick-link.quick-link-style-aurora-tile,
+html.quick-link-style-aurora .quick-link:not([class*="quick-link-style-"]),
+html.quick-link-style-aurora-tile .quick-link:not([class*="quick-link-style-"]) {
+  background: rgba(20, 23, 32, 0.84) !important;
+  backdrop-filter: blur(22px) !important;
+  -webkit-backdrop-filter: blur(22px) !important;
+  border: 1.5px solid color-mix(in srgb, var(--ql-color) 45%, var(--glass-border)) !important;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.18) !important;
+}
+.quick-link.quick-link-style-aurora .quick-link__blob,
+.quick-link.quick-link-style-aurora-tile .quick-link__blob,
+html.quick-link-style-aurora .quick-link:not([class*="quick-link-style-"]) .quick-link__blob,
+html.quick-link-style-aurora-tile .quick-link:not([class*="quick-link-style-"]) .quick-link__blob {
+  filter: blur(26px) !important;
+  background: color-mix(in srgb, var(--ql-color) 60%, transparent) !important;
+  opacity: 0.65 !important;
+  transform: scale(1.3) !important;
+}
+.quick-link.quick-link-style-aurora:hover,
+.quick-link.quick-link-style-aurora-tile:hover,
+html.quick-link-style-aurora .quick-link:not([class*="quick-link-style-"]):hover,
+html.quick-link-style-aurora-tile .quick-link:not([class*="quick-link-style-"]):hover {
+  transform: translateY(-5px) !important;
+  border-color: var(--ql-color) !important;
+  box-shadow: 0 16px 36px -4px color-mix(in srgb, var(--ql-color) 50%, transparent),
+    0 0 20px color-mix(in srgb, var(--ql-color) 30%, transparent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.28) !important;
+}
+.quick-link.quick-link-style-aurora:hover .quick-link__blob,
+.quick-link.quick-link-style-aurora-tile:hover .quick-link__blob,
+html.quick-link-style-aurora .quick-link:not([class*="quick-link-style-"]):hover .quick-link__blob,
+html.quick-link-style-aurora-tile .quick-link:not([class*="quick-link-style-"]):hover .quick-link__blob {
+  transform: scale(1.6) !important;
+  opacity: 0.85 !important;
+}
+html.light .quick-link.quick-link-style-aurora,
+html.light .quick-link.quick-link-style-aurora-tile,
+html.light.quick-link-style-aurora .quick-link:not([class*="quick-link-style-"]),
+html.light.quick-link-style-aurora-tile .quick-link:not([class*="quick-link-style-"]) {
+  background: rgba(255, 255, 255, 0.92) !important;
+  backdrop-filter: blur(22px) !important;
+  -webkit-backdrop-filter: blur(22px) !important;
+  border-color: color-mix(in srgb, var(--ql-color) 40%, rgba(0, 0, 0, 0.08)) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06), inset 0 1px 0 #ffffff !important;
+}
+
+/* ── 5. FLOATING 3D ───────────────────────────────────────────────────── */
+.quick-link.quick-link-style-floating,
+.quick-link.quick-link-style-floating-tile,
+html.quick-link-style-floating .quick-link:not([class*="quick-link-style-"]),
+html.quick-link-style-floating-tile .quick-link:not([class*="quick-link-style-"]) {
+  background: linear-gradient(145deg, #232734, #181a23) !important;
+  border: 1.5px solid color-mix(in srgb, var(--ql-color) 35%, rgba(255, 255, 255, 0.14)) !important;
+  box-shadow: 0 14px 34px -6px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.16) !important;
+  transform: perspective(600px) rotateX(0deg) translateY(-2px) !important;
+}
+.quick-link.quick-link-style-floating:hover,
+.quick-link.quick-link-style-floating-tile:hover,
+html.quick-link-style-floating .quick-link:not([class*="quick-link-style-"]):hover,
+html.quick-link-style-floating-tile .quick-link:not([class*="quick-link-style-"]):hover {
+  transform: perspective(600px) rotateX(3deg) translateY(-7px) scale(1.02) !important;
+  border-color: var(--ql-color) !important;
+  box-shadow: 0 22px 46px -8px rgba(0, 0, 0, 0.65), 0 0 18px color-mix(in srgb, var(--ql-color) 35%, transparent) !important;
+}
+html.light .quick-link.quick-link-style-floating,
+html.light .quick-link.quick-link-style-floating-tile,
+html.light.quick-link-style-floating .quick-link:not([class*="quick-link-style-"]),
+html.light.quick-link-style-floating-tile .quick-link:not([class*="quick-link-style-"]) {
+  background: #ffffff !important;
+  border-color: color-mix(in srgb, var(--ql-color) 35%, #cbd5e1) !important;
+  box-shadow: 0 12px 28px -4px rgba(0, 0, 0, 0.08), inset 0 1px 0 #ffffff !important;
+}
+
+/* ── 6. NEON GLASS ────────────────────────────────────────────────────── */
+.quick-link.quick-link-style-neon,
+.quick-link.quick-link-style-neon-edge,
+html.quick-link-style-neon .quick-link:not([class*="quick-link-style-"]),
+html.quick-link-style-neon-edge .quick-link:not([class*="quick-link-style-"]) {
+  background: rgba(14, 16, 22, 0.92) !important;
+  backdrop-filter: blur(16px) !important;
+  border: 2px solid var(--ql-color) !important;
+  box-shadow: 0 0 16px color-mix(in srgb, var(--ql-color) 40%, transparent),
+    inset 0 0 10px color-mix(in srgb, var(--ql-color) 12%, transparent) !important;
+}
+.quick-link.quick-link-style-neon:hover,
+.quick-link.quick-link-style-neon-edge:hover,
+html.quick-link-style-neon .quick-link:not([class*="quick-link-style-"]):hover,
+html.quick-link-style-neon-edge .quick-link:not([class*="quick-link-style-"]):hover {
+  transform: translateY(-4px) !important;
+  box-shadow: 0 0 28px color-mix(in srgb, var(--ql-color) 65%, transparent),
+    inset 0 0 16px color-mix(in srgb, var(--ql-color) 25%, transparent) !important;
+}
+html.light .quick-link.quick-link-style-neon,
+html.light .quick-link.quick-link-style-neon-edge,
+html.light.quick-link-style-neon .quick-link:not([class*="quick-link-style-"]),
+html.light.quick-link-style-neon-edge .quick-link:not([class*="quick-link-style-"]) {
+  background: #ffffff !important;
+  border-color: var(--ql-color) !important;
+  box-shadow: 0 0 14px color-mix(in srgb, var(--ql-color) 30%, transparent) !important;
+}
+
+/* ── 7. GRADIENT GLASS ────────────────────────────────────────────────── */
+.quick-link.quick-link-style-gradient,
+.quick-link.quick-link-style-gradient-mesh,
+html.quick-link-style-gradient .quick-link:not([class*="quick-link-style-"]),
+html.quick-link-style-gradient-mesh .quick-link:not([class*="quick-link-style-"]) {
+  background: linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--ql-color) 25%, #161822) 0%,
+      color-mix(in srgb, var(--ql-color) 8%, #0e1017) 100%
+    ) !important;
+  border: 1.5px solid color-mix(in srgb, var(--ql-color) 45%, var(--glass-border)) !important;
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--ql-color) 20%, transparent) !important;
+}
+.quick-link.quick-link-style-gradient:hover,
+.quick-link.quick-link-style-gradient-mesh:hover,
+html.quick-link-style-gradient .quick-link:not([class*="quick-link-style-"]):hover,
+html.quick-link-style-gradient-mesh .quick-link:not([class*="quick-link-style-"]):hover {
+  transform: translateY(-4px) !important;
+  background: linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--ql-color) 34%, #161822) 0%,
+      color-mix(in srgb, var(--ql-color) 14%, #0e1017) 100%
+    ) !important;
+  border-color: var(--ql-color) !important;
+  box-shadow: 0 14px 32px color-mix(in srgb, var(--ql-color) 35%, transparent) !important;
+}
+html.light .quick-link.quick-link-style-gradient,
+html.light .quick-link.quick-link-style-gradient-mesh,
+html.light.quick-link-style-gradient .quick-link:not([class*="quick-link-style-"]),
+html.light.quick-link-style-gradient-mesh .quick-link:not([class*="quick-link-style-"]) {
+  background: linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--ql-color) 20%, #ffffff) 0%,
+      color-mix(in srgb, var(--ql-color) 8%, #f8fafc) 100%
+    ) !important;
+  border-color: color-mix(in srgb, var(--ql-color) 35%, transparent) !important;
+  box-shadow: 0 6px 20px color-mix(in srgb, var(--ql-color) 12%, transparent) !important;
+}
+
+/* ── 8. NEUMORPHIC ────────────────────────────────────────────────────── */
+.quick-link.quick-link-style-neumorphic,
+.quick-link.quick-link-style-soft-neumorphic,
+html.quick-link-style-neumorphic .quick-link:not([class*="quick-link-style-"]),
+html.quick-link-style-soft-neumorphic .quick-link:not([class*="quick-link-style-"]) {
+  background: linear-gradient(145deg, #1f232f, #171922) !important;
+  border: 1px solid color-mix(in srgb, var(--ql-color) 25%, rgba(255, 255, 255, 0.08)) !important;
+  box-shadow: inset 2px 2px 5px rgba(255, 255, 255, 0.08),
+    inset -2px -2px 5px rgba(0, 0, 0, 0.5),
+    0 8px 24px rgba(0, 0, 0, 0.3) !important;
+  border-radius: 18px !important;
+}
+.quick-link.quick-link-style-neumorphic:hover,
+.quick-link.quick-link-style-soft-neumorphic:hover,
+html.quick-link-style-neumorphic .quick-link:not([class*="quick-link-style-"]):hover,
+html.quick-link-style-soft-neumorphic .quick-link:not([class*="quick-link-style-"]):hover {
+  transform: translateY(-2px) !important;
+  box-shadow: inset 1px 1px 3px rgba(255, 255, 255, 0.12),
+    inset -1px -1px 3px rgba(0, 0, 0, 0.4),
+    0 12px 28px rgba(0, 0, 0, 0.38),
+    0 0 14px color-mix(in srgb, var(--ql-color) 25%, transparent) !important;
+}
+html.light .quick-link.quick-link-style-neumorphic,
+html.light .quick-link.quick-link-style-soft-neumorphic,
+html.light.quick-link-style-neumorphic .quick-link:not([class*="quick-link-style-"]),
+html.light.quick-link-style-soft-neumorphic .quick-link:not([class*="quick-link-style-"]) {
+  background: linear-gradient(145deg, #ffffff, #edf2f7) !important;
+  border: 1px solid color-mix(in srgb, var(--ql-color) 25%, #e2e8f0) !important;
+  box-shadow: inset 2px 2px 4px rgba(255, 255, 255, 0.9),
+    inset -2px -2px 4px rgba(0, 0, 0, 0.06),
+    0 8px 20px rgba(0, 0, 0, 0.05) !important;
+}
+
+/* ── 9. ACCENT RAIL ───────────────────────────────────────────────────── */
+.quick-link.quick-link-style-accent-rail,
+.quick-link.quick-link-style-accent-bar,
+html.quick-link-style-accent-rail .quick-link:not([class*="quick-link-style-"]),
+html.quick-link-style-accent-bar .quick-link:not([class*="quick-link-style-"]) {
+  background: var(--card-bg, #1a1d26) !important;
+  border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.1)) !important;
+  border-left: 5px solid var(--ql-color) !important;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.22) !important;
+}
+.quick-link.quick-link-style-accent-rail:hover,
+.quick-link.quick-link-style-accent-bar:hover,
+html.quick-link-style-accent-rail .quick-link:not([class*="quick-link-style-"]):hover,
+html.quick-link-style-accent-bar .quick-link:not([class*="quick-link-style-"]):hover {
+  transform: translateX(4px) !important;
+  border-left-width: 6px !important;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.3),
+    -4px 0 16px color-mix(in srgb, var(--ql-color) 35%, transparent) !important;
+}
+html.light .quick-link.quick-link-style-accent-rail,
+html.light .quick-link.quick-link-style-accent-bar,
+html.light.quick-link-style-accent-rail .quick-link:not([class*="quick-link-style-"]),
+html.light.quick-link-style-accent-bar .quick-link:not([class*="quick-link-style-"]) {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  border-left: 5px solid var(--ql-color) !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.05) !important;
+}
+
+/* ── 10. MINIMAL PREMIUM ──────────────────────────────────────────────── */
+.quick-link.quick-link-style-minimal,
+.quick-link.quick-link-style-minimal-tile,
+html.quick-link-style-minimal .quick-link:not([class*="quick-link-style-"]),
+html.quick-link-style-minimal-tile .quick-link:not([class*="quick-link-style-"]) {
+  background: rgba(255, 255, 255, 0.035) !important;
+  border: 1px solid color-mix(in srgb, var(--ql-color) 25%, rgba(255, 255, 255, 0.09)) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+}
+.quick-link.quick-link-style-minimal:hover,
+.quick-link.quick-link-style-minimal-tile:hover,
+html.quick-link-style-minimal .quick-link:not([class*="quick-link-style-"]):hover,
+html.quick-link-style-minimal-tile .quick-link:not([class*="quick-link-style-"]):hover {
+  transform: translateY(-2px) !important;
+  background: rgba(255, 255, 255, 0.06) !important;
+  border-color: color-mix(in srgb, var(--ql-color) 50%, rgba(255, 255, 255, 0.15)) !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.16) !important;
+}
+html.light .quick-link.quick-link-style-minimal,
+html.light .quick-link.quick-link-style-minimal-tile,
+html.light.quick-link-style-minimal .quick-link:not([class*="quick-link-style-"]),
+html.light.quick-link-style-minimal-tile .quick-link:not([class*="quick-link-style-"]) {
+  background: #ffffff !important;
+  border: 1px solid color-mix(in srgb, var(--ql-color) 30%, #e2e8f0) !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04) !important;
+}
