@@ -11,7 +11,7 @@ import {
   MdUploadFile, MdBadge, MdCreditCard, MdCheck, MdDirectionsCar,
   MdPeople, MdPhone, MdContactPhone, MdEdit, MdArrowBack,
   MdArrowForward, MdLocalParking, MdWarning, MdMoreVert, MdBlock,
-  MdVisibility, MdVisibilityOff,
+  MdVisibility, MdVisibilityOff, MdGroups, MdCalculate,
 } from "react-icons/md";
 import { toast } from "react-toastify";
 import Select from "../../components/common/Select";
@@ -25,6 +25,7 @@ import { useCustomAlert } from "../../context/CustomAlertContext";
 
 import Pagination from "../../components/common/Pagination";
 import UserAvatar from "../../components/common/UserAvatar";
+import StatCard from "../../components/common/StatCard";
 
 /* ─────────────────────────────────────────
    HELPERS
@@ -2310,6 +2311,7 @@ export default function Resident() {
 
   const [residents, setResidents] = useState([]);
   const [totalAll, setTotalAll] = useState(0);
+  const [roleCounts, setRoleCounts] = useState(null);
   const [initialLoad, setInitialLoad] = useState(true);
   const [fetching, setFetching] = useState(false);
   const [search, setSearch] = useState("");
@@ -2504,6 +2506,7 @@ const [totalPages, setTotalPages] = useState(1);
           : [];
         setResidents(data);
         setTotalAll(res.data.totalAll ?? res.data.pagination?.totalItems ?? 0);
+        setRoleCounts(res.data?.roleCounts || null);
         setTotalPages(res.data.pagination?.totalPages ?? 1);
         setTotalItems(res.data.pagination?.totalItems ?? 0);
         setPage(pageNum);
@@ -2538,6 +2541,9 @@ const [totalPages, setTotalPages] = useState(1);
         case "SOCIETY_ADMIN":
           return roles.includes("SOCIETY_ADMIN");
         case "RESIDENT":
+          // "Resident" means a regular member: everyone except the committee
+          // and accountant buckets shown by the KPI cards above the table.
+          if (roles.includes("COMMITTEE_MEMBER") || roles.includes("ACCOUNTANT")) return false;
           return residentType === "OWNER" || roles.includes("RESIDENT") || (residentType !== "TENANT" && !roles.includes("TENANT"));
         case "TENANT":
           return residentType === "TENANT" || roles.includes("TENANT");
@@ -2546,6 +2552,30 @@ const [totalPages, setTotalPages] = useState(1);
       }
     });
   }, [residents, filterRole]);
+
+  /* KPI card values. `roleCounts` is returned by GET /users/resident and is
+     computed from the whole filtered set (not just the current page), so the
+     four cards stay accurate no matter the page size. The reduce below is only
+     a fallback if the server did not send the breakdown. */
+  const cardStats = useMemo(() => {
+    const fallbackCounts = residents.reduce(
+      (acc, r) => {
+        const roles = Array.isArray(r.roles) ? r.roles : typeof r.roles === "string" ? [r.roles] : [];
+        if (roles.includes("COMMITTEE_MEMBER")) acc.committee += 1;
+        else if (roles.includes("ACCOUNTANT")) acc.accountant += 1;
+        else acc.resident += 1;
+        return acc;
+      },
+      { resident: 0, committee: 0, accountant: 0 },
+    );
+    const counts = roleCounts || fallbackCounts;
+    return {
+      total: roleCounts?.total ?? totalAll,
+      resident: counts.resident ?? 0,
+      committee: counts.committee ?? 0,
+      accountant: counts.accountant ?? 0,
+    };
+  }, [roleCounts, residents, totalAll]);
 
   const handleOpenAddResident = () => {
     if (!showForm && !hasPermission(user, "resident", "create")) {
@@ -3040,6 +3070,69 @@ const [totalPages, setTotalPages] = useState(1);
             {showForm ? t("cancel") : t("residentAddBtn")}
           </GlobalButton>
         )}
+      </div>
+
+      {/* ── KPI STAT CARDS ──
+          Same StatCard component, variant and semantic tones as /admin, so the
+          global card style chosen in Settings → Theme & Branding applies here
+          too (the style class comes from ThemeContext inside StatCard).
+          Clicking a card applies the matching role filter above the table. */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
+        <StatCard
+          variant="sheen"
+          tone="brand"
+          interactive
+          selected={!filterRole}
+          onClick={() => setFilterRole("")}
+          icon={MdPeople}
+          value={initialLoad ? "—" : cardStats.total}
+          label={t("resStatTotal", "Total Residents")}
+          description={
+            <span className="hidden lg:block">{t("resStatTotalDesc", "All registered society members")}</span>
+          }
+        />
+
+        <StatCard
+          variant="sheen"
+          tone="success"
+          interactive
+          selected={filterRole === "RESIDENT"}
+          onClick={() => setFilterRole("RESIDENT")}
+          icon={MdPerson}
+          value={initialLoad ? "—" : cardStats.resident}
+          label={t("roleResident", "Resident")}
+          description={
+            <span className="hidden lg:block">{t("resStatResidentDesc", "Owners & tenants without a role")}</span>
+          }
+        />
+
+        <StatCard
+          variant="sheen"
+          tone="warning"
+          interactive
+          selected={filterRole === "COMMITTEE_MEMBER"}
+          onClick={() => setFilterRole("COMMITTEE_MEMBER")}
+          icon={MdGroups}
+          value={initialLoad ? "—" : cardStats.committee}
+          label={t("roleCommittee", "Committee Member")}
+          description={
+            <span className="hidden lg:block">{t("resStatCommitteeDesc", "Elected managing committee")}</span>
+          }
+        />
+
+        <StatCard
+          variant="sheen"
+          tone="info"
+          interactive
+          selected={filterRole === "ACCOUNTANT"}
+          onClick={() => setFilterRole("ACCOUNTANT")}
+          icon={MdCalculate}
+          value={initialLoad ? "—" : cardStats.accountant}
+          label={t("roleAccountant", "Accountant")}
+          description={
+            <span className="hidden lg:block">{t("resStatAccountantDesc", "Appointed finance in-charge")}</span>
+          }
+        />
       </div>
 
       {/* Add / Edit Resident Modal Popup */}

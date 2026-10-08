@@ -6,7 +6,7 @@ import { Spinner, amenityEmoji, PALETTES, isPaidAmenity } from "../amenityHelper
 import SlidingTabs from "../../../components/common/SlidingTabs";
 import ExpandableSearch from "../../../components/common/ExpandableSearch";
 import GlobalButton from "../../../components/common/GlobalButton";
-import PanelHero from "../../../components/common/PanelHero";
+import StatCard from "../../../components/common/StatCard";
 
 function StatusBadge({ status, t }) {
   const cfg = {
@@ -146,9 +146,6 @@ export default function Index({
 
   return (
     <>
-      {/* IDENTITY HERO — matches the dashboard's top section */}
-      <PanelHero clickableAvatar />
-
       {/* HEADER */}
       <div className="ad-page-header flex flex-col md:flex-row items-start md:items-center justify-between gap-4 p-4 sm:p-5 rounded-2xl border"
         style={{
@@ -364,6 +361,50 @@ export default function Index({
       {/* ════════════ BOOKINGS ════════════ */}
       {activeTab === "BOOKINGS" && (
         <>
+          {/* Dynamic StatCards for Bookings */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+            <StatCard
+              icon={MdCalendarMonth}
+              value={groupedBookings.length}
+              label={t("amenBookingTotal") || "Total Bookings"}
+              tone="brand"
+              active={bookingFilter === "ALL"}
+              onClick={() => onBookingFilter("ALL")}
+            />
+            <StatCard
+              icon={MdCheckCircle}
+              value={groupedBookings.filter((b) => b.status === "APPROVED").length}
+              label={t("amenBookingApproved") || "Approved"}
+              tone="success"
+              active={bookingFilter === "APPROVED"}
+              onClick={() => onBookingFilter("APPROVED")}
+            />
+            <StatCard
+              icon={MdCancel}
+              value={groupedBookings.filter((b) => b.status === "REJECTED").length}
+              label={t("amenBookingRejected") || "Rejected"}
+              tone="danger"
+              active={bookingFilter === "REJECTED"}
+              onClick={() => onBookingFilter("REJECTED")}
+            />
+            <StatCard
+              icon={MdAccessTime}
+              value={groupedBookings.filter((b) => b.status === "PENDING" || b.status === "PAYMENT_PENDING").length}
+              label={t("amenBookingPending") || "Pending"}
+              tone="warning"
+              active={bookingFilter === "PENDING" || bookingFilter === "PAYMENT_PENDING"}
+              onClick={() => onBookingFilter("PENDING")}
+            />
+            <StatCard
+              icon={MdBlock}
+              value={groupedBookings.filter((b) => b.status === "CANCELLED").length}
+              label={t("amenBookingCancelled") || "Canceled"}
+              tone="neutral"
+              active={bookingFilter === "CANCELLED"}
+              onClick={() => onBookingFilter("CANCELLED")}
+            />
+          </div>
+
           {/* Filter pills */}
           <div style={{ overflowX: "auto", paddingBottom: 2 }}>
             <div style={{ display: "inline-flex", padding: 5, gap: 4, background: "var(--card-inner-bg)", border: "1.5px solid var(--glass-border)", borderRadius: 14, minWidth: isMobile ? "100%" : "auto" }}>

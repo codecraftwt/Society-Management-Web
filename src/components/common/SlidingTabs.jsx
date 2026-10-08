@@ -31,7 +31,7 @@ export default function SlidingTabs({
     const list = listRef.current;
     if (!list) return;
     const { tabList: latestTabs, value: activeValue } = latestRef.current;
-    const index = latestTabs.findIndex((item) => item.id === activeValue);
+    const index = latestTabs.findIndex((item) => (item.id ?? item.key ?? item.value) === activeValue);
     const el = index >= 0 ? itemRefs.current[index] : null;
     if (!el) return;
 
@@ -84,10 +84,11 @@ export default function SlidingTabs({
         }}
       />
       {tabList.map((item, index) => {
-        const active = item.id === value;
+        const itemId = item.id ?? item.key ?? item.value ?? String(index);
+        const active = itemId === value;
         return (
           <button
-            key={item.id}
+            key={itemId}
             type="button"
             role="tab"
             aria-selected={active}
@@ -95,7 +96,7 @@ export default function SlidingTabs({
             ref={(node) => {
               itemRefs.current[index] = node;
             }}
-            onClick={() => onChange?.(item.id)}
+            onClick={() => onChange?.(itemId)}
           >
             {item.icon}
             {item.label}

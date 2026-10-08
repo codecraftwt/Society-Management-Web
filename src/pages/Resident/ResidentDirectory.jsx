@@ -4,6 +4,7 @@ import { useLang } from "../../context/LanguageContext";
 import ExpandableSearch from "../../components/common/ExpandableSearch";
 import SlidingTabs from "../../components/common/SlidingTabs";
 import StatCard from "../../components/common/StatCard";
+import Select from "../../components/common/Select";
 import {
   MdPeople,
   MdPhone,
@@ -164,50 +165,53 @@ export default function ResidentDirectory() {
         </div>
       </div>
 
-      {/* Stats Summary */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-          gap: "14px",
-          marginTop: "16px",
-          marginBottom: "20px",
-        }}
-      >
+      {/* Stats Summary (ONE ROW) */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 my-4">
         <StatCard
+          icon={MdPeople}
           tone="brand"
           value={neighbours.length}
-          label={t("dirTotalNeighbours")}
+          label={t("dirTotalNeighbours") || "Total Neighbours"}
         />
         <StatCard
+          icon={MdApartment}
           tone="warning"
           value={blocks.length || 1}
-          label={t("dirSocietyBlocks")}
+          label={t("dirSocietyBlocks") || "Society Blocks"}
         />
         <StatCard
+          icon={MdCheck}
           tone="success"
           value={filtered.length}
-          label={t("dirActiveMatches")}
+          label={t("dirActiveMatches") || "Active Matches"}
         />
       </div>
 
-      {/* Filter Tabs & Expandable Search */}
+      {/* Filter Dropdown & Expandable Search */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
-        {/* Left: Block Tabs */}
-        {blockTabItems.length > 1 && (
-          <div className="overflow-x-auto max-w-full pb-0.5" style={{ scrollbarWidth: "none" }}>
-            <SlidingTabs
-              items={blockTabItems}
-              value={selectedBlock}
-              onChange={setSelectedBlock}
-            />
-          </div>
-        )}
+        {/* Left: Block Dropdown Selector */}
+        <div className="flex items-center gap-2 w-full sm:w-64">
+          <Select
+            value={selectedBlock}
+            onChange={(e) => setSelectedBlock(e.target.value)}
+            className="input h-10 w-full text-xs font-semibold"
+          >
+            <option value="ALL">🏢 {t("compTabAll") || "All Blocks"} ({neighbours.length})</option>
+            {blocks.map((b) => {
+              const count = neighbours.filter((n) => (n.Block?.name || n.block_name || n.Block?.block_name) === b).length;
+              return (
+                <option key={b} value={b}>
+                  🏢 Block {b} ({count})
+                </option>
+              );
+            })}
+          </Select>
+        </div>
 
         {/* Right: Expandable Search */}
-        <div className="flex items-center gap-2.5 ml-auto">
+        <div className="flex items-center gap-2.5 ml-auto w-full sm:w-auto justify-end">
           <ExpandableSearch
-            placeholder={t("dirSearch")}
+            placeholder={t("dirSearch") || "Search resident, flat, phone…"}
             value={search}
             onChange={setSearch}
           />

@@ -600,26 +600,7 @@ html.light {
     color: #667085;
   }
 
-  /* ── Flat Card (Light: #FFFFFF card on #F6F7FB page) ── */
-  .fh-flat-card {
-    background: #FFFFFF;
-    border: 1px solid #E2E8F0;
-    box-shadow: 0 2px 8px -2px rgba(15, 23, 42, 0.05);
-    border-radius: 16px;
-    transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
-  }
-
-  .fh-flat-card:hover {
-    border-color: #2563EB;
-    box-shadow: 0 12px 24px -4px rgba(37, 99, 235, 0.12);
-    transform: translateY(-2px);
-  }
-
-  .fh-flat-card--selected {
-    border-color: #2563EB !important;
-    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.25);
-  }
-
+  
   .fh-card-avatar--occ {
     background: #ECFDF5;
     border-color: #A7F3D0;
@@ -688,10 +669,7 @@ html.light {
     font-weight: 600;
   }
 
-  .fh-flat-card:hover .fh-card-footer-action {
-    color: #2563EB;
-  }
-
+  
   /* ── Pop-Up Modal (Light) ── */
   .fh-modal-overlay {
     background: rgba(15, 23, 42, 0.45);

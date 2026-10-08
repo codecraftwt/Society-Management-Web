@@ -7,10 +7,11 @@ import {
   MdOpenInNew, MdWarning, MdSearch, MdFilterList,
   MdPerson, MdHome, MdCalendarToday, MdDirectionsCar,
   MdGroup, MdRefresh, MdVisibility, MdPeople, MdBusiness,
-  MdChevronLeft, MdChevronRight
+  MdChevronLeft, MdChevronRight, MdCheckCircle, MdCancel
 } from "react-icons/md";
 import Select from "../../components/common/Select";
 import ExpandableSearch from "../../components/common/ExpandableSearch";
+import StatCard from "../../components/common/StatCard";
 
 import Pagination from "../../components/common/Pagination";
 import { useLang } from "../../context/LanguageContext";
@@ -505,6 +506,38 @@ export default function TenantManagement() {
             <MdRefresh size={16} /> {t("refresh")}
           </button>
         </div>
+      </div>
+
+      {/* ── Statistical KPI Cards ── */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+        <StatCard
+          tone="brand"
+          value={tabCounts.ALL || 0}
+          label={t("tmTotalTenants") || "Total Tenants"}
+          icon={MdPeople}
+          subtext="All tenant applications"
+        />
+        <StatCard
+          tone="success"
+          value={tabCounts.APPROVED || 0}
+          label={t("tmApproved") || "Approved"}
+          icon={MdCheckCircle}
+          subtext="Approved & active"
+        />
+        <StatCard
+          tone="danger"
+          value={tabCounts.REJECTED || 0}
+          label={t("tmRejected") || "Rejected"}
+          icon={MdCancel}
+          subtext="Declined requests"
+        />
+        <StatCard
+          tone="info"
+          value={tabCounts.LIVING || 0}
+          label={t("tmLiving") || "Living"}
+          icon={MdHome}
+          subtext="Currently residing"
+        />
       </div>
 
       {/* ── Table ── */}

@@ -10,12 +10,17 @@ import {
 } from "recharts";
 import {
   MdReportProblem,
-  MdCheckCircle, MdFlashOn, MdApartment,
   MdRefresh,
+  MdCampaign,
+  MdChevronRight,
+  MdDashboard,
+  MdOutlinePayments,
+  MdApartment,
 } from "react-icons/md";
+import { FaUsers, FaParking, FaShieldAlt } from "react-icons/fa";
 import PanelHero from "../../components/common/PanelHero";
 import StatCard from "../../components/common/StatCard";
-import RecordCard from "../../components/common/RecordCard";
+import QuickLink from "../../components/common/QuickLink";
 import CreditedDebitedChart from "../../components/accounting/CreditedDebitedChart";
 
 /* ── SKELETON LOADER ── */
@@ -125,6 +130,66 @@ export default function AdminDashboard() {
     { name: t("dashTotalFlats") || "Total Flats", value: totalFlats, color: "#a78bfa" },
   ];
 
+  const quickLinks = [
+    {
+      id: "residents",
+      title: t("navResidents") || "Manage Residents",
+      desc: t("dashQuickResidentsDesc") || "Directory, approvals & tenant management",
+      icon: FaUsers,
+      path: "/admin/resident",
+      color: "#2563EB",
+      bg: "rgba(37, 99, 235, 0.15)",
+      badge: t("dashBadgeDirectory") || "Directory",
+      badgeColor: "bg-blue-600 text-white",
+    },
+    {
+      id: "complaints",
+      title: t("dashOpenComplaints") || "Open Complaints",
+      desc: t("dashQuickComplaintsDesc") || "Review, assign & resolve member issues",
+      icon: MdReportProblem,
+      path: "/admin/complaints",
+      color: "#F43F5E",
+      bg: "rgba(244, 63, 94, 0.15)",
+      badge: openComplaints > 0
+        ? (t("dashBadgeOpenCount", { count: openComplaints }) || `${openComplaints} Open`)
+        : (t("dashBadgeComplaints") || "Complaints"),
+      badgeColor: openComplaints > 0 ? "bg-rose-600 text-white" : "bg-rose-600/80 text-white",
+    },
+    {
+      id: "accounting",
+      title: t("navAccounting") || "Billing & Finance",
+      desc: t("dashQuickAccountingDesc") || "Invoices, payments, expense & ledger books",
+      icon: MdOutlinePayments,
+      path: "/admin/accounting",
+      color: "#16A34A",
+      bg: "rgba(22, 163, 74, 0.15)",
+      badge: t("dashBadgeFinance") || "Finance",
+      badgeColor: "bg-emerald-600 text-white",
+    },
+    {
+      id: "parking",
+      title: t("navParking") || "Parking Bays",
+      desc: t("dashQuickParkingDesc") || "Slot allocation, vehicles & vehicle plates",
+      icon: FaParking,
+      path: "/admin/parking-slots",
+      color: "#9333EA",
+      bg: "rgba(147, 51, 234, 0.15)",
+      badge: t("dashBadgeSlots") || "Slots",
+      badgeColor: "bg-purple-600 text-white",
+    },
+    {
+      id: "notices",
+      title: t("navNotices") || "Notice Broadcast",
+      desc: t("dashQuickNoticesDesc") || "Publish circulars & announcements",
+      icon: MdCampaign,
+      path: "/admin/notice",
+      color: "#D97706",
+      bg: "rgba(217, 119, 6, 0.15)",
+      badge: t("dashBadgeCircular") || "Circular",
+      badgeColor: "bg-amber-600 text-white",
+    },
+  ];
+
   const { user } = useContext(AuthContext);
   const isCommittee = isCommitteeMember(user);
 
@@ -167,6 +232,7 @@ export default function AdminDashboard() {
         <StatCard
           variant="sheen"
           tone="brand"
+          icon={FaUsers}
           value={residents}
           label={t("dashResidents") || "Residents"}
           description={
@@ -179,6 +245,7 @@ export default function AdminDashboard() {
         <StatCard
           variant="sheen"
           tone="success"
+          icon={FaShieldAlt}
           value={guards}
           label={t("dashGuards") || "Guards"}
           description={
@@ -191,6 +258,7 @@ export default function AdminDashboard() {
         <StatCard
           variant="sheen"
           tone="warning"
+          icon={MdReportProblem}
           value={openComplaints}
           label={t("dashOpenComplaints") || "Open Complaints"}
           onClick={() => navigate("/admin/complaints")}
@@ -204,6 +272,7 @@ export default function AdminDashboard() {
         <StatCard
           variant="sheen"
           tone="info"
+          icon={MdApartment}
           value={totalFlats}
           label={t("dashTotalFlats") || "Total Flats"}
           description={
@@ -214,10 +283,45 @@ export default function AdminDashboard() {
         />
       </div>
 
-      {/* ── 3. MAIN ANALYTICS CHARTS (2 COLUMNS) ── */}
+      {/* ── 3. QUICK LINKS OPERATIONS HUB (5 DISTINCT COLOR CARDS MATCHING GUARD DASHBOARD) ── */}
+      <div className="bg-card border border-glass-border rounded-2xl p-5 sm:p-6 shadow-sm">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <MdDashboard size={20} className="text-accent" />
+            <div>
+              <h2 className="text-base font-bold text-primary">
+                {t("dashQuickLinks") || "Quick Operations"}
+              </h2>
+              <p className="text-xs text-secondary">
+                {t("dashQuickLinksSub") || "1-Click administrative operations & tools"}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
+          {quickLinks.map((action, idx) => (
+            <QuickLink
+              key={action.id}
+              title={action.title}
+              desc={action.desc}
+              icon={action.icon}
+              badge={action.badge}
+              badgeColor={action.badgeColor}
+              color={action.color}
+              bg={action.bg}
+              path={action.path}
+              onClick={action.onClick}
+              style={{ animationDelay: `${idx * 60}ms` }}
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* ── 4. MAIN ANALYTICS CHARTS (2 COLUMNS) ── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 w-full min-w-0">
         {/* Donut Chart: Society Overview */}
-        <div className="bg-card border border-glass-border rounded-2xl p-6 flex flex-col justify-between min-w-0 shadow-sm">
+        <div className="bg-card border border-glass-border hover:border-accent/40 rounded-2xl p-6 flex flex-col justify-between min-w-0 shadow-sm transition-colors duration-200">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
             <div>
               <h2 className="text-base font-bold text-primary">
@@ -278,7 +382,7 @@ export default function AdminDashboard() {
         </div>
 
         {/* Bar Chart: Quick Comparison */}
-        <div className="bg-card border border-glass-border rounded-2xl p-6 flex flex-col justify-between min-w-0 shadow-sm">
+        <div className="bg-card border border-glass-border hover:border-accent/40 rounded-2xl p-6 flex flex-col justify-between min-w-0 shadow-sm transition-colors duration-200">
           <div className="mb-4">
             <h2 className="text-base font-bold text-primary">
               {t("dashComparison") || "Quick Comparison"}
@@ -331,49 +435,8 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {/* ── 3b. FINANCIAL OVERVIEW ── */}
+      {/* ── 5. FINANCIAL OVERVIEW ── */}
       <CreditedDebitedChart linkTo="/admin/accounting" />
-
-      {/* ── 4. OPERATIONAL STATUS SECTION (3 COLUMNS) ── */}
-      <div className="space-y-3">
-        <h2 className="text-sm font-bold uppercase tracking-wider text-secondary">
-          {t("dashOperationalStatus")}
-        </h2>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {/* Status Item 1: System Status */}
-          <RecordCard
-            icon={MdCheckCircle}
-            tone="success"
-            title={t("dashSystemStatus") || "System Status"}
-            badge={t("dashLive") || "Live"}
-            description={t("dashRunning") || "Running"}
-          >
-            {t("dashSystemStatusDesc") || "All services operational"}
-          </RecordCard>
-
-          {/* Status Item 2: Power Backup */}
-          <RecordCard
-            icon={MdFlashOn}
-            tone="info"
-            title={t("dashPowerBackup") || "Power Backup"}
-            badge={t("dashStandby") || "Standby"}
-            description={t("dashActive") || "Active"}
-          >
-            {t("dashPowerBackupDesc") || "Generator available"}
-          </RecordCard>
-
-          {/* Status Item 3: Society Info */}
-          <RecordCard
-            icon={MdApartment}
-            tone="brand"
-            title={t("dashSocietyId") || "Society Reference"}
-            description={t("dashSocietyIdValue", { id: societyId || t("dashNA") })}
-          >
-            {t("dashSocietyIdDesc") || "System reference number"}
-          </RecordCard>
-        </div>
-      </div>
     </div>
   );
 }

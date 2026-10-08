@@ -287,7 +287,6 @@ export function StatCards({ isMobile, stats }) {
       {stats.map((s, i) => (
         <StatCard
           key={i}
-          variant="sheen"
           layout={isMobile ? "stacked" : "inline"}
           icon={s.Icon}
           value={s.val}

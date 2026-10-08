@@ -2,6 +2,7 @@
 import { useState, useRef, useEffect } from "react";
 import { MdLanguage, MdCheck, MdExpandMore } from "react-icons/md";
 import { useLang } from "../../context/LanguageContext";
+import "./LanguageSelector.css";
 
 export default function LanguageSelector({ compact = false }) {
   const { lang, changeLang, LANGUAGES } = useLang();

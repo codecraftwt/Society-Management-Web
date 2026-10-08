@@ -742,8 +742,8 @@ const navigate = useNavigate();
       <div className="ge-root ra-root animate-fadeIn">
 
         {/* PAGE HEADER */}
-        <div className="ge-er ra-er">
-          <div className="ge-er-left ra-er-left">
+        <div className="flex items-center gap-3 mb-4 sm:mb-5">
+          <div className="flex items-center gap-3">
             <div className="ad-page-icon">
               <MdPool size={22} />
             </div>
@@ -755,7 +755,7 @@ const navigate = useNavigate();
         </div>
 
         <SlidingTabs
-          className="ge-filter-tabs"
+          className="ge-filter-tabs mb-6"
           value={tab}
           onChange={setTab}
           items={[

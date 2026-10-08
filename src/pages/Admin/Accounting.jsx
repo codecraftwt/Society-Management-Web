@@ -449,62 +449,52 @@ function OverviewTab({ b, months, year, onOpenTab }) {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
         {/* 1. Opening Balance */}
         <StatCard
-          variant="sheen"
-          tone="neutral"
+          tone="brand"
           value={CURRENCY(b.opening_balance)}
           label={t("accOpeningBalance")}
-          description={
-            <span className="hidden lg:block">
-              {b.opening_balance_effective_date
-                ? t("accEffectiveOn", { date: b.opening_balance_effective_date })
-                : t("accInitialBalanceReserve")}
-            </span>
+          icon={MdSavings}
+          subtext={
+            b.opening_balance_effective_date
+              ? t("accEffectiveOn", { date: b.opening_balance_effective_date })
+              : t("accInitialBalanceReserve")
           }
         />
 
         {/* 2. Total Income */}
         <StatCard
-          variant="sheen"
           tone="success"
           value={CURRENCY(b.total_income ?? b.total_credit)}
           label={t("accTotalIncome")}
-          description={
-            <span className="hidden lg:block">
-              {t("accBillsMaintAmenities", {
-                bills: CURRENCY(b.bill_income),
-                maint: CURRENCY(b.maintenance_income),
-                amenities: CURRENCY(b.amenity_income),
-              })}
-            </span>
+          icon={MdArrowUpward}
+          subtext={
+            t("accBillsMaintAmenities", {
+              bills: CURRENCY(b.bill_income),
+              maint: CURRENCY(b.maintenance_income),
+              amenities: CURRENCY(b.amenity_income),
+            })
           }
         />
 
         {/* 3. Total Expenses */}
         <StatCard
-          variant="sheen"
           tone="danger"
           value={CURRENCY(b.total_expenses ?? b.total_debit)}
           label={t("accTotalExpenses")}
-          description={
-            <span className="hidden lg:block">
-              {b.void_reversals
-                ? t("accIncludesVoid", { amount: CURRENCY(b.void_reversals) })
-                : t("accMoneyOut")}
-            </span>
+          icon={MdArrowDownward}
+          subtext={
+            b.void_reversals
+              ? t("accIncludesVoid", { amount: CURRENCY(b.void_reversals) })
+              : t("accMoneyOut")
           }
         />
 
         {/* 4. Current Balance */}
         <StatCard
-          variant="sheen"
-          tone="brand"
+          tone="info"
           value={CURRENCY(b.current_balance)}
           label={t("accCurrentBalance")}
-          description={
-            <span className="hidden lg:block">
-              {t("accRunningCashPosition", { society: b.society_name || t("accSocietyName") })}
-            </span>
-          }
+          icon={MdAccountBalance}
+          subtext={t("accRunningCashPosition", { society: b.society_name || t("accSocietyName") })}
         />
       </div>
 
@@ -527,32 +517,31 @@ function OverviewTab({ b, months, year, onOpenTab }) {
           </span>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-          {/* Three peer income categories. Distinct tones preserve the original's three
-            visually separate cards while staying theme-aware. */}
+          {/* Utility Flat Bills */}
           <StatCard
-            variant="sheen"
             tone="info"
             value={CURRENCY(b.bill_income)}
             label={t("accUtilityFlatBills")}
-            description={<span className="hidden lg:block">{t("accUtilityDesc")}</span>}
+            icon={MdReceipt}
+            subtext={t("accUtilityDesc")}
           />
 
           {/* Maintenance Fees */}
           <StatCard
-            variant="sheen"
             tone="success"
             value={CURRENCY(b.maintenance_income)}
             label={t("accMaintenanceFees")}
-            description={<span className="hidden lg:block">{t("accMaintenanceDesc")}</span>}
+            icon={MdPayments}
+            subtext={t("accMaintenanceDesc")}
           />
 
           {/* Amenity Bookings */}
           <StatCard
-            variant="sheen"
             tone="brand"
             value={CURRENCY(b.amenity_income)}
             label={t("accAmenityBookings")}
-            description={<span className="hidden lg:block">{t("accAmenityDesc")}</span>}
+            icon={MdCalendarToday}
+            subtext={t("accAmenityDesc")}
           />
         </div>
       </div>

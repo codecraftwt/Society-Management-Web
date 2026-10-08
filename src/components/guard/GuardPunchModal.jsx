@@ -28,6 +28,8 @@ export default function GuardPunchModal({
   mode = "PUNCH_IN", // "PUNCH_IN" | "PUNCH_OUT"
   isOnDuty = true,
   onSuccess,
+  forced = false,
+  onLogout,
 }) {
   const { t } = useLang();
 
@@ -128,7 +130,7 @@ export default function GuardPunchModal({
     );
   }, [t]);
 
-  /* ── Initialize on Open (Wait for user click to open camera) ── */
+  /* ── Initialize on Open (Fetch GPS & attempt camera start) ── */
   useEffect(() => {
     if (isOpen) {
       setCapturedBlob(null);
@@ -136,7 +138,6 @@ export default function GuardPunchModal({
       setErrorMessage("");
       setLocationError("");
       fetchLocation();
-      // Explicitly do not auto-start camera — wait for user to click "Open Camera"
     } else {
       stopCamera();
     }
@@ -188,6 +189,13 @@ export default function GuardPunchModal({
     startCamera();
   };
 
+  /* ── Handle Modal Backdrop Click ── */
+  const handleBackdropClick = (e) => {
+    if (e.target === e.currentTarget && !forced && !isSubmitting) {
+      onClose();
+    }
+  };
+
   /* ── Submit Punch Action ── */
   const handleSubmit = async () => {
     setErrorMessage("");
@@ -217,7 +225,7 @@ export default function GuardPunchModal({
           headers: { "Content-Type": "multipart/form-data" },
         });
 
-        toast.success(res.data?.message || t("gdPunchInSuccess", "Punch-in recorded successfully!"));
+        toast.success(res.data?.message || t("gdPunchInSuccess", "Punch-in recorded successfully! Shift active."));
       } else {
         const payload = {
           lat: location.lat,
@@ -229,6 +237,7 @@ export default function GuardPunchModal({
         toast.success(res.data?.message || t("gdPunchOutSuccess", "Punch-out recorded successfully!"));
       }
 
+      window.dispatchEvent(new Event("refresh_guard_data"));
       onSuccess?.();
       onClose();
     } catch (err) {
@@ -249,44 +258,83 @@ export default function GuardPunchModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fadeIn">
-      <div className="relative w-full max-w-lg bg-card rounded-2xl border border-glass-border shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+    <div
+      onClick={handleBackdropClick}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md animate-fadeIn"
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="relative w-full max-w-lg bg-card rounded-3xl border border-glass-border shadow-2xl overflow-hidden flex flex-col max-h-[92vh] animate-scaleIn"
+      >
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-glass-border bg-card-inner-bg/50">
           <div className="flex items-center gap-3">
             <div
-              className={`w-10 h-10 rounded-xl flex items-center justify-center text-white shadow-md ${
-                isPunchIn ? "bg-emerald-600" : "bg-rose-600"
+              className={`w-11 h-11 rounded-2xl flex items-center justify-center text-white shadow-md ${
+                isPunchIn
+                  ? "bg-gradient-to-tr from-emerald-600 to-teal-500 shadow-emerald-500/25"
+                  : "bg-gradient-to-tr from-rose-600 to-red-500 shadow-rose-500/25"
               }`}
             >
-              {isPunchIn ? <MdLogin size={22} /> : <MdLogout size={22} />}
+              {isPunchIn ? <MdLogin size={24} /> : <MdLogout size={24} />}
             </div>
             <div>
-              <h3 className="text-lg font-bold text-primary">
-                {isPunchIn
-                  ? t("gdPunchInTitle", "Guard Punch In")
-                  : t("gdPunchOutTitle", "Guard Punch Out")}
-              </h3>
+              <div className="flex items-center gap-2">
+                <h3 className="text-lg font-bold text-primary">
+                  {isPunchIn
+                    ? t("gdPunchInTitle", "Guard Punch In")
+                    : t("gdPunchOutTitle", "Guard Punch Out")}
+                </h3>
+                {forced && (
+                  <span className="px-2 py-0.5 text-[10px] font-extrabold uppercase rounded-full bg-emerald-500/20 text-emerald-500 border border-emerald-500/30">
+                    {t("gdMandatory", "Required")}
+                  </span>
+                )}
+              </div>
               <p className="text-xs text-secondary">
                 {isPunchIn
-                  ? t("gdPunchInSubtitle", "Capture live selfie and verify society geofence")
-                  : t("gdPunchOutSubtitle", "Verify location to conclude your duty")}
+                  ? t("gdPunchInSubtitle", "Capture live selfie and verify society GPS location")
+                  : t("gdPunchOutSubtitle", "Verify GPS location to conclude your duty")}
               </p>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="p-2 rounded-xl text-secondary hover:text-primary hover:bg-card-inner-bg transition"
-          >
-            <MdClose size={20} />
-          </button>
+
+          {!forced ? (
+            <button
+              type="button"
+              onClick={onClose}
+              className="p-2 rounded-xl text-secondary hover:text-primary hover:bg-card-inner-bg transition"
+            >
+              <MdClose size={20} />
+            </button>
+          ) : (
+            <div
+              className="p-2 text-secondary/50 cursor-not-allowed"
+              title={t("gdPunchInMandatoryNote", "Duty punch-in is required before accessing gate operations")}
+            >
+              <MdClose size={20} className="opacity-30" />
+            </div>
+          )}
         </div>
 
         {/* Content Body */}
         <div className="p-6 overflow-y-auto space-y-4">
+          {/* Mandatory Duty Prompt Notice */}
+          {forced && isPunchIn && (
+            <div className="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/25 text-emerald-600 dark:text-emerald-400 text-xs flex items-start gap-2.5">
+              <MdCheckCircle size={18} className="shrink-0 mt-0.5" />
+              <span>
+                {t(
+                  "gdMandatoryPunchInMsg",
+                  "Security duty has started. Complete your punch-in attendance to unlock gate operations and visitor registration."
+                )}
+              </span>
+            </div>
+          )}
+
           {/* Off Duty Alert */}
           {isPunchIn && !isOnDuty && (
-            <div className="p-3.5 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-600 dark:text-amber-400 text-xs flex items-start gap-2.5">
+            <div className="p-3.5 rounded-2xl bg-amber-500/15 border border-amber-500/30 text-amber-600 dark:text-amber-400 text-xs flex items-start gap-2.5">
               <MdWarning size={18} className="shrink-0 mt-0.5" />
               <span>{t("gdOffDutyModalWarn", "You are currently off duty. Punch in is only permitted during your assigned shift window.")}</span>
             </div>
@@ -294,17 +342,17 @@ export default function GuardPunchModal({
 
           {/* Error Banner */}
           {errorMessage && (
-            <div className="p-3.5 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-500 text-xs flex items-start gap-2.5">
+            <div className="p-3.5 rounded-2xl bg-rose-500/15 border border-rose-500/30 text-rose-500 text-xs flex items-start gap-2.5">
               <MdWarning size={18} className="shrink-0 mt-0.5" />
               <span>{errorMessage}</span>
             </div>
           )}
 
           {/* Location Status Card */}
-          <div className="p-3.5 rounded-xl bg-card-inner-bg border border-glass-border flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2.5">
+          <div className="p-4 rounded-2xl bg-card-inner-bg border border-glass-border flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
               <div
-                className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                className={`w-9 h-9 rounded-xl flex items-center justify-center ${
                   location
                     ? "bg-emerald-500/20 text-emerald-500"
                     : locationError
@@ -312,7 +360,7 @@ export default function GuardPunchModal({
                     : "bg-blue-500/20 text-blue-500"
                 }`}
               >
-                <MdLocationOn size={18} className={locationLoading ? "animate-bounce" : ""} />
+                <MdLocationOn size={20} className={locationLoading ? "animate-bounce" : ""} />
               </div>
               <div>
                 <p className="text-xs font-semibold text-primary">
@@ -334,7 +382,7 @@ export default function GuardPunchModal({
               type="button"
               onClick={fetchLocation}
               disabled={locationLoading}
-              className="px-2.5 py-1.5 text-xs font-medium rounded-lg bg-card border border-glass-border text-secondary hover:text-primary transition flex items-center gap-1 shrink-0"
+              className="px-3 py-1.5 text-xs font-semibold rounded-xl bg-card border border-glass-border text-secondary hover:text-primary transition flex items-center gap-1.5 shrink-0 hover:scale-105 active:scale-95"
               title={t("gdRetryGps", "Refresh GPS")}
             >
               <MdRefresh size={14} className={locationLoading ? "animate-spin" : ""} />
@@ -412,7 +460,7 @@ export default function GuardPunchModal({
                   <button
                     type="button"
                     onClick={handleRetake}
-                    className="px-4 py-2 text-xs font-semibold rounded-xl bg-card-inner-bg border border-glass-border text-secondary hover:text-primary transition flex items-center gap-1.5"
+                    className="px-4 py-2 text-xs font-semibold rounded-xl bg-card-inner-bg border border-glass-border text-secondary hover:text-primary transition flex items-center gap-1.5 hover:scale-105"
                   >
                     <MdRefresh size={16} />
                     <span>{t("gdRetake", "Retake Photo")}</span>
@@ -421,7 +469,7 @@ export default function GuardPunchModal({
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
-                    className="px-4 py-2 text-xs font-semibold rounded-xl bg-card-inner-bg border border-glass-border text-secondary hover:text-primary transition flex items-center gap-1.5"
+                    className="px-4 py-2 text-xs font-semibold rounded-xl bg-card-inner-bg border border-glass-border text-secondary hover:text-primary transition flex items-center gap-1.5 hover:scale-105"
                   >
                     <MdFileUpload size={16} />
                     <span>{t("gdUploadFallback", "Upload Photo Fallback")}</span>
@@ -442,7 +490,7 @@ export default function GuardPunchModal({
 
           {/* Punch-Out Friendly Summary */}
           {!isPunchIn && (
-            <div className="p-4 rounded-xl bg-rose-500/5 border border-rose-500/20 text-center space-y-2">
+            <div className="p-4 rounded-2xl bg-rose-500/5 border border-rose-500/20 text-center space-y-2">
               <p className="text-sm font-semibold text-primary">
                 {t("gdConfirmPunchOutMsg", "Ready to punch out and conclude your shift?")}
               </p>
@@ -454,22 +502,35 @@ export default function GuardPunchModal({
         </div>
 
         {/* Footer Actions */}
-        <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-glass-border bg-card-inner-bg/50">
-          <button
-            type="button"
-            onClick={onClose}
-            disabled={isSubmitting}
-            className="px-4 py-2 text-xs font-semibold rounded-xl bg-card border border-glass-border text-secondary hover:text-primary transition"
-          >
-            {t("gdCancel", "Cancel")}
-          </button>
+        <div className="flex items-center justify-between gap-3 px-6 py-4 border-t border-glass-border bg-card-inner-bg/50">
+          <div>
+            {forced && onLogout ? (
+              <button
+                type="button"
+                onClick={onLogout}
+                disabled={isSubmitting}
+                className="px-3.5 py-2 text-xs font-semibold rounded-xl text-rose-500 hover:bg-rose-500/10 transition"
+              >
+                {t("gdLogoutInstead", "Log Out")}
+              </button>
+            ) : !forced ? (
+              <button
+                type="button"
+                onClick={onClose}
+                disabled={isSubmitting}
+                className="px-4 py-2 text-xs font-semibold rounded-xl bg-card border border-glass-border text-secondary hover:text-primary transition"
+              >
+                {t("gdCancel", "Cancel")}
+              </button>
+            ) : null}
+          </div>
 
           <button
             type="button"
             onClick={handleSubmit}
             disabled={isSubmitting || (isPunchIn && (!isOnDuty || !capturedBlob)) || !location}
-            className={`px-5 py-2 text-xs font-bold rounded-xl text-white shadow-md hover:scale-105 active:scale-95 transition flex items-center gap-2 disabled:opacity-50 disabled:pointer-events-none ${
-              isPunchIn ? "bg-emerald-600 hover:bg-emerald-500" : "bg-rose-600 hover:bg-rose-500"
+            className={`px-5 py-2.5 text-xs font-bold rounded-xl text-white shadow-md hover:scale-105 active:scale-95 transition flex items-center gap-2 disabled:opacity-50 disabled:pointer-events-none ${
+              isPunchIn ? "bg-emerald-600 hover:bg-emerald-500 shadow-emerald-500/25" : "bg-rose-600 hover:bg-rose-500 shadow-rose-500/25"
             }`}
           >
             {isSubmitting ? (

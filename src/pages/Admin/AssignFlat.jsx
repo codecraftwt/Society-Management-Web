@@ -16,6 +16,7 @@ import ExpandableSearch from "../../components/common/ExpandableSearch";
 import { getRequiredError } from "../../utils/validators";
 
 import Pagination from "../../components/common/Pagination";
+import StatCard from "../../components/common/StatCard";
 
 /* ─────────────────────────────────────────
    HELPERS
@@ -820,6 +821,24 @@ export default function AssignFlat() {
     });
   }, [allAssigned, filterBlockId, filterFloorId, filterResidentType, filterPropertyType, debouncedSearch]);
 
+  const totalCount = allAssigned.length;
+  const ownerCount = useMemo(
+    () => allAssigned.filter((f) => (f.Resident?.resident_type || f.resident_type || "").toUpperCase() === "OWNER").length,
+    [allAssigned]
+  );
+  const tenantCount = useMemo(
+    () => allAssigned.filter((f) => (f.Resident?.resident_type || f.resident_type || "").toUpperCase() === "TENANT").length,
+    [allAssigned]
+  );
+  const rowHouseCount = useMemo(
+    () => allAssigned.filter((f) => flatIsRowHouse(f)).length,
+    [allAssigned]
+  );
+  const flatCount = useMemo(
+    () => allAssigned.filter((f) => !flatIsRowHouse(f)).length,
+    [allAssigned]
+  );
+
   const totalItems = filteredAssigned.length;
   const totalPages = Math.ceil(totalItems / limit) || 1;
   const paginatedAssigned = filteredAssigned.slice((page - 1) * limit, page * limit);
@@ -933,6 +952,50 @@ export default function AssignFlat() {
             {t("afAssignBtn") || "Assign Unit"}
           </GlobalButton>
         </div>
+      </div>
+
+      {/* ── Summary StatCards (Dynamic Theme Enabled) ── */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
+        <StatCard
+          tone="brand"
+          variant="sheen"
+          icon={MdHomeWork}
+          value={initialLoad ? "—" : totalCount}
+          label={t("afTotalAssigned") || "Total Assigned"}
+          description={<span className="hidden lg:block">All occupied units</span>}
+        />
+        <StatCard
+          tone="success"
+          variant="sheen"
+          icon={MdPerson}
+          value={initialLoad ? "—" : ownerCount}
+          label={t("afOwners") || "Owners"}
+          description={<span className="hidden lg:block">Permanent owners</span>}
+        />
+        <StatCard
+          tone="info"
+          variant="sheen"
+          icon={MdPerson}
+          value={initialLoad ? "—" : tenantCount}
+          label={t("afTenants") || "Tenants"}
+          description={<span className="hidden lg:block">Rental occupants</span>}
+        />
+        <StatCard
+          tone="warning"
+          variant="sheen"
+          icon={MdHome}
+          value={initialLoad ? "—" : rowHouseCount}
+          label={t("afRowHouses") || "Row Houses"}
+          description={<span className="hidden lg:block">Independent units</span>}
+        />
+        <StatCard
+          tone="danger"
+          variant="sheen"
+          icon={MdApartment}
+          value={initialLoad ? "—" : flatCount}
+          label={t("afApartmentFlats") || "Flats"}
+          description={<span className="hidden lg:block">Block apartments</span>}
+        />
       </div>
 
       {/* ── Modal Popup Overlay for Assign Wizard ── */}

@@ -26,6 +26,7 @@ import useUnsavedDirty from "../../hooks/useUnsavedDirty";
 import ConfirmDiscard from "../../components/common/ConfirmDiscard";
 
 import Pagination from "../../components/common/Pagination";
+import RecordCard from "../../components/common/RecordCard";
 import "./Admin.css";
 
 /* ── Status Badge (slot) ── */
@@ -1312,8 +1313,6 @@ const [totalPages, setTotalPages] = useState(1);
                       }`}
                       style={{ animationDelay: `${i * 15}ms` }}
                     >
-                      <span className="ps-card-blob" aria-hidden="true" />
-
                       {/* Top Header */}
                       <div className="ps-card-top">
                         <div className="ps-card-left-header">
@@ -1516,38 +1515,29 @@ const [totalPages, setTotalPages] = useState(1);
                     const isCar = slot.vehicle_type === "CAR";
                     const isAvail = slot.status === "AVAILABLE";
                     return (
-                      <div
+                      <RecordCard
                         key={slot.id}
+                        tone={isAvail ? "success" : "brand"}
+                        interactive
+                        blob={false}
                         onClick={() => setDetailSlot(slot)}
                         style={{ animationDelay: `${i * 15}ms` }}
-                        className={`ps-decent-card ps-decent-card--${isAvail ? "available" : "occupied"} group cursor-pointer`}
-                      >
-                        <span className="ps-card-blob" aria-hidden="true" />
-
-                        {/* Top Card Bar: Slot Number, Vehicle Type, Status */}
-                        <div className="ps-card-top">
-                          <div className="ps-card-left-header">
-                            <div
-                              className={`ps-type-icon ${
-                                isCar ? "ps-type-icon--car" : "ps-type-icon--bike"
-                              }`}
-                            >
-                              {isCar ? <MdDirectionsCar size={16} /> : <MdTwoWheeler size={16} />}
-                            </div>
-                            <div className="ps-head-text">
-                              <span className="ps-slot-label">{t("parkColSlot")}</span>
-                              <h4 className="ps-slot-number">{slot.slot_number}</h4>
-                            </div>
-                            <MdChevronRight className="ps-card-arrow" size={16} />
+                        className="ps-slot-card"
+                        icon={isCar ? MdDirectionsCar : MdTwoWheeler}
+                        title={
+                          <div className="ps-head-text">
+                            <span className="ps-slot-label">{t("parkColSlot")}</span>
+                            <h4 className="ps-slot-number">{slot.slot_number}</h4>
                           </div>
-                          <StatusBadge status={slot.status} t={t} />
-                        </div>
-
-                        <span className="ps-slot-meta">
-                          {slot.parking_floor ? t("parkFloorValue", { floor: slot.parking_floor }) : t("parkGround")} ·{" "}
-                          {isCar ? t("parkCar") : t("parkBike")}
-                        </span>
-
+                        }
+                        description={
+                          <span className="ps-slot-meta">
+                            {slot.parking_floor ? t("parkFloorValue", { floor: slot.parking_floor }) : t("parkGround")} ·{" "}
+                            {isCar ? t("parkCar") : t("parkBike")}
+                          </span>
+                        }
+                        badge={<StatusBadge status={slot.status} t={t} />}
+                      >
                         {/* Compact Card Middle: Resident, Flat & Vehicle info */}
                         <div className="ps-card-middle">
                           {isAvail ? (
@@ -1590,7 +1580,7 @@ const [totalPages, setTotalPages] = useState(1);
                             </div>
                           )}
                         </div>
-                      </div>
+                      </RecordCard>
                     );
                   })}
                 </div>
@@ -1730,255 +1720,192 @@ const [totalPages, setTotalPages] = useState(1);
         </>
       )}
 
-      {/* Flat History Style Pop-up Modal: Create Slots */}
-      {showForm &&
-        createPortal(
-<div
-          className="fh-modal-overlay"
-          onClick={requestCloseForm}
-          style={{
-            position: "fixed",
-            inset: 0,
-            zIndex: 1300,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: "16px",
-            overflowY: "auto",
-          }}
-        >
-            <div
-              className="fh-modal-box parking-slot-modal"
-              style={{
-                width: "min(520px, 94vw)",
-                maxHeight: "min(620px, 92vh)",
-                margin: "auto",
-                display: "flex",
-                flexDirection: "column",
-              }}
-              onClick={(e) => e.stopPropagation()}
-              role="dialog"
-              aria-modal="true"
+      {/* Create Slots Modal */}
+      <GlobalModal
+        isOpen={showForm}
+        onClose={requestCloseForm}
+        title={t("parkFormTitle") || "Create Parking Slots"}
+        subtitle={t("parkCreateSubtitle") || "Configure batch slot creation with automated numbering"}
+        icon={FaParking}
+        size="md"
+        disableUnsavedWarning={false}
+        footer={
+          <div className="flex items-center justify-end gap-3 w-full">
+            <GlobalButton variant="cancel" onClick={requestCloseForm}>
+              {t("cancel") || "Cancel"}
+            </GlobalButton>
+            <GlobalButton
+              type="submit"
+              form="create-parking-slots-form"
+              variant="add"
+              icon={MdAdd}
+              loading={submitting}
+              borderDraw
+              size="md"
             >
-              {/* Glowing top accent line */}
-              <div className="fh-modal-top-accent" />
-
-              {/* Modal Header */}
-              <div className="fh-modal-header">
-                <div className="fh-modal-header-left">
-                  <div
-                    style={{
-                      width: 42,
-                      height: 42,
-                      borderRadius: 12,
-                      background: "rgba(59, 130, 246, 0.12)",
-                      border: "1px solid rgba(59, 130, 246, 0.28)",
-                      color: "var(--accent)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      flexShrink: 0,
-                    }}
-                  >
-                    <FaParking size={20} />
-                  </div>
-                  <div>
-                    <h3
-                      className="fh-modal-title"
-                      style={{ fontSize: "1.15rem", margin: 0, fontWeight: 700 }}
-                    >
-                      {t("parkFormTitle") || "Create Parking Slots"}
-                    </h3>
-                    <p
-                      style={{
-                        fontSize: "0.75rem",
-                        color: "var(--text-secondary)",
-                        margin: "2px 0 0",
-                      }}
-                    >
-                      {t("parkCreateSubtitle")}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="fh-modal-header-actions">
-                  <button
-                    type="button"
-                    className="fh-modal-close-btn"
-                    onClick={requestCloseForm}
-                    title={t("parkClosePopup")}
-                  >
-                    <MdClose size={16} />
-                  </button>
-                </div>
-              </div>
-
-              {/* Modal Form */}
-              <form
-                onSubmit={handleSubmit}
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  flex: 1,
-                  minHeight: 0,
-                  overflow: "hidden",
-                }}
+              {submitting
+                ? (t("parkCreating") || "Creating...")
+                : (t("parkCreateBtn") || "Create Slots")}
+            </GlobalButton>
+          </div>
+        }
+      >
+        <form id="create-parking-slots-form" onSubmit={handleSubmit} className="flex flex-col gap-4">
+          {/* Vehicle Type Toggle */}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-semibold text-secondary uppercase tracking-wider">
+              {t("parkVehicleType") || "Vehicle Type"}
+            </label>
+            <div className="grid grid-cols-2 gap-2.5">
+              <button
+                type="button"
+                onClick={() => setForm({ ...form, vehicle_type: "CAR" })}
+                className={`flex items-center justify-center gap-2.5 py-2.5 px-4 rounded-xl text-xs font-bold transition-all border ${
+                  form.vehicle_type === "CAR"
+                    ? "bg-accent text-white border-accent shadow-md shadow-accent/20"
+                    : "bg-card-inner-bg text-secondary border-glass-border hover:text-primary hover:border-slate-400/30"
+                }`}
               >
-                {/* Scrollable Body */}
-                <div
-                  className="fh-modal-body"
-                  style={{
-                    flex: 1,
-                    minHeight: 0,
-                    overflowY: "auto",
-                    padding: "18px 22px",
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "14px",
-                  }}
-                >
-                  {/* Vehicle Type Toggle */}
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-semibold text-secondary uppercase tracking-wider">
-                      {t("parkVehicleType") || "Vehicle Type"}
-                    </label>
-                    <div className="grid grid-cols-2 gap-2.5">
-                      <button
-                        type="button"
-                        onClick={() => setForm({ ...form, vehicle_type: "CAR" })}
-                        className={`ps-vehicle-mode-btn ${
-                          form.vehicle_type === "CAR" ? "ps-vehicle-mode-btn--active-car" : ""
-                        }`}
-                      >
-                        <MdDirectionsCar size={16} />
-                        <span>{t("parkCar") || "Car Space"}</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setForm({ ...form, vehicle_type: "BIKE" })}
-                        className={`ps-vehicle-mode-btn ${
-                          form.vehicle_type === "BIKE" ? "ps-vehicle-mode-btn--active-bike" : ""
-                        }`}
-                      >
-                        <MdTwoWheeler size={16} />
-                        <span>{t("parkBike") || "Bike Space"}</span>
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Floor & Prefix */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div className="flex flex-col gap-1.5">
-                      <label className="text-xs font-semibold text-secondary">
-                        {t("parkFloorLevel")} <span className="text-red-400">*</span>
-                      </label>
-                      <input
-                        className="input h-10 w-full text-xs font-medium"
-                        placeholder={t("parkFloorPlaceholder")}
-                        required
-                        value={form.parking_floor}
-                        onChange={(e) => setForm({ ...form, parking_floor: e.target.value })}
-                      />
-                    </div>
-
-                    <div className="flex flex-col gap-1.5">
-                      <label className="text-xs font-semibold text-secondary">
-                        {t("parkPrefix") || "Slot Prefix"}
-                      </label>
-                      <input
-                        className="input h-10 w-full text-xs font-medium"
-                        placeholder={t("parkPrefixPlaceholderLong")}
-                        value={form.prefix}
-                        onChange={(e) => setForm({ ...form, prefix: e.target.value })}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Start Number & Count */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div className="flex flex-col gap-1.5">
-                      <label className="text-xs font-semibold text-secondary">
-                        {t("parkStartNumber") || "Start Number"} <span className="text-red-400">*</span>
-                      </label>
-                      <input
-                        type="number"
-                        min="1"
-                        className="input h-10 w-full text-xs font-medium"
-                        placeholder={t("parkStartNumberPlaceholder")}
-                        required
-                        value={form.start_number}
-                        onChange={(e) => setForm({ ...form, start_number: e.target.value })}
-                      />
-                    </div>
-
-                    <div className="flex flex-col gap-1.5">
-                      <label className="text-xs font-semibold text-secondary">
-                        {t("parkCount") || "How Many Slots?"} <span className="text-red-400">*</span>
-                      </label>
-                      <input
-                        type="number"
-                        min="1"
-                        max="200"
-                        className="input h-10 w-full text-xs font-medium"
-                        placeholder={t("parkCountPlaceholder")}
-                        required
-                        value={form.count}
-                        onChange={(e) => setForm({ ...form, count: e.target.value })}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Live Preview Banner */}
-                  {generatedPreview && (
-                    <div
-                      className="rounded-xl p-3 text-xs flex items-center justify-between gap-3 animate-fadeIn"
-                      style={{
-                        background: "rgba(59, 130, 246, 0.08)",
-                        border: "1px solid rgba(59, 130, 246, 0.25)",
-                        color: "#93C5FD",
-                      }}
-                    >
-                      <div className="flex items-center gap-2 min-w-0">
-                        <span
-                          className="px-2 py-0.5 rounded font-bold uppercase text-[10px] shrink-0"
-                          style={{ background: "rgba(59, 130, 246, 0.25)", color: "#93C5FD" }}
-                        >
-                          {t("parkPreview")}
-                        </span>
-                        <span className="truncate">
-                          {t("parkSlotsRange", { first: generatedPreview.firstSlot, last: generatedPreview.lastSlot })}
-                        </span>
-                      </div>
-                      <span className="font-semibold shrink-0 text-blue-300">
-                        {t("parkPreviewCount", { count: generatedPreview.cnt, type: generatedPreview.type })}
-                      </span>
-                    </div>
-                  )}
-                </div>
-
-                {/* Fixed Footer: Always visible, never cut off */}
-                <div className="fh-modal-footer">
-                  <GlobalButton variant="cancel" onClick={requestCloseForm}>
-                    {t("cancel") || "Cancel"}
-                  </GlobalButton>
-                  <GlobalButton
-                    type="submit"
-                    variant="add"
-                    icon={MdAdd}
-                    loading={submitting}
-                    borderDraw
-                    size="md"
-                  >
-                    {submitting
-                      ? (t("parkCreating") || "Creating...")
-                      : (t("parkCreateBtn") || "Create Slots")}
-                  </GlobalButton>
-                </div>
-              </form>
+                <MdDirectionsCar size={17} />
+                <span>{t("parkCar") || "Car Space"}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setForm({ ...form, vehicle_type: "BIKE" })}
+                className={`flex items-center justify-center gap-2.5 py-2.5 px-4 rounded-xl text-xs font-bold transition-all border ${
+                  form.vehicle_type === "BIKE"
+                    ? "bg-accent text-white border-accent shadow-md shadow-accent/20"
+                    : "bg-card-inner-bg text-secondary border-glass-border hover:text-primary hover:border-slate-400/30"
+                }`}
+              >
+                <MdTwoWheeler size={17} />
+                <span>{t("parkBike") || "Bike Space"}</span>
+              </button>
             </div>
-          </div>,
-          document.body
-        )}
+          </div>
+
+          {/* Floor & Prefix */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-semibold text-secondary">
+                {t("parkFloorLevel")} <span className="text-red-400">*</span>
+              </label>
+              <input
+                className="input w-full"
+                style={{
+                  height: 42,
+                  borderRadius: 12,
+                  padding: "0 14px",
+                  fontSize: 13,
+                  fontWeight: 500,
+                  boxSizing: "border-box",
+                }}
+                placeholder={t("parkFloorPlaceholder") || "e.g. B1, Ground, P1"}
+                required
+                value={form.parking_floor}
+                onChange={(e) => setForm({ ...form, parking_floor: e.target.value })}
+              />
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-semibold text-secondary">
+                {t("parkPrefix") || "Slot Prefix"}
+              </label>
+              <input
+                className="input w-full"
+                style={{
+                  height: 42,
+                  borderRadius: 12,
+                  padding: "0 14px",
+                  fontSize: 13,
+                  fontWeight: 500,
+                  boxSizing: "border-box",
+                }}
+                placeholder={t("parkPrefixPlaceholderLong") || "e.g. A-, C-"}
+                value={form.prefix}
+                onChange={(e) => setForm({ ...form, prefix: e.target.value })}
+              />
+            </div>
+          </div>
+
+          {/* Start Number & Count */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-semibold text-secondary">
+                {t("parkStartNumber") || "Start Number"} <span className="text-red-400">*</span>
+              </label>
+              <input
+                type="number"
+                min="1"
+                className="input w-full"
+                style={{
+                  height: 42,
+                  borderRadius: 12,
+                  padding: "0 14px",
+                  fontSize: 13,
+                  fontWeight: 500,
+                  boxSizing: "border-box",
+                }}
+                placeholder={t("parkStartNumberPlaceholder") || "101"}
+                required
+                value={form.start_number}
+                onChange={(e) => setForm({ ...form, start_number: e.target.value })}
+              />
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-semibold text-secondary">
+                {t("parkCount") || "How Many Slots?"} <span className="text-red-400">*</span>
+              </label>
+              <input
+                type="number"
+                min="1"
+                max="200"
+                className="input w-full"
+                style={{
+                  height: 42,
+                  borderRadius: 12,
+                  padding: "0 14px",
+                  fontSize: 13,
+                  fontWeight: 500,
+                  boxSizing: "border-box",
+                }}
+                placeholder={t("parkCountPlaceholder") || "20"}
+                required
+                value={form.count}
+                onChange={(e) => setForm({ ...form, count: e.target.value })}
+              />
+            </div>
+          </div>
+
+          {/* Live Preview Banner */}
+          {generatedPreview && (
+            <div
+              className="rounded-xl p-3.5 text-xs flex items-center justify-between gap-3 animate-fadeIn mt-1"
+              style={{
+                background: "rgba(59, 130, 246, 0.08)",
+                border: "1px solid rgba(59, 130, 246, 0.28)",
+                color: "var(--accent)",
+              }}
+            >
+              <div className="flex items-center gap-2 min-w-0">
+                <span
+                  className="px-2 py-0.5 rounded-md font-extrabold uppercase text-[10px] shrink-0"
+                  style={{ background: "rgba(59, 130, 246, 0.22)", color: "var(--accent)" }}
+                >
+                  {t("parkPreview")}
+                </span>
+                <span className="truncate font-semibold text-primary">
+                  {t("parkSlotsRange", { first: generatedPreview.firstSlot, last: generatedPreview.lastSlot })}
+                </span>
+              </div>
+              <span className="font-bold shrink-0 text-accent">
+                {t("parkPreviewCount", { count: generatedPreview.cnt, type: generatedPreview.type })}
+              </span>
+            </div>
+          )}
+        </form>
+      </GlobalModal>
 
       <GlobalConfirmDialog
         isOpen={!!confirmDel}
@@ -1993,273 +1920,206 @@ const [totalPages, setTotalPages] = useState(1);
       />
 
       {/* Edit Slot Modal */}
-      {editSlot &&
-        createPortal(
-          <div
-            className="fh-modal-overlay"
-            onClick={requestCloseEdit}
-            style={{
-              position: "fixed",
-              inset: 0,
-              zIndex: 1300,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              padding: "16px",
-              overflowY: "auto",
-            }}
-          >
-            <div
-              className="fh-modal-box parking-slot-modal"
-              style={{
-                width: "min(500px, 94vw)",
-                maxHeight: "min(620px, 92vh)",
-                margin: "auto",
-                display: "flex",
-                flexDirection: "column",
-              }}
-              onClick={(e) => e.stopPropagation()}
-              role="dialog"
-              aria-modal="true"
+      <GlobalModal
+        isOpen={!!editSlot}
+        onClose={requestCloseEdit}
+        title={t("parkEditSlot") || "Edit Parking Slot"}
+        subtitle={t("parkEditSubtitle") || "Update slot configuration and assigned unit"}
+        icon={MdEdit}
+        size="md"
+        disableUnsavedWarning={false}
+        footer={
+          <div className="flex items-center justify-end gap-3 w-full">
+            <GlobalButton variant="cancel" onClick={requestCloseEdit}>
+              {t("cancel") || "Cancel"}
+            </GlobalButton>
+            <GlobalButton
+              type="submit"
+              form="edit-parking-slot-form"
+              variant="save"
+              icon={MdDone}
+              loading={editSubmitting}
+              borderDraw
+              size="md"
             >
-              {/* Glowing top accent line */}
-              <div className="fh-modal-top-accent" style={{ background: "linear-gradient(90deg, #10b981, #3b82f6)" }} />
-
-              {/* Modal Header */}
-              <div className="fh-modal-header">
-                <div className="fh-modal-header-left">
-                  <div
-                    style={{
-                      width: 42,
-                      height: 42,
-                      borderRadius: 12,
-                      background: "rgba(16, 185, 129, 0.12)",
-                      border: "1px solid rgba(16, 185, 129, 0.28)",
-                      color: "#34d399",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      flexShrink: 0,
-                    }}
-                  >
-                    <MdEdit size={20} />
-                  </div>
-                  <div>
-                    <h3
-                      className="fh-modal-title"
-                      style={{ fontSize: "1.15rem", margin: 0, fontWeight: 700 }}
-                    >
-                      {t("parkEditSlot")}
-                    </h3>
-                    <p
-                      style={{
-                        fontSize: "0.75rem",
-                        color: "var(--text-secondary)",
-                        margin: "2px 0 0",
-                      }}
-                    >
-                      {t("parkEditSubtitle")}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="fh-modal-header-actions">
-                  <button
-                    type="button"
-                    className="fh-modal-close-btn"
-                    onClick={requestCloseEdit}
-                    title={t("parkClosePopup")}
-                  >
-                    <MdClose size={16} />
-                  </button>
-                </div>
-              </div>
-
-              {/* Modal Form */}
-              <form
-                onSubmit={handleEditSubmit}
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  flex: 1,
-                  minHeight: 0,
-                  overflow: "hidden",
-                }}
-              >
-                {/* Scrollable Body */}
-                <div
-                  className="fh-modal-body"
-                  style={{
-                    flex: 1,
-                    minHeight: 0,
-                    overflowY: "auto",
-                    padding: "18px 22px",
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "14px",
-                  }}
-                >
-                  {/* Error banner */}
-                  {editError && (
-                    <div
-                      className="flex items-center gap-2 p-3 rounded-xl text-xs font-semibold animate-fadeIn"
-                      style={{
-                        background: "rgba(248, 113, 113, 0.12)",
-                        border: "1px solid rgba(248, 113, 113, 0.28)",
-                        color: "#f87171",
-                      }}
-                    >
-                      <MdWarning size={16} className="shrink-0" />
-                      <span>{editError}</span>
-                    </div>
-                  )}
-
-                  {/* Vehicle Type Toggle */}
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-semibold text-secondary uppercase tracking-wider">
-                      {t("parkVehicleType") || "Vehicle Type"}
-                    </label>
-                    <div className="grid grid-cols-2 gap-2.5">
-                      <button
-                        type="button"
-                        onClick={() => setEditForm({ ...editForm, vehicle_type: "CAR" })}
-                        className={`ps-vehicle-mode-btn ${
-                          editForm.vehicle_type === "CAR" ? "ps-vehicle-mode-btn--active-car" : ""
-                        }`}
-                      >
-                        <MdDirectionsCar size={16} />
-                        <span>{t("parkCar") || "Car Space"}</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setEditForm({ ...editForm, vehicle_type: "BIKE" })}
-                        className={`ps-vehicle-mode-btn ${
-                          editForm.vehicle_type === "BIKE" ? "ps-vehicle-mode-btn--active-bike" : ""
-                        }`}
-                      >
-                        <MdTwoWheeler size={16} />
-                        <span>{t("parkBike") || "Bike Space"}</span>
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Slot Number & Floor */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div className="flex flex-col gap-1.5">
-                      <label className="text-xs font-semibold text-secondary">
-                        {t("parkSlotNumber")} <span className="text-red-400">*</span>
-                      </label>
-                      <input
-                        className="input h-10 w-full text-xs font-medium"
-                        placeholder={t("parkSlotNumberPlaceholder")}
-                        required
-                        value={editForm.slot_number}
-                        onChange={(e) => setEditForm({ ...editForm, slot_number: e.target.value })}
-                      />
-                    </div>
-
-                    <div className="flex flex-col gap-1.5">
-                      <label className="text-xs font-semibold text-secondary">
-                        {t("parkFloorLevel")}
-                      </label>
-                      <input
-                        className="input h-10 w-full text-xs font-medium"
-                        placeholder={t("parkFloorPlaceholder")}
-                        value={editForm.parking_floor}
-                        onChange={(e) => setEditForm({ ...editForm, parking_floor: e.target.value })}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Allocated Flat Dropdown / Viewer */}
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-semibold text-secondary uppercase tracking-wider flex items-center justify-between">
-                      <span>{t("parkAllocatedFlat")}</span>
-                      {editSlot.flat_number && (
-                        <span className="text-[11px] font-bold text-emerald-400">
-                          {t("parkCurrentFlat", { number: editSlot.flat_number })}
-                        </span>
-                      )}
-                    </label>
-                    <div className="relative">
-                      <Select
-                        className="input h-10 w-full text-xs font-medium"
-                        value={editForm.flat_id || ""}
-                        onChange={(e) => setEditForm({ ...editForm, flat_id: e.target.value })}
-                      >
-                        <option value="">{t("parkNoFlatAllocated")}</option>
-                        {flats.map((f) => {
-                          const blockName = f.Floor?.Block?.name || f.Block?.name;
-                          return (
-                            <option key={f.id} value={f.id}>
-                              {t("parkFlatNumber", { number: f.flat_number })}{blockName ? ` (${blockName})` : ""}{f.resident?.name ? ` · ${f.resident.name}` : ""}
-                            </option>
-                          );
-                        })}
-                      </Select>
-                    </div>
-                    {editSlot.resident && (
-                      <div className="text-[11px] text-secondary flex items-center gap-1.5 mt-0.5">
-                        <span>{t("parkResidentLabel")}: <strong>{editSlot.resident.name}</strong></span>
-                        {editSlot.vehicle && (
-                          <span>· {t("parkVehicleLabel")}: <strong style={{ fontFamily: "monospace" }}>{editSlot.vehicle.vehicle_number}</strong></span>
-                        )}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Parking Type (DEFAULT vs EXTRA) */}
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-semibold text-secondary uppercase tracking-wider">
-                      {t("parkTypeCategory")}
-                    </label>
-                    <div className="grid grid-cols-2 gap-2.5">
-                      <button
-                        type="button"
-                        onClick={() => setEditForm({ ...editForm, parking_type: "DEFAULT" })}
-                        className={`ps-vehicle-mode-btn ${
-                          editForm.parking_type === "DEFAULT" ? "ps-vehicle-mode-btn--active-car" : ""
-                        }`}
-                        style={editForm.parking_type === "DEFAULT" ? { borderColor: "rgba(59,130,246,0.4)" } : {}}
-                      >
-                        <FaParking size={14} />
-                        <span>{t("parkStandardDefault")}</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setEditForm({ ...editForm, parking_type: "EXTRA" })}
-                        className={`ps-vehicle-mode-btn ${
-                          editForm.parking_type === "EXTRA" ? "ps-vehicle-mode-btn--active-car" : ""
-                        }`}
-                        style={editForm.parking_type === "EXTRA" ? { borderColor: "rgba(251,191,36,0.5)", color: "var(--accent)" } : {}}
-                      >
-                        <span style={{ fontSize: 13, fontWeight: 800 }}>⚡</span>
-                        <span>{t("parkExtraSpace")}</span>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Fixed Footer */}
-                <div className="fh-modal-footer">
-                  <GlobalButton variant="cancel" onClick={requestCloseEdit}>
-                    {t("cancel") || "Cancel"}
-                  </GlobalButton>
-                  <GlobalButton
-                    type="submit"
-                    variant="save"
-                    icon={MdDone}
-                    loading={editSubmitting}
-                    borderDraw
-                  >
-                    {editSubmitting ? t("saving") : t("parkSaveChanges")}
-                  </GlobalButton>
-                </div>
-              </form>
+              {editSubmitting ? (t("saving") || "Saving...") : (t("parkSaveChanges") || "Save Changes")}
+            </GlobalButton>
+          </div>
+        }
+      >
+        <form id="edit-parking-slot-form" onSubmit={handleEditSubmit} className="flex flex-col gap-4">
+          {/* Error banner */}
+          {editError && (
+            <div
+              className="flex items-center gap-2 p-3 rounded-xl text-xs font-semibold animate-fadeIn"
+              style={{
+                background: "rgba(248, 113, 113, 0.12)",
+                border: "1px solid rgba(248, 113, 113, 0.28)",
+                color: "#f87171",
+              }}
+            >
+              <MdWarning size={16} className="shrink-0" />
+              <span>{editError}</span>
             </div>
-          </div>,
-          document.body
-        )}
+          )}
+
+          {/* Vehicle Type Toggle */}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-semibold text-secondary uppercase tracking-wider">
+              {t("parkVehicleType") || "Vehicle Type"}
+            </label>
+            <div className="grid grid-cols-2 gap-2.5">
+              <button
+                type="button"
+                onClick={() => setEditForm({ ...editForm, vehicle_type: "CAR" })}
+                className={`flex items-center justify-center gap-2.5 py-2.5 px-4 rounded-xl text-xs font-bold transition-all border ${
+                  editForm.vehicle_type === "CAR"
+                    ? "bg-accent text-white border-accent shadow-md shadow-accent/20"
+                    : "bg-card-inner-bg text-secondary border-glass-border hover:text-primary hover:border-slate-400/30"
+                }`}
+              >
+                <MdDirectionsCar size={17} />
+                <span>{t("parkCar") || "Car Space"}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setEditForm({ ...editForm, vehicle_type: "BIKE" })}
+                className={`flex items-center justify-center gap-2.5 py-2.5 px-4 rounded-xl text-xs font-bold transition-all border ${
+                  editForm.vehicle_type === "BIKE"
+                    ? "bg-accent text-white border-accent shadow-md shadow-accent/20"
+                    : "bg-card-inner-bg text-secondary border-glass-border hover:text-primary hover:border-slate-400/30"
+                }`}
+              >
+                <MdTwoWheeler size={17} />
+                <span>{t("parkBike") || "Bike Space"}</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Slot Number & Floor */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-semibold text-secondary">
+                {t("parkSlotNumber")} <span className="text-red-400">*</span>
+              </label>
+              <input
+                className="input w-full"
+                style={{
+                  height: 42,
+                  borderRadius: 12,
+                  padding: "0 14px",
+                  fontSize: 13,
+                  fontWeight: 500,
+                  boxSizing: "border-box",
+                }}
+                placeholder={t("parkSlotNumberPlaceholder")}
+                required
+                value={editForm.slot_number}
+                onChange={(e) => setEditForm({ ...editForm, slot_number: e.target.value })}
+              />
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-semibold text-secondary">
+                {t("parkFloorLevel")}
+              </label>
+              <input
+                className="input w-full"
+                style={{
+                  height: 42,
+                  borderRadius: 12,
+                  padding: "0 14px",
+                  fontSize: 13,
+                  fontWeight: 500,
+                  boxSizing: "border-box",
+                }}
+                placeholder={t("parkFloorPlaceholder")}
+                value={editForm.parking_floor}
+                onChange={(e) => setEditForm({ ...editForm, parking_floor: e.target.value })}
+              />
+            </div>
+          </div>
+
+          {/* Allocated Flat Dropdown / Viewer */}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-semibold text-secondary uppercase tracking-wider flex items-center justify-between">
+              <span>{t("parkAllocatedFlat")}</span>
+              {editSlot?.flat_number && (
+                <span className="text-[11px] font-bold text-emerald-400">
+                  {t("parkCurrentFlat", { number: editSlot.flat_number })}
+                </span>
+              )}
+            </label>
+            <div className="relative">
+              <Select
+                className="input w-full"
+                rootStyle={{ width: "100%" }}
+                style={{
+                  height: 42,
+                  borderRadius: 12,
+                  padding: "0 14px",
+                  fontSize: 13,
+                  fontWeight: 500,
+                  boxSizing: "border-box",
+                }}
+                value={editForm.flat_id || ""}
+                onChange={(e) => setEditForm({ ...editForm, flat_id: e.target.value })}
+              >
+                <option value="">{t("parkNoFlatAllocated")}</option>
+                {flats.map((f) => {
+                  const blockName = f.Floor?.Block?.name || f.Block?.name;
+                  return (
+                    <option key={f.id} value={f.id}>
+                      {t("parkFlatNumber", { number: f.flat_number })}{blockName ? ` (${blockName})` : ""}{f.resident?.name ? ` · ${f.resident.name}` : ""}
+                    </option>
+                  );
+                })}
+              </Select>
+            </div>
+            {editSlot?.resident && (
+              <div className="text-[11px] text-secondary flex items-center gap-1.5 mt-0.5">
+                <span>{t("parkResidentLabel")}: <strong>{editSlot.resident.name}</strong></span>
+                {editSlot.vehicle && (
+                  <span>· {t("parkVehicleLabel")}: <strong style={{ fontFamily: "monospace" }}>{editSlot.vehicle.vehicle_number}</strong></span>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Parking Type (DEFAULT vs EXTRA) */}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-semibold text-secondary uppercase tracking-wider">
+              {t("parkTypeCategory")}
+            </label>
+            <div className="grid grid-cols-2 gap-2.5">
+              <button
+                type="button"
+                onClick={() => setEditForm({ ...editForm, parking_type: "DEFAULT" })}
+                className={`flex items-center justify-center gap-2.5 py-2.5 px-4 rounded-xl text-xs font-bold transition-all border ${
+                  editForm.parking_type === "DEFAULT"
+                    ? "bg-accent text-white border-accent shadow-md shadow-accent/20"
+                    : "bg-card-inner-bg text-secondary border-glass-border hover:text-primary hover:border-slate-400/30"
+                }`}
+              >
+                <FaParking size={15} />
+                <span>{t("parkStandardDefault")}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setEditForm({ ...editForm, parking_type: "EXTRA" })}
+                className={`flex items-center justify-center gap-2.5 py-2.5 px-4 rounded-xl text-xs font-bold transition-all border ${
+                  editForm.parking_type === "EXTRA"
+                    ? "bg-accent text-white border-accent shadow-md shadow-accent/20"
+                    : "bg-card-inner-bg text-secondary border-glass-border hover:text-primary hover:border-slate-400/30"
+                }`}
+              >
+                <span style={{ fontSize: 13, fontWeight: 800 }}>⚡</span>
+                <span>{t("parkExtraSpace")}</span>
+              </button>
+            </div>
+          </div>
+        </form>
+      </GlobalModal>
 
       <GlobalConfirmDialog
         isOpen={!!releaseConfirm}

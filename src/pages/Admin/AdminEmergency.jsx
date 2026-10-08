@@ -409,35 +409,35 @@ export default function AdminEmergency() {
           emergencies become `danger` and "Resolved" becomes `success`. */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
-          variant="sheen"
-          tone="neutral"
+          tone="brand"
           value={metrics.total}
           label={t("sosKpiTotalTitle")}
-          description={t("sosAllEmergencies")}
+          icon={MdWarning}
+          subtext={t("sosAllEmergencies")}
         />
 
         <StatCard
-          variant="sheen"
           tone="danger"
           value={metrics.active}
           label={t("sosKpiActiveTitle")}
-          description={metrics.active > 0 ? t("sosKpiActiveDesc") : t("sosKpiNoActiveDesc")}
+          icon={FaExclamationTriangle}
+          subtext={metrics.active > 0 ? t("sosKpiActiveDesc") : t("sosKpiNoActiveDesc")}
         />
 
         <StatCard
-          variant="sheen"
           tone="success"
           value={metrics.resolved}
           label={t("sosKpiResolvedTitle")}
-          description={t("sosKpiResolvedDesc")}
+          icon={MdCheckCircle}
+          subtext={t("sosKpiResolvedDesc")}
         />
 
         <StatCard
-          variant="sheen"
           tone="info"
           value={metrics.totalAcks}
           label={t("sosKpiAcksTitle")}
-          description={t("sosKpiAcksDesc")}
+          icon={MdPeople}
+          subtext={t("sosKpiAcksDesc")}
         />
       </div>
 

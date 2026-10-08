@@ -15,6 +15,7 @@ import ExpandableSearch from "../../components/common/ExpandableSearch";
 import Modal from "../../components/Modal";
 import { toast } from "react-toastify";
 import Pagination from "../../components/common/Pagination";
+import StatCard from "../../components/common/StatCard";
 
 function useIsMobile() {
   const [m, setM] = useState(() => typeof window !== "undefined" && window.innerWidth < 768);

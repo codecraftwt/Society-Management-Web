@@ -1,6 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { MdMenu, MdClose, MdLogout, MdApartment, MdSettings } from "react-icons/md";
+import { MdMenu, MdClose, MdLogout, MdApartment, MdSettings, MdArrowBack } from "react-icons/md";
 import ThemeToggle from "./ThemeToggle";
 import LanguageSelector from "./LanguageSelector";
 import NotificationBell from "./NotificationBell";
@@ -12,6 +12,8 @@ export default function AppHeader({
   subtitle,
   societyName = null,
   actions = null,
+  leftActions = null,
+  onBack = null,
   showThemeToggle = true,
   showLanguageSelector = true,
   showNotificationBell = true,
@@ -29,7 +31,7 @@ export default function AppHeader({
       }`}
       aria-label={t("appHeader")}
     >
-      {/* ── LEFT AREA: HAMBURGER & IDENTITY ── */}
+      {/* ── LEFT AREA: HAMBURGER, BACK BTN & IDENTITY ── */}
       <div className="flex items-center gap-2.5 md:gap-3.5 min-w-0">
         {/* Mobile Hamburger Button */}
         <button
@@ -46,6 +48,24 @@ export default function AppHeader({
         >
           {mobileOpen ? <MdClose size={20} /> : <MdMenu size={20} />}
         </button>
+
+        {/* Back Button (Left-aligned) */}
+        {onBack && (
+          <button
+            type="button"
+            onClick={onBack}
+            className="inline-flex items-center justify-center h-9 px-3 rounded-xl border border-glass-border bg-card-inner-bg text-primary text-xs font-semibold gap-1.5 transition-all duration-200 ease-out hover:bg-card hover:border-accent/40 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent shrink-0 cursor-pointer shadow-2xs"
+            title={t("back", "Back")}
+            aria-label={t("back", "Back")}
+          >
+            <MdArrowBack size={16} />
+            <span className="hidden sm:inline">{t("back", "Back")}</span>
+          </button>
+        )}
+
+        {leftActions && (
+          <div className="flex items-center gap-2 shrink-0">{leftActions}</div>
+        )}
 
         {/* Identity & Context */}
         <div className="min-w-0 flex flex-col justify-center">

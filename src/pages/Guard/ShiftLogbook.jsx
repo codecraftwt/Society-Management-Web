@@ -217,7 +217,7 @@ export default function ShiftLogbook() {
 
           <button
             onClick={() => setIsAddModalOpen(true)}
-            className="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-black transition-all flex items-center justify-center gap-2 shadow-md hover:shadow-indigo-500/25 hover:scale-102 active:scale-98 flex-1 sm:flex-none"
+            className="btn-primary flex items-center justify-center gap-2 text-xs font-bold px-4 py-2.5 rounded-xl transition-all shadow-md hover:scale-102 active:scale-98 flex-1 sm:flex-none"
           >
             <MdAdd size={19} />
             <span>{t("lgAddBtn", "Add Log Entry")}</span>

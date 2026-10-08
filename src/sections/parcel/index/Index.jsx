@@ -14,6 +14,7 @@ import ExpandableSearch from "../../../components/common/ExpandableSearch";
 import Pagination from "../../../components/common/Pagination";
 import GlobalBadge from "../../../components/common/GlobalBadge";
 import Select from "../../../components/common/Select";
+import StatCard from "../../../components/common/StatCard";
 import {
   getLoggedAt,
   getStatusMeta,
@@ -25,45 +26,6 @@ import {
   resolveRequester,
   resolveResident,
 } from "../parcelDetails";
-
-/** Modern Stat Counter Card */
-const StatCard = ({ icon: Icon, title, count, color, active, onClick }) => (
-  <button
-    type="button"
-    onClick={onClick}
-    className="flex-1 min-w-[130px] p-3.5 rounded-2xl border text-left cursor-pointer transition-all hover:scale-[1.02] active:scale-[0.98]"
-    style={{
-      background: active ? `${color}14` : "var(--card-bg)",
-      borderColor: active ? color : "var(--glass-border)",
-      boxShadow: active ? `0 8px 20px -4px ${color}33` : "none",
-    }}
-  >
-    <div className="flex items-center justify-between gap-2">
-      <span
-        className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
-        style={{
-          background: `${color}1f`,
-          border: `1px solid ${color}38`,
-          color: color,
-        }}
-      >
-        <Icon size={16} />
-      </span>
-      <span
-        className="text-lg font-black tracking-tight"
-        style={{ color: active ? color : "var(--text-primary)" }}
-      >
-        {count || 0}
-      </span>
-    </div>
-    <p
-      className="text-xs font-semibold mt-2.5 truncate"
-      style={{ color: active ? color : "var(--text-secondary)", margin: "10px 0 0" }}
-    >
-      {title}
-    </p>
-  </button>
-);
 
 /** Modern, Attractive Parcel Card */
 const ParcelCard = ({ parcel, onOpen }) => {
@@ -348,35 +310,31 @@ export default function Index({
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <StatCard
           icon={MdInventory2}
-          title="All Parcels"
-          count={counts.ALL}
-          color="#6366f1"
-          active={status === "ALL"}
-          onClick={() => onStatusChange("ALL")}
+          label="All Parcels"
+          value={counts.ALL || 0}
+          tone="brand"
+          subtext="Total recorded packages"
         />
         <StatCard
           icon={MdLocalShipping}
-          title="Expected"
-          count={counts.EXPECTED}
-          color="#60a5fa"
-          active={status === "EXPECTED"}
-          onClick={() => onStatusChange("EXPECTED")}
+          label="Expected"
+          value={counts.EXPECTED || 0}
+          tone="info"
+          subtext="Awaiting delivery"
         />
         <StatCard
           icon={MdStorefront}
-          title="At Gate"
-          count={counts.AT_GATE}
-          color="#f59e0b"
-          active={status === "AT_GATE"}
-          onClick={() => onStatusChange("AT_GATE")}
+          label="At Gate"
+          value={counts.AT_GATE || 0}
+          tone="warning"
+          subtext="Held at security gate"
         />
         <StatCard
           icon={MdCheckCircle}
-          title="Collected"
-          count={counts.COLLECTED}
-          color="#10b981"
-          active={status === "COLLECTED"}
-          onClick={() => onStatusChange("COLLECTED")}
+          label="Collected"
+          value={counts.COLLECTED || 0}
+          tone="success"
+          subtext="Handed over to resident"
         />
       </div>
 

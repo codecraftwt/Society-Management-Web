@@ -255,20 +255,34 @@ const [totalPages, setTotalPages] = useState(1);
       {/* ── STATS ── */}
       {!loading && counts.total > 0 && (
         <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(4,1fr)", gap: 10 }}>
-          {[
-            { label: t("compStatTotal"), val: counts.total, tone: "brand" },
-            { label: t("rptOpen"), val: counts.open, tone: "warning" },
-            { label: t("compTabInProgress"), val: counts.progress, tone: "warning" },
-            { label: t("compStatusResolved"), val: counts.resolved, tone: "success" },
-          ].map((s, i) => (
-            <StatCard
-              key={i}
-              value={s.val}
-              label={s.label}
-              tone={s.tone}
-              style={{ borderRadius: isMobile ? 14 : 18, padding: isMobile ? "12px 14px" : "16px 18px" }}
-            />
-          ))}
+          <StatCard
+            value={counts.total}
+            label={t("compStatTotal")}
+            tone="brand"
+            icon={MdReportProblem}
+            style={{ borderRadius: isMobile ? 14 : 18 }}
+          />
+          <StatCard
+            value={counts.open}
+            label={t("rptOpen")}
+            tone="warning"
+            icon={MdPending}
+            style={{ borderRadius: isMobile ? 14 : 18 }}
+          />
+          <StatCard
+            value={counts.progress}
+            label={t("compTabInProgress")}
+            tone="info"
+            icon={MdSchedule}
+            style={{ borderRadius: isMobile ? 14 : 18 }}
+          />
+          <StatCard
+            value={counts.resolved}
+            label={t("compStatusResolved")}
+            tone="success"
+            icon={MdCheckCircle}
+            style={{ borderRadius: isMobile ? 14 : 18 }}
+          />
         </div>
       )}
 

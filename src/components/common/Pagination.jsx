@@ -1,6 +1,7 @@
 import { MdChevronLeft, MdChevronRight } from "react-icons/md";
 import Select from "./Select";
 import { useLang } from "../../context/LanguageContext";
+import "./Pagination.css";
 
 export const PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
 
@@ -38,23 +39,14 @@ export default function Pagination({
     <div className="pagination-wrap pagination-wrap--bar" style={style}>
       {showSize && (
         <div className="pagination-size">
-          <span className="pagination-size-label">{t("paginationPerPage")}</span>
-          <div style={{ width: 92 }}>
+          <span className="pagination-size-label">{t("paginationPerPage") || "Rows per page:"}</span>
+          <div style={{ width: 84 }}>
             <Select
               value={size}
               searchable={false}
               onChange={(e) => onPageSizeChange(Number(e.target.value))}
               options={options.map((n) => ({ value: n, label: String(n) }))}
-              className="text-xs font-semibold"
-              style={{
-                height: 32,
-                minHeight: 32,
-                padding: "0 0.5rem",
-                background: "var(--card-inner-bg)",
-                borderColor: "var(--glass-border)",
-                color: "var(--text-primary)",
-                borderRadius: 8,
-              }}
+              className="pagination-size-select"
             />
           </div>
         </div>

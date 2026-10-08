@@ -143,7 +143,13 @@ export default function AdminSetting() {
 
   const [me, setMe] = useState(null);
 
-  const { societyTheme, applySocietyTheme, resetSocietyTheme } = useTheme();
+  const {
+    societyTheme,
+    applySocietyTheme,
+    resetSocietyTheme,
+    setCardStyle,
+    setQuickLinkStyle,
+  } = useTheme();
   const isSocietyAdmin = userRole === "SOCIETY_ADMIN" || (isAdminOrSocietyAdmin && !!(me?.society_id || user?.society_id));
   const activeSocietyId = me?.society_id || user?.society_id;
 
@@ -155,14 +161,16 @@ export default function AdminSetting() {
 
   const [themePrimary, setThemePrimary] = useState(societyTheme?.primary || "#a05aff");
   const [themeAccent, setThemeAccent] = useState(societyTheme?.accent || "#9e58ff");
+  const [themeCardStyle, setThemeCardStyle] = useState(societyTheme?.cardStyle || "default");
+  const [themeQuickLinkStyle, setThemeQuickLinkStyle] = useState(societyTheme?.quickLinkStyle || "default");
   const [themeSaveLoading, setThemeSaveLoading] = useState(false);
   const [themeResetLoading, setThemeResetLoading] = useState(false);
 
   useEffect(() => {
-    if (societyTheme?.configured) {
-      if (societyTheme.primary) setThemePrimary(societyTheme.primary);
-      if (societyTheme.accent) setThemeAccent(societyTheme.accent);
-    }
+    if (societyTheme?.primary) setThemePrimary(societyTheme.primary);
+    if (societyTheme?.accent) setThemeAccent(societyTheme.accent);
+    if (societyTheme?.cardStyle) setThemeCardStyle(societyTheme.cardStyle);
+    if (societyTheme?.quickLinkStyle) setThemeQuickLinkStyle(societyTheme.quickLinkStyle);
   }, [societyTheme]);
 
   const submitSocietyTheme = async () => {
@@ -183,8 +191,17 @@ export default function AdminSetting() {
       await API.put(`/societies/${activeSocietyId}/theme`, {
         primary: themePrimary,
         accent: themeAccent || themePrimary,
+        card_style: themeCardStyle,
+        quick_link_style: themeQuickLinkStyle,
+        cardStyle: themeCardStyle,
+        quickLinkStyle: themeQuickLinkStyle,
       });
-      applySocietyTheme({ primary: themePrimary, accent: themeAccent || themePrimary });
+      applySocietyTheme({
+        primary: themePrimary,
+        accent: themeAccent || themePrimary,
+        cardStyle: themeCardStyle,
+        quickLinkStyle: themeQuickLinkStyle,
+      });
       toast.success(t("asToastThemeSaved", "Society branding updated successfully!"));
     } catch (err) {
       toast.error(err.response?.data?.message || t("asErrThemeSave", "Failed to update society branding"));
@@ -201,6 +218,8 @@ export default function AdminSetting() {
       resetSocietyTheme();
       setThemePrimary("#a05aff");
       setThemeAccent("#9e58ff");
+      setThemeCardStyle("default");
+      setThemeQuickLinkStyle("default");
       toast.success(t("asToastThemeReset", "Theme reset to system default"));
     } catch (err) {
       toast.error(err.response?.data?.message || t("asErrThemeReset", "Failed to reset society theme"));
@@ -208,6 +227,7 @@ export default function AdminSetting() {
       setThemeResetLoading(false);
     }
   };
+
 
   /* `loading` starts true, so the effect never needs a synchronous setState —
      the first update lands after the request settles. */
@@ -494,13 +514,13 @@ export default function AdminSetting() {
         <button type="button" className="set-card set-card--profile" onClick={() => openSection("profile")}>
           <span className="set-card__top">
             <span className="set-card__avatar">
-              <UserAvatar name={name} src={photo} size={44} radius={44} alt={name} />
+              <UserAvatar name={name} src={photo} size={36} radius={36} alt={name} />
               <span className="set-card__avatar-cam" aria-hidden="true">
-                <MdCameraAlt size={11} />
+                <MdCameraAlt size={10} />
               </span>
             </span>
             <span className="set-card__icon" aria-hidden="true">
-              <MdPerson size={21} />
+              <MdPerson size={18} />
             </span>
           </span>
 
@@ -529,7 +549,7 @@ export default function AdminSetting() {
         <button type="button" className="set-card set-card--password" onClick={() => openSection("password")}>
           <span className="set-card__top">
             <span className="set-card__icon" aria-hidden="true">
-              <MdLock size={21} />
+              <MdLock size={18} />
             </span>
           </span>
 
@@ -546,7 +566,7 @@ export default function AdminSetting() {
           <span className="set-card__foot">
             <span className="set-card__cta">
               {t("asCardPasswordCta", "Change Password")}
-              <MdChevronRight size={15} aria-hidden="true" />
+              <MdChevronRight size={14} aria-hidden="true" />
             </span>
             <span className="set-card__status">
               <span className="set-card__status-dot" aria-hidden="true" />
@@ -560,7 +580,7 @@ export default function AdminSetting() {
           <button type="button" className="set-card set-card--roles" onClick={() => openSection("roles")}>
             <span className="set-card__top">
               <span className="set-card__icon" aria-hidden="true">
-                <MdShield size={21} />
+                <MdShield size={18} />
               </span>
             </span>
 
@@ -577,7 +597,7 @@ export default function AdminSetting() {
             <span className="set-card__foot">
               <span className="set-card__cta">
                 {t("asCardRolesCta", "Manage Permissions")}
-                <MdChevronRight size={15} aria-hidden="true" />
+                <MdChevronRight size={14} aria-hidden="true" />
               </span>
               {roleLabel && (
                 <span className="set-card__status set-card__status--violet">
@@ -594,7 +614,7 @@ export default function AdminSetting() {
           <button type="button" className="set-card set-card--theme" onClick={() => openSection("theme")}>
             <span className="set-card__top">
               <span className="set-card__icon" aria-hidden="true">
-                <MdPalette size={21} />
+                <MdPalette size={18} />
               </span>
             </span>
 
@@ -611,7 +631,7 @@ export default function AdminSetting() {
             <span className="set-card__foot">
               <span className="set-card__cta">
                 {t("asCardThemeCta", "Customize Branding")}
-                <MdChevronRight size={15} aria-hidden="true" />
+                <MdChevronRight size={14} aria-hidden="true" />
               </span>
               {societyLabel && (
                 <span
@@ -641,7 +661,7 @@ export default function AdminSetting() {
           <button type="button" className="set-card set-card--location" onClick={() => openSection("location")}>
             <span className="set-card__top">
               <span className="set-card__icon" aria-hidden="true">
-                <MdPlace size={21} />
+                <MdPlace size={18} />
               </span>
             </span>
 
@@ -658,7 +678,7 @@ export default function AdminSetting() {
             <span className="set-card__foot">
               <span className="set-card__cta">
                 {t("asCardLocationCta", "Configure Location")}
-                <MdChevronRight size={15} aria-hidden="true" />
+                <MdChevronRight size={14} aria-hidden="true" />
               </span>
               <span className="set-card__status set-card__status--emerald">
                 <span className="set-card__status-dot" aria-hidden="true" />
@@ -1071,8 +1091,18 @@ export default function AdminSetting() {
         <ThemeBrandingEditor
           primaryColor={themePrimary}
           accentColor={themeAccent}
+          cardStyle={themeCardStyle}
+          quickLinkStyle={themeQuickLinkStyle}
           onChangePrimary={setThemePrimary}
           onChangeAccent={setThemeAccent}
+          onChangeCardStyle={(style) => {
+            setThemeCardStyle(style);
+            setCardStyle(style);
+          }}
+          onChangeQuickLinkStyle={(style) => {
+            setThemeQuickLinkStyle(style);
+            setQuickLinkStyle(style);
+          }}
           onApplyPreset={(p) => {
             setThemePrimary(p.primary);
             setThemeAccent(p.accent);
@@ -1097,7 +1127,7 @@ export default function AdminSetting() {
             loading={themeSaveLoading}
             disabled={!isValidHexColor(themePrimary) || themeResetLoading}
           >
-            {t("asSaveThemeBtn", "Apply Brand Colors")}
+            {t("asSaveThemeBtn", "Save Society Theme")}
           </GlobalButton>
         </div>
       </div>

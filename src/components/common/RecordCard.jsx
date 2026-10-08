@@ -25,6 +25,8 @@ import "./RecordCard.css";
  * - tone        neutral | brand | success | warning | danger | info
  * - variant     base | glass
  * - interactive (bool)     hover affordance + shine sweep
+ * - blob        (bool)     default true. Set false to drop the decorative
+ *                          corner circle (ui-record-card__blob).
  * - selected    (bool)
  * - disabled    (bool)
  * - as          (string)   defaults to "article"; becomes "button" when
@@ -53,6 +55,7 @@ export default function RecordCard({
   tone = "neutral",
   variant = "base",
   interactive = false,
+  blob = true,
   selected = false,
   disabled = false,
   as,
@@ -110,7 +113,7 @@ export default function RecordCard({
       {...(interactive && selected ? { "aria-pressed": true } : {})}
       {...(clickable ? { onClick: disabled ? undefined : onClick } : {})}
     >
-      <span className="ui-record-card__blob" aria-hidden="true" />
+      {blob && <span className="ui-record-card__blob" aria-hidden="true" />}
 
       {(title || Icon || description || badge) && (
         <Box className="ui-record-card__header">

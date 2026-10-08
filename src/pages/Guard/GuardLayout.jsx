@@ -39,10 +39,67 @@ function GuardLayoutInner() {
   const base = "/guard";
 
   const [alerts, setAlerts] = useState([]);
+  const [shift, setShift] = useState(null);
   const [showEmergency, setShowEmergency] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   const socket = getSocket();
+
+  /* Load guard shift */
+  const loadShift = async () => {
+    try {
+      const res = await API.get("/guard-shift/my").catch(() => null);
+      if (res?.data) {
+        setShift(res.data?.data || res.data);
+      }
+    } catch (e) {
+      console.error("Guard layout shift fetch error:", e);
+    }
+  };
+
+  useEffect(() => {
+    loadShift();
+    window.addEventListener("refresh_guard_data", loadShift);
+    return () => window.removeEventListener("refresh_guard_data", loadShift);
+  }, []);
+
+  /* Enforce Punch-In before accessing gate operations subroutes */
+  useEffect(() => {
+    if (!shift || !shift.shift_type) return;
+
+    let isDuty = typeof shift.isOnDuty === "boolean" ? shift.isOnDuty : false;
+    if (!isDuty && shift.start_time && shift.end_time) {
+      try {
+        const [sh, sm] = shift.start_time.split(":").map(Number);
+        const [eh, em] = shift.end_time.split(":").map(Number);
+        const d = new Date();
+        const curMinutes = d.getHours() * 60 + d.getMinutes();
+        const startMinutes = sh * 60 + (sm || 0);
+        const endMinutes = eh * 60 + (em || 0);
+        isDuty =
+          startMinutes <= endMinutes
+            ? curMinutes >= startMinutes && curMinutes < endMinutes
+            : curMinutes >= startMinutes || curMinutes < endMinutes;
+      } catch (e) {
+        isDuty = false;
+      }
+    }
+
+    const isPunchedIn =
+      shift?.attendance?.status === "PUNCHED_IN" ||
+      Boolean(shift?.attendance?.punch_in && shift?.attendance?.status !== "NOT_PUNCHED_IN");
+    const isPunchedOut = shift?.attendance?.status === "PUNCHED_OUT";
+    const isLocked = isDuty && !isPunchedIn && !isPunchedOut;
+
+    if (
+      isLocked &&
+      location.pathname !== "/guard" &&
+      location.pathname !== "/guard/settings" &&
+      location.pathname !== "/guard/help-contacts"
+    ) {
+      navigate("/guard", { replace: true });
+    }
+  }, [shift, location.pathname, navigate]);
 
   const menu = [
     {
@@ -195,36 +252,23 @@ function GuardLayoutInner() {
         <AppHeader
           title={null}
           subtitle={null}
+          onBack={location.pathname !== base ? () => navigate(base) : null}
           actions={
-            <>
-              {location.pathname !== base && (
-                <button
-                  type="button"
-                  onClick={() => navigate(base)}
-                  className="inline-flex items-center justify-center h-9 px-3 rounded-xl border border-glass-border bg-card-inner-bg text-primary text-xs font-semibold gap-1.5 transition-all duration-200 ease-out hover:bg-card hover:border-accent/40 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-                  title={t("back", "Back")}
-                  aria-label={t("back", "Back")}
-                >
-                  <MdArrowBack size={16} />
-                  <span>{t("back", "Back")}</span>
-                </button>
+            <button
+              onClick={() => setShowEmergency(true)}
+              className={`relative flex items-center justify-center h-9 px-3 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs gap-1.5 shadow-md shadow-red-500/30 transition-colors duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-300 cursor-pointer ${
+                alerts.length > 0 ? "animate-pulse ring-2 ring-red-400" : ""
+              }`}
+              title="Emergency & SOS Center"
+            >
+              <MdWarning size={17} className="text-white" />
+              <span>SOS</span>
+              {alerts.length > 0 && (
+                <span className="bg-white text-red-600 text-[10px] font-extrabold min-w-4.5 h-4.5 flex items-center justify-center rounded-full leading-none px-1">
+                  {alerts.length}
+                </span>
               )}
-              <button
-                onClick={() => setShowEmergency(true)}
-                className={`relative flex items-center justify-center h-9 px-3 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs gap-1.5 shadow-md shadow-red-500/30 transition-colors duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-300 ${
-                  alerts.length > 0 ? "animate-pulse ring-2 ring-red-400" : ""
-                }`}
-                title="Emergency & SOS Center"
-              >
-                <MdWarning size={17} className="text-white" />
-                <span>SOS</span>
-                {alerts.length > 0 && (
-                  <span className="bg-white text-red-600 text-[10px] font-extrabold min-w-4.5 h-4.5 flex items-center justify-center rounded-full leading-none px-1">
-                    {alerts.length}
-                  </span>
-                )}
-              </button>
-            </>
+            </button>
           }
           onLogout={() => setShowLogoutConfirm(true)}
           settingsPath={`${base}/settings`}

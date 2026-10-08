@@ -9,19 +9,37 @@ import GlobalConfirmDialog from "../../components/common/GlobalConfirmDialog";
 import { useLang } from "../../context/LanguageContext";
 import { AuthContext } from "../../context/AuthContext";
 import { hasPermission } from "../../utils/permissions";
-import { MdApartment, MdLogout, MdChevronLeft, MdChevronRight } from "react-icons/md";
+import {
+  MdApartment,
+  MdLogout,
+  MdChevronLeft,
+  MdChevronRight,
+  MdCheckCircle,
+  MdMeetingRoom,
+  MdDoorFront,
+  MdPerson,
+  MdBlock,
+  MdWarning,
+  MdLocalParking,
+  MdDeliveryDining,
+  MdReceipt,
+  MdSearch,
+  MdRefresh,
+} from "react-icons/md";
 import SlidingTabs from "../../components/common/SlidingTabs";
 import ExpandableSearch from "../../components/common/ExpandableSearch";
-
 import Pagination from "../../components/common/Pagination";
+import RecordCard from "../../components/common/RecordCard";
+import StatCard from "../../components/common/StatCard";
+import "./Admin.css";
 
 /* ─────────────────────────────────────────────────────────────
    SPINNER
 ────────────────────────────────────────────────────────────── */
 const SpinnerComp = ({ t }) => (
-  <div className="fh-loading">
-    <div className="fh-spinner" />
-    <span>{t("fhLoading")}</span>
+  <div className="fh-loading flex flex-col items-center justify-center p-8 gap-3 text-secondary">
+    <div className="w-8 h-8 rounded-full border-2 border-accent border-t-transparent animate-spin" />
+    <span className="text-xs font-semibold">{t("fhLoading") || "Loading details..."}</span>
   </div>
 );
 
@@ -29,10 +47,10 @@ const SpinnerComp = ({ t }) => (
    EMPTY STATE
 ────────────────────────────────────────────────────────────── */
 const Empty = ({ icon = "📭", text = "No data", sub = "" }) => (
-  <div className="fh-empty-state">
-    <span className="fh-empty-icon">{icon}</span>
-    <p className="fh-empty-text">{text}</p>
-    {sub && <p className="fh-empty-sub">{sub}</p>}
+  <div className="fh-empty-state flex flex-col items-center justify-center p-8 text-center rounded-2xl bg-black/[0.02] dark:bg-white/[0.02] border border-glass-border">
+    <span className="text-3xl mb-2 select-none" aria-hidden="true">{icon}</span>
+    <p className="text-sm font-bold text-primary mb-1">{text}</p>
+    {sub && <p className="text-xs text-secondary max-w-sm">{sub}</p>}
   </div>
 );
 
@@ -41,9 +59,9 @@ const Empty = ({ icon = "📭", text = "No data", sub = "" }) => (
 ────────────────────────────────────────────────────────────── */
 const statusVariant = (s = "") => {
   const v = s.toLowerCase().replace(/[^a-z]/g, "");
-  if (["paid","resolved","collected","delivered","completed","approved"].includes(v)) return "success";
-  if (["rejected","cancelled","failed"].includes(v)) return "danger";
-  if (["pending","pendingpayment","atgate","open"].includes(v)) return "warning";
+  if (["paid", "resolved", "collected", "delivered", "completed", "approved"].includes(v)) return "success";
+  if (["rejected", "cancelled", "failed"].includes(v)) return "danger";
+  if (["pending", "pendingpayment", "atgate", "open"].includes(v)) return "warning";
   return "info";
 };
 
@@ -74,59 +92,75 @@ const ResidentsTab = ({ residents, t, onMoveOut }) => {
   });
 
   if (!validResidents.length)
-    return <Empty icon="👤" text={t("fhNoResidents")} sub={t("fhNoResidentsSub")} />;
+    return <Empty icon="👤" text={t("fhNoResidents") || "No residents recorded"} sub={t("fhNoResidentsSub") || "This flat has no current or historical resident profiles."} />;
 
   return (
-    <div className="fh-list">
+    <div className="space-y-3">
       {validResidents.map((r, i) => {
-        const name     = r.User?.name || r.user?.name || r.name || r.resident_name;
-        const initials = name.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase();
-        const moveIn   = r.move_in_date || r.move_in  || r.moveIn  || r.check_in  || r.created_at || null;
-        const moveOut  = r.move_out_date || r.move_out || r.moveOut || r.check_out || null;
+        const name = r.User?.name || r.user?.name || r.name || r.resident_name;
+        const initials = name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
+        const moveIn = r.move_in_date || r.move_in || r.moveIn || r.check_in || r.created_at || null;
+        const moveOut = r.move_out_date || r.move_out || r.moveOut || r.check_out || null;
         const isCurrent = !moveOut;
-        const role     = r.type || r.role || r.resident_type || r.User?.role || t("fhResidents");
+        const role = r.type || r.role || r.resident_type || r.User?.role || t("fhResidents") || "Resident";
 
         return (
-          <div className="fh-resident-card" key={r.id || i}>
-            <div className="fh-resident-avatar">{initials}</div>
-
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div className="fh-resident-top">
-                <p className="fh-resident-name">{name}</p>
-                <span className={`fh-resident-badge ${isCurrent ? "fh-resident-badge--current" : "fh-resident-badge--past"}`}>
-                  {isCurrent ? t("fhCurrent") : t("fhPast")}
-                </span>
+          <div
+            className="p-4 rounded-xl bg-transparent border border-glass-border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 transition-all hover:border-accent/40 shadow-sm"
+            key={r.id || i}
+          >
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-10 h-10 rounded-xl bg-accent-soft text-accent font-bold flex items-center justify-center text-sm shrink-0 border border-accent/20">
+                {initials}
               </div>
 
-              <p className="fh-resident-meta">{role}</p>
-
-              <div className="fh-resident-dates">
-                {moveIn && (
-                  <span className="fh-date-chip fh-date-chip--in">
-                    {t("fhIn")}: {String(moveIn).slice(0, 10)}
-                  </span>
-                )}
-                {moveIn && <span className="fh-date-sep">→</span>}
-                {isCurrent
-                  ? <span className="fh-date-chip fh-date-chip--present">{t("fhPresent")}</span>
-                  : moveOut && <span className="fh-date-chip fh-date-chip--out">{t("fhOut")}: {String(moveOut).slice(0, 10)}</span>
-                }
-              </div>
-
-              {isCurrent && onMoveOut && (
-                <div className="fh-resident-actions">
-                  <GlobalButton
-                    variant="danger"
-                    size="sm"
-                    icon={MdLogout}
-                    onClick={() => onMoveOut(r)}
-                    title={t("fhMoveOutTitle")}
+              <div className="min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="font-bold text-sm text-primary truncate">{name}</span>
+                  <span
+                    className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${
+                      isCurrent
+                        ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20"
+                        : "bg-slate-500/10 text-slate-400 border border-slate-500/20"
+                    }`}
                   >
-                    {t("fhMarkLeft")}
-                  </GlobalButton>
+                    {isCurrent ? t("fhCurrent") || "Active" : t("fhPast") || "Past Resident"}
+                  </span>
                 </div>
-              )}
+
+                <div className="flex items-center gap-2 mt-1 text-xs text-secondary flex-wrap">
+                  <span className="font-semibold text-accent">{role}</span>
+                  <span>•</span>
+                  {moveIn && (
+                    <span>
+                      {t("fhIn") || "Joined"}: {String(moveIn).slice(0, 10)}
+                    </span>
+                  )}
+                  {moveOut && (
+                    <>
+                      <span>→</span>
+                      <span>
+                        {t("fhOut") || "Left"}: {String(moveOut).slice(0, 10)}
+                      </span>
+                    </>
+                  )}
+                </div>
+              </div>
             </div>
+
+            {isCurrent && onMoveOut && (
+              <div className="shrink-0 self-end sm:self-center">
+                <GlobalButton
+                  variant="danger"
+                  size="sm"
+                  icon={MdLogout}
+                  onClick={() => onMoveOut(r)}
+                  title={t("fhMoveOutTitle")}
+                >
+                  {t("fhMarkLeft") || "Move Out"}
+                </GlobalButton>
+              </div>
+            )}
           </div>
         );
       })}
@@ -141,7 +175,7 @@ const BillsTab = ({ bills, t }) => {
   const [filter, setFilter] = useState("all");
 
   if (!bills.length)
-    return <Empty icon="💳" text={t("fhNoBills")} sub={t("fhNoBillsSub")} />;
+    return <Empty icon="💳" text={t("fhNoBills") || "No billing records"} sub={t("fhNoBillsSub") || "Invoices and fee records for this flat will appear here."} />;
 
   const totalAmount = bills.reduce((sum, b) => sum + Number(b.amount || 0), 0);
   const paidBills = bills.filter((b) => (b.status || "").toLowerCase() === "paid");
@@ -153,20 +187,26 @@ const BillsTab = ({ bills, t }) => {
     filter === "paid" ? paidBills : filter === "pending" ? pendingBills : bills;
 
   return (
-    <div className="fh-bills-section">
+    <div className="space-y-4">
       {/* Financial Summary Strip */}
-      <div className="fh-bills-summary-row">
-        <div className="fh-bills-sum-card fh-bills-sum-card--total">
-          <span className="fh-bills-sum-label">Total Billed</span>
-          <span className="fh-bills-sum-val">₹{totalAmount.toLocaleString("en-IN")}</span>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div className="p-3.5 rounded-xl bg-transparent border border-glass-border">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-secondary block">Total Billed</span>
+          <span className="text-base sm:text-lg font-extrabold text-primary mt-0.5 block">
+            ₹{totalAmount.toLocaleString("en-IN")}
+          </span>
         </div>
-        <div className="fh-bills-sum-card fh-bills-sum-card--paid">
-          <span className="fh-bills-sum-label">Paid Amount</span>
-          <span className="fh-bills-sum-val">₹{paidAmount.toLocaleString("en-IN")}</span>
+        <div className="p-3.5 rounded-xl bg-transparent border border-emerald-500/30">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-500 block">Paid Amount</span>
+          <span className="text-base sm:text-lg font-extrabold text-emerald-500 mt-0.5 block">
+            ₹{paidAmount.toLocaleString("en-IN")}
+          </span>
         </div>
-        <div className="fh-bills-sum-card fh-bills-sum-card--pending">
-          <span className="fh-bills-sum-label">Pending Amount</span>
-          <span className="fh-bills-sum-val">₹{pendingAmount.toLocaleString("en-IN")}</span>
+        <div className="p-3.5 rounded-xl bg-transparent border border-amber-500/30">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-amber-500 block">Pending Amount</span>
+          <span className="text-base sm:text-lg font-extrabold text-amber-500 mt-0.5 block">
+            ₹{pendingAmount.toLocaleString("en-IN")}
+          </span>
         </div>
       </div>
 
@@ -184,34 +224,34 @@ const BillsTab = ({ bills, t }) => {
       {displayedBills.length === 0 ? (
         <Empty icon="💰" text="No bills in this category" sub="Select a different filter above." />
       ) : (
-        <div className="fh-table-wrap">
-          <table className="fh-table">
+        <div className="overflow-x-auto rounded-xl border border-glass-border">
+          <table className="w-full text-left text-xs border-collapse">
             <thead>
-              <tr className="fh-t-row">
-                <th className="fh-th">{t("fhDescription")}</th>
-                <th className="fh-th">{t("fhAmount")}</th>
-                <th className="fh-th">{t("fhDueDate")}</th>
-                <th className="fh-th">{t("fhStatus")}</th>
+              <tr className="bg-transparent border-b border-glass-border text-secondary uppercase font-bold text-[10px] tracking-wider">
+                <th className="p-3">{t("fhDescription") || "Description"}</th>
+                <th className="p-3">{t("fhAmount") || "Amount"}</th>
+                <th className="p-3">{t("fhDueDate") || "Due Date"}</th>
+                <th className="p-3">{t("fhStatus") || "Status"}</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-glass-border">
               {displayedBills.map((b, i) => (
-                <tr className="fh-tbody-row" key={b.id || i}>
-                  <td className="fh-td fh-td--name">
-                    <div style={{ fontWeight: 600 }}>
-                      {b.description || b.title || b.bill_type || b.type || `${t("fhBills")} #${i + 1}`}
+                <tr className="hover:bg-white/[0.02] transition-colors" key={b.id || i}>
+                  <td className="p-3">
+                    <div className="font-bold text-primary">
+                      {b.description || b.title || b.bill_type || b.type || `${t("fhBills") || "Bill"} #${i + 1}`}
                     </div>
                     {b.billing_month && (
-                      <span style={{ fontSize: "11px", opacity: 0.7 }}>Month: {b.billing_month}</span>
+                      <span className="text-[11px] text-secondary opacity-75">Month: {b.billing_month}</span>
                     )}
                   </td>
-                  <td className="fh-td fh-td--amount">
+                  <td className="p-3 font-bold text-primary">
                     ₹{Number(b.amount || 0).toLocaleString("en-IN")}
                   </td>
-                  <td className="fh-td">
+                  <td className="p-3 text-secondary">
                     {b.due_date ? String(b.due_date).slice(0, 10) : b.dueDate || b.due || "—"}
                   </td>
-                  <td className="fh-td">
+                  <td className="p-3">
                     <Pill status={b.status} t={t} />
                   </td>
                 </tr>
@@ -229,28 +269,37 @@ const BillsTab = ({ bills, t }) => {
 ────────────────────────────────────────────────────────────── */
 const ParcelsTab = ({ parcels, t }) => {
   if (!parcels.length)
-    return <Empty icon="📦" text={t("fhNoParcels")} sub={t("fhNoParcelsSub")} />;
+    return <Empty icon="📦" text={t("fhNoParcels") || "No parcels"} sub={t("fhNoParcelsSub") || "Courier deliveries for this flat will be logged here."} />;
 
   return (
-    <div className="fh-list">
+    <div className="space-y-2.5">
       {parcels.map((p, i) => (
-        <div className="fh-row-card" key={p.id || i}>
-          <div className="fh-row-card-icon fh-row-card-icon--blue">📦</div>
-          <div className="fh-row-card-body">
-            <p className="fh-row-card-title">
-              {p.courier_name || p.courierName || p.sender || `${t("fhParcels")} #${i + 1}`}
-            </p>
-            {p.description && <p className="fh-row-card-sub">{p.description}</p>}
-            <div className="fh-row-card-footer">
-              {(p.arrived_at || p.created_at || p.date) && (
-                <span className="fh-row-date">
-                  {String(p.arrived_at || p.created_at || p.date).slice(0, 10)}
-                </span>
-              )}
-              <Pill status={(p.status || "expected").replace("_", " ")} t={t} />
-              {p.otp && <span className="fh-meta-chip">OTP: {p.otp}</span>}
+        <div
+          className="p-3.5 rounded-xl bg-transparent border border-glass-border flex items-center justify-between gap-3 hover:border-accent/40 transition-colors shadow-sm"
+          key={p.id || i}
+        >
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-9 h-9 rounded-xl bg-blue-500/10 text-blue-500 flex items-center justify-center shrink-0 border border-blue-500/20">
+              <MdDeliveryDining size={20} />
+            </div>
+            <div className="min-w-0">
+              <p className="font-bold text-sm text-primary truncate">
+                {p.courier_name || p.courierName || p.sender || `${t("fhParcels") || "Parcel"} #${i + 1}`}
+              </p>
+              {p.description && <p className="text-xs text-secondary truncate">{p.description}</p>}
+              <div className="flex items-center gap-2 mt-1 text-[11px] text-secondary flex-wrap">
+                {(p.arrived_at || p.created_at || p.date) && (
+                  <span>{String(p.arrived_at || p.created_at || p.date).slice(0, 16).replace("T", " ")}</span>
+                )}
+                {p.otp && (
+                  <span className="font-mono px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-500 font-bold text-[10px]">
+                    OTP: {p.otp}
+                  </span>
+                )}
+              </div>
             </div>
           </div>
+          <Pill status={(p.status || "expected").replace("_", " ")} t={t} />
         </div>
       ))}
     </div>
@@ -262,35 +311,42 @@ const ParcelsTab = ({ parcels, t }) => {
 ────────────────────────────────────────────────────────────── */
 const VisitorsTab = ({ visitors, t }) => {
   if (!visitors.length)
-    return <Empty icon="🚶" text={t("fhNoVisitors")} sub={t("fhNoVisitorsSub")} />;
+    return <Empty icon="🚶" text={t("fhNoVisitors") || "No visitor logs"} sub={t("fhNoVisitorsSub") || "Guest check-ins and passes will appear here."} />;
 
   return (
-    <div className="fh-list">
+    <div className="space-y-2.5">
       {visitors.map((v, i) => (
-        <div className="fh-row-card" key={v.id || i}>
-          <div className="fh-row-card-icon fh-row-card-icon--purple">🚶</div>
-          <div className="fh-row-card-body">
-            <p className="fh-row-card-title">
-              {v.visitor_name || v.visitorName || v.name || `${t("fhVisitors")} #${i + 1}`}
-            </p>
-            {v.purpose && <p className="fh-row-card-sub">{v.purpose}</p>}
-            <div className="fh-row-card-footer">
-              {(v.entry_time || v.entry || v.check_in || v.created_at) && (
-                <span className="fh-row-date">
-                  {String(v.entry_time || v.entry || v.check_in || v.created_at)
-                    .slice(0, 16).replace("T", " ")}
-                </span>
-              )}
-              {v.vehicle_number && (
-                <span className="fh-meta-chip">🚗 {v.vehicle_number}</span>
-              )}
-              {v.exit_time && (
-                <span className="fh-meta-chip">
-                  {t("fhOut")}: {String(v.exit_time).slice(0, 16).replace("T", " ")}
-                </span>
-              )}
+        <div
+          className="p-3.5 rounded-xl bg-transparent border border-glass-border flex items-center justify-between gap-3 hover:border-accent/40 transition-colors shadow-sm"
+          key={v.id || i}
+        >
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-9 h-9 rounded-xl bg-purple-500/10 text-purple-500 flex items-center justify-center shrink-0 border border-purple-500/20">
+              <MdPerson size={20} />
+            </div>
+            <div className="min-w-0">
+              <p className="font-bold text-sm text-primary truncate">
+                {v.visitor_name || v.visitorName || v.name || `${t("fhVisitors") || "Visitor"} #${i + 1}`}
+              </p>
+              <div className="flex items-center gap-2 mt-0.5 text-xs text-secondary flex-wrap">
+                {v.purpose && <span className="text-accent font-semibold">{v.purpose}</span>}
+                {v.vehicle_number && (
+                  <span className="font-mono text-[10px] px-1.5 py-0.5 rounded bg-black/20 text-slate-300">
+                    🚗 {v.vehicle_number}
+                  </span>
+                )}
+              </div>
+              <div className="flex items-center gap-2 mt-1 text-[11px] text-secondary">
+                {(v.entry_time || v.entry || v.check_in || v.created_at) && (
+                  <span>In: {String(v.entry_time || v.entry || v.check_in || v.created_at).slice(0, 16).replace("T", " ")}</span>
+                )}
+                {v.exit_time && <span>• Out: {String(v.exit_time).slice(0, 16).replace("T", " ")}</span>}
+              </div>
             </div>
           </div>
+          <GlobalBadge size="sm" variant={v.exit_time ? "neutral" : "success"}>
+            {v.exit_time ? "Exited" : "On Premises"}
+          </GlobalBadge>
         </div>
       ))}
     </div>
@@ -299,72 +355,48 @@ const VisitorsTab = ({ visitors, t }) => {
 
 /* ─────────────────────────────────────────────────────────────
    TAB: COMPLAINTS
-   — shows complainer name from User.name (included by backend)
 ────────────────────────────────────────────────────────────── */
 const ComplaintsTab = ({ complaints, t }) => {
   if (!complaints.length)
-    return <Empty icon="📋" text={t("fhNoComplaints")} sub={t("fhNoComplaintsSub")} />;
+    return <Empty icon="📋" text={t("fhNoComplaints") || "No complaints"} sub={t("fhNoComplaintsSub") || "Tickets and issue reports for this flat will be listed here."} />;
 
   return (
-    <div className="fh-list">
+    <div className="space-y-2.5">
       {complaints.map((c, i) => {
-        /* backend includes { User: { id, name } } on each complaint */
         const complainerName = c.User?.name || c.user?.name || null;
 
         return (
-          <div className="fh-row-card" key={c.id || i}>
-            <div className="fh-row-card-icon fh-row-card-icon--red">📋</div>
-            <div className="fh-row-card-body">
-
-              {/* complaint title */}
-              <p className="fh-row-card-title">
-                {c.title || c.subject || c.category || `${t("fhComplaints")} #${i + 1}`}
-              </p>
-
-              {/* complainer name chip — shown just below the title */}
-              {complainerName && (
-                <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 4 }}>
-                  <span style={{
-                    fontSize: "10px",
-                    fontWeight: 600,
-                    color: "var(--text-secondary)",
-                    textTransform: "uppercase",
-                    letterSpacing: "0.05em",
-                  }}>
-                    By
-                  </span>
-                  <span style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: 4,
-                    fontSize: "11px",
-                    fontWeight: 700,
-                    padding: "2px 8px",
-                    borderRadius: "999px",
-                    background: "rgba(107,70,193,0.10)",
-                    border: "1px solid rgba(107,70,193,0.22)",
-                    color: "var(--stat-purple-color, #C0B0E5)",
-                  }}>
-                    👤 {complainerName}
-                  </span>
+          <div
+            className="p-3.5 rounded-xl bg-transparent border border-glass-border flex flex-col gap-2 hover:border-accent/40 transition-colors shadow-sm"
+            key={c.id || i}
+          >
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="w-8 h-8 rounded-lg bg-rose-500/10 text-rose-500 flex items-center justify-center shrink-0 border border-rose-500/20">
+                  <MdWarning size={16} />
                 </div>
-              )}
-
-              {/* description */}
-              {c.description && (
-                <p className="fh-row-card-sub">{c.description}</p>
-              )}
-
-              {/* footer: date + status */}
-              <div className="fh-row-card-footer">
-                {(c.created_at || c.date) && (
-                  <span className="fh-row-date">
-                    {String(c.created_at || c.date).slice(0, 10)}
-                  </span>
-                )}
-                <Pill status={c.status || "OPEN"} t={t} />
+                <h4 className="font-bold text-sm text-primary truncate">
+                  {c.title || c.subject || c.category || `${t("fhComplaints") || "Ticket"} #${i + 1}`}
+                </h4>
               </div>
+              <Pill status={c.status || "OPEN"} t={t} />
+            </div>
 
+            {complainerName && (
+              <div className="flex items-center gap-1.5 text-xs text-secondary">
+                <span>Reported by:</span>
+                <span className="font-semibold text-primary">{complainerName}</span>
+              </div>
+            )}
+
+            {c.description && (
+              <p className="text-xs text-secondary bg-transparent p-2.5 rounded-lg border border-glass-border leading-relaxed">
+                {c.description}
+              </p>
+            )}
+
+            <div className="text-[11px] text-secondary text-right pt-1">
+              {(c.created_at || c.date) && String(c.created_at || c.date).slice(0, 10)}
             </div>
           </div>
         );
@@ -378,44 +410,42 @@ const ComplaintsTab = ({ complaints, t }) => {
 ────────────────────────────────────────────────────────────── */
 const ParkingTab = ({ parking, t }) => {
   if (!parking.length)
-    return <Empty icon="🚗" text={t("fhNoParking")} sub={t("fhNoParkingSub")} />;
+    return <Empty icon="🚗" text={t("fhNoParking") || "No parking records"} sub={t("fhNoParkingSub") || "Allocated bays and vehicle passes will appear here."} />;
 
   return (
-    <div className="fh-list">
+    <div className="space-y-2.5">
       {parking.map((p, i) => (
-        <div className="fh-row-card" key={p.id || i}>
-          <div className="fh-row-card-icon fh-row-card-icon--amber">🚗</div>
-          <div className="fh-row-card-body">
-
-            {/* guest name */}
-            <p className="fh-row-card-title">
-              {p.guest_name || `${t("fhParking")} #${i + 1}`}
-            </p>
-
-            {/* vehicle info */}
-            {(p.vehicle_number || p.vehicle_type) && (
-              <p className="fh-row-card-sub">
-                {[p.vehicle_number, p.vehicle_type].filter(Boolean).join(" · ")}
-              </p>
-            )}
-
-            <div className="fh-row-card-footer">
-              {/* expected arrival date */}
-              {p.expected_arrival && (
-                <span className="fh-row-date">
-                  {String(p.expected_arrival).slice(0, 10)}
+        <div
+          className="p-3.5 rounded-xl bg-transparent border border-glass-border flex items-center justify-between gap-3 hover:border-accent/40 transition-colors shadow-sm"
+          key={p.id || i}
+        >
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-9 h-9 rounded-xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center shrink-0 border border-emerald-500/20">
+              <MdLocalParking size={20} />
+            </div>
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="font-bold text-sm text-primary">
+                  {p.assigned_spot ? `Bay ${p.assigned_spot}` : p.guest_name || `${t("fhParking") || "Slot"} #${i + 1}`}
                 </span>
-              )}
-
-              {/* assigned spot */}
-              {p.assigned_spot && (
-                <span className="fh-meta-chip">🅿️ {p.assigned_spot}</span>
-              )}
-
-              {/* status */}
-              <Pill status={p.status || "APPROVED"} t={t} />
+                {p.assigned_spot && (
+                  <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 text-[10px] font-bold uppercase">
+                    🅿️ {p.assigned_spot}
+                  </span>
+                )}
+              </div>
+              <div className="flex items-center gap-2 mt-1 text-xs text-secondary flex-wrap">
+                {p.vehicle_number && (
+                  <span className="font-mono text-[10px] px-1.5 py-0.5 rounded bg-black/20 text-slate-300 font-bold">
+                    {p.vehicle_number}
+                  </span>
+                )}
+                {p.vehicle_type && <span>{p.vehicle_type}</span>}
+                {p.expected_arrival && <span>• {String(p.expected_arrival).slice(0, 10)}</span>}
+              </div>
             </div>
           </div>
+          <Pill status={p.status || "APPROVED"} t={t} />
         </div>
       ))}
     </div>
@@ -424,9 +454,8 @@ const ParkingTab = ({ parking, t }) => {
 
 /* ─────────────────────────────────────────────────────────────
    MAIN COMPONENT
-   ────────────────────────────────────────────────────────────── */
+────────────────────────────────────────────────────────────── */
 
-/** Sentinel id for the "All Blocks" pseudo-chip (never a real block name). */
 const ALL_BLOCKS = "__all__";
 
 const FlatHistory = () => {
@@ -434,17 +463,16 @@ const FlatHistory = () => {
   const { user } = useContext(AuthContext);
   const canMoveOut = hasPermission(user, "flat_history", "move_out") || hasPermission(user, "flat_history", "view");
 
-  const [flats,        setFlats]        = useState([]);
+  const [flats, setFlats] = useState([]);
   const [selectedFlat, setSelectedFlat] = useState(null);
-  const [activeTab,    setActiveTab]    = useState("residents");
-  const [search,       setSearch]       = useState("");
-  const [searchOpen,   setSearchOpen]   = useState(false);
-  const [loading,      setLoading]      = useState(false);
-  const [fetchError,   setFetchError]   = useState(null);
-  const [activeBlock,  setActiveBlock]  = useState(ALL_BLOCKS);
+  const [activeTab, setActiveTab] = useState("residents");
+  const [search, setSearch] = useState("");
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [fetchError, setFetchError] = useState(null);
+  const [activeBlock, setActiveBlock] = useState(ALL_BLOCKS);
   const [confirmMoveOut, setConfirmMoveOut] = useState(null);
-  const [movingOut,    setMovingOut]    = useState(false);
-
+  const [movingOut, setMovingOut] = useState(false);
 
   const searchInputRef = useRef(null);
 
@@ -461,22 +489,22 @@ const FlatHistory = () => {
   }, []);
 
   const [data, setData] = useState({
-    residents:  [],
-    bills:      [],
-    parcels:    [],
-    visitors:   [],
+    residents: [],
+    bills: [],
+    parcels: [],
+    visitors: [],
     complaints: [],
-    parking:    [],
+    parking: [],
   });
 
   /* ── TABS CONFIGURATION ── */
   const TABS = [
-    { id: "residents",  label: t("fhResidents"),              icon: "👥", color: "indigo" },
-    { id: "bills",      label: `${t("fhBills")} & Payments`,  icon: "💳", color: "amber"  },
-    { id: "parcels",    label: t("fhParcels"),                icon: "📦", color: "blue"   },
-    { id: "visitors",   label: t("fhVisitors"),               icon: "🚶", color: "purple" },
-    { id: "complaints", label: t("fhComplaints"),             icon: "📋", color: "red"    },
-    { id: "parking",    label: t("fhParking"),                icon: "🚗", color: "green"  },
+    { id: "residents", label: t("fhResidents") || "Residents", icon: "👥" },
+    { id: "bills", label: `${t("fhBills") || "Bills"} & Payments`, icon: "💳" },
+    { id: "parcels", label: t("fhParcels") || "Parcels", icon: "📦" },
+    { id: "visitors", label: t("fhVisitors") || "Visitors", icon: "🚶" },
+    { id: "complaints", label: t("fhComplaints") || "Complaints", icon: "📋" },
+    { id: "parking", label: t("fhParking") || "Parking", icon: "🚗" },
   ];
 
   /* ── Helper: Extract clean block name ── */
@@ -485,7 +513,7 @@ const FlatHistory = () => {
     if (raw && typeof raw === "string" && raw.trim().length > 0) {
       return raw.trim();
     }
-    return flat?.block_id ? `${t("fhBlock")} ${flat.block_id}` : "Unassigned";
+    return flat?.block_id ? `${t("fhBlock") || "Block"} ${flat.block_id}` : "Unassigned";
   }, [t]);
 
   /* ── Helper: Owner / resident name assigned to the flat ── */
@@ -539,43 +567,36 @@ const FlatHistory = () => {
       const safeArr = (result) =>
         result.status === "fulfilled" ? toArr(result.value) : [];
 
-      /* normalise residents */
       const residents = (() => {
         if (residentsRes.status !== "fulfilled") return [];
         const raw = residentsRes.value?.data;
         if (!raw) return [];
-        if (Array.isArray(raw))           return raw;
-        if (Array.isArray(raw.data))      return raw.data;
+        if (Array.isArray(raw)) return raw;
+        if (Array.isArray(raw.data)) return raw.data;
         if (Array.isArray(raw.residents)) return raw.residents;
-        if (typeof raw === "object")      return [raw];
+        if (typeof raw === "object") return [raw];
         return [];
       })();
 
-      /* filter by flat_id or flat_number */
       const byFlat = (arr) =>
         arr.filter(
           (item) =>
-            String(item.flat_id    ?? item.flatId    ?? "") === String(flat.id) ||
-            String(item.flat_number ?? "")                   === String(flat.flat_number)
+            String(item.flat_id ?? item.flatId ?? "") === String(flat.id) ||
+            String(item.flat_number ?? "") === String(flat.flat_number)
         );
 
-      /* resident_id of this flat — used for complaints filter */
       const residentId = flat.resident_id;
 
       setData({
         residents,
-        bills:      byFlat(safeArr(billsRes)),
-        parcels:    byFlat(safeArr(parcelsRes)),
-        visitors:   byFlat(safeArr(visitorsRes)),
-
-        // ✅ complaints have no flat_id → match by resident_id
+        bills: byFlat(safeArr(billsRes)),
+        parcels: byFlat(safeArr(parcelsRes)),
+        visitors: byFlat(safeArr(visitorsRes)),
         complaints: residentId
           ? safeArr(complaintsRes).filter(
               (c) => String(c.resident_id ?? "") === String(residentId)
             )
           : [],
-
-        // ✅ parking requests have flat_id
         parking: safeArr(parkingRes).filter(
           (p) => String(p.flat_id ?? "") === String(flat.id)
         ),
@@ -584,7 +605,7 @@ const FlatHistory = () => {
       setSelectedFlat(flat);
     } catch (err) {
       console.error("fetchFlatDetails error:", err);
-      setFetchError(t("fhFetchError"));
+      setFetchError(t("fhFetchError") || "Failed to load flat records");
     } finally {
       setLoading(false);
     }
@@ -634,11 +655,13 @@ const FlatHistory = () => {
 
   const isAllBlocks = activeBlock === ALL_BLOCKS;
 
-  /* ── Every flat in the society (used by the "All Blocks" view) ── */
   const allFlats = useMemo(
     () => blockNames.flatMap((bName) => allBlockGroups[bName].flats),
     [allBlockGroups, blockNames]
   );
+
+  const totalOccupied = useMemo(() => flats.filter((f) => !!f.resident_id).length, [flats]);
+  const totalVacant = useMemo(() => flats.filter((f) => !f.resident_id).length, [flats]);
 
   /* ── Search handling ── */
   const searchTrim = search.trim().toLowerCase();
@@ -652,12 +675,10 @@ const FlatHistory = () => {
       ).length;
       if (cnt > 0) res[bName] = cnt;
     }
-    // Totals for the "All Blocks" chip so its badge tracks the search too
     res[ALL_BLOCKS] = blockNames.reduce((sum, b) => sum + (res[b] || 0), 0);
     return res;
   }, [allBlockGroups, blockNames, searchTrim, flatSearchText]);
 
-  /* ── Toggle chips: "All Blocks" first, then one per block ── */
   const blockTabs = useMemo(() => {
     const badgeFor = (bName) => {
       if (matchCountsByBlock[bName] !== undefined) return matchCountsByBlock[bName];
@@ -666,19 +687,15 @@ const FlatHistory = () => {
     };
 
     return [
-      { id: ALL_BLOCKS, label: t("allBlocks"), badge: badgeFor(ALL_BLOCKS) },
+      { id: ALL_BLOCKS, label: t("allBlocks") || "All Blocks", badge: badgeFor(ALL_BLOCKS) },
       ...blockNames.map((bName) => ({ id: bName, label: bName, badge: badgeFor(bName) })),
     ];
   }, [allBlockGroups, allFlats, blockNames, matchCountsByBlock, t]);
 
-  /* ── The chip row holds every block but is clipped to ~4 chips, and scrolls
-        horizontally (swipe / trackpad / wheel / arrows) to reach the rest. ── */
   const toggleWrapRef = useRef(null);
-
   const activeBlockIdx = blockTabs.findIndex((item) => item.id === activeBlock);
 
   const visibleBlockTabs = useMemo(() => {
-    // The open search box only leaves room for the active chip
     if (searchOpen) return blockTabs.filter((item) => item.id === activeBlock);
     return blockTabs;
   }, [blockTabs, searchOpen, activeBlock]);
@@ -691,7 +708,6 @@ const FlatHistory = () => {
   const canStepBack = activeBlockIdx > 0;
   const canStepFwd = activeBlockIdx > -1 && activeBlockIdx < blockTabs.length - 1;
 
-  // Keep the selected chip in view when it moves by arrow, click or keyboard
   useEffect(() => {
     const strip = toggleWrapRef.current?.querySelector(".sliding-tabs");
     const active = strip?.querySelector('[aria-selected="true"]');
@@ -706,7 +722,6 @@ const FlatHistory = () => {
     });
   }, [activeBlock, searchOpen, blockTabs]);
 
-  // A plain mouse wheel should scroll the strip sideways instead of the page
   const onToggleWheel = useCallback((e) => {
     const strip = e.currentTarget.querySelector(".sliding-tabs");
     if (!strip || strip.scrollWidth <= strip.clientWidth) return;
@@ -719,21 +734,18 @@ const FlatHistory = () => {
   const activeBlockFlats = useMemo(() => {
     const source = isAllBlocks
       ? allFlats
-      : (activeBlock && allBlockGroups[activeBlock] ? allBlockGroups[activeBlock].flats : []);
+      : activeBlock && allBlockGroups[activeBlock] ? allBlockGroups[activeBlock].flats : [];
     if (!searchTrim) return source;
     return source.filter((f) => flatSearchText(f).includes(searchTrim));
   }, [allFlats, allBlockGroups, activeBlock, isAllBlocks, searchTrim, flatSearchText]);
 
-  /* ── 10 records per page for flats in the active view ── */
   const [flatPage, setFlatPage] = useState(1);
-  const [limit, setLimit] = useState(10);
+  const [limit, setLimit] = useState(12);
   const flatTotalPages = Math.max(1, Math.ceil(activeBlockFlats.length / limit));
   const pagedFlats = useMemo(() => {
     return activeBlockFlats.slice((flatPage - 1) * limit, flatPage * limit);
   }, [activeBlockFlats, flatPage, limit]);
 
-  // Reset page when the active view or the search changes (adjusted during
-  // render so switching chips/search never shows a stale page first)
   const viewKey = `${activeBlock}|${searchTrim}`;
   const [prevViewKey, setPrevViewKey] = useState(viewKey);
   if (viewKey !== prevViewKey) {
@@ -741,7 +753,6 @@ const FlatHistory = () => {
     setFlatPage(1);
   }
 
-  /* ── Move-out flow: open confirm, close, execute ── */
   const openMoveOutConfirm = useCallback((resident) => {
     setConfirmMoveOut({ flat: selectedFlat, resident });
   }, [selectedFlat]);
@@ -758,7 +769,7 @@ const FlatHistory = () => {
       resident.user_id ?? resident.userId ?? resident.User?.id ?? resident.user?.id ?? null;
 
     if (!flat || !userId) {
-      toast.error(t("fhMoveOutFailId"));
+      toast.error(t("fhMoveOutFailId") || "Invalid resident ID");
       setConfirmMoveOut(null);
       return;
     }
@@ -766,7 +777,7 @@ const FlatHistory = () => {
     setMovingOut(true);
     try {
       await moveOutResident(flat.id, userId);
-      toast.success(t("fhMoveOutSuccess"));
+      toast.success(t("fhMoveOutSuccess") || "Resident moved out successfully");
       setConfirmMoveOut(null);
 
       const res = await API.get("/flats/getall");
@@ -776,54 +787,65 @@ const FlatHistory = () => {
       if (updated) await fetchFlatDetails(updated);
     } catch (err) {
       console.error("Move-out error:", err);
-      toast.error(err.response?.data?.message || t("fhMoveOutFail"));
+      toast.error(err.response?.data?.message || t("fhMoveOutFail") || "Failed to process move out");
     } finally {
       setMovingOut(false);
     }
   }, [confirmMoveOut, movingOut, t, fetchFlatDetails]);
 
-  /* ── Section content renderer (one section per toggle tab) ── */
   const renderContent = () => {
-    if (loading)    return <SpinnerComp t={t} />;
-    if (fetchError) return (
-      <div style={{ padding: "2rem", color: "var(--danger, #f87171)", textAlign: "center", fontSize: "14px" }}>
-        ⚠️ {fetchError}
-      </div>
-    );
+    if (loading) return <SpinnerComp t={t} />;
+    if (fetchError)
+      return (
+        <div className="p-8 text-center text-rose-500 font-semibold text-sm">
+          ⚠️ {fetchError}
+        </div>
+      );
     switch (activeTab) {
-      case "residents":  return <ResidentsTab  residents={data.residents}   t={t} onMoveOut={canMoveOut ? openMoveOutConfirm : null} />;
-      case "bills":      return <BillsTab      bills={data.bills}           t={t} />;
-      case "parcels":    return <ParcelsTab    parcels={data.parcels}       t={t} />;
-      case "visitors":   return <VisitorsTab   visitors={data.visitors}     t={t} />;
-      case "complaints": return <ComplaintsTab complaints={data.complaints} t={t} />;
-      case "parking":    return <ParkingTab    parking={data.parking}       t={t} />;
-      default:           return null;
+      case "residents":
+        return <ResidentsTab residents={data.residents} t={t} onMoveOut={canMoveOut ? openMoveOutConfirm : null} />;
+      case "bills":
+        return <BillsTab bills={data.bills} t={t} />;
+      case "parcels":
+        return <ParcelsTab parcels={data.parcels} t={t} />;
+      case "visitors":
+        return <VisitorsTab visitors={data.visitors} t={t} />;
+      case "complaints":
+        return <ComplaintsTab complaints={data.complaints} t={t} />;
+      case "parking":
+        return <ParkingTab parking={data.parking} t={t} />;
+      default:
+        return null;
     }
   };
 
   return (
     <div className="fh-root flat-history-page space-y-5 animate-fadeIn">
-      {/* ── Page Header: Unified Single Row ── */}
+      {/* ── 1. Header & Navigation Controls ── */}
       <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3">
         <div className="flex items-center gap-3 shrink-0">
-          <div className="ad-page-icon">
-            <MdApartment size={20} />
+          <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-accent to-accent-light text-white flex items-center justify-center shadow-lg shadow-accent/25 shrink-0">
+            <MdApartment size={22} />
           </div>
           <div>
-            <h1 className="text-lg font-semibold" style={{ letterSpacing: "-0.02em", margin: 0 }}>{t("fhTitle") || "Flat Directory"}</h1>
-            <p className="text-secondary text-xs mt-0.5">{t("fhSubtitle") || "Manage and view complete flat history"}</p>
+            <h1 className="text-lg font-bold text-primary tracking-tight m-0">
+              {t("fhTitle") || "Flat Directory & History"}
+            </h1>
+            <p className="text-secondary text-xs mt-0.5 m-0">
+              {t("fhSubtitle") || "Complete tenancy records, invoices, visitors & parcel logs"}
+            </p>
           </div>
         </div>
 
-        <div className="fh-header-controls">
+        <div className="flex items-center gap-2.5 flex-wrap xl:flex-nowrap justify-start xl:justify-end">
           {blockNames.length > 0 && (
-            <div className="fh-block-toggle" ref={toggleWrapRef} onWheel={onToggleWheel}>
+            <div className="fh-block-toggle flex items-center gap-1 min-w-0" ref={toggleWrapRef} onWheel={onToggleWheel}>
               <button
                 type="button"
-                className="fh-block-nav"
+                className="fh-block-nav w-8 h-8 rounded-full border border-glass-border bg-card-inner-bg flex items-center justify-center text-secondary hover:text-primary transition-all disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer shrink-0"
                 onClick={() => stepBlock(-1)}
                 disabled={!canStepBack}
-                aria-label={t("fhPrevBlock") || "Previous block"}
+                aria-label="Previous block"
               >
                 <MdChevronLeft size={18} />
               </button>
@@ -837,10 +859,10 @@ const FlatHistory = () => {
 
               <button
                 type="button"
-                className="fh-block-nav"
+                className="fh-block-nav w-8 h-8 rounded-full border border-glass-border bg-card-inner-bg flex items-center justify-center text-secondary hover:text-primary transition-all disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer shrink-0"
                 onClick={() => stepBlock(1)}
                 disabled={!canStepFwd}
-                aria-label={t("fhNextBlock") || "Next block"}
+                aria-label="Next block"
               >
                 <MdChevronRight size={18} />
               </button>
@@ -850,189 +872,307 @@ const FlatHistory = () => {
           <ExpandableSearch
             isOpen={searchOpen}
             onOpenChange={setSearchOpen}
-            maxWidth={320}
+            maxWidth={300}
             value={search}
-            onChange={(val) => { setSearch(val); setFlatPage(1); }}
-            placeholder={t("fhSearchPlaceholder") || "Search flats, blocks or owners..."}
+            onChange={(val) => {
+              setSearch(val);
+              setFlatPage(1);
+            }}
+            placeholder={t("fhSearchPlaceholder") || "Search flat, block, owner..."}
           />
-
-          <span className="fh-header-badge">
-            <GlobalBadge variant="info" size="lg" icon={MdApartment}>
-              {flats.length} {t("fhFlats") || "Flats"}
-            </GlobalBadge>
-          </span>
         </div>
       </div>
 
-      {/* Block Section & Flats Container */}
-      <div className="fh-block-section-wrap">
+      {/* ── 2. Summary KPI Strip ── */}
+      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <StatCard
+          icon={MdApartment}
+          value={flats.length}
+          label={t("fhTotalFlats") || "Total Flats"}
+          tone="brand"
+          description={`${blockNames.length} ${blockNames.length === 1 ? "Block" : "Blocks"}`}
+          active={isAllBlocks}
+          onClick={() => setActiveBlock(ALL_BLOCKS)}
+        />
+        <StatCard
+          icon={MdPerson}
+          value={totalOccupied}
+          label={t("fhOccupiedFlats") || "Occupied"}
+          tone="info"
+          description={`${flats.length ? Math.round((totalOccupied / flats.length) * 100) : 0}% Occupancy`}
+        />
+        <StatCard
+          icon={MdMeetingRoom}
+          value={totalVacant}
+          label={t("fhVacantFlats") || "Available"}
+          tone="success"
+          description="Ready to assign"
+        />
+        <StatCard
+          icon={MdDoorFront}
+          value={activeBlockFlats.length}
+          label={isAllBlocks ? (t("allBlocks") || "All Blocks") : activeBlock}
+          tone="warning"
+          description={`${activeBlockFlats.length} flats matched`}
+        />
+      </div>
+
+      {/* ── 3. Flats Card Grid Section ── */}
+      <div className="border border-glass-border rounded-2xl p-4 sm:p-5 shadow-sm bg-transparent">
         {isAllBlocks || (activeBlock && allBlockGroups[activeBlock]) ? (
-          <div className="fh-block-content" key={activeBlock}>
-            {/* Flats Grid for this block with slide page transition */}
+          <div>
             {activeBlockFlats.length === 0 ? (
-              <Empty icon="🔍" text={t("fhNoFlatsFound")} sub={t("fhNoFlatsSub")} />
+              <Empty
+                icon="🔍"
+                text={t("fhNoFlatsFound") || "No matching flats found"}
+                sub={t("fhNoFlatsSub") || "Try changing your search query or selecting a different block above."}
+              />
             ) : (
               <div key={flatPage} className="animate-slide-page">
-                <div className="fh-flat-grid">
-                  {pagedFlats.map((flat) => {
+                <div className="ps-card-grid">
+                  {pagedFlats.map((flat, i) => {
                     const occ = !!flat.resident_id;
                     const isSelected = selectedFlat?.id === flat.id;
                     const residentName =
                       getFlatOwnerName(flat) || (occ ? "Occupied Resident" : null);
 
                     return (
-                      <div
+                      <RecordCard
                         key={flat.id}
-                        className={`fh-flat-card ${isSelected ? "fh-flat-card--selected" : ""}`}
+                        interactive
+                        selected={isSelected}
+                        tone="neutral"
+                        blob={false}
                         onClick={() => fetchFlatDetails(flat)}
-                      >
-                        {/* Top row: Flat number, BHK/type pill, and Status */}
-                        <div className="fh-card-header-row">
-                          <div className="fh-card-header-left">
-                            <div className={`fh-card-avatar ${occ ? "fh-card-avatar--occ" : "fh-card-avatar--vac"}`}>
-                              <span>{occ ? "👥" : "🏢"}</span>
-                            </div>
-                            <div className="fh-card-title-group">
-                              <div className="fh-card-number-row">
-                                <h3 className="fh-card-number-pill">
-                                  {(t("fhFlat") || "Flat")} {flat.flat_number}
-                                </h3>
-                                {flat.flat_type && (
-                                  <span className="fh-card-type-tag">{flat.flat_type}</span>
-                                )}
-
-                              </div>
-                              <span className="fh-card-meta-line">
-                                {flat.Floor?.floor_number != null
-                                  ? `${getBlockName(flat)} · Floor ${flat.Floor.floor_number}`
-                                  : getBlockName(flat)}
-                              </span>
-                            </div>
-                          </div>
-
-                          <div className="fh-card-header-right">
-                            <span className={`fh-card-status-badge ${occ ? "fh-card-status-badge--occ" : "fh-card-status-badge--vac"}`}>
-                              <span className={`fh-status-dot ${occ ? "fh-status-dot--green" : "fh-status-dot--gray"}`} />
-                              {occ ? (t("fhOccupied") || "Occupied") : (t("fhVacant") || "Vacant")}
+                        style={{
+                          animationDelay: `${i * 15}ms`,
+                          background: "transparent",
+                          backgroundColor: "transparent",
+                        }}
+                        className="cursor-pointer group hover:border-accent/50 transition-all !bg-transparent"
+                        icon={occ ? MdApartment : MdMeetingRoom}
+                        title={
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-base font-extrabold text-primary tracking-tight">
+                              {t("fhFlat") || "Flat"} {flat.flat_number}
                             </span>
+                            {flat.flat_type && (
+                              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-accent-soft text-accent border border-accent/20">
+                                {flat.flat_type}
+                              </span>
+                            )}
                           </div>
-                        </div>
-
-                        {/* Middle row: Resident details or Vacant prompt */}
-                        <div className="fh-card-body">
+                        }
+                        description={
+                          <div className="flex items-center gap-1.5 text-xs text-secondary mt-0.5 flex-wrap">
+                            <span className="font-semibold text-primary/80">
+                              {getBlockName(flat)}
+                            </span>
+                            {flat.Floor?.floor_number != null && (
+                              <>
+                                <span>•</span>
+                                <span>Floor {flat.Floor.floor_number}</span>
+                              </>
+                            )}
+                            {flat.area_sqft && (
+                              <>
+                                <span>•</span>
+                                <span>{flat.area_sqft} sq.ft</span>
+                              </>
+                            )}
+                          </div>
+                        }
+                        badge={
+                          <GlobalBadge
+                            size="sm"
+                            variant={occ ? "info" : "success"}
+                            icon={occ ? MdPerson : MdCheckCircle}
+                          >
+                            {occ ? t("fhOccupied") || "Occupied" : t("fhVacant") || "Available"}
+                          </GlobalBadge>
+                        }
+                      >
+                        {/* Card Middle: Formal Resident or Vacancy information */}
+                        <div className="mt-2.5 pt-2.5 border-t border-glass-border">
                           {occ ? (
-                            <div className="fh-card-resident-strip">
-                              <span className="fh-resident-icon">👤</span>
-                              <span className="fh-resident-text truncate">
-                                {residentName}
+                            <div className="flex items-center justify-between gap-2.5">
+                              <div className="flex items-center gap-2.5 min-w-0">
+                                <div className="w-8 h-8 rounded-full bg-accent-soft text-accent font-bold flex items-center justify-center text-xs shrink-0 border border-accent/20">
+                                  {residentName?.trim()?.charAt(0)?.toUpperCase() || "R"}
+                                </div>
+                                <div className="min-w-0">
+                                  <p className="font-bold text-xs text-primary truncate m-0">
+                                    {residentName}
+                                  </p>
+                                  <p className="text-[11px] text-secondary m-0 mt-0.5 truncate">
+                                    {flat.resident_type || (flat.flat_type ? `${flat.flat_type} · ` : "")}{t("fhCurrentResident") || "Primary Resident"}
+                                  </p>
+                                </div>
+                              </div>
+
+                              <span className="text-[11px] font-bold text-accent group-hover:translate-x-0.5 transition-transform shrink-0 flex items-center gap-0.5">
+                                <span>View</span>
+                                <MdChevronRight size={14} />
                               </span>
                             </div>
                           ) : (
-                            <div className="fh-card-vacant-strip">
-                              <span className="fh-vacant-dot" />
-                              <span className="fh-vacant-text">{t("fhAvailableForAssignment") || "Available for assignment"}</span>
+                            <div className="flex items-center justify-between gap-2 py-1">
+                              <div className="flex items-center gap-2">
+                                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                                <span className="text-xs font-semibold text-emerald-500">
+                                  {t("fhAvailableForAssignment") || "Vacant · Ready to Assign"}
+                                </span>
+                              </div>
+                              <span className="text-[11px] font-bold text-secondary group-hover:text-accent group-hover:translate-x-0.5 transition-all flex items-center gap-0.5">
+                                <span>Details</span>
+                                <MdChevronRight size={14} />
+                              </span>
                             </div>
                           )}
                         </div>
-
-                        {/* Bottom row: Quick action / View history teaser */}
-                        <div className="fh-card-footer">
-                          <span className="fh-card-action-link">
-                            {t("fhViewHistory") || "View History"} →
-                          </span>
-                        </div>
-                      </div>
+                      </RecordCard>
                     );
                   })}
                 </div>
 
-                <div className="flex flex-col sm:flex-row justify-between items-center px-3 pt-4 mt-4 border-t border-glass gap-3">
-                  <span className="text-xs text-secondary">
+                {/* Pagination Footer */}
+                <div className="flex flex-col sm:flex-row justify-between items-center px-2 pt-5 mt-4 border-t border-glass-border gap-3">
+                  <span className="text-xs text-secondary font-medium">
                     Showing <strong>{pagedFlats.length}</strong> of <strong>{activeBlockFlats.length}</strong> flats{" "}
-                    {isAllBlocks ? t("allBlocks").toLowerCase() : `in ${activeBlock}`}
+                    {isAllBlocks ? (t("allBlocks") || "All Blocks").toLowerCase() : `in ${activeBlock}`}
                   </span>
-                  <Pagination page={flatPage} totalPages={flatTotalPages} onPageChange={setFlatPage} pageSize={limit} onPageSizeChange={(s) => { setLimit(s); setFlatPage(1); }} />
+                  <Pagination
+                    page={flatPage}
+                    totalPages={flatTotalPages}
+                    onPageChange={setFlatPage}
+                    pageSize={limit}
+                    onPageSizeChange={(s) => {
+                      setLimit(s);
+                      setFlatPage(1);
+                    }}
+                  />
                 </div>
               </div>
             )}
           </div>
         ) : (
-          <Empty icon="🏢" text={t("fhNoFlatsFound")} sub={t("fhNoFlatsSub")} />
+          <Empty icon="🏢" text={t("fhNoFlatsFound") || "No flats found"} sub={t("fhNoFlatsSub") || "Select a valid block."} />
         )}
       </div>
 
-      {/* Flat History Detail Pop-up Modal (centered, global modal style) */}
+      {/* ── 4. Flat History Detail Pop-up Modal ── */}
       {selectedFlat && (
         <GlobalModal
           isOpen={!!selectedFlat}
           onClose={goBack}
           size="xl"
-          icon={<span style={{ fontSize: 20 }}>{selectedFlat.resident_id ? "👥" : "🏠"}</span>}
+          icon={<MdApartment size={22} className="text-accent" />}
           title={
-            <span className="fh-modal-title-row">
-              {t("fhFlat")} {selectedFlat.flat_number}{" "}
-              <span
-                className={`fh-card-status-badge ${
-                  selectedFlat.resident_id
-                    ? "fh-card-status-badge--occ"
-                    : "fh-card-status-badge--vac"
-                }`}
-              >
-                <span
-                  className={`fh-status-indicator-dot ${selectedFlat.resident_id ? "fh-status-indicator-dot--occ" : ""}`}
-                />
-                {selectedFlat.resident_id ? t("fhOccupied") : t("fhVacant")}
+            <div className="flex items-center gap-2.5 flex-wrap">
+              <span className="font-extrabold text-base sm:text-lg text-primary">
+                {t("fhFlat") || "Flat"} {selectedFlat.flat_number}
               </span>
-            </span>
+              <GlobalBadge
+                size="sm"
+                variant={selectedFlat.resident_id ? "danger" : "success"}
+                icon={selectedFlat.resident_id ? MdBlock : MdCheckCircle}
+              >
+                {selectedFlat.resident_id ? t("fhOccupied") || "Occupied" : t("fhVacant") || "Available"}
+              </GlobalBadge>
+            </div>
           }
           subtitle={
-            <span className="fh-modal-subtitle">
-              <span className="fh-modal-badge-chip">🏢 {getBlockName(selectedFlat)}</span>
+            <div className="flex items-center gap-2 flex-wrap text-xs text-secondary mt-1">
+              <span className="px-2 py-0.5 rounded-md bg-transparent border border-glass-border font-semibold">
+                🏢 {getBlockName(selectedFlat)}
+              </span>
+              {selectedFlat.Floor?.floor_number != null && (
+                <span className="px-2 py-0.5 rounded-md bg-transparent border border-glass-border font-semibold">
+                  Floor {selectedFlat.Floor.floor_number}
+                </span>
+              )}
               {selectedFlat.flat_type && (
-                <span className="fh-modal-badge-chip">{selectedFlat.flat_type}</span>
+                <span className="px-2 py-0.5 rounded-md bg-accent-soft text-accent border border-accent/20 font-bold">
+                  {selectedFlat.flat_type}
+                </span>
               )}
               {selectedFlat.area_sqft && (
-                <span className="fh-modal-badge-chip">{selectedFlat.area_sqft} sq.ft</span>
+                <span className="px-2 py-0.5 rounded-md bg-transparent border border-glass-border font-semibold">
+                  {selectedFlat.area_sqft} sq.ft
+                </span>
               )}
-            </span>
+            </div>
           }
         >
-          {/* Section Toggle Buttons */}
-          <div className="fh-section-toggle-wrap">
-            <SlidingTabs
-              value={activeTab}
-              onChange={setActiveTab}
-              items={TABS.map((tab) => ({
-                id: tab.id,
-                label: tab.label,
-                icon: <span aria-hidden="true">{tab.icon}</span>,
-                badge: data[tab.id]?.length ?? 0,
-              }))}
-            />
-          </div>
+          <div className="space-y-5">
+            {/* Quick KPI Strip inside modal */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 p-3 rounded-xl bg-transparent border border-glass-border">
+              <div className="p-2 flex flex-col">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-secondary">Residents</span>
+                <span className="text-sm font-extrabold text-primary mt-0.5">
+                  {data.residents.length} {data.residents.length === 1 ? "Member" : "Members"}
+                </span>
+              </div>
+              <div className="p-2 flex flex-col">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-secondary">Billing</span>
+                <span className="text-sm font-extrabold text-primary mt-0.5">
+                  {data.bills.length} Invoices
+                </span>
+              </div>
+              <div className="p-2 flex flex-col">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-secondary">Parcels</span>
+                <span className="text-sm font-extrabold text-primary mt-0.5">
+                  {data.parcels.length} Logged
+                </span>
+              </div>
+              <div className="p-2 flex flex-col">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-secondary">Visitors</span>
+                <span className="text-sm font-extrabold text-primary mt-0.5">
+                  {data.visitors.length} Entries
+                </span>
+              </div>
+            </div>
 
-          {/* Active Section — slider-type animation on switch */}
-          <div className="fh-section-animated" key={activeTab}>
-            {renderContent()}
+            {/* Section Toggle Tabs */}
+            <div className="pb-2 border-b border-glass-border">
+              <SlidingTabs
+                value={activeTab}
+                onChange={setActiveTab}
+                items={TABS.map((tab) => ({
+                  id: tab.id,
+                  label: tab.label,
+                  icon: <span aria-hidden="true">{tab.icon}</span>,
+                  badge: data[tab.id]?.length ?? 0,
+                }))}
+              />
+            </div>
+
+            {/* Active Section Content */}
+            <div className="min-h-[220px]" key={activeTab}>
+              {renderContent()}
+            </div>
           </div>
         </GlobalModal>
       )}
 
+      {/* ── 5. Move-out Confirmation Dialog ── */}
       <GlobalConfirmDialog
         isOpen={!!confirmMoveOut}
         onClose={closeMoveOutConfirm}
         onConfirm={doMoveOut}
-        title={t("fhMoveOutTitle")}
-        message={confirmMoveOut
-          ? `${t("fhMoveOutConfirm")} ${
-              confirmMoveOut.resident?.User?.name ||
-              confirmMoveOut.resident?.user?.name ||
-              confirmMoveOut.resident?.name ||
-              t("fhUnknown")
-            }${confirmMoveOut.flat ? ` — ${t("fhFlat")} ${confirmMoveOut.flat.flat_number}` : ""}?`
-          : ""}
-        confirmLabel={t("fhConfirmMoveOut")}
-        cancelLabel={t("fhCancel")}
+        title={t("fhMoveOutTitle") || "Confirm Move Out"}
+        message={
+          confirmMoveOut
+            ? `${t("fhMoveOutConfirm") || "Are you sure you want to mark this resident as moved out?"} ${
+                confirmMoveOut.resident?.User?.name ||
+                confirmMoveOut.resident?.user?.name ||
+                confirmMoveOut.resident?.name ||
+                t("fhUnknown") || "Unknown"
+              }${confirmMoveOut.flat ? ` — ${t("fhFlat") || "Flat"} ${confirmMoveOut.flat.flat_number}` : ""}?`
+            : ""
+        }
+        confirmLabel={t("fhConfirmMoveOut") || "Confirm Move Out"}
+        cancelLabel={t("fhCancel") || "Cancel"}
         variant="danger"
         icon={MdLogout}
         loading={movingOut}

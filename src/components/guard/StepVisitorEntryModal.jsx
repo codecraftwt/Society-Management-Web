@@ -453,15 +453,15 @@ export default function StepVisitorEntryModal({
         {/* ── 2. CONNECTED MODERN STEPPER ── */}
         <div className="px-7 py-3.5 bg-card-inner-bg/80 border-b border-glass-border shrink-0">
           <div className="relative flex items-center justify-between">
-            {/* Background Thin Connecting Line */}
-            <div className="absolute left-5 right-5 top-1/2 -translate-y-1/2 h-0.5 bg-glass-border/80 z-0" />
+            {/* Background Solid Connecting Line (centered behind 32px step circles) */}
+            <div className="absolute left-6 right-6 top-4 -translate-y-1/2 h-1 bg-gray-200 dark:bg-gray-700/80 rounded-full z-0" />
 
             {/* Active Filled Progress Line */}
             <div
-              className="absolute left-5 top-1/2 -translate-y-1/2 h-0.5 z-0 transition-all duration-300 ease-out"
+              className="absolute left-6 top-4 -translate-y-1/2 h-1 rounded-full z-0 transition-all duration-300 ease-out"
               style={{
                 width: `${((currentStep - 1) / (steps.length - 1)) * 100}%`,
-                maxWidth: "calc(100% - 40px)",
+                maxWidth: "calc(100% - 48px)",
                 background: "var(--accent)",
               }}
             />
@@ -538,13 +538,16 @@ export default function StepVisitorEntryModal({
                             setSelectedBrand(b.id);
                             if (errors.brand) setErrors((prev) => ({ ...prev, brand: null }));
                           }}
-                          className={`p-2.5 rounded-xl border text-center font-bold text-xs transition-all duration-150 flex items-center justify-center gap-2 cursor-pointer ${isSel ? "shadow-xs" : "border-glass-border hover:border-gray-300 dark:hover:border-gray-600 bg-card text-primary"}`}
-                          style={isSel ? { borderColor: "var(--accent)", color: "var(--accent)", background: "transparent" } : {}}
+                          className={`p-2.5 rounded-xl border text-center font-bold text-xs transition-all duration-150 flex items-center gap-2 cursor-pointer ${
+                            isSel
+                              ? "border-blue-600 bg-blue-50/80 dark:bg-blue-950/40 text-blue-600 dark:text-blue-300 shadow-xs ring-1 ring-blue-500/30"
+                              : "border-glass-border hover:border-gray-300 dark:hover:border-gray-600 bg-card text-primary"
+                          }`}
                         >
                           <span
-                            className="w-5 h-5 rounded-md flex items-center justify-center text-[10px] font-black shrink-0"
+                            className="w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-black shrink-0 shadow-xs"
                             style={{
-                              backgroundColor: isSel ? "var(--accent)" : "rgba(100, 116, 139, 0.15)",
+                              backgroundColor: isSel ? "var(--accent)" : "rgba(100, 116, 139, 0.12)",
                               color: isSel ? "#FFFFFF" : "var(--text-primary)",
                             }}
                           >
@@ -561,13 +564,19 @@ export default function StepVisitorEntryModal({
 
                   {selectedBrand === "other" && (
                     <div className="mt-2.5 animate-fadeIn">
-                      <input
-                        type="text"
-                        placeholder={t("sgeCustomBrandPlaceholder", "Enter custom brand or company name...")}
-                        value={otherBrandName}
-                        onChange={(e) => setOtherBrandName(e.target.value)}
-                        className="w-full h-11 px-3.5 text-xs font-medium rounded-xl bg-card-inner-bg border border-glass-border focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20 text-primary outline-none"
-                      />
+                      <div className="flex items-center h-12 rounded-xl bg-card-inner-bg border border-glass-border focus-within:border-blue-600 transition-colors">
+                        <div className="pl-3.5 pr-2.5 text-secondary flex items-center justify-center shrink-0">
+                          <MdBadge size={19} />
+                        </div>
+                        <input
+                          type="text"
+                          placeholder={t("sgeCustomBrandPlaceholder", "Enter custom brand or company name...")}
+                          value={otherBrandName}
+                          onChange={(e) => setOtherBrandName(e.target.value)}
+                          style={{ border: "none", outline: "none", boxShadow: "none" }}
+                          className="w-full h-full pr-3 bg-transparent text-xs font-medium text-primary placeholder:text-secondary/50 border-0 outline-none ring-0 shadow-none"
+                        />
+                      </div>
                     </div>
                   )}
                 </div>
@@ -581,14 +590,14 @@ export default function StepVisitorEntryModal({
                   </label>
                 )}
                 <div
-                  className={`flex items-center h-12 rounded-xl bg-card-inner-bg border transition-all overflow-hidden ${
+                  className={`flex items-center h-12 rounded-xl bg-card-inner-bg border transition-colors ${
                     errors.name
-                      ? "border-red-500 ring-1 ring-red-500/30"
-                      : "border-glass-border focus-within:border-blue-600 focus-within:ring-2 focus-within:ring-blue-500/20"
+                      ? "border-red-500"
+                      : "border-glass-border focus-within:border-blue-600"
                   }`}
                 >
                   <div className="pl-3.5 pr-2.5 text-secondary flex items-center justify-center shrink-0">
-                    <MdPerson size={20} className="text-secondary/70" />
+                    <MdPerson size={19} />
                   </div>
                   <input
                     type="text"
@@ -599,7 +608,8 @@ export default function StepVisitorEntryModal({
                       setVisitorName(e.target.value);
                       if (errors.name) setErrors((prev) => ({ ...prev, name: null }));
                     }}
-                    className="w-full h-full pr-3 bg-transparent text-sm font-medium text-primary placeholder:text-secondary/50 outline-none border-0"
+                    style={{ border: "none", outline: "none", boxShadow: "none" }}
+                    className="w-full h-full pr-3.5 bg-transparent text-sm font-medium text-primary placeholder:text-secondary/50 border-0 outline-none ring-0 shadow-none"
                   />
                 </div>
                 {errors.name && (
@@ -615,14 +625,14 @@ export default function StepVisitorEntryModal({
                     {t("sgeContactMobile", "Contact Mobile")}
                   </label>
                   <div
-                    className={`flex items-center h-12 rounded-xl bg-card-inner-bg border transition-all overflow-hidden ${
+                    className={`flex items-center h-12 rounded-xl bg-card-inner-bg border transition-colors ${
                       errors.mobile
-                        ? "border-red-500 ring-1 ring-red-500/30"
-                        : "border-glass-border focus-within:border-blue-600 focus-within:ring-2 focus-within:ring-blue-500/20"
+                        ? "border-red-500"
+                        : "border-glass-border focus-within:border-blue-600"
                     }`}
                   >
                     <div className="pl-3.5 pr-2.5 text-secondary flex items-center justify-center shrink-0">
-                      <MdPhone size={18} className="text-secondary/70" />
+                      <MdPhone size={18} />
                     </div>
                     <input
                       type="tel"
@@ -633,7 +643,8 @@ export default function StepVisitorEntryModal({
                         setMobile(e.target.value.replace(/\D/g, ""));
                         if (errors.mobile) setErrors((prev) => ({ ...prev, mobile: null }));
                       }}
-                      className="w-full h-full pr-3 bg-transparent text-sm font-mono text-primary placeholder:text-secondary/50 outline-none border-0"
+                      style={{ border: "none", outline: "none", boxShadow: "none" }}
+                      className="w-full h-full pr-3.5 bg-transparent text-sm font-mono text-primary placeholder:text-secondary/50 border-0 outline-none ring-0 shadow-none"
                     />
                   </div>
                   {errors.mobile && (
@@ -647,14 +658,14 @@ export default function StepVisitorEntryModal({
                     {t("sgeVehicleOptional", "Vehicle Number (Optional)")}
                   </label>
                   <div
-                    className={`flex items-center h-12 rounded-xl bg-card-inner-bg border transition-all overflow-hidden ${
+                    className={`flex items-center h-12 rounded-xl bg-card-inner-bg border transition-colors ${
                       errors.vehicle
-                        ? "border-red-500 ring-1 ring-red-500/30"
-                        : "border-glass-border focus-within:border-blue-600 focus-within:ring-2 focus-within:ring-blue-500/20"
+                        ? "border-red-500"
+                        : "border-glass-border focus-within:border-blue-600"
                     }`}
                   >
                     <div className="pl-3.5 pr-2.5 text-secondary flex items-center justify-center shrink-0">
-                      <MdDirectionsCar size={18} className="text-secondary/70" />
+                      <MdDirectionsCar size={18} />
                     </div>
                     <input
                       type="text"
@@ -664,7 +675,8 @@ export default function StepVisitorEntryModal({
                         setVehicleNumber(e.target.value.toUpperCase());
                         if (errors.vehicle) setErrors((prev) => ({ ...prev, vehicle: null }));
                       }}
-                      className="w-full h-full pr-3 bg-transparent text-sm font-mono uppercase font-bold text-primary placeholder:text-secondary/50 outline-none border-0"
+                      style={{ border: "none", outline: "none", boxShadow: "none" }}
+                      className="w-full h-full pr-3.5 bg-transparent text-sm font-mono uppercase font-bold text-primary placeholder:text-secondary/50 border-0 outline-none ring-0 shadow-none"
                     />
                   </div>
                   {errors.vehicle && (
@@ -708,14 +720,15 @@ export default function StepVisitorEntryModal({
                     <label className="block text-xs font-semibold text-secondary mb-1.5">
                       {t("sgeAssignSlot", "Assign Visitor Slot")}
                     </label>
-                    <div className="relative flex items-center h-12 rounded-xl bg-card-inner-bg border border-glass-border focus-within:border-blue-600 focus-within:ring-2 focus-within:ring-blue-500/20">
-                      <div className="pl-3.5 pr-2 text-secondary flex items-center justify-center shrink-0">
-                        <MdLocalParking size={18} className="text-secondary/70" />
+                    <div className="relative flex items-center h-12 rounded-xl bg-card-inner-bg border border-glass-border focus-within:border-blue-600 transition-colors">
+                      <div className="pl-3.5 pr-2.5 text-secondary flex items-center justify-center shrink-0">
+                        <MdLocalParking size={18} />
                       </div>
                       <select
                         value={assignedSlot}
                         onChange={(e) => setAssignedSlot(e.target.value)}
-                        className="w-full h-full pr-8 bg-transparent text-xs font-bold text-primary outline-none border-0 appearance-none cursor-pointer"
+                        style={{ border: "none", outline: "none", boxShadow: "none" }}
+                        className="w-full h-full pr-8 bg-transparent text-xs font-bold text-primary border-0 outline-none ring-0 shadow-none appearance-none cursor-pointer"
                       >
                         <option value="" className="bg-card text-primary">
                           {t("sgeNoSlot", "No Parking Slot")}
@@ -850,7 +863,8 @@ export default function StepVisitorEntryModal({
                     placeholder={t("sgeSearchFlat", "Search flat...")}
                     value={flatSearch}
                     onChange={(e) => setFlatSearch(e.target.value)}
-                    className="w-full bg-transparent text-xs font-bold text-primary outline-none border-0"
+                    style={{ border: "none", outline: "none", boxShadow: "none" }}
+                    className="w-full bg-transparent text-xs font-bold text-primary outline-none border-0 ring-0 shadow-none"
                   />
                 </div>
               </div>

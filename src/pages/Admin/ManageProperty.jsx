@@ -86,12 +86,10 @@ export default function ManageProperty() {
   const [tab, setTab] = useState("blocks");
   const [search, setSearch] = useState("");
   const [showBlockForm, setShowBlockForm] = useState(false);
-  const [showAssignForm, setShowAssignForm] = useState(false);
 
   const TABS = [
     { key: "blocks",  label: t("mpTabBlocks") || "Blocks & Floors",  icon: MdGridView   },
     { key: "flats",   label: t("mpTabFlats") || "All Properties",    icon: MdApartment  },
-    { key: "assign",  label: t("mpTabAssign") || "Assign Units",     icon: MdLinkOff    },
   ];
 
   const handleTabChange = (newTab) => {
@@ -126,28 +124,13 @@ export default function ManageProperty() {
             </GlobalButton>
           )}
 
-          {canEdit && tab === "assign" && (
-            <GlobalButton
-              variant={showAssignForm ? "cancel" : "add"}
-              borderDraw
-              onClick={() => setShowAssignForm((p) => !p)}
-              icon={showAssignForm ? MdClose : MdAdd}
-              className="mp-page-head__cta shrink-0"
-              style={{ fontWeight: 700 }}
-            >
-              {showAssignForm ? t("cancel") : t("mpAssignUnit")}
-            </GlobalButton>
-          )}
-
           <ExpandableSearch
             value={search}
             onChange={setSearch}
             placeholder={
               tab === "blocks"
                 ? t("mpSearchPhases")
-                : tab === "flats"
-                ? t("mpSearchProperty")
-                : t("mpSearchAssignments")
+                : t("mpSearchProperty")
             }
           />
 
@@ -185,17 +168,6 @@ export default function ManageProperty() {
           canEdit={canEdit}
           search={search}
           setSearch={setSearch}
-        />
-      )}
-      {tab === "assign"  && (
-        <AssignTab
-          isMobile={isMobile}
-          t={t}
-          canEdit={canEdit}
-          search={search}
-          setSearch={setSearch}
-          showForm={showAssignForm}
-          setShowForm={setShowAssignForm}
         />
       )}
     </div>
@@ -2198,13 +2170,13 @@ function FlatsTab({
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       {!loading && (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: isMobile ? 8 : 12 }}>
+        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(3,1fr)", gap: isMobile ? 8 : 12 }}>
           {[
-            { label: t("mpTotal") || "Total",       val: counts.ALL,      tone: "brand"   },
-            { label: t("mpOccupied") || "Occupied",  val: counts.OCCUPIED, tone: "success" },
-            { label: t("mpVacant") || "Vacant",      val: counts.VACANT,   tone: "info"    },
+            { label: t("mpTotal") || "Total Units",       val: counts.ALL,      tone: "brand",   icon: MdApartment,     subtext: "Total registered properties" },
+            { label: t("mpOccupied") || "Occupied Units",  val: counts.OCCUPIED, tone: "success", icon: MdCheckCircle,   subtext: `${counts.ALL ? Math.round((counts.OCCUPIED / counts.ALL) * 100) : 0}% occupancy rate` },
+            { label: t("mpVacant") || "Vacant Units",      val: counts.VACANT,   tone: "info",    icon: MdHomeWork,      subtext: `${counts.VACANT} units ready for move-in` },
           ].map(s => (
-            <StatCard key={s.label} tone={s.tone} value={s.val} label={s.label} />
+            <StatCard key={s.label} tone={s.tone} value={s.val} label={s.label} icon={s.icon} subtext={s.subtext} />
           ))}
         </div>
       )}

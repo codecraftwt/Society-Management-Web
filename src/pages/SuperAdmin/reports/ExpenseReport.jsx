@@ -13,6 +13,7 @@ import {
 import Select from "../../../components/common/Select";
 import ReportFilterSheet from "../../../components/common/ReportFilterSheet";
 import Pagination from "../../../components/common/Pagination";
+import StatCard from "../../../components/common/StatCard";
 
 const ENDPOINT = "/reports/expenses";
 
@@ -261,16 +262,30 @@ export default function SuperAdminExpenseReport() {
       {/* ── STATS ── */}
       {!loading && counts.total > 0 && (
         <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(4,1fr)", gap: 10 }}>
-          {[
-            { label: t("expStatTotal") || "Total Expenses", val: inr(counts.totalExpense), color: "amber" },
-            { label: t("expStatVoided") || "Voided Amount", val: inr(counts.voidAmount), color: "purple" },
-            { label: t("expStatPosted") || "Posted", val: counts.posted, color: "green" },
-            { label: t("expStatVoidCount") || "Voided", val: counts.voided, color: "purple" },
-          ].map((s, i) => (
-            <div key={i} className={`stat-card stat-card--${s.color}`} style={{ borderRadius: isMobile ? 14 : 18, padding: isMobile ? "12px 14px" : "16px 18px" }}>
-              <div><div className="stat-card__val" style={{ fontSize: isMobile ? 18 : 22 }}>{s.val}</div><div className="stat-card__label">{s.label}</div></div>
-            </div>
-          ))}
+          <StatCard
+            value={inr(counts.totalExpense)}
+            label={t("expStatTotal") || "Total Expenses"}
+            tone="brand"
+            icon={MdTrendingDown}
+          />
+          <StatCard
+            value={inr(counts.voidAmount)}
+            label={t("expStatVoided") || "Voided Amount"}
+            tone="danger"
+            icon={MdAccountBalanceWallet}
+          />
+          <StatCard
+            value={counts.posted}
+            label={t("expStatPosted") || "Posted"}
+            tone="success"
+            icon={MdTrendingDown}
+          />
+          <StatCard
+            value={counts.voided}
+            label={t("expStatVoidCount") || "Voided"}
+            tone="neutral"
+            icon={MdAccountBalanceWallet}
+          />
         </div>
       )}
 

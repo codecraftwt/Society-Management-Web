@@ -4,6 +4,7 @@ import {
   MdWarning, MdLocalFireDepartment, MdLocalHospital,
   MdSecurity, MdHelp, MdAdd, MdClose, MdSend,
   MdChevronLeft, MdChevronRight, MdHome, MdSearch,
+  MdNotifications, MdCheckCircle,
 } from "react-icons/md";
 import { toast } from "react-toastify";
 import API from "../../services/api";
@@ -372,10 +373,10 @@ export default function MyEmergency() {
         </div>
       )}
 
-      <div className="ge-stats">
-        <StatCard tone="brand" value={counts.ALL} label={t("emergencyStatTotal")} />
-        <StatCard tone="warning" value={counts.ACTIVE} label={t("emergencyStatActive")} />
-        <StatCard tone="success" value={counts.RESOLVED} label={t("emergencyStatResolved")} />
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-4">
+        <StatCard icon={MdNotifications} tone="brand" value={counts.ALL} label={t("emergencyStatTotal")} />
+        <StatCard icon={MdWarning} tone="danger" value={counts.ACTIVE} label={t("emergencyStatActive")} />
+        <StatCard icon={MdCheckCircle} tone="success" value={counts.RESOLVED} label={t("emergencyStatResolved")} />
       </div>
 
       <div className="ge-toolbar">

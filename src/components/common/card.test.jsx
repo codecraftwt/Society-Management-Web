@@ -1,9 +1,11 @@
 import { describe, it, expect } from "vitest";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
+import { MemoryRouter } from "react-router-dom";
 import { MdRefresh, MdWarning } from "react-icons/md";
 import StatCard from "./StatCard.jsx";
 import RecordCard from "./RecordCard.jsx";
+import QuickLink from "./QuickLink.jsx";
 
 /**
  * Render tests for the Phase 1 primitives.
@@ -14,6 +16,7 @@ import RecordCard from "./RecordCard.jsx";
  */
 
 const html = (element) => renderToStaticMarkup(element);
+const htmlWithRouter = (element) => renderToStaticMarkup(<MemoryRouter>{element}</MemoryRouter>);
 
 describe("StatCard", () => {
   it("renders the label and the value", () => {
@@ -66,13 +69,13 @@ describe("StatCard", () => {
   });
 
   it("renders a real button when onClick is supplied", () => {
-    const out = html(<StatCard label="A" value={1} onClick={() => {}} />);
+    const out = html(<StatCard label="A" value={1} onClick={() => { }} />);
     expect(out).toMatch(/^<button/);
     expect(out).toContain('type="button"');
   });
 
   it("adds role and tabIndex when a non-interactive tag is forced with onClick", () => {
-    const out = html(<StatCard label="A" value={1} as="div" onClick={() => {}} />);
+    const out = html(<StatCard label="A" value={1} as="div" onClick={() => { }} />);
     expect(out).toMatch(/^<div/);
     expect(out).toContain('role="button"');
     expect(out).toContain('tabindex="0"');
@@ -85,7 +88,7 @@ describe("StatCard", () => {
   });
 
   it("marks a disabled native button with the disabled attribute", () => {
-    const out = html(<StatCard label="A" value={1} onClick={() => {}} disabled />);
+    const out = html(<StatCard label="A" value={1} onClick={() => { }} disabled />);
     expect(out).toContain("disabled");
     expect(out).toContain("ui-stat-card--disabled");
   });
@@ -176,6 +179,13 @@ describe("RecordCard", () => {
     expect(out).not.toContain("ui-record-card__icon");
   });
 
+  it("renders the decorative blob by default and drops it with blob={false}", () => {
+    expect(html(<RecordCard title="X" />)).toContain("ui-record-card__blob");
+    expect(html(<RecordCard title="X" blob={false} />)).not.toContain(
+      "ui-record-card__blob",
+    );
+  });
+
   it("renders the badge slot", () => {
     expect(html(<RecordCard title="X" badge={<span>Open</span>} />)).toContain(
       "ui-record-card__badge",
@@ -216,7 +226,7 @@ describe("RecordCard", () => {
   });
 
   it("switches to a button shell on onClick and keeps content valid", () => {
-    const out = html(<RecordCard title="Complaint" description="Leak" onClick={() => {}} />);
+    const out = html(<RecordCard title="Complaint" description="Leak" onClick={() => { }} />);
     expect(out).toMatch(/^<button/);
     expect(out).toContain('type="button"');
     // a button may not contain block-level or heading content
@@ -226,7 +236,7 @@ describe("RecordCard", () => {
   });
 
   it("adds role and tabIndex when a non-interactive tag is forced with onClick", () => {
-    const out = html(<RecordCard title="X" as="div" onClick={() => {}} />);
+    const out = html(<RecordCard title="X" as="div" onClick={() => { }} />);
     expect(out).toContain('role="button"');
     expect(out).toContain('tabindex="0"');
   });
@@ -238,7 +248,7 @@ describe("RecordCard", () => {
   });
 
   it("marks a disabled native button with the disabled attribute", () => {
-    const out = html(<RecordCard title="X" onClick={() => {}} disabled />);
+    const out = html(<RecordCard title="X" onClick={() => { }} disabled />);
     expect(out).toContain("disabled");
   });
 
@@ -258,5 +268,76 @@ describe("RecordCard", () => {
     expect(html(<RecordCard title="X" />)).toContain(
       'class="ui-record-card__blob" aria-hidden="true"',
     );
+  });
+});
+
+describe("StatCard Style Variants", () => {
+  it("supports all 10 global card theme variants", () => {
+    const styles = [
+      "default",
+      "solid",
+      "glass",
+      "aurora",
+      "floating",
+      "neon",
+      "gradient",
+      "neumorphic",
+      "accent-rail",
+      "minimal",
+    ];
+    for (const style of styles) {
+      const out = html(<StatCard label="A" value={1} styleVariant={style} />);
+      expect(out).toContain(`card-style-${style}`);
+    }
+  });
+});
+
+describe("QuickLink", () => {
+  it("renders title, description and icon", () => {
+    const out = htmlWithRouter(
+      <QuickLink
+        title="Residents"
+        desc="Active members living in society"
+        icon={MdRefresh}
+        styleVariant="glass"
+      />
+    );
+    expect(out).toContain("Residents");
+    expect(out).toContain("Active members living in society");
+    expect(out).toContain("quick-link");
+    expect(out).toContain("quick-link-style-glass");
+    expect(out).toContain("quick-link__icon");
+  });
+
+  it("renders badge when provided", () => {
+    const out = htmlWithRouter(
+      <QuickLink
+        title="Complaints"
+        badge="2 Open"
+        badgeColor="bg-rose-600 text-white"
+      />
+    );
+    expect(out).toContain("2 Open");
+    expect(out).toContain("quick-link__badge");
+    expect(out).toContain("bg-rose-600");
+  });
+
+  it("supports all 10 quick link theme variants", () => {
+    const styles = [
+      "default",
+      "solid",
+      "glass",
+      "aurora",
+      "floating",
+      "neon",
+      "gradient",
+      "neumorphic",
+      "accent-rail",
+      "minimal",
+    ];
+    for (const style of styles) {
+      const out = htmlWithRouter(<QuickLink title="Test" styleVariant={style} />);
+      expect(out).toContain(`quick-link-style-${style}`);
+    }
   });
 });

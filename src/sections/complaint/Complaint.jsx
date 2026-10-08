@@ -10,7 +10,7 @@ import useDebounce from "../../hooks/useDebounce";
 import {
   MdArrowDropDown, MdCalendarToday, MdChat, MdClose, MdDownload,
   MdFilterAlt, MdImage, MdOutlineInbox, MdPictureAsPdf, MdRefresh,
-  MdReportProblem, MdSearch, MdTableChart,
+  MdReportProblem, MdSearch, MdTableChart, MdCheckCircle, MdHourglassEmpty, MdSync
 } from "react-icons/md";
 import { toast } from "react-toastify";
 import Select from "../../components/common/Select";
@@ -18,6 +18,7 @@ import SlidingTabs from "../../components/common/SlidingTabs";
 import ExpandableSearch from "../../components/common/ExpandableSearch";
 import DateRangeFilter from "../../components/common/DateRangeFilter";
 import Pagination from "../../components/common/Pagination";
+import StatCard from "../../components/common/StatCard";
 import { exportToPDF } from "../../utils/exportPDF";
 import styles from "./Complaint.module.css";
 import { formatDate, flatLabel, toDateBoundary, useIsMobile } from "./complaintHelpers.js";
@@ -600,6 +601,38 @@ export default function Complaint() {
             )}
           </div>
         </div>
+      </div>
+
+      {/* ── Statistical KPI Cards ── */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-5">
+        <StatCard
+          tone="brand"
+          value={counts.ALL || 0}
+          label={t("compTabAll") || "All Complaints"}
+          icon={MdReportProblem}
+          subtext="Total logged grievances"
+        />
+        <StatCard
+          tone="warning"
+          value={counts.PENDING || 0}
+          label={t("compStatusPending") || "Pending"}
+          icon={MdHourglassEmpty}
+          subtext="Awaiting review"
+        />
+        <StatCard
+          tone="info"
+          value={counts.IN_PROGRESS || 0}
+          label={t("compTabInProgress") || "In Progress"}
+          icon={MdSync}
+          subtext="Under investigation"
+        />
+        <StatCard
+          tone="success"
+          value={counts.RESOLVED || 0}
+          label={t("compStatusResolved") || "Resolved"}
+          icon={MdCheckCircle}
+          subtext="Successfully closed"
+        />
       </div>
 
       {/* ── 2. FILTERS ROW ────────────────────────────────────────── */}

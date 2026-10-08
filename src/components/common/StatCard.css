@@ -197,65 +197,77 @@ button.ui-stat-card {
 /* ── TONES ────────────────────────────────────────────────────────────── */
 
 .ui-stat-card--tone-neutral {
-  --ui-card-tone-color: var(--ui-card-tone-neutral-color);
-  --ui-card-tone-bg: var(--ui-card-tone-neutral-bg);
-  --ui-card-tone-border: var(--ui-card-tone-neutral-border);
-  --ui-card-tone-surface: var(--ui-card-tone-neutral-surface);
-  --ui-card-ink-value: var(--ui-card-tone-neutral-color);
-  --ui-card-ink-label: var(--ui-card-tone-neutral-color);
-  --ui-card-ink-icon: var(--ui-card-tone-neutral-color);
-  --ui-card-ink-desc: var(--ui-card-tone-neutral-color);
+  --ui-card-tone-accent: var(--text-secondary, #94a3b8);
+  --ui-card-tone-color: var(--text-secondary, #94a3b8);
+  --ui-card-tone-border: rgba(255, 255, 255, 0.12);
+  --ui-card-tone-bg: var(--card-bg, #1a1d26);
+  --ui-card-tone-surface: var(--card-bg, #1a1d26);
+  --ui-card-ink-value: var(--text-primary, #ffffff);
+  --ui-card-ink-label: var(--text-secondary, #94a3b8);
+  --ui-card-ink-icon: var(--text-secondary, #94a3b8);
+  --ui-card-ink-desc: var(--text-secondary, #94a3b8);
 }
 .ui-stat-card--tone-brand {
-  --ui-card-tone-color: var(--ui-card-tone-brand-color);
-  --ui-card-tone-bg: var(--ui-card-tone-brand-bg);
-  --ui-card-tone-border: var(--ui-card-tone-brand-border);
-  --ui-card-tone-surface: var(--ui-card-tone-brand-surface);
-  --ui-card-ink-value: var(--ui-card-tone-brand-color);
-  --ui-card-ink-label: var(--ui-card-tone-brand-color);
-  --ui-card-ink-icon: var(--ui-card-tone-brand-color);
-  --ui-card-ink-desc: var(--ui-card-tone-brand-color);
+  --ui-card-tone-accent: #2563eb;
+  --ui-card-tone-color: #2563eb;
+  --ui-card-tone-border: #2563eb;
+  --ui-card-tone-bg: rgba(37, 99, 235, 0.12);
+  --ui-card-tone-surface: var(--card-bg, #1a1d26);
+  --ui-card-ink-value: var(--text-primary, #ffffff);
+  --ui-card-ink-label: #3b82f6;
+  --ui-card-ink-icon: #2563eb;
+  --ui-card-ink-desc: var(--text-secondary, #94a3b8);
 }
 .ui-stat-card--tone-success {
-  --ui-card-tone-color: var(--ui-card-tone-success-color);
-  --ui-card-tone-bg: var(--ui-card-tone-success-bg);
-  --ui-card-tone-border: var(--ui-card-tone-success-border);
-  --ui-card-tone-surface: var(--ui-card-tone-success-surface);
-  --ui-card-ink-value: var(--ui-card-tone-success-color);
-  --ui-card-ink-label: var(--ui-card-tone-success-color);
-  --ui-card-ink-icon: var(--ui-card-tone-success-color);
-  --ui-card-ink-desc: var(--ui-card-tone-success-color);
+  --ui-card-tone-accent: #10b981;
+  --ui-card-tone-color: #10b981;
+  --ui-card-tone-border: #10b981;
+  --ui-card-tone-bg: rgba(16, 185, 129, 0.12);
+  --ui-card-tone-surface: var(--card-bg, #1a1d26);
+  --ui-card-ink-value: var(--text-primary, #ffffff);
+  --ui-card-ink-label: #10b981;
+  --ui-card-ink-icon: #10b981;
+  --ui-card-ink-desc: var(--text-secondary, #94a3b8);
 }
 .ui-stat-card--tone-warning {
-  --ui-card-tone-color: var(--ui-card-tone-warning-color);
-  --ui-card-tone-bg: var(--ui-card-tone-warning-bg);
-  --ui-card-tone-border: var(--ui-card-tone-warning-border);
-  --ui-card-tone-surface: var(--ui-card-tone-warning-surface);
-  --ui-card-ink-value: var(--ui-card-tone-warning-color);
-  --ui-card-ink-label: var(--ui-card-tone-warning-color);
-  --ui-card-ink-icon: var(--ui-card-tone-warning-color);
-  --ui-card-ink-desc: var(--ui-card-tone-warning-color);
+  --ui-card-tone-accent: #f59e0b;
+  --ui-card-tone-color: #f59e0b;
+  --ui-card-tone-border: #f59e0b;
+  --ui-card-tone-bg: rgba(245, 158, 11, 0.12);
+  --ui-card-tone-surface: var(--card-bg, #1a1d26);
+  --ui-card-ink-value: var(--text-primary, #ffffff);
+  --ui-card-ink-label: #f59e0b;
+  --ui-card-ink-icon: #f59e0b;
+  --ui-card-ink-desc: var(--text-secondary, #94a3b8);
 }
 .ui-stat-card--tone-danger {
-  --ui-card-tone-color: var(--ui-card-tone-danger-color);
-  --ui-card-tone-bg: var(--ui-card-tone-danger-bg);
-  --ui-card-tone-border: var(--ui-card-tone-danger-border);
-  --ui-card-tone-surface: var(--ui-card-tone-danger-surface);
-  --ui-card-ink-value: var(--ui-card-tone-danger-color);
-  --ui-card-ink-label: var(--ui-card-tone-danger-color);
-  --ui-card-ink-icon: var(--ui-card-tone-danger-color);
-  --ui-card-ink-desc: var(--ui-card-tone-danger-color);
+  --ui-card-tone-accent: #ef4444;
+  --ui-card-tone-color: #ef4444;
+  --ui-card-tone-border: #ef4444;
+  --ui-card-tone-bg: rgba(239, 68, 68, 0.12);
+  --ui-card-tone-surface: var(--card-bg, #1a1d26);
+  --ui-card-ink-value: var(--text-primary, #ffffff);
+  --ui-card-ink-label: #ef4444;
+  --ui-card-ink-icon: #ef4444;
+  --ui-card-ink-desc: var(--text-secondary, #94a3b8);
 }
 .ui-stat-card--tone-info {
-  --ui-card-tone-color: var(--ui-card-tone-info-color);
-  --ui-card-tone-bg: var(--ui-card-tone-info-bg);
-  --ui-card-tone-border: var(--ui-card-tone-info-border);
-  --ui-card-tone-surface: var(--ui-card-tone-info-surface);
-  --ui-card-ink-value: var(--ui-card-tone-info-color);
-  --ui-card-ink-label: var(--ui-card-tone-info-color);
-  --ui-card-ink-icon: var(--ui-card-tone-info-color);
-  --ui-card-ink-desc: var(--ui-card-tone-info-color);
+  --ui-card-tone-accent: #06b6d4;
+  --ui-card-tone-color: #06b6d4;
+  --ui-card-tone-border: #06b6d4;
+  --ui-card-tone-bg: rgba(6, 182, 212, 0.12);
+  --ui-card-tone-surface: var(--card-bg, #1a1d26);
+  --ui-card-ink-value: var(--text-primary, #ffffff);
+  --ui-card-ink-label: #06b6d4;
+  --ui-card-ink-icon: #06b6d4;
+  --ui-card-ink-desc: var(--text-secondary, #94a3b8);
 }
+
+html.light .ui-stat-card {
+  --ui-card-ink-value: var(--text-primary, #0f172a);
+  --ui-card-ink-desc: var(--text-secondary, #475569);
+}
+
 
 /* ── VARIANTS ─────────────────────────────────────────────────────────── */
 
@@ -377,6 +389,60 @@ button.ui-stat-card {
   .ui-stat-card:not(.ui-stat-card--layout-inline) .ui-stat-card__value {
     font-size: 20px;
   }
+}
+
+/* ── DARK THEME ENHANCEMENTS ─────────────────────────────────────────── */
+
+html:not(.light) .ui-stat-card,
+html.role-theme:not(.light) .ui-stat-card {
+  background: radial-gradient(
+      circle at 88% 12%,
+      color-mix(in srgb, var(--ui-card-tone-accent, var(--accent)) 12%, transparent) 0%,
+      transparent 65%
+    ),
+    var(--ui-card-tone-surface, var(--card-bg, #1e212b));
+  border-color: color-mix(
+    in srgb,
+    var(--ui-card-tone-accent, var(--accent)) 36%,
+    var(--ui-card-tone-border, var(--glass-border))
+  );
+}
+
+html:not(.light) .ui-stat-card__blob,
+html.role-theme:not(.light) .ui-stat-card__blob {
+  background: color-mix(in srgb, var(--ui-card-tone-accent, var(--accent)) 16%, transparent);
+}
+
+html:not(.light) .ui-stat-card__icon,
+html.role-theme:not(.light) .ui-stat-card__icon {
+  background: color-mix(in srgb, var(--ui-card-tone-accent, var(--accent)) 16%, transparent);
+  color: var(--ui-card-tone-accent, var(--accent));
+  border: 1px solid color-mix(in srgb, var(--ui-card-tone-accent, var(--accent)) 30%, transparent);
+}
+
+html:not(.light) .ui-stat-card__value,
+html.role-theme:not(.light) .ui-stat-card__value {
+  color: #ffffff;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+}
+
+html:not(.light) .ui-stat-card__label,
+html.role-theme:not(.light) .ui-stat-card__label {
+  color: color-mix(in srgb, var(--ui-card-tone-accent, var(--accent)) 50%, var(--text-secondary));
+  font-weight: 700;
+}
+
+html:not(.light) .ui-stat-card__desc,
+html.role-theme:not(.light) .ui-stat-card__desc {
+  color: var(--text-secondary, rgba(255, 255, 255, 0.6));
+}
+
+html:not(.light) .ui-stat-card--variant-sheen:hover,
+html.role-theme:not(.light) .ui-stat-card--variant-sheen:hover {
+  border-color: var(--ui-card-tone-accent, var(--accent));
+  box-shadow: 0 12px 28px -4px color-mix(in srgb, var(--ui-card-tone-accent, var(--accent)) 42%, transparent),
+    0 0 14px color-mix(in srgb, var(--ui-card-tone-accent, var(--accent)) 22%, transparent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 
 /* ── REDUCED MOTION ──────────────────────────────────────────────────── */

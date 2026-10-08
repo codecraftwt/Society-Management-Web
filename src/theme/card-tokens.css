@@ -61,16 +61,16 @@
 
   /* ── GEOMETRY ──────────────────────────────────────────────────────── */
   --ui-card-radius: 16px;
-  --ui-card-padding: 20px 22px;         /* statistical, desktop  */
-  --ui-card-padding-compact: 14px 12px;  /* statistical, <=1023px */
+  --ui-card-padding: 13px 16px;         /* statistical, desktop  */
+  --ui-card-padding-compact: 11px 11px;  /* statistical, <=1023px */
   --ui-card-padding-record: 14px;       /* record shell           */
-  --ui-card-gap: 6px;
-  --ui-card-gap-lg: 12px;
-  --ui-card-icon-size: 36px;
-  --ui-card-icon-radius: 11px;
+  --ui-card-gap: 3px;
+  --ui-card-gap-lg: 10px;
+  --ui-card-icon-size: 30px;
+  --ui-card-icon-radius: 9px;
 
   /* ── TYPOGRAPHY — statistical ──────────────────────────────────────── */
-  --ui-card-value-size: 26px;
+  --ui-card-value-size: 23px;
   --ui-card-value-weight: 800;
   --ui-card-value-tracking: -0.04em;
   --ui-card-value-line: 1;
@@ -177,9 +177,9 @@
   /* ── STATISTICAL CARD FRAME ─────────────────────────────────────────────
      index.css:2623 declares `border: 1px solid` and role-theme.css:620
      raises that to 2px in authenticated dark; the authenticated light tier
-     sets `border: none` so the gradient runs to the edge. */
+     sets `border: none` so the gradient runs to the edge. Tone classes
+     provide their own distinct border colors via --ui-card-tone-border. */
   --ui-card-stat-border-width: 1px;
-  --ui-card-stat-border-color: var(--ui-card-tone-border, var(--ui-card-border));
 }
 
 /* ==========================================================================

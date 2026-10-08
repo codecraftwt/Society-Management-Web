@@ -1,5 +1,8 @@
 import React from "react";
+import { useTheme } from "../../context/ThemeContext";
+import { normalizeCardStyle } from "../../utils/themeUtils";
 import "./StatCard.css";
+
 
 /**
  * StatCard
@@ -42,6 +45,7 @@ export default function StatCard({
   iconSize = 20,
   tone = "neutral",
   variant = "base",
+  styleVariant = null,
   layout = "stacked",
   interactive = false,
   selected = false,
@@ -52,6 +56,16 @@ export default function StatCard({
   style = {},
   ...rest
 }) {
+  let activeThemeCardStyle = "default";
+  try {
+    const themeContext = useTheme();
+    activeThemeCardStyle = themeContext?.societyTheme?.cardStyle || "default";
+  } catch {
+    // fallback if context is not present
+  }
+
+  const effectiveCardStyle = normalizeCardStyle(styleVariant || activeThemeCardStyle);
+
   const clickable = typeof onClick === "function";
   const Tag = as ?? (clickable ? "button" : "div");
   const nativelyInteractive = Tag === "button" || Tag === "a";
@@ -70,7 +84,9 @@ export default function StatCard({
     `ui-stat-card--tone-${tone}`,
     `ui-stat-card--variant-${variant}`,
     `ui-stat-card--layout-${layout}`,
+    effectiveCardStyle !== "default" || styleVariant ? `card-style-${effectiveCardStyle}` : "",
     Icon ? "ui-stat-card--has-icon" : "",
+
     interactive ? "ui-stat-card--interactive" : "",
     selected ? "ui-stat-card--selected" : "",
     disabled ? "ui-stat-card--disabled" : "",

@@ -357,9 +357,14 @@ html.role-theme .rd-skeleton {
   background: var(--card-inner-bg) !important;
 }
 
-/* Documents — search toolbar alignment */
+/* Resident pages — toolbar alignment */
 .rd-root .ge-toolbar {
+  display: flex;
   align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
 }
 .rd-root .ge-toolbar .ge-search-wrap {
   flex: 1 1 220px;
@@ -369,8 +374,6 @@ html.role-theme .rd-skeleton {
 @media (min-width: 768px) {
   .rd-root .ge-toolbar .ge-search-wrap {
     max-width: 340px;
-  }
-  .rd-root .ge-toolbar .gp-filter-tabs.sliding-tabs {
     margin-left: auto;
   }
 }
@@ -381,12 +384,6 @@ html.role-theme .rd-skeleton {
   }
   .rd-root .ge-toolbar .ge-search-wrap {
     min-width: unset;
-  }
-  .rd-root .ge-toolbar .gp-filter-tabs.sliding-tabs {
-    display: flex;
-    width: 100%;
-    max-width: 100%;
-    align-self: stretch;
   }
 }
 

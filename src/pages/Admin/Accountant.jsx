@@ -17,6 +17,9 @@ import GlobalModal from "../../components/common/GlobalModal";
 import GlobalTable from "../../components/common/GlobalTable";
 import GlobalBadge from "../../components/common/GlobalBadge";
 import GlobalConfirmDialog from "../../components/common/GlobalConfirmDialog";
+import UserAvatar from "../../components/common/UserAvatar";
+import ProfilePictureUploader from "../../components/common/ProfilePictureUploader";
+import StatCard from "../../components/common/StatCard";
 import { isCommitteeMember, hasPermission } from "../../utils/permissions";
 import { getTitleError, getEmailError, getMobileError } from "../../utils/validators";
 import { useCustomAlert } from "../../context/CustomAlertContext";
@@ -230,6 +233,7 @@ export default function Accountant() {
   const [formData, setFormData] = useState({
     name: "", email: "", password: "Admin@123", phone: "", society_id: "",
   });
+  const [photoFile, setPhotoFile] = useState(null);
   const [editTarget, setEditTarget] = useState(null);
   const [phoneError, setPhoneError] = useState("");
   const [submitLoading, setSubmitLoading] = useState(false);
@@ -326,6 +330,7 @@ export default function Accountant() {
     setFormData({
       name: "", email: "", password: "Admin@123", phone: "", society_id: defaultSocId || "",
     });
+    setPhotoFile(null);
     setSelectedResidentId("");
     setPhoneError("");
     setShowOriginModal(true);
@@ -347,6 +352,7 @@ export default function Accountant() {
         showUnauthorized(t("acctUnauthCreateExt") || "You do not have permission to create an external accountant.");
         return;
       }
+      setPhotoFile(null);
       setShowExternalModal(true);
     }
   };
@@ -413,17 +419,32 @@ export default function Accountant() {
 
     try {
       setSubmitLoading(true);
-      await API.post("/accountant", {
-        ...formData,
-        name: formData.name.trim(),
-        email: formData.email.trim(),
-        phone: formData.phone.trim() || undefined,
-        society_id: targetSocId,
-      });
+      let body;
+      let headers = {};
+      if (photoFile) {
+        body = new FormData();
+        body.append("name", formData.name.trim());
+        body.append("email", formData.email.trim());
+        body.append("password", formData.password || "Admin@123");
+        if (formData.phone?.trim()) body.append("phone", formData.phone.trim());
+        if (targetSocId) body.append("society_id", targetSocId);
+        body.append("photo", photoFile);
+        headers["Content-Type"] = "multipart/form-data";
+      } else {
+        body = {
+          ...formData,
+          name: formData.name.trim(),
+          email: formData.email.trim(),
+          phone: formData.phone.trim() || undefined,
+          society_id: targetSocId,
+        };
+      }
+      await API.post("/accountant", body, { headers });
 
       toast.success(t("acctToastCreated") || "External accountant created successfully!");
       setShowExternalModal(false);
       setFormData({ name: "", email: "", password: "Admin@123", phone: "", society_id: "" });
+      setPhotoFile(null);
       setPhoneError("");
       fetchAccountants();
     } catch (err) {
@@ -450,13 +471,25 @@ export default function Accountant() {
     try {
       setSubmitLoading(true);
       const targetId = editTarget?.user_id || editTarget?.id;
-      await API.put(`/accountant/${targetId}`, {
-        name: formData.name.trim(),
-        phone: formData.phone.trim() || undefined,
-      });
+      let body;
+      let headers = {};
+      if (photoFile) {
+        body = new FormData();
+        body.append("name", formData.name.trim());
+        if (formData.phone?.trim()) body.append("phone", formData.phone.trim());
+        body.append("photo", photoFile);
+        headers["Content-Type"] = "multipart/form-data";
+      } else {
+        body = {
+          name: formData.name.trim(),
+          phone: formData.phone.trim() || undefined,
+        };
+      }
+      await API.put(`/accountant/${targetId}`, body, { headers });
 
       toast.success(t("acctToastUpdated") || "Accountant details updated successfully!");
       setShowEditModal(false);
+      setPhotoFile(null);
       setPhoneError("");
       fetchAccountants();
     } catch (err) {
@@ -479,6 +512,7 @@ export default function Accountant() {
       phone: acc.phone || "",
       society_id: acc.society_id || "",
     });
+    setPhotoFile(null);
     setPhoneError("");
     setShowEditModal(true);
   };
@@ -532,17 +566,12 @@ export default function Accountant() {
       header: t("acctColAccountant") || "Accountant",
       render: (acc) => (
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <div style={{
-            width: 36, height: 36, borderRadius: "50%",
-            background: acc.status === "INACTIVE"
-              ? "linear-gradient(135deg, #64748b, #475569)"
-              : "linear-gradient(135deg, var(--accent), var(--accent-light))",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 13, fontWeight: 800, color: "#fff",
-            flexShrink: 0,
-          }}>
-            {acc.name?.[0]?.toUpperCase()}
-          </div>
+          <UserAvatar
+            name={acc.name}
+            src={acc.profile_picture}
+            size={36}
+            radius={10}
+          />
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
               <p style={{ fontWeight: 700, color: "var(--text-primary)", margin: 0, fontSize: "0.9rem" }}>{acc.name}</p>
@@ -709,6 +738,38 @@ export default function Accountant() {
             </GlobalButton>
           )}
         </div>
+      </div>
+
+      {/* ── STATISTICAL KPI CARDS ── */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 my-4">
+        <StatCard
+          tone="brand"
+          value={accountants.length}
+          label={t("acctTotal", "Total Accountants")}
+          icon={MdAccountBalance}
+          subtext="Appointed accountants"
+        />
+        <StatCard
+          tone="success"
+          value={accountants.filter(a => a.status === "ACTIVE").length}
+          label={t("acctActive", "Active")}
+          icon={MdCheckCircle}
+          subtext="Managing society finances"
+        />
+        <StatCard
+          tone="danger"
+          value={accountants.filter(a => a.status === "INACTIVE").length}
+          label={t("acctInactive", "Inactive")}
+          icon={MdBlock}
+          subtext="Deactivated access"
+        />
+        <StatCard
+          tone="info"
+          value={accountants.filter(a => a.from_society).length}
+          label={t("acctFromSociety", "Resident Appointed")}
+          icon={MdHome}
+          subtext="From society residents"
+        />
       </div>
 
       {/* ── ACCOUNTANTS TABLE ── */}
@@ -972,6 +1033,14 @@ export default function Accountant() {
             </div>
           )}
 
+          <div style={{ display: "flex", justifyContent: "center", marginBottom: 6 }}>
+            <ProfilePictureUploader
+              name={formData.name || "Accountant"}
+              onFileSelect={(file) => setPhotoFile(file)}
+              size={80}
+            />
+          </div>
+
           <div>
             <SectionLabel>{t("acctName") || "Full Name"}</SectionLabel>
             <input
@@ -1067,6 +1136,15 @@ export default function Accountant() {
         submitVariant="edit"
       >
         <form onSubmit={handleUpdate} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+          <div style={{ display: "flex", justifyContent: "center", marginBottom: 6 }}>
+            <ProfilePictureUploader
+              name={formData.name || editTarget?.name || "Accountant"}
+              currentUrl={editTarget?.profile_picture}
+              onFileSelect={(file) => setPhotoFile(file)}
+              size={80}
+            />
+          </div>
+
           <div>
             <SectionLabel>{t("acctName") || "Full Name"}</SectionLabel>
             <input

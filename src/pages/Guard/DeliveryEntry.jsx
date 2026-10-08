@@ -157,10 +157,10 @@ export default function DeliveryEntry() {
   ];
 
   return (
-    <div className="ge-root">
+    <div className="ge-root space-y-6 animate-fadeIn">
       {/* ── HEADER ── */}
-      <div className="ge-er">
-        <div className="ge-er-left">
+      <div className="ge-er flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="ge-er-left flex items-center gap-3">
           <div
             className="ad-page-icon"
             style={{ background: "rgba(8, 145, 178, 0.15)", color: "#0891B2" }}
@@ -176,16 +176,18 @@ export default function DeliveryEntry() {
         </div>
         <button
           onClick={() => setShowModal(true)}
-          className="btn-primary"
+          className="btn-primary flex items-center gap-2"
           style={{ background: "#0891B2" }}
         >
-          <MdAdd size={18} /> {t("delAddBtn", "New Delivery Entry")}
+          <MdAdd size={18} /> <span>{t("delAddBtn", "New Delivery Entry")}</span>
         </button>
       </div>
 
       {/* ── STAT CARDS ── */}
-      <div className="ge-stats">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 my-2">
         <StatCard
+          layout="inline"
+          icon={<FaTruck size={20} />}
           tone="brand"
           interactive
           selected={filter === "ALL"}
@@ -194,6 +196,8 @@ export default function DeliveryEntry() {
           label={t("delStatTotal", "Total Deliveries")}
         />
         <StatCard
+          layout="inline"
+          icon={<FaTruck size={20} />}
           tone="info"
           interactive
           selected={filter === "IN"}
@@ -202,6 +206,8 @@ export default function DeliveryEntry() {
           label={t("delStatInside", "Inside Campus")}
         />
         <StatCard
+          layout="inline"
+          icon={<MdLogout size={20} />}
           tone="success"
           interactive
           selected={filter === "OUT"}
@@ -212,182 +218,172 @@ export default function DeliveryEntry() {
       </div>
 
       {/* ── SEARCH + FILTER ── */}
-      <div className="ge-toolbar">
+      <div className="ge-toolbar flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="overflow-x-auto max-w-full pb-1 sm:pb-0">
           <SlidingTabs
             className="ge-filter-tabs"
             value={filter}
             onChange={handleFilterChange}
-tabs={filterTabs.map(({ key, label, count }) => ({
+            items={filterTabs.map(({ key, label, count }) => ({
               id: key,
-              label: (
-                <span className="flex items-center gap-1.5">
-                  <span>{label}</span>
-                  <span className="opacity-75 font-normal">({count})</span>
-                </span>
-              ),
+              label: label,
+              badge: count,
             }))}
           />
         </div>
 
-        <ExpandableSearch
-          placeholder={t("delSearchPlaceholder", "Search agent, Swiggy/Zomato, phone, flat...")}
-          value={search}
-          onChange={setSearch}
-        />
+        <div className="sm:ml-auto w-full sm:w-auto">
+          <ExpandableSearch
+            placeholder={t("delSearchPlaceholder", "Search agent, Swiggy/Zomato, phone, flat...")}
+            value={search}
+            onChange={setSearch}
+          />
+        </div>
       </div>
 
-      {/* ── DESKTOP TABLE ── */}
-      <div className="ge-table-card">
-        {initialLoad ? (
-          <div className="p-8 text-center text-secondary">
-            <Spinner size={24} />
-            <p className="mt-2 text-xs">{t("delLoading", "Loading delivery records...")}</p>
+      {/* ── DATA SECTION (SINGLE UNIFIED LOADING & EMPTY STATES) ── */}
+      {initialLoad ? (
+        <div className="ge-table-card p-12 text-center text-secondary">
+          <Spinner size={26} />
+          <p className="mt-2 text-xs font-bold">{t("delLoading", "Loading delivery records...")}</p>
+        </div>
+      ) : deliveries.length === 0 ? (
+        <div className="ge-table-card p-12 text-center text-secondary">
+          <div className="ge-empty py-4">
+            <span className="ge-empty-icon text-3xl">📦</span>
+            <p className="mt-2 text-sm font-semibold">{t("delEmpty", "No delivery records found")}</p>
           </div>
-        ) : deliveries.length === 0 ? (
-          <div className="ge-empty">
-            <span className="ge-empty-icon">📦</span>
-            <span>{t("delEmpty", "No delivery records found")}</span>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="ge-table">
-              <thead>
-                <tr>
-                  <th>{t("delColPartner", "Delivery Partner & Agent")}</th>
-                  <th>{t("delColFlat", "Flat Destination")}</th>
-                  <th>{t("delColContact", "Contact")}</th>
-                  <th>{t("delColVehicleNo", "Vehicle Number")}</th>
-                  <th>{t("delColEntryTime", "Entry Time")}</th>
-                  <th>{t("delColExitTime", "Exit Time")}</th>
-                  <th>{t("delColStatus", "Status")}</th>
-                  <th>{t("delColAction", "Action")}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {deliveries.map((item) => {
-                  const isInside = !item.exit_time;
-                  const { company, agent } = splitDeliveryName(item.visitor_name);
-                  return (
-                    <tr key={item.id}>
-                      <td>
-                        <div className="flex items-center gap-2.5">
-                          <div className="w-8 h-8 rounded-lg bg-cyan-500/15 text-cyan-600 dark:text-cyan-400 flex items-center justify-center font-bold text-xs shrink-0">
-                            <FaTruck size={15} />
+        </div>
+      ) : (
+        <>
+          {/* Desktop Table */}
+          <div className="ge-table-card hidden md:block">
+            <div className="overflow-x-auto">
+              <table className="ge-table">
+                <thead>
+                  <tr>
+                    <th>{t("delColPartner", "Delivery Partner & Agent")}</th>
+                    <th>{t("delColFlat", "Flat Destination")}</th>
+                    <th>{t("delColContact", "Contact")}</th>
+                    <th>{t("delColVehicleNo", "Vehicle Number")}</th>
+                    <th>{t("delColEntryTime", "Entry Time")}</th>
+                    <th>{t("delColExitTime", "Exit Time")}</th>
+                    <th>{t("delColStatus", "Status")}</th>
+                    <th>{t("delColAction", "Action")}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {deliveries.map((item) => {
+                    const isInside = !item.exit_time;
+                    const { company, agent } = splitDeliveryName(item.visitor_name);
+                    return (
+                      <tr key={item.id}>
+                        <td>
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-8 h-8 rounded-lg bg-cyan-500/15 text-cyan-600 dark:text-cyan-400 flex items-center justify-center font-bold text-xs shrink-0">
+                              <FaTruck size={15} />
+                            </div>
+                            <div>
+                              <span className="font-bold text-primary block text-sm">
+                                {agent}
+                              </span>
+                              <span className="text-[11px] font-semibold text-cyan-600 dark:text-cyan-400">
+                                {company}
+                              </span>
+                            </div>
                           </div>
-                          <div>
-                            <span className="font-bold text-primary block text-sm">
-                              {agent}
-                            </span>
-                            <span className="text-[11px] font-semibold text-cyan-600 dark:text-cyan-400">
-                              {company}
-                            </span>
-                          </div>
-                        </div>
-                      </td>
-                      <td>
-                        <span className="ge-flat-chip">{resolveVisitorFlatLabel(item, t)}</span>
-                      </td>
-                      <td>
-                        <a
-                          href={`tel:${item.mobile}`}
-                          className="inline-flex items-center gap-1 text-xs font-mono text-blue-600 dark:text-blue-400 hover:underline"
-                        >
-                          <MdPhone size={12} />
-                          {item.mobile || "—"}
-                        </a>
-                      </td>
-                      <td>
-                        <span className="text-xs font-mono text-secondary">
-                          {item.vehicle_number || "—"}
-                        </span>
-                      </td>
-                      <td>
-                        <span className="text-xs text-primary font-medium">
-                          {item.entry_time
-                            ? new Date(item.entry_time).toLocaleTimeString([], {
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              })
-                            : "—"}
-                        </span>
-                      </td>
-                      <td>
-                        <span className="text-xs text-secondary font-medium">
-                          {item.exit_time
-                            ? new Date(item.exit_time).toLocaleTimeString([], {
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              })
-                            : "—"}
-                        </span>
-                      </td>
-                      <td>
-                        {isInside ? (
-                          <span className="ge-badge ge-badge--inside">
-                            ● {t("delBadgeInside", "Inside")}
-                          </span>
-                        ) : (
-                          <span className="ge-badge ge-badge--left">
-                            ✔ {t("delBadgeExited", "Exited")}
-                          </span>
-                        )}
-                      </td>
-                      <td>
-                        {isInside ? (
-                          <button
-                            onClick={() => handleMarkExit(item.id, agent)}
-                            disabled={exitLoadingId === item.id}
-                            className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition flex items-center gap-1 shadow-sm disabled:opacity-50"
+                        </td>
+                        <td>
+                          <span className="ge-flat-chip">{resolveVisitorFlatLabel(item, t)}</span>
+                        </td>
+                        <td>
+                          <a
+                            href={`tel:${item.mobile}`}
+                            className="inline-flex items-center gap-1 text-xs font-mono text-blue-600 dark:text-blue-400 hover:underline"
                           >
-                            {exitLoadingId === item.id ? (
-                              <Spinner size={12} />
-                            ) : (
-                              <MdLogout size={13} />
-                            )}
-                            <span>{t("delMarkExit", "Mark Exit")}</span>
-                          </button>
-                        ) : (
-                          <span className="text-xs text-secondary italic">{t("delCompleted", "Completed")}</span>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                            <MdPhone size={12} />
+                            {item.mobile || "—"}
+                          </a>
+                        </td>
+                        <td>
+                          <span className="text-xs font-mono text-secondary">
+                            {item.vehicle_number || "—"}
+                          </span>
+                        </td>
+                        <td>
+                          <span className="text-xs text-primary font-medium">
+                            {item.entry_time
+                              ? new Date(item.entry_time).toLocaleTimeString([], {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })
+                              : "—"}
+                          </span>
+                        </td>
+                        <td>
+                          <span className="text-xs text-secondary font-medium">
+                            {item.exit_time
+                              ? new Date(item.exit_time).toLocaleTimeString([], {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })
+                              : "—"}
+                          </span>
+                        </td>
+                        <td>
+                          {isInside ? (
+                            <span className="ge-badge ge-badge--inside">
+                              ● {t("delBadgeInside", "Inside")}
+                            </span>
+                          ) : (
+                            <span className="ge-badge ge-badge--left">
+                              ✔ {t("delBadgeExited", "Exited")}
+                            </span>
+                          )}
+                        </td>
+                        <td>
+                          {isInside ? (
+                            <button
+                              onClick={() => handleMarkExit(item.id, agent)}
+                              disabled={exitLoadingId === item.id}
+                              className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition flex items-center gap-1 shadow-sm disabled:opacity-50"
+                            >
+                              {exitLoadingId === item.id ? (
+                                <Spinner size={12} />
+                              ) : (
+                                <MdLogout size={13} />
+                              )}
+                              <span>{t("delMarkExit", "Mark Exit")}</span>
+                            </button>
+                          ) : (
+                            <span className="text-xs text-secondary italic">{t("delCompleted", "Completed")}</span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
 
-            <div style={{ display: "flex", justifyContent: "center", padding: "12px 0 8px" }}>
-              <Pagination
-                page={page}
-                totalPages={totalPages}
-                onPageChange={handlePageChange}
-                pageSize={limit}
-                onPageSizeChange={(s) => {
-                  limitRef.current = s;
-                  setLimit(s);
-                  setPage(1);
-                  handlePageChange(1);
-                }}
-              />
+              <div style={{ display: "flex", justifyContent: "center", padding: "12px 0 8px" }}>
+                <Pagination
+                  page={page}
+                  totalPages={totalPages}
+                  onPageChange={handlePageChange}
+                  pageSize={limit}
+                  onPageSizeChange={(s) => {
+                    limitRef.current = s;
+                    setLimit(s);
+                    setPage(1);
+                    handlePageChange(1);
+                  }}
+                />
+              </div>
             </div>
           </div>
-        )}
-      </div>
 
-      {/* ── MOBILE CARDS ── */}
-      <div className="ge-mobile-list">
-        {initialLoad ? (
-          <div className="p-6 text-center text-secondary">
-            <Spinner size={20} />
-          </div>
-        ) : deliveries.length === 0 ? (
-          <div className="ge-empty">
-            <span className="ge-empty-icon">📦</span>
-            <span>{t("delEmpty", "No delivery records found")}</span>
-          </div>
-        ) : (
-          <>
+          {/* Mobile Cards */}
+          <div className="ge-mobile-list block md:hidden space-y-3">
             {deliveries.map((item) => {
               const { company, agent } = splitDeliveryName(item.visitor_name);
               return (
@@ -469,9 +465,9 @@ tabs={filterTabs.map(({ key, label, count }) => ({
                 }}
               />
             </div>
-          </>
-        )}
-      </div>
+          </div>
+        </>
+      )}
 
       {/* ── 4-STEP WIZARD ENTRY MODAL ── */}
       <StepVisitorEntryModal

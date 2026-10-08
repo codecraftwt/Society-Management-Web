@@ -20,6 +20,7 @@ import { isCommitteeMember, hasPermission } from "../../utils/permissions";
 import { getTitleError, getPositiveAmountError } from "../../utils/validators";
 import useUnsavedDirty from "../../hooks/useUnsavedDirty";
 import ConfirmDiscard from "../../components/common/ConfirmDiscard";
+import StatCard from "../../components/common/StatCard";
 import "../Admin/Admin.css";
 
 /* ── helpers ── */
@@ -1130,8 +1131,50 @@ function BillsTab({ billingMonth, setBillingMonth, onView, configs = [] }) {
     return `${t(MONTH_KEYS[fromMonth])} ${fromYear} – ${t(MONTH_KEYS[toMonth])} ${toYear}`;
   }, [customType, startDate, endDate, fromMonth, fromYear, toMonth, toYear, t]);
 
+  // Dynamic stat counts
+  const totalBills = bills.length;
+  const pendingBills = useMemo(() => bills.filter((b) => b.status === "PENDING").length, [bills]);
+  const paidBills = useMemo(() => bills.filter((b) => b.status === "PAID").length, [bills]);
+  const awaitingBills = useMemo(() => bills.filter((b) => b.status === "PENDING_VERIFICATION").length, [bills]);
+
   return (
     <div className="flex flex-col gap-4">
+      {/* Dynamic StatCards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <StatCard
+          icon={MdReceiptLong}
+          value={totalBills}
+          label={t("mntStatusAll")}
+          tone="brand"
+          active={status === ""}
+          onClick={() => setStatus("")}
+        />
+        <StatCard
+          icon={MdSchedule}
+          value={pendingBills}
+          label={t("mntStatusPending")}
+          tone="warning"
+          active={status === "PENDING"}
+          onClick={() => setStatus("PENDING")}
+        />
+        <StatCard
+          icon={MdCheckCircle}
+          value={paidBills}
+          label={t("mntStatusPaid")}
+          tone="success"
+          active={status === "PAID"}
+          onClick={() => setStatus("PAID")}
+        />
+        <StatCard
+          icon={MdOutlineErrorOutline}
+          value={awaitingBills}
+          label={t("mntStatusAwaiting")}
+          tone="info"
+          active={status === "PENDING_VERIFICATION"}
+          onClick={() => setStatus("PENDING_VERIFICATION")}
+        />
+      </div>
+
       {/* Modern Compact Filter Toolbar */}
       <div
         className="p-3 sm:p-4 rounded-2xl border flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3.5"
@@ -1171,8 +1214,8 @@ function BillsTab({ billingMonth, setBillingMonth, onView, configs = [] }) {
               value={monthIdx}
               onChange={onChangeMonth}
               disabled={mode === "custom"}
-              className={`bg-transparent text-xs font-semibold outline-none cursor-pointer ${mode === "custom" ? "opacity-40" : ""}`}
-              style={{ color: "var(--text-primary)" }}
+              className={`bg-transparent text-xs font-semibold outline-none cursor-pointer border-0 shadow-none focus:ring-0 ${mode === "custom" ? "opacity-40" : ""}`}
+              style={{ color: "var(--text-primary)", border: "none", outline: "none", boxShadow: "none" }}
             >
               {monthOptions.map((m) => (
                 <option key={m.value} value={m.value} style={{ background: "var(--card-bg)", color: "var(--text-primary)" }}>
@@ -1185,8 +1228,8 @@ function BillsTab({ billingMonth, setBillingMonth, onView, configs = [] }) {
               value={year}
               onChange={onChangeYear}
               disabled={mode === "custom"}
-              className={`bg-transparent text-xs font-semibold outline-none cursor-pointer ${mode === "custom" ? "opacity-40" : ""}`}
-              style={{ color: "var(--text-primary)" }}
+              className={`bg-transparent text-xs font-semibold outline-none cursor-pointer border-0 shadow-none focus:ring-0 ${mode === "custom" ? "opacity-40" : ""}`}
+              style={{ color: "var(--text-primary)", border: "none", outline: "none", boxShadow: "none" }}
             >
               {yearOptions.map((y) => (
                 <option key={y.value} value={y.value} style={{ background: "var(--card-bg)", color: "var(--text-primary)" }}>

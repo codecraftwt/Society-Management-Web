@@ -10,6 +10,8 @@ import {
   MdChevronLeft, MdChevronRight, MdPeople,
   MdPerson, MdLocalShipping, MdLocalTaxi, MdBuild,
   MdClose,
+  MdDirectionsWalk,
+  MdCheckCircle,
 } from "react-icons/md";
 import GlobalBadge from "../../components/common/GlobalBadge";
 
@@ -232,8 +234,8 @@ export default function ResidentVisitors() {
   return (
     <div className="ge-root animate-fadeIn">
 
-      <div className="ge-er">
-        <div className="ge-er-left">
+      <div className="flex items-center gap-3 mb-4 sm:mb-5">
+        <div className="flex items-center gap-3">
           <div className="ad-page-icon">
             <MdPeople size={22} />
           </div>
@@ -244,18 +246,21 @@ export default function ResidentVisitors() {
         </div>
       </div>
 
-      <div className="ge-stats">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-4">
         <StatCard
+          icon={MdPeople}
           tone="brand"
           value={counts.ALL}
           label={t("visStatTotal")}
         />
         <StatCard
+          icon={MdDirectionsWalk}
           tone="warning"
           value={counts.INSIDE}
           label={t("visTabInside")}
         />
         <StatCard
+          icon={MdCheckCircle}
           tone="success"
           value={counts.LEFT}
           label={t("visTabLeft")}
@@ -263,7 +268,7 @@ export default function ResidentVisitors() {
       </div>
 
       {/* ── Toolbar: Status Tabs & Search ── */}
-      <div className="ge-toolbar">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
         <div className="overflow-x-auto max-w-full pb-1 sm:pb-0">
           <SlidingTabs
             className="ge-filter-tabs"
@@ -277,7 +282,7 @@ export default function ResidentVisitors() {
           />
         </div>
 
-        <div className="ml-auto">
+        <div className="flex items-center justify-end gap-2 sm:ml-auto shrink-0">
           <ExpandableSearch
             placeholder={t("visSearch") || "Search by name, vehicle, purpose..."}
             value={search}

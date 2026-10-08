@@ -1299,10 +1299,10 @@ export default function MyHouseHold() {
           </div>
         )}
 
-        <div className="ge-stats">
-          <StatCard tone="brand" value={familyMembers.length} label={t("hhTabFamily")} />
-          <StatCard tone="warning" value={helpMembers.length} label={t("hhTabHelp")} />
-          <StatCard tone="success" value={adminCount} label={t("hhAdmins")} />
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-4">
+          <StatCard icon={MdFamilyRestroom} tone="brand" value={familyMembers.length} label={t("hhTabFamily")} />
+          <StatCard icon={MdWork} tone="warning" value={helpMembers.length} label={t("hhTabHelp")} />
+          <StatCard icon={MdAdminPanelSettings} tone="success" value={adminCount} label={t("hhAdmins")} />
         </div>
 
         <div className="ge-toolbar">
@@ -1452,54 +1452,99 @@ export default function MyHouseHold() {
 
 /* ── MEMBER ROW ── */
 function MemberRow({ member, isFamily, onDelete, onToggleAdmin, onEdit, onAttendance, onDailyPass, t }) {
-  const initial = member.name?.charAt(0).toUpperCase();
+  const initial = member.name?.charAt(0).toUpperCase() || "M";
   return (
-    <div className="ra-booking-row hh-member-row">
-      <div className="ra-booking-left">
-        <div className={`hh-avatar ${isFamily ? "hh-avatar--family" : "hh-avatar--help"}`}>
+    <div className="p-3.5 sm:p-4 rounded-xl border border-glass-border bg-card-inner-bg/60 hover:bg-card-inner-bg hover:border-accent/40 transition-all flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3.5 shadow-sm group">
+      <div className="flex items-center gap-3.5 min-w-0">
+        <div
+          className={`w-11 h-11 rounded-xl flex items-center justify-center font-extrabold text-sm shrink-0 border ${
+            isFamily
+              ? "bg-blue-500/10 text-blue-400 border-blue-500/20"
+              : "bg-amber-500/10 text-amber-400 border-amber-500/20"
+          }`}
+        >
           {initial}
         </div>
-        <div>
-          <div className="hh-name-row">
-            <span className="ra-booking-name" style={{ margin: 0 }}>{member.name}</span>
+        <div className="min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="font-bold text-sm text-primary truncate group-hover:text-accent transition-colors">
+              {member.name}
+            </span>
             {isFamily && member.isAdmin && (
-              <span className="hh-admin-badge">
-                <MdAdminPanelSettings size={9} /> {t("hhAdminBadge")}
+              <span className="inline-flex items-center gap-1 text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+                <MdAdminPanelSettings size={12} /> {t("hhAdminBadge") || "Flat Admin"}
               </span>
             )}
+            <span
+              className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                isFamily
+                  ? "bg-blue-500/10 text-blue-400 border-blue-500/20"
+                  : "bg-amber-500/10 text-amber-400 border-amber-500/20"
+              }`}
+            >
+              {isFamily ? member.relation : member.work}
+            </span>
           </div>
-          <div className="hh-meta-row">
-            <span className="ra-booking-date">{isFamily ? member.relation : member.work}</span>
+
+          <div className="flex items-center gap-3 mt-1 text-xs text-secondary flex-wrap">
             {member.phone && (
-              <span className="ra-booking-date hh-meta-item">
-                <MdPhone size={10} className="hh-meta-icon" /> {member.phone}
+              <span className="inline-flex items-center gap-1">
+                <MdPhone size={12} className="text-secondary/70" /> {member.phone}
               </span>
             )}
             {member.email && (
-              <span className="ra-booking-date hh-meta-item">
-                <MdEmail size={10} className="hh-meta-icon" /> {member.email}
+              <span className="inline-flex items-center gap-1">
+                <MdEmail size={12} className="text-secondary/70" /> {member.email}
               </span>
             )}
           </div>
         </div>
       </div>
-      <div className="ra-booking-right" style={{ gap: "6px" }}>
-        {isFamily && <AdminToggle checked={!!member.isAdmin} onChange={onToggleAdmin} />}
+
+      <div className="flex items-center gap-1.5 self-end sm:self-center shrink-0">
+        {isFamily && (
+          <div className="flex items-center gap-1.5 mr-2">
+            <span className="text-[11px] text-secondary font-medium hidden md:inline">
+              {member.isAdmin ? "Admin" : "Member"}
+            </span>
+            <AdminToggle checked={!!member.isAdmin} onChange={onToggleAdmin} />
+          </div>
+        )}
         {!isFamily && member.phone && (
-          <button type="button" onClick={onDailyPass} className="hh-icon-btn hh-icon-btn--daily" title={t("hhPassBtn", "Daily Gate Pass")}>
-            <MdRepeat size={14} />
+          <button
+            type="button"
+            onClick={onDailyPass}
+            className="p-2 rounded-lg bg-card-inner-bg hover:bg-amber-500/10 hover:text-amber-400 text-secondary border border-glass-border transition-all cursor-pointer"
+            title={t("hhPassBtn", "Daily Gate Pass")}
+          >
+            <MdRepeat size={16} />
           </button>
         )}
         {!isFamily && member.phone && (
-          <button type="button" onClick={onAttendance} className="hh-icon-btn hh-icon-btn--att" title={t("hhViewAttendance", "View attendance")}>
-            <MdCalendarToday size={14} />
+          <button
+            type="button"
+            onClick={onAttendance}
+            className="p-2 rounded-lg bg-card-inner-bg hover:bg-cyan-500/10 hover:text-cyan-400 text-secondary border border-glass-border transition-all cursor-pointer"
+            title={t("hhViewAttendance", "View attendance")}
+          >
+            <MdCalendarToday size={16} />
           </button>
         )}
-        <button type="button" onClick={onEdit} className="hh-icon-btn hh-icon-btn--edit" title={t("hhEditMember")}>
-          <MdEdit size={14} />
+        <button
+          type="button"
+          onClick={onEdit}
+          className="p-2 rounded-lg bg-card-inner-bg hover:bg-blue-500/10 hover:text-blue-400 text-secondary border border-glass-border transition-all cursor-pointer"
+          title={t("hhEditMember") || "Edit Member"}
+        >
+          <MdEdit size={16} />
         </button>
-        <button type="button" onClick={onDelete} className="hh-icon-btn hh-icon-btn--delete" title={t("hhRemoveMember")}>
-          <MdDelete size={14} />
+        <button
+          type="button"
+          onClick={onDelete}
+          className="p-2 rounded-lg bg-card-inner-bg hover:bg-rose-500/10 hover:text-rose-400 text-secondary border border-glass-border transition-all cursor-pointer"
+          title={t("hhRemoveMember") || "Remove Member"}
+        >
+          <MdDelete size={16} />
         </button>
       </div>
     </div>

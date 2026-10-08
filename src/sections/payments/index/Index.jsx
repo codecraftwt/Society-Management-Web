@@ -350,7 +350,6 @@ export default function Index({
           {kpis.map((kpi, idx) => (
             <StatCard
               key={kpi.title}
-              variant="sheen"
               layout="inline"
               icon={kpi.icon}
               value={kpi.val}

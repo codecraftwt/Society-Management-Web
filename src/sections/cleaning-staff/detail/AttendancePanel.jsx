@@ -1,11 +1,22 @@
 import { useState } from "react";
 import { toast } from "react-toastify";
-import { MdEditCalendar, MdHistory, MdInfoOutline, MdPerson } from "react-icons/md";
+import {
+  MdEditCalendar,
+  MdHistory,
+  MdInfoOutline,
+  MdPerson,
+  MdAccessTime,
+  MdLogin,
+  MdLogout,
+  MdPhone,
+  MdDone,
+} from "react-icons/md";
 
 import { useLang } from "../../../context/LanguageContext";
 import { getErrorMessage } from "../../../utils/validators";
 import GlobalTable from "../../../components/common/GlobalTable";
 import GlobalBadge from "../../../components/common/GlobalBadge";
+import GlobalButton from "../../../components/common/GlobalButton";
 import GlobalModal from "../../../components/common/GlobalModal";
 import { updateAttendance } from "../cleaningStaffService";
 import {
@@ -16,6 +27,7 @@ import {
   formatWorkedMinutes,
   istToDateTimeLocal,
   dateTimeLocalToIst,
+  formatPhone,
 } from "../format";
 
 const STATE_BADGE = {
@@ -46,6 +58,7 @@ export default function AttendancePanel({
   staffNameResolver,
   emptyMessage,
   onUpdated,
+  onResetFilter,
 }) {
   const { t } = useLang();
 
@@ -112,27 +125,52 @@ export default function AttendancePanel({
     return row.cleaningStaff?.name || row.cleaning_staff?.name || "—";
   };
 
+  const resolveStaffPhone = (row) => {
+    return row.cleaningStaff?.phone || row.cleaning_staff?.phone || null;
+  };
+
   const columns = [
     ...(showStaffColumn
       ? [
           {
             key: "staff",
             header: t("csStaff", "Staff"),
-            render: (row) => (
-              <span
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 6,
-                  fontSize: 13,
-                  fontWeight: 600,
-                  color: "var(--text-primary)",
-                }}
-              >
-                <MdPerson size={14} style={{ color: "var(--text-secondary)", flexShrink: 0 }} />
-                {resolveStaffName(row)}
-              </span>
-            ),
+            render: (row) => {
+              const name = resolveStaffName(row);
+              const phone = resolveStaffPhone(row);
+              return (
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div
+                    style={{
+                      width: 32,
+                      height: 32,
+                      borderRadius: "50%",
+                      background: "rgba(59, 130, 246, 0.12)",
+                      border: "1px solid rgba(59, 130, 246, 0.25)",
+                      color: "var(--accent)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontWeight: 700,
+                      fontSize: 12,
+                      flexShrink: 0,
+                    }}
+                  >
+                    {name?.charAt(0)?.toUpperCase() || "S"}
+                  </div>
+                  <div className="flex flex-col min-w-0">
+                    <span className="font-bold text-xs text-primary truncate">
+                      {name}
+                    </span>
+                    {phone && (
+                      <span className="text-[10px] text-secondary font-mono">
+                        {formatPhone(phone)}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              );
+            },
           },
         ]
       : []),
@@ -140,7 +178,7 @@ export default function AttendancePanel({
       key: "attendance_date",
       header: t("csDate", "Date"),
       render: (row) => (
-        <span style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)" }}>
+        <span className="font-semibold text-xs text-primary px-2 py-1 rounded-md bg-card-inner-bg border border-glass-border inline-block whitespace-nowrap">
           {formatDateOnly(row.attendance_date)}
         </span>
       ),
@@ -148,26 +186,37 @@ export default function AttendancePanel({
     {
       key: "check_in",
       header: t("csCheckIn", "IN"),
-      render: (row) => (
-        <span style={{ fontSize: 13, color: "var(--text-secondary)" }}>
-          {row.check_in ? formatTimeIST(row.check_in) : "—"}
-        </span>
-      ),
+      render: (row) =>
+        row.check_in ? (
+          <span className="inline-flex items-center gap-1.5 font-mono text-xs font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-md whitespace-nowrap">
+            <MdLogin size={12} />
+            {formatTimeIST(row.check_in)}
+          </span>
+        ) : (
+          <span className="text-secondary text-xs">—</span>
+        ),
     },
     {
       key: "check_out",
       header: t("csCheckOut", "OUT"),
-      render: (row) => (
-        <span style={{ fontSize: 13, color: "var(--text-secondary)" }}>
-          {row.check_out ? formatTimeIST(row.check_out) : "—"}
-        </span>
-      ),
+      render: (row) =>
+        row.check_out ? (
+          <span className="inline-flex items-center gap-1.5 font-mono text-xs font-semibold text-slate-300 bg-slate-500/10 border border-slate-500/20 px-2 py-0.5 rounded-md whitespace-nowrap">
+            <MdLogout size={12} />
+            {formatTimeIST(row.check_out)}
+          </span>
+        ) : (
+          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-md whitespace-nowrap animate-pulse">
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+            {t("csOnDuty", "On Duty")}
+          </span>
+        ),
     },
     {
       key: "worked_minutes",
       header: t("csWorkedHours", "Worked"),
       render: (row) => (
-        <span style={{ fontSize: 13, fontWeight: 700, color: "var(--text-primary)" }}>
+        <span className="font-bold text-xs text-primary font-mono whitespace-nowrap">
           {formatWorkedMinutes(row.worked_minutes)}
         </span>
       ),
@@ -177,7 +226,11 @@ export default function AttendancePanel({
       header: t("csStatus", "Status"),
       render: (row) => {
         const cfg = STATE_BADGE[deriveAttendanceState(row)];
-        return <GlobalBadge variant={cfg.variant} size="sm" dot>{t(cfg.labelKey, cfg.fallback)}</GlobalBadge>;
+        return (
+          <GlobalBadge variant={cfg.variant} size="sm" dot>
+            {t(cfg.labelKey, cfg.fallback)}
+          </GlobalBadge>
+        );
       },
     },
     {
@@ -185,20 +238,13 @@ export default function AttendancePanel({
       header: t("csManual", "Manual"),
       render: (row) =>
         row.is_manual ? (
-          <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+          <div className="flex flex-col gap-0.5">
             <GlobalBadge variant="info" size="sm">
               {t("csCorrected", "Corrected")}
             </GlobalBadge>
             {row.notes && (
               <span
-                style={{
-                  fontSize: 11,
-                  color: "var(--text-tertiary, var(--text-secondary))",
-                  maxWidth: 170,
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  whiteSpace: "nowrap",
-                }}
+                className="text-[10px] text-secondary max-w-[150px] truncate"
                 title={row.notes}
               >
                 {row.notes}
@@ -206,7 +252,7 @@ export default function AttendancePanel({
             )}
           </div>
         ) : (
-          <span style={{ color: "var(--text-tertiary, var(--text-secondary))", fontSize: 12 }}>—</span>
+          <span className="text-secondary text-xs">—</span>
         ),
     },
     {
@@ -214,30 +260,56 @@ export default function AttendancePanel({
       header: "",
       align: "right",
       render: (row) => (
-        <button
-          type="button"
-          className="cs-passcode__copy"
+        <GlobalButton
+          variant="secondary"
+          size="xs"
+          icon={MdEditCalendar}
           onClick={() => openCorrection(row)}
-          aria-label={t("csCorrect", "Correct attendance")}
           title={t("csCorrect", "Correct attendance")}
-          style={{ padding: 6 }}
         >
-          <MdEditCalendar size={15} />
-        </button>
+          {t("csEdit", "Edit")}
+        </GlobalButton>
       ),
     },
   ];
 
   return (
     <div>
-      <div style={{ marginBottom: 10 }}>
-        <h4 className="cs-section-title" style={{ margin: 0 }}>
-          <MdHistory size={14} />
-          {t("csAttendance", "Attendance")}
-        </h4>
-        <p className="cs-hint" style={{ marginTop: 4 }}>
-          {t("csAttendanceHint", "Times are shown in IST (Asia/Kolkata).")}
-        </p>
+      {/* Attendance Header info banner */}
+      <div className="flex items-center justify-between gap-3 mb-3 flex-wrap">
+        <div className="flex items-center gap-2.5">
+          <div
+            style={{
+              width: 32,
+              height: 32,
+              borderRadius: 10,
+              background: "rgba(59, 130, 246, 0.12)",
+              border: "1px solid rgba(59, 130, 246, 0.25)",
+              color: "var(--accent)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0,
+            }}
+          >
+            <MdHistory size={16} />
+          </div>
+          <div>
+            <h4 className="text-sm font-bold text-primary m-0">
+              {t("csAttendance", "Attendance Records")}
+            </h4>
+            <p className="text-xs text-secondary m-0">
+              {t("csAttendanceHint", "Times are shown in IST (Asia/Kolkata).")}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-card-inner-bg border border-glass-border text-secondary">
+            <MdAccessTime size={13} className="text-accent" />
+            IST (UTC+05:30)
+          </span>
+        </div>
       </div>
 
       <GlobalTable
@@ -247,14 +319,26 @@ export default function AttendancePanel({
         rowKey="id"
         compact
         emptyIcon={MdHistory}
-        emptyMessage={emptyMessage || t("csNoAttendance", "No attendance recorded yet")}
+        emptyMessage={emptyMessage || t("csNoAttendance", "No attendance for this period")}
         emptySubtext={t(
           "csNoAttendanceSub",
           "Attendance rows appear here after a guard scans the staff pass at the gate."
         )}
+        emptyAction={
+          onResetFilter ? (
+            <GlobalButton
+              variant="secondary"
+              size="sm"
+              icon={MdAccessTime}
+              onClick={onResetFilter}
+            >
+              {t("csViewToday", "View Today's Attendance")}
+            </GlobalButton>
+          ) : null
+        }
       />
 
-      {/* ── Manual correction ──────────────────────────────────────────── */}
+      {/* ── Manual correction modal ──────────────────────────────────────────── */}
       <GlobalModal
         isOpen={Boolean(target)}
         onClose={() => setTarget(null)}
@@ -272,13 +356,13 @@ export default function AttendancePanel({
         onSubmit={submitCorrection}
         submitLoading={saving}
         submitDisabled={saving}
-        submitIcon={MdEditCalendar}
+        submitIcon={MdDone}
         submitVariant="primary"
       >
-        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          <div className="cs-notice">
-            <MdInfoOutline size={15} style={{ flexShrink: 0, marginTop: 1 }} />
-            <span>
+        <div className="flex flex-col gap-4">
+          <div className="p-3 rounded-xl bg-accent/10 border border-accent/20 text-xs text-primary flex items-start gap-2.5">
+            <MdInfoOutline size={17} className="text-accent shrink-0 mt-0.5" />
+            <span className="leading-relaxed text-secondary">
               {t(
                 "csCorrectionNote",
                 "Saving marks this record as manually corrected and records who changed it. Worked hours are recalculated automatically."
@@ -286,24 +370,26 @@ export default function AttendancePanel({
             </span>
           </div>
 
-          <div className="cs-grid-2">
-            <div className="cs-field">
-              <label className="sa-label" style={{ fontSize: 10.5 }}>
-                {t("csCheckIn", "IN")}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-semibold text-secondary">
+                {t("csCheckIn", "Check IN")}
               </label>
               <input
-                className="input"
+                className="input w-full"
+                style={{ height: 40, borderRadius: 10, padding: "0 12px", fontSize: 13 }}
                 type="datetime-local"
                 value={form.check_in}
                 onChange={(e) => setForm((p) => ({ ...p, check_in: e.target.value }))}
               />
             </div>
-            <div className="cs-field">
-              <label className="sa-label" style={{ fontSize: 10.5 }}>
-                {t("csCheckOut", "OUT")}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-semibold text-secondary">
+                {t("csCheckOut", "Check OUT")}
               </label>
               <input
-                className="input"
+                className="input w-full"
+                style={{ height: 40, borderRadius: 10, padding: "0 12px", fontSize: 13 }}
                 type="datetime-local"
                 value={form.check_out}
                 onChange={(e) => setForm((p) => ({ ...p, check_out: e.target.value }))}
@@ -311,20 +397,26 @@ export default function AttendancePanel({
             </div>
           </div>
 
-          <div className="cs-field">
-            <label className="sa-label" style={{ fontSize: 10.5 }}>
-              {t("csCorrectionReason", "Correction note")} *
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-semibold text-secondary">
+              {t("csCorrectionReason", "Correction note")} <span className="text-red-400">*</span>
             </label>
             <textarea
-              className="input"
+              className="input w-full"
+              style={{ borderRadius: 10, padding: "10px 12px", fontSize: 13 }}
               rows={3}
               value={form.notes}
               onChange={(e) => setForm((p) => ({ ...p, notes: e.target.value }))}
               placeholder={t("csCorrectionReasonPlaceholder", "Why is this being corrected?")}
+              required
             />
           </div>
 
-          {error && <p className="cs-error">{error}</p>}
+          {error && (
+            <div className="flex items-center gap-2 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-xs font-semibold text-red-400">
+              <span>{error}</span>
+            </div>
+          )}
         </div>
       </GlobalModal>
     </div>

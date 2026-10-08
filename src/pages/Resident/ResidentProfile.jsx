@@ -29,11 +29,14 @@ import {
   MdSwapHoriz,
   MdVerified,
   MdShield,
+  MdPeople,
+  MdBuild,
 } from "react-icons/md";
 import { toast } from "react-toastify";
 import SOSModal from "../../components/emergency/SOSModal";
 import Modal from "../../components/Modal";
 import UserAvatar from "../../components/common/UserAvatar";
+import StatCard from "../../components/common/StatCard";
 import { getTitleError, getMobileError, getVehicleNumberError } from "../../utils/validators";
 
 function SkeletonBlock({ width = "100%", height = 16, radius = 8, style = {} }) {
@@ -235,6 +238,16 @@ export default function ResidentProfile() {
   const totalPendingAmount = useMemo(() => {
     return pendingBills.reduce((acc, b) => acc + Number(b.amount || 0), 0);
   }, [pendingBills]);
+
+  // Family members count
+  const familyMembersCount = useMemo(() => {
+    return Math.max(0, household.length - dailyHelpList.length);
+  }, [household, dailyHelpList]);
+
+  // Inside visitors count
+  const insideVisitorsCount = useMemo(() => {
+    return visitors.filter((v) => v.status === "INSIDE").length;
+  }, [visitors]);
 
   // Handle Quick Pre-Approval Submit
   const handleCreatePreApproval = async (e) => {
@@ -516,6 +529,63 @@ export default function ResidentProfile() {
         )}
       </div>
 
+      {/* ── 2.5 STATISTICAL OVERVIEW CARDS (DYNAMICALLY THEMED) ── */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <StatCard
+          label={t("rpPendingDuesLabel") || "Pending Dues"}
+          value={totalPendingAmount > 0 ? `₹${totalPendingAmount.toLocaleString("en-IN")}` : "₹0"}
+          description={
+            pendingBills.length > 0
+              ? t("rpUnpaidBillsDesc", { count: pendingBills.length }) || `${pendingBills.length} unpaid bill(s)`
+              : t("rpNoPendingDues") || "All dues cleared"
+          }
+          icon={MdAccountBalanceWallet}
+          tone={totalPendingAmount > 0 ? "warning" : "success"}
+          interactive
+          onClick={() => navigate(`${base}/bills`)}
+        />
+        <StatCard
+          label={t("rpVisitorsLabel") || "Visitors & Passes"}
+          value={visitors.length}
+          description={
+            insideVisitorsCount > 0
+              ? t("rpInsideVisitorsDesc", { count: insideVisitorsCount }) || `${insideVisitorsCount} inside campus`
+              : t("rpLiveVisitorLogs") || "Gate activity logs"
+          }
+          icon={MdPeople}
+          tone="info"
+          interactive
+          onClick={() => navigate(`${base}/visitors`)}
+        />
+        <StatCard
+          label={t("rpHouseholdStaffLabel") || "Household & Staff"}
+          value={household.length}
+          description={
+            t("rpHouseholdStaffDesc", {
+              staff: dailyHelpList.length,
+              family: familyMembersCount,
+            }) || `${dailyHelpList.length} staff • ${familyMembersCount} family`
+          }
+          icon={MdHome}
+          tone="brand"
+          interactive
+          onClick={() => navigate(`${base}/my-household`)}
+        />
+        <StatCard
+          label={t("rpNoticesLabel") || "Notice Board"}
+          value={latestNotices.length}
+          description={
+            latestNotices.length > 0
+              ? t("rpActiveCircularsDesc", { count: latestNotices.length }) || `${latestNotices.length} active notices`
+              : t("rpUpToDateDesc") || "Up to date"
+          }
+          icon={MdOutlineCampaign}
+          tone="neutral"
+          interactive
+          onClick={() => navigate(`${base}/notices`)}
+        />
+      </div>
+
       {/* ── 3. 4 MODERN & ATTRACTIVE CORE ACTION CARDS (Notices, Bills, Gate pass, Collection) ── */}
       <div className="space-y-3.5">
         <div className="flex items-center justify-between">
@@ -662,21 +732,53 @@ export default function ResidentProfile() {
         )}
       </div>
 
-      {/* ── 5. VISITOR ACCESS & INSTANT PRE-APPROVAL LAUNCHER ── */}
-      <div className="space-y-3.5">
+      {/* ── 5. VISITOR ACCESS & INSTANT PRE-APPROVAL LAUNCHER (COLORFUL DASHBOARD DESIGN) ── */}
+      <div className="space-y-4 sm:space-y-5">
+        {/* Section Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-2.5">
-            <div className="w-2 h-5 bg-cyan-400 rounded-full shadow-sm shadow-cyan-400/50" />
-            <h2 className="text-base font-black text-primary tracking-tight">
-              {t("rpVisitorAccessTitle")}
-            </h2>
+          <div className="flex items-start sm:items-center gap-3">
+            <div className="w-1.5 h-6 sm:h-7 bg-gradient-to-b from-cyan-400 via-blue-500 to-purple-500 rounded-full shadow-sm shadow-cyan-400/50 shrink-0 mt-0.5 sm:mt-0" aria-hidden="true" />
+            <div>
+              <h2 className="text-lg sm:text-xl font-black text-primary tracking-tight leading-tight m-0">
+                {t("rpVisitorAccessTitle") || "Visitor Access & Pre-Approvals"}
+              </h2>
+              <p className="text-xs sm:text-sm text-secondary font-normal mt-0.5 m-0">
+                {t("rpVisitorAccessSubtitle") || "Instant digital gate passes, cab approvals & live arrival logs"}
+              </p>
+            </div>
           </div>
 
-          {/* Quick Pre-Approval Buttons */}
-          <div className="flex items-center gap-2 flex-wrap">
-            <button
-              type="button"
-              onClick={() =>
+          <button
+            type="button"
+            onClick={() => navigate(`${base}/visitors`)}
+            className="text-xs sm:text-sm font-bold text-accent hover:underline flex items-center gap-1.5 self-start sm:self-auto cursor-pointer group focus-visible:ring-2 focus-visible:ring-accent focus:outline-hidden rounded-lg px-1 py-0.5 transition-colors"
+          >
+            <span>{t("rpVisitorLogs") || "Visitor Logs"}</span>
+            <MdArrowForward size={15} className="group-hover:translate-x-1 transition-transform" />
+          </button>
+        </div>
+
+        {/* 3 Colorful Action Hero Cards for Instant Pre-Approval */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5">
+          {/* 1. Guest Pre-Approval */}
+          <div
+            onClick={() =>
+              setPreApprovalModal({
+                isOpen: true,
+                purpose: "GUEST",
+                visitorName: "",
+                visitorPhone: "",
+                vehicleNumber: "",
+                expectedDate: new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" }),
+                notes: "",
+                submitting: false,
+              })
+            }
+            tabIndex={0}
+            role="button"
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
                 setPreApprovalModal({
                   isOpen: true,
                   purpose: "GUEST",
@@ -686,17 +788,53 @@ export default function ResidentProfile() {
                   expectedDate: new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" }),
                   notes: "",
                   submitting: false,
-                })
+                });
               }
-              className="py-2 px-3.5 rounded-xl text-xs font-bold text-cyan-400 bg-cyan-500/10 border border-cyan-500/30 hover:bg-cyan-500/20 transition active:scale-95 cursor-pointer flex items-center gap-1.5 shadow-sm"
-            >
-              <MdPerson size={15} />
-              <span>{t("rpPreApproveGuest")}</span>
-            </button>
+            }}
+            style={{ "--gd-c": "#06b6d4", "--gd-badge-c": "#06b6d4" }}
+            className="gd-action gd-action--guest group relative overflow-hidden rounded-2xl p-5 sm:p-6 cursor-pointer flex flex-col justify-between min-h-[145px] transition-all duration-200 focus-visible:ring-2 focus-visible:ring-cyan-400 focus:outline-hidden"
+          >
+            <span className="gd-action__blob" aria-hidden />
+            <div className="flex items-start justify-between gap-2">
+              <div className="gd-action__icon">
+                <MdPerson size={24} />
+              </div>
+              <span className="gd-action__badge absolute top-3.5 right-3.5 z-[2] px-2.5 py-0.5 rounded-full text-[9.5px] font-extrabold uppercase tracking-wider shadow-sm">
+                INSTANT PASS
+              </span>
+            </div>
+            <div className="relative z-[1] mt-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-[15px] sm:text-base font-black text-primary group-hover:text-cyan-400 transition-colors leading-tight m-0">
+                  + {t("rpPreApproveGuest") || "Pre-Approve Guest"}
+                </h3>
+                <MdChevronRight className="gd-action__arrow shrink-0" size={18} />
+              </div>
+              <p className="text-xs sm:text-[13px] text-secondary mt-1 leading-snug m-0">
+                1-Tap Invite · Generate OTP & QR pass
+              </p>
+            </div>
+          </div>
 
-            <button
-              type="button"
-              onClick={() =>
+          {/* 2. Cab Entry Pre-Approval */}
+          <div
+            onClick={() =>
+              setPreApprovalModal({
+                isOpen: true,
+                purpose: "CAB",
+                visitorName: "",
+                visitorPhone: "",
+                vehicleNumber: "",
+                expectedDate: new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" }),
+                notes: "",
+                submitting: false,
+              })
+            }
+            tabIndex={0}
+            role="button"
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
                 setPreApprovalModal({
                   isOpen: true,
                   purpose: "CAB",
@@ -706,17 +844,53 @@ export default function ResidentProfile() {
                   expectedDate: new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" }),
                   notes: "",
                   submitting: false,
-                })
+                });
               }
-              className="py-2 px-3.5 rounded-xl text-xs font-bold text-amber-400 bg-amber-500/10 border border-amber-500/30 hover:bg-amber-500/20 transition active:scale-95 cursor-pointer flex items-center gap-1.5 shadow-sm"
-            >
-              <MdLocalTaxi size={15} />
-              <span>{t("rpAddCab")}</span>
-            </button>
+            }}
+            style={{ "--gd-c": "#10b981", "--gd-badge-c": "#10b981" }}
+            className="gd-action gd-action--cab group relative overflow-hidden rounded-2xl p-5 sm:p-6 cursor-pointer flex flex-col justify-between min-h-[145px] transition-all duration-200 focus-visible:ring-2 focus-visible:ring-emerald-400 focus:outline-hidden"
+          >
+            <span className="gd-action__blob" aria-hidden />
+            <div className="flex items-start justify-between gap-2">
+              <div className="gd-action__icon">
+                <MdLocalTaxi size={24} />
+              </div>
+              <span className="gd-action__badge absolute top-3.5 right-3.5 z-[2] px-2.5 py-0.5 rounded-full text-[9.5px] font-extrabold uppercase tracking-wider shadow-sm">
+                AUTO GATE IN
+              </span>
+            </div>
+            <div className="relative z-[1] mt-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-[15px] sm:text-base font-black text-primary group-hover:text-emerald-400 transition-colors leading-tight m-0">
+                  + {t("rpAddCab") || "Cab"}
+                </h3>
+                <MdChevronRight className="gd-action__arrow shrink-0" size={18} />
+              </div>
+              <p className="text-xs sm:text-[13px] text-secondary mt-1 leading-snug m-0">
+                Ola, Uber, Rapido automatic clearance
+              </p>
+            </div>
+          </div>
 
-            <button
-              type="button"
-              onClick={() =>
+          {/* 3. Delivery Pre-Approval */}
+          <div
+            onClick={() =>
+              setPreApprovalModal({
+                isOpen: true,
+                purpose: "DELIVERY",
+                visitorName: "",
+                visitorPhone: "",
+                vehicleNumber: "",
+                expectedDate: new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" }),
+                notes: "",
+                submitting: false,
+              })
+            }
+            tabIndex={0}
+            role="button"
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
                 setPreApprovalModal({
                   isOpen: true,
                   purpose: "DELIVERY",
@@ -726,90 +900,171 @@ export default function ResidentProfile() {
                   expectedDate: new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" }),
                   notes: "",
                   submitting: false,
-                })
+                });
               }
-              className="py-2 px-3.5 rounded-xl text-xs font-bold text-purple-400 bg-purple-500/10 border border-purple-500/30 hover:bg-purple-500/20 transition active:scale-95 cursor-pointer flex items-center gap-1.5 shadow-sm"
-            >
-              <MdLocalShipping size={15} />
-              <span>{t("rpAddDelivery")}</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => navigate(`${base}/visitors`)}
-              className="text-xs font-bold text-accent hover:underline ml-1"
-            >
-              {t("rpVisitorLogs")}
-            </button>
+            }}
+            style={{ "--gd-c": "#a855f7", "--gd-badge-c": "#a855f7" }}
+            className="gd-action gd-action--delivery group relative overflow-hidden rounded-2xl p-5 sm:p-6 cursor-pointer flex flex-col justify-between min-h-[145px] transition-all duration-200 focus-visible:ring-2 focus-visible:ring-purple-400 focus:outline-hidden"
+          >
+            <span className="gd-action__blob" aria-hidden />
+            <div className="flex items-start justify-between gap-2">
+              <div className="gd-action__icon">
+                <MdLocalShipping size={24} />
+              </div>
+              <span className="gd-action__badge absolute top-3.5 right-3.5 z-[2] px-2.5 py-0.5 rounded-full text-[9.5px] font-extrabold uppercase tracking-wider shadow-sm">
+                QUICK DROP
+              </span>
+            </div>
+            <div className="relative z-[1] mt-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-[15px] sm:text-base font-black text-primary group-hover:text-purple-400 transition-colors leading-tight m-0">
+                  + {t("rpAddDelivery") || "Delivery"}
+                </h3>
+                <MdChevronRight className="gd-action__arrow shrink-0" size={18} />
+              </div>
+              <p className="text-xs sm:text-[13px] text-secondary mt-1 leading-snug m-0">
+                Swiggy, Zomato, Amazon gate pass
+              </p>
+            </div>
           </div>
         </div>
 
-        {/* Visitors Feed */}
-        {visitors.length === 0 ? (
-          <div className="p-8 rounded-3xl border border-glass-border bg-card text-center text-secondary shadow-sm">
-            <MdQrCodeScanner size={32} className="mx-auto mb-2 opacity-35 text-cyan-400" />
-            <p className="text-sm font-bold text-primary">{t("rpNoRecentVisitors")}</p>
-            <p className="text-xs text-secondary mt-1 max-w-md mx-auto">
-              {t("rpNoRecentVisitorsSub")}
-            </p>
+        {/* Live Visitor Feed Section - Colorful Dashboard Activity Panel */}
+        <div className="rounded-2xl sm:rounded-3xl border border-purple-500/20 bg-gradient-to-br from-purple-500/[0.07] via-blue-500/[0.04] to-cyan-500/[0.06] p-5 sm:p-6 shadow-sm space-y-4">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)] animate-pulse shrink-0" aria-hidden="true" />
+              <h3 className="text-base sm:text-lg font-black text-primary tracking-tight m-0">
+                Recent Visitor Activity
+              </h3>
+            </div>
+            {visitors.length > 0 && (
+              <span className="text-xs font-bold px-3 py-1 rounded-full bg-purple-500/15 text-purple-400 border border-purple-500/25 shadow-xs">
+                {visitors.length} {visitors.length === 1 ? "record" : "records"}
+              </span>
+            )}
           </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
-            {visitors.slice(0, 6).map((v) => {
-              const type = (v.type || v.purpose || "GUEST").toUpperCase();
-              const isInside = v.status === "INSIDE";
-              const isApproved = v.status === "APPROVED";
 
-              return (
-                <div
-                  key={v.id}
-                  onClick={() => navigate(`${base}/visitors`)}
-                  className="p-4 rounded-2xl border border-glass-border bg-card hover:bg-card-inner-bg transition flex items-center justify-between gap-3 cursor-pointer shadow-sm"
-                >
-                  <div className="flex items-center gap-3.5 min-w-0">
-                    <div className="w-11 h-11 rounded-2xl bg-card-inner-bg text-primary border border-glass-border flex items-center justify-center shrink-0">
-                      {type === "CAB" ? (
-                        <MdLocalTaxi size={22} className="text-amber-400" />
-                      ) : type === "DELIVERY" ? (
-                        <MdLocalShipping size={22} className="text-purple-400" />
-                      ) : (
-                        <MdPerson size={22} className="text-cyan-400" />
-                      )}
+          {visitors.length === 0 ? (
+            <div className="p-8 rounded-2xl border border-glass-border bg-card-inner-bg/60 text-center text-secondary shadow-2xs">
+              <MdQrCodeScanner size={36} className="mx-auto mb-2 opacity-40 text-cyan-400" />
+              <p className="text-sm font-bold text-primary m-0">{t("rpNoRecentVisitors") || "No recent visitor records"}</p>
+              <p className="text-xs text-secondary mt-1 max-w-sm mx-auto m-0">
+                {t("rpNoRecentVisitorsSub") || "Use the 1-tap quick action cards above to pre-approve upcoming visitors."}
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-4">
+              {visitors.slice(0, 6).map((v) => {
+                const rawType = (v.type || v.purpose || "GUEST").toUpperCase();
+                const isCab = rawType.includes("CAB") || rawType.includes("TAXI");
+                const isDelivery = rawType.includes("DELIVERY") || rawType.includes("FOOD") || rawType.includes("PARCEL");
+                const isService = rawType.includes("SERVICE") || rawType.includes("HELP") || rawType.includes("STAFF") || rawType.includes("MAID") || rawType.includes("COOK") || rawType.includes("DRIVER");
+                
+                const typeLabel = isCab ? "CAB" : isDelivery ? "DELIVERY" : isService ? "SERVICE" : "GUEST";
+                const IconComp = isCab ? MdLocalTaxi : isDelivery ? MdLocalShipping : isService ? MdBuild : MdPerson;
+                
+                const isInside = v.status === "INSIDE" || (!v.exit_time && Boolean(v.entry_time || v.check_in_time));
+                const isApproved = v.status === "APPROVED";
+                const isLeft = Boolean(v.exit_time) || String(v.status).toUpperCase() === "LEFT" || String(v.status).toUpperCase() === "COMPLETED";
+
+                // Extract and format time
+                const timeStr = v.entry_time || v.check_in_time || v.created_at || v.expected_date;
+                let formattedTime = "Recently";
+                if (timeStr) {
+                  try {
+                    const d = new Date(timeStr);
+                    if (!isNaN(d.getTime())) {
+                      const isToday = new Date().toDateString() === d.toDateString();
+                      const timeFmt = d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+                      formattedTime = isToday ? `Today, ${timeFmt}` : `${d.toLocaleDateString([], { month: "short", day: "numeric" })}, ${timeFmt}`;
+                    }
+                  } catch {
+                    formattedTime = "Recently";
+                  }
+                }
+
+                return (
+                  <div
+                    key={v.id}
+                    onClick={() => navigate(`${base}/visitors`)}
+                    tabIndex={0}
+                    role="button"
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        navigate(`${base}/visitors`);
+                      }
+                    }}
+                    className="p-4 rounded-2xl border border-glass-border bg-card-inner-bg/85 backdrop-blur-md hover:bg-card-inner-bg hover:border-accent/40 transition-all duration-200 flex items-center justify-between gap-3.5 cursor-pointer shadow-xs hover:shadow-md hover:-translate-y-0.5 group focus-visible:ring-2 focus-visible:ring-accent focus:outline-hidden"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div
+                        className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 border ${
+                          isCab
+                            ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/30 shadow-[0_0_12px_rgba(16,185,129,0.15)]"
+                            : isDelivery
+                            ? "bg-amber-500/15 text-amber-400 border-amber-500/30 shadow-[0_0_12px_rgba(245,158,11,0.15)]"
+                            : isService
+                            ? "bg-purple-500/15 text-purple-400 border-purple-500/30 shadow-[0_0_12px_rgba(168,85,247,0.15)]"
+                            : "bg-cyan-500/15 text-cyan-400 border-cyan-500/30 shadow-[0_0_12px_rgba(6,182,212,0.15)]"
+                        }`}
+                      >
+                        <IconComp size={22} />
+                      </div>
+
+                      <div className="min-w-0">
+                        <p className="text-sm sm:text-base font-bold text-primary truncate m-0 group-hover:text-accent transition-colors">
+                          {v.name || v.visitor_name || t("vrVisitor") || "Visitor"}
+                        </p>
+                        <div className="flex items-center gap-1.5 mt-0.5 text-xs text-secondary truncate">
+                          <span
+                            className={`px-1.5 py-0.5 rounded-md font-extrabold text-[9.5px] uppercase tracking-wider border ${
+                              isCab
+                                ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/25"
+                                : isDelivery
+                                ? "bg-amber-500/15 text-amber-400 border-amber-500/25"
+                                : isService
+                                ? "bg-purple-500/15 text-purple-400 border-purple-500/25"
+                                : "bg-cyan-500/15 text-cyan-400 border-cyan-500/25"
+                            }`}
+                          >
+                            {typeLabel}
+                          </span>
+                          {v.vehicle_number && (
+                            <span className="font-mono text-[10.5px] text-secondary/90 truncate">
+                              • {v.vehicle_number}
+                            </span>
+                          )}
+                        </div>
+                      </div>
                     </div>
 
-                    <div className="min-w-0">
-                      <p className="text-xs sm:text-sm font-bold text-primary truncate">{v.name || v.visitor_name || t("vrVisitor")}</p>
-                      <p className="text-[10.5px] text-secondary font-medium truncate">
-                        {v.vehicle_number ? `🚗 ${v.vehicle_number}` : type}
-                      </p>
+                    <div className="text-right shrink-0">
+                      <span
+                        className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider inline-block ${
+                          isInside
+                            ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 shadow-[0_0_8px_rgba(16,185,129,0.25)]"
+                            : isApproved
+                            ? "bg-cyan-500/20 text-cyan-400 border border-cyan-500/40"
+                            : isLeft
+                            ? "bg-purple-500/10 text-purple-300 border border-purple-500/20"
+                            : "bg-accent/15 text-accent border border-accent/25"
+                        }`}
+                      >
+                        {isInside ? "● Inside" : isLeft ? "LEFT" : isApproved ? "APPROVED" : v.status || "LOGGED"}
+                      </span>
+                      <span className="text-xs text-secondary mt-1 block font-medium flex items-center justify-end gap-1">
+                        <MdAccessTime size={12} className="opacity-70" />
+                        {formattedTime}
+                      </span>
                     </div>
                   </div>
-
-                  <div className="text-right shrink-0">
-                    <span
-                      className={`px-2.5 py-1 rounded-xl text-[10px] font-extrabold uppercase tracking-wider block ${
-                        isInside
-                          ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30"
-                          : isApproved
-                          ? "bg-cyan-500/15 text-cyan-400 border border-cyan-500/30"
-                          : "bg-card-inner-bg text-secondary border border-glass-border"
-                      }`}
-                    >
-                      {v.status || "LOGGED"}
-                    </span>
-                    <span className="text-[10px] text-secondary mt-0.5 block font-medium">
-                      {v.check_in_time
-                        ? new Date(v.check_in_time).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-                        : v.created_at
-                        ? new Date(v.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-                        : "—"}
-                    </span>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
+                );
+              })}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* ── 6. QUICK PRE-APPROVAL MODAL ── */}

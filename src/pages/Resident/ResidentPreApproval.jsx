@@ -468,23 +468,27 @@ export default function ResidentPreApproval() {
       </div>
 
       {/* ── STATS CARDS ── */}
-      <div className="ge-stats">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4">
         <StatCard
+          icon={MdPersonAdd}
           tone="brand"
           value={counts.total}
           label={t("preapStatTotal")}
         />
         <StatCard
+          icon={MdCalendarToday}
           tone="warning"
           value={counts.today}
           label={t("preapStatToday")}
         />
         <StatCard
+          icon={MdCheckCircle}
           tone="success"
           value={counts.active}
           label={t("preapStatActive")}
         />
         <StatCard
+          icon={MdHistory}
           tone="info"
           value={counts.used}
           label={t("preapStatUsed")}

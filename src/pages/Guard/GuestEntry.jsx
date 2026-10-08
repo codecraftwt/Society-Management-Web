@@ -154,10 +154,10 @@ export default function GuestEntry() {
   ];
 
   return (
-    <div className="ge-root">
+    <div className="ge-root space-y-6 animate-fadeIn">
       {/* ── HEADER ── */}
-      <div className="ge-er">
-        <div className="ge-er-left">
+      <div className="ge-er flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="ge-er-left flex items-center gap-3">
           <div className="ad-page-icon">
             <FaUserFriends size={22} />
           </div>
@@ -168,14 +168,16 @@ export default function GuestEntry() {
             </p>
           </div>
         </div>
-        <button onClick={() => setShowModal(true)} className="btn-primary">
-          <MdAdd size={18} /> {t("geAddBtn", "New Guest Entry")}
+        <button onClick={() => setShowModal(true)} className="btn-primary flex items-center gap-2">
+          <MdAdd size={18} /> <span>{t("geAddBtn", "New Guest Entry")}</span>
         </button>
       </div>
 
       {/* ── STAT CARDS ── */}
-      <div className="ge-stats">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 my-2">
         <StatCard
+          layout="inline"
+          icon={<FaUserFriends size={20} />}
           tone="brand"
           interactive
           selected={filter === "ALL"}
@@ -184,6 +186,8 @@ export default function GuestEntry() {
           label={t("geStatTotal", "Total Guests")}
         />
         <StatCard
+          layout="inline"
+          icon={<MdDirectionsWalk size={20} />}
           tone="info"
           interactive
           selected={filter === "IN"}
@@ -192,6 +196,8 @@ export default function GuestEntry() {
           label={t("geStatInside", "Inside Premises")}
         />
         <StatCard
+          layout="inline"
+          icon={<MdLogout size={20} />}
           tone="success"
           interactive
           selected={filter === "OUT"}
@@ -202,46 +208,48 @@ export default function GuestEntry() {
       </div>
 
       {/* ── SEARCH + FILTER ── */}
-      <div className="ge-toolbar">
+      <div className="ge-toolbar flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="overflow-x-auto max-w-full pb-1 sm:pb-0">
           <SlidingTabs
             className="ge-filter-tabs"
             value={filter}
             onChange={handleFilterChange}
-            tabs={filterTabs.map(({ key, label, count }) => ({
+            items={filterTabs.map(({ key, label, count }) => ({
               id: key,
-              label: (
-                <span className="flex items-center gap-1.5">
-                  <span>{label}</span>
-                  <span className="opacity-75 font-normal">({count})</span>
-                </span>
-              ),
+              label: label,
+              badge: count,
             }))}
           />
         </div>
 
-        <ExpandableSearch
-          placeholder={t("geSearchPlaceholder", "Search by guest name, phone, flat...")}
-          value={search}
-          onChange={setSearch}
-        />
+        <div className="sm:ml-auto w-full sm:w-auto">
+          <ExpandableSearch
+            placeholder={t("geSearchPlaceholder", "Search by guest name, phone, flat...")}
+            value={search}
+            onChange={setSearch}
+          />
+        </div>
       </div>
 
-      {/* ── DESKTOP TABLE ── */}
-      <div className="ge-table-card">
-        {initialLoad ? (
-          <div className="p-8 text-center text-secondary">
-            <Spinner size={24} />
-            <p className="mt-2 text-xs">{t("geLoading", "Loading guest records...")}</p>
+      {/* ── DATA SECTION (SINGLE UNIFIED LOADING & EMPTY STATES) ── */}
+      {initialLoad ? (
+        <div className="ge-table-card p-12 text-center text-secondary">
+          <Spinner size={26} />
+          <p className="mt-2 text-xs font-bold">{t("geLoading", "Loading guest records...")}</p>
+        </div>
+      ) : visitors.length === 0 ? (
+        <div className="ge-table-card p-12 text-center text-secondary">
+          <div className="ge-empty py-4">
+            <span className="ge-empty-icon text-3xl">👥</span>
+            <p className="mt-2 text-sm font-semibold">{t("geEmpty", "No guest records found")}</p>
           </div>
-        ) : visitors.length === 0 ? (
-          <div className="ge-empty">
-            <span className="ge-empty-icon">👥</span>
-            <span>{t("geEmpty", "No guest records found")}</span>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="ge-table">
+        </div>
+      ) : (
+        <>
+          {/* Desktop Table */}
+          <div className="ge-table-card hidden md:block">
+            <div className="overflow-x-auto">
+              <table className="ge-table">
               <thead>
                 <tr>
                   <th>{t("geColVisitor", "Guest Name")}</th>
@@ -352,38 +360,26 @@ export default function GuestEntry() {
                 })}
               </tbody>
             </table>
+          </div>
 
-            <div style={{ display: "flex", justifyContent: "center", padding: "12px 0 8px" }}>
-              <Pagination
-                page={page}
-                totalPages={totalPages}
-                onPageChange={handlePageChange}
-                pageSize={limit}
-                onPageSizeChange={(s) => {
-                  limitRef.current = s;
-                  setLimit(s);
-                  setPage(1);
-                  handlePageChange(1);
-                }}
-              />
-            </div>
+          <div style={{ display: "flex", justifyContent: "center", padding: "12px 0 8px" }}>
+            <Pagination
+              page={page}
+              totalPages={totalPages}
+              onPageChange={handlePageChange}
+              pageSize={limit}
+              onPageSizeChange={(s) => {
+                limitRef.current = s;
+                setLimit(s);
+                setPage(1);
+                handlePageChange(1);
+              }}
+            />
           </div>
-        )}
-      </div>
+        </div>
 
-      {/* ── MOBILE CARDS ── */}
-      <div className="ge-mobile-list">
-        {initialLoad ? (
-          <div className="p-6 text-center text-secondary">
-            <Spinner size={20} />
-          </div>
-        ) : visitors.length === 0 ? (
-          <div className="ge-empty">
-            <span className="ge-empty-icon">👥</span>
-            <span>{t("geEmpty", "No guest records found")}</span>
-          </div>
-        ) : (
-          <>
+          {/* Mobile Cards */}
+          <div className="ge-mobile-list block md:hidden space-y-3">
             {visitors.map((item) => (
               <div key={item.id} className="ge-mobile-card">
                 <div className="ge-mc-top">
@@ -457,9 +453,9 @@ export default function GuestEntry() {
                 }}
               />
             </div>
-          </>
-        )}
-      </div>
+          </div>
+        </>
+      )}
 
       {/* ── 4-STEP WIZARD ENTRY MODAL ── */}
       <StepVisitorEntryModal

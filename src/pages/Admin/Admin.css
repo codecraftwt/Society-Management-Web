@@ -1062,25 +1062,17 @@ html.role-theme .admin-root .flat-history-page .fh-flat-grid {
   gap: 12px;
 }
 
-html.role-theme .admin-root .flat-history-page .fh-flat-card {
-  min-width: 0;
-  padding: 14px !important;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  background: var(--card-bg) !important;
-  border: 1px solid var(--glass-border) !important;
-  border-radius: 14px !important;
-  box-shadow: var(--shadow-sm) !important;
+/* Flat History Cards — Remove card background color */
+.flat-history-page .ui-record-card,
+.flat-history-page .ps-card-grid .ui-record-card,
+html.role-theme .flat-history-page .ui-record-card,
+html.role-theme .admin-root .flat-history-page .ui-record-card {
+  background: transparent !important;
+  background-color: transparent !important;
+  --ui-card-bg: transparent;
+  --ui-card-tone-bg: transparent;
 }
 
-html.role-theme .admin-root .flat-history-page .fh-flat-card:hover,
-html.role-theme .admin-root .flat-history-page .fh-flat-card--selected {
-  border-color: rgba(var(--acct-purple-rgb), 0.42) !important;
-  background: var(--card-inner-bg-hover) !important;
-  box-shadow: var(--shadow-hover) !important;
-  transform: translateY(-2px);
-}
 
 .flat-history-page .fh-card-header-row,
 .flat-history-page .fh-card-header-left,
@@ -1573,102 +1565,6 @@ html.light.role-theme .sa-add-btn.sa-add-pill.parking-create-slots-btn:hover:not
   box-shadow: var(--shadow-sm);
 }
 
-.parking-management-page .ps-decent-card,
-.parking-management-page .ps-slot-card {
-  --ps-c: var(--accent);
-  isolation: isolate;
-  position: relative;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  padding: 14px;
-  border-radius: 20px !important;
-  background: var(--card-bg) !important;
-  border: 1.5px solid var(--glass-border) !important;
-  box-shadow: var(--shadow-sm) !important;
-  animation: psActionIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) backwards;
-  transition:
-    transform 0.35s cubic-bezier(0.16, 1, 0.3, 1),
-    box-shadow 0.35s cubic-bezier(0.16, 1, 0.3, 1),
-    border-color 0.35s cubic-bezier(0.16, 1, 0.3, 1),
-    background 0.35s cubic-bezier(0.16, 1, 0.3, 1) !important;
-}
-
-.parking-management-page .ps-decent-card--available,
-.parking-management-page .ps-slot-card--available {
-  --ps-c: var(--success);
-}
-
-.parking-management-page .ps-decent-card--occupied,
-.parking-management-page .ps-slot-card--occupied {
-  --ps-c: var(--accent);
-}
-
-/* Shine sweep */
-.parking-management-page .ps-decent-card::after,
-.parking-management-page .ps-slot-card::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: -70%;
-  width: 55%;
-  height: 100%;
-  background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.28), transparent);
-  transform: skewX(-18deg);
-  opacity: 0;
-  pointer-events: none;
-  z-index: 3;
-}
-.parking-management-page .ps-decent-card:hover::after,
-.parking-management-page .ps-slot-card:hover::after {
-  animation: psShine 0.75s ease forwards;
-}
-
-/* Colour blob */
-.parking-management-page .ps-card-blob {
-  position: absolute;
-  right: -26px;
-  top: -26px;
-  width: 96px;
-  height: 96px;
-  border-radius: 50%;
-  background: var(--ps-c);
-  opacity: 0.12;
-  transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.45s;
-  pointer-events: none;
-  z-index: 0;
-}
-.parking-management-page .ps-decent-card:hover .ps-card-blob,
-.parking-management-page .ps-slot-card:hover .ps-card-blob {
-  transform: scale(1.45);
-  opacity: 0.22;
-}
-
-.parking-management-page .ps-decent-card:hover,
-.parking-management-page .ps-slot-card:hover {
-  transform: translateY(-6px) scale(1.015);
-  background: var(--card-bg) !important;
-  border-color: var(--ps-c) !important;
-  box-shadow: var(--shadow-hover) !important;
-}
-
-.parking-management-page .ps-decent-card > *:not(.ps-card-blob),
-.parking-management-page .ps-slot-card > *:not(.ps-card-blob) {
-  position: relative;
-  z-index: 1;
-}
-
-@keyframes psActionIn {
-  from { opacity: 0; transform: translateY(14px) scale(0.96); }
-  to   { opacity: 1; transform: translateY(0) scale(1); }
-}
-@keyframes psShine {
-  0%   { left: -70%; opacity: 0; }
-  25%  { opacity: 1; }
-  100% { left: 130%; opacity: 0; }
-}
-
 /* Header */
 .parking-management-page .ps-card-top {
   align-items: center;
@@ -1716,13 +1612,6 @@ html.light.role-theme .sa-add-btn.sa-add-pill.parking-create-slots-btn:hover:not
   box-shadow: 0 6px 16px -6px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.35);
   transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.35s;
 }
-.parking-management-page .ps-decent-card:hover .ps-type-icon,
-.parking-management-page .ps-slot-card:hover .ps-type-icon {
-  transform: translateY(-2px) scale(1.08) rotate(-3deg);
-  box-shadow: 0 10px 24px -8px var(--ps-c),
-    0 0 0 3px color-mix(in srgb, var(--ps-c) 22%, transparent),
-    inset 0 1px 0 rgba(255, 255, 255, 0.4);
-}
 
 /* Arrow */
 .parking-management-page .ps-card-arrow {
@@ -1731,11 +1620,6 @@ html.light.role-theme .sa-add-btn.sa-add-pill.parking-create-slots-btn:hover:not
   transform: translateX(-6px);
   transition: opacity 0.3s, transform 0.3s;
   flex-shrink: 0;
-}
-.parking-management-page .ps-decent-card:hover .ps-card-arrow,
-.parking-management-page .ps-slot-card:hover .ps-card-arrow {
-  opacity: 1;
-  transform: translateX(0);
 }
 
 /* Body */
@@ -1918,80 +1802,6 @@ html.light.role-theme .sa-add-btn.sa-add-pill.parking-create-slots-btn:hover:not
   color: #ffffff;
 }
 
-/* Light theme — glassmorphic tinted cards */
-html.light.role-theme .parking-management-page :is(.ps-slot-card, .ps-decent-card).ps-slot-card--available,
-html.light.role-theme .parking-management-page :is(.ps-slot-card, .ps-decent-card).ps-decent-card--available {
-  background: linear-gradient(135deg, rgba(240, 253, 244, 0.85) 0%, rgba(220, 252, 231, 0.75) 100%) !important;
-  border: 1.5px solid rgba(187, 247, 208, 0.9) !important;
-  box-shadow: 0 4px 15px rgba(22, 163, 74, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.8) !important;
-}
-html.light.role-theme .parking-management-page :is(.ps-slot-card, .ps-decent-card):is(.ps-slot-card--available, .ps-decent-card--available):hover {
-  border-color: #16a34a !important;
-  box-shadow: 0 18px 35px -5px rgba(22, 163, 74, 0.3), inset 0 1px 0 rgba(255, 255, 255, 1) !important;
-}
-
-html.light.role-theme .parking-management-page :is(.ps-slot-card, .ps-decent-card).ps-slot-card--occupied,
-html.light.role-theme .parking-management-page :is(.ps-slot-card, .ps-decent-card).ps-decent-card--occupied {
-  background: linear-gradient(135deg, rgba(250, 245, 255, 0.85) 0%, rgba(243, 232, 255, 0.75) 100%) !important;
-  border: 1.5px solid rgba(233, 213, 255, 0.9) !important;
-  box-shadow: 0 4px 15px rgba(147, 51, 234, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.8) !important;
-}
-html.light.role-theme .parking-management-page :is(.ps-slot-card, .ps-decent-card):is(.ps-slot-card--occupied, .ps-decent-card--occupied):hover {
-  border-color: #9333ea !important;
-  box-shadow: 0 18px 35px -5px rgba(147, 51, 234, 0.3), inset 0 1px 0 rgba(255, 255, 255, 1) !important;
-}
-
-html.light.role-theme .parking-management-page :is(.ps-slot-card, .ps-decent-card) .ps-occupied-details {
-  background: rgba(255, 255, 255, 0.72) !important;
-  border-color: rgba(255, 255, 255, 0.9) !important;
-}
-
-html.light.role-theme .parking-management-page :is(.ps-slot-card, .ps-decent-card):is(.ps-slot-card--available, .ps-decent-card--available) .ps-avail-bay {
-  background: rgba(255, 255, 255, 0.6) !important;
-  border-color: rgba(22, 163, 74, 0.4) !important;
-  color: #16a34a !important;
-}
-
-html.light.role-theme .parking-management-page :is(.ps-slot-card, .ps-decent-card) :is(.ps-slot-number, .ps-resident-name) {
-  color: #111827 !important;
-}
-
-html.light.role-theme .parking-management-page :is(.ps-slot-card, .ps-decent-card) :is(.ps-slot-label, .ps-slot-meta, .ps-vehicle-model, .ps-resident-sub) {
-  color: #64748b !important;
-}
-
-html.light.role-theme .parking-management-page :is(.ps-slot-card, .ps-decent-card) .ps-vehicle-plate {
-  background: #ffffff !important;
-  border: 1px solid #e4e7ec !important;
-  color: #334155 !important;
-}
-
-/* Dark theme — frosted glass cards */
-html.role-theme:not(.light) .parking-management-page :is(.ps-slot-card, .ps-decent-card) {
-  background: rgba(34, 37, 46, 0.75) !important;
-  backdrop-filter: blur(18px) !important;
-  -webkit-backdrop-filter: blur(18px) !important;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
-}
-html.role-theme:not(.light) .parking-management-page :is(.ps-slot-card, .ps-decent-card).ps-slot-card--available,
-html.role-theme:not(.light) .parking-management-page :is(.ps-slot-card, .ps-decent-card).ps-decent-card--available {
-  border: 1.5px solid rgba(25, 135, 84, 0.4) !important;
-}
-html.role-theme:not(.light) .parking-management-page :is(.ps-slot-card, .ps-decent-card).ps-slot-card--occupied,
-html.role-theme:not(.light) .parking-management-page :is(.ps-slot-card, .ps-decent-card).ps-decent-card--occupied {
-  border: 1.5px solid rgba(160, 90, 255, 0.35) !important;
-}
-html.role-theme:not(.light) .parking-management-page :is(.ps-slot-card, .ps-decent-card):hover {
-  background: rgba(34, 37, 46, 0.95) !important;
-}
-html.role-theme:not(.light) .parking-management-page :is(.ps-slot-card, .ps-decent-card):is(.ps-slot-card--available, .ps-decent-card--available):hover {
-  border-color: #198754 !important;
-  box-shadow: 0 12px 30px rgba(25, 135, 84, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
-}
-html.role-theme:not(.light) .parking-management-page :is(.ps-slot-card, .ps-decent-card):is(.ps-slot-card--occupied, .ps-decent-card--occupied):hover {
-  border-color: var(--accent) !important;
-  box-shadow: 0 12px 30px rgba(160, 90, 255, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
-}
 
 .parking-management-page .ps-type-icon--car {
   background: rgba(var(--acct-blue-rgb), 0.14) !important;
@@ -2551,5 +2361,235 @@ html.role-theme .gt-filter-pill--active-green {
   color: #ffffff !important;
   box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35) !important;
 }
+
+/* ==========================================================================
+   ADMIN QUICK ACTION / OPERATION CARDS (Matching Guard Dashboard System)
+   ========================================================================== */
+@keyframes gdActionIn {
+  from { opacity: 0; transform: translateY(14px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes gdShine {
+  0%   { left: -70%; opacity: 0; }
+  25%  { opacity: 1; }
+  100% { left: 130%; opacity: 0; }
+}
+
+html.role-theme .gd-action {
+  isolation: isolate;
+  position: relative;
+  overflow: hidden;
+  border-radius: 20px !important;
+  animation: gdActionIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 0.35s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+html.role-theme .gd-action::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -70%;
+  width: 55%;
+  height: 100%;
+  background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.45), transparent);
+  transform: skewX(-18deg);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 3;
+}
+
+html.role-theme .gd-action:hover::after {
+  animation: gdShine 0.75s ease forwards;
+}
+
+html.role-theme .gd-action__blob {
+  position: absolute;
+  right: -26px;
+  top: -26px;
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  background: var(--gd-c);
+  opacity: 0.12;
+  transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.45s;
+  pointer-events: none;
+  z-index: 0;
+}
+
+html.role-theme .gd-action:hover .gd-action__blob {
+  transform: scale(1.45);
+  opacity: 0.22;
+}
+
+html.role-theme .gd-action__icon {
+  position: relative;
+  z-index: 1;
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6px 16px -6px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.35s;
+}
+
+html.role-theme .gd-action:hover .gd-action__icon {
+  transform: translateY(-2px) scale(1.1) rotate(-3deg);
+  box-shadow: 0 10px 24px -8px var(--gd-c), 0 0 0 3px color-mix(in srgb, var(--gd-c) 22%, transparent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+
+html.role-theme .gd-action__arrow {
+  color: var(--gd-c);
+  opacity: 0;
+  transform: translateX(-6px);
+  transition: opacity 0.3s, transform 0.3s;
+}
+
+html.role-theme .gd-action:hover .gd-action__arrow {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+/* Light Theme Action Cards */
+html.light.role-theme .gd-action--guest {
+  background: linear-gradient(135deg, rgba(239, 246, 255, 0.85) 0%, rgba(219, 234, 254, 0.75) 100%) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border: 1.5px solid rgba(191, 219, 254, 0.9) !important;
+  box-shadow: 0 4px 15px rgba(37, 99, 235, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.8) !important;
+}
+html.light.role-theme .gd-action--guest:hover {
+  transform: translateY(-6px) scale(1.025);
+  border-color: #2563eb !important;
+  box-shadow: 0 18px 35px -5px rgba(37, 99, 235, 0.3), inset 0 1px 0 rgba(255, 255, 255, 1) !important;
+}
+
+html.light.role-theme .gd-action--cab {
+  background: linear-gradient(135deg, rgba(255, 251, 235, 0.85) 0%, rgba(254, 243, 199, 0.75) 100%) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border: 1.5px solid rgba(253, 230, 138, 0.9) !important;
+  box-shadow: 0 4px 15px rgba(217, 119, 6, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.8) !important;
+}
+html.light.role-theme .gd-action--cab:hover {
+  transform: translateY(-6px) scale(1.025);
+  border-color: #d97706 !important;
+  box-shadow: 0 18px 35px -5px rgba(217, 119, 6, 0.3), inset 0 1px 0 rgba(255, 255, 255, 1) !important;
+}
+
+html.light.role-theme .gd-action--gatepass {
+  background: linear-gradient(135deg, rgba(240, 253, 244, 0.85) 0%, rgba(220, 252, 231, 0.75) 100%) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border: 1.5px solid rgba(187, 247, 208, 0.9) !important;
+  box-shadow: 0 4px 15px rgba(22, 163, 74, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.8) !important;
+}
+html.light.role-theme .gd-action--gatepass:hover {
+  transform: translateY(-6px) scale(1.025);
+  border-color: #16a34a !important;
+  box-shadow: 0 18px 35px -5px rgba(22, 163, 74, 0.3), inset 0 1px 0 rgba(255, 255, 255, 1) !important;
+}
+
+html.light.role-theme .gd-action--parking {
+  background: linear-gradient(135deg, rgba(250, 245, 255, 0.85) 0%, rgba(243, 232, 255, 0.75) 100%) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border: 1.5px solid rgba(233, 213, 255, 0.9) !important;
+  box-shadow: 0 4px 15px rgba(147, 51, 234, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.8) !important;
+}
+html.light.role-theme .gd-action--parking:hover {
+  transform: translateY(-6px) scale(1.025);
+  border-color: #9333ea !important;
+  box-shadow: 0 18px 35px -5px rgba(147, 51, 234, 0.3), inset 0 1px 0 rgba(255, 255, 255, 1) !important;
+}
+
+html.light.role-theme .gd-action--bills {
+  background: linear-gradient(135deg, rgba(255, 241, 242, 0.85) 0%, rgba(255, 228, 230, 0.75) 100%) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border: 1.5px solid rgba(254, 205, 211, 0.9) !important;
+  box-shadow: 0 4px 15px rgba(244, 63, 94, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.8) !important;
+}
+html.light.role-theme .gd-action--bills:hover {
+  transform: translateY(-6px) scale(1.025);
+  border-color: #f43f5e !important;
+  box-shadow: 0 18px 35px -5px rgba(244, 63, 94, 0.3), inset 0 1px 0 rgba(255, 255, 255, 1) !important;
+}
+
+/* Dark Theme Action Cards */
+html.role-theme:not(.light) .gd-action--guest {
+  border: 1.5px solid rgba(59, 130, 246, 0.35) !important;
+  background: rgba(30, 41, 59, 0.75) !important;
+  backdrop-filter: blur(18px) !important;
+  -webkit-backdrop-filter: blur(18px) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
+}
+html.role-theme:not(.light) .gd-action--guest:hover {
+  transform: translateY(-6px) scale(1.025);
+  border-color: #3b82f6 !important;
+  background: rgba(30, 41, 59, 0.95) !important;
+  box-shadow: 0 12px 30px rgba(59, 130, 246, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
+}
+
+html.role-theme:not(.light) .gd-action--cab {
+  border: 1.5px solid rgba(234, 179, 8, 0.35) !important;
+  background: rgba(30, 41, 59, 0.75) !important;
+  backdrop-filter: blur(18px) !important;
+  -webkit-backdrop-filter: blur(18px) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
+}
+html.role-theme:not(.light) .gd-action--cab:hover {
+  transform: translateY(-6px) scale(1.025);
+  border-color: #eab308 !important;
+  background: rgba(30, 41, 59, 0.95) !important;
+  box-shadow: 0 12px 30px rgba(234, 179, 8, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
+}
+
+html.role-theme:not(.light) .gd-action--gatepass {
+  border: 1.5px solid rgba(34, 197, 94, 0.35) !important;
+  background: rgba(30, 41, 59, 0.75) !important;
+  backdrop-filter: blur(18px) !important;
+  -webkit-backdrop-filter: blur(18px) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
+}
+html.role-theme:not(.light) .gd-action--gatepass:hover {
+  transform: translateY(-6px) scale(1.025);
+  border-color: #22c55e !important;
+  background: rgba(30, 41, 59, 0.95) !important;
+  box-shadow: 0 12px 30px rgba(34, 197, 94, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
+}
+
+html.role-theme:not(.light) .gd-action--parking {
+  border: 1.5px solid rgba(168, 85, 247, 0.35) !important;
+  background: rgba(30, 41, 59, 0.75) !important;
+  backdrop-filter: blur(18px) !important;
+  -webkit-backdrop-filter: blur(18px) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
+}
+html.role-theme:not(.light) .gd-action--parking:hover {
+  transform: translateY(-6px) scale(1.025);
+  border-color: #a855f7 !important;
+  background: rgba(30, 41, 59, 0.95) !important;
+  box-shadow: 0 12px 30px rgba(168, 85, 247, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
+}
+
+html.role-theme:not(.light) .gd-action--bills {
+  border: 1.5px solid rgba(244, 63, 94, 0.35) !important;
+  background: rgba(30, 41, 59, 0.75) !important;
+  backdrop-filter: blur(18px) !important;
+  -webkit-backdrop-filter: blur(18px) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
+}
+html.role-theme:not(.light) .gd-action--bills:hover {
+  transform: translateY(-6px) scale(1.025);
+  border-color: #f43f5e !important;
+  background: rgba(30, 41, 59, 0.95) !important;
+  box-shadow: 0 12px 30px rgba(244, 63, 94, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
+}
+
 
 

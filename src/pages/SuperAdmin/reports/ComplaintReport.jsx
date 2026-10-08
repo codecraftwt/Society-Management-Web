@@ -15,8 +15,8 @@ import {
   MdBusiness
 } from "react-icons/md";
 import Select from "../../../components/common/Select";
-
 import Pagination from "../../../components/common/Pagination";
+import StatCard from "../../../components/common/StatCard";
 
 function useIsMobile() {
   const [m, setM] = useState(() => typeof window !== "undefined" && window.innerWidth < 768);
@@ -362,16 +362,30 @@ const [totalPages, setTotalPages] = useState(1);
       {/* ── STATS ── */}
       {!loading && counts.total > 0 && (
         <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(4,1fr)", gap: 10 }}>
-          {[
-            { label: t("compStatTotal") || "Total", val: counts.total, color: "purple" },
-            { label: t("rptOpen") || "Open", val: counts.open, color: "amber" },
-            { label: t("compStatusInProgress") || "In Progress", val: counts.progress, color: "amber" },
-            { label: t("compStatusResolved") || "Resolved", val: counts.resolved, color: "green" },
-          ].map((s, i) => (
-            <div key={i} className={`stat-card stat-card--${s.color}`} style={{ borderRadius: isMobile ? 14 : 18, padding: isMobile ? "12px 14px" : "16px 18px" }}>
-              <div><div className="stat-card__val">{s.val}</div><div className="stat-card__label">{s.label}</div></div>
-            </div>
-          ))}
+          <StatCard
+            value={counts.total}
+            label={t("compStatTotal") || "Total"}
+            tone="brand"
+            icon={MdReportProblem}
+          />
+          <StatCard
+            value={counts.open}
+            label={t("rptOpen") || "Open"}
+            tone="warning"
+            icon={MdPending}
+          />
+          <StatCard
+            value={counts.progress}
+            label={t("compStatusInProgress") || "In Progress"}
+            tone="info"
+            icon={MdSchedule}
+          />
+          <StatCard
+            value={counts.resolved}
+            label={t("compStatusResolved") || "Resolved"}
+            tone="success"
+            icon={MdCheckCircle}
+          />
         </div>
       )}
 

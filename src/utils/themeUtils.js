@@ -148,11 +148,194 @@ export const applyDynamicTheme = (tokens, target = document.documentElement) => 
 };
 
 /**
+ * Statistical Card Style Families (10 distinct design treatments, starting with Current / Default)
+ */
+export const CARD_STYLES = [
+  { id: "default", name: "Current / Default", description: "Original clean dashboard card appearance" },
+  { id: "solid", name: "Colorful Solid", description: "Bold vibrant solid surface matching semantic tone" },
+  { id: "glass", name: "Glass Morphism", description: "Translucent frosted glass with backdrop blur" },
+  { id: "aurora", name: "Aurora Glass", description: "Radiant glowing color aura blooming behind card" },
+  { id: "floating", name: "Floating 3D", description: "Deep 3D physical elevation & perspective depth" },
+  { id: "neon", name: "Neon Glass", description: "Illuminated glowing border & external neon halo" },
+  { id: "gradient", name: "Gradient Glass", description: "Vibrant multi-stop tone gradient & light sheen" },
+  { id: "neumorphic", name: "Neumorphic", description: "Pillowed tactile surface with inset highlights" },
+  { id: "accent-rail", name: "Accent Rail", description: "Bold vertical semantic-color indicator stripe" },
+  { id: "minimal", name: "Minimal Premium", description: "Restrained ultra-clean typographic finish" },
+];
+
+/**
+ * Quick Link Style Families (10 distinct design treatments, starting with Current / Default)
+ */
+export const QUICK_LINK_STYLES = [
+  { id: "default", name: "Current / Default", description: "Original clean quick link design" },
+  { id: "solid", name: "Colorful Solid", description: "Bold vibrant solid tile matching semantic tone" },
+  { id: "glass", name: "Glass Morphism", description: "Translucent frosted glass with backdrop blur" },
+  { id: "aurora", name: "Aurora Glass", description: "Radiant soft aura bloom behind quick link" },
+  { id: "floating", name: "Floating 3D", description: "Elevated surface with 3D perspective hover lift" },
+  { id: "neon", name: "Neon Glass", description: "Illuminated glowing border on dark glass" },
+  { id: "gradient", name: "Gradient Glass", description: "Modern smooth color gradient flow" },
+  { id: "neumorphic", name: "Neumorphic", description: "Soft tactile pillowed surface & press depth" },
+  { id: "accent-rail", name: "Accent Rail", description: "Strong semantic-color indicator side rail" },
+  { id: "minimal", name: "Minimal Premium", description: "Clean ultra-flat typography-focused tile" },
+];
+
+const CARD_STYLE_ALIASES = {
+  default: "default",
+  current: "default",
+  base: "default",
+  solid: "solid",
+  glass: "glass",
+  "aurora-glass": "aurora",
+  aurora: "aurora",
+  "floating-3d": "floating",
+  floating: "floating",
+  elevated: "floating",
+  "neon-glow": "neon",
+  neon: "neon",
+  outline: "neon",
+  "gradient-mesh": "gradient",
+  gradient: "gradient",
+  "neumorphic-glass": "neumorphic",
+  neumorphic: "neumorphic",
+  "accent-rail": "accent-rail",
+  "accent-bar": "accent-rail",
+  "minimal-premium": "minimal",
+  minimal: "minimal",
+  "liquid-glass": "aurora",
+  "layered-glass": "glass",
+  "spotlight-glass": "glass",
+  "executive-glass": "default",
+  soft: "glass",
+};
+
+const QUICK_LINK_STYLE_ALIASES = {
+  default: "default",
+  current: "default",
+  solid: "solid",
+  glass: "glass",
+  "glass-tile": "glass",
+  "aurora-tile": "aurora",
+  aurora: "aurora",
+  "floating-tile": "floating",
+  floating: "floating",
+  elevated: "floating",
+  "neon-edge": "neon",
+  neon: "neon",
+  outline: "neon",
+  "gradient-mesh": "gradient",
+  gradient: "gradient",
+  "soft-neumorphic": "neumorphic",
+  neumorphic: "neumorphic",
+  "accent-rail": "accent-rail",
+  "accent-bar": "accent-rail",
+  "minimal-tile": "minimal",
+  minimal: "minimal",
+  "orbital-glass": "glass",
+  "layered-tile": "glass",
+  "interactive-3d": "floating",
+  "spotlight-glass": "glass",
+  soft: "aurora",
+};
+
+/**
+ * Normalizes legacy/variant card style names to the canonical style ID.
+ */
+export const normalizeCardStyle = (style) => {
+  if (!style || typeof style !== "string") return "default";
+  const clean = style.trim().toLowerCase();
+  return CARD_STYLE_ALIASES[clean] || (CARD_STYLES.some((s) => s.id === clean) ? clean : "default");
+};
+
+/**
+ * Normalizes legacy/variant quick link style names to the canonical style ID.
+ */
+export const normalizeQuickLinkStyle = (style) => {
+  if (!style || typeof style !== "string") return "default";
+  const clean = style.trim().toLowerCase();
+  return QUICK_LINK_STYLE_ALIASES[clean] || (QUICK_LINK_STYLES.some((s) => s.id === clean) ? clean : "default");
+};
+
+/**
+ * Applies a card style class to target element (default: document.documentElement)
+ */
+export const applyCardStyle = (styleId, target = typeof document !== "undefined" ? document.documentElement : null) => {
+  if (!target || !target.classList) return;
+  const canonical = normalizeCardStyle(styleId);
+  CARD_STYLES.forEach((s) => {
+    target.classList.remove(`card-style-${s.id}`);
+  });
+  // Also clean up previous verbose class names
+  [
+    "aurora-glass",
+    "liquid-glass",
+    "floating-3d",
+    "neumorphic-glass",
+    "gradient-mesh",
+    "neon-glow",
+    "layered-glass",
+    "spotlight-glass",
+    "minimal-premium",
+    "executive-glass",
+    "glass",
+    "solid",
+    "soft",
+    "outline",
+    "gradient",
+    "elevated",
+    "minimal",
+    "accent-bar",
+    "accent",
+  ].forEach((cls) => {
+    target.classList.remove(`card-style-${cls}`);
+  });
+  target.classList.add(`card-style-${canonical}`);
+};
+
+/**
+ * Applies a quick link style class to target element (default: document.documentElement)
+ */
+export const applyQuickLinkStyle = (styleId, target = typeof document !== "undefined" ? document.documentElement : null) => {
+  if (!target || !target.classList) return;
+  const canonical = normalizeQuickLinkStyle(styleId);
+  QUICK_LINK_STYLES.forEach((s) => {
+    target.classList.remove(`quick-link-style-${s.id}`);
+  });
+  [
+    "glass-tile",
+    "floating-tile",
+    "aurora-tile",
+    "orbital-glass",
+    "neon-edge",
+    "layered-tile",
+    "gradient-mesh",
+    "soft-neumorphic",
+    "minimal-tile",
+    "interactive-3d",
+    "spotlight-glass",
+    "solid",
+    "soft",
+    "glass",
+    "outline",
+    "gradient",
+    "elevated",
+    "minimal",
+    "accent-bar",
+    "accent",
+  ].forEach((cls) => {
+    target.classList.remove(`quick-link-style-${cls}`);
+  });
+  target.classList.add(`quick-link-style-${canonical}`);
+};
+
+
+/**
  * Clears custom injected variables so defaults in role-theme.css resume naturally.
  */
-export const clearDynamicTheme = (target = document.documentElement) => {
+export const clearDynamicTheme = (target = typeof document !== "undefined" ? document.documentElement : null) => {
   if (!target) return;
   THEME_VARIABLE_KEYS.forEach((key) => {
-    target.style.removeProperty(key);
+    target.style?.removeProperty(key);
   });
 };
+
+

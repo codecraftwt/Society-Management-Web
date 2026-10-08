@@ -546,8 +546,8 @@ export default function MyVehicles() {
   return (
     <div className="ge-root mv-page animate-fadeIn">
 
-      <div className="ge-er">
-        <div className="ge-er-left">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 sm:mb-5">
+        <div className="flex items-center gap-3">
           <div className="ad-page-icon">
             <MdDirectionsCarFilled size={22} />
           </div>
@@ -559,7 +559,7 @@ export default function MyVehicles() {
         {activeTab === "vehicles" && (
           <button
             type="button"
-            className="btn-primary flex items-center gap-2"
+            className="btn-primary flex items-center gap-2 self-start sm:self-auto shrink-0"
             onClick={() => { setShowForm(true); setErrorMsg(""); }}
           >
             <MdAdd size={18} />
@@ -568,10 +568,10 @@ export default function MyVehicles() {
         )}
       </div>
 
-      <div className="ge-stats">
-        <StatCard tone="brand" value={vehicles.length} label={t("vehTitle")} />
-        <StatCard tone="info" value={allocatedSlots.length} label={t("vehStatSlots")} />
-        <StatCard tone="warning" value={pendingCount} label={t("vehStatPending")} />
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-4">
+        <StatCard icon={MdDirectionsCarFilled} tone="brand" value={vehicles.length} label={t("vehTitle")} />
+        <StatCard icon={MdLocalParking} tone="info" value={allocatedSlots.length} label={t("vehStatSlots")} />
+        <StatCard icon={MdHourglassEmpty} tone="warning" value={pendingCount} label={t("vehStatPending")} />
       </div>
 
       {residentProfile && declaredVehicleCount > 0 && (

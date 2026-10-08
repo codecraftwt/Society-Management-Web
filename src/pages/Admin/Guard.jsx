@@ -19,6 +19,7 @@ import UserAvatar from "../../components/common/UserAvatar";
 import ProfilePictureUploader from "../../components/common/ProfilePictureUploader";
 import GlobalBadge from "../../components/common/GlobalBadge";
 import GlobalConfirmDialog from "../../components/common/GlobalConfirmDialog";
+import StatCard from "../../components/common/StatCard";
 import { isCommitteeMember, hasPermission } from "../../utils/permissions";
 import { getTitleError, getEmailError } from "../../utils/validators";
 import {
@@ -1301,6 +1302,7 @@ export default function Guard() {
             onChange={(tab) => {
               setMainTab(tab);
               if (tab === "ATTENDANCE") {
+                setAttendanceGuardFilter("ALL");
                 fetchAttendance();
                 fetchAttendanceSummary();
               }
@@ -1622,118 +1624,28 @@ export default function Guard() {
         /* ── ATTENDANCE VIEW ── */
         <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 16 }}>
           {/* Summary KPI Cards */}
-          <div style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))",
-            gap: 14,
-          }}>
-            {/* Total Checked-In Today */}
-            <div style={{
-              padding: 16,
-              borderRadius: 16,
-              background: "var(--card-bg)",
-              border: "1px solid var(--glass-border)",
-              backdropFilter: "blur(12px)",
-              display: "flex",
-              alignItems: "center",
-              gap: 14,
-            }}>
-              <div style={{
-                width: 44,
-                height: 44,
-                borderRadius: 12,
-                background: "rgba(158, 88, 255, 0.15)",
-                border: "1px solid rgba(158, 88, 255, 0.3)",
-                color: "var(--accent)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                flexShrink: 0,
-              }}>
-                <MdFingerprint size={22} />
-              </div>
-              <div>
-                <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--text-secondary)" }}>
-                  {t("guardKpiTotalToday", "Today's Check-ins")}
-                </div>
-                <div style={{ fontSize: 22, fontWeight: 800, color: "var(--text-primary)", marginTop: 2 }}>
-                  {attendanceSummary.total}
-                </div>
-              </div>
-            </div>
-
-            {/* Currently On Duty */}
-            <div style={{
-              padding: 16,
-              borderRadius: 16,
-              background: "linear-gradient(135deg, rgba(16, 185, 129, 0.12), var(--card-bg))",
-              border: "1.5px solid rgba(16, 185, 129, 0.35)",
-              backdropFilter: "blur(12px)",
-              display: "flex",
-              alignItems: "center",
-              gap: 14,
-            }}>
-              <div style={{
-                width: 44,
-                height: 44,
-                borderRadius: 12,
-                background: "#10b981",
-                color: "#ffffff",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                flexShrink: 0,
-                boxShadow: "0 6px 16px rgba(16, 185, 129, 0.35)",
-              }}>
-                <MdSecurity size={22} />
-              </div>
-              <div>
-                <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", color: "#10b981" }}>
-                  {t("guardKpiOnDuty", "Currently On Duty")}
-                </div>
-                <div style={{ fontSize: 22, fontWeight: 800, color: "var(--text-primary)", marginTop: 2, display: "flex", alignItems: "center", gap: 6 }}>
-                  {attendanceSummary.punched_in}
-                  <span style={{ fontSize: 11, fontWeight: 700, color: "#10b981", background: "rgba(16, 185, 129, 0.15)", padding: "2px 7px", borderRadius: 999 }}>
-                    Active
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Shifts Completed */}
-            <div style={{
-              padding: 16,
-              borderRadius: 16,
-              background: "var(--card-bg)",
-              border: "1px solid var(--glass-border)",
-              backdropFilter: "blur(12px)",
-              display: "flex",
-              alignItems: "center",
-              gap: 14,
-            }}>
-              <div style={{
-                width: 44,
-                height: 44,
-                borderRadius: 12,
-                background: "rgba(59, 130, 246, 0.15)",
-                border: "1px solid rgba(59, 130, 246, 0.3)",
-                color: "#3b82f6",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                flexShrink: 0,
-              }}>
-                <MdCheckCircle size={22} />
-              </div>
-              <div>
-                <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--text-secondary)" }}>
-                  {t("guardKpiCompleted", "Shifts Completed")}
-                </div>
-                <div style={{ fontSize: 22, fontWeight: 800, color: "var(--text-primary)", marginTop: 2 }}>
-                  {attendanceSummary.punched_out}
-                </div>
-              </div>
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
+            <StatCard
+              tone="brand"
+              value={attendanceSummary.total}
+              label={t("guardKpiTotalToday", "Today's Check-ins")}
+              icon={MdFingerprint}
+              subtext="Total shift punch-ins"
+            />
+            <StatCard
+              tone="success"
+              value={attendanceSummary.punched_in}
+              label={t("guardKpiOnDuty", "Currently On Duty")}
+              icon={MdSecurity}
+              subtext={`${attendanceSummary.punched_in} active on duty`}
+            />
+            <StatCard
+              tone="info"
+              value={attendanceSummary.punched_out}
+              label={t("guardKpiCompleted", "Shifts Completed")}
+              icon={MdCheckCircle}
+              subtext="Punched out safely"
+            />
           </div>
 
           {/* Attendance Filters Bar */}

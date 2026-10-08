@@ -155,10 +155,10 @@ export default function ServiceEntry() {
   ];
 
   return (
-    <div className="ge-root">
+    <div className="ge-root space-y-6 animate-fadeIn">
       {/* ── HEADER ── */}
-      <div className="ge-er">
-        <div className="ge-er-left">
+      <div className="ge-er flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="ge-er-left flex items-center gap-3">
           <div
             className="ad-page-icon"
             style={{
@@ -177,16 +177,18 @@ export default function ServiceEntry() {
         </div>
         <button
           onClick={() => setShowModal(true)}
-          className="btn-primary"
+          className="btn-primary flex items-center gap-2"
           style={{ background: "#8B5CF6" }}
         >
-          <MdAdd size={18} /> {t("svcAddBtn", "New Service Entry")}
+          <MdAdd size={18} /> <span>{t("svcAddBtn", "New Service Entry")}</span>
         </button>
       </div>
 
       {/* ── STAT CARDS ── */}
-      <div className="ge-stats">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 my-2">
         <StatCard
+          layout="inline"
+          icon={<FaTools size={20} />}
           tone="brand"
           interactive
           selected={filter === "ALL"}
@@ -195,6 +197,8 @@ export default function ServiceEntry() {
           label={t("svcStatTotal", "Total Services")}
         />
         <StatCard
+          layout="inline"
+          icon={<FaTools size={20} />}
           tone="info"
           interactive
           selected={filter === "IN"}
@@ -203,6 +207,8 @@ export default function ServiceEntry() {
           label={t("svcStatInside", "Currently Inside")}
         />
         <StatCard
+          layout="inline"
+          icon={<MdLogout size={20} />}
           tone="success"
           interactive
           selected={filter === "OUT"}
@@ -213,7 +219,7 @@ export default function ServiceEntry() {
       </div>
 
       {/* ── SEARCH + FILTER ── */}
-      <div className="ge-toolbar">
+      <div className="ge-toolbar flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="overflow-x-auto max-w-full pb-1 sm:pb-0">
           <SlidingTabs
             className="ge-filter-tabs"
@@ -227,163 +233,157 @@ export default function ServiceEntry() {
           />
         </div>
 
-        <ExpandableSearch
-          value={search}
-          onChange={setSearch}
-          placeholder={t("svcSearchPlaceholder", "Search technician, skill, flat, mobile...")}
-        />
+        <div className="sm:ml-auto w-full sm:w-auto">
+          <ExpandableSearch
+            value={search}
+            onChange={setSearch}
+            placeholder={t("svcSearchPlaceholder", "Search technician, skill, flat, mobile...")}
+          />
+        </div>
       </div>
 
-      {/* ── DESKTOP TABLE ── */}
-      <div className="ge-table-card">
-        {initialLoad ? (
-          <div className="p-8 text-center text-secondary">
-            <Spinner size={24} />
-            <p className="mt-2 text-xs">{t("svcLoading", "Loading service entries...")}</p>
+      {/* ── DATA SECTION (SINGLE UNIFIED LOADING & EMPTY STATES) ── */}
+      {initialLoad ? (
+        <div className="ge-table-card p-12 text-center text-secondary">
+          <Spinner size={26} />
+          <p className="mt-2 text-xs font-bold">{t("svcLoading", "Loading service entries...")}</p>
+        </div>
+      ) : services.length === 0 ? (
+        <div className="ge-table-card p-12 text-center text-secondary">
+          <div className="ge-empty py-4">
+            <span className="ge-empty-icon text-3xl">🔧</span>
+            <p className="mt-2 text-sm font-semibold">{t("svcEmpty", "No service technician entries found")}</p>
           </div>
-        ) : services.length === 0 ? (
-          <div className="ge-empty">
-            <span className="ge-empty-icon">🔧</span>
-            <span>{t("svcEmpty", "No service technician entries found")}</span>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="ge-table">
-              <thead>
-                <tr>
-                  <th>{t("svcColTech", "Technician / Skill")}</th>
-                  <th>{t("svcColFlat", "Flat Visited")}</th>
-                  <th>{t("svcColContact", "Contact")}</th>
-                  <th>{t("svcColVehicle", "Vehicle")}</th>
-                  <th>{t("svcColEntryTime", "Entry Time")}</th>
-                  <th>{t("svcColExitTime", "Exit Time")}</th>
-                  <th>{t("svcColStatus", "Status")}</th>
-                  <th>{t("svcColAction", "Action")}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {services.map((item) => {
-                  const isInside = !item.exit_time;
-                  return (
-                    <tr key={item.id}>
-                      <td>
-                        <div className="flex items-center gap-2.5">
-                          <div className="w-8 h-8 rounded-lg bg-purple-500/15 text-purple-600 dark:text-purple-400 flex items-center justify-center font-bold text-xs shrink-0">
-                            <MdHandyman size={16} />
+        </div>
+      ) : (
+        <>
+          {/* Desktop Table */}
+          <div className="ge-table-card hidden md:block">
+            <div className="overflow-x-auto">
+              <table className="ge-table">
+                <thead>
+                  <tr>
+                    <th>{t("svcColTech", "Technician / Skill")}</th>
+                    <th>{t("svcColFlat", "Flat Visited")}</th>
+                    <th>{t("svcColContact", "Contact")}</th>
+                    <th>{t("svcColVehicle", "Vehicle")}</th>
+                    <th>{t("svcColEntryTime", "Entry Time")}</th>
+                    <th>{t("svcColExitTime", "Exit Time")}</th>
+                    <th>{t("svcColStatus", "Status")}</th>
+                    <th>{t("svcColAction", "Action")}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {services.map((item) => {
+                    const isInside = !item.exit_time;
+                    return (
+                      <tr key={item.id}>
+                        <td>
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-8 h-8 rounded-lg bg-purple-500/15 text-purple-600 dark:text-purple-400 flex items-center justify-center font-bold text-xs shrink-0">
+                              <MdHandyman size={16} />
+                            </div>
+                            <div>
+                              <span className="font-bold text-primary block text-sm">
+                                {item.visitor_name}
+                              </span>
+                              <span className="text-[11px] text-secondary">
+                                {t("svcSubService", "Service / Maintenance")}
+                              </span>
+                            </div>
                           </div>
-                          <div>
-                            <span className="font-bold text-primary block text-sm">
-                              {item.visitor_name}
-                            </span>
-                            <span className="text-[11px] text-secondary">
-                              {t("svcSubService", "Service / Maintenance")}
-                            </span>
-                          </div>
-                        </div>
-                      </td>
-                      <td>
-                        <span className="ge-flat-chip">{resolveVisitorFlatLabel(item, t)}</span>
-                      </td>
-                      <td>
-                        <a
-                          href={`tel:${item.mobile}`}
-                          className="inline-flex items-center gap-1 text-xs font-mono text-blue-600 dark:text-blue-400 hover:underline"
-                        >
-                          <MdPhone size={12} />
-                          {item.mobile || "—"}
-                        </a>
-                      </td>
-                      <td>
-                        <span className="text-xs font-mono text-secondary">
-                          {item.vehicle_number || "—"}
-                        </span>
-                      </td>
-                      <td>
-                        <span className="text-xs text-primary font-medium">
-                          {item.entry_time
-                            ? new Date(item.entry_time).toLocaleTimeString([], {
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              })
-                            : "—"}
-                        </span>
-                      </td>
-                      <td>
-                        <span className="text-xs text-secondary font-medium">
-                          {item.exit_time
-                            ? new Date(item.exit_time).toLocaleTimeString([], {
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              })
-                            : "—"}
-                        </span>
-                      </td>
-                      <td>
-                        {isInside ? (
-                          <span className="ge-badge ge-badge--inside">
-                            ● {t("svcBadgeInside", "Inside")}
-                          </span>
-                        ) : (
-                          <span className="ge-badge ge-badge--left">
-                            ✔ {t("svcBadgeExited", "Exited")}
-                          </span>
-                        )}
-                      </td>
-                      <td>
-                        {isInside ? (
-                          <button
-                            onClick={() => handleMarkExit(item.id, item.visitor_name)}
-                            disabled={exitLoadingId === item.id}
-                            className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition flex items-center gap-1 shadow-sm disabled:opacity-50"
+                        </td>
+                        <td>
+                          <span className="ge-flat-chip">{resolveVisitorFlatLabel(item, t)}</span>
+                        </td>
+                        <td>
+                          <a
+                            href={`tel:${item.mobile}`}
+                            className="inline-flex items-center gap-1 text-xs font-mono text-blue-600 dark:text-blue-400 hover:underline"
                           >
-                            {exitLoadingId === item.id ? (
-                              <Spinner size={12} />
-                            ) : (
-                              <MdLogout size={13} />
-                            )}
-                            <span>{t("svcMarkExit", "Mark Exit")}</span>
-                          </button>
-                        ) : (
-                          <span className="text-xs text-secondary italic">{t("svcCompleted", "Completed")}</span>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                            <MdPhone size={12} />
+                            {item.mobile || "—"}
+                          </a>
+                        </td>
+                        <td>
+                          <span className="text-xs font-mono text-secondary">
+                            {item.vehicle_number || "—"}
+                          </span>
+                        </td>
+                        <td>
+                          <span className="text-xs text-primary font-medium">
+                            {item.entry_time
+                              ? new Date(item.entry_time).toLocaleTimeString([], {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })
+                              : "—"}
+                          </span>
+                        </td>
+                        <td>
+                          <span className="text-xs text-secondary font-medium">
+                            {item.exit_time
+                              ? new Date(item.exit_time).toLocaleTimeString([], {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })
+                              : "—"}
+                          </span>
+                        </td>
+                        <td>
+                          {isInside ? (
+                            <span className="ge-badge ge-badge--inside">
+                              ● {t("svcBadgeInside", "Inside")}
+                            </span>
+                          ) : (
+                            <span className="ge-badge ge-badge--left">
+                              ✔ {t("svcBadgeExited", "Exited")}
+                            </span>
+                          )}
+                        </td>
+                        <td>
+                          {isInside ? (
+                            <button
+                              onClick={() => handleMarkExit(item.id, item.visitor_name)}
+                              disabled={exitLoadingId === item.id}
+                              className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition flex items-center gap-1 shadow-sm disabled:opacity-50"
+                            >
+                              {exitLoadingId === item.id ? (
+                                <Spinner size={12} />
+                              ) : (
+                                <MdLogout size={13} />
+                              )}
+                              <span>{t("svcMarkExit", "Mark Exit")}</span>
+                            </button>
+                          ) : (
+                            <span className="text-xs text-secondary italic">{t("svcCompleted", "Completed")}</span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
 
-            <div style={{ display: "flex", justifyContent: "center", padding: "12px 0 8px" }}>
-              <Pagination
-                page={page}
-                totalPages={totalPages}
-                onPageChange={handlePageChange}
-                pageSize={limit}
-                onPageSizeChange={(s) => {
-                  limitRef.current = s;
-                  setLimit(s);
-                  setPage(1);
-                  handlePageChange(1);
-                }}
-              />
+              <div style={{ display: "flex", justifyContent: "center", padding: "12px 0 8px" }}>
+                <Pagination
+                  page={page}
+                  totalPages={totalPages}
+                  onPageChange={handlePageChange}
+                  pageSize={limit}
+                  onPageSizeChange={(s) => {
+                    limitRef.current = s;
+                    setLimit(s);
+                    setPage(1);
+                    handlePageChange(1);
+                  }}
+                />
+              </div>
             </div>
           </div>
-        )}
-      </div>
 
-      {/* ── MOBILE CARDS ── */}
-      <div className="ge-mobile-list">
-        {initialLoad ? (
-          <div className="p-6 text-center text-secondary">
-            <Spinner size={20} />
-          </div>
-        ) : services.length === 0 ? (
-          <div className="ge-empty">
-            <span className="ge-empty-icon">🔧</span>
-            <span>{t("svcEmpty", "No service technician entries found")}</span>
-          </div>
-        ) : (
-          <>
+          {/* Mobile Cards */}
+          <div className="ge-mobile-list block md:hidden space-y-3">
             {services.map((item) => (
               <div key={item.id} className="ge-mobile-card">
                 <div className="ge-mc-top">
@@ -451,9 +451,9 @@ export default function ServiceEntry() {
                 }}
               />
             </div>
-          </>
-        )}
-      </div>
+          </div>
+        </>
+      )}
 
       {/* ── 4-STEP WIZARD ENTRY MODAL ── */}
       <StepVisitorEntryModal

@@ -35,6 +35,7 @@ import {
 import GuardEmergencyModal from "../../components/guard/GuardEmergencyModal";
 import GuardPunchModal from "../../components/guard/GuardPunchModal";
 import StatCard from "../../components/common/StatCard";
+import QuickLink from "../../components/common/QuickLink";
 
 /* ─────────────────────────────────────────────────────────────
    Helper Functions
@@ -252,6 +253,44 @@ export default function GuardDashboard() {
     }
     return false;
   }, [shift, dateTime]);
+
+  /* ── Attendance Gate Check Lock ──
+     If guard is on active duty and has not punched in yet, gate actions
+     and panel navigation are locked until punch-in is recorded. */
+  const isAttendanceLocked = useMemo(() => {
+    if (!shift || !isOnDuty) return false;
+    const isPunchedIn =
+      shift?.attendance?.status === "PUNCHED_IN" ||
+      Boolean(shift?.attendance?.punch_in && shift?.attendance?.status !== "NOT_PUNCHED_IN");
+    const isPunchedOut = shift?.attendance?.status === "PUNCHED_OUT";
+    return !isPunchedIn && !isPunchedOut;
+  }, [shift, isOnDuty]);
+
+  // Automatically trigger mandatory punch-in modal when guard lands on duty without punch-in
+  useEffect(() => {
+    if (!loading && isAttendanceLocked) {
+      setPunchModal((prev) => {
+        if (!prev.open) {
+          return { open: true, mode: "PUNCH_IN", forced: true };
+        }
+        return prev;
+      });
+    }
+  }, [loading, isAttendanceLocked]);
+
+  /* ── Guard Action Protection Interceptor ── */
+  const handleProtectedAction = (actionCallback) => {
+    if (isAttendanceLocked) {
+      toast.warn(
+        t("gdPunchInRequiredToast", "Duty check-in required. Please punch in first before performing gate operations.")
+      );
+      setPunchModal({ open: true, mode: "PUNCH_IN", forced: true });
+      return;
+    }
+    if (typeof actionCallback === "function") {
+      actionCallback();
+    }
+  };
 
   /* ── Security Radar (Overstaying Visitors) ──
      Pass-entered visitors use their configured allowed-time (dwell_minutes);
@@ -779,51 +818,26 @@ export default function GuardDashboard() {
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
-          {gateQuickActions.map((action, idx) => {
-            const Icon = action.icon;
-            return (
-              <div
-                key={action.id}
-                onClick={() => {
+          {gateQuickActions.map((action, idx) => (
+            <QuickLink
+              key={action.id}
+              title={action.title}
+              desc={action.desc}
+              icon={action.icon}
+              badge={action.badge}
+              badgeColor={action.badgeColor}
+              color={action.color}
+              bg={action.bg}
+              path={action.path}
+              onClick={() => {
+                handleProtectedAction(() => {
                   if (action.onClick) action.onClick();
                   else if (action.path) navigate(action.path);
-                }}
-                style={{ "--gd-c": action.color, animationDelay: `${idx * 60}ms` }}
-                className={`gd-action gd-action--enter group relative overflow-hidden rounded-2xl p-4 sm:p-5 cursor-pointer flex flex-col gap-3 ${action.cardClass}`}
-              >
-                <span className="gd-action__blob" aria-hidden />
-
-                {action.badge && (
-                  <span
-                    className={`gd-action__badge absolute top-3 right-3 z-2 px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider shadow-sm ${
-                      action.badgeColor || "bg-blue-600 text-white"
-                    }`}
-                  >
-                    {action.badge}
-                  </span>
-                )}
-
-                <div
-                  className="gd-action__icon"
-                  style={{ backgroundColor: action.bg, color: action.color }}
-                >
-                  <Icon size={22} />
-                </div>
-
-                <div className="relative z-1 mt-auto">
-                  <div className="flex items-center gap-1">
-                    <h3 className="text-[13px] sm:text-sm font-bold text-primary leading-tight">
-                      {action.title}
-                    </h3>
-                    <MdChevronRight className="gd-action__arrow shrink-0" size={16} />
-                  </div>
-                  <p className="text-[10px] sm:text-[11px] text-secondary line-clamp-2 mt-0.5 leading-snug">
-                    {action.desc}
-                  </p>
-                </div>
-              </div>
-            );
-          })}
+                });
+              }}
+              style={{ animationDelay: `${idx * 60}ms` }}
+            />
+          ))}
         </div>
       </div>
 
@@ -1160,7 +1174,7 @@ export default function GuardDashboard() {
 
                       {isInside ? (
                         <button
-                          onClick={() => setExitTarget(v)}
+                          onClick={() => handleProtectedAction(() => setExitTarget(v))}
                           disabled={exitLoading}
                           className="btn-danger px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm hover:scale-105 active:scale-95 transition"
                         >
@@ -1264,7 +1278,12 @@ export default function GuardDashboard() {
         isOpen={punchModal.open}
         mode={punchModal.mode}
         isOnDuty={isOnDuty}
-        onClose={() => setPunchModal({ open: false, mode: "PUNCH_IN" })}
+        forced={punchModal.forced || isAttendanceLocked}
+        onClose={() => setPunchModal({ open: false, mode: "PUNCH_IN", forced: false })}
+        onLogout={() => {
+          localStorage.clear();
+          navigate("/login");
+        }}
         onSuccess={() => loadDashboardData(true)}
       />
 

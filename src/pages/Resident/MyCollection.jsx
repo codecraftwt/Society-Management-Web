@@ -525,7 +525,7 @@ export default function MyCollection() {
 
       {/* ── TOOLBAR: Tabs on left, DateRange + Search on right ── */}
       {!loading && (
-        <div className="ge-toolbar">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
           <div className="overflow-x-auto max-w-full pb-1 sm:pb-0">
             <SlidingTabs
               className="gp-filter-tabs"
@@ -541,7 +541,7 @@ export default function MyCollection() {
             />
           </div>
 
-          <div className="flex items-center gap-2.5 ml-auto">
+          <div className="flex items-center justify-end gap-2.5 sm:ml-auto shrink-0 flex-wrap sm:flex-nowrap">
             <DateRangeFilter
               fromDate={fromDate}
               toDate={toDate}

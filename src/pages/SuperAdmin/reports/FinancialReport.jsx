@@ -15,6 +15,7 @@ import {
 import Select from "../../../components/common/Select";
 import ReportFilterSheet from "../../../components/common/ReportFilterSheet";
 import Pagination from "../../../components/common/Pagination";
+import StatCard from "../../../components/common/StatCard";
 
 const ENDPOINT = "/reports/payments";
 
@@ -308,16 +309,30 @@ export default function SuperAdminFinancialReport() {
       {/* ── STATS ── */}
       {!loading && counts.total > 0 && (
         <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(4,1fr)", gap: 10 }}>
-          {[
-            { label: t("rptCollected") || "Total Collected", val: inr(counts.collected), color: "green" },
-            { label: t("payStatPendingAmt") || "Pending Amount", val: inr(counts.pendingAmount), color: "amber" },
-            { label: t("payStatSuccess") || "Successful", val: counts.success, color: "green" },
-            { label: t("payStatPending") || "Pending", val: counts.pending, color: "purple" },
-          ].map((s, i) => (
-            <div key={i} className={`stat-card stat-card--${s.color}`} style={{ borderRadius: isMobile ? 14 : 18, padding: isMobile ? "12px 14px" : "16px 18px" }}>
-              <div><div className="stat-card__val" style={{ fontSize: isMobile ? 18 : 22 }}>{s.val}</div><div className="stat-card__label">{s.label}</div></div>
-            </div>
-          ))}
+          <StatCard
+            value={inr(counts.collected)}
+            label={t("rptCollected") || "Total Collected"}
+            tone="success"
+            icon={MdAttachMoney}
+          />
+          <StatCard
+            value={inr(counts.pendingAmount)}
+            label={t("payStatPendingAmt") || "Pending Amount"}
+            tone="warning"
+            icon={MdSchedule}
+          />
+          <StatCard
+            value={counts.success}
+            label={t("payStatSuccess") || "Successful"}
+            tone="success"
+            icon={MdCheckCircle}
+          />
+          <StatCard
+            value={counts.pending}
+            label={t("payStatPending") || "Pending"}
+            tone="brand"
+            icon={MdSchedule}
+          />
         </div>
       )}
 

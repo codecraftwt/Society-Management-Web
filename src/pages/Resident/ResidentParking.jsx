@@ -17,6 +17,8 @@ import useUnsavedDirty from "../../hooks/useUnsavedDirty";
 import { getTitleError, getVehicleNumberError, getRequiredDateError, getSelectError } from "../../utils/validators";
 
 import Pagination from "../../components/common/Pagination";
+import StatCard from "../../components/common/StatCard";
+import GlobalBadge from "../../components/common/GlobalBadge";
 
 function useDebounce(value, delay = 500) {
   const [debounced, setDebounced] = useState(value);
@@ -334,8 +336,8 @@ useEffect(() => {
   return (
     <div className="ge-root animate-fadeIn">
 
-      <div className="ge-er">
-        <div className="ge-er-left">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 sm:mb-5">
+        <div className="flex items-center gap-3">
           <div className="ad-page-icon">
             <MdLocalParking size={22} />
           </div>
@@ -347,11 +349,39 @@ useEffect(() => {
         {hasFlat && (
           <button
             onClick={() => setShowForm((p) => !p)}
-            className="btn-primary flex items-center gap-2"
+            className="btn-primary flex items-center gap-2 self-start sm:self-auto shrink-0"
           >
             <MdAdd size={18} /> {t("parkRequestBtn")}
           </button>
         )}
+      </div>
+
+      {/* ── STATS CARDS (ONE ROW) ── */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4">
+        <StatCard
+          icon={MdLocalParking}
+          tone="brand"
+          value={counts.ALL || 0}
+          label={t("parkStatTotal") || "Total Requests"}
+        />
+        <StatCard
+          icon={MdInfo}
+          tone="warning"
+          value={counts.PENDING || 0}
+          label={t("parkStatusPending") || "Pending"}
+        />
+        <StatCard
+          icon={MdCheckCircle}
+          tone="success"
+          value={counts.APPROVED || 0}
+          label={t("parkStatusApproved") || "Approved"}
+        />
+        <StatCard
+          icon={MdDirectionsCar}
+          tone="info"
+          value={counts.COMPLETED || 0}
+          label={t("parkStatusCompleted") || "Completed"}
+        />
       </div>
 
       {/* ── SUCCESS TOAST (shown after form auto-closes) ── */}

@@ -7,6 +7,8 @@ import { ThemeProvider } from "./context/ThemeContext";
 import "./index.css";
 import "./light.css";
 import "./theme/card-tokens.css";
+import "./theme/card-styles.css";
+import "./theme/quick-link-styles.css";
 
 /*
   LanguageProvider is NO LONGER here.

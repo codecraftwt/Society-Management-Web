@@ -5,7 +5,12 @@ import {
   rgbToString,
   adjustBrightness,
   deriveThemeTokens,
+  CARD_STYLES,
+  QUICK_LINK_STYLES,
+  normalizeCardStyle,
+  normalizeQuickLinkStyle,
 } from "./themeUtils";
+
 
 describe("themeUtils", () => {
   describe("isValidHexColor", () => {
@@ -76,4 +81,69 @@ describe("themeUtils", () => {
       expect(deriveThemeTokens("not-a-color")).toBeNull();
     });
   });
+
+  describe("CARD_STYLES & QUICK_LINK_STYLES", () => {
+    it("contains at least 8 distinct card styles including default", () => {
+      expect(CARD_STYLES.length).toBeGreaterThanOrEqual(10);
+      const ids = CARD_STYLES.map((s) => s.id);
+      expect(ids).toEqual(
+        expect.arrayContaining([
+          "default",
+          "solid",
+          "glass",
+          "aurora",
+          "floating",
+          "neon",
+          "gradient",
+          "neumorphic",
+          "accent-rail",
+          "minimal",
+        ]),
+      );
+      CARD_STYLES.forEach((s) => {
+        expect(s.id).toBeDefined();
+        expect(s.name).toBeDefined();
+        expect(s.description).toBeDefined();
+      });
+    });
+
+    it("contains at least 8 distinct quick link styles including default", () => {
+      expect(QUICK_LINK_STYLES.length).toBeGreaterThanOrEqual(10);
+      const ids = QUICK_LINK_STYLES.map((s) => s.id);
+      expect(ids).toEqual(
+        expect.arrayContaining([
+          "default",
+          "solid",
+          "glass",
+          "aurora",
+          "floating",
+          "neon",
+          "gradient",
+          "neumorphic",
+          "accent-rail",
+          "minimal",
+        ]),
+      );
+      QUICK_LINK_STYLES.forEach((s) => {
+        expect(s.id).toBeDefined();
+        expect(s.name).toBeDefined();
+      });
+    });
+
+    it("normalizes legacy style identifiers correctly", () => {
+      expect(normalizeCardStyle("current")).toBe("default");
+      expect(normalizeCardStyle("aurora-glass")).toBe("aurora");
+      expect(normalizeCardStyle("floating-3d")).toBe("floating");
+      expect(normalizeCardStyle("glass")).toBe("glass");
+      expect(normalizeCardStyle("solid")).toBe("solid");
+
+      expect(normalizeQuickLinkStyle("current")).toBe("default");
+      expect(normalizeQuickLinkStyle("glass-tile")).toBe("glass");
+      expect(normalizeQuickLinkStyle("aurora-tile")).toBe("aurora");
+      expect(normalizeQuickLinkStyle("neon-edge")).toBe("neon");
+      expect(normalizeQuickLinkStyle("solid")).toBe("solid");
+    });
+  });
+
 });
+

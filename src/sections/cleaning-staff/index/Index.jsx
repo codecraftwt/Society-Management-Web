@@ -12,6 +12,9 @@ import {
   MdCalendarMonth,
   MdPeople,
   MdQrCode,
+  MdAccessTime,
+  MdRefresh,
+  MdEditCalendar,
 } from "react-icons/md";
 
 import { AuthContext } from "../../../context/AuthContext";
@@ -23,6 +26,7 @@ import GlobalButton from "../../../components/common/GlobalButton";
 import ExpandableSearch from "../../../components/common/ExpandableSearch";
 import SlidingTabs from "../../../components/common/SlidingTabs";
 import UserAvatar from "../../../components/common/UserAvatar";
+import StatCard from "../../../components/common/StatCard";
 import AttendancePanel from "../detail/AttendancePanel";
 import PassQrModal from "../detail/PassQrModal";
 import useStaffEnrichment from "../useStaffEnrichment";
@@ -375,37 +379,37 @@ export default function Index({
         {view === "staff" && (
           <>
             {/* KPI cards */}
-            <div className="cs-kpi-grid" style={{ marginBottom: 16 }}>
-              <KpiCard
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-4">
+              <StatCard
                 icon={MdPeople}
                 label={t("csKpiTotal", "Total Staff")}
                 value={kpi.total}
-                desc={t("csKpiTotalDesc", "All staff on record")}
-                accent="var(--accent)"
+                subtext={t("csKpiTotalDesc", "All staff on record")}
+                tone="brand"
                 loading={kpiLoading}
               />
-              <KpiCard
+              <StatCard
                 icon={MdCheckCircle}
                 label={t("csKpiActive", "Active")}
                 value={kpi.active}
-                desc={t("csKpiActiveDesc", "Eligible for new passes")}
-                accent="var(--success, #10b981)"
+                subtext={t("csKpiActiveDesc", "Eligible for new passes")}
+                tone="success"
                 loading={kpiLoading}
               />
-              <KpiCard
+              <StatCard
                 icon={MdPauseCircle}
                 label={t("csKpiInactive", "Inactive")}
                 value={kpi.inactive}
-                desc={t("csKpiInactiveDesc", "History preserved")}
-                accent="var(--warning, #f59e0b)"
+                subtext={t("csKpiInactiveDesc", "History preserved")}
+                tone="warning"
                 loading={kpiLoading}
               />
-              <KpiCard
+              <StatCard
                 icon={MdConfirmationNumber}
                 label={t("csKpiOnPass", "On Pass Today")}
                 value={kpi.onPass}
-                desc={t("csKpiOnPassDesc", "{n} scans/day per pass", { n: MAX_SCANS_PER_DAY })}
-                accent="var(--info, #3b82f6)"
+                subtext={t("csKpiOnPassDesc", "{n} scans/day per pass", { n: MAX_SCANS_PER_DAY })}
+                tone="info"
                 loading={kpiLoading}
               />
             </div>
@@ -455,11 +459,46 @@ export default function Index({
         {/* ══ ATTENDANCE VIEW ════════════════════════════════════════════ */}
         {view === "attendance" && (
           <>
-            <div className="cs-toolbar" style={{ marginBottom: 12 }}>
-              <div className="cs-toolbar__actions">
-                <span className="cs-inline-stat">
-                  <MdCalendarMonth size={13} />
-                  {t("csFrom", "From")}
+            {/* KPI Summary Cards */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-4">
+              <StatCard
+                icon={MdHistory}
+                label={t("csKpiTotalRecords", "Total Records")}
+                value={attStats.total}
+                subtext={t("csKpiTotalRecordsDesc", "Attendance entries in filter")}
+                tone="brand"
+              />
+              <StatCard
+                icon={MdCheckCircle}
+                label={t("csPresent", "Present")}
+                value={attStats.present}
+                subtext={t("csKpiPresentDesc", "Completed shift")}
+                tone="success"
+              />
+              <StatCard
+                icon={MdAccessTime}
+                label={t("csIncomplete", "Incomplete / Open")}
+                value={attStats.incomplete}
+                subtext={t("csKpiIncompleteDesc", "Active shift or missing out")}
+                tone="warning"
+              />
+              <StatCard
+                icon={MdEditCalendar}
+                label={t("csManual", "Manual Correction")}
+                value={attStats.manual}
+                subtext={t("csKpiManualDesc", "Adjusted by admin")}
+                tone="info"
+              />
+            </div>
+
+            {/* Filter toolbar */}
+            <div className="bg-card border border-glass-border rounded-2xl p-3.5 mb-4 flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-3 flex-wrap">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-semibold text-secondary flex items-center gap-1.5">
+                    <MdCalendarMonth size={14} className="text-accent" />
+                    {t("csFrom", "From")}:
+                  </span>
                   <input
                     className="input"
                     type="date"
@@ -467,11 +506,20 @@ export default function Index({
                     onChange={(e) =>
                       onAttendanceFilterChange?.({ ...attendanceFilter, from: e.target.value })
                     }
-                    style={{ width: 150, height: 32, fontSize: 12.5 }}
+                    style={{
+                      height: 36,
+                      borderRadius: 10,
+                      padding: "0 10px",
+                      fontSize: 12,
+                      width: 140,
+                    }}
                   />
-                </span>
-                <span className="cs-inline-stat">
-                  {t("csTo", "To")}
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-semibold text-secondary">
+                    {t("csTo", "To")}:
+                  </span>
                   <input
                     className="input"
                     type="date"
@@ -479,55 +527,64 @@ export default function Index({
                     onChange={(e) =>
                       onAttendanceFilterChange?.({ ...attendanceFilter, to: e.target.value })
                     }
-                    style={{ width: 150, height: 32, fontSize: 12.5 }}
+                    style={{
+                      height: 36,
+                      borderRadius: 10,
+                      padding: "0 10px",
+                      fontSize: 12,
+                      width: 140,
+                    }}
                   />
-                </span>
-                <GlobalButton
-                  variant="secondary"
-                  icon={MdEventAvailable}
-                  onClick={() => onAttendanceFilterChange?.({ ...attendanceFilter, from: today, to: today })}
-                >
-                  {t("csToday", "Today")}
-                </GlobalButton>
-                <GlobalButton
-                  variant="secondary"
-                  icon={MdEventBusy}
-                  onClick={() =>
-                    onAttendanceFilterChange?.({
-                      ...attendanceFilter,
-                      from: addDaysIST(today, -6),
-                      to: today,
-                    })
-                  }
-                >
-                  {t("csLast7", "Last 7 days")}
-                </GlobalButton>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <GlobalButton
+                    variant={attendanceFilter.from === today && attendanceFilter.to === today ? "primary" : "secondary"}
+                    size="sm"
+                    icon={MdEventAvailable}
+                    onClick={() => onAttendanceFilterChange?.({ ...attendanceFilter, from: today, to: today })}
+                  >
+                    {t("csToday", "Today")}
+                  </GlobalButton>
+                  <GlobalButton
+                    variant={attendanceFilter.from === addDaysIST(today, -6) && attendanceFilter.to === today ? "primary" : "secondary"}
+                    size="sm"
+                    icon={MdEventBusy}
+                    onClick={() =>
+                      onAttendanceFilterChange?.({
+                        ...attendanceFilter,
+                        from: addDaysIST(today, -6),
+                        to: today,
+                      })
+                    }
+                  >
+                    {t("csLast7", "Last 7 days")}
+                  </GlobalButton>
+                  {(attendanceFilter.from || attendanceFilter.to) && (
+                    <GlobalButton
+                      variant="reset"
+                      size="sm"
+                      icon={MdRefresh}
+                      onClick={() => onAttendanceFilterChange?.({ from: "", to: "" })}
+                    >
+                      {t("reset", "Reset")}
+                    </GlobalButton>
+                  )}
+                </div>
               </div>
-            </div>
 
-            <div className="cs-inline-stats">
-              <span className="cs-inline-stat">
-                <strong>{attStats.total}</strong> {t("csRows", "records")}
-              </span>
-              <span className="cs-inline-stat">
-                <strong>{attStats.present}</strong> {t("csPresent", "present")}
-              </span>
-              <span className="cs-inline-stat">
-                <strong>{attStats.incomplete}</strong> {t("csIncomplete", "incomplete")}
-              </span>
-              <span className="cs-inline-stat">
-                <strong>{attStats.manual}</strong> {t("csManual", "manual")}
-              </span>
+              {attendanceFilter.from && attendanceFilter.to && (
+                <div className="flex items-center gap-1.5 text-xs font-bold text-accent bg-accent/10 border border-accent/25 px-3 py-1.5 rounded-xl">
+                  <span>📅</span>
+                  <span>
+                    {formatDateOnly(attendanceFilter.from)}
+                    {attendanceFilter.from !== attendanceFilter.to
+                      ? ` → ${formatDateOnly(attendanceFilter.to)}`
+                      : ""}
+                  </span>
+                </div>
+              )}
             </div>
-
-            {attendanceFilter.from && attendanceFilter.to && (
-              <p className="cs-hint" style={{ marginBottom: 10 }}>
-                {formatDateOnly(attendanceFilter.from)}
-                {attendanceFilter.from !== attendanceFilter.to
-                  ? ` → ${formatDateOnly(attendanceFilter.to)}`
-                  : ""}
-              </p>
-            )}
 
             {canCorrectAttendance ? (
               <AttendancePanel
@@ -536,6 +593,7 @@ export default function Index({
                 showStaffColumn
                 emptyMessage={t("csNoAttendance", "No attendance for this period")}
                 onUpdated={onAttendanceReload}
+                onResetFilter={() => onAttendanceFilterChange?.({ from: today, to: today })}
               />
             ) : (
               <p className="cs-hint">

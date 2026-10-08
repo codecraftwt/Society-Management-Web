@@ -194,10 +194,9 @@ hatch avoids invalid HTML but is worse for assistive tech than today's plain
 | `.mcard` | 1 file | clean | REJECTED (nested interactive) |
 | `.complaint-card` | **0 files** — **PURGED** 2026-10-02 | removed from `index.css` (base + responsive blocks) | DEAD — removed |
 | `.sa-kpi-card` | **0 files** — **PURGED** 2026-10-02 | removed from `SuperAdmin.css` (base + tier blocks) and `role-theme.css` (selector lists) | DEAD — removed |
-| `.gd-stat-card` | **0 files** — **PURGED** 2026-10-02 | removed from `Guard.css` (tier block), `index.css` (base + responsive), and `role-theme.css` (selector lists) | DEAD — removed |
-| `.ps-decent-card` | 1 file (`Admin/AssignParkingSlot.jsx`) | `role-theme.css` lines 2660-2676, scoped tier rules | KEEP — `available`/`occupied` state card; not a generic primitive |
+| `.ps-decent-card` | **0 files** — **PURGED** (Phase 4) | `role-theme.css` + `Admin.css` rules removed; migrated to `RecordCard` | MIGRATED (Phase 4) |
 | `.ra-card` | 1 file (`Resident/ResidentAmenity.jsx`) | `Resident.css` with `html.role-theme .ra-card` rules | KEEP — amenity selection card with emoji, accent bar, disabled opacity; specialty UI |
-| `.fh-flat-card` | 1 file (`Admin/FlatHistory.jsx`) | `Admin.css` with deeply scoped tier rules + `light.css` overrides | KEEP — flat selection card with resident/vacant strip and selection state |
+| `.fh-flat-card` | **0 files** — **PURGED** (Phase 4) | `Admin.css` + `light.css` rules removed; migrated to `RecordCard` | MIGRATED (Phase 4) |
 | `.adh-op` | 1 file (`Admin/AdminDashboard.jsx:315-365`) | 11 rules in `Admin.css`, **all 11 tier-gated** | NEEDS DECISION — same `--stat-*` gradient exposure as `.ad-kpi`, same page |
 | `.premium-card` | 2 files (`Accountant/*`) | — | KEEP per Phase 2 scope |
 | `.sa-action-menu` | 1 file | — | KEEP per Phase 2 scope |
