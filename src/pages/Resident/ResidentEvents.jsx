@@ -7,7 +7,6 @@ import {
   MdVideoLibrary,
   MdRefresh,
   MdChevronRight,
-  MdEventAvailable,
 } from "react-icons/md";
 import eventService from "../../services/eventService";
 import ExpandableSearch from "../../components/common/ExpandableSearch";
@@ -15,12 +14,9 @@ import GlobalButton from "../../components/common/GlobalButton";
 import GlobalModal from "../../components/common/GlobalModal";
 import Pagination from "../../components/common/Pagination";
 import MediaLightbox from "../../components/common/MediaLightbox";
-import PanelHero from "../../components/common/PanelHero";
 import RecordCard from "../../components/common/RecordCard";
-import { useLang } from "../../context/LanguageContext";
 
 export default function ResidentEvents() {
-  const { t } = useLang();
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
@@ -81,12 +77,6 @@ export default function ResidentEvents() {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-      <PanelHero
-        title={t("events", "Society Events")}
-        subtitle="Explore upcoming society celebrations, community workshops, and video highlights."
-        icon={MdEventAvailable}
-      />
-
       {/* Filter Toolbar */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>

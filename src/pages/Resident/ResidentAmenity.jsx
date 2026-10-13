@@ -1,5 +1,5 @@
 import Pagination from "../../components/common/Pagination";
-  import { useEffect, useState, useRef, useCallback } from "react";
+  import { useEffect, useState, useRef, useCallback, useMemo } from "react";
   import { useNavigate } from "react-router-dom";
   import API from "../../services/api";
   import { useLang } from "../../context/LanguageContext";
@@ -7,6 +7,7 @@ import Pagination from "../../components/common/Pagination";
   import "react-datepicker/dist/react-datepicker.css";
   import Modal from "../../components/Modal";
   import StatCard from "../../components/common/StatCard";
+import Select from "../../components/common/Select";
   import SlidingTabs from "../../components/common/SlidingTabs";
   import ExpandableSearch from "../../components/common/ExpandableSearch";
   import { QRCodeCanvas } from "qrcode.react";
@@ -20,6 +21,8 @@ import Pagination from "../../components/common/Pagination";
     MdSportsBasketball, MdSportsVolleyball, MdSportsGolf, MdSportsBaseball,
     MdSportsHockey, MdSportsKabaddi, MdPark, MdChair, MdCelebration,
     MdTheaters, MdTheaterComedy, MdSpa, MdMenuBook, MdEmojiEvents,
+  MdFilterList, MdQrCode2, MdOutlineInbox,
+  MdCheckCircle, MdCancel, MdEventAvailable, MdAccessTime,
   } from "react-icons/md";
 
     
@@ -108,7 +111,7 @@ import Pagination from "../../components/common/Pagination";
     );
   }
 
-  const amenityIcon = (name = "") => {
+  const amenityIcon = (name = "", size = 32) => {
     const n = name.toLowerCase();
     let Icon = MdEmojiEvents;
     if (n.includes("swim") || n.includes("pool"))              Icon = MdPool;
@@ -132,8 +135,8 @@ import Pagination from "../../components/common/Pagination";
     else if (n.includes("ground") || n.includes("field") || n.includes("sport")) Icon = MdSportsSoccer;
     return (
       <Icon
-        size={34}
-        style={{ color: "#93C5FD", display: "block" }}
+        size={size}
+        style={{ color: "currentColor", display: "block" }}
         aria-hidden="true"
       />
     );
@@ -192,6 +195,18 @@ const navigate = useNavigate();
     const [statusFilter,    setStatusFilter]    = useState("ALL");
     const [amenityFilter,   setAmenityFilter]   = useState("ALL");
     const debouncedSearch = useDebounce(bookingSearch, 500);
+
+    /* ── Amenities tab filters ── */
+    const [amenitySearch,     setAmenitySearch]     = useState("");
+    const [amenityTypeFilter, setAmenityTypeFilter] = useState("ALL");
+    const visibleAmenities = useMemo(() => {
+      const q = amenitySearch.trim().toLowerCase();
+      return amenities.filter((a) => {
+        const matchesType = amenityTypeFilter === "ALL" || a.type === amenityTypeFilter;
+        const matchesSearch = !q || String(a.name || "").toLowerCase().includes(q);
+        return matchesType && matchesSearch;
+      });
+    }, [amenities, amenitySearch, amenityTypeFilter]);
 
     /* ── Pagination ── */
     const [page,       setPage]       = useState(1);
@@ -754,92 +769,246 @@ const navigate = useNavigate();
           </div>
         </div>
 
-        <SlidingTabs
-          className="ge-filter-tabs mb-6"
-          value={tab}
-          onChange={setTab}
-          items={[
-            {
-              id: "AMENITIES",
-              label: t("amenTabFacilities"),
-              icon: <MdPool size={15} />,
-            },
-            {
-              id: "BOOKINGS",
-              label: t("amenTabBookings"),
-              icon: <MdDateRange size={15} />,
-              badge: counts.ALL > 0 ? counts.ALL : undefined,
-              alert: counts.PAYMENT_PENDING,
-            },
-          ]}
-        />
+        {/* TOP TOOLBAR: Toggle btn + Filter dropdown(s) + Search bar ALL IN ONE ROW */}
+        <div className="ge-toolbar flex items-center justify-between gap-3 flex-wrap mb-5">
+          <div className="flex items-center gap-3 flex-wrap flex-1 min-w-0">
+            {/* Toggle Button (Facilities vs My Bookings) */}
+            <SlidingTabs
+              className="ge-filter-tabs shrink-0"
+              value={tab}
+              onChange={setTab}
+              items={[
+                {
+                  id: "AMENITIES",
+                  label: t("amenTabFacilities") || "Facilities",
+                  icon: <MdPool size={15} />,
+                },
+                {
+                  id: "BOOKINGS",
+                  label: t("amenTabBookings") || "My Bookings",
+                  icon: <MdDateRange size={15} />,
+                  badge: counts.ALL > 0 ? counts.ALL : undefined,
+                  alert: counts.PAYMENT_PENDING,
+                },
+              ]}
+            />
+
+            {/* Contextual Filter Dropdown(s) */}
+            {tab === "AMENITIES" ? (
+              <div className="flex items-center gap-2">
+                <div style={{ width: 165 }}>
+                  <Select
+                    value={amenityTypeFilter}
+                    onChange={(e) => setAmenityTypeFilter(e.target.value)}
+                    icon={<MdFilterList size={16} />}
+                    options={[
+                      { value: "ALL", label: t("geFilterAll") || "All Facilities" },
+                      { value: "FREE", label: t("amenFree") || "Free" },
+                      { value: "PAID", label: t("amenPaid") || "Paid" },
+                    ]}
+                  />
+                </div>
+                {(amenityTypeFilter !== "ALL" || amenitySearch) && (
+                  <button
+                    type="button"
+                    onClick={() => { setAmenityTypeFilter("ALL"); setAmenitySearch(""); }}
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold text-red-400 hover:text-red-300 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 transition-all cursor-pointer shrink-0"
+                    title={t("amenClearFilters", "Reset filter")}
+                  >
+                    <MdClose size={14} />
+                    <span>{t("clearFilter") || "Reset"}</span>
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 flex-wrap">
+                {/* Status Dropdown */}
+                <div style={{ width: 175 }}>
+                  <Select
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value)}
+                    icon={<MdFilterList size={16} />}
+                    options={STATUS_OPTIONS.map((s) => ({
+                      value: s,
+                      label: `${s === "ALL" ? (t("geFilterAll") || "All Statuses") : statusDisplayLabel(s)} (${counts[s] ?? 0})`,
+                    }))}
+                  />
+                </div>
+
+                {/* Amenity Dropdown */}
+                {amenityNames.length > 0 && (
+                  <div style={{ width: 175 }}>
+                    <Select
+                      value={amenityFilter}
+                      onChange={(e) => setAmenityFilter(e.target.value)}
+                      icon={<MdPool size={16} />}
+                      options={[
+                        { value: "ALL", label: t("amenAllAmenities", "All Amenities") },
+                        ...amenityNames.map((name) => ({
+                          value: name,
+                          label: name,
+                        })),
+                      ]}
+                    />
+                  </div>
+                )}
+
+                {/* Reset button if any filter is active */}
+                {(statusFilter !== "ALL" || amenityFilter !== "ALL" || bookingSearch) && (
+                  <button
+                    type="button"
+                    onClick={clearAllFilters}
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold text-red-400 hover:text-red-300 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 transition-all cursor-pointer shrink-0"
+                    title={t("amenClearFilters", "Clear all filters")}
+                  >
+                    <MdClose size={14} />
+                    <span>{t("clearFilter") || "Reset"}</span>
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Search bar in the same row */}
+          <div className="shrink-0 ml-auto">
+            <ExpandableSearch
+              placeholder={
+                tab === "AMENITIES"
+                  ? (t("amenitySearch", "Search facilities…"))
+                  : (t("amenitySearch", "Search bookings…"))
+              }
+              value={tab === "AMENITIES" ? amenitySearch : bookingSearch}
+              onChange={tab === "AMENITIES" ? setAmenitySearch : setBookingSearch}
+            />
+          </div>
+        </div>
 
         {/* ══════════════════════════════
             AMENITIES TAB
         ══════════════════════════════ */}
         {tab === "AMENITIES" && (
-          <div className="ra-grid">
-            {amenities.map((a, idx) => {
-              const isDisabled = !a.is_active;
-              const isTemp     = a.disable_type === "TEMPORARY";
-              return (
-                <div key={a.id} className="ra-card" style={{
-                  animationDelay: `${idx * 60}ms`,
-                  opacity: isDisabled ? 0.72 : 1,
-                  ...(isDisabled && isTemp  ? { borderTop: "2px solid var(--accent)" } : {}),
-                  ...(isDisabled && !isTemp ? { borderTop: "2px solid #991b1b" } : {}),
-                }}>
-                  <div className="ra-card-accent" />
-                  {isDisabled && (
-                    <div style={{
-                      position: "absolute", top: 10, right: 10,
-                      padding: "2px 8px", borderRadius: 999, fontSize: 10, fontWeight: 600,
-                      background: isTemp ? "rgba(160,90,255,0.12)" : "rgba(220,38,38,0.1)",
-                      color:      isTemp ? "var(--acct-cyan)"               : "#7f1d1d",
-                      border: `1px solid ${isTemp ? "rgba(160,90,255,0.28)" : "rgba(220,38,38,0.22)"}`,
-                    }}>
-                      {isTemp ? t("amenTempClosed") : t("amenClosed")}
-                    </div>
-                  )}
-                  <div className="ra-card-emoji" style={{ opacity: isDisabled ? 0.45 : 1 }}>
-                    {amenityIcon(a.name)}
-                  </div>
-                  <div className="ra-card-body">
-                    <h3 className="ra-card-name" style={{ opacity: isDisabled ? 0.65 : 1 }}>{a.name}</h3>
-                    <div className="ra-card-meta">
-                      <span className="ra-pill ra-pill--type">
-                        {a.booking_type === "FULL_DAY" ? t("amenFullDay") : t("amenHourly")}
-                      </span>
-                      <span className={`ra-pill ${a.type === "FREE" ? "ra-pill--free" : "ra-pill--paid"}`}>
-                        {a.type === "FREE" ? t("amenFree") : t("amenPaid")}
-                      </span>
-                    </div>
-                    {a.type === "PAID" && (
-                      <p className="ra-card-price">
-                        <span className="ra-rupee">₹</span>{a.rate_per_hour}
-                        <span className="ra-per">/{a.booking_type === "FULL_DAY" ? t("amenPerDay") : t("amenPerHr")}</span>
-                      </p>
-                    )}
-                    <ClosureBanner amenity={a} />
-                  </div>
-                  {isDisabled ? (
-                    <button type="button" disabled className="ra-book-btn"
-                      style={{ opacity: 0.38, cursor: "not-allowed", background: "var(--card-inner-bg)" }}>
-                      <span>{t("amenBookingUnavailable")}</span>
-                    </button>
-                  ) : (
-                    <button type="button" onClick={() => selectAmenity(a)} className="ra-book-btn">
-                      <span>{t("amenCheckAvailability")}</span>
-                      <span className="ra-btn-arrow">→</span>
-                    </button>
-                  )}
+          <div className="space-y-4">
+            {visibleAmenities.length === 0 ? (
+              <div className="ra-empty flex flex-col items-center justify-center py-14 px-4 text-center">
+                <div className="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-secondary mb-3 shadow-sm">
+                  <span className="ra-empty-icon text-2xl">◈</span>
                 </div>
-              );
-            })}
+                <h3 className="text-sm font-bold text-primary mb-1">
+                  {t("amenNoAmenities") || "No facilities found"}
+                </h3>
+                <p className="text-xs text-secondary mb-3">
+                  {t("amenTryDifferentFilters", "Try adjusting your search criteria or clear filters.")}
+                </p>
+                {(amenityTypeFilter !== "ALL" || amenitySearch) && (
+                  <button
+                    type="button"
+                    onClick={() => { setAmenityTypeFilter("ALL"); setAmenitySearch(""); }}
+                    className="px-3.5 py-1.5 rounded-xl text-xs font-semibold text-accent hover:text-accent-light bg-accent-soft border border-accent/20 transition-all cursor-pointer"
+                  >
+                    {t("clearFilter") || "Reset"}
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div className="ra-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                {visibleAmenities.map((a, idx) => {
+                  const isDisabled = !a.is_active;
+                  const isTemp     = a.disable_type === "TEMPORARY";
+                  return (
+                    <div
+                      key={a.id}
+                      className={`ra-card group ${isDisabled ? "ra-card--disabled opacity-75" : ""}`}
+                      style={{
+                        animationDelay: `${idx * 50}ms`,
+                        ...(isDisabled && isTemp  ? { borderTop: "2px solid var(--accent)" } : {}),
+                        ...(isDisabled && !isTemp ? { borderTop: "2px solid #ef4444" } : {}),
+                      }}
+                    >
+                      <div className="ra-card-accent" />
+
+                      {/* Card Header: Icon box + Availability pill */}
+                      <div className="flex items-start justify-between gap-3 mb-3.5">
+                        <div className="ra-card-icon-box w-12 h-12 rounded-2xl flex items-center justify-center shrink-0">
+                          {amenityIcon(a.name, 26)}
+                        </div>
+
+                        {isDisabled ? (
+                          <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold ${
+                            isTemp
+                              ? "bg-amber-500/10 text-amber-400 border border-amber-500/25"
+                              : "bg-red-500/10 text-red-400 border border-red-500/25"
+                          }`}>
+                            {isTemp ? <MdWarning size={12} /> : <MdBlock size={12} />}
+                            <span>{isTemp ? (t("amenTempClosed") || "Temp Closed") : (t("amenClosed") || "Closed")}</span>
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-green-500/10 text-green-400 border border-green-500/25">
+                            <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+                            <span>{t("amenAvailable") || "Available"}</span>
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Card Body: Title & Meta Features */}
+                      <div className="ra-card-body flex-1 mb-4">
+                        <h3 className="ra-card-name text-base sm:text-lg font-bold text-primary tracking-tight mb-2.5">
+                          {a.name}
+                        </h3>
+
+                        <div className="flex items-center gap-2 flex-wrap mb-3">
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-white/5 border border-white/8 text-secondary">
+                            <MdAccessTime size={13} className="text-accent" />
+                            <span>{a.booking_type === "FULL_DAY" ? (t("amenFullDay") || "Full Day") : (t("amenHourly") || "Hourly")}</span>
+                          </span>
+
+                          {a.type === "FREE" ? (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
+                              <MdCheck size={13} />
+                              <span>{t("amenFree") || "Free Access"}</span>
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-purple-500/10 border border-purple-500/20 text-purple-300">
+                              <span className="font-extrabold text-sm text-primary">₹{a.rate_per_hour}</span>
+                              <span className="text-[11px] text-secondary">/{a.booking_type === "FULL_DAY" ? (t("amenPerDay") || "day") : (t("amenPerHr") || "hr")}</span>
+                            </span>
+                          )}
+                        </div>
+
+                        <ClosureBanner amenity={a} />
+                      </div>
+
+                      {/* Card Footer: Action Button */}
+                      {isDisabled ? (
+                        <button
+                          type="button"
+                          disabled
+                          className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-xs text-secondary bg-white/4 border border-white/8 cursor-not-allowed opacity-60"
+                        >
+                          <MdBlock size={14} />
+                          <span>{t("amenBookingUnavailable") || "Booking Unavailable"}</span>
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => selectAmenity(a)}
+                          className="ra-modern-book-btn group/btn w-full flex items-center justify-between px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm text-white transition-all cursor-pointer shadow-sm"
+                        >
+                          <span className="flex items-center gap-2">
+                            <MdEventAvailable size={16} />
+                            <span>{t("amenCheckAvailability") || "Check Availability"}</span>
+                          </span>
+                          <span className="text-base font-bold group-hover/btn:translate-x-1 transition-transform">→</span>
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         )}
 
-        {/* ══════════════════════════════
+{/* ══════════════════════════════
             BOOKINGS TAB
         ══════════════════════════════ */}
         {tab === "BOOKINGS" && (
@@ -862,90 +1031,97 @@ const navigate = useNavigate();
               </div>
             )}
 
-            {!initialLoad && (
-              <div className="ge-toolbar">
-                <ExpandableSearch
-                  placeholder={t("amenitySearch", "Search by amenity…")}
-                  value={bookingSearch}
-                  onChange={setBookingSearch}
-                />
-              </div>
-            )}
-
+            {/* Dashboard-style Statistical Cards */}
             {!initialLoad && counts.ALL > 0 && (
-              <div className="ge-stats ra-booking-stats">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-5 ra-booking-stats">
                 <StatCard
                   tone="brand"
+                  variant="sheen"
+                  interactive
+                  icon={MdDateRange}
                   value={counts.ALL}
-                  label={t("geFilterAll") || "All"}
+                  label={t("geFilterAll") || "Total Bookings"}
+                  selected={statusFilter === "ALL"}
+                  onClick={() => setStatusFilter("ALL")}
                 />
                 <StatCard
-                  tone="info"
+                  tone="warning"
+                  variant="sheen"
+                  interactive
+                  icon={MdOutlineTimer}
                   value={(counts.PAYMENT_PENDING || 0) + (counts.PENDING || 0)}
-                  label={t("amenPending")}
+                  label={t("amenPending") || "Pending"}
+                  selected={statusFilter === "PENDING" || statusFilter === "PAYMENT_PENDING"}
+                  onClick={() => setStatusFilter(counts.PAYMENT_PENDING > 0 ? "PAYMENT_PENDING" : "PENDING")}
                 />
                 <StatCard
                   tone="success"
+                  variant="sheen"
+                  interactive
+                  icon={MdCheckCircle}
                   value={counts.APPROVED || 0}
-                  label={statusDisplayLabel("APPROVED")}
+                  label={statusDisplayLabel("APPROVED") || "Confirmed"}
+                  selected={statusFilter === "APPROVED"}
+                  onClick={() => setStatusFilter("APPROVED")}
                 />
                 <StatCard
                   tone="danger"
+                  variant="sheen"
+                  interactive
+                  icon={MdCancel}
                   value={(counts.CANCELLED || 0) + (counts.REJECTED || 0)}
-                  label={statusDisplayLabel("CANCELLED")}
+                  label={statusDisplayLabel("CANCELLED") || "Cancelled"}
+                  selected={statusFilter === "CANCELLED" || statusFilter === "REJECTED"}
+                  onClick={() => setStatusFilter("CANCELLED")}
                 />
-              </div>
-            )}
-
-            {!initialLoad && (
-              <SlidingTabs
-                className="gp-filter-tabs"
-                value={statusFilter}
-                onChange={setStatusFilter}
-                items={STATUS_OPTIONS.map((s) => ({
-                  id: s,
-                  label: s === "ALL" ? (t("geFilterAll") || "All") : statusDisplayLabel(s),
-                  badge: counts[s] ?? 0,
-                  alert: s === "PAYMENT_PENDING" ? counts.PAYMENT_PENDING : undefined,
-                }))}
-              />
-            )}
-
-            {!initialLoad && amenityNames.length > 0 && (
-              <div className="ra-amenity-chips">
-                {["ALL", ...amenityNames].map((name) => (
-                  <button
-                    key={name}
-                    type="button"
-                    onClick={() => setAmenityFilter(name)}
-                    className={`ra-filter-chip ${amenityFilter === name ? "ra-filter-chip--active" : ""}`}
-                  >
-                    {name === "ALL" ? (t("geFilterAll") || "All") : name}
-                  </button>
-                ))}
               </div>
             )}
 
             {initialLoad && (
-              <div className="flex flex-col items-center gap-3 py-10 text-secondary">
+              <div className="flex flex-col items-center gap-3 py-12 text-secondary">
                 <Spinner /><p className="text-sm">{t("loading")}</p>
               </div>
             )}
 
             {!initialLoad && counts.ALL === 0 && (
-              <div className="ra-empty">
-                <span className="ra-empty-icon">◈</span>
-                <p>{t("amenNoBookings")}</p>
+              <div className="ra-empty flex flex-col items-center justify-center py-14 px-4 text-center">
+                <div className="w-16 h-16 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-secondary mb-4 shadow-sm">
+                  <MdDateRange size={32} className="opacity-40" />
+                </div>
+                <h3 className="text-base font-bold text-primary mb-1">
+                  {t("amenNoBookings", "No bookings yet")}
+                </h3>
+                <p className="text-xs text-secondary max-w-sm mb-4">
+                  {t("amenNoBookingsSub", "You haven't reserved any society facilities yet. Browse available facilities and book your slot.")}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setTab("AMENITIES")}
+                  className="px-4 py-2 rounded-xl text-xs font-bold text-white bg-accent hover:bg-accent-light shadow-sm transition-all cursor-pointer flex items-center gap-1.5"
+                >
+                  <MdPool size={15} />
+                  <span>{t("amenBrowseFacilities", "Browse Facilities")}</span>
+                </button>
               </div>
             )}
 
             {!initialLoad && counts.ALL > 0 && myBookings.length === 0 && !fetching && (
-              <div className="ra-empty">
-                <span className="ra-empty-icon">🔍</span>
-                <p>{t("amenNoBookingsMatch")}</p>
-                <button type="button" onClick={clearAllFilters}
-                  style={{ color: "var(--accent)", background: "none", border: "none", cursor: "pointer", fontSize: 12, marginTop: 6 }}>
-                  {t("amenClearFilters")}
+              <div className="ra-empty flex flex-col items-center justify-center py-14 px-4 text-center">
+                <div className="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-secondary mb-3 shadow-sm">
+                  <MdOutlineInbox size={28} className="opacity-40" />
+                </div>
+                <h3 className="text-sm font-bold text-primary mb-1">
+                  {t("amenNoBookingsMatch", "No bookings match your filters")}
+                </h3>
+                <p className="text-xs text-secondary mb-3">
+                  {t("amenTryDifferentFilters", "Try adjusting your search criteria or clear filters.")}
+                </p>
+                <button
+                  type="button"
+                  onClick={clearAllFilters}
+                  className="px-3.5 py-1.5 rounded-xl text-xs font-semibold text-accent hover:text-accent-light bg-accent-soft border border-accent/20 transition-all cursor-pointer"
+                >
+                  {t("amenClearFilters", "Clear all filters")}
                 </button>
               </div>
             )}
@@ -953,88 +1129,92 @@ const navigate = useNavigate();
             {!initialLoad && groupedBookings.map((b, idx) => {
               const isPaymentPending = b.status === "PAYMENT_PENDING";
               const dotColor = STATUS_STYLE[b.status]?.dot || "#726988";
-              // For grouped full‑day bookings we may lack start_time; formatBookingDate will handle it
               return (
-                <div key={b.id}
+                <div
+                  key={b.id}
                   onClick={() => !isPaymentPending && openPass(b)}
-                  className="ra-booking-row"
-                  style={{
-                    animationDelay: `${idx * 50}ms`,
-                    cursor: isPaymentPending ? "default" : "pointer",
-                    ...(isPaymentPending ? {
-                      border: "1px solid var(--stat-purple-border)",
-                      background: "var(--stat-purple-bg)",
-                    } : {}),
-                  }}>
-                  <div className="ra-booking-left">
-                    <span className="ra-booking-dot" style={{ background: dotColor }} />
-                    <div>
-                      <p className="ra-booking-name">{b.Amenity?.name}</p>
-                      <p className="ra-booking-date">{formatBookingDate(b)}</p>
+                  className={`ra-booking-row ${isPaymentPending ? "ra-booking-row--pending-payment" : ""}`}
+                  style={{ animationDelay: `${idx * 40}ms` }}
+                >
+                  <div className="ra-booking-left flex items-center gap-3.5 min-w-0">
+                    <div className="ra-booking-avatar flex items-center justify-center shrink-0">
+                      {amenityIcon(b.Amenity?.name, 22)}
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap mb-1">
+                        <h4 className="ra-booking-name font-bold text-sm sm:text-base text-primary truncate m-0">
+                          {b.Amenity?.name}
+                        </h4>
+                        <span className="ra-booking-id text-[10.5px] font-mono font-bold px-2 py-0.5 rounded-full bg-white/6 text-secondary border border-white/8">
+                          #{b.id}
+                        </span>
+                        {b.Amenity?.booking_type && (
+                          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                            {b.Amenity.booking_type === "FULL_DAY" ? (t("amenFullDay") || "Full Day") : (t("amenHourly") || "Hourly")}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-3 text-xs text-secondary flex-wrap">
+                        <span className="flex items-center gap-1.5 font-medium text-secondary">
+                          <MdDateRange size={14} className="text-accent shrink-0" />
+                          <span>{formatBookingDate(b)}</span>
+                        </span>
+                        {bookingAmount(b) > 0 && (
+                          <span className="font-semibold text-primary">
+                            ₹{bookingAmount(b)}
+                          </span>
+                        )}
+                      </div>
                       {isPaymentPending && (
-                        <PaymentCountdown expiresAt={b.payment_expires_at} />
+                        <div className="mt-1.5">
+                          <PaymentCountdown expiresAt={b.payment_expires_at} />
+                        </div>
                       )}
                     </div>
                   </div>
 
-                  <div className="ra-booking-right">
+                  <div className="ra-booking-right flex items-center gap-3 shrink-0">
                     {isPaymentPending ? (
-                      /* ── PAYMENT_PENDING actions ── */
-                      <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6 }}>
-                        <span style={{
-                          fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 999,
-                          background: "var(--stat-purple-bg)", color: "var(--stat-purple-color)",
-                          border: "1px solid var(--stat-purple-border)",
-                        }}>
-                          {t("amenAwaitingPayment")}
-                        </span>
-                        <div style={{ display: "flex", gap: 6 }}>
-                          <button
-                            type="button"
-                            onClick={(e) => { e.stopPropagation(); handleRepay(b); }}
-                            disabled={repayingId === b.id}
-                            style={{
-                              display: "flex", alignItems: "center", gap: 5,
-                              padding: "6px 12px", borderRadius: 10, fontSize: 12, fontWeight: 700,
-                              background: "var(--stat-purple-bg)", color: "var(--stat-purple-color)",
-                              border: "1.5px solid var(--stat-purple-border)",
-                              cursor: repayingId === b.id ? "not-allowed" : "pointer",
-                              opacity: repayingId === b.id ? 0.6 : 1,
-                            }}>
-                            {repayingId === b.id
-                              ? <Spinner small />
-                              : <>
-                                  <MdRefresh size={13} /> {t("amenPayNow")}
-                                </>
-                            }
-                          </button>
-                          <button
-                            type="button"
-                            onClick={(e) => { e.stopPropagation(); cancelBooking(b.id); }}
-                            style={{
-                              padding: "6px 10px", borderRadius: 10, fontSize: 12, fontWeight: 600,
-                              background: "transparent", color: "var(--text-secondary)",
-                              border: "1px solid var(--glass-border)", cursor: "pointer",
-                            }}>
-                            {t("cancel")}
-                          </button>
-                        </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); handleRepay(b); }}
+                          disabled={repayingId === b.id}
+                          className="ra-btn-pay-now flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold text-white shadow-sm transition-all cursor-pointer"
+                        >
+                          {repayingId === b.id ? <Spinner small /> : <><MdRefresh size={14} /> {t("amenPayNow") || "Pay Now"}</>}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); cancelBooking(b.id); }}
+                          className="px-3 py-1.5 rounded-xl text-xs font-medium text-secondary hover:text-primary border border-white/10 hover:border-white/20 transition-all cursor-pointer"
+                        >
+                          {t("cancel")}
+                        </button>
                       </div>
                     ) : (
-                      /* ── All other statuses ── */
-                      <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 5 }}>
-                        <span className={statusClass(b.status)} style={{ fontSize: 11 }}>
-                          {statusDisplayLabel(b.status)}
+                      <div className="flex items-center gap-2.5">
+                        <span className={`ra-status-badge ra-status-${b.status.toLowerCase()}`}>
+                          <span className="ra-status-dot" style={{ background: dotColor }} />
+                          <span>{statusDisplayLabel(b.status)}</span>
                         </span>
-                        {["PENDING", "APPROVED"].includes(b.status) && (
-                          <button type="button"
+
+                        {b.status === "PENDING" && (
+                          <button
+                            type="button"
                             onClick={(e) => { e.stopPropagation(); cancelBooking(b.id); }}
-                            className="btn-danger ra-cancel-btn">
-                            {t("amenCancelBooking")}
+                            className="px-2.5 py-1 rounded-lg text-xs font-semibold text-red-400 hover:text-red-300 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 transition-all cursor-pointer"
+                          >
+                            {t("amenCancelBooking") || "Cancel"}
                           </button>
                         )}
+
                         {b.status === "APPROVED" && (
-                          <span className="ra-chevron" style={{ fontSize: 18, color: "var(--text-secondary)" }}>›</span>
+                          <div className="flex items-center gap-1.5 text-xs font-semibold text-accent hover:text-accent-light px-2.5 py-1 rounded-xl bg-accent-soft border border-accent/20 transition-all cursor-pointer">
+                            <MdQrCode2 size={16} />
+                            <span className="hidden sm:inline">{t("amenPassView") || "Pass"}</span>
+                            <span className="text-sm">›</span>
+                          </div>
                         )}
                       </div>
                     )}

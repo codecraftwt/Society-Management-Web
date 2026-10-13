@@ -109,17 +109,35 @@ export default function StatCard({
       {...(interactive && selected ? { "aria-pressed": true } : {})}
       {...(clickable ? { onClick: disabled ? undefined : onClick } : {})}
     >
-      <span className="ui-stat-card__blob" aria-hidden="true" />
-      {Icon ? (
-        <span className="ui-stat-card__icon" aria-hidden="true">
-          {typeof Icon === "function" ? <Icon size={iconSize} /> : Icon}
-        </span>
-      ) : null}
-      <span className="ui-stat-card__value">{value}</span>
-      <span className="ui-stat-card__label">{label}</span>
-      {description ? (
-        <span className="ui-stat-card__desc">{description}</span>
-      ) : null}
+      {layout === "inline" ? (
+        <>
+          {Icon ? (
+            <span className="ui-stat-card__icon" aria-hidden="true">
+              {typeof Icon === "function" ? <Icon size={iconSize} /> : Icon}
+            </span>
+          ) : null}
+          <span className="ui-stat-card__value">{value}</span>
+          <span className="ui-stat-card__label">{label}</span>
+          {description ? (
+            <span className="ui-stat-card__desc">{description}</span>
+          ) : null}
+        </>
+      ) : (
+        <>
+          <div className="ui-stat-card__top">
+            {Icon ? (
+              <span className="ui-stat-card__icon" aria-hidden="true">
+                {typeof Icon === "function" ? <Icon size={iconSize} /> : Icon}
+              </span>
+            ) : <span />}
+            <span className="ui-stat-card__value">{value}</span>
+          </div>
+          <span className="ui-stat-card__label">{label}</span>
+          {description ? (
+            <span className="ui-stat-card__desc">{description}</span>
+          ) : null}
+        </>
+      )}
     </Tag>
   );
 }

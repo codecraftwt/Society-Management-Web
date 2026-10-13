@@ -12,8 +12,10 @@ import {
   MdClose,
   MdDirectionsWalk,
   MdCheckCircle,
+  MdFilterList,
 } from "react-icons/md";
 import GlobalBadge from "../../components/common/GlobalBadge";
+import Select from "../../components/common/Select";
 
 import Pagination from "../../components/common/Pagination";
 import StatCard from "../../components/common/StatCard";
@@ -291,33 +293,18 @@ export default function ResidentVisitors() {
         </div>
       </div>
 
-      {/* ── Entry Type / Purpose Filter Chips ── */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-2 mb-3 scrollbar-none">
-        {purposeOptions.map((opt) => {
-          const IconComponent = opt.icon;
-          const isActive = purposeFilter === opt.id;
-          return (
-            <button
-              key={opt.id}
-              onClick={() => handlePurposeChange(opt.id)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200 shrink-0 border ${
-                isActive
-                  ? "bg-accent text-white border-accent shadow-sm"
-                  : "bg-white/5 hover:bg-white/10 text-secondary hover:text-white border-white/10"
-              }`}
-            >
-              <IconComponent size={14} className={isActive ? "text-white" : "text-secondary"} />
-              <span>{opt.label}</span>
-              {typeof opt.count === 'number' && opt.count > 0 && (
-                <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
-                  isActive ? "bg-white/20 text-white" : "bg-white/10 text-secondary"
-                }`}>
-                  {opt.count}
-                </span>
-              )}
-            </button>
-          );
-        })}
+      {/* ── Entry Type filter (collapsed into a single dropdown) ── */}
+      <div className="flex items-center gap-2 mb-3">
+        <Select
+          options={purposeOptions.map((opt) => ({
+            value: opt.id,
+            label: `${opt.label}${typeof opt.count === "number" ? ` (${opt.count})` : ""}`,
+          }))}
+          value={purposeFilter}
+          onChange={(e) => handlePurposeChange(e.target.value)}
+          icon={<MdFilterList size={16} />}
+          style={{ width: 200, height: 38, minHeight: 38 }}
+        />
 
         {(purposeFilter !== "ALL" || search || filter !== "ALL") && (
           <button

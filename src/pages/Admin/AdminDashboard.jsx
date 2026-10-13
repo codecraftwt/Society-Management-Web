@@ -233,8 +233,8 @@ export default function AdminDashboard() {
       {/* ── 1. DASHBOARD HERO HEADER ── */}
       <PanelHero societyName={stats?.societyName} />
 
-      {/* ── 2. KEY METRICS KPI CARDS (6 COLUMNS) ── */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-3.5">
+      {/* ── 2. KEY METRICS KPI CARDS (4 CARDS: 2 IN A ROW) ── */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-3.5">
         <StatCard
           variant="sheen"
           tone="brand"
@@ -242,11 +242,6 @@ export default function AdminDashboard() {
           value={residents}
           label={t("dashResidents") || "Residents"}
           onClick={() => navigate("/admin/resident")}
-          description={
-            <span className="hidden lg:block">
-              {t("dashResidentsDesc") || "Active society members"}
-            </span>
-          }
         />
 
         <StatCard
@@ -256,11 +251,6 @@ export default function AdminDashboard() {
           value={guards}
           label={t("dashGuards") || "Guards"}
           onClick={() => navigate("/admin/guard")}
-          description={
-            <span className="hidden lg:block">
-              {t("dashGuardsDesc") || "Security staff"}
-            </span>
-          }
         />
 
         <StatCard
@@ -270,11 +260,6 @@ export default function AdminDashboard() {
           value={openComplaints}
           label={t("dashOpenComplaints") || "Open Complaints"}
           onClick={() => navigate("/admin/complaints")}
-          description={
-            <span className="hidden lg:block">
-              {isCommittee ? t("dashCommitteeReview") : t("dashComplaintsDesc")}
-            </span>
-          }
         />
 
         <StatCard
@@ -284,44 +269,11 @@ export default function AdminDashboard() {
           value={totalFlats}
           label={t("dashTotalFlats") || "Total Flats"}
           onClick={() => navigate("/admin/property")}
-          description={
-            <span className="hidden lg:block">
-              {t("dashTotalFlatsDesc") || "All society units"}
-            </span>
-          }
-        />
-
-        <StatCard
-          variant="sheen"
-          tone="brand"
-          icon={MdApartment}
-          value={occupiedFlats}
-          label={t("dashOccupiedFlats", "Occupied Units") || "Occupied Units"}
-          onClick={() => navigate("/admin/property")}
-          description={
-            <span className="hidden lg:block">
-              {t("dashOccupiedFlatsDesc", "Tenant & owner units") || "Tenant & owner units"}
-            </span>
-          }
-        />
-
-        <StatCard
-          variant="sheen"
-          tone="neutral"
-          icon={MdApartment}
-          value={vacantFlats}
-          label={t("dashVacantFlats", "Vacant Units") || "Vacant Units"}
-          onClick={() => navigate("/admin/property")}
-          description={
-            <span className="hidden lg:block">
-              {t("dashVacantFlatsDesc", "Ready for allotment") || "Ready for allotment"}
-            </span>
-          }
         />
       </div>
 
 
-      {/* ── 3. QUICK LINKS OPERATIONS HUB (6 DISTINCT COLOR CARDS) ── */}
+      {/* ── 3. QUICK LINKS OPERATIONS HUB (4 DISTINCT COLOR CARDS: 2 IN A ROW) ── */}
       <div className="bg-card border border-glass-border rounded-2xl p-4 sm:p-5 shadow-sm">
         <div className="flex items-center justify-between mb-3.5">
           <div className="flex items-center gap-2">
@@ -337,8 +289,8 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 sm:gap-3">
-          {quickLinks.map((action, idx) => (
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3">
+          {quickLinks.slice(0, 4).map((action, idx) => (
             <QuickLink
               key={action.id}
               title={action.title}

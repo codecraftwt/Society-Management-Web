@@ -165,9 +165,7 @@ html.role-theme .ra-tab-badge {
 }
 
 html.role-theme .ra-card,
-html.role-theme .ra-booking-row,
 html.role-theme .ra-summary-card,
-html.role-theme .ra-modal-inner,
 html.role-theme .ra-calendar-section,
 html.role-theme .ra-summary-section,
 html.role-theme .ra-empty,
@@ -176,6 +174,14 @@ html.role-theme .ra-pass-wrapper {
   border-color: var(--glass-border) !important;
   box-shadow: var(--shadow-sm) !important;
   backdrop-filter: none !important;
+}
+
+html.role-theme .ra-modal-inner {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  gap: 16px !important;
 }
 
 html.role-theme .ra-bookings {
@@ -189,9 +195,9 @@ html.role-theme .ra-card::before {
 }
 
 html.role-theme .ra-card:hover {
-  transform: none !important;
-  box-shadow: var(--shadow-md) !important;
-  border-color: rgba(var(--acct-purple-rgb), 0.28) !important;
+  transform: translateY(-3px) !important;
+  box-shadow: 0 12px 28px -6px rgba(0, 0, 0, 0.15) !important;
+  border-color: rgba(var(--acct-purple-rgb, 124, 58, 237), 0.35) !important;
 }
 
 html.role-theme .ra-card-accent {
@@ -357,33 +363,54 @@ html.role-theme .rd-skeleton {
   background: var(--card-inner-bg) !important;
 }
 
-/* Resident pages — toolbar alignment */
-.rd-root .ge-toolbar {
+/* Resident pages — shared toolbar (ge-toolbar) + header (ge-er*) alignment.
+   These base classes ship unstyled globally, so the layout is scoped here to
+   keep the page icon/title inline and the search / filter / action controls on
+   a single row across every Resident screen. */
+.resident-root .ge-toolbar,
+.resident-root .ge-er {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
   flex-wrap: wrap;
+}
+.resident-root .ge-toolbar {
   margin-bottom: 16px;
 }
-.rd-root .ge-toolbar .ge-search-wrap {
+.resident-root .ge-er-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+.resident-root .ge-er-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.resident-root .ge-toolbar .ge-search-wrap {
   flex: 1 1 220px;
   max-width: 100%;
   min-width: 200px;
 }
 @media (min-width: 768px) {
-  .rd-root .ge-toolbar .ge-search-wrap {
+  .resident-root .ge-toolbar .ge-search-wrap {
     max-width: 340px;
     margin-left: auto;
   }
 }
 @media (max-width: 767px) {
-  .rd-root .ge-toolbar {
+  .resident-root .ge-toolbar {
     flex-direction: column;
     align-items: stretch;
   }
-  .rd-root .ge-toolbar .ge-search-wrap {
+  .resident-root .ge-toolbar .ge-search-wrap {
     min-width: unset;
+  }
+  .resident-root .ge-toolbar > .ml-auto {
+    margin-left: 0;
   }
 }
 
@@ -1516,57 +1543,635 @@ html.role-theme .ov-page {
 }
 
 /* --------------------------------------------------------------------------
-   Amenities extras
+   Amenities & Bookings Extras (Modern UI Redesign)
    -------------------------------------------------------------------------- */
 html.role-theme .ra-pay-banner {
   display: flex;
   align-items: flex-start;
-  gap: 10px;
-  padding: 12px 16px;
-  border-radius: 12px;
-  margin-bottom: 12px;
-  background: var(--accent-soft);
-  border: 1px solid rgba(var(--acct-purple-rgb), 0.28);
+  gap: 12px;
+  padding: 14px 18px;
+  border-radius: 14px;
+  margin-bottom: 14px;
+  background: rgba(168, 85, 247, 0.1);
+  border: 1px solid rgba(168, 85, 247, 0.25);
+  box-shadow: 0 4px 14px rgba(168, 85, 247, 0.08);
 }
 
 html.role-theme .ra-pay-banner-icon {
-  color: var(--accent);
+  color: var(--accent, #a855f7);
   flex-shrink: 0;
-  margin-top: 1px;
+  margin-top: 2px;
 }
 
 html.role-theme .ra-pay-banner-title {
-  font-size: 13px;
+  font-size: 13.5px;
   font-weight: 700;
   color: var(--text-primary);
 }
 
 html.role-theme .ra-pay-banner-sub {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--text-secondary);
   margin-top: 2px;
 }
 
 html.role-theme .ra-booking-stats {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 14px !important;
+  width: 100% !important;
+  margin-bottom: 20px !important;
 }
 
-html.role-theme .ra-amenity-chips {
+/* Modern Booking Rows */
+html.role-theme .ra-bookings {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+html.role-theme .ra-booking-row {
+  background: var(--card-bg) !important;
+  border: 1px solid var(--glass-border) !important;
+  border-radius: 16px !important;
+  padding: 14px 18px !important;
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  gap: 16px !important;
+  transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  box-shadow: var(--shadow-sm) !important;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+html.role-theme .ra-booking-row:hover {
+  transform: translateY(-2px) !important;
+  border-color: rgba(var(--acct-purple-rgb, 124, 58, 237), 0.35) !important;
+  box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.12) !important;
+}
+
+html.role-theme .ra-booking-row--pending-payment {
+  background: rgba(168, 85, 247, 0.06) !important;
+  border-color: rgba(168, 85, 247, 0.28) !important;
+}
+
+html.role-theme .ra-booking-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: var(--accent-soft, rgba(99, 102, 241, 0.12));
+  border: 1px solid rgba(var(--acct-purple-rgb, 99, 102, 241), 0.22);
+  color: var(--accent);
+}
+
+html.role-theme .ra-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+html.role-theme .ra-status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+html.role-theme .ra-status-approved {
+  background: rgba(34, 197, 94, 0.12) !important;
+  color: #22c55e !important;
+  border: 1px solid rgba(34, 197, 94, 0.28) !important;
+}
+
+html.role-theme .ra-status-pending {
+  background: rgba(234, 179, 8, 0.12) !important;
+  color: #eab308 !important;
+  border: 1px solid rgba(234, 179, 8, 0.28) !important;
+}
+
+html.role-theme .ra-status-payment_pending {
+  background: rgba(168, 85, 247, 0.12) !important;
+  color: #a855f7 !important;
+  border: 1px solid rgba(168, 85, 247, 0.28) !important;
+}
+
+html.role-theme .ra-status-cancelled,
+html.role-theme .ra-status-rejected {
+  background: rgba(239, 68, 68, 0.12) !important;
+  color: #ef4444 !important;
+  border: 1px solid rgba(239, 68, 68, 0.28) !important;
+}
+
+html.role-theme .ra-btn-pay-now {
+  background: linear-gradient(135deg, #7c3aed, #a855f7) !important;
+  border: none !important;
+  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3) !important;
+}
+
+html.role-theme .ra-btn-pay-now:hover {
+  opacity: 0.95;
+  transform: translateY(-1px);
+}
+
+/* ── Calendar & Modal Reservation Section ── */
+html.role-theme .ra-calendar-section {
+  background: var(--card-inner-bg, rgba(255, 255, 255, 0.03)) !important;
+  border: 1px solid var(--glass-border) !important;
+  border-radius: 16px !important;
+  padding: 18px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  box-shadow: var(--shadow-sm) !important;
+}
+
+html.role-theme .ra-inline-calendar {
+  display: flex;
+  justify-content: center;
+  padding: 6px 0;
+}
+
+html.role-theme .ra-inline-calendar .react-datepicker {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  font-family: inherit;
+}
+
+html.role-theme .ra-inline-calendar .react-datepicker__header {
+  background: transparent !important;
+  border-bottom: 1px solid var(--glass-border) !important;
+  padding-bottom: 8px !important;
+}
+
+html.role-theme .ra-inline-calendar .react-datepicker__current-month {
+  color: var(--text-primary) !important;
+  font-weight: 700 !important;
+  font-size: 15px !important;
+  margin-bottom: 6px !important;
+}
+
+html.role-theme .ra-inline-calendar .react-datepicker__day-name {
+  color: var(--text-tertiary) !important;
+  font-weight: 700 !important;
+  font-size: 11px !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em;
+}
+
+html.role-theme .ra-inline-calendar .react-datepicker__day {
+  color: var(--text-primary) !important;
+  border-radius: 10px !important;
+  width: 36px !important;
+  height: 36px !important;
+  line-height: 36px !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  transition: all 0.15s ease !important;
+}
+
+html.role-theme .ra-inline-calendar .react-datepicker__day:hover {
+  background: var(--accent-soft) !important;
+  color: var(--accent) !important;
+}
+
+html.role-theme .ra-inline-calendar .react-datepicker__day--selected,
+html.role-theme .ra-inline-calendar .react-datepicker__day--keyboard-selected,
+html.role-theme .ra-inline-calendar .react-datepicker__day.ra-day-endpoint {
+  background: var(--accent) !important;
+  color: #ffffff !important;
+  font-weight: 700 !important;
+  border-radius: 10px !important;
+  box-shadow: 0 4px 12px rgba(var(--acct-purple-rgb, 124, 58, 237), 0.35) !important;
+}
+
+html.role-theme .ra-inline-calendar .react-datepicker__day.ra-day-mid {
+  background: var(--accent-soft) !important;
+  color: var(--accent) !important;
+  border-radius: 0 !important;
+  font-weight: 600 !important;
+}
+
+html.role-theme .ra-inline-calendar .react-datepicker__day--disabled {
+  opacity: 0.3 !important;
+  cursor: not-allowed !important;
+  color: var(--text-disabled) !important;
+}
+
+/* ── Step dates pill tags & action buttons ── */
+html.role-theme .ra-step-dates {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+html.role-theme .ra-step-date-chip {
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  border: 1px solid rgba(var(--acct-purple-rgb, 124, 58, 237), 0.25);
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+html.role-theme .ra-step-clear {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  color: #ef4444;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+html.role-theme .ra-step-clear:hover {
+  background: rgba(239, 68, 68, 0.18);
+}
+
+html.role-theme .ra-step-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+html.role-theme .ra-next-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 24px;
+  border-radius: 12px;
+  border: none;
+  background: var(--accent) !important;
+  color: #fff !important;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(var(--acct-purple-rgb, 124, 58, 237), 0.3) !important;
+  transition: all 0.2s ease;
+}
+
+html.role-theme .ra-next-btn:hover:not(:disabled) {
+  opacity: 0.95;
+  transform: translateY(-1px) !important;
+}
+
+html.role-theme .ra-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 12px;
+  padding: 6px 14px;
+  border-radius: 10px;
+  background: var(--input-bg, rgba(255, 255, 255, 0.05));
+  border: 1px solid var(--glass-border);
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+html.role-theme .ra-back-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* ── Summary Card & Price Calculation ── */
+html.role-theme .ra-summary-card {
+  padding: 18px !important;
+  border-radius: 16px !important;
+  background: var(--card-inner-bg, rgba(255, 255, 255, 0.03)) !important;
+  border: 1px solid var(--glass-border) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 12px !important;
+}
+
+html.role-theme .ra-summary-dates-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 190px;
+  overflow-y: auto;
+}
+
+html.role-theme .ra-summary-date-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-size: 12.5px;
+  background: var(--input-bg, rgba(255, 255, 255, 0.04));
+  color: var(--text-secondary);
+  border: 1px solid var(--glass-border);
+}
+
+html.role-theme .ra-summary-divider {
+  height: 1px;
+  background: var(--glass-border);
+  margin: 2px 0;
+}
+
+html.role-theme .ra-summary-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+html.role-theme .ra-summary-line strong {
+  color: var(--text-primary);
+  font-weight: 700;
+}
+
+html.role-theme .ra-summary-total {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 4px;
+}
+
+html.role-theme .ra-summary-total-amt {
+  font-size: 20px !important;
+  font-weight: 800 !important;
+  color: var(--accent) !important;
+}
+
+html.role-theme .ra-range-book {
+  width: 100%;
+  padding: 11px 16px;
+  border-radius: 12px;
+  border: none;
+  background: var(--accent);
+  color: #fff;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 14px rgba(var(--acct-purple-rgb, 124, 58, 237), 0.3);
+}
+
+/* ── Hourly Slots Grid ── */
+html.role-theme .ra-slots-day-scroll {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-height: 380px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+html.role-theme .ra-slot-day-group {
+  display: flex;
+  flex-direction: column;
   gap: 8px;
 }
 
-html.role-theme .ra-next-btn:hover:not(:disabled),
-html.role-theme .ra-range-book:hover:not(:disabled),
-html.role-theme .ra-pass-btn:hover:not(:disabled),
-html.role-theme .ra-slot-btn:hover:not(:disabled) {
-  transform: none !important;
+html.role-theme .ra-slot-day-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--glass-border);
 }
 
-@media (max-width: 700px) {
+html.role-theme .ra-slot-day-picked {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--accent);
+  background: var(--accent-soft);
+  padding: 2px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(var(--acct-purple-rgb, 124, 58, 237), 0.25);
+}
+
+html.role-theme .ra-slots-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(115px, 1fr));
+  gap: 8px;
+}
+
+html.role-theme .ra-slot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 10px 8px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+  min-height: 48px;
+  position: relative;
+}
+
+html.role-theme .ra-slot--available {
+  background: var(--input-bg, rgba(255, 255, 255, 0.04));
+  border: 1px solid var(--glass-border);
+  color: var(--text-primary);
+}
+
+html.role-theme .ra-slot--available:hover {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
+  transform: translateY(-1px);
+}
+
+html.role-theme .ra-slot--selected {
+  background: var(--accent) !important;
+  border-color: var(--accent) !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 12px rgba(var(--acct-purple-rgb, 124, 58, 237), 0.35) !important;
+  font-weight: 700;
+}
+
+html.role-theme .ra-slot--taken {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  color: var(--text-tertiary);
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+html.role-theme .ra-slot-time {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+html.role-theme .ra-slot-taken-label {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--danger, #ef4444);
+}
+
+html.role-theme .ra-slot-span {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  background: var(--accent-soft);
+  border: 1px solid rgba(var(--acct-purple-rgb, 124, 58, 237), 0.25);
+  margin-top: 12px;
+}
+
+html.role-theme .ra-booking-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-radius: 12px;
+  background: var(--card-inner-bg, rgba(255, 255, 255, 0.03));
+  border: 1px solid var(--glass-border);
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-top: 12px;
+}
+
+html.role-theme .ra-booking-summary strong {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--accent);
+}
+
+html.role-theme .ra-book-btn--full {
+  width: 100%;
+  padding: 12px 18px;
+  border-radius: 12px;
+  border: none;
+  background: var(--accent);
+  color: #fff;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 16px rgba(var(--acct-purple-rgb, 124, 58, 237), 0.3);
+  margin-top: 12px;
+}
+
+/* ── Demo UPI Payment Modal ── */
+html.role-theme .ra-pay-amount {
+  font-size: 32px;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+html.role-theme .ra-pay-qr {
+  display: inline-flex;
+  padding: 14px;
+  background: #ffffff;
+  border-radius: 18px;
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  margin-bottom: 16px;
+}
+
+html.role-theme .ra-pay-divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 14px 0;
+  position: relative;
+}
+
+html.role-theme .ra-pay-divider::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: var(--glass-border);
+}
+
+html.role-theme .ra-pay-divider span {
+  position: relative;
+  background: var(--card-bg, #1a1528);
+  padding: 0 12px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  letter-spacing: 0.08em;
+}
+
+html.role-theme .ra-pay-upi-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: var(--input-bg, rgba(255, 255, 255, 0.04));
+  border: 1px solid var(--glass-border);
+  margin-bottom: 16px;
+}
+
+html.role-theme .ra-pay-upi-id {
+  font-family: monospace;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+html.role-theme .ra-pay-copy-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 10px;
+  border-radius: 8px;
+  background: var(--accent-soft);
+  border: 1px solid rgba(var(--acct-purple-rgb, 124, 58, 237), 0.25);
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+html.role-theme .ra-pay-confirm-btn {
+  width: 100%;
+  padding: 12px 18px;
+  border-radius: 12px;
+  border: none;
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);
+}
+
+@media (max-width: 768px) {
   html.role-theme .ra-booking-stats {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 10px !important;
   }
 }
 
@@ -2908,4 +3513,25 @@ html.light.role-theme .rp-dash .rp-va-chip {
     height: 44px;
     border-radius: 14px;
   }
+}
+
+html.role-theme .ra-card-icon-box {
+  background: var(--accent-soft, rgba(99, 102, 241, 0.12));
+  border: 1px solid rgba(var(--acct-purple-rgb, 99, 102, 241), 0.22);
+  color: var(--accent);
+}
+
+html.role-theme .ra-card-icon-box svg {
+  color: var(--accent) !important;
+}
+
+html.role-theme .ra-modern-book-btn {
+  background: var(--accent) !important;
+  border: none !important;
+  box-shadow: 0 4px 14px rgba(var(--acct-purple-rgb, 124, 58, 237), 0.28) !important;
+}
+
+html.role-theme .ra-modern-book-btn:hover {
+  opacity: 0.95;
+  box-shadow: 0 6px 20px rgba(var(--acct-purple-rgb, 124, 58, 237), 0.38) !important;
 }

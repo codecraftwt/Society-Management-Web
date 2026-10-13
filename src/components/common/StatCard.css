@@ -131,10 +131,32 @@ button.ui-stat-card {
   overflow-wrap: anywhere;
 }
 
-/* ── LAYOUTS ───────────────────────────────────────────────────────────── */
+/* stacked is the default: logo on left, value on right, label below */
+.ui-stat-card:not(.ui-stat-card--layout-inline) {
+  justify-content: flex-start;
+  gap: 0;
+}
 
-/* stacked is the default and needs no rules: the base .ui-stat-card is already
- * a flex column placing icon, value, label, description top to bottom. */
+.ui-stat-card__top {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  margin-bottom: 8px;
+}
+
+.ui-stat-card:not(.ui-stat-card--layout-inline) .ui-stat-card__value {
+  margin-top: 0;
+}
+
+.ui-stat-card:not(.ui-stat-card--layout-inline) .ui-stat-card__label {
+  margin-top: 0;
+}
+
+.ui-stat-card:not(.ui-stat-card--layout-inline) .ui-stat-card__desc {
+  margin-top: 4px;
+}
 
 /* inline = the compact horizontal tile used by dense summary rows
  * (Resident.css .ov-stat). The icon moves to the leading edge and the value /

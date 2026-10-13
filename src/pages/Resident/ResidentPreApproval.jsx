@@ -11,7 +11,7 @@ import {
   MdCheckCircle, MdContentCopy, MdPerson,
   MdVisibility, MdDownload, MdPictureAsPdf,
   MdSearch, MdOutlineInbox, MdHome, MdHistory,
-  MdRepeat, MdTimer, MdAccessTime, MdInfoOutline,
+  MdRepeat, MdTimer, MdAccessTime, MdInfoOutline, MdFilterList,
 } from "react-icons/md";
 import { QRCodeCanvas } from "qrcode.react";
 import Modal from "../../components/Modal";
@@ -76,8 +76,6 @@ export default function ResidentPreApproval() {
   const [copiedId,     setCopiedId]     = useState(null);
   const [myFlats,      setMyFlats]      = useState([]);
   const [selectedFlatId, setSelectedFlatId] = useState("");
-  const [istTime,      setIstTime]      = useState("");
-  const [istDate,      setIstDate]      = useState("");
   const [viewPass,     setViewPass]     = useState(null);
   const [showForm,     setShowForm]     = useState(false);
   const [activeTab,    setActiveTab]    = useState("active");
@@ -225,28 +223,6 @@ export default function ResidentPreApproval() {
   };
 
   const isDaily = (p) => String(p?.pass_type || "").toUpperCase() === "DAILY";
-
-  /* ── Live IST clock ── */
-  useEffect(() => {
-    const tick = () => {
-      const now = new Date();
-      setIstTime(
-        now.toLocaleTimeString("en-IN", {
-          timeZone: "Asia/Kolkata",
-          hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: true,
-        })
-      );
-      setIstDate(
-        now.toLocaleDateString("en-IN", {
-          timeZone: "Asia/Kolkata",
-          weekday: "short", day: "2-digit", month: "short", year: "numeric",
-        })
-      );
-    };
-    tick();
-    const id = setInterval(tick, 1000);
-    return () => clearInterval(id);
-  }, []);
 
   /* ── API calls ── */
   const fetchMyPasses = async () => {
@@ -495,15 +471,6 @@ export default function ResidentPreApproval() {
         />
       </div>
 
-      {/* ── LIVE IST CLOCK ── */}
-      <div className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl bg-white/5 border border-white/10 text-sm">
-        <span className="w-2 h-2 rounded-full bg-green-400 shrink-0" />
-        <span className="text-secondary text-xs">{t("preapIstLabel")}</span>
-        <span className="ml-auto font-mono text-xs font-medium tabular-nums text-secondary tracking-wide">
-          {istDate}&nbsp;&nbsp;{istTime}
-        </span>
-      </div>
-
       {/* ── NO FLAT WARNING ── */}
       {!flatAssigned && (
         <div className="flex items-start gap-3 bg-red-500/10 border border-red-500/25 rounded-xl p-4 animate-scaleIn">
@@ -743,21 +710,21 @@ export default function ResidentPreApproval() {
       {/* ── TOOLBAR (Purpose Tabs + Date Range Filter + Expandable Search) ── */}
       {myPasses.length > 0 && (
         <div className="flex items-center justify-between gap-3 flex-wrap">
-          <div className="overflow-x-auto max-w-full pb-1 sm:pb-0">
-            <SlidingTabs
-              tabs={[
-                { id: "ALL", label: t("compTabAll") || "All" },
-                { id: "GUEST", label: t("preapPurposeGuest") || "Guest" },
-                { id: "DELIVERY", label: t("preapPurposeDelivery") || "Delivery" },
-                { id: "CAB", label: t("preapPurposeCab") || "Cab" },
-                { id: "SERVICE", label: t("preapPurposeService") || "Service" },
-                { id: "MAINTENANCE", label: t("preapPurposeMaintenance") || "Maintenance" },
-                { id: "OTHER", label: t("preapPurposeOther") || "Other" },
-              ]}
-              value={filterPurpose}
-              onChange={(id) => { setFilterPurpose(id); setPage(1); }}
-            />
-          </div>
+          <Select
+            options={[
+              { value: "ALL", label: t("compTabAll") || "All" },
+              { value: "GUEST", label: t("preapPurposeGuest") || "Guest" },
+              { value: "DELIVERY", label: t("preapPurposeDelivery") || "Delivery" },
+              { value: "CAB", label: t("preapPurposeCab") || "Cab" },
+              { value: "SERVICE", label: t("preapPurposeService") || "Service" },
+              { value: "MAINTENANCE", label: t("preapPurposeMaintenance") || "Maintenance" },
+              { value: "OTHER", label: t("preapPurposeOther") || "Other" },
+            ]}
+            value={filterPurpose}
+            onChange={(e) => { setFilterPurpose(e.target.value); setPage(1); }}
+            icon={<MdFilterList size={16} />}
+            style={{ width: 200, height: 40, minHeight: 40 }}
+          />
 
           <div className="flex items-center gap-2.5 flex-wrap sm:flex-nowrap justify-between sm:justify-end ml-auto sm:ml-0">
             <DateRangeFilter

@@ -42,7 +42,7 @@ export default function AppHeader({
           <button
             type="button"
             onClick={openMobile}
-            className="header-action-btn md:hidden shrink-0"
+            className="header-action-btn md:hidden! shrink-0"
             aria-label={t("sbOpen", "Open menu")}
             title={t("sbOpen", "Open menu")}
           >

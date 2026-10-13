@@ -66,18 +66,18 @@
   --ui-card-padding-record: 13px;       /* record shell           */
   --ui-card-gap: 2px;
   --ui-card-gap-lg: 8px;
-  --ui-card-icon-size: 28px;
-  --ui-card-icon-radius: 8px;
+  --ui-card-icon-size: 32px;
+  --ui-card-icon-radius: 9px;
 
   /* ── TYPOGRAPHY — statistical ──────────────────────────────────────── */
-  --ui-card-value-size: 21px;
+  --ui-card-value-size: 26px;
   --ui-card-value-weight: 800;
   --ui-card-value-tracking: -0.03em;
   --ui-card-value-line: 1.1;
-  --ui-card-label-size: 10.5px;
-  --ui-card-label-weight: 600;
+  --ui-card-label-size: 12px;
+  --ui-card-label-weight: 700;
   --ui-card-label-tracking: 0.04em;
-  --ui-card-desc-size: 10.5px;
+  --ui-card-desc-size: 11px;
 
   /* ── TYPOGRAPHY — record ───────────────────────────────────────────── */
   --ui-card-title-size: 0.95rem;

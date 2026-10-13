@@ -1,18 +1,13 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useLang } from "../../context/LanguageContext";
-import SlidingTabs from "../../components/common/SlidingTabs";
 import ExpandableSearch from "../../components/common/ExpandableSearch";
 import GlobalModal from "../../components/common/GlobalModal";
-import StatCard from "../../components/common/StatCard";
 import Pagination from "../../components/common/Pagination";
 import {
   MdDescription, MdDownload, MdVisibility,
   MdSearch,
-  MdGavel, MdGroups, MdMenuBook,
-  MdBarChart, MdSecurity,
   MdClose, MdRefresh,
   MdChevronLeft, MdChevronRight,
-  MdFolderOpen, MdGridView, MdViewList,
   MdInsertDriveFile, MdPictureAsPdf, MdTableChart, MdSlideshow, MdImage,
   MdCalendarMonth, MdOpenInNew,
 } from "react-icons/md";
@@ -27,8 +22,6 @@ function useDebounce(value, delay = 500) {
   }, [value, delay]);
   return debounced;
 }
-
-const CATEGORY_KEYS = ["All", "Legal", "Meetings", "Guidelines", "Finance", "Security"];
 
 const FILE_TYPES = [
   { exts: ["pdf"], icon: MdPictureAsPdf, color: "#ef4444" },
@@ -164,15 +157,13 @@ export default function ResidentDocument() {
   const [documents,      setDocuments]      = useState([]);
   const [counts,         setCounts]         = useState({ All: 0, Legal: 0, Meetings: 0, Guidelines: 0, Finance: 0, Security: 0 });
   const [error,          setError]          = useState(null);
-  const [viewMode,       setViewMode]       = useState("grid"); // "grid" | "table"
 
   // ── Loading states ──
   const [initialLoad, setInitialLoad] = useState(true);
   const [fetching,    setFetching]    = useState(false);
 
-  // ── Search & filter ──
+  // ── Search ──
   const [search,         setSearch]         = useState("");
-  const [activeCategory, setActiveCategory] = useState("All");
   const debouncedSearch = useDebounce(search, 500);
 
   // ── Pagination ──
@@ -234,19 +225,17 @@ export default function ResidentDocument() {
     fetchDocuments(1, "All", "", true);
   }, []);
 
-  // ── Re-fetch on search/category change ──
+  // ── Re-fetch on search change ──
   useEffect(() => {
     if (initialLoad) return;
-    fetchDocuments(1, activeCategory, debouncedSearch);
-  }, [debouncedSearch, activeCategory]);
-
-  const handleCategoryChange = (cat) => setActiveCategory(cat);
+    fetchDocuments(1, "All", debouncedSearch);
+  }, [debouncedSearch]);
 
   const handlePageChange = (newPage) =>
-    fetchDocuments(newPage, activeCategory, debouncedSearch);
+    fetchDocuments(newPage, "All", debouncedSearch);
 
   const handleRetry = () =>
-    fetchDocuments(page, activeCategory, debouncedSearch, page === 1 && initialLoad);
+    fetchDocuments(page, "All", debouncedSearch, page === 1 && initialLoad);
 
   return (
     <div className="ge-root rd-root animate-fadeIn space-y-5">
@@ -263,108 +252,13 @@ export default function ResidentDocument() {
         </div>
       </div>
 
-      {/* ── 2. Dynamic Category StatCards Strip ── */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 sm:gap-3">
-        <StatCard
-          icon={MdFolderOpen}
-          value={counts.All ?? 0}
-          label="All Files"
-          tone="brand"
-          active={activeCategory === "All"}
-          onClick={() => setActiveCategory("All")}
+      {/* ── 3. Toolbar: Search ── */}
+      <div className="flex items-center justify-end gap-3">
+        <ExpandableSearch
+          placeholder={t("docSearch") || "Search by document title…"}
+          value={search}
+          onChange={setSearch}
         />
-        <StatCard
-          icon={MdGavel}
-          value={counts.Legal ?? 0}
-          label="Legal"
-          tone="danger"
-          active={activeCategory === "Legal"}
-          onClick={() => setActiveCategory("Legal")}
-        />
-        <StatCard
-          icon={MdGroups}
-          value={counts.Meetings ?? 0}
-          label="Meetings"
-          tone="info"
-          active={activeCategory === "Meetings"}
-          onClick={() => setActiveCategory("Meetings")}
-        />
-        <StatCard
-          icon={MdMenuBook}
-          value={counts.Guidelines ?? 0}
-          label="Guidelines"
-          tone="warning"
-          active={activeCategory === "Guidelines"}
-          onClick={() => setActiveCategory("Guidelines")}
-        />
-        <StatCard
-          icon={MdBarChart}
-          value={counts.Finance ?? 0}
-          label="Finance"
-          tone="success"
-          active={activeCategory === "Finance"}
-          onClick={() => setActiveCategory("Finance")}
-        />
-        <StatCard
-          icon={MdSecurity}
-          value={counts.Security ?? 0}
-          label="Security"
-          tone="brand"
-          active={activeCategory === "Security"}
-          onClick={() => setActiveCategory("Security")}
-        />
-      </div>
-
-      {/* ── 3. Toolbar: Categories + View Toggle + Search ── */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
-        <div className="overflow-x-auto max-w-full pb-1 sm:pb-0">
-          <SlidingTabs
-            className="gp-filter-tabs"
-            value={activeCategory}
-            onChange={handleCategoryChange}
-            tabs={CATEGORY_KEYS.map((cat) => ({
-              id: cat,
-              label: categoryLabel(cat),
-              badge: counts[cat] ?? 0,
-            }))}
-          />
-        </div>
-
-        <div className="flex items-center gap-2.5 ml-auto flex-wrap sm:flex-nowrap">
-          {/* Grid vs Table View Mode Switcher */}
-          <div className="flex items-center rounded-xl p-1 bg-card-inner-bg border border-glass-border">
-            <button
-              type="button"
-              onClick={() => setViewMode("grid")}
-              className={`p-1.5 rounded-lg text-xs font-semibold flex items-center gap-1 transition-all cursor-pointer ${
-                viewMode === "grid"
-                  ? "bg-accent text-white shadow-sm"
-                  : "text-secondary hover:text-primary"
-              }`}
-              title="Grid View"
-            >
-              <MdGridView size={16} />
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewMode("table")}
-              className={`p-1.5 rounded-lg text-xs font-semibold flex items-center gap-1 transition-all cursor-pointer ${
-                viewMode === "table"
-                  ? "bg-accent text-white shadow-sm"
-                  : "text-secondary hover:text-primary"
-              }`}
-              title="Table View"
-            >
-              <MdViewList size={16} />
-            </button>
-          </div>
-
-          <ExpandableSearch
-            placeholder={t("docSearch") || "Search by document title…"}
-            value={search}
-            onChange={setSearch}
-          />
-        </div>
       </div>
 
       {/* ── 4. Error State ── */}
@@ -403,106 +297,18 @@ export default function ResidentDocument() {
       {/* ── 7. Documents Display (Grid vs. Table) ── */}
       {!initialLoad && !error && documents.length > 0 && (
         <div className="space-y-4">
-          {viewMode === "grid" ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5">
-              {documents.map((doc, i) => (
-                <ResidentDocCard
-                  key={doc.id}
-                  doc={doc}
-                  index={i}
-                  t={t}
-                  categoryLabel={categoryLabel}
-                  onOpen={setViewDoc}
-                />
-              ))}
-            </div>
-          ) : (
-            <div className="bg-card rounded-2xl border border-glass-border overflow-hidden shadow-sm">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs border-collapse">
-                  <thead>
-                    <tr className="bg-card-inner-bg/80 border-b border-glass-border text-secondary font-bold uppercase tracking-wider text-[10.5px]">
-                      <th className="p-3.5">Document</th>
-                      <th className="p-3.5">Category</th>
-                      <th className="p-3.5">File Details</th>
-                      <th className="p-3.5">Uploaded</th>
-                      <th className="p-3.5 text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-glass-border">
-                    {documents.map((doc) => {
-                      const { icon: FileIcon, color: fileColor } = getFileType(doc.file_name);
-                      const fileUrl = getDocUrl(doc.file_url);
-
-                      return (
-                        <tr
-                          key={doc.id}
-                          className="hover:bg-card-inner-bg/50 transition-colors cursor-pointer"
-                          onClick={() => setViewDoc(doc)}
-                        >
-                          <td className="p-3.5">
-                            <div className="flex items-center gap-3 min-w-0">
-                              <div
-                                className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 border"
-                                style={{
-                                  background: `color-mix(in srgb, ${fileColor} 15%, transparent)`,
-                                  borderColor: `color-mix(in srgb, ${fileColor} 30%, transparent)`,
-                                  color: fileColor,
-                                }}
-                              >
-                                <FileIcon size={18} />
-                              </div>
-                              <div className="min-w-0">
-                                <p className="font-bold text-xs text-primary truncate m-0">{doc.title}</p>
-                                <p className="text-[11px] text-secondary truncate m-0">{doc.file_name}</p>
-                              </div>
-                            </div>
-                          </td>
-
-                          <td className="p-3.5">
-                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-accent-soft text-accent border border-accent/20">
-                              {categoryLabel(doc.category)}
-                            </span>
-                          </td>
-
-                          <td className="p-3.5 text-secondary">
-                            <span className="font-mono text-xs">{doc.file_size_formatted || "—"}</span>
-                          </td>
-
-                          <td className="p-3.5 text-secondary">
-                            {doc.created_at ? new Date(doc.created_at).toLocaleDateString() : "—"}
-                          </td>
-
-                          <td className="p-3.5 text-right" onClick={(e) => e.stopPropagation()}>
-                            <div className="inline-flex items-center gap-1.5">
-                              <button
-                                type="button"
-                                onClick={() => setViewDoc(doc)}
-                                className="p-1.5 rounded-lg bg-card-inner-bg hover:bg-accent-soft hover:text-accent text-secondary border border-glass-border transition-all cursor-pointer"
-                                title={t("docView") || "Preview"}
-                              >
-                                <MdVisibility size={15} />
-                              </button>
-                              <a
-                                href={fileUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                download={doc.file_name || doc.title}
-                                className="p-1.5 rounded-lg bg-card-inner-bg hover:bg-emerald-500/15 hover:text-emerald-400 text-secondary border border-glass-border transition-all cursor-pointer inline-flex items-center justify-center"
-                                title={t("docDownload") || "Download"}
-                              >
-                                <MdDownload size={15} />
-                              </a>
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5">
+            {documents.map((doc, i) => (
+              <ResidentDocCard
+                key={doc.id}
+                doc={doc}
+                index={i}
+                t={t}
+                categoryLabel={categoryLabel}
+                onOpen={setViewDoc}
+              />
+            ))}
+          </div>
 
           {/* ── Pagination Footer ── */}
           <div className="flex flex-col sm:flex-row justify-between items-center px-2 pt-3 border-t border-glass-border gap-3">
