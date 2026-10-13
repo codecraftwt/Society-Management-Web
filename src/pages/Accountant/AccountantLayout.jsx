@@ -248,10 +248,10 @@ function AccountantLayoutInner() {
               {hasPermission(user, "emergency", "trigger") && (
                 <button
                   onClick={() => setShowSOS(true)}
-                  className="flex items-center justify-center sm:justify-start gap-1.5 rounded-xl bg-linear-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 shadow-md shadow-red-500/30 transition w-9 sm:w-auto px-0 sm:px-3 h-9 text-white text-xs font-bold cursor-pointer"
+                  className="header-sos-btn"
                   title="Raise an SOS alert to the whole society"
                 >
-                  <MdEmergency size={15} />
+                  <span className="header-sos-pulse-icon"><MdEmergency size={15} /></span>
                   <span className="hidden sm:inline">SOS</span>
                 </button>
               )}

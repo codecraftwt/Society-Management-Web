@@ -183,7 +183,7 @@ export default function Guard() {
   const [attendanceList, setAttendanceList] = useState([]);
   const [attendanceTotal, setAttendanceTotal] = useState(0);
   const [attendanceLoading, setAttendanceLoading] = useState(false);
-  const [attendanceDate, setAttendanceDate] = useState(() => getTodayISO());
+  const [attendanceDate, setAttendanceDate] = useState("");
   const [attendanceGuardFilter, setAttendanceGuardFilter] = useState("ALL");
   const [attendanceStatusFilter, setAttendanceStatusFilter] = useState("ALL");
   const [attendanceSummary, setAttendanceSummary] = useState({ total: 0, punched_in: 0, punched_out: 0 });

@@ -60,24 +60,24 @@
   --ui-card-sheen-bg: rgba(255, 255, 255, 0.28);
 
   /* ── GEOMETRY ──────────────────────────────────────────────────────── */
-  --ui-card-radius: 16px;
-  --ui-card-padding: 13px 16px;         /* statistical, desktop  */
-  --ui-card-padding-compact: 11px 11px;  /* statistical, <=1023px */
-  --ui-card-padding-record: 14px;       /* record shell           */
-  --ui-card-gap: 3px;
-  --ui-card-gap-lg: 10px;
-  --ui-card-icon-size: 30px;
-  --ui-card-icon-radius: 9px;
+  --ui-card-radius: 14px;
+  --ui-card-padding: 11px 14px;         /* statistical, desktop  */
+  --ui-card-padding-compact: 9px 11px;  /* statistical, <=1023px */
+  --ui-card-padding-record: 13px;       /* record shell           */
+  --ui-card-gap: 2px;
+  --ui-card-gap-lg: 8px;
+  --ui-card-icon-size: 28px;
+  --ui-card-icon-radius: 8px;
 
   /* ── TYPOGRAPHY — statistical ──────────────────────────────────────── */
-  --ui-card-value-size: 23px;
+  --ui-card-value-size: 21px;
   --ui-card-value-weight: 800;
-  --ui-card-value-tracking: -0.04em;
-  --ui-card-value-line: 1;
-  --ui-card-label-size: 11px;
+  --ui-card-value-tracking: -0.03em;
+  --ui-card-value-line: 1.1;
+  --ui-card-label-size: 10.5px;
   --ui-card-label-weight: 600;
   --ui-card-label-tracking: 0.04em;
-  --ui-card-desc-size: 11px;
+  --ui-card-desc-size: 10.5px;
 
   /* ── TYPOGRAPHY — record ───────────────────────────────────────────── */
   --ui-card-title-size: 0.95rem;

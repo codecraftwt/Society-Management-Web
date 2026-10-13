@@ -235,6 +235,19 @@ function AssignWizard({ onClose, onSuccess }) {
       .finally(() => setLoadingDropdowns(false));
   }, []);
 
+  useEffect(() => {
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKeyDown = (e) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      window.removeEventListener("keydown", onKeyDown);
+    };
+  }, [onClose]);
+
   const availableBlocks = (() => {
     const seen = new Set();
     const blocks = [];
@@ -287,10 +300,14 @@ function AssignWizard({ onClose, onSuccess }) {
     });
   })();
 
- const filteredResidents = residents.filter(r =>
-    r.name.toLowerCase().includes(residentSearch.toLowerCase()) && 
-    r.resident_type !== "TENANT" // ✅ FIX: Exclude tenants from the selection list!
-  );
+ const filteredResidents = residents.filter(r => {
+   const q = residentSearch.trim().toLowerCase();
+   const matches = !q
+     || (r.name || "").toLowerCase().includes(q)
+     || (r.email || "").toLowerCase().includes(q)
+     || (r.phone || "").toLowerCase().includes(q);
+   return matches && r.resident_type !== "TENANT"; // ✅ Exclude tenants from the selection list!
+ });
 
   const canGoNext = () => {
     if (step === 1) return !!propertyType;
@@ -661,16 +678,54 @@ function AssignWizard({ onClose, onSuccess }) {
       )}
 
       {/* Buttons */}
-      <div style={{ display: "flex", gap: 10, paddingTop: 16, borderTop: "1px solid var(--glass-border)", marginTop: 20 }}>
+      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 10, paddingTop: 16, borderTop: "1px solid var(--glass-border)", marginTop: 20 }}>
         {step > 1 && (
-          <button type="button" onClick={goBack} className="sa-btn sa-btn-ghost">
-            <MdArrowBack size={15} /> {t("afBack")}
+          <button
+            type="button"
+            onClick={goBack}
+            onMouseEnter={(e) => { e.currentTarget.style.background = "var(--card-inner-bg)"; e.currentTarget.style.borderColor = "var(--accent)"; }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.borderColor = "var(--glass-border)"; }}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 7,
+              padding: "10px 18px",
+              borderRadius: 12,
+              border: "1.5px solid var(--glass-border)",
+              background: "transparent",
+              color: "var(--text-primary)",
+              fontSize: 13.5,
+              fontWeight: 700,
+              cursor: "pointer",
+              transition: "all 0.18s ease",
+            }}
+          >
+            <MdArrowBack size={16} /> {t("afBack")}
           </button>
         )}
-        <button type="button" onClick={onClose} className="sa-btn sa-btn-ghost">
-          {t("cancel")}
+        <button
+          type="button"
+          onClick={onClose}
+          onMouseEnter={(e) => { e.currentTarget.style.color = "#f87171"; e.currentTarget.style.background = "rgba(239,68,68,0.08)"; }}
+          onMouseLeave={(e) => { e.currentTarget.style.color = "var(--text-secondary)"; e.currentTarget.style.background = "transparent"; }}
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 6,
+            padding: "10px 14px",
+            borderRadius: 12,
+            border: "none",
+            background: "transparent",
+            color: "var(--text-secondary)",
+            fontSize: 13.5,
+            fontWeight: 600,
+            cursor: "pointer",
+            transition: "all 0.18s ease",
+          }}
+        >
+          <MdClose size={15} /> {t("cancel")}
         </button>
-        <div style={{ flex: 1 }} />
+        <div style={{ flex: 1, minWidth: 8 }} />
         {step < residentStep ? (
           <GlobalButton
             type="button"

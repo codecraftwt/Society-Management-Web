@@ -9,6 +9,7 @@ import Select from "../../components/common/Select";
 import ExpandableSearch from "../../components/common/ExpandableSearch";
 import GlobalModal from "../../components/common/GlobalModal";
 import StatCard from "../../components/common/StatCard";
+import SlidingTabs from "../../components/common/SlidingTabs";
 import SOSModal from "../../components/emergency/SOSModal";
 import {
   MdSecurity,

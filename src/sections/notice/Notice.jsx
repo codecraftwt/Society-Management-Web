@@ -10,7 +10,6 @@ import {
   MdOutlineOpenInNew,
   MdCheckCircle,
   MdPeople,
-  MdVisibility,
   MdDoneAll,
   MdHourglassEmpty,
   MdAttachFile,
@@ -411,13 +410,6 @@ export default function Notice() {
                   <p style={{ fontSize: 18, fontWeight: 800, margin: 0, color: "var(--text-primary)" }}>{historyModal.data?.summary?.total ?? 0}</p>
                 </div>
               </div>
-              <div style={{ padding: "12px 14px", borderRadius: 12, background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.2)", display: "flex", alignItems: "center", gap: 10 }}>
-                <MdVisibility size={22} style={{ color: "#f59e0b" }} />
-                <div>
-                  <p style={{ fontSize: 11, color: "var(--text-secondary)", margin: 0, textTransform: "uppercase", fontWeight: 600 }}>{t("noticeViewed", "Viewed")}</p>
-                  <p style={{ fontSize: 18, fontWeight: 800, margin: 0, color: "#f59e0b" }}>{historyModal.data?.summary?.viewed ?? 0}</p>
-                </div>
-              </div>
               <div style={{ padding: "12px 14px", borderRadius: 12, background: "rgba(16,185,129,0.08)", border: "1px solid rgba(16,185,129,0.2)", display: "flex", alignItems: "center", gap: 10 }}>
                 <MdDoneAll size={22} style={{ color: "#10b981" }} />
                 <div>
@@ -456,8 +448,7 @@ export default function Notice() {
                 {[
                   { key: "ALL", label: t("noticeHistFilterAll", "All") },
                   { key: "ACKNOWLEDGED", label: t("noticeAcknowledged", "Acknowledged") },
-                  { key: "VIEWED", label: t("noticeViewed", "Viewed") },
-                  { key: "NOT_VIEWED", label: t("noticeNotViewed", "Not Viewed") },
+                  { key: "PENDING", label: t("noticePending", "Pending") },
                 ].map(({ key, label }) => (
                   <button
                     key={key}

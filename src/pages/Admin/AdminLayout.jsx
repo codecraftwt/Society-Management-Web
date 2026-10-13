@@ -292,10 +292,10 @@ function AdminLayoutInner() {
               {hasPermission(user, "emergency", "trigger") && (
                 <button
                   onClick={() => setShowSOS(true)}
-                  className="flex items-center justify-center sm:justify-start gap-1.5 rounded-xl bg-linear-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 shadow-md shadow-red-500/30 transition w-9 sm:w-auto px-0 sm:px-3 h-9 text-white text-xs font-bold"
+                  className="header-sos-btn"
                   title={t("raiseSos")}
                 >
-                  <MdEmergency size={15} />
+                  <span className="header-sos-pulse-icon"><MdEmergency size={15} /></span>
                   <span className="hidden sm:inline">SOS</span>
                 </button>
               )}
@@ -304,10 +304,10 @@ function AdminLayoutInner() {
               {alerts.length > 0 && (
                 <button
                   onClick={() => setShowEmergency(true)}
-                  className="relative flex items-center justify-center w-9 h-9 rounded-xl bg-red-600 hover:bg-red-700 shadow-md shadow-red-500/30 animate-pulse transition"
+                  className="header-action-btn relative bg-red-600! border-red-500! text-white! shadow-md shadow-red-500/30 animate-pulse"
                   title={t("adminActiveEmergencies")}
                 >
-                  <MdWarning size={18} className="text-white" />
+                  <MdWarning size={18} />
                   <span className="header-sos-count absolute -top-1 -right-1 bg-white text-red-600 text-[10px] font-bold min-w-4.5 h-4.5 flex items-center justify-center rounded-full leading-none px-1">
                     {alerts.length}
                   </span>

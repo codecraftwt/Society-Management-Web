@@ -144,18 +144,13 @@ export default function NotificationBell() {
       {/* ── Bell button ── */}
       <button
         onClick={() => setOpen(true)}
-        className="relative flex items-center justify-center w-9 h-9 rounded-xl transition-colors"
-        style={{
-          background: "var(--card-inner-bg)",
-          border: "1.5px solid var(--glass-border)",
-          color: "var(--text-primary)",
-        }}
+        className="header-action-btn relative"
         aria-label="Open Notifications"
         title="Notifications"
       >
         <MdNotifications size={19} />
         {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold min-w-4.5 h-4.5 flex items-center justify-center rounded-full leading-none px-1 shadow-sm">
+          <span className="absolute -top-1 -right-1 bg-linear-to-r from-red-500 to-rose-600 text-white text-[10px] font-extrabold min-w-4.5 h-4.5 flex items-center justify-center rounded-full leading-none px-1 shadow-md shadow-red-500/30">
             {unreadCount > 99 ? "99+" : unreadCount}
           </span>
         )}

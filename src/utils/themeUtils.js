@@ -72,14 +72,16 @@ export const adjustBrightness = (hex, percent) => {
  * Preset palettes for quick selection in the Super Admin and Society Admin UI.
  */
 export const PRESET_THEME_PALETTES = [
-  { name: "Corona Purple (Default)", primary: "#a05aff", accent: "#9e58ff" },
-  { name: "Emerald Mint", primary: "#10b981", accent: "#059669" },
-  { name: "Ocean Sky", primary: "#0ea5e9", accent: "#0284c7" },
-  { name: "Royal Indigo", primary: "#6366f1", accent: "#4f46e5" },
-  { name: "Amber Sunset", primary: "#f59e0b", accent: "#d97706" },
-  { name: "Rose Crimson", primary: "#f43f5e", accent: "#e11d48" },
-  { name: "Teal Cyan", primary: "#14b8a6", accent: "#0d9488" },
-  { name: "Violet Orchid", primary: "#8b5cf6", accent: "#7c3aed" },
+  { id: "electric-royal", name: "Electric Royal", primary: "#001EFF", accent: "#00BFFF" },
+  { id: "royal-amethyst", name: "Royal Amethyst", primary: "#6036FF", accent: "#D000FF" },
+  { id: "emerald-flash", name: "Emerald Flash", primary: "#00A86B", accent: "#B6FF00" },
+  { id: "golden-volt", name: "Golden Volt", primary: "#FFB800", accent: "#FF6D00" },
+  { id: "crimson-blaze", name: "Crimson Blaze", primary: "#FF1744", accent: "#FF6D00" },
+  { id: "pink-voltage", name: "Pink Voltage", primary: "#FF0080", accent: "#FFB000" },
+  { id: "tropical-flame", name: "Tropical Flame", primary: "#00A878", accent: "#FF6B35" },
+  { id: "cyber-purple", name: "Cyber Purple", primary: "#7B00FF", accent: "#00D4FF" },
+  { id: "ruby-royale", name: "Ruby Royale", primary: "#D50032", accent: "#FF5CA8" },
+  { id: "lime-reactor", name: "Lime Reactor", primary: "#65D600", accent: "#00CFA6" },
 ];
 
 const THEME_VARIABLE_KEYS = [
@@ -148,7 +150,7 @@ export const applyDynamicTheme = (tokens, target = document.documentElement) => 
 };
 
 /**
- * Statistical Card Style Families (10 distinct design treatments, starting with Current / Default)
+ * Statistical Card Style Families (12 distinct design treatments, starting with Current / Default)
  */
 export const CARD_STYLES = [
   { id: "default", name: "Current / Default", description: "Original clean dashboard card appearance" },
@@ -161,10 +163,12 @@ export const CARD_STYLES = [
   { id: "neumorphic", name: "Neumorphic", description: "Pillowed tactile surface with inset highlights" },
   { id: "accent-rail", name: "Accent Rail", description: "Bold vertical semantic-color indicator stripe" },
   { id: "minimal", name: "Minimal Premium", description: "Restrained ultra-clean typographic finish" },
+  { id: "holographic", name: "Holographic Sheen", description: "Iridescent prismatic sheen that shifts with light" },
+  { id: "spotlight", name: "Spotlight Premium", description: "Top-lit spotlight glow with soft elevated depth" },
 ];
 
 /**
- * Quick Link Style Families (10 distinct design treatments, starting with Current / Default)
+ * Quick Link Style Families (12 distinct design treatments, starting with Current / Default)
  */
 export const QUICK_LINK_STYLES = [
   { id: "default", name: "Current / Default", description: "Original clean quick link design" },
@@ -177,6 +181,8 @@ export const QUICK_LINK_STYLES = [
   { id: "neumorphic", name: "Neumorphic", description: "Soft tactile pillowed surface & press depth" },
   { id: "accent-rail", name: "Accent Rail", description: "Strong semantic-color indicator side rail" },
   { id: "minimal", name: "Minimal Premium", description: "Clean ultra-flat typography-focused tile" },
+  { id: "holographic", name: "Holographic Sheen", description: "Iridescent prismatic sheen that shifts with light" },
+  { id: "spotlight", name: "Spotlight Premium", description: "Top-lit spotlight glow with soft elevated depth" },
 ];
 
 const CARD_STYLE_ALIASES = {
@@ -206,6 +212,11 @@ const CARD_STYLE_ALIASES = {
   "spotlight-glass": "glass",
   "executive-glass": "default",
   soft: "glass",
+  holographic: "holographic",
+  holo: "holographic",
+  iridescent: "holographic",
+  spotlight: "spotlight",
+  "spotlight-premium": "spotlight",
 };
 
 const QUICK_LINK_STYLE_ALIASES = {
@@ -235,6 +246,11 @@ const QUICK_LINK_STYLE_ALIASES = {
   "interactive-3d": "floating",
   "spotlight-glass": "glass",
   soft: "aurora",
+  holographic: "holographic",
+  holo: "holographic",
+  iridescent: "holographic",
+  spotlight: "spotlight",
+  "spotlight-premium": "spotlight",
 };
 
 /**

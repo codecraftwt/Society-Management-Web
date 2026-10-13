@@ -1,11 +1,12 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { MdMenu, MdClose, MdLogout, MdApartment, MdSettings, MdArrowBack } from "react-icons/md";
+import { MdLogout, MdApartment, MdSettings, MdArrowBack, MdMenu } from "react-icons/md";
 import ThemeToggle from "./ThemeToggle";
 import LanguageSelector from "./LanguageSelector";
 import NotificationBell from "./NotificationBell";
 import { useSidebar } from "../../context/SidebarContext";
 import { useLang } from "../../context/LanguageContext";
+import "./AppHeader.css";
 
 export default function AppHeader({
   title,
@@ -20,41 +21,41 @@ export default function AppHeader({
   settingsPath = null,
   onLogout = null,
 }) {
-  const { openMobile, closeMobile, mobileOpen } = useSidebar();
   const { t } = useLang();
   const navigate = useNavigate();
 
+  let sidebarCtx = null;
+  try {
+    sidebarCtx = useSidebar();
+  } catch (_) {}
+  const openMobile = sidebarCtx?.openMobile;
+
   return (
     <header
-      className={`sticky top-0 h-14 md:h-16 bg-navbar flex items-center justify-between px-3 md:px-6 shrink-0 border-b border-glass-border backdrop-blur-md transition-colors ${
-        mobileOpen ? "z-60" : "z-30"
-      }`}
-      aria-label={t("appHeader")}
+      className="app-header-root z-30"
+      aria-label={t("appHeader") || "Header Navigation"}
     >
-      {/* ── LEFT AREA: HAMBURGER, BACK BTN & IDENTITY ── */}
-      <div className="flex items-center gap-2.5 md:gap-3.5 min-w-0">
-        {/* Mobile Hamburger Button */}
-        <button
-          type="button"
-          onClick={mobileOpen ? closeMobile : openMobile}
-          className="md:hidden relative z-61 flex items-center justify-center w-10 h-10 rounded-xl shrink-0 transition-colors hover:bg-white/5 active:scale-95"
-          style={{
-            background: "var(--card-inner-bg)",
-            border: "1.5px solid var(--glass-border)",
-            color: "var(--text-primary)",
-          }}
-          aria-label={mobileOpen ? t("sbCloseMenu") : t("openMenu")}
-          title={mobileOpen ? t("sbCloseMenu") : t("openMenu")}
-        >
-          {mobileOpen ? <MdClose size={20} /> : <MdMenu size={20} />}
-        </button>
+      {/* ── LEFT AREA: BACK BTN & IDENTITY ── */}
+      <div className="header-left">
+        {/* Mobile Hamburger Menu Toggle */}
+        {openMobile && (
+          <button
+            type="button"
+            onClick={openMobile}
+            className="header-action-btn md:hidden shrink-0"
+            aria-label={t("sbOpen", "Open menu")}
+            title={t("sbOpen", "Open menu")}
+          >
+            <MdMenu size={20} />
+          </button>
+        )}
 
         {/* Back Button (Left-aligned) */}
         {onBack && (
           <button
             type="button"
             onClick={onBack}
-            className="inline-flex items-center justify-center h-9 px-3 rounded-xl border border-glass-border bg-card-inner-bg text-primary text-xs font-semibold gap-1.5 transition-all duration-200 ease-out hover:bg-card hover:border-accent/40 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent shrink-0 cursor-pointer shadow-2xs"
+            className="header-action-btn w-auto px-3 gap-1.5 text-xs font-semibold"
             title={t("back", "Back")}
             aria-label={t("back", "Back")}
           >
@@ -64,7 +65,7 @@ export default function AppHeader({
         )}
 
         {leftActions && (
-          <div className="flex items-center gap-2 shrink-0">{leftActions}</div>
+          <div className="header-control-group">{leftActions}</div>
         )}
 
         {/* Identity & Context */}
@@ -78,7 +79,7 @@ export default function AppHeader({
 
             {/* Optional Society Name Badge */}
             {societyName && (
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-xs font-medium bg-accent/10 text-accent border border-accent/20 truncate max-w-55">
+              <span className="header-society-badge">
                 <MdApartment size={13} className="shrink-0" />
                 <span className="truncate">{societyName}</span>
               </span>
@@ -94,14 +95,14 @@ export default function AppHeader({
       </div>
 
       {/* ── RIGHT AREA: ACTIONS & PREFERENCES ── */}
-      <div className="flex items-center gap-2 md:gap-3 shrink-0">
-        {/* Role-Specific Custom Actions (Society Filter, Role Switcher, Emergency Alerts) */}
+      <div className="header-right">
+        {/* Role-Specific Custom Actions (Refresh, Role Switcher, SOS, Emergency Alerts) */}
         {actions && (
-          <div className="flex items-center gap-2 shrink-0">{actions}</div>
+          <div className="header-control-group">{actions}</div>
         )}
 
-        {/* Global Preference Controls */}
-        <div className="flex items-center gap-1.5 md:gap-2 shrink-0 border-l border-glass-border pl-2 md:pl-3">
+        {/* Global Preference Controls: Theme, Language & Notifications */}
+        <div className="header-control-group">
           {showThemeToggle && <ThemeToggle />}
           {showLanguageSelector && (
             <span className="hidden sm:inline-flex items-center">
@@ -115,12 +116,7 @@ export default function AppHeader({
         {settingsPath && (
           <button
             onClick={() => navigate(settingsPath)}
-            className="flex items-center justify-center w-10 h-10 rounded-xl transition-all hover:bg-accent/10 hover:border-accent/30 hover:text-accent active:scale-95"
-            style={{
-              background: "var(--card-inner-bg)",
-              border: "1.5px solid var(--glass-border)",
-              color: "var(--text-primary)",
-            }}
+            className="header-action-btn"
             aria-label={t("settings") || "Settings"}
             title={t("settings") || "Settings"}
           >
@@ -132,12 +128,7 @@ export default function AppHeader({
         {onLogout && (
           <button
             onClick={onLogout}
-            className="flex items-center justify-center w-10 h-10 rounded-xl transition-all hover:bg-red-500/10 hover:border-red-500/30 hover:text-red-500 active:scale-95"
-            style={{
-              background: "var(--card-inner-bg)",
-              border: "1.5px solid var(--glass-border)",
-              color: "var(--text-primary)",
-            }}
+            className="header-action-btn header-action-btn--logout"
             aria-label={t("logout") || "Logout"}
             title={t("logout") || "Logout"}
           >

@@ -264,10 +264,10 @@ function SuperAdminLayoutInner() {
             <>
               <button
                 onClick={() => setShowSOS(true)}
-                className="hidden sm:flex items-center gap-1.5 rounded-xl bg-linear-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 shadow-md shadow-red-500/30 transition px-3 h-9 text-white text-xs font-bold"
+                className="hidden sm:inline-flex header-sos-btn"
                 title="Raise an SOS alert to any society"
               >
-                <MdEmergency size={15} />
+                <span className="header-sos-pulse-icon"><MdEmergency size={15} /></span>
                 <span>SOS</span>
               </button>
 

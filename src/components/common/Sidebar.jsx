@@ -471,8 +471,9 @@ export default function Sidebar({
       {/* ── DESKTOP SIDEBAR ── */}
       <aside
         className={`hidden md:flex fixed left-0 top-0 h-screen bg-sidebar flex-col z-40 border-r border-glass-border transition-all duration-200 box-border ${
-          collapsed ? "w-19 px-3 py-4" : "w-66 p-4"
+          collapsed ? "px-3 py-4" : "p-4"
         }`}
+        style={{ width: "var(--sidebar-w, 256px)" }}
       >
         {renderBrand(false)}
         {renderNavList(false)}

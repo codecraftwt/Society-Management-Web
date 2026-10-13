@@ -2726,3 +2726,186 @@ html.role-theme .hh-sal-note svg {
   flex-shrink: 0;
   margin-top: 1px;
 }
+
+/* ==========================================================================
+   Visitor Access & Pre-Approvals — premium instant-pass action cards
+   (Scoped to the resident dashboard so the shared .gd-action system used by
+   Guard/Admin keeps its own look.)
+   ========================================================================== */
+
+html.role-theme .rp-dash .rp-va-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 14px;
+  min-height: 180px;
+  padding: 18px 18px 16px !important;
+  border-radius: 22px !important;
+}
+
+html.role-theme .rp-dash .rp-va-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    120% 90% at 100% 0%,
+    color-mix(in srgb, var(--gd-c) 18%, transparent) 0%,
+    transparent 55%
+  );
+}
+
+html.role-theme .rp-dash .rp-va-head {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+html.role-theme .rp-dash .rp-va-icon {
+  width: 50px;
+  height: 50px;
+  border-radius: 16px;
+  color: #ffffff !important;
+  background: linear-gradient(
+    140deg,
+    color-mix(in srgb, var(--gd-c) 88%, #ffffff) 0%,
+    color-mix(in srgb, var(--gd-c) 72%, #000000) 100%
+  ) !important;
+  border: 1px solid color-mix(in srgb, var(--gd-c) 50%, #ffffff) !important;
+  box-shadow: 0 10px 22px -8px var(--gd-c),
+    inset 0 1px 0 rgba(255, 255, 255, 0.55) !important;
+}
+
+html.role-theme .rp-dash .rp-va-card:hover .rp-va-icon {
+  transform: translateY(-3px) scale(1.08) rotate(-4deg);
+  box-shadow: 0 16px 30px -8px var(--gd-c),
+    0 0 0 4px color-mix(in srgb, var(--gd-c) 22%, transparent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6) !important;
+}
+
+html.role-theme .rp-dash .rp-va-icon svg {
+  color: #ffffff;
+}
+
+html.role-theme .rp-dash .rp-va-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 9px !important;
+  border-radius: 999px !important;
+  font-size: 9px !important;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  background-color: color-mix(in srgb, var(--gd-c) 16%, transparent) !important;
+  border: 1px solid color-mix(in srgb, var(--gd-c) 42%, transparent) !important;
+  color: var(--gd-c) !important;
+}
+
+html.light.role-theme .rp-dash .rp-va-badge {
+  background-color: color-mix(in srgb, var(--gd-c) 12%, #ffffff) !important;
+  color: color-mix(in srgb, var(--gd-c) 78%, #0b1220) !important;
+}
+
+html.role-theme .rp-dash .rp-va-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--gd-c);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--gd-c) 22%, transparent);
+  animation: rpVaPulse 1.8s ease-in-out infinite;
+}
+
+@keyframes rpVaPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.45; transform: scale(0.78); }
+}
+
+html.role-theme .rp-dash .rp-va-body {
+  position: relative;
+  z-index: 1;
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+html.role-theme .rp-dash .rp-va-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+html.role-theme .rp-dash .rp-va-title-text {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1.2;
+  color: var(--text-primary);
+  transition: color 0.25s ease;
+}
+
+html.role-theme .rp-dash .rp-va-card:hover .rp-va-title-text {
+  color: var(--gd-c);
+}
+
+html.role-theme .rp-dash .rp-va-arrow {
+  color: var(--gd-c);
+}
+
+html.role-theme .rp-dash .rp-va-desc {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--text-secondary);
+}
+
+html.role-theme .rp-dash .rp-va-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+html.role-theme .rp-dash .rp-va-chip {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 999px;
+  color: var(--text-secondary);
+  background: color-mix(in srgb, var(--gd-c) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--gd-c) 26%, transparent);
+  transition: background 0.25s ease, color 0.25s ease, border-color 0.25s ease;
+}
+
+html.role-theme .rp-dash .rp-va-card:hover .rp-va-chip {
+  background: color-mix(in srgb, var(--gd-c) 18%, transparent);
+  border-color: color-mix(in srgb, var(--gd-c) 45%, transparent);
+  color: var(--text-primary);
+}
+
+html.light.role-theme .rp-dash .rp-va-chip {
+  background: color-mix(in srgb, var(--gd-c) 8%, #ffffff);
+  border-color: color-mix(in srgb, var(--gd-c) 24%, #e2e8f0);
+  color: color-mix(in srgb, var(--gd-c) 65%, #334155);
+}
+
+@media (max-width: 639px) {
+  html.role-theme .rp-dash .rp-va-card {
+    min-height: 152px;
+    padding: 16px !important;
+  }
+  html.role-theme .rp-dash .rp-va-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
+  }
+}

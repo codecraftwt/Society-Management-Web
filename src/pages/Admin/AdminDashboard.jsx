@@ -122,6 +122,8 @@ export default function AdminDashboard() {
   const guards = stats?.guards ?? 0;
   const openComplaints = stats?.openComplaints ?? 0;
   const totalFlats = stats?.totalFlats ?? 0;
+  const occupiedFlats = stats?.occupiedFlats ?? 0;
+  const vacantFlats = stats?.vacantFlats ?? 0;
 
   const chartData = [
     { name: t("dashResidents") || "Residents", value: residents, color: "#22d3ee" },
@@ -188,6 +190,17 @@ export default function AdminDashboard() {
       badge: t("dashBadgeCircular") || "Circular",
       badgeColor: "bg-amber-600 text-white",
     },
+    {
+      id: "emergency",
+      title: t("navEmergency") || "Emergency Hub",
+      desc: t("dashQuickEmergencyDesc") || "Security alert center & SOS contacts",
+      icon: FaShieldAlt,
+      path: "/admin/emergency",
+      color: "#DC2626",
+      bg: "rgba(220, 38, 38, 0.15)",
+      badge: t("dashBadgeEmergency") || "Alert",
+      badgeColor: "bg-red-600 text-white",
+    },
   ];
 
   const { user } = useContext(AuthContext);
@@ -220,24 +233,18 @@ export default function AdminDashboard() {
       {/* ── 1. DASHBOARD HERO HEADER ── */}
       <PanelHero societyName={stats?.societyName} />
 
-      {/* ── 2. KEY METRICS KPI CARDS (4 COLUMNS) ── */}
-      {/* Migrated from .ad-kpi in Phase 2 batch 2A. The scoped palette at
-          role-theme.css:2440-2450 (cyan / blue / pink / lavender) was replaced
-          by semantic tones so the cards now follow role, light and the
-          society accent. variant="sheen" reproduces the ::before corner blob
-          and ::after shine that .dash-kpi-scope applied to all four cards.
-          The descriptions keep their original `hidden lg:block` wrapper so
-          their below-lg visibility is unchanged. */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
+      {/* ── 2. KEY METRICS KPI CARDS (6 COLUMNS) ── */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-3.5">
         <StatCard
           variant="sheen"
           tone="brand"
           icon={FaUsers}
           value={residents}
           label={t("dashResidents") || "Residents"}
+          onClick={() => navigate("/admin/resident")}
           description={
             <span className="hidden lg:block">
-              {t("dashResidentsDesc") || "Active members living in society"}
+              {t("dashResidentsDesc") || "Active society members"}
             </span>
           }
         />
@@ -248,9 +255,10 @@ export default function AdminDashboard() {
           icon={FaShieldAlt}
           value={guards}
           label={t("dashGuards") || "Guards"}
+          onClick={() => navigate("/admin/guard")}
           description={
             <span className="hidden lg:block">
-              {t("dashGuardsDesc") || "On-duty security personnel"}
+              {t("dashGuardsDesc") || "Security staff"}
             </span>
           }
         />
@@ -275,21 +283,51 @@ export default function AdminDashboard() {
           icon={MdApartment}
           value={totalFlats}
           label={t("dashTotalFlats") || "Total Flats"}
+          onClick={() => navigate("/admin/property")}
           description={
             <span className="hidden lg:block">
-              {t("dashTotalFlatsDesc") || "Across all blocks & floors"}
+              {t("dashTotalFlatsDesc") || "All society units"}
+            </span>
+          }
+        />
+
+        <StatCard
+          variant="sheen"
+          tone="brand"
+          icon={MdApartment}
+          value={occupiedFlats}
+          label={t("dashOccupiedFlats", "Occupied Units") || "Occupied Units"}
+          onClick={() => navigate("/admin/property")}
+          description={
+            <span className="hidden lg:block">
+              {t("dashOccupiedFlatsDesc", "Tenant & owner units") || "Tenant & owner units"}
+            </span>
+          }
+        />
+
+        <StatCard
+          variant="sheen"
+          tone="neutral"
+          icon={MdApartment}
+          value={vacantFlats}
+          label={t("dashVacantFlats", "Vacant Units") || "Vacant Units"}
+          onClick={() => navigate("/admin/property")}
+          description={
+            <span className="hidden lg:block">
+              {t("dashVacantFlatsDesc", "Ready for allotment") || "Ready for allotment"}
             </span>
           }
         />
       </div>
 
-      {/* ── 3. QUICK LINKS OPERATIONS HUB (5 DISTINCT COLOR CARDS MATCHING GUARD DASHBOARD) ── */}
-      <div className="bg-card border border-glass-border rounded-2xl p-5 sm:p-6 shadow-sm">
-        <div className="flex items-center justify-between mb-4">
+
+      {/* ── 3. QUICK LINKS OPERATIONS HUB (6 DISTINCT COLOR CARDS) ── */}
+      <div className="bg-card border border-glass-border rounded-2xl p-4 sm:p-5 shadow-sm">
+        <div className="flex items-center justify-between mb-3.5">
           <div className="flex items-center gap-2">
-            <MdDashboard size={20} className="text-accent" />
+            <MdDashboard size={18} className="text-accent" />
             <div>
-              <h2 className="text-base font-bold text-primary">
+              <h2 className="text-sm sm:text-base font-bold text-primary">
                 {t("dashQuickLinks") || "Quick Operations"}
               </h2>
               <p className="text-xs text-secondary">
@@ -299,7 +337,7 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 sm:gap-3">
           {quickLinks.map((action, idx) => (
             <QuickLink
               key={action.id}
@@ -317,6 +355,7 @@ export default function AdminDashboard() {
           ))}
         </div>
       </div>
+
 
       {/* ── 4. MAIN ANALYTICS CHARTS (2 COLUMNS) ── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 w-full min-w-0">

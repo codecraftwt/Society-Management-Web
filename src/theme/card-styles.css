@@ -1,7 +1,7 @@
 /* ============================================================================
  * GLOBAL STATISTICAL CARD THEMES — COMPONENT-SCOPED CSS
  * ----------------------------------------------------------------------------
- * 10 Genuinely Different Design Treatments for StatCards (.ui-stat-card):
+ * 12 Genuinely Different Design Treatments for StatCards (.ui-stat-card):
  *   1. default     (Current / Default — Original clean dashboard card)
  *   2. solid       (Colorful Solid — Bold vibrant semantic-tone surface)
  *   3. glass       (Glass Morphism — Frosted translucent glass with backdrop-blur)
@@ -12,6 +12,8 @@
  *   8. neumorphic  (Neumorphic — Soft tactile pillowed surface with inset highlights)
  *   9. accent-rail (Accent Rail — Bold 5px vertical semantic-color stripe)
  *  10. minimal     (Minimal Premium — Ultra-clean restrained minimalist)
+ *  11. holographic (Holographic Sheen — Iridescent prismatic shine)
+ *  12. spotlight   (Spotlight Premium — Top-lit spotlight glow)
  *
  * CRITICAL ARCHITECTURAL RULE:
  * Every selector MUST be strictly scoped to `.ui-stat-card`.
@@ -413,6 +415,91 @@ html.light.card-style-minimal-premium .ui-stat-card:not([class*="card-style-"]) 
   background: #ffffff !important;
   border: 1.5px solid color-mix(in srgb, var(--ui-card-tone-accent, var(--accent, #6366f1)) 35%, #e2e8f0) !important;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04) !important;
+}
+
+/* ── 11. HOLOGRAPHIC SHEEN ────────────────────────────────────────────── */
+.ui-stat-card.card-style-holographic,
+html.card-style-holographic .ui-stat-card:not([class*="card-style-"]) {
+  background: linear-gradient(
+      115deg,
+      rgba(255, 110, 199, 0.26) 0%,
+      rgba(123, 97, 255, 0.26) 24%,
+      rgba(33, 212, 253, 0.24) 48%,
+      rgba(126, 231, 135, 0.22) 72%,
+      rgba(255, 196, 86, 0.24) 100%
+    ),
+    linear-gradient(145deg, #1c2130, #12141c) !important;
+  border: 1.5px solid color-mix(in srgb, var(--ui-card-tone-accent, var(--accent, #8b5cf6)) 45%, rgba(255, 255, 255, 0.22)) !important;
+  box-shadow: 0 10px 30px -10px color-mix(in srgb, var(--ui-card-tone-accent, var(--accent, #8b5cf6)) 45%, transparent),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.08) !important;
+  background-size: 200% 200% !important;
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.35s ease,
+    background-position 0.6s ease !important;
+}
+.ui-stat-card.card-style-holographic .ui-stat-card__blob,
+html.card-style-holographic .ui-stat-card:not([class*="card-style-"]) .ui-stat-card__blob {
+  background: color-mix(in srgb, var(--ui-card-tone-accent, var(--accent, #8b5cf6)) 28%, transparent) !important;
+}
+.ui-stat-card.card-style-holographic:hover,
+html.card-style-holographic .ui-stat-card:not([class*="card-style-"]):hover {
+  transform: translateY(-4px) !important;
+  background-position: 100% 50% !important;
+  border-color: color-mix(in srgb, var(--ui-card-tone-accent, var(--accent, #8b5cf6)) 65%, rgba(255, 255, 255, 0.3)) !important;
+  box-shadow: 0 18px 40px -10px color-mix(in srgb, var(--ui-card-tone-accent, var(--accent, #8b5cf6)) 60%, transparent),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.14) !important;
+}
+html.light .ui-stat-card.card-style-holographic,
+html.light.card-style-holographic .ui-stat-card:not([class*="card-style-"]) {
+  background: linear-gradient(
+      115deg,
+      rgba(255, 110, 199, 0.16) 0%,
+      rgba(123, 97, 255, 0.16) 24%,
+      rgba(33, 212, 253, 0.15) 48%,
+      rgba(126, 231, 135, 0.14) 72%,
+      rgba(255, 196, 86, 0.16) 100%
+    ),
+    linear-gradient(145deg, #ffffff, #f4f6fb) !important;
+  border-color: color-mix(in srgb, var(--ui-card-tone-accent, var(--accent, #8b5cf6)) 40%, #e2e8f0) !important;
+  box-shadow: 0 8px 24px -10px color-mix(in srgb, var(--ui-card-tone-accent, var(--accent, #8b5cf6)) 35%, transparent),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.9) !important;
+}
+
+/* ── 12. SPOTLIGHT PREMIUM ────────────────────────────────────────────── */
+.ui-stat-card.card-style-spotlight,
+html.card-style-spotlight .ui-stat-card:not([class*="card-style-"]) {
+  background: radial-gradient(
+      120% 95% at 50% -25%,
+      color-mix(in srgb, var(--ui-card-tone-accent, var(--accent, #6366f1)) 34%, transparent) 0%,
+      transparent 62%
+    ),
+    var(--card-bg, #1a1d26) !important;
+  border: 1.5px solid color-mix(in srgb, var(--ui-card-tone-accent, var(--accent, #6366f1)) 42%, var(--glass-border)) !important;
+  box-shadow: 0 12px 30px -14px color-mix(in srgb, var(--ui-card-tone-accent, var(--accent, #6366f1)) 55%, transparent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12) !important;
+  transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease !important;
+}
+.ui-stat-card.card-style-spotlight .ui-stat-card__blob,
+html.card-style-spotlight .ui-stat-card:not([class*="card-style-"]) .ui-stat-card__blob {
+  background: color-mix(in srgb, var(--ui-card-tone-accent, var(--accent, #6366f1)) 22%, transparent) !important;
+}
+.ui-stat-card.card-style-spotlight:hover,
+html.card-style-spotlight .ui-stat-card:not([class*="card-style-"]):hover {
+  transform: translateY(-4px) !important;
+  border-color: color-mix(in srgb, var(--ui-card-tone-accent, var(--accent, #6366f1)) 70%, var(--glass-border)) !important;
+  box-shadow: 0 20px 44px -14px color-mix(in srgb, var(--ui-card-tone-accent, var(--accent, #6366f1)) 70%, transparent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.16) !important;
+}
+html.light .ui-stat-card.card-style-spotlight,
+html.light.card-style-spotlight .ui-stat-card:not([class*="card-style-"]) {
+  background: radial-gradient(
+      120% 95% at 50% -25%,
+      color-mix(in srgb, var(--ui-card-tone-accent, var(--accent, #6366f1)) 20%, transparent) 0%,
+      transparent 62%
+    ),
+    #ffffff !important;
+  border-color: color-mix(in srgb, var(--ui-card-tone-accent, var(--accent, #6366f1)) 40%, #e2e8f0) !important;
+  box-shadow: 0 12px 28px -16px color-mix(in srgb, var(--ui-card-tone-accent, var(--accent, #6366f1)) 45%, transparent),
+    inset 0 1px 0 #ffffff !important;
 }
 
 /* ── REDUCED MOTION ─────────────────────────────────────────────────── */

@@ -37,6 +37,7 @@ import SOSModal from "../../components/emergency/SOSModal";
 import Modal from "../../components/Modal";
 import UserAvatar from "../../components/common/UserAvatar";
 import StatCard from "../../components/common/StatCard";
+import QuickLink from "../../components/common/QuickLink";
 import { getTitleError, getMobileError, getVehicleNumberError } from "../../utils/validators";
 
 function SkeletonBlock({ width = "100%", height = 16, radius = 8, style = {} }) {
@@ -304,7 +305,7 @@ export default function ResidentProfile() {
       title: t("menuNotices"),
       subtitle: latestNotices.length > 0 ? t("rpActiveBulletins", { count: latestNotices.length }) : t("rpOfficialAnnouncements"),
       badge: latestNotices.length > 0 ? t("rpNew", { count: latestNotices.length }) : t("rpUpdated"),
-      badgeColor: "#3B82F6",
+      badgeColor: "bg-blue-600 text-white",
       color: "#3B82F6",
       bg: "rgba(37, 99, 235, 0.15)",
       cardClass: "gd-action--notice",
@@ -320,7 +321,7 @@ export default function ResidentProfile() {
       title: t("menuBills"),
       subtitle: pendingBills.length > 0 ? t("rpTotalDue", { amount: totalPendingAmount.toLocaleString("en-IN") }) : t("rpAllDuesCleared"),
       badge: pendingBills.length > 0 ? t("rpDue", { count: pendingBills.length }) : t("rpZeroDues"),
-      badgeColor: pendingBills.length > 0 ? "#E11D48" : "#10B981",
+      badgeColor: pendingBills.length > 0 ? "bg-rose-600 text-white" : "bg-emerald-600 text-white",
       color: "#E11D48",
       bg: "rgba(225, 29, 72, 0.15)",
       cardClass: "gd-action--bills",
@@ -336,7 +337,7 @@ export default function ResidentProfile() {
       title: t("rdCardGatePass"),
       subtitle: t("rpGatePassSub"),
       badge: t("rpFastTrack"),
-      badgeColor: "#0891B2",
+      badgeColor: "bg-cyan-600 text-white",
       color: "#0891B2",
       bg: "rgba(8, 145, 178, 0.15)",
       cardClass: "gd-action--fastpass",
@@ -352,7 +353,7 @@ export default function ResidentProfile() {
       title: t("rpCardCollectionTitle"),
       subtitle: pendingParcels.length > 0 ? t("rpParcelsWaiting", { count: pendingParcels.length }) : t("rpCollectionSub"),
       badge: pendingParcels.length > 0 ? t("rpReady", { count: pendingParcels.length }) : t("rpNoDeliveries"),
-      badgeColor: pendingParcels.length > 0 ? "#D97706" : "#64748B",
+      badgeColor: pendingParcels.length > 0 ? "bg-amber-600 text-white" : "bg-slate-600 text-white",
       color: "#D97706",
       bg: "rgba(217, 119, 6, 0.15)",
       cardClass: "gd-action--parcel",
@@ -586,61 +587,36 @@ export default function ResidentProfile() {
         />
       </div>
 
-      {/* ── 3. 4 MODERN & ATTRACTIVE CORE ACTION CARDS (Notices, Bills, Gate pass, Collection) ── */}
-      <div className="space-y-3.5">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="w-2 h-5 bg-accent rounded-full shadow-sm shadow-accent/50" />
-            <h2 className="text-base font-black text-primary tracking-tight">
-              {t("rpQuickServicesTitle")}
-            </h2>
+      {/* ── 3. QUICK SERVICES & ACTION HUB (shared dynamic QuickLink system) ── */}
+      <div className="bg-card border border-glass-border rounded-2xl p-4 sm:p-5 shadow-sm">
+        <div className="flex items-center justify-between mb-3.5">
+          <div className="flex items-center gap-2">
+            <MdDashboard size={18} className="text-accent" />
+            <div>
+              <h2 className="text-sm sm:text-base font-bold text-primary">
+                {t("rpQuickServicesTitle")}
+              </h2>
+              <p className="text-xs text-secondary">{t("rpQuickServicesSub")}</p>
+            </div>
           </div>
           <span className="text-xs text-secondary font-bold">{t("rpEssentialHubs", { count: 4 })}</span>
         </div>
 
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-          {coreActionCards.map((card, idx) => {
-            const IconComp = card.icon;
-            return (
-              <div
-                key={card.id}
-                onClick={card.onClick}
-                style={{
-                  "--gd-c": card.color,
-                  "--gd-badge-c": card.badgeColor || card.color,
-                  animationDelay: `${idx * 60}ms`,
-                }}
-                className={`gd-action ${card.cardClass} group relative overflow-hidden rounded-2xl p-4 sm:p-5 cursor-pointer flex flex-col gap-3`}
-              >
-                <span className="gd-action__blob" aria-hidden />
-
-                {card.badge && (
-                  <span className="gd-action__badge absolute top-3 right-3 z-[2] px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider shadow-sm">
-                    {card.badge}
-                  </span>
-                )}
-
-                <div
-                  className="gd-action__icon"
-                  style={{ backgroundColor: card.bg, color: card.color }}
-                >
-                  <IconComp size={22} />
-                </div>
-
-                <div className="relative z-[1] mt-auto">
-                  <div className="flex items-center gap-1">
-                    <h3 className="text-[13px] sm:text-sm font-bold text-primary leading-tight">
-                      {card.title}
-                    </h3>
-                    <MdChevronRight className="gd-action__arrow shrink-0" size={16} />
-                  </div>
-                  <p className="text-[10px] sm:text-[11px] text-secondary line-clamp-2 mt-0.5 leading-snug">
-                    {card.subtitle}
-                  </p>
-                </div>
-              </div>
-            );
-          })}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3">
+          {coreActionCards.map((card, idx) => (
+            <QuickLink
+              key={card.id}
+              title={card.title}
+              desc={card.subtitle}
+              icon={card.icon}
+              badge={card.badge}
+              badgeColor={card.badgeColor}
+              color={card.color}
+              bg={card.bg}
+              onClick={card.onClick}
+              style={{ animationDelay: `${idx * 60}ms` }}
+            />
+          ))}
         </div>
       </div>
 
@@ -792,27 +768,30 @@ export default function ResidentProfile() {
               }
             }}
             style={{ "--gd-c": "#06b6d4", "--gd-badge-c": "#06b6d4" }}
-            className="gd-action gd-action--guest group relative overflow-hidden rounded-2xl p-5 sm:p-6 cursor-pointer flex flex-col justify-between min-h-[145px] transition-all duration-200 focus-visible:ring-2 focus-visible:ring-cyan-400 focus:outline-hidden"
+            className="gd-action gd-action--guest rp-va-card group cursor-pointer focus-visible:ring-2 focus-visible:ring-cyan-400 focus:outline-hidden"
           >
             <span className="gd-action__blob" aria-hidden />
-            <div className="flex items-start justify-between gap-2">
-              <div className="gd-action__icon">
+
+            <div className="rp-va-head">
+              <span className="gd-action__icon rp-va-icon">
                 <MdPerson size={24} />
-              </div>
-              <span className="gd-action__badge absolute top-3.5 right-3.5 z-[2] px-2.5 py-0.5 rounded-full text-[9.5px] font-extrabold uppercase tracking-wider shadow-sm">
-                INSTANT PASS
+              </span>
+              <span className="gd-action__badge rp-va-badge">
+                <span className="rp-va-dot" aria-hidden />
+                Instant Pass
               </span>
             </div>
-            <div className="relative z-[1] mt-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-[15px] sm:text-base font-black text-primary group-hover:text-cyan-400 transition-colors leading-tight m-0">
-                  + {t("rpPreApproveGuest") || "Pre-Approve Guest"}
-                </h3>
-                <MdChevronRight className="gd-action__arrow shrink-0" size={18} />
+
+            <div className="rp-va-body">
+              <div className="rp-va-title">
+                <h3 className="rp-va-title-text">{t("rpPreApproveGuest") || "Pre-Approve Guest"}</h3>
+                <MdChevronRight className="gd-action__arrow rp-va-arrow shrink-0" size={18} />
               </div>
-              <p className="text-xs sm:text-[13px] text-secondary mt-1 leading-snug m-0">
-                1-Tap Invite · Generate OTP & QR pass
-              </p>
+              <p className="rp-va-desc">1-Tap Invite · Generate OTP & QR pass</p>
+              <div className="rp-va-chips">
+                <span className="rp-va-chip">OTP + QR</span>
+                <span className="rp-va-chip">1-Tap Invite</span>
+              </div>
             </div>
           </div>
 
@@ -848,27 +827,30 @@ export default function ResidentProfile() {
               }
             }}
             style={{ "--gd-c": "#10b981", "--gd-badge-c": "#10b981" }}
-            className="gd-action gd-action--cab group relative overflow-hidden rounded-2xl p-5 sm:p-6 cursor-pointer flex flex-col justify-between min-h-[145px] transition-all duration-200 focus-visible:ring-2 focus-visible:ring-emerald-400 focus:outline-hidden"
+            className="gd-action gd-action--cab rp-va-card group cursor-pointer focus-visible:ring-2 focus-visible:ring-emerald-400 focus:outline-hidden"
           >
             <span className="gd-action__blob" aria-hidden />
-            <div className="flex items-start justify-between gap-2">
-              <div className="gd-action__icon">
+
+            <div className="rp-va-head">
+              <span className="gd-action__icon rp-va-icon">
                 <MdLocalTaxi size={24} />
-              </div>
-              <span className="gd-action__badge absolute top-3.5 right-3.5 z-[2] px-2.5 py-0.5 rounded-full text-[9.5px] font-extrabold uppercase tracking-wider shadow-sm">
-                AUTO GATE IN
+              </span>
+              <span className="gd-action__badge rp-va-badge">
+                <span className="rp-va-dot" aria-hidden />
+                Auto Gate In
               </span>
             </div>
-            <div className="relative z-[1] mt-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-[15px] sm:text-base font-black text-primary group-hover:text-emerald-400 transition-colors leading-tight m-0">
-                  + {t("rpAddCab") || "Cab"}
-                </h3>
-                <MdChevronRight className="gd-action__arrow shrink-0" size={18} />
+
+            <div className="rp-va-body">
+              <div className="rp-va-title">
+                <h3 className="rp-va-title-text">{t("rpAddCab") || "Add Cab"}</h3>
+                <MdChevronRight className="gd-action__arrow rp-va-arrow shrink-0" size={18} />
               </div>
-              <p className="text-xs sm:text-[13px] text-secondary mt-1 leading-snug m-0">
-                Ola, Uber, Rapido automatic clearance
-              </p>
+              <p className="rp-va-desc">Ola, Uber, Rapido automatic clearance</p>
+              <div className="rp-va-chips">
+                <span className="rp-va-chip">Ola · Uber</span>
+                <span className="rp-va-chip">Rapido</span>
+              </div>
             </div>
           </div>
 
@@ -904,27 +886,30 @@ export default function ResidentProfile() {
               }
             }}
             style={{ "--gd-c": "#a855f7", "--gd-badge-c": "#a855f7" }}
-            className="gd-action gd-action--delivery group relative overflow-hidden rounded-2xl p-5 sm:p-6 cursor-pointer flex flex-col justify-between min-h-[145px] transition-all duration-200 focus-visible:ring-2 focus-visible:ring-purple-400 focus:outline-hidden"
+            className="gd-action gd-action--delivery rp-va-card group cursor-pointer focus-visible:ring-2 focus-visible:ring-purple-400 focus:outline-hidden"
           >
             <span className="gd-action__blob" aria-hidden />
-            <div className="flex items-start justify-between gap-2">
-              <div className="gd-action__icon">
+
+            <div className="rp-va-head">
+              <span className="gd-action__icon rp-va-icon">
                 <MdLocalShipping size={24} />
-              </div>
-              <span className="gd-action__badge absolute top-3.5 right-3.5 z-[2] px-2.5 py-0.5 rounded-full text-[9.5px] font-extrabold uppercase tracking-wider shadow-sm">
-                QUICK DROP
+              </span>
+              <span className="gd-action__badge rp-va-badge">
+                <span className="rp-va-dot" aria-hidden />
+                Quick Drop
               </span>
             </div>
-            <div className="relative z-[1] mt-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-[15px] sm:text-base font-black text-primary group-hover:text-purple-400 transition-colors leading-tight m-0">
-                  + {t("rpAddDelivery") || "Delivery"}
-                </h3>
-                <MdChevronRight className="gd-action__arrow shrink-0" size={18} />
+
+            <div className="rp-va-body">
+              <div className="rp-va-title">
+                <h3 className="rp-va-title-text">{t("rpAddDelivery") || "Add Delivery"}</h3>
+                <MdChevronRight className="gd-action__arrow rp-va-arrow shrink-0" size={18} />
               </div>
-              <p className="text-xs sm:text-[13px] text-secondary mt-1 leading-snug m-0">
-                Swiggy, Zomato, Amazon gate pass
-              </p>
+              <p className="rp-va-desc">Swiggy, Zomato, Amazon gate pass</p>
+              <div className="rp-va-chips">
+                <span className="rp-va-chip">Swiggy · Zomato</span>
+                <span className="rp-va-chip">Amazon</span>
+              </div>
             </div>
           </div>
         </div>

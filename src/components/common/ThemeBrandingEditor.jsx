@@ -1,4 +1,4 @@
-import { useMemo, useState, useRef } from "react";
+import { useMemo, useRef } from "react";
 import {
   PRESET_THEME_PALETTES,
   isValidHexColor,
@@ -71,27 +71,157 @@ export default function ThemeBrandingEditor({
     ref.current.scrollBy({ left: scrollAmount, behavior: "smooth" });
   };
 
+  const livePreviewPanel = (
+    <div
+      className="p-5 rounded-2xl border transition-all duration-200"
+      style={{
+        ...(previewTokens || {}),
+        background: "var(--card-bg)",
+        borderColor: "var(--glass-border)",
+        boxShadow: previewTokens
+          ? `0 12px 32px -8px rgba(${previewTokens["--accent-rgb"] || "160,90,255"}, 0.2)`
+          : undefined,
+      }}
+    >
+      <div className="flex items-center justify-between pb-3 mb-3 border-b border-[var(--glass-border)] flex-wrap gap-2">
+        <div className="flex items-center gap-2.5">
+          <div
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-white shadow-sm"
+            style={{
+              background: "linear-gradient(135deg, var(--accent), var(--accent-light))",
+            }}
+          >
+            <MdApartment size={18} />
+          </div>
+          <div>
+            <div
+              className="text-xs font-bold"
+              style={{ color: "var(--text-primary)" }}
+            >
+              {societyName}
+            </div>
+            <div
+              className="text-[10px]"
+              style={{ color: "var(--text-secondary)" }}
+            >
+              Live Custom Brand Token Preview
+            </div>
+          </div>
+        </div>
+
+        <span
+          className="text-[11px] font-bold px-2.5 py-0.5 rounded-full border flex items-center gap-1.5"
+          style={{
+            color: "var(--accent)",
+            background: "var(--accent-light-bg)",
+            borderColor: "var(--accent-soft)",
+          }}
+        >
+          <span
+            className="w-1.5 h-1.5 rounded-full"
+            style={{ background: "var(--accent)" }}
+          />
+          Active Brand
+        </span>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div
+          className="p-3.5 rounded-xl border flex flex-col justify-between gap-2.5"
+          style={{
+            background: "rgba(var(--accent-rgb, 160, 90, 255), 0.05)",
+            borderColor: "rgba(var(--accent-rgb, 160, 90, 255), 0.18)",
+          }}
+        >
+          <span
+            className="text-[10px] font-bold uppercase tracking-wider"
+            style={{ color: "var(--text-secondary)" }}
+          >
+            Primary Button Token
+          </span>
+          <button
+            type="button"
+            className="w-full py-2.5 px-3 rounded-xl font-bold text-xs text-white flex items-center justify-center gap-1.5 transition-all shadow-md active:scale-95 cursor-pointer"
+            style={{
+              background: "linear-gradient(135deg, var(--accent), var(--accent-light))",
+              boxShadow: "0 4px 14px rgba(var(--accent-rgb, 160, 90, 255), 0.35)",
+            }}
+          >
+            <span>Save Record</span>
+            <MdArrowForward size={14} />
+          </button>
+        </div>
+
+        <div
+          className="p-3.5 rounded-xl border flex flex-col justify-between gap-1.5"
+          style={{
+            background: "var(--card-bg)",
+            borderColor: "var(--glass-border)",
+          }}
+        >
+          <span
+            className="text-[10px] font-bold uppercase tracking-wider"
+            style={{ color: "var(--text-secondary)" }}
+          >
+            Text Accent Token
+          </span>
+          <div className="text-xs">
+            <span
+              className="font-semibold"
+              style={{ color: "var(--text-primary)" }}
+            >
+              Welcome to{" "}
+            </span>
+            <span
+              className="font-bold underline decoration-2 underline-offset-2"
+              style={{ color: "var(--accent)" }}
+            >
+              {societyName}
+            </span>
+          </div>
+          <div
+            className="text-[10px]"
+            style={{ color: "var(--text-secondary)" }}
+          >
+            Accent Token:{" "}
+            <code
+              className="font-mono font-bold"
+              style={{ color: "var(--accent)" }}
+            >
+              {isPrimaryValid ? primaryColor : "#a05aff"}
+            </code>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <div className="flex flex-col gap-8">
       {/* ── 1. PRESET BRAND PALETTES & COLOR CUSTOMIZATION ── */}
       <div className="p-4 sm:p-5 rounded-2xl border border-[var(--glass-border)] bg-[var(--card-bg)] flex flex-col gap-4 shadow-sm">
         <div>
-          <div className="flex items-center gap-2 mb-2.5">
-            <MdAutoAwesome size={18} style={{ color: "var(--accent)" }} />
-            <label
-              className="text-xs font-bold uppercase tracking-wider"
-              style={{ color: "var(--text-secondary)" }}
-            >
-              Curated Brand Color Palettes
-            </label>
+          <div className="flex items-center justify-between gap-2 mb-2.5 flex-wrap">
+            <div className="flex items-center gap-2">
+              <MdAutoAwesome size={18} style={{ color: "var(--accent)" }} />
+              <label
+                className="text-xs font-bold uppercase tracking-wider"
+                style={{ color: "var(--text-secondary)" }}
+              >
+                Curated Brand Color Palettes
+              </label>
+            </div>
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[rgba(var(--accent-rgb,160,90,255),0.12)] text-[var(--accent)] border border-[rgba(var(--accent-rgb,160,90,255),0.2)]">
+              {PRESET_THEME_PALETTES.length} Premium Combinations
+            </span>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-2.5">
             {PRESET_THEME_PALETTES.map((palette) => {
               const isSelected =
                 primaryColor?.toLowerCase() === palette.primary.toLowerCase();
               return (
                 <button
-                  key={palette.name}
+                  key={palette.id}
                   type="button"
                   onClick={() => {
                     if (onApplyPreset) onApplyPreset(palette);
@@ -107,15 +237,31 @@ export default function ThemeBrandingEditor({
                   }`}
                   style={{ cursor: "pointer" }}
                 >
-                  <div className="flex items-center -space-x-1 shrink-0">
+                  <div className="flex items-center -space-x-2 shrink-0">
                     <span
-                      className="w-4 h-4 rounded-full border border-white/20 shadow-sm"
+                      className="relative w-7 h-7 rounded-full ring-2 ring-white/30 shadow-md overflow-hidden"
                       style={{ background: palette.primary }}
-                    />
+                    >
+                      <span
+                        className="absolute inset-0"
+                        style={{
+                          background:
+                            "radial-gradient(circle at 32% 25%, rgba(255,255,255,0.6), transparent 58%)",
+                        }}
+                      />
+                    </span>
                     <span
-                      className="w-3.5 h-3.5 rounded-full border border-white/20 shadow-sm"
+                      className="relative w-7 h-7 rounded-full ring-2 ring-[var(--card-bg)] shadow-md overflow-hidden"
                       style={{ background: palette.accent }}
-                    />
+                    >
+                      <span
+                        className="absolute inset-0"
+                        style={{
+                          background:
+                            "radial-gradient(circle at 32% 25%, rgba(255,255,255,0.55), transparent 58%)",
+                        }}
+                      />
+                    </span>
                   </div>
                   <div className="min-w-0 flex-1">
                     <div
@@ -141,12 +287,32 @@ export default function ThemeBrandingEditor({
         {/* Color Customization Inputs */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-3 border-t border-[var(--glass-border)]">
           {/* Primary Color */}
-          <div className="flex flex-col gap-1.5">
-            <label
-              className="text-xs font-bold uppercase tracking-wider flex items-center justify-between"
-              style={{ color: "var(--text-secondary)" }}
-            >
-              <span>Primary Brand Color</span>
+          <div
+            className="relative flex flex-col gap-2 p-3.5 pl-4 rounded-xl border overflow-hidden"
+            style={{
+              borderColor: isPrimaryValid
+                ? `color-mix(in srgb, ${primaryColor} 45%, var(--glass-border))`
+                : "var(--glass-border)",
+              background: isPrimaryValid
+                ? `linear-gradient(135deg, ${primaryColor}18, transparent 70%)`
+                : "var(--card-bg)",
+            }}
+          >
+            <span
+              className="absolute top-0 left-0 h-full w-1.5"
+              style={{ background: isPrimaryValid ? primaryColor : "var(--glass-border)" }}
+            />
+            <div className="flex items-center justify-between gap-2">
+              <span
+                className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider"
+                style={{ color: "var(--text-primary)" }}
+              >
+                <span
+                  className="w-3 h-3 rounded-full shadow-sm ring-2 ring-white/20"
+                  style={{ background: isPrimaryValid ? primaryColor : "#a05aff" }}
+                />
+                Primary Brand Color
+              </span>
               <span
                 className="text-[10px] font-mono px-1.5 py-0.5 rounded border"
                 style={{
@@ -157,17 +323,15 @@ export default function ThemeBrandingEditor({
               >
                 {isPrimaryValid ? primaryColor.toUpperCase() : "INVALID"}
               </span>
-            </label>
+            </div>
             <div className="flex items-center gap-2">
-              <div className="relative shrink-0">
-                <input
-                  type="color"
-                  value={isPrimaryValid ? primaryColor : "#a05aff"}
-                  onChange={(e) => onChangePrimary?.(e.target.value)}
-                  className="w-10 h-10 rounded-xl cursor-pointer border border-[var(--glass-border)] p-0.5 bg-[var(--card-bg)]"
-                  title="Choose Primary Brand Color"
-                />
-              </div>
+              <input
+                type="color"
+                value={isPrimaryValid ? primaryColor : "#a05aff"}
+                onChange={(e) => onChangePrimary?.(e.target.value)}
+                className="w-10 h-10 rounded-xl cursor-pointer border border-[var(--glass-border)] p-0.5 bg-[var(--card-bg)] shrink-0"
+                title="Choose Primary Brand Color"
+              />
               <div className="flex-1 relative">
                 <input
                   type="text"
@@ -187,12 +351,34 @@ export default function ThemeBrandingEditor({
           </div>
 
           {/* Secondary / Accent Color */}
-          <div className="flex flex-col gap-1.5">
-            <label
-              className="text-xs font-bold uppercase tracking-wider flex items-center justify-between"
-              style={{ color: "var(--text-secondary)" }}
-            >
-              <span>Secondary / Accent</span>
+          <div
+            className="relative flex flex-col gap-2 p-3.5 pl-4 rounded-xl border overflow-hidden"
+            style={{
+              borderColor: isAccentValid
+                ? `color-mix(in srgb, ${accentColor} 45%, var(--glass-border))`
+                : "var(--glass-border)",
+              background: `linear-gradient(135deg, ${isPrimaryValid ? primaryColor : "#a05aff"}10, ${isAccentValid ? accentColor : "#8b5cf6"}18 60%, transparent 85%)`,
+            }}
+          >
+            <span
+              className="absolute top-0 left-0 h-full w-1.5"
+              style={{
+                background: `linear-gradient(180deg, ${isPrimaryValid ? primaryColor : "#a05aff"}, ${isAccentValid ? accentColor : "#8b5cf6"})`,
+              }}
+            />
+            <div className="flex items-center justify-between gap-2">
+              <span
+                className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider"
+                style={{ color: "var(--text-primary)" }}
+              >
+                <span
+                  className="w-3 h-3 rounded-full shadow-sm ring-2 ring-white/20"
+                  style={{
+                    background: `linear-gradient(90deg, ${isPrimaryValid ? primaryColor : "#a05aff"} 50%, ${isAccentValid ? accentColor : "#8b5cf6"} 50%)`,
+                  }}
+                />
+                Secondary / Accent
+              </span>
               <span
                 className="text-[10px] font-mono px-1.5 py-0.5 rounded border"
                 style={{
@@ -203,14 +389,19 @@ export default function ThemeBrandingEditor({
               >
                 {isAccentValid ? accentColor.toUpperCase() : "AUTO"}
               </span>
-            </label>
+            </div>
             <div className="flex items-center gap-2">
-              <div className="relative shrink-0">
+              <div
+                className="rounded-xl p-[2px] shrink-0 shadow-sm"
+                style={{
+                  background: `linear-gradient(135deg, ${isPrimaryValid ? primaryColor : "#a05aff"}, ${isAccentValid ? accentColor : "#8b5cf6"})`,
+                }}
+              >
                 <input
                   type="color"
                   value={isAccentValid ? accentColor : primaryColor || "#8b5cf6"}
                   onChange={(e) => onChangeAccent?.(e.target.value)}
-                  className="w-10 h-10 rounded-xl cursor-pointer border border-[var(--glass-border)] p-0.5 bg-[var(--card-bg)]"
+                  className="block w-9 h-9 rounded-[10px] cursor-pointer border-0 p-0.5 bg-[var(--card-bg)]"
                   title="Choose Accent Color"
                 />
               </div>
@@ -228,13 +419,16 @@ export default function ThemeBrandingEditor({
               </div>
             </div>
             <p className="text-[11px]" style={{ color: "var(--text-secondary)" }}>
-              Used for subtle badges, gradients, secondary indicators, and glow highlights.
+              Blends with the primary color for badges, gradients, and glow highlights.
             </p>
           </div>
         </div>
       </div>
 
-      {/* ── 2. STATISTICAL CARD THEME SECTION ── */}
+      {/* ── 2. LIVE CUSTOM BRAND TOKEN PREVIEW (directly below color selection) ── */}
+      {livePreviewPanel}
+
+      {/* ── 3. STATISTICAL CARD THEME SECTION ── */}
       <div className="p-4 sm:p-6 rounded-2xl border border-[var(--glass-border)] bg-[var(--card-bg)] flex flex-col gap-6 shadow-sm">
         {/* Section Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-[var(--glass-border)]">
@@ -363,7 +557,35 @@ export default function ThemeBrandingEditor({
         </div>
 
         {/* ── THEME OPTIONS: Choose Statistical Card Theme (Horizontal Scrolling Showcase) ── */}
-        <div className="flex flex-col gap-3 pt-2">
+        <div
+          className="relative flex flex-col gap-3 pt-5 mt-1 rounded-2xl border-2 p-3.5 sm:p-4 overflow-hidden"
+          style={{
+            borderColor: "color-mix(in srgb, var(--accent) 45%, transparent)",
+            background:
+              "linear-gradient(135deg, rgba(var(--accent-rgb,160,90,255),0.10), rgba(var(--accent-rgb,160,90,255),0.02) 55%, transparent)",
+          }}
+        >
+          <span
+            className="absolute top-0 left-0 h-1 w-full"
+            style={{
+              background:
+                "linear-gradient(90deg, var(--accent), var(--accent-light), transparent)",
+            }}
+          />
+          <div className="flex items-center gap-2 -mt-1">
+            <span
+              className="w-5 h-5 rounded-md text-white flex items-center justify-center shadow-sm shrink-0"
+              style={{ background: "var(--accent)" }}
+            >
+              <MdStyle size={12} />
+            </span>
+            <span
+              className="text-[10px] font-bold uppercase tracking-[0.15em]"
+              style={{ color: "var(--accent)" }}
+            >
+              Style Picker
+            </span>
+          </div>
           <div className="flex items-center justify-between">
             <div>
               <div className="flex items-center gap-2">
@@ -374,7 +596,7 @@ export default function ThemeBrandingEditor({
                   Choose Statistical Card Theme
                 </span>
                 <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[rgba(var(--accent-rgb,160,90,255),0.12)] text-[var(--accent)] border border-[rgba(var(--accent-rgb,160,90,255),0.2)]">
-                  10 Visual Presets
+                  12 Visual Presets
                 </span>
               </div>
               <p className="text-[11px] mt-0.5" style={{ color: "var(--text-secondary)" }}>
@@ -504,6 +726,24 @@ export default function ThemeBrandingEditor({
                     tone: "brand",
                     accentHex: "#0EA5E9",
                   },
+                  holographic: {
+                    badge: "Holographic",
+                    badgeBg: "bg-fuchsia-500/10 text-fuchsia-400 border-fuchsia-500/30",
+                    label: "Revenue",
+                    value: "₹92.6K",
+                    icon: MdOutlinePayments,
+                    tone: "brand",
+                    accentHex: "#D946EF",
+                  },
+                  spotlight: {
+                    badge: "Spotlight",
+                    badgeBg: "bg-violet-500/10 text-violet-400 border-violet-500/30",
+                    label: "Occupancy",
+                    value: "86%",
+                    icon: FaUsers,
+                    tone: "brand",
+                    accentHex: "#7C3AED",
+                  },
                 };
                 const item = showcaseMap[style.id] || showcaseMap.default;
 
@@ -587,7 +827,7 @@ export default function ThemeBrandingEditor({
         </div>
       </div>
 
-      {/* ── 3. QUICK LINK THEME SECTION ── */}
+      {/* ── 4. QUICK LINK THEME SECTION ── */}
       <div className="p-4 sm:p-6 rounded-2xl border border-[var(--glass-border)] bg-[var(--card-bg)] flex flex-col gap-6 shadow-sm">
         {/* Section Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-[var(--glass-border)]">
@@ -688,7 +928,35 @@ export default function ThemeBrandingEditor({
         </div>
 
         {/* ── THEME OPTIONS: Choose Quick Link Theme (Horizontal Scrolling Showcase) ── */}
-        <div className="flex flex-col gap-3 pt-2">
+        <div
+          className="relative flex flex-col gap-3 pt-5 mt-1 rounded-2xl border-2 p-3.5 sm:p-4 overflow-hidden"
+          style={{
+            borderColor: "color-mix(in srgb, var(--accent) 45%, transparent)",
+            background:
+              "linear-gradient(135deg, rgba(var(--accent-rgb,160,90,255),0.10), rgba(var(--accent-rgb,160,90,255),0.02) 55%, transparent)",
+          }}
+        >
+          <span
+            className="absolute top-0 left-0 h-1 w-full"
+            style={{
+              background:
+                "linear-gradient(90deg, var(--accent), var(--accent-light), transparent)",
+            }}
+          />
+          <div className="flex items-center gap-2 -mt-1">
+            <span
+              className="w-5 h-5 rounded-md text-white flex items-center justify-center shadow-sm shrink-0"
+              style={{ background: "var(--accent)" }}
+            >
+              <MdFlashOn size={12} />
+            </span>
+            <span
+              className="text-[10px] font-bold uppercase tracking-[0.15em]"
+              style={{ color: "var(--accent)" }}
+            >
+              Action Picker
+            </span>
+          </div>
           <div className="flex items-center justify-between">
             <div>
               <div className="flex items-center gap-2">
@@ -699,7 +967,7 @@ export default function ThemeBrandingEditor({
                   Choose Quick Link Theme
                 </span>
                 <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[rgba(var(--accent-rgb,160,90,255),0.12)] text-[var(--accent)] border border-[rgba(var(--accent-rgb,160,90,255),0.2)]">
-                  10 Action Styles
+                  12 Action Styles
                 </span>
               </div>
               <p className="text-[11px] mt-0.5" style={{ color: "var(--text-secondary)" }}>
@@ -839,6 +1107,26 @@ export default function ThemeBrandingEditor({
                     badgeText: "Config",
                     badgeColor: "bg-blue-600 text-white",
                   },
+                  holographic: {
+                    badge: "Holographic",
+                    badgeBg: "bg-fuchsia-500/10 text-fuchsia-400 border-fuchsia-500/20",
+                    title: "Amenities",
+                    desc: "Prism clubhouse",
+                    icon: MdFlashOn,
+                    color: "#D946EF",
+                    badgeText: "New",
+                    badgeColor: "bg-fuchsia-600 text-white",
+                  },
+                  spotlight: {
+                    badge: "Spotlight",
+                    badgeBg: "bg-violet-500/10 text-violet-400 border-violet-500/20",
+                    title: "Reports",
+                    desc: "Analytics suite",
+                    icon: MdStyle,
+                    color: "#7C3AED",
+                    badgeText: "Pro",
+                    badgeColor: "bg-violet-600 text-white",
+                  },
                 };
                 const item = showcaseMap[style.id] || showcaseMap.default;
 
@@ -917,129 +1205,6 @@ export default function ThemeBrandingEditor({
         </div>
       </div>
 
-      {/* ── 4. LIVE CUSTOM BRAND TOKEN PREVIEW CONTAINER ── */}
-      <div
-        className="p-5 rounded-2xl border transition-all duration-200"
-        style={{
-          ...(previewTokens || {}),
-          background: "var(--card-bg)",
-          borderColor: "var(--glass-border)",
-          boxShadow: previewTokens
-            ? `0 12px 32px -8px rgba(${previewTokens["--accent-rgb"] || "160,90,255"}, 0.2)`
-            : undefined,
-        }}
-      >
-        <div className="flex items-center justify-between pb-3 mb-3 border-b border-[var(--glass-border)] flex-wrap gap-2">
-          <div className="flex items-center gap-2.5">
-            <div
-              className="w-8 h-8 rounded-lg flex items-center justify-center text-white shadow-sm"
-              style={{
-                background: "linear-gradient(135deg, var(--accent), var(--accent-light))",
-              }}
-            >
-              <MdApartment size={18} />
-            </div>
-            <div>
-              <div
-                className="text-xs font-bold"
-                style={{ color: "var(--text-primary)" }}
-              >
-                {societyName}
-              </div>
-              <div
-                className="text-[10px]"
-                style={{ color: "var(--text-secondary)" }}
-              >
-                Live Custom Brand Token Preview
-              </div>
-            </div>
-          </div>
-
-          <span
-            className="text-[11px] font-bold px-2.5 py-0.5 rounded-full border flex items-center gap-1.5"
-            style={{
-              color: "var(--accent)",
-              background: "var(--accent-light-bg)",
-              borderColor: "var(--accent-soft)",
-            }}
-          >
-            <span
-              className="w-1.5 h-1.5 rounded-full"
-              style={{ background: "var(--accent)" }}
-            />
-            Active Brand
-          </span>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div
-            className="p-3.5 rounded-xl border flex flex-col justify-between gap-2.5"
-            style={{
-              background: "rgba(var(--accent-rgb, 160, 90, 255), 0.05)",
-              borderColor: "rgba(var(--accent-rgb, 160, 90, 255), 0.18)",
-            }}
-          >
-            <span
-              className="text-[10px] font-bold uppercase tracking-wider"
-              style={{ color: "var(--text-secondary)" }}
-            >
-              Primary Button Token
-            </span>
-            <button
-              type="button"
-              className="w-full py-2.5 px-3 rounded-xl font-bold text-xs text-white flex items-center justify-center gap-1.5 transition-all shadow-md active:scale-95 cursor-pointer"
-              style={{
-                background: "linear-gradient(135deg, var(--accent), var(--accent-light))",
-                boxShadow: "0 4px 14px rgba(var(--accent-rgb, 160, 90, 255), 0.35)",
-              }}
-            >
-              <span>Save Record</span>
-              <MdArrowForward size={14} />
-            </button>
-          </div>
-
-          <div
-            className="p-3.5 rounded-xl border flex flex-col justify-between gap-1.5"
-            style={{
-              background: "var(--card-bg)",
-              borderColor: "var(--glass-border)",
-            }}
-          >
-            <span
-              className="text-[10px] font-bold uppercase tracking-wider"
-              style={{ color: "var(--text-secondary)" }}
-            >
-              Text Accent Token
-            </span>
-            <div className="text-xs">
-              <span
-                className="font-semibold"
-                style={{ color: "var(--text-primary)" }}
-              >
-                Welcome to{" "}
-              </span>
-              <span
-                className="font-bold underline decoration-2 underline-offset-2"
-                style={{ color: "var(--accent)" }}
-              >
-                {societyName}
-              </span>
-            </div>
-            <div
-              className="text-[10px]"
-              style={{ color: "var(--text-secondary)" }}
-            >
-              Accent Token:{" "}
-              <code
-                className="font-mono font-bold"
-                style={{ color: "var(--accent)" }}
-              >
-                {isPrimaryValid ? primaryColor : "#a05aff"}
-              </code>
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }

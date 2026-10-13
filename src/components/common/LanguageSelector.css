@@ -43,9 +43,9 @@
 /* Compact Mode (Top Navbar) */
 .lang-trigger--compact {
   height: 36px;
-  padding: 0 9px;
-  gap: 5px;
-  border-radius: 11px;
+  padding: 0 10px;
+  gap: 6px;
+  border-radius: 12px;
 }
 
 .lang-globe {
