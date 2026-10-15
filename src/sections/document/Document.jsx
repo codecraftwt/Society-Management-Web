@@ -1,6 +1,6 @@
 // DOCUMENT SECTION (replaces src/pages/Admin/AdminDocument.jsx)
 import { useState, useEffect, useRef, useCallback } from "react";
-import { MdCheckCircle, MdWarningAmber, MdDescription } from "react-icons/md";
+import { MdCheckCircle, MdWarningAmber, MdDescription, MdFileDownload, MdOpenInNew } from "react-icons/md";
 import API from "../../services/api";
 import { BASE_URL } from "../../config/apiConfig";
 import { useLang } from "../../context/LanguageContext";
@@ -204,39 +204,114 @@ export default function Document() {
         onToast={showToast}
       />
 
-      {/* View modal */}
-      <GlobalModal
-        isOpen={!!viewDoc}
-        onClose={() => setViewDoc(null)}
-        title={viewDoc?.title || "Document"}
-        subtitle={viewDoc?.file_name}
-        icon={MdDescription}
-        size="lg"
-      >
-        <div
-          style={{
-            height: "70vh",
-            width: "100%",
-            borderRadius: 12,
-            overflow: "hidden",
-            background: "#fff",
-          }}
+      {/* Enhanced Full-Featured Document Preview Modal */}
+      {viewDoc && (
+        <GlobalModal
+          isOpen={!!viewDoc}
+          onClose={() => setViewDoc(null)}
+          size="xxl"
+          style={{ maxWidth: "1280px", width: "95vw", height: "90vh", borderRadius: 24 }}
+          bodyStyle={{ padding: 0, flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", background: "#0f172a" }}
+          title={
+            <div className="flex items-center gap-2.5 flex-wrap">
+              <span className="font-bold text-base text-primary truncate max-w-sm sm:max-w-md">
+                {viewDoc.title}
+              </span>
+              <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-accent-soft text-accent border border-accent/20">
+                {catLabel(viewDoc.category)}
+              </span>
+            </div>
+          }
+          subtitle={
+            <span className="text-xs text-secondary flex items-center gap-2 mt-0.5 font-medium">
+              <span className="font-mono text-slate-400">{viewDoc.file_name}</span>
+              {viewDoc.file_size_formatted && (
+                <>
+                  <span className="text-slate-500">•</span>
+                  <span className="text-slate-400">{viewDoc.file_size_formatted}</span>
+                </>
+              )}
+            </span>
+          }
+          icon={MdDescription}
         >
-          {viewDoc && (
-            <iframe
-              src={
-                viewDoc.file_url?.startsWith("http")
-                  ? viewDoc.file_url
-                  : `${BASE_URL}/${viewDoc.file_url}`
-              }
-              title={viewDoc.title}
-              width="100%"
-              height="100%"
-              style={{ border: "none" }}
-            />
-          )}
-        </div>
-      </GlobalModal>
+          {/* Document Viewer Action Strip */}
+          <div className="px-4 py-2.5 bg-slate-900/90 backdrop-blur border-b border-white/10 flex items-center justify-between gap-3 text-xs flex-wrap">
+            <div className="flex items-center gap-2">
+              <span className="px-2 py-0.5 rounded-md bg-white/10 font-mono font-bold text-[10px] text-slate-200 uppercase tracking-wider">
+                {String(viewDoc.file_name || "").split(".").pop() || "FILE"}
+              </span>
+              {viewDoc.created_at && (
+                <span className="text-slate-400 text-xs hidden sm:inline">
+                  Uploaded {new Date(viewDoc.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                </span>
+              )}
+            </div>
+
+            <div className="flex items-center gap-2">
+              <a
+                href={
+                  viewDoc.file_url?.startsWith("http")
+                    ? viewDoc.file_url
+                    : `${BASE_URL}/${viewDoc.file_url}`
+                }
+                download={viewDoc.file_name || "document"}
+                target="_blank"
+                rel="noreferrer"
+                className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-white/10 hover:bg-white/15 text-white flex items-center gap-1.5 transition-colors cursor-pointer"
+                title="Download original document"
+              >
+                <MdFileDownload size={15} />
+                <span>Download</span>
+              </a>
+
+              <a
+                href={
+                  viewDoc.file_url?.startsWith("http")
+                    ? viewDoc.file_url
+                    : `${BASE_URL}/${viewDoc.file_url}`
+                }
+                target="_blank"
+                rel="noreferrer"
+                className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
+                title="Open file in new browser window"
+              >
+                <MdOpenInNew size={14} />
+                <span>Full Tab</span>
+              </a>
+            </div>
+          </div>
+
+          {/* Document Content Viewport */}
+          <div className="flex-1 w-full h-full relative overflow-hidden bg-slate-950 flex items-center justify-center">
+            {/\.(png|jpe?g|webp|gif|svg)$/i.test(viewDoc.file_name || "") ? (
+              <div className="w-full h-full p-4 flex items-center justify-center overflow-auto">
+                <img
+                  src={
+                    viewDoc.file_url?.startsWith("http")
+                      ? viewDoc.file_url
+                      : `${BASE_URL}/${viewDoc.file_url}`
+                  }
+                  alt={viewDoc.title}
+                  className="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
+                />
+              </div>
+            ) : (
+              <iframe
+                src={`${
+                  viewDoc.file_url?.startsWith("http")
+                    ? viewDoc.file_url
+                    : `${BASE_URL}/${viewDoc.file_url}`
+                }#toolbar=1&navpanes=0`}
+                title={viewDoc.title}
+                width="100%"
+                height="100%"
+                className="w-full h-full border-none"
+              />
+            )}
+          </div>
+        </GlobalModal>
+      )}
     </div>
   );
 }

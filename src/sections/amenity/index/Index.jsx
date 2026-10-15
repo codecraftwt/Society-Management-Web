@@ -46,10 +46,15 @@ function FilterRow({ label, active, onClick }) {
 function ReasonBanner({ amenity }) {
   const isTemp = amenity.disable_type === "TEMPORARY";
   return (
-    <div style={{ display: "flex", alignItems: "flex-start", gap: 7, padding: "8px 10px", borderRadius: 8, marginBottom: 10, background: isTemp ? "rgba(160,90,255,0.1)" : "rgba(220,38,38,0.07)", border: `1px solid ${isTemp ? "rgba(160,90,255,0.28)" : "rgba(220,38,38,0.22)"}`, fontSize: 11, lineHeight: 1.45, color: isTemp ? "var(--accent)" : "#7f1d1d" }}>
+    <div style={{
+      display: "flex", alignItems: "flex-start", gap: 7, padding: "8px 10px", borderRadius: 8, marginBottom: 10,
+      background: isTemp ? "rgba(160,90,255,0.08)" : "var(--card-inner-bg)",
+      border: isTemp ? "1px solid rgba(160,90,255,0.25)" : "1px solid var(--glass-border)",
+      fontSize: 11, lineHeight: 1.45, color: isTemp ? "var(--accent)" : "var(--text-secondary)"
+    }}>
       {isTemp ? <MdWarning size={13} style={{ flexShrink: 0, marginTop: 1 }} /> : <MdBlock size={13} style={{ flexShrink: 0, marginTop: 1 }} />}
       <span>
-        <strong>{isTemp ? "Maintenance: " : "Permanently closed: "}</strong>
+        <strong>{isTemp ? "Maintenance: " : "Closed: "}</strong>
         {amenity.disabled_reason}
         {isTemp && amenity.disabled_until && ` Reopens on ${amenity.disabled_until}.`}
       </span>
@@ -60,7 +65,6 @@ function ReasonBanner({ amenity }) {
 function getCardStrip(a, pal) {
   if (!a.is_active) {
     if (a.disable_type === "TEMPORARY") return "var(--accent)";
-    if (a.disable_type === "PERMANENT") return "#991b1b";
     return "var(--glass-border)";
   }
   return `linear-gradient(90deg,${pal.strip},${pal.stripEnd})`;
@@ -69,7 +73,7 @@ function getCardStrip(a, pal) {
 function StatusLabel({ a, t }) {
   if (!a.is_active) {
     if (a.disable_type === "TEMPORARY") return { label: "Temp. off", color: "var(--accent)", dotColor: "#4BCBEB" };
-    if (a.disable_type === "PERMANENT") return { label: "Disabled", color: "#dc2626", dotColor: "#dc2626" };
+    if (a.disable_type === "PERMANENT") return { label: "Disabled", color: "var(--text-secondary)", dotColor: "#94a3b8" };
     return { label: t("amenOff"), color: "var(--text-secondary)", dotColor: "var(--text-secondary)" };
   }
   return { label: t("amenLive"), color: "#22c55e", dotColor: "#22c55e" };
@@ -336,16 +340,26 @@ export default function Index({
                       {canEdit && (
                         <div style={{ display: "flex", gap: 8 }}>
                           {active ? (
-                            <button onClick={() => onDisable(a)} style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 7, borderRadius: 12, padding: "11px 0", fontSize: 13, fontWeight: 700, cursor: "pointer", background: "var(--reject-bg)", color: "var(--reject-color)", border: "1.5px solid var(--reject-border)" }}>
-                              <MdToggleOff size={17} /> {t("amenDisableBtn")}
+                            <button
+                              onClick={() => onDisable(a)}
+                              className="flex-1 flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl text-xs font-semibold cursor-pointer transition-all bg-card-inner-bg text-secondary border border-glass-border hover:text-rose-400 hover:border-rose-500/30"
+                            >
+                              <MdToggleOff size={16} /> {t("amenDisableBtn")}
                             </button>
                           ) : (
-                            <button onClick={() => onReEnable(a.id)} disabled={togglingId === a.id} style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 7, borderRadius: 12, padding: "11px 0", fontSize: 13, fontWeight: 700, cursor: togglingId === a.id ? "not-allowed" : "pointer", background: pal.iconBg, color: pal.strip, border: `1.5px solid ${pal.iconBorder}` }}>
-                              {togglingId === a.id ? <Spinner /> : <><MdToggleOn size={17} /> {t("amenReenableBtn")}</>}
+                            <button
+                              onClick={() => onReEnable(a.id)}
+                              disabled={togglingId === a.id}
+                              className="flex-1 flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl text-xs font-bold cursor-pointer transition-all bg-emerald-500/10 text-emerald-500 dark:text-emerald-400 border border-emerald-500/25 hover:bg-emerald-500/20"
+                            >
+                              {togglingId === a.id ? <Spinner /> : <><MdToggleOn size={16} /> {t("amenReenableBtn")}</>}
                             </button>
                           )}
-                          <button onClick={() => onEdit(a)} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, borderRadius: 12, padding: "11px 14px", fontSize: 13, fontWeight: 700, cursor: "pointer", background: "var(--card-inner-bg)", color: "var(--text-primary)", border: "1.5px solid var(--glass-border)" }}>
-                            <MdEdit size={16} /> {t("amenEditBtn")}
+                          <button
+                            onClick={() => onEdit(a)}
+                            className="flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-xl text-xs font-bold cursor-pointer transition-all bg-accent/10 text-accent border border-accent/25 hover:bg-accent/20"
+                          >
+                            <MdEdit size={15} /> {t("amenEditBtn")}
                           </button>
                         </div>
                       )}

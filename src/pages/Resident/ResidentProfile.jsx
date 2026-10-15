@@ -298,21 +298,21 @@ export default function ResidentProfile() {
     }
   };
 
-  // 4 Modern & Attractive Cards Requested: Notices, Bills, Gate pass, Collection
+  // 4 Modern & Attractive Cards: Notices, Bills, Gate pass, Collection (dynamically themed)
   const coreActionCards = [
     {
       id: "notices",
       title: t("menuNotices"),
       subtitle: latestNotices.length > 0 ? t("rpActiveBulletins", { count: latestNotices.length }) : t("rpOfficialAnnouncements"),
       badge: latestNotices.length > 0 ? t("rpNew", { count: latestNotices.length }) : t("rpUpdated"),
-      badgeColor: "bg-blue-600 text-white",
-      color: "#3B82F6",
-      bg: "rgba(37, 99, 235, 0.15)",
+      badgeColor: "bg-accent/20 text-accent border border-accent/30",
+      color: "var(--accent)",
+      bg: "var(--accent-soft)",
       cardClass: "gd-action--notice",
       icon: MdOutlineCampaign,
-      iconColor: "text-blue-400",
-      glowColor: "from-blue-600/25 via-indigo-600/15 to-purple-600/5",
-      borderColor: "border-blue-500/30 hover:border-blue-400",
+      iconColor: "text-accent",
+      glowColor: "from-accent/25 via-accent/15 to-transparent",
+      borderColor: "border-accent/30 hover:border-accent",
       ctaText: t("rpOpenNoticeBoard"),
       onClick: () => navigate(`${base}/notices`),
     },
@@ -321,14 +321,14 @@ export default function ResidentProfile() {
       title: t("menuBills"),
       subtitle: pendingBills.length > 0 ? t("rpTotalDue", { amount: totalPendingAmount.toLocaleString("en-IN") }) : t("rpAllDuesCleared"),
       badge: pendingBills.length > 0 ? t("rpDue", { count: pendingBills.length }) : t("rpZeroDues"),
-      badgeColor: pendingBills.length > 0 ? "bg-rose-600 text-white" : "bg-emerald-600 text-white",
-      color: "#E11D48",
-      bg: "rgba(225, 29, 72, 0.15)",
+      badgeColor: pendingBills.length > 0 ? "bg-rose-500/20 text-rose-400 border border-rose-500/30" : "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30",
+      color: pendingBills.length > 0 ? "#E11D48" : "var(--secondary)",
+      bg: pendingBills.length > 0 ? "rgba(225, 29, 72, 0.15)" : "color-mix(in srgb, var(--secondary) 18%, transparent)",
       cardClass: "gd-action--bills",
       icon: MdOutlineReceiptLong,
-      iconColor: "text-rose-400",
-      glowColor: "from-rose-600/25 via-pink-600/15 to-purple-600/5",
-      borderColor: "border-rose-500/30 hover:border-rose-400",
+      iconColor: pendingBills.length > 0 ? "text-rose-400" : "text-secondary",
+      glowColor: pendingBills.length > 0 ? "from-rose-600/25 via-pink-600/15 to-transparent" : "from-secondary/25 via-secondary/15 to-transparent",
+      borderColor: pendingBills.length > 0 ? "border-rose-500/30 hover:border-rose-400" : "border-secondary/30 hover:border-secondary",
       ctaText: pendingBills.length > 0 ? t("rpPayDuesNow") : t("rpViewPaymentHistory"),
       onClick: () => navigate(`${base}/bills`),
     },
@@ -337,14 +337,14 @@ export default function ResidentProfile() {
       title: t("rdCardGatePass"),
       subtitle: t("rpGatePassSub"),
       badge: t("rpFastTrack"),
-      badgeColor: "bg-cyan-600 text-white",
-      color: "#0891B2",
-      bg: "rgba(8, 145, 178, 0.15)",
+      badgeColor: "bg-secondary/20 text-secondary border border-secondary/30",
+      color: "var(--secondary)",
+      bg: "color-mix(in srgb, var(--secondary) 18%, transparent)",
       cardClass: "gd-action--fastpass",
       icon: MdOutlineQrCodeScanner,
-      iconColor: "text-cyan-400",
-      glowColor: "from-cyan-600/25 via-teal-600/15 to-blue-600/5",
-      borderColor: "border-cyan-500/30 hover:border-cyan-400",
+      iconColor: "text-secondary",
+      glowColor: "from-secondary/25 via-accent/15 to-transparent",
+      borderColor: "border-secondary/30 hover:border-secondary",
       ctaText: t("rpGenerateEntryPass"),
       onClick: () => navigate(`${base}/preapproval`),
     },
@@ -353,14 +353,14 @@ export default function ResidentProfile() {
       title: t("rpCardCollectionTitle"),
       subtitle: pendingParcels.length > 0 ? t("rpParcelsWaiting", { count: pendingParcels.length }) : t("rpCollectionSub"),
       badge: pendingParcels.length > 0 ? t("rpReady", { count: pendingParcels.length }) : t("rpNoDeliveries"),
-      badgeColor: pendingParcels.length > 0 ? "bg-amber-600 text-white" : "bg-slate-600 text-white",
-      color: "#D97706",
-      bg: "rgba(217, 119, 6, 0.15)",
+      badgeColor: pendingParcels.length > 0 ? "bg-accent/20 text-accent border border-accent/30" : "bg-card-inner-bg text-secondary border border-glass-border",
+      color: "var(--accent-light, var(--accent))",
+      bg: "color-mix(in srgb, var(--accent) 15%, transparent)",
       cardClass: "gd-action--parcel",
       icon: MdOutlineInventory2,
-      iconColor: "text-amber-400",
-      glowColor: "from-amber-600/25 via-orange-600/15 to-yellow-600/5",
-      borderColor: "border-amber-500/30 hover:border-amber-400",
+      iconColor: "text-accent",
+      glowColor: "from-accent/25 via-secondary/15 to-transparent",
+      borderColor: "border-accent/30 hover:border-accent",
       ctaText: t("rpViewParcelBox"),
       onClick: () => navigate(`${base}/my-collection`),
     },
@@ -624,7 +624,7 @@ export default function ResidentProfile() {
       <div className="space-y-3.5">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="w-2 h-5 bg-teal-400 rounded-full shadow-sm shadow-teal-400/50" />
+            <div className="w-2 h-5 bg-accent rounded-full shadow-sm shadow-accent/50" />
             <h2 className="text-base font-black text-primary tracking-tight">
               {t("rpDailyHelpTitle")}
             </h2>
@@ -642,7 +642,7 @@ export default function ResidentProfile() {
         {dailyHelpList.length === 0 ? (
           <div className="p-6 rounded-3xl border border-glass-border bg-card flex flex-col sm:flex-row items-center justify-between gap-5 shadow-sm">
             <div className="flex items-center gap-4 text-center sm:text-left">
-              <div className="w-13 h-13 rounded-2xl bg-teal-500/10 text-teal-400 border border-teal-500/25 flex items-center justify-center shrink-0">
+              <div className="w-13 h-13 rounded-2xl bg-accent-soft text-accent border border-accent/25 flex items-center justify-center shrink-0">
                 <MdCleaningServices size={28} />
               </div>
               <div>
@@ -656,7 +656,7 @@ export default function ResidentProfile() {
             <button
               type="button"
               onClick={() => navigate(`${base}/my-household`)}
-              className="py-2.5 px-5 rounded-xl text-xs font-bold text-white bg-linear-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 shadow-md shadow-teal-600/25 transition active:scale-95 cursor-pointer shrink-0 flex items-center gap-2"
+              className="py-2.5 px-5 rounded-xl text-xs font-bold text-white bg-linear-to-r from-accent to-secondary hover:brightness-110 shadow-md shadow-accent/25 transition active:scale-95 cursor-pointer shrink-0 flex items-center gap-2"
             >
               <MdAdd size={17} />
               <span>{t("rpAddStaff")}</span>
@@ -674,7 +674,7 @@ export default function ResidentProfile() {
                 >
                   <div className="flex items-center gap-3.5 min-w-0">
                     <div className="relative">
-                      <div className="w-11 h-11 rounded-2xl bg-teal-500/15 text-teal-400 border border-teal-500/25 flex items-center justify-center font-bold text-base shrink-0">
+                      <div className="w-11 h-11 rounded-2xl bg-accent-soft text-accent border border-accent/25 flex items-center justify-center font-bold text-base shrink-0">
                         {help.name?.charAt(0).toUpperCase() || "H"}
                       </div>
                       <span
@@ -713,7 +713,7 @@ export default function ResidentProfile() {
         {/* Section Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-start sm:items-center gap-3">
-            <div className="w-1.5 h-6 sm:h-7 bg-gradient-to-b from-cyan-400 via-blue-500 to-purple-500 rounded-full shadow-sm shadow-cyan-400/50 shrink-0 mt-0.5 sm:mt-0" aria-hidden="true" />
+            <div className="w-1.5 h-6 sm:h-7 bg-linear-to-b from-accent to-secondary rounded-full shadow-sm shadow-accent/50 shrink-0 mt-0.5 sm:mt-0" aria-hidden="true" />
             <div>
               <h2 className="text-lg sm:text-xl font-black text-primary tracking-tight leading-tight m-0">
                 {t("rpVisitorAccessTitle") || "Visitor Access & Pre-Approvals"}
@@ -767,8 +767,8 @@ export default function ResidentProfile() {
                 });
               }
             }}
-            style={{ "--gd-c": "#06b6d4", "--gd-badge-c": "#06b6d4" }}
-            className="gd-action gd-action--guest rp-va-card group cursor-pointer focus-visible:ring-2 focus-visible:ring-cyan-400 focus:outline-hidden"
+            style={{ "--gd-c": "var(--accent)", "--gd-badge-c": "var(--accent)" }}
+            className="gd-action gd-action--guest rp-va-card group cursor-pointer focus-visible:ring-2 focus-visible:ring-accent focus:outline-hidden"
           >
             <span className="gd-action__blob" aria-hidden />
 
@@ -826,8 +826,8 @@ export default function ResidentProfile() {
                 });
               }
             }}
-            style={{ "--gd-c": "#10b981", "--gd-badge-c": "#10b981" }}
-            className="gd-action gd-action--cab rp-va-card group cursor-pointer focus-visible:ring-2 focus-visible:ring-emerald-400 focus:outline-hidden"
+            style={{ "--gd-c": "var(--secondary)", "--gd-badge-c": "var(--secondary)" }}
+            className="gd-action gd-action--cab rp-va-card group cursor-pointer focus-visible:ring-2 focus-visible:ring-secondary focus:outline-hidden"
           >
             <span className="gd-action__blob" aria-hidden />
 
@@ -885,8 +885,8 @@ export default function ResidentProfile() {
                 });
               }
             }}
-            style={{ "--gd-c": "#a855f7", "--gd-badge-c": "#a855f7" }}
-            className="gd-action gd-action--delivery rp-va-card group cursor-pointer focus-visible:ring-2 focus-visible:ring-purple-400 focus:outline-hidden"
+            style={{ "--gd-c": "var(--accent-light, var(--accent))", "--gd-badge-c": "var(--accent-light, var(--accent))" }}
+            className="gd-action gd-action--delivery rp-va-card group cursor-pointer focus-visible:ring-2 focus-visible:ring-accent focus:outline-hidden"
           >
             <span className="gd-action__blob" aria-hidden />
 
@@ -915,7 +915,7 @@ export default function ResidentProfile() {
         </div>
 
         {/* Live Visitor Feed Section - Colorful Dashboard Activity Panel */}
-        <div className="rounded-2xl sm:rounded-3xl border border-purple-500/20 bg-gradient-to-br from-purple-500/[0.07] via-blue-500/[0.04] to-cyan-500/[0.06] p-5 sm:p-6 shadow-sm space-y-4">
+        <div className="rounded-2xl sm:rounded-3xl border border-glass-border bg-linear-to-br from-accent/[0.06] via-secondary/[0.03] to-card-bg p-5 sm:p-6 shadow-sm space-y-4">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2.5">
               <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)] animate-pulse shrink-0" aria-hidden="true" />
@@ -924,7 +924,7 @@ export default function ResidentProfile() {
               </h3>
             </div>
             {visitors.length > 0 && (
-              <span className="text-xs font-bold px-3 py-1 rounded-full bg-purple-500/15 text-purple-400 border border-purple-500/25 shadow-xs">
+              <span className="text-xs font-bold px-3 py-1 rounded-full bg-accent-soft text-accent border border-accent/25 shadow-xs">
                 {visitors.length} {visitors.length === 1 ? "record" : "records"}
               </span>
             )}
@@ -932,7 +932,7 @@ export default function ResidentProfile() {
 
           {visitors.length === 0 ? (
             <div className="p-8 rounded-2xl border border-glass-border bg-card-inner-bg/60 text-center text-secondary shadow-2xs">
-              <MdQrCodeScanner size={36} className="mx-auto mb-2 opacity-40 text-cyan-400" />
+              <MdQrCodeScanner size={36} className="mx-auto mb-2 opacity-40 text-accent" />
               <p className="text-sm font-bold text-primary m-0">{t("rpNoRecentVisitors") || "No recent visitor records"}</p>
               <p className="text-xs text-secondary mt-1 max-w-sm mx-auto m-0">
                 {t("rpNoRecentVisitorsSub") || "Use the 1-tap quick action cards above to pre-approve upcoming visitors."}
@@ -1095,7 +1095,7 @@ export default function ResidentProfile() {
                   : preApprovalModal.purpose === "DELIVERY"
                   ? t("rpDeliveryPartner")
                   : t("rpGuestFullName")}{" "}
-                <span className="text-cyan-400">*</span>
+                <span className="text-accent">*</span>
               </label>
               <input
                 type="text"
@@ -1181,7 +1181,7 @@ export default function ResidentProfile() {
               <button
                 type="submit"
                 disabled={preApprovalModal.submitting}
-                className="flex-2 py-2.5 px-4 rounded-xl font-bold text-xs sm:text-sm text-white bg-linear-to-r from-accent via-purple-600 to-indigo-600 hover:from-accent-light hover:to-indigo-500 shadow-md shadow-accent/25 transition active:scale-95 disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2"
+                className="flex-2 py-2.5 px-4 rounded-xl font-bold text-xs sm:text-sm text-white bg-linear-to-r from-accent to-secondary hover:brightness-110 shadow-md shadow-accent/25 transition active:scale-95 disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2"
               >
                 {preApprovalModal.submitting
                   ? t("rpApproving")

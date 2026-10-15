@@ -842,7 +842,7 @@ html.light .set-field__action:hover {
   width: 100% !important;
   height: 100% !important;
   object-fit: cover !important;
-  object-position: center 30%;
+  object-position: center center;
   display: block !important;
 }
 

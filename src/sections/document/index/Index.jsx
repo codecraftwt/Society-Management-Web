@@ -1,18 +1,15 @@
-import { useState } from "react";
 import {
   MdDescription, MdDelete, MdVisibility, MdInsertDriveFile,
   MdAdd, MdRefresh, MdPictureAsPdf, MdTableChart, MdSlideshow, MdImage,
   MdChevronRight, MdCalendarMonth, MdCloudDone, MdWarningAmber,
-  MdFolderOpen, MdGavel, MdGroups, MdMenuBook, MdAccountBalanceWallet,
-  MdSecurity, MdGridView, MdViewList, MdFileDownload, MdOpenInNew,
 } from "react-icons/md";
 import { useLang } from "../../../context/LanguageContext";
 import { BASE_URL } from "../../../config/apiConfig";
 import GlobalButton from "../../../components/common/GlobalButton";
 import ExpandableSearch from "../../../components/common/ExpandableSearch";
-import SlidingTabs from "../../../components/common/SlidingTabs";
 import Pagination from "../../../components/common/Pagination";
-import StatCard from "../../../components/common/StatCard";
+
+const ALL_CATS = ["All", "Legal", "Meetings", "Guidelines", "Finance", "Security"];
 
 const FILE_TYPES = [
   { exts: ["pdf"], icon: MdPictureAsPdf, color: "#ef4444" },
@@ -99,142 +96,39 @@ function DocCard({ doc, t, onDelete, onOpen, isCommittee, catLabel, index = 0 })
         <span className="doc-ext">{ext}</span>
       </div>
 
-      <div className="doc-card-footer flex items-center justify-between gap-2 mt-auto pt-2">
-        <div className="flex items-center gap-1.5">
-          <button
-            type="button"
-            className="doc-view-btn flex items-center gap-1.5"
-            onClick={(e) => {
-              e.stopPropagation();
-              onOpen(doc);
-            }}
-          >
-            <MdVisibility size={14} aria-hidden="true" /> {t("docView") || "Preview"}
-          </button>
-          
-          <a
-            href={fileLink}
-            target="_blank"
-            rel="noreferrer"
-            className="w-8 h-8 rounded-xl flex items-center justify-center text-secondary hover:text-accent bg-card-inner-bg border border-glass-border hover:border-accent/40 transition-all cursor-pointer"
-            onClick={(e) => e.stopPropagation()}
-            title="Open in new tab / Download"
-          >
-            <MdOpenInNew size={15} />
-          </a>
-        </div>
+      {/* Primary Card Action Footer: View Document Only */}
+      <div className="flex items-center gap-2 mt-auto pt-3 border-t border-glass-border">
+        {/* Primary Action: View Document */}
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onOpen(doc);
+          }}
+          className="flex-1 h-9.5 px-4 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 bg-accent text-white hover:opacity-90 shadow-xs shadow-accent/25 cursor-pointer"
+          title={t("docView") || "View Document"}
+        >
+          <MdVisibility size={16} />
+          <span>{t("docView") || "View Document"}</span>
+        </button>
 
+        {/* Admin Action: Delete */}
         {!isCommittee && (
           <button
             type="button"
-            className="doc-del-btn"
             onClick={(e) => {
               e.stopPropagation();
               onDelete(doc);
             }}
-            aria-label={t("billDelete") || "Delete"}
+            className="w-9.5 h-9.5 rounded-xl flex items-center justify-center text-rose-400 hover:text-rose-300 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 transition-all cursor-pointer shrink-0"
             title={t("billDelete") || "Delete"}
+            aria-label={t("billDelete") || "Delete"}
           >
             <MdDelete size={16} />
           </button>
         )}
       </div>
     </div>
-  );
-}
-
-function DocTableRow({ doc, t, onDelete, onOpen, isCommittee, catLabel }) {
-  const { icon: FileIcon, color: fileColor } = getFileType(doc.file_name);
-  const ext = getFileExt(doc.file_name);
-  const formatDate = (d) =>
-    !d ? "—" : new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
-  const fileLink = getDocUrl(doc.file_url);
-
-  return (
-    <tr
-      className="border-b transition-colors cursor-pointer hover:bg-hover-bg"
-      style={{ borderColor: "var(--glass-border)" }}
-      onClick={() => onOpen(doc)}
-    >
-      <td className="py-3 px-4">
-        <div className="flex items-center gap-3">
-          <div
-            className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 shadow-2xs"
-            style={{
-              color: fileColor,
-              background: `color-mix(in srgb, ${fileColor} 14%, transparent)`,
-              border: `1px solid color-mix(in srgb, ${fileColor} 30%, transparent)`,
-            }}
-          >
-            <FileIcon size={18} />
-          </div>
-          <div className="min-w-0">
-            <p className="font-bold text-sm text-primary truncate max-w-xs sm:max-w-sm m-0">
-              {doc.title}
-            </p>
-            <p className="text-xs text-secondary truncate max-w-xs m-0 mt-0.5">
-              {doc.file_name}
-            </p>
-          </div>
-        </div>
-      </td>
-
-      <td className="py-3 px-3">
-        <span className="doc-cat-chip">
-          <span className="doc-cat-dot" aria-hidden="true" />
-          {catLabel(doc.category)}
-        </span>
-      </td>
-
-      <td className="py-3 px-3 text-xs text-secondary font-medium">
-        <span className="uppercase font-bold text-[10px] px-2 py-0.5 rounded-md bg-card-inner-bg border border-glass-border">
-          {ext}
-        </span>
-      </td>
-
-      <td className="py-3 px-3 text-xs text-secondary font-medium whitespace-nowrap">
-        {doc.file_size_formatted || "—"}
-      </td>
-
-      <td className="py-3 px-3 text-xs text-secondary font-medium whitespace-nowrap">
-        {formatDate(doc.created_at)}
-      </td>
-
-      <td className="py-3 px-4 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-end gap-1.5">
-          <button
-            type="button"
-            className="px-2.5 py-1.5 rounded-lg text-xs font-bold border transition-colors flex items-center gap-1 text-accent bg-accent/10 border-accent/25 hover:bg-accent/20 cursor-pointer"
-            onClick={() => onOpen(doc)}
-            title="Preview Document"
-          >
-            <MdVisibility size={14} />
-            <span className="hidden sm:inline">{t("docView") || "Preview"}</span>
-          </button>
-
-          <a
-            href={fileLink}
-            target="_blank"
-            rel="noreferrer"
-            className="w-8 h-8 rounded-lg flex items-center justify-center text-secondary hover:text-accent bg-card-inner-bg border border-glass-border hover:border-accent/40 transition-all cursor-pointer"
-            title="Open in new tab"
-          >
-            <MdOpenInNew size={14} />
-          </a>
-
-          {!isCommittee && (
-            <button
-              type="button"
-              className="w-8 h-8 rounded-lg flex items-center justify-center text-red-500 bg-red-500/10 border border-red-500/20 hover:bg-red-500/20 transition-all cursor-pointer"
-              onClick={() => onDelete(doc)}
-              title={t("billDelete") || "Delete"}
-            >
-              <MdDelete size={15} />
-            </button>
-          )}
-        </div>
-      </td>
-    </tr>
   );
 }
 
@@ -282,65 +176,10 @@ export default function Index({
   onPageSizeChange,
 }) {
   const { t } = useLang();
-  const [viewMode, setViewMode] = useState("grid"); // "grid" | "list"
-
-  const CATEGORY_TABS = ["All", "Legal", "Meetings", "Guidelines", "Finance", "Security"];
 
   return (
-    <div className="space-y-5">
-      {/* ── 1. Dynamic StatCards Strip ── */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-        <StatCard
-          icon={MdFolderOpen}
-          value={counts?.All || totalItems || 0}
-          label={t("docCatAll") || "All Files"}
-          tone="brand"
-          active={activeCat === "All"}
-          onClick={() => onCatChange("All")}
-        />
-        <StatCard
-          icon={MdGavel}
-          value={counts?.Legal || 0}
-          label={t("docCatLegal") || "Legal"}
-          tone="brand"
-          active={activeCat === "Legal"}
-          onClick={() => onCatChange("Legal")}
-        />
-        <StatCard
-          icon={MdGroups}
-          value={counts?.Meetings || 0}
-          label={t("docCatMeetings") || "Meetings"}
-          tone="info"
-          active={activeCat === "Meetings"}
-          onClick={() => onCatChange("Meetings")}
-        />
-        <StatCard
-          icon={MdMenuBook}
-          value={counts?.Guidelines || 0}
-          label={t("docCatGuidelines") || "Guidelines"}
-          tone="warning"
-          active={activeCat === "Guidelines"}
-          onClick={() => onCatChange("Guidelines")}
-        />
-        <StatCard
-          icon={MdAccountBalanceWallet}
-          value={counts?.Finance || 0}
-          label={t("docCatFinance") || "Finance"}
-          tone="success"
-          active={activeCat === "Finance"}
-          onClick={() => onCatChange("Finance")}
-        />
-        <StatCard
-          icon={MdSecurity}
-          value={counts?.Security || 0}
-          label={t("docCatSecurity") || "Security"}
-          tone="info"
-          active={activeCat === "Security"}
-          onClick={() => onCatChange("Security")}
-        />
-      </div>
-
-      {/* ── 2. Unified Header & Actions Bar ── */}
+    <div className="space-y-4">
+      {/* ── 1. Unified Header & Actions Bar ── */}
       <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3.5">
         <div className="flex items-center gap-3">
           <div className="ad-page-icon">
@@ -364,34 +203,6 @@ export default function Index({
         </div>
 
         <div className="flex items-center gap-2.5 flex-wrap xl:flex-nowrap justify-start xl:justify-end">
-          {/* View Mode Toggle */}
-          <div className="flex items-center p-1 rounded-xl bg-card-inner-bg border border-glass-border">
-            <button
-              type="button"
-              onClick={() => setViewMode("grid")}
-              className={`p-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                viewMode === "grid"
-                  ? "bg-accent text-white shadow-sm shadow-accent/30"
-                  : "text-secondary hover:text-primary"
-              }`}
-              title="Grid View"
-            >
-              <MdGridView size={16} />
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewMode("list")}
-              className={`p-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                viewMode === "list"
-                  ? "bg-accent text-white shadow-sm shadow-accent/30"
-                  : "text-secondary hover:text-primary"
-              }`}
-              title="Table / List View"
-            >
-              <MdViewList size={16} />
-            </button>
-          </div>
-
           <ExpandableSearch
             value={search}
             onChange={onSearchChange}
@@ -407,20 +218,38 @@ export default function Index({
         </div>
       </div>
 
-      {/* ── 3. Category Tabs ── */}
-      <div className="overflow-x-auto pb-1 scrollbar-none">
-        <SlidingTabs
-          value={activeCat}
-          onChange={onCatChange}
-          items={CATEGORY_TABS.map((cat) => ({
-            id: cat,
-            label: catLabel(cat),
-            badge: counts[cat] ?? 0,
-          }))}
-        />
+      {/* ── 2. Category Filter Pills (Primary & Secondary Theme) ── */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
+        {ALL_CATS.map((cat) => {
+          const isActive = activeCat === cat;
+          const count = counts?.[cat] ?? 0;
+          return (
+            <button
+              key={cat}
+              type="button"
+              onClick={() => onCatChange?.(cat)}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 cursor-pointer ${
+                isActive
+                  ? "bg-accent text-white shadow-xs shadow-accent/25"
+                  : "bg-card-inner-bg text-secondary border border-glass-border hover:text-primary hover:border-accent/40"
+              }`}
+            >
+              <span>{catLabel(cat)}</span>
+              <span
+                className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${
+                  isActive
+                    ? "bg-white/20 text-white"
+                    : "bg-card text-secondary border border-glass-border"
+                }`}
+              >
+                {count}
+              </span>
+            </button>
+          );
+        })}
       </div>
 
-      {/* ── 4. Error Alert ── */}
+      {/* ── 3. Error Alert ── */}
       {error && (
         <div className="doc-empty-state">
           <div className="doc-empty-icon" style={{ color: "var(--danger)", background: "color-mix(in srgb, var(--danger) 10%, transparent)" }}>
@@ -433,7 +262,7 @@ export default function Index({
         </div>
       )}
 
-      {/* ── 5. Loading Skeleton ── */}
+      {/* ── 4. Loading Skeleton ── */}
       {initialLoad && !error && (
         <div className="doc-card-grid">
           {[1, 2, 3, 4, 5, 6].map((i) => (
@@ -442,7 +271,7 @@ export default function Index({
         </div>
       )}
 
-      {/* ── 6. Empty State ── */}
+      {/* ── 5. Empty State ── */}
       {!initialLoad && !error && docs.length === 0 && !fetching && (
         <div className="doc-empty-state">
           <div className="doc-empty-icon">
@@ -469,66 +298,28 @@ export default function Index({
         </div>
       )}
 
-      {/* ── 7. Document Content (Grid vs Table List) ── */}
+      {/* ── 6. Document Card Grid (Table view removed per user request) ── */}
       {!initialLoad && !error && docs.length > 0 && (
         <>
-          {viewMode === "grid" ? (
-            <div
-              className="doc-card-grid"
-              style={{ opacity: fetching ? 0.55 : 1, transition: "opacity 0.2s ease" }}
-            >
-              {docs.map((doc, i) => (
-                <DocCard
-                  key={doc.id}
-                  doc={doc}
-                  t={t}
-                  catLabel={catLabel}
-                  onDelete={onDelete}
-                  onOpen={onOpenView}
-                  isCommittee={isCommittee}
-                  index={i}
-                />
-              ))}
-            </div>
-          ) : (
-            <div
-              className="rounded-2xl border overflow-hidden bg-card border-glass-border shadow-sm"
-              style={{ opacity: fetching ? 0.55 : 1, transition: "opacity 0.2s ease" }}
-            >
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm border-collapse">
-                  <thead>
-                    <tr
-                      className="border-b text-[11px] uppercase tracking-wider text-secondary bg-card-inner-bg/60"
-                      style={{ borderColor: "var(--glass-border)" }}
-                    >
-                      <th className="py-3 px-4 font-bold">Document & File</th>
-                      <th className="py-3 px-3 font-bold">Category</th>
-                      <th className="py-3 px-3 font-bold">Format</th>
-                      <th className="py-3 px-3 font-bold">Size</th>
-                      <th className="py-3 px-3 font-bold">Date Uploaded</th>
-                      <th className="py-3 px-4 font-bold text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-glass-border">
-                    {docs.map((doc) => (
-                      <DocTableRow
-                        key={doc.id}
-                        doc={doc}
-                        t={t}
-                        catLabel={catLabel}
-                        onDelete={onDelete}
-                        onOpen={onOpenView}
-                        isCommittee={isCommittee}
-                      />
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
+          <div
+            className="doc-card-grid"
+            style={{ opacity: fetching ? 0.55 : 1, transition: "opacity 0.2s ease" }}
+          >
+            {docs.map((doc, i) => (
+              <DocCard
+                key={doc.id}
+                doc={doc}
+                t={t}
+                catLabel={catLabel}
+                onDelete={onDelete}
+                onOpen={onOpenView}
+                isCommittee={isCommittee}
+                index={i}
+              />
+            ))}
+          </div>
 
-          {/* ── 8. Pagination Strip ── */}
+          {/* ── 7. Pagination Strip ── */}
           <div className="doc-pagination-container">
             <p className="doc-pagination-info">
               {t("adDocShowingCount", {

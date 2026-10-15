@@ -36,6 +36,7 @@ import GuardEmergencyModal from "../../components/guard/GuardEmergencyModal";
 import GuardPunchModal from "../../components/guard/GuardPunchModal";
 import StatCard from "../../components/common/StatCard";
 import QuickLink from "../../components/common/QuickLink";
+import UserAvatar from "../../components/common/UserAvatar";
 
 /* ─────────────────────────────────────────────────────────────
    Helper Functions
@@ -492,24 +493,34 @@ export default function GuardDashboard() {
           1. DASHBOARD HERO HEADER (MATCHING ADMIN DASHBOARD)
           ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
       <div className="gd-hero-card rounded-2xl p-6 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-md">
-        <div className="space-y-1 min-w-0">
-          <div className="flex items-center gap-3 flex-wrap">
-            <h1 className="text-xl md:text-2xl font-bold text-primary tracking-tight flex items-center gap-2">
-              <span>{greeting}, {profile?.name || t("gdGuard", "Security Officer")}</span>
-              <span className="animate-wave inline-block">👮</span>
-            </h1>
+        <div className="flex items-center gap-4 min-w-0">
+          <UserAvatar
+            name={profile?.name || t("gdGuard", "Security Officer")}
+            src={profile?.profile_picture || profile?.profile_image || profile?.avatar}
+            size={56}
+            radius="50%"
+            className="gd-hero-avatar shrink-0 ring-2 ring-blue-500/40 shadow-md"
+          />
 
-            {profile?.Society?.name && (
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-blue-500/15 text-blue-400 border border-blue-500/30">
-                <MdApartment className="text-blue-400" />
-                {profile.Society.name}
-              </span>
-            )}
+          <div className="space-y-1 min-w-0">
+            <div className="flex items-center gap-3 flex-wrap">
+              <h1 className="text-xl md:text-2xl font-bold text-primary tracking-tight flex items-center gap-2">
+                <span>{greeting}, {profile?.name || t("gdGuard", "Security Officer")}</span>
+                <span className="animate-wave inline-block">👮</span>
+              </h1>
+
+              {profile?.Society?.name && (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-blue-500/15 text-blue-400 border border-blue-500/30">
+                  <MdApartment className="text-blue-400" />
+                  {profile.Society.name}
+                </span>
+              )}
+            </div>
+
+            <p className="text-xs md:text-sm text-secondary truncate">
+              {t("gdGuardPortal", "Guard Security Hub")} • {t("gdGateOpsTagline", "Gate Operations & Visitor Management")}
+            </p>
           </div>
-
-          <p className="text-xs md:text-sm text-secondary truncate">
-            {t("gdGuardPortal", "Guard Security Hub")} • {t("gdGateOpsTagline", "Gate Operations & Visitor Management")}
-          </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-3 shrink-0">

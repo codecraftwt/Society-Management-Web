@@ -15,6 +15,7 @@ export default function AppHeader({
   actions = null,
   leftActions = null,
   onBack = null,
+  showMenuButton = true,
   showThemeToggle = true,
   showLanguageSelector = true,
   showNotificationBell = true,
@@ -38,7 +39,7 @@ export default function AppHeader({
       {/* ── LEFT AREA: BACK BTN & IDENTITY ── */}
       <div className="header-left">
         {/* Mobile Hamburger Menu Toggle */}
-        {openMobile && (
+        {openMobile && showMenuButton && (
           <button
             type="button"
             onClick={openMobile}

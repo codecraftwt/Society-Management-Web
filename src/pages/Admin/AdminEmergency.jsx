@@ -11,6 +11,7 @@ import GlobalModal from "../../components/common/GlobalModal";
 import StatCard from "../../components/common/StatCard";
 import SlidingTabs from "../../components/common/SlidingTabs";
 import SOSModal from "../../components/emergency/SOSModal";
+import Pagination, { PAGE_SIZE_OPTIONS } from "../../components/common/Pagination";
 import {
   MdSecurity,
   MdWarning,
@@ -94,6 +95,10 @@ export default function AdminEmergency() {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
 
+  // Pagination State
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+
   // History Modal State
   const [historyModal, setHistoryModal] = useState({
     isOpen: false,
@@ -173,6 +178,26 @@ export default function AdminEmergency() {
     });
     return { total, active, resolved, totalAcks };
   }, [alerts]);
+
+  // Pagination Calculations
+  const totalItems = alerts.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / limit));
+  const paginatedAlerts = useMemo(() => {
+    const start = (page - 1) * limit;
+    return alerts.slice(start, start + limit);
+  }, [alerts, page, limit]);
+
+  // Reset to first page when search or filters change
+  useEffect(() => {
+    setPage(1);
+  }, [search, statusFilter, typeFilter, selectedSocietyId, startDate, endDate]);
+
+  // Keep page within bounds
+  useEffect(() => {
+    if (page > totalPages) {
+      setPage(totalPages);
+    }
+  }, [page, totalPages]);
 
   // Open Acknowledgements History
   const openHistoryModal = async (alertItem) => {
@@ -481,8 +506,9 @@ export default function AdminEmergency() {
           )}
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-          {alerts.map((alert) => {
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+            {paginatedAlerts.map((alert) => {
             const typeMeta = TYPE_MAP[alert.type] || TYPE_MAP.OTHER || {
               labelKey: "sosTypeOther",
               icon: MdWarning,
@@ -722,7 +748,37 @@ export default function AdminEmergency() {
             );
           })}
         </div>
-      )}
+
+        {/* ── Pagination Footer ── */}
+        <div
+          className="flex items-center justify-between gap-3 flex-wrap pt-3 border-t border-glass mt-4"
+          style={{ borderTop: "1px solid var(--glass-border)" }}
+        >
+          <span className="text-xs text-secondary">
+            {t(
+              "sosShowingRange",
+              {
+                from: totalItems > 0 ? (page - 1) * limit + 1 : 0,
+                to: Math.min(page * limit, totalItems),
+                total: totalItems,
+              },
+              `Showing ${totalItems > 0 ? (page - 1) * limit + 1 : 0}–${Math.min(page * limit, totalItems)} of ${totalItems} emergencies`
+            )}
+          </span>
+          <Pagination
+            page={page}
+            totalPages={totalPages}
+            onPageChange={(p) => setPage(p)}
+            pageSize={limit}
+            onPageSizeChange={(s) => {
+              setLimit(s);
+              setPage(1);
+            }}
+            pageSizeOptions={[10, 20, 30, 50]}
+          />
+        </div>
+      </>
+    )}
 
       {/* ── ACKNOWLEDGEMENT / READ HISTORY MODAL ── */}
       {historyModal.isOpen && (

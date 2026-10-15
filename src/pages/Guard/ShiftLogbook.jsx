@@ -204,25 +204,6 @@ export default function ShiftLogbook() {
             </p>
           </div>
         </div>
-
-        <div className="w-full sm:w-auto flex items-center gap-2.5">
-          <button
-            onClick={() => fetchLogs(true)}
-            disabled={refreshing}
-            className="btn-secondary flex items-center justify-center gap-1.5 text-xs font-bold px-3.5 py-2.5 rounded-xl transition-all hover:scale-102 active:scale-98 flex-1 sm:flex-none"
-          >
-            <MdRefresh size={18} className={refreshing ? "animate-spin text-accent" : ""} />
-            <span>{refreshing ? t("lgRefreshing", "Refreshing...") : t("lgRefresh", "Refresh")}</span>
-          </button>
-
-          <button
-            onClick={() => setIsAddModalOpen(true)}
-            className="btn-primary flex items-center justify-center gap-2 text-xs font-bold px-4 py-2.5 rounded-xl transition-all shadow-md hover:scale-102 active:scale-98 flex-1 sm:flex-none"
-          >
-            <MdAdd size={19} />
-            <span>{t("lgAddBtn", "Add Log Entry")}</span>
-          </button>
-        </div>
       </div>
 
       {/* ── KPI STAT CARDS ── */}
@@ -262,7 +243,7 @@ export default function ShiftLogbook() {
       </div>
 
       {/* ── SEARCH & FILTER TOOLBAR WITH TOGGLE SEARCH BAR ── */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-card/60 backdrop-blur-md p-2 rounded-2xl border border-glass-border shadow-xs">
+      <div className="ge-toolbar">
         <div className="overflow-x-auto max-w-full pb-1 sm:pb-0">
           <SlidingTabs
             className="ge-filter-tabs"
@@ -280,11 +261,30 @@ export default function ShiftLogbook() {
           />
         </div>
 
-        <ExpandableSearch
-          value={search}
-          onChange={setSearch}
-          placeholder={t("lgSearchPlaceholder", "Search by message or guard...")}
-        />
+        <div className="ge-er-right">
+          <button
+            onClick={() => fetchLogs(true)}
+            disabled={refreshing}
+            className="btn-secondary flex items-center justify-center gap-1.5 text-xs font-bold px-3.5 py-2.5 rounded-xl transition-all hover:scale-102 active:scale-98"
+          >
+            <MdRefresh size={18} className={refreshing ? "animate-spin text-accent" : ""} />
+            <span>{refreshing ? t("lgRefreshing", "Refreshing...") : t("lgRefresh", "Refresh")}</span>
+          </button>
+
+          <button
+            onClick={() => setIsAddModalOpen(true)}
+            className="btn-primary flex items-center justify-center gap-2 text-xs font-bold px-4 py-2.5 rounded-xl transition-all shadow-md hover:scale-102 active:scale-98"
+          >
+            <MdAdd size={19} />
+            <span>{t("lgAddBtn", "Add Log Entry")}</span>
+          </button>
+
+          <ExpandableSearch
+            value={search}
+            onChange={setSearch}
+            placeholder={t("lgSearchPlaceholder", "Search by message or guard...")}
+          />
+        </div>
       </div>
 
       {/* ── LOG FEED TIMELINE ── */}

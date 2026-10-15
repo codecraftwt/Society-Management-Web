@@ -354,12 +354,32 @@ function ChatPanel({ complaintId, currentUser, onIncomingMessage }) {
 
   return (
     <div className="chat-panel">
-      <div className="chat-panel__header">
-        <MdChat size={15} className="chat-panel__header-icon" />
-        <span className="chat-panel__header-title">{t("chatDiscussion")}</span>
-        <span className="chat-panel__count">
-          {comments.filter(c => !String(c.id).startsWith("opt_")).length}
-        </span>
+      <div className="chat-panel__header" style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: 8,
+        padding: "10px 16px",
+        background: "var(--card-inner-bg)",
+        borderBottom: "1px solid var(--glass-border)",
+        flexShrink: 0
+      }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
+          <span style={{
+            width: 8,
+            height: 8,
+            borderRadius: "50%",
+            background: "var(--stat-green-color, #10b981)",
+            boxShadow: "0 0 6px var(--stat-green-color, #10b981)",
+            flexShrink: 0
+          }} />
+          <span style={{ fontSize: 13, fontWeight: 700, color: "var(--text-primary)" }}>
+            {t("chatDiscussion")}
+          </span>
+          <span className="chat-panel__count">
+            {comments.filter(c => !String(c.id).startsWith("opt_")).length}
+          </span>
+        </div>
         {comments.length > 0 && (
           <div style={{ marginLeft: "auto" }}>
             {confirmClear ? (
@@ -379,7 +399,7 @@ function ChatPanel({ complaintId, currentUser, onIncomingMessage }) {
                 </button>
               </div>
             ) : (
-              <button onClick={() => setConfirmClear(true)} className="chat-clear-btn">
+              <button onClick={() => setConfirmClear(true)} className="chat-clear-btn" title={t("chatClear")}>
                 <MdDelete size={12} /> {t("chatClear")}
               </button>
             )}
@@ -393,7 +413,13 @@ function ChatPanel({ complaintId, currentUser, onIncomingMessage }) {
             <Spinner small />
           </div>
         ) : comments.length === 0 ? (
-          <div className="chat-panel__empty">{t("chatEmpty")}</div>
+          <div className="chat-panel__empty" style={{
+            display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+            padding: "40px 20px", gap: 10, height: "100%", color: "var(--text-secondary)"
+          }}>
+            <MdChat size={36} style={{ opacity: 0.25, color: "var(--accent)" }} />
+            <p style={{ margin: 0, fontSize: 13, fontWeight: 500 }}>{t("chatEmpty") || "No messages yet. Start the discussion below!"}</p>
+          </div>
         ) : (
           comments.map(comment => {
             const mine  = isMe(comment);
@@ -561,7 +587,8 @@ function ChatPanel({ complaintId, currentUser, onIncomingMessage }) {
 }
 
 // ─── ComplaintDrawer ──────────────────────────────────────────────────────────
-function ComplaintDrawer({ complaint, onClose, currentUser, t, defaultTab = "details", onMarkRead }) {
+function ComplaintDrawer({ complaint, onClose, currentUser, t, defaultTab = "details", onMarkRead, unreadCount = 0 }) {
+  const isMobile = useIsMobile();
   const [drawerTab,     setDrawerTab]     = useState(defaultTab);
   const [lightboxPhoto, setLightboxPhoto] = useState(null);
 
@@ -587,45 +614,165 @@ function ComplaintDrawer({ complaint, onClose, currentUser, t, defaultTab = "det
     :                     t("compStatusPending");
 
   const tabBtn = (key) => ({
-    flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 5,
-    padding: "7px 8px", borderRadius: 8, border: "none", cursor: "pointer",
-    fontSize: 12, fontWeight: 600, transition: "all 0.15s",
+    flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+    padding: "8px 12px", borderRadius: 8, border: "none", cursor: "pointer",
+    fontSize: 12, fontWeight: 600, transition: "all 0.2s cubic-bezier(0.16, 1, 0.3, 1)",
     background: drawerTab === key ? "var(--accent)" : "transparent",
     color:      drawerTab === key ? "#fff" : "var(--text-secondary)",
-    boxShadow:  drawerTab === key ? "0 2px 8px rgba(91,141,239,0.35)" : "none",
+    boxShadow:  drawerTab === key ? "0 2px 8px rgba(var(--accent-rgb, 99, 102, 241), 0.3)" : "none",
   });
 
   return createPortal(
     <>
-      <div className="modal-overlay-blur animate-fadeIn" style={{ zIndex: 1050 }} onClick={onClose} />
-      <div className="resident-complaint-drawer animate-fadeIn" style={{ zIndex: 1060 }}>
-        <div className="detail-drawer__header">
+      <div
+        className="modal-overlay-blur animate-fadeIn"
+        style={{
+          position: "fixed",
+          inset: 0,
+          zIndex: 1050,
+          background: "rgba(0, 0, 0, 0.55)",
+          backdropFilter: "blur(4px)",
+        }}
+        onClick={onClose}
+      />
+      <div
+        className="detail-drawer inherent-drawer animate-fadeIn"
+        style={isMobile ? {
+          position: "fixed",
+          inset: 0,
+          width: "100%",
+          maxWidth: "100%",
+          height: "100%",
+          borderRadius: 0,
+          zIndex: 1060,
+          display: "flex",
+          flexDirection: "column",
+          background: "var(--card-bg)",
+          boxShadow: "0 0 40px rgba(0,0,0,0.5)",
+          overflow: "hidden"
+        } : {
+          position: "fixed",
+          top: 0,
+          right: 0,
+          bottom: 0,
+          left: "auto",
+          width: "min(490px, 100vw)",
+          height: "100vh",
+          borderRadius: "20px 0 0 20px",
+          zIndex: 1060,
+          display: "flex",
+          flexDirection: "column",
+          background: "var(--card-bg)",
+          boxShadow: "-12px 0 48px rgba(0,0,0,0.45)",
+          borderLeft: "1px solid var(--glass-border)",
+          overflow: "hidden"
+        }}
+      >
+        <div className="detail-drawer__header" style={{
+          padding: "16px 20px",
+          borderBottom: "1px solid var(--glass-border)",
+          background: "var(--card-inner-bg)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          flexShrink: 0
+        }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
-            <div className="er-icon er-icon--complaint" style={{ width: 36, height: 36, borderRadius: 10, flexShrink: 0 }}>
-              <MdReportProblem size={17} />
+            <div className="er-icon er-icon--complaint" style={{ width: 38, height: 38, borderRadius: 10, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <MdReportProblem size={18} />
             </div>
             <div style={{ minWidth: 0 }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text-primary)" }}>{t("drawerComplaintDetails")}</div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text-primary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {complaint.title || t("drawerComplaintDetails")}
+              </div>
               <div style={{ fontSize: 11, color: "var(--text-secondary)", marginTop: 2 }}>{formatDate(complaint.created_at)}</div>
             </div>
           </div>
-          <button className="detail-drawer__close-btn" onClick={onClose}><MdClose size={17} /></button>
+          <button
+            className="detail-drawer__close-btn"
+            onClick={onClose}
+            aria-label="Close"
+            style={{
+              width: 34,
+              height: 34,
+              borderRadius: 10,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              background: "var(--card-bg)",
+              border: "1px solid var(--glass-border)",
+              cursor: "pointer",
+              color: "var(--text-secondary)",
+              transition: "all 0.15s"
+            }}
+          >
+            <MdClose size={18} />
+          </button>
         </div>
 
-        <div className="detail-drawer__tabs">
-          <div className="detail-drawer__tabs-inner">
+        <div className="detail-drawer__tabs" style={{
+          padding: "10px 16px",
+          background: "var(--card-inner-bg)",
+          borderBottom: "1px solid var(--glass-border)",
+          flexShrink: 0
+        }}>
+          <div className="detail-drawer__tabs-inner" style={{
+            display: "flex",
+            flex: 1,
+            background: "var(--card-bg)",
+            border: "1px solid var(--glass-border)",
+            borderRadius: 10,
+            padding: 3,
+            gap: 4
+          }}>
             <button style={tabBtn("details")} onClick={() => handleTabChange("details")}>
-              <MdReportProblem size={13} /> {t("chatDetails")}
+              <MdReportProblem size={14} /> <span>{t("chatDetails")}</span>
             </button>
             <button style={tabBtn("chat")} onClick={() => handleTabChange("chat")}>
-              <MdChat size={13} /> {t("chatDiscussion")}
+              <MdChat size={14} /> <span>{t("chatDiscussion")}</span>
+              {unreadCount > 0 && drawerTab !== "chat" && (
+                <span style={{
+                  minWidth: 16,
+                  height: 16,
+                  borderRadius: "50%",
+                  background: "var(--accent)",
+                  color: "#fff",
+                  fontSize: 9,
+                  fontWeight: 800,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  padding: "0 4px",
+                  marginLeft: 4,
+                  lineHeight: 1
+                }}>
+                  {unreadCount > 99 ? "99+" : unreadCount}
+                </span>
+              )}
             </button>
           </div>
         </div>
 
         <div
           className={`detail-drawer__body scrollbar-hide${drawerTab === "chat" ? " detail-drawer__body--chat" : ""}`}
-          style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, overflowY: "auto" }}
+          style={drawerTab === "chat" ? {
+            flex: 1,
+            display: "flex",
+            flexDirection: "column",
+            minHeight: 0,
+            overflow: "hidden",
+            padding: 0,
+            gap: 0,
+            background: "var(--card-bg)"
+          } : {
+            flex: 1,
+            display: "flex",
+            flexDirection: "column",
+            minHeight: 0,
+            overflowY: "auto",
+            padding: "18px 20px 24px",
+            gap: 16
+          }}
         >
           {drawerTab === "details" && (
             <>
@@ -926,21 +1073,20 @@ function MobileComplaintCard({ c, authUser, unreadMap, confirmDeleteId, deleting
               <MdCalendarToday size={11} /> {formatDate(c.created_at)}
             </p>
           )}
-          <div style={{ position: "relative" }}>
+          <button
+            type="button"
+            onClick={() => onOpen(c, "chat")}
+            className={`rcr-discuss-btn ${unread > 0 ? "rcr-discuss-btn--has-unread rcr-discuss-btn--shake" : ""}`}
+            title={t("chatDiscussion")}
+          >
+            <MdChat size={14} style={{ color: unread > 0 ? "var(--accent)" : "currentColor", flexShrink: 0 }} />
+            <span>{t("chatDiscussion")}</span>
             {unread > 0 && (
-              <span style={{ position: "absolute", top: -8, right: -8, minWidth: 18, height: 18,
-                borderRadius: "50%", background: "linear-gradient(135deg, #25d366, #128c7e)",
-                color: "#fff", fontSize: 10, fontWeight: 800, display: "flex", alignItems: "center",
-                justifyContent: "center", padding: "0 4px", border: "2px solid var(--card-bg)",
-                boxShadow: "0 2px 8px rgba(37,211,102,0.55)", zIndex: 2, letterSpacing: 0, lineHeight: 1,
-                animation: "rcr-badge-pop 0.4s cubic-bezier(0.34,1.56,0.64,1) both" }}>
+              <span className="rcr-discuss-badge">
                 {unread > 99 ? "99+" : unread}
               </span>
             )}
-            <button onClick={() => onOpen(c, "chat")} className={`rcr-discuss-btn ${unread > 0 ? "rcr-discuss-btn--shake" : ""}`}>
-              <MdChat size={13} /><span>{t("chatDiscussion")}</span>
-            </button>
-          </div>
+          </button>
         </div>
       </div>
     </div>
@@ -1385,6 +1531,68 @@ const { t }              = useLang();
           0%   { transform: scale(0); opacity: 0; }
           70%  { transform: scale(1.25); opacity: 1; }
           100% { transform: scale(1); opacity: 1; }
+        }
+        @keyframes rcr-discuss-shake {
+          0%, 100% { transform: translateX(0); }
+          20%, 60% { transform: translateX(-2px); }
+          40%, 80% { transform: translateX(2px); }
+        }
+        .rcr-discuss-btn {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 7px;
+          padding: 6px 14px;
+          border-radius: 10px;
+          font-size: 12px;
+          font-weight: 600;
+          font-family: inherit;
+          cursor: pointer;
+          background: var(--card-inner-bg);
+          border: 1px solid var(--glass-border);
+          color: var(--text-secondary);
+          transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+          user-select: none;
+          outline: none;
+        }
+        .rcr-discuss-btn:hover {
+          background: var(--accent-soft, rgba(160, 90, 255, 0.12));
+          border-color: color-mix(in srgb, var(--accent) 45%, var(--glass-border));
+          color: var(--accent);
+          transform: translateY(-1px);
+          box-shadow: 0 4px 12px rgba(var(--accent-rgb, 99, 102, 241), 0.15);
+        }
+        .rcr-discuss-btn:active {
+          transform: translateY(0);
+        }
+        .rcr-discuss-btn--has-unread {
+          background: var(--accent-soft, rgba(160, 90, 255, 0.15));
+          border-color: var(--accent);
+          color: var(--accent);
+          font-weight: 700;
+        }
+        .rcr-discuss-btn--shake {
+          animation: rcr-discuss-shake 3s ease-in-out infinite;
+        }
+        .rcr-discuss-btn--shake:hover {
+          animation: none;
+        }
+        .rcr-discuss-badge {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          min-width: 18px;
+          height: 18px;
+          padding: 0 5px;
+          border-radius: 999px;
+          font-size: 10px;
+          font-weight: 800;
+          background: var(--accent);
+          color: #ffffff;
+          box-shadow: 0 2px 6px rgba(var(--accent-rgb, 99, 102, 241), 0.35);
+          margin-left: 2px;
+          line-height: 1;
         }
       `}</style>
 
@@ -1838,6 +2046,7 @@ const { t }              = useLang();
           defaultTab={drawerDefaultTab}
           onMarkRead={markRead}
           statusCfg={statusCfg}
+          unreadCount={unreadMap[selectedComplaint.id] || 0}
         />
       )}
 

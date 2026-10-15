@@ -3,8 +3,12 @@ import { useNavigate } from "react-router-dom";
 import API from "../../services/api";
 import {
   MdArrowForward,
+  MdArrowUpward,
+  MdArrowDownward,
   MdAccountBalance,
+  MdBuild,
   MdCheckCircle,
+  MdDashboard,
   MdSchedule,
   MdTrendingUp,
   MdOutlinePayments,
@@ -12,17 +16,9 @@ import {
 } from "react-icons/md";
 import { useLang } from "../../context/LanguageContext";
 import StatCard from "../../components/common/StatCard";
+import QuickLink from "../../components/common/QuickLink";
 import CreditedDebitedChart from "../../components/accounting/CreditedDebitedChart";
-
-const toArray = (data) => {
-  if (Array.isArray(data)) return data;
-  if (data && typeof data === "object") {
-    for (const key of ["data", "payments", "bills", "records", "items", "results"]) {
-      if (Array.isArray(data[key])) return data[key];
-    }
-  }
-  return [];
-};
+import { getLedger } from "../../services/accountingService";
 
 const formatCurrency = (value) => {
   const num = Number(value || 0);
@@ -41,7 +37,7 @@ export default function AccountDashboard() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [stats, setStats] = useState(null);
-  const [recent, setRecent] = useState([]);
+  const [ledger, setLedger] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -52,24 +48,23 @@ export default function AccountDashboard() {
   useEffect(() => {
     const load = async () => {
       try {
-        const [statsRes, paymentsRes] = await Promise.all([
+        const [statsRes, ledgerRes] = await Promise.allSettled([
           API.get("/accountant/dashboard-stats"),
-          API.get("/accountant/payments"),
+          getLedger({ page: 1, limit: 5, order: "DESC" }),
         ]);
-        setStats(statsRes.data || null);
-        const payments = toArray(paymentsRes.data);
-        setRecent(
-          payments
-            .map((p) => ({
-              id: p.id,
-              bill_title: p.Bill?.title || p.bill?.title || "Bill payment",
-              amount: Number(p.amount || p.Bill?.amount || 0),
-              payment_date: p.payment_date || p.created_at || null,
-              flat_number: p.Bill?.Flat?.flat_number || p.bill?.flat?.flat_number || "—",
-              resident_name: p.Bill?.Flat?.User?.name || p.bill?.flat?.user?.name || "—",
-            }))
-            .slice(0, 6)
-        );
+
+        if (statsRes.status === "fulfilled") {
+          setStats(statsRes.value.data || null);
+        }
+
+        if (ledgerRes.status === "fulfilled" && ledgerRes.value) {
+          const list = Array.isArray(ledgerRes.value.data)
+            ? ledgerRes.value.data
+            : Array.isArray(ledgerRes.value)
+            ? ledgerRes.value
+            : [];
+          setLedger(list.slice(0, 5));
+        }
       } catch (err) {
         console.error("Failed to load accountant dashboard", err);
       } finally {
@@ -92,6 +87,55 @@ export default function AccountDashboard() {
   }
 
   const hasStats = !!stats;
+
+  const quickLinks = [
+    {
+      id: "payments",
+      title: t("acctMenuPaymentsShort") || "Payments",
+      desc: t("acctQuickPaymentsDesc") || "Collections & receipts",
+      icon: MdOutlinePayments,
+      path: "/accountant/payments",
+      color: "#2563EB",
+      bg: "rgba(37, 99, 235, 0.15)",
+      badge: t("acctQuickPaymentsBadge") || "Cash In",
+      badgeColor: "bg-blue-600 text-white",
+    },
+    {
+      id: "accounting",
+      title: t("acctQuickAccounts") || "Account & Cash",
+      desc: t("acctQuickAccountsDesc") || "Ledger & cash book",
+      icon: MdAccountBalance,
+      path: "/accountant/accounting",
+      color: "#10B981",
+      bg: "rgba(16, 185, 129, 0.15)",
+      badge: t("acctQuickAccountsBadge") || "Ledger",
+      badgeColor: "bg-emerald-600 text-white",
+    },
+    {
+      id: "bills",
+      title: t("adminMenuManageBills") || "Billing & Invoices",
+      desc: t("acctQuickBillsDesc") || "Invoices & dues",
+      icon: MdReceiptLong,
+      path: "/accountant/manage-bills",
+      color: "#F59E0B",
+      bg: "rgba(245, 158, 11, 0.15)",
+      badge: stats?.pendingBills > 0
+        ? (t("acctQuickBillsDue", { count: stats.pendingBills }) || `${stats.pendingBills} Due`)
+        : (t("acctQuickBillsBadge") || "Invoices"),
+      badgeColor: stats?.pendingBills > 0 ? "bg-amber-600 text-white" : "bg-amber-600/80 text-white",
+    },
+    {
+      id: "maintenance",
+      title: t("adminMenuMaintenance") || "Maintenance",
+      desc: t("acctQuickMaintenanceDesc") || "Dues calculation",
+      icon: MdBuild,
+      path: "/accountant/maintenance",
+      color: "#8B5CF6",
+      bg: "rgba(139, 92, 246, 0.15)",
+      badge: t("acctQuickMaintenanceBadge") || "Rates",
+      badgeColor: "bg-purple-600 text-white",
+    },
+  ];
 
   return (
     <div className="space-y-6 animate-fadeIn">
@@ -151,51 +195,106 @@ export default function AccountDashboard() {
         </div>
       )}
 
+      {/* === QUICK OPERATIONS === */}
+      <div className="space-y-3.5">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <MdDashboard size={18} className="text-accent" />
+            <div>
+              <h2 className="text-sm sm:text-base font-bold text-primary">
+                {t("dashQuickLinks") || "Quick Operations"}
+              </h2>
+              <p className="text-xs text-secondary">
+                {t("dashQuickLinksSub") || "1-Click operations"}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3">
+          {quickLinks.map((action, idx) => (
+            <QuickLink
+              key={action.id}
+              title={action.title}
+              desc={action.desc}
+              icon={action.icon}
+              badge={action.badge}
+              badgeColor={action.badgeColor}
+              color={action.color}
+              bg={action.bg}
+              path={action.path}
+              style={{ animationDelay: `${idx * 60}ms` }}
+            />
+          ))}
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
-        {/* === RECENT PAYMENTS === */}
+        {/* === CASH BOOK LEDGER (GENERAL LEDGER) === */}
         <div className="premium-card xl:col-span-2">
           <div className="p-4 sm:p-5 border-b flex items-center justify-between" style={{ borderColor: "var(--glass-border)" }}>
             <div className="flex items-center gap-2">
-              <MdOutlinePayments size={18} style={{ color: "var(--accent)" }} />
-              <h3 className="font-semibold" style={{ color: "var(--text-primary)" }}>
-                {t("acctDashRecentPayments")}
-              </h3>
+              <MdReceiptLong size={18} style={{ color: "var(--accent)" }} />
+              <div>
+                <h3 className="font-semibold" style={{ color: "var(--text-primary)" }}>
+                  {t("accLedgerTitle")}
+                </h3>
+                <p className="text-xs text-secondary mt-0.5">{t("accLedgerSubtitle")}</p>
+              </div>
             </div>
             <button
-              onClick={() => navigate("/accountant/payments")}
-              className="text-xs font-semibold text-accent hover:underline inline-flex items-center gap-1"
+              onClick={() => navigate("/accountant/accounting")}
+              className="text-xs font-semibold text-accent hover:underline inline-flex items-center gap-1 shrink-0"
             >
               {t("rrViewReport")} <MdArrowForward size={14} />
             </button>
           </div>
 
           <div className="p-4 sm:p-5">
-            {recent.length === 0 ? (
+            {ledger.length === 0 ? (
               <div className="text-center py-10">
-                <MdOutlinePayments size={36} className="mx-auto text-secondary opacity-40" />
-                <p className="mt-3 text-sm text-secondary">{t("acctDashNoPayments")}</p>
+                <MdReceiptLong size={36} className="mx-auto text-secondary opacity-40" />
+                <p className="mt-3 text-sm text-secondary">{t("accNoLedgerEntries")}</p>
               </div>
             ) : (
               <div className="space-y-3">
-                {recent.map((p) => (
-                  <div
-                    key={p.id}
-                    className="info-row justify-between rounded-xl border p-3"
-                    style={{ borderColor: "var(--glass-border)" }}
-                  >
-                    <div className="min-w-0">
-                      <p className="font-medium text-sm truncate" style={{ color: "var(--text-primary)" }}>
-                        {p.bill_title}
-                      </p>
-                      <p className="text-xs text-secondary mt-0.5">
-                        {p.resident_name} • {t("flatShort") || "Flat"} {p.flat_number} • {formatDate(p.payment_date)}
-                      </p>
+                {ledger.map((r) => {
+                  const isCredit = r.type === "CREDIT";
+                  const openingRow = r.source === "OPENING" || r.opening;
+                  return (
+                    <div
+                      key={r.id ?? `${r.entry_date}-${r.description}`}
+                      className="info-row justify-between rounded-xl border p-3"
+                      style={{ borderColor: "var(--glass-border)" }}
+                    >
+                      <div className="min-w-0 flex items-center gap-3">
+                        <span
+                          className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-extrabold shrink-0 ${
+                            isCredit
+                              ? "bg-emerald-500/15 text-emerald-500 border border-emerald-500/30"
+                              : "bg-rose-500/15 text-rose-500 border border-rose-500/30"
+                          }`}
+                        >
+                          {isCredit ? <MdArrowUpward size={12} /> : <MdArrowDownward size={12} />}
+                          {isCredit ? t("accCreditShort") : t("accDebitShort")}
+                        </span>
+                        <div className="min-w-0">
+                          <p className="font-medium text-sm truncate" style={{ color: "var(--text-primary)" }} title={r.description}>
+                            {r.description || r.source || "—"}
+                          </p>
+                          <p className="text-xs text-secondary mt-0.5">
+                            {formatDate(r.entry_date)} • {r.source}
+                          </p>
+                        </div>
+                      </div>
+                      <span
+                        className={`font-semibold text-sm shrink-0 ${isCredit ? "text-emerald-500" : "text-rose-500"}`}
+                      >
+                        {openingRow ? formatCurrency(r.amount) : `${isCredit ? "+" : "−"}${formatCurrency(r.amount)}`}
+                      </span>
                     </div>
-                    <span className="font-semibold text-sm shrink-0" style={{ color: "var(--text-primary)" }}>
-                      {formatCurrency(p.amount)}
-                    </span>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>

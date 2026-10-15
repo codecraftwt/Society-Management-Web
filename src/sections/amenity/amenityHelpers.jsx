@@ -27,7 +27,7 @@ export const PALETTES = [
   { iconBg: "rgba(75,203,235,0.15)", iconBorder: "rgba(75,203,235,0.28)", strip: "#4bcbeb", stripEnd: "#1bcfb4", glow: "rgba(75,203,235,0.20)" },
   { iconBg: "rgba(16,185,129,0.15)", iconBorder: "rgba(16,185,129,0.28)", strip: "#34d399", stripEnd: "#059669", glow: "rgba(16,185,129,0.20)" },
   { iconBg: "rgba(160,90,255,0.15)", iconBorder: "rgba(160,90,255,0.28)", strip: "#4BCBEB", stripEnd: "var(--accent)", glow: "rgba(160,90,255,0.20)" },
-  { iconBg: "rgba(244,63,94,0.15)", iconBorder: "rgba(244,63,94,0.28)", strip: "#fb7185", stripEnd: "#be123c", glow: "rgba(244,63,94,0.20)" },
+  { iconBg: "rgba(99,102,241,0.15)", iconBorder: "rgba(99,102,241,0.28)", strip: "#818cf8", stripEnd: "#6366f1", glow: "rgba(99,102,241,0.20)" },
   { iconBg: "rgba(91,141,239,0.15)", iconBorder: "rgba(91,141,239,0.28)", strip: "#94B5F5", stripEnd: "#3E60A3", glow: "rgba(91,141,239,0.20)" },
 ];
 

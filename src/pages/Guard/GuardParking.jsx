@@ -696,25 +696,6 @@ export default function GuardParking() {
             </p>
           </div>
         </div>
-
-        <div className="flex items-center gap-2.5">
-          <button
-            onClick={() => setShowResidentModal(true)}
-            className="btn-primary text-xs shrink-0"
-          >
-            <MdAdd size={18} />
-            <span>{t("gpResEntryBtn", "Resident Vehicle Entry")}</span>
-          </button>
-
-          <button
-            onClick={handleRefresh}
-            disabled={refreshing}
-            className="btn-secondary flex items-center gap-1.5 text-xs font-bold px-3.5 py-2.5 rounded-xl transition-all cursor-pointer border-0 outline-none"
-          >
-            <MdRefresh size={18} className={refreshing ? "animate-spin text-accent" : ""} />
-            <span>{refreshing ? t("gpRefreshing", "Refreshing…") : t("gpRefresh", "Refresh")}</span>
-          </button>
-        </div>
       </div>
 
       {/* ── VIEW MODE SWITCHER ── */}
@@ -793,7 +774,7 @@ export default function GuardParking() {
 
       {/* ── SEARCH & FILTER TOOLBAR ── */}
       {!initialLoad && (
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-card/60 backdrop-blur-md p-2 rounded-2xl border border-glass-border shadow-xs">
+        <div className="ge-toolbar">
           <div className="overflow-x-auto max-w-full pb-1 sm:pb-0">
             <SlidingTabs
               value={activeTab}
@@ -805,11 +786,30 @@ export default function GuardParking() {
             />
           </div>
 
-          <ExpandableSearch
-            value={search}
-            onChange={setSearch}
-            placeholder={t("gpSearchPlaceholder", "Search guest, vehicle...")}
-          />
+          <div className="ge-er-right">
+            <button
+              onClick={() => setShowResidentModal(true)}
+              className="btn-primary text-xs shrink-0 flex items-center gap-1.5"
+            >
+              <MdAdd size={18} />
+              <span>{t("gpResEntryBtn", "Resident Vehicle Entry")}</span>
+            </button>
+
+            <button
+              onClick={handleRefresh}
+              disabled={refreshing}
+              className="btn-secondary flex items-center gap-1.5 text-xs font-bold px-3.5 py-2.5 rounded-xl transition-all cursor-pointer border-0 outline-none"
+            >
+              <MdRefresh size={18} className={refreshing ? "animate-spin text-accent" : ""} />
+              <span>{refreshing ? t("gpRefreshing", "Refreshing…") : t("gpRefresh", "Refresh")}</span>
+            </button>
+
+            <ExpandableSearch
+              value={search}
+              onChange={setSearch}
+              placeholder={t("gpSearchPlaceholder", "Search guest, vehicle...")}
+            />
+          </div>
         </div>
       )}
 

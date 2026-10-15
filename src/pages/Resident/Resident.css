@@ -623,7 +623,7 @@ html.role-theme .rph-hero {
     135deg,
     color-mix(in srgb, var(--accent) 18%, var(--card-inner-bg)) 0%,
     var(--card-bg) 44%,
-    color-mix(in srgb, #22d3ee 13%, var(--card-bg)) 100%
+    color-mix(in srgb, var(--secondary, #22d3ee) 13%, var(--card-bg)) 100%
   );
   box-shadow: 0 24px 60px -30px rgba(15, 23, 42, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.07);
 }
@@ -668,11 +668,11 @@ html.role-theme .rph-hero__aurora--b {
   left: -72px;
   width: 240px;
   height: 240px;
-  background: rgba(34, 211, 238, 0.18);
+  background: color-mix(in srgb, var(--secondary, #22d3ee) 18%, transparent);
   animation: rphFloat 14s ease-in-out infinite reverse;
 }
 html.light.role-theme .rph-hero__aurora--a { background: color-mix(in srgb, var(--accent) 20%, transparent); }
-html.light.role-theme .rph-hero__aurora--b { background: rgba(34, 211, 238, 0.16); }
+html.light.role-theme .rph-hero__aurora--b { background: color-mix(in srgb, var(--secondary, #22d3ee) 16%, transparent); }
 
 html.role-theme .rph-hero__grid {
   position: absolute;
@@ -732,7 +732,7 @@ html.role-theme .rph-avatar__ring {
   position: absolute;
   inset: 0;
   border-radius: 24px;
-  background: linear-gradient(135deg, var(--accent) 0%, #22d3ee 100%);
+  background: linear-gradient(135deg, var(--accent) 0%, var(--secondary, #22d3ee) 100%);
   box-shadow: 0 14px 28px -14px color-mix(in srgb, var(--accent) 90%, transparent);
 }
 html.role-theme .rph-avatar__initials {
@@ -845,12 +845,12 @@ html.role-theme .rph-meta__ic {
   color: #fff;
 }
 html.role-theme .rph-meta__ic--sky {
-  background: linear-gradient(135deg, #38bdf8, #2563eb);
-  box-shadow: 0 6px 14px -8px #2563eb;
+  background: linear-gradient(135deg, var(--accent-light, #38bdf8), var(--accent, #2563eb));
+  box-shadow: 0 6px 14px -8px color-mix(in srgb, var(--accent, #2563eb) 60%, transparent);
 }
 html.role-theme .rph-meta__ic--cyan {
-  background: linear-gradient(135deg, #22d3ee, #0891b2);
-  box-shadow: 0 6px 14px -8px #0891b2;
+  background: linear-gradient(135deg, var(--secondary, #22d3ee), color-mix(in srgb, var(--secondary, #0891b2) 80%, #000));
+  box-shadow: 0 6px 14px -8px color-mix(in srgb, var(--secondary, #0891b2) 60%, transparent);
 }
 html.role-theme .rph-meta-divider {
   width: 1px;
@@ -937,7 +937,7 @@ html.role-theme .rph-switch__pill:hover {
 }
 html.role-theme .rph-switch__pill.is-active {
   color: #fff;
-  background: linear-gradient(135deg, var(--accent), color-mix(in srgb, #22d3ee 55%, var(--accent)));
+  background: linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--secondary, #22d3ee) 55%, var(--accent)));
   border-color: color-mix(in srgb, var(--accent) 50%, transparent);
   box-shadow: 0 10px 20px -10px color-mix(in srgb, var(--accent) 95%, transparent);
 }
@@ -1043,7 +1043,7 @@ html.role-theme .rph-btn {
 html.role-theme .rph-btn:active { transform: scale(0.96); }
 html.role-theme .rph-btn--dues {
   color: #fff;
-  background: linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent) 60%, #05070f));
+  background: linear-gradient(135deg, var(--accent), var(--secondary, color-mix(in srgb, var(--accent) 60%, #05070f)));
   box-shadow: 0 12px 24px -12px color-mix(in srgb, var(--accent) 95%, transparent);
 }
 html.role-theme .rph-btn--dues:hover {
@@ -3534,4 +3534,59 @@ html.role-theme .ra-modern-book-btn {
 html.role-theme .ra-modern-book-btn:hover {
   opacity: 0.95;
   box-shadow: 0 6px 20px rgba(var(--acct-purple-rgb, 124, 58, 237), 0.38) !important;
+}
+
+/* --------------------------------------------------------------------------
+   Resident Complaints — Discuss Button & Drawer
+   -------------------------------------------------------------------------- */
+.rcr-discuss-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 6px 14px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  background: var(--card-inner-bg);
+  border: 1px solid var(--glass-border);
+  color: var(--text-secondary);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  user-select: none;
+  outline: none;
+}
+.rcr-discuss-btn:hover {
+  background: var(--accent-soft, rgba(160, 90, 255, 0.12));
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--glass-border));
+  color: var(--accent);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(var(--accent-rgb, 99, 102, 241), 0.15);
+}
+.rcr-discuss-btn:active {
+  transform: translateY(0);
+}
+.rcr-discuss-btn--has-unread {
+  background: var(--accent-soft, rgba(160, 90, 255, 0.15));
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 700;
+}
+.rcr-discuss-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 800;
+  background: var(--accent);
+  color: #ffffff;
+  box-shadow: 0 2px 6px rgba(var(--accent-rgb, 99, 102, 241), 0.35);
+  margin-left: 2px;
+  line-height: 1;
 }

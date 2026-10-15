@@ -230,7 +230,7 @@ function GuardLayoutInner() {
 
   return (
     <div
-      className="h-screen overflow-hidden bg-app flex"
+      className="guard-root h-screen overflow-hidden bg-app flex"
       style={{ color: "var(--text-primary)" }}
     >
       {/* ── REUSABLE SIDEBAR ── */}
@@ -252,7 +252,7 @@ function GuardLayoutInner() {
         <AppHeader
           title={null}
           subtitle={null}
-          onBack={location.pathname !== base ? () => navigate(base) : null}
+          showMenuButton={false}
           actions={
             <button
               onClick={() => setShowEmergency(true)}
@@ -276,6 +276,18 @@ function GuardLayoutInner() {
 
         {/* PAGE CONTENT */}
         <main className="flex-1 overflow-y-auto overflow-x-clip scrollbar-hide py-4 sm:py-6 lg:py-8 px-3 sm:px-4 lg:px-6">
+          {location.pathname !== base && (
+            <button
+              type="button"
+              onClick={() => navigate(base)}
+              className="guard-back-btn"
+              aria-label={t("back", "Back")}
+              title={t("back", "Back")}
+            >
+              <MdArrowBack size={17} />
+              <span>{t("back", "Back")}</span>
+            </button>
+          )}
           <Outlet />
         </main>
       </div>

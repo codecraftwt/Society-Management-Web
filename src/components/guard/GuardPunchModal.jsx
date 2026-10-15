@@ -1,5 +1,18 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import API from "../../services/api";
+
+const haversineMeters = (lat1, lon1, lat2, lon2) => {
+  if (lat1 == null || lon1 == null || lat2 == null || lon2 == null) return null;
+  const R = 6371e3;
+  const toRad = (deg) => (deg * Math.PI) / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return Math.round(R * c);
+};
 import { toast } from "react-toastify";
 import {
   MdClose,
@@ -37,6 +50,7 @@ export default function GuardPunchModal({
   const [capturedBlob, setCapturedBlob] = useState(null);
   const [capturedPreview, setCapturedPreview] = useState(null);
   const [location, setLocation] = useState(null);
+  const [geofence, setGeofence] = useState(null);
   const [locationLoading, setLocationLoading] = useState(false);
   const [locationError, setLocationError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -138,6 +152,13 @@ export default function GuardPunchModal({
       setErrorMessage("");
       setLocationError("");
       fetchLocation();
+      API.get("/guard-attendance/today")
+        .then((res) => {
+          if (res.data?.geofence) {
+            setGeofence(res.data.geofence);
+          }
+        })
+        .catch(() => {});
     } else {
       stopCamera();
     }
@@ -348,47 +369,115 @@ export default function GuardPunchModal({
             </div>
           )}
 
-          {/* Location Status Card */}
-          <div className="p-4 rounded-2xl bg-card-inner-bg border border-glass-border flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
+          {/* Location Status Card with Live Comparison */}
+          {(() => {
+            const distance =
+              location && geofence?.latitude && geofence?.longitude
+                ? haversineMeters(
+                    geofence.latitude,
+                    geofence.longitude,
+                    location.lat,
+                    location.lng
+                  )
+                : null;
+            const allowedRadius = geofence?.radius || 50;
+            const accuracyBuffer = Math.min(
+              Math.max(location?.accuracy ? location.accuracy * 0.75 : 15, 15),
+              100
+            );
+            const effectiveRadius = allowedRadius + accuracyBuffer;
+            const isWithin = distance != null ? distance <= effectiveRadius : null;
+
+            return (
               <div
-                className={`w-9 h-9 rounded-xl flex items-center justify-center ${
-                  location
-                    ? "bg-emerald-500/20 text-emerald-500"
-                    : locationError
-                    ? "bg-rose-500/20 text-rose-500"
-                    : "bg-blue-500/20 text-blue-500"
+                className={`p-4 rounded-2xl border transition-all ${
+                  isWithin === true
+                    ? "bg-emerald-500/10 border-emerald-500/30"
+                    : isWithin === false
+                    ? "bg-rose-500/10 border-rose-500/30"
+                    : "bg-card-inner-bg border-glass-border"
                 }`}
               >
-                <MdLocationOn size={20} className={locationLoading ? "animate-bounce" : ""} />
-              </div>
-              <div>
-                <p className="text-xs font-semibold text-primary">
-                  {locationLoading
-                    ? t("gdFetchingGps", "Locating your GPS position...")
-                    : location
-                    ? t("gdGpsAcquired", "GPS Location Acquired")
-                    : t("gdGpsMissing", "GPS Location Required")}
-                </p>
-                <p className="text-[11px] text-secondary">
-                  {location
-                    ? `Lat: ${location.lat.toFixed(5)}, Lng: ${location.lng.toFixed(5)}`
-                    : locationError || t("gdGpsAccuracyNote", "High-accuracy geolocation required")}
-                </p>
-              </div>
-            </div>
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <div
+                      className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
+                        isWithin === true
+                          ? "bg-emerald-500/20 text-emerald-500"
+                          : isWithin === false
+                          ? "bg-rose-500/20 text-rose-500"
+                          : location
+                          ? "bg-emerald-500/20 text-emerald-500"
+                          : locationError
+                          ? "bg-rose-500/20 text-rose-500"
+                          : "bg-blue-500/20 text-blue-500"
+                      }`}
+                    >
+                      <MdLocationOn size={20} className={locationLoading ? "animate-bounce" : ""} />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="text-xs font-semibold text-primary">
+                          {locationLoading
+                            ? t("gdFetchingGps", "Locating your GPS position...")
+                            : location
+                            ? t("gdGpsAcquired", "GPS Location Acquired")
+                            : t("gdGpsMissing", "GPS Location Required")}
+                        </p>
+                        {isWithin != null && (
+                          <span
+                            className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider ${
+                              isWithin
+                                ? "bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30"
+                                : "bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/30"
+                            }`}
+                          >
+                            {isWithin ? "✓ In Range" : "⚠ Out of Range"}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[11px] text-secondary mt-0.5">
+                        {location
+                          ? `Lat: ${location.lat.toFixed(5)}, Lng: ${location.lng.toFixed(5)}${
+                              location.accuracy != null ? ` (±${Math.round(location.accuracy)}m)` : ""
+                            }`
+                          : locationError || t("gdGpsAccuracyNote", "High-accuracy geolocation required")}
+                      </p>
+                    </div>
+                  </div>
 
-            <button
-              type="button"
-              onClick={fetchLocation}
-              disabled={locationLoading}
-              className="px-3 py-1.5 text-xs font-semibold rounded-xl bg-card border border-glass-border text-secondary hover:text-primary transition flex items-center gap-1.5 shrink-0 hover:scale-105 active:scale-95"
-              title={t("gdRetryGps", "Refresh GPS")}
-            >
-              <MdRefresh size={14} className={locationLoading ? "animate-spin" : ""} />
-              <span>{t("gdRetry", "Retry")}</span>
-            </button>
-          </div>
+                  <button
+                    type="button"
+                    onClick={fetchLocation}
+                    disabled={locationLoading}
+                    className="px-3 py-1.5 text-xs font-semibold rounded-xl bg-card border border-glass-border text-secondary hover:text-primary transition flex items-center gap-1.5 shrink-0 hover:scale-105 active:scale-95"
+                    title={t("gdRetryGps", "Refresh GPS")}
+                  >
+                    <MdRefresh size={14} className={locationLoading ? "animate-spin" : ""} />
+                    <span>{t("gdRetry", "Retry")}</span>
+                  </button>
+                </div>
+
+                {/* Distance vs Allowed Comparison Banner */}
+                {distance != null && geofence && (
+                  <div
+                    className={`mt-2.5 pt-2.5 border-t flex items-center gap-2 text-xs font-semibold ${
+                      isWithin
+                        ? "border-emerald-500/20 text-emerald-600 dark:text-emerald-400"
+                        : "border-rose-500/20 text-rose-600 dark:text-rose-400"
+                    }`}
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full bg-current" />
+                    <span>
+                      {isWithin
+                        ? `Distance: ${distance}m away (Allowed within ${allowedRadius}m radius)`
+                        : `Distance: ${distance}m away (Allowed within ${allowedRadius}m radius). Please move closer.`}
+                    </span>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
 
           {/* Punch-In Camera / Upload Section */}
           {isPunchIn && (

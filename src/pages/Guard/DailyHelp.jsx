@@ -207,15 +207,6 @@ export default function DailyHelp() {
             </p>
           </div>
         </div>
-
-        <button
-          onClick={() => fetchDirectory(true)}
-          disabled={refreshing}
-          className="btn-secondary flex items-center gap-1.5 text-xs font-bold px-3.5 py-2"
-        >
-          <MdRefresh size={18} className={refreshing ? "animate-spin text-accent" : ""} />
-          <span>{refreshing ? t("dhRefreshing", "Refreshing...") : t("dhRefresh", "Refresh")}</span>
-        </button>
       </div>
 
       {/* ── KPI STAT CARDS ── */}
@@ -265,11 +256,22 @@ export default function DailyHelp() {
           />
         </div>
 
-        <ExpandableSearch
-          value={search}
-          onChange={setSearch}
-          placeholder={t("dhSearchPlaceholder", "Search helper by name, phone, maid, cook, flat...")}
-        />
+        <div className="ge-er-right">
+          <button
+            onClick={() => fetchDirectory(true)}
+            disabled={refreshing}
+            className="btn-secondary flex items-center gap-1.5 text-xs font-bold px-3.5 py-2"
+          >
+            <MdRefresh size={18} className={refreshing ? "animate-spin text-accent" : ""} />
+            <span>{refreshing ? t("dhRefreshing", "Refreshing...") : t("dhRefresh", "Refresh")}</span>
+          </button>
+
+          <ExpandableSearch
+            value={search}
+            onChange={setSearch}
+            placeholder={t("dhSearchPlaceholder", "Search helper by name, phone, maid, cook, flat...")}
+          />
+        </div>
       </div>
 
       {/* ── DESKTOP TABLE ── */}
