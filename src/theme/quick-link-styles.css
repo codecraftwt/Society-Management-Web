@@ -141,6 +141,10 @@ html.quick-link-style-default .quick-link:not([class*="quick-link-style-"]) {
   background: var(--card-bg, #1a1d26) !important;
   border: 1.5px solid color-mix(in srgb, var(--ql-color) 35%, var(--glass-border)) !important;
 }
+.quick-link.quick-link-style-default .quick-link__blob,
+html.quick-link-style-default .quick-link:not([class*="quick-link-style-"]) .quick-link__blob {
+  display: none !important;
+}
 .quick-link.quick-link-style-default:hover,
 html.quick-link-style-default .quick-link:not([class*="quick-link-style-"]):hover {
   transform: translateY(-4px) !important;
@@ -195,7 +199,7 @@ html.light.quick-link-style-solid .quick-link:not([class*="quick-link-style-"]) 
 }
 .quick-link.quick-link-style-solid .quick-link__blob,
 html.quick-link-style-solid .quick-link:not([class*="quick-link-style-"]) .quick-link__blob {
-  background: rgba(255, 255, 255, 0.18) !important;
+  display: none !important;
 }
 .quick-link.quick-link-style-solid:hover,
 html.quick-link-style-solid .quick-link:not([class*="quick-link-style-"]):hover {
@@ -215,15 +219,21 @@ html.light.quick-link-style-solid .quick-link:not([class*="quick-link-style-"]) 
 html.quick-link-style-glass .quick-link:not([class*="quick-link-style-"]),
 html.quick-link-style-glass-tile .quick-link:not([class*="quick-link-style-"]) {
   background: radial-gradient(
-      circle at 85% 15%,
-      color-mix(in srgb, var(--ql-color) 20%, transparent) 0%,
+      100% 100% at 85% 15%,
+      color-mix(in srgb, var(--ql-color) 16%, transparent) 0%,
       transparent 65%
     ),
-    rgba(22, 25, 34, 0.78) !important;
-  backdrop-filter: blur(18px) !important;
-  -webkit-backdrop-filter: blur(18px) !important;
-  border: 1.5px solid color-mix(in srgb, var(--ql-color) 45%, var(--glass-border)) !important;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.16) !important;
+    rgba(22, 26, 36, 0.76) !important;
+  backdrop-filter: blur(20px) saturate(160%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(160%) !important;
+  border: 1.5px solid color-mix(in srgb, var(--ql-color) 42%, rgba(255, 255, 255, 0.18)) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.22) !important;
+}
+.quick-link.quick-link-style-glass .quick-link__blob,
+.quick-link.quick-link-style-glass-tile .quick-link__blob,
+html.quick-link-style-glass .quick-link:not([class*="quick-link-style-"]) .quick-link__blob,
+html.quick-link-style-glass-tile .quick-link:not([class*="quick-link-style-"]) .quick-link__blob {
+  display: none !important;
 }
 .quick-link.quick-link-style-glass:hover,
 .quick-link.quick-link-style-glass-tile:hover,
@@ -367,6 +377,12 @@ html.quick-link-style-gradient-mesh .quick-link:not([class*="quick-link-style-"]
   border: 1.5px solid color-mix(in srgb, var(--ql-color) 45%, var(--glass-border)) !important;
   box-shadow: 0 8px 24px color-mix(in srgb, var(--ql-color) 20%, transparent) !important;
 }
+.quick-link.quick-link-style-gradient .quick-link__blob,
+.quick-link.quick-link-style-gradient-mesh .quick-link__blob,
+html.quick-link-style-gradient .quick-link:not([class*="quick-link-style-"]) .quick-link__blob,
+html.quick-link-style-gradient-mesh .quick-link:not([class*="quick-link-style-"]) .quick-link__blob {
+  display: none !important;
+}
 .quick-link.quick-link-style-gradient:hover,
 .quick-link.quick-link-style-gradient-mesh:hover,
 html.quick-link-style-gradient .quick-link:not([class*="quick-link-style-"]):hover,
@@ -404,6 +420,12 @@ html.quick-link-style-soft-neumorphic .quick-link:not([class*="quick-link-style-
     inset -2px -2px 5px rgba(0, 0, 0, 0.5),
     0 8px 24px rgba(0, 0, 0, 0.3) !important;
   border-radius: 18px !important;
+}
+.quick-link.quick-link-style-neumorphic .quick-link__blob,
+.quick-link.quick-link-style-soft-neumorphic .quick-link__blob,
+html.quick-link-style-neumorphic .quick-link:not([class*="quick-link-style-"]) .quick-link__blob,
+html.quick-link-style-soft-neumorphic .quick-link:not([class*="quick-link-style-"]) .quick-link__blob {
+  display: none !important;
 }
 .quick-link.quick-link-style-neumorphic:hover,
 .quick-link.quick-link-style-soft-neumorphic:hover,
@@ -463,6 +485,12 @@ html.quick-link-style-minimal-tile .quick-link:not([class*="quick-link-style-"])
   background: rgba(255, 255, 255, 0.035) !important;
   border: 1px solid color-mix(in srgb, var(--ql-color) 25%, rgba(255, 255, 255, 0.09)) !important;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+}
+.quick-link.quick-link-style-minimal .quick-link__blob,
+.quick-link.quick-link-style-minimal-tile .quick-link__blob,
+html.quick-link-style-minimal .quick-link:not([class*="quick-link-style-"]) .quick-link__blob,
+html.quick-link-style-minimal-tile .quick-link:not([class*="quick-link-style-"]) .quick-link__blob {
+  display: none !important;
 }
 .quick-link.quick-link-style-minimal:hover,
 .quick-link.quick-link-style-minimal-tile:hover,

@@ -5707,8 +5707,54 @@ html.light div[style*="position: fixed"]:not(.media-lightbox-overlay) > div[styl
   padding-top: 10px;
   margin-top: 4px;
 }
-.ps-card-actions > button {
-  min-width: 0;
+.ps-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--glass-border, rgba(255, 255, 255, 0.08));
+}
+.ps-card-btn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+.ps-card-btn--allocate {
+  background: rgba(16, 185, 129, 0.15);
+  color: #10B981;
+  border-color: rgba(16, 185, 129, 0.35);
+}
+.ps-card-btn--allocate:hover {
+  background: #10B981;
+  color: #FFFFFF;
+}
+.ps-card-btn--edit {
+  background: rgba(59, 130, 246, 0.12);
+  color: #60A5FA;
+  border-color: rgba(59, 130, 246, 0.30);
+}
+.ps-card-btn--edit:hover {
+  background: #2563EB;
+  color: #FFFFFF;
+}
+.ps-card-btn--release {
+  background: rgba(239, 68, 68, 0.12);
+  color: #F87171;
+  border-color: rgba(239, 68, 68, 0.30);
+}
+.ps-card-btn--release:hover {
+  background: #EF4444;
+  color: #FFFFFF;
 }
 .ps-tag-pill {
   font-size: 0.6875rem;

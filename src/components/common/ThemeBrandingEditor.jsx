@@ -658,7 +658,7 @@ export default function ThemeBrandingEditor({
                     badge: "Frosted Glass",
                     badgeBg: "bg-emerald-500/10 text-emerald-400 border-emerald-500/30",
                     label: "Security",
-                    value: "24 On-Duty",
+                    value: "24 Guards",
                     icon: FaShieldAlt,
                     tone: "success",
                     accentHex: "#10B981",

@@ -365,127 +365,128 @@ export default function GuardDashboard() {
     }
   };
 
-  /* ── Quick Action Tiles Config (Distinct Card Colors) ── */
-  const quickActions = [
-    {
-      id: "guest",
-      title: t("gdActionGuest", "Guest Entry"),
-      desc: t("gdActionGuestDesc", "Friends, family & personal visits"),
-      icon: FaUserFriends,
-      path: "/guard/guest-entry",
-      color: "#2563EB",
-      bg: "rgba(37, 99, 235, 0.15)",
-      badge: "Quick",
-      badgeColor: "bg-blue-600 text-white",
-      cardClass: "gd-action--guest",
-    },
-    {
-      id: "cab",
-      title: t("gdActionCab", "Cab Entry"),
-      desc: t("gdActionCabDesc", "Uber, Ola, BluSmart & taxi"),
-      icon: MdLocalTaxi,
-      path: "/guard/cab-entry",
-      color: "#D97706",
-      bg: "rgba(217, 119, 6, 0.15)",
-      badgeColor: "bg-amber-600 text-white",
-      cardClass: "gd-action--cab",
-    },
-    {
-      id: "delivery",
-      title: t("gdActionDelivery", "Delivery Entry"),
-      desc: t("gdActionDeliveryDesc", "Zomato, Swiggy, Amazon & parcel"),
-      icon: FaTruck,
-      path: "/guard/delivery-entry",
-      color: "#0891B2",
-      bg: "rgba(8, 145, 178, 0.15)",
-      badgeColor: "bg-cyan-600 text-white",
-      cardClass: "gd-action--delivery",
-    },
-    {
-      id: "service",
-      title: t("gdActionService", "Service Entry"),
-      desc: t("gdActionServiceDesc", "Plumber, electrician, repairs & maids"),
-      icon: FaTools,
-      path: "/guard/service-entry",
-      color: "#8B5CF6",
-      bg: "rgba(139, 92, 246, 0.15)",
-      badgeColor: "bg-purple-600 text-white",
-      cardClass: "gd-action--service",
-    },
-    {
-      id: "dailyhelp",
-      title: t("gdActionDailyHelp", "Daily Help"),
-      desc: t("gdActionDailyHelpDesc", "Maids, cooks, drivers & helpers"),
-      icon: FaHandshake,
-      path: "/guard/daily-help",
-      color: "#0D9488",
-      bg: "rgba(13, 148, 136, 0.15)",
-      badgeColor: "bg-teal-600 text-white",
-      cardClass: "gd-action--dailyhelp",
-    },
+  /* ── Quick Explore Links (5 Links: Shift Log Book, Collection, Visitor Log, Parking, Emergency History) ── */
+  const quickExploreLinks = [
     {
       id: "logbook",
       title: t("gdActionLogbook", "Shift Log Book"),
-      desc: t("gdActionLogbookDesc", "Handover notes & gate records"),
+      desc: t("gdActionLogbookDesc", "Handover notes & duty records"),
       icon: MdHistoryEdu,
       path: "/guard/shift-logbook",
       color: "#6366F1",
       bg: "rgba(99, 102, 241, 0.15)",
       badgeColor: "bg-indigo-600 text-white",
-      cardClass: "gd-action--logbook",
-    },
-    {
-      id: "gatepass",
-      title: t("gdActionGatepass", "GatePass Verify"),
-      desc: t("gdActionGatepassDesc", "Verify QR or resident pass code"),
-      icon: MdVerified,
-      path: "/guard/gatepass",
-      color: "#16A34A",
-      bg: "rgba(22, 163, 74, 0.15)",
-      badge: "Fast Pass",
-      badgeColor: "bg-emerald-600 text-white",
-      cardClass: "gd-action--gatepass",
-    },
-    {
-      id: "parking",
-      title: t("gdActionParking", "Parking Check"),
-      desc: t("gdActionParkingDesc", "Check visitor slots & plates"),
-      icon: FaParking,
-      path: "/guard/parking",
-      color: "#9333EA",
-      bg: "rgba(147, 51, 234, 0.15)",
-      badgeColor: "bg-purple-600 text-white",
-      cardClass: "gd-action--parking",
     },
     {
       id: "collection",
-      title: t("gdActionCollection", "Parcel & Courier"),
-      desc: t("gdActionCollectionDesc", "Track resident parcel drop-offs"),
+      title: t("gdActionCollection", "Collection"),
+      desc: t("gdActionCollectionDesc", "Parcel & courier drop-offs"),
       icon: MdOutlineCardGiftcard,
       path: "/guard/collection",
       color: "#DB2777",
       bg: "rgba(219, 39, 119, 0.15)",
       badgeColor: "bg-pink-600 text-white",
-      cardClass: "gd-action--collection",
     },
     {
-      id: "emergency",
-      title: t("gdActionEmergency", "Guard SOS Alert"),
-      desc: t("gdActionEmergencyDesc", "Broadcast emergency gate alert"),
+      id: "visitorlogs",
+      title: t("gdActionVisitorLogs", "Visitor Log"),
+      desc: t("gdActionVisitorLogsDesc", "Detailed visitor entry & exit logs"),
+      icon: FaUserFriends,
+      path: "/guard/visitorlogs",
+      color: "#0284C7",
+      bg: "rgba(2, 132, 199, 0.15)",
+      badgeColor: "bg-sky-600 text-white",
+    },
+    {
+      id: "parking",
+      title: t("gdActionParking", "Parking"),
+      desc: t("gdActionParkingDesc", "Visitor slots & vehicle plates"),
+      icon: FaParking,
+      path: "/guard/parking",
+      color: "#9333EA",
+      bg: "rgba(147, 51, 234, 0.15)",
+      badgeColor: "bg-purple-600 text-white",
+    },
+    {
+      id: "emergency-history",
+      title: t("gdActionEmergencyHistory", "Emergency History"),
+      desc: t("gdActionEmergencyHistoryDesc", "Past security incidents & SOS logs"),
       icon: MdWarning,
-      onClick: () => setShowEmergencyModal(true),
+      path: "/guard/emergency-history",
       color: "#DC2626",
       bg: "rgba(220, 38, 38, 0.15)",
-      badge: "SOS",
-      badgeColor: "bg-red-600 text-white animate-pulse",
-      cardClass: "gd-action--emergency",
+      badgeColor: "bg-red-600 text-white",
     },
   ];
 
-  const GATE_PRIMARY_IDS = ["guest", "cab", "delivery", "gatepass", "emergency"];
-  const gateQuickActions = GATE_PRIMARY_IDS.map((id) =>
-    quickActions.find((a) => a.id === id)
-  ).filter(Boolean);
+  /* ── Gate Entry Management (5 Categories: Production Enterprise System) ── */
+  const gateEntryCards = [
+    {
+      id: "guest",
+      title: t("gdActionGuest", "Guest Entry"),
+      subtitle: t("gdActionGuestDesc", "Friends, family & personal visitors"),
+      pill: t("gdPillVisitor", "Visitor"),
+      icon: FaUserFriends,
+      path: "/guard/guest-entry",
+      accentColor: "#6366F1", // Indigo
+      accentBg: "bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 border-indigo-200/60 dark:border-indigo-800/40",
+      pillClass: "bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border-indigo-500/20",
+      topBarClass: "bg-indigo-500",
+      hoverBorder: "hover:border-indigo-500/40 dark:hover:border-indigo-400/40",
+    },
+    {
+      id: "cab",
+      title: t("gdActionCab", "Cab Entry"),
+      subtitle: t("gdActionCabDesc", "Uber, Ola, BluSmart, taxis & autos"),
+      pill: t("gdPillTaxi", "Taxi / Auto"),
+      icon: MdLocalTaxi,
+      path: "/guard/cab-entry",
+      accentColor: "#D97706", // Amber
+      accentBg: "bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border-amber-200/60 dark:border-amber-800/40",
+      pillClass: "bg-amber-500/10 text-amber-800 dark:text-amber-300 border-amber-500/20",
+      topBarClass: "bg-amber-500",
+      hoverBorder: "hover:border-amber-500/40 dark:hover:border-amber-400/40",
+    },
+    {
+      id: "delivery",
+      title: t("gdActionDelivery", "Delivery Entry"),
+      subtitle: t("gdActionDeliveryDesc", "Zomato, Swiggy, Amazon & couriers"),
+      pill: t("gdPillCourier", "Courier"),
+      icon: FaTruck,
+      path: "/guard/delivery-entry",
+      accentColor: "#0284C7", // Sky blue
+      accentBg: "bg-sky-50 dark:bg-sky-950/40 text-sky-600 dark:text-sky-400 border-sky-200/60 dark:border-sky-800/40",
+      pillClass: "bg-sky-500/10 text-sky-800 dark:text-sky-300 border-sky-500/20",
+      topBarClass: "bg-sky-500",
+      hoverBorder: "hover:border-sky-500/40 dark:hover:border-sky-400/40",
+    },
+    {
+      id: "service",
+      title: t("gdActionService", "Service Entry"),
+      subtitle: t("gdActionServiceDesc", "Plumbers, electricians & repair staff"),
+      pill: t("gdPillTechnician", "Technician"),
+      icon: FaTools,
+      path: "/guard/service-entry",
+      accentColor: "#9333EA", // Purple
+      accentBg: "bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400 border-purple-200/60 dark:border-purple-800/40",
+      pillClass: "bg-purple-500/10 text-purple-800 dark:text-purple-300 border-purple-500/20",
+      topBarClass: "bg-purple-500",
+      hoverBorder: "hover:border-purple-500/40 dark:hover:border-purple-400/40",
+    },
+    {
+      id: "dailyhelp",
+      title: t("gdActionDailyHelp", "Daily Help"),
+      subtitle: t("gdActionDailyHelpDesc", "Maids, cooks, drivers & regular staff"),
+      pill: t("gdPillStaff", "Staff"),
+      icon: FaHandshake,
+      path: "/guard/daily-help",
+      accentColor: "#059669", // Emerald
+      accentBg: "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border-emerald-200/60 dark:border-emerald-800/40",
+      pillClass: "bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 border-emerald-500/20",
+      topBarClass: "bg-emerald-500",
+      hoverBorder: "hover:border-emerald-500/40 dark:hover:border-emerald-400/40",
+    },
+  ];
 
   return (
     <div className="dash-kpi-scope space-y-6 w-full min-w-0 max-w-400 mx-auto pb-8 animate-fadeIn">
@@ -811,135 +812,217 @@ export default function GuardDashboard() {
       </div>
 
       {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-          5. QUICK GATE OPERATIONS HUB (DISTINCT COLOR CARDS)
+          6. 50/50 SPLIT: GATE ENTRY MANAGEMENT (50%) & LIVE GATE VISITORS STREAM (50%)
           ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
-      <div className="gd-glass-card rounded-2xl p-6 shadow-sm">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <MdDashboard size={20} className="text-accent" />
-            <div>
-              <h2 className="text-base font-bold text-primary">
-                {t("gdQuickActions", "Quick Gate Operations")}
-              </h2>
-              <p className="text-xs text-secondary">
-                {t("gdQuickActionsSub", "1-Click gate entry & logging tools")}
-              </p>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+        {/* ─── Column 1 (50%): Gate Entry Management (Mobile App-Styled Cards, No Popups) ─── */}
+        <div className="gd-glass-card rounded-2xl p-5 sm:p-6 shadow-sm flex flex-col justify-between">
+          <div>
+            {/* ── Section Header ── */}
+            <div className="flex items-center justify-between gap-3 pb-3.5 mb-4 border-b border-divider">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-10 h-10 rounded-xl bg-accent/10 text-accent flex items-center justify-center shrink-0 border border-accent/20 shadow-xs">
+                  <MdLogin size={20} />
+                </div>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-base font-bold text-primary tracking-tight truncate">
+                      {t("gdGateEntryManagement", "Gate Entry Management")}
+                    </h2>
+                    <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-accent/10 text-accent border border-accent/20">
+                      5 Categories
+                    </span>
+                  </div>
+                  <p className="text-xs text-secondary truncate mt-0.5">
+                    {t("gdGateEntryManagementSub", "Select a visitor category to authorize entry.")}
+                  </p>
+                </div>
+              </div>
+
+              <span className="sm:hidden px-2 py-0.5 rounded-full text-[10px] font-semibold bg-accent/10 text-accent border border-accent/20 shrink-0">
+                5 Categories
+              </span>
+            </div>
+
+            {/* ── Responsive Category Cards: Desktop (3 in Row 1, 2 in Row 2), Tablet (2 cols), Mobile (1 col) ── */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3 sm:gap-3.5 my-1">
+              {/* Row 1: 3 Cards (Guest, Cab, Delivery) */}
+              {gateEntryCards.slice(0, 3).map((card) => {
+                const Icon = card.icon;
+                return (
+                  <button
+                    key={card.id}
+                    type="button"
+                    onClick={() => handleProtectedAction(() => navigate(card.path))}
+                    className={`col-span-1 sm:col-span-1 lg:col-span-2 relative overflow-hidden rounded-xl p-4 border border-divider/80 ${card.hoverBorder} bg-card hover:bg-card-hover/90 text-left transition-all duration-200 ease-out flex flex-col justify-between group cursor-pointer shadow-xs hover:shadow-md hover:-translate-y-0.5 active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 motion-reduce:transition-none motion-reduce:transform-none min-h-[148px]`}
+                  >
+                    {/* Top Accent Line */}
+                    <div
+                      className={`absolute top-0 left-0 right-0 h-[2.5px] ${card.topBarClass} opacity-80 group-hover:opacity-100 transition-opacity duration-200`}
+                    />
+
+                    {/* Top Row: Icon + Badge & Action Affordance */}
+                    <div className="flex items-center justify-between gap-2 w-full mb-3">
+                      <div
+                        className={`w-10 h-10 rounded-xl ${card.accentBg} flex items-center justify-center shrink-0 border shadow-xs group-hover:scale-105 transition-transform duration-200`}
+                      >
+                        <Icon size={19} />
+                      </div>
+
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <span
+                          className={`px-2 py-0.5 rounded-full text-[10px] font-semibold tracking-wide border ${card.pillClass}`}
+                        >
+                          {card.pill}
+                        </span>
+                        <div className="w-6 h-6 rounded-lg flex items-center justify-center text-secondary/50 group-hover:text-primary group-hover:translate-x-0.5 transition-all duration-200">
+                          <MdChevronRight size={17} />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Content: Title & Description */}
+                    <div>
+                      <h3 className="text-sm font-semibold text-primary group-hover:text-primary transition-colors tracking-tight leading-snug">
+                        {card.title}
+                      </h3>
+                      <p className="text-xs text-secondary mt-1 leading-relaxed line-clamp-2">
+                        {card.subtitle}
+                      </p>
+                    </div>
+                  </button>
+                );
+              })}
+
+              {/* Row 2: 2 Cards (Service, Daily Help) */}
+              {gateEntryCards.slice(3, 5).map((card, idx) => {
+                const Icon = card.icon;
+                return (
+                  <button
+                    key={card.id}
+                    type="button"
+                    onClick={() => handleProtectedAction(() => navigate(card.path))}
+                    className={`col-span-1 ${idx === 1 ? "sm:col-span-2" : "sm:col-span-1"} lg:col-span-3 relative overflow-hidden rounded-xl p-4 border border-divider/80 ${card.hoverBorder} bg-card hover:bg-card-hover/90 text-left transition-all duration-200 ease-out flex flex-col justify-between group cursor-pointer shadow-xs hover:shadow-md hover:-translate-y-0.5 active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 motion-reduce:transition-none motion-reduce:transform-none min-h-[148px]`}
+                  >
+                    {/* Top Accent Line */}
+                    <div
+                      className={`absolute top-0 left-0 right-0 h-[2.5px] ${card.topBarClass} opacity-80 group-hover:opacity-100 transition-opacity duration-200`}
+                    />
+
+                    {/* Top Row: Icon + Badge & Action Affordance */}
+                    <div className="flex items-center justify-between gap-2 w-full mb-3">
+                      <div
+                        className={`w-10 h-10 rounded-xl ${card.accentBg} flex items-center justify-center shrink-0 border shadow-xs group-hover:scale-105 transition-transform duration-200`}
+                      >
+                        <Icon size={19} />
+                      </div>
+
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <span
+                          className={`px-2 py-0.5 rounded-full text-[10px] font-semibold tracking-wide border ${card.pillClass}`}
+                        >
+                          {card.pill}
+                        </span>
+                        <div className="w-6 h-6 rounded-lg flex items-center justify-center text-secondary/50 group-hover:text-primary group-hover:translate-x-0.5 transition-all duration-200">
+                          <MdChevronRight size={17} />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Content: Title & Description */}
+                    <div>
+                      <h3 className="text-sm font-semibold text-primary group-hover:text-primary transition-colors tracking-tight leading-snug">
+                        {card.title}
+                      </h3>
+                      <p className="text-xs text-secondary mt-1 leading-relaxed line-clamp-2">
+                        {card.subtitle}
+                      </p>
+                    </div>
+                  </button>
+                );
+              })}
             </div>
           </div>
-        </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
-          {gateQuickActions.map((action, idx) => (
-            <QuickLink
-              key={action.id}
-              title={action.title}
-              desc={action.desc}
-              icon={action.icon}
-              badge={action.badge}
-              badgeColor={action.badgeColor}
-              color={action.color}
-              bg={action.bg}
-              path={action.path}
-              onClick={() => {
-                handleProtectedAction(() => {
-                  if (action.onClick) action.onClick();
-                  else if (action.path) navigate(action.path);
-                });
-              }}
-              style={{ animationDelay: `${idx * 60}ms` }}
-            />
-          ))}
-        </div>
-      </div>
-
-      {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-          6. LIVE GATE ACTIVITY STREAM & VISITORS LOG
-          ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
-      <div className="gd-glass-card rounded-2xl p-6 shadow-sm">
-        {/* Header & Controls */}
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 pb-4 border-b border-divider">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="gd-live-badge shrink-0">
-              <span className="gd-live-dot" />
-              LIVE
-            </div>
-            <div className="min-w-0">
-              <h2 className="text-base font-bold text-primary flex items-center gap-2">
-                {t("gdGateStream", "Live Gate Visitors Stream")}
-              </h2>
-              <p className="text-xs text-secondary mt-0.5">
-                {stats.inside === 1
-                  ? t("gdAutoRefreshOne", { count: stats.inside }, "Auto-refresh every 15s · {count} visitor inside now")
-                  : t("gdAutoRefreshMany", { count: stats.inside }, "Auto-refresh every 15s · {count} visitors inside now")}
-              </p>
-            </div>
-          </div>
-
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-            {/* Filter Tabs */}
-            <div className="flex items-center p-1 rounded-xl bg-card-inner-bg border border-glass-border self-start sm:self-auto">
-              <button
-                onClick={() => setActiveTab("INSIDE")}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 ${
-                  activeTab === "INSIDE"
-                    ? "bg-card text-accent shadow-sm"
-                    : "text-secondary hover:text-primary"
-                }`}
-              >
-                <span>{t("gdTabInside", "Inside Now")}</span>
-                <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-bold">
-                  {stats.inside}
-                </span>
-              </button>
-
-              <button
-                onClick={() => setActiveTab("OVERSTAY")}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 ${
-                  activeTab === "OVERSTAY"
-                    ? "bg-card text-amber-500 shadow-sm"
-                    : "text-secondary hover:text-primary"
-                }`}
-              >
-                <span>{t("gdTabOverstay", "Overstaying")}</span>
-                {overstayingVisitors.length > 0 && (
-                  <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-amber-500 text-white font-bold animate-pulse">
-                    {overstayingVisitors.length}
-                  </span>
-                )}
-              </button>
-
-              <button
-                onClick={() => setActiveTab("ALL")}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 ${
-                  activeTab === "ALL"
-                    ? "bg-card text-accent shadow-sm"
-                    : "text-secondary hover:text-primary"
-                }`}
-              >
-                <span>{t("gdTabAll", "All Today")}</span>
-                <span className="text-[10px] text-secondary font-semibold">({stats.today})</span>
-              </button>
-            </div>
-
-            {/* Refresh Button */}
+          {/* ── Section Footer: Security Note & View Logs ── */}
+          <div className="mt-4 pt-3.5 border-t border-divider flex items-center justify-between gap-3 text-xs text-secondary">
+            <span className="flex items-center gap-1.5 min-w-0 text-secondary">
+              <MdShield size={14} className="text-accent shrink-0" />
+              <span className="truncate">{t("gdSecureLogging", "Real-time entry timestamps & flat verification")}</span>
+            </span>
             <button
               type="button"
-              onClick={() => loadDashboardData(true)}
-              disabled={loading}
-              title={t("gdRefreshLive", "Refresh live data")}
-              className="p-2 sm:px-3 sm:py-1.5 rounded-xl bg-card-inner-bg hover:bg-card border border-glass-border transition flex items-center gap-1.5 shadow-sm hover:scale-105 active:scale-95 disabled:opacity-60"
+              className="text-xs font-semibold text-accent hover:text-accent-hover hover:underline shrink-0 flex items-center gap-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent rounded transition-colors"
+              onClick={() => navigate("/guard/visitorlogs")}
+              aria-label={t("gdViewAllLogs", "View Logs")}
             >
-              <MdRefresh size={16} className={`text-accent ${loading ? "animate-spin" : ""}`} />
-              <span className="text-xs font-semibold text-secondary hidden sm:inline">{t("gdRefresh", "Refresh")}</span>
+              <span>{t("gdViewAllLogs", "View Logs")}</span>
+              <span aria-hidden="true">→</span>
             </button>
+          </div>
+        </div>
 
-            {/* Search Input Toggle */}
-            {isSearchOpen ? (
-              <div className="relative flex items-center min-w-60 sm:w-72 max-w-full animate-fadeIn">
-                <MdSearch
-                  size={18}
-                  className="absolute left-3.5 top-1/2 -translate-y-1/2 text-accent pointer-events-none z-10"
-                />
+        {/* ─── Column 2 (50%): Live Gate Activity Stream & Visitors Log ─── */}
+        <div className="gd-glass-card rounded-2xl p-5 sm:p-6 shadow-sm flex flex-col justify-between">
+          <div>
+            {/* Header (Title on left, Refresh + Search triggers on right) */}
+            <div className="flex items-center justify-between gap-3 pb-3 border-b border-divider">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="gd-live-badge shrink-0">
+                  <span className="gd-live-dot" />
+                  LIVE
+                </div>
+                <div className="min-w-0">
+                  <h2 className="text-base font-bold text-primary truncate">
+                    {t("gdGateStream", "Live Gate Visitors Stream")}
+                  </h2>
+                  <p className="text-xs text-secondary truncate">
+                    {stats.inside === 1
+                      ? t("gdAutoRefreshOne", { count: stats.inside }, "Auto-refresh · 1 inside now")
+                      : t("gdAutoRefreshMany", { count: stats.inside }, `Auto-refresh · ${stats.inside} inside now`)}
+                  </p>
+                </div>
+              </div>
+
+              {/* Header Actions: Search & Refresh */}
+              <div className="flex items-center gap-1.5 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsSearchOpen(!isSearchOpen);
+                    if (!isSearchOpen) {
+                      setTimeout(() => searchInputRef.current?.focus(), 50);
+                    } else {
+                      setSearchQuery("");
+                    }
+                  }}
+                  className={`p-2 rounded-xl border transition flex items-center gap-1 shadow-sm ${
+                    isSearchOpen || searchQuery
+                      ? "bg-accent/15 border-accent text-accent"
+                      : "bg-card-inner-bg hover:bg-card border-glass-border text-secondary hover:text-primary"
+                  }`}
+                  title={t("gdSearchLive", "Search Live Visitors")}
+                >
+                  <MdSearch size={16} />
+                  {searchQuery && <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => loadDashboardData(true)}
+                  disabled={loading}
+                  title={t("gdRefreshLive", "Refresh live data")}
+                  className="p-2 rounded-xl bg-card-inner-bg hover:bg-card border border-glass-border text-secondary hover:text-primary transition shadow-sm disabled:opacity-60"
+                >
+                  <MdRefresh size={16} className={`text-accent ${loading ? "animate-spin" : ""}`} />
+                </button>
+              </div>
+            </div>
+
+            {/* Search Input Bar (when open) */}
+            {isSearchOpen && (
+              <div className="relative flex items-center w-full animate-fadeIn mt-3">
+                <MdSearch size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-accent pointer-events-none" />
                 <input
                   ref={searchInputRef}
                   type="text"
@@ -951,11 +1034,10 @@ export default function GuardDashboard() {
                       setIsSearchOpen(false);
                     }
                   }}
-                  placeholder={t("gdSearchPlaceholder", "Search name, flat, phone...")}
-                  className="gd-stream-search-input w-full pr-14 py-2 rounded-xl text-xs bg-card-inner-bg border border-accent/40 text-primary placeholder-secondary focus:outline-none focus:border-accent shadow-sm"
-                  style={{ paddingLeft: "42px" }}
+                  placeholder={t("gdSearchPlaceholder", "Search visitor, phone, flat, vehicle...")}
+                  className="w-full pl-9 pr-14 py-2 rounded-xl text-xs bg-card-inner-bg border border-accent/40 text-primary placeholder-secondary focus:outline-none focus:ring-1 focus:ring-accent"
                 />
-                <div className="absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center gap-0.5">
+                <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
                   {searchQuery && (
                     <button
                       type="button"
@@ -963,10 +1045,10 @@ export default function GuardDashboard() {
                         setSearchQuery("");
                         searchInputRef.current?.focus();
                       }}
-                      className="p-1 rounded-lg text-secondary hover:text-primary transition"
+                      className="p-1 text-secondary hover:text-primary transition"
                       title={t("gdClear", "Clear")}
                     >
-                      <MdClose size={14} />
+                      <MdClose size={13} />
                     </button>
                   )}
                   <button
@@ -975,236 +1057,255 @@ export default function GuardDashboard() {
                       setSearchQuery("");
                       setIsSearchOpen(false);
                     }}
-                    className="p-1 rounded-lg text-secondary hover:text-rose-500 hover:bg-rose-500/10 transition"
+                    className="p-1 text-secondary hover:text-rose-500 transition"
                     title={t("gdCloseSearch", "Close Search")}
                   >
                     <MdClose size={15} />
                   </button>
                 </div>
               </div>
-            ) : (
-              <button
-                type="button"
-                onClick={() => {
-                  setIsSearchOpen(true);
-                  setTimeout(() => searchInputRef.current?.focus(), 50);
-                }}
-                className={`p-2 sm:px-3 sm:py-1.5 rounded-xl bg-card-inner-bg hover:bg-card border transition flex items-center gap-1.5 shadow-sm hover:scale-105 active:scale-95 ${
-                  searchQuery
-                    ? "border-accent text-accent"
-                    : "border-glass-border text-secondary hover:text-primary"
-                }`}
-                title={t("gdSearchLive", "Search Live Visitors")}
-              >
-                <MdSearch size={16} />
-                <span className="text-xs font-semibold hidden sm:inline">{t("gdSearch", "Search")}</span>
-                {searchQuery && (
-                  <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
-                )}
-              </button>
             )}
-          </div>
-        </div>
 
-        {/* Visitors List */}
-        <div className="mt-4">
-          {loading ? (
-            <div className="py-16 text-center space-y-3">
-              <div className="w-8 h-8 border-3 border-accent border-t-transparent rounded-full animate-spin mx-auto" />
-              <p className="text-xs font-medium text-secondary">{t("gdLoadingVisitors", "Loading live visitors data...")}</p>
-            </div>
-          ) : filteredVisitors.length === 0 ? (
-            <div className="py-16 text-center space-y-3">
-              <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center mx-auto">
-                <MdCheckCircle size={28} />
+            {/* Toolbar: Segmented Filter Tabs */}
+            <div className="mt-3">
+              <div className="flex items-center p-1 rounded-xl bg-card-inner-bg border border-glass-border w-full">
+                <button
+                  onClick={() => setActiveTab("INSIDE")}
+                  className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 ${
+                    activeTab === "INSIDE"
+                      ? "bg-card text-accent shadow-sm"
+                      : "text-secondary hover:text-primary"
+                  }`}
+                >
+                  <span>{t("gdTabInside", "Inside Now")}</span>
+                  <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-bold">
+                    {stats.inside}
+                  </span>
+                </button>
+
+                <button
+                  onClick={() => setActiveTab("OVERSTAY")}
+                  className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 ${
+                    activeTab === "OVERSTAY"
+                      ? "bg-card text-amber-500 shadow-sm"
+                      : "text-secondary hover:text-primary"
+                  }`}
+                >
+                  <span>{t("gdTabOverstay", "Overstaying")}</span>
+                  {overstayingVisitors.length > 0 && (
+                    <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-amber-500 text-white font-bold animate-pulse">
+                      {overstayingVisitors.length}
+                    </span>
+                  )}
+                </button>
+
+                <button
+                  onClick={() => setActiveTab("ALL")}
+                  className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 ${
+                    activeTab === "ALL"
+                      ? "bg-card text-accent shadow-sm"
+                      : "text-secondary hover:text-primary"
+                  }`}
+                >
+                  <span>{t("gdTabAll", "All Today")}</span>
+                  <span className="text-[10px] text-secondary font-semibold">({stats.today})</span>
+                </button>
               </div>
-              <h3 className="text-sm font-bold text-primary">
-                {searchQuery
-                  ? t("gdEmptyMatching", "No matching visitors found")
-                  : activeTab === "OVERSTAY"
-                  ? t("gdEmptyOverstay", "No overstaying visitors on premises")
-                  : activeTab === "INSIDE"
-                  ? t("gdEmptyInside", "No active visitors inside right now")
-                  : t("gdEmptyAll", "No visitor records today")}
-              </h3>
-              <p className="text-xs text-secondary max-w-sm mx-auto">
-                {activeTab === "INSIDE"
-                  ? t("gdEmptyInsideSub", "All visitors have safely departed or no gate entries recorded yet.")
-                  : t("gdEmptyAllSub", "Gate activity is all clear and logged.")}
-              </p>
             </div>
-          ) : (
-            <div className="gd-stream-rows mt-4">
-              {filteredVisitors.map((v, index) => {
-                const meta = getVisitorTypeMeta(v.visitor_type || v.purpose, t);
-                const Icon = meta.icon;
-                const isInside = !v.exit_time;
-                const elapsedMins = getElapsedMinutes(v.entry_time);
-                const dwellLimit = v.dwell_minutes ? Number(v.dwell_minutes) : 45;
-                const isOverstay =
-                  isInside &&
-                  (v.dwell_minutes ||
-                    ["DELIVERY", "CAB", "SERVICE"].includes((v.visitor_type || v.purpose || "").toUpperCase())) &&
-                  elapsedMins >= dwellLimit;
 
-                return (
-                  <div
-                    key={v.id}
-                    style={{ animationDelay: `${Math.min(index, 8) * 50}ms` }}
-                    className={`gd-stream-row relative overflow-hidden rounded-2xl p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-3 ${
-                      isOverstay ? "gd-stream-row--overstay" : ""
-                    }`}
-                  >
-                    <span className="gd-stream-accent" style={{ background: meta.color }} />
-
-                    {/* Visitor Info */}
-                    <div className="flex items-center gap-3.5 min-w-0 flex-1">
-                      <div
-                        className="gd-stream-avatar shrink-0"
-                        style={{ backgroundColor: meta.bg, color: meta.color }}
-                      >
-                        <Icon size={18} />
-                        {isInside && (
-                          <span
-                            className="gd-stream-live-dot"
-                            style={{ background: isOverstay ? "#f59e0b" : "#10b981" }}
-                          />
-                        )}
-                      </div>
-
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-bold text-sm text-primary truncate max-w-42.5 sm:max-w-none">
-                            {v.visitor_name || t("gdGuestVisitor", "Guest Visitor")}
-                          </span>
-
-                          <span
-                            className="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wide border flex items-center gap-1"
-                            style={{
-                              backgroundColor: meta.bg,
-                              color: meta.color,
-                              borderColor: meta.border,
-                            }}
-                          >
-                            <Icon size={10} />
-                            {meta.label}
-                          </span>
-
-                          {isInside && !isOverstay && (
-                            <span className="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
-                              {t("gdInside", "Inside")}
-                            </span>
-                          )}
-
-                          {isOverstay && (
-                            <span className="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-amber-500 text-white shadow-sm animate-pulse">
-                              {t("gdOverstayBadge", { mins: elapsedMins }, "Overstay {mins}m")}
-                            </span>
-                          )}
-                        </div>
-
-                        <div className="flex items-center gap-2 text-xs text-secondary mt-1.5 flex-wrap">
-                          <span className="flex items-center gap-1 text-primary font-medium">
-                            <MdApartment className="text-accent shrink-0" />
-                            {getFlatLabel(v, t)}
-                          </span>
-
-                          {v.visitor_phone && (
-                            <>
-                              <span className="text-secondary">•</span>
-                              <span className="flex items-center gap-1">
-                                <MdPhone size={12} />
-                                {v.visitor_phone}
-                              </span>
-                            </>
-                          )}
-
-                          {(v.vehicle_number || v.vehicle_no) && (
-                            <>
-                              <span className="text-secondary">•</span>
-                              <span className="flex items-center gap-1 font-mono uppercase bg-card-inner-bg border border-glass-border px-1.5 py-0.5 rounded text-[11px] font-bold">
-                                <MdDirectionsCar size={12} />
-                                {v.vehicle_number || v.vehicle_no}
-                              </span>
-                            </>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Right Metadata & Action */}
-                    <div className="flex items-center gap-4 justify-between lg:justify-end shrink-0 pl-1 lg:pl-0 border-t lg:border-t-0 border-glass-border pt-3 lg:pt-0">
-                      <div className="text-left lg:text-right">
-                        <div className="flex items-center gap-1.5 justify-start lg:justify-end">
-                          <MdAccessTime size={12} className="text-secondary" />
-                          <p className="text-xs font-bold text-primary">
-                            {new Date(v.entry_time).toLocaleTimeString("en-IN", {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                              hour12: true,
-                            })}
-                          </p>
-                        </div>
-                        <p className="text-[11px] text-secondary mt-0.5">
-                          {isInside ? (
-                            <span
-                              className={`font-semibold ${
-                                isOverstay ? "text-amber-500" : "text-emerald-500"
-                              }`}
-                            >
-                              {formatElapsedStr(elapsedMins, t)}
-                            </span>
-                          ) : (
-                            <span>
-                              {t("gdLeftAt", "Left at")}{" "}
-                              {new Date(v.exit_time).toLocaleTimeString("en-IN", {
-                                hour: "2-digit",
-                                minute: "2-digit",
-                                hour12: true,
-                              })}
-                            </span>
-                          )}
-                        </p>
-                        {isInside && (
-                          <div className="gd-dwell-wrap" title="Dwell time vs 45 min overstay threshold">
-                            <div
-                              className="gd-dwell"
-                              style={{
-                                width: `${Math.min(100, (elapsedMins / dwellLimit) * 100)}%`,
-                                background:
-                                  elapsedMins >= dwellLimit
-                                    ? "#ef4444"
-                                    : elapsedMins >= dwellLimit * 0.66
-                                    ? "#f59e0b"
-                                    : "#10b981",
-                              }}
-                            />
-                          </div>
-                        )}
-                      </div>
-
-                      {isInside ? (
-                        <button
-                          onClick={() => handleProtectedAction(() => setExitTarget(v))}
-                          disabled={exitLoading}
-                          className="btn-danger px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm hover:scale-105 active:scale-95 transition"
-                        >
-                          <MdLogout size={14} />
-                          <span className="hidden sm:inline">{t("gdMarkExit", "Mark Exit")}</span>
-                          <span className="sm:hidden">{t("gdExit", "Exit")}</span>
-                        </button>
-                      ) : (
-                        <span className="px-3 py-1.5 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-bold border border-emerald-500/25 flex items-center gap-1">
-                          <MdCheckCircle size={14} />
-                          {t("gdExited", "Exited")}
-                        </span>
-                      )}
-                    </div>
+            {/* Visitors List / Empty State */}
+            <div className="mt-3">
+              {loading ? (
+                <div className="py-12 text-center space-y-3">
+                  <div className="w-8 h-8 border-3 border-accent border-t-transparent rounded-full animate-spin mx-auto" />
+                  <p className="text-xs font-medium text-secondary">{t("gdLoadingVisitors", "Loading live visitors data...")}</p>
+                </div>
+              ) : filteredVisitors.length === 0 ? (
+                <div className="py-10 text-center space-y-2.5">
+                  <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center mx-auto">
+                    <MdCheckCircle size={26} />
                   </div>
-                );
-              })}
+                  <h3 className="text-sm font-bold text-primary">
+                    {searchQuery
+                      ? t("gdEmptyMatching", "No matching visitors found")
+                      : activeTab === "OVERSTAY"
+                      ? t("gdEmptyOverstay", "No overstaying visitors on premises")
+                      : activeTab === "INSIDE"
+                      ? t("gdEmptyInside", "No active visitors inside right now")
+                      : t("gdEmptyAll", "No visitor records today")}
+                  </h3>
+                  <p className="text-xs text-secondary max-w-xs mx-auto">
+                    {activeTab === "INSIDE"
+                      ? t("gdEmptyInsideSub", "All visitors have departed or no entries yet today.")
+                      : t("gdEmptyAllSub", "Gate activity is all clear and logged.")}
+                  </p>
+                </div>
+              ) : (
+                <div className="gd-stream-rows space-y-2.5 max-h-[360px] overflow-y-auto pr-1">
+                  {filteredVisitors.map((v, index) => {
+                    const meta = getVisitorTypeMeta(v.visitor_type || v.purpose, t);
+                    const Icon = meta.icon;
+                    const isInside = !v.exit_time;
+                    const elapsedMins = getElapsedMinutes(v.entry_time);
+                    const dwellLimit = v.dwell_minutes ? Number(v.dwell_minutes) : 45;
+                    const isOverstay =
+                      isInside &&
+                      (v.dwell_minutes ||
+                        ["DELIVERY", "CAB", "SERVICE"].includes((v.visitor_type || v.purpose || "").toUpperCase())) &&
+                      elapsedMins >= dwellLimit;
+
+                    return (
+                      <div
+                        key={v.id}
+                        style={{ animationDelay: `${Math.min(index, 8) * 50}ms` }}
+                        className={`gd-stream-row relative overflow-hidden rounded-xl p-3 border border-glass-border bg-card-inner-bg/60 hover:bg-card-inner-bg transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 ${
+                          isOverstay ? "gd-stream-row--overstay border-amber-500/40" : ""
+                        }`}
+                      >
+                        <span className="gd-stream-accent" style={{ background: meta.color }} />
+
+                        {/* Visitor Info */}
+                        <div className="flex items-center gap-3 min-w-0 flex-1">
+                          <div
+                            className="gd-stream-avatar shrink-0 w-9 h-9 rounded-xl flex items-center justify-center"
+                            style={{ backgroundColor: meta.bg, color: meta.color }}
+                          >
+                            <Icon size={16} />
+                            {isInside && (
+                              <span
+                                className="gd-stream-live-dot"
+                                style={{ background: isOverstay ? "#f59e0b" : "#10b981" }}
+                              />
+                            )}
+                          </div>
+
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="font-bold text-xs sm:text-sm text-primary truncate max-w-[140px] sm:max-w-none">
+                                {v.visitor_name || t("gdGuestVisitor", "Guest Visitor")}
+                              </span>
+
+                              <span
+                                className="px-1.5 py-0.2 rounded text-[10px] font-bold uppercase tracking-wide border flex items-center gap-1"
+                                style={{
+                                  backgroundColor: meta.bg,
+                                  color: meta.color,
+                                  borderColor: meta.border,
+                                }}
+                              >
+                                {meta.label}
+                              </span>
+
+                              {isInside && !isOverstay && (
+                                <span className="px-1.5 py-0.2 rounded text-[9px] font-bold uppercase tracking-wider bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
+                                  {t("gdInside", "Inside")}
+                                </span>
+                              )}
+
+                              {isOverstay && (
+                                <span className="px-1.5 py-0.2 rounded text-[9px] font-bold uppercase tracking-wider bg-amber-500 text-white shadow-sm animate-pulse">
+                                  {t("gdOverstayBadge", { mins: elapsedMins }, "Overstay {mins}m")}
+                                </span>
+                              )}
+                            </div>
+
+                            <div className="flex items-center gap-2 text-[11px] text-secondary mt-1 flex-wrap">
+                              <span className="flex items-center gap-1 text-primary font-medium truncate">
+                                <MdApartment className="text-accent shrink-0" size={13} />
+                                <span className="truncate">{getFlatLabel(v, t)}</span>
+                              </span>
+
+                              {v.visitor_phone && (
+                                <>
+                                  <span className="text-secondary">•</span>
+                                  <span className="flex items-center gap-1">
+                                    <MdPhone size={11} />
+                                    {v.visitor_phone}
+                                  </span>
+                                </>
+                              )}
+
+                              {(v.vehicle_number || v.vehicle_no) && (
+                                <>
+                                  <span className="text-secondary">•</span>
+                                  <span className="font-mono uppercase bg-card-inner-bg border border-glass-border px-1 py-0.2 rounded text-[10px] font-bold">
+                                    {v.vehicle_number || v.vehicle_no}
+                                  </span>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Right Metadata & Action */}
+                        <div className="flex items-center gap-2.5 justify-between sm:justify-end shrink-0 pl-1 sm:pl-0 border-t sm:border-t-0 border-glass-border pt-2 sm:pt-0">
+                          <div className="text-left sm:text-right">
+                            <div className="flex items-center gap-1 justify-start sm:justify-end">
+                              <MdAccessTime size={11} className="text-secondary" />
+                              <p className="text-[11px] font-bold text-primary">
+                                {new Date(v.entry_time).toLocaleTimeString("en-IN", {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                  hour12: true,
+                                })}
+                              </p>
+                            </div>
+                            <p className="text-[10px] text-secondary">
+                              {isInside ? (
+                                <span className={`font-semibold ${isOverstay ? "text-amber-500" : "text-emerald-500"}`}>
+                                  {formatElapsedStr(elapsedMins, t)}
+                                </span>
+                              ) : (
+                                <span>
+                                  {t("gdLeftAt", "Left at")}{" "}
+                                  {new Date(v.exit_time).toLocaleTimeString("en-IN", {
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                    hour12: true,
+                                  })}
+                                </span>
+                              )}
+                            </p>
+                          </div>
+
+                          {isInside ? (
+                            <button
+                              onClick={() => handleProtectedAction(() => setExitTarget(v))}
+                              disabled={exitLoading}
+                              className="btn-danger px-2.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1 shadow-sm hover:scale-105 active:scale-95 transition"
+                            >
+                              <MdLogout size={13} />
+                              <span>{t("gdMarkExit", "Mark Exit")}</span>
+                            </button>
+                          ) : (
+                            <span className="px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-bold border border-emerald-500/25 flex items-center gap-1">
+                              <MdCheckCircle size={13} />
+                              {t("gdExited", "Exited")}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
-          )}
+          </div>
+
+          {/* Col 2 Card Footer: Stream Status & Quick Log Link */}
+          <div className="mt-4 pt-3 border-t border-divider flex items-center justify-between text-xs text-secondary">
+            <span className="flex items-center gap-1.5 min-w-0">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+              <span className="truncate">{t("gdLiveFeedActive", "Live gate sync · Auto updates on entry")}</span>
+            </span>
+            <button
+              type="button"
+              className="text-[11px] font-semibold text-accent hover:underline shrink-0 ml-2"
+              onClick={() => navigate("/guard/visitorlogs")}
+            >
+              {t("gdFullHistory", "Full History →")}
+            </button>
+          </div>
         </div>
       </div>
 

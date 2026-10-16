@@ -30,7 +30,7 @@ html.card-style-default .ui-stat-card:not([class*="card-style-"]) {
 }
 .ui-stat-card.card-style-default .ui-stat-card__blob,
 html.card-style-default .ui-stat-card:not([class*="card-style-"]) .ui-stat-card__blob {
-  background: color-mix(in srgb, var(--ui-card-tone-accent, var(--accent, #2563eb)) 20%, transparent) !important;
+  display: none !important;
 }
 .ui-stat-card.card-style-default:hover,
 html.card-style-default .ui-stat-card:not([class*="card-style-"]):hover {
@@ -86,8 +86,7 @@ html.light.card-style-solid .ui-stat-card:not([class*="card-style-"]) .ui-stat-c
 }
 .ui-stat-card.card-style-solid .ui-stat-card__blob,
 html.card-style-solid .ui-stat-card:not([class*="card-style-"]) .ui-stat-card__blob {
-  background: rgba(255, 255, 255, 0.18) !important;
-  opacity: 0.8 !important;
+  display: none !important;
 }
 .ui-stat-card.card-style-solid:hover,
 html.card-style-solid .ui-stat-card:not([class*="card-style-"]):hover {
@@ -101,45 +100,44 @@ html.light.card-style-solid .ui-stat-card:not([class*="card-style-"]) {
   box-shadow: 0 8px 24px color-mix(in srgb, var(--ui-card-tone-accent, var(--accent, #6366f1)) 40%, transparent) !important;
 }
 
-/* ── 3. GLASS MORPHISM ────────────────────────────────────────────────── */
+/* ── 3. GLASS MORPHISM (Frosted Glass — Pure Translucent Without Blobs) ── */
 .ui-stat-card.card-style-glass,
 html.card-style-glass .ui-stat-card:not([class*="card-style-"]) {
   background: radial-gradient(
-      circle at 88% 12%,
-      color-mix(in srgb, var(--ui-card-tone-accent, var(--accent, #10b981)) 26%, transparent) 0%,
+      100% 100% at 88% 12%,
+      color-mix(in srgb, var(--ui-card-tone-accent, var(--accent, #10b981)) 16%, transparent) 0%,
       transparent 68%
     ),
-    rgba(22, 25, 34, 0.78) !important;
-  backdrop-filter: blur(18px) !important;
-  -webkit-backdrop-filter: blur(18px) !important;
-  border: 1.5px solid color-mix(in srgb, var(--ui-card-tone-accent, var(--accent, #10b981)) 48%, var(--glass-border)) !important;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.18), 0 0 16px color-mix(in srgb, var(--ui-card-tone-accent, var(--accent, #10b981)) 15%, transparent) !important;
+    rgba(22, 26, 36, 0.74) !important;
+  backdrop-filter: blur(20px) saturate(160%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(160%) !important;
+  border: 1.5px solid color-mix(in srgb, var(--ui-card-tone-accent, var(--accent, #10b981)) 42%, rgba(255, 255, 255, 0.18)) !important;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.28), inset 0 1px 1px rgba(255, 255, 255, 0.25) !important;
   transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease !important;
 }
 .ui-stat-card.card-style-glass .ui-stat-card__blob,
 html.card-style-glass .ui-stat-card:not([class*="card-style-"]) .ui-stat-card__blob {
-  background: color-mix(in srgb, var(--ui-card-tone-accent, var(--accent, #10b981)) 24%, transparent) !important;
+  display: none !important;
 }
 .ui-stat-card.card-style-glass:hover,
 html.card-style-glass .ui-stat-card:not([class*="card-style-"]):hover {
   transform: translateY(-4px) !important;
   border-color: var(--ui-card-tone-accent, var(--accent, #10b981)) !important;
-  box-shadow: 0 14px 32px -4px color-mix(in srgb, var(--ui-card-tone-accent, var(--accent, #10b981)) 45%, transparent),
-    0 0 18px color-mix(in srgb, var(--ui-card-tone-accent, var(--accent, #10b981)) 25%, transparent),
-    inset 0 1px 0 rgba(255, 255, 255, 0.28) !important;
+  box-shadow: 0 14px 34px -4px color-mix(in srgb, var(--ui-card-tone-accent, var(--accent, #10b981)) 45%, transparent),
+    inset 0 1px 1px rgba(255, 255, 255, 0.35) !important;
 }
 html.light .ui-stat-card.card-style-glass,
 html.light.card-style-glass .ui-stat-card:not([class*="card-style-"]) {
   background: radial-gradient(
-      circle at 88% 12%,
-      color-mix(in srgb, var(--ui-card-tone-accent, var(--accent, #10b981)) 20%, transparent) 0%,
+      100% 100% at 88% 12%,
+      color-mix(in srgb, var(--ui-card-tone-accent, var(--accent, #10b981)) 14%, transparent) 0%,
       transparent 68%
     ),
-    rgba(255, 255, 255, 0.88) !important;
-  backdrop-filter: blur(18px) !important;
-  -webkit-backdrop-filter: blur(18px) !important;
-  border-color: color-mix(in srgb, var(--ui-card-tone-accent, var(--accent, #10b981)) 45%, rgba(0, 0, 0, 0.1)) !important;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06), inset 0 1px 0 #ffffff !important;
+    rgba(255, 255, 255, 0.85) !important;
+  backdrop-filter: blur(20px) saturate(160%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(160%) !important;
+  border-color: color-mix(in srgb, var(--ui-card-tone-accent, var(--accent, #10b981)) 38%, rgba(0, 0, 0, 0.08)) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05), inset 0 1px 2px #ffffff !important;
 }
 
 /* ── 4. AURORA GLASS ──────────────────────────────────────────────────── */
@@ -279,7 +277,7 @@ html.card-style-gradient-mesh .ui-stat-card:not([class*="card-style-"]) {
 .ui-stat-card.card-style-gradient-mesh .ui-stat-card__blob,
 html.card-style-gradient .ui-stat-card:not([class*="card-style-"]) .ui-stat-card__blob,
 html.card-style-gradient-mesh .ui-stat-card:not([class*="card-style-"]) .ui-stat-card__blob {
-  background: color-mix(in srgb, var(--ui-card-tone-accent, var(--accent, #ec4899)) 30%, transparent) !important;
+  display: none !important;
 }
 .ui-stat-card.card-style-gradient:hover,
 .ui-stat-card.card-style-gradient-mesh:hover,
@@ -324,7 +322,7 @@ html.card-style-neumorphic-glass .ui-stat-card:not([class*="card-style-"]) {
 .ui-stat-card.card-style-neumorphic-glass .ui-stat-card__blob,
 html.card-style-neumorphic .ui-stat-card:not([class*="card-style-"]) .ui-stat-card__blob,
 html.card-style-neumorphic-glass .ui-stat-card:not([class*="card-style-"]) .ui-stat-card__blob {
-  background: color-mix(in srgb, var(--ui-card-tone-accent, var(--accent, #14b8a6)) 22%, transparent) !important;
+  display: none !important;
 }
 .ui-stat-card.card-style-neumorphic:hover,
 .ui-stat-card.card-style-neumorphic-glass:hover,
@@ -397,7 +395,7 @@ html.card-style-minimal-premium .ui-stat-card:not([class*="card-style-"]) {
 .ui-stat-card.card-style-minimal-premium .ui-stat-card__blob,
 html.card-style-minimal .ui-stat-card:not([class*="card-style-"]) .ui-stat-card__blob,
 html.card-style-minimal-premium .ui-stat-card:not([class*="card-style-"]) .ui-stat-card__blob {
-  background: color-mix(in srgb, var(--ui-card-tone-accent, var(--accent, #6366f1)) 16%, transparent) !important;
+  display: none !important;
 }
 .ui-stat-card.card-style-minimal:hover,
 .ui-stat-card.card-style-minimal-premium:hover,
@@ -540,12 +538,12 @@ html.light.card-style-spotlight .ui-stat-card:not([class*="card-style-"]) {
   background: rgba(var(--accent-rgb, 160, 90, 255), 0.65);
 }
 .studio-carousel-item {
-  flex: 0 0 220px;
+  flex: 0 0 255px;
   scroll-snap-align: start;
 }
 @media (min-width: 640px) {
   .studio-carousel-item {
-    flex: 0 0 240px;
+    flex: 0 0 270px;
   }
 }
 @media (min-width: 1024px) {

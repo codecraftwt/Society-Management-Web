@@ -78,7 +78,9 @@ export default function QuickLink({
       }}
       {...rest}
     >
-      <span className="quick-link__blob" aria-hidden="true" />
+      {["aurora", "aurora-tile", "floating", "floating-tile", "holographic", "spotlight"].includes(activeStyle) && (
+        <span className="quick-link__blob" aria-hidden="true" />
+      )}
 
       {badge && (
         <span className={`quick-link__badge ${badgeColor}`}>

@@ -11,8 +11,9 @@ import {
   MdDirectionsCar, MdTwoWheeler,
   MdOutlineInbox, MdCheckCircle,
   MdBlock, MdFilterList, MdSearch,
-  MdLocalParking, MdWarning, MdPersonSearch,
-  MdPendingActions, MdDone, MdRefresh, MdPersonRemove, MdChevronRight,
+  MdLocalParking, MdWarning,
+  MdPendingActions, MdDone, MdRefresh, MdPersonRemove,
+  MdPersonAdd,
 } from "react-icons/md";
 import { FaParking } from "react-icons/fa";
 import Select from "../../components/common/Select";
@@ -856,6 +857,21 @@ export default function AssignParkingSlot({ hideHeader = false, societyId } = {}
   });
   const [editSubmitting, setEditSubmitting] = useState(false);
 
+  /* Allocate slot */
+  const [allocateSlot, setAllocateSlot] = useState(null);
+  const [allocateForm, setAllocateForm] = useState({
+    slot_id: "",
+    flat_id: "",
+    resident_id: "",
+    vehicle_id: "",
+    vehicle_number: "",
+    vehicle_type: "CAR",
+    vehicle_name: "",
+    parking_type: "DEFAULT",
+  });
+  const [allocateSubmitting, setAllocateSubmitting] = useState(false);
+  const [allocateError, setAllocateError] = useState("");
+
   /* Unsaved-changes guard (create + edit slot forms) */
   const [confirmDiscard, setConfirmDiscard] = useState(false);
   const dirtyRef = useUnsavedDirty(showForm || !!editSlot);
@@ -962,7 +978,6 @@ export default function AssignParkingSlot({ hideHeader = false, societyId } = {}
       loadSlots(1, vehicleFilter, debouncedSearch, statusFilter, wingFilter);
       loadAllSlots();
       loadPendingResidentCount();
-      loadOwnerSlots();
     } catch (e) { console.error(e); }
     finally { setSubmitting(false); }
   };
@@ -982,7 +997,6 @@ export default function AssignParkingSlot({ hideHeader = false, societyId } = {}
       const newPage = slots.length === 1 && page > 1 ? page - 1 : page;
       loadSlots(newPage, vehicleFilter, debouncedSearch, statusFilter, wingFilter);
       loadAllSlots();
-      loadOwnerSlots();
     } catch (e) { console.error(e); }
     finally { setDeleting(null); }
   };
@@ -1030,6 +1044,63 @@ export default function AssignParkingSlot({ hideHeader = false, societyId } = {}
       setEditError(err?.response?.data?.message || t("parkUpdateFailed"));
     } finally {
       setEditSubmitting(false);
+    }
+  };
+
+  /* ────────────────────────────
+     ALLOCATE SLOT
+  ──────────────────────────── */
+  const openAllocate = (slot) => {
+    if (!hasPermission(user, "parking_slots", "allocate")) {
+      showUnauthorized(t("parkNoPermissionAssign") || "You do not have permission to allocate parking slots");
+      return;
+    }
+    setAllocateSlot(slot);
+    setAllocateForm({
+      slot_id: slot.id,
+      flat_id: "",
+      resident_id: "",
+      vehicle_id: "",
+      vehicle_number: "",
+      vehicle_type: slot.vehicle_type || "CAR",
+      vehicle_name: "",
+      parking_type: "DEFAULT",
+    });
+    setAllocateError("");
+  };
+
+  const handleAllocateSubmit = async (e) => {
+    e?.preventDefault?.();
+    if (!allocateSlot) return;
+    if (!hasPermission(user, "parking_slots", "allocate")) {
+      showUnauthorized(t("parkNoPermissionAssign") || "You do not have permission to allocate parking slots");
+      return;
+    }
+    if (!allocateForm.flat_id && !allocateForm.vehicle_number && !allocateForm.vehicle_id) {
+      setAllocateError(t("parkAllocateTargetRequired") || "Please select a Flat or enter Vehicle details to allocate this slot.");
+      return;
+    }
+
+    setAllocateSubmitting(true);
+    setAllocateError("");
+    try {
+      await API.post("/parking-slots/allocate", {
+        slot_id: allocateSlot.id,
+        slot_number: allocateSlot.slot_number,
+        flat_id: allocateForm.flat_id ? parseInt(allocateForm.flat_id, 10) : undefined,
+        resident_id: allocateForm.resident_id ? parseInt(allocateForm.resident_id, 10) : undefined,
+        vehicle_id: allocateForm.vehicle_id ? parseInt(allocateForm.vehicle_id, 10) : undefined,
+        vehicle_number: allocateForm.vehicle_number ? allocateForm.vehicle_number.trim().toUpperCase() : undefined,
+        vehicle_type: allocateForm.vehicle_type || allocateSlot.vehicle_type || "CAR",
+        vehicle_name: allocateForm.vehicle_name ? allocateForm.vehicle_name.trim() : undefined,
+        parking_type: allocateForm.parking_type || "DEFAULT",
+      });
+      setAllocateSlot(null);
+      refreshAll();
+    } catch (err) {
+      setAllocateError(err?.response?.data?.message || t("parkAssignFailed") || "Failed to allocate slot");
+    } finally {
+      setAllocateSubmitting(false);
     }
   };
 
@@ -1116,15 +1187,6 @@ export default function AssignParkingSlot({ hideHeader = false, societyId } = {}
   /* Pending extra request count for badge */
   const [pendingResidentCount, setPendingResidentCount] = useState(0);
 
-  /* Slot Ownership tab */
-  const [ownerSlots, setOwnerSlots] = useState([]);
-  const [ownerLoading, setOwnerLoading] = useState(true);
-  const [ownerSearch, setOwnerSearch] = useState("");
-  const [ownerStatus, setOwnerStatus] = useState("ALL");
-  const [ownerType, setOwnerType] = useState("ALL");
-  const [ownerAlloc, setOwnerAlloc] = useState("ALL");
-  const debouncedOwnerSearch = useDebounce(ownerSearch, 400);
-
   /* ────────────────────────────
      LOADERS
   ──────────────────────────── */
@@ -1180,17 +1242,6 @@ export default function AssignParkingSlot({ hideHeader = false, societyId } = {}
     } catch (e) { /* silent */ }
   }, [headers]);
 
-  const loadOwnerSlots = useCallback(async (showLoader = false) => {
-    if (showLoader) setOwnerLoading(true);
-    try {
-      const res = await API.get("/parking-slots", { params: { limit: 1000, ...(filterSocietyId ? { society_id: filterSocietyId } : {}) }, headers });
-      setOwnerSlots(Array.isArray(res.data?.data) ? res.data.data : []);
-    } catch (e) { console.error(e); setOwnerSlots([]); }
-    finally { setOwnerLoading(false); }
-  }, [filterSocietyId, headers]);
-
-  useEffect(() => { loadOwnerSlots(true); }, [loadOwnerSlots]);
-
   useEffect(() => {
     loadSlots(1, "ALL", "", "ALL", wingFilter, true);
     loadAllSlots();
@@ -1220,7 +1271,6 @@ export default function AssignParkingSlot({ hideHeader = false, societyId } = {}
     loadFlats();
     loadSlots(page, vehicleFilter, debouncedSearch, statusFilter, wingFilter);
     loadPendingResidentCount();
-    loadOwnerSlots();
   };
 
   const getWingLabel = (s) => {
@@ -1259,54 +1309,9 @@ export default function AssignParkingSlot({ hideHeader = false, societyId } = {}
 
   const mainTabs = [
     { key: "slots", label: t("parkMainSlots"), icon: <FaParking size={13} /> },
-    { key: "ownership", label: t("parkSlotOwners"), icon: <MdPersonSearch size={15} /> },
     { key: "resident-entry", label: t("parkResidentEntry"), icon: <span style={{ fontSize: 14 }}>🏠</span> },
     { key: "resident-requests", label: t("parkExtraRequests"), icon: <MdPendingActions size={14} /> },
   ];
-
-  /* ── Slot Ownership: filtered view ── */
-  const ownerQ = debouncedOwnerSearch.toLowerCase().trim();
-  const cleanOwnerQ = ownerQ.replace(/[\s\-_]+/g, "");
-  const ownerFiltered = ownerSlots.filter(s => {
-    if (ownerType !== "ALL" && s.vehicle_type !== ownerType) return false;
-    if (ownerStatus === "AVAILABLE" && s.status !== "AVAILABLE") return false;
-    if (ownerStatus === "ASSIGNED" && s.status === "AVAILABLE") return false;
-    if (ownerAlloc === "WITH_VEHICLE" && !s.vehicle) return false;
-    if (ownerAlloc === "NO_VEHICLE" && s.vehicle) return false;
-    if (ownerAlloc === "ALLOCATED" && !s.resident && !s.flat_number) return false;
-    if (ownerAlloc === "FREE" && s.status !== "AVAILABLE") return false;
-    if (wingFilter !== "ALL") {
-      const slotWing = s.wing || s.block_name || s.Flat?.Block?.name;
-      if (slotWing !== wingFilter) return false;
-    }
-    if (ownerQ) {
-      const hay = [
-        s.slot_number,
-        s.parking_floor,
-        s.wing,
-        s.flat_number,
-        s.resident?.name,
-        s.resident?.email,
-        s.resident?.phone,
-        s.vehicle?.vehicle_number,
-        s.vehicle?.vehicle_name,
-      ].filter(Boolean).join(" ").toLowerCase();
-
-      const cleanHay = hay.replace(/[\s\-_]+/g, "");
-      if (!hay.includes(ownerQ) && (!cleanOwnerQ || !cleanHay.includes(cleanOwnerQ))) {
-        return false;
-      }
-    }
-    return true;
-  });
-
-  const ownerSegment = (opts, value, setValue) => (
-    <SlidingTabs
-      value={value}
-      onChange={setValue}
-      items={opts.map((option) => ({ id: option.value, label: option.label }))}
-    />
-  );
 
   /* ────────────────────────────
      RENDER
@@ -1370,15 +1375,13 @@ export default function AssignParkingSlot({ hideHeader = false, societyId } = {}
           />
 
           <ExpandableSearch
-            value={mainTab === "ownership" ? ownerSearch : search}
-            onChange={mainTab === "ownership" ? setOwnerSearch : setSearch}
+            value={search}
+            onChange={setSearch}
             isOpen={isSearchOpen}
             onOpenChange={setIsSearchOpen}
             maxWidth={240}
             placeholder={
-              mainTab === "ownership"
-                ? t("parkSearchOwners")
-                : mainTab === "resident-entry"
+              mainTab === "resident-entry"
                 ? t("parkSearchResidentVehicles")
                 : t("parkSearchSlots")
             }
@@ -1401,215 +1404,6 @@ export default function AssignParkingSlot({ hideHeader = false, societyId } = {}
           allSlots={allSlots}
           onSlotAssigned={refreshAll}
         />
-      )}
-
-      {/* TAB: SLOT OWNERS */}
-      {mainTab === "ownership" && (
-        <div className="space-y-4 animate-fadeIn">
-          {/* Filters & Summary Bar */}
-          <div className="ps-slots-container">
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
-              <div className="flex items-center gap-2 flex-wrap">
-                {ownerSegment(
-                  [
-                    { value: "ALL", label: t("parkTabAll") },
-                    { value: "CAR", label: t("parkTabCars") },
-                    { value: "BIKE", label: t("parkTabBikes") },
-                  ],
-                  ownerType,
-                  setOwnerType
-                )}
-                {ownerSegment(
-                  [
-                    { value: "ALL", label: t("parkAllStatus") },
-                    { value: "AVAILABLE", label: t("parkAvailable") },
-                    { value: "ASSIGNED", label: t("parkAssigned") },
-                  ],
-                  ownerStatus,
-                  setOwnerStatus
-                )}
-                {ownerSegment(
-                  [
-                    { value: "ALL", label: t("parkTabAll") },
-                    { value: "FREE", label: t("parkFreeOnly") },
-                    { value: "ALLOCATED", label: t("parkAllocated") },
-                    { value: "WITH_VEHICLE", label: t("parkWithVehicle") },
-                    { value: "NO_VEHICLE", label: t("parkNoVehicle") },
-                  ],
-                  ownerAlloc,
-                  setOwnerAlloc
-                )}
-
-                {availableWings.length > 0 && (
-                  <Select
-                    className="input"
-                    style={{ minWidth: 135, height: 36, padding: "4px 12px", borderRadius: 10, fontSize: 12, fontWeight: 600 }}
-                    value={wingFilter}
-                    onChange={(e) => setWingFilter(e.target.value)}
-                  >
-                    <option value="ALL">{t("allWings") || "All Wings"}</option>
-                    {availableWings.map((w) => (
-                      <option key={w} value={w}>{/^(wing|block|tower)/i.test(w) ? w : `Wing ${w}`}</option>
-                    ))}
-                  </Select>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Loading State */}
-          {ownerLoading && (
-            <div className="ps-slots-container flex flex-col items-center gap-3 py-14 text-secondary">
-              <Spinner />
-              <p className="text-sm">{t("parkLoading") || "Loading slot allocations..."}</p>
-            </div>
-          )}
-
-          {/* Empty State */}
-          {!ownerLoading && ownerFiltered.length === 0 && (
-            <div className="ps-slots-container flex flex-col items-center gap-2 py-16 text-secondary animate-fadeIn">
-              <MdOutlineInbox size={46} className="opacity-25" />
-              <p className="text-sm">
-                {ownerSlots.length === 0
-                  ? t("parkEmpty") || "No parking slots registered"
-                  : t("parkNoMatchFilter")}
-              </p>
-            </div>
-          )}
-
-          {/* Modern Card Grid */}
-          {!ownerLoading && ownerFiltered.length > 0 && (
-            <div className="ps-slots-container space-y-4">
-              <div className="ps-card-grid">
-                {ownerFiltered.map((s, i) => {
-                  const isCar = s.vehicle_type === "CAR";
-                  const isAvail = s.status === "AVAILABLE";
-                  return (
-                    <div
-                      key={s.id}
-                      className={`ps-slot-card ${
-                        isAvail ? "ps-slot-card--available" : "ps-slot-card--occupied"
-                      }`}
-                      style={{ animationDelay: `${i * 15}ms` }}
-                    >
-                      {/* Top Header */}
-                      <div className="ps-card-top">
-                        <div className="ps-card-left-header">
-                          <div
-                            className={`ps-type-icon ${
-                              isCar ? "ps-type-icon--car" : "ps-type-icon--bike"
-                            }`}
-                          >
-                            {isCar ? <MdDirectionsCar size={16} /> : <MdTwoWheeler size={16} />}
-                          </div>
-                          <div className="ps-head-text">
-                            <span className="ps-slot-label">{t("parkColSlot")}</span>
-                            <h4 className="ps-slot-number">{s.slot_number}</h4>
-                          </div>
-                          <MdChevronRight className="ps-card-arrow" size={16} />
-                        </div>
-                        <StatusBadge status={s.status} t={t} />
-                      </div>
-
-                      <span className="ps-slot-meta">
-                        {s.parking_floor ? t("parkFloorValue", { floor: s.parking_floor }) : t("parkGroundFloor")} ·{" "}
-                        {isCar ? t("parkCar") : t("parkBike")}
-                        {getWingLabel(s) ? ` · ${getWingLabel(s)}` : ""}
-                      </span>
-
-                      {/* Middle Details */}
-                      <div className="ps-card-middle">
-                        {isAvail ? (
-                          <div className="ps-avail-bay">
-                            <span className="ps-avail-dot" />
-                            <span className="ps-avail-bay-text">
-                              {t("parkUnallocatedAvailable")}
-                            </span>
-                          </div>
-                        ) : (
-                          <div className="ps-occupied-details">
-                            <div className="ps-resident-row">
-                              <span className="ps-resident-avatar" aria-hidden="true">
-                                {s.resident?.name?.trim()?.charAt(0)?.toUpperCase() || "R"}
-                              </span>
-                              <div className="ps-resident-meta">
-                                <span className="ps-resident-name">
-                                  {s.resident?.name || t("parkOccupied")}
-                                </span>
-                                <span className="ps-resident-sub">
-                                  {s.flat_number
-                                    ? t("parkFlatNumber", { number: s.flat_number })
-                                    : s.resident?.email || t("parkOccupied")}
-                                </span>
-                              </div>
-                            </div>
-                            {s.vehicle ? (
-                              <div className="ps-vehicle-tag">
-                                <span className="ps-plate-mark" aria-hidden="true" />
-                                <span className="ps-vehicle-plate">
-                                  {s.vehicle.vehicle_number}
-                                </span>
-                                {s.vehicle.vehicle_name && (
-                                  <span className="ps-vehicle-model">
-                                    {s.vehicle.vehicle_name}
-                                  </span>
-                                )}
-                              </div>
-                            ) : (
-                              <p className="ps-no-resident-tag">
-                                {s.resident ? t("parkNoVehicleLinked") : "—"}
-                              </p>
-                            )}
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Card Footer */}
-                      <div className="ps-card-footer ps-card-actions">
-                        {!isAvail && (
-                          <GlobalButton
-                            variant="danger"
-                            size="xs"
-                            icon={MdPersonRemove}
-                            onClick={() => openReleaseConfirm(s)}
-                            title={t("parkReleaseTitle")}
-                            fullWidth
-                            className="slot-owner-release-btn flex-1"
-                          >
-                            {t("parkRelease")}
-                          </GlobalButton>
-                        )}
-                        {!isCommittee && (
-                          <GlobalButton
-                            variant="edit"
-                            size="xs"
-                            icon={MdEdit}
-                            onClick={() => openEdit(s)}
-                            title={t("parkEditSlot")}
-                            fullWidth
-                            className="slot-owner-edit-btn flex-1"
-                          >
-                            {t("parkEdit")}
-                          </GlobalButton>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-
-              {/* Counter Footer */}
-              <div
-                className="flex justify-between items-center px-1 pt-3"
-                style={{ borderTop: "1px solid var(--divider, rgba(255,255,255,0.08))" }}
-              >
-                <p className="text-xs text-secondary">
-                  {t("parkShowingTotal", { shown: ownerFiltered.length, total: ownerSlots.length })}
-                </p>
-              </div>
-            </div>
-          )}
-        </div>
       )}
 
       {/* TAB: PARKING SLOTS */}
@@ -1781,6 +1575,65 @@ export default function AssignParkingSlot({ hideHeader = false, societyId } = {}
                             </div>
                           )}
                         </div>
+
+                        {/* Distinct Card Action Bar: Allocate & Edit options separated */}
+                        <div className="ps-card-actions" onClick={(e) => e.stopPropagation()}>
+                          {isAvail ? (
+                            <>
+                              <button
+                                type="button"
+                                className="ps-card-btn ps-card-btn--allocate"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  openAllocate(slot);
+                                }}
+                              >
+                                <MdPersonAdd size={14} />
+                                <span>{t("parkAllocate") || "Allocate"}</span>
+                              </button>
+                              {!isCommittee && (
+                                <button
+                                  type="button"
+                                  className="ps-card-btn ps-card-btn--edit"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    openEdit(slot);
+                                  }}
+                                >
+                                  <MdEdit size={14} />
+                                  <span>{t("edit") || "Edit"}</span>
+                                </button>
+                              )}
+                            </>
+                          ) : (
+                            <>
+                              <button
+                                type="button"
+                                className="ps-card-btn ps-card-btn--release"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  openReleaseConfirm(slot);
+                                }}
+                              >
+                                <MdPersonRemove size={14} />
+                                <span>{t("parkRelease") || "Release"}</span>
+                              </button>
+                              {!isCommittee && (
+                                <button
+                                  type="button"
+                                  className="ps-card-btn ps-card-btn--edit"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    openEdit(slot);
+                                  }}
+                                >
+                                  <MdEdit size={14} />
+                                  <span>{t("edit") || "Edit"}</span>
+                                </button>
+                              )}
+                            </>
+                          )}
+                        </div>
                       </RecordCard>
                     );
                   })}
@@ -1815,6 +1668,19 @@ export default function AssignParkingSlot({ hideHeader = false, societyId } = {}
               bodyClassName="parking-slot-detail-body"
               footer={detailSlot ? (
                 <div className="parking-slot-detail-actions">
+                  {detailSlot.status === "AVAILABLE" && (
+                    <GlobalButton
+                      variant="primary"
+                      icon={MdPersonAdd}
+                      onClick={() => {
+                        const slot = detailSlot;
+                        setDetailSlot(null);
+                        openAllocate(slot);
+                      }}
+                    >
+                      {t("parkAllocateSlot") || "Allocate Slot"}
+                    </GlobalButton>
+                  )}
                   {!isCommittee && (
                     <GlobalButton
                       variant="edit"
@@ -2521,6 +2387,157 @@ export default function AssignParkingSlot({ hideHeader = false, societyId } = {}
         icon={MdPersonRemove}
         loading={!!releaseConfirm && releasing === releaseConfirm.id}
       />
+
+      {/* Allocate Slot Modal */}
+      <GlobalModal
+        isOpen={!!allocateSlot}
+        onClose={() => setAllocateSlot(null)}
+        title={t("parkAllocateSlot") || "Allocate Parking Slot"}
+        subtitle={allocateSlot ? `${allocateSlot.slot_number} · ${allocateSlot.vehicle_type === "CAR" ? t("parkCar") || "Car Space" : t("parkBike") || "Bike Space"} · ${allocateSlot.parking_floor ? t("parkFloorValue", { floor: allocateSlot.parking_floor }) : t("parkGround") || "Ground"}` : ""}
+        icon={MdPersonAdd}
+        size="md"
+        disableUnsavedWarning={false}
+        footer={
+          <div className="flex items-center justify-end gap-3 w-full">
+            <GlobalButton variant="cancel" onClick={() => setAllocateSlot(null)}>
+              {t("cancel") || "Cancel"}
+            </GlobalButton>
+            <GlobalButton
+              type="submit"
+              form="allocate-parking-slot-form"
+              variant="save"
+              icon={MdDone}
+              loading={allocateSubmitting}
+              borderDraw
+              size="md"
+            >
+              {allocateSubmitting ? (t("saving") || "Saving...") : (t("parkConfirmAllocate") || "Allocate Slot")}
+            </GlobalButton>
+          </div>
+        }
+      >
+        <form id="allocate-parking-slot-form" onSubmit={handleAllocateSubmit} className="flex flex-col gap-4">
+          {allocateError && (
+            <div
+              className="flex items-center gap-2 p-3 rounded-xl text-xs font-semibold animate-fadeIn"
+              style={{
+                background: "rgba(248, 113, 113, 0.12)",
+                border: "1px solid rgba(248, 113, 113, 0.28)",
+                color: "#f87171",
+              }}
+            >
+              <MdWarning size={16} className="shrink-0" />
+              <span>{allocateError}</span>
+            </div>
+          )}
+
+          {/* Target Flat Selection */}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-semibold text-secondary uppercase tracking-wider">
+              {t("parkAssignToFlat") || "Assign To Unit / Flat"} <span className="text-red-400">*</span>
+            </label>
+            <Select
+              className="input w-full"
+              style={{ height: 42, borderRadius: 12, padding: "0 14px", fontSize: 13, fontWeight: 500 }}
+              value={allocateForm.flat_id}
+              onChange={(e) => {
+                const fId = e.target.value;
+                const selectedFlat = flats.find((f) => String(f.id) === String(fId));
+                setAllocateForm((p) => ({
+                  ...p,
+                  flat_id: fId,
+                  resident_id: selectedFlat?.resident_id || p.resident_id,
+                }));
+              }}
+            >
+              <option value="">{t("selectFlatPlaceholder") || "Select Flat / Resident Unit"}</option>
+              {flats.map((f) => {
+                const blockName = f.Floor?.Block?.name || f.Block?.name;
+                return (
+                  <option key={f.id} value={f.id}>
+                    {t("parkFlatNumber", { number: f.flat_number })}{blockName ? ` (${blockName})` : ""}{f.resident?.name ? ` · ${f.resident.name}` : ""}
+                  </option>
+                );
+              })}
+            </Select>
+          </div>
+
+          {/* Vehicle Plate & Model */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-semibold text-secondary">
+                {t("parkVehicleNumber") || "Vehicle Plate Number"}
+              </label>
+              <input
+                className="input w-full"
+                style={{
+                  height: 42,
+                  borderRadius: 12,
+                  padding: "0 14px",
+                  fontSize: 13,
+                  fontWeight: 600,
+                  textTransform: "uppercase",
+                  boxSizing: "border-box",
+                }}
+                placeholder="e.g. MH-09-AB-1234"
+                value={allocateForm.vehicle_number}
+                onChange={(e) => setAllocateForm({ ...allocateForm, vehicle_number: e.target.value })}
+              />
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-semibold text-secondary">
+                {t("parkVehicleModel") || "Vehicle Model / Name"}
+              </label>
+              <input
+                className="input w-full"
+                style={{
+                  height: 42,
+                  borderRadius: 12,
+                  padding: "0 14px",
+                  fontSize: 13,
+                  fontWeight: 500,
+                  boxSizing: "border-box",
+                }}
+                placeholder="e.g. Honda City, Activa"
+                value={allocateForm.vehicle_name}
+                onChange={(e) => setAllocateForm({ ...allocateForm, vehicle_name: e.target.value })}
+              />
+            </div>
+          </div>
+
+          {/* Allocation Type Toggle (DEFAULT vs EXTRA) */}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-semibold text-secondary uppercase tracking-wider">
+              {t("parkAllocationType") || "Space Type"}
+            </label>
+            <div className="grid grid-cols-2 gap-2.5">
+              <button
+                type="button"
+                onClick={() => setAllocateForm({ ...allocateForm, parking_type: "DEFAULT" })}
+                className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs font-bold transition-all border ${
+                  allocateForm.parking_type === "DEFAULT"
+                    ? "bg-accent text-white border-accent shadow-md shadow-accent/20"
+                    : "bg-card-inner-bg text-secondary border-glass-border hover:text-primary"
+                }`}
+              >
+                <span>{t("parkStandard") || "Default Space"}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setAllocateForm({ ...allocateForm, parking_type: "EXTRA" })}
+                className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs font-bold transition-all border ${
+                  allocateForm.parking_type === "EXTRA"
+                    ? "bg-accent text-white border-accent shadow-md shadow-accent/20"
+                    : "bg-card-inner-bg text-secondary border-glass-border hover:text-primary"
+                }`}
+              >
+                <span>{t("parkExtra") || "Extra Space"}</span>
+              </button>
+            </div>
+          </div>
+        </form>
+      </GlobalModal>
 
       {/* Unsaved-changes discard confirm */}
       <ConfirmDiscard

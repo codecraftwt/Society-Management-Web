@@ -109,7 +109,9 @@ button.ui-stat-card {
   line-height: var(--ui-card-value-line);
   color: var(--ui-card-ink-value, var(--text-primary));
   font-variant-numeric: tabular-nums;
-  overflow-wrap: anywhere;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .ui-stat-card__label {

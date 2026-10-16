@@ -2346,7 +2346,6 @@ const [totalPages, setTotalPages] = useState(1);
   const [availableSlots, setAvailableSlots] = useState([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
 
-  const [confirmId, setConfirmId] = useState(null);
   const [committeeConfirm, setCommitteeConfirm] = useState(null);
   const [accountantConfirm, setAccountantConfirm] = useState(null);
   const [flatDetailModal, setFlatDetailModal] = useState(null);
@@ -2354,6 +2353,8 @@ const [totalPages, setTotalPages] = useState(1);
   const [rejectTarget, setRejectTarget] = useState(null);
   const [rejectReason, setRejectReason] = useState("");
   const [rejectLoading, setRejectLoading] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   const { user } = useContext(AuthContext);
   const { showUnauthorized, showError } = useCustomAlert();
@@ -2589,7 +2590,6 @@ const [totalPages, setTotalPages] = useState(1);
       resetForm();
       setFormSocietyId(filterSocietyId);
     }
-    setConfirmId(null);
     setAssignModal(null);
     if (showForm) resetForm();
   };
@@ -2740,6 +2740,7 @@ const [totalPages, setTotalPages] = useState(1);
     setFormSocietyId(resident.society_id || "");
     setFormStep(1);
     setShowForm(true);
+    setDeleteTarget(null);
     setAssignModal(null);
   };
 
@@ -2921,12 +2922,13 @@ const [totalPages, setTotalPages] = useState(1);
   const handleDelete = async (id) => {
     if (!hasPermission(user, "resident", "delete")) {
       showUnauthorized("You do not have permission to delete residents.");
-      setConfirmId(null);
+      setDeleteTarget(null);
       return;
     }
+    setDeleteLoading(true);
     try {
       await API.delete(`/users/resident/${id}`);
-      setConfirmId(null);
+      setDeleteTarget(null);
       loadResidents(page, debouncedSearch);
       toast.success(t("resDeletedOk"));
     } catch (err) {
@@ -2935,7 +2937,9 @@ const [totalPages, setTotalPages] = useState(1);
       } else {
         toast.error(err.response?.data?.message || t("residentDeleteFail"));
       }
-      setConfirmId(null);
+      setDeleteTarget(null);
+    } finally {
+      setDeleteLoading(false);
     }
   };
 
@@ -3660,107 +3664,92 @@ const [totalPages, setTotalPages] = useState(1);
                       {canManageResidents && (
                         <td style={{ padding: "14px 16px" }}>
                           <div style={{ display: "flex", justifyContent: "flex-end" }}>
-                            {confirmId === r.id ? (
-                              <span className="res-confirm">
-                                <span className="res-confirm-label">{t("sure")}</span>
-                                <button onClick={() => handleDelete(r.id)} className="res-confirm-yes">{t("yes")}</button>
-                                <button onClick={() => setConfirmId(null)} className="res-confirm-cancel">{t("cancel")}</button>
-                              </span>
-                            ) : (
-                              <ResidentActionMenu
-                                t={t}
-                                onAssignFlat={() => handleOpenAssignModal(r)}
-                                onEdit={() => handleEdit(r)}
-                                isCommittee={!!r.roles?.includes("COMMITTEE_MEMBER")}
-                                isAccountant={!!r.roles?.includes("ACCOUNTANT")}
-                                isSocietyAdmin={!!r.roles?.includes("SOCIETY_ADMIN")}
-                                isTenant={r.resident_type === "TENANT"}
-                                isPendingApproval={String(r.approval_status || "").toUpperCase() === "PENDING"}
-      isRejected={String(r.approval_status || "").toUpperCase() === "REJECTED"}
-                                onApprove={() => handleApproveResident(r)}
-                                onReject={() => setRejectTarget(r)}
-                                onPromote={() => setCommitteeConfirm({ type: "promote", id: r.id, name: r.name })}
-                                onRemoveCommittee={() => setCommitteeConfirm({ type: "remove", id: r.id, name: r.name })}
-                                onDeactivateAccountant={() => setAccountantConfirm({ id: r.id, name: r.name })}
-                                onDelete={() => {
-                                  if (!hasPermission(user, "resident", "delete")) {
-                                    showUnauthorized("You do not have permission to delete residents.");
-                                    return;
-                                  }
-                                  setConfirmId(r.id);
-                                }}
-                              />
-                            )}
-                          </div>
-                        </td>
-                      )}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                        <ResidentActionMenu
+                          t={t}
+                          onAssignFlat={() => handleOpenAssignModal(r)}
+                          onEdit={() => handleEdit(r)}
+                          isCommittee={!!r.roles?.includes("COMMITTEE_MEMBER")}
+                          isAccountant={!!r.roles?.includes("ACCOUNTANT")}
+                          isSocietyAdmin={!!r.roles?.includes("SOCIETY_ADMIN")}
+                          isTenant={r.resident_type === "TENANT"}
+                          isPendingApproval={String(r.approval_status || "").toUpperCase() === "PENDING"}
+  isRejected={String(r.approval_status || "").toUpperCase() === "REJECTED"}
+                          onApprove={() => handleApproveResident(r)}
+                          onReject={() => setRejectTarget(r)}
+                          onPromote={() => setCommitteeConfirm({ type: "promote", id: r.id, name: r.name })}
+                          onRemoveCommittee={() => setCommitteeConfirm({ type: "remove", id: r.id, name: r.name })}
+                          onDeactivateAccountant={() => setAccountantConfirm({ id: r.id, name: r.name })}
+                          onDelete={() => {
+                            if (!hasPermission(user, "resident", "delete")) {
+                              showUnauthorized("You do not have permission to delete residents.");
+                              return;
+                            }
+                            setDeleteTarget(r);
+                          }}
+                        />
+                      </div>
+                         </td>
+                       )}
+                     </tr>
+                   ))}
+                 </tbody>
+               </table>
+             </div>
 
-            <div className="md:hidden">
-              {displayedResidents.map((r) => (
-                <div key={r.id} className="animate-fadeIn" style={{ padding: "14px 16px", borderBottom: "1px solid var(--divider)" }}>
-                  <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <p style={{ fontSize: 14, fontWeight: 700, color: "var(--text-primary)", margin: 0 }}>{r.name}</p>
-                      <p style={{ fontSize: 11, color: "var(--text-secondary)", margin: "2px 0 0" }}>{r.email}</p>
-                      {r.phone && <p style={{ fontSize: 11, color: "var(--text-secondary)", margin: "1px 0 0", display: "flex", alignItems: "center", gap: 3 }}><MdPhone size={10} style={{ opacity: 0.5 }} /> {r.phone}</p>}
-                      <div style={{ display: "flex", alignItems: "center", gap: 5, flexWrap: "wrap", marginTop: 6 }}>
-                        <ResidentTypeBadge type={r.resident_type} />
-                        {r.approval_status === "PENDING" && <PendingApprovalBadge />}
-                        {r.flats?.map((flat, fIdx) => (
-                          <span key={flat.id || fIdx} style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 999, background: "rgba(34,197,94,0.10)", color: "#4ade80", border: "1px solid rgba(34,197,94,0.22)" }}>
-                            {flat.flat_number}
-                          </span>
-                        ))}
-                        {r.roles?.includes("SOCIETY_ADMIN") && <span className="res-socadmin-badge">★ {t("roleSocietyAdmin")}</span>}
-                        {r.roles?.includes("COMMITTEE_MEMBER") && <span className="res-committee-badge">★ {t("colCommittee") || "Committee"}</span>}
-                        {r.roles?.includes("ACCOUNTANT") && <span className="res-accountant-badge">★ {t("resAccountantBadge")}</span>}
-                        <span style={{ cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 3, fontSize: 10, fontWeight: 600, padding: "2px 7px", borderRadius: 999, background: "rgba(251,191,36,0.10)", color: "var(--accent)", border: "1px solid rgba(251,191,36,0.20)" }} title={`Vehicles: ${r.vehicle_count ?? 0}`}><MdDirectionsCar size={10} /> {r.vehicle_count ?? 0}</span>
-                        <span style={{ cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 3, fontSize: 10, fontWeight: 600, padding: "2px 7px", borderRadius: 999, background: "rgba(52,211,153,0.10)", color: "#34d399", border: "1px solid rgba(52,211,153,0.20)" }} title={`${t("colOccupants")}: ${r.occupant_count ?? 1}`}><MdPeople size={10} /> {r.occupant_count ?? 1}</span>
-                      </div>
-                    </div>
-                    {canManageResidents && (
-                      <div style={{ flexShrink: 0 }}>
-                        {confirmId === r.id ? (
-                          <div className="res-confirm res-confirm--mobile">
-                            <button onClick={() => handleDelete(r.id)} className="res-confirm-yes">{t("billYesDelete") || "Delete"}</button>
-                            <button onClick={() => setConfirmId(null)} className="res-confirm-cancel">{t("cancel")}</button>
-                          </div>
-                        ) : (
-                          <ResidentActionMenu
-                            t={t}
-                            onAssignFlat={() => handleOpenAssignModal(r)}
-                            onEdit={() => handleEdit(r)}
-                            isCommittee={!!r.roles?.includes("COMMITTEE_MEMBER")}
-                            isAccountant={!!r.roles?.includes("ACCOUNTANT")}
-                            isSocietyAdmin={!!r.roles?.includes("SOCIETY_ADMIN")}
-                            isTenant={r.resident_type === "TENANT"}
-                            isPendingApproval={String(r.approval_status || "").toUpperCase() === "PENDING"}
-      isRejected={String(r.approval_status || "").toUpperCase() === "REJECTED"}
-                            onApprove={() => handleApproveResident(r)}
-                            onReject={() => setRejectTarget(r)}
-                            onPromote={() => setCommitteeConfirm({ type: "promote", id: r.id, name: r.name })}
-                            onRemoveCommittee={() => setCommitteeConfirm({ type: "remove", id: r.id, name: r.name })}
-                            onDeactivateAccountant={() => setAccountantConfirm({ id: r.id, name: r.name })}
-                            onDelete={() => {
-                              if (!hasPermission(user, "resident", "delete")) {
-                                showUnauthorized("You do not have permission to delete residents.");
-                                return;
-                              }
-                              setConfirmId(r.id);
-                            }}
-                          />
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
+             <div className="md:hidden">
+               {displayedResidents.map((r) => (
+                 <div key={r.id} className="animate-fadeIn" style={{ padding: "14px 16px", borderBottom: "1px solid var(--divider)" }}>
+                   <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
+                     <div style={{ flex: 1, minWidth: 0 }}>
+                       <p style={{ fontSize: 14, fontWeight: 700, color: "var(--text-primary)", margin: 0 }}>{r.name}</p>
+                       <p style={{ fontSize: 11, color: "var(--text-secondary)", margin: "2px 0 0" }}>{r.email}</p>
+                       {r.phone && <p style={{ fontSize: 11, color: "var(--text-secondary)", margin: "1px 0 0", display: "flex", alignItems: "center", gap: 3 }}><MdPhone size={10} style={{ opacity: 0.5 }} /> {r.phone}</p>}
+                       <div style={{ display: "flex", alignItems: "center", gap: 5, flexWrap: "wrap", marginTop: 6 }}>
+                         <ResidentTypeBadge type={r.resident_type} />
+                         {r.approval_status === "PENDING" && <PendingApprovalBadge />}
+                         {r.flats?.map((flat, fIdx) => (
+                           <span key={flat.id || fIdx} style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 999, background: "rgba(34,197,94,0.10)", color: "#4ade80", border: "1px solid rgba(34,197,94,0.22)" }}>
+                             {flat.flat_number}
+                           </span>
+                         ))}
+                         {r.roles?.includes("SOCIETY_ADMIN") && <span className="res-socadmin-badge">★ {t("roleSocietyAdmin")}</span>}
+                         {r.roles?.includes("COMMITTEE_MEMBER") && <span className="res-committee-badge">★ {t("colCommittee") || "Committee"}</span>}
+                         {r.roles?.includes("ACCOUNTANT") && <span className="res-accountant-badge">★ {t("resAccountantBadge")}</span>}
+                         <span style={{ cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 3, fontSize: 10, fontWeight: 600, padding: "2px 7px", borderRadius: 999, background: "rgba(251,191,36,0.10)", color: "var(--accent)", border: "1px solid rgba(251,191,36,0.20)" }} title={`Vehicles: ${r.vehicle_count ?? 0}`}><MdDirectionsCar size={10} /> {r.vehicle_count ?? 0}</span>
+                         <span style={{ cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 3, fontSize: 10, fontWeight: 600, padding: "2px 7px", borderRadius: 999, background: "rgba(52,211,153,0.10)", color: "#34d399", border: "1px solid rgba(52,211,153,0.20)" }} title={`${t("colOccupants")}: ${r.occupant_count ?? 1}`}><MdPeople size={10} /> {r.occupant_count ?? 1}</span>
+                       </div>
+                     </div>
+                     {canManageResidents && (
+                       <div style={{ flexShrink: 0 }}>
+                         <ResidentActionMenu
+                           t={t}
+                           onAssignFlat={() => handleOpenAssignModal(r)}
+                           onEdit={() => handleEdit(r)}
+                           isCommittee={!!r.roles?.includes("COMMITTEE_MEMBER")}
+                           isAccountant={!!r.roles?.includes("ACCOUNTANT")}
+                           isSocietyAdmin={!!r.roles?.includes("SOCIETY_ADMIN")}
+                           isTenant={r.resident_type === "TENANT"}
+                           isPendingApproval={String(r.approval_status || "").toUpperCase() === "PENDING"}
+       isRejected={String(r.approval_status || "").toUpperCase() === "REJECTED"}
+                           onApprove={() => handleApproveResident(r)}
+                           onReject={() => setRejectTarget(r)}
+                           onPromote={() => setCommitteeConfirm({ type: "promote", id: r.id, name: r.name })}
+                           onRemoveCommittee={() => setCommitteeConfirm({ type: "remove", id: r.id, name: r.name })}
+                           onDeactivateAccountant={() => setAccountantConfirm({ id: r.id, name: r.name })}
+                           onDelete={() => {
+                             if (!hasPermission(user, "resident", "delete")) {
+                               showUnauthorized("You do not have permission to delete residents.");
+                               return;
+                             }
+                             setDeleteTarget(r);
+                           }}
+                         />
+                       </div>
+                     )}
+                   </div>
+                 </div>
+               ))}
+             </div>
 
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10, padding: "16px 20px", borderTop: "1px solid var(--divider)" }}>
               <p className="text-xs text-secondary">{t("colShowing") || "Showing"} {displayedResidents.length} {t("colOf") || "of"} {totalItems}</p>
@@ -3917,6 +3906,57 @@ const [totalPages, setTotalPages] = useState(1);
                 disabled={rejectLoading || !rejectReason.trim()}
               >
                 {rejectLoading ? <>{t("rejecting", "Rejecting…")}</> : <><MdClose size={16} /> <span>{t("reject") || "Reject"}</span></>}
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Delete Resident Confirm Dialog */}
+      {deleteTarget && createPortal(
+        <div
+          onClick={(e) => { if (e.target === e.currentTarget) setDeleteTarget(null); }}
+          style={{ position: "fixed", inset: 0, zIndex: 9999, background: "rgba(0,0,0,0.65)", backdropFilter: "blur(8px)", display: "flex", alignItems: "center", justifyContent: "center", padding: "16px" }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{ width: "100%", maxWidth: 420, background: "var(--card-bg)", border: "1px solid var(--glass-border)", borderRadius: 20, padding: "24px", boxShadow: "0 24px 80px rgba(0,0,0,0.5)", animation: "saModalPopIn 0.25s cubic-bezier(0.16, 1, 0.3, 1)" }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
+              <div style={{ width: 42, height: 42, borderRadius: 12, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(239,68,68,0.14)", border: "1px solid rgba(239,68,68,0.3)" }}>
+                <MdDelete size={22} style={{ color: "#f87171" }} />
+              </div>
+              <div>
+                <p style={{ margin: 0, fontSize: 16, fontWeight: 800, color: "var(--text-primary)", letterSpacing: "-0.02em" }}>
+                  {t("resDeleteTitle", "Delete Resident")}
+                </p>
+                <p style={{ margin: 0, fontSize: 12, color: "var(--text-secondary)" }}>{deleteTarget.name}</p>
+              </div>
+            </div>
+
+            <p style={{ margin: 0, fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.6 }}>
+              {t("resDeleteBody", "This will permanently delete the resident, free up their assigned units and remove their access. This action cannot be undone.")}
+            </p>
+
+            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 22 }}>
+              <button
+                type="button"
+                onClick={() => setDeleteTarget(null)}
+                className="sa-btn sa-btn-ghost"
+                disabled={deleteLoading}
+                style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", height: 42, padding: "0 22px", whiteSpace: "nowrap", lineHeight: 1, fontSize: 14 }}
+              >
+                {t("cancel") || "Cancel"}
+              </button>
+              <button
+                type="button"
+                onClick={() => handleDelete(deleteTarget.id)}
+                className="btn-danger"
+                style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6, height: 42, padding: "0 22px", whiteSpace: "nowrap", lineHeight: 1, fontSize: 14, borderRadius: 999, fontWeight: 700 }}
+                disabled={deleteLoading}
+              >
+                {deleteLoading ? <>{t("deleting", "Deleting…")}</> : <><MdDelete size={16} /> <span>{t("delete") || "Delete"}</span></>}
               </button>
             </div>
           </div>

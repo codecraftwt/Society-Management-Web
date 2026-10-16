@@ -65,6 +65,14 @@ export default function StatCard({
   }
 
   const effectiveCardStyle = normalizeCardStyle(styleVariant || activeThemeCardStyle);
+  const showBlob = [
+    "aurora",
+    "aurora-glass",
+    "floating",
+    "floating-3d",
+    "holographic",
+    "spotlight",
+  ].includes(effectiveCardStyle);
 
   const clickable = typeof onClick === "function";
   const Tag = as ?? (clickable ? "button" : "div");
@@ -109,6 +117,7 @@ export default function StatCard({
       {...(interactive && selected ? { "aria-pressed": true } : {})}
       {...(clickable ? { onClick: disabled ? undefined : onClick } : {})}
     >
+      {showBlob && <span className="ui-stat-card__blob" aria-hidden="true" />}
       {layout === "inline" ? (
         <>
           {Icon ? (
