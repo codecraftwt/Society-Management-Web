@@ -1,7 +1,8 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useContext } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import API from "../../services/api";
 import { useLang } from "../../context/LanguageContext";
+import { AuthContext } from "../../context/AuthContext";
 import {
   MdDashboard,
   MdSend,
@@ -87,6 +88,7 @@ function DashboardSkeleton() {
 
 export default function ResidentProfile() {
   const { t } = useLang();
+  const { user } = useContext(AuthContext);
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const base = pathname.startsWith("/family") ? "/family" : "/resident";
@@ -143,7 +145,12 @@ export default function ResidentProfile() {
       if (profileRes.status === "fulfilled") setProfile(profileRes.value.data);
 
       if (flatsRes.status === "fulfilled") {
-        const userFlats = Array.isArray(flatsRes.value.data) ? flatsRes.value.data : [];
+        let userFlats = Array.isArray(flatsRes.value.data) ? flatsRes.value.data : [];
+        if (user?.society_id) {
+          userFlats = userFlats.filter(
+            (f) => !f.society_id || String(f.society_id) === String(user.society_id)
+          );
+        }
         setFlats(userFlats);
         // Keep the active context on a flat the owner actually occupies —
         // never auto-select (or stay stuck on) a flat rented out to a tenant.
@@ -194,7 +201,7 @@ export default function ResidentProfile() {
 
   useEffect(() => {
     loadDashboardData();
-  }, []);
+  }, [user?.society_id]);
 
   // Time-based greeting helper
   const greeting = useMemo(() => {
@@ -372,7 +379,7 @@ export default function ResidentProfile() {
   const getPurposeLabel = (p) =>
     t({ GUEST: "preapPurposeGuest", CAB: "preapPurposeCab", DELIVERY: "preapPurposeDelivery" }[p] || "preapPurposeGuest");
 
-  const societyName = profile?.Society?.name || currentFlat?.society_name || t("rpSocietyFallback");
+  const societyName = user?.society_name || currentFlat?.society_name || profile?.Society?.name || t("rpSocietyFallback");
 
   return (
     <div className="ge-root rp-dash space-y-6 animate-fadeIn pb-14">

@@ -12,6 +12,7 @@ import {
   MdPeople, MdPhone, MdContactPhone, MdEdit, MdArrowBack,
   MdArrowForward, MdLocalParking, MdWarning, MdMoreVert, MdBlock,
   MdVisibility, MdVisibilityOff, MdGroups, MdCalculate,
+  MdEmail, MdOpenInNew,
 } from "react-icons/md";
 import { toast } from "react-toastify";
 import Select from "../../components/common/Select";
@@ -27,6 +28,7 @@ import Pagination from "../../components/common/Pagination";
 import UserAvatar from "../../components/common/UserAvatar";
 import StatCard from "../../components/common/StatCard";
 import ProfilePictureUploader from "../../components/common/ProfilePictureUploader";
+import ResidentDetailsModal from "./ResidentDetailsModal";
 
 /* ─────────────────────────────────────────
    HELPERS
@@ -111,7 +113,7 @@ function PendingApprovalBadge() {
 /* ─────────────────────────────────────────
    RESIDENT ACTION MENU (three-dot kebab)
    ───────────────────────────────────────── */
-function ResidentActionMenu({ onAssignFlat, onEdit, isCommittee, isAccountant, isSocietyAdmin, isTenant, onPromote, onRemoveCommittee, onDeactivateAccountant, onDelete, isPendingApproval, isRejected, onApprove, onReject, t }) {
+function ResidentActionMenu({ onViewDetails, onAssignFlat, onEdit, isCommittee, isAccountant, isSocietyAdmin, isTenant, onPromote, onRemoveCommittee, onDeactivateAccountant, onDelete, isPendingApproval, isRejected, onApprove, onReject, t }) {
   const [open, setOpen] = useState(false);
   const [pos, setPos] = useState(null);
   const ref = useRef(null);
@@ -212,6 +214,14 @@ function ResidentActionMenu({ onAssignFlat, onEdit, isCommittee, isAccountant, i
               <div className="sa-action-divider" />
             </>
           )}
+          <button
+            role="menuitem"
+            className="sa-action-item"
+            onClick={() => act(onViewDetails)}
+          >
+            <MdVisibility size={15} style={{ color: "var(--accent)" }} />
+            {t("resViewDetails", "View Details")}
+          </button>
           <button
             role="menuitem"
             className={gatedClass}
@@ -315,31 +325,62 @@ function CounterField({ value, onChange, min = 0, max = 99 }) {
   );
 }
 
-function DocumentUploadField({ label, icon: Icon, accept, file, onChange, required }) {
+function DocumentUploadField({ label, icon: Icon, accept, file, onChange, required, existingUrl }) {
   const { t } = useLang();
   const inputRef = useRef(null);
   const [dragging, setDragging] = useState(false);
   const preview = file?.type?.startsWith("image/") ? URL.createObjectURL(file) : null;
+  const isImageExisting = existingUrl && !existingUrl.toLowerCase().split("?")[0].endsWith(".pdf");
+
   return (
     <div>
-      <label style={{ display: "block", fontSize: 11, fontWeight: 600, letterSpacing: "0.05em", textTransform: "uppercase", color: "var(--text-secondary)", marginBottom: 6 }}>
-        {label} {required && <span style={{ color: "#f87171" }}>*</span>}
-      </label>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
+        <label style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.05em", textTransform: "uppercase", color: "var(--text-secondary)", margin: 0 }}>
+          {label} {required && <span style={{ color: "#f87171" }}>*</span>}
+        </label>
+        {existingUrl && !file && (
+          <a
+            href={existingUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
+            style={{ fontSize: 11, fontWeight: 600, color: "var(--accent)", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 4 }}
+          >
+            <MdVisibility size={14} /> View Current
+          </a>
+        )}
+      </div>
       <div
         onClick={() => inputRef.current?.click()}
         onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
         onDragLeave={() => setDragging(false)}
         onDrop={(e) => { e.preventDefault(); setDragging(false); const dropped = e.dataTransfer.files?.[0]; if (dropped) onChange(dropped); }}
-        style={{ borderRadius: 12, border: `2px dashed ${file ? "rgba(34,197,94,0.5)" : dragging ? "rgba(107,70,193,0.6)" : "rgba(255,255,255,0.12)"}`, background: file ? "rgba(34,197,94,0.06)" : dragging ? "rgba(107,70,193,0.06)" : "var(--card-inner-bg)", padding: "14px 16px", cursor: "pointer", transition: "all 0.2s", display: "flex", alignItems: "center", gap: 12, minHeight: 64 }}
+        style={{
+          borderRadius: 12,
+          border: `2px dashed ${file ? "rgba(34,197,94,0.5)" : existingUrl ? "rgba(16,185,129,0.4)" : dragging ? "rgba(107,70,193,0.6)" : "rgba(255,255,255,0.12)"}`,
+          background: file ? "rgba(34,197,94,0.06)" : existingUrl ? "rgba(16,185,129,0.04)" : dragging ? "rgba(107,70,193,0.06)" : "var(--card-inner-bg)",
+          padding: "14px 16px",
+          cursor: "pointer",
+          transition: "all 0.2s",
+          display: "flex",
+          alignItems: "center",
+          gap: 12,
+          minHeight: 64,
+        }}
       >
-        <div style={{ width: 40, height: 40, borderRadius: 10, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", background: file ? "rgba(34,197,94,0.12)" : "rgba(107,70,193,0.10)", border: `1px solid ${file ? "rgba(34,197,94,0.25)" : "rgba(107,70,193,0.20)"}` }}>
-          {file ? <MdCheck size={20} style={{ color: "#4ade80" }} /> : <Icon size={20} style={{ color: "#9F87D7" }} />}
+        <div style={{ width: 40, height: 40, borderRadius: 10, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", background: file ? "rgba(34,197,94,0.12)" : existingUrl ? "rgba(16,185,129,0.12)" : "rgba(107,70,193,0.10)", border: `1px solid ${file ? "rgba(34,197,94,0.25)" : existingUrl ? "rgba(16,185,129,0.25)" : "rgba(107,70,193,0.20)"}` }}>
+          {file ? <MdCheck size={20} style={{ color: "#4ade80" }} /> : existingUrl ? <MdCheckCircle size={20} style={{ color: "#10b981" }} /> : <Icon size={20} style={{ color: "#9F87D7" }} />}
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           {file ? (
             <>
               <p style={{ fontSize: 13, fontWeight: 600, color: "#4ade80", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{file.name}</p>
-              <p style={{ fontSize: 11, color: "var(--text-secondary)", margin: "2px 0 0" }}>{(file.size / 1024).toFixed(1)} KB · {t("rcaClickReplace")}</p>
+              <p style={{ fontSize: 11, color: "var(--text-secondary)", margin: "2px 0 0" }}>{(file.size / 1024).toFixed(1)} KB · {t("rcaClickReplace", "Click to replace")}</p>
+            </>
+          ) : existingUrl ? (
+            <>
+              <p style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)", margin: 0 }}>Current document on file</p>
+              <p style={{ fontSize: 11, color: "var(--text-secondary)", margin: "2px 0 0" }}>Click or drag to upload a replacement photo</p>
             </>
           ) : (
             <>
@@ -353,7 +394,11 @@ function DocumentUploadField({ label, icon: Icon, accept, file, onChange, requir
             <MdClose size={16} />
           </button>
         )}
-        {preview && <img src={preview} alt="preview" style={{ width: 40, height: 40, objectFit: "cover", borderRadius: 8, flexShrink: 0, border: "1px solid rgba(255,255,255,0.1)" }} />}
+        {preview ? (
+          <img src={preview} alt="preview" style={{ width: 44, height: 44, objectFit: "cover", borderRadius: 8, flexShrink: 0, border: "1px solid rgba(255,255,255,0.15)" }} />
+        ) : (existingUrl && isImageExisting) ? (
+          <img src={existingUrl} alt="current" style={{ width: 44, height: 44, objectFit: "cover", borderRadius: 8, flexShrink: 0, border: "1px solid rgba(16,185,129,0.3)" }} />
+        ) : null}
         <input ref={inputRef} type="file" accept={accept} style={{ display: "none" }} onChange={(e) => onChange(e.target.files?.[0] || null)} />
       </div>
     </div>
@@ -2331,15 +2376,23 @@ const [totalPages, setTotalPages] = useState(1);
   const [editingId, setEditingId] = useState(null);
   const [formStep, setFormStep] = useState(1);
   const [showPassword, setShowPassword] = useState(false);
+  const [emailCheckState, setEmailCheckState] = useState({
+    status: "idle", // "idle" | "checking" | "not_found" | "already_member" | "exists_other"
+    user: null,
+    message: "",
+  });
+  const [useExistingAccount, setUseExistingAccount] = useState(false);
 
   const [editFlatData, setEditFlatData] = useState(EMPTY_EDIT_FLAT);
   const [editCurrentFlats, setEditCurrentFlats] = useState([]);
 
   const [assignModal, setAssignModal] = useState(null);
 
+  const [viewDetailsModal, setViewDetailsModal] = useState(null);
   const [aadharFile, setAadharFile] = useState(null);
   const [photoFile, setPhotoFile] = useState(null);
   const [panFile, setPanFile] = useState(null);
+  const [residentDocs, setResidentDocs] = useState(null);
 
   const [allUnassignedFlats, setAllUnassignedFlats] = useState([]);
   const [loadingFlats, setLoadingFlats] = useState(false);
@@ -2466,12 +2519,97 @@ const [totalPages, setTotalPages] = useState(1);
     setAadharFile(null);
     setPanFile(null);
     setPhotoFile(null);
+    setResidentDocs(null);
     setEditingId(null);
     setEditFlatData(EMPTY_EDIT_FLAT);
     setEditCurrentFlats([]);
     setFormSocietyId("");
     setFormStep(1);
     setShowPassword(false);
+    setEmailCheckState({ status: "idle", user: null, message: "" });
+    setUseExistingAccount(false);
+  };
+
+  const handleCheckEmail = async () => {
+    setFormError("");
+    const emailToTest = (formData.email || "").trim();
+    if (!emailToTest) {
+      setFormError(t("rcaErrEmailRequired", "Email is required."));
+      return;
+    }
+    const err = getEmailError(emailToTest);
+    if (err) {
+      setFormError(t("rcaErrEmailInvalid", "Please enter a valid email address."));
+      return;
+    }
+    const socId = isSuperAdmin ? formSocietyId : user?.society_id;
+    if (isSuperAdmin && !socId) {
+      setFormError(t("rcaErrSelectSociety", "Please select a target society first."));
+      return;
+    }
+
+    setEmailCheckState({ status: "checking", user: null, message: "Checking email..." });
+    try {
+      const headers = (isSuperAdmin && socId) ? { "x-society-id": socId } : {};
+      const res = await API.get("/users/resident/check-email", {
+        params: { email: emailToTest, society_id: socId },
+        headers,
+      });
+      const data = res.data;
+      if (!data.exists) {
+        setEmailCheckState({
+          status: "not_found",
+          user: null,
+          message: data.message || "Email is available. New account will be created.",
+        });
+        setUseExistingAccount(false);
+      } else if (data.alreadyMember) {
+        setEmailCheckState({
+          status: "already_member",
+          user: data.user,
+          message: data.message || "Resident is already registered in this society.",
+        });
+        setUseExistingAccount(false);
+      } else {
+        setEmailCheckState({
+          status: "exists_other",
+          user: data.user,
+          message: data.message || "An existing resident account was found with this email.",
+        });
+      }
+    } catch (apiErr) {
+      console.error("Email check failed", apiErr);
+      setEmailCheckState({
+        status: "idle",
+        user: null,
+        message: apiErr.response?.data?.message || "Failed to check email status.",
+      });
+      setFormError(apiErr.response?.data?.message || "Failed to check email status.");
+    }
+  };
+
+  const handleApplyExistingUser = (existingUser) => {
+    if (!existingUser) return;
+    setFormData((prev) => ({
+      ...prev,
+      name: existingUser.name || prev.name,
+      phone: existingUser.phone || prev.phone,
+      profile_picture: existingUser.profile_picture || null,
+      profile_picture_url: existingUser.profile_picture || null,
+      occupant_count: existingUser.occupant_count != null ? existingUser.occupant_count : prev.occupant_count,
+      vehicle_count: existingUser.vehicle_count != null ? existingUser.vehicle_count : prev.vehicle_count,
+      emergency_contact: existingUser.emergency_contact
+        ? {
+            name: existingUser.emergency_contact.name || "",
+            phone: existingUser.emergency_contact.phone || "",
+          }
+        : prev.emergency_contact,
+    }));
+    if (existingUser.documents) {
+      setResidentDocs(existingUser.documents);
+    }
+    setUseExistingAccount(true);
+    toast.info(`Reusing account for ${existingUser.name}. All existing profile, household details, and KYC documents linked.`);
   };
 
   /* Unsaved-changes guard */
@@ -2602,13 +2740,15 @@ const [totalPages, setTotalPages] = useState(1);
     setAssignModal({ id: resident.id, name: resident.name, society_id: resident.society_id });
   };
 
-  const handleApproveResident = async (resident) => {
+  const handleApproveResident = async (resident, societyId) => {
     if (!hasPermission(user, "tenant_management", "approve")) {
       showUnauthorized("You do not have permission to approve residents.");
       return;
     }
     try {
-      await API.put(`/admin/approve-resident/${resident.id}`);
+      const pendingSoc = resident.societies?.find((s) => s.membership_status === "PENDING");
+      const targetSocId = societyId || (user.activeRole !== "SUPER_ADMIN" ? user.society_id : (pendingSoc?.id || resident.society_id));
+      await API.put(`/admin/approve-resident/${resident.id}`, { society_id: targetSocId });
       toast.success(`${resident.name} approved & activated`);
       loadResidents(page, debouncedSearch);
     } catch (err) {
@@ -2629,7 +2769,9 @@ const [totalPages, setTotalPages] = useState(1);
     }
     setRejectLoading(true);
     try {
-      const { data } = await API.put(`/admin/reject-resident/${rejectTarget.id}`, { reason });
+      const pendingSoc = rejectTarget.societies?.find((s) => s.membership_status === "PENDING");
+      const targetSocId = rejectTarget._targetSocietyId || (user.activeRole !== "SUPER_ADMIN" ? user.society_id : (pendingSoc?.id || rejectTarget.society_id));
+      const { data } = await API.put(`/admin/reject-resident/${rejectTarget.id}`, { reason, society_id: targetSocId });
       toast.success(t("residentRejected", { name: rejectTarget.name }));
       // The API persists the rejection even if SMTP fails, so warn separately.
       if (data && data.emailSent === false) {
@@ -2649,17 +2791,17 @@ const [totalPages, setTotalPages] = useState(1);
     }
   };
 
-  const promoteCommittee = async (userId) => {
+  const promoteCommittee = async (userId, societyId) => {
     if (!hasPermission(user, "resident", "promote")) {
       showUnauthorized("You do not have permission to promote committee members.");
       setCommitteeConfirm(null);
       return;
     }
     try {
-      await API.post("/users/committee/promote", { userId });
+      const res = await API.post("/users/committee/promote", { userId, societyId });
       setCommitteeConfirm(null);
       loadResidents(page, debouncedSearch);
-      toast.success("Promoted to committee member");
+      toast.success(res.data?.message || "Promoted to committee member");
     } catch (err) {
       if (err.response?.status === 403) {
         showUnauthorized(err.response?.data?.message || "Operation restricted");
@@ -2669,17 +2811,17 @@ const [totalPages, setTotalPages] = useState(1);
     }
   };
 
-  const removeCommittee = async (userId) => {
+  const removeCommittee = async (userId, societyId) => {
     if (!hasPermission(user, "resident", "promote")) {
       showUnauthorized("You do not have permission to manage committee members.");
       setCommitteeConfirm(null);
       return;
     }
     try {
-      await API.post("/users/committee/remove", { userId });
+      const res = await API.post("/users/committee/remove", { userId, societyId });
       setCommitteeConfirm(null);
       loadResidents(page, debouncedSearch);
-      toast.success("Removed from committee");
+      toast.success(res.data?.message || "Removed from committee");
     } catch (err) {
       if (err.response?.status === 403) {
         showUnauthorized(err.response?.data?.message || "Operation restricted");
@@ -2733,7 +2875,28 @@ const [totalPages, setTotalPages] = useState(1);
       showUnauthorized("You do not have permission to edit resident details.");
       return;
     }
-    setFormData({ name: resident.name, email: resident.email, password: "", phone: resident.phone || "", resident_type: resident.resident_type || "OWNER", flat_assignments: [], vehicle_count: resident.vehicle_count ?? 0, occupant_count: resident.occupant_count ?? 1, emergency_contact: { name: resident.emergency_contact?.name || "", phone: resident.emergency_contact?.phone || "" } });
+    const pic = resident.profile_picture || resident.avatar || resident.profile_picture_url || null;
+    setFormData({
+      name: resident.name,
+      email: resident.email,
+      password: "",
+      phone: resident.phone || "",
+      resident_type: resident.resident_type || "OWNER",
+      flat_assignments: [],
+      vehicle_count: resident.vehicle_count ?? 0,
+      occupant_count: resident.occupant_count ?? 1,
+      emergency_contact: {
+        name: resident.emergency_contact?.name || "",
+        phone: resident.emergency_contact?.phone || "",
+      },
+      profile_picture: pic,
+      profile_picture_url: pic,
+      profile_picture_file: null,
+    });
+    setPhotoFile(null);
+    setAadharFile(null);
+    setPanFile(null);
+    setResidentDocs(resident.documents || null);
     setEditCurrentFlats(resident.flats || []);
     setEditFlatData(EMPTY_EDIT_FLAT);
     setEditingId(resident.id);
@@ -2742,6 +2905,14 @@ const [totalPages, setTotalPages] = useState(1);
     setShowForm(true);
     setDeleteTarget(null);
     setAssignModal(null);
+
+    const socId = resident.society_id || (isSuperAdmin ? formSocietyId : user?.society_id);
+    const headers = (isSuperAdmin && socId) ? { "x-society-id": socId } : {};
+    API.get(`/user-documents/user/${resident.id}`, { headers })
+      .then((res) => {
+        if (res.data) setResidentDocs(res.data);
+      })
+      .catch((err) => console.error("Failed to load resident docs", err));
   };
 
   const handleNextStep = () => {
@@ -2751,20 +2922,33 @@ const [totalPages, setTotalPages] = useState(1);
         setFormError(t("rcaErrSelectSociety"));
         return;
       }
+      const emailErr = getEmailError(formData.email);
+      if (emailErr) {
+        setFormError(!formData.email?.trim() ? t("rcaErrEmailRequired") : t("rcaErrEmailInvalid"));
+        return;
+      }
+
+      if (!editingId) {
+        if (emailCheckState.status === "already_member") {
+          setFormError("A resident with this email is already registered in this society.");
+          return;
+        }
+        if (emailCheckState.status === "exists_other" && !useExistingAccount) {
+          setFormError("An existing account with this email was found. Please click 'Use Existing Account' to reuse data, or use a different email.");
+          return;
+        }
+      }
+
       if (!formData.name?.trim()) {
         setFormError(t("rcaErrNameRequired"));
         return;
       }
       const nameErr = getTitleError(formData.name, "Full name");
       if (nameErr) { setFormError(t("rcaErrNameInvalid")); return; }
-      const emailErr = getEmailError(formData.email);
-      if (emailErr) {
-        setFormError(!formData.email?.trim() ? t("rcaErrEmailRequired") : t("rcaErrEmailInvalid"));
-        return;
-      }
+
       const phoneErr = formData.phone ? getMobileError(formData.phone, "Phone") : null;
       if (phoneErr) { setFormError(t("rcaErrPhoneInvalid")); return; }
-      if (!editingId && !formData.password?.trim()) {
+      if (!editingId && !useExistingAccount && !formData.password?.trim()) {
         setFormData((prev) => ({ ...prev, password: DEFAULT_RESIDENT_PASSWORD }));
       }
       setFormStep(2);
@@ -2784,7 +2968,7 @@ const [totalPages, setTotalPages] = useState(1);
         const ecPhoneErr = getMobileError(ec.phone, "Emergency contact phone");
         if (ecPhoneErr) { setFormError(t("rcaErrEcPhone")); return; }
       }
-      if (!editingId && (!aadharFile || !panFile)) {
+      if (!editingId && !useExistingAccount && (!aadharFile || !panFile)) {
         setFormError(t("rcaErrKyc"));
         return;
       }
@@ -2797,7 +2981,7 @@ const [totalPages, setTotalPages] = useState(1);
     e.preventDefault();
     setFormError("");
 
-    if (!editingId && (!aadharFile || !panFile)) {
+    if (!editingId && !useExistingAccount && (!aadharFile || !panFile)) {
       setFormError(t("rcaErrKyc"));
       return;
     }
@@ -2849,7 +3033,31 @@ const [totalPages, setTotalPages] = useState(1);
           payload.revoke_parking_slot = true;
           if (editFlatData.selectedExistingFlatId) payload.revoke_flat_id = Number(editFlatData.selectedExistingFlatId);
         }
-        await API.put(`/users/resident/${editingId}`, payload, { headers });
+        const editPhoto = formData.profile_picture_file || photoFile;
+        if (editPhoto) {
+          const fd = new FormData();
+          Object.entries(payload).forEach(([k, v]) => {
+            if (v !== undefined) {
+              fd.append(k, typeof v === "object" && v !== null ? JSON.stringify(v) : String(v));
+            }
+          });
+          fd.append("photo", editPhoto);
+          await API.put(`/users/resident/${editingId}`, fd, { headers });
+        } else {
+          await API.put(`/users/resident/${editingId}`, payload, { headers });
+        }
+
+        if (aadharFile || panFile) {
+          const docForm = new FormData();
+          if (aadharFile) docForm.append("aadhar", aadharFile);
+          if (panFile) docForm.append("pan", panFile);
+          await API.post(
+            `/user-documents?userId=${editingId}`,
+            docForm,
+            { headers: { ...headers, "Content-Type": "multipart/form-data" } },
+          );
+        }
+
         toast.success(t("rcaUpdateSuccess"));
       } else {
         const flatAssignments = formData.flat_assignments
@@ -2867,24 +3075,27 @@ const [totalPages, setTotalPages] = useState(1);
         const residentPayload = {
           name: formData.name.trim(),
           email: formData.email.trim(),
-          password: formData.password || DEFAULT_RESIDENT_PASSWORD,
+          password: useExistingAccount ? undefined : (formData.password || DEFAULT_RESIDENT_PASSWORD),
           phone: formData.phone || undefined,
           resident_type: "OWNER",
           flat_assignments: flatAssignments,
           vehicle_count: formData.vehicle_count,
           occupant_count: formData.occupant_count,
           emergency_contact: ecFilled ? { name: ec.name.trim(), phone: ec.phone.trim() } : undefined,
+          useExistingAccount: Boolean(useExistingAccount),
+          society_id: formSocietyId || undefined,
         };
 
         let residentRes;
-        if (photoFile) {
+        const uploadPhoto = formData.profile_picture_file || photoFile;
+        if (uploadPhoto && !useExistingAccount) {
           const fd = new FormData();
           Object.entries(residentPayload).forEach(([key, value]) => {
             if (value !== undefined) {
               fd.append(key, typeof value === "object" && value !== null ? JSON.stringify(value) : String(value));
             }
           });
-          fd.append("photo", photoFile);
+          fd.append("photo", uploadPhoto);
           residentRes = await API.post("/users/resident", fd, { headers });
         } else {
           residentRes = await API.post("/users/resident", residentPayload, { headers });
@@ -2895,16 +3106,18 @@ const [totalPages, setTotalPages] = useState(1);
           residentRes.data?.id ||
           residentRes.data?.resident?.id;
 
-        const docForm = new FormData();
-        docForm.append("aadhar", aadharFile);
-        docForm.append("pan", panFile);
-        await API.post(
-          `/user-documents${newUserId ? `?userId=${newUserId}` : ""}`,
-          docForm,
-          { headers: { ...headers, "Content-Type": "multipart/form-data" } },
-        );
+        if (aadharFile || panFile) {
+          const docForm = new FormData();
+          if (aadharFile) docForm.append("aadhar", aadharFile);
+          if (panFile) docForm.append("pan", panFile);
+          await API.post(
+            `/user-documents${newUserId ? `?userId=${newUserId}` : ""}`,
+            docForm,
+            { headers: { ...headers, "Content-Type": "multipart/form-data" } },
+          );
+        }
 
-        toast.success(t("rcaCreateSuccess"));
+        toast.success(useExistingAccount ? "Resident added to society using existing account!" : t("rcaCreateSuccess"));
       }
 
       resetForm();
@@ -2968,6 +3181,21 @@ const [totalPages, setTotalPages] = useState(1);
           onSuccess={() => { setAssignModal(null); loadResidents(page, debouncedSearch); }}
         />,
         document.body
+      )}
+
+      {viewDetailsModal && (
+        <ResidentDetailsModal
+          resident={viewDetailsModal}
+          onClose={() => setViewDetailsModal(null)}
+          onEdit={(r) => {
+            setViewDetailsModal(null);
+            handleEdit(r);
+          }}
+          isSuperAdmin={isSuperAdmin}
+          onUpdated={() => {
+            loadResidents(page, debouncedSearch);
+          }}
+        />
       )}
 
       {flatDetailModal && createPortal(
@@ -3202,7 +3430,13 @@ const [totalPages, setTotalPages] = useState(1);
                           <Select
                             className="input w-full"
                             value={formSocietyId}
-                            onChange={(e) => setFormSocietyId(e.target.value)}
+                            onChange={(e) => {
+                              setFormSocietyId(e.target.value);
+                              if (emailCheckState.status !== "idle") {
+                                setEmailCheckState({ status: "idle", user: null, message: "" });
+                                setUseExistingAccount(false);
+                              }
+                            }}
                             disabled={!!editingId}
                             required
                           >
@@ -3220,11 +3454,140 @@ const [totalPages, setTotalPages] = useState(1);
                       </div>
                     )}
 
+                    {/* Email Verification Section */}
+                    <div style={{ display: "flex", flexDirection: "column", gap: 10, padding: 16, borderRadius: 14, background: "var(--card-inner-bg)", border: "1px solid var(--glass-border)" }}>
+                      <label style={{ fontSize: 13, fontWeight: 700, color: "var(--text-primary)", display: "flex", alignItems: "center", gap: 6 }}>
+                        <MdPerson size={16} color="var(--accent)" />
+                        {t("residentEmail", "Resident Email")} <span style={{ color: "#f87171" }}>*</span>
+                      </label>
+                      <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                        <input
+                          className="input"
+                          style={{ flex: 1, ...(editingId ? { opacity: 0.6, cursor: "not-allowed" } : {}) }}
+                          placeholder={t("rcaEmailPlaceholder", "resident@example.com")}
+                          type="email"
+                          value={formData.email}
+                          disabled={!!editingId}
+                          onChange={(e) => {
+                            setFormData({ ...formData, email: e.target.value });
+                            if (emailCheckState.status !== "idle") {
+                              setEmailCheckState({ status: "idle", user: null, message: "" });
+                              setUseExistingAccount(false);
+                            }
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" && !editingId) {
+                              e.preventDefault();
+                              handleCheckEmail();
+                            }
+                          }}
+                        />
+                        {!editingId && (
+                          <button
+                            type="button"
+                            onClick={handleCheckEmail}
+                            disabled={emailCheckState.status === "checking" || !formData.email?.trim()}
+                            className="btn"
+                            style={{
+                              background: "linear-gradient(135deg, var(--accent), var(--accent-light))",
+                              color: "#fff",
+                              fontWeight: 700,
+                              fontSize: 12,
+                              padding: "9px 16px",
+                              borderRadius: 10,
+                              border: "none",
+                              cursor: !formData.email?.trim() ? "not-allowed" : "pointer",
+                              opacity: !formData.email?.trim() ? 0.6 : 1,
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 6,
+                              flexShrink: 0,
+                              boxShadow: "0 4px 14px rgba(160,90,255,0.3)",
+                            }}
+                          >
+                            {emailCheckState.status === "checking" ? <Spinner small /> : <MdSearch size={16} />}
+                            {t("checkAccountBtn", "Check if Exists")}
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Feedback states */}
+                      {emailCheckState.status === "checking" && (
+                        <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "var(--text-secondary)", marginTop: 2 }}>
+                          <Spinner small /> <span>Checking if account already exists...</span>
+                        </div>
+                      )}
+
+                      {emailCheckState.status === "not_found" && (
+                        <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", borderRadius: 10, background: "rgba(16,185,129,0.1)", border: "1px solid rgba(16,185,129,0.25)", color: "#10b981", fontSize: 12, fontWeight: 600 }}>
+                          <MdCheckCircle size={16} />
+                          <span>New Resident: No existing account found. Please fill in the details below to create an account.</span>
+                        </div>
+                      )}
+
+                      {emailCheckState.status === "already_member" && (
+                        <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", borderRadius: 10, background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.25)", color: "#f87171", fontSize: 12, fontWeight: 600 }}>
+                          <MdWarning size={16} />
+                          <span>Already Registered: A resident with email "{formData.email}" already belongs to this society.</span>
+                        </div>
+                      )}
+
+                      {emailCheckState.status === "exists_other" && (
+                        <div style={{ display: "flex", flexDirection: "column", gap: 10, padding: "12px 14px", borderRadius: 12, background: "rgba(160,90,255,0.1)", border: "1px solid rgba(160,90,255,0.3)" }}>
+                          <div style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
+                            <MdCheckCircle size={18} color="var(--accent)" style={{ flexShrink: 0, marginTop: 1 }} />
+                            <div>
+                              <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: "var(--text-primary)" }}>
+                                Existing Account Found: {emailCheckState.user?.name}
+                              </p>
+                              <p style={{ margin: "2px 0 0", fontSize: 12, color: "var(--text-secondary)" }}>
+                                Phone: {emailCheckState.user?.phone || "N/A"}. Reusing this account allows the resident to log in with their existing password and switch between societies.
+                              </p>
+                            </div>
+                          </div>
+                          {!useExistingAccount ? (
+                            <button
+                              type="button"
+                              onClick={() => handleApplyExistingUser(emailCheckState.user)}
+                              style={{
+                                background: "linear-gradient(135deg, #10b981, #059669)",
+                                color: "#fff",
+                                fontWeight: 700,
+                                fontSize: 12,
+                                padding: "8px 14px",
+                                borderRadius: 8,
+                                border: "none",
+                                cursor: "pointer",
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: 6,
+                                alignSelf: "flex-start",
+                                boxShadow: "0 4px 12px rgba(160,90,255,0.25)",
+                              }}
+                            >
+                              <MdCheck size={16} />
+                              Use Existing Account & Reuse Data
+                            </button>
+                          ) : (
+                            <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 700, color: "#10b981" }}>
+                              <MdCheckCircle size={15} />
+                              <span>✓ Existing Account Data Reused. Password & profile will remain unchanged.</span>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
                     <SectionDivider icon={MdPerson} label={t("personalInfo", "Personal Information")} />
                     
                     {/* Profile Picture Upload Box */}
                     <div className="p-4 rounded-xl border border-glass bg-card-inner flex flex-col gap-2">
-                      <label className="text-xs font-semibold text-secondary">{t("profilePicture", "Profile Photo (Optional)")}</label>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                        <label className="text-xs font-semibold text-secondary">{t("profilePicture", "Profile Photo (Optional)")}</label>
+                        {useExistingAccount && (
+                          <span style={{ fontSize: 11, fontWeight: 600, color: "#10b981" }}>Reused from existing profile</span>
+                        )}
+                      </div>
                       <ProfilePictureUploader
                         name={formData.name || "Resident"}
                         currentUrl={formData.profile_picture_url || formData.profile_picture}
@@ -3242,35 +3605,41 @@ const [totalPages, setTotalPages] = useState(1);
                       <Field label={t("residentName")} required>
                         <input className="input w-full" placeholder={t("rcaNamePlaceholder")} value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} required />
                       </Field>
-                      <Field label={t("residentEmail")} required>
-                        <input className="input w-full" placeholder={t("rcaEmailPlaceholder")} type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} required disabled={!!editingId} style={editingId ? { opacity: 0.6, cursor: "not-allowed" } : {}} />
-                      </Field>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                       <Field label={t("rcaPhone")}>
                         <input className="input w-full" placeholder={t("rcaPhonePlaceholder")} type="tel" value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} />
                       </Field>
-                      {!editingId && (
-                        <Field label={t("residentPassword")} required>
-                          <div className="relative flex items-center">
-                            <input
-                              className="input w-full"
-                              value={DEFAULT_RESIDENT_PASSWORD}
-                              readOnly
-                              disabled
-                              style={{ opacity: 0.8, cursor: "not-allowed", backgroundColor: "var(--card-inner-bg)", fontWeight: 700, letterSpacing: "0.02em" }}
-                            />
-                            <span className="absolute right-3 text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-500/15 text-emerald-500 border border-emerald-500/30 pointer-events-none">
-                              Default
+                    </div>
+
+                    {!editingId && (
+                      <div className="grid grid-cols-1 gap-3.5">
+                        {useExistingAccount ? (
+                          <div style={{ padding: "12px 14px", borderRadius: 10, background: "rgba(16,185,129,0.08)", border: "1px solid rgba(16,185,129,0.2)", display: "flex", alignItems: "center", gap: 8 }}>
+                            <MdCheckCircle size={16} color="#10b981" />
+                            <span style={{ fontSize: 12, fontWeight: 600, color: "#10b981" }}>
+                              Reusing Existing Password: Resident will use their current login password. No new password needed.
                             </span>
                           </div>
-                          <p style={{ fontSize: 11, color: "var(--text-secondary)", marginTop: 4, opacity: 0.85 }}>
-                            {t("resPasswordHint", "Default: Admin@123 (Resident can change password after login)")}
-                          </p>
-                        </Field>
-                      )}
-                    </div>
+                        ) : (
+                          <Field label={t("residentPassword")} required>
+                            <div className="relative flex items-center">
+                              <input
+                                className="input w-full"
+                                value={DEFAULT_RESIDENT_PASSWORD}
+                                readOnly
+                                disabled
+                                style={{ opacity: 0.8, cursor: "not-allowed", backgroundColor: "var(--card-inner-bg)", fontWeight: 700, letterSpacing: "0.02em" }}
+                              />
+                              <span className="absolute right-3 text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-500/15 text-emerald-500 border border-emerald-500/30 pointer-events-none">
+                                Default
+                              </span>
+                            </div>
+                            <p style={{ fontSize: 11, color: "var(--text-secondary)", marginTop: 4, opacity: 0.85 }}>
+                              {t("resPasswordHint", "Default: Admin@123 (Resident can change password after login)")}
+                            </p>
+                          </Field>
+                        )}
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -3301,14 +3670,53 @@ const [totalPages, setTotalPages] = useState(1);
                       </Field>
                     </div>
 
-                    {!editingId && (
-                      <>
-                        <SectionDivider icon={MdUploadFile} label={t("rcaKycDocs")} />
-                        <DocumentUploadField label={`${t("ppTitle")} (${t("ppOptional")})`} icon={MdPerson} accept="image/jpeg,image/png,image/webp,image/gif,image/heic,image/heif" file={photoFile} onChange={setPhotoFile} />
-                        <DocumentUploadField label={t("rcaAadhar")} icon={MdBadge} accept="application/pdf,image/*" file={aadharFile} onChange={setAadharFile} required />
-                        <DocumentUploadField label={t("rcaPan")} icon={MdCreditCard} accept="application/pdf,image/*" file={panFile} onChange={setPanFile} required />
-                      </>
+                    <SectionDivider icon={MdUploadFile} label={t("rcaKycDocs", "KYC Documents")} />
+                    {useExistingAccount && (
+                      <div style={{ padding: "10px 14px", borderRadius: 10, background: "rgba(16,185,129,0.08)", border: "1px solid rgba(16,185,129,0.25)", display: "flex", flexDirection: "column", gap: 6 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "#10b981", fontWeight: 700 }}>
+                          <MdCheckCircle size={16} /> Reusing Existing Verified Documents
+                        </div>
+                        <div style={{ fontSize: 12, color: "var(--text-secondary)" }}>
+                          {residentDocs?.aadhar_url || emailCheckState?.user?.documents?.aadhar_url ? "✓ Aadhaar Card is on file." : "No previous Aadhaar on file."}{" "}
+                          {residentDocs?.pan_url || emailCheckState?.user?.documents?.pan_url ? "✓ PAN Card is on file." : "No previous PAN on file."}
+                          <span style={{ display: "block", marginTop: 4, fontStyle: "italic" }}>
+                            Uploading new documents below is optional and will update the resident's records.
+                          </span>
+                        </div>
+                      </div>
                     )}
+                    {editingId && (
+                      <div style={{ padding: "10px 14px", borderRadius: 10, background: "rgba(107,70,193,0.08)", border: "1px solid rgba(107,70,193,0.25)", display: "flex", flexDirection: "column", gap: 6 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "var(--accent)", fontWeight: 700 }}>
+                          <MdBadge size={16} /> KYC Verification Documents
+                        </div>
+                        <div style={{ fontSize: 12, color: "var(--text-secondary)" }}>
+                          {residentDocs?.aadhar_url ? "✓ Current Aadhaar Card is on file." : "No Aadhaar on file."}{" "}
+                          {residentDocs?.pan_url ? "✓ Current PAN Card is on file." : "No PAN on file."}
+                          <span style={{ display: "block", marginTop: 4, fontStyle: "italic" }}>
+                            You can view the current documents below or upload new files to replace them.
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                    <DocumentUploadField
+                      label={t("rcaAadhar", "Aadhaar Card Photo / PDF")}
+                      icon={MdBadge}
+                      accept="application/pdf,image/*"
+                      file={aadharFile}
+                      onChange={setAadharFile}
+                      required={!editingId && !useExistingAccount}
+                      existingUrl={residentDocs?.aadhar_url || (useExistingAccount ? emailCheckState?.user?.documents?.aadhar_url : null)}
+                    />
+                    <DocumentUploadField
+                      label={t("rcaPan", "PAN Card Photo / PDF")}
+                      icon={MdCreditCard}
+                      accept="application/pdf,image/*"
+                      file={panFile}
+                      onChange={setPanFile}
+                      required={!editingId && !useExistingAccount}
+                      existingUrl={residentDocs?.pan_url || (useExistingAccount ? emailCheckState?.user?.documents?.pan_url : null)}
+                    />
                   </div>
                 )}
 
@@ -3599,7 +4007,7 @@ const [totalPages, setTotalPages] = useState(1);
                       t("colContact") || "Contact",
                       t("colType") || "Type",
                       t("colUnits") || "Units",
-                      t("colHousehold") || "Household",
+                      t("colSociety", "Society"),
                       ...(canManageResidents ? [t("colActions") || "Actions"] : []),
                     ].map((h, i, arr) => (
                       <th key={i} style={{ textAlign: (canManageResidents && i === arr.length - 1) ? "right" : "left", padding: "12px 16px", fontSize: 10, fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.07em", whiteSpace: "nowrap" }}>{h}</th>
@@ -3614,7 +4022,14 @@ const [totalPages, setTotalPages] = useState(1);
                         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                           <UserAvatar name={r.name} src={r.profile_picture} size={36} radius="50%" />
                           <div>
-                            <div style={{ fontWeight: 700, fontSize: 13, color: "var(--text-primary)" }}>{r.name}</div>
+                            <div
+                              onClick={() => setViewDetailsModal(r)}
+                              style={{ fontWeight: 700, fontSize: 13, color: "var(--text-primary)", cursor: "pointer" }}
+                              title="Click to view full resident details"
+                              className="hover:underline"
+                            >
+                              {r.name}
+                            </div>
                             <div style={{ display: "flex", gap: 5, flexWrap: "wrap", marginTop: 3 }}>
                               {r.roles?.includes("SOCIETY_ADMIN") && <span className="res-socadmin-badge" style={{ display: "inline-flex" }}>★ {t("roleSocietyAdmin")}</span>}
                               {r.roles?.includes("COMMITTEE_MEMBER") && <span className="res-committee-badge" style={{ display: "inline-flex" }}>★ {t("colCommittee") || "Committee"}</span>}
@@ -3630,7 +4045,7 @@ const [totalPages, setTotalPages] = useState(1);
                       <td style={{ padding: "14px 16px" }}>
                         <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 5 }}>
                           <ResidentTypeBadge type={r.resident_type} />
-                          {r.approval_status === "PENDING" && <PendingApprovalBadge />}
+                          {(r.approval_status === "PENDING" || r.has_pending_approval) && <PendingApprovalBadge />}
                         </div>
                       </td>
                       <td style={{ padding: "14px 16px", minWidth: 140 }}>
@@ -3649,16 +4064,58 @@ const [totalPages, setTotalPages] = useState(1);
                           )) : <span style={{ fontSize: 12, color: "var(--text-secondary)", opacity: 0.45 }}>{t("colNoUnit") || "No unit assigned"}</span>}
                         </div>
                       </td>
-                      <td style={{ padding: "14px 16px" }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                          <div style={{ display: "flex", alignItems: "center", gap: 4, cursor: "pointer" }} title={`Vehicles: ${r.vehicle_count ?? 0}`}>
-                            <MdDirectionsCar size={16} style={{ color: "var(--text-secondary)" }} />
-                            <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text-primary)" }}>{r.vehicle_count ?? 0}</span>
-                          </div>
-                          <div style={{ display: "flex", alignItems: "center", gap: 4, cursor: "pointer" }} title={`${t("colOccupants")}: ${r.occupant_count ?? 1}`}>
-                            <MdPeople size={16} style={{ color: "var(--text-secondary)" }} />
-                            <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text-primary)" }}>{r.occupant_count ?? 1}</span>
-                          </div>
+                      <td style={{ padding: "14px 16px", minWidth: 160 }}>
+                        <div style={{ display: "flex", flexDirection: "column", gap: 5, alignItems: "flex-start" }}>
+                          {r.societies && r.societies.length > 0 ? (
+                            r.societies.map((soc, sIdx) => (
+                              <span
+                                key={soc.id || sIdx}
+                                onClick={() => setViewDetailsModal(r)}
+                                style={{
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  gap: 5,
+                                  fontSize: 11,
+                                  fontWeight: 600,
+                                  padding: "3px 9px",
+                                  borderRadius: 8,
+                                  background: sIdx === 0 ? "rgba(107,70,193,0.12)" : "rgba(59,130,246,0.10)",
+                                  color: sIdx === 0 ? "var(--accent)" : "#60a5fa",
+                                  border: `1px solid ${sIdx === 0 ? "rgba(107,70,193,0.25)" : "rgba(59,130,246,0.22)"}`,
+                                  cursor: "pointer",
+                                  whiteSpace: "nowrap",
+                                }}
+                                title={`${soc.name}${soc.flats?.length ? ` · ${soc.flats.length} flat(s)` : ""}`}
+                              >
+                                <MdApartment size={13} style={{ flexShrink: 0 }} />
+                                <span style={{ maxWidth: 140, overflow: "hidden", textOverflow: "ellipsis" }}>
+                                  {soc.name}
+                                </span>
+                              </span>
+                            ))
+                          ) : r.society_name ? (
+                            <span
+                              onClick={() => setViewDetailsModal(r)}
+                              style={{
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: 5,
+                                fontSize: 11,
+                                fontWeight: 600,
+                                padding: "3px 9px",
+                                borderRadius: 8,
+                                background: "rgba(107,70,193,0.12)",
+                                color: "var(--accent)",
+                                border: "1px solid rgba(107,70,193,0.25)",
+                                cursor: "pointer",
+                              }}
+                            >
+                              <MdApartment size={13} />
+                              {r.society_name}
+                            </span>
+                          ) : (
+                            <span style={{ fontSize: 12, color: "var(--text-secondary)", opacity: 0.5 }}>—</span>
+                          )}
                         </div>
                       </td>
                       {canManageResidents && (
@@ -3666,19 +4123,26 @@ const [totalPages, setTotalPages] = useState(1);
                           <div style={{ display: "flex", justifyContent: "flex-end" }}>
                         <ResidentActionMenu
                           t={t}
+                          onViewDetails={() => setViewDetailsModal(r)}
                           onAssignFlat={() => handleOpenAssignModal(r)}
                           onEdit={() => handleEdit(r)}
                           isCommittee={!!r.roles?.includes("COMMITTEE_MEMBER")}
                           isAccountant={!!r.roles?.includes("ACCOUNTANT")}
                           isSocietyAdmin={!!r.roles?.includes("SOCIETY_ADMIN")}
                           isTenant={r.resident_type === "TENANT"}
-                          isPendingApproval={String(r.approval_status || "").toUpperCase() === "PENDING"}
-  isRejected={String(r.approval_status || "").toUpperCase() === "REJECTED"}
+                          isPendingApproval={String(r.approval_status || "").toUpperCase() === "PENDING" || Boolean(r.has_pending_approval)}
+                          isRejected={String(r.approval_status || "").toUpperCase() === "REJECTED"}
                           onApprove={() => handleApproveResident(r)}
                           onReject={() => setRejectTarget(r)}
-                          onPromote={() => setCommitteeConfirm({ type: "promote", id: r.id, name: r.name })}
-                          onRemoveCommittee={() => setCommitteeConfirm({ type: "remove", id: r.id, name: r.name })}
-                          onDeactivateAccountant={() => setAccountantConfirm({ id: r.id, name: r.name })}
+                          onPromote={() => {
+                            const socList = r.societies && r.societies.length > 0 ? r.societies : (r.society_id ? [{ id: r.society_id, name: r.society_name }] : []);
+                            setCommitteeConfirm({ type: "promote", id: r.id, name: r.name, societies: socList, selectedSocietyId: socList[0]?.id || r.society_id || null });
+                          }}
+                          onRemoveCommittee={() => {
+                            const socList = r.societies && r.societies.length > 0 ? r.societies : (r.society_id ? [{ id: r.society_id, name: r.society_name }] : []);
+                            const committeeSocs = socList.filter((s) => s.roles?.includes("COMMITTEE_MEMBER"));
+                            setCommitteeConfirm({ type: "remove", id: r.id, name: r.name, societies: committeeSocs.length > 0 ? committeeSocs : socList, selectedSocietyId: (committeeSocs[0] || socList[0])?.id || r.society_id || null });
+                          }}
                           onDelete={() => {
                             if (!hasPermission(user, "resident", "delete")) {
                               showUnauthorized("You do not have permission to delete residents.");
@@ -3701,40 +4165,70 @@ const [totalPages, setTotalPages] = useState(1);
                  <div key={r.id} className="animate-fadeIn" style={{ padding: "14px 16px", borderBottom: "1px solid var(--divider)" }}>
                    <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
                      <div style={{ flex: 1, minWidth: 0 }}>
-                       <p style={{ fontSize: 14, fontWeight: 700, color: "var(--text-primary)", margin: 0 }}>{r.name}</p>
+                       <p
+                         onClick={() => setViewDetailsModal(r)}
+                         style={{ fontSize: 14, fontWeight: 700, color: "var(--text-primary)", margin: 0, cursor: "pointer" }}
+                         className="hover:underline"
+                       >
+                         {r.name}
+                       </p>
                        <p style={{ fontSize: 11, color: "var(--text-secondary)", margin: "2px 0 0" }}>{r.email}</p>
                        {r.phone && <p style={{ fontSize: 11, color: "var(--text-secondary)", margin: "1px 0 0", display: "flex", alignItems: "center", gap: 3 }}><MdPhone size={10} style={{ opacity: 0.5 }} /> {r.phone}</p>}
                        <div style={{ display: "flex", alignItems: "center", gap: 5, flexWrap: "wrap", marginTop: 6 }}>
                          <ResidentTypeBadge type={r.resident_type} />
-                         {r.approval_status === "PENDING" && <PendingApprovalBadge />}
+                         {(r.approval_status === "PENDING" || r.has_pending_approval) && <PendingApprovalBadge />}
                          {r.flats?.map((flat, fIdx) => (
                            <span key={flat.id || fIdx} style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 999, background: "rgba(34,197,94,0.10)", color: "#4ade80", border: "1px solid rgba(34,197,94,0.22)" }}>
                              {flat.flat_number}
                            </span>
                          ))}
+                         {r.societies && r.societies.length > 0 ? (
+                           r.societies.map((soc, sIdx) => (
+                             <span key={soc.id || sIdx} style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 999, background: "rgba(107,70,193,0.12)", color: "var(--accent)", border: "1px solid rgba(107,70,193,0.25)" }}>
+                               <MdApartment size={11} /> {soc.name}
+                             </span>
+                           ))
+                         ) : r.society_name ? (
+                           <span style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 999, background: "rgba(107,70,193,0.12)", color: "var(--accent)", border: "1px solid rgba(107,70,193,0.25)" }}>
+                             <MdApartment size={11} /> {r.society_name}
+                           </span>
+                         ) : null}
                          {r.roles?.includes("SOCIETY_ADMIN") && <span className="res-socadmin-badge">★ {t("roleSocietyAdmin")}</span>}
                          {r.roles?.includes("COMMITTEE_MEMBER") && <span className="res-committee-badge">★ {t("colCommittee") || "Committee"}</span>}
                          {r.roles?.includes("ACCOUNTANT") && <span className="res-accountant-badge">★ {t("resAccountantBadge")}</span>}
-                         <span style={{ cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 3, fontSize: 10, fontWeight: 600, padding: "2px 7px", borderRadius: 999, background: "rgba(251,191,36,0.10)", color: "var(--accent)", border: "1px solid rgba(251,191,36,0.20)" }} title={`Vehicles: ${r.vehicle_count ?? 0}`}><MdDirectionsCar size={10} /> {r.vehicle_count ?? 0}</span>
-                         <span style={{ cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 3, fontSize: 10, fontWeight: 600, padding: "2px 7px", borderRadius: 999, background: "rgba(52,211,153,0.10)", color: "#34d399", border: "1px solid rgba(52,211,153,0.20)" }} title={`${t("colOccupants")}: ${r.occupant_count ?? 1}`}><MdPeople size={10} /> {r.occupant_count ?? 1}</span>
                        </div>
+                       <button
+                         type="button"
+                         onClick={() => setViewDetailsModal(r)}
+                         style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 11, fontWeight: 700, padding: "3px 9px", borderRadius: 8, background: "rgba(107,70,193,0.12)", color: "var(--accent)", border: "1px solid rgba(107,70,193,0.25)", cursor: "pointer", marginTop: 6 }}
+                       >
+                         <MdVisibility size={13} /> {t("resViewDetails", "View Details")}
+                       </button>
                      </div>
                      {canManageResidents && (
                        <div style={{ flexShrink: 0 }}>
                          <ResidentActionMenu
                            t={t}
+                           onViewDetails={() => setViewDetailsModal(r)}
                            onAssignFlat={() => handleOpenAssignModal(r)}
                            onEdit={() => handleEdit(r)}
                            isCommittee={!!r.roles?.includes("COMMITTEE_MEMBER")}
                            isAccountant={!!r.roles?.includes("ACCOUNTANT")}
                            isSocietyAdmin={!!r.roles?.includes("SOCIETY_ADMIN")}
                            isTenant={r.resident_type === "TENANT"}
-                           isPendingApproval={String(r.approval_status || "").toUpperCase() === "PENDING"}
-       isRejected={String(r.approval_status || "").toUpperCase() === "REJECTED"}
+                           isPendingApproval={String(r.approval_status || "").toUpperCase() === "PENDING" || Boolean(r.has_pending_approval)}
+                           isRejected={String(r.approval_status || "").toUpperCase() === "REJECTED"}
                            onApprove={() => handleApproveResident(r)}
                            onReject={() => setRejectTarget(r)}
-                           onPromote={() => setCommitteeConfirm({ type: "promote", id: r.id, name: r.name })}
-                           onRemoveCommittee={() => setCommitteeConfirm({ type: "remove", id: r.id, name: r.name })}
+                           onPromote={() => {
+                             const socList = r.societies && r.societies.length > 0 ? r.societies : (r.society_id ? [{ id: r.society_id, name: r.society_name }] : []);
+                             setCommitteeConfirm({ type: "promote", id: r.id, name: r.name, societies: socList, selectedSocietyId: socList[0]?.id || r.society_id || null });
+                           }}
+                           onRemoveCommittee={() => {
+                             const socList = r.societies && r.societies.length > 0 ? r.societies : (r.society_id ? [{ id: r.society_id, name: r.society_name }] : []);
+                             const committeeSocs = socList.filter((s) => s.roles?.includes("COMMITTEE_MEMBER"));
+                             setCommitteeConfirm({ type: "remove", id: r.id, name: r.name, societies: committeeSocs.length > 0 ? committeeSocs : socList, selectedSocietyId: (committeeSocs[0] || socList[0])?.id || r.society_id || null });
+                           }}
                            onDeactivateAccountant={() => setAccountantConfirm({ id: r.id, name: r.name })}
                            onDelete={() => {
                              if (!hasPermission(user, "resident", "delete")) {
@@ -3767,7 +4261,7 @@ const [totalPages, setTotalPages] = useState(1);
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            style={{ width: "100%", maxWidth: 420, background: "var(--card-bg)", border: "1px solid var(--glass-border)", borderRadius: 20, padding: "24px", boxShadow: "0 24px 80px rgba(0,0,0,0.5)", animation: "saModalPopIn 0.25s cubic-bezier(0.16, 1, 0.3, 1)" }}
+            style={{ width: "100%", maxWidth: 440, background: "var(--card-bg)", border: "1px solid var(--glass-border)", borderRadius: 20, padding: "24px", boxShadow: "0 24px 80px rgba(0,0,0,0.5)", animation: "saModalPopIn 0.25s cubic-bezier(0.16, 1, 0.3, 1)" }}
           >
             <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
               <div style={{ width: 42, height: 42, borderRadius: 12, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", background: committeeConfirm.type === "promote" ? "rgba(160,90,255,0.14)" : "rgba(239,68,68,0.14)", border: `1px solid ${committeeConfirm.type === "promote" ? "rgba(160,90,255,0.3)" : "rgba(239,68,68,0.3)"}` }}>
@@ -3785,13 +4279,80 @@ const [totalPages, setTotalPages] = useState(1);
               {committeeConfirm.type === "promote" ? t("resAddCommitteeBody") : t("resRemoveCommitteeBody")}
             </p>
 
+            {/* Multiple Societies Selection */}
+            {committeeConfirm.societies && committeeConfirm.societies.length > 1 && (
+              <div style={{ marginTop: 14, marginBottom: 8 }}>
+                <label style={{ fontSize: 11, fontWeight: 700, color: "var(--accent)", textTransform: "uppercase", letterSpacing: "0.06em", display: "block", marginBottom: 8 }}>
+                  Select Society:
+                </label>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8, maxHeight: 180, overflowY: "auto" }}>
+                  {committeeConfirm.societies.map((soc) => {
+                    const isSelected = String(committeeConfirm.selectedSocietyId) === String(soc.id);
+                    const isAlreadyCommittee = soc.roles?.includes("COMMITTEE_MEMBER");
+                    return (
+                      <div
+                        key={soc.id}
+                        onClick={() => setCommitteeConfirm((prev) => ({ ...prev, selectedSocietyId: soc.id }))}
+                        style={{
+                          padding: "10px 14px",
+                          borderRadius: 10,
+                          border: `1.5px solid ${isSelected ? "var(--accent)" : "rgba(255,255,255,0.08)"}`,
+                          background: isSelected ? "rgba(107,70,193,0.12)" : "rgba(255,255,255,0.02)",
+                          cursor: "pointer",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          transition: "all 0.15s ease",
+                        }}
+                      >
+                        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                          <input
+                            type="radio"
+                            name="committeeSocietySelection"
+                            checked={isSelected}
+                            onChange={() => setCommitteeConfirm((prev) => ({ ...prev, selectedSocietyId: soc.id }))}
+                            style={{ accentColor: "var(--accent)", cursor: "pointer" }}
+                          />
+                          <div>
+                            <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text-primary)" }}>
+                              {soc.name}
+                            </div>
+                            {soc.flats && soc.flats.length > 0 && (
+                              <div style={{ fontSize: 11, color: "var(--text-secondary)", opacity: 0.7 }}>
+                                Flats: {soc.flats.map((f) => f.flat_number).join(", ")}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        {isAlreadyCommittee && (
+                          <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 7px", borderRadius: 4, background: "rgba(160,90,255,0.15)", color: "var(--accent)" }}>
+                            Committee Member
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {committeeConfirm.societies && committeeConfirm.societies.length === 1 && (
+              <div style={{ marginTop: 12, marginBottom: 8, padding: "8px 12px", borderRadius: 8, background: "rgba(107,70,193,0.08)", border: "1px solid rgba(107,70,193,0.2)", fontSize: 12, color: "var(--text-secondary)" }}>
+                Target Society: <strong style={{ color: "var(--text-primary)" }}>{committeeConfirm.societies[0].name}</strong>
+              </div>
+            )}
+
             <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 22 }}>
               <button type="button" onClick={() => setCommitteeConfirm(null)} className="sa-btn sa-btn-ghost">
                 {t("cancel") || "Cancel"}
               </button>
               <button
                 type="button"
-                onClick={() => committeeConfirm.type === "promote" ? promoteCommittee(committeeConfirm.id) : removeCommittee(committeeConfirm.id)}
+                disabled={committeeConfirm.societies?.length > 1 && !committeeConfirm.selectedSocietyId}
+                onClick={() => committeeConfirm.type === "promote"
+                  ? promoteCommittee(committeeConfirm.id, committeeConfirm.selectedSocietyId)
+                  : removeCommittee(committeeConfirm.id, committeeConfirm.selectedSocietyId)
+                }
                 className={committeeConfirm.type === "promote" ? "btn-primary" : "btn-danger"}
                 style={{ borderRadius: 999, fontWeight: 700 }}
               >

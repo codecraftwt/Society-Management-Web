@@ -200,3 +200,101 @@ html.light.role-theme .app-header-root {
     padding: 0 0.55rem;
   }
 }
+
+/* ── Multi-Society Switcher Dropdown ── */
+.header-society-switcher-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.65rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: var(--accent-soft, rgba(160, 90, 255, 0.12));
+  color: var(--accent, #a05aff);
+  border: 1px solid var(--accent-border, rgba(160, 90, 255, 0.25));
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.header-society-switcher-btn:hover {
+  background: var(--accent-hover, rgba(160, 90, 255, 0.2));
+  border-color: var(--accent, #a05aff);
+  transform: translateY(-1px);
+}
+
+.header-society-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  min-width: 240px;
+  max-width: 320px;
+  background: var(--surface-bg, #1a1c24);
+  border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.1));
+  border-radius: 14px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  padding: 6px;
+  z-index: 50;
+  animation: fadeInDown 0.15s ease-out;
+}
+
+html.light .header-society-menu {
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+}
+
+.header-society-menu-title {
+  padding: 6px 10px 4px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-secondary, #94a3b8);
+}
+
+.header-society-menu-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.header-society-menu-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: transparent;
+  border: none;
+  color: var(--text-primary, #f1f5f9);
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+  width: 100%;
+}
+
+.header-society-menu-item:hover {
+  background: rgba(160, 90, 255, 0.1);
+}
+
+.header-society-menu-item.active {
+  background: rgba(160, 90, 255, 0.16);
+  border: 1px solid rgba(160, 90, 255, 0.3);
+}
+
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+

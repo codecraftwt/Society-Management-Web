@@ -9,11 +9,19 @@ const socket = io((import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/a
   transports: ["websocket","polling"],
 });
 
+let lastSocietyId = null;
+
 /** Read the stored user and emit "join" so the server assigns rooms. */
 function joinRooms() {
   try {
     const user = JSON.parse(localStorage.getItem("user"));
     if (!user?.id) return;
+
+    if (lastSocietyId && user.society_id && String(lastSocietyId) !== String(user.society_id)) {
+      socket.emit("leave_society", lastSocietyId);
+      console.log(`[socket] left old society room → society_${lastSocietyId}`);
+    }
+    lastSocietyId = user.society_id;
 
     socket.emit("join", {
       userId:    user.id,

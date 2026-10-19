@@ -47,91 +47,213 @@ function AllocatedSlotCard({ slot, t }) {
   const ac    = isCAR ? "var(--accent)" : "var(--acct-violet)";
   const abg   = isCAR ? "var(--accent-soft)"  : "rgba(var(--acct-violet-rgb),0.12)";
   const abdr  = isCAR ? "rgba(var(--acct-purple-rgb),0.28)"  : "rgba(var(--acct-violet-rgb),0.28)";
+  const isOccupied = Boolean(slot.linked_vehicle);
 
   return (
-    <div style={{ borderRadius: 16, border: "1px solid var(--glass-border)", background: "var(--card-inner-bg)", overflow: "hidden" }}>
-      {slot.flat && (
-        <div style={{ display:"flex", alignItems:"center", gap:8, padding:"10px 16px", borderBottom:"1px solid var(--glass-border)", background:"var(--card-inner-bg)" }}>
-          <MdApartment style={{ color:"var(--text-secondary)", fontSize:15 }} />
-          <span style={{ fontSize:12, color:"var(--text-secondary)", fontWeight:700, letterSpacing:"0.04em" }}>
-            {t("rdFlat")} {slot.flat.flat_number}{slot.flat.floor_id != null && <> · {t("vehFloor", { floor: slot.flat.floor_id })}</>}
-          </span>
-        </div>
-      )}
-      <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"16px" }}>
-        <div style={{ display:"flex", alignItems:"center", gap:14 }}>
-          <div style={{ width:46, height:46, borderRadius:13, display:"flex", alignItems:"center", justifyContent:"center", background:abg, border:`1px solid ${abdr}` }}>
-            {isCAR
-              ? <MdDirectionsCarFilled style={{ fontSize:22, color:ac }} />
-              : <MdTwoWheeler          style={{ fontSize:22, color:ac }} />}
-          </div>
-          <div>
-            <p style={{ margin:0, fontWeight:800, fontSize:18, letterSpacing:"0.04em", color:"var(--text-primary)", fontFamily:"monospace" }}>
-              {slot.slot_number}
-            </p>
-            <p style={{ margin:"4px 0 0", fontSize:12, color:"var(--text-secondary)", fontWeight:600 }}>
-              {vehTypeLabel(t, slot.vehicle_type)}
-              {slot.parking_floor && <> &nbsp;·&nbsp; {t("vehLevel", { level: slot.parking_floor })}</>}
-            </p>
-            {slot.linked_vehicle ? (
-  <p
-    style={{
-      margin: "4px 0 0",
-      fontSize: 11,
-      color: "var(--accent)",
-      display: "flex",
-      alignItems: "center",
-      gap: 4,
-      fontWeight: 700,
-    }}
-  >
-    <MdDirectionsCarFilled size={11} />
-
-    {slot.linked_vehicle.vehicle_number}
-
-    {slot.linked_vehicle.vehicle_name && (
-      <span
+    <div
+      style={{
+        borderRadius: 16,
+        border: `1px solid ${isOccupied ? "var(--glass-border)" : "var(--glass-border)"}`,
+        background: "var(--card-inner-bg)",
+        overflow: "hidden",
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "space-between",
+        boxShadow: isOccupied ? "0 4px 18px -4px rgba(0,0,0,0.12)" : "none",
+        transition: "all 0.2s ease",
+      }}
+    >
+      {/* Top Header: Flat info + Slot Allocation Type */}
+      <div
         style={{
-          color: "var(--text-secondary)",
-          fontWeight: 500,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          padding: "10px 16px",
+          borderBottom: "1px solid var(--glass-border)",
+          background: "var(--card-inner-bg)",
         }}
       >
-        · {slot.linked_vehicle.vehicle_name}
-      </span>
-    )}
-  </p>
-) : (
-              <p style={{ margin:"4px 0 0", fontSize:11, color:"var(--accent)", fontWeight:600 }}>
-                {t("vehNoLinkedYet")}
-              </p>
+        <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+          <MdApartment style={{ color: "var(--text-secondary)", fontSize: 15 }} />
+          <span style={{ fontSize: 12, color: "var(--text-secondary)", fontWeight: 700, letterSpacing: "0.03em" }}>
+            {slot.flat ? (
+              <>
+                {t("rdFlat")} {slot.flat.flat_number}
+                {slot.flat.floor_id != null && <> · {t("vehFloor", { floor: slot.flat.floor_id })}</>}
+              </>
+            ) : (
+              t("parkMainSlots")
             )}
-          </div>
+          </span>
         </div>
-        <div style={{
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "flex-end",
-          gap: 6,
-        }}>
-          {/* DEFAULT / EXTRA badge */}
-          <span style={{
-            padding: "5px 12px", borderRadius: 999, fontSize: 11, fontWeight: 700,
+
+        {/* DEFAULT / EXTRA badge */}
+        <span
+          style={{
+            padding: "2px 8px",
+            borderRadius: 999,
+            fontSize: 10,
+            fontWeight: 800,
+            letterSpacing: "0.04em",
+            textTransform: "uppercase",
             background: slot.parking_type === "DEFAULT" ? "var(--approve-bg)" : "var(--approval-bg)",
             color: slot.parking_type === "DEFAULT" ? "var(--approve-color)" : "var(--approval-color)",
             border: `1px solid ${slot.parking_type === "DEFAULT" ? "var(--approve-border)" : "var(--approval-border)"}`,
-          }}>
-            {slot.parking_type === "DEFAULT" ? t("vehDefault") : t("vehExtra")}
-          </span>
-          {/* Occupancy badge */}
-          <span style={{
-            padding: "4px 10px", borderRadius: 999, fontSize: 10, fontWeight: 700,
-            background: slot.linked_vehicle ? "var(--accent-soft)" : "var(--card-inner-bg)",
-            color: slot.linked_vehicle ? "var(--accent)" : "var(--text-secondary)",
-            border: `1px solid ${slot.linked_vehicle ? "rgba(var(--acct-purple-rgb),0.28)" : "var(--glass-border)"}`,
-          }}>
-            {slot.linked_vehicle ? t("vehOccupied") : t("vehUnlinked")}
+          }}
+        >
+          {slot.parking_type === "DEFAULT" ? t("vehDefault") : t("vehExtra")}
+        </span>
+      </div>
+
+      {/* Main Body */}
+      <div style={{ padding: "16px" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <div
+              style={{
+                width: 44,
+                height: 44,
+                borderRadius: 12,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                background: abg,
+                border: `1px solid ${abdr}`,
+                flexShrink: 0,
+              }}
+            >
+              {isCAR
+                ? <MdDirectionsCarFilled style={{ fontSize: 22, color: ac }} />
+                : <MdTwoWheeler          style={{ fontSize: 22, color: ac }} />}
+            </div>
+            <div>
+              <p
+                style={{
+                  margin: 0,
+                  fontWeight: 800,
+                  fontSize: 19,
+                  letterSpacing: "0.04em",
+                  color: "var(--text-primary)",
+                  fontFamily: "monospace",
+                  lineHeight: 1.2,
+                }}
+              >
+                {slot.slot_number}
+              </p>
+              <p style={{ margin: "3px 0 0", fontSize: 12, color: "var(--text-secondary)", fontWeight: 600 }}>
+                {vehTypeLabel(t, slot.vehicle_type)}
+                {slot.parking_floor && <> · {t("vehLevel", { level: slot.parking_floor })}</>}
+              </p>
+            </div>
+          </div>
+
+          {/* Occupancy Status Badge */}
+          <span
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 5,
+              padding: "4px 10px",
+              borderRadius: 999,
+              fontSize: 11,
+              fontWeight: 700,
+              background: isOccupied ? "rgba(16, 185, 129, 0.12)" : "rgba(59, 130, 246, 0.10)",
+              color: isOccupied ? "#10B981" : "#3B82F6",
+              border: `1px solid ${isOccupied ? "rgba(16, 185, 129, 0.28)" : "rgba(59, 130, 246, 0.25)"}`,
+              flexShrink: 0,
+            }}
+          >
+            <span
+              style={{
+                width: 6,
+                height: 6,
+                borderRadius: "50%",
+                background: isOccupied ? "#10B981" : "#3B82F6",
+              }}
+            />
+            {isOccupied ? t("vehOccupied") : (t("parkTabAvailable") || "Available")}
           </span>
         </div>
+
+        {/* Vehicle Information or Clean Empty Indicator */}
+        {isOccupied ? (
+          <div
+            style={{
+              marginTop: 14,
+              padding: "10px 12px",
+              borderRadius: 10,
+              background: "rgba(var(--accent-rgb, 124, 58, 237), 0.05)",
+              border: "1px solid rgba(var(--accent-rgb, 124, 58, 237), 0.18)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: 8,
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
+              <div
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 5,
+                  padding: "3px 8px",
+                  borderRadius: 6,
+                  background: "var(--card-inner-bg)",
+                  border: "1px solid var(--glass-border)",
+                  fontFamily: "monospace",
+                  fontWeight: 800,
+                  fontSize: 12,
+                  letterSpacing: "0.04em",
+                  color: "var(--text-primary)",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                <MdDirectionsCarFilled size={12} style={{ color: ac }} />
+                {slot.linked_vehicle.vehicle_number}
+              </div>
+              {slot.linked_vehicle.vehicle_name && (
+                <span
+                  style={{
+                    fontSize: 12,
+                    color: "var(--text-secondary)",
+                    fontWeight: 600,
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  · {slot.linked_vehicle.vehicle_name}
+                </span>
+              )}
+            </div>
+            <span style={{ fontSize: 10, fontWeight: 700, color: "#10B981", flexShrink: 0 }}>
+              ✓ Linked
+            </span>
+          </div>
+        ) : (
+          <div
+            style={{
+              marginTop: 14,
+              padding: "10px 12px",
+              borderRadius: 10,
+              background: "rgba(255, 255, 255, 0.02)",
+              border: "1px dashed var(--glass-border)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              color: "var(--text-secondary)",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 500 }}>
+              <span style={{ fontSize: 13, opacity: 0.6 }}>🅿️</span>
+              <span>{t("vehAvailable") || "Empty / Unlinked"}</span>
+            </div>
+            <span style={{ fontSize: 11, fontWeight: 600, color: "#3B82F6" }}>
+              Ready to claim
+            </span>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -1084,22 +1206,6 @@ export default function MyVehicles() {
             </div>
           ) : (
             <>
-              <div className="mv-info">
-                <MdInfo size={15} />
-                <span>
-                  {t("vehPreAssignedA")} <strong>{t("vehPreAssignedStrong")}</strong>{t("vehPreAssignedB")}
-                </span>
-              </div>
-
-              {allocatedSlots.length > 1 && (
-                <div className="mv-info">
-                  <MdApartment size={15} />
-                  <span>
-                    {t("vehSlotsAcrossA")} <strong>{allocatedSlots.length}</strong> {t("vehSlotsAcrossB", { flats: new Set(allocatedSlots.map(s => s.flat_id)).size })}
-                  </span>
-                </div>
-              )}
-
               {visibleSlots.length === 0 ? (
                 <div className="bg-card rounded-xl">
                   <div className="mv-empty">
@@ -1112,21 +1218,6 @@ export default function MyVehicles() {
                   {visibleSlots.map(slot => <AllocatedSlotCard key={slot.id} slot={slot} t={t} />)}
                 </div>
               )}
-
-              <div style={{ display:"flex", gap:12, flexWrap:"wrap", marginTop:4 }}>
-                {[
-                  { label:t("vehStatTotalSlots"), value: allocatedSlots.length },
-                  { label:t("vehStatCarSlots"),   value: allocatedSlots.filter(s => s.vehicle_type==="CAR").length },
-                  { label:t("vehStatBikeSlots"),  value: allocatedSlots.filter(s => s.vehicle_type==="BIKE").length },
-                  { label:t("vehStatInUse"),      value: allocatedSlots.filter(s => s.linked_vehicle).length },
-                  { label:t("vehStatFree"),       value: allocatedSlots.filter(s => !s.linked_vehicle).length },
-                ].map(stat => (
-                  <div key={stat.label} style={{ flex:"1 1 90px", padding:"12px 16px", borderRadius:12, background:"var(--card-inner-bg)", border:"1px solid var(--glass-border)", textAlign:"center" }}>
-                    <p style={{ margin:0, fontSize:22, fontWeight:800, color:"var(--text-primary)" }}>{stat.value}</p>
-                    <p style={{ margin:"3px 0 0", fontSize:11, color:"var(--text-secondary)", fontWeight:600 }}>{stat.label}</p>
-                  </div>
-                ))}
-              </div>
             </>
           )}
         </div>
@@ -1137,12 +1228,6 @@ export default function MyVehicles() {
       ══════════════════════════════ */}
       {activeTab === "requests" && (
         <div className="space-y-4">
-          <div className="mv-info">
-            <MdInfo size={15} />
-            <span>
-              {t("vehReqInfoA")} <strong>{t("vehReqInfoStrong")}</strong>{t("vehReqInfoB")}
-            </span>
-          </div>
 
           {requestsLoading ? (
             <div style={{ display:"flex", alignItems:"center", justifyContent:"center", padding:"48px 20px", color:"var(--text-secondary)", gap:10 }}>

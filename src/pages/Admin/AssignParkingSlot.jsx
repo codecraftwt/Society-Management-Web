@@ -1309,7 +1309,6 @@ export default function AssignParkingSlot({ hideHeader = false, societyId } = {}
 
   const mainTabs = [
     { key: "slots", label: t("parkMainSlots"), icon: <FaParking size={13} /> },
-    { key: "resident-entry", label: t("parkResidentEntry"), icon: <span style={{ fontSize: 14 }}>🏠</span> },
     { key: "resident-requests", label: t("parkExtraRequests"), icon: <MdPendingActions size={14} /> },
   ];
 
@@ -1380,23 +1379,10 @@ export default function AssignParkingSlot({ hideHeader = false, societyId } = {}
             isOpen={isSearchOpen}
             onOpenChange={setIsSearchOpen}
             maxWidth={240}
-            placeholder={
-              mainTab === "resident-entry"
-                ? t("parkSearchResidentVehicles")
-                : t("parkSearchSlots")
-            }
+            placeholder={t("parkSearchSlots")}
           />
         </div>
       </div>
-
-      {/* TAB: RESIDENT ENTRY */}
-      {mainTab === "resident-entry" && (
-        <ResidentEntryPanel
-          slots={allSlots}
-          onCreated={refreshAll}
-          t={t}
-        />
-      )}
 
       {/* TAB: EXTRA SLOT REQUESTS */}
       {mainTab === "resident-requests" && (

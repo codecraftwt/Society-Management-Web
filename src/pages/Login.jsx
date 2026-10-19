@@ -394,6 +394,7 @@ function Login() {
   const [step, setStep] = useState("credentials");
   const [tempToken, setTempToken] = useState(null);
   const [panelPrompt, setPanelPrompt] = useState(null);
+  const [multiSocietyPrompt, setMultiSocietyPrompt] = useState(null);
   const [rejection, setRejection] = useState(null);
 
   // Panel chooser helpers — society admins, committee members & accountants who live in the
@@ -481,6 +482,23 @@ function Login() {
   };
 
   const handleVerified = (user, token) => {
+    // If the user belongs to multiple societies, ask for society selection first!
+    const availableSocieties = Array.isArray(user.availableSocieties) && user.availableSocieties.length > 0
+      ? user.availableSocieties
+      : [];
+
+    if (availableSocieties.length > 1) {
+      setStep("credentials");
+      setTempToken(null);
+      setMultiSocietyPrompt({
+        user,
+        token,
+        societies: availableSocieties,
+        selectedSociety: null,
+      });
+      return;
+    }
+
     const roles = Array.isArray(user.roles) && user.roles.length ? user.roles : [user.role].filter(Boolean);
     // `availablePanels` is the authoritative list — it reflects whether an
     // accountant or admin actually lives in the society, which `roles` cannot express.
@@ -536,6 +554,84 @@ function Login() {
 
     const targetRoute = ROUTE_MAP[user.activeRole] || "/";
     navigate(targetRoute, { replace: true });
+  };
+
+  const handleSelectSociety = (soc) => {
+    const socRoles = Array.isArray(soc.roles) && soc.roles.length ? soc.roles : ["RESIDENT"];
+    const hasAdmin = socRoles.includes("SOCIETY_ADMIN");
+    const hasComm = !hasAdmin && (socRoles.includes("COMMITTEE_MEMBER") || socRoles.includes("COMMITTEE"));
+    const hasAcc = socRoles.includes("ACCOUNTANT");
+    const hasRes = socRoles.includes("RESIDENT");
+    const choiceCount = [hasAdmin, hasComm, hasAcc, hasRes].filter(Boolean).length;
+
+    if (choiceCount > 1) {
+      // Multiple roles in this chosen society -> proceed to role selection for this society
+      setMultiSocietyPrompt((prev) => ({
+        ...prev,
+        selectedSociety: soc,
+      }));
+    } else {
+      // Exactly 1 role in this chosen society -> finalize login right away
+      const targetRole = hasAdmin
+        ? "SOCIETY_ADMIN"
+        : hasComm
+        ? "COMMITTEE_MEMBER"
+        : hasAcc
+        ? "ACCOUNTANT"
+        : "RESIDENT";
+      finalizeSocietyLogin(soc.id, targetRole);
+    }
+  };
+
+  const finalizeSocietyLogin = async (targetSocietyId, targetRole) => {
+    if (!multiSocietyPrompt) return;
+    const { user, token } = multiSocietyPrompt;
+    setLoginLoading(true);
+
+    try {
+      let finalUser = user;
+      let finalToken = token;
+
+      // Always sync active society & role via switch-society
+      const switchRes = await API.post(
+        "/auth/switch-society",
+        { society_id: targetSocietyId, role: targetRole },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      if (switchRes.data?.token) {
+        finalToken = switchRes.data.token;
+        finalUser = switchRes.data.user || {
+          ...user,
+          society_id: targetSocietyId,
+          activeRole: targetRole,
+          role: targetRole,
+        };
+      }
+
+      setMultiSocietyPrompt(null);
+      login(finalUser, finalToken);
+
+      if (targetRole === "SUPER_ADMIN") {
+        localStorage.setItem("superadmin_society_filter", "ALL");
+      }
+
+      const targetRoute = ROUTE_MAP[targetRole] || "/";
+      navigate(targetRoute, { replace: true });
+    } catch (err) {
+      console.error("Society login finalization failed:", err);
+      toast.error(err.response?.data?.message || "Failed to enter panel");
+    } finally {
+      setLoginLoading(false);
+    }
+  };
+
+  const dismissMultiSocietyPrompt = () => {
+    if (!multiSocietyPrompt) return;
+    const { user, token } = multiSocietyPrompt;
+    setMultiSocietyPrompt(null);
+    login(user, token);
+    navigate(ROUTE_MAP[user.activeRole] || "/", { replace: true });
   };
 
   const enterPanel = async (panelRole) => {
@@ -926,6 +1022,453 @@ function Login() {
                   </button>
                 )}
               </div>
+            </div>
+          </div>,
+          document.body
+        )}
+
+      {/* MULTI-SOCIETY & ROLE SELECTION MODAL */}
+      {multiSocietyPrompt &&
+        createPortal(
+          <div
+            style={{
+              position: "fixed",
+              inset: 0,
+              zIndex: 9999,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              background: "rgba(0,0,0,0.72)",
+              backdropFilter: "blur(6px)",
+              padding: "16px",
+            }}
+            onClick={dismissMultiSocietyPrompt}
+          >
+            <div
+              style={{
+                background: "var(--card-bg, #181c2a)",
+                borderRadius: 20,
+                border: "1px solid var(--divider, rgba(255,255,255,0.1))",
+                boxShadow: "0 24px 60px rgba(0,0,0,0.5)",
+                width: "100%",
+                maxWidth: 480,
+                maxHeight: "90vh",
+                overflowY: "auto",
+                display: "flex",
+                flexDirection: "column",
+                gap: 16,
+                padding: "24px",
+                color: "var(--text-primary, #ffffff)",
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Header */}
+              <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  <div
+                    style={{
+                      width: 44,
+                      height: 44,
+                      borderRadius: 12,
+                      background: "linear-gradient(135deg, rgba(107,70,193,0.2) 0%, rgba(59,130,246,0.2) 100%)",
+                      border: "1px solid rgba(107,70,193,0.35)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      color: "var(--accent, #a78bfa)",
+                      flexShrink: 0,
+                    }}
+                  >
+                    {multiSocietyPrompt.selectedSociety ? (
+                      <MdGroups size={24} />
+                    ) : (
+                      <HiOutlineBuildingOffice2 size={24} />
+                    )}
+                  </div>
+                  <div>
+                    <h3 style={{ margin: 0, fontSize: 17, fontWeight: 800 }}>
+                      {multiSocietyPrompt.selectedSociety ? "Select Role Panel" : "Select Society"}
+                    </h3>
+                    <p style={{ margin: "3px 0 0", fontSize: 12, color: "var(--text-secondary, rgba(255,255,255,0.65))" }}>
+                      {multiSocietyPrompt.selectedSociety
+                        ? `Choose role for ${multiSocietyPrompt.selectedSociety.name}:`
+                        : "You belong to multiple societies. Select where to enter:"}
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={dismissMultiSocietyPrompt}
+                  style={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: 8,
+                    border: "1px solid rgba(255,255,255,0.1)",
+                    background: "rgba(255,255,255,0.05)",
+                    color: "var(--text-secondary, rgba(255,255,255,0.7))",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    flexShrink: 0,
+                  }}
+                  title="Close and continue"
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* Sub-state 1: Society Selection List */}
+              {!multiSocietyPrompt.selectedSociety && (
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  {multiSocietyPrompt.societies.map((soc) => {
+                    const socRoles = Array.isArray(soc.roles) && soc.roles.length ? soc.roles : ["RESIDENT"];
+                    return (
+                      <button
+                        key={soc.id}
+                        type="button"
+                        onClick={() => handleSelectSociety(soc)}
+                        disabled={loginLoading}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 14,
+                          padding: "14px 16px",
+                          borderRadius: 14,
+                          background: "var(--card-inner-bg, rgba(255,255,255,0.03))",
+                          border: "1px solid var(--glass-border, rgba(255,255,255,0.08))",
+                          cursor: "pointer",
+                          transition: "all 0.2s",
+                          textAlign: "left",
+                          width: "100%",
+                          color: "inherit",
+                        }}
+                        className="login-panel-option"
+                      >
+                        <div
+                          style={{
+                            width: 42,
+                            height: 42,
+                            borderRadius: 10,
+                            background: "rgba(59,130,246,0.12)",
+                            border: "1px solid rgba(59,130,246,0.25)",
+                            color: "#60a5fa",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            flexShrink: 0,
+                          }}
+                        >
+                          <HiOutlineBuildingOffice2 size={22} />
+                        </div>
+                        <div style={{ minWidth: 0, flex: 1 }}>
+                          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+                            <p style={{ fontSize: 14, fontWeight: 800, margin: 0, color: "var(--text-primary, #ffffff)" }}>
+                              {soc.name}
+                            </p>
+                            <span style={{ fontSize: 14, color: "var(--accent, #a78bfa)", fontWeight: 700 }}>→</span>
+                          </div>
+                          {soc.address && (
+                            <p style={{ fontSize: 11, margin: "2px 0 0", color: "var(--text-secondary, rgba(255,255,255,0.6))", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                              {soc.address}
+                            </p>
+                          )}
+                          <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", marginTop: 6 }}>
+                            {soc.resident_type && (
+                              <span
+                                style={{
+                                  fontSize: 10,
+                                  fontWeight: 700,
+                                  padding: "2px 6px",
+                                  borderRadius: 4,
+                                  background: "rgba(59,130,246,0.12)",
+                                  color: "#60a5fa",
+                                  border: "1px solid rgba(59,130,246,0.25)",
+                                  textTransform: "uppercase",
+                                }}
+                              >
+                                {soc.resident_type}
+                              </span>
+                            )}
+                            {socRoles.includes("COMMITTEE_MEMBER") && (
+                              <span
+                                style={{
+                                  fontSize: 10,
+                                  fontWeight: 800,
+                                  padding: "2px 6px",
+                                  borderRadius: 4,
+                                  background: "rgba(234,179,8,0.16)",
+                                  color: "#facc15",
+                                  border: "1px solid rgba(234,179,8,0.35)",
+                                  textTransform: "uppercase",
+                                }}
+                              >
+                                ★ COMMITTEE MEMBER
+                              </span>
+                            )}
+                            {socRoles.includes("SOCIETY_ADMIN") && (
+                              <span
+                                style={{
+                                  fontSize: 10,
+                                  fontWeight: 700,
+                                  padding: "2px 6px",
+                                  borderRadius: 4,
+                                  background: "rgba(168,85,247,0.14)",
+                                  color: "#c084fc",
+                                  border: "1px solid rgba(168,85,247,0.25)",
+                                  textTransform: "uppercase",
+                                }}
+                              >
+                                ADMIN
+                              </span>
+                            )}
+                            {socRoles.includes("ACCOUNTANT") && (
+                              <span
+                                style={{
+                                  fontSize: 10,
+                                  fontWeight: 700,
+                                  padding: "2px 6px",
+                                  borderRadius: 4,
+                                  background: "rgba(16,185,129,0.14)",
+                                  color: "#34d399",
+                                  border: "1px solid rgba(16,185,129,0.25)",
+                                  textTransform: "uppercase",
+                                }}
+                              >
+                                ACCOUNTANT
+                              </span>
+                            )}
+                            {!socRoles.includes("COMMITTEE_MEMBER") && !socRoles.includes("SOCIETY_ADMIN") && !socRoles.includes("ACCOUNTANT") && (
+                              <span
+                                style={{
+                                  fontSize: 10,
+                                  fontWeight: 600,
+                                  padding: "2px 6px",
+                                  borderRadius: 4,
+                                  background: "rgba(255,255,255,0.06)",
+                                  color: "var(--text-secondary, rgba(255,255,255,0.7))",
+                                  border: "1px solid rgba(255,255,255,0.1)",
+                                  textTransform: "uppercase",
+                                }}
+                              >
+                                RESIDENT
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Sub-state 2: Role Selection for selected society */}
+              {multiSocietyPrompt.selectedSociety && (
+                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                  <button
+                    type="button"
+                    onClick={() => setMultiSocietyPrompt((p) => ({ ...p, selectedSociety: null }))}
+                    style={{
+                      alignSelf: "flex-start",
+                      background: "transparent",
+                      border: "none",
+                      color: "var(--accent, #a78bfa)",
+                      fontSize: 12,
+                      fontWeight: 700,
+                      cursor: "pointer",
+                      padding: 0,
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 4,
+                    }}
+                  >
+                    ← Back to Society Selection
+                  </button>
+
+                  <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                    {/* Society Admin Card */}
+                    {(multiSocietyPrompt.selectedSociety.roles || []).includes("SOCIETY_ADMIN") && (
+                      <button
+                        type="button"
+                        onClick={() => finalizeSocietyLogin(multiSocietyPrompt.selectedSociety.id, "SOCIETY_ADMIN")}
+                        disabled={loginLoading}
+                        className="login-panel-option"
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 14,
+                          padding: "14px 16px",
+                          borderRadius: 14,
+                          background: "var(--card-inner-bg, rgba(255,255,255,0.03))",
+                          border: "1px solid var(--glass-border, rgba(255,255,255,0.08))",
+                          cursor: "pointer",
+                          transition: "all 0.2s",
+                          textAlign: "left",
+                          color: "inherit",
+                        }}
+                      >
+                        <div
+                          style={{
+                            width: 42,
+                            height: 42,
+                            borderRadius: 10,
+                            background: "rgba(59,130,246,0.12)",
+                            color: "#3b82f6",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            flexShrink: 0,
+                          }}
+                        >
+                          <MdAdminPanelSettings size={22} />
+                        </div>
+                        <div style={{ minWidth: 0, flex: 1 }}>
+                          <p style={{ fontSize: 14, fontWeight: 800, margin: 0, color: "var(--text-primary, #ffffff)" }}>Society Admin Panel</p>
+                          <p style={{ fontSize: 11, margin: "2px 0 0", color: "var(--text-secondary, rgba(255,255,255,0.65))" }}>
+                            Full society management, flats, staff & settings
+                          </p>
+                        </div>
+                      </button>
+                    )}
+
+                    {/* Committee Member Card */}
+                    {(multiSocietyPrompt.selectedSociety.roles || []).includes("COMMITTEE_MEMBER") && (
+                      <button
+                        type="button"
+                        onClick={() => finalizeSocietyLogin(multiSocietyPrompt.selectedSociety.id, "COMMITTEE_MEMBER")}
+                        disabled={loginLoading}
+                        className="login-panel-option"
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 14,
+                          padding: "14px 16px",
+                          borderRadius: 14,
+                          background: "var(--card-inner-bg, rgba(255,255,255,0.03))",
+                          border: "1px solid var(--glass-border, rgba(255,255,255,0.08))",
+                          cursor: "pointer",
+                          transition: "all 0.2s",
+                          textAlign: "left",
+                          color: "inherit",
+                        }}
+                      >
+                        <div
+                          style={{
+                            width: 42,
+                            height: 42,
+                            borderRadius: 10,
+                            background: "rgba(234,179,8,0.16)",
+                            color: "#facc15",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            flexShrink: 0,
+                          }}
+                        >
+                          <MdGroups size={22} />
+                        </div>
+                        <div style={{ minWidth: 0, flex: 1 }}>
+                          <p style={{ fontSize: 14, fontWeight: 800, margin: 0, color: "var(--text-primary, #ffffff)" }}>Committee Member Panel</p>
+                          <p style={{ fontSize: 11, margin: "2px 0 0", color: "var(--text-secondary, rgba(255,255,255,0.65))" }}>
+                            Manage notices, complaints & society operations
+                          </p>
+                        </div>
+                      </button>
+                    )}
+
+                    {/* Accountant Card */}
+                    {(multiSocietyPrompt.selectedSociety.roles || []).includes("ACCOUNTANT") && (
+                      <button
+                        type="button"
+                        onClick={() => finalizeSocietyLogin(multiSocietyPrompt.selectedSociety.id, "ACCOUNTANT")}
+                        disabled={loginLoading}
+                        className="login-panel-option"
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 14,
+                          padding: "14px 16px",
+                          borderRadius: 14,
+                          background: "var(--card-inner-bg, rgba(255,255,255,0.03))",
+                          border: "1px solid var(--glass-border, rgba(255,255,255,0.08))",
+                          cursor: "pointer",
+                          transition: "all 0.2s",
+                          textAlign: "left",
+                          color: "inherit",
+                        }}
+                      >
+                        <div
+                          style={{
+                            width: 42,
+                            height: 42,
+                            borderRadius: 10,
+                            background: "rgba(16,185,129,0.12)",
+                            color: "#10b981",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            flexShrink: 0,
+                          }}
+                        >
+                          <MdAccountBalance size={22} />
+                        </div>
+                        <div style={{ minWidth: 0, flex: 1 }}>
+                          <p style={{ fontSize: 14, fontWeight: 800, margin: 0, color: "var(--text-primary, #ffffff)" }}>Accountant Panel</p>
+                          <p style={{ fontSize: 11, margin: "2px 0 0", color: "var(--text-secondary, rgba(255,255,255,0.65))" }}>
+                            Manage bills, payments, expenses & society finance
+                          </p>
+                        </div>
+                      </button>
+                    )}
+
+                    {/* Resident Card */}
+                    {(multiSocietyPrompt.selectedSociety.roles || []).includes("RESIDENT") && (
+                      <button
+                        type="button"
+                        onClick={() => finalizeSocietyLogin(multiSocietyPrompt.selectedSociety.id, "RESIDENT")}
+                        disabled={loginLoading}
+                        className="login-panel-option"
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 14,
+                          padding: "14px 16px",
+                          borderRadius: 14,
+                          background: "var(--card-inner-bg, rgba(255,255,255,0.03))",
+                          border: "1px solid var(--glass-border, rgba(255,255,255,0.08))",
+                          cursor: "pointer",
+                          transition: "all 0.2s",
+                          textAlign: "left",
+                          color: "inherit",
+                        }}
+                      >
+                        <div
+                          style={{
+                            width: 42,
+                            height: 42,
+                            borderRadius: 10,
+                            background: "rgba(37,99,235,0.12)",
+                            color: "var(--accent, #60a5fa)",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            flexShrink: 0,
+                          }}
+                        >
+                          <MdHome size={22} />
+                        </div>
+                        <div style={{ minWidth: 0, flex: 1 }}>
+                          <p style={{ fontSize: 14, fontWeight: 800, margin: 0, color: "var(--text-primary, #ffffff)" }}>Resident Panel</p>
+                          <p style={{ fontSize: 11, margin: "2px 0 0", color: "var(--text-secondary, rgba(255,255,255,0.65))" }}>
+                            Bills, complaints, visitors & daily services
+                          </p>
+                        </div>
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           </div>,
           document.body

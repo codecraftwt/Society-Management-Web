@@ -47,15 +47,18 @@ export default function RoleSwitcher({ fullWidth = false }) {
   const [error, setError] = useState(null);
   const wrapRef = useRef(null);
 
-  /* Only offer panels the API says this user actually has. `roles` always
-     contains RESIDENT for an accountant (even one appointed from outside the
-     society), so availablePanels is the only safe source — it is derived from
-     AccountantAssignment.is_society_resident server-side. */
-  const available = Array.isArray(user?.availablePanels) && user.availablePanels.length
+  const currentSoc = (user?.availableSocieties || []).find(
+    (s) => Number(s.id) === Number(user?.society_id)
+  );
+  const currentSocRoles = Array.isArray(currentSoc?.roles) ? currentSoc.roles : [];
+
+  const candidatePanels = Array.isArray(user?.availablePanels) && user.availablePanels.length
     ? user.availablePanels
     : null;
-  const roles = (available ?? user?.roles ?? []).filter(Boolean);
-  const activeRole = user?.activeRole;
+
+  const rawList = candidatePanels ?? (currentSocRoles.length ? currentSocRoles : (user?.roles ?? [user?.role]));
+  const roles = [...new Set(rawList.filter(Boolean))];
+  const activeRole = user?.activeRole || (roles.includes("RESIDENT") ? "RESIDENT" : roles[0]);
 
   /* Dismiss on outside click or Escape. */
   useEffect(() => {

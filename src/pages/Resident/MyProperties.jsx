@@ -97,7 +97,14 @@ export default function MyProperties() {
 
       // Step 1 — get all flats this user belongs to
       const flatRes = await API.get("/users/get-flat");
-      const flats   = Array.isArray(flatRes.data) ? flatRes.data : [];
+      let flats   = Array.isArray(flatRes.data) ? flatRes.data : [];
+
+      // Filter by current active society if present
+      if (user?.society_id) {
+        flats = flats.filter(
+          (f) => !f.society_id || String(f.society_id) === String(user.society_id)
+        );
+      }
 
       // Step 2 — keep only flats where user is OWNER (not family member / tenant)
       const ownedFlats = flats.filter((f) => f.role === "OWNER" || f.isAdmin);
@@ -133,7 +140,7 @@ export default function MyProperties() {
 
   useEffect(() => {
     if (user?.id) loadProperties();
-  }, [user]);
+  }, [user?.id, user?.society_id]);
 
   /* ─────────────────────────────────────────
      Handlers
