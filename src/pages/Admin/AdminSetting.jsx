@@ -41,6 +41,7 @@ import GlobalModal from "../../components/common/GlobalModal";
 import GlobalConfirmDialog from "../../components/common/GlobalConfirmDialog";
 import GlobalButton from "../../components/common/GlobalButton";
 import ThemeBrandingEditor from "../../components/common/ThemeBrandingEditor";
+import SocietyLogoUploader from "../../components/common/SocietyLogoUploader";
 import SocietyLocationSettings from "../../components/common/SocietyLocationSettings";
 import "./AdminSetting.css";
 
@@ -163,6 +164,8 @@ export default function AdminSetting() {
   const [themeAccent, setThemeAccent] = useState(societyTheme?.accent || "#9e58ff");
   const [themeCardStyle, setThemeCardStyle] = useState(societyTheme?.cardStyle || "default");
   const [themeQuickLinkStyle, setThemeQuickLinkStyle] = useState(societyTheme?.quickLinkStyle || "default");
+  const [themeLogoUrl, setThemeLogoUrl] = useState(societyTheme?.logo_url || null);
+  const [logoModalOpen, setLogoModalOpen] = useState(false);
   const [themeSaveLoading, setThemeSaveLoading] = useState(false);
   const [themeResetLoading, setThemeResetLoading] = useState(false);
 
@@ -171,7 +174,28 @@ export default function AdminSetting() {
     if (societyTheme?.accent) setThemeAccent(societyTheme.accent);
     if (societyTheme?.cardStyle) setThemeCardStyle(societyTheme.cardStyle);
     if (societyTheme?.quickLinkStyle) setThemeQuickLinkStyle(societyTheme.quickLinkStyle);
+    if (societyTheme?.logo_url) setThemeLogoUrl(societyTheme.logo_url);
   }, [societyTheme]);
+
+  useEffect(() => {
+    if (view === "theme" && activeSocietyId) {
+      API.get(`/societies/${activeSocietyId}/theme`)
+        .then((res) => {
+          if (res.data?.success) {
+            setThemeLogoUrl(res.data.logo_url || res.data.theme?.logo_url || null);
+            if (res.data.configured) {
+              setThemePrimary(res.data.theme.primary || "#a05aff");
+              setThemeAccent(res.data.theme.accent || "#9e58ff");
+              setThemeCardStyle(res.data.theme.cardStyle || res.data.theme.card_style || "default");
+              setThemeQuickLinkStyle(res.data.theme.quickLinkStyle || res.data.theme.quick_link_style || "default");
+            }
+          }
+        })
+        .catch((err) => {
+          console.error("Failed to load society theme in settings:", err);
+        });
+    }
+  }, [view, activeSocietyId]);
 
   const submitSocietyTheme = async () => {
     if (!activeSocietyId) {
@@ -1086,8 +1110,80 @@ export default function AdminSetting() {
   /* ══ Theme & Branding ═══════════════════════════════════════════════ */
 
   const renderTheme = () => (
-    <div className="set-pf">
+    <div className="set-pf flex flex-col gap-6">
       <div className="set-ws" style={{ padding: "24px" }}>
+        {/* Society Logo Branding Hero (matches My Profile layout) */}
+        <div className="set-hero set-logo-hero mb-8 pb-6 border-b border-[var(--glass-border)]">
+          <div className="set-avatar set-avatar--logo">
+            <button
+              type="button"
+              className="set-avatar__btn set-avatar__btn--logo"
+              onClick={() => setLogoModalOpen(true)}
+              aria-label={themeLogoUrl ? "Change or remove society logo" : "Upload society logo"}
+              title={themeLogoUrl ? "Change society logo" : "Upload society logo"}
+            >
+              {themeLogoUrl ? (
+                <img
+                  src={themeLogoUrl}
+                  alt={societyLabel || user?.society_name || "Society Logo"}
+                  className="w-full h-full object-contain p-1.5"
+                  onError={(e) => {
+                    e.currentTarget.style.display = "none";
+                    if (e.currentTarget.nextSibling) e.currentTarget.nextSibling.style.display = "flex";
+                  }}
+                />
+              ) : null}
+              <div
+                style={{ display: themeLogoUrl ? "none" : "flex" }}
+                className="w-full h-full items-center justify-center bg-linear-to-br from-indigo-500/20 via-purple-500/15 to-blue-500/20 text-accent"
+              >
+                <MdApartment size={38} />
+              </div>
+              <span className="set-avatar__overlay" aria-hidden="true">
+                <span className="set-avatar__cam">
+                  <MdCameraAlt size={18} />
+                </span>
+                <span className="set-avatar__hint">
+                  {themeLogoUrl ? t("edit", "Edit Logo") : t("upload", "Upload Logo")}
+                </span>
+              </span>
+            </button>
+            <span
+              className={`set-avatar__dot ${themeLogoUrl ? "bg-emerald-500" : "bg-amber-400"}`}
+              aria-hidden="true"
+            />
+          </div>
+
+          <div className="set-hero__id">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h3 className="set-hero__name text-lg font-bold">{societyLabel || user?.society_name || "Your Society"}</h3>
+              <span className={`text-[11px] px-2.5 py-0.5 rounded-full font-semibold border ${
+                themeLogoUrl
+                  ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
+                  : "bg-amber-500/10 text-amber-400 border-amber-500/30"
+              }`}>
+                {themeLogoUrl ? "Official Logo Active" : "Default Identity"}
+              </span>
+            </div>
+            <p className="set-hero__mail mt-1 flex items-center gap-1.5 text-secondary">
+              <MdPalette size={14} className="text-accent shrink-0" />
+              <span>Theme, Identity & Visual Branding</span>
+            </p>
+          </div>
+
+          <div className="set-hero__spacer" />
+
+          <button
+            type="button"
+            className="set-btn set-btn--ghost flex items-center gap-2 px-4 py-2 rounded-xl border border-[var(--glass-border)] hover:border-accent hover:text-accent transition-all font-semibold text-xs"
+            onClick={() => setLogoModalOpen(true)}
+          >
+            <MdEdit size={16} />
+            <span>{themeLogoUrl ? "Edit Logo" : "Upload Logo"}</span>
+          </button>
+        </div>
+
+        {/* Visual Brand Colors & Style Cards */}
         <ThemeBrandingEditor
           primaryColor={themePrimary}
           accentColor={themeAccent}
@@ -1107,7 +1203,8 @@ export default function AdminSetting() {
             setThemePrimary(p.primary);
             setThemeAccent(p.accent);
           }}
-          societyName={societyLabel || "Your Society"}
+          societyName={societyLabel || user?.society_name || "Your Society"}
+          logoUrl={themeLogoUrl}
         />
 
         <div className="flex items-center justify-between mt-6 pt-5 border-t border-[var(--glass-border)] flex-wrap gap-3">
@@ -1131,6 +1228,31 @@ export default function AdminSetting() {
           </GlobalButton>
         </div>
       </div>
+
+      {/* Society Logo Modal Popup */}
+      {logoModalOpen && (
+        <GlobalModal
+          isOpen={logoModalOpen}
+          onClose={() => setLogoModalOpen(false)}
+          title={t("saSocietyLogoHeading", "Society Logo")}
+          size="sm"
+        >
+          <SocietyLogoUploader
+            societyId={activeSocietyId}
+            societyName={societyLabel || user?.society_name || "Your Society"}
+            currentLogoUrl={themeLogoUrl}
+            onLogoUpdated={(newLogoUrl) => {
+              setThemeLogoUrl(newLogoUrl);
+              applySocietyTheme({
+                ...societyTheme,
+                logo_url: newLogoUrl,
+              });
+            }}
+            onClose={() => setLogoModalOpen(false)}
+            disabled={themeSaveLoading || themeResetLoading}
+          />
+        </GlobalModal>
+      )}
     </div>
   );
 

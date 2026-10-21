@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback, useMemo, useRef, useContext } from "react";
+import { useSearchParams } from "react-router-dom";
 import API from "../../services/api";
 import { toast } from "react-toastify";
 import { moveOutResident } from "../../services/flatService";
@@ -6,6 +7,7 @@ import GlobalModal from "../../components/common/GlobalModal";
 import GlobalButton from "../../components/common/GlobalButton";
 import GlobalBadge from "../../components/common/GlobalBadge";
 import GlobalConfirmDialog from "../../components/common/GlobalConfirmDialog";
+import Select from "../../components/common/Select";
 import { useLang } from "../../context/LanguageContext";
 import { AuthContext } from "../../context/AuthContext";
 import { hasPermission } from "../../utils/permissions";
@@ -25,6 +27,7 @@ import {
   MdReceipt,
   MdSearch,
   MdRefresh,
+  MdHomeWork,
 } from "react-icons/md";
 import SlidingTabs from "../../components/common/SlidingTabs";
 import ExpandableSearch from "../../components/common/ExpandableSearch";
@@ -81,6 +84,42 @@ const toArr = (res) => {
   }
   return [];
 };
+
+const BHK_STYLES = {
+  "1BHK": { bg: "rgba(56, 189, 248, 0.12)", color: "#38bdf8", border: "rgba(56, 189, 248, 0.3)" },
+  "2BHK": { bg: "rgba(167, 139, 250, 0.14)", color: "#c084fc", border: "rgba(167, 139, 250, 0.3)" },
+  "3BHK": { bg: "rgba(244, 114, 182, 0.14)", color: "#f472b6", border: "rgba(244, 114, 182, 0.3)" },
+};
+
+function BhkBadge({ type }) {
+  if (!type) return null;
+  const s = BHK_STYLES[type] || { bg: "rgba(160,90,255,0.12)", color: "var(--accent)", border: "rgba(160,90,255,0.25)" };
+  return (
+    <span
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        fontSize: 10,
+        fontWeight: 800,
+        padding: "2px 7px",
+        borderRadius: 6,
+        background: s.bg,
+        color: s.color,
+        border: `1px solid ${s.border}`,
+        letterSpacing: "0.02em",
+      }}
+    >
+      {type}
+    </span>
+  );
+}
+
+function formatFlatTitle(num) {
+  if (!num) return "Flat —";
+  const str = String(num).trim();
+  if (/^(flat|house|villa|unit|block)/i.test(str)) return str;
+  return `Flat ${str}`;
+}
 
 /* ─────────────────────────────────────────────────────────────
    TAB: RESIDENTS
@@ -461,7 +500,61 @@ const ALL_BLOCKS = "__all__";
 const FlatHistory = () => {
   const { t } = useLang();
   const { user } = useContext(AuthContext);
-  const canMoveOut = hasPermission(user, "flat_history", "move_out") || hasPermission(user, "flat_history", "view");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const isSuperAdmin = user?.activeRole === "SUPER_ADMIN" || user?.role === "SUPER_ADMIN";
+  const canMoveOut = isSuperAdmin || hasPermission(user, "flat_history", "move_out") || hasPermission(user, "flat_history", "view");
+
+  // ── SuperAdmin Society Selection ──
+  const [societies, setSocieties] = useState([]);
+  const [loadingSocieties, setLoadingSocieties] = useState(false);
+
+  const querySocId = searchParams.get("societyId");
+  const storedSocFilter = localStorage.getItem("superadmin_society_filter");
+  const initialSocId = querySocId || (storedSocFilter && storedSocFilter !== "ALL" ? storedSocFilter : "") || "";
+  const [selectedSocietyId, setSelectedSocietyId] = useState(initialSocId);
+
+  useEffect(() => {
+    if (isSuperAdmin) {
+      setLoadingSocieties(true);
+      API.get("/societies")
+        .then((res) => {
+          const list = res.data || [];
+          setSocieties(list);
+          if (!selectedSocietyId && list.length > 0) {
+            const firstId = String(list[0].id);
+            setSelectedSocietyId(firstId);
+            localStorage.setItem("superadmin_society_filter", firstId);
+            setSearchParams({ societyId: firstId });
+          }
+        })
+        .catch((err) => console.error("Failed to load societies", err))
+        .finally(() => setLoadingSocieties(false));
+    }
+  }, [isSuperAdmin]);
+
+  useEffect(() => {
+    if (querySocId && querySocId !== selectedSocietyId) {
+      setSelectedSocietyId(querySocId);
+      localStorage.setItem("superadmin_society_filter", querySocId);
+    }
+  }, [querySocId]);
+
+  const handleSocietyChange = (newSocId) => {
+    setSelectedSocietyId(newSocId);
+    setSelectedFlat(null);
+    setActiveBlock(ALL_BLOCKS);
+    setSearch("");
+    setFlatPage(1);
+    if (newSocId) {
+      localStorage.setItem("superadmin_society_filter", newSocId);
+      setSearchParams({ societyId: newSocId });
+    } else {
+      localStorage.removeItem("superadmin_society_filter");
+      setSearchParams({});
+    }
+  };
+
+  const activeSocId = isSuperAdmin ? selectedSocietyId : (user?.society_id || null);
 
   const [flats, setFlats] = useState([]);
   const [selectedFlat, setSelectedFlat] = useState(null);
@@ -540,12 +633,30 @@ const FlatHistory = () => {
       .toLowerCase();
   }, [getBlockName, getFlatOwnerName]);
 
-  /* ── 1. Load flat list on mount ── */
+  /* ── 1. Load flat list on mount & when society changes ── */
+  const loadFlats = useCallback(async () => {
+    if (isSuperAdmin && !activeSocId) {
+      setFlats([]);
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    try {
+      const headers = activeSocId ? { "x-society-id": activeSocId } : {};
+      const params = activeSocId ? { society_id: activeSocId } : {};
+      const res = await API.get("/flats/getall", { headers, params });
+      setFlats(toArr(res));
+    } catch (err) {
+      console.error("Flats fetch error:", err);
+      toast.error(t("fhFetchError") || "Failed to load flats");
+    } finally {
+      setLoading(false);
+    }
+  }, [isSuperAdmin, activeSocId, t]);
+
   useEffect(() => {
-    API.get("/flats/getall")
-      .then((res) => setFlats(toArr(res)))
-      .catch((err) => console.error("Flats fetch error:", err));
-  }, []);
+    loadFlats();
+  }, [loadFlats]);
 
   /* ── 2. Load full flat details when a card is clicked ── */
   const fetchFlatDetails = useCallback(async (flat) => {
@@ -554,14 +665,16 @@ const FlatHistory = () => {
       setFetchError(null);
       setActiveTab("residents");
 
+      const reqHeaders = activeSocId ? { "x-society-id": activeSocId } : {};
+
       const [residentsRes, billsRes, parcelsRes, visitorsRes, complaintsRes, parkingRes] =
         await Promise.allSettled([
-          API.get(`/flat-history/${flat.id}`),
-          API.get(`/bills/society`),
-          API.get(`/parcels`),
-          API.get(`/visitors`),
-          API.get(`/complaints`),
-          API.get(`/parking?limit=100&flat_id=${flat.id}`),
+          API.get(`/flat-history/${flat.id}`, { headers: reqHeaders }),
+          API.get(`/bills/society`, { headers: reqHeaders }),
+          API.get(`/parcels`, { headers: reqHeaders }),
+          API.get(`/visitors`, { headers: reqHeaders }),
+          API.get(`/complaints`, { headers: reqHeaders }),
+          API.get(`/parking?limit=100&flat_id=${flat.id}`, { headers: reqHeaders }),
         ]);
 
       const safeArr = (result) =>
@@ -609,7 +722,7 @@ const FlatHistory = () => {
     } finally {
       setLoading(false);
     }
-  }, [t]);
+  }, [activeSocId, t]);
 
   /* ── 3. Reset Detail Drawer ── */
   const goBack = () => {
@@ -656,7 +769,7 @@ const FlatHistory = () => {
   const isAllBlocks = activeBlock === ALL_BLOCKS;
 
   const allFlats = useMemo(
-    () => blockNames.flatMap((bName) => allBlockGroups[bName].flats),
+    () => blockNames.flatMap((bName) => allBlockGroups[bName]?.flats || []),
     [allBlockGroups, blockNames]
   );
 
@@ -670,7 +783,8 @@ const FlatHistory = () => {
     if (!searchTrim) return {};
     const res = {};
     for (const bName of blockNames) {
-      const cnt = allBlockGroups[bName].flats.filter((f) =>
+      const bFlats = allBlockGroups[bName]?.flats || [];
+      const cnt = bFlats.filter((f) =>
         flatSearchText(f).includes(searchTrim)
       ).length;
       if (cnt > 0) res[bName] = cnt;
@@ -734,19 +848,31 @@ const FlatHistory = () => {
   const activeBlockFlats = useMemo(() => {
     const source = isAllBlocks
       ? allFlats
-      : activeBlock && allBlockGroups[activeBlock] ? allBlockGroups[activeBlock].flats : [];
+      : (activeBlock && allBlockGroups[activeBlock] ? (allBlockGroups[activeBlock]?.flats || []) : []);
     if (!searchTrim) return source;
     return source.filter((f) => flatSearchText(f).includes(searchTrim));
   }, [allFlats, allBlockGroups, activeBlock, isAllBlocks, searchTrim, flatSearchText]);
 
+  const [statusFilter, setStatusFilter] = useState("all"); // "all" | "occupied" | "vacant"
+
+  const statusFilteredFlats = useMemo(() => {
+    if (statusFilter === "occupied") {
+      return activeBlockFlats.filter((f) => !!f.resident_id);
+    }
+    if (statusFilter === "vacant") {
+      return activeBlockFlats.filter((f) => !f.resident_id);
+    }
+    return activeBlockFlats;
+  }, [activeBlockFlats, statusFilter]);
+
   const [flatPage, setFlatPage] = useState(1);
   const [limit, setLimit] = useState(12);
-  const flatTotalPages = Math.max(1, Math.ceil(activeBlockFlats.length / limit));
+  const flatTotalPages = Math.max(1, Math.ceil(statusFilteredFlats.length / limit));
   const pagedFlats = useMemo(() => {
-    return activeBlockFlats.slice((flatPage - 1) * limit, flatPage * limit);
-  }, [activeBlockFlats, flatPage, limit]);
+    return statusFilteredFlats.slice((flatPage - 1) * limit, flatPage * limit);
+  }, [statusFilteredFlats, flatPage, limit]);
 
-  const viewKey = `${activeBlock}|${searchTrim}`;
+  const viewKey = `${activeBlock}|${statusFilter}|${searchTrim}`;
   const [prevViewKey, setPrevViewKey] = useState(viewKey);
   if (viewKey !== prevViewKey) {
     setPrevViewKey(viewKey);
@@ -780,7 +906,9 @@ const FlatHistory = () => {
       toast.success(t("fhMoveOutSuccess") || "Resident moved out successfully");
       setConfirmMoveOut(null);
 
-      const res = await API.get("/flats/getall");
+      const headers = activeSocId ? { "x-society-id": activeSocId } : {};
+      const params = activeSocId ? { society_id: activeSocId } : {};
+      const res = await API.get("/flats/getall", { headers, params });
       const fresh = toArr(res);
       setFlats(fresh);
       const updated = fresh.find((f) => String(f.id) === String(flat.id));
@@ -821,7 +949,7 @@ const FlatHistory = () => {
 
   return (
     <div className="fh-root flat-history-page space-y-5 animate-fadeIn">
-      {/* ── 1. Header & Navigation Controls ── */}
+      {/* ── 1. Header & Navigation Controls (Always Visible with Society Dropdown in Same Row) ── */}
       <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3">
         <div className="flex items-center gap-3 shrink-0">
           <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-accent to-accent-light text-white flex items-center justify-center shadow-lg shadow-accent/25 shrink-0">
@@ -838,199 +966,409 @@ const FlatHistory = () => {
         </div>
 
         <div className="flex items-center gap-2.5 flex-wrap xl:flex-nowrap justify-start xl:justify-end">
+          {/* SuperAdmin Society Selector in the SAME ROW with header controls */}
+          {isSuperAdmin && (
+            <div style={{ minWidth: 180, maxWidth: 260 }} className="shrink-0">
+              <Select
+                value={selectedSocietyId}
+                onChange={(e) => handleSocietyChange(e.target.value)}
+                style={{ width: "100%", height: 38, borderRadius: 10, fontSize: 13, fontWeight: 700 }}
+              >
+                <option value="">Select Society...</option>
+                {societies.map((s) => (
+                  <option key={s.id} value={s.id}>{s.name}</option>
+                ))}
+              </Select>
+            </div>
+          )}
+
           {blockNames.length > 0 && (
             <div className="fh-block-toggle flex items-center gap-1 min-w-0" ref={toggleWrapRef} onWheel={onToggleWheel}>
               <button
                 type="button"
                 className="fh-block-nav w-8 h-8 rounded-full border border-glass-border bg-card-inner-bg flex items-center justify-center text-secondary hover:text-primary transition-all disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer shrink-0"
                 onClick={() => stepBlock(-1)}
-                disabled={!canStepBack}
-                aria-label="Previous block"
-              >
-                <MdChevronLeft size={18} />
-              </button>
+                    disabled={!canStepBack}
+                    aria-label="Previous block"
+                  >
+                    <MdChevronLeft size={18} />
+                  </button>
 
-              <SlidingTabs
-                value={activeBlock}
-                onChange={setActiveBlock}
-                items={visibleBlockTabs}
-                className="sliding-tabs--tight sliding-tabs--scroll"
+                  <SlidingTabs
+                    value={activeBlock}
+                    onChange={setActiveBlock}
+                    items={visibleBlockTabs}
+                    className="sliding-tabs--tight sliding-tabs--scroll"
+                  />
+
+                  <button
+                    type="button"
+                    className="fh-block-nav w-8 h-8 rounded-full border border-glass-border bg-card-inner-bg flex items-center justify-center text-secondary hover:text-primary transition-all disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer shrink-0"
+                    onClick={() => stepBlock(1)}
+                    disabled={!canStepFwd}
+                    aria-label="Next block"
+                  >
+                    <MdChevronRight size={18} />
+                  </button>
+                </div>
+              )}
+
+              <ExpandableSearch
+                isOpen={searchOpen}
+                onOpenChange={setSearchOpen}
+                maxWidth={300}
+                value={search}
+                onChange={(val) => {
+                  setSearch(val);
+                  setFlatPage(1);
+                }}
+                placeholder={t("fhSearchPlaceholder") || "Search flat, block, owner..."}
               />
-
-              <button
-                type="button"
-                className="fh-block-nav w-8 h-8 rounded-full border border-glass-border bg-card-inner-bg flex items-center justify-center text-secondary hover:text-primary transition-all disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer shrink-0"
-                onClick={() => stepBlock(1)}
-                disabled={!canStepFwd}
-                aria-label="Next block"
-              >
-                <MdChevronRight size={18} />
-              </button>
             </div>
-          )}
+          </div>
 
-          <ExpandableSearch
-            isOpen={searchOpen}
-            onOpenChange={setSearchOpen}
-            maxWidth={300}
-            value={search}
-            onChange={(val) => {
-              setSearch(val);
-              setFlatPage(1);
-            }}
-            placeholder={t("fhSearchPlaceholder") || "Search flat, block, owner..."}
-          />
+      {/* ── Body: Ask to select society if not selected ── */}
+      {isSuperAdmin && !activeSocId ? (
+        <div className="card" style={{ padding: 48, textAlign: "center", borderRadius: 18, border: "1px solid var(--glass-border)", background: "var(--card-bg)" }}>
+          <div style={{
+            width: 56,
+            height: 56,
+            borderRadius: 18,
+            background: "rgba(160, 90, 255, 0.12)",
+            border: "1px solid rgba(160, 90, 255, 0.25)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            color: "var(--accent)",
+            margin: "0 auto 16px"
+          }}>
+            <MdApartment size={28} />
+          </div>
+          <h3 style={{ fontSize: 17, fontWeight: 800, color: "var(--text-primary)", margin: 0 }}>Select a Society</h3>
+          <p style={{ color: "var(--text-secondary)", fontSize: 13, maxWidth: 440, margin: "8px auto 0" }}>
+            Please select a society from the dropdown above in the header to view its flats, residents, and tenancy history.
+          </p>
         </div>
-      </div>
-
-      {/* ── 2. Summary KPI Strip ── */}
-      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+      ) : (
+        <>
+          {/* ── 2. Summary KPI Strip ── */}
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <StatCard
           icon={MdApartment}
           value={flats.length}
-          label={t("fhTotalFlats") || "Total Flats"}
+          label={t("fhTotalFlats", "Total Flats")}
           tone="brand"
           description={`${blockNames.length} ${blockNames.length === 1 ? "Block" : "Blocks"}`}
-          active={isAllBlocks}
-          onClick={() => setActiveBlock(ALL_BLOCKS)}
+          active={statusFilter === "all" && isAllBlocks}
+          onClick={() => { setStatusFilter("all"); setActiveBlock(ALL_BLOCKS); }}
         />
         <StatCard
           icon={MdPerson}
           value={totalOccupied}
-          label={t("fhOccupiedFlats") || "Occupied"}
+          label={t("fhOccupiedFlats", "Occupied Flats")}
           tone="info"
           description={`${flats.length ? Math.round((totalOccupied / flats.length) * 100) : 0}% Occupancy`}
+          active={statusFilter === "occupied"}
+          onClick={() => setStatusFilter(statusFilter === "occupied" ? "all" : "occupied")}
         />
         <StatCard
           icon={MdMeetingRoom}
           value={totalVacant}
-          label={t("fhVacantFlats") || "Available"}
+          label={t("fhVacantFlats", "Vacant Flats")}
           tone="success"
           description="Ready to assign"
+          active={statusFilter === "vacant"}
+          onClick={() => setStatusFilter(statusFilter === "vacant" ? "all" : "vacant")}
         />
         <StatCard
           icon={MdDoorFront}
-          value={activeBlockFlats.length}
-          label={isAllBlocks ? (t("allBlocks") || "All Blocks") : activeBlock}
+          value={statusFilteredFlats.length}
+          label={isAllBlocks ? (t("allBlocks", "All Blocks")) : activeBlock}
           tone="warning"
-          description={`${activeBlockFlats.length} flats matched`}
+          description={`${statusFilteredFlats.length} flats matched`}
+          onClick={() => setStatusFilter("all")}
         />
       </div>
 
       {/* ── 3. Flats Card Grid Section ── */}
-      <div className="border border-glass-border rounded-2xl p-4 sm:p-5 shadow-sm bg-transparent">
+      <div className="border border-glass-border rounded-2xl p-4 sm:p-5 shadow-sm bg-card-bg">
         {isAllBlocks || (activeBlock && allBlockGroups[activeBlock]) ? (
           <div>
-            {activeBlockFlats.length === 0 ? (
+            {/* Filter Bar: Status tabs + Search count */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 mb-4 border-b border-glass-border">
+              {/* Status Filter Segmented Control */}
+              <div className="flex items-center gap-1.5 p-1 rounded-xl bg-card-inner-bg border border-glass-border w-fit">
+                <button
+                  type="button"
+                  onClick={() => { setStatusFilter("all"); setFlatPage(1); }}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                    statusFilter === "all"
+                      ? "bg-accent text-white shadow-md shadow-accent/25"
+                      : "text-secondary hover:text-primary"
+                  }`}
+                >
+                  <MdApartment size={14} />
+                  <span>All Units ({activeBlockFlats.length})</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => { setStatusFilter("occupied"); setFlatPage(1); }}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                    statusFilter === "occupied"
+                      ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/25"
+                      : "text-secondary hover:text-primary"
+                  }`}
+                >
+                  <span className="w-2 h-2 rounded-full bg-indigo-400" />
+                  <span>Occupied ({activeBlockFlats.filter((f) => !!f.resident_id).length})</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => { setStatusFilter("vacant"); setFlatPage(1); }}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                    statusFilter === "vacant"
+                      ? "bg-emerald-600 text-white shadow-md shadow-emerald-600/25"
+                      : "text-secondary hover:text-primary"
+                  }`}
+                >
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                  <span>Vacant ({activeBlockFlats.filter((f) => !f.resident_id).length})</span>
+                </button>
+              </div>
+
+              <div className="flex items-center gap-2 text-xs text-secondary font-medium">
+                <span>
+                  Showing <strong>{statusFilteredFlats.length}</strong> {statusFilter !== "all" ? statusFilter : ""} flats{" "}
+                  {isAllBlocks ? "across All Blocks" : `in ${activeBlock}`}
+                </span>
+              </div>
+            </div>
+
+            {statusFilteredFlats.length === 0 ? (
               <Empty
                 icon="🔍"
-                text={t("fhNoFlatsFound") || "No matching flats found"}
-                sub={t("fhNoFlatsSub") || "Try changing your search query or selecting a different block above."}
+                text={t("fhNoFlatsFound", "No matching flats found")}
+                sub={t("fhNoFlatsSub", "Try changing your status filter, search query, or selecting a different block above.")}
               />
             ) : (
-              <div key={flatPage} className="animate-slide-page">
-                <div className="ps-card-grid">
+              <div key={`${flatPage}-${statusFilter}`} className="animate-slide-page">
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
+                    gap: 16,
+                  }}
+                >
                   {pagedFlats.map((flat, i) => {
                     const occ = !!flat.resident_id;
                     const isSelected = selectedFlat?.id === flat.id;
-                    const residentName =
-                      getFlatOwnerName(flat) || (occ ? "Occupied Resident" : null);
+                    const residentName = getFlatOwnerName(flat) || (occ ? "Occupied Resident" : null);
+                    const blockName = getBlockName(flat);
+                    const initial = residentName?.trim()?.charAt(0)?.toUpperCase() || "R";
 
                     return (
-                      <RecordCard
+                      <div
                         key={flat.id}
-                        interactive
-                        selected={isSelected}
-                        tone="neutral"
-                        blob={false}
                         onClick={() => fetchFlatDetails(flat)}
                         style={{
                           animationDelay: `${i * 15}ms`,
-                          background: "transparent",
-                          backgroundColor: "transparent",
+                          position: "relative",
+                          borderRadius: 20,
+                          padding: "18px 20px 16px",
+                          cursor: "pointer",
+                          transition: "all 0.22s cubic-bezier(0.16, 1, 0.3, 1)",
+                          background: occ
+                            ? "linear-gradient(180deg, rgba(99, 102, 241, 0.06) 0%, rgba(99, 102, 241, 0.01) 100%), var(--card-inner-bg)"
+                            : "linear-gradient(180deg, rgba(16, 185, 129, 0.06) 0%, rgba(16, 185, 129, 0.01) 100%), var(--card-inner-bg)",
+                          border: isSelected
+                            ? "2px solid var(--accent)"
+                            : occ
+                              ? "1.5px solid rgba(99, 102, 241, 0.22)"
+                              : "1.5px solid rgba(16, 185, 129, 0.25)",
+                          boxShadow: isSelected
+                            ? "0 8px 30px rgba(160, 90, 255, 0.28)"
+                            : occ
+                              ? "0 4px 18px rgba(0, 0, 0, 0.06)"
+                              : "0 4px 18px rgba(0, 0, 0, 0.06)",
+                          outline: "none",
                         }}
-                        className="cursor-pointer group hover:border-accent/50 transition-all !bg-transparent"
-                        icon={occ ? MdApartment : MdMeetingRoom}
-                        title={
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <span className="text-base font-extrabold text-primary tracking-tight">
-                              {t("fhFlat") || "Flat"} {flat.flat_number}
-                            </span>
-                            {flat.flat_type && (
-                              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-accent-soft text-accent border border-accent/20">
-                                {flat.flat_type}
-                              </span>
-                            )}
-                          </div>
-                        }
-                        description={
-                          <div className="flex items-center gap-1.5 text-xs text-secondary mt-0.5 flex-wrap">
-                            <span className="font-semibold text-primary/80">
-                              {getBlockName(flat)}
-                            </span>
-                            {flat.Floor?.floor_number != null && (
-                              <>
-                                <span>•</span>
-                                <span>Floor {flat.Floor.floor_number}</span>
-                              </>
-                            )}
-                            {flat.area_sqft && (
-                              <>
-                                <span>•</span>
-                                <span>{flat.area_sqft} sq.ft</span>
-                              </>
-                            )}
-                          </div>
-                        }
-                        badge={
-                          <GlobalBadge
-                            size="sm"
-                            variant={occ ? "info" : "success"}
-                            icon={occ ? MdPerson : MdCheckCircle}
-                          >
-                            {occ ? t("fhOccupied") || "Occupied" : t("fhVacant") || "Available"}
-                          </GlobalBadge>
-                        }
+                        className={`group ${occ ? "hover:border-indigo-400/60 hover:shadow-lg hover:shadow-indigo-500/15" : "hover:border-emerald-400/60 hover:shadow-lg hover:shadow-emerald-500/15"} hover:-translate-y-1`}
                       >
-                        {/* Card Middle: Formal Resident or Vacancy information */}
-                        <div className="mt-2.5 pt-2.5 border-t border-glass-border">
+                        {/* Top Header: Icon + Unit Number + BHK + Status Badge */}
+                        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10 }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
+                            <div style={{
+                              width: 42,
+                              height: 42,
+                              borderRadius: 13,
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              flexShrink: 0,
+                              background: occ ? "rgba(99, 102, 241, 0.14)" : "rgba(16, 185, 129, 0.14)",
+                              border: `1px solid ${occ ? "rgba(99, 102, 241, 0.28)" : "rgba(16, 185, 129, 0.28)"}`,
+                              color: occ ? "#818cf8" : "#34d399",
+                            }}>
+                              {occ ? <MdApartment size={22} /> : <MdDoorFront size={22} />}
+                            </div>
+
+                            <div style={{ minWidth: 0 }}>
+                              <div style={{ display: "flex", alignItems: "center", gap: 7, flexWrap: "wrap" }}>
+                                <span style={{ fontSize: 16, fontWeight: 800, color: "var(--text-primary)", letterSpacing: "-0.01em" }}>
+                                  {formatFlatTitle(flat.flat_number)}
+                                </span>
+                                {flat.flat_type && <BhkBadge type={flat.flat_type} />}
+                              </div>
+
+                              <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "var(--text-secondary)", marginTop: 3 }}>
+                                <span style={{ fontWeight: 600, color: "var(--text-secondary)" }}>{blockName}</span>
+                                {flat.Floor?.floor_number != null && (
+                                  <>
+                                    <span>•</span>
+                                    <span>Floor {flat.Floor.floor_number}</span>
+                                  </>
+                                )}
+                                {flat.area_sqft && (
+                                  <>
+                                    <span>•</span>
+                                    <span>{flat.area_sqft} sq.ft</span>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Status Badge */}
                           {occ ? (
-                            <div className="flex items-center justify-between gap-2.5">
-                              <div className="flex items-center gap-2.5 min-w-0">
-                                <div className="w-8 h-8 rounded-full bg-accent-soft text-accent font-bold flex items-center justify-center text-xs shrink-0 border border-accent/20">
-                                  {residentName?.trim()?.charAt(0)?.toUpperCase() || "R"}
+                            <span style={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: 5,
+                              fontSize: 11,
+                              fontWeight: 800,
+                              padding: "4px 10px",
+                              borderRadius: 999,
+                              background: "rgba(99, 102, 241, 0.14)",
+                              color: "#818cf8",
+                              border: "1px solid rgba(99, 102, 241, 0.3)",
+                              whiteSpace: "nowrap",
+                              flexShrink: 0,
+                            }}>
+                              <MdPerson size={13} />
+                              <span>{t("fhOccupied", "Occupied")}</span>
+                            </span>
+                          ) : (
+                            <span style={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: 6,
+                              fontSize: 11,
+                              fontWeight: 800,
+                              padding: "4px 10px",
+                              borderRadius: 999,
+                              background: "rgba(16, 185, 129, 0.14)",
+                              color: "#34d399",
+                              border: "1px solid rgba(16, 185, 129, 0.3)",
+                              whiteSpace: "nowrap",
+                              flexShrink: 0,
+                            }}>
+                              <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#34d399", boxShadow: "0 0 8px #34d399" }} className="animate-pulse" />
+                              <span>{t("fhVacant", "Vacant")}</span>
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Bottom Section: Resident Strip OR Vacant Action */}
+                        <div style={{
+                          marginTop: 14,
+                          paddingTop: 12,
+                          borderTop: `1px solid ${occ ? "rgba(99, 102, 241, 0.14)" : "rgba(16, 185, 129, 0.14)"}`,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          gap: 10,
+                        }}>
+                          {occ ? (
+                            <>
+                              <div style={{ display: "flex", alignItems: "center", gap: 9, minWidth: 0 }}>
+                                <div style={{
+                                  width: 32,
+                                  height: 32,
+                                  borderRadius: 10,
+                                  background: "linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)",
+                                  color: "#fff",
+                                  fontWeight: 800,
+                                  fontSize: 12,
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  flexShrink: 0,
+                                  boxShadow: "0 2px 8px rgba(99, 102, 241, 0.3)",
+                                }}>
+                                  {initial}
                                 </div>
-                                <div className="min-w-0">
-                                  <p className="font-bold text-xs text-primary truncate m-0">
+                                <div style={{ minWidth: 0 }}>
+                                  <p style={{ margin: 0, fontSize: 12, fontWeight: 700, color: "var(--text-primary)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                                     {residentName}
                                   </p>
-                                  <p className="text-[11px] text-secondary m-0 mt-0.5 truncate">
-                                    {flat.resident_type || (flat.flat_type ? `${flat.flat_type} · ` : "")}{t("fhCurrentResident") || "Primary Resident"}
+                                  <p style={{ margin: 0, fontSize: 11, color: "var(--text-secondary)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                                    {flat.resident_type || "Primary Resident"}
                                   </p>
                                 </div>
                               </div>
 
-                              <span className="text-[11px] font-bold text-accent group-hover:translate-x-0.5 transition-transform shrink-0 flex items-center gap-0.5">
-                                <span>View</span>
-                                <MdChevronRight size={14} />
+                              <span style={{
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: 2,
+                                fontSize: 12,
+                                fontWeight: 700,
+                                color: "#818cf8",
+                                flexShrink: 0,
+                              }} className="group-hover:translate-x-1 transition-transform">
+                                <span>{t("fhViewHistory", "History")}</span>
+                                <MdChevronRight size={15} />
                               </span>
-                            </div>
+                            </>
                           ) : (
-                            <div className="flex items-center justify-between gap-2 py-1">
-                              <div className="flex items-center gap-2">
-                                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                                <span className="text-xs font-semibold text-emerald-500">
-                                  {t("fhAvailableForAssignment") || "Vacant · Ready to Assign"}
+                            <>
+                              <div style={{ display: "flex", alignItems: "center", gap: 7, minWidth: 0 }}>
+                                <div style={{
+                                  width: 22,
+                                  height: 22,
+                                  borderRadius: 7,
+                                  background: "rgba(16, 185, 129, 0.15)",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  color: "#34d399",
+                                  flexShrink: 0,
+                                }}>
+                                  <MdCheckCircle size={14} />
+                                </div>
+                                <span style={{ fontSize: 12, fontWeight: 600, color: "#34d399", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                                  {t("fhAvailableForAssignment", "Available for assignment")}
                                 </span>
                               </div>
-                              <span className="text-[11px] font-bold text-secondary group-hover:text-accent group-hover:translate-x-0.5 transition-all flex items-center gap-0.5">
+
+                              <span style={{
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: 2,
+                                fontSize: 12,
+                                fontWeight: 700,
+                                color: "#34d399",
+                                flexShrink: 0,
+                              }} className="group-hover:translate-x-1 transition-transform">
                                 <span>Details</span>
-                                <MdChevronRight size={14} />
+                                <MdChevronRight size={15} />
                               </span>
-                            </div>
+                            </>
                           )}
                         </div>
-                      </RecordCard>
+                      </div>
                     );
                   })}
                 </div>
@@ -1038,8 +1376,8 @@ const FlatHistory = () => {
                 {/* Pagination Footer */}
                 <div className="flex flex-col sm:flex-row justify-between items-center px-2 pt-5 mt-4 border-t border-glass-border gap-3">
                   <span className="text-xs text-secondary font-medium">
-                    Showing <strong>{pagedFlats.length}</strong> of <strong>{activeBlockFlats.length}</strong> flats{" "}
-                    {isAllBlocks ? (t("allBlocks") || "All Blocks").toLowerCase() : `in ${activeBlock}`}
+                    Showing <strong>{pagedFlats.length}</strong> of <strong>{statusFilteredFlats.length}</strong> flats{" "}
+                    {isAllBlocks ? (t("allBlocks", "All Blocks")).toLowerCase() : `in ${activeBlock}`}
                   </span>
                   <Pagination
                     page={flatPage}
@@ -1056,7 +1394,7 @@ const FlatHistory = () => {
             )}
           </div>
         ) : (
-          <Empty icon="🏢" text={t("fhNoFlatsFound") || "No flats found"} sub={t("fhNoFlatsSub") || "Select a valid block."} />
+          <Empty icon="🏢" text={t("fhNoFlatsFound", "No flats found")} sub={t("fhNoFlatsSub", "Select a valid block.")} />
         )}
       </div>
 
@@ -1177,6 +1515,8 @@ const FlatHistory = () => {
         icon={MdLogout}
         loading={movingOut}
       />
+        </>
+      )}
     </div>
   );
 };

@@ -1001,6 +1001,27 @@ html.light .set-avatar__dot {
   border-color: #ffffff;
 }
 
+/* ── Logo avatar variant (rounded rectangle, contain-fit) ── */
+.set-avatar--logo {
+  border-radius: 20px;
+}
+.set-avatar__btn--logo {
+  border-radius: 20px !important;
+  background: var(--card-inner-bg, rgba(255, 255, 255, 0.04));
+  border: 1.5px solid var(--glass-border, rgba(255, 255, 255, 0.12));
+}
+.set-avatar__btn--logo > :first-child {
+  border-radius: 20px !important;
+}
+.set-avatar__btn--logo img {
+  border-radius: 16px !important;
+  object-fit: contain !important;
+  padding: 4px;
+}
+.set-avatar__btn--logo .set-avatar__overlay {
+  border-radius: 20px !important;
+}
+
 .set-grid { display: grid; }
 .set-grid--3 { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
 .set-grid--2 { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 14px; }

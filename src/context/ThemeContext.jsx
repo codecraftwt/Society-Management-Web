@@ -17,7 +17,7 @@ import "../theme/quick-link-styles.css";
 const ThemeContext = createContext({
   theme: "dark",
   toggleTheme: () => { },
-  societyTheme: { primary: null, accent: null, cardStyle: "default", quickLinkStyle: "default", configured: false },
+  societyTheme: { primary: null, accent: null, cardStyle: "default", quickLinkStyle: "default", logo_url: null, society_name: null, configured: false },
   applySocietyTheme: () => { },
   resetSocietyTheme: () => { },
   previewTheme: () => { },
@@ -41,10 +41,10 @@ export function ThemeProvider({ children }) {
     try {
       const cached = localStorage.getItem("active_society_theme");
       return cached
-        ? { cardStyle: "default", quickLinkStyle: "default", ...JSON.parse(cached) }
-        : { primary: null, accent: null, cardStyle: "default", quickLinkStyle: "default", configured: false };
+        ? { cardStyle: "default", quickLinkStyle: "default", logo_url: null, society_name: null, ...JSON.parse(cached) }
+        : { primary: null, accent: null, cardStyle: "default", quickLinkStyle: "default", logo_url: null, society_name: null, configured: false };
     } catch {
-      return { primary: null, accent: null, cardStyle: "default", quickLinkStyle: "default", configured: false };
+      return { primary: null, accent: null, cardStyle: "default", quickLinkStyle: "default", logo_url: null, society_name: null, configured: false };
     }
   });
 
@@ -81,7 +81,7 @@ export function ThemeProvider({ children }) {
 
   const applySocietyTheme = useCallback((themeData) => {
     if (!themeData) {
-      setSocietyTheme({ primary: null, accent: null, cardStyle: "default", quickLinkStyle: "default", configured: false });
+      setSocietyTheme({ primary: null, accent: null, cardStyle: "default", quickLinkStyle: "default", logo_url: null, society_name: null, configured: false });
       localStorage.removeItem("active_society_theme");
       clearDynamicTheme();
       applyCardStyle("default");
@@ -93,27 +93,34 @@ export function ThemeProvider({ children }) {
     const accent = themeData.accent || themeData.accent_color || null;
     const cardStyle = themeData.cardStyle || themeData.card_style || null;
     const quickLinkStyle = themeData.quickLinkStyle || themeData.quick_link_style || null;
+    const logoUrl = themeData.logo_url !== undefined ? themeData.logo_url : (themeData.logoUrl !== undefined ? themeData.logoUrl : undefined);
+    const societyName = themeData.society_name || themeData.societyName || undefined;
 
-    if (!primary && !accent && (!cardStyle || cardStyle === "default") && (!quickLinkStyle || quickLinkStyle === "default")) {
-      setSocietyTheme({ primary: null, accent: null, cardStyle: "default", quickLinkStyle: "default", configured: false });
-      localStorage.removeItem("active_society_theme");
-      clearDynamicTheme();
-      applyCardStyle("default");
-      applyQuickLinkStyle("default");
-      return;
-    }
+    const hasAnyConfig = Boolean(
+      primary ||
+      accent ||
+      (cardStyle && cardStyle !== "default") ||
+      (quickLinkStyle && quickLinkStyle !== "default") ||
+      logoUrl
+    );
 
     setSocietyTheme((prev) => {
       const next = {
-        primary: primary ?? prev.primary ?? null,
-        accent: accent ?? prev.accent ?? null,
+        primary: primary !== undefined ? primary : prev.primary,
+        accent: accent !== undefined ? accent : prev.accent,
         cardStyle: cardStyle ?? prev.cardStyle ?? "default",
         quickLinkStyle: quickLinkStyle ?? prev.quickLinkStyle ?? "default",
-        configured: true,
+        logo_url: logoUrl !== undefined ? logoUrl : (prev.logo_url ?? null),
+        society_name: societyName !== undefined ? societyName : (prev.society_name ?? null),
+        configured: hasAnyConfig || prev.configured,
       };
       localStorage.setItem("active_society_theme", JSON.stringify(next));
-      const tokens = deriveThemeTokens(next.primary, next.accent);
-      if (tokens) applyDynamicTheme(tokens);
+      if (next.primary) {
+        const tokens = deriveThemeTokens(next.primary, next.accent);
+        if (tokens) applyDynamicTheme(tokens);
+      } else {
+        clearDynamicTheme();
+      }
       applyCardStyle(next.cardStyle);
       applyQuickLinkStyle(next.quickLinkStyle);
       return next;
@@ -145,7 +152,7 @@ export function ThemeProvider({ children }) {
   }, []);
 
   const resetSocietyTheme = useCallback(() => {
-    setSocietyTheme({ primary: null, accent: null, cardStyle: "default", quickLinkStyle: "default", configured: false });
+    setSocietyTheme({ primary: null, accent: null, cardStyle: "default", quickLinkStyle: "default", logo_url: null, society_name: null, configured: false });
     localStorage.removeItem("active_society_theme");
     clearDynamicTheme();
     applyCardStyle("default");
@@ -173,9 +180,14 @@ export function ThemeProvider({ children }) {
     }
     try {
       const res = await API.get(`/societies/${societyId}/theme`);
-      if (res.data?.success && res.data.configured) {
-        applySocietyTheme(res.data.theme);
-        return res.data.theme;
+      if (res.data?.success) {
+        const themePayload = {
+          ...(res.data.theme || {}),
+          society_name: res.data.society_name,
+          logo_url: res.data.logo_url !== undefined ? res.data.logo_url : res.data.theme?.logo_url,
+        };
+        applySocietyTheme(themePayload);
+        return themePayload;
       } else {
         resetSocietyTheme();
         return null;
@@ -195,12 +207,13 @@ export function ThemeProvider({ children }) {
       try {
         const storedUser = JSON.parse(localStorage.getItem("user") || "null");
         if (storedUser?.society_id && String(storedUser.society_id) === String(payload?.society_id)) {
-          const theme = payload?.theme;
-          if (theme?.primary || theme?.accent || theme?.cardStyle || theme?.card_style || theme?.quickLinkStyle || theme?.quick_link_style) {
-            applySocietyTheme(theme);
-          } else {
-            resetSocietyTheme();
-          }
+          const theme = payload?.theme || {};
+          const logoUrl = payload?.logo_url !== undefined ? payload.logo_url : theme.logo_url;
+          applySocietyTheme({
+            ...theme,
+            logo_url: logoUrl,
+            society_name: payload?.society_name || storedUser?.society_name,
+          });
         }
       } catch (e) {
         console.error("[ThemeContext] Error handling socket theme update:", e);

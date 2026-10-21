@@ -370,7 +370,10 @@ export default function Societies() {
                     hasAdmin={!!s.societyAdmins}
                     t={t}
                     onEditAdmin={() => openAdminModal(s)}
-                    onManage={() => navigate(`/superadmin/society/${s.id}/blocks`)}
+                    onManage={() => {
+                      localStorage.setItem("superadmin_society_filter", String(s.id));
+                      navigate(`/superadmin/property?societyId=${s.id}`);
+                    }}
                     onCustomizeTheme={() => openThemeModal(s)}
                     onDelete={() => setDeleteConfirm({ isOpen: true, id: s.id, loading: false })}
                   />
@@ -541,7 +544,10 @@ export default function Societies() {
         onManage={() => {
           const s = detailSociety;
           setDetailSociety(null);
-          if (s) navigate(`/superadmin/society/${s.id}/blocks`);
+          if (s) {
+            localStorage.setItem("superadmin_society_filter", String(s.id));
+            navigate(`/superadmin/property?societyId=${s.id}`);
+          }
         }}
         t={t}
       />

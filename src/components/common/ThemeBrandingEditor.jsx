@@ -45,6 +45,7 @@ export default function ThemeBrandingEditor({
   onChangeQuickLinkStyle,
   onApplyPreset,
   societyName = "Skyline Residency",
+  logoUrl = null,
 }) {
   const isPrimaryValid = isValidHexColor(primaryColor);
   const isAccentValid = isValidHexColor(accentColor);
@@ -85,14 +86,20 @@ export default function ThemeBrandingEditor({
     >
       <div className="flex items-center justify-between pb-3 mb-3 border-b border-[var(--glass-border)] flex-wrap gap-2">
         <div className="flex items-center gap-2.5">
-          <div
-            className="w-8 h-8 rounded-lg flex items-center justify-center text-white shadow-sm"
-            style={{
-              background: "linear-gradient(135deg, var(--accent), var(--accent-light))",
-            }}
-          >
-            <MdApartment size={18} />
-          </div>
+          {logoUrl ? (
+            <div className="w-8 h-8 rounded-lg border border-[var(--glass-border)] bg-[var(--card-inner-bg)] p-0.5 flex items-center justify-center shrink-0 overflow-hidden shadow-sm">
+              <img src={logoUrl} alt={societyName} className="w-full h-full object-contain" />
+            </div>
+          ) : (
+            <div
+              className="w-8 h-8 rounded-lg flex items-center justify-center text-white shadow-sm shrink-0"
+              style={{
+                background: "linear-gradient(135deg, var(--accent), var(--accent-light))",
+              }}
+            >
+              <MdApartment size={18} />
+            </div>
+          )}
           <div>
             <div
               className="text-xs font-bold"

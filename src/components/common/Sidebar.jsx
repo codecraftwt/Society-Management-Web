@@ -14,6 +14,7 @@ import { useSidebar } from "../../context/SidebarContext";
 import UserAvatar from "./UserAvatar";
 import { AuthContext } from "../../context/AuthContext";
 import { useLang } from "../../context/LanguageContext";
+import { useTheme } from "../../context/ThemeContext";
 import { getProfilePath } from "../../constants/app";
 
 const GROUP_I18N = {
@@ -163,6 +164,9 @@ export default function Sidebar({
     }));
   };
 
+  const { societyTheme } = useTheme();
+  const currentLogo = societyTheme?.logo_url || user?.society_logo || user?.society_logo_url || user?.society?.logo_url || null;
+
   /* ── Render Brand Header ── */
   const renderBrand = (isMobileDrawer = false) => {
     // Collapsed desktop header: ONLY centered brand logo icon (click to expand)
@@ -171,11 +175,24 @@ export default function Sidebar({
         <div className="flex items-center justify-center mb-6 shrink-0 relative group/tooltip">
           <button
             onClick={toggleCollapsed}
-            className="flex items-center justify-center text-accent hover:text-primary transition-colors"
+            className="flex items-center justify-center w-10 h-10 rounded-xl bg-linear-to-br from-blue-600/20 to-indigo-600/10 border border-blue-500/25 text-accent hover:text-primary transition-all overflow-hidden p-1"
             aria-label={t("sbExpand")}
             title={t("sbExpand")}
           >
-            <TbLayoutSidebarLeftExpandFilled size={22} />
+            {currentLogo ? (
+              <img
+                src={currentLogo}
+                alt=""
+                className="w-full h-full object-contain rounded-lg"
+                onError={(e) => {
+                  e.currentTarget.style.display = "none";
+                  if (e.currentTarget.nextSibling) e.currentTarget.nextSibling.style.display = "flex";
+                }}
+              />
+            ) : null}
+            <span style={{ display: currentLogo ? "none" : "flex" }} className="items-center justify-center">
+              <TbLayoutSidebarLeftExpandFilled size={22} />
+            </span>
           </button>
           <div className="fixed left-20 ml-1.5 z-50 hidden group-hover/tooltip:block bg-card border border-glass-border text-primary text-xs font-semibold px-3 py-1.5 rounded-lg shadow-xl whitespace-nowrap pointer-events-none animate-fadeIn">
             {t("sbExpand")}
@@ -188,8 +205,21 @@ export default function Sidebar({
     return (
       <div className={`flex items-center justify-between gap-2 px-1 shrink-0 border-b border-glass-border ${isMobileDrawer ? "mb-2 pb-3" : "mb-6 pb-4"}`}>
         <div className="flex items-center gap-3 min-w-0 flex-1 overflow-hidden">
-          <div className="w-9 h-9 rounded-xl bg-linear-to-br from-blue-600/25 to-indigo-600/15 border border-blue-500/30 flex items-center justify-center text-accent shrink-0 shadow-sm">
-            <FaBuilding size={18} />
+          <div className="w-10 h-10 rounded-xl bg-linear-to-br from-blue-600/25 to-indigo-600/15 border border-blue-500/30 flex items-center justify-center text-accent shrink-0 shadow-sm overflow-hidden p-1">
+            {currentLogo ? (
+              <img
+                src={currentLogo}
+                alt=""
+                className="w-full h-full object-contain rounded-lg"
+                onError={(e) => {
+                  e.currentTarget.style.display = "none";
+                  if (e.currentTarget.nextSibling) e.currentTarget.nextSibling.style.display = "flex";
+                }}
+              />
+            ) : null}
+            <span style={{ display: currentLogo ? "none" : "flex" }} className="items-center justify-center w-full h-full">
+              <FaBuilding size={18} />
+            </span>
           </div>
           <div className="min-w-0 flex-1 overflow-hidden">
             <h2 className="text-sm font-extrabold leading-tight truncate text-primary tracking-tight">

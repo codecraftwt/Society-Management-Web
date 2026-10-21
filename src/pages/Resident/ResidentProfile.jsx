@@ -38,6 +38,7 @@ import SOSModal from "../../components/emergency/SOSModal";
 import Modal from "../../components/Modal";
 import UserAvatar from "../../components/common/UserAvatar";
 import StatCard from "../../components/common/StatCard";
+import { formatFullFlatLabel } from "../../utils/flatFormatter";
 import QuickLink from "../../components/common/QuickLink";
 import { getTitleError, getMobileError, getVehicleNumberError } from "../../utils/validators";
 
@@ -445,8 +446,7 @@ export default function ResidentProfile() {
                         <MdHome size={14} />
                       </span>
                       <span className="truncate">
-                        {currentFlat.block_name ? `${t("rdBlock")} ${currentFlat.block_name} · ` : ""}
-                        {t("rdFlat")} {currentFlat.flat_number || "—"}
+                        {formatFullFlatLabel(currentFlat, t) || `${currentFlat.block_name ? `${currentFlat.block_name} · ` : ""}${currentFlat.flat_number || "—"}`}
                       </span>
                     </span>
                   </>

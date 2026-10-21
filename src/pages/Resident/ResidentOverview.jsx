@@ -19,6 +19,7 @@ import { useLang } from "../../context/LanguageContext";
 import API from "../../services/api";
 import UserAvatar from "../../components/common/UserAvatar";
 import StatCard from "../../components/common/StatCard";
+import { formatFullFlatLabel } from "../../utils/flatFormatter";
 
 /**
  * Resident "My Overview" screen.
@@ -141,7 +142,7 @@ export default function ResidentOverview() {
       ];
 
   const flatLabel = hasFlat
-    ? `${t("rdBlock")} ${flatInfo?.block_name || "—"}, ${t("rdFlat")} ${flatInfo?.flat_number || "—"}`
+    ? (formatFullFlatLabel(flatInfo, t) || `${flatInfo?.block_name || "—"}, ${flatInfo?.flat_number || "—"}`)
     : t("rdFlatNotAssigned");
 
   return (

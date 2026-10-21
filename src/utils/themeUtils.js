@@ -72,16 +72,16 @@ export const adjustBrightness = (hex, percent) => {
  * Preset palettes for quick selection in the Super Admin and Society Admin UI.
  */
 export const PRESET_THEME_PALETTES = [
-  { id: "electric-royal", name: "Electric Royal", primary: "#001EFF", accent: "#00BFFF" },
-  { id: "royal-amethyst", name: "Royal Amethyst", primary: "#6036FF", accent: "#D000FF" },
-  { id: "emerald-flash", name: "Emerald Flash", primary: "#00A86B", accent: "#B6FF00" },
-  { id: "golden-volt", name: "Golden Volt", primary: "#FFB800", accent: "#FF6D00" },
-  { id: "crimson-blaze", name: "Crimson Blaze", primary: "#FF1744", accent: "#FF6D00" },
-  { id: "pink-voltage", name: "Pink Voltage", primary: "#FF0080", accent: "#FFB000" },
-  { id: "tropical-flame", name: "Tropical Flame", primary: "#00A878", accent: "#FF6B35" },
-  { id: "cyber-purple", name: "Cyber Purple", primary: "#7B00FF", accent: "#00D4FF" },
-  { id: "ruby-royale", name: "Ruby Royale", primary: "#D50032", accent: "#FF5CA8" },
-  { id: "lime-reactor", name: "Lime Reactor", primary: "#65D600", accent: "#00CFA6" },
+  { id: "rust-blaze", name: "Rust Blaze", primary: "#B12C00", accent: "#EB5B00" },
+  { id: "midnight-violet", name: "Midnight Violet", primary: "#090040", accent: "#471396" },
+  { id: "electric-sapphire", name: "Electric Sapphire", primary: "#2F2FE4", accent: "#162E93" },
+  { id: "mulberry-crimson", name: "Mulberry Crimson", primary: "#54123B", accent: "#C02739" },
+  { id: "solar-flare", name: "Solar Flare", primary: "#FA7D09", accent: "#FF4301" },
+  { id: "cosmic-plum", name: "Cosmic Plum", primary: "#0D1164", accent: "#640D5F" },
+  { id: "azure-cyan", name: "Azure Cyan", primary: "#2373F4", accent: "#65D0F4" },
+  { id: "fuchsia-orchid", name: "Fuchsia Orchid", primary: "#F10086", accent: "#711A75" },
+  { id: "emerald-mint", name: "Emerald Mint", primary: "#064E3B", accent: "#00D294" },
+  { id: "obsidian-coral", name: "Obsidian Coral", primary: "#1A1A2E", accent: "#E94560" },
 ];
 
 const THEME_VARIABLE_KEYS = [

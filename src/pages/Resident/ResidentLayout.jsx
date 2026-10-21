@@ -257,7 +257,7 @@ function ResidentLayoutInner() {
         <AppHeader
           title={null}
           subtitle={null}
-          societyName={collapsed ? user?.society_name : null}
+          societyName={user?.society_name || user?.society?.name || null}
           actions={
             <>
               <button

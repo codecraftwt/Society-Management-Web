@@ -19,6 +19,8 @@ import {
   MdHistory,
   MdInventory2,
   MdCelebration,
+  MdHomeWork,
+  MdApartment,
 } from "react-icons/md";
 import { FaBuilding, FaUsers, FaUserShield, FaParking } from "react-icons/fa";
 import ThemeToggle from "../../components/common/ThemeToggle";
@@ -62,6 +64,18 @@ function SuperAdminLayoutInner() {
       label: t("saMenuSocieties", "Societies"),
       path: `${base}/societies`,
       icon: FaBuilding,
+      group: "COMMUNITY & UNITS",
+    },
+    {
+      label: t("saMenuPropertyBlocks", "Property & Block"),
+      path: `${base}/property`,
+      icon: MdHomeWork,
+      group: "COMMUNITY & UNITS",
+    },
+    {
+      label: t("saMenuFlatHistory", "Flat History"),
+      path: `${base}/flat-history`,
+      icon: MdApartment,
       group: "COMMUNITY & UNITS",
     },
     {

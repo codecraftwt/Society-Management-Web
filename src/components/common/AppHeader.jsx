@@ -7,6 +7,7 @@ import NotificationBell from "./NotificationBell";
 import { useSidebar } from "../../context/SidebarContext";
 import { useLang } from "../../context/LanguageContext";
 import { useAuth } from "../../context/AuthContext";
+import { useTheme } from "../../context/ThemeContext";
 import "./AppHeader.css";
 import { DASHBOARD_ROUTES } from "../../constants/app";
 
@@ -73,10 +74,22 @@ export default function AppHeader({
     }
   };
 
+  const { societyTheme } = useTheme();
+
   const currentSocietyName =
     societyName ||
+    societyTheme?.society_name ||
     user?.society_name ||
+    user?.society?.name ||
     availableSocieties?.find((s) => Number(s.id) === Number(user?.society_id))?.name ||
+    null;
+
+  const currentSocietyLogo =
+    societyTheme?.logo_url ||
+    user?.society_logo ||
+    user?.society_logo_url ||
+    user?.society?.logo_url ||
+    availableSocieties?.find((s) => Number(s.id) === Number(user?.society_id))?.logo_url ||
     null;
 
   let sidebarCtx = null;
@@ -143,7 +156,22 @@ export default function AppHeader({
                   title="Switch Society"
                   disabled={isSwitching}
                 >
-                  <MdApartment size={13} className="shrink-0 text-accent" />
+                  <span className="header-society-icon-container">
+                    {currentSocietyLogo ? (
+                      <img
+                        src={currentSocietyLogo}
+                        alt=""
+                        className="header-society-logo-img"
+                        onError={(e) => {
+                          e.currentTarget.style.display = "none";
+                          if (e.currentTarget.nextSibling) e.currentTarget.nextSibling.style.display = "inline-flex";
+                        }}
+                      />
+                    ) : null}
+                    <span style={{ display: currentSocietyLogo ? "none" : "inline-flex" }}>
+                      <MdApartment size={13} className="shrink-0 text-accent" />
+                    </span>
+                  </span>
                   <span className="truncate max-w-[12rem]">{currentSocietyName || "Select Society"}</span>
                   <MdKeyboardArrowDown
                     size={15}
@@ -164,6 +192,22 @@ export default function AppHeader({
                             onClick={() => handleSelectSociety(soc.id)}
                             className={`header-society-menu-item ${isCurrent ? "active" : ""}`}
                           >
+                            <span className="header-society-icon-container header-society-icon-container--item">
+                              {soc.logo_url ? (
+                                <img
+                                  src={soc.logo_url}
+                                  alt=""
+                                  className="header-society-logo-img"
+                                  onError={(e) => {
+                                    e.currentTarget.style.display = "none";
+                                    if (e.currentTarget.nextSibling) e.currentTarget.nextSibling.style.display = "inline-flex";
+                                  }}
+                                />
+                              ) : null}
+                              <span style={{ display: soc.logo_url ? "none" : "inline-flex" }}>
+                                <MdApartment size={13} className="text-secondary" />
+                              </span>
+                            </span>
                             <div className="flex-1 min-w-0 text-left">
                               <div className="font-semibold text-xs truncate flex items-center gap-1.5">
                                 <span>{soc.name}</span>
@@ -187,7 +231,22 @@ export default function AppHeader({
               </div>
             ) : currentSocietyName ? (
               <span className="header-society-badge">
-                <MdApartment size={13} className="shrink-0" />
+                <span className="header-society-icon-container header-society-icon-container--badge">
+                  {currentSocietyLogo ? (
+                    <img
+                      src={currentSocietyLogo}
+                      alt=""
+                      className="header-society-logo-img"
+                      onError={(e) => {
+                        e.currentTarget.style.display = "none";
+                        if (e.currentTarget.nextSibling) e.currentTarget.nextSibling.style.display = "inline-flex";
+                      }}
+                    />
+                  ) : null}
+                  <span style={{ display: currentSocietyLogo ? "none" : "inline-flex" }}>
+                    <MdApartment size={12} className="shrink-0 text-accent" />
+                  </span>
+                </span>
                 <span className="truncate">{currentSocietyName}</span>
               </span>
             ) : null}

@@ -11,8 +11,12 @@ import {
   MdApartment,
   MdCheckCircle,
   MdOutlineAutoAwesome,
+  MdCameraAlt,
+  MdEdit,
 } from "react-icons/md";
+import GlobalModal from "../../components/common/GlobalModal";
 import ThemeBrandingEditor from "../../components/common/ThemeBrandingEditor";
+import SocietyLogoUploader from "../../components/common/SocietyLogoUploader";
 import GlobalButton from "../../components/common/GlobalButton";
 import Select from "../../components/common/Select";
 import { isValidHexColor, applyDynamicTheme, clearDynamicTheme, deriveThemeTokens } from "../../utils/themeUtils";
@@ -28,6 +32,8 @@ export default function SocietyThemeBrandingPage() {
   const [societies, setSocieties] = useState([]);
   const [selectedSocietyId, setSelectedSocietyId] = useState(societyIdParam);
   const [selectedSocietyName, setSelectedSocietyName] = useState(initialSocietyName);
+  const [logoUrl, setLogoUrl] = useState(null);
+  const [logoModalOpen, setLogoModalOpen] = useState(false);
 
   const [primaryColor, setPrimaryColor] = useState("#a05aff");
   const [accentColor, setAccentColor] = useState("#9e58ff");
@@ -54,6 +60,11 @@ export default function SocietyThemeBrandingPage() {
           const match = list.find((s) => String(s.id) === String(selectedSocietyId));
           if (match && match.name) {
             setSelectedSocietyName(match.name);
+          } else if (list.length > 0) {
+            // Selected param not found in actual societies list; safely fall back to the first valid society
+            setSelectedSocietyId(String(list[0].id));
+            setSelectedSocietyName(list[0].name);
+            setSearchParams({ societyId: String(list[0].id), societyName: list[0].name });
           }
         }
       })
@@ -71,13 +82,22 @@ export default function SocietyThemeBrandingPage() {
     setLoading(true);
     try {
       const res = await API.get(`/societies/${socId}/theme`);
-      if (res.data?.success && res.data.configured) {
-        setPrimaryColor(res.data.theme.primary || "#a05aff");
-        setAccentColor(res.data.theme.accent || "#9e58ff");
-        setCardStyle(res.data.theme.cardStyle || res.data.theme.card_style || "default");
-        setQuickLinkStyle(res.data.theme.quickLinkStyle || res.data.theme.quick_link_style || "default");
+      if (res.data?.success) {
+        setLogoUrl(res.data.logo_url || res.data.theme?.logo_url || null);
+        if (res.data.configured) {
+          setPrimaryColor(res.data.theme.primary || "#a05aff");
+          setAccentColor(res.data.theme.accent || "#9e58ff");
+          setCardStyle(res.data.theme.cardStyle || res.data.theme.card_style || "default");
+          setQuickLinkStyle(res.data.theme.quickLinkStyle || res.data.theme.quick_link_style || "default");
+        } else {
+          // Defaults
+          setPrimaryColor("#a05aff");
+          setAccentColor("#9e58ff");
+          setCardStyle("default");
+          setQuickLinkStyle("default");
+        }
       } else {
-        // Defaults
+        setLogoUrl(null);
         setPrimaryColor("#a05aff");
         setAccentColor("#9e58ff");
         setCardStyle("default");
@@ -85,6 +105,7 @@ export default function SocietyThemeBrandingPage() {
       }
     } catch (err) {
       console.error("Failed to fetch society theme:", err);
+      setLogoUrl(null);
       setPrimaryColor("#a05aff");
       setAccentColor("#9e58ff");
       setCardStyle("default");
@@ -260,36 +281,134 @@ export default function SocietyThemeBrandingPage() {
           <span className="text-sm font-semibold">{t("saLoadingTheme", "Loading society theme preferences...")}</span>
         </div>
       ) : (
-        <div className="bg-[var(--card-bg)] border border-[var(--glass-border)] rounded-2xl p-5 sm:p-7 shadow-lg backdrop-blur-md">
-          <div className="mb-6 pb-4 border-b border-[var(--glass-border)] flex items-center justify-between flex-wrap gap-2">
-            <div className="flex items-center gap-2">
-              <MdOutlineAutoAwesome size={20} className="text-[var(--accent)]" />
-              <h2 className="text-base font-bold text-[var(--text-primary)]">
-                {t("saBrandingStudioSubtitle", "Live Visual Style Editor")}
-              </h2>
+        <div className="flex flex-col gap-6">
+          {/* Society Logo Branding Hero Card (Matches /admin/settings profile hero layout) */}
+          <div className="p-5 sm:p-6 rounded-2xl border border-[var(--glass-border)] bg-[var(--card-bg)] shadow-lg backdrop-blur-xl flex flex-col sm:flex-row items-center gap-5 justify-between">
+            <div className="flex items-center gap-4 w-full sm:w-auto">
+              <div className="relative group shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setLogoModalOpen(true)}
+                  className="w-18 h-18 sm:w-20 sm:h-20 rounded-2xl border-2 border-[var(--glass-border)] hover:border-[var(--accent)] bg-[var(--card-inner-bg)] p-2 flex items-center justify-center relative overflow-hidden transition-all shadow-sm cursor-pointer group"
+                  aria-label={logoUrl ? "Change or remove society logo" : "Upload society logo"}
+                  title={logoUrl ? "Change society logo" : "Upload society logo"}
+                >
+                  {logoUrl ? (
+                    <img
+                      src={logoUrl}
+                      alt={selectedSocietyName || "Society Logo"}
+                      className="w-full h-full object-contain"
+                      onError={(e) => {
+                        e.currentTarget.style.display = "none";
+                        if (e.currentTarget.nextSibling) e.currentTarget.nextSibling.style.display = "flex";
+                      }}
+                    />
+                  ) : null}
+                  <div
+                    style={{ display: logoUrl ? "none" : "flex" }}
+                    className="w-full h-full items-center justify-center text-[var(--accent)]"
+                  >
+                    <MdApartment size={36} />
+                  </div>
+                  <span className="absolute inset-0 bg-black/55 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white text-[10px] font-bold gap-1 backdrop-blur-[2px]">
+                    <MdCameraAlt size={18} />
+                    <span>{logoUrl ? t("edit", "Edit") : t("upload", "Upload")}</span>
+                  </span>
+                </button>
+                <span
+                  className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-[var(--card-bg)] ${
+                    logoUrl ? "bg-emerald-500" : "bg-amber-400"
+                  }`}
+                  aria-hidden="true"
+                />
+              </div>
+
+              <div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h2 className="text-lg font-bold text-[var(--text-primary)]">
+                    {selectedSocietyName || "Selected Society"}
+                  </h2>
+                  <span
+                    className={`text-[11px] px-2.5 py-0.5 rounded-full font-semibold border ${
+                      logoUrl
+                        ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
+                        : "bg-amber-500/10 text-amber-400 border-amber-500/30"
+                    }`}
+                  >
+                    {logoUrl ? "Official Logo Active" : "Default Identity"}
+                  </span>
+                </div>
+                <p className="text-xs text-[var(--text-secondary)] mt-1 flex items-center gap-1.5">
+                  <MdPalette size={14} className="text-[var(--accent)] shrink-0" />
+                  <span>Theme, Identity & Visual Branding</span>
+                </p>
+              </div>
             </div>
-            <span className="text-xs font-semibold px-3 py-1 rounded-full bg-[rgba(16,185,129,0.12)] text-[#10b981] border border-[rgba(16,185,129,0.25)] flex items-center gap-1.5">
-              <MdCheckCircle size={14} />
-              {t("saRealtimeSync", "Realtime Preview Active")}
-            </span>
+
+            <button
+              type="button"
+              onClick={() => setLogoModalOpen(true)}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-[var(--glass-border)] hover:border-[var(--accent)] hover:text-[var(--accent)] text-[var(--text-primary)] bg-[var(--card-inner-bg)] transition-all font-semibold text-xs cursor-pointer w-full sm:w-auto justify-center shadow-sm"
+            >
+              <MdEdit size={16} />
+              <span>{logoUrl ? t("editLogo", "Edit Logo") : t("uploadLogo", "Upload Logo")}</span>
+            </button>
           </div>
 
-          <ThemeBrandingEditor
-            primaryColor={primaryColor}
-            accentColor={accentColor}
-            cardStyle={cardStyle}
-            quickLinkStyle={quickLinkStyle}
-            onChangePrimary={setPrimaryColor}
-            onChangeAccent={setAccentColor}
-            onChangeCardStyle={setCardStyle}
-            onChangeQuickLinkStyle={setQuickLinkStyle}
-            onApplyPreset={(p) => {
-              setPrimaryColor(p.primary);
-              setAccentColor(p.accent);
-            }}
-            societyName={selectedSocietyName || "Society Portal"}
-          />
+          {/* Visual Style & Color Editor */}
+          <div className="bg-[var(--card-bg)] border border-[var(--glass-border)] rounded-2xl p-5 sm:p-7 shadow-lg backdrop-blur-md">
+            <div className="mb-6 pb-4 border-b border-[var(--glass-border)] flex items-center justify-between flex-wrap gap-2">
+              <div className="flex items-center gap-2">
+                <MdOutlineAutoAwesome size={20} className="text-[var(--accent)]" />
+                <h2 className="text-base font-bold text-[var(--text-primary)]">
+                  {t("saBrandingStudioSubtitle", "Live Visual Style Editor")}
+                </h2>
+              </div>
+              <span className="text-xs font-semibold px-3 py-1 rounded-full bg-[rgba(16,185,129,0.12)] text-[#10b981] border border-[rgba(16,185,129,0.25)] flex items-center gap-1.5">
+                <MdCheckCircle size={14} />
+                {t("saRealtimeSync", "Realtime Preview Active")}
+              </span>
+            </div>
+
+            <ThemeBrandingEditor
+              primaryColor={primaryColor}
+              accentColor={accentColor}
+              cardStyle={cardStyle}
+              quickLinkStyle={quickLinkStyle}
+              onChangePrimary={setPrimaryColor}
+              onChangeAccent={setAccentColor}
+              onChangeCardStyle={setCardStyle}
+              onChangeQuickLinkStyle={setQuickLinkStyle}
+              onApplyPreset={(p) => {
+                setPrimaryColor(p.primary);
+                setAccentColor(p.accent);
+              }}
+              societyName={selectedSocietyName || "Society Portal"}
+              logoUrl={logoUrl}
+            />
+          </div>
         </div>
+      )}
+
+      {/* Society Logo Modal Popup */}
+      {logoModalOpen && (
+        <GlobalModal
+          isOpen={logoModalOpen}
+          onClose={() => setLogoModalOpen(false)}
+          title={t("saSocietyLogoHeading", "Society Logo")}
+          size="sm"
+        >
+          <SocietyLogoUploader
+            societyId={selectedSocietyId}
+            societyName={selectedSocietyName || "Selected Society"}
+            currentLogoUrl={logoUrl}
+            onLogoUpdated={(newLogoUrl) => {
+              setLogoUrl(newLogoUrl);
+            }}
+            onClose={() => setLogoModalOpen(false)}
+            disabled={loading || saveLoading || resetLoading}
+          />
+        </GlobalModal>
       )}
     </div>
   );

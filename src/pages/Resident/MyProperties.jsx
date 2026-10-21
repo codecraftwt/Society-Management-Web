@@ -12,6 +12,7 @@ import useUnsavedDirty from "../../hooks/useUnsavedDirty";
 import ConfirmDiscard from "../../components/common/ConfirmDiscard";
 import { getNameError, getEmailError, getMobileError, getRequiredDateError, getDateRangeError, getPasswordError } from "../../utils/validators";
 import { useLang } from "../../context/LanguageContext";
+import { formatFullFlatLabel } from "../../utils/flatFormatter";
 
 /* ─────────────────────────────────────────────
    Document Upload Field
@@ -294,11 +295,8 @@ export default function MyProperties() {
           const isApproved      = hasTenant && tenantStatus === "APPROVED" && prop.tenantData.is_current;
           const showSelfOccupied = !isPending && !isApproved;
 
-          // ✅ flat_number / block_name / floor_number come directly from get-flat
-          const flatNumber  = prop.flat_number  || t("rpropUnknown");
-          const blockName   = prop.block_name   ? `${t("rdBlock")} ${prop.block_name}` : "";
-          const floorLabel  = prop.floor_number != null ? `${t("rpropFloor")} ${prop.floor_number}` : "";
-          const flatLabel   = [blockName, floorLabel, `${t("rdFlat")} ${flatNumber}`].filter(Boolean).join(", ");
+          // ✅ Cleanly format flat label without repeating "Block" or prefix redundancy
+          const flatLabel = formatFullFlatLabel(prop, t) || prop.flat_number || t("rpropUnknown");
 
           return (
             <div

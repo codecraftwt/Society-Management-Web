@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback, useMemo, useRef, useContext } from "react";
 import { createPortal } from "react-dom";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import API from "../../services/api";
 import { useLang } from "../../context/LanguageContext";
 import { AuthContext } from "../../context/AuthContext";
@@ -79,18 +79,76 @@ function propertyTypeLabel(type, t) {
 ══════════════════════════════════════════════ */
 export default function ManageProperty() {
   const navigate  = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { t }     = useLang();
   const isMobile  = useIsMobile();
   const { user }  = useContext(AuthContext);
-  const canEdit   = hasPermission(user, "property", "edit") || hasPermission(user, "property", "create") || hasPermission(user, "property", "view");
+  const isSuperAdmin = (user?.activeRole || user?.role) === "SUPER_ADMIN";
+  const canEdit   = isSuperAdmin || hasPermission(user, "property", "edit") || hasPermission(user, "property", "create") || hasPermission(user, "property", "view");
   const [tab, setTab] = useState("blocks");
   const [search, setSearch] = useState("");
   const [showBlockForm, setShowBlockForm] = useState(false);
+
+  // ── SuperAdmin Society Selection ──
+  const [societies, setSocieties] = useState([]);
+  const [loadingSocieties, setLoadingSocieties] = useState(false);
+
+  const querySocId = searchParams.get("societyId");
+  const storedSocFilter = localStorage.getItem("superadmin_society_filter");
+  const initialSocId = querySocId || (storedSocFilter && storedSocFilter !== "ALL" ? storedSocFilter : "") || "";
+  const [selectedSocietyId, setSelectedSocietyId] = useState(initialSocId);
+
+  useEffect(() => {
+    if (isSuperAdmin) {
+      setLoadingSocieties(true);
+      API.get("/societies")
+        .then((res) => {
+          const list = res.data || [];
+          setSocieties(list);
+          if (!selectedSocietyId && list.length > 0) {
+            const firstId = String(list[0].id);
+            setSelectedSocietyId(firstId);
+            localStorage.setItem("superadmin_society_filter", firstId);
+            setSearchParams({ societyId: firstId });
+          }
+        })
+        .catch((err) => console.error("Failed to load societies", err))
+        .finally(() => setLoadingSocieties(false));
+    }
+  }, [isSuperAdmin]);
+
+  useEffect(() => {
+    if (querySocId && querySocId !== selectedSocietyId) {
+      setSelectedSocietyId(querySocId);
+      localStorage.setItem("superadmin_society_filter", querySocId);
+    }
+  }, [querySocId]);
+
+  const handleSocietyChange = (newSocId) => {
+    setSelectedSocietyId(newSocId);
+    if (newSocId) {
+      localStorage.setItem("superadmin_society_filter", newSocId);
+      setSearchParams({ societyId: newSocId });
+    } else {
+      localStorage.removeItem("superadmin_society_filter");
+      setSearchParams({});
+    }
+  };
+
+  const activeSocietyId = isSuperAdmin ? selectedSocietyId : (user?.society_id || getSocietyId());
 
   const TABS = [
     { key: "blocks",  label: t("mpTabBlocks") || "Blocks & Floors",  icon: MdGridView   },
     { key: "flats",   label: t("mpTabFlats") || "All Properties",    icon: MdApartment  },
   ];
+
+  const handleOpenCreateBlock = () => {
+    if (isSuperAdmin && !activeSocietyId) {
+      toast.warning(t("mpSelectSocietyFirst") || "Please select a society first to create a block.");
+      return;
+    }
+    setShowBlockForm(true);
+  };
 
   const handleTabChange = (newTab) => {
     setTab(newTab);
@@ -99,6 +157,7 @@ export default function ManageProperty() {
 
   return (
     <div className="mp-page space-y-5 animate-fadeIn">
+      {/* ── Page Header (Title, Society Dropdown, Create Button, Search, Tabs in Same Row) ── */}
       <div className="mp-page-head">
         <div className="mp-page-head__title">
           <div className="ad-page-icon">
@@ -111,11 +170,27 @@ export default function ManageProperty() {
         </div>
 
         <div className="mp-page-head__tools">
+          {/* SuperAdmin Society Selector in the SAME ROW near the Create button */}
+          {isSuperAdmin && (
+            <div style={{ minWidth: 180, maxWidth: 260 }} className="shrink-0">
+              <Select
+                value={selectedSocietyId}
+                onChange={(e) => handleSocietyChange(e.target.value)}
+                style={{ width: "100%", height: 38, borderRadius: 10, fontSize: 13, fontWeight: 700 }}
+              >
+                <option value="">Select Society...</option>
+                {societies.map((s) => (
+                  <option key={s.id} value={s.id}>{s.name}</option>
+                ))}
+              </Select>
+            </div>
+          )}
+
           {canEdit && tab === "blocks" && (
             <GlobalButton
               variant="add"
               borderDraw
-              onClick={() => setShowBlockForm(true)}
+              onClick={handleOpenCreateBlock}
               icon={MdAdd}
               className="mp-page-head__cta shrink-0"
               style={{ fontWeight: 700 }}
@@ -149,26 +224,54 @@ export default function ManageProperty() {
         </div>
       </div>
 
-      {/* ── Tab panels ── */}
-      {tab === "blocks"  && (
-        <BlocksTab
-          isMobile={isMobile}
-          t={t}
-          canEdit={canEdit}
-          search={search}
-          setSearch={setSearch}
-          showForm={showBlockForm}
-          setShowForm={setShowBlockForm}
-        />
-      )}
-      {tab === "flats"   && (
-        <FlatsTab
-          isMobile={isMobile}
-          t={t}
-          canEdit={canEdit}
-          search={search}
-          setSearch={setSearch}
-        />
+      {/* ── Body: Ask to select society if not selected ── */}
+      {isSuperAdmin && !activeSocietyId ? (
+        <div className="card" style={{ padding: 48, textAlign: "center", borderRadius: 18, border: "1px solid var(--glass-border)", background: "var(--card-bg)" }}>
+          <div style={{
+            width: 56,
+            height: 56,
+            borderRadius: 18,
+            background: "rgba(160, 90, 255, 0.12)",
+            border: "1px solid rgba(160, 90, 255, 0.25)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            color: "var(--accent)",
+            margin: "0 auto 16px"
+          }}>
+            <MdApartment size={28} />
+          </div>
+          <h3 style={{ fontSize: 17, fontWeight: 800, color: "var(--text-primary)", margin: 0 }}>Select a Society</h3>
+          <p style={{ color: "var(--text-secondary)", fontSize: 13, maxWidth: 440, margin: "8px auto 0" }}>
+            Please select a society from the dropdown above in the header to view and configure its blocks, floors, flats, and layouts.
+          </p>
+        </div>
+      ) : (
+        <>
+          {/* ── Tab panels ── */}
+          {tab === "blocks"  && (
+            <BlocksTab
+              isMobile={isMobile}
+              t={t}
+              canEdit={canEdit}
+              search={search}
+              setSearch={setSearch}
+              showForm={showBlockForm}
+              setShowForm={setShowBlockForm}
+              societyId={activeSocietyId}
+            />
+          )}
+          {tab === "flats"   && (
+            <FlatsTab
+              isMobile={isMobile}
+              t={t}
+              canEdit={canEdit}
+              search={search}
+              setSearch={setSearch}
+              societyId={activeSocietyId}
+            />
+          )}
+        </>
       )}
     </div>
   );
@@ -177,7 +280,7 @@ export default function ManageProperty() {
 /* ══════════════════════════════════════════════
    AREA ASSIGN MODAL (Dual-Mode: Make All Same & Separate Filling)
 ══════════════════════════════════════════════ */
-function AreaAssignModal({
+export function AreaAssignModal({
   flats,
   values,
   setValues,
@@ -1142,6 +1245,7 @@ function BlocksTab({
   setSearch: setExternalSearch,
   showForm: externalShowForm,
   setShowForm: setExternalShowForm,
+  societyId,
 }) {
   const [blocks,        setBlocks]        = useState([]);
   const [loading,       setLoading]       = useState(true);
@@ -1155,6 +1259,15 @@ function BlocksTab({
   const [localShowForm, setLocalShowForm] = useState(false);
   const showForm = externalShowForm !== undefined ? externalShowForm : localShowForm;
   const setShowForm = setExternalShowForm !== undefined ? setExternalShowForm : setLocalShowForm;
+
+  const activeSocId = societyId || getSocietyId();
+
+  // ── 3-Tier BHK Draft Configuration State ──
+  const [blockDefaultBhk, setBlockDefaultBhk] = useState("2BHK");
+  const [floorsLayout, setFloorsLayout]       = useState([]);
+  const [activeFloorIndex, setActiveFloorIndex] = useState(0);
+  const [dimWarning, setDimWarning]           = useState("");
+  const prevDimsRef = useRef({ floors: 0, units: 0, hasCustom: false });
 
   const [confirmId,     setConfirmId]     = useState(null);
   const [deletingId,    setDeletingId]    = useState(null);
@@ -1172,12 +1285,284 @@ function BlocksTab({
   const [savingAreas, setSavingAreas] = useState(false);
   const [refreshFlatsKey, setRefreshFlatsKey] = useState(0);
 
-  useEffect(() => { loadBlocks(); }, []);
+  useEffect(() => {
+    if (activeSocId) {
+      loadBlocks();
+    } else {
+      setBlocks([]);
+      setLoading(false);
+    }
+  }, [activeSocId]);
+
+  // ── Synchronize draft floor and flat layout when inputs change ──
+  useEffect(() => {
+    if (propertyType !== "APARTMENT") {
+      setFloorsLayout([]);
+      setDimWarning("");
+      return;
+    }
+    const fc = parseInt(floorCount, 10);
+    const fp = parseInt(flatsPerFloor, 10);
+    if (isNaN(fc) || fc < 1 || isNaN(fp) || fp < 1) {
+      setFloorsLayout([]);
+      setDimWarning("");
+      return;
+    }
+
+    if (
+      prevDimsRef.current.hasCustom &&
+      (fc < prevDimsRef.current.floors || fp < prevDimsRef.current.units)
+    ) {
+      setDimWarning("Notice: Decreasing floor or unit count removes configured flats from the draft layout.");
+    } else {
+      setDimWarning("");
+    }
+
+    setFloorsLayout((prevFloors) => {
+      const blockPrefix = (name || "").trim() || "Wing";
+      const newFloors = [];
+
+      for (let f = 1; f <= fc; f++) {
+        const existingFloor = prevFloors[f - 1];
+        const floorDefault = existingFloor?.floorDefaultBhk || blockDefaultBhk || "2BHK";
+        const mode = existingFloor?.mode || "DEFAULT";
+
+        const newFlats = [];
+        for (let u = 1; u <= fp; u++) {
+          const flatNum = `${blockPrefix}-${f}${u.toString().padStart(2, "0")}`;
+          const existingFlat = existingFloor?.flats?.[u - 1];
+
+          if (existingFlat) {
+            newFlats.push({
+              flat_number: flatNum,
+              flat_type: existingFlat.flat_type || floorDefault,
+              isOverridden: !!existingFlat.isOverridden,
+            });
+          } else {
+            newFlats.push({
+              flat_number: flatNum,
+              flat_type: floorDefault,
+              isOverridden: false,
+            });
+          }
+        }
+
+        const mixedCounts = { "1BHK": 0, "2BHK": 0, "3BHK": 0 };
+        newFlats.forEach((fl) => {
+          if (mixedCounts[fl.flat_type] !== undefined) {
+            mixedCounts[fl.flat_type]++;
+          }
+        });
+
+        newFloors.push({
+          floor_number: f,
+          mode,
+          floorDefaultBhk: floorDefault,
+          mixedCounts: existingFloor?.mode === "MIXED" && existingFloor.mixedCounts ? existingFloor.mixedCounts : mixedCounts,
+          flats: newFlats,
+        });
+      }
+
+      const isCustom = newFloors.some(f => f.mode === "MIXED" || f.flats.some(fl => fl.isOverridden || fl.flat_type !== blockDefaultBhk));
+      prevDimsRef.current = { floors: fc, units: fp, hasCustom: isCustom };
+
+      return newFloors;
+    });
+  }, [propertyType, floorCount, flatsPerFloor, name]);
+
+  // Level 1: Change block default
+  const handleBlockDefaultChange = (newBhk) => {
+    setBlockDefaultBhk(newBhk);
+    setFloorsLayout(prev => prev.map(floor => {
+      if (floor.mode === "DEFAULT") {
+        const updatedFlats = floor.flats.map(fl =>
+          fl.isOverridden ? fl : { ...fl, flat_type: newBhk }
+        );
+        const counts = { "1BHK": 0, "2BHK": 0, "3BHK": 0 };
+        updatedFlats.forEach(fl => { if (counts[fl.flat_type] !== undefined) counts[fl.flat_type]++; });
+        return {
+          ...floor,
+          floorDefaultBhk: newBhk,
+          flats: updatedFlats,
+          mixedCounts: counts,
+        };
+      }
+      return floor;
+    }));
+  };
+
+  // Level 2: Change floor default
+  const handleFloorDefaultChange = (floorIndex, newBhk) => {
+    setFloorsLayout(prev => prev.map((floor, idx) => {
+      if (idx !== floorIndex) return floor;
+      const updatedFlats = floor.flats.map(fl =>
+        fl.isOverridden ? fl : { ...fl, flat_type: newBhk }
+      );
+      const counts = { "1BHK": 0, "2BHK": 0, "3BHK": 0 };
+      updatedFlats.forEach(fl => { if (counts[fl.flat_type] !== undefined) counts[fl.flat_type]++; });
+      return {
+        ...floor,
+        mode: "DEFAULT",
+        floorDefaultBhk: newBhk,
+        flats: updatedFlats,
+        mixedCounts: counts,
+      };
+    }));
+  };
+
+  // Level 2: Switch floor mode
+  const handleFloorModeChange = (floorIndex, newMode) => {
+    setFloorsLayout(prev => prev.map((floor, idx) => {
+      if (idx !== floorIndex) return floor;
+      let updatedFlats = [...floor.flats];
+      if (newMode === "DEFAULT") {
+        const fallback = floor.floorDefaultBhk || blockDefaultBhk || "2BHK";
+        updatedFlats = updatedFlats.map(fl => fl.isOverridden ? fl : { ...fl, flat_type: fallback });
+      }
+      const counts = { "1BHK": 0, "2BHK": 0, "3BHK": 0 };
+      updatedFlats.forEach(fl => { if (counts[fl.flat_type] !== undefined) counts[fl.flat_type]++; });
+      return { ...floor, mode: newMode, flats: updatedFlats, mixedCounts: counts };
+    }));
+  };
+
+  // Level 2: Mixed distribution stepper change
+  const handleMixedCountChange = (floorIndex, bhkType, delta) => {
+    setFloorsLayout(prev => prev.map((floor, idx) => {
+      if (idx !== floorIndex) return floor;
+      const currentCount = floor.mixedCounts?.[bhkType] || 0;
+      const newCount = Math.max(0, currentCount + delta);
+      const newCounts = { ...(floor.mixedCounts || {}), [bhkType]: newCount };
+      const totalRequested = (newCounts["1BHK"] || 0) + (newCounts["2BHK"] || 0) + (newCounts["3BHK"] || 0);
+      const numFlats = floor.flats.length;
+
+      let updatedFlats = [...floor.flats];
+      if (totalRequested === numFlats) {
+        const targetTypes = [
+          ...Array(newCounts["1BHK"] || 0).fill("1BHK"),
+          ...Array(newCounts["2BHK"] || 0).fill("2BHK"),
+          ...Array(newCounts["3BHK"] || 0).fill("3BHK"),
+        ];
+        updatedFlats = updatedFlats.map((fl, fIdx) => ({
+          ...fl,
+          flat_type: targetTypes[fIdx] || fl.flat_type,
+        }));
+      }
+
+      return {
+        ...floor,
+        mode: "MIXED",
+        mixedCounts: newCounts,
+        flats: updatedFlats,
+      };
+    }));
+  };
+
+  // Level 3: Individual flat BHK override
+  const handleFlatBhkChange = (floorIndex, flatIndex, newBhk) => {
+    setFloorsLayout(prev => prev.map((floor, idx) => {
+      if (idx !== floorIndex) return floor;
+      const updatedFlats = floor.flats.map((fl, fIdx) => {
+        if (fIdx !== flatIndex) return fl;
+        return {
+          ...fl,
+          flat_type: newBhk,
+          isOverridden: true,
+        };
+      });
+      const counts = { "1BHK": 0, "2BHK": 0, "3BHK": 0 };
+      updatedFlats.forEach(fl => { if (counts[fl.flat_type] !== undefined) counts[fl.flat_type]++; });
+      return {
+        ...floor,
+        flats: updatedFlats,
+        mixedCounts: counts,
+      };
+    }));
+  };
+
+  // Level 3: Revert individual flat override
+  const handleRevertFlatOverride = (floorIndex, flatIndex) => {
+    setFloorsLayout(prev => prev.map((floor, idx) => {
+      if (idx !== floorIndex) return floor;
+      const fallbackBhk = floor.floorDefaultBhk || blockDefaultBhk || "2BHK";
+      const updatedFlats = floor.flats.map((fl, fIdx) => {
+        if (fIdx !== flatIndex) return fl;
+        return {
+          ...fl,
+          flat_type: fallbackBhk,
+          isOverridden: false,
+        };
+      });
+      const counts = { "1BHK": 0, "2BHK": 0, "3BHK": 0 };
+      updatedFlats.forEach(fl => { if (counts[fl.flat_type] !== undefined) counts[fl.flat_type]++; });
+      return {
+        ...floor,
+        flats: updatedFlats,
+        mixedCounts: counts,
+      };
+    }));
+  };
+
+  // Validation of the draft layout
+  const layoutValidation = useMemo(() => {
+    if (propertyType !== "APARTMENT") {
+      return { isValid: true, errors: [] };
+    }
+    const fc = parseInt(floorCount, 10);
+    const fp = parseInt(flatsPerFloor, 10);
+    if (!fc || fc < 1 || !fp || fp < 1) {
+      return { isValid: false, errors: ["Please enter valid floor and unit counts."] };
+    }
+    if (!floorsLayout.length || floorsLayout.length !== fc) {
+      return { isValid: false, errors: ["Layout preview is generating..."] };
+    }
+
+    const errors = [];
+    floorsLayout.forEach((floor, idx) => {
+      const fNum = floor.floor_number || (idx + 1);
+      if (floor.mode === "MIXED") {
+        const sum = (floor.mixedCounts?.["1BHK"] || 0) + (floor.mixedCounts?.["2BHK"] || 0) + (floor.mixedCounts?.["3BHK"] || 0);
+        if (sum !== fp) {
+          errors.push(`Floor ${fNum} mixed distribution sum (${sum}) must equal ${fp} units.`);
+        }
+      }
+      floor.flats.forEach(fl => {
+        if (!fl.flat_type || !["1BHK", "2BHK", "3BHK"].includes(fl.flat_type)) {
+          errors.push(`Unit ${fl.flat_number} must have a valid BHK type.`);
+        }
+      });
+    });
+
+    return {
+      isValid: errors.length === 0,
+      errors,
+    };
+  }, [propertyType, floorCount, flatsPerFloor, floorsLayout]);
+
+  // Overall BHK Breakdown summary
+  const overallBhkSummary = useMemo(() => {
+    const counts = { "1BHK": 0, "2BHK": 0, "3BHK": 0, total: 0 };
+    floorsLayout.forEach(floor => {
+      floor.flats.forEach(fl => {
+        if (counts[fl.flat_type] !== undefined) {
+          counts[fl.flat_type]++;
+        }
+        counts.total++;
+      });
+    });
+    return counts;
+  }, [floorsLayout]);
 
   const loadBlocks = async () => {
+    if (!activeSocId) {
+      setBlocks([]);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     try {
-      const res = await API.get(`/blocks/${getSocietyId()}`);
+      const res = await API.get(`/blocks/${activeSocId}`, {
+        headers: { "x-society-id": activeSocId }
+      });
       setBlocks(res.data || []);
     } catch { setError(t("mpFailedLoadBlocks") || "Failed to load blocks"); }
     finally { setLoading(false); }
@@ -1196,7 +1581,10 @@ function BlocksTab({
 
   const handleCreate = async (e) => {
     e?.preventDefault?.();
-    let payload = { name, society_id: getSocietyId(), property_type: propertyType };
+    if (!activeSocId) {
+      return setError(t("mpSelectSocietyFirst") || "Please select a society first.");
+    }
+    let payload = { name, society_id: activeSocId, property_type: propertyType };
 
     const nameError = getTitleError(name, t("mpPhaseNameLabel"));
     if (nameError) return setError(nameError);
@@ -1217,6 +1605,18 @@ function BlocksTab({
       if (flatsPerFloorError) return setError(flatsPerFloorError);
       payload.floor_count     = Number(floorCount);
       payload.flats_per_floor = Number(flatsPerFloor);
+
+      // Validate and attach the full floor/flat BHK layout
+      if (!layoutValidation.isValid) {
+        return setError(layoutValidation.errors[0] || "Invalid BHK layout configuration.");
+      }
+      payload.floors = floorsLayout.map(f => ({
+        floor_number: f.floor_number,
+        flats: f.flats.map(fl => ({
+          flat_number: fl.flat_number,
+          flat_type: fl.flat_type,
+        })),
+      }));
     }
 
     setSubmitting(true); setError("");
@@ -1227,6 +1627,9 @@ function BlocksTab({
       const initialCommonArea = commonArea;
       setCommonArea("");
       setPropertyType("APARTMENT");
+      setBlockDefaultBhk("2BHK");
+      setFloorsLayout([]);
+      setActiveFloorIndex(0);
       setShowForm(false);
 
       // For ROW_HOUSE: show area assignment modal popup
@@ -1302,13 +1705,13 @@ function BlocksTab({
         title={t("mpCreateNewBlock")}
         subtitle={t("mpCreatePhaseHint")}
         icon={MdAdd}
-        size={isMobile ? "md" : "lg"}
+        size={isMobile ? "md" : "xl"}
         showFooter
         submitLabel={t("mpCreate")}
         cancelLabel={t("cancel")}
         onSubmit={handleCreate}
         submitLoading={submitting}
-        submitDisabled={submitting}
+        submitDisabled={submitting || (propertyType === "APARTMENT" && (!layoutValidation.isValid || floorsLayout.length === 0))}
         submitIcon={MdAdd}
         submitVariant="add"
         submitBorderDraw
@@ -1563,37 +1966,487 @@ function BlocksTab({
                 )}
               </div>
             ) : (
-              <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 14 }}>
-                <div>
-                  <label style={{ fontSize: 11, fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.05em", display: "block", marginBottom: 6 }}>
-                    {t("mpFloorCount")}
-                  </label>
-                  <input
-                    className="input"
-                    type="number"
-                    min={1}
-                    placeholder={t("mpFloorCountPh")}
-                    value={floorCount}
-                    onChange={e => setFloorCount(e.target.value)}
-                    style={{ height: 42, borderRadius: 10, fontSize: 13, width: "100%", boxSizing: "border-box" }}
-                    required
-                  />
+              <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 14 }}>
+                  <div>
+                    <label style={{ fontSize: 11, fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.05em", display: "block", marginBottom: 6 }}>
+                      {t("mpFloorCount")}
+                    </label>
+                    <input
+                      className="input"
+                      type="number"
+                      min={1}
+                      placeholder={t("mpFloorCountPh")}
+                      value={floorCount}
+                      onChange={e => setFloorCount(e.target.value)}
+                      style={{ height: 42, borderRadius: 10, fontSize: 13, width: "100%", boxSizing: "border-box" }}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: 11, fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.05em", display: "block", marginBottom: 6 }}>
+                      {t("mpUnitsPerFloor")}
+                    </label>
+                    <input
+                      className="input"
+                      type="number"
+                      min={1}
+                      placeholder={t("mpUnitsPerFloorPh")}
+                      value={flatsPerFloor}
+                      onChange={e => setFlatsPerFloor(e.target.value)}
+                      style={{ height: 42, borderRadius: 10, fontSize: 13, width: "100%", boxSizing: "border-box" }}
+                      required
+                    />
+                  </div>
                 </div>
-                <div>
-                  <label style={{ fontSize: 11, fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.05em", display: "block", marginBottom: 6 }}>
-                    {t("mpUnitsPerFloor")}
-                  </label>
-                  <input
-                    className="input"
-                    type="number"
-                    min={1}
-                    placeholder={t("mpUnitsPerFloorPh")}
-                    value={flatsPerFloor}
-                    onChange={e => setFlatsPerFloor(e.target.value)}
-                    style={{ height: 42, borderRadius: 10, fontSize: 13, width: "100%", boxSizing: "border-box" }}
-                    required
-                  />
-                </div>
+
+                {/* ── INTERACTIVE BHK DRAFT PREVIEW & 3-TIER CONFIGURATION ── */}
+                {floorsLayout.length > 0 && (
+                  <div style={{
+                    background: "rgba(var(--acct-purple-rgb, 139,92,246), 0.04)",
+                    border: "1px solid rgba(var(--acct-purple-rgb, 139,92,246), 0.2)",
+                    borderRadius: 16,
+                    padding: "16px",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 16,
+                    marginTop: 4,
+                  }}>
+                    {/* Section Header */}
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
+                        <div style={{ width: 32, height: 32, borderRadius: 10, background: "rgba(139,92,246,0.18)", display: "flex", alignItems: "center", justifyContent: "center", color: "#a78bfa" }}>
+                          <MdLayers size={18} />
+                        </div>
+                        <div>
+                          <span style={{ fontSize: 13, fontWeight: 800, color: "var(--text-primary)" }}>
+                            BHK Layout & Interactive Draft Preview
+                          </span>
+                          <p style={{ margin: "2px 0 0", fontSize: 11, color: "var(--text-secondary)" }}>
+                            Configure block defaults, floor distributions, or customize individual units
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Live Balance / Validity Pill */}
+                      {layoutValidation.isValid ? (
+                        <span style={{
+                          display: "inline-flex", alignItems: "center", gap: 5,
+                          fontSize: 11, fontWeight: 700, padding: "3px 9px", borderRadius: 999,
+                          background: "rgba(34,197,94,0.12)", color: "#4ade80", border: "1px solid rgba(34,197,94,0.25)"
+                        }}>
+                          <MdCheckCircle size={13} /> Layout Balanced & Ready
+                        </span>
+                      ) : (
+                        <span style={{
+                          display: "inline-flex", alignItems: "center", gap: 5,
+                          fontSize: 11, fontWeight: 700, padding: "3px 9px", borderRadius: 999,
+                          background: "rgba(239,68,68,0.12)", color: "#f87171", border: "1px solid rgba(239,68,68,0.25)"
+                        }}>
+                          Incomplete / Imbalanced
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Notice if dimensions decreased */}
+                    {dimWarning && (
+                      <div style={{
+                        padding: "8px 12px", borderRadius: 10,
+                        background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.25)",
+                        color: "#fbbf24", fontSize: 11, fontWeight: 600, display: "flex", alignItems: "center", gap: 6
+                      }}>
+                        <span>⚠️</span> {dimWarning}
+                      </div>
+                    )}
+
+                    {/* Level 1: Block-wide Default Controls */}
+                    <div style={{
+                      background: "var(--card-bg)",
+                      border: "1px solid var(--glass-border)",
+                      borderRadius: 12,
+                      padding: "12px 14px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      flexWrap: "wrap",
+                      gap: 10
+                    }}>
+                      <div>
+                        <span style={{ fontSize: 11, fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                          Level 1: Block-Wide Default
+                        </span>
+                        <p style={{ margin: "2px 0 0", fontSize: 11, color: "var(--text-secondary)" }}>
+                          Applies to all eligible floors and flats in {name.trim() || "this block"}
+                        </p>
+                      </div>
+
+                      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                        {["1BHK", "2BHK", "3BHK"].map(bhk => {
+                          const isSelected = blockDefaultBhk === bhk;
+                          return (
+                            <button
+                              key={bhk}
+                              type="button"
+                              onClick={() => handleBlockDefaultChange(bhk)}
+                              style={{
+                                padding: "6px 14px",
+                                borderRadius: 8,
+                                fontSize: 12,
+                                fontWeight: 700,
+                                cursor: "pointer",
+                                transition: "all 0.16s ease",
+                                background: isSelected ? "var(--accent)" : "var(--card-inner-bg)",
+                                color: isSelected ? "#fff" : "var(--text-primary)",
+                                border: `1.5px solid ${isSelected ? "var(--accent)" : "var(--glass-border)"}`,
+                                boxShadow: isSelected ? "0 2px 8px rgba(139,92,246,0.3)" : "none",
+                              }}
+                            >
+                              {bhk}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Overall Stats Summary Bar */}
+                    <div style={{
+                      display: "grid",
+                      gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : "repeat(4, 1fr)",
+                      gap: 8,
+                    }}>
+                      <div style={{ padding: "8px 12px", borderRadius: 10, background: "var(--card-inner-bg)", border: "1px solid var(--glass-border)", textAlign: "center" }}>
+                        <span style={{ fontSize: 10, color: "var(--text-secondary)", fontWeight: 700, textTransform: "uppercase" }}>Total Flats</span>
+                        <div style={{ fontSize: 15, fontWeight: 800, color: "var(--text-primary)", marginTop: 2 }}>{overallBhkSummary.total}</div>
+                      </div>
+                      <div style={{ padding: "8px 12px", borderRadius: 10, background: "rgba(99,102,241,0.08)", border: "1px solid rgba(99,102,241,0.2)", textAlign: "center" }}>
+                        <span style={{ fontSize: 10, color: "#818cf8", fontWeight: 700, textTransform: "uppercase" }}>1BHK Total</span>
+                        <div style={{ fontSize: 15, fontWeight: 800, color: "#818cf8", marginTop: 2 }}>{overallBhkSummary["1BHK"]}</div>
+                      </div>
+                      <div style={{ padding: "8px 12px", borderRadius: 10, background: "rgba(139,92,246,0.08)", border: "1px solid rgba(139,92,246,0.2)", textAlign: "center" }}>
+                        <span style={{ fontSize: 10, color: "#a78bfa", fontWeight: 700, textTransform: "uppercase" }}>2BHK Total</span>
+                        <div style={{ fontSize: 15, fontWeight: 800, color: "#a78bfa", marginTop: 2 }}>{overallBhkSummary["2BHK"]}</div>
+                      </div>
+                      <div style={{ padding: "8px 12px", borderRadius: 10, background: "rgba(236,72,153,0.08)", border: "1px solid rgba(236,72,153,0.2)", textAlign: "center" }}>
+                        <span style={{ fontSize: 10, color: "#f472b6", fontWeight: 700, textTransform: "uppercase" }}>3BHK Total</span>
+                        <div style={{ fontSize: 15, fontWeight: 800, color: "#f472b6", marginTop: 2 }}>{overallBhkSummary["3BHK"]}</div>
+                      </div>
+                    </div>
+
+                    {/* Floor Navigation Pills / Tabs */}
+                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 6 }}>
+                        <label style={{ fontSize: 11, fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                          Level 2 & 3: Floor & Flat Configuration
+                        </label>
+                        <span style={{ fontSize: 11, color: "var(--text-secondary)" }}>
+                          Select a floor to customize its distribution and individual units
+                        </span>
+                      </div>
+
+                      <div style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 6,
+                        overflowX: "auto",
+                        paddingBottom: 4,
+                        scrollbarWidth: "thin",
+                      }}>
+                        {floorsLayout.map((flr, idx) => {
+                          const isActive = idx === activeFloorIndex;
+                          const fp = parseInt(flatsPerFloor, 10) || 0;
+                          const sum = (flr.mixedCounts?.["1BHK"] || 0) + (flr.mixedCounts?.["2BHK"] || 0) + (flr.mixedCounts?.["3BHK"] || 0);
+                          const hasFloorDiscrepancy = flr.mode === "MIXED" && sum !== fp;
+
+                          return (
+                            <button
+                              key={flr.floor_number}
+                              type="button"
+                              onClick={() => setActiveFloorIndex(idx)}
+                              style={{
+                                padding: "6px 12px",
+                                borderRadius: 8,
+                                fontSize: 12,
+                                fontWeight: 700,
+                                cursor: "pointer",
+                                whiteSpace: "nowrap",
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 6,
+                                transition: "all 0.16s ease",
+                                background: isActive ? "rgba(var(--acct-purple-rgb, 139,92,246), 0.18)" : "var(--card-inner-bg)",
+                                border: `1.5px solid ${isActive ? "var(--accent)" : hasFloorDiscrepancy ? "#ef4444" : "var(--glass-border)"}`,
+                                color: isActive ? "var(--accent)" : hasFloorDiscrepancy ? "#ef4444" : "var(--text-primary)",
+                              }}
+                            >
+                              <span>Floor {flr.floor_number}</span>
+                              {hasFloorDiscrepancy ? (
+                                <span style={{ fontSize: 9, padding: "1px 5px", borderRadius: 4, background: "rgba(239,68,68,0.2)", color: "#ef4444" }}>
+                                  !
+                                </span>
+                              ) : flr.mode === "MIXED" ? (
+                                <span style={{ fontSize: 9, padding: "1px 5px", borderRadius: 4, background: "rgba(139,92,246,0.15)", color: "#a78bfa" }}>
+                                  Mixed
+                                </span>
+                              ) : (
+                                <span style={{ fontSize: 9, padding: "1px 5px", borderRadius: 4, background: "rgba(255,255,255,0.06)", color: "var(--text-secondary)" }}>
+                                  {flr.floorDefaultBhk}
+                                </span>
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Active Floor Detail Card */}
+                    {floorsLayout[activeFloorIndex] && (() => {
+                      const currentFloor = floorsLayout[activeFloorIndex];
+                      const fp = parseInt(flatsPerFloor, 10) || 0;
+                      const sum = (currentFloor.mixedCounts?.["1BHK"] || 0) + (currentFloor.mixedCounts?.["2BHK"] || 0) + (currentFloor.mixedCounts?.["3BHK"] || 0);
+                      const isFloorBalanced = currentFloor.mode === "DEFAULT" || sum === fp;
+
+                      return (
+                        <div style={{
+                          background: "var(--card-bg)",
+                          border: `1.5px solid ${isFloorBalanced ? "var(--glass-border)" : "rgba(239,68,68,0.4)"}`,
+                          borderRadius: 14,
+                          padding: "14px 16px",
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: 14,
+                        }}>
+                          {/* Floor Header & Mode Switch */}
+                          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10 }}>
+                            <div>
+                              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                                <span style={{ fontSize: 14, fontWeight: 800, color: "var(--text-primary)" }}>
+                                  Floor {currentFloor.floor_number} Controls
+                                </span>
+                                <span style={{ fontSize: 11, color: "var(--text-secondary)", background: "var(--card-inner-bg)", padding: "2px 8px", borderRadius: 6 }}>
+                                  {currentFloor.flats.length} Flats
+                                </span>
+                              </div>
+                              <p style={{ margin: "2px 0 0", fontSize: 11, color: "var(--text-secondary)" }}>
+                                {currentFloor.mode === "DEFAULT"
+                                  ? "All non-overridden units on this floor inherit the floor default"
+                                  : "Mixed distribution: specify counts of 1BHK, 2BHK, and 3BHK"}
+                              </p>
+                            </div>
+
+                            {/* Mode Switch (Uniform vs Mixed) */}
+                            <div style={{ display: "flex", alignItems: "center", gap: 4, background: "var(--card-inner-bg)", padding: 3, borderRadius: 8, border: "1px solid var(--glass-border)" }}>
+                              <button
+                                type="button"
+                                onClick={() => handleFloorModeChange(activeFloorIndex, "DEFAULT")}
+                                style={{
+                                  padding: "4px 10px",
+                                  borderRadius: 6,
+                                  fontSize: 11,
+                                  fontWeight: 700,
+                                  cursor: "pointer",
+                                  border: "none",
+                                  background: currentFloor.mode === "DEFAULT" ? "var(--accent)" : "transparent",
+                                  color: currentFloor.mode === "DEFAULT" ? "#fff" : "var(--text-secondary)",
+                                }}
+                              >
+                                Uniform
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleFloorModeChange(activeFloorIndex, "MIXED")}
+                                style={{
+                                  padding: "4px 10px",
+                                  borderRadius: 6,
+                                  fontSize: 11,
+                                  fontWeight: 700,
+                                  cursor: "pointer",
+                                  border: "none",
+                                  background: currentFloor.mode === "MIXED" ? "var(--accent)" : "transparent",
+                                  color: currentFloor.mode === "MIXED" ? "#fff" : "var(--text-secondary)",
+                                }}
+                              >
+                                Mixed
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* Mode Configuration Body */}
+                          {currentFloor.mode === "DEFAULT" ? (
+                            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8, padding: "10px 12px", background: "var(--card-inner-bg)", borderRadius: 10 }}>
+                              <span style={{ fontSize: 12, fontWeight: 600, color: "var(--text-secondary)" }}>
+                                Floor {currentFloor.floor_number} Default BHK:
+                              </span>
+                              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                                {["1BHK", "2BHK", "3BHK"].map(bhk => (
+                                  <button
+                                    key={bhk}
+                                    type="button"
+                                    onClick={() => handleFloorDefaultChange(activeFloorIndex, bhk)}
+                                    style={{
+                                      padding: "5px 12px",
+                                      borderRadius: 6,
+                                      fontSize: 11,
+                                      fontWeight: 700,
+                                      cursor: "pointer",
+                                      border: `1.5px solid ${currentFloor.floorDefaultBhk === bhk ? "var(--accent)" : "var(--glass-border)"}`,
+                                      background: currentFloor.floorDefaultBhk === bhk ? "rgba(139,92,246,0.18)" : "var(--card-bg)",
+                                      color: currentFloor.floorDefaultBhk === bhk ? "var(--accent)" : "var(--text-primary)",
+                                    }}
+                                  >
+                                    {bhk}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          ) : (
+                            <div style={{ display: "flex", flexDirection: "column", gap: 8, padding: "12px", background: "var(--card-inner-bg)", borderRadius: 10, border: isFloorBalanced ? "1px solid var(--glass-border)" : "1px solid rgba(239,68,68,0.3)" }}>
+                              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 6 }}>
+                                <span style={{ fontSize: 11, fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase" }}>
+                                  Distribution Steppers (Sum must equal {fp})
+                                </span>
+                                <span style={{
+                                  fontSize: 11, fontWeight: 700,
+                                  color: isFloorBalanced ? "#4ade80" : "#f87171",
+                                  display: "flex", alignItems: "center", gap: 4
+                                }}>
+                                  {isFloorBalanced ? <MdCheckCircle size={13} /> : "⚠️"} Sum: {sum} / {fp}
+                                </span>
+                              </div>
+
+                              <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(3, 1fr)", gap: 10 }}>
+                                {["1BHK", "2BHK", "3BHK"].map(bhk => {
+                                  const cnt = currentFloor.mixedCounts?.[bhk] || 0;
+                                  return (
+                                    <div key={bhk} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 12px", borderRadius: 8, background: "var(--card-bg)", border: "1px solid var(--glass-border)" }}>
+                                      <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text-primary)" }}>{bhk}</span>
+                                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                                        <button
+                                          type="button"
+                                          onClick={() => handleMixedCountChange(activeFloorIndex, bhk, -1)}
+                                          disabled={cnt <= 0}
+                                          style={{ width: 26, height: 26, borderRadius: 6, border: "1px solid var(--glass-border)", background: "var(--card-inner-bg)", color: "var(--text-primary)", fontWeight: 800, cursor: cnt <= 0 ? "not-allowed" : "pointer", opacity: cnt <= 0 ? 0.4 : 1 }}
+                                        >
+                                          -
+                                        </button>
+                                        <span style={{ fontSize: 13, fontWeight: 800, minWidth: 20, textAlign: "center", color: "var(--text-primary)" }}>{cnt}</span>
+                                        <button
+                                          type="button"
+                                          onClick={() => handleMixedCountChange(activeFloorIndex, bhk, 1)}
+                                          disabled={sum >= fp}
+                                          style={{ width: 26, height: 26, borderRadius: 6, border: "1px solid var(--glass-border)", background: "var(--card-inner-bg)", color: "var(--text-primary)", fontWeight: 800, cursor: sum >= fp ? "not-allowed" : "pointer", opacity: sum >= fp ? 0.4 : 1 }}
+                                        >
+                                          +
+                                        </button>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Level 3: Individual Units Grid */}
+                          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                              <span style={{ fontSize: 11, fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                                Individual Units on Floor {currentFloor.floor_number}
+                              </span>
+                              <span style={{ fontSize: 11, color: "var(--text-secondary)" }}>
+                                Click BHK on any unit card to override individually
+                              </span>
+                            </div>
+
+                            <div style={{
+                              display: "grid",
+                              gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : "repeat(auto-fill, minmax(130px, 1fr))",
+                              gap: 8,
+                              maxHeight: 220,
+                              overflowY: "auto",
+                              paddingRight: 4,
+                            }}>
+                              {currentFloor.flats.map((fl, uIdx) => {
+                                const isOverridden = !!fl.isOverridden;
+                                const bhkStyle = fl.flat_type === "1BHK"
+                                  ? { bg: "rgba(99,102,241,0.12)", color: "#818cf8", border: "rgba(99,102,241,0.25)" }
+                                  : fl.flat_type === "2BHK"
+                                  ? { bg: "rgba(139,92,246,0.12)", color: "#a78bfa", border: "rgba(139,92,246,0.25)" }
+                                  : { bg: "rgba(236,72,153,0.12)", color: "#f472b6", border: "rgba(236,72,153,0.25)" };
+
+                                return (
+                                  <div
+                                    key={fl.flat_number}
+                                    style={{
+                                      padding: "8px 10px",
+                                      borderRadius: 10,
+                                      background: "var(--card-inner-bg)",
+                                      border: `1px solid ${isOverridden ? "rgba(139,92,246,0.4)" : "var(--glass-border)"}`,
+                                      display: "flex",
+                                      flexDirection: "column",
+                                      gap: 6,
+                                    }}
+                                  >
+                                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                                      <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text-primary)" }}>
+                                        {fl.flat_number}
+                                      </span>
+                                      {isOverridden && (
+                                        <button
+                                          type="button"
+                                          onClick={() => handleRevertFlatOverride(activeFloorIndex, uIdx)}
+                                          title="Revert override to floor default"
+                                          style={{
+                                            border: "none",
+                                            background: "rgba(139,92,246,0.15)",
+                                            color: "#a78bfa",
+                                            borderRadius: 4,
+                                            padding: "1px 5px",
+                                            fontSize: 10,
+                                            fontWeight: 700,
+                                            cursor: "pointer",
+                                          }}
+                                        >
+                                          ↺ Reset
+                                        </button>
+                                      )}
+                                    </div>
+
+                                    {/* BHK Selector Pills */}
+                                    <div style={{ display: "flex", gap: 3 }}>
+                                      {["1BHK", "2BHK", "3BHK"].map(bhkOpt => {
+                                        const isMatch = fl.flat_type === bhkOpt;
+                                        return (
+                                          <button
+                                            key={bhkOpt}
+                                            type="button"
+                                            onClick={() => handleFlatBhkChange(activeFloorIndex, uIdx, bhkOpt)}
+                                            style={{
+                                              flex: 1,
+                                              padding: "3px 0",
+                                              borderRadius: 5,
+                                              fontSize: 10,
+                                              fontWeight: 700,
+                                              cursor: "pointer",
+                                              border: isMatch ? `1px solid ${bhkStyle.border}` : "1px solid var(--glass-border)",
+                                              background: isMatch ? bhkStyle.bg : "var(--card-bg)",
+                                              color: isMatch ? bhkStyle.color : "var(--text-secondary)",
+                                              transition: "all 0.12s ease",
+                                            }}
+                                          >
+                                            {bhkOpt}
+                                          </button>
+                                        );
+                                      })}
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })()}
+                  </div>
+                )}
               </div>
             )}
           </form>
@@ -2029,6 +2882,16 @@ function InlineFlats({ floorId, blockId, isMobile, t, onOpenAreaModal, blockName
                     : <MdApartment size={13} style={{ color: occupied ? "var(--stat-green-color,#86efac)" : "var(--text-secondary)" }} />
                   }
                   <span style={{ fontSize: 12, fontWeight: 600, color: "var(--text-primary)" }}>{f.flat_number}</span>
+                  {f.flat_type && (
+                    <span style={{
+                      fontSize: 9, fontWeight: 700, padding: "1px 6px", borderRadius: 6,
+                      background: f.flat_type === "1BHK" ? "rgba(99,102,241,0.12)" : f.flat_type === "2BHK" ? "rgba(139,92,246,0.12)" : "rgba(236,72,153,0.12)",
+                      color: f.flat_type === "1BHK" ? "#818cf8" : f.flat_type === "2BHK" ? "#a78bfa" : "#f472b6",
+                      border: `1px solid ${f.flat_type === "1BHK" ? "rgba(99,102,241,0.25)" : f.flat_type === "2BHK" ? "rgba(139,92,246,0.25)" : "rgba(236,72,153,0.25)"}`
+                    }}>
+                      {f.flat_type}
+                    </span>
+                  )}
                   <span style={{ fontSize: 9, fontWeight: 700, padding: "1px 5px", borderRadius: 999, background: occupied ? "rgba(34,197,94,0.12)" : "rgba(114,105,136,0.10)", color: occupied ? "var(--stat-green-color,#86efac)" : "var(--text-secondary)", border: `1px solid ${occupied ? "rgba(34,197,94,0.22)" : "rgba(114,105,136,0.15)"}` }}>
                     {occupied ? t("mpOcc") || "Occ" : t("mpVac") || "Vac"}
                   </span>
@@ -2100,6 +2963,7 @@ function FlatsTab({
   canEdit = true,
   search: externalSearch,
   setSearch: setExternalSearch,
+  societyId,
 }) {
   const [flats,        setFlats]        = useState([]);
   const [loading,      setLoading]      = useState(true);
@@ -2114,12 +2978,23 @@ function FlatsTab({
   const [page,         setPage]         = useState(1);
   const [limit,        setLimit]        = useState(10);
 
-  useEffect(() => { loadFlats(); }, []);
+  const activeSocId = societyId || getSocietyId();
+
+  useEffect(() => {
+    if (activeSocId) {
+      loadFlats();
+    } else {
+      setFlats([]);
+      setLoading(false);
+    }
+  }, [activeSocId]);
 
   const loadFlats = async () => {
     setLoading(true); setError("");
     try {
-      const res = await API.get("/flats/getall");
+      const headers = activeSocId ? { "x-society-id": activeSocId } : {};
+      const params = activeSocId ? { society_id: activeSocId } : {};
+      const res = await API.get("/flats/getall", { headers, params });
       setFlats(res.data || []);
     } catch { setError(t("mpFailedLoadFlats") || "Failed to load flats"); }
     finally { setLoading(false); }
@@ -2224,7 +3099,19 @@ function FlatsTab({
                       }
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <p style={{ fontWeight: 700, fontSize: 13, color: "var(--text-primary)", margin: 0 }}>{f.flat_number}</p>
+                      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                        <p style={{ fontWeight: 700, fontSize: 13, color: "var(--text-primary)", margin: 0 }}>{f.flat_number}</p>
+                        {f.flat_type && (
+                          <span style={{
+                            fontSize: 9, fontWeight: 700, padding: "1px 6px", borderRadius: 6,
+                            background: f.flat_type === "1BHK" ? "rgba(99,102,241,0.12)" : f.flat_type === "2BHK" ? "rgba(139,92,246,0.12)" : "rgba(236,72,153,0.12)",
+                            color: f.flat_type === "1BHK" ? "#818cf8" : f.flat_type === "2BHK" ? "#a78bfa" : "#f472b6",
+                            border: `1px solid ${f.flat_type === "1BHK" ? "rgba(99,102,241,0.25)" : f.flat_type === "2BHK" ? "rgba(139,92,246,0.25)" : "rgba(236,72,153,0.25)"}`
+                          }}>
+                            {f.flat_type}
+                          </span>
+                        )}
+                      </div>
                       <p style={{ fontSize: 11, color: "var(--text-secondary)", margin: "1px 0 0" }}>
                         {f.Floor ? t("mpFlBlkLine", { n: f.Floor.floor_number, name: blockName }) : t("mpBlkLine", { name: blockName })} · {occ ? t("mpOccupied") : t("mpVacant")}
                       </p>
@@ -2280,6 +3167,16 @@ function FlatsTab({
                             }
                           </div>
                           <span style={{ fontWeight: 600, fontSize: 14, color: "var(--text-primary)" }}>{f.flat_number}</span>
+                          {f.flat_type && (
+                            <span style={{
+                              fontSize: 10, fontWeight: 700, padding: "2px 7px", borderRadius: 6,
+                              background: f.flat_type === "1BHK" ? "rgba(99,102,241,0.12)" : f.flat_type === "2BHK" ? "rgba(139,92,246,0.12)" : "rgba(236,72,153,0.12)",
+                              color: f.flat_type === "1BHK" ? "#818cf8" : f.flat_type === "2BHK" ? "#a78bfa" : "#f472b6",
+                              border: `1px solid ${f.flat_type === "1BHK" ? "rgba(99,102,241,0.25)" : f.flat_type === "2BHK" ? "rgba(139,92,246,0.25)" : "rgba(236,72,153,0.25)"}`
+                            }}>
+                              {f.flat_type}
+                            </span>
+                          )}
                         </div>
                       </td>
                       <td>

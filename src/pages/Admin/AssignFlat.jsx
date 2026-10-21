@@ -349,7 +349,7 @@ function AssignWizard({ onClose, onSuccess }) {
       await API.put(`/flats/assign/${selectedFlatId}`, {
         resident_id: residentId,
         resident_type: residentType,
-        flat_type: isApartment ? flatType : null,
+        flat_type: isApartment ? (selectedFlat?.flat_type || null) : null,
         parking_slot_id: parkingSlotId || null
       });
       onSuccess();
@@ -545,22 +545,33 @@ function AssignWizard({ onClose, onSuccess }) {
           )}
 
           {isApartment && selectedFlatId && (
-            <div style={{ marginTop: 8 }}>
-              <p style={{ fontSize: 12, fontWeight: 600, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8 }}>{t("afFlatSize")}</p>
-              <div style={{ display: "flex", gap: 8 }}>
-                {["1BHK", "2BHK", "3BHK"].map(opt => {
-                  const active = flatType === opt; const s = BHK_STYLES[opt];
-                  return (
-                    <button key={opt} type="button" onClick={() => setFlatType(opt)} style={{
-                      flex: 1, padding: "10px 4px", borderRadius: 10, cursor: "pointer",
-                      fontSize: 13, fontWeight: 700, transition: "all 0.18s", outline: "none",
-                      background: active ? s.bg : "var(--card-inner-bg)",
-                      border: `2px solid ${active ? s.border : "rgba(255,255,255,0.08)"}`,
-                      color: active ? s.color : "var(--text-secondary)",
-                    }}>{opt}</button>
-                  );
-                })}
+            <div style={{
+              marginTop: 10,
+              padding: "12px 14px",
+              background: "var(--card-inner-bg)",
+              border: "1px solid var(--glass-border)",
+              borderRadius: 12,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              flexWrap: "wrap",
+              gap: 8,
+            }}>
+              <div>
+                <span style={{ fontSize: 11, fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                  {t("afFlatSize") || "Configured BHK Type"}
+                </span>
+                <p style={{ margin: "2px 0 0", fontSize: 11, color: "var(--text-secondary)" }}>
+                  Property attribute (configured during block creation)
+                </p>
               </div>
+              {selectedFlat?.flat_type ? (
+                <BhkBadge type={selectedFlat.flat_type} />
+              ) : (
+                <span style={{ fontSize: 11, color: "var(--text-secondary)", fontStyle: "italic" }}>
+                  Not configured
+                </span>
+              )}
             </div>
           )}
         </div>
@@ -576,7 +587,7 @@ function AssignWizard({ onClose, onSuccess }) {
             <SummaryRow label={t("afPhaseBlock")} value={t("afBlockName", { name: selectedBlock?.name })} icon={<MdBusiness size={15} />} />
             {isApartment && <SummaryRow label={t("afFloor")} value={t("afFloorName", { number: selectedFloor?.number })} icon={<MdLayers size={15} />} />}
             <SummaryRow label={isApartment ? t("afFlatNumber") : t("afHouseNumber")} value={selectedFlat?.flat_number} icon={<MdHome size={15} />} />
-            {isApartment && <SummaryRow label={t("afConfiguration")} value={flatType} icon={<MdMeetingRoom size={15} />} />}
+            {isApartment && <SummaryRow label={t("afConfiguration")} value={selectedFlat?.flat_type || "—"} icon={<MdMeetingRoom size={15} />} />}
           </div>
 
           <div>

@@ -1003,3 +1003,373 @@ html.light.role-theme .sa-root button.text-white {
   align-items: center;
 }
 .sd-footer-actions .sd-spacer { flex: 1; }
+
+/* ==========================================================================
+   SUPER ADMIN BASE LAYOUT CLASSES
+   Restored from index.css (removed in the c3c2994 style cleanup).
+   These power Blocks / Floors / Flats / Societies / createSocietyAdmin.
+   Token-based so they adapt to dark + light themes automatically.
+   ========================================================================== */
+
+/* ── Page shell ── */
+.sa-page {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+  min-width: 0;
+  padding-bottom: 2rem;
+}
+.sa-page.sa-dash-page {
+  gap: 28px;
+  padding-bottom: 40px;
+}
+
+/* ── Page hero ── */
+.sa-page-er {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  padding: 18px 24px;
+  border-radius: 18px;
+  background:
+    radial-gradient(420px 160px at 8% -60%, rgba(var(--acct-purple-rgb, 160, 90, 255), 0.16), transparent 70%),
+    var(--card-bg);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+.sa-page-er::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 4px;
+  background: linear-gradient(180deg, var(--accent), var(--accent-light, var(--accent)));
+  border-radius: 18px 0 0 18px;
+}
+.sa-page-title {
+  margin: 0;
+  font-family: var(--font-heading, var(--font-body, inherit));
+  font-size: clamp(1.25rem, 1.05rem + 0.8vw, 1.6rem);
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  line-height: 1.15;
+  color: var(--text-primary);
+}
+.sa-page-subtitle {
+  margin: 5px 0 0;
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  letter-spacing: 0.01em;
+}
+
+/* ── Form cards ── */
+.sa-form-card,
+.soc-form-card {
+  position: relative;
+  padding: 22px 24px;
+  border-radius: 18px;
+  background: var(--card-bg);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+.soc-form-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--accent), rgba(var(--acct-cyan-rgb, 34, 211, 238), 0.6), transparent 70%);
+}
+.sa-form-er {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+.sa-form-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--accent-soft);
+  color: var(--accent);
+  flex-shrink: 0;
+}
+.sa-form-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+.sa-form-subtitle {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+
+/* ── Field grids (used by create-block / create-flat forms) ── */
+.sa-grid-4 {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+}
+.sa-grid-5 {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 14px;
+}
+@media (max-width: 1100px) {
+  .sa-grid-4,
+  .sa-grid-5 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (max-width: 560px) {
+  .sa-grid-4,
+  .sa-grid-5 {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── Inputs / labels ── */
+.sa-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+.sa-label {
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  letter-spacing: 0.01em;
+}
+.sa-hint {
+  font-size: 0.68rem;
+  color: var(--text-secondary);
+  margin-top: 4px;
+  opacity: 0.75;
+}
+.sa-input {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.sa-input-icon {
+  position: absolute;
+  left: 12px;
+  color: var(--text-secondary);
+  pointer-events: none;
+  flex-shrink: 0;
+}
+
+/* ── Toolbar / search / segmented control ── */
+.sa-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.sa-search-wrap {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex: 1;
+  min-width: 210px;
+  max-width: 330px;
+  height: 42px;
+  padding: 0 14px;
+  border-radius: 11px;
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+.sa-search-wrap:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+  background: var(--card-bg);
+}
+.sa-search-wrap > svg {
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+.sa-search-wrap .sa-search-input {
+  flex: 1;
+  min-width: 0;
+  align-self: stretch;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 0.86rem;
+  outline: none;
+}
+.sa-search-input::placeholder {
+  color: var(--text-secondary);
+  opacity: 0.7;
+}
+.sa-segment {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 11px;
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+}
+.sa-segment button {
+  border: 0;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 7px 13px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
+}
+.sa-segment button:hover {
+  color: var(--text-primary);
+}
+.sa-segment button.sa-segment-active {
+  color: #fff;
+  background: var(--accent);
+  box-shadow: 0 4px 14px rgba(var(--acct-purple-rgb, 160, 90, 255), 0.3);
+}
+
+/* ── Stats grid / stat cards ── */
+.sa-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+  min-width: 0;
+}
+@media (min-width: 1024px) {
+  .sa-stats-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+.sa-stat-card {
+  --stat-c: var(--accent);
+  --stat-bg: var(--accent-soft);
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 18px;
+  border-radius: 16px;
+  background: var(--card-bg);
+  border: 1px solid var(--glass-border);
+  min-width: 0;
+  overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+.sa-stat-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(150px 90px at 12% -20%, var(--stat-bg), transparent 72%);
+  opacity: 0.7;
+}
+.sa-stat-card::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--stat-c), transparent 75%);
+  opacity: 0.55;
+}
+.sa-stat-card:hover {
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--stat-c) 38%, var(--glass-border));
+  box-shadow: var(--shadow-md);
+}
+.sa-stat-icon {
+  position: relative;
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, var(--stat-bg) 60%, var(--card-bg));
+  color: var(--stat-c);
+}
+.sa-stat-value {
+  position: relative;
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  line-height: 1;
+  letter-spacing: -0.01em;
+}
+.sa-stat-label {
+  position: relative;
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  margin-top: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+/* ── Loading / skeleton ── */
+.sa-loading-state {
+  display: grid;
+  grid-template-columns: repeat(1, 1fr);
+  gap: 16px;
+}
+@media (min-width: 640px) {
+  .sa-loading-state { grid-template-columns: repeat(2, 1fr); }
+}
+@media (min-width: 1280px) {
+  .sa-loading-state { grid-template-columns: repeat(3, 1fr); }
+}
+.sa-skeleton-card {
+  height: 220px;
+  border-radius: 16px;
+  background: var(--card-bg);
+  border: 1px solid var(--glass-border);
+  animation: sa-pulse 1.5s ease-in-out infinite;
+}
+@keyframes sa-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* ── Empty state ── */
+.sa-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 64px 24px;
+  gap: 10px;
+  text-align: center;
+  border-radius: 16px;
+  background: var(--card-bg);
+  border: 1px solid var(--glass-border);
+}
+.sa-empty-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+.sa-empty-subtitle {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin: 0;
+}

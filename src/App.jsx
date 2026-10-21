@@ -196,6 +196,7 @@ function App() {
             <Route path="settings" element={<AdminSetting />} />
             <Route path='parcel-management' element={<Parcels />} />
             <Route path="flat-history" element={<FlatHistory />} />
+            <Route path="property" element={<ManageProperty />} />
             <Route path="role-permissions" element={<RolePermissions />} />
             <Route path="reports/complaints" element={<SuperAdminComplaintReport />} />
             <Route path="reports/visitors" element={<SuperAdminVisitorReport />} />
@@ -227,7 +228,7 @@ function App() {
         </Route>
 
         {/* === SOCIETY ADMIN & COMMITTEE MEMBER === */}
-        <Route element={<ProtectedRoute roles={["SOCIETY_ADMIN", "COMMITTEE_MEMBER"]} />}>
+        <Route element={<ProtectedRoute roles={["SUPER_ADMIN", "SOCIETY_ADMIN", "COMMITTEE_MEMBER"]} />}>
           <Route path="/admin" element={<AdminLayout />}>
             <Route index element={<AdminDashboard />} />
             {/* Personal profile, reachable by every admin/committee member.

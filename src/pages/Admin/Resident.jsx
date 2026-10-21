@@ -12,7 +12,7 @@ import {
   MdPeople, MdPhone, MdContactPhone, MdEdit, MdArrowBack,
   MdArrowForward, MdLocalParking, MdWarning, MdMoreVert, MdBlock,
   MdVisibility, MdVisibilityOff, MdGroups, MdCalculate,
-  MdEmail, MdOpenInNew,
+  MdEmail, MdOpenInNew, MdOutlineLocationOn, MdLock,
 } from "react-icons/md";
 import { toast } from "react-toastify";
 import Select from "../../components/common/Select";
@@ -73,9 +73,9 @@ const RESIDENT_TYPE_STYLES = {
   TENANT: { bg: "rgba(160,90,255,0.12)", color: "var(--accent)", border: "rgba(160,90,255,0.25)", label: "Tenant" },
 };
 const BHK_STYLES = {
-  "1BHK": { bg: "rgba(107,70,193,0.10)", color: "#9F87D7", border: "rgba(107,70,193,0.22)" },
-  "2BHK": { bg: "rgba(91,141,239,0.10)", color: "#94B5F5", border: "rgba(91,141,239,0.22)" },
-  "3BHK": { bg: "rgba(107,70,193,0.10)", color: "#9F87D7", border: "rgba(107,70,193,0.22)" },
+  "1BHK": { bg: "rgba(56, 189, 248, 0.12)", color: "#38bdf8", border: "rgba(56, 189, 248, 0.3)" },
+  "2BHK": { bg: "rgba(167, 139, 250, 0.14)", color: "#c084fc", border: "rgba(167, 139, 250, 0.3)" },
+  "3BHK": { bg: "rgba(244, 114, 182, 0.14)", color: "#f472b6", border: "rgba(244, 114, 182, 0.3)" },
 };
 
 function ResidentTypeBadge({ type }) {
@@ -92,9 +92,9 @@ function ResidentTypeBadge({ type }) {
 
 function BhkBadge({ type }) {
   if (!type) return null;
-  const s = BHK_STYLES[type] || BHK_STYLES["2BHK"];
+  const s = BHK_STYLES[type] || { bg: "rgba(160,90,255,0.12)", color: "var(--accent)", border: "rgba(160,90,255,0.25)" };
   return (
-    <span style={{ display: "inline-flex", alignItems: "center", fontSize: 10, fontWeight: 700, padding: "2px 7px", borderRadius: 6, background: s.bg, color: s.color, border: `1px solid ${s.border}` }}>
+    <span style={{ display: "inline-flex", alignItems: "center", fontSize: 10, fontWeight: 800, padding: "2px 7px", borderRadius: 6, background: s.bg, color: s.color, border: `1px solid ${s.border}`, letterSpacing: "0.02em" }}>
       {type}
     </span>
   );
@@ -408,7 +408,7 @@ function DocumentUploadField({ label, icon: Icon, accept, file, onChange, requir
 /* ═══════════════════════════════════════════
    STEP INDICATOR
 ═══════════════════════════════════════════ */
-function StepIndicator({ step, total, labels }) {
+function StepIndicator({ step, total, labels, onStepClick }) {
   return (
     <div style={{ display: "flex", alignItems: "flex-start", gap: 0, marginBottom: 20 }}>
       {labels.map((label, i) => {
@@ -417,7 +417,12 @@ function StepIndicator({ step, total, labels }) {
         const active = step === num;
         return (
           <div key={i} style={{ display: "flex", alignItems: "center", flex: i < total - 1 ? 1 : "none" }}>
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+            <div
+              style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, cursor: done ? "pointer" : "default" }}
+              onClick={() => {
+                if (done && onStepClick) onStepClick(num);
+              }}
+            >
               <div
                 className={!done && !active ? "res-step-circle-inactive" : ""}
                 style={{
@@ -495,13 +500,19 @@ function SelectionCard({ icon, title, subtitle, selected, onClick, color = "var(
 ═══════════════════════════════════════════ */
 function AssignFlatModal({ residentId, residentName, societyId, onClose, onSuccess }) {
   const { user } = useContext(AuthContext);
+  const { t } = useLang();
   const isSuperAdmin = user?.activeRole === "SUPER_ADMIN";
   const [step, setStep] = useState(1);
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState("");
   const [allFlats, setAllFlats] = useState([]);
   const [availableSlots, setAvailableSlots] = useState([]);
-  const [loadingData, setLoadingData] = useState(true);
+  const [loadingData, setLoadingData] = useState(false);
+
+  // Society selection for SuperAdmin
+  const [selectedSocietyId, setSelectedSocietyId] = useState(() => (societyId ? String(societyId) : ""));
+  const [societiesList, setSocietiesList] = useState([]);
+  const [loadingSocieties, setLoadingSocieties] = useState(false);
 
   const [propertyType, setPropertyType] = useState("");
   const [selectedBlockId, setSelectedBlockId] = useState("");
@@ -510,10 +521,11 @@ function AssignFlatModal({ residentId, residentName, societyId, onClose, onSucce
   const [selectedFlat, setSelectedFlat] = useState(null);
   const [flatType, setFlatType] = useState("2BHK");
   const [selectedSlotIds, setSelectedSlotIds] = useState([]);
+  const [bhkFilter, setBhkFilter] = useState("ALL");
 
   const isApartment = propertyType === "APARTMENT";
   const totalSteps = isApartment ? 4 : 3;
-  const stepLabels = isApartment ? ["Type", "Block", "Floor", "Unit"] : ["Type", "Block", "Unit"];
+  const stepLabels = isApartment ? ["Type", "Block", "Floor", "Unit & Parking"] : ["Type", "Block", "Unit & Parking"];
   const flatStep = isApartment ? 4 : 3;
 
   useEffect(() => {
@@ -521,47 +533,125 @@ function AssignFlatModal({ residentId, residentName, societyId, onClose, onSucce
     return () => { document.body.style.overflow = ""; };
   }, []);
 
+  // Fetch societies list for SuperAdmin
   useEffect(() => {
+    if (isSuperAdmin) {
+      setLoadingSocieties(true);
+      API.get("/public/societies")
+        .then((res) => {
+          const list = res.data || [];
+          setSocietiesList(list);
+          if (!selectedSocietyId && societyId) {
+            setSelectedSocietyId(String(societyId));
+          }
+        })
+        .catch(() => {
+          API.get("/societies")
+            .then((res) => setSocietiesList(res.data || []))
+            .catch(console.error);
+        })
+        .finally(() => setLoadingSocieties(false));
+    }
+  }, [isSuperAdmin]);
+
+  // Keep in sync if prop changes
+  useEffect(() => {
+    if (societyId) {
+      setSelectedSocietyId(String(societyId));
+    }
+  }, [societyId]);
+
+  // Reset steps and sub-selections when society changes
+  const handleSocietyChange = (newSocId) => {
+    setSelectedSocietyId(newSocId);
+    setPropertyType("");
+    setSelectedBlockId("");
+    setSelectedFloorId("");
+    setSelectedFlatId("");
+    setSelectedFlat(null);
+    setSelectedSlotIds([]);
+    setBhkFilter("ALL");
+    setStep(1);
+    setFormError("");
+  };
+
+  const effectiveSocId = isSuperAdmin ? selectedSocietyId : (societyId || user?.society_id);
+
+  // Fetch unassigned flats and available parking slots for the chosen society
+  useEffect(() => {
+    if (isSuperAdmin && !selectedSocietyId) {
+      setAllFlats([]);
+      setAvailableSlots([]);
+      setLoadingData(false);
+      return;
+    }
+
     setLoadingData(true);
-    const headers = isSuperAdmin && societyId ? { "x-society-id": societyId } : {};
+    const headers = effectiveSocId ? { "x-society-id": String(effectiveSocId) } : {};
+    const params = effectiveSocId ? { society_id: String(effectiveSocId) } : {};
     Promise.all([
-      API.get("/flats/unassigned", { headers }),
-      API.get("/parking-slots/available", { headers }),
+      API.get("/flats/unassigned", { headers, params }),
+      API.get("/parking-slots/available", { headers, params }),
     ])
       .then(([fRes, sRes]) => {
         setAllFlats(fRes.data || []);
         setAvailableSlots(sRes.data || []);
       })
-      .catch(console.error)
+      .catch((err) => {
+        console.error("Failed to load units:", err);
+        setAllFlats([]);
+        setAvailableSlots([]);
+      })
       .finally(() => setLoadingData(false));
-  }, [residentId, societyId, isSuperAdmin]);
+  }, [residentId, effectiveSocId, isSuperAdmin, selectedSocietyId]);
 
-  const availableBlocks = (() => {
-    const seen = new Set(); const out = [];
+  const availableBlocks = useMemo(() => {
+    const seen = new Set();
+    const out = [];
     allFlats.forEach((f) => {
       const isRH = f.floor_id == null;
       if (propertyType === "APARTMENT" && isRH) return;
       if (propertyType === "ROW_HOUSE" && !isRH) return;
       const bid = f.Block?.id || f.Floor?.Block?.id;
       const bname = f.Block?.name || f.Floor?.Block?.name;
-      if (bid && !seen.has(bid)) { seen.add(bid); out.push({ id: bid, name: bname }); }
+      if (bid && !seen.has(bid)) {
+        seen.add(bid);
+        const count = allFlats.filter(flat => {
+          const flatRH = flat.floor_id == null;
+          if (propertyType === "APARTMENT" && flatRH) return false;
+          if (propertyType === "ROW_HOUSE" && !flatRH) return false;
+          const b = flat.Block?.id || flat.Floor?.Block?.id;
+          return String(b) === String(bid);
+        }).length;
+        out.push({ id: bid, name: bname, count });
+      }
     });
     return out;
-  })();
+  }, [allFlats, propertyType]);
 
-  const availableFloors = (() => {
+  const availableFloors = useMemo(() => {
     if (!isApartment || !selectedBlockId) return [];
-    const seen = new Set(); const out = [];
+    const seen = new Set();
+    const out = [];
     allFlats.forEach((f) => {
       if (f.floor_id == null) return;
       if (String(f.Floor?.Block?.id) !== String(selectedBlockId)) return;
-      const fid = f.Floor?.id; const fnum = f.Floor?.floor_number;
-      if (fid && !seen.has(fid)) { seen.add(fid); out.push({ id: fid, number: fnum }); }
+      const fid = f.Floor?.id;
+      const fnum = f.Floor?.floor_number;
+      if (fid && !seen.has(fid)) {
+        seen.add(fid);
+        const count = allFlats.filter(flat => {
+          return flat.floor_id != null &&
+            String(flat.Floor?.Block?.id) === String(selectedBlockId) &&
+            String(flat.Floor?.id) === String(fid);
+        }).length;
+        out.push({ id: fid, number: fnum, count });
+      }
     });
     return out.sort((a, b) => Number(a.number) - Number(b.number));
-  })();
+  }, [allFlats, isApartment, selectedBlockId]);
 
-  const availableFlats = (() => {
+  const availableFlats = useMemo(() => {
     if (!selectedBlockId) return [];
     return allFlats.filter((f) => {
       if (isApartment) {
@@ -574,12 +664,24 @@ function AssignFlatModal({ residentId, residentName, societyId, onClose, onSucce
         return String(f.Block?.id) === String(selectedBlockId);
       }
     });
-  })();
+  }, [allFlats, isApartment, selectedBlockId, selectedFloorId]);
+
+  const availableBhkTypes = useMemo(() => {
+    if (!isApartment) return [];
+    const set = new Set(availableFlats.map(f => f.flat_type).filter(Boolean));
+    return ["1BHK", "2BHK", "3BHK"].filter(t => set.has(t));
+  }, [availableFlats, isApartment]);
+
+  const displayedFlats = useMemo(() => {
+    if (!isApartment || bhkFilter === "ALL") return availableFlats;
+    return availableFlats.filter(f => f.flat_type === bhkFilter);
+  }, [availableFlats, bhkFilter, isApartment]);
 
   const selectedBlock = availableBlocks.find((b) => String(b.id) === String(selectedBlockId));
   const selectedFloor = availableFloors.find((f) => String(f.id) === String(selectedFloorId));
 
   const canGoNext = () => {
+    if (isSuperAdmin && !selectedSocietyId) return false;
     if (step === 1) return !!propertyType;
     if (step === 2) return !!selectedBlockId;
     if (step === 3 && isApartment) return !!selectedFloorId;
@@ -588,9 +690,24 @@ function AssignFlatModal({ residentId, residentName, societyId, onClose, onSucce
 
   const goBack = () => {
     setFormError("");
-    if (step === 2) { setSelectedBlockId(""); setSelectedFloorId(""); setSelectedFlatId(""); setSelectedFlat(null); }
-    if (step === 3 && isApartment) { setSelectedFloorId(""); setSelectedFlatId(""); setSelectedFlat(null); }
-    if (step === flatStep) { setSelectedFlatId(""); setSelectedFlat(null); }
+    if (step === 2) {
+      setSelectedBlockId("");
+      setSelectedFloorId("");
+      setSelectedFlatId("");
+      setSelectedFlat(null);
+      setBhkFilter("ALL");
+    }
+    if (step === 3 && isApartment) {
+      setSelectedFloorId("");
+      setSelectedFlatId("");
+      setSelectedFlat(null);
+      setBhkFilter("ALL");
+    }
+    if (step === flatStep) {
+      setSelectedFlatId("");
+      setSelectedFlat(null);
+      setBhkFilter("ALL");
+    }
     setStep((s) => s - 1);
   };
 
@@ -611,7 +728,14 @@ function AssignFlatModal({ residentId, residentName, societyId, onClose, onSucce
 
   const handleSubmit = async () => {
     setFormError("");
-    if (!selectedFlatId) { setFormError("Please select a unit."); return; }
+    if (isSuperAdmin && !selectedSocietyId) {
+      setFormError("Please select a society.");
+      return;
+    }
+    if (!selectedFlatId) {
+      setFormError("Please select a unit.");
+      return;
+    }
     setSubmitting(true);
     try {
       const parkingSlots = selectedSlotIds.map((id, idx) => ({
@@ -621,10 +745,12 @@ function AssignFlatModal({ residentId, residentName, societyId, onClose, onSucce
       const payload = {
         resident_id: Number(residentId),
         resident_type: "OWNER",
-        flat_type: isApartment ? flatType : null,
+        flat_type: isApartment ? (selectedFlat?.flat_type || null) : null,
         parking_slots: parkingSlots,
+        ...(selectedSocietyId ? { society_id: Number(selectedSocietyId) } : {}),
       };
-      await API.put(`/flats/assign/${selectedFlatId}`, payload);
+      const headers = selectedSocietyId ? { "x-society-id": String(selectedSocietyId) } : {};
+      await API.put(`/flats/assign/${selectedFlatId}`, payload, { headers });
       toast.success(`Flat assigned to ${residentName}`);
       onSuccess();
     } catch (err) {
@@ -636,70 +762,548 @@ function AssignFlatModal({ residentId, residentName, societyId, onClose, onSucce
     }
   };
 
-  return (
-    createPortal(
-    <div onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
-      style={{ position: "fixed", inset: 0, zIndex: 1100, background: "rgba(0,0,0,0.65)", backdropFilter: "blur(8px)", display: "flex", alignItems: "center", justifyContent: "center", padding: "16px" }}>
-      <div onClick={(e) => e.stopPropagation()}
-        style={{ width: "100%", maxWidth: 520, background: "var(--card-bg)", border: "1px solid var(--glass-border)", borderRadius: 20, maxHeight: "90vh", overflowY: "auto", backdropFilter: "blur(20px)", boxShadow: "0 24px 80px rgba(0,0,0,0.5), 0 0 20px rgba(160,90,255,0.15)", animation: "saModalPopIn 0.25s cubic-bezier(0.16, 1, 0.3, 1)" }}>
+  return createPortal(
+    <div
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 1100,
+        background: "rgba(10, 14, 26, 0.75)",
+        backdropFilter: "blur(12px)",
+        WebkitBackdropFilter: "blur(12px)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "16px",
+      }}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          width: "100%",
+          maxWidth: 620,
+          background: "var(--card-bg)",
+          border: "1px solid var(--glass-border)",
+          borderRadius: 24,
+          maxHeight: "92vh",
+          display: "flex",
+          flexDirection: "column",
+          overflow: "hidden",
+          backdropFilter: "blur(24px)",
+          WebkitBackdropFilter: "blur(24px)",
+          boxShadow: "0 28px 85px rgba(0,0,0,0.65), 0 0 35px rgba(160,90,255,0.18)",
+          animation: "saAssignModalIn 0.28s cubic-bezier(0.16, 1, 0.3, 1)",
+        }}
+      >
         {/* Header */}
-        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", padding: "20px 22px 0" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <div style={{ width: 38, height: 38, borderRadius: 11, background: "linear-gradient(135deg,var(--accent),var(--accent-light))", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 6px 16px rgba(160,90,255,0.35)" }}>
-              <MdHome size={20} color="#fff" />
+        <div style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          padding: "20px 24px 18px",
+          borderBottom: "1px solid var(--glass-border)",
+          background: "linear-gradient(180deg, rgba(255,255,255,0.03) 0%, transparent 100%)",
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+            <div style={{
+              width: 44,
+              height: 44,
+              borderRadius: 14,
+              background: "linear-gradient(135deg, var(--accent) 0%, #6366f1 100%)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              boxShadow: "0 8px 20px rgba(160,90,255,0.35)",
+              color: "#fff",
+              flexShrink: 0,
+            }}>
+              <MdHome size={24} />
             </div>
             <div>
-              <p style={{ margin: 0, fontSize: 17, fontWeight: 800, color: "var(--text-primary)", letterSpacing: "-0.02em" }}>Assign New Flat</p>
-              <p style={{ margin: 0, fontSize: 12, color: "#4BCBEB", fontWeight: 600 }}>→ {residentName}</p>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <h3 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: "var(--text-primary)", letterSpacing: "-0.02em" }}>
+                  Assign Unit
+                </h3>
+                <span style={{
+                  fontSize: 10,
+                  fontWeight: 800,
+                  padding: "2px 8px",
+                  borderRadius: 999,
+                  background: "rgba(160,90,255,0.12)",
+                  color: "var(--accent)",
+                  border: "1px solid rgba(160,90,255,0.25)",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.05em",
+                }}>
+                  Step {step} of {totalSteps}
+                </span>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 3 }}>
+                <span style={{ fontSize: 12, color: "var(--text-secondary)" }}>Assigning to:</span>
+                <span style={{
+                  fontSize: 12,
+                  fontWeight: 700,
+                  color: "#4BCBEB",
+                  background: "rgba(75, 203, 235, 0.1)",
+                  padding: "1px 8px",
+                  borderRadius: 6,
+                  border: "1px solid rgba(75, 203, 235, 0.22)",
+                }}>
+                  {residentName}
+                </span>
+              </div>
             </div>
           </div>
-          <button onClick={onClose} style={{ width: 34, height: 34, borderRadius: 10, border: "1px solid var(--glass-border)", background: "var(--card-inner-bg)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-secondary)" }}>
-            <MdClose size={17} />
+          <button
+            onClick={onClose}
+            style={{
+              width: 36,
+              height: 36,
+              borderRadius: 12,
+              border: "1px solid var(--glass-border)",
+              background: "var(--card-inner-bg)",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color: "var(--text-secondary)",
+              transition: "all 0.18s ease",
+            }}
+            title="Close"
+          >
+            <MdClose size={18} />
           </button>
         </div>
 
-        <div style={{ height: 1, background: "var(--glass-border)", margin: "16px 0 0" }} />
+        {/* SuperAdmin Society Selection Banner */}
+        {isSuperAdmin && (
+          <div style={{
+            padding: "12px 24px",
+            background: "linear-gradient(135deg, rgba(160,90,255,0.08) 0%, rgba(99,102,241,0.04) 100%)",
+            borderBottom: "1px solid var(--glass-border)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 12,
+            flexWrap: "wrap",
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <div style={{
+                width: 32,
+                height: 32,
+                borderRadius: 10,
+                background: "rgba(160,90,255,0.18)",
+                border: "1px solid rgba(160,90,255,0.3)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: "var(--accent)",
+                flexShrink: 0,
+              }}>
+                <MdApartment size={18} />
+              </div>
+              <div>
+                <div style={{ fontSize: 11, fontWeight: 800, color: "var(--text-primary)", letterSpacing: "0.02em" }}>
+                  Target Society <span style={{ color: "#f87171" }}>*</span>
+                </div>
+                <div style={{ fontSize: 10, color: "var(--text-secondary)" }}>
+                  Assigning unit from selected society
+                </div>
+              </div>
+            </div>
 
-        <div style={{ padding: "20px 22px 28px", display: "flex", flexDirection: "column", gap: 16 }}>
-          {loadingData ? (
-            <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "30px 0", color: "var(--text-secondary)", fontSize: 13, justifyContent: "center" }}>
-              <Spinner small /> Loading available units…
+            <div style={{ flex: 1, minWidth: 200, maxWidth: 280 }}>
+              <select
+                value={selectedSocietyId}
+                onChange={(e) => handleSocietyChange(e.target.value)}
+                style={{
+                  width: "100%",
+                  padding: "8px 12px",
+                  borderRadius: 10,
+                  border: "1px solid var(--glass-border)",
+                  background: "var(--card-inner-bg)",
+                  color: "var(--text-primary)",
+                  fontSize: 13,
+                  fontWeight: 600,
+                  outline: "none",
+                  cursor: "pointer",
+                }}
+              >
+                <option value="">-- Choose Society --</option>
+                {societiesList.map((soc) => (
+                  <option key={soc.id} value={soc.id}>
+                    {soc.name} {soc.city ? `(${soc.city})` : ""}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        )}
+
+        {/* Stepper Progress Bar */}
+        <div style={{ padding: "16px 24px 0", background: "var(--card-bg)" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", position: "relative" }}>
+            {stepLabels.map((label, idx) => {
+              const num = idx + 1;
+              const isCompleted = step > num;
+              const isActive = step === num;
+              return (
+                <div key={label} style={{ display: "flex", alignItems: "center", flex: idx === stepLabels.length - 1 ? 0 : 1, position: "relative" }}>
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", zIndex: 2 }}>
+                    <div
+                      style={{
+                        width: 30,
+                        height: 30,
+                        borderRadius: "50%",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontSize: 11,
+                        fontWeight: 800,
+                        transition: "all 0.25s ease",
+                        background: isCompleted
+                          ? "linear-gradient(135deg, #10b981 0%, #059669 100%)"
+                          : isActive
+                            ? "linear-gradient(135deg, var(--accent) 0%, #6366f1 100%)"
+                            : "var(--card-inner-bg)",
+                        border: `2px solid ${isCompleted ? "#10b981" : isActive ? "var(--accent)" : "var(--glass-border)"}`,
+                        color: isCompleted || isActive ? "#fff" : "var(--text-secondary)",
+                        boxShadow: isActive ? "0 4px 14px rgba(160,90,255,0.4)" : isCompleted ? "0 4px 10px rgba(160,90,255,0.3)" : "none",
+                      }}
+                    >
+                      {isCompleted ? <MdCheck size={14} color="#fff" /> : num}
+                    </div>
+                    <span style={{
+                      fontSize: 10,
+                      fontWeight: isActive ? 800 : 600,
+                      color: isActive ? "var(--accent)" : isCompleted ? "#10b981" : "var(--text-secondary)",
+                      marginTop: 4,
+                      whiteSpace: "nowrap",
+                      letterSpacing: "0.02em",
+                    }}>
+                      {label}
+                    </span>
+                  </div>
+
+                  {idx < stepLabels.length - 1 && (
+                    <div style={{
+                      flex: 1,
+                      height: 3,
+                      margin: "0 8px 16px",
+                      background: isCompleted ? "linear-gradient(90deg, #10b981, #10b981)" : "var(--glass-border)",
+                      borderRadius: 99,
+                      transition: "all 0.3s ease",
+                    }} />
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Scrollable Body */}
+        <div style={{
+          padding: "20px 24px 24px",
+          overflowY: "auto",
+          flex: 1,
+          display: "flex",
+          flexDirection: "column",
+          gap: 16,
+        }}>
+          {isSuperAdmin && !selectedSocietyId ? (
+            <div style={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 12,
+              padding: "48px 16px",
+              textAlign: "center",
+            }}>
+              <div style={{
+                width: 56,
+                height: 56,
+                borderRadius: 18,
+                background: "rgba(160,90,255,0.12)",
+                border: "1px solid rgba(160,90,255,0.25)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: "var(--accent)",
+              }}>
+                <MdApartment size={28} />
+              </div>
+              <div style={{ fontSize: 15, fontWeight: 700, color: "var(--text-primary)" }}>
+                Please Select a Society
+              </div>
+              <div style={{ fontSize: 13, color: "var(--text-secondary)", maxWidth: 360 }}>
+                Choose the society from the dropdown above to load available blocks, floors, vacant flats, and parking slots.
+              </div>
+            </div>
+          ) : loadingData ? (
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12, padding: "50px 0", color: "var(--text-secondary)" }}>
+              <Spinner />
+              <span style={{ fontSize: 13, fontWeight: 600 }}>Loading available units and blocks…</span>
             </div>
           ) : (
             <>
-              <StepIndicator step={step} total={totalSteps} labels={stepLabels} />
-
               {formError && (
-                <div style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.25)", borderRadius: 10, padding: "10px 14px", fontSize: 13, color: "#f87171", display: "flex", alignItems: "center", gap: 8 }}>
-                  <MdClose size={14} style={{ flexShrink: 0 }} /> {formError}
+                <div style={{
+                  background: "rgba(239,68,68,0.12)",
+                  border: "1px solid rgba(239,68,68,0.3)",
+                  borderRadius: 12,
+                  padding: "11px 14px",
+                  fontSize: 13,
+                  color: "#f87171",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                  animation: "fadeIn 0.2s ease",
+                }}>
+                  <MdClose size={16} style={{ flexShrink: 0 }} />
+                  <span>{formError}</span>
                 </div>
               )}
 
               {/* STEP 1: Property Type */}
               {step === 1 && (
-                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                  <p style={{ fontSize: 12, color: "var(--text-secondary)", margin: "0 0 2px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>Property Type</p>
-                  <SelectionCard icon={<MdApartment size={18} style={{ color: "#4BCBEB" }} />} title="Apartment / Flat" subtitle="Multi-floor building" selected={propertyType === "APARTMENT"} onClick={() => { setPropertyType("APARTMENT"); setSelectedBlockId(""); setSelectedFloorId(""); setSelectedFlatId(""); setSelectedFlat(null); }} color="var(--accent)" colorBg="rgba(160,90,255,0.12)" />
-                  <SelectionCard icon={<MdHomeWork size={18} style={{ color: "#34d399" }} />} title="Row House / Villa" subtitle="Ground-level independent house" selected={propertyType === "ROW_HOUSE"} onClick={() => { setPropertyType("ROW_HOUSE"); setSelectedBlockId(""); setSelectedFloorId(""); setSelectedFlatId(""); setSelectedFlat(null); }} color="#10b981" colorBg="rgba(16,185,129,0.12)" />
+                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                  {allFlats.length === 0 && (
+                    <div style={{
+                      padding: "14px 16px",
+                      borderRadius: 14,
+                      background: "rgba(239,68,68,0.08)",
+                      border: "1px solid rgba(239,68,68,0.22)",
+                      color: "#f87171",
+                      fontSize: 13,
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 10,
+                    }}>
+                      <MdWarning size={18} style={{ flexShrink: 0 }} />
+                      <span>No unassigned vacant units currently exist in this society. Please select another society or create blocks and units first.</span>
+                    </div>
+                  )}
+
+                  <div>
+                    <h4 style={{ margin: 0, fontSize: 13, fontWeight: 700, color: "var(--text-primary)", letterSpacing: "0.02em" }}>
+                      Select Property Category
+                    </h4>
+                    <p style={{ margin: "2px 0 0", fontSize: 12, color: "var(--text-secondary)" }}>
+                      Choose whether you are assigning a multi-floor apartment flat or an independent row house
+                    </p>
+                  </div>
+
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 10, marginTop: 4 }}>
+                    <button
+                      type="button"
+                      onClick={() => { setPropertyType("APARTMENT"); setSelectedBlockId(""); setSelectedFloorId(""); setSelectedFlatId(""); setSelectedFlat(null); setBhkFilter("ALL"); }}
+                      style={{
+                        padding: "16px 18px",
+                        borderRadius: 16,
+                        cursor: "pointer",
+                        textAlign: "left",
+                        transition: "all 0.2s ease",
+                        outline: "none",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 16,
+                        background: propertyType === "APARTMENT"
+                          ? "linear-gradient(135deg, rgba(160,90,255,0.14) 0%, rgba(99,102,241,0.08) 100%)"
+                          : "var(--card-inner-bg)",
+                        border: `2px solid ${propertyType === "APARTMENT" ? "var(--accent)" : "var(--glass-border)"}`,
+                        boxShadow: propertyType === "APARTMENT" ? "0 6px 20px rgba(160,90,255,0.2)" : "none",
+                        transform: propertyType === "APARTMENT" ? "translateY(-1px)" : "none",
+                      }}
+                    >
+                      <div style={{
+                        width: 48,
+                        height: 48,
+                        borderRadius: 14,
+                        background: propertyType === "APARTMENT" ? "rgba(160,90,255,0.25)" : "rgba(255,255,255,0.04)",
+                        border: `1px solid ${propertyType === "APARTMENT" ? "var(--accent)" : "var(--glass-border)"}`,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        color: propertyType === "APARTMENT" ? "#c084fc" : "#4BCBEB",
+                        flexShrink: 0,
+                      }}>
+                        <MdApartment size={26} />
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                          <span style={{ fontSize: 15, fontWeight: 800, color: propertyType === "APARTMENT" ? "var(--accent)" : "var(--text-primary)" }}>
+                            Apartment / Tower Flat
+                          </span>
+                          <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 7px", borderRadius: 6, background: "rgba(56, 189, 248, 0.12)", color: "#38bdf8", border: "1px solid rgba(56, 189, 248, 0.25)" }}>
+                            Multi-Storey
+                          </span>
+                        </div>
+                        <p style={{ margin: "4px 0 0", fontSize: 12, color: "var(--text-secondary)" }}>
+                          Tower block structure organized by floors with individual BHK configurations (1BHK, 2BHK, 3BHK).
+                        </p>
+                      </div>
+                      <div style={{
+                        width: 22,
+                        height: 22,
+                        borderRadius: "50%",
+                        border: `2px solid ${propertyType === "APARTMENT" ? "var(--accent)" : "var(--glass-border)"}`,
+                        background: propertyType === "APARTMENT" ? "var(--accent)" : "transparent",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        flexShrink: 0,
+                        transition: "all 0.2s ease",
+                      }}>
+                        {propertyType === "APARTMENT" && <MdCheck size={14} color="#fff" />}
+                      </div>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => { setPropertyType("ROW_HOUSE"); setSelectedBlockId(""); setSelectedFloorId(""); setSelectedFlatId(""); setSelectedFlat(null); setBhkFilter("ALL"); }}
+                      style={{
+                        padding: "16px 18px",
+                        borderRadius: 16,
+                        cursor: "pointer",
+                        textAlign: "left",
+                        transition: "all 0.2s ease",
+                        outline: "none",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 16,
+                        background: propertyType === "ROW_HOUSE"
+                          ? "linear-gradient(135deg, rgba(16,185,129,0.14) 0%, rgba(5,150,105,0.08) 100%)"
+                          : "var(--card-inner-bg)",
+                        border: `2px solid ${propertyType === "ROW_HOUSE" ? "#10b981" : "var(--glass-border)"}`,
+                        boxShadow: propertyType === "ROW_HOUSE" ? "0 6px 20px rgba(16,185,129,0.2)" : "none",
+                        transform: propertyType === "ROW_HOUSE" ? "translateY(-1px)" : "none",
+                      }}
+                    >
+                      <div style={{
+                        width: 48,
+                        height: 48,
+                        borderRadius: 14,
+                        background: propertyType === "ROW_HOUSE" ? "rgba(16,185,129,0.25)" : "rgba(255,255,255,0.04)",
+                        border: `1px solid ${propertyType === "ROW_HOUSE" ? "#10b981" : "var(--glass-border)"}`,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        color: "#34d399",
+                        flexShrink: 0,
+                      }}>
+                        <MdHomeWork size={26} />
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                          <span style={{ fontSize: 15, fontWeight: 800, color: propertyType === "ROW_HOUSE" ? "#34d399" : "var(--text-primary)" }}>
+                            Row House / Villa
+                          </span>
+                          <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 7px", borderRadius: 6, background: "rgba(16,185,129,0.12)", color: "#34d399", border: "1px solid rgba(16,185,129,0.25)" }}>
+                            Independent
+                          </span>
+                        </div>
+                        <p style={{ margin: "4px 0 0", fontSize: 12, color: "var(--text-secondary)" }}>
+                          Ground-level independent residence with direct private entrance and standalone compound.
+                        </p>
+                      </div>
+                      <div style={{
+                        width: 22,
+                        height: 22,
+                        borderRadius: "50%",
+                        border: `2px solid ${propertyType === "ROW_HOUSE" ? "#10b981" : "var(--glass-border)"}`,
+                        background: propertyType === "ROW_HOUSE" ? "#10b981" : "transparent",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        flexShrink: 0,
+                        transition: "all 0.2s ease",
+                      }}>
+                        {propertyType === "ROW_HOUSE" && <MdCheck size={14} color="#fff" />}
+                      </div>
+                    </button>
+                  </div>
                 </div>
               )}
 
               {/* STEP 2: Block */}
               {step === 2 && (
-                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                  <p style={{ fontSize: 12, color: "var(--text-secondary)", margin: "0 0 2px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>Select Block</p>
+                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                    <div>
+                      <h4 style={{ margin: 0, fontSize: 13, fontWeight: 700, color: "var(--text-primary)", letterSpacing: "0.02em" }}>
+                        Select Building Block
+                      </h4>
+                      <p style={{ margin: "2px 0 0", fontSize: 12, color: "var(--text-secondary)" }}>
+                        Choose from blocks with available vacant units
+                      </p>
+                    </div>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: "var(--text-secondary)" }}>
+                      {availableBlocks.length} Block{availableBlocks.length === 1 ? "" : "s"}
+                    </span>
+                  </div>
+
                   {availableBlocks.length === 0 ? (
-                    <div style={{ padding: "20px", textAlign: "center", color: "var(--text-secondary)", fontSize: 13, borderRadius: 12, background: "var(--card-inner-bg)", border: "1px dashed var(--glass-border)" }}>{t("resNoBlocksAvailable")}</div>
+                    <div style={{ padding: "32px 20px", textAlign: "center", color: "var(--text-secondary)", fontSize: 13, borderRadius: 16, background: "var(--card-inner-bg)", border: "1px dashed var(--glass-border)" }}>
+                      {t("resNoBlocksAvailable") || "No blocks with vacant units available in this category."}
+                    </div>
                   ) : (
-                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(110px,1fr))", gap: 8 }}>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(130px, 1fr))", gap: 10 }}>
                       {availableBlocks.map((block) => {
                         const active = String(selectedBlockId) === String(block.id);
+                        const activeColor = isApartment ? "var(--accent)" : "#10b981";
                         return (
-                          <button key={block.id} type="button" onClick={() => { setSelectedBlockId(block.id); setSelectedFloorId(""); setSelectedFlatId(""); setSelectedFlat(null); }}
-                            style={{ padding: "14px 10px", borderRadius: 14, cursor: "pointer", textAlign: "center", transition: "all 0.18s ease", outline: "none", background: active ? "rgba(160,90,255,0.12)" : "var(--card-inner-bg)", border: `2px solid ${active ? "var(--accent)" : "var(--glass-border)"}` }}>
-                            {isApartment ? <MdApartment size={22} style={{ color: active ? "#4BCBEB" : "var(--text-secondary)", display: "block", margin: "0 auto 6px" }} /> : <MdHomeWork size={22} style={{ color: active ? "#34d399" : "var(--text-secondary)", display: "block", margin: "0 auto 6px" }} />}
-                            <div style={{ fontSize: 13, fontWeight: 700, color: active ? (isApartment ? "#4BCBEB" : "#34d399") : "var(--text-primary)" }}>Block {block.name}</div>
-                            {active && <MdCheckCircle size={12} style={{ color: isApartment ? "#4BCBEB" : "#34d399", marginTop: 4 }} />}
+                          <button
+                            key={block.id}
+                            type="button"
+                            onClick={() => { setSelectedBlockId(block.id); setSelectedFloorId(""); setSelectedFlatId(""); setSelectedFlat(null); setBhkFilter("ALL"); }}
+                            style={{
+                              padding: "16px 12px",
+                              borderRadius: 16,
+                              cursor: "pointer",
+                              textAlign: "center",
+                              transition: "all 0.18s ease",
+                              outline: "none",
+                              background: active
+                                ? (isApartment ? "linear-gradient(135deg, rgba(160,90,255,0.18), rgba(99,102,241,0.1))" : "linear-gradient(135deg, rgba(16,185,129,0.18), rgba(5,150,105,0.1))")
+                                : "var(--card-inner-bg)",
+                              border: `2px solid ${active ? activeColor : "var(--glass-border)"}`,
+                              boxShadow: active ? `0 6px 20px ${isApartment ? "rgba(160,90,255,0.25)" : "rgba(16,185,129,0.25)"}` : "none",
+                              transform: active ? "translateY(-2px)" : "none",
+                              display: "flex",
+                              flexDirection: "column",
+                              alignItems: "center",
+                              gap: 6,
+                            }}
+                          >
+                            <div style={{
+                              width: 38,
+                              height: 38,
+                              borderRadius: 12,
+                              background: active
+                                ? (isApartment ? "rgba(160,90,255,0.25)" : "rgba(16,185,129,0.25)")
+                                : "rgba(255,255,255,0.04)",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              color: active ? activeColor : "var(--text-secondary)",
+                            }}>
+                              {isApartment ? <MdApartment size={22} /> : <MdHomeWork size={22} />}
+                            </div>
+                            <div style={{ fontSize: 14, fontWeight: 800, color: active ? activeColor : "var(--text-primary)" }}>
+                              Block {block.name}
+                            </div>
+                            <span style={{
+                              fontSize: 10,
+                              fontWeight: 700,
+                              padding: "2px 8px",
+                              borderRadius: 999,
+                              background: active ? (isApartment ? "rgba(160,90,255,0.2)" : "rgba(16,185,129,0.2)") : "rgba(255,255,255,0.06)",
+                              color: active ? activeColor : "var(--text-secondary)",
+                            }}>
+                              {block.count} vacant unit{block.count === 1 ? "" : "s"}
+                            </span>
                           </button>
                         );
                       })}
@@ -708,21 +1312,80 @@ function AssignFlatModal({ residentId, residentName, societyId, onClose, onSucce
                 </div>
               )}
 
-              {/* STEP 3: Floor */}
+              {/* STEP 3: Floor (Apartment Only) */}
               {step === 3 && isApartment && (
-                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                  <p style={{ fontSize: 12, color: "var(--text-secondary)", margin: "0 0 2px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>Floor — <span style={{ color: "#4BCBEB" }}>Block {selectedBlock?.name}</span></p>
+                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                    <div>
+                      <h4 style={{ margin: 0, fontSize: 13, fontWeight: 700, color: "var(--text-primary)", letterSpacing: "0.02em" }}>
+                        Select Floor — <span style={{ color: "var(--accent)" }}>Block {selectedBlock?.name}</span>
+                      </h4>
+                      <p style={{ margin: "2px 0 0", fontSize: 12, color: "var(--text-secondary)" }}>
+                        Pick the floor to view available apartment flats
+                      </p>
+                    </div>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: "var(--text-secondary)" }}>
+                      {availableFloors.length} Floor{availableFloors.length === 1 ? "" : "s"}
+                    </span>
+                  </div>
+
                   {availableFloors.length === 0 ? (
-                    <div style={{ padding: "20px", textAlign: "center", color: "var(--text-secondary)", fontSize: 13, borderRadius: 12, background: "var(--card-inner-bg)", border: "1px dashed var(--glass-border)" }}>{t("resNoFloorsVacant")}</div>
+                    <div style={{ padding: "32px 20px", textAlign: "center", color: "var(--text-secondary)", fontSize: 13, borderRadius: 16, background: "var(--card-inner-bg)", border: "1px dashed var(--glass-border)" }}>
+                      {t("resNoFloorsVacant") || "No floors with vacant flats in this block."}
+                    </div>
                   ) : (
-                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(90px,1fr))", gap: 8 }}>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(120px, 1fr))", gap: 10 }}>
                       {availableFloors.map((floor) => {
                         const active = String(selectedFloorId) === String(floor.id);
                         return (
-                          <button key={floor.id} type="button" onClick={() => { setSelectedFloorId(floor.id); setSelectedFlatId(""); setSelectedFlat(null); }}
-                            style={{ padding: "14px 8px", borderRadius: 14, cursor: "pointer", textAlign: "center", transition: "all 0.18s ease", outline: "none", background: active ? "rgba(160,90,255,0.12)" : "var(--card-inner-bg)", border: `2px solid ${active ? "var(--accent)" : "var(--glass-border)"}` }}>
-                            <MdLayers size={20} style={{ color: active ? "#4BCBEB" : "var(--text-secondary)", display: "block", margin: "0 auto 6px" }} />
-                            <div style={{ fontSize: 13, fontWeight: 700, color: active ? "#4BCBEB" : "var(--text-primary)" }}>Floor {floor.number}</div>
+                          <button
+                            key={floor.id}
+                            type="button"
+                            onClick={() => { setSelectedFloorId(floor.id); setSelectedFlatId(""); setSelectedFlat(null); setBhkFilter("ALL"); }}
+                            style={{
+                              padding: "16px 10px",
+                              borderRadius: 16,
+                              cursor: "pointer",
+                              textAlign: "center",
+                              transition: "all 0.18s ease",
+                              outline: "none",
+                              background: active
+                                ? "linear-gradient(135deg, rgba(160,90,255,0.18), rgba(99,102,241,0.1))"
+                                : "var(--card-inner-bg)",
+                              border: `2px solid ${active ? "var(--accent)" : "var(--glass-border)"}`,
+                              boxShadow: active ? "0 6px 20px rgba(160,90,255,0.25)" : "none",
+                              transform: active ? "translateY(-2px)" : "none",
+                              display: "flex",
+                              flexDirection: "column",
+                              alignItems: "center",
+                              gap: 6,
+                            }}
+                          >
+                            <div style={{
+                              width: 36,
+                              height: 36,
+                              borderRadius: 12,
+                              background: active ? "rgba(160,90,255,0.25)" : "rgba(255,255,255,0.04)",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              color: active ? "var(--accent)" : "var(--text-secondary)",
+                            }}>
+                              <MdLayers size={20} />
+                            </div>
+                            <div style={{ fontSize: 14, fontWeight: 800, color: active ? "var(--accent)" : "var(--text-primary)" }}>
+                              Floor {floor.number}
+                            </div>
+                            <span style={{
+                              fontSize: 10,
+                              fontWeight: 700,
+                              padding: "2px 8px",
+                              borderRadius: 999,
+                              background: active ? "rgba(160,90,255,0.2)" : "rgba(255,255,255,0.06)",
+                              color: active ? "var(--accent)" : "var(--text-secondary)",
+                            }}>
+                              {floor.count} vacant flat{floor.count === 1 ? "" : "s"}
+                            </span>
                           </button>
                         );
                       })}
@@ -731,26 +1394,196 @@ function AssignFlatModal({ residentId, residentName, societyId, onClose, onSucce
                 </div>
               )}
 
-              {/* STEP flatStep: Unit + Parking */}
+              {/* STEP 4 (or 3): Units + BHK Display + Parking */}
               {step === flatStep && (
-                <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
                   <div>
-                    <p style={{ fontSize: 12, color: "var(--text-secondary)", margin: "0 0 8px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>Select {isApartment ? "Flat" : "House"}</p>
-                    {availableFlats.length === 0 ? (
-                      <div style={{ padding: "20px", textAlign: "center", color: "var(--text-secondary)", fontSize: 13, borderRadius: 12, background: "var(--card-inner-bg)", border: "1px dashed var(--glass-border)" }}>{t("resNoUnitsAvailable")}</div>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8, flexWrap: "wrap", gap: 8 }}>
+                      <div>
+                        <h4 style={{ margin: 0, fontSize: 13, fontWeight: 700, color: "var(--text-primary)", letterSpacing: "0.02em" }}>
+                          Select {isApartment ? "Flat Unit" : "Row House"}
+                        </h4>
+                        <p style={{ margin: "2px 0 0", fontSize: 12, color: "var(--text-secondary)" }}>
+                          {isApartment
+                            ? `Showing units in Block ${selectedBlock?.name} • Floor ${selectedFloor?.number}`
+                            : `Showing units in Block ${selectedBlock?.name}`}
+                        </p>
+                      </div>
+
+                      {/* BHK Filter Chips if multiple BHKs exist */}
+                      {isApartment && availableBhkTypes.length > 1 && (
+                        <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                          <button
+                            type="button"
+                            onClick={() => setBhkFilter("ALL")}
+                            style={{
+                              padding: "3px 9px",
+                              borderRadius: 999,
+                              fontSize: 11,
+                              fontWeight: 700,
+                              cursor: "pointer",
+                              outline: "none",
+                              border: bhkFilter === "ALL" ? "1px solid var(--accent)" : "1px solid var(--glass-border)",
+                              background: bhkFilter === "ALL" ? "rgba(160,90,255,0.18)" : "var(--card-inner-bg)",
+                              color: bhkFilter === "ALL" ? "var(--text-primary)" : "var(--text-secondary)",
+                              transition: "all 0.15s ease",
+                            }}
+                          >
+                            All ({availableFlats.length})
+                          </button>
+                          {availableBhkTypes.map((type) => {
+                            const count = availableFlats.filter(f => f.flat_type === type).length;
+                            const isAct = bhkFilter === type;
+                            const s = BHK_STYLES[type] || BHK_STYLES["2BHK"];
+                            return (
+                              <button
+                                key={type}
+                                type="button"
+                                onClick={() => setBhkFilter(type)}
+                                style={{
+                                  padding: "3px 9px",
+                                  borderRadius: 999,
+                                  fontSize: 11,
+                                  fontWeight: 700,
+                                  cursor: "pointer",
+                                  outline: "none",
+                                  border: isAct ? `1px solid ${s.color}` : "1px solid var(--glass-border)",
+                                  background: isAct ? s.bg : "var(--card-inner-bg)",
+                                  color: isAct ? s.color : "var(--text-secondary)",
+                                  transition: "all 0.15s ease",
+                                }}
+                              >
+                                {type} ({count})
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+
+                    {displayedFlats.length === 0 ? (
+                      <div style={{ padding: "30px 20px", textAlign: "center", color: "var(--text-secondary)", fontSize: 13, borderRadius: 16, background: "var(--card-inner-bg)", border: "1px dashed var(--glass-border)" }}>
+                        {t("resNoUnitsAvailable") || "No vacant units matching your filter."}
+                      </div>
                     ) : (
-                      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(86px,1fr))", gap: 8, maxHeight: 180, overflowY: "auto", paddingRight: 2 }}>
-                        {availableFlats.map((flat) => {
+                      <div style={{
+                        display: "grid",
+                        gridTemplateColumns: "repeat(auto-fill, minmax(105px, 1fr))",
+                        gap: 10,
+                        maxHeight: 210,
+                        overflowY: "auto",
+                        padding: "4px 2px",
+                      }}>
+                        {displayedFlats.map((flat) => {
                           const isSel = String(selectedFlatId) === String(flat.id);
-                          const color = isApartment ? "#4BCBEB" : "#34d399";
-                          const bg = isApartment ? "rgba(160,90,255,0.12)" : "rgba(16,185,129,0.12)";
-                          const borderC = isApartment ? "var(--accent)" : "#10b981";
+                          const activeColor = isApartment ? "var(--accent)" : "#10b981";
+                          const bhkStyle = BHK_STYLES[flat.flat_type] || BHK_STYLES["2BHK"];
                           return (
-                            <button key={flat.id} type="button" onClick={() => handleFlatSelect(flat.id)}
-                              style={{ padding: "12px 6px", borderRadius: 12, cursor: "pointer", textAlign: "center", transition: "all 0.16s ease", outline: "none", background: isSel ? bg : "var(--card-inner-bg)", border: `2px solid ${isSel ? borderC : "var(--glass-border)"}` }}>
-                              {isApartment ? <MdMeetingRoom size={18} style={{ color: isSel ? color : "var(--text-secondary)", display: "block", margin: "0 auto 4px" }} /> : <MdHomeWork size={18} style={{ color: isSel ? color : "var(--text-secondary)", display: "block", margin: "0 auto 4px" }} />}
-                              <div style={{ fontSize: 12, fontWeight: 700, color: isSel ? color : "var(--text-primary)" }}>{flat.flat_number}</div>
-                              {isSel && <MdCheckCircle size={11} style={{ color, marginTop: 3 }} />}
+                            <button
+                              key={flat.id}
+                              type="button"
+                              onClick={() => handleFlatSelect(flat.id)}
+                              style={{
+                                position: "relative",
+                                padding: "12px 8px 10px",
+                                borderRadius: 14,
+                                cursor: "pointer",
+                                textAlign: "center",
+                                transition: "all 0.18s cubic-bezier(0.16, 1, 0.3, 1)",
+                                outline: "none",
+                                background: isSel
+                                  ? (isApartment ? "linear-gradient(145deg, rgba(160,90,255,0.18), rgba(99,102,241,0.12))" : "linear-gradient(145deg, rgba(16,185,129,0.18), rgba(5,150,105,0.12))")
+                                  : "var(--card-inner-bg)",
+                                border: isSel
+                                  ? `2px solid ${activeColor}`
+                                  : "1px solid var(--glass-border)",
+                                boxShadow: isSel
+                                  ? `0 6px 20px ${isApartment ? "rgba(160,90,255,0.28)" : "rgba(16,185,129,0.25)"}`
+                                  : "none",
+                                transform: isSel ? "translateY(-2px)" : "none",
+                                display: "flex",
+                                flexDirection: "column",
+                                alignItems: "center",
+                                gap: 4,
+                              }}
+                            >
+                              {isSel && (
+                                <div style={{
+                                  position: "absolute",
+                                  top: 5,
+                                  right: 5,
+                                  width: 16,
+                                  height: 16,
+                                  borderRadius: "50%",
+                                  background: activeColor,
+                                  color: "#fff",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                }}>
+                                  <MdCheck size={11} />
+                                </div>
+                              )}
+
+                              <div style={{
+                                width: 32,
+                                height: 32,
+                                borderRadius: 10,
+                                background: isSel
+                                  ? (isApartment ? "rgba(160,90,255,0.25)" : "rgba(16,185,129,0.25)")
+                                  : "rgba(255,255,255,0.04)",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                color: isSel ? activeColor : "var(--text-secondary)",
+                                marginBottom: 2,
+                              }}>
+                                {isApartment ? <MdMeetingRoom size={18} /> : <MdHomeWork size={18} />}
+                              </div>
+
+                              <div style={{
+                                fontSize: 13,
+                                fontWeight: 800,
+                                color: isSel ? activeColor : "var(--text-primary)",
+                                letterSpacing: "-0.01em",
+                              }}>
+                                {flat.flat_number}
+                              </div>
+
+                              {isApartment ? (
+                                flat.flat_type ? (
+                                  <span style={{
+                                    fontSize: 10,
+                                    fontWeight: 800,
+                                    padding: "2px 7px",
+                                    borderRadius: 6,
+                                    background: bhkStyle.bg,
+                                    color: bhkStyle.color,
+                                    border: `1px solid ${bhkStyle.border}`,
+                                    letterSpacing: "0.02em",
+                                    marginTop: 2,
+                                  }}>
+                                    {flat.flat_type}
+                                  </span>
+                                ) : (
+                                  <span style={{ fontSize: 9, color: "var(--text-secondary)", fontStyle: "italic", marginTop: 2 }}>
+                                    —
+                                  </span>
+                                )
+                              ) : (
+                                <span style={{
+                                  fontSize: 9,
+                                  fontWeight: 700,
+                                  padding: "2px 6px",
+                                  borderRadius: 5,
+                                  background: "rgba(16,185,129,0.12)",
+                                  color: "#34d399",
+                                  border: "1px solid rgba(16,185,129,0.22)",
+                                  marginTop: 2,
+                                }}>
+                                  Villa
+                                </span>
+                              )}
                             </button>
                           );
                         })}
@@ -758,40 +1591,108 @@ function AssignFlatModal({ residentId, residentName, societyId, onClose, onSucce
                     )}
                   </div>
 
-                  {isApartment && selectedFlatId && (
-                    <div>
-                      <p style={{ fontSize: 11, fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8 }}>Flat Size (BHK)</p>
-                      <div style={{ display: "flex", gap: 8 }}>
-                        {["1BHK", "2BHK", "3BHK"].map((opt) => {
-                          const active = flatType === opt;
-                          return (
-                            <button key={opt} type="button" onClick={() => setFlatType(opt)}
-                              style={{ flex: 1, padding: "10px 4px", borderRadius: 10, cursor: "pointer", fontSize: 13, fontWeight: 700, transition: "all 0.18s ease", outline: "none", background: active ? "rgba(160,90,255,0.12)" : "var(--card-inner-bg)", border: `2px solid ${active ? "var(--accent)" : "var(--glass-border)"}`, color: active ? "#4BCBEB" : "var(--text-secondary)" }}>
-                              {opt}
-                            </button>
-                          );
-                        })}
+                  {/* Selected Flat Confirmation Showcase */}
+                  {selectedFlat && (
+                    <div style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      gap: 12,
+                      padding: "14px 18px",
+                      borderRadius: 16,
+                      background: isApartment
+                        ? "linear-gradient(135deg, rgba(160,90,255,0.12) 0%, rgba(99,102,241,0.06) 100%)"
+                        : "linear-gradient(135deg, rgba(16,185,129,0.12) 0%, rgba(5,150,105,0.06) 100%)",
+                      border: `1.5px solid ${isApartment ? "rgba(160,90,255,0.25)" : "rgba(16,185,129,0.25)"}`,
+                      boxShadow: "0 4px 16px rgba(0,0,0,0.12)",
+                    }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                        <div style={{
+                          width: 42,
+                          height: 42,
+                          borderRadius: 12,
+                          background: isApartment ? "rgba(160,90,255,0.22)" : "rgba(16,185,129,0.22)",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          color: isApartment ? "#c084fc" : "#34d399",
+                          flexShrink: 0,
+                        }}>
+                          {isApartment ? <MdApartment size={24} /> : <MdHomeWork size={24} />}
+                        </div>
+                        <div>
+                          <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                            <span style={{ fontWeight: 800, fontSize: 15, color: "var(--text-primary)" }}>
+                              {isApartment ? "Flat" : "House"} {selectedFlat.flat_number}
+                            </span>
+                            {isApartment && selectedFlat?.flat_type && (
+                              <BhkBadge type={selectedFlat.flat_type} />
+                            )}
+                          </div>
+                          <p style={{ fontSize: 12, color: "var(--text-secondary)", margin: "3px 0 0" }}>
+                            {selectedBlock && `Block ${selectedBlock.name}`}
+                            {isApartment && selectedFloor && ` • Floor ${selectedFloor.number}`}
+                            {selectedSlotIds.length > 0 && ` • ${selectedSlotIds.length} slot(s)`}
+                          </p>
+                        </div>
                       </div>
+                      <span style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 5,
+                        fontSize: 11,
+                        fontWeight: 800,
+                        padding: "4px 10px",
+                        borderRadius: 999,
+                        background: "rgba(16,185,129,0.14)",
+                        color: "#34d399",
+                        border: "1px solid rgba(16,185,129,0.3)",
+                        whiteSpace: "nowrap",
+                      }}>
+                        <MdCheckCircle size={13} /> Selected
+                      </span>
                     </div>
                   )}
 
+                  {/* Parking Slots Section */}
                   {selectedFlatId && availableSlots.length > 0 && (
-                    <div>
-                      <p style={{ fontSize: 11, fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 4 }}>
-                        Parking Slots
-                        <span style={{ marginLeft: 6, fontWeight: 400, textTransform: "none", fontSize: 10, letterSpacing: 0, color: "var(--text-secondary)" }}>
-                          (optional · 1st selected = Default, others = Extra)
+                    <div style={{
+                      padding: "12px 14px",
+                      borderRadius: 14,
+                      background: "var(--card-inner-bg)",
+                      border: "1px solid var(--glass-border)",
+                    }}>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+                        <span style={{ fontSize: 11, fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                          Assign Parking Slots (Optional)
                         </span>
-                      </p>
-                      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(80px,1fr))", gap: 6, maxHeight: 140, overflowY: "auto" }}>
+                        <span style={{ fontSize: 10, color: "var(--text-secondary)" }}>
+                          1st = <span style={{ color: "#4ade80", fontWeight: 700 }}>Default</span> · others = <span style={{ color: "var(--accent)", fontWeight: 700 }}>Extra</span>
+                        </span>
+                      </div>
+
+                      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(82px, 1fr))", gap: 6, maxHeight: 120, overflowY: "auto" }}>
                         {availableSlots.map((s) => {
                           const isSel = selectedSlotIds.includes(String(s.id));
                           const selIdx = selectedSlotIds.indexOf(String(s.id));
                           const badgeLabel = selIdx === 0 ? "DEFAULT" : selIdx > 0 ? "EXTRA" : null;
                           return (
-                            <button key={s.id} type="button" onClick={() => toggleSlot(s.id)}
-                              style={{ padding: "10px 6px", borderRadius: 10, cursor: "pointer", textAlign: "center", transition: "all 0.16s ease", outline: "none", background: isSel ? "rgba(160,90,255,0.12)" : "var(--card-inner-bg)", border: `2px solid ${isSel ? "var(--accent)" : "var(--glass-border)"}` }}>
-                              <MdLocalParking size={16} style={{ color: isSel ? "#4BCBEB" : "var(--text-secondary)", display: "block", margin: "0 auto 3px" }} />
+                            <button
+                              key={s.id}
+                              type="button"
+                              onClick={() => toggleSlot(s.id)}
+                              style={{
+                                padding: "8px 6px",
+                                borderRadius: 10,
+                                cursor: "pointer",
+                                textAlign: "center",
+                                transition: "all 0.16s ease",
+                                outline: "none",
+                                background: isSel ? "rgba(160,90,255,0.14)" : "var(--card-bg)",
+                                border: `2px solid ${isSel ? "var(--accent)" : "var(--glass-border)"}`,
+                              }}
+                            >
+                              <MdLocalParking size={16} style={{ color: isSel ? "#4BCBEB" : "var(--text-secondary)", display: "block", margin: "0 auto 2px" }} />
                               <div style={{ fontSize: 11, fontWeight: 700, color: isSel ? "#4BCBEB" : "var(--text-primary)" }}>{s.slot_number}</div>
                               {s.vehicle_type && <div style={{ fontSize: 9, color: "var(--text-secondary)", marginTop: 1 }}>{s.vehicle_type}</div>}
                               {badgeLabel && (
@@ -803,21 +1704,22 @@ function AssignFlatModal({ residentId, residentName, societyId, onClose, onSucce
                           );
                         })}
                       </div>
+
                       {selectedSlotIds.length > 0 && (
-                        <div style={{ display: "flex", flexDirection: "column", gap: 5, marginTop: 8 }}>
+                        <div style={{ display: "flex", flexDirection: "column", gap: 5, marginTop: 10 }}>
                           {selectedSlotIds.map((sid, idx) => {
                             const slotObj = availableSlots.find(s => String(s.id) === sid);
                             if (!slotObj) return null;
                             return (
-                              <div key={sid} style={{ display: "flex", alignItems: "center", gap: 8, padding: "7px 12px", borderRadius: 8, background: "rgba(160,90,255,0.08)", border: "1px solid rgba(160,90,255,0.2)" }}>
+                              <div key={sid} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 10px", borderRadius: 8, background: "rgba(160,90,255,0.08)", border: "1px solid rgba(160,90,255,0.2)" }}>
                                 <MdLocalParking size={13} style={{ color: "#4BCBEB", flexShrink: 0 }} />
                                 <span style={{ fontSize: 12, fontWeight: 600, color: "var(--text-primary)", flex: 1 }}>
-                                  {slotObj.slot_number}{slotObj.vehicle_type ? ` · ${slotObj.vehicle_type}` : ""}
+                                  {slotObj.slot_number}{slotObj.vehicle_type ? ` • ${slotObj.vehicle_type}` : ""}
                                 </span>
-                                <span style={{ fontSize: 10, fontWeight: 800, padding: "2px 7px", borderRadius: 999, background: idx === 0 ? "rgba(74,222,128,0.12)" : "rgba(251,191,36,0.12)", color: idx === 0 ? "#4ade80" : "var(--accent)", border: `1px solid ${idx === 0 ? "rgba(74,222,128,0.25)" : "rgba(251,191,36,0.25)"}` }}>
+                                <span style={{ fontSize: 9, fontWeight: 800, padding: "2px 7px", borderRadius: 999, background: idx === 0 ? "rgba(74,222,128,0.12)" : "rgba(251,191,36,0.12)", color: idx === 0 ? "#4ade80" : "var(--accent)", border: `1px solid ${idx === 0 ? "rgba(74,222,128,0.25)" : "rgba(251,191,36,0.25)"}` }}>
                                   {idx === 0 ? "DEFAULT" : "EXTRA"}
                                 </span>
-                                <button type="button" onClick={() => toggleSlot(slotObj.id)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-secondary)", display: "flex" }}>
+                                <button type="button" onClick={() => toggleSlot(slotObj.id)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-secondary)", display: "flex", padding: 2 }}>
                                   <MdClose size={13} />
                                 </button>
                               </div>
@@ -827,63 +1729,137 @@ function AssignFlatModal({ residentId, residentName, societyId, onClose, onSucce
                       )}
                     </div>
                   )}
-
-                  {selectedFlat && (
-                    <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 16px", borderRadius: 12, background: isApartment ? "rgba(160,90,255,0.08)" : "rgba(16,185,129,0.08)", border: `1px solid ${isApartment ? "rgba(160,90,255,0.22)" : "rgba(16,185,129,0.22)"}` }}>
-                      {isApartment ? <MdApartment size={20} style={{ color: "#4BCBEB", flexShrink: 0 }} /> : <MdHomeWork size={20} style={{ color: "#34d399", flexShrink: 0 }} />}
-                      <div>
-                        <p style={{ fontWeight: 800, fontSize: 14, color: isApartment ? "#4BCBEB" : "#34d399", margin: 0, letterSpacing: "-0.01em" }}>
-                          {isApartment ? "Flat" : "House"} {selectedFlat.flat_number}{isApartment && ` · ${flatType}`}
-                        </p>
-                        <p style={{ fontSize: 12, color: "var(--text-secondary)", margin: "3px 0 0" }}>
-                          {selectedBlock && `Block ${selectedBlock.name}`}
-                          {isApartment && selectedFloor && ` · Floor ${selectedFloor.number}`}
-                          {selectedSlotIds.length > 0 && ` · ${selectedSlotIds.length} slot(s)`}
-                        </p>
-                      </div>
-                    </div>
-                  )}
                 </div>
               )}
-
-              {/* Navigation */}
-              <div style={{ display: "flex", gap: 10, marginTop: 4 }}>
-                {step > 1 && (
-                  <button type="button" onClick={goBack} className="sa-btn sa-btn-ghost">
-                    <MdArrowBack size={15} /> Back
-                  </button>
-                )}
-                <div style={{ flex: 1 }} />
-                {step < flatStep ? (
-                  <button
-                    type="button"
-                    onClick={() => { setFormError(""); setStep((s) => s + 1); }}
-                    disabled={!canGoNext()}
-                    className="btn-primary"
-                    style={{ opacity: canGoNext() ? 1 : 0.5, cursor: canGoNext() ? "pointer" : "not-allowed", fontWeight: 700 }}
-                  >
-                    <span>Next</span> <MdArrowForward size={15} />
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={handleSubmit}
-                    disabled={submitting || !selectedFlatId}
-                    className="btn-primary"
-                    style={{ opacity: submitting || !selectedFlatId ? 0.5 : 1, fontWeight: 700, cursor: submitting || !selectedFlatId ? "not-allowed" : "pointer" }}
-                  >
-                    {submitting ? <><Spinner small /> Assigning…</> : <><MdCheckCircle size={16} /> <span>Confirm Assignment</span></>}
-                  </button>
-                )}
-              </div>
             </>
           )}
         </div>
+
+        {/* Footer Navigation */}
+        <div style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          padding: "16px 24px",
+          borderTop: "1px solid var(--glass-border)",
+          background: "linear-gradient(180deg, transparent 0%, rgba(255,255,255,0.02) 100%)",
+        }}>
+          {step > 1 ? (
+            <button
+              type="button"
+              onClick={goBack}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+                padding: "10px 16px",
+                borderRadius: 12,
+                fontSize: 13,
+                fontWeight: 700,
+                cursor: "pointer",
+                background: "var(--card-inner-bg)",
+                border: "1px solid var(--glass-border)",
+                color: "var(--text-secondary)",
+                transition: "all 0.18s ease",
+              }}
+            >
+              <MdArrowBack size={16} /> Back
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={onClose}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+                padding: "10px 16px",
+                borderRadius: 12,
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: "pointer",
+                background: "transparent",
+                border: "1px solid transparent",
+                color: "var(--text-secondary)",
+                transition: "all 0.18s ease",
+              }}
+            >
+              Cancel
+            </button>
+          )}
+
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            {step < flatStep ? (
+              <button
+                type="button"
+                onClick={() => { setFormError(""); setStep((s) => s + 1); }}
+                disabled={!canGoNext()}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 8,
+                  padding: "10px 20px",
+                  borderRadius: 12,
+                  fontSize: 13,
+                  fontWeight: 800,
+                  cursor: canGoNext() ? "pointer" : "not-allowed",
+                  opacity: canGoNext() ? 1 : 0.5,
+                  background: "linear-gradient(135deg, var(--accent) 0%, #6366f1 100%)",
+                  border: "none",
+                  color: "#fff",
+                  boxShadow: canGoNext() ? "0 6px 20px rgba(160,90,255,0.35)" : "none",
+                  transition: "all 0.18s ease",
+                }}
+              >
+                <span>Continue</span>
+                <MdArrowForward size={16} />
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={handleSubmit}
+                disabled={submitting || !selectedFlatId}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 8,
+                  padding: "10px 22px",
+                  borderRadius: 12,
+                  fontSize: 13,
+                  fontWeight: 800,
+                  cursor: submitting || !selectedFlatId ? "not-allowed" : "pointer",
+                  opacity: submitting || !selectedFlatId ? 0.5 : 1,
+                  background: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
+                  border: "none",
+                  color: "#fff",
+                  boxShadow: submitting || !selectedFlatId ? "none" : "0 6px 20px rgba(16,185,129,0.35)",
+                  transition: "all 0.18s ease",
+                }}
+              >
+                {submitting ? (
+                  <>
+                    <Spinner small />
+                    <span>Assigning Unit…</span>
+                  </>
+                ) : (
+                  <>
+                    <MdCheckCircle size={17} />
+                    <span>Confirm Assignment</span>
+                  </>
+                )}
+              </button>
+            )}
+          </div>
+        </div>
       </div>
-      <style>{`@keyframes modalPop { from { transform: scale(0.94) translateY(12px); opacity: 0; } to { transform: scale(1) translateY(0); opacity: 1; } }`}</style>
+      <style>{`
+        @keyframes saAssignModalIn {
+          0% { transform: scale(0.92) translateY(14px); opacity: 0; }
+          100% { transform: scale(1) translateY(0); opacity: 1; }
+        }
+      `}</style>
     </div>,
     document.body
-        )
   );
 }
 
@@ -1353,6 +2329,11 @@ function FlatAssignCard({
                     <div style={{ fontSize: 11, fontWeight: 700, color: isSel ? color : "var(--text-primary)" }}>
                       {f.flat_number}
                     </div>
+                    {isApartment && f.flat_type && (
+                      <div style={{ marginTop: 2 }}>
+                        <BhkBadge type={f.flat_type} />
+                      </div>
+                    )}
                     {isSel && <MdCheckCircle size={11} style={{ color, marginTop: 2 }} />}
                   </button>
                 );
@@ -1362,37 +2343,17 @@ function FlatAssignCard({
         </div>
       )}
 
-      {/* BHK selector (apartment + flat chosen) */}
+      {/* BHK badge (apartment + flat chosen) */}
       {isApartment && flat_id && (
         <div>
           <label style={fieldLabelStyle}>Flat Size (BHK)</label>
-          <div style={{ display: "flex", gap: 7 }}>
-            {["1BHK", "2BHK", "3BHK"].map((opt) => {
-              const active = flat_type === opt;
-              const s = BHK_STYLES[opt];
-              return (
-                <button
-                  key={opt}
-                  type="button"
-                  onClick={() => set({ flat_type: opt })}
-                  style={{
-                    flex: 1,
-                    padding: "8px 4px",
-                    borderRadius: 8,
-                    cursor: "pointer",
-                    fontSize: 11,
-                    fontWeight: 700,
-                    transition: "all 0.18s",
-                    outline: "none",
-                    background: active ? s.bg : "rgba(255,255,255,0.04)",
-                    border: `1.5px solid ${active ? s.border : "rgba(255,255,255,0.08)"}`,
-                    color: active ? s.color : "var(--text-secondary)",
-                  }}
-                >
-                  {opt}
-                </button>
-              );
-            })}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 12px", borderRadius: 8, background: "rgba(255,255,255,0.04)", border: "1.5px solid rgba(255,255,255,0.08)" }}>
+            <span style={{ fontSize: 11, color: "var(--text-secondary)" }}>Property Attribute</span>
+            {flat_type ? (
+              <BhkBadge type={flat_type} />
+            ) : (
+              <span style={{ fontSize: 11, color: "var(--text-secondary)", fontStyle: "italic" }}>Not configured</span>
+            )}
           </div>
         </div>
       )}
@@ -1897,6 +2858,11 @@ function MultiFlatAssignSection({ allUnassignedFlats, availableSlots, assignment
                     <div style={{ fontSize: 12, fontWeight: 700, color: isSel ? color : "var(--text-primary)" }}>
                       {flat.flat_number}
                     </div>
+                    {isApartment && flat.flat_type && (
+                      <div style={{ marginTop: 3 }}>
+                        <BhkBadge type={flat.flat_type} />
+                      </div>
+                    )}
                   </button>
                 );
               })}
@@ -1969,32 +2935,17 @@ function MultiFlatAssignSection({ allUnassignedFlats, availableSlots, assignment
                   </button>
                 </div>
 
-                {/* BHK selector (apartment only) */}
+                {/* BHK display (apartment only) */}
                 {isApartment && (
                   <div>
-                    <label style={fieldLabelStyle}>{t("rcaFlatSize")}</label>
-                    <div style={{ display: "flex", gap: 6 }}>
-                      {["1BHK", "2BHK", "3BHK"].map((opt) => {
-                        const active = assignment.flat_type === opt;
-                        const s = BHK_STYLES[opt];
-                        return (
-                          <button
-                            key={opt}
-                            type="button"
-                            onClick={() => updateFlat(assignment.flat_id, { flat_type: opt })}
-                            style={{
-                              flex: 1, padding: "7px 4px", borderRadius: 8,
-                              cursor: "pointer", fontSize: 11, fontWeight: 700,
-                              transition: "all 0.15s", outline: "none",
-                              background: active ? s.bg : "rgba(255,255,255,0.04)",
-                              border: `1.5px solid ${active ? s.border : "rgba(255,255,255,0.08)"}`,
-                              color: active ? s.color : "var(--text-secondary)",
-                            }}
-                          >
-                            {opt}
-                          </button>
-                        );
-                      })}
+                    <label style={fieldLabelStyle}>{t("rcaFlatSize") || "Flat Size (BHK)"}</label>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "7px 10px", borderRadius: 8, background: "rgba(255,255,255,0.04)", border: "1.5px solid rgba(255,255,255,0.08)" }}>
+                      <span style={{ fontSize: 11, color: "var(--text-secondary)" }}>Configured BHK</span>
+                      {assignment.flat_type ? (
+                        <BhkBadge type={assignment.flat_type} />
+                      ) : (
+                        <span style={{ fontSize: 11, color: "var(--text-secondary)", fontStyle: "italic" }}>Not configured</span>
+                      )}
                     </div>
                   </div>
                 )}
@@ -2332,6 +3283,23 @@ function EditFlatSection({ allUnassignedFlats, availableSlots, currentFlats, cur
 
 const DEFAULT_RESIDENT_PASSWORD = "Admin@123";
 
+/* ─── Password rule checks (matching Register.jsx) ─── */
+const PW_RULES = [
+  { id: "len", label: "At least 8 chars", test: (p) => Boolean(p && p.length >= 8) },
+  { id: "upper", label: "One uppercase (A-Z)", test: (p) => /[A-Z]/.test(p || "") },
+  { id: "lower", label: "One lowercase (a-z)", test: (p) => /[a-z]/.test(p || "") },
+  { id: "digit", label: "One number (0-9)", test: (p) => /\d/.test(p || "") },
+  { id: "spec", label: "One special char (!@#)", test: (p) => /[\W_]/.test(p || "") },
+];
+
+function pwStrength(p) {
+  if (!p) return 0;
+  return PW_RULES.filter((r) => r.test(p)).length;
+}
+
+const STRENGTH_LABELS = ["", "Weak", "Fair", "Moderate", "Strong", "Very Strong"];
+const STRENGTH_COLORS = ["", "#ef4444", "#3b82f6", "#eab308", "#22c55e", "#10b981"];
+
 const EMPTY_FORM = {
   name: "", email: "", password: DEFAULT_RESIDENT_PASSWORD, phone: "",
   resident_type: "OWNER",
@@ -2421,6 +3389,14 @@ const [totalPages, setTotalPages] = useState(1);
     const saved = localStorage.getItem("superadmin_society_filter");
     return (saved === "ALL" || !saved) ? "" : saved;
   });
+
+  const isResidentPending = (r) => {
+    if (!r) return false;
+    if (isSuperAdmin && !filterSocietyId) {
+      return String(r.approval_status || "").toUpperCase() === "PENDING" || Boolean(r.has_pending_approval);
+    }
+    return String(r.approval_status || "").toUpperCase() === "PENDING";
+  };
   const [filterBlockId, setFilterBlockId] = useState("");
   const [filterFloorId, setFilterFloorId] = useState("");
   const [filterFlatId, setFilterFlatId] = useState("");
@@ -2428,12 +3404,40 @@ const [totalPages, setTotalPages] = useState(1);
   const [allSocietyFlats, setAllSocietyFlats] = useState([]);
   const [formSocietyId, setFormSocietyId] = useState("");
 
-  // 1. Fetch Societies if Super Admin
+  // 1. Fetch Societies for selection (both Super Admin & Society Admin)
   useEffect(() => {
-    if (isSuperAdmin) {
-      API.get("/societies").then(res => setSocietiesList(res.data || [])).catch(console.error);
-    }
-  }, [isSuperAdmin]);
+    API.get("/public/societies")
+      .then((res) => setSocietiesList(res.data || []))
+      .catch(() => {
+        API.get("/societies")
+          .then((res) => setSocietiesList(res.data || []))
+          .catch(console.error);
+      });
+  }, []);
+
+  const [societySearch, setSocietySearch] = useState("");
+
+  const filteredSocieties = useMemo(() => {
+    const q = (societySearch || "").trim().toLowerCase();
+    if (!q) return societiesList;
+    return societiesList.filter(
+      (s) =>
+        s.name?.toLowerCase().includes(q) ||
+        s.address?.toLowerCase().includes(q)
+    );
+  }, [societiesList, societySearch]);
+
+  const currentSocietyObj = useMemo(() => {
+    const targetId = formSocietyId || (isSuperAdmin ? filterSocietyId : user?.society_id);
+    if (!targetId) return null;
+    const match = societiesList.find((s) => String(s.id) === String(targetId));
+    if (match) return match;
+    return {
+      id: targetId,
+      name: user?.society_name || `Society #${targetId}`,
+      address: user?.society_address || "",
+    };
+  }, [formSocietyId, filterSocietyId, user, societiesList, isSuperAdmin]);
 
   // 2. Fetch all flats for the selected society to build filter dropdowns
   useEffect(() => {
@@ -2523,7 +3527,9 @@ const [totalPages, setTotalPages] = useState(1);
     setEditingId(null);
     setEditFlatData(EMPTY_EDIT_FLAT);
     setEditCurrentFlats([]);
-    setFormSocietyId("");
+    const defaultSocId = isSuperAdmin ? (filterSocietyId || "") : (user?.society_id ? String(user.society_id) : "");
+    setFormSocietyId(defaultSocId);
+    setSocietySearch("");
     setFormStep(1);
     setShowPassword(false);
     setEmailCheckState({ status: "idle", user: null, message: "" });
@@ -2737,7 +3743,8 @@ const [totalPages, setTotalPages] = useState(1);
       showUnauthorized("You do not have permission to assign units.");
       return;
     }
-    setAssignModal({ id: resident.id, name: resident.name, society_id: resident.society_id });
+    const defaultSocId = resident.society_id || (resident.societies && resident.societies[0]?.id) || (isSuperAdmin ? filterSocietyId : user?.society_id) || "";
+    setAssignModal({ id: resident.id, name: resident.name, society_id: defaultSocId });
   };
 
   const handleApproveResident = async (resident, societyId) => {
@@ -2917,14 +3924,24 @@ const [totalPages, setTotalPages] = useState(1);
 
   const handleNextStep = () => {
     setFormError("");
+
+    // ── STEP 1: Society ──
     if (formStep === 1) {
-      if (isSuperAdmin && !formSocietyId) {
-        setFormError(t("rcaErrSelectSociety"));
+      const targetSocId = formSocietyId || (isSuperAdmin ? filterSocietyId : user?.society_id);
+      if (!targetSocId) {
+        setFormError(t("rcaErrSelectSociety", "Please select a society to continue."));
         return;
       }
+      if (!formSocietyId) setFormSocietyId(String(targetSocId));
+      setFormStep(2);
+      return;
+    }
+
+    // ── STEP 2: Account ──
+    if (formStep === 2) {
       const emailErr = getEmailError(formData.email);
       if (emailErr) {
-        setFormError(!formData.email?.trim() ? t("rcaErrEmailRequired") : t("rcaErrEmailInvalid"));
+        setFormError(!formData.email?.trim() ? t("rcaErrEmailRequired", "Email is required.") : t("rcaErrEmailInvalid", "Please enter a valid email address."));
         return;
       }
 
@@ -2940,39 +3957,51 @@ const [totalPages, setTotalPages] = useState(1);
       }
 
       if (!formData.name?.trim()) {
-        setFormError(t("rcaErrNameRequired"));
+        setFormError(t("rcaErrNameRequired", "Full name is required."));
         return;
       }
       const nameErr = getTitleError(formData.name, "Full name");
-      if (nameErr) { setFormError(t("rcaErrNameInvalid")); return; }
+      if (nameErr) { setFormError(t("rcaErrNameInvalid", "Name must contain only letters and spaces.")); return; }
 
       const phoneErr = formData.phone ? getMobileError(formData.phone, "Phone") : null;
-      if (phoneErr) { setFormError(t("rcaErrPhoneInvalid")); return; }
+      if (phoneErr) { setFormError(t("rcaErrPhoneInvalid", "Phone must be a valid 10-digit number.")); return; }
+
       if (!editingId && !useExistingAccount && !formData.password?.trim()) {
         setFormData((prev) => ({ ...prev, password: DEFAULT_RESIDENT_PASSWORD }));
       }
-      setFormStep(2);
+      setFormStep(3);
       return;
     }
 
-    if (formStep === 2) {
+    // ── STEP 3: Household ──
+    if (formStep === 3) {
+      if (Number(formData.occupant_count) < 1) {
+        setFormError("Occupant count must be at least 1.");
+        return;
+      }
       const ec = formData.emergency_contact;
-      const ecFilled = ec.name?.trim() || ec.phone?.trim();
-      if (ecFilled && (!ec.name?.trim() || !ec.phone?.trim())) {
-        setFormError(t("rcaErrEmergencyBoth"));
+      const ecFilled = ec?.name?.trim() || ec?.phone?.trim();
+      if (ecFilled && (!ec?.name?.trim() || !ec?.phone?.trim())) {
+        setFormError(t("rcaErrEmergencyBoth", "Please provide both emergency contact name and phone, or leave both empty."));
         return;
       }
       if (ecFilled) {
         const ecNameErr = getTitleError(ec.name, "Emergency contact name");
-        if (ecNameErr) { setFormError(t("rcaErrEcName")); return; }
+        if (ecNameErr) { setFormError(t("rcaErrEcName", "Emergency contact name must be letters only.")); return; }
         const ecPhoneErr = getMobileError(ec.phone, "Emergency contact phone");
-        if (ecPhoneErr) { setFormError(t("rcaErrEcPhone")); return; }
+        if (ecPhoneErr) { setFormError(t("rcaErrEcPhone", "Emergency contact phone must be 10 digits.")); return; }
       }
+      setFormStep(4);
+      return;
+    }
+
+    // ── STEP 4: KYC ──
+    if (formStep === 4) {
       if (!editingId && !useExistingAccount && (!aadharFile || !panFile)) {
-        setFormError(t("rcaErrKyc"));
+        setFormError(t("rcaErrKyc", "Please upload both Aadhaar and PAN documents for verification."));
         return;
       }
-      setFormStep(3);
+      setFormStep(5);
       return;
     }
   };
@@ -3172,15 +4201,14 @@ const [totalPages, setTotalPages] = useState(1);
 
   return (
     <div className="space-y-5 animate-fadeIn">
-      {assignModal && createPortal(
+      {assignModal && (
         <AssignFlatModal
           residentId={assignModal.id}
           residentName={assignModal.name}
-          societyId={assignModal.society_id}
+          societyId={assignModal.society_id || (isSuperAdmin ? filterSocietyId : user?.society_id)}
           onClose={() => setAssignModal(null)}
           onSuccess={() => { setAssignModal(null); loadResidents(page, debouncedSearch); }}
-        />,
-        document.body
+        />
       )}
 
       {viewDetailsModal && (
@@ -3376,7 +4404,7 @@ const [totalPages, setTotalPages] = useState(1);
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            style={{ width: "100%", maxWidth: 620, background: "var(--card-bg)", border: "1px solid var(--glass-border)", borderRadius: 20, maxHeight: "90vh", overflowY: "auto", backdropFilter: "blur(20px)", boxShadow: "0 24px 80px rgba(0,0,0,0.5), 0 0 20px rgba(160,90,255,0.15)", animation: "adminModalPopIn 0.28s cubic-bezier(0.16, 1, 0.3, 1)" }}
+            style={{ width: "100%", maxWidth: 660, background: "var(--card-bg)", border: "1px solid var(--glass-border)", borderRadius: 20, maxHeight: "90vh", overflowY: "auto", backdropFilter: "blur(20px)", boxShadow: "0 24px 80px rgba(0,0,0,0.5), 0 0 20px rgba(160,90,255,0.15)", animation: "adminModalPopIn 0.28s cubic-bezier(0.16, 1, 0.3, 1)" }}
             className="modal-scroll-thin"
           >
             {/* Header */}
@@ -3387,13 +4415,22 @@ const [totalPages, setTotalPages] = useState(1);
                 </div>
                 <div>
                   <h3 style={{ fontWeight: 800, fontSize: 17, color: "var(--text-primary)", margin: 0, letterSpacing: "-0.02em" }}>
-                    {editingId ? t("rcaEditTitle") : t("rcaCreateTitle")}
+                    {editingId ? t("rcaEditTitle", "Edit Resident Details") : t("rcaCreateTitle", "Add New Resident")}
                   </h3>
-                  <p style={{ fontSize: 12, color: "#4BCBEB", margin: "2px 0 0", fontWeight: 600 }}>
+                  <p style={{ fontSize: 12, color: "var(--accent)", margin: "2px 0 0", fontWeight: 600 }}>
                     {t("rcaStepOf", {
                       step: formStep,
-                      total: 3,
-                      label: formStep === 1 ? t("rcaStepPersonal") : formStep === 2 ? t("rcaStepKyc") : t("rcaStepFlat"),
+                      total: 5,
+                      label:
+                        formStep === 1
+                          ? t("rcaStepSociety", "Society Selection")
+                          : formStep === 2
+                          ? t("rcaStepPersonal", "Personal & Account Details")
+                          : formStep === 3
+                          ? t("rcaStepHousehold", "Household & Vehicles")
+                          : formStep === 4
+                          ? t("rcaStepKyc", "KYC Verification")
+                          : t("rcaStepFlat", "Unit Assignment & Review"),
                     })}
                   </p>
                 </div>
@@ -3407,7 +4444,21 @@ const [totalPages, setTotalPages] = useState(1);
             </div>
 
             <div style={{ padding: "16px 24px 0" }}>
-              <StepIndicator step={formStep} total={3} labels={[t("rcaTabPersonal"), t("rcaTabKyc"), t("rcaTabFlat")]} />
+              <StepIndicator
+                step={formStep}
+                total={5}
+                labels={[
+                  t("rcaTabSociety", "Society"),
+                  t("rcaTabAccount", "Account"),
+                  t("rcaTabHousehold", "Household"),
+                  t("rcaTabKyc", "KYC"),
+                  t("rcaTabUnit", "Unit"),
+                ]}
+                onStepClick={(targetStep) => {
+                  setFormError("");
+                  setFormStep(targetStep);
+                }}
+              />
             </div>
 
             <div style={{ height: 1, background: "var(--glass-border)", margin: "16px 0 0" }} />
@@ -3421,39 +4472,164 @@ const [totalPages, setTotalPages] = useState(1);
 
               <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
 
-                {/* STEP 1: Personal & Account Details */}
+                {/* ═══════════════════════════════════════════════════════════
+                    STEP 1: SOCIETY SELECTION (SAME AS REGISTER.JSX)
+                   ═══════════════════════════════════════════════════════════ */}
                 {formStep === 1 && (
-                  <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                    {isSuperAdmin && (
-                      <div className="p-3.5 rounded-xl border border-glass bg-card-inner">
-                        <Field label={t("rcaSociety")} required>
-                          <Select
+                  <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                    <SectionDivider icon={MdApartment} label={isSuperAdmin ? t("rcaSelectTargetSociety", "Select Target Society") : t("rcaActiveSociety", "Active Society")} required />
+                    {isSuperAdmin ? (
+                      <>
+                        <div style={{ position: "relative" }}>
+                          <MdSearch size={18} style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "var(--text-secondary)" }} />
+                          <input
+                            type="text"
+                            placeholder="Search society by name or location…"
+                            value={societySearch}
+                            onChange={(e) => setSocietySearch(e.target.value)}
                             className="input w-full"
-                            value={formSocietyId}
-                            onChange={(e) => {
-                              setFormSocietyId(e.target.value);
-                              if (emailCheckState.status !== "idle") {
-                                setEmailCheckState({ status: "idle", user: null, message: "" });
-                                setUseExistingAccount(false);
-                              }
-                            }}
-                            disabled={!!editingId}
-                            required
-                          >
-                            <option value="">{t("rcaSelectSociety")}</option>
-                            {societiesList.map((s) => (
-                              <option key={s.id} value={s.id}>{s.name}</option>
-                            ))}
-                          </Select>
-                          {editingId && (
-                            <p style={{ fontSize: 11, color: "var(--text-secondary)", marginTop: 4 }}>
-                              {t("rcaSocietyLocked")}
+                            style={{ paddingLeft: 38, paddingRight: societySearch ? 36 : 14, height: 42, fontSize: 13 }}
+                          />
+                          {societySearch && (
+                            <button
+                              type="button"
+                              onClick={() => setSocietySearch("")}
+                              style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", color: "var(--text-secondary)", cursor: "pointer", fontSize: 13, padding: 4 }}
+                            >
+                              ✕
+                            </button>
+                          )}
+                        </div>
+
+                        <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 8, maxHeight: 280, overflowY: "auto", paddingRight: 4 }}>
+                          {filteredSocieties.length === 0 ? (
+                            <div style={{ padding: "28px 16px", textAlign: "center", color: "var(--text-secondary)", fontSize: 13, background: "var(--card-inner-bg)", borderRadius: 12, border: "1px dashed var(--glass-border)" }}>
+                              <MdApartment size={28} style={{ margin: "0 auto 6px", opacity: 0.5 }} />
+                              No societies found matching "{societySearch}"
+                            </div>
+                          ) : (
+                            filteredSocieties.map((soc) => {
+                              const isSelected = String(formSocietyId) === String(soc.id);
+                              return (
+                                <div
+                                  key={soc.id}
+                                  onClick={() => {
+                                    if (!editingId) {
+                                      setFormSocietyId(String(soc.id));
+                                      if (emailCheckState.status !== "idle") {
+                                        setEmailCheckState({ status: "idle", user: null, message: "" });
+                                        setUseExistingAccount(false);
+                                      }
+                                    }
+                                  }}
+                                  style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: 12,
+                                    padding: "12px 16px",
+                                    borderRadius: 14,
+                                    background: isSelected ? "rgba(var(--accent-rgb, 160, 90, 255), 0.12)" : "var(--card-inner-bg)",
+                                    border: `1.5px solid ${isSelected ? "var(--accent)" : "var(--glass-border)"}`,
+                                    cursor: editingId ? "not-allowed" : "pointer",
+                                    transition: "all 0.2s ease",
+                                  }}
+                                >
+                                  <div
+                                    style={{
+                                      width: 38,
+                                      height: 38,
+                                      borderRadius: 10,
+                                      background: isSelected ? "linear-gradient(135deg, var(--accent), var(--accent-light))" : "rgba(255,255,255,0.06)",
+                                      color: isSelected ? "#fff" : "var(--accent)",
+                                      display: "flex",
+                                      alignItems: "center",
+                                      justifyContent: "center",
+                                      flexShrink: 0,
+                                    }}
+                                  >
+                                    <MdApartment size={20} />
+                                  </div>
+                                  <div style={{ flex: 1, minWidth: 0 }}>
+                                    <h4 style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "var(--text-primary)" }}>
+                                      {soc.name}
+                                    </h4>
+                                    {soc.address && (
+                                      <p style={{ margin: "2px 0 0", fontSize: 11, color: "var(--text-secondary)", display: "flex", alignItems: "center", gap: 4 }}>
+                                        <MdOutlineLocationOn size={13} style={{ flexShrink: 0 }} /> {soc.address}
+                                      </p>
+                                    )}
+                                  </div>
+                                  <div>
+                                    {isSelected ? (
+                                      <MdCheckCircle size={22} color="var(--accent)" />
+                                    ) : (
+                                      <div style={{ width: 18, height: 18, borderRadius: "50%", border: "2px solid var(--glass-border)" }} />
+                                    )}
+                                  </div>
+                                </div>
+                              );
+                            })
+                          )}
+                        </div>
+                        {editingId && (
+                          <p style={{ fontSize: 11, color: "var(--text-secondary)", margin: "4px 0 0" }}>
+                            {t("rcaSocietyLocked", "Society cannot be changed for an existing resident record.")}
+                          </p>
+                        )}
+                      </>
+                    ) : (
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 14,
+                          padding: "16px 18px",
+                          borderRadius: 16,
+                          background: "rgba(var(--accent-rgb, 160, 90, 255), 0.12)",
+                          border: "1.5px solid var(--accent)",
+                        }}
+                      >
+                        <div
+                          style={{
+                            width: 44,
+                            height: 44,
+                            borderRadius: 12,
+                            background: "linear-gradient(135deg, var(--accent), var(--accent-light))",
+                            color: "#fff",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            flexShrink: 0,
+                          }}
+                        >
+                          <MdApartment size={24} />
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                            <h4 style={{ margin: 0, fontSize: 15, fontWeight: 800, color: "var(--text-primary)" }}>
+                              {currentSocietyObj?.name || user?.society_name || "Active Society"}
+                            </h4>
+                            <span style={{ fontSize: 10, fontWeight: 800, padding: "2px 8px", borderRadius: 999, background: "rgba(16,185,129,0.15)", color: "#10b981", border: "1px solid rgba(16,185,129,0.3)" }}>
+                              Current Society
+                            </span>
+                          </div>
+                          {(currentSocietyObj?.address || user?.society_address) && (
+                            <p style={{ margin: "4px 0 0", fontSize: 12, color: "var(--text-secondary)", display: "flex", alignItems: "center", gap: 4 }}>
+                              <MdOutlineLocationOn size={14} style={{ flexShrink: 0 }} /> {currentSocietyObj?.address || user?.society_address}
                             </p>
                           )}
-                        </Field>
+                        </div>
+                        <MdCheckCircle size={24} color="var(--accent)" />
                       </div>
                     )}
+                  </div>
+                )}
 
+                {/* ═══════════════════════════════════════════════════════════
+                    STEP 2: PERSONAL & ACCOUNT DETAILS (SAME AS REGISTER.JSX)
+                   ═══════════════════════════════════════════════════════════ */}
+                {formStep === 2 && (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
                     {/* Email Verification Section */}
                     <div style={{ display: "flex", flexDirection: "column", gap: 10, padding: 16, borderRadius: 14, background: "var(--card-inner-bg)", border: "1px solid var(--glass-border)" }}>
                       <label style={{ fontSize: 13, fontWeight: 700, color: "var(--text-primary)", display: "flex", alignItems: "center", gap: 6 }}>
@@ -3511,7 +4687,6 @@ const [totalPages, setTotalPages] = useState(1);
                         )}
                       </div>
 
-                      {/* Feedback states */}
                       {emailCheckState.status === "checking" && (
                         <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "var(--text-secondary)", marginTop: 2 }}>
                           <Spinner small /> <span>Checking if account already exists...</span>
@@ -3521,7 +4696,7 @@ const [totalPages, setTotalPages] = useState(1);
                       {emailCheckState.status === "not_found" && (
                         <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", borderRadius: 10, background: "rgba(16,185,129,0.1)", border: "1px solid rgba(16,185,129,0.25)", color: "#10b981", fontSize: 12, fontWeight: 600 }}>
                           <MdCheckCircle size={16} />
-                          <span>New Resident: No existing account found. Please fill in the details below to create an account.</span>
+                          <span>New Resident: No existing account found. Please fill in details to create account.</span>
                         </div>
                       )}
 
@@ -3579,11 +4754,159 @@ const [totalPages, setTotalPages] = useState(1);
                     </div>
 
                     <SectionDivider icon={MdPerson} label={t("personalInfo", "Personal Information")} />
-                    
-                    {/* Profile Picture Upload Box */}
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                      <Field label={t("residentName", "Full Name")} required>
+                        <input className="input w-full" placeholder={t("rcaNamePlaceholder", "e.g. John Doe")} value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} required />
+                      </Field>
+                      <Field label={t("rcaPhone", "Phone Number")}>
+                        <input className="input w-full" placeholder={t("rcaPhonePlaceholder", "10-digit mobile")} type="tel" value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} />
+                      </Field>
+                    </div>
+
+                    {!editingId && (
+                      <div className="grid grid-cols-1 gap-3.5">
+                        {useExistingAccount ? (
+                          <div style={{ padding: "12px 14px", borderRadius: 10, background: "rgba(16,185,129,0.08)", border: "1px solid rgba(16,185,129,0.2)", display: "flex", alignItems: "center", gap: 8 }}>
+                            <MdCheckCircle size={16} color="#10b981" />
+                            <span style={{ fontSize: 12, fontWeight: 600, color: "#10b981" }}>
+                              Reusing Existing Password: Resident will use their current login password.
+                            </span>
+                          </div>
+                        ) : (
+                          <Field label={t("residentPassword", "Password")} required>
+                            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                              <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
+                                <input
+                                  type={showPassword ? "text" : "password"}
+                                  className="input w-full"
+                                  placeholder={t("rcaPasswordPlaceholder", "Enter password or use default")}
+                                  value={formData.password}
+                                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                                  style={{ paddingRight: 80 }}
+                                />
+                                <div style={{ position: "absolute", right: 8, display: "flex", alignItems: "center", gap: 4 }}>
+                                  <button
+                                    type="button"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    style={{ background: "none", border: "none", color: "var(--text-secondary)", cursor: "pointer", padding: 4 }}
+                                    title={showPassword ? "Hide password" : "Show password"}
+                                  >
+                                    {showPassword ? <MdVisibilityOff size={16} /> : <MdVisibility size={16} />}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => setFormData({ ...formData, password: DEFAULT_RESIDENT_PASSWORD })}
+                                    style={{
+                                      fontSize: 10,
+                                      fontWeight: 700,
+                                      padding: "3px 7px",
+                                      borderRadius: 6,
+                                      background: formData.password === DEFAULT_RESIDENT_PASSWORD ? "rgba(16,185,129,0.2)" : "rgba(255,255,255,0.08)",
+                                      color: formData.password === DEFAULT_RESIDENT_PASSWORD ? "#10b981" : "var(--text-secondary)",
+                                      border: "1px solid var(--glass-border)",
+                                      cursor: "pointer",
+                                    }}
+                                  >
+                                    Default
+                                  </button>
+                                </div>
+                              </div>
+
+                              {formData.password ? (
+                                <div style={{ padding: "10px 12px", borderRadius: 10, background: "var(--card-inner-bg)", border: "1px solid var(--glass-border)" }}>
+                                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
+                                    <span style={{ fontSize: 11, fontWeight: 700, color: "var(--text-secondary)" }}>
+                                      Password Strength:
+                                    </span>
+                                    <span style={{ fontSize: 11, fontWeight: 800, color: STRENGTH_COLORS[pwStrength(formData.password)] || "#64748B" }}>
+                                      {STRENGTH_LABELS[pwStrength(formData.password)] || "Too Weak"}
+                                    </span>
+                                  </div>
+
+                                  <div style={{ display: "flex", gap: 4, height: 4, marginBottom: 8 }}>
+                                    {[1, 2, 3, 4, 5].map((seg) => {
+                                      const active = pwStrength(formData.password) >= seg;
+                                      return (
+                                        <div
+                                          key={seg}
+                                          style={{
+                                            flex: 1,
+                                            height: "100%",
+                                            borderRadius: 999,
+                                            background: active ? STRENGTH_COLORS[pwStrength(formData.password)] : "rgba(255,255,255,0.1)",
+                                            transition: "all 0.2s ease",
+                                          }}
+                                        />
+                                      );
+                                    })}
+                                  </div>
+
+                                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 4 }}>
+                                    {PW_RULES.map((rule) => {
+                                      const passed = rule.test(formData.password);
+                                      return (
+                                        <div key={rule.id} style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 10, fontWeight: 600, color: passed ? "#10b981" : "var(--text-secondary)" }}>
+                                          <MdCheck size={12} color={passed ? "#10b981" : "var(--text-secondary)"} style={{ opacity: passed ? 1 : 0.4 }} />
+                                          <span>{rule.label}</span>
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+                              ) : (
+                                <p style={{ fontSize: 11, color: "var(--text-secondary)", margin: 0 }}>
+                                  Default password is <code style={{ fontWeight: 700, color: "var(--accent)" }}>{DEFAULT_RESIDENT_PASSWORD}</code>. Resident can change after login.
+                                </p>
+                              )}
+                            </div>
+                          </Field>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* ═══════════════════════════════════════════════════════════
+                    STEP 3: HOUSEHOLD & VEHICLES (SAME AS REGISTER.JSX)
+                   ═══════════════════════════════════════════════════════════ */}
+                {formStep === 3 && (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                    <SectionDivider icon={MdPeople} label={t("rcaHousehold", "Household Details")} />
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                      <Field label={t("rcaFamilyMembers", "Family Members / Occupants")}>
+                        <CounterField value={formData.occupant_count} onChange={(v) => setFormData((f) => ({ ...f, occupant_count: v }))} min={1} max={99} />
+                      </Field>
+                      <Field label={t("rcaVehicleCount", "Number of Vehicles")}>
+                        <CounterField value={formData.vehicle_count} onChange={(v) => setFormData((f) => ({ ...f, vehicle_count: v }))} min={0} max={99} />
+                      </Field>
+                    </div>
+
+                    <SectionDivider icon={MdContactPhone} label={t("rcaEmergencyOptional", "Emergency Contact (Optional)")} />
+                    <div style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "10px 12px", background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.15)", borderRadius: 10, marginTop: -4 }}>
+                      <MdPhone size={15} style={{ color: "#f87171", flexShrink: 0, marginTop: 1 }} />
+                      <p style={{ fontSize: 11, color: "var(--text-secondary)", margin: 0, lineHeight: 1.5 }}>{t("rcaEmergencyHint", "Provide contact person in case of urgent alerts or emergency.")}</p>
+                    </div>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                      <Field label={t("rcaContactName", "Contact Person Name")}>
+                        <input className="input w-full" placeholder={t("rcaContactNamePh", "e.g. Jane Doe")} value={formData.emergency_contact?.name || ""} onChange={(e) => setFormData((f) => ({ ...f, emergency_contact: { ...f.emergency_contact, name: e.target.value } }))} />
+                      </Field>
+                      <Field label={t("rcaContactPhone", "Contact Phone Number")}>
+                        <input className="input w-full" placeholder={t("rcaPhonePlaceholder", "10-digit mobile")} type="tel" value={formData.emergency_contact?.phone || ""} onChange={(e) => setFormData((f) => ({ ...f, emergency_contact: { ...f.emergency_contact, phone: e.target.value } }))} />
+                      </Field>
+                    </div>
+                  </div>
+                )}
+
+                {/* ═══════════════════════════════════════════════════════════
+                    STEP 4: PROFILE PHOTO & KYC (SAME AS REGISTER.JSX)
+                   ═══════════════════════════════════════════════════════════ */}
+                {formStep === 4 && (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                    <SectionDivider icon={MdPerson} label={t("profilePicture", "Profile Photo (Optional)")} />
                     <div className="p-4 rounded-xl border border-glass bg-card-inner flex flex-col gap-2">
                       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                        <label className="text-xs font-semibold text-secondary">{t("profilePicture", "Profile Photo (Optional)")}</label>
+                        <label className="text-xs font-semibold text-secondary">{t("profilePicture", "Profile Photo")}</label>
                         {useExistingAccount && (
                           <span style={{ fontSize: 11, fontWeight: 600, color: "#10b981" }}>Reused from existing profile</span>
                         )}
@@ -3601,76 +4924,7 @@ const [totalPages, setTotalPages] = useState(1);
                       />
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                      <Field label={t("residentName")} required>
-                        <input className="input w-full" placeholder={t("rcaNamePlaceholder")} value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} required />
-                      </Field>
-                      <Field label={t("rcaPhone")}>
-                        <input className="input w-full" placeholder={t("rcaPhonePlaceholder")} type="tel" value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} />
-                      </Field>
-                    </div>
-
-                    {!editingId && (
-                      <div className="grid grid-cols-1 gap-3.5">
-                        {useExistingAccount ? (
-                          <div style={{ padding: "12px 14px", borderRadius: 10, background: "rgba(16,185,129,0.08)", border: "1px solid rgba(16,185,129,0.2)", display: "flex", alignItems: "center", gap: 8 }}>
-                            <MdCheckCircle size={16} color="#10b981" />
-                            <span style={{ fontSize: 12, fontWeight: 600, color: "#10b981" }}>
-                              Reusing Existing Password: Resident will use their current login password. No new password needed.
-                            </span>
-                          </div>
-                        ) : (
-                          <Field label={t("residentPassword")} required>
-                            <div className="relative flex items-center">
-                              <input
-                                className="input w-full"
-                                value={DEFAULT_RESIDENT_PASSWORD}
-                                readOnly
-                                disabled
-                                style={{ opacity: 0.8, cursor: "not-allowed", backgroundColor: "var(--card-inner-bg)", fontWeight: 700, letterSpacing: "0.02em" }}
-                              />
-                              <span className="absolute right-3 text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-500/15 text-emerald-500 border border-emerald-500/30 pointer-events-none">
-                                Default
-                              </span>
-                            </div>
-                            <p style={{ fontSize: 11, color: "var(--text-secondary)", marginTop: 4, opacity: 0.85 }}>
-                              {t("resPasswordHint", "Default: Admin@123 (Resident can change password after login)")}
-                            </p>
-                          </Field>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* STEP 2: Household & KYC Details */}
-                {formStep === 2 && (
-                  <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-                    <SectionDivider icon={MdPeople} label={t("rcaHousehold")} />
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                      <Field label={t("rcaVehicleCount")}>
-                        <CounterField value={formData.vehicle_count} onChange={(v) => setFormData((f) => ({ ...f, vehicle_count: v }))} min={0} max={99} />
-                      </Field>
-                      <Field label={t("rcaFamilyMembers")}>
-                        <CounterField value={formData.occupant_count} onChange={(v) => setFormData((f) => ({ ...f, occupant_count: v }))} min={1} max={99} />
-                      </Field>
-                    </div>
-
-                    <SectionDivider icon={MdContactPhone} label={t("rcaEmergencyOptional")} />
-                    <div style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "10px 12px", background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.15)", borderRadius: 10, marginTop: -4 }}>
-                      <MdPhone size={15} style={{ color: "#f87171", flexShrink: 0, marginTop: 1 }} />
-                      <p style={{ fontSize: 11, color: "var(--text-secondary)", margin: 0, lineHeight: 1.5 }}>{t("rcaEmergencyHint")}</p>
-                    </div>
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                      <Field label={t("rcaContactName")}>
-                        <input className="input w-full" placeholder={t("rcaContactNamePh")} value={formData.emergency_contact.name} onChange={(e) => setFormData((f) => ({ ...f, emergency_contact: { ...f.emergency_contact, name: e.target.value } }))} />
-                      </Field>
-                      <Field label={t("rcaContactPhone")}>
-                        <input className="input w-full" placeholder={t("rcaPhonePlaceholder")} type="tel" value={formData.emergency_contact.phone} onChange={(e) => setFormData((f) => ({ ...f, emergency_contact: { ...f.emergency_contact, phone: e.target.value } }))} />
-                      </Field>
-                    </div>
-
-                    <SectionDivider icon={MdUploadFile} label={t("rcaKycDocs", "KYC Documents")} />
+                    <SectionDivider icon={MdUploadFile} label={t("rcaKycDocs", "KYC Verification Documents")} />
                     {useExistingAccount && (
                       <div style={{ padding: "10px 14px", borderRadius: 10, background: "rgba(16,185,129,0.08)", border: "1px solid rgba(16,185,129,0.25)", display: "flex", flexDirection: "column", gap: 6 }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "#10b981", fontWeight: 700 }}>
@@ -3720,29 +4974,58 @@ const [totalPages, setTotalPages] = useState(1);
                   </div>
                 )}
 
-                {/* STEP 3: Flat Assignment & Parking */}
-                {formStep === 3 && (
+                {/* ═══════════════════════════════════════════════════════════
+                    STEP 5: UNIT ASSIGNMENT & REVIEW (SAME AS REGISTER.JSX)
+                   ═══════════════════════════════════════════════════════════ */}
+                {formStep === 5 && (
                   <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                    <SectionDivider icon={MdHome} label={t("rcaFlatAssign", "Unit / Flat Assignment")} required />
+
+                    <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", borderRadius: 12, background: "var(--card-inner-bg)", border: "1px solid var(--glass-border)" }}>
+                      <label style={{ fontSize: 12, fontWeight: 700, color: "var(--text-primary)" }}>
+                        Resident Type:
+                      </label>
+                      <div style={{ display: "flex", gap: 8 }}>
+                        {["OWNER", "TENANT"].map((type) => {
+                          const isSelected = (formData.resident_type || "OWNER") === type;
+                          return (
+                            <button
+                              key={type}
+                              type="button"
+                              onClick={() => setFormData((prev) => ({ ...prev, resident_type: type }))}
+                              style={{
+                                padding: "6px 14px",
+                                borderRadius: 999,
+                                fontSize: 12,
+                                fontWeight: 700,
+                                border: `1.5px solid ${isSelected ? "var(--accent)" : "var(--glass-border)"}`,
+                                background: isSelected ? "rgba(var(--accent-rgb, 160, 90, 255), 0.15)" : "transparent",
+                                color: isSelected ? "var(--accent)" : "var(--text-secondary)",
+                                cursor: "pointer",
+                                transition: "all 0.2s ease",
+                              }}
+                            >
+                              {type === "OWNER" ? "Owner" : "Tenant"}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
                     {!editingId && (
                       <>
-                        <SectionDivider icon={MdHome} label={t("rcaFlatAssign")} required />
-
                         {missingFlat && (
                           <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", borderRadius: 10, background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.22)" }}>
                             <MdWarning size={15} style={{ color: "#f87171", flexShrink: 0 }} />
                             <p style={{ fontSize: 12, color: "#f87171", margin: 0, fontWeight: 600 }}>
-                              {t("rcaMustAssignFlat")}
+                              {t("rcaMustAssignFlat", "Please assign at least one flat to proceed.")}
                             </p>
                           </div>
                         )}
 
-                        <p style={{ fontSize: 11, color: "var(--text-secondary)", marginTop: -4, marginBottom: 2 }}>
-                          <span style={{ color: "var(--accent)" }}>{t("rcaParkingHint")}</span>
-                        </p>
-
                         {loadingFlats || loadingSlots ? (
                           <div style={{ display: "flex", alignItems: "center", gap: 8, color: "var(--text-secondary)", fontSize: 13, padding: "10px 0" }}>
-                            <Spinner small /> {t("rcaLoadingUnits")}
+                            <Spinner small /> {t("rcaLoadingUnits", "Loading available units...")}
                           </div>
                         ) : (
                           <MultiFlatAssignSection
@@ -3757,11 +5040,9 @@ const [totalPages, setTotalPages] = useState(1);
 
                     {editingId && (
                       <>
-                        <SectionDivider icon={MdHome} label={t("rcaReassignOptional")} />
-                        <p style={{ fontSize: 11, color: "var(--text-secondary)", marginTop: -4, marginBottom: 2 }}>{t("rcaLeaveBlank")}</p>
                         {loadingFlats || loadingSlots ? (
                           <div style={{ display: "flex", alignItems: "center", gap: 8, color: "var(--text-secondary)", fontSize: 13, padding: "10px 0" }}>
-                            <Spinner small /> {t("rcaLoadingUnits")}
+                            <Spinner small /> {t("rcaLoadingUnits", "Loading available units...")}
                           </div>
                         ) : (
                           <EditFlatSection
@@ -3774,6 +5055,45 @@ const [totalPages, setTotalPages] = useState(1);
                         )}
                       </>
                     )}
+
+                    {/* Registration Summary Card */}
+                    <div style={{ padding: 14, borderRadius: 14, background: "var(--card-inner-bg)", border: "1px solid var(--glass-border)", marginTop: 6 }}>
+                      <h4 style={{ margin: "0 0 10px 0", fontSize: 12, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.04em", color: "var(--accent)", display: "flex", alignItems: "center", gap: 6 }}>
+                        <MdCheckCircle size={15} /> Registration Summary
+                      </h4>
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, fontSize: 12 }}>
+                        <div>
+                          <span style={{ color: "var(--text-secondary)", display: "block", fontSize: 11 }}>Target Society</span>
+                          <span style={{ fontWeight: 700, color: "var(--text-primary)" }}>
+                            {currentSocietyObj?.name || (societiesList.find(s => String(s.id) === String(formSocietyId))?.name) || user?.society_name || "Society"}
+                          </span>
+                        </div>
+                        <div>
+                          <span style={{ color: "var(--text-secondary)", display: "block", fontSize: 11 }}>Resident Type</span>
+                          <span style={{ fontWeight: 700, color: formData.resident_type === "TENANT" ? "var(--accent)" : "#10b981" }}>
+                            {formData.resident_type || "OWNER"}
+                          </span>
+                        </div>
+                        <div>
+                          <span style={{ color: "var(--text-secondary)", display: "block", fontSize: 11 }}>Resident Name</span>
+                          <span style={{ fontWeight: 700, color: "var(--text-primary)" }}>{formData.name || "—"}</span>
+                        </div>
+                        <div>
+                          <span style={{ color: "var(--text-secondary)", display: "block", fontSize: 11 }}>Email & Phone</span>
+                          <span style={{ fontWeight: 600, color: "var(--text-primary)" }}>{formData.email} {formData.phone ? `· ${formData.phone}` : ""}</span>
+                        </div>
+                        <div>
+                          <span style={{ color: "var(--text-secondary)", display: "block", fontSize: 11 }}>Household</span>
+                          <span style={{ fontWeight: 600, color: "var(--text-primary)" }}>{formData.occupant_count} Member(s) · {formData.vehicle_count} Vehicle(s)</span>
+                        </div>
+                        <div>
+                          <span style={{ color: "var(--text-secondary)", display: "block", fontSize: 11 }}>Assigned Unit</span>
+                          <span style={{ fontWeight: 700, color: completedFlats > 0 ? "#10b981" : "#f87171" }}>
+                            {completedFlats > 0 ? `${completedFlats} Unit(s) selected` : "No unit assigned"}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 )}
 
@@ -3801,7 +5121,7 @@ const [totalPages, setTotalPages] = useState(1);
                       {t("cancel", "Cancel")}
                     </GlobalButton>
                   </div>
-                  {formStep < 3 ? (
+                  {formStep < 5 ? (
                     <GlobalButton
                       type="button"
                       variant="add"
@@ -3811,7 +5131,7 @@ const [totalPages, setTotalPages] = useState(1);
                       onClick={handleNextStep}
                       style={{ fontWeight: 700 }}
                     >
-                      {t("rcaNextStep")}
+                      {t("rcaNextStep", "Next Step")}
                     </GlobalButton>
                   ) : (
                     <GlobalButton
@@ -3824,10 +5144,10 @@ const [totalPages, setTotalPages] = useState(1);
                       style={{ fontWeight: 700 }}
                     >
                       {submitting
-                        ? (editingId ? t("updating") : t("rcaCreating"))
+                        ? (editingId ? t("updating", "Updating...") : t("rcaCreating", "Adding Resident..."))
                         : (!editingId && missingFlat)
-                          ? t("rcaAssignFlatFirst")
-                          : (editingId ? t("rcaUpdateResident") : t("rcaConfirmSave"))}
+                          ? t("rcaAssignFlatFirst", "Assign Unit First")
+                          : (editingId ? t("rcaUpdateResident", "Save Changes") : t("rcaConfirmSave", "Add Resident"))}
                     </GlobalButton>
                   )}
                 </div>
@@ -4045,7 +5365,7 @@ const [totalPages, setTotalPages] = useState(1);
                       <td style={{ padding: "14px 16px" }}>
                         <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 5 }}>
                           <ResidentTypeBadge type={r.resident_type} />
-                          {(r.approval_status === "PENDING" || r.has_pending_approval) && <PendingApprovalBadge />}
+                          {isResidentPending(r) && <PendingApprovalBadge />}
                         </div>
                       </td>
                       <td style={{ padding: "14px 16px", minWidth: 140 }}>
@@ -4130,7 +5450,7 @@ const [totalPages, setTotalPages] = useState(1);
                           isAccountant={!!r.roles?.includes("ACCOUNTANT")}
                           isSocietyAdmin={!!r.roles?.includes("SOCIETY_ADMIN")}
                           isTenant={r.resident_type === "TENANT"}
-                          isPendingApproval={String(r.approval_status || "").toUpperCase() === "PENDING" || Boolean(r.has_pending_approval)}
+                          isPendingApproval={isResidentPending(r)}
                           isRejected={String(r.approval_status || "").toUpperCase() === "REJECTED"}
                           onApprove={() => handleApproveResident(r)}
                           onReject={() => setRejectTarget(r)}
@@ -4176,7 +5496,7 @@ const [totalPages, setTotalPages] = useState(1);
                        {r.phone && <p style={{ fontSize: 11, color: "var(--text-secondary)", margin: "1px 0 0", display: "flex", alignItems: "center", gap: 3 }}><MdPhone size={10} style={{ opacity: 0.5 }} /> {r.phone}</p>}
                        <div style={{ display: "flex", alignItems: "center", gap: 5, flexWrap: "wrap", marginTop: 6 }}>
                          <ResidentTypeBadge type={r.resident_type} />
-                         {(r.approval_status === "PENDING" || r.has_pending_approval) && <PendingApprovalBadge />}
+                         {isResidentPending(r) && <PendingApprovalBadge />}
                          {r.flats?.map((flat, fIdx) => (
                            <span key={flat.id || fIdx} style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 999, background: "rgba(34,197,94,0.10)", color: "#4ade80", border: "1px solid rgba(34,197,94,0.22)" }}>
                              {flat.flat_number}
@@ -4216,7 +5536,7 @@ const [totalPages, setTotalPages] = useState(1);
                            isAccountant={!!r.roles?.includes("ACCOUNTANT")}
                            isSocietyAdmin={!!r.roles?.includes("SOCIETY_ADMIN")}
                            isTenant={r.resident_type === "TENANT"}
-                           isPendingApproval={String(r.approval_status || "").toUpperCase() === "PENDING" || Boolean(r.has_pending_approval)}
+                           isPendingApproval={isResidentPending(r)}
                            isRejected={String(r.approval_status || "").toUpperCase() === "REJECTED"}
                            onApprove={() => handleApproveResident(r)}
                            onReject={() => setRejectTarget(r)}
