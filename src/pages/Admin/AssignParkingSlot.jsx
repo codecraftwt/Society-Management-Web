@@ -81,17 +81,6 @@ const localizedRequiredError = (value, label, t) =>
     ? t("parkValidationRequired", { field: label })
     : null;
 
-const localizedTitleError = (value, label, t) => {
-  const required = localizedRequiredError(value, label, t);
-  if (required) return required;
-  const clean = String(value).trim();
-  if (clean.length < 4) return t("parkValidationMinChars", { field: label, count: 4 });
-  if (/^\d+$/.test(clean)) return t("parkValidationOnlyNumbers", { field: label });
-  if (/^[\W_]+$/.test(clean)) return t("parkValidationOnlySpecial", { field: label });
-  if (/\s{2,}/.test(clean)) return t("parkValidationSpaces", { field: label });
-  return null;
-};
-
 const localizedPositiveNumberError = (value, label, t) => {
   const required = localizedRequiredError(value, label, t);
   if (required) return required;
@@ -952,7 +941,7 @@ export default function AssignParkingSlot({ hideHeader = false, societyId } = {}
     const floorErr = localizedRequiredError(form.parking_floor, t("parkFloorLevel"), t);
     if (floorErr) { showError(floorErr); return; }
 
-    const prefixErr = localizedTitleError(form.prefix, t("parkPrefix"), t);
+    const prefixErr = localizedRequiredError(form.prefix, t("parkPrefix"), t);
     if (prefixErr) { showError(prefixErr); return; }
 
     const startErr = localizedPositiveNumberError(form.start_number, t("parkStartNumber"), t);

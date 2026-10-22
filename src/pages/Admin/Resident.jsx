@@ -5,7 +5,7 @@ import API from "../../services/api";
 import { AuthContext } from "../../context/AuthContext";
 import { useLang } from "../../context/LanguageContext";
 import {
-  MdPersonAdd, MdDelete, MdSearch, MdClose, MdHome,
+  MdPersonAdd, MdSearch, MdClose, MdHome,
   MdChevronLeft, MdChevronRight, MdPerson, MdApartment,
   MdLayers, MdAdd, MdHomeWork, MdMeetingRoom, MdCheckCircle,
   MdUploadFile, MdBadge, MdCreditCard, MdCheck, MdDirectionsCar,
@@ -113,7 +113,7 @@ function PendingApprovalBadge() {
 /* ─────────────────────────────────────────
    RESIDENT ACTION MENU (three-dot kebab)
    ───────────────────────────────────────── */
-function ResidentActionMenu({ onViewDetails, onAssignFlat, onEdit, isCommittee, isAccountant, isSocietyAdmin, isTenant, onPromote, onRemoveCommittee, onDeactivateAccountant, onDelete, isPendingApproval, isRejected, onApprove, onReject, t }) {
+function ResidentActionMenu({ onViewDetails, onAssignFlat, onEdit, isCommittee, isAccountant, isSocietyAdmin, isTenant, onPromote, onRemoveCommittee, onDeactivateAccountant, onToggleStatus, isPendingApproval, isRejected, isInactive, onApprove, onReject, t }) {
   const [open, setOpen] = useState(false);
   const [pos, setPos] = useState(null);
   const ref = useRef(null);
@@ -270,10 +270,17 @@ function ResidentActionMenu({ onViewDetails, onAssignFlat, onEdit, isCommittee, 
             </>
           )}
           <div className="sa-action-divider" />
-          <button role="menuitem" className="sa-action-item sa-action-item-danger" onClick={() => act(onDelete)}>
-            <MdDelete size={15} />
-            {t("mpDelete") || "Delete"}
-          </button>
+          {isInactive ? (
+            <button role="menuitem" className="sa-action-item" onClick={() => act(onToggleStatus)} style={{ color: "#4ade80" }}>
+              <MdCheckCircle size={15} />
+              {t("resReactivate", "Reactivate")}
+            </button>
+          ) : (
+            <button role="menuitem" className="sa-action-item sa-action-item-danger" onClick={() => act(onToggleStatus)}>
+              <MdBlock size={15} />
+              {t("resDeactivate", "Deactivate")}
+            </button>
+          )}
         </div>,
         document.body
       )}
@@ -3374,8 +3381,8 @@ const [totalPages, setTotalPages] = useState(1);
   const [rejectTarget, setRejectTarget] = useState(null);
   const [rejectReason, setRejectReason] = useState("");
   const [rejectLoading, setRejectLoading] = useState(false);
-  const [deleteTarget, setDeleteTarget] = useState(null);
-  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [statusTarget, setStatusTarget] = useState(null);
+  const [statusLoading, setStatusLoading] = useState(false);
 
   const { user } = useContext(AuthContext);
   const { showUnauthorized, showError } = useCustomAlert();
@@ -3910,7 +3917,7 @@ const [totalPages, setTotalPages] = useState(1);
     setFormSocietyId(resident.society_id || "");
     setFormStep(1);
     setShowForm(true);
-    setDeleteTarget(null);
+    setStatusTarget(null);
     setAssignModal(null);
 
     const socId = resident.society_id || (isSuperAdmin ? formSocietyId : user?.society_id);
@@ -4161,27 +4168,24 @@ const [totalPages, setTotalPages] = useState(1);
     }
   };
 
-  const handleDelete = async (id) => {
-    if (!hasPermission(user, "resident", "delete")) {
-      showUnauthorized("You do not have permission to delete residents.");
-      setDeleteTarget(null);
-      return;
-    }
-    setDeleteLoading(true);
+  const handleToggleStatus = async (resident) => {
+    const target = resident;
+    const activating = String(target.status || "").toUpperCase() === "INACTIVE";
+    setStatusLoading(true);
     try {
-      await API.delete(`/users/resident/${id}`);
-      setDeleteTarget(null);
+      await API.patch(`/users/resident/${target.id}/status`, { status: activating ? "ACTIVE" : "INACTIVE" });
+      setStatusTarget(null);
       loadResidents(page, debouncedSearch);
-      toast.success(t("resDeletedOk"));
+      toast.success(activating ? t("resReactivatedOk") : t("resDeactivatedOk"));
     } catch (err) {
       if (err.response?.status === 403) {
         showUnauthorized(err.response?.data?.message || "Operation restricted");
       } else {
-        toast.error(err.response?.data?.message || t("residentDeleteFail"));
+        toast.error(err.response?.data?.message || t("residentStatusFail"));
       }
-      setDeleteTarget(null);
+      setStatusTarget(null);
     } finally {
-      setDeleteLoading(false);
+      setStatusLoading(false);
     }
   };
 
@@ -5463,13 +5467,8 @@ const [totalPages, setTotalPages] = useState(1);
                             const committeeSocs = socList.filter((s) => s.roles?.includes("COMMITTEE_MEMBER"));
                             setCommitteeConfirm({ type: "remove", id: r.id, name: r.name, societies: committeeSocs.length > 0 ? committeeSocs : socList, selectedSocietyId: (committeeSocs[0] || socList[0])?.id || r.society_id || null });
                           }}
-                          onDelete={() => {
-                            if (!hasPermission(user, "resident", "delete")) {
-                              showUnauthorized("You do not have permission to delete residents.");
-                              return;
-                            }
-                            setDeleteTarget(r);
-                          }}
+                          isInactive={String(r.status || "").toUpperCase() === "INACTIVE"}
+                          onToggleStatus={() => setStatusTarget(r)}
                         />
                       </div>
                          </td>
@@ -5549,15 +5548,10 @@ const [totalPages, setTotalPages] = useState(1);
                              const committeeSocs = socList.filter((s) => s.roles?.includes("COMMITTEE_MEMBER"));
                              setCommitteeConfirm({ type: "remove", id: r.id, name: r.name, societies: committeeSocs.length > 0 ? committeeSocs : socList, selectedSocietyId: (committeeSocs[0] || socList[0])?.id || r.society_id || null });
                            }}
-                           onDeactivateAccountant={() => setAccountantConfirm({ id: r.id, name: r.name })}
-                           onDelete={() => {
-                             if (!hasPermission(user, "resident", "delete")) {
-                               showUnauthorized("You do not have permission to delete residents.");
-                               return;
-                             }
-                             setDeleteTarget(r);
-                           }}
-                         />
+                            onDeactivateAccountant={() => setAccountantConfirm({ id: r.id, name: r.name })}
+                            isInactive={String(r.status || "").toUpperCase() === "INACTIVE"}
+                            onToggleStatus={() => setStatusTarget(r)}
+                          />
                        </div>
                      )}
                    </div>
@@ -5794,52 +5788,65 @@ const [totalPages, setTotalPages] = useState(1);
         document.body
       )}
 
-      {/* Delete Resident Confirm Dialog */}
-      {deleteTarget && createPortal(
+      {/* Deactivate / Reactivate Resident Confirm Dialog */}
+      {statusTarget && createPortal(
         <div
-          onClick={(e) => { if (e.target === e.currentTarget) setDeleteTarget(null); }}
+          onClick={(e) => { if (e.target === e.currentTarget) setStatusTarget(null); }}
           style={{ position: "fixed", inset: 0, zIndex: 9999, background: "rgba(0,0,0,0.65)", backdropFilter: "blur(8px)", display: "flex", alignItems: "center", justifyContent: "center", padding: "16px" }}
         >
           <div
             onClick={(e) => e.stopPropagation()}
             style={{ width: "100%", maxWidth: 420, background: "var(--card-bg)", border: "1px solid var(--glass-border)", borderRadius: 20, padding: "24px", boxShadow: "0 24px 80px rgba(0,0,0,0.5)", animation: "saModalPopIn 0.25s cubic-bezier(0.16, 1, 0.3, 1)" }}
           >
-            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
-              <div style={{ width: 42, height: 42, borderRadius: 12, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(239,68,68,0.14)", border: "1px solid rgba(239,68,68,0.3)" }}>
-                <MdDelete size={22} style={{ color: "#f87171" }} />
-              </div>
-              <div>
-                <p style={{ margin: 0, fontSize: 16, fontWeight: 800, color: "var(--text-primary)", letterSpacing: "-0.02em" }}>
-                  {t("resDeleteTitle", "Delete Resident")}
-                </p>
-                <p style={{ margin: 0, fontSize: 12, color: "var(--text-secondary)" }}>{deleteTarget.name}</p>
-              </div>
-            </div>
+            {(() => {
+              const activating = String(statusTarget.status || "").toUpperCase() === "INACTIVE";
+              return (
+                <>
+                  <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
+                    <div style={{ width: 42, height: 42, borderRadius: 12, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", background: activating ? "rgba(34,197,94,0.14)" : "rgba(239,68,68,0.14)", border: `1px solid ${activating ? "rgba(34,197,94,0.3)" : "rgba(239,68,68,0.3)"}` }}>
+                      {activating ? <MdCheckCircle size={22} style={{ color: "#4ade80" }} /> : <MdBlock size={22} style={{ color: "#f87171" }} />}
+                    </div>
+                    <div>
+                      <p style={{ margin: 0, fontSize: 16, fontWeight: 800, color: "var(--text-primary)", letterSpacing: "-0.02em" }}>
+                        {activating ? t("resReactivateTitle", "Reactivate Resident") : t("resDeactivateTitle", "Deactivate Resident")}
+                      </p>
+                      <p style={{ margin: 0, fontSize: 12, color: "var(--text-secondary)" }}>{statusTarget.name}</p>
+                    </div>
+                  </div>
 
-            <p style={{ margin: 0, fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.6 }}>
-              {t("resDeleteBody", "This will permanently delete the resident, free up their assigned units and remove their access. This action cannot be undone.")}
-            </p>
+                  <p style={{ margin: 0, fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.6 }}>
+                    {activating
+                      ? t("resReactivateBody", "This will restore the resident's access so they can sign in again. All their units, bills and history remain unchanged.")
+                      : t("resDeactivateBody", "This will disable the resident's login and revoke their access. No data is deleted — units, bills and history stay intact, and you can reactivate them anytime.")}
+                  </p>
 
-            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 22 }}>
-              <button
-                type="button"
-                onClick={() => setDeleteTarget(null)}
-                className="sa-btn sa-btn-ghost"
-                disabled={deleteLoading}
-                style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", height: 42, padding: "0 22px", whiteSpace: "nowrap", lineHeight: 1, fontSize: 14 }}
-              >
-                {t("cancel") || "Cancel"}
-              </button>
-              <button
-                type="button"
-                onClick={() => handleDelete(deleteTarget.id)}
-                className="btn-danger"
-                style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6, height: 42, padding: "0 22px", whiteSpace: "nowrap", lineHeight: 1, fontSize: 14, borderRadius: 999, fontWeight: 700 }}
-                disabled={deleteLoading}
-              >
-                {deleteLoading ? <>{t("deleting", "Deleting…")}</> : <><MdDelete size={16} /> <span>{t("delete") || "Delete"}</span></>}
-              </button>
-            </div>
+                  <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 22 }}>
+                    <button
+                      type="button"
+                      onClick={() => setStatusTarget(null)}
+                      className="sa-btn sa-btn-ghost"
+                      disabled={statusLoading}
+                      style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", height: 42, padding: "0 22px", whiteSpace: "nowrap", lineHeight: 1, fontSize: 14 }}
+                    >
+                      {t("cancel") || "Cancel"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleToggleStatus(statusTarget)}
+                      className={activating ? "btn-primary" : "btn-danger"}
+                      style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6, height: 42, padding: "0 22px", whiteSpace: "nowrap", lineHeight: 1, fontSize: 14, borderRadius: 999, fontWeight: 700 }}
+                      disabled={statusLoading}
+                    >
+                      {statusLoading
+                        ? <>{activating ? t("resReactivating", "Reactivating…") : t("resDeactivating", "Deactivating…")}</>
+                        : activating
+                          ? <><MdCheckCircle size={16} /> <span>{t("resReactivate", "Reactivate")}</span></>
+                          : <><MdBlock size={16} /> <span>{t("resDeactivate", "Deactivate")}</span></>}
+                    </button>
+                  </div>
+                </>
+              );
+            })()}
           </div>
         </div>,
         document.body

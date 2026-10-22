@@ -20,7 +20,7 @@ import ExpandableSearch from "../../components/common/ExpandableSearch";
 import GlobalButton from "../../components/common/GlobalButton";
 import GlobalModal from "../../components/common/GlobalModal";
 import StatCard from "../../components/common/StatCard";
-import { getTitleError, getNumberError, getPositiveAmountError } from "../../utils/validators";
+import { getNumberError, getPositiveAmountError } from "../../utils/validators";
 import "./Admin.css";
 
 import Pagination from "../../components/common/Pagination";
@@ -1586,8 +1586,9 @@ function BlocksTab({
     }
     let payload = { name, society_id: activeSocId, property_type: propertyType };
 
-    const nameError = getTitleError(name, t("mpPhaseNameLabel"));
-    if (nameError) return setError(nameError);
+    if (!name || !String(name).trim()) {
+      return setError(t("mpPhaseNameRequired", "Phase / Block name is required."));
+    }
 
     if (propertyType === "ROW_HOUSE") {
       const housesError = getNumberError(totalHouses, t("mpTotalHousesLabel"), { min: 1, allowZero: false, allowDecimal: false });

@@ -155,7 +155,9 @@ function App() {
           path="/login"
           element={
             <PublicRoute>
-              <Login />
+              <LanguageProvider role="home">
+                <Login />
+              </LanguageProvider>
             </PublicRoute>
           }
         />

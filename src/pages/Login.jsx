@@ -18,8 +18,14 @@ import {
 import {
   HiOutlineBuildingOffice2,
   HiOutlineArrowLeft,
-  HiOutlinePhone
+  HiOutlinePhone,
+  HiBars3,
+  HiOutlineXMark,
+  HiOutlineArrowRight
 } from "react-icons/hi2";
+import compLogoImg from "../assets/Photos/Home/comp_logo.png";
+import LanguageSelector from "../components/common/LanguageSelector";
+import "../home/Home.css";
 import {
   MdHome,
   MdGroups,
@@ -383,8 +389,17 @@ function RejectionModal({ details, onClose, t }) {
 
 function Login() {
   const navigate = useNavigate();
-  const { login, switchRole } = useContext(AuthContext);
+  const { login, switchRole, user } = useContext(AuthContext);
   const { t } = useLang();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 24);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -693,24 +708,105 @@ function Login() {
         className="login-bg-photo"
       />
 
-      {/* Top Header Bar */}
-      <header className="login-top-bar">
-        <Link to="/" className="login-brand-logo">
-          <div className="login-brand-icon">
-            <HiOutlineBuildingOffice2 />
-          </div>
-          <div>
-            <div className="login-brand-title">Society Management</div>
-          </div>
-        </Link>
+      {/* Home-style Navbar */}
+      <nav className={`home-navbar ${scrolled ? "home-navbar--scrolled" : "home-navbar--over-hero"} ${menuOpen ? "home-navbar--menu-open" : ""}`}>
+        <div className="home-container">
+          <div className="home-navbar-inner">
+            {/* Dual Brand Identity: Company Logo + Product Branding */}
+            <Link to="/" className="home-brand-logo" aria-label="Society Management Home">
+              <img
+                src={compLogoImg}
+                alt="WK Company Logo"
+                className="home-brand-comp-logo"
+              />
+              <div className="home-brand-divider" aria-hidden="true" />
+              <div className="home-brand-text">
+                <div className="home-brand-title">{t("homeBrandTitle") || "Society Management"}</div>
+                <div className="home-brand-subtitle">{t("homeBrandSubtitle") || "SYSTEM"}</div>
+              </div>
+            </Link>
 
-        <div className="login-top-actions">
-          <ThemeToggle />
-          <Link to="/" className="login-back-home">
-            <HiOutlineArrowLeft /> Back to Home
-          </Link>
+            {/* Desktop Navigation Links */}
+            <ul className="home-nav-links">
+              <li className="home-nav-item">
+                <Link to="/#features" className="home-nav-link">
+                  {t("homeNavFeatures") || "Features"}
+                </Link>
+              </li>
+              <li className="home-nav-item">
+                <Link to="/#how-it-works" className="home-nav-link">
+                  {t("homeNavHowItWorks") || "How It Works"}
+                </Link>
+              </li>
+              <li className="home-nav-item">
+                <Link to="/#roles" className="home-nav-link">
+                  {t("homeNavUserRoles") || "User Roles"}
+                </Link>
+              </li>
+            </ul>
+
+            {/* Nav Right Actions: Language -> Home CTA -> Theme */}
+            <div className="home-nav-actions">
+              <LanguageSelector compact />
+              <Link
+                to="/"
+                className="home-btn-nav-cta"
+                aria-label="Home"
+              >
+                <span>{t("homeNavHome") || "Home"}</span>
+                <HiOutlineArrowRight className="home-nav-btn-arrow" />
+              </Link>
+              <div className="home-nav-theme-toggle">
+                <ThemeToggle />
+              </div>
+            </div>
+
+            {/* Mobile Burger */}
+            <button
+              className="home-mobile-burger"
+              onClick={() => setMenuOpen((o) => !o)}
+              aria-label="Toggle navigation menu"
+              aria-expanded={menuOpen}
+            >
+              {menuOpen ? <HiOutlineXMark /> : <HiBars3 />}
+            </button>
+          </div>
         </div>
-      </header>
+
+        {/* Mobile Navigation Menu */}
+        <div className={`home-mobile-menu ${menuOpen ? "active" : ""}`}>
+          <Link to="/#features" className="home-mobile-link" onClick={() => setMenuOpen(false)}>
+            {t("homeNavFeatures") || "Features"}
+          </Link>
+          <Link to="/#how-it-works" className="home-mobile-link" onClick={() => setMenuOpen(false)}>
+            {t("homeNavHowItWorks") || "How It Works"}
+          </Link>
+          <Link to="/#roles" className="home-mobile-link" onClick={() => setMenuOpen(false)}>
+            {t("homeNavUserRoles") || "User Roles"}
+          </Link>
+
+          <div className="home-mobile-divider" />
+
+          <div className="home-mobile-prefs">
+            <div className="home-nav-theme-toggle">
+              <ThemeToggle />
+            </div>
+            <LanguageSelector compact />
+          </div>
+
+          <div className="home-mobile-actions">
+            <Link
+              to="/"
+              onClick={() => setMenuOpen(false)}
+              className="home-btn-nav-cta"
+              aria-label="Home"
+            >
+              <span>{t("homeNavHome") || "Home"}</span>
+              <HiOutlineArrowRight className="home-nav-btn-arrow" />
+            </Link>
+          </div>
+        </div>
+      </nav>
 
       {/* OTP Modal */}
       {step === "otp" && (

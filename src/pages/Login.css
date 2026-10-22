@@ -9,9 +9,9 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 5rem 1rem 2rem 1rem;
+  padding: 7rem 1rem 2.5rem 1rem;
   background: linear-gradient(135deg, #0b1329 0%, #0f172a 50%, #1e293b 100%);
-  overflow: hidden;
+  overflow-x: hidden;
   transition: background 0.3s ease;
 }
 
