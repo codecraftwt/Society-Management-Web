@@ -1,6 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { APP_NAME } from "../constants/app";
 import API from "../services/api";
 import {
   MdEmail,
@@ -28,14 +27,21 @@ import {
 import {
   HiOutlineBuildingOffice2,
   HiOutlineSparkles,
-  HiOutlineArrowLeft,
   HiOutlineShieldCheck,
+  HiBars3,
+  HiOutlineXMark,
+  HiOutlineArrowRight,
 } from "react-icons/hi2";
 import { toast } from "react-toastify";
 import ThemeToggle from "../components/common/ThemeToggle";
+import LanguageSelector from "../components/common/LanguageSelector";
+import { useLang } from "../context/LanguageContext";
 import { getTitleError, getEmailError, getMobileError } from "../utils/validators";
 
 import homeBannerImg from "../assets/Photos/Home/Home.png";
+import loginVisualImg from "../assets/Photos/Home/login_right_side_img.png";
+import compLogoImg from "../assets/Photos/Home/comp_logo.png";
+import "../home/Home.css";
 import "./Register.css";
 
 /* ─── Password rule checks ─── */
@@ -65,6 +71,16 @@ const fileToBase64 = (file) =>
 
 function Register() {
   const navigate = useNavigate();
+  const { t } = useLang();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 24);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   // 5 Step Flow
   const [step, setStep] = useState(1);
@@ -486,39 +502,101 @@ function Register() {
 
   const strength = pwStrength(formData.password);
 
+  const stepVisuals = [
+    { image: loginVisualImg, title: "Find Your Community", description: "Choose your society to begin your registration.", highlight: "Verified community selection", detail: "Browse the available communities and choose the right home." },
+    { image: loginVisualImg, title: "Your Account, Your Access", description: "Set up your details and securely connect your account.", highlight: "A secure resident profile", detail: "Add your contact details and connect an existing profile if you have one." },
+    { image: loginVisualImg, title: "Make It Feel Like Home", description: "Add your household details and registered vehicles.", highlight: "Household and vehicle details", detail: "Keep household and vehicle information together in your resident profile." },
+    { image: loginVisualImg, title: "Verify Your Identity", description: "Complete your profile and provide the required documents.", highlight: "Private document upload", detail: "Add a profile photo and the documents requested by your society." },
+    { image: loginVisualImg, title: "Choose Your Place", description: "Select your wing, floor, and apartment to complete registration.", highlight: "Your exact home in the community", detail: "Confirm the apartment details linked to your new resident account." },
+  ];
+  const currentVisual = stepVisuals[step - 1];
+
   return (
     <div className="reg-root">
       {/* Ambient Glow */}
       <div className="reg-glow-orb orb-1" />
       <div className="reg-glow-orb orb-2" />
 
-      {/* Background photo */}
-      <img
-        src={homeBannerImg}
-        alt="Residential Background"
-        className="reg-bg-photo"
-      />
+      {/* Existing full-page photo is retained for legacy styles and hidden by the split layout. */}
+      <img src={homeBannerImg} alt="" className="reg-bg-photo" aria-hidden="true" />
 
-      {/* Header Bar */}
-      <header className="reg-top-bar">
-        <Link to="/" className="reg-brand-logo">
-          <div className="reg-brand-icon">
-            <HiOutlineBuildingOffice2 />
+      {/* Match the login page navigation so registration shares the same wayfinding and preferences. */}
+      <nav className={`home-navbar ${scrolled ? "home-navbar--scrolled" : "home-navbar--over-hero"} ${menuOpen ? "home-navbar--menu-open" : ""}`}>
+        <div className="home-container">
+          <div className="home-navbar-inner">
+            <Link to="/" className="home-brand-logo" aria-label={t("homeBrandHomeLabel")}>
+              <img src={compLogoImg} alt={t("homeCompanyLogoAlt")} className="home-brand-comp-logo" />
+              <div className="home-brand-divider" aria-hidden="true" />
+              <div className="home-brand-text">
+                <div className="home-brand-title">{t("homeBrandTitle")}</div>
+                <div className="home-brand-subtitle">{t("homeBrandSubtitle")}</div>
+              </div>
+            </Link>
+
+            <ul className="home-nav-links">
+              <li className="home-nav-item"><Link to="/#features" className="home-nav-link">{t("homeNavFeatures")}</Link></li>
+              <li className="home-nav-item"><Link to="/#how-it-works" className="home-nav-link">{t("homeNavHowItWorks")}</Link></li>
+              <li className="home-nav-item"><Link to="/#roles" className="home-nav-link">{t("homeNavUserRoles")}</Link></li>
+            </ul>
+
+            <div className="home-nav-actions">
+              <LanguageSelector compact />
+              <div className="home-nav-theme-toggle"><ThemeToggle /></div>
+              <Link to="/" className="home-btn-nav-cta" aria-label={t("homeNavHome")}>
+                <span>{t("homeNavHome")}</span>
+                <HiOutlineArrowRight className="home-nav-btn-arrow" />
+              </Link>
+            </div>
+
+            <button className="home-mobile-burger" onClick={() => setMenuOpen((open) => !open)} aria-label={t("homeToggleMenu")} aria-expanded={menuOpen}>
+              {menuOpen ? <HiOutlineXMark /> : <HiBars3 />}
+            </button>
           </div>
-          <div className="reg-brand-title">{APP_NAME || "Society Management"}</div>
-        </Link>
-
-        <div className="reg-top-actions">
-          <ThemeToggle />
-          <Link to="/" className="reg-back-home">
-            <HiOutlineArrowLeft /> Back to Home
-          </Link>
         </div>
-      </header>
 
-      {/* Compact Card Container */}
-      <div className={`reg-card ${visible ? "reg-visible" : ""}`}>
-        {/* Compact Header */}
+        <div className={`home-mobile-menu ${menuOpen ? "active" : ""}`}>
+          <Link to="/#features" className="home-mobile-link" onClick={() => setMenuOpen(false)}>{t("homeNavFeatures")}</Link>
+          <Link to="/#how-it-works" className="home-mobile-link" onClick={() => setMenuOpen(false)}>{t("homeNavHowItWorks")}</Link>
+          <Link to="/#roles" className="home-mobile-link" onClick={() => setMenuOpen(false)}>{t("homeNavUserRoles")}</Link>
+          <div className="home-mobile-divider" />
+          <div className="home-mobile-prefs">
+            <LanguageSelector compact />
+            <div className="home-nav-theme-toggle"><ThemeToggle /></div>
+          </div>
+          <div className="home-mobile-actions">
+            <Link to="/" onClick={() => setMenuOpen(false)} className="home-btn-nav-cta" aria-label={t("homeNavHome")}>
+              <span>{t("homeNavHome")}</span>
+              <HiOutlineArrowRight className="home-nav-btn-arrow" />
+            </Link>
+          </div>
+        </div>
+      </nav>
+
+      <main className="reg-layout">
+        <aside className="reg-visual-panel" key={step}>
+          <img className="reg-visual-image" src={currentVisual.image} alt="" />
+          <div className="reg-visual-overlay" />
+          <Link to="/" className="reg-visual-brand" aria-label={t("homeBrandHomeLabel")}>
+            <img src={compLogoImg} alt={t("homeCompanyLogoAlt")} />
+            <span><strong>{t("homeBrandTitle")}</strong><small>{t("homeBrandSubtitle")}</small></span>
+          </Link>
+          <div className="reg-visual-copy animate-fadeIn">
+            <span className="reg-visual-kicker"><HiOutlineBuildingOffice2 /> RESIDENT ONBOARDING</span>
+            <h2>{currentVisual.title}</h2>
+            <p>{currentVisual.description}</p>
+          </div>
+          <div className="reg-visual-highlight">
+            <span className="reg-highlight-icon"><HiOutlineShieldCheck /></span>
+            <span className="reg-highlight-copy">
+              <strong>{currentVisual.highlight}</strong>
+              <small>{currentVisual.detail}</small>
+            </span>
+            <HiOutlineSparkles className="reg-highlight-sparkle" />
+          </div>
+        </aside>
+
+      <section className={`reg-card ${visible ? "reg-visible" : ""}`}>
+        {/* Registration header */}
         <div className="reg-header">
           <div className="reg-badge">
             <HiOutlineSparkles /> Resident Registration
@@ -565,7 +643,7 @@ function Register() {
         </div>
 
         {/* Form Container */}
-        <form onSubmit={handleRegister}>
+        <form className="reg-form-scroll" onSubmit={handleRegister}>
           {/* ═══════════════════════════════════════════════════════════
               STEP 1: SELECT SOCIETY
              ═══════════════════════════════════════════════════════════ */}
@@ -671,7 +749,7 @@ function Register() {
 
               {/* Email Address with Check Button */}
               <div className="reg-field">
-                <label className="reg-label">Email Address (Check Existing Account)</label>
+                <label className="reg-label">Email Address</label>
                 <div className="reg-email-row">
                   <div className="reg-input-wrap" style={{ flex: 1 }}>
                     <MdEmail className="reg-icon-left" />
@@ -724,18 +802,16 @@ function Register() {
                   <div className="reg-reuse-card animate-scaleIn">
                     <div className="reg-reuse-header">
                       <span className="reg-reuse-title">
-                        <FiCheck size={14} /> Existing Account Found: {emailCheckState.user?.name}
+                        <FiCheck size={14} /> Profile found
                       </span>
+                      <span className="reg-existing-name">{emailCheckState.user?.name}</span>
                     </div>
-                    <p className="reg-reuse-desc">
-                      Verified profile found. Click below to reuse your personal details, saved password, household, and KYC documents.
-                    </p>
                     <button
                       type="button"
                       className="reg-reuse-action-btn"
                       onClick={() => handleApplyExistingUser(emailCheckState.user)}
                     >
-                      <HiOutlineShieldCheck size={15} /> Use Existing Account & Load Data
+                      <HiOutlineShieldCheck size={15} /> Use saved profile
                     </button>
                   </div>
                 )}
@@ -749,8 +825,7 @@ function Register() {
                       <MdCheckCircle size={18} />
                     </div>
                     <div className="reg-linked-text">
-                      <strong>Profile Linked: {formData.name}</strong>
-                      <span>Saved password, household details & KYC synced.</span>
+                      <strong>Profile linked · {formData.name}</strong>
                     </div>
                   </div>
                   <button
@@ -840,12 +915,6 @@ function Register() {
                       {showPassword ? <AiOutlineEyeInvisible size={16} /> : <AiOutlineEye size={16} />}
                     </button>
                   </div>
-
-                  {useExistingAccount ? (
-                    <span className="reg-loaded-pw-hint">
-                      🔐 Saved password loaded automatically from your account.
-                    </span>
-                  ) : null}
 
                   {/* Password Strength Meter */}
                   {!useExistingAccount && formData.password.length > 0 && (
@@ -1380,7 +1449,8 @@ function Register() {
             Sign in
           </button>
         </div>
-      </div>
+      </section>
+      </main>
     </div>
   );
 }

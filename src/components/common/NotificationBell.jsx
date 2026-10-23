@@ -33,13 +33,9 @@ export default function NotificationBell() {
   useEffect(() => {
     loadNotifications();
 
-    if (user?.id) {
-      socket.emit("join", {
-        userId: user.id,
-        role: user.activeRole ?? user.role,
-        societyId: user.society_id,
-      });
-    }
+    // Room assignment is handled by the shared socket in services/socket.js,
+    // which joins the user_/role_/society_ rooms from the verified handshake.
+    // Emitting `join` again here only produced duplicate room-join logs.
 
     const onNew = (notification) => {
       setNotifications((prev) => {

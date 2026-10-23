@@ -156,6 +156,7 @@ export default function Select({
   const emit = (o) => {
     setOpen(false);
     if (onChange) onChange({ target: { name, value: o.value } });
+    window.dispatchEvent(new Event("superadmin-society-scope-change"));
   };
 
   const openMenu = (toOpen) => {

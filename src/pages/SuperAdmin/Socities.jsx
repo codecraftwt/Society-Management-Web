@@ -4,13 +4,14 @@ import { useLang } from "../../context/LanguageContext";
 import { toast } from "react-toastify";
 import API from "../../services/api";
 import {
-  MdAdd, MdApartment, MdHomeWork, MdWarning, MdPalette, MdRefresh
+  MdAdd, MdApartment, MdHomeWork, MdWarning, MdPalette, MdRefresh, MdLocationOn
 } from "react-icons/md";
 import { FaBuilding, FaUserShield } from "react-icons/fa";
 import Select from "../../components/common/Select";
 import { getTitleError, getRequiredError, getEmailError } from "../../utils/validators";
 import SocietyActionMenu from "../../components/super-admin/SocietyActionMenu";
 import SocietyDetailModal from "../../components/super-admin/SocietyDetailModal";
+import SocietyLogo from "../../components/super-admin/SocietyLogo";
 import GlobalButton from "../../components/common/GlobalButton";
 import GlobalModal from "../../components/common/GlobalModal";
 import GlobalConfirmDialog from "../../components/common/GlobalConfirmDialog";
@@ -20,6 +21,15 @@ import ThemeBrandingEditor from "../../components/common/ThemeBrandingEditor";
 import { isValidHexColor } from "../../utils/themeUtils";
 
 const DEFAULT_PASSWORD = "Admin@123";
+
+const CARD_ACCENTS = ["#7657d9", "#3f78c8", "#0f9f96", "#c26a3d", "#bb5793"];
+
+/** Decorative watermark glyph shown on the coloured cover of a society card. */
+const socTypeGlyph = (pt) => {
+  if (pt === "Row Houses") return MdHomeWork;
+  if (pt === "Commercial") return FaBuilding;
+  return MdApartment;
+};
 
 const socPropTypeLabel = (pt, t) => {
   const map = {
@@ -73,6 +83,13 @@ export default function Societies() {
   const openThemeModal = useCallback((s) => {
     const url = `/superadmin/society-theme?societyId=${s.id}&societyName=${encodeURIComponent(s.name)}`;
     navigate(url);
+  }, [navigate]);
+
+  const openSocietyLocation = useCallback((society) => {
+    if (!society?.id) return;
+    localStorage.setItem("superadmin_society_filter", String(society.id));
+    window.dispatchEvent(new Event("superadmin-society-scope-change"));
+    navigate(`/superadmin/society-location?societyId=${society.id}`);
   }, [navigate]);
 
   const saveSocietyTheme = async () => {
@@ -350,22 +367,34 @@ export default function Societies() {
       ) : (
         <div className="sa-society-grid" key={`${filterStatus}-${searchQuery.trim().toLowerCase()}`}>
           {filteredSocieties.map((s, i) => {
-            const typeColor = typeColors[s.property_type] || "#9F87D7";
+            const propertyType = s.property_type || "Apartments";
+            // When the API does not provide a property type, keep the grid
+            // visually varied while retaining the same accent for known types.
+            const typeColor = s.property_type
+              ? (typeColors[propertyType] || "#9F87D7")
+              : CARD_ACCENTS[i % CARD_ACCENTS.length];
+            const Glyph = socTypeGlyph(propertyType);
             return (
-              <div key={s.id} className="sa-society-card animate-fadeIn" style={{ animationDelay: `${i * 30}ms`, cursor: "pointer" }} onClick={() => setDetailSociety(s)}>
-                {/* Header row */}
-                <div className="sa-soc-card-top">
-                  <div className="sa-soc-icon" style={{ background: `${typeColor}1A`, color: typeColor }}>
-                    {s.property_type === "Row Houses" ? <MdHomeWork size={17} /> : <FaBuilding size={17} />}
-                  </div>
-                  <div className="sa-soc-name-wrap">
-                    <h3 className="sa-soc-name" title={s.name}>{s.name}</h3>
-                    <span className={`sa-soc-status ${s.societyAdmins ? "sa-soc-active" : "sa-soc-pending"}`}>
-                      <span className="sa-soc-dot" />
-                      {s.societyAdmins ? t("saBadgeActive") : t("saBadgePending")}
-                    </span>
-                  </div>
-                  {/* Action Menu */}
+              <div
+                key={s.id}
+                className="sa-society-card animate-fadeIn"
+                style={{ animationDelay: `${i * 30}ms`, cursor: "pointer", "--soc-accent": typeColor }}
+                onClick={() => setDetailSociety(s)}
+              >
+                {/* ── Branded cover ── */}
+                <div className="sa-soc-cover" aria-hidden="true">
+                  <span className="sa-soc-cover-eyebrow">
+                    <span className="sa-soc-cover-eyebrow-dot" />
+                    {t("saResidentialCommunity", "RESIDENTIAL COMMUNITY")}
+                  </span>
+                  <span className="sa-soc-cover-glyph">
+                    <Glyph size={104} />
+                  </span>
+                  <span className="sa-soc-cover-name" title={s.name}>{s.name}</span>
+                </div>
+
+                {/* ── Floating action menu ── */}
+                <div className="sa-soc-cover-actions">
                   <SocietyActionMenu
                     hasAdmin={!!s.societyAdmins}
                     t={t}
@@ -374,36 +403,65 @@ export default function Societies() {
                       localStorage.setItem("superadmin_society_filter", String(s.id));
                       navigate(`/superadmin/property?societyId=${s.id}`);
                     }}
+                    onSetLocation={() => openSocietyLocation(s)}
                     onCustomizeTheme={() => openThemeModal(s)}
                     onDelete={() => setDeleteConfirm({ isOpen: true, id: s.id, loading: false })}
                   />
                 </div>
 
-                <div className="sa-soc-divider" />
-
-                {/* Property Type row */}
-                <div className="sa-soc-row">
-                  <span className="sa-soc-row-label">{t("saSocRowType", "TYPE")}</span>
-                  <span className="sa-soc-type-badge" style={{ color: typeColor, background: `${typeColor}18`, borderColor: `${typeColor}30` }}>
-                    {socPropTypeLabel(s.property_type || "Apartments", t)}
-                  </span>
+                {/* ── Logo badge (overlaps the cover) ── */}
+                <div className="sa-soc-logo-slot">
+                  <SocietyLogo
+                    src={s.logo_url}
+                    name={s.name}
+                    propertyType={propertyType}
+                    size={64}
+                    tone={typeColor}
+                  />
                 </div>
 
-                {/* Admin row */}
-                <div className="sa-soc-row">
-                  <span className="sa-soc-row-label">{t("saSocRowAdmin", "ADMIN")}</span>
+                {/* ── Body ── */}
+                <div className="sa-soc-card-body">
+                  {s.address && (
+                    <p className="sa-soc-addr" title={s.address}>
+                      <MdLocationOn size={13} />
+                      <span>{s.address}</span>
+                    </p>
+                  )}
+
+                  <div className="sa-soc-pills">
+                    <span className={`sa-soc-status ${s.societyAdmins ? "sa-soc-active" : "sa-soc-pending"}`}>
+                      <span className="sa-soc-dot" />
+                      {s.societyAdmins ? t("saBadgeActive") : t("saBadgePending")}
+                    </span>
+                    <span className="sa-soc-type-badge">{socPropTypeLabel(propertyType, t)}</span>
+                  </div>
+
+                  <div className="sa-soc-divider" />
+
+                  {/* Admin row */}
                   {s.societyAdmins ? (
-                    <div className="sa-soc-admin-info">
-                      <div className="sa-soc-avatar">
+                    <div className="sa-soc-admin-bar">
+                      <span className="sa-soc-avatar">
                         {s.societyAdmins.name?.charAt(0).toUpperCase()}
-                      </div>
-                      <span className="sa-soc-admin-name">{s.societyAdmins.name}</span>
+                      </span>
+                      <span className="sa-soc-admin-meta">
+                        <span className="sa-soc-admin-role">{t("saSocRowAdmin", "ADMIN")}</span>
+                        <span className="sa-soc-admin-name">{s.societyAdmins.name}</span>
+                      </span>
                     </div>
                   ) : (
-                    <span className="sa-soc-unassigned">
-                      <MdWarning size={13} /> {t("saNotAssigned")}
-                    </span>
+                    <div className="sa-soc-admin-bar sa-soc-admin-bar--empty">
+                      <span className="sa-soc-avatar sa-soc-avatar--empty">
+                        <MdWarning size={14} />
+                      </span>
+                      <span className="sa-soc-admin-meta">
+                        <span className="sa-soc-admin-role">{t("saSocRowAdmin", "ADMIN")}</span>
+                        <span className="sa-soc-unassigned">{t("saNotAssigned")}</span>
+                      </span>
+                    </div>
                   )}
+                  <span className="sa-soc-card-arrow" aria-hidden="true">›</span>
                 </div>
               </div>
             );
@@ -548,6 +606,11 @@ export default function Societies() {
             localStorage.setItem("superadmin_society_filter", String(s.id));
             navigate(`/superadmin/property?societyId=${s.id}`);
           }
+        }}
+        onSetLocation={() => {
+          const s = detailSociety;
+          setDetailSociety(null);
+          if (s) openSocietyLocation(s);
         }}
         t={t}
       />

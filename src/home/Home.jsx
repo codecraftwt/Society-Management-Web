@@ -175,10 +175,10 @@ const Home = () => {
         <div className="home-container">
           <div className="home-navbar-inner">
             {/* Dual Brand Identity: Company Logo + Product Branding */}
-            <Link to="/" className="home-brand-logo" aria-label="Society Management Home">
+            <Link to="/" className="home-brand-logo" aria-label={t("homeBrandHomeLabel")}>
               <img
                 src={compLogoImg}
-                alt="WK Company Logo"
+                alt={t("homeCompanyLogoAlt")}
                 className="home-brand-comp-logo"
               />
               <div className="home-brand-divider" aria-hidden="true" />
@@ -210,24 +210,24 @@ const Home = () => {
             {/* Nav Right Actions: Language -> Dashboard CTA -> Theme */}
             <div className="home-nav-actions">
               <LanguageSelector compact />
-              <button
-                onClick={goToApp}
-                className="home-btn-nav-cta"
-                aria-label="Dashboard"
-              >
-                <span>{loggedIn ? t("homeDashboard") : "Dashboard"}</span>
-                <HiOutlineArrowRight className="home-nav-btn-arrow" />
-              </button>
               <div className="home-nav-theme-toggle">
                 <ThemeToggle />
               </div>
+              <button
+                onClick={goToApp}
+                className="home-btn-nav-cta"
+                aria-label={t("homeDashboard")}
+              >
+                <span>{t("homeDashboard")}</span>
+                <HiOutlineArrowRight className="home-nav-btn-arrow" />
+              </button>
             </div>
 
             {/* Mobile Burger */}
             <button
               className="home-mobile-burger"
               onClick={() => setMenuOpen((o) => !o)}
-              aria-label="Toggle navigation menu"
+              aria-label={t("homeToggleMenu")}
               aria-expanded={menuOpen}
             >
               {menuOpen ? <HiOutlineXMark /> : <HiBars3 />}
@@ -250,10 +250,10 @@ const Home = () => {
           <div className="home-mobile-divider" />
 
           <div className="home-mobile-prefs">
+            <LanguageSelector compact />
             <div className="home-nav-theme-toggle">
               <ThemeToggle />
             </div>
-            <LanguageSelector compact />
           </div>
 
           <div className="home-mobile-actions">
@@ -261,7 +261,7 @@ const Home = () => {
               onClick={() => { setMenuOpen(false); goToApp(); }}
               className="home-btn-nav-cta"
             >
-              <span>{loggedIn ? t("homeDashboard") : "Dashboard"}</span>
+              <span>{t("homeDashboard")}</span>
               <HiOutlineArrowRight className="home-nav-btn-arrow" />
             </button>
             {!loggedIn && (
@@ -306,7 +306,7 @@ const Home = () => {
                   className="home-hero-eyebrow"
                 >
                   <HiOutlineBuildingOffice2 className="home-hero-eyebrow-icon" />
-                  <span>SMARTER COMMUNITY LIVING</span>
+                <span>{t("homeLandingEyebrow")}</span>
                 </motion.div>
 
                 {/* 2. Main Editorial Headline */}
@@ -316,9 +316,9 @@ const Home = () => {
                   transition={{ duration: 0.7, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
                   className="home-hero-heading"
                 >
-                  <span className="home-hero-heading-solid">Your Society.</span>
+                  <span className="home-hero-heading-solid">{t("homeLandingTitle1")}</span>
                   <br />
-                  <span className="home-hero-heading-gradient">Simplified.</span>
+                  <span className="home-hero-heading-gradient">{t("homeLandingTitle2")}</span>
                 </motion.h1>
 
                 {/* 3. Supporting Description */}
@@ -328,7 +328,7 @@ const Home = () => {
                   transition={{ duration: 0.65, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
                   className="home-hero-description"
                 >
-                  One connected platform to manage residents, properties, parking, security, maintenance, finances and everyday community operations.
+                  {t("homeLandingDescription")}
                 </motion.p>
 
                 {/* 4. Primary & Secondary CTA Buttons */}
@@ -342,7 +342,7 @@ const Home = () => {
                     onClick={goToApp}
                     className="home-btn-hero-primary"
                   >
-                    <span>Explore Dashboard</span>
+                    <span>{t("homeExploreDashboard")}</span>
                     <HiOutlineArrowRight className="home-btn-arrow-icon" />
                   </button>
 
@@ -350,7 +350,7 @@ const Home = () => {
                     onClick={() => scrollToSection("features")}
                     className="home-btn-hero-secondary"
                   >
-                    <span>Explore Features</span>
+                    <span>{t("homeExploreFeatures")}</span>
                     <HiOutlineArrowRight className="home-btn-arrow-icon" />
                   </button>
                 </motion.div>
@@ -365,76 +365,76 @@ const Home = () => {
                   {/* Community-Role Indicator */}
                   <div className="home-hero-roles-bar">
                     <div className="home-hero-roles-icons">
-                      <div className="home-hero-role-item" title="Residents">
-                        <div className="home-hero-role-circle">
+                      <div className="home-hero-role-item" title={t("homeRoleResidents")}>
+                        <div className="home-hero-role-circle home-hero-role-circle--resident">
                           <HiOutlineUser />
                         </div>
-                        <span className="home-hero-role-name">Residents</span>
+                        <span className="home-hero-role-name">{t("homeRoleResidents")}</span>
                       </div>
 
-                      <div className="home-hero-role-item" title="Security">
-                        <div className="home-hero-role-circle">
+                      <div className="home-hero-role-item" title={t("homeRoleSecurity")}>
+                        <div className="home-hero-role-circle home-hero-role-circle--security">
                           <HiOutlineShieldCheck />
                         </div>
-                        <span className="home-hero-role-name">Security</span>
+                        <span className="home-hero-role-name">{t("homeRoleSecurity")}</span>
                       </div>
 
-                      <div className="home-hero-role-item" title="Committee">
-                        <div className="home-hero-role-circle">
+                      <div className="home-hero-role-item" title={t("homeRoleCommittee")}>
+                        <div className="home-hero-role-circle home-hero-role-circle--committee">
                           <HiOutlineUserGroup />
                         </div>
-                        <span className="home-hero-role-name">Committee</span>
+                        <span className="home-hero-role-name">{t("homeRoleCommittee")}</span>
                       </div>
 
-                      <div className="home-hero-role-item" title="Admin">
-                        <div className="home-hero-role-circle">
+                      <div className="home-hero-role-item" title={t("homeRoleAdmin")}>
+                        <div className="home-hero-role-circle home-hero-role-circle--admin">
                           <HiOutlineCog6Tooth />
                         </div>
-                        <span className="home-hero-role-name">Admin</span>
+                        <span className="home-hero-role-name">{t("homeRoleAdmin")}</span>
                       </div>
                     </div>
 
                     <div className="home-hero-roles-divider" aria-hidden="true" />
 
                     <div className="home-hero-roles-info">
-                      <div className="home-hero-roles-title">Built for every community role</div>
-                      <div className="home-hero-roles-subtitle">One simple, connected platform.</div>
+                      <div className="home-hero-roles-title">{t("homeRolePitchTitle")}</div>
+                      <div className="home-hero-roles-subtitle">{t("homeRolePitchSubtitle")}</div>
                     </div>
                   </div>
 
                   {/* Compact Benefit Strip */}
                   <div className="home-hero-feature-strip">
-                    <div className="home-feature-strip-cell">
+                    <div className="home-feature-strip-cell home-feature-strip-cell--security">
                       <div className="home-feature-strip-icon-box">
                         <HiOutlineShieldCheck />
                       </div>
                       <div className="home-feature-strip-details">
-                        <div className="home-feature-strip-title">Smart Gate Security</div>
-                        <div className="home-feature-strip-desc">Safer communities</div>
+                        <div className="home-feature-strip-title">{t("homeSecurityTitle")}</div>
+                        <div className="home-feature-strip-desc">{t("homeSecurityDesc")}</div>
                       </div>
                     </div>
 
                     <div className="home-feature-strip-sep" aria-hidden="true" />
 
-                    <div className="home-feature-strip-cell">
+                    <div className="home-feature-strip-cell home-feature-strip-cell--finance">
                       <div className="home-feature-strip-icon-box">
                         <span className="home-currency-symbol">₹</span>
                       </div>
                       <div className="home-feature-strip-details">
-                        <div className="home-feature-strip-title">Finance &amp; Maintenance</div>
-                        <div className="home-feature-strip-desc">Stay in control</div>
+                        <div className="home-feature-strip-title">{t("homeFinanceTitle")}</div>
+                        <div className="home-feature-strip-desc">{t("homeFinanceDesc")}</div>
                       </div>
                     </div>
 
                     <div className="home-feature-strip-sep" aria-hidden="true" />
 
-                    <div className="home-feature-strip-cell">
+                    <div className="home-feature-strip-cell home-feature-strip-cell--resident">
                       <div className="home-feature-strip-icon-box">
                         <HiOutlineUsers />
                       </div>
                       <div className="home-feature-strip-details">
-                        <div className="home-feature-strip-title">Resident Experience</div>
-                        <div className="home-feature-strip-desc">A better tomorrow</div>
+                        <div className="home-feature-strip-title">{t("homeResidentExpTitle")}</div>
+                        <div className="home-feature-strip-desc">{t("homeResidentExpDesc")}</div>
                       </div>
                     </div>
                   </div>
@@ -456,7 +456,7 @@ const Home = () => {
                   <div className="home-hero-photo-frame">
                     <SafeImage
                       src={homeBannerImg}
-                      alt="Contemporary Luxury Residential Community"
+                      alt={t("homeAltHero")}
                       className="home-hero-photo"
                       fallbackIcon={HiOutlineBuildingOffice2}
                       fallbackGradient="linear-gradient(135deg, #1e3a8a 0%, #0f172a 100%)"
@@ -472,7 +472,7 @@ const Home = () => {
                       <div className="home-hero-img-badge-icon">
                         <HiOutlineBuildingOffice2 />
                       </div>
-                      <span>COMMUNITY AT A GLANCE</span>
+                      <span>{t("homeCommunityGlance")}</span>
                     </motion.div>
                   </div>
 
@@ -485,8 +485,8 @@ const Home = () => {
                   >
                     <span className="home-status-indicator-dot" />
                     <div className="home-status-meta">
-                      <div className="home-status-title">Smart Society Platform</div>
-                      <div className="home-status-subtitle">Security and operations, connected 24/7</div>
+                      <div className="home-status-title">{t("homeHeroStatTitle")}</div>
+                      <div className="home-status-subtitle">{t("homeLandingStatus")}</div>
                     </div>
                     <HiOutlineArrowRight className="home-status-arrow" />
                   </motion.div>
@@ -542,15 +542,15 @@ const Home = () => {
                   <div className="home-feature-card-icon-wrap">
                     <HiOutlineBuildingOffice2 />
                   </div>
-                  <span className="home-feature-tag">PORTAL</span>
+                  <span className="home-feature-tag">{t("homeFeature1Tag")}</span>
                 </div>
-                <h3 className="home-feature-card-title">Your Community, Your Portal</h3>
+                <h3 className="home-feature-card-title">{t("homeFeature1Title")}</h3>
                 <p className="home-feature-card-desc">
-                  A dedicated digital home for your society, with secure access and organized community information.
+                  {t("homeFeature1Desc")}
                 </p>
                 <div className="home-feature-card-footer">
                   <span className="home-feature-chip">
-                    <HiOutlineCheckCircle className="home-feature-chip-icon" /> Verified Society Gateway
+                    <HiOutlineCheckCircle className="home-feature-chip-icon" /> {t("homeFeature1Chip")}
                   </span>
                   <HiOutlineArrowRight className="home-feature-arrow" />
                 </div>
@@ -568,15 +568,15 @@ const Home = () => {
                   <div className="home-feature-card-icon-wrap">
                     <HiOutlineCog6Tooth />
                   </div>
-                  <span className="home-feature-tag">AUTOMATION</span>
+                  <span className="home-feature-tag">{t("homeFeature2Tag")}</span>
                 </div>
-                <h3 className="home-feature-card-title">Smarter Everyday Operations</h3>
+                <h3 className="home-feature-card-title">{t("homeFeature2Title")}</h3>
                 <p className="home-feature-card-desc">
-                  Simplify billing, reminders, maintenance workflows, and repetitive administrative tasks.
+                  {t("homeFeature2Desc")}
                 </p>
                 <div className="home-feature-card-footer">
                   <span className="home-feature-chip">
-                    <HiOutlineCheckCircle className="home-feature-chip-icon" /> Zero Manual Overhead
+                    <HiOutlineCheckCircle className="home-feature-chip-icon" /> {t("homeFeature2Chip")}
                   </span>
                   <HiOutlineArrowRight className="home-feature-arrow" />
                 </div>
@@ -594,15 +594,15 @@ const Home = () => {
                   <div className="home-feature-card-icon-wrap">
                     <HiOutlineMegaphone />
                   </div>
-                  <span className="home-feature-tag">NOTICES</span>
+                  <span className="home-feature-tag">{t("homeFeature3Tag")}</span>
                 </div>
-                <h3 className="home-feature-card-title">Connected Community</h3>
+                <h3 className="home-feature-card-title">{t("homeFeature3Title")}</h3>
                 <p className="home-feature-card-desc">
-                  Share notices, announcements, events, and updates that keep everyone informed.
+                  {t("homeFeature3Desc")}
                 </p>
                 <div className="home-feature-card-footer">
                   <span className="home-feature-chip">
-                    <HiOutlineCheckCircle className="home-feature-chip-icon" /> Instant Member Broadcast
+                    <HiOutlineCheckCircle className="home-feature-chip-icon" /> {t("homeFeature3Chip")}
                   </span>
                   <HiOutlineArrowRight className="home-feature-arrow" />
                 </div>
@@ -620,15 +620,15 @@ const Home = () => {
                   <div className="home-feature-card-icon-wrap">
                     <HiOutlineShieldCheck />
                   </div>
-                  <span className="home-feature-tag">SECURITY</span>
+                  <span className="home-feature-tag">{t("homeFeature4Tag")}</span>
                 </div>
-                <h3 className="home-feature-card-title">Access with Confidence</h3>
+                <h3 className="home-feature-card-title">{t("homeFeature4Title")}</h3>
                 <p className="home-feature-card-desc">
-                  Give residents, administrators, committee members, accountants, and staff the right level of access.
+                  {t("homeFeature4Desc")}
                 </p>
                 <div className="home-feature-card-footer">
                   <span className="home-feature-chip">
-                    <HiOutlineCheckCircle className="home-feature-chip-icon" /> Role-Based Permissions
+                    <HiOutlineCheckCircle className="home-feature-chip-icon" /> {t("homeFeature4Chip")}
                   </span>
                   <HiOutlineArrowRight className="home-feature-arrow" />
                 </div>
@@ -646,15 +646,15 @@ const Home = () => {
                   <div className="home-feature-card-icon-wrap">
                     <HiOutlineCreditCard />
                   </div>
-                  <span className="home-feature-tag">PAYMENTS</span>
+                  <span className="home-feature-tag">{t("homeFeature5Tag")}</span>
                 </div>
-                <h3 className="home-feature-card-title">Seamless Maintenance Payments</h3>
+                <h3 className="home-feature-card-title">{t("homeFeature5Title")}</h3>
                 <p className="home-feature-card-desc">
-                  Manage maintenance dues, online payments, receipts, and reminders in one convenient place.
+                  {t("homeFeature5Desc")}
                 </p>
                 <div className="home-feature-card-footer">
                   <span className="home-feature-chip">
-                    <HiOutlineCheckCircle className="home-feature-chip-icon" /> Direct Bank Settlement
+                    <HiOutlineCheckCircle className="home-feature-chip-icon" /> {t("homeFeature5Chip")}
                   </span>
                   <HiOutlineArrowRight className="home-feature-arrow" />
                 </div>
@@ -672,15 +672,15 @@ const Home = () => {
                   <div className="home-feature-card-icon-wrap">
                     <HiOutlineSparkles />
                   </div>
-                  <span className="home-feature-tag">SERVICES</span>
+                  <span className="home-feature-tag">{t("homeFeature6Tag")}</span>
                 </div>
-                <h3 className="home-feature-card-title">A Better Resident Experience</h3>
+                <h3 className="home-feature-card-title">{t("homeFeature6Title")}</h3>
                 <p className="home-feature-card-desc">
-                  Make everyday living easier with complaint requests, amenity bookings, and convenient resident services.
+                  {t("homeFeature6Desc")}
                 </p>
                 <div className="home-feature-card-footer">
                   <span className="home-feature-chip">
-                    <HiOutlineCheckCircle className="home-feature-chip-icon" /> 1-Tap Service Requests
+                    <HiOutlineCheckCircle className="home-feature-chip-icon" /> {t("homeFeature6Chip")}
                   </span>
                   <HiOutlineArrowRight className="home-feature-arrow" />
                 </div>
@@ -700,7 +700,7 @@ const Home = () => {
                   <HiOutlineSparkles className="home-features-pill-icon" />
                 </span>
                 <span className="home-features-pill-text">
-                  One connected platform for properties, people, security, and everyday operations
+                  {t("homeLandingPlatformLine")}
                 </span>
               </div>
             </motion.div>

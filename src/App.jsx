@@ -39,6 +39,7 @@ import SuperAdminComplaintReport from "./pages/SuperAdmin/reports/ComplaintRepor
 import SuperAdminFinancialReport from "./pages/SuperAdmin/reports/FinancialReport";
 import SuperAdminExpenseReport from "./pages/SuperAdmin/reports/ExpenseReport";
 import SocietyThemeBrandingPage from "./pages/SuperAdmin/SocietyThemeBrandingPage";
+import SuperAdminSocietyLocation from "./pages/SuperAdmin/SuperAdminSocietyLocation";
 
 /* === SOCIETY ADMIN (FULL ACCESS) === */
 import AdminLayout from "./pages/Admin/AdminLayout";
@@ -161,7 +162,7 @@ function App() {
             </PublicRoute>
           }
         />
-        <Route path="/register" element={<Register />} />
+        <Route path="/register" element={<LanguageProvider role="home"><Register /></LanguageProvider>} />
         <Route path="/registration-pending" element={<RegistrationPending />} />
         <Route path="/forgot-password" element={<ForgetPassword />} />
         <Route path="/reset-password/:token" element={<ResetPassword />} />
@@ -177,6 +178,7 @@ function App() {
           <Route path="/superadmin" element={<SuperAdminLayout />}>
             <Route index element={<SuperAdminDashboard />} />
             <Route path="societies" element={<Socities />} />
+            <Route path="society-location" element={<SuperAdminSocietyLocation />} />
             <Route path="society-theme" element={<SocietyThemeBrandingPage />} />
             <Route path="society/:societyId/blocks" element={<Blocks />} />
             <Route path="floor/:floorId/flats" element={<Flats />} />

@@ -432,12 +432,26 @@ export default function GuardPunchModal({
                                 : "bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/30"
                             }`}
                           >
-                            {isWithin ? "✓ In Range" : "⚠ Out of Range"}
+                            {isPunchIn
+                              ? isWithin
+                                ? "✓ In Range"
+                                : "⚠ Out of Range"
+                              : isWithin
+                              ? t("gdReadyToPunchOut", "Ready to punch out")
+                              : t("gdMoveCloserToPunchOut", "Move closer to punch out")}
                           </span>
                         )}
                       </div>
                       <p className="text-[11px] text-secondary mt-0.5">
-                        {location
+                        {!isPunchIn
+                          ? isWithin === true
+                            ? t("gdCanPunchOutNow", "You can punch out now.")
+                            : isWithin === false
+                            ? t("gdMoveIntoRange", "Move closer to the society to punch out.")
+                            : locationLoading
+                            ? t("gdCheckingPunchOutRange", "Checking your location…")
+                            : locationError || t("gdCheckingPunchOutRange", "Checking your location…")
+                          : location
                           ? `Lat: ${location.lat.toFixed(5)}, Lng: ${location.lng.toFixed(5)}${
                               location.accuracy != null ? ` (±${Math.round(location.accuracy)}m)` : ""
                             }`
@@ -459,7 +473,7 @@ export default function GuardPunchModal({
                 </div>
 
                 {/* Distance vs Allowed Comparison Banner */}
-                {distance != null && geofence && (
+                {isPunchIn && distance != null && geofence && (
                   <div
                     className={`mt-2.5 pt-2.5 border-t flex items-center gap-2 text-xs font-semibold ${
                       isWithin

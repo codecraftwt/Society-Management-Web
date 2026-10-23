@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { MdMoreVert, MdManageAccounts, MdDelete, MdPalette } from "react-icons/md";
+import { MdMoreVert, MdManageAccounts, MdDelete, MdPalette, MdPlace } from "react-icons/md";
 import { BiSolidEdit } from "react-icons/bi";
 
 /**
@@ -17,6 +17,7 @@ export default function SocietyActionMenu({
   onEditAdmin,
   onManage,
   onCustomizeTheme,
+  onSetLocation,
   onDelete,
   hasAdmin,
   t,
@@ -100,6 +101,17 @@ export default function SocietyActionMenu({
             <MdManageAccounts size={15} />
             {t("saManageBtn")}
           </button>
+
+          {onSetLocation && (
+            <button
+              role="menuitem"
+              className="sa-action-item"
+              onClick={handleItem(onSetLocation)}
+            >
+              <MdPlace size={15} />
+              {t("asLocationTab", "Society Location")}
+            </button>
+          )}
 
           {onCustomizeTheme && (
             <button

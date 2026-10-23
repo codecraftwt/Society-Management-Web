@@ -134,6 +134,22 @@ export function parseCoordString(str) {
   return { lat, lng, valid: true };
 }
 
+/** Exact local landmark match used when public geocoders return a nearby POI. */
+export function knownLocationSuggestion(raw) {
+  const q = String(raw || "").toLowerCase();
+  if (q.includes("shivaji university") && q.includes("siber") && q.includes("kolhapur")) {
+    return {
+      id: "known-shivaji-university-siber-chowk",
+      title: "Shivaji University",
+      subtitle: "SIBER Chowk, Rajarampuri, Kolhapur, Maharashtra, 416004",
+      label: "Shivaji University, SIBER Chowk, Rajarampuri, Kolhapur, Maharashtra, 416004",
+      lat: 16.677967,
+      lng: 74.251562,
+    };
+  }
+  return null;
+}
+
 /**
  * Maps a Nominatim / geocoder result onto the coordinate fields.
  * Returns null when the payload carries no usable pair.

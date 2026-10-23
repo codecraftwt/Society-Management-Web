@@ -25,6 +25,7 @@ import {
   formatDistance,
   geocodeResultToPoint,
   generateSmartLocationCandidates,
+  knownLocationSuggestion,
   haversineDistanceKm,
   photonFeatureToPoint,
   parseCoordString,
@@ -56,7 +57,7 @@ function ErrorIcon({ size = 13 }) {
   );
 }
 
-export default function SocietyLocationSettings() {
+export default function SocietyLocationSettings({ societyId = null, societyName = "" }) {
   const { t } = useLang();
 
   /* ── Form State ────────────────────────────────────────────────────────── */
@@ -122,13 +123,16 @@ export default function SocietyLocationSettings() {
 
   /* ── Reverse Geocode Sync ───────────────────────────────────────────────── */
   const revTimerRef = useRef(null);
+  const moveRevisionRef = useRef(0);
   const syncAddressFromCoords = useCallback((lat, lng) => {
     if (lat == null || lng == null) return;
+    const revision = ++moveRevisionRef.current;
     if (revTimerRef.current) clearTimeout(revTimerRef.current);
     revTimerRef.current = setTimeout(async () => {
       try {
         const geo = await reverseGeocode(lat, lng);
         if (!aliveRef.current) return;
+        if (revision !== moveRevisionRef.current) return;
         if (geo && geo.formattedAddress) {
           setAddress(geo.formattedAddress);
           setCurrentAddress(geo.formattedAddress);
@@ -154,16 +158,21 @@ export default function SocietyLocationSettings() {
     }
   }, [syncAddressFromCoords]);
 
-  const handleMapMove = useCallback((lat, lng) => {
+  const handleMapMove = useCallback((lat, lng, source) => {
     const fields = toCoordFields(lat, lng);
     setLatitude(fields.latitude);
     setLongitude(fields.longitude);
     setNotice("");
     syncAddressFromCoords(lat, lng);
+    // Re-center after a drag so the final pin position is the visible,
+    // committed point instead of leaving the map viewport behind it.
+    if (source === "dragend" || source === "click") {
+      setFlyCount((count) => count + 1);
+    }
   }, [syncAddressFromCoords]);
 
   /* ── Load Geofence from API ────────────────────────────────────────────── */
-  const applyGeofence = useCallback((geo) => {
+  const applyGeofence = useCallback((geo, society = null) => {
     const lat = toNumber(geo?.latitude);
     const lng = toNumber(geo?.longitude);
     const rad = toNumber(geo?.radius_meters);
@@ -175,19 +184,20 @@ export default function SocietyLocationSettings() {
       longitude: lng,
       radius: rad || RADIUS_DEFAULT,
       isConfigured: lat !== null && lng !== null,
+      societyName: society?.society_name || societyName,
     });
     if (lat !== null && lng !== null) {
       syncAddressFromCoords(lat, lng);
     }
-  }, [syncAddressFromCoords]);
+  }, [societyName, syncAddressFromCoords]);
 
   const loadGeofence = useCallback(async () => {
     setLoading(true);
     setLoadError("");
     try {
-      const res = await API.get("/societies/geofence");
+      const res = await API.get("/societies/geofence", societyId ? { params: { society_id: societyId } } : undefined);
       if (!aliveRef.current) return;
-      applyGeofence(res?.data?.geofence);
+      applyGeofence(res?.data?.geofence, res?.data);
       if (res?.data?.address) {
         setCurrentAddress(res.data.address);
       }
@@ -200,7 +210,7 @@ export default function SocietyLocationSettings() {
     } finally {
       if (aliveRef.current) setLoading(false);
     }
-  }, [applyGeofence, t]);
+  }, [applyGeofence, societyId, t]);
 
   useEffect(() => {
     loadGeofence();
@@ -244,6 +254,9 @@ export default function SocietyLocationSettings() {
     async (query) => {
       const q = String(query || "").trim();
       if (!q) return [];
+
+      const knownMatch = knownLocationSuggestion(q);
+      if (knownMatch) return [knownMatch];
 
       // 1. Direct coordinate string check
       const coordPair = parseCoordString(q);
@@ -358,6 +371,18 @@ export default function SocietyLocationSettings() {
       setResults([]);
       setSearchOpen(false);
       setSearching(false);
+      return;
+    }
+
+    const knownMatch = knownLocationSuggestion(q);
+    if (knownMatch) {
+      setCoordinates(knownMatch.lat, knownMatch.lng, true);
+      setLocationTitle(knownMatch.title);
+      setCurrentAddress(knownMatch.label);
+      setResults([]);
+      setSearchOpen(false);
+      setSearching(false);
+      setNotice(t("asLocPicked", "Location set: {{place}}", { place: knownMatch.label }));
       return;
     }
 
@@ -503,7 +528,10 @@ export default function SocietyLocationSettings() {
     setNotice("");
     setSaved(false);
     try {
-      const res = await API.put("/societies/geofence", payload);
+      const res = await API.put("/societies/geofence", {
+        ...payload,
+        ...(societyId ? { society_id: societyId } : {}),
+      });
       if (!aliveRef.current) return;
       toast.success(t("asLocSaved", "Society location saved successfully."));
       setSaved(true);
@@ -515,6 +543,7 @@ export default function SocietyLocationSettings() {
         longitude: point.lng,
         radius: toNumber(radius),
         isConfigured: true,
+        societyName: res?.data?.society_name || societyName,
       });
       setTimeout(() => {
         if (aliveRef.current) setSaved(false);

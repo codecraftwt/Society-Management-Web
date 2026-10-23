@@ -1,7 +1,6 @@
 import { useState, useContext, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate, Link } from "react-router-dom";
-import { APP_NAME } from "../constants/app";
 import API from "../services/api";
 import { AuthContext } from "../context/AuthContext";
 import { toast } from "react-toastify";
@@ -18,10 +17,10 @@ import {
 import {
   HiOutlineBuildingOffice2,
   HiOutlineArrowLeft,
+  HiOutlineArrowRight,
   HiOutlinePhone,
   HiBars3,
   HiOutlineXMark,
-  HiOutlineArrowRight
 } from "react-icons/hi2";
 import compLogoImg from "../assets/Photos/Home/comp_logo.png";
 import LanguageSelector from "../components/common/LanguageSelector";
@@ -36,7 +35,7 @@ import {
 
 import ThemeToggle from "../components/common/ThemeToggle";
 import { useLang } from "../context/LanguageContext";
-import homeBannerImg from "../assets/Photos/Home/Home.png";
+import loginHeroImg from "../assets/Photos/Home/login_right_side_img.png";
 import "./Login.css";
 
 /* ═══════════════════════════════════════════════════════════
@@ -160,9 +159,9 @@ function OtpModal({ email, tempToken, onVerified, onCancel }) {
   const dashOffset = circumference * (1 - progress);
   const timerColor = sessionSecs > 60 ? "#38bdf8" : sessionSecs > 30 ? "#3B82F6" : "#ef4444";
 
-  return (
-    <div className="otp-overlay">
-      <div className="otp-modal-box animate-scaleIn">
+  return createPortal(
+    <div className="otp-overlay otp-overlay--login">
+      <div className="otp-modal-box otp-modal-box--login animate-scaleIn">
         <div className="otp-modal-topbar" />
 
         <div className="otp-modal-inner">
@@ -297,7 +296,8 @@ function OtpModal({ email, tempToken, onVerified, onCancel }) {
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
@@ -392,14 +392,6 @@ function Login() {
   const { login, switchRole, user } = useContext(AuthContext);
   const { t } = useLang();
   const [menuOpen, setMenuOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
-
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 24);
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -556,8 +548,8 @@ function Login() {
       return;
     }
 
-    // If non-resident society admin, ensure activeRole is SOCIETY_ADMIN
-    if (hasSocietyAdmin && !hasResident) {
+    // If society admin, ensure activeRole defaults to SOCIETY_ADMIN unless another management role was set
+    if (hasSocietyAdmin && (!user.activeRole || user.activeRole === "RESIDENT")) {
       user.activeRole = "SOCIETY_ADMIN";
     }
 
@@ -697,116 +689,84 @@ function Login() {
 
   return (
     <div className="login-page-container">
-      {/* Background Ambient Glow Orbs */}
-      <div className="login-glow-orb orb-1"></div>
-      <div className="login-glow-orb orb-2"></div>
-
-      {/* Full-bleed background photo of residential community */}
-      <img
-        src={homeBannerImg}
-        alt="Residential Community Background"
-        className="login-bg-photo"
-      />
-
-      {/* Home-style Navbar */}
-      <nav className={`home-navbar ${scrolled ? "home-navbar--scrolled" : "home-navbar--over-hero"} ${menuOpen ? "home-navbar--menu-open" : ""}`}>
+      <nav className={`home-navbar home-navbar--scrolled ${menuOpen ? "home-navbar--menu-open" : ""}`}>
         <div className="home-container">
           <div className="home-navbar-inner">
-            {/* Dual Brand Identity: Company Logo + Product Branding */}
-            <Link to="/" className="home-brand-logo" aria-label="Society Management Home">
-              <img
-                src={compLogoImg}
-                alt="WK Company Logo"
-                className="home-brand-comp-logo"
-              />
+            <Link to="/" className="home-brand-logo" aria-label={t("homeBrandHomeLabel")}>
+              <img src={compLogoImg} alt={t("homeCompanyLogoAlt")} className="home-brand-comp-logo" />
               <div className="home-brand-divider" aria-hidden="true" />
               <div className="home-brand-text">
-                <div className="home-brand-title">{t("homeBrandTitle") || "Society Management"}</div>
-                <div className="home-brand-subtitle">{t("homeBrandSubtitle") || "SYSTEM"}</div>
+                <div className="home-brand-title">{t("homeBrandTitle")}</div>
+                <div className="home-brand-subtitle">{t("homeBrandSubtitle")}</div>
               </div>
             </Link>
-
-            {/* Desktop Navigation Links */}
             <ul className="home-nav-links">
-              <li className="home-nav-item">
-                <Link to="/#features" className="home-nav-link">
-                  {t("homeNavFeatures") || "Features"}
-                </Link>
-              </li>
-              <li className="home-nav-item">
-                <Link to="/#how-it-works" className="home-nav-link">
-                  {t("homeNavHowItWorks") || "How It Works"}
-                </Link>
-              </li>
-              <li className="home-nav-item">
-                <Link to="/#roles" className="home-nav-link">
-                  {t("homeNavUserRoles") || "User Roles"}
-                </Link>
-              </li>
+              <li className="home-nav-item"><Link to="/#features" className="home-nav-link">{t("homeNavFeatures")}</Link></li>
+              <li className="home-nav-item"><Link to="/#how-it-works" className="home-nav-link">{t("homeNavHowItWorks")}</Link></li>
+              <li className="home-nav-item"><Link to="/#roles" className="home-nav-link">{t("homeNavUserRoles")}</Link></li>
             </ul>
-
-            {/* Nav Right Actions: Language -> Home CTA -> Theme */}
             <div className="home-nav-actions">
               <LanguageSelector compact />
-              <Link
-                to="/"
-                className="home-btn-nav-cta"
-                aria-label="Home"
-              >
-                <span>{t("homeNavHome") || "Home"}</span>
-                <HiOutlineArrowRight className="home-nav-btn-arrow" />
-              </Link>
-              <div className="home-nav-theme-toggle">
-                <ThemeToggle />
-              </div>
+              <div className="home-nav-theme-toggle"><ThemeToggle /></div>
+              <Link to="/" className="home-btn-nav-cta"><span>{t("homeNavHome")}</span><HiOutlineArrowRight className="home-nav-btn-arrow" /></Link>
             </div>
-
-            {/* Mobile Burger */}
-            <button
-              className="home-mobile-burger"
-              onClick={() => setMenuOpen((o) => !o)}
-              aria-label="Toggle navigation menu"
-              aria-expanded={menuOpen}
-            >
+            <button className="home-mobile-burger" onClick={() => setMenuOpen((open) => !open)} aria-label={t("homeToggleMenu")} aria-expanded={menuOpen}>
               {menuOpen ? <HiOutlineXMark /> : <HiBars3 />}
             </button>
           </div>
         </div>
-
-        {/* Mobile Navigation Menu */}
         <div className={`home-mobile-menu ${menuOpen ? "active" : ""}`}>
-          <Link to="/#features" className="home-mobile-link" onClick={() => setMenuOpen(false)}>
-            {t("homeNavFeatures") || "Features"}
-          </Link>
-          <Link to="/#how-it-works" className="home-mobile-link" onClick={() => setMenuOpen(false)}>
-            {t("homeNavHowItWorks") || "How It Works"}
-          </Link>
-          <Link to="/#roles" className="home-mobile-link" onClick={() => setMenuOpen(false)}>
-            {t("homeNavUserRoles") || "User Roles"}
-          </Link>
-
+          <Link to="/#features" className="home-mobile-link" onClick={() => setMenuOpen(false)}>{t("homeNavFeatures")}</Link>
+          <Link to="/#how-it-works" className="home-mobile-link" onClick={() => setMenuOpen(false)}>{t("homeNavHowItWorks")}</Link>
+          <Link to="/#roles" className="home-mobile-link" onClick={() => setMenuOpen(false)}>{t("homeNavUserRoles")}</Link>
           <div className="home-mobile-divider" />
-
-          <div className="home-mobile-prefs">
-            <div className="home-nav-theme-toggle">
-              <ThemeToggle />
-            </div>
-            <LanguageSelector compact />
-          </div>
-
-          <div className="home-mobile-actions">
-            <Link
-              to="/"
-              onClick={() => setMenuOpen(false)}
-              className="home-btn-nav-cta"
-              aria-label="Home"
-            >
-              <span>{t("homeNavHome") || "Home"}</span>
-              <HiOutlineArrowRight className="home-nav-btn-arrow" />
-            </Link>
-          </div>
+          <div className="home-mobile-prefs"><LanguageSelector compact /><div className="home-nav-theme-toggle"><ThemeToggle /></div></div>
+          <div className="home-mobile-actions"><Link to="/" className="home-btn-nav-cta" onClick={() => setMenuOpen(false)}>{t("homeNavHome")}</Link></div>
         </div>
       </nav>
+      <main className="login-auth-card">
+      <section className="login-hero-panel">
+        <img src={loginHeroImg} alt="" className="login-hero-image" />
+        <div className="login-hero-shade" aria-hidden="true" />
+        <div className="login-hero-brand">
+          <Link to="/" className="login-hero-brand-link" aria-label={t("homeBrandHomeLabel")}>
+            <img src={compLogoImg} alt={t("homeCompanyLogoAlt")} />
+            <span className="login-hero-brand-copy">
+              <strong>{t("homeBrandTitle")}</strong>
+              <small>{t("homeBrandSubtitle")}</small>
+            </span>
+          </Link>
+        </div>
+        <div className="login-hero-copy">
+          <h1>{t("authHeroTitle")}<br /><span>{t("authHeroAccent")}</span></h1>
+          <p className="login-hero-description">{t("authHeroDescription")}</p>
+        </div>
+        <div className="login-benefit-strip">
+          <div className="login-benefit">
+            <span className="login-benefit-icon"><HiShieldCheck /></span>
+            <span>{t("authBenefit1")}</span>
+          </div>
+          <div className="login-benefit-divider" />
+          <div className="login-benefit">
+            <span className="login-benefit-icon"><MdGroups /></span>
+            <span>{t("authBenefit2")}</span>
+          </div>
+          <div className="login-benefit-divider" />
+          <div className="login-benefit">
+            <span className="login-benefit-icon"><HiLockClosed /></span>
+            <span>{t("authBenefit3")}</span>
+          </div>
+        </div>
+      </section>
+
+      <section className="login-form-panel">
+        <div className="login-panel-top">
+          <button type="button" className="login-back-button" onClick={() => navigate("/")}>
+            <HiOutlineArrowLeft /> {t("authBack")}
+          </button>
+        </div>
+
+        <div className="login-content">
 
       {/* OTP Modal */}
       {step === "otp" && (
@@ -1570,20 +1530,25 @@ function Login() {
           document.body
         )}
 
-      {/* From Uiverse.io by Praashoo7 Form Card */}
       <form className="form" onSubmit={handleLogin}>
-        <p id="heading">Login</p>
+        <div className="login-heading-block">
+          <p className="login-eyebrow">{t("authWelcomeEyebrow")}</p>
+          <h2 id="heading">{t("authWelcomeTitle")}</h2>
+          <p className="login-heading-subtitle">{t("authWelcomeSubtitle")}</p>
+        </div>
 
         {/* Email Field with SVG icon */}
+        <label className="login-field-label" htmlFor="login-email">{t("authEmailLabel")}</label>
         <div className="field">
           <svg className="input-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
             <path d="M13.106 7.222c0-2.967-2.249-5.032-5.482-5.032-3.35 0-5.646 2.318-5.646 5.702 0 3.493 2.235 5.708 5.762 5.708.862 0 1.689-.123 2.304-.335v-.862c-.43.199-1.354.328-2.29.328-2.926 0-4.813-1.88-4.813-4.798 0-2.844 1.921-4.881 4.594-4.881 2.735 0 4.608 1.688 4.608 4.156 0 1.682-.554 2.769-1.416 2.769-.492 0-.772-.28-.772-.76V5.206H8.923v.834h-.11c-.266-.595-.881-.964-1.6-.964-1.4 0-2.378 1.162-2.378 2.823 0 1.737.957 2.906 2.379 2.906.8 0 1.415-.39 1.709-1.087h.11c.081.67.703 1.148 1.503 1.148 1.572 0 2.57-1.415 2.57-3.643zm-7.177.704c0-1.197.54-1.907 1.456-1.907.93 0 1.524.738 1.524 1.907S8.308 9.84 7.371 9.84c-.895 0-1.442-.725-1.442-1.914z"></path>
           </svg>
           <input
-            autoComplete="off"
-            placeholder="Username / Email"
+            id="login-email"
+            placeholder={t("authEmailPlaceholder")}
             className="input-field"
             type="email"
+            autoComplete="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
@@ -1591,12 +1556,14 @@ function Login() {
         </div>
 
         {/* Password Field with SVG icon + Eye toggle */}
+        <label className="login-field-label" htmlFor="login-password">{t("authPasswordLabel")}</label>
         <div className="field">
           <svg className="input-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
             <path d="M8 1a2 2 0 0 1 2 2v4H6V3a2 2 0 0 1 2-2zm3 6V3a3 3 0 0 0-6 0v4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"></path>
           </svg>
           <input
-            placeholder="Password"
+            id="login-password"
+            placeholder={t("authPasswordPlaceholder")}
             className="input-field"
             type={showPassword ? "text" : "password"}
             value={password}
@@ -1607,35 +1574,42 @@ function Login() {
             type="button"
             onClick={() => setShowPassword(!showPassword)}
             className="eye-toggle-btn"
-            aria-label={showPassword ? "Hide Password" : "Show Password"}
+            aria-label={showPassword ? t("authHidePassword") : t("authShowPassword")}
           >
             {showPassword ? <AiOutlineEyeInvisible size={18} /> : <AiOutlineEye size={18} />}
           </button>
         </div>
 
-        {/* 2FA Notice */}
+        <div className="login-options-row">
+          <span />
+          <button type="button" onClick={() => navigate("/forgot-password")} className="button3">
+            {t("authForgotPassword")}
+          </button>
+        </div>
+
+        {/* Existing verification notice; the OTP flow is unchanged. */}
         <div className="uiverse-notice">
           <HiShieldCheck className="uiverse-notice-icon" />
           <span className="uiverse-notice-text">
-            A 6-digit verification code will be sent to your email.
+            {t("authVerificationNotice")}
           </span>
         </div>
 
         {/* Buttons Row */}
         <div className="btn">
           <button type="submit" disabled={loginLoading} className="button1">
-            {loginLoading ? "Sending OTP…" : "Login"}
-          </button>
-          <button type="button" onClick={() => navigate("/register")} className="button2">
-            Sign Up
+            {loginLoading ? t("authSendingCode") : <>{t("authSignIn")} <HiOutlineArrowRight /></>}
           </button>
         </div>
 
-        {/* Forgot Password Button */}
-        <button type="button" onClick={() => navigate("/forgot-password")} className="button3">
-          Forgot Password
-        </button>
+        <div className="login-form-links">
+          <span>{t("authNoAccount")}</span>
+          <Link to="/register">{t("authCreateAccount")}</Link>
+        </div>
       </form>
+        </div>
+      </section>
+      </main>
     </div>
   );
 }

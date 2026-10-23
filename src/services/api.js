@@ -16,20 +16,27 @@ API.interceptors.request.use((config) => {
 
   // Attach active role if present
   const userStr = localStorage.getItem("user");
+  let activeRole = "";
   if (userStr) {
     try {
       const parsedUser = JSON.parse(userStr);
-      const activeRole = parsedUser.activeRole || parsedUser.role;
+      activeRole = String(parsedUser.activeRole || parsedUser.role || "").toUpperCase();
       if (activeRole) {
-        config.headers["x-active-role"] = activeRole;
+        config.headers["x-active-role"] = parsedUser.activeRole || parsedUser.role;
       }
-    } catch (e) {}
+    } catch {
+      // Ignore malformed cached user data and omit the role-specific scope.
+    }
   }
 
   // --- NEW: Intercept & Attach Super Admin Global Filter ---
   // If the Super Admin has selected a specific society, attach it to all requests
-  const saFilter = localStorage.getItem("superadmin_society_filter");
-  if (saFilter && saFilter !== "ALL") {
+  const saFilter = activeRole === "SUPER_ADMIN"
+    ? localStorage.getItem("superadmin_society_filter")
+    : null;
+  const requestPath = (config.url || "").split("?")[0];
+  const isSocietyScopeExempt = /^\/?societies\/?$/.test(requestPath) || /^\/?auth(?:\/|$)/.test(requestPath);
+  if (saFilter && saFilter !== "ALL" && !isSocietyScopeExempt && !config._skipSuperAdminSocietyFilter) {
     // Attach as header for all requests (POST, PUT, DELETE, etc.)
     config.headers["x-society-id"] = saFilter;
     

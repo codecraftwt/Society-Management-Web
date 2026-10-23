@@ -1707,7 +1707,7 @@ export default function MaintenancePage() {
   return (
     <div className="flex flex-col gap-4">
       {/* ── UNIFIED HEADER BAR ── */}
-      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3 mb-1">
+      <div className="flex flex-col 2xl:flex-row 2xl:flex-nowrap 2xl:items-center justify-between gap-3 mb-1">
         <div className="flex items-center gap-3">
           <div
             style={{
@@ -1734,11 +1734,8 @@ export default function MaintenancePage() {
             </p>
           </div>
         </div>
-      </div>
-
-      {/* ── CONTROLS TOOLBAR: Toggle Buttons, Society Dropdown, Generate Bills, New Configuration in one row ── */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 w-full my-1">
-        <div className="flex items-center overflow-x-auto max-w-full pb-0.5" style={{ scrollbarWidth: "none" }}>
+        {/* ── Controls stay beside the heading on desktop ── */}
+        <div className="flex items-center gap-2.5 flex-wrap 2xl:flex-nowrap justify-start 2xl:justify-end min-w-0 max-w-full pb-1" style={{ scrollbarWidth: "none" }}>
           <SlidingTabs
             value={tab}
             onChange={setTab}
@@ -1747,12 +1744,9 @@ export default function MaintenancePage() {
               { id: "bills", label: t("mntTabGeneratedBills"), icon: <MdReceiptLong size={15} /> },
             ]}
           />
-        </div>
-
-        <div className="flex items-center gap-2.5 flex-wrap sm:flex-nowrap shrink-0 overflow-x-auto max-w-full pb-1" style={{ scrollbarWidth: "none" }}>
           {isSuperAdmin && (
             <Select
-              className="text-xs font-semibold"
+              className="text-xs font-semibold sa-society-select"
               placeholder={t("mntSelectSociety")}
               value={societyId}
               onChange={handleSocietyChange}

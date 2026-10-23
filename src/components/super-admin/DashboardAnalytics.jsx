@@ -56,6 +56,12 @@ const LIGHT_PALETTE = {
 
 const DONUT_COLORS_DARK = ["#22d3ee", "#3b82f6", "#fb7185", "#a78bfa", "#06b6d4", "#2563eb"];
 const DONUT_COLORS_LIGHT = ["#22d3ee", "#3b82f6", "#fb7185", "#a78bfa", "#06b6d4", "#2563eb"];
+const PROPERTY_TYPE_BAR_COLORS = {
+  apartments: "#3B82F6",
+  rowHouses: "#10B981",
+  mixed: "#8B5CF6",
+  commercial: "#F59E0B",
+};
 
 // ── Tooltip style ────────────────────────────────────────────────────────────
 function buildTooltipStyle(p) {
@@ -101,14 +107,32 @@ function NoData({ message = "No data available" }) {
 }
 
 // ── Property type label mapping ──────────────────────────────────────────────
-function propTypeLabel(pt, t) {
-  const map = {
-    Apartments: t("saAnPropApt", "Apartments"),
-    "Row Houses": t("saAnPropRow", "Row Houses"),
-    Mixed: t("saAnPropMixed", "Mixed"),
-    Commercial: t("saAnPropCom", "Commercial"),
+function propTypeKey(pt) {
+  const normalized = String(pt || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[_-]+/g, " ")
+    .replace(/\s+/g, " ");
+
+  if (["apartment", "apartments", "flat", "flats", "apartment / flats", "apartments / flats"].includes(normalized)) {
+    return "apartments";
+  }
+  if (normalized.includes("row house") || normalized.includes("row houses") || normalized.includes("villa")) {
+    return "rowHouses";
+  }
+  if (normalized.includes("mixed")) return "mixed";
+  if (normalized.includes("commercial")) return "commercial";
+  return normalized || "apartments";
+}
+
+function propTypeLabel(type, t) {
+  const labels = {
+    apartments: t("saAnPropApt", "Apartments"),
+    rowHouses: t("saAnPropRow", "Row Houses"),
+    mixed: t("saAnPropMixed", "Mixed"),
+    commercial: t("saAnPropCom", "Commercial"),
   };
-  return map[pt] || pt;
+  return labels[type] || type;
 }
 
 // ── Main component ───────────────────────────────────────────────────────────
@@ -123,6 +147,8 @@ export default function DashboardAnalytics({ societies, loading, onDataLoaded })
   const [residents, setResidents] = useState([]);
   const [liveLoading, setLiveLoading] = useState(true);
   const [liveError, setLiveError] = useState(false);
+  const [blockTypesBySociety, setBlockTypesBySociety] = useState({});
+  const [propertyTypesLoading, setPropertyTypesLoading] = useState(true);
 
   // ── Fetch every resident on the platform ──
   const fetchResidents = useCallback(async () => {
@@ -135,7 +161,10 @@ export default function DashboardAnalytics({ societies, loading, onDataLoaded })
       let total = null;
       let guard = 0;
       while (true) {
-        const res = await API.get("/users/resident", { params: { page, limit: 50 } });
+        const res = await API.get("/users/resident", {
+          params: { page, limit: 50 },
+          _skipSuperAdminSocietyFilter: true,
+        });
         const body = res.data || {};
         const rows = body.data || [];
         total = body.totalAll ?? total;
@@ -156,6 +185,51 @@ export default function DashboardAnalytics({ societies, loading, onDataLoaded })
   useEffect(() => {
     fetchResidents();
   }, [fetchResidents]);
+
+  // A society can contain both apartment and row-house blocks. Fetch its block
+  // types so the property chart reflects the actual structure, not only the
+  // society's single top-level property_type value.
+  useEffect(() => {
+    let cancelled = false;
+
+    const fetchPropertyTypes = async () => {
+      if (!societies?.length) {
+        setBlockTypesBySociety({});
+        setPropertyTypesLoading(false);
+        return;
+      }
+
+      setPropertyTypesLoading(true);
+      const entries = await Promise.all(
+        societies.map(async (society) => {
+          try {
+            const response = await API.get(`/blocks/${society.id}`, {
+              headers: { "x-society-id": String(society.id) },
+              _skipSuperAdminSocietyFilter: true,
+            });
+            const blockTypes = Object.fromEntries(
+              (Array.isArray(response.data) ? response.data : [])
+                .filter((block) => block.id && block.property_type)
+                .map((block) => [String(block.id), block.property_type])
+            );
+            return [String(society.id), blockTypes];
+          } catch {
+            return [String(society.id), []];
+          }
+        })
+      );
+
+      if (!cancelled) {
+        setBlockTypesBySociety(Object.fromEntries(entries));
+        setPropertyTypesLoading(false);
+      }
+    };
+
+    fetchPropertyTypes();
+    return () => {
+      cancelled = true;
+    };
+  }, [societies]);
 
   // ── Derive all analytics (REAL data) ──
   const analytics = useMemo(() => {
@@ -207,22 +281,48 @@ export default function DashboardAnalytics({ societies, loading, onDataLoaded })
     const totalAssigned = (societies || []).filter((s) => !!s.societyAdmins).length;
     const totalUnassigned = (societies || []).length - totalAssigned;
 
-    // Property type distribution
+    // Count societies that contain each property type. Mixed societies are
+    // included in each applicable category instead of being forced into one.
     const propertyCounts = {};
     (societies || []).forEach((s) => {
-      const k = propTypeLabel(s.property_type || "Apartments", t);
-      propertyCounts[k] = (propertyCounts[k] || 0) + 1;
+      const societyBlockTypes = Object.values(blockTypesBySociety[String(s.id)] || {});
+      const sourceTypes = societyBlockTypes.length ? societyBlockTypes : [s.property_type || "Apartments"];
+      const uniqueTypes = new Set(sourceTypes.map(propTypeKey));
+      uniqueTypes.forEach((type) => {
+        propertyCounts[type] = (propertyCounts[type] || 0) + 1;
+      });
     });
-    const propertyTypeData = Object.entries(propertyCounts).map(([name, value]) => ({ name, value }));
+    const propertyTypeData = Object.entries(propertyCounts).map(([type, value]) => ({
+      type,
+      name: propTypeLabel(type, t),
+      value,
+    }));
 
-    // Residents grouped by property type (distinct from society count donut)
-    const typeTotals = {};
-    (societies || []).forEach((s) => {
-      const k = propTypeLabel(s.property_type || "Apartments", t);
-      typeTotals[k] = (typeTotals[k] || 0) + (societyMap[String(s.id)]?.residents || 0);
+    // Group residents by the property type of their assigned flat's block.
+    // A resident with flats in multiple property types is counted once in each.
+    const residentIdsByType = {};
+    residents.forEach((resident) => {
+      const types = new Set();
+      (resident.flats || []).forEach((flat) => {
+        const block = flat.Block || flat.Floor?.Block;
+        const blockId = block?.id;
+        const societyId = String(flat.society_id || block?.society_id || resident.society_id || "");
+        const blockType = blockTypesBySociety[societyId]?.[String(blockId)];
+        if (blockType) types.add(propTypeKey(blockType));
+      });
+
+      if (types.size === 0) {
+        const fallbackType = societyMap[String(resident.society_id)]?.propertyType;
+        if (fallbackType) types.add(propTypeKey(fallbackType));
+      }
+
+      types.forEach((type) => {
+        if (!residentIdsByType[type]) residentIdsByType[type] = new Set();
+        residentIdsByType[type].add(String(resident.id));
+      });
     });
-    const residentByTypeData = Object.entries(typeTotals)
-      .map(([name, Residents]) => ({ name, Residents }))
+    const residentByTypeData = Object.entries(residentIdsByType)
+      .map(([type, residentIds]) => ({ type, name: propTypeLabel(type, t), Residents: residentIds.size }))
       .sort((a, b) => b.Residents - a.Residents);
 
     return {
@@ -237,7 +337,7 @@ export default function DashboardAnalytics({ societies, loading, onDataLoaded })
       totalAssigned,
       totalUnassigned,
     };
-  }, [societies, residents, p.purple, p.violet, p.cyan, t]);
+  }, [societies, residents, blockTypesBySociety, p.purple, p.violet, p.cyan, t]);
 
   // Report live totals to parent KPI cards
   useEffect(() => {
@@ -252,7 +352,7 @@ export default function DashboardAnalytics({ societies, loading, onDataLoaded })
     }
   }, [liveLoading, liveError, analytics, onDataLoaded]);
 
-  const isLoading = loading || liveLoading;
+  const isLoading = loading || liveLoading || propertyTypesLoading;
   const shortName = (name) => (name && name.length > 13 ? name.slice(0, 12) + "…" : name || "—");
 
   if (isLoading) {
@@ -318,7 +418,7 @@ export default function DashboardAnalytics({ societies, loading, onDataLoaded })
                 data={compositionData}
                 cx="50%" cy="50%"
                 innerRadius={68} outerRadius={100}
-                paddingAngle={3}
+                paddingAngle={0}
                 dataKey="value"
                 startAngle={90} endAngle={-270}
               >
@@ -364,7 +464,7 @@ export default function DashboardAnalytics({ societies, loading, onDataLoaded })
       {/* ── 4. Property type mix donut ── */}
       <ChartCard
         title={t("saAnPropTitle", "Societies by Property Type")}
-        subtitle={t("saAnPropSub", "Distribution of societies across property types")}
+        subtitle={t("saAnPropSub", "Societies that include each property type; a society may appear in more than one category.")}
         badge={t("saAnLive", "Live")}
       >
         {propertyTypeData.reduce((s, d) => s + d.value, 0) > 0 ? (
@@ -372,11 +472,14 @@ export default function DashboardAnalytics({ societies, loading, onDataLoaded })
             <PieChart>
               <Pie
                 data={propertyTypeData}
-                cx="50%" cy="50%"
-                innerRadius={62} outerRadius={92}
-                paddingAngle={4}
+                cx="50%"
+                cy="48%"
+                innerRadius={0}
+                outerRadius={88}
+                paddingAngle={3}
                 dataKey="value"
-                startAngle={90} endAngle={-270}
+                startAngle={90}
+                endAngle={-270}
               >
                 {propertyTypeData.map((entry, index) => (
                   <Cell key={`pt-${index}`} fill={donutColors[index % donutColors.length]} stroke="none" />
@@ -397,12 +500,16 @@ export default function DashboardAnalytics({ societies, loading, onDataLoaded })
       >
         {residentByTypeData.some((d) => d.Residents > 0) ? (
           <ResponsiveContainer width="100%" height={260}>
-            <BarChart data={residentByTypeData} layout="vertical" margin={{ left: 8, right: 24, top: 4, bottom: 0 }} barCategoryGap="30%">
-              <CartesianGrid stroke={p.grid} strokeDasharray="3 3" horizontal={false} />
-              <XAxis type="number" tick={{ fill: p.textMuted, fontSize: 11 }} axisLine={false} tickLine={false} allowDecimals={false} />
-              <YAxis type="category" dataKey="name" tick={{ fill: p.textMuted, fontSize: 11 }} axisLine={false} tickLine={false} width={86} />
+            <BarChart data={residentByTypeData} margin={{ left: 0, right: 12, top: 12, bottom: 12 }} barCategoryGap="32%">
+              <CartesianGrid stroke={p.grid} strokeDasharray="3 3" vertical={false} />
+              <XAxis dataKey="name" tick={{ fill: p.textMuted, fontSize: 11 }} axisLine={false} tickLine={false} interval={0} />
+              <YAxis tick={{ fill: p.textMuted, fontSize: 11 }} axisLine={false} tickLine={false} allowDecimals={false} width={34} />
               <Tooltip contentStyle={ttStyle} cursor={{ fill: "rgba(167,139,250,0.10)" }} />
-              <Bar dataKey="Residents" name={t("saAnResidents", "Residents")} fill={p.cyan} radius={[0, 6, 6, 0]} maxBarSize={22} />
+              <Bar dataKey="Residents" name={t("saAnResidents", "Residents")} radius={[6, 6, 0, 0]} maxBarSize={42}>
+                {residentByTypeData.map((entry) => (
+                  <Cell key={`resident-type-${entry.type}`} fill={PROPERTY_TYPE_BAR_COLORS[entry.type] || p.cyan} />
+                ))}
+              </Bar>
             </BarChart>
           </ResponsiveContainer>
         ) : <NoData message={t("saAnNoResData", "No resident data yet.")} />}

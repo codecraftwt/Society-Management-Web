@@ -149,7 +149,11 @@ export default function MyProperties() {
   const handleAddTenant = async (e) => {
     e.preventDefault();
 
-    const nameError = getNameError(formData.name, t("rpropFullName"));
+    // Normalize pasted or manually typed whitespace before validating. A name
+    // such as "Kunal  Mehta" is still a valid full name; collapse repeated
+    // spaces so the shared validator does not reject it.
+    const normalizedName = String(formData.name || "").trim().replace(/\s+/g, " ");
+    const nameError = getNameError(normalizedName, t("rpropFullName"));
     if (nameError) return toast.error(nameError);
 
     const emailError = getEmailError(formData.email, t("rpropEmail"));
@@ -175,7 +179,7 @@ export default function MyProperties() {
 
     setSubmitting(true);
     try {
-      const res       = await API.post("/users/resident/add-tenant", { flat_id: selectedFlatId, ...formData });
+      const res       = await API.post("/users/resident/add-tenant", { flat_id: selectedFlatId, ...formData, name: normalizedName });
       const newUserId = res.data.tenant.id;
 
       const docForm = new FormData();

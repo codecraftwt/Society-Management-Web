@@ -1,7 +1,7 @@
 
 import { createContext, useContext, useState, useEffect, useCallback } from "react";
 import API from "../services/api";
-import { rejoinSocket, getSocket } from "../services/socket";
+import { rejoinSocket, getSocket, connectSocket, disconnectSocket } from "../services/socket";
 
 export const AuthContext = createContext({
   user:               null,
@@ -102,6 +102,9 @@ export const AuthProvider = ({ children }) => {
     if (localStorage.getItem("token")) {
       refreshPermissions();
       fetchSocieties();
+      // Open the authenticated socket connection. The handshake carries the
+      // stored JWT, so the server can assign the correct rooms.
+      connectSocket();
     }
   }, [refreshPermissions, fetchSocieties]);
 
@@ -169,6 +172,9 @@ export const AuthProvider = ({ children }) => {
 
   const login = (userData, token) => {
     const normalised = normaliseUser(userData);
+    if (String(normalised.activeRole || normalised.role || "").toUpperCase() !== "SUPER_ADMIN") {
+      localStorage.removeItem("superadmin_society_filter");
+    }
     localStorage.setItem("token", token);
     localStorage.setItem("user", JSON.stringify(normalised));
     setUser(normalised);
@@ -185,6 +191,8 @@ export const AuthProvider = ({ children }) => {
     localStorage.clear();
     setUser(null);
     setAvailableSocieties([]);
+    // Drop the authenticated connection — the socket handshake carries the JWT.
+    disconnectSocket();
   };
 
   const updateUser = (updatedFields) => {
@@ -199,6 +207,9 @@ export const AuthProvider = ({ children }) => {
 
     localStorage.setItem("token", token);
     const normalised = normaliseUser(updatedUser);
+    if (String(normalised.activeRole || normalised.role || "").toUpperCase() !== "SUPER_ADMIN") {
+      localStorage.removeItem("superadmin_society_filter");
+    }
     localStorage.setItem("user", JSON.stringify(normalised));
     setUser(normalised);
     // ✅ Re-join with new activeRole so server rooms update immediately

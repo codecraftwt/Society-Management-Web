@@ -1200,12 +1200,9 @@ const { t }              = useLang();
     : s === "RESOLVED"  ? t("compStatusResolved")
     :                     t("compStatusPending");
 
-  useEffect(() => {
-    const socket = getSocket();
-    if (!socket || !authUser?.society_id) return;
-    socket.emit("join_society", authUser.society_id);
-    return () => socket.emit("leave_society", authUser.society_id);
-  }, [authUser?.society_id]);
+  // NOTE: the society room is joined by the shared socket (services/socket.js)
+  // when the authenticated session connects. Leaving it on unmount used to
+  // silently unsubscribe the resident from society-wide broadcasts.
 
   useEffect(() => {
     const socket = getSocket();

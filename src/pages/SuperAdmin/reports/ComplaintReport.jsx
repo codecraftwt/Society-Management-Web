@@ -265,6 +265,8 @@ const [totalPages, setTotalPages] = useState(1);
   }, [pendingFloorId]);
 
   const applyFilter = () => {
+    localStorage.setItem("superadmin_society_filter", pendingSocietyId || "ALL");
+    window.dispatchEvent(new Event("superadmin-society-scope-change"));
     setSocietyId(pendingSocietyId);
     setBlockId(pendingBlockId);
     setFloorId(pendingFloorId);
@@ -278,6 +280,8 @@ const [totalPages, setTotalPages] = useState(1);
   };
 
   const clearFilter = () => {
+    localStorage.setItem("superadmin_society_filter", "ALL");
+    window.dispatchEvent(new Event("superadmin-society-scope-change"));
     setSocietyId("ALL");
     setPendingSocietyId("ALL");
     setBlockId("");
@@ -297,6 +301,20 @@ const [totalPages, setTotalPages] = useState(1);
   };
 
   const handlePageChange = p => fetchComplaints(p, societyId, blockId, floorId, flatId, status, fromDate, toDate);
+
+  const handleSectionSocietyChange = (value) => {
+    localStorage.setItem("superadmin_society_filter", value || "ALL");
+    setSocietyId(value);
+    setPendingSocietyId(value);
+    setBlockId(""); setPendingBlockId("");
+    setFloorId(""); setPendingFloorId("");
+    setFlatId(""); setPendingFlatId("");
+    setApplied(value !== "ALL" || !!(status || (fromDate && toDate)));
+    fetchComplaints(1, value, "", "", "", status, fromDate, toDate);
+  };
+  const activeSocietyName = societyId === "ALL"
+    ? (t("rptAllSocieties") || "All Societies")
+    : societies.find((society) => String(society.id) === String(societyId))?.name;
 
   const statusLabels = { openLabel: t("rptOpen") || "Open", inProgressLabel: t("compTabInProgress") || "In Progress", resolvedLabel: t("compStatusResolved") || "Resolved" };
   const filterLabels = { 
@@ -350,9 +368,13 @@ const [totalPages, setTotalPages] = useState(1);
             <MdArrowBack size={18} />
           </button>
           <div className="er-icon er-icon--complaint"><MdReportProblem size={22} /></div>
-          <div><h2 className="page-title">Global Complaint Report</h2><p className="page-subtitle">{loading ? "—" : `${counts.total} total complaints`}</p></div>
+          <div><h2 className="page-title">Global Complaint Report</h2><p className="page-subtitle">{loading ? "—" : `${counts.total} total complaints`}</p>{activeSocietyName && <span className="sa-society-context">Viewing: {activeSocietyName}</span>}</div>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+          <Select className="input sa-society-select" value={societyId} onChange={(e) => handleSectionSocietyChange(e.target.value)} style={{ minWidth: 190, height: 38 }}>
+            <option value="ALL">{t("rptAllSocieties") || "All Societies"}</option>
+            {societies.map((society) => <option key={society.id} value={society.id}>{society.name}</option>)}
+          </Select>
           <button onClick={handleExcelExport} className="btn-export" style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 13px", fontSize: 12, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}><MdTableChart size={14} /> Excel</button>
           <button onClick={handlePDFExport} className="btn-export" style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 13px", fontSize: 12, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}><MdPictureAsPdf size={14} /> PDF</button>
           <button onClick={() => setShowFilters(true)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 13px", borderRadius: 10, fontSize: 12, fontWeight: 700, background: applied ? "rgba(107,70,193,0.15)" : "var(--card-inner-bg)", color: applied ? "#9F87D7" : "var(--text-secondary)", border: applied ? "1px solid rgba(107,70,193,0.35)" : "1px solid var(--glass-border)", cursor: "pointer", position: "relative", whiteSpace: "nowrap" }}><MdFilterList size={14} /> Filters{applied && <span style={{ position: "absolute", top: -3, right: -3, width: 8, height: 8, borderRadius: "50%", background: "#6B46C1", boxShadow: "0 0 6px rgba(107,70,193,0.6)" }} />}</button>

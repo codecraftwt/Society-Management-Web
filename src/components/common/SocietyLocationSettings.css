@@ -709,8 +709,29 @@ html.light .set-loc__preset-chip {
 .set-loc__preset-chip.is-active {
   background: linear-gradient(135deg, #10b981 0%, #059669 100%);
   border-color: #10b981;
-  color: #ffffff;
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff;
   box-shadow: 0 2px 8px rgba(16, 185, 129, 0.35);
+}
+
+.set-loc__preset-chip.is-active:hover,
+.set-loc__preset-chip.is-active:focus-visible {
+  background: #059669 !important;
+  background-color: #059669 !important;
+  border-color: #047857 !important;
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+}
+
+/* Keep the selected preset visible against global role-theme button rules. */
+html.role-theme .set-loc .set-loc__preset-chip.is-active,
+html.role-theme .set-loc .set-loc__preset-chip.is-active:hover,
+html.role-theme .set-loc .set-loc__preset-chip.is-active:focus-visible {
+  background: #10b981 !important;
+  background-color: #10b981 !important;
+  border-color: #10b981 !important;
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
 }
 
 /* ── 5. Action Footer (Always Visible, Premium Buttons) ───────────────────── */

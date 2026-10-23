@@ -146,11 +146,6 @@ export default function Parcels() {
     setPage(1);
   };
 
-  const selectedSocietyName = useMemo(
-    () => societies.find((s) => String(s.id) === String(societyId))?.name || "",
-    [societies, societyId]
-  );
-
   /* The API filters on courier name only; widen the current page to the unit
      and the people involved, which is what an admin actually scans for. */
   const visibleRows = useMemo(
@@ -178,7 +173,6 @@ export default function Parcels() {
         onPageChange={setPage}
         onPageSizeChange={handlePageSizeChange}
         onOpen={setSelected}
-        societyLabel={isSuperAdmin ? selectedSocietyName : ""}
         isSuperAdmin={isSuperAdmin}
         societies={societies}
         societyId={societyId}

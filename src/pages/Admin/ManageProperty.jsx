@@ -105,12 +105,6 @@ export default function ManageProperty() {
         .then((res) => {
           const list = res.data || [];
           setSocieties(list);
-          if (!selectedSocietyId && list.length > 0) {
-            const firstId = String(list[0].id);
-            setSelectedSocietyId(firstId);
-            localStorage.setItem("superadmin_society_filter", firstId);
-            setSearchParams({ societyId: firstId });
-          }
         })
         .catch((err) => console.error("Failed to load societies", err))
         .finally(() => setLoadingSocieties(false));
@@ -1281,7 +1275,7 @@ function BlocksTab({
   const [areaAssignValues, setAreaAssignValues] = useState({});
   const [areaAssignInitialMode, setAreaAssignInitialMode] = useState("SAME");
   const [areaAssignBlockName, setAreaAssignBlockName] = useState("");
-  const [areaStrategy, setAreaStrategy] = useState("BOTH"); // "SAME" | "SEPARATE" | "BOTH"
+  const [areaStrategy, setAreaStrategy] = useState("SEPARATE");
   const [savingAreas, setSavingAreas] = useState(false);
   const [refreshFlatsKey, setRefreshFlatsKey] = useState(0);
 
@@ -1594,7 +1588,7 @@ function BlocksTab({
       const housesError = getNumberError(totalHouses, t("mpTotalHousesLabel"), { min: 1, allowZero: false, allowDecimal: false });
       if (housesError) return setError(housesError);
       payload.flats_per_floor = Number(totalHouses);
-      if (areaStrategy !== "SEPARATE") {
+      if (areaStrategy !== "SEPARATE" && commonArea) {
         const areaError = getPositiveAmountError(commonArea, t("mpBuiltUpAreaLabel"));
         if (areaError) return setError(areaError);
         payload.area_sqft = Number(commonArea);
@@ -1648,8 +1642,9 @@ function BlocksTab({
               : (f.area_sqft != null ? String(f.area_sqft) : "");
           });
           setAreaAssignValues(vals);
-          // Set initial mode based on admin choice
-          setAreaAssignInitialMode(areaStrategy === "SEPARATE" || areaStrategy === "BOTH" ? "SEPARATE" : "SAME");
+          // Start with the uniform-area confirmation when a common base was
+          // entered. Users can still switch to separate filling afterward.
+          setAreaAssignInitialMode("SAME");
         }
       }
 
@@ -1708,12 +1703,12 @@ function BlocksTab({
         icon={MdAdd}
         size={isMobile ? "md" : "xl"}
         showFooter
-        submitLabel={t("mpCreate")}
+        submitLabel={propertyType === "ROW_HOUSE" ? t("next", "Next") : t("mpCreate")}
         cancelLabel={t("cancel")}
         onSubmit={handleCreate}
         submitLoading={submitting}
         submitDisabled={submitting || (propertyType === "APARTMENT" && (!layoutValidation.isValid || floorsLayout.length === 0))}
-        submitIcon={MdAdd}
+        submitIcon={propertyType === "ROW_HOUSE" ? MdArrowForwardIos : MdAdd}
         submitVariant="add"
         submitBorderDraw
         bodyClassName="modal-scroll-thin"
@@ -1803,8 +1798,24 @@ function BlocksTab({
                   />
                 </div>
 
+                <div style={{
+                  display: "flex",
+                  alignItems: "flex-start",
+                  gap: 10,
+                  padding: "11px 13px",
+                  borderRadius: 11,
+                  background: "var(--card-inner-bg)",
+                  border: "1px solid var(--glass-border)",
+                  color: "var(--text-secondary)",
+                  fontSize: 12,
+                  lineHeight: 1.45,
+                }}>
+                  <MdSquareFoot size={18} style={{ color: "var(--accent)", flexShrink: 0, marginTop: 1 }} />
+                  <span>After you click <strong style={{ color: "var(--text-primary)" }}>Next</strong>, you can assign the built-up area for all houses or customize individual houses.</span>
+                </div>
+
                 {/* Strategy Selector (3 Choices: Both, Same, Separate) */}
-                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                <div style={{ display: "none", flexDirection: "column", gap: 8 }}>
                   <label style={{ fontSize: 11, fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
                     {t("mpAreaStrategy")}
                   </label>
@@ -1897,7 +1908,7 @@ function BlocksTab({
                     border: "1px solid var(--glass-border)",
                     borderRadius: 12,
                     padding: "12px 14px",
-                    display: "flex",
+                    display: "none",
                     flexDirection: "column",
                     gap: 10
                   }}>
@@ -1955,7 +1966,7 @@ function BlocksTab({
                     border: "1px solid rgba(var(--acct-purple-rgb),0.22)",
                     borderRadius: 12,
                     padding: "12px 14px",
-                    display: "flex",
+                    display: "none",
                     alignItems: "center",
                     gap: 10
                   }}>
@@ -2911,7 +2922,7 @@ function InlineFlats({ floorId, blockId, isMobile, t, onOpenAreaModal, blockName
               {isRowHouseContext && (
                 <div style={{ display: "flex", alignItems: "center", gap: 6, borderTop: "1px solid var(--glass-border)", paddingTop: 6 }}>
                   {editingAreaId === f.id ? (
-                    <div style={{ display: "flex", alignItems: "center", gap: 4, flex: 1 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 4, flex: 1, flexWrap: "wrap" }}>
                       <input
                         className="mp-compact-input"
                         type="number"
@@ -2921,14 +2932,14 @@ function InlineFlats({ floorId, blockId, isMobile, t, onOpenAreaModal, blockName
                         onChange={e => setAreaValue(e.target.value)}
                         placeholder={t("mpAreaPh")}
                         autoFocus
-                        style={{ flex: 1, minWidth: 0, padding: "2px 6px", borderRadius: 4, border: "1px solid var(--glass-border)", background: "var(--card-inner-bg)", color: "var(--text-primary)", fontSize: 11 }}
+                        style={{ flex: "1 1 78px", minWidth: 70, width: 0, padding: "4px 6px", borderRadius: 5, border: "1px solid var(--glass-border)", background: "var(--card-inner-bg)", color: "var(--text-primary)", fontSize: 11, boxSizing: "border-box" }}
                         onKeyDown={e => { if (e.key === "Enter") saveArea(f.id); if (e.key === "Escape") setEditingAreaId(null); }}
                       />
                       <span style={{ fontSize: 10, color: "var(--text-secondary)", whiteSpace: "nowrap" }}>{t("mpSqft")}</span>
-                      <button onClick={() => saveArea(f.id)} disabled={savingArea} style={{ padding: "1px 6px", borderRadius: 4, fontSize: 10, fontWeight: 700, background: "#10b981", color: "#fff", border: "none", cursor: "pointer" }}>
+                      <button onClick={() => saveArea(f.id)} disabled={savingArea} style={{ padding: "4px 8px", borderRadius: 5, fontSize: 10, fontWeight: 700, background: "#10b981", color: "#fff", border: "none", cursor: "pointer", whiteSpace: "nowrap" }}>
                         {savingArea ? "..." : t("mpSave")}
                       </button>
-                      <button onClick={() => setEditingAreaId(null)} style={{ padding: "1px 4px", borderRadius: 4, fontSize: 10, background: "none", color: "var(--text-secondary)", border: "none", cursor: "pointer" }}>✕</button>
+                      <button onClick={() => setEditingAreaId(null)} style={{ padding: "4px 5px", borderRadius: 5, fontSize: 10, background: "none", color: "var(--text-secondary)", border: "none", cursor: "pointer" }}>✕</button>
                     </div>
                   ) : (
                     <div style={{ display: "flex", alignItems: "center", gap: 4, flex: 1 }}>

@@ -221,12 +221,11 @@ export default function Complaint() {
     loadComplaints(1, debSearch, filterStatus);
   }, [filterSocietyId, filterBlockId, filterFloorId, filterFlatId, debSearch, filterStatus, dateFrom, dateTo, loadComplaints]);
 
-  useEffect(() => {
-    const socket = getSocket();
-    if (!socket || !authUser?.society_id) return;
-    socket.emit("join_society", authUser.society_id);
-    return () => socket.emit("leave_society", authUser.society_id);
-  }, [authUser?.society_id]);
+  // NOTE: the society room is joined by the shared socket (services/socket.js)
+  // when the authenticated session connects. Joining it again here and then
+  // LEAVING it on unmount used to silently unsubscribe the user from every
+  // society-wide broadcast (new_complaint, emergency_alert, theme updates)
+  // as soon as they navigated away from this page.
 
   useEffect(() => {
     const socket = getSocket();
@@ -385,6 +384,7 @@ export default function Complaint() {
   const applySocietyFilter = useCallback((val) => {
     setFilterSocietyId(val);
     localStorage.setItem("superadmin_society_filter", val || "ALL");
+    window.dispatchEvent(new Event("superadmin-society-scope-change"));
   }, []);
 
   const clearAllFilters = () => {

@@ -304,12 +304,10 @@ export default function SocietyLocationMap({
               keyboard
               title="Society location"
               eventHandlers={{
-                drag: (e) => {
-                  const p = e.target.getLatLng();
-                  onMove(p.lat, p.lng, "drag");
-                },
                 dragend: (e) => {
                   const p = e.target.getLatLng();
+                  // Commit the final pin position only. Reverse geocoding is
+                  // descriptive and must never replace the exact dragged point.
                   onMove(p.lat, p.lng, "dragend");
                 },
               }}

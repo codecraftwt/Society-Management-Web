@@ -520,12 +520,6 @@ const FlatHistory = () => {
         .then((res) => {
           const list = res.data || [];
           setSocieties(list);
-          if (!selectedSocietyId && list.length > 0) {
-            const firstId = String(list[0].id);
-            setSelectedSocietyId(firstId);
-            localStorage.setItem("superadmin_society_filter", firstId);
-            setSearchParams({ societyId: firstId });
-          }
         })
         .catch((err) => console.error("Failed to load societies", err))
         .finally(() => setLoadingSocieties(false));

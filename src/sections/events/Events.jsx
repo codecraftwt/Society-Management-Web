@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useContext } from "react";
-import { MdAdd, MdRefresh, MdImage, MdVideoLibrary, MdEdit, MdDelete, MdVisibility, MdApartment } from "react-icons/md";
+import { MdAdd, MdRefresh, MdImage, MdVideoLibrary, MdEdit, MdDelete, MdVisibility, MdApartment, MdCalendarToday, MdLocationOn, MdDescription } from "react-icons/md";
 import { AuthContext } from "../../context/AuthContext";
 import API from "../../services/api";
 import Select from "../../components/common/Select";
@@ -9,7 +9,6 @@ import GlobalModal from "../../components/common/GlobalModal";
 import GlobalConfirmDialog from "../../components/common/GlobalConfirmDialog";
 import GlobalTable from "../../components/common/GlobalTable";
 import GlobalBadge from "../../components/common/GlobalBadge";
-import PanelHero from "../../components/common/PanelHero";
 import ExpandableSearch from "../../components/common/ExpandableSearch";
 import Pagination from "../../components/common/Pagination";
 import MediaLightbox from "../../components/common/MediaLightbox";
@@ -46,6 +45,8 @@ export default function Events() {
 
   const [formModalOpen, setFormModalOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState(null);
+  const [viewingEvent, setViewingEvent] = useState(null);
+  const [detailsLoading, setDetailsLoading] = useState(false);
   const [formLoading, setFormLoading] = useState(false);
 
   const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, id: null, title: "", loading: false });
@@ -99,6 +100,19 @@ export default function Events() {
       setEditingEvent(eventObj);
     }
     setFormModalOpen(true);
+  };
+
+  const handleOpenDetails = async (eventObj) => {
+    setDetailsLoading(true);
+    setViewingEvent(eventObj);
+    try {
+      const detailRes = await eventService.getEventById(eventObj.id);
+      if (detailRes.success) setViewingEvent(detailRes.data);
+    } catch (err) {
+      console.error("Failed to load event details:", err);
+    } finally {
+      setDetailsLoading(false);
+    }
   };
 
   const handleFormSubmit = async (formData, customHeaders = {}) => {
@@ -256,6 +270,9 @@ export default function Events() {
       align: "right",
       render: (row) => (
         <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 6 }}>
+          <GlobalButton variant="secondary" size="sm" icon={MdVisibility} onClick={() => handleOpenDetails(row)}>
+            View
+          </GlobalButton>
           <GlobalButton variant="secondary" size="sm" icon={MdEdit} onClick={() => handleOpenEdit(row)}>
             Edit
           </GlobalButton>
@@ -269,17 +286,6 @@ export default function Events() {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-      <PanelHero
-        title="Event Management"
-        subtitle="Organize, schedule, and showcase society events with photo galleries and video highlights."
-        icon={MdVideoLibrary}
-        actions={
-          <GlobalButton variant="primary" icon={MdAdd} onClick={handleOpenCreate}>
-            Create Event
-          </GlobalButton>
-        }
-      />
-
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }}>
         <ExpandableSearch
           value={search}
@@ -292,7 +298,7 @@ export default function Events() {
         <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
           {isSuperAdmin && (
             <Select
-              className="input"
+              className="input sa-society-select"
               style={{ minWidth: 160, height: 38, padding: "6px 12px", borderRadius: 10, fontSize: 13 }}
               value={filterSocietyId}
               onChange={(e) => {
@@ -324,11 +330,6 @@ export default function Events() {
         emptyMessage="No society events found."
         emptySubtext="Get started by publishing your first society event with photo galleries and video highlights."
         emptyIcon={MdVideoLibrary}
-        emptyAction={
-          <GlobalButton variant="primary" icon={MdAdd} onClick={handleOpenCreate}>
-            Create Event
-          </GlobalButton>
-        }
       />
 
       {pagination.totalPages > 1 && (
@@ -338,6 +339,42 @@ export default function Events() {
           onPageChange={(p) => setPage(p)}
         />
       )}
+
+      <GlobalModal
+        isOpen={!!viewingEvent}
+        onClose={() => setViewingEvent(null)}
+        title={viewingEvent?.title || "Event details"}
+        size="lg"
+      >
+        {viewingEvent && (
+          <div className="sa-event-details">
+            {viewingEvent.cover_url && <img className="sa-event-details-cover" src={viewingEvent.cover_url} alt={viewingEvent.title || "Event cover"} />}
+            {detailsLoading && <p className="text-sm text-secondary">Loading full event details…</p>}
+            <div className="sa-event-detail-meta">
+              <span><MdCalendarToday />{viewingEvent.event_date || "Date to be announced"}{viewingEvent.event_time ? ` · ${viewingEvent.event_time}` : ""}</span>
+              <span><MdLocationOn />{viewingEvent.location || "Venue to be announced"}</span>
+              {isSuperAdmin && <span><MdApartment />{viewingEvent.society_name || viewingEvent.society?.name || societiesList.find((s) => String(s.id) === String(viewingEvent.society_id))?.name || "Society"}</span>}
+            </div>
+            <section className="sa-event-description">
+              <h3><MdDescription />About this event</h3>
+              <p>{viewingEvent.description?.trim() || "No event description has been added."}</p>
+            </section>
+            <div className="sa-event-detail-footer">
+              <span>Created by {viewingEvent.created_by_name || "—"}</span>
+              <GlobalBadge variant={viewingEvent.is_active ? "success" : "neutral"}>{viewingEvent.is_active ? "Published" : "Hidden"}</GlobalBadge>
+            </div>
+            {viewingEvent.media?.length > 0 && (
+              <div className="sa-event-media-grid">
+                {viewingEvent.media.map((media, index) => (
+                  <button key={media.id || media.url || index} type="button" onClick={() => { setLightboxMedia(viewingEvent.media); setLightboxTitle(viewingEvent.title || "event_media"); setLightboxOpen(true); }}>
+                    <img src={media.thumbnail_url || media.url || media.file_url} alt={media.caption || `${viewingEvent.title} media ${index + 1}`} />
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </GlobalModal>
 
       {/* Form Modal */}
       <GlobalModal

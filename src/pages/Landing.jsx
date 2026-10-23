@@ -2,9 +2,12 @@ import { useNavigate } from "react-router-dom";
 import { APP_NAME } from "../constants/app";
 import { motion } from "framer-motion";
 import ThemeToggle from "../components/common/ThemeToggle";
+import LanguageSelector from "../components/common/LanguageSelector";
+import { useLang } from "../context/LanguageContext";
 
 const Landing = () => {
   const navigate = useNavigate();
+  const { t } = useLang();
 
   return (
     <div className="min-h-screen flex flex-col bg-app relative overflow-hidden">
@@ -21,6 +24,7 @@ const Landing = () => {
 
         {/* Right: toggle + login — gap-3, no overlap */}
         <div className="flex items-center gap-2 sm:gap-3">
+          <LanguageSelector compact />
           <ThemeToggle />
           <motion.button
             whileHover={{ scale: 1.05 }}
@@ -28,7 +32,7 @@ const Landing = () => {
             onClick={() => navigate("/login")}
             className="btn-primary"
           >
-            Login
+            {t("landingLogin")}
           </motion.button>
         </div>
       </header>
@@ -45,16 +49,15 @@ const Landing = () => {
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}
             className="text-3xl sm:text-4xl font-bold mb-4" style={{ color: "var(--text-primary)" }}
           >
-            Smart Society <br />
-            <span className="text-accent">Management</span>, Simplified
+            {t("landingTitleLine1")} <br />
+            <span className="text-accent">{t("landingTitleLine2")}</span>{t("landingTitleSuffix")}
           </motion.h2>
 
           <motion.p
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.35 }}
             className="text-secondary mb-8 leading-relaxed"
           >
-            Manage residents, billing, complaints, and security from one
-            unified platform designed for modern societies.
+            {t("landingDescription")}
           </motion.p>
 
           <motion.button
@@ -63,14 +66,14 @@ const Landing = () => {
             onClick={() => navigate("/login")}
             className="btn-primary mx-auto"
           >
-            Get Started 🚀
+            {t("landingGetStarted")} 🚀
           </motion.button>
         </motion.div>
       </main>
 
       {/* Footer */}
       <footer className="relative z-10 text-center py-5 text-secondary text-sm">
-        © {new Date().getFullYear()} {APP_NAME}. All rights reserved.
+        © {new Date().getFullYear()} {APP_NAME}. {t("allRightsReserved")}.
       </footer>
     </div>
   );

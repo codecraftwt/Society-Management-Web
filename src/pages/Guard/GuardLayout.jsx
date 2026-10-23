@@ -204,16 +204,13 @@ function GuardLayoutInner() {
     return () => clearInterval(id);
   }, []);
 
-  /* Socket join + listener */
+  /* Socket listener */
   useEffect(() => {
-    const user = JSON.parse(localStorage.getItem("user"));
-    if (!socket || !user?.id) return;
+    if (!socket) return;
 
-    socket.emit("join", {
-      userId: user.id,
-      role: user.role,
-      societyId: user.society_id,
-    });
+    // Room assignment (user_/role_/society_) is handled by the shared socket in
+    // services/socket.js from the verified handshake. Emitting `join` again
+    // here only produced duplicate room-join logs on the server.
 
     const handleNotification = () => {
       window.dispatchEvent(new Event("refresh_guard_data"));

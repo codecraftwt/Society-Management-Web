@@ -736,7 +736,7 @@ function ResidentRequestsPanel({ allSlots, onSlotAssigned }) {
 export default function AssignParkingSlot({ hideHeader = false, societyId } = {}) {
   const { t } = useLang();
   const { user } = useAuthContext();
-  const isSuperAdmin = user?.role === "SUPER_ADMIN";
+  const isSuperAdmin = String(user?.activeRole || user?.role || "").toUpperCase() === "SUPER_ADMIN";
   const { showUnauthorized, showError } = useCustomAlert();
   const isCommittee = isCommitteeMember(user);
 
@@ -883,7 +883,7 @@ export default function AssignParkingSlot({ hideHeader = false, societyId } = {}
       return;
     }
     const initialSocId = isSuperAdmin
-      ? (filterSocietyId || (societiesList[0]?.id ? String(societiesList[0]?.id) : ""))
+      ? (filterSocietyId || "")
       : (user?.society_id ? String(user?.society_id) : "");
 
     setForm({
@@ -1323,7 +1323,7 @@ export default function AssignParkingSlot({ hideHeader = false, societyId } = {}
         <div className="ps-page-toolbar flex items-center gap-2.5 flex-nowrap shrink-0 overflow-x-auto max-w-full">
           {isSuperAdmin && (
             <Select
-              className="input"
+              className="input sa-society-select"
               style={{ minWidth: 150, height: 38, padding: "6px 12px", borderRadius: 10, fontSize: 13 }}
               value={filterSocietyId}
               onChange={(e) => {
@@ -1943,6 +1943,7 @@ export default function AssignParkingSlot({ hideHeader = false, societyId } = {}
                   boxSizing: "border-box",
                 }}
                 placeholder={t("parkPrefixPlaceholderLong") || "e.g. A-, C-"}
+                required
                 value={form.prefix}
                 onChange={(e) => setForm({ ...form, prefix: e.target.value })}
               />

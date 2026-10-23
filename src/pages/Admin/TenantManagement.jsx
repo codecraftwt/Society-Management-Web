@@ -62,6 +62,27 @@ function LeaseChip({ date }) {
   );
 }
 
+function getTenantDocuments(tenant) {
+  const docs = tenant?.documents || tenant?.UserDocuments || tenant?.UserDocument || {};
+  return { aadhar: docs.aadhar_url || tenant?.aadhar_url || null, pan: docs.pan_url || tenant?.pan_url || null };
+}
+
+function DocumentStatus({ tenant }) {
+  const docs = getTenantDocuments(tenant);
+  const count = [docs.aadhar, docs.pan].filter(Boolean).length;
+  return <span className={`tm-document-status ${count === 2 ? "is-complete" : count ? "is-partial" : "is-empty"}`}><MdBadge size={13} /> {count}/2 KYC</span>;
+}
+
+function DocumentCard({ label, url, icon }) {
+  return (
+    <div className="tm-document-card">
+      <div className="tm-document-icon">{icon}</div>
+      <div className="min-w-0 flex-1"><p className="tm-document-label">{label}</p><p className="tm-document-state">{url ? "Uploaded and ready to view" : "Not uploaded"}</p></div>
+      {url ? <a className="tm-document-link" href={url} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()}>View <MdOpenInNew size={14} /></a> : <span className="tm-document-missing">Missing</span>}
+    </div>
+  );
+}
+
 /* ─────────────────────────────────────────────
    REJECTION MODAL
 ───────────────────────────────────────────── */
@@ -159,19 +180,20 @@ function DetailModal({ tenant, onClose, onApprove, onReject, isPending }) {
       onClick={onClose}
     >
       <div
-        className="tm-modal-panel rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl"
+        className="tm-modal-panel rounded-2xl w-full max-w-4xl max-h-[92vh] overflow-y-auto shadow-2xl"
         style={{ background: "var(--card-bg)", border: "1px solid var(--glass-border)" }}
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="tm-detail-header flex items-center gap-3 px-5 py-4 sticky top-0 z-10"
+        <div className="tm-detail-header flex items-center gap-3 px-6 py-5 sticky top-0 z-10"
           style={{ background: "var(--card-bg)", borderBottom: "1px solid var(--divider)" }}>
-          <div className="w-10 h-10 rounded-xl bg-blue-500/12 text-blue-400 flex items-center justify-center font-black text-lg">
+          <div className="tm-detail-avatar w-12 h-12 rounded-2xl flex items-center justify-center font-black text-xl">
             {tenant.tenant_name?.charAt(0)}
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="font-bold truncate" style={{ color: "var(--text-primary)" }}>{tenant.tenant_name}</h3>
+            <div className="flex items-center gap-2 flex-wrap"><h3 className="font-bold truncate" style={{ color: "var(--text-primary)" }}>{tenant.tenant_name}</h3><DocumentStatus tenant={tenant} /></div>
             <p className="truncate" style={{ fontSize: 11, color: "var(--text-secondary)" }}>{tenant.tenant_email}</p>
+            <p className="truncate mt-0.5" style={{ fontSize: 11, color: "var(--accent)" }}>{tenant.society_name || "Society"}{tenant.flat_number ? ` · Flat ${tenant.flat_number}` : ""}</p>
           </div>
           <StatusBadge label={tenant.status_label} />
           <button onClick={onClose} className="hover:text-red-400 transition bg-white/5 p-2 rounded-lg" style={{ color: "var(--text-secondary)" }}>
@@ -179,7 +201,7 @@ function DetailModal({ tenant, onClose, onApprove, onReject, isPending }) {
           </button>
         </div>
 
-        <div className="p-5 space-y-4">
+        <div className="tm-detail-grid p-6">
           {/* Personal */}
           <Section title={t("tmPersonalInfo")} icon={<MdPerson size={14} />}>
             <Row label={t("tmFullName")} value={tenant.tenant_name} />
@@ -218,6 +240,13 @@ function DetailModal({ tenant, onClose, onApprove, onReject, isPending }) {
               </>
             )}
           </Section>
+
+          <Section title="KYC Documents" icon={<MdCreditCard size={14} />} wide>
+            <div className="tm-documents-grid">
+              <DocumentCard label="Aadhaar Card" url={getTenantDocuments(tenant).aadhar} icon={<MdBadge size={19} />} />
+              <DocumentCard label="PAN Card" url={getTenantDocuments(tenant).pan} icon={<MdCreditCard size={19} />} />
+            </div>
+          </Section>
         </div>
 
         {/* Action buttons (only for pending) */}
@@ -244,9 +273,9 @@ function DetailModal({ tenant, onClose, onApprove, onReject, isPending }) {
   );
 }
 
-function Section({ title, icon, children }) {
+function Section({ title, icon, children, wide }) {
   return (
-    <div>
+    <div className={wide ? "tm-detail-section-wide" : ""}>
       <div className="flex items-center gap-1.5 font-black uppercase tracking-widest mb-2" style={{ fontSize: 10, color: "var(--text-secondary)" }}>
         {icon}{title}
       </div>
@@ -571,7 +600,7 @@ export default function TenantManagement() {
                       <p className="truncate" style={{ fontSize: 10, color: "var(--accent)", fontWeight: 700 }}>{row.society_name}</p>
                     )}
                   </div>
-                  <StatusBadge label={row.status_label} />
+                  <div className="flex flex-col items-end gap-1"><StatusBadge label={row.status_label} /><DocumentStatus tenant={row} /></div>
                 </div>
                 <div className="px-4 pb-1 flex flex-wrap items-center gap-x-4 gap-y-1.5">
                   <span className="text-xs" style={{ color: "var(--text-secondary)" }}>
@@ -617,7 +646,7 @@ export default function TenantManagement() {
                 color: "var(--text-secondary)",
                 background: "var(--card-inner-bg)",
                 borderBottom: "1px solid var(--divider)",
-                gridTemplateColumns: "2fr 1.2fr 1fr 1fr 1fr 1fr auto",
+                gridTemplateColumns: "2fr 1.2fr 1fr 1fr 1fr .8fr 1fr auto",
                 gap: "12px",
               }}
             >
@@ -626,6 +655,7 @@ export default function TenantManagement() {
               <span>{t("tmColStatus")}</span>
               <span>{t("tmColMoveIn")}</span>
               <span>{t("tmColLeaseEnd")}</span>
+              <span>KYC</span>
               <span>{t("tmColApproval")}</span>
               <span>{t("tmColActions")}</span>
             </div>
@@ -636,7 +666,7 @@ export default function TenantManagement() {
                   key={row.tenant_id}
                   className="grid items-center px-4 py-3 hover:bg-white/2 transition group cursor-pointer"
                   style={{
-                    gridTemplateColumns: "2fr 1.2fr 1fr 1fr 1fr 1fr auto",
+                gridTemplateColumns: "2fr 1.2fr 1fr 1fr 1fr .8fr 1fr auto",
                     gap: "12px",
                     borderBottom: i < pagedTenants.length - 1 ? "1px solid var(--divider)" : "none",
                     background: i % 2 === 0 ? "var(--card-inner-bg)" : "transparent",
@@ -668,6 +698,8 @@ export default function TenantManagement() {
                   <p className="text-xs" style={{ color: "var(--text-secondary)" }}>{formatDate(row.move_in_date)}</p>
 
                   <div><LeaseChip date={row.move_out_date} /></div>
+
+                  <DocumentStatus tenant={row} />
 
                   <StatusBadge label={row.approval_status || "—"} />
 

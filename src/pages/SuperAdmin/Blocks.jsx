@@ -17,12 +17,13 @@ import {
   MdTune,
   MdSquareFoot,
   MdLaunch,
+  MdArrowForward,
 } from "react-icons/md";
 import { FaBuilding } from "react-icons/fa";
 import Select from "../../components/common/Select";
 import { toast } from "react-toastify";
 import FieldError from "../../components/common/FieldError";
-import { getTitleError, getNumberError, getPositiveAmountError } from "../../utils/validators";
+import { getNumberError, getPositiveAmountError } from "../../utils/validators";
 import GlobalButton from "../../components/common/GlobalButton";
 import GlobalTable from "../../components/common/GlobalTable";
 import GlobalBadge from "../../components/common/GlobalBadge";
@@ -400,7 +401,7 @@ export default function Blocks() {
     setFieldErrors({});
     setFormError("");
 
-    const nameErr = getTitleError(name, "Block/Tower name");
+    const nameErr = name.trim() ? null : t("mpPhaseNameRequired", "Block/Tower name is required.");
     if (nameErr) {
       toast.error(nameErr);
       setFieldErrors(p => ({ ...p, name: nameErr }));
@@ -421,6 +422,12 @@ export default function Blocks() {
         return;
       }
       payload.flats_per_floor = Number(totalHouses);
+      if (areaStrategy !== "SEPARATE" && !commonArea) {
+        const areaErr = t("mpCommonAreaRequired", "Enter a common built-up area before continuing.");
+        toast.error(areaErr);
+        setFieldErrors(p => ({ ...p, commonArea: areaErr }));
+        return;
+      }
       if (areaStrategy !== "SEPARATE" && commonArea) {
         const areaErr = getPositiveAmountError(commonArea, "Built-up Area");
         if (areaErr) {
@@ -500,7 +507,11 @@ export default function Blocks() {
               : (f.area_sqft != null ? String(f.area_sqft) : "");
           });
           setAreaAssignValues(vals);
-          setAreaAssignInitialMode(areaStrategy === "SEPARATE" || areaStrategy === "BOTH" ? "SEPARATE" : "SAME");
+          // Open the uniform-area view whenever a common area was selected.
+          // "Use Both" still allows individual edits, but the first screen
+          // should confirm the base value instead of dropping users into the
+          // more advanced house-by-house editor.
+          setAreaAssignInitialMode(areaStrategy === "SEPARATE" ? "SEPARATE" : "SAME");
         }
       }
 
@@ -729,12 +740,12 @@ export default function Blocks() {
         icon={MdAdd}
         size="xl"
         showFooter
-        submitLabel={t("mpCreate") || "Create"}
+        submitLabel={propertyType === "ROW_HOUSE" ? t("next", "Next") : (t("mpCreate") || "Create")}
         cancelLabel={t("cancel") || "Cancel"}
         onSubmit={handleSubmit}
         submitLoading={submitting}
-        submitDisabled={submitting || (propertyType === "APARTMENT" && (!layoutValidation.isValid || floorsLayout.length === 0))}
-        submitIcon={MdAdd}
+        submitDisabled={submitting || (propertyType === "APARTMENT" && (!layoutValidation.isValid || floorsLayout.length === 0)) || (propertyType === "ROW_HOUSE" && areaStrategy !== "SEPARATE" && !commonArea)}
+        submitIcon={propertyType === "ROW_HOUSE" ? MdArrowForward : MdAdd}
         submitVariant="add"
         submitBorderDraw
         bodyClassName="modal-scroll-thin"
@@ -928,6 +939,7 @@ export default function Blocks() {
                     />
                     <span style={{ fontSize: 11, color: "var(--text-secondary)", fontWeight: 700 }}>{t("mpSqft") || "sq.ft"}</span>
                   </div>
+                  <FieldError error={fieldErrors.commonArea} />
 
                   <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
                     <span style={{ fontSize: 10, color: "var(--text-secondary)", fontWeight: 600 }}>Presets:</span>

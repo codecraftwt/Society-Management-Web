@@ -253,6 +253,7 @@ export default function Index({
                 {totalCount} Total
               </span>
             </div>
+            {isSuperAdmin && workingSocietyName && <span className="sa-society-context">Viewing: {workingSocietyName}</span>}
           </div>
         </div>
 
@@ -260,7 +261,7 @@ export default function Index({
         <div className="flex items-center gap-2.5 flex-wrap sm:flex-nowrap shrink-0">
           {isSuperAdmin && societies.length > 0 && (
             <Select
-              className="text-xs font-semibold"
+              className="text-xs font-semibold sa-society-select"
               value={societyId}
               onChange={onSocietyChange}
               style={{
@@ -273,6 +274,7 @@ export default function Index({
                 borderRadius: 12,
               }}
             >
+              <option value="" disabled>Select a society</option>
               {societies.map((s) => (
                 <option key={s.id} value={s.id}>
                   {s.name}

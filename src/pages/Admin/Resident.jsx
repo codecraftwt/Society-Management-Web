@@ -3875,6 +3875,7 @@ const [totalPages, setTotalPages] = useState(1);
     if (isSuperAdmin) {
       setFilterSocietyId("");
       localStorage.setItem("superadmin_society_filter", "ALL");
+      window.dispatchEvent(new Event("superadmin-society-scope-change"));
     }
     setSearch("");
   };

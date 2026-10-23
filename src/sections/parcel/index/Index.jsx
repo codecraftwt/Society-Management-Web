@@ -217,7 +217,6 @@ export default function Index({
   onPageChange,
   onPageSizeChange,
   onOpen,
-  societyLabel,
   isSuperAdmin,
   societies = [],
   societyId = "",
@@ -251,18 +250,6 @@ export default function Index({
               <h1 className="text-xl font-bold tracking-tight text-primary m-0">
                 Parcel Management
               </h1>
-              {societyLabel && (
-                <span
-                  className="px-2.5 py-0.5 rounded-full text-xs font-bold"
-                  style={{
-                    background: "rgba(124, 58, 237, 0.12)",
-                    border: "1px solid rgba(124, 58, 237, 0.25)",
-                    color: "var(--accent)",
-                  }}
-                >
-                  {societyLabel}
-                </span>
-              )}
             </div>
             <p className="text-secondary text-xs mt-1 m-0">
               Track deliveries, gate acknowledgments, and resident handovers in real time.

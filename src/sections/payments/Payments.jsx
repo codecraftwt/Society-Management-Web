@@ -83,6 +83,7 @@ export default function Payments() {
       setLoading(false);
       setRows([]);
       setPagination({});
+      setBooted(true);
       return;
     }
     const requestId = (requestIdRef.current += 1);
@@ -154,7 +155,11 @@ export default function Payments() {
   /* Single owner of the fetch. Anything that changes the result set (source tab,
      society, and on mount) goes through here exactly once. */
   useEffect(() => {
-    if (isSuperAdmin && (!societyId || societyId === "ALL")) return;
+    if (isSuperAdmin && (!societyId || societyId === "ALL")) {
+      setLoading(false);
+      setBooted(true);
+      return;
+    }
     load(1, source, limit, societyId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [source, societyId]);
@@ -318,7 +323,8 @@ export default function Payments() {
   const hasContent = !isSuperAdmin || (societyId && societyId !== "ALL");
 
   // If Super Admin has not selected a society, show the Society Selection Console
-  if (isSuperAdmin && (!societyId || societyId === "ALL")) {
+  // Society selection now stays in the page toolbar; avoid a separate picker landing screen.
+  if (false && isSuperAdmin && (!societyId || societyId === "ALL")) {
     return (
       <div className="space-y-6 animate-fadeIn py-2 max-w-5xl mx-auto">
         {/* Hero Banner */}

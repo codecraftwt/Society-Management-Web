@@ -8,13 +8,14 @@ import {
   MdPark, MdLocalParking, MdPestControl, MdCampaign,
   MdDirectionsCar, MdHealthAndSafety, MdOutlineInbox, MdDescription,
   MdAccountBalanceWallet, MdReceiptLong, MdAttachMoney, MdCalendarToday,
-  MdLocationOn, MdEdit, MdClose, MdShield,
+  MdLocationOn, MdEdit, MdClose, MdShield, MdVerified,
 } from "react-icons/md";
 import { FaBuilding } from "react-icons/fa";
 import { FiUser, FiUsers, FiLock, FiShield, FiBriefcase } from "react-icons/fi";
 import { LuCrown } from "react-icons/lu";
 import { AiOutlineSafetyCertificate, AiOutlineCreditCard } from "react-icons/ai";
 import { PiMedalBold } from "react-icons/pi";
+import SocietyLogo from "./SocietyLogo";
 
 const inr = (n) =>
   "₹" + (Number(n || 0).toLocaleString("en-IN", { maximumFractionDigits: 2 }));
@@ -52,7 +53,7 @@ function SectionTitle({ icon: Icon, label, count = null, color = "var(--accent)"
   );
 }
 
-export default function SocietyDetailModal({ society, onClose, onEditAdmin, onManage, t }) {
+export default function SocietyDetailModal({ society, onClose, onEditAdmin, onManage, onSetLocation, t }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [detail, setDetail] = useState(null);
@@ -88,6 +89,13 @@ export default function SocietyDetailModal({ society, onClose, onEditAdmin, onMa
   const isAssigned = d ? (d.admins?.length > 0) : !!society?.societyAdmins;
   const admin = d?.admins?.[0] || society?.societyAdmins || null;
   const created = d?.created_at;
+
+  // Logo: prefer the freshly fetched detail payload, fall back to the list row.
+  const logoUrl = d?.logo_url || society?.logo_url || null;
+  // A society can hold more than one property type across its blocks — the
+  // first one drives the hero accent colour.
+  const primaryType = d?.propertyTypes?.[0] || society?.property_type || "Apartments";
+  const heroTone = typeColor(primaryType);
 
   return (
     <GlobalModal
@@ -128,9 +136,21 @@ export default function SocietyDetailModal({ society, onClose, onEditAdmin, onMa
         {!loading && !error && d && (
           <>
             {/* ── Hero banner ── */}
-            <div className="sd-hero">
-              <div className="sd-hero-icon">
-                <MdApartment size={28} />
+            <div className="sd-hero" style={{ "--soc-accent": heroTone }}>
+              <span className="sd-hero-glow" aria-hidden="true" />
+              <div className="sd-hero-logo">
+                <SocietyLogo
+                  src={logoUrl}
+                  name={s.name}
+                  propertyType={primaryType}
+                  size={92}
+                  tone={heroTone}
+                />
+                {logoUrl && (
+                  <span className="sd-hero-logo-badge" title="Official society logo">
+                    <MdVerified size={17} />
+                  </span>
+                )}
               </div>
               <div className="sd-hero-info">
                 <div className="sd-hero-title-row">
@@ -149,7 +169,7 @@ export default function SocietyDetailModal({ society, onClose, onEditAdmin, onMa
                     <span
                       key={pt}
                       className="sd-chip"
-                      style={{ color: typeColor(pt), background: `${typeColor(pt)}18`, borderColor: `${typeColor(pt)}30` }}
+                      style={{ color: typeColor(pt), background: `color-mix(in srgb, ${typeColor(pt)} 14%, transparent)`, borderColor: `color-mix(in srgb, ${typeColor(pt)} 32%, transparent)` }}
                     >
                       {pt}
                     </span>
@@ -298,6 +318,9 @@ export default function SocietyDetailModal({ society, onClose, onEditAdmin, onMa
               {t("close", "Close")}
             </GlobalButton>
             <span className="sd-spacer" />
+            <GlobalButton variant="secondary" icon={MdLocationOn} onClick={onSetLocation}>
+              {t("asLocationTab", "Society Location")}
+            </GlobalButton>
             <GlobalButton variant="primary" borderDraw icon={MdOutlineInbox} onClick={onManage}>
               {t("saManageBtn")}
             </GlobalButton>

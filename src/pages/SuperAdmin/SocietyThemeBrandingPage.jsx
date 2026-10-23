@@ -53,18 +53,13 @@ export default function SocietyThemeBrandingPage() {
         const list = res.data || [];
         setSocieties(list);
 
-        if (!selectedSocietyId && list.length > 0) {
-          setSelectedSocietyId(String(list[0].id));
-          setSelectedSocietyName(list[0].name);
-        } else if (selectedSocietyId) {
+        if (selectedSocietyId) {
           const match = list.find((s) => String(s.id) === String(selectedSocietyId));
           if (match && match.name) {
             setSelectedSocietyName(match.name);
-          } else if (list.length > 0) {
-            // Selected param not found in actual societies list; safely fall back to the first valid society
-            setSelectedSocietyId(String(list[0].id));
-            setSelectedSocietyName(list[0].name);
-            setSearchParams({ societyId: String(list[0].id), societyName: list[0].name });
+          } else {
+            setSelectedSocietyId("");
+            setSelectedSocietyName("");
           }
         }
       })

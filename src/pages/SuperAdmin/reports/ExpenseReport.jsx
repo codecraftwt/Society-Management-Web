@@ -122,6 +122,8 @@ export default function SuperAdminExpenseReport() {
   }, [isSuperAdmin]);
 
   const applyFilter = () => {
+    localStorage.setItem("superadmin_society_filter", pSociety || "ALL");
+    window.dispatchEvent(new Event("superadmin-society-scope-change"));
     const f = { societyId: pSociety, status: pStatus, paidBy: pPaidBy, mode: pMode, fromDate: pFrom, toDate: pTo };
     setSocietyId(f.societyId); setStatus(f.status); setPaidBy(f.paidBy); setMode(f.mode);
     setFromDate(f.fromDate); setToDate(f.toDate);
@@ -131,6 +133,8 @@ export default function SuperAdminExpenseReport() {
   };
 
   const clearFilter = () => {
+    localStorage.setItem("superadmin_society_filter", "ALL");
+    window.dispatchEvent(new Event("superadmin-society-scope-change"));
     setSocietyId("ALL"); setPSociety("ALL");
     setStatus(""); setPStatus("");
     setPaidBy(""); setPPaidBy("");
@@ -142,6 +146,17 @@ export default function SuperAdminExpenseReport() {
   };
 
   const handlePageChange = p => fetchExpenses(p, { societyId, status, paidBy, mode, fromDate, toDate });
+
+  const handleSectionSocietyChange = (value) => {
+    localStorage.setItem("superadmin_society_filter", value || "ALL");
+    const filters = { societyId: value, status, paidBy, mode, fromDate, toDate };
+    setSocietyId(value); setPSociety(value);
+    setApplied(value !== "ALL" || !!(status || paidBy || mode || (fromDate && toDate)));
+    fetchExpenses(1, filters);
+  };
+  const activeSocietyName = societyId === "ALL"
+    ? (t("rptAllSocieties") || "All Societies")
+    : societies.find((society) => String(society.id) === String(societyId))?.name;
 
   const fetchAllForExport = async () => {
     const params = new URLSearchParams({ page: 1, limit: 1000 });
@@ -250,9 +265,14 @@ export default function SuperAdminExpenseReport() {
             <p className="page-subtitle">
               {loading ? "—" : (t("expReportSubtitle") || "Every expense recorded across the system")}
             </p>
+            {activeSocietyName && <span className="sa-society-context">Viewing: {activeSocietyName}</span>}
           </div>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+          {isSuperAdmin && <Select className="input sa-society-select" value={societyId} onChange={(e) => handleSectionSocietyChange(e.target.value)} style={{ minWidth: 190, height: 38 }}>
+            <option value="ALL">{t("rptAllSocieties") || "All Societies"}</option>
+            {societies.map((society) => <option key={society.id} value={society.id}>{society.name}</option>)}
+          </Select>}
           <button onClick={handleExcelExport} className="btn-export" style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 13px", fontSize: 12, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}><MdTableChart size={14} /> {t("rptExportExcel") || "Excel"}</button>
           <button onClick={handlePDFExport} className="btn-export" style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 13px", fontSize: 12, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}><MdPictureAsPdf size={14} /> {t("rptExportPDF") || "PDF"}</button>
           <button onClick={() => setShowFilters(true)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 13px", borderRadius: 10, fontSize: 12, fontWeight: 700, background: applied ? "rgba(107,70,193,0.15)" : "var(--card-inner-bg)", color: applied ? "#9F87D7" : "var(--text-secondary)", border: applied ? "1px solid rgba(107,70,193,0.35)" : "1px solid var(--glass-border)", cursor: "pointer", position: "relative", whiteSpace: "nowrap" }}><MdFilterList size={14} /> Filters{applied && <span style={{ position: "absolute", top: -3, right: -3, width: 8, height: 8, borderRadius: "50%", background: "#6B46C1", boxShadow: "0 0 6px rgba(107,70,193,0.6)" }} />}</button>
