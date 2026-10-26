@@ -1,10 +1,67 @@
 /* src/components/common/ProfilePictureCropModal.css */
 
+/* The crop editor is also used on public pages where the role theme is not
+   mounted. Keep the shared modal readable and self-contained there too. */
+.global-modal-container .sa-modal-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px 20px 16px;
+  border-bottom: 1px solid var(--glass-border, rgba(148, 163, 184, 0.2));
+}
+
+.global-modal-container .sa-modal-icon {
+  width: 42px;
+  height: 42px;
+  flex: 0 0 42px;
+  display: grid;
+  place-items: center;
+  border-radius: 13px;
+  color: #fff;
+  background: linear-gradient(135deg, #7c3aed, #2563eb);
+  box-shadow: 0 8px 20px rgba(99, 102, 241, 0.28);
+}
+
+.global-modal-container .sa-modal-title {
+  margin: 0;
+  color: var(--text-primary, #172033);
+  font-size: 18px;
+  line-height: 1.25;
+  font-weight: 800;
+}
+
+.global-modal-container .sa-modal-subtitle {
+  margin: 4px 0 0;
+  color: var(--text-secondary, #64748b);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.global-modal-container .sa-modal-close {
+  width: 34px;
+  height: 34px;
+  flex: 0 0 34px;
+  display: grid;
+  place-items: center;
+  margin-left: auto;
+  border: 1px solid var(--glass-border, #e2e8f0);
+  border-radius: 10px;
+  background: var(--card-inner-bg, #f8fafc);
+  color: var(--text-secondary, #64748b);
+  cursor: pointer;
+}
+
+.global-modal-container .sa-modal-body {
+  min-width: 0;
+  box-sizing: border-box;
+}
+
 .pp-modal-wrap {
   display: flex;
   flex-direction: column;
   gap: 16px;
   width: 100%;
+  min-width: 0;
 }
 
 /* Mode Switcher Segmented Tabs */
@@ -129,6 +186,8 @@
   background: var(--card-inner-bg, rgba(255, 255, 255, 0.04));
   border: 1.5px solid var(--glass-border, rgba(255, 255, 255, 0.08));
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+  min-width: 0;
+  flex-wrap: wrap;
 }
 
 .pp-slider-group {
@@ -136,6 +195,7 @@
   align-items: center;
   gap: 10px;
   flex: 1;
+  min-width: 180px;
 }
 
 .pp-btn-icon {
@@ -267,4 +327,50 @@
   gap: 10px;
   flex-wrap: wrap;
   margin-top: 4px;
+}
+
+@media (max-width: 600px) {
+  .global-modal-backdrop {
+    padding: 8px !important;
+  }
+
+  .global-modal-container {
+    max-height: calc(100dvh - 16px) !important;
+    border-radius: 18px !important;
+  }
+
+  .global-modal-container .sa-modal-header {
+    padding: 14px 16px 12px;
+  }
+
+  .global-modal-container .sa-modal-body {
+    padding: 14px !important;
+  }
+
+  .pp-mode-tabs {
+    width: 100%;
+  }
+
+  .pp-canvas-box {
+    max-width: min(340px, 100%);
+  }
+
+  .pp-control-bar {
+    padding: 9px;
+    gap: 8px;
+  }
+
+  .pp-slider-group {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .pp-control-bar > .flex {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .pp-footer-actions {
+    justify-content: center;
+  }
 }

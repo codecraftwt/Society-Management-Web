@@ -188,6 +188,11 @@ export default function SettingsPanel({
   const [me, setMe] = useState(null);
 
   useEffect(() => {
+    if (user?.id) {
+      setMe(user);
+      setLoading(false);
+      return undefined;
+    }
     let cancelled = false;
     (async () => {
       try {
@@ -212,7 +217,7 @@ export default function SettingsPanel({
     return () => {
       cancelled = true;
     };
-  }, [updateUser]);
+  }, [updateUser, user]);
 
   /* ── Notification preferences ── */
   const [notifs, setNotifs] = useState({

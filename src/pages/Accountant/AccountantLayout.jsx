@@ -27,6 +27,7 @@ import Sidebar from "../../components/common/Sidebar";
 import AppHeader from "../../components/common/AppHeader";
 import AdminEmergencyModal from "../../components/admin/AdminEmergencyModal";
 import SOSModal from "../../components/emergency/SOSModal";
+import useEmergencyAlerts from "../../hooks/useEmergencyAlerts";
 import { useRoleTheme } from "../../context/ThemeContext";
 import { AuthContext } from "../../context/AuthContext";
 import { hasPermission } from "../../utils/permissions";
@@ -39,7 +40,7 @@ function AccountantLayoutInner() {
   const { user, refreshPermissions } = useContext(AuthContext);
   useRoleTheme();
 
-  const [alerts, setAlerts] = useState([]);
+  const { alerts, refresh: refreshEmergencies } = useEmergencyAlerts();
   const [showEmergency, setShowEmergency] = useState(false);
   const [showSOS, setShowSOS] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
@@ -53,22 +54,6 @@ function AccountantLayoutInner() {
     window.addEventListener("permissions_updated", handlePermChange);
     return () => window.removeEventListener("permissions_updated", handlePermChange);
   }, [refreshPermissions]);
-
-  /* Emergency polling */
-  const loadEmergencies = async () => {
-    try {
-      const res = await API.get("/emergency/active");
-      setAlerts(res.data || []);
-    } catch (err) {
-      console.error("Emergency fetch failed", err);
-    }
-  };
-
-  useEffect(() => {
-    loadEmergencies();
-    const interval = setInterval(loadEmergencies, 5000);
-    return () => clearInterval(interval);
-  }, []);
 
   const menu = [
     {
@@ -329,7 +314,7 @@ function AccountantLayoutInner() {
         alerts={alerts}
         isOpen={showEmergency}
         onClose={() => setShowEmergency(false)}
-        refresh={loadEmergencies}
+        refresh={refreshEmergencies}
       />
 
       {/* SOS MODAL */}
@@ -337,7 +322,7 @@ function AccountantLayoutInner() {
         key={String(showSOS)}
         isOpen={showSOS}
         onClose={() => setShowSOS(false)}
-        onRefresh={loadEmergencies}
+        onRefresh={refreshEmergencies}
         alerts={alerts}
         senderLabel="sosSenderSOS"
         modalTitle="sosSocietySOSCenter"

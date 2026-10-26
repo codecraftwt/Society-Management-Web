@@ -86,7 +86,7 @@ export default function Create({
       title={t("noticeCreateTitle")}
       subtitle={t("noticeModalSubtitle")}
       icon={MdCampaign}
-      size="md"
+      size="lg"
       showFooter
       submitLabel={t("noticePublish")}
       cancelLabel={t("cancel") || "Cancel"}

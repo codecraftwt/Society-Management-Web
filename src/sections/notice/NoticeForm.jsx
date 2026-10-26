@@ -1,6 +1,16 @@
-import { useMemo, useState, useEffect, useContext } from "react";
+import { useMemo, useState, useEffect, useContext, useRef } from "react";
 import { toast } from "react-toastify";
-import { MdAttachFile, MdClose, MdPublic, MdHome } from "react-icons/md";
+import {
+  MdAttachFile,
+  MdClose,
+  MdPublic,
+  MdHome,
+  MdEditNote,
+  MdInfoOutline,
+  MdCloudUpload,
+  MdPictureAsPdf,
+  MdSwapHoriz,
+} from "react-icons/md";
 
 import { useLang } from "../../context/LanguageContext";
 import { AuthContext } from "../../context/AuthContext";
@@ -21,14 +31,15 @@ const ALLOWED_MIMES = new Set([
 
 const ALLOWED_EXTS = ["pdf", "jpg", "jpeg", "png", "gif", "webp", "svg"];
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
+const DESC_MAX_LENGTH = 1000;
+const DESC_MIN_HEIGHT = 200;
+const DESC_MAX_HEIGHT = 380;
 
-const imgStyle = {
-  width: "100%",
-  maxHeight: 220,
-  objectFit: "cover",
-  borderRadius: 12,
-  border: "1px solid var(--glass-border)",
-  background: "var(--card-inner-bg)",
+const formatFileSize = (bytes) => {
+  if (!bytes) return "";
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 };
 
 export default function NoticeForm({
@@ -45,8 +56,27 @@ export default function NoticeForm({
 
   const [flatsList, setFlatsList] = useState([]);
   const [loadingFlats, setLoadingFlats] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const descRef = useRef(null);
+  const fileInputRef = useRef(null);
 
   const activeSocId = isSuperAdmin ? form.society_id : user?.society_id;
+
+  const descLength = (form.description || "").length;
+  const descPercent = Math.min(100, (descLength / DESC_MAX_LENGTH) * 100);
+  const descState =
+    descLength >= DESC_MAX_LENGTH ? "limit" : descLength >= DESC_MAX_LENGTH * 0.9 ? "warn" : "normal";
+
+  useEffect(() => {
+    const el = descRef.current;
+    if (!el) return;
+    const frame = requestAnimationFrame(() => {
+      el.style.height = "auto";
+      const nextHeight = Math.max(DESC_MIN_HEIGHT, Math.min(el.scrollHeight, DESC_MAX_HEIGHT));
+      el.style.height = `${nextHeight}px`;
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [form.description]);
 
   useEffect(() => {
     let isMounted = true;
@@ -100,6 +130,53 @@ export default function NoticeForm({
       ? raw
       : `${BASE_URL}${raw}`;
   }, [existingFileUrl, newPreviewUrl]);
+
+  const applySelectedFile = (selected) => {
+    if (!selected) return;
+    const ext = selected.name?.split(".").pop()?.toLowerCase() || "";
+    const allowedType = ALLOWED_MIMES.has(selected.type);
+    const allowedExt = ALLOWED_EXTS.includes(ext) && !selected.type;
+    if (!allowedType && !allowedExt) {
+      toast.error(t("noticeInvalidFileType", "Invalid file type. Only PDF, JPG, PNG, WEBP, GIF and SVG are allowed."));
+      return;
+    }
+    if (selected.size > MAX_FILE_SIZE) {
+      toast.error(t("noticeFileTooLarge", "File size exceeds the 10 MB limit."));
+      return;
+    }
+    setFile(selected);
+  };
+
+  const handleFileInput = (e) => {
+    const selected = e.target.files?.[0];
+    e.target.value = "";
+    applySelectedFile(selected);
+  };
+
+  const openFilePicker = () => fileInputRef.current?.click();
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    applySelectedFile(e.dataTransfer.files?.[0]);
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!isDragging) setIsDragging(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    if (e.currentTarget.contains(e.relatedTarget)) return;
+    setIsDragging(false);
+  };
+
+  const newFileKind = newPreviewUrl
+    ? t("noticeFileImage", "Image")
+    : `${file?.name?.split(".").pop()?.toUpperCase() || "FILE"}`;
 
   return (
     <>
@@ -251,17 +328,42 @@ export default function NoticeForm({
         />
       </div>
 
-      <div>
-        <label className="sa-label">{t("noticeDescriptionLabel")}</label>
-        <textarea
-          className="input"
-          rows={4}
-          placeholder={t("noticeDescPlaceholder") || "Provide detailed information for residents..."}
-          value={form.description}
-          required
-          style={{ resize: "none" }}
-          onChange={(e) => setForm({ ...form, description: e.target.value })}
-        />
+      <div className="notice-desc-field">
+        <div className="notice-desc-head">
+          <label className="sa-label notice-desc-label" htmlFor="notice-description">
+            <MdEditNote size={16} aria-hidden="true" />
+            <span>{t("noticeDescriptionLabel")}</span>
+          </label>
+          <span className={`notice-desc-count is-${descState}`} aria-hidden="true">
+            <strong>{descLength}</strong>
+            <span className="notice-desc-count-sep">/</span>
+            {DESC_MAX_LENGTH}
+          </span>
+        </div>
+
+        <div className={`notice-desc-shell is-${descState}`}>
+          <textarea
+            id="notice-description"
+            ref={descRef}
+            className="notice-desc-input"
+            rows={7}
+            maxLength={DESC_MAX_LENGTH}
+            placeholder={t("noticeDescPlaceholder") || "Provide detailed information for residents..."}
+            value={form.description}
+            required
+            aria-describedby="notice-description-help"
+            onChange={(e) => setForm({ ...form, description: e.target.value })}
+          />
+          <div className="notice-desc-footer">
+            <span className="notice-desc-tip" id="notice-description-help">
+              <MdInfoOutline size={14} aria-hidden="true" />
+              <span>{t("noticeDescTip", "Be clear and specific. Line breaks are supported.")}</span>
+            </span>
+            <span className="notice-desc-track" aria-hidden="true">
+              <span className="notice-desc-bar" style={{ width: `${descPercent}%` }} />
+            </span>
+          </div>
+        </div>
       </div>
 
 
@@ -283,39 +385,58 @@ export default function NoticeForm({
         </p>
       </div>
 
-      <div>
-        <label className="sa-label">{t("noticeAttachmentLabel")}</label>
+      <div className="notice-upload-field">
+        <div className="notice-upload-head">
+          <label className="sa-label notice-upload-label" htmlFor="notice-file-input">
+            <MdAttachFile size={15} aria-hidden="true" />
+            <span>{t("noticeAttachmentLabel")}</span>
+          </label>
+        </div>
+
+        <input
+          id="notice-file-input"
+          ref={fileInputRef}
+          type="file"
+          className="notice-upload-input"
+          accept="image/*,application/pdf"
+          onChange={handleFileInput}
+        />
+
         {file ? (
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            {newPreviewUrl && <img src={newPreviewUrl} alt="New attachment preview" style={imgStyle} />}
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 9,
-                padding: "8px 12px",
-                borderRadius: 9,
-                background: "rgba(16,185,129,0.08)",
-                border: "1px solid rgba(16,185,129,0.25)",
-              }}
-            >
-              <MdAttachFile size={16} style={{ color: "#10b981", flexShrink: 0 }} />
-              <span
-                style={{
-                  fontSize: 12,
-                  color: "var(--text-primary)",
-                  flex: 1,
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  whiteSpace: "nowrap",
-                }}
-              >
+          <div className="notice-upload-card is-new">
+            {newPreviewUrl ? (
+              <img className="notice-upload-thumb" src={newPreviewUrl} alt={t("noticeNewPreview", "New attachment preview")} />
+            ) : (
+              <span className="notice-upload-doc" aria-hidden="true">
+                <MdPictureAsPdf size={24} />
+                <small>{newFileKind}</small>
+              </span>
+            )}
+            <div className="notice-upload-meta">
+              <span className="notice-upload-name" title={file.name}>
                 {file.name}
               </span>
+              <span className="notice-upload-sub">
+                {formatFileSize(file.size)} · {newFileKind}
+                {existingFileUrl ? ` · ${t("noticeReplacesCurrent", "Replaces current attachment")}` : ""}
+              </span>
+            </div>
+            <div className="notice-upload-actions">
               <button
                 type="button"
+                className="notice-upload-action"
+                onClick={openFilePicker}
+                title={t("replace", "Replace")}
+              >
+                <MdSwapHoriz size={15} aria-hidden="true" />
+                <span>{t("replace", "Replace")}</span>
+              </button>
+              <button
+                type="button"
+                className="notice-upload-remove"
                 onClick={() => setFile(null)}
-                style={{ background: "none", border: "none", cursor: "pointer", color: "#ef4444" }}
+                aria-label={t("remove", "Remove")}
+                title={t("remove", "Remove")}
               >
                 <MdClose size={16} />
               </button>
@@ -323,85 +444,64 @@ export default function NoticeForm({
           </div>
         ) : (
           <>
-            {existingImage && <img src={existingImage} alt="Current attachment preview" style={{ ...imgStyle, marginBottom: 10 }} />}
-            <label
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                padding: "10px 14px",
-                borderRadius: 10,
-                cursor: "pointer",
-                border: "1.5px dashed var(--glass-border)",
-                background: "var(--card-inner-bg)",
-                fontSize: "0.82rem",
-                color: "var(--text-secondary)",
-              }}
-            >
-              <MdAttachFile size={16} />
-              <span>{existingFileUrl ? (t("noticeReplaceHint", "Replace attachment")) : t("noticeAttachHint")}</span>
-              <input
-                type="file"
-                accept="image/*,application/pdf"
-                onChange={(e) => {
-                  const selected = e.target.files[0];
-                  e.target.value = "";
-                  if (!selected) return;
-                  const ext = selected.name?.split(".").pop()?.toLowerCase() || "";
-                  const allowedType = ALLOWED_MIMES.has(selected.type);
-                  const allowedExt = ALLOWED_EXTS.includes(ext) && !selected.type;
-                  if (!allowedType && !allowedExt) {
-                    toast.error(t("noticeInvalidFileType", "Invalid file type. Only PDF, JPG, PNG, WEBP, GIF and SVG are allowed."));
-                    return;
-                  }
-                  if (selected.size > MAX_FILE_SIZE) {
-                    toast.error(t("noticeFileTooLarge", "File size exceeds the 10 MB limit."));
-                    return;
-                  }
-                  setFile(selected);
-                }}
-                style={{ display: "none" }}
-              />
-            </label>
             {existingFileUrl && (
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 9,
-                  padding: "8px 12px",
-                  marginTop: 10,
-                  borderRadius: 9,
-                  background: "rgba(160,90,255,0.08)",
-                  border: "1px solid rgba(160,90,255,0.25)",
-                }}
-              >
-                <MdAttachFile size={16} style={{ color: "var(--accent)", flexShrink: 0 }} />
-                <span
-                  style={{
-                    fontSize: 12,
-                    color: "var(--text-primary)",
-                    flex: 1,
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  {existingFileName || t("noticeAttachmentLabel")}
-                </span>
-                <span
-                  style={{
-                    fontSize: 10,
-                    color: "var(--text-secondary)",
-                    fontWeight: 700,
-                    textTransform: "uppercase",
-                    flexShrink: 0,
-                  }}
-                >
-                  {t("noticeCurrent", "Current")}
-                </span>
+              <div className="notice-upload-card is-existing">
+                {existingImage ? (
+                  <img className="notice-upload-thumb" src={existingImage} alt={t("noticeCurrentPreview", "Current attachment preview")} />
+                ) : (
+                  <span className="notice-upload-doc" aria-hidden="true">
+                    <MdAttachFile size={22} />
+                  </span>
+                )}
+                <div className="notice-upload-meta">
+                  <span className="notice-upload-name" title={existingFileName}>
+                    {existingFileName || t("noticeAttachmentLabel")}
+                  </span>
+                  <span className="notice-upload-sub">{t("noticeCurrentAttachment", "Current attachment")}</span>
+                </div>
+                <span className="notice-upload-tag">{t("noticeCurrent", "Current")}</span>
               </div>
             )}
+
+            <label
+              htmlFor="notice-file-input"
+              className={`notice-dropzone${isDragging ? " is-dragging" : ""}${existingFileUrl ? " is-compact" : ""}`}
+              onDragEnter={handleDragOver}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  openFilePicker();
+                }
+              }}
+              tabIndex={0}
+              role="button"
+              aria-label={t("noticeDropAria", "Upload attachment by clicking or dropping a file here")}
+            >
+              <span className="notice-dropzone-icon" aria-hidden="true">
+                <MdCloudUpload size={existingFileUrl ? 22 : 30} />
+              </span>
+              <span className="notice-dropzone-copy">
+                <strong>
+                  {existingFileUrl
+                    ? t("noticeReplaceDropTitle", "Drop a new file to replace")
+                    : t("noticeDropTitle", "Click to upload or drag & drop")}
+                </strong>
+                <span>{t("noticeDropSubtitle", "PDF or image · up to 10 MB")}</span>
+              </span>
+              <span className="notice-dropzone-cta">{t("browse", "Browse")}</span>
+            </label>
+
+            <div className="notice-upload-formats" aria-hidden="true">
+              <span>PDF</span>
+              <span>JPG</span>
+              <span>PNG</span>
+              <span>WEBP</span>
+              <span>GIF</span>
+              <span>SVG</span>
+            </div>
           </>
         )}
       </div>

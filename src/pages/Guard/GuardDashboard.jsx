@@ -37,6 +37,8 @@ import GuardPunchModal from "../../components/guard/GuardPunchModal";
 import StatCard from "../../components/common/StatCard";
 import QuickLink from "../../components/common/QuickLink";
 import UserAvatar from "../../components/common/UserAvatar";
+import { useAuthContext } from "../../context/AuthContext";
+import useEmergencyAlerts from "../../hooks/useEmergencyAlerts";
 
 /* ─────────────────────────────────────────────────────────────
    Helper Functions
@@ -137,6 +139,7 @@ const getFlatLabel = (v, t) => {
 export default function GuardDashboard() {
   const { t } = useLang();
   const navigate = useNavigate();
+  const { user } = useAuthContext();
 
   // State variables
   const [dateTime, setDateTime] = useState(new Date());
@@ -144,19 +147,26 @@ export default function GuardDashboard() {
   const [shift, setShift] = useState(null);
   const [stats, setStats] = useState({ today: 0, inside: 0, exited: 0 });
   const [visitors, setVisitors] = useState([]);
-  const [activeAlerts, setActiveAlerts] = useState([]);
+  const { alerts: activeAlerts } = useEmergencyAlerts();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState("INSIDE"); // INSIDE | OVERSTAY | ALL
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const searchInputRef = useRef(null);
+  const visitorStreamRef = useRef(null);
   const [showEmergencyModal, setShowEmergencyModal] = useState(false);
   const [punchModal, setPunchModal] = useState({ open: false, mode: "PUNCH_IN" });
 
   // Exit Modal State
   const [exitTarget, setExitTarget] = useState(null);
   const [exitLoading, setExitLoading] = useState(false);
+
+  const reviewOverstays = () => {
+    setSearchQuery("");
+    setActiveTab("OVERSTAY");
+    requestAnimationFrame(() => visitorStreamRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
+  };
 
   // Greeting determination
   const greeting = useMemo(() => {
@@ -170,16 +180,14 @@ export default function GuardDashboard() {
   const loadDashboardData = useCallback(async (isManual = false) => {
     if (isManual) setRefreshing(true);
     try {
-      const pPromise = API.get("/users/me").catch(() => null);
+      const pPromise = Promise.resolve({ data: user });
       const sPromise = API.get("/guard-shift/my").catch(() => null);
       const vPromise = API.get("/visitors?page=1&limit=50").catch(() => null);
-      const ePromise = API.get("/emergency/active").catch(() => null);
 
-      const [pRes, sRes, vRes, eRes] = await Promise.all([
+      const [pRes, sRes, vRes] = await Promise.all([
         pPromise,
         sPromise,
         vPromise,
-        ePromise,
       ]);
 
       if (pRes?.data) setProfile(pRes.data);
@@ -197,16 +205,13 @@ export default function GuardDashboard() {
         });
       }
 
-      if (eRes?.data) {
-        setActiveAlerts(Array.isArray(eRes.data) ? eRes.data : []);
-      }
     } catch (err) {
       console.error("Dashboard data load error:", err);
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [user]);
 
   // Initial load and live clock interval
   useEffect(() => {
@@ -733,7 +738,7 @@ export default function GuardDashboard() {
           </div>
 
           <button
-            onClick={() => setActiveTab("OVERSTAY")}
+            onClick={reviewOverstays}
             className="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold shadow-md transition self-start md:self-center shrink-0 hover:scale-105 active:scale-95"
           >
             {t("gdReviewOverstays", "Review Overstays")}
@@ -963,7 +968,7 @@ export default function GuardDashboard() {
         </div>
 
         {/* ─── Column 2 (50%): Live Gate Activity Stream & Visitors Log ─── */}
-        <div className="gd-glass-card rounded-2xl p-5 sm:p-6 shadow-sm flex flex-col justify-between">
+        <div ref={visitorStreamRef} className="gd-glass-card rounded-2xl p-5 sm:p-6 shadow-sm flex flex-col justify-between">
           <div>
             {/* Header (Title on left, Refresh + Search triggers on right) */}
             <div className="flex items-center justify-between gap-3 pb-3 border-b border-divider">

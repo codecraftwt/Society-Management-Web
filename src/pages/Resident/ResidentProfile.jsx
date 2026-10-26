@@ -134,7 +134,7 @@ export default function ResidentProfile() {
         householdRes,
         parcelsRes,
       ] = await Promise.allSettled([
-        API.get("/users/me"),
+        Promise.resolve({ data: user }),
         API.get("/users/get-flat"),
         API.get("/bills/resident?status=PENDING&limit=5"),
         API.get("/notices?limit=5"),

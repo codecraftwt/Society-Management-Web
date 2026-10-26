@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import { createPortal } from "react-dom";
 import API from "../services/api";
 import {
   MdEmail,
@@ -35,6 +36,7 @@ import {
 import { toast } from "react-toastify";
 import ThemeToggle from "../components/common/ThemeToggle";
 import LanguageSelector from "../components/common/LanguageSelector";
+import ProfilePictureCropModal from "../components/common/ProfilePictureCropModal";
 import { useLang } from "../context/LanguageContext";
 import { getTitleError, getEmailError, getMobileError } from "../utils/validators";
 
@@ -43,6 +45,7 @@ import loginVisualImg from "../assets/Photos/Home/login_right_side_img.png";
 import compLogoImg from "../assets/Photos/Home/comp_logo.png";
 import "../home/Home.css";
 import "./Register.css";
+import "./Login.css";
 
 /* ─── Password rule checks ─── */
 const PW_RULES = [
@@ -96,6 +99,7 @@ function Register() {
   const [blocks, setBlocks] = useState([]);
   const [floors, setFloors] = useState([]);
   const [flats, setFlats] = useState([]);
+  const [propertyType, setPropertyType] = useState("APARTMENT");
 
   // Main Form Data
   const [formData, setFormData] = useState({
@@ -119,6 +123,8 @@ function Register() {
 
   // Previews & File Metadata
   const [profilePicPreview, setProfilePicPreview] = useState(null);
+  const [profileCropFile, setProfileCropFile] = useState(null);
+  const [showProfileCrop, setShowProfileCrop] = useState(false);
   const [aadharPreview, setAadharPreview] = useState(null);
   const [aadharName, setAadharName] = useState("");
   const [panPreview, setPanPreview] = useState(null);
@@ -127,6 +133,11 @@ function Register() {
   const profileInputRef = useRef(null);
   const aadharInputRef = useRef(null);
   const panInputRef = useRef(null);
+  const formScrollRef = useRef(null);
+
+  useEffect(() => {
+    formScrollRef.current?.scrollTo?.({ top: 0, behavior: "smooth" });
+  }, [step]);
 
   // Email Check Status
   const [emailCheckState, setEmailCheckState] = useState({
@@ -135,6 +146,24 @@ function Register() {
     message: "",
   });
   const [useExistingAccount, setUseExistingAccount] = useState(false);
+  const [registrationOtp, setRegistrationOtp] = useState("");
+  const [registrationOtpSent, setRegistrationOtpSent] = useState(false);
+  const [registrationEmailVerified, setRegistrationEmailVerified] = useState(false);
+  const [registrationSubmitted, setRegistrationSubmitted] = useState(false);
+  const registrationVerifiedRef = useRef(false);
+  const [otpLoading, setOtpLoading] = useState(false);
+  const [registrationOtpSeconds, setRegistrationOtpSeconds] = useState(120);
+  const [registrationResendCooldown, setRegistrationResendCooldown] = useState(30);
+  const otpInputRefs = useRef([]);
+
+  useEffect(() => {
+    if (!registrationOtpSent || registrationEmailVerified) return undefined;
+    const timer = window.setInterval(() => {
+      setRegistrationOtpSeconds((value) => Math.max(0, value - 1));
+      setRegistrationResendCooldown((value) => Math.max(0, value - 1));
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [registrationOtpSent, registrationEmailVerified]);
 
   // Load public societies on mount
   useEffect(() => {
@@ -185,6 +214,7 @@ function Register() {
       flat_id: "",
     }));
     setBlocks([]);
+    setPropertyType("APARTMENT");
     setFloors([]);
     setFlats([]);
 
@@ -195,6 +225,20 @@ function Register() {
       console.error("Failed to load blocks:", err);
     }
   };
+
+  const handlePropertyTypeChange = (type) => {
+    setPropertyType(type);
+    setFormData((p) => ({ ...p, block_id: "", floor_id: "", flat_id: "" }));
+    setFloors([]);
+    setFlats([]);
+  };
+
+  const availableBlocks = useMemo(() => blocks.filter((block) => {
+    if (!propertyType) return false;
+    const rawType = String(block.property_type || block.propertyType || "APARTMENT").trim().toUpperCase().replace(/[ -]+/g, "_");
+    const type = rawType === "ROW_HOUSES" || rawType === "VILLA" ? "ROW_HOUSE" : rawType;
+    return propertyType === "ROW_HOUSE" ? type === "ROW_HOUSE" : type !== "ROW_HOUSE";
+  }), [blocks, propertyType]);
 
   // Load Floors and Flats when Block changes
   const handleBlockChange = async (e) => {
@@ -241,6 +285,62 @@ function Register() {
     if (name === "email") {
       setEmailCheckState({ status: "idle", user: null, message: "" });
       setUseExistingAccount(false);
+      setRegistrationEmailVerified(false);
+      setRegistrationOtpSent(false);
+      setRegistrationOtp("");
+    }
+  };
+
+  const sendRegistrationOtp = async () => {
+    const email = formData.email.trim().toLowerCase();
+    if (!isEmail(email)) {
+      toast.error("Please enter a valid email address first.");
+      setStep(2);
+      return;
+    }
+    setOtpLoading(true);
+    try {
+      await API.post("/auth/send-registration-otp", {
+        email,
+        name: formData.name,
+        phone: formData.mobile,
+        society_id: formData.society_id || undefined,
+      });
+      setRegistrationOtpSent(true);
+      setRegistrationOtpSeconds(120);
+      setRegistrationResendCooldown(30);
+      setRegistrationOtp("");
+      toast.success("Verification OTP sent to your email.");
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Unable to send verification OTP.");
+    } finally {
+      setOtpLoading(false);
+    }
+  };
+
+  const verifyRegistrationOtp = async () => {
+    if (!/^\d{6}$/.test(registrationOtp.trim())) {
+      toast.error("Enter the 6-digit OTP sent to your email.");
+      return;
+    }
+    setOtpLoading(true);
+    try {
+      await API.post("/auth/verify-registration-otp", {
+        email: formData.email.trim().toLowerCase(),
+        otp: registrationOtp.trim(),
+      });
+      setRegistrationEmailVerified(true);
+      registrationVerifiedRef.current = true;
+      setRegistrationOtpSent(false);
+      setRegistrationOtp("");
+      toast.success("Email verified. Completing your registration…");
+      window.requestAnimationFrame(() => {
+        document.querySelector(".reg-form-scroll")?.requestSubmit();
+      });
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Invalid or expired OTP.");
+    } finally {
+      setOtpLoading(false);
     }
   };
 
@@ -343,16 +443,27 @@ function Register() {
   const handleProfilePicChange = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 5 * 1024 * 1024) {
+    e.target.value = "";
+    if (file.size >= 5 * 1024 * 1024) {
       toast.error("Profile picture size must be under 5MB");
       return;
     }
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please select an image file.");
+      return;
+    }
+    setProfileCropFile(file);
+    setShowProfileCrop(true);
+  };
+
+  const handleProfileCropSave = async (file) => {
     try {
       const base64 = await fileToBase64(file);
       setProfilePicPreview(base64);
       setFormData((p) => ({ ...p, profile_picture: base64 }));
+      setProfileCropFile(null);
     } catch (err) {
-      toast.error("Failed to read image file");
+      toast.error("Failed to process profile picture");
     }
   };
 
@@ -445,6 +556,10 @@ function Register() {
       return;
     }
     if (step === 4) {
+      if (!formData.aadhar_card || !formData.pan_card) {
+        toast.error("Aadhaar Card and PAN Card are required to continue.");
+        return;
+      }
       setStep(5);
       return;
     }
@@ -460,6 +575,18 @@ function Register() {
     }
     if (!formData.flat_id) {
       toast.error("Please select your flat/unit.");
+      return;
+    }
+
+    if (!registrationEmailVerified && !registrationVerifiedRef.current) {
+      if (!registrationOtpSent) {
+        setLoading(true);
+        try {
+          await sendRegistrationOtp();
+        } finally {
+          setLoading(false);
+        }
+      }
       return;
     }
 
@@ -492,7 +619,7 @@ function Register() {
 
       const res = await API.post("/auth/register", payload);
       toast.success("Registration submitted successfully!");
-      navigate("/registration-pending", { state: { userId: res.data.userId } });
+      setRegistrationSubmitted(true);
     } catch (err) {
       toast.error(err.response?.data?.message || "Registration Failed");
     } finally {
@@ -643,7 +770,7 @@ function Register() {
         </div>
 
         {/* Form Container */}
-        <form className="reg-form-scroll" onSubmit={handleRegister}>
+        <form ref={formScrollRef} className="reg-form-scroll" onSubmit={handleRegister}>
           {/* ═══════════════════════════════════════════════════════════
               STEP 1: SELECT SOCIETY
              ═══════════════════════════════════════════════════════════ */}
@@ -1147,7 +1274,7 @@ function Register() {
                     Profile Photo
                   </label>
                   <p className="reg-photo-desc">
-                    Clear face photo for visitor pass matching and resident ID.
+                    Clear face photo for visitor pass matching and resident ID. Maximum size: 5 MB.
                   </p>
                   <div style={{ display: "flex", gap: 8 }}>
                     <button
@@ -1310,6 +1437,14 @@ function Register() {
              ═══════════════════════════════════════════════════════════ */}
           {step === 5 && (
             <div className="reg-fields animate-fadeIn">
+              <div className="reg-field">
+                <label className="reg-label">What type of home are you selecting?</label>
+                <div className="reg-property-choice">
+                  <button type="button" className={propertyType === "APARTMENT" ? "selected" : ""} onClick={() => handlePropertyTypeChange("APARTMENT")}>🏢 Flat / Apartment</button>
+                  <button type="button" className={propertyType === "ROW_HOUSE" ? "selected" : ""} onClick={() => handlePropertyTypeChange("ROW_HOUSE")}>🏡 Row House / Villa</button>
+                </div>
+              </div>
+
               {/* Wing / Block Selection */}
               <div className="reg-field">
                 <label className="reg-label">Select Wing / Block</label>
@@ -1323,7 +1458,7 @@ function Register() {
                     required
                   >
                     <option value="">Choose Wing / Block</option>
-                    {blocks.map((b) => (
+                    {availableBlocks.map((b) => (
                       <option key={b.id} value={b.id}>
                         {b.name}
                       </option>
@@ -1334,7 +1469,7 @@ function Register() {
               </div>
 
               {/* Floor Selection */}
-              <div className="reg-field">
+              {propertyType !== "ROW_HOUSE" && <div className="reg-field">
                 <label className="reg-label">Select Floor</label>
                 <div className="reg-input-wrap reg-select-wrap">
                   <MdApartment className="reg-icon-left" />
@@ -1360,11 +1495,11 @@ function Register() {
                   </select>
                   <MdKeyboardArrowDown className="reg-select-arrow" />
                 </div>
-              </div>
+              </div>}
 
               {/* Flat Selection */}
               <div className="reg-field">
-                <label className="reg-label">Select Flat / Apartment Unit</label>
+                <label className="reg-label">{propertyType === "ROW_HOUSE" ? "Select Row House / Villa" : "Select Flat / Apartment Unit"}</label>
                 <div className="reg-input-wrap reg-select-wrap">
                   <FiHome className="reg-icon-left" />
                   <select
@@ -1441,6 +1576,109 @@ function Register() {
             </div>
           )}
         </form>
+
+        {registrationOtpSent && !registrationEmailVerified && (
+          <div className="otp-overlay otp-overlay--login" role="dialog" aria-modal="true" aria-label="Verify email">
+            <div className="otp-modal-box otp-modal-box--login animate-scaleIn">
+              <div className="otp-modal-topbar" />
+              <div className="otp-modal-inner">
+                <div className="otp-modal-header">
+                  <div className="otp-shield-icon"><MdEmail /></div>
+                  <h2 className="otp-title">Verify Your Email</h2>
+                  <p className="otp-subtitle">A 6-digit verification code was sent to</p>
+                  <div className="otp-email-badge"><MdEmail /><span>{formData.email}</span></div>
+                </div>
+              <div
+                className="reg-otp-boxes"
+                onPaste={(e) => {
+                  e.preventDefault();
+                  const pasted = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
+                  if (!pasted) return;
+                  setRegistrationOtp(pasted);
+                  otpInputRefs.current[Math.min(pasted.length, 6) - 1]?.focus();
+                }}
+              >
+                {[0, 1, 2, 3, 4, 5].map((i) => (
+                  <input
+                    key={i}
+                    ref={(el) => { otpInputRefs.current[i] = el; }}
+                    className={`otp-input${registrationOtp[i] ? " filled" : ""}`}
+                    inputMode="numeric"
+                    maxLength={1}
+                    value={registrationOtp[i] || ""}
+                    onChange={(e) => {
+                      const digit = e.target.value.replace(/\D/g, "");
+                      const next = registrationOtp.split("");
+                      next[i] = digit;
+                      setRegistrationOtp(next.join("").slice(0, 6));
+                      if (digit && i < 5) otpInputRefs.current[i + 1]?.focus();
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Backspace" && !registrationOtp[i] && i > 0) otpInputRefs.current[i - 1]?.focus();
+                    }}
+                    autoFocus={i === 0}
+                    aria-label={`OTP digit ${i + 1}`}
+                  />
+                ))}
+              </div>
+                <div style={{ display: "flex", justifyContent: "center", marginBottom: "1.25rem" }}>
+                  <div style={{ position: "relative", width: 54, height: 54 }}>
+                    <svg className="otp-timer-track" width="54" height="54" style={{ transform: "rotate(-90deg)" }}>
+                      <circle cx="27" cy="27" r="20" fill="none" strokeWidth="3" />
+                      <circle cx="27" cy="27" r="20" fill="none" stroke={registrationOtpSeconds > 30 ? "#38bdf8" : "#ef4444"} strokeWidth="3" strokeDasharray={2 * Math.PI * 20} strokeDashoffset={2 * Math.PI * 20 * (1 - registrationOtpSeconds / 120)} strokeLinecap="round" />
+                    </svg>
+                    <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      <span className="otp-timer-value" style={{ color: registrationOtpSeconds > 0 ? "#38bdf8" : "#ef4444" }}>
+                        {`${String(Math.floor(registrationOtpSeconds / 60)).padStart(2, "0")}:${String(registrationOtpSeconds % 60).padStart(2, "0")}`}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <div className="reg-otp-dots" aria-hidden="true">
+                  {[0, 1, 2, 3, 4, 5].map((i) => <span key={i} className={registrationOtp.length > i ? "filled" : ""} />)}
+                </div>
+                <button type="button" className="button1" onClick={verifyRegistrationOtp} disabled={otpLoading || registrationOtp.length !== 6} style={{ width: "100%", marginBottom: "0.75rem" }}>
+                  {otpLoading ? "Verifying…" : "✓ Verify Email"}
+                </button>
+                <button type="button" className="otp-resend-btn" onClick={sendRegistrationOtp} disabled={otpLoading || registrationResendCooldown > 0 || registrationOtpSeconds === 0}>
+                  {registrationResendCooldown > 0 ? `↻ Resend in ${registrationResendCooldown}s` : "↻ Resend OTP"}
+                </button>
+                <button type="button" className="otp-cancel-btn" onClick={() => setRegistrationOtpSent(false)}>× Cancel</button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {registrationEmailVerified && (
+          <div className="reg-verified-banner">
+            <MdCheckCircle size={18} /> Email verified successfully. Submit your registration.
+          </div>
+        )}
+
+        <ProfilePictureCropModal
+          isOpen={showProfileCrop && Boolean(profileCropFile)}
+          file={profileCropFile}
+          onClose={() => {
+            setShowProfileCrop(false);
+            setProfileCropFile(null);
+          }}
+          onSave={handleProfileCropSave}
+          onPickAnother={() => profileInputRef.current?.click()}
+        />
+
+        {registrationSubmitted && createPortal((
+          <div className="otp-overlay otp-overlay--login" role="dialog" aria-modal="true">
+            <div className="otp-modal-box otp-modal-box--login animate-scaleIn" style={{ textAlign: "center" }}>
+              <div className="otp-modal-topbar" />
+              <div className="otp-modal-inner">
+                <div className="otp-shield-icon" style={{ margin: "0 auto 16px", color: "#10b981", background: "#ecfdf5", borderColor: "#a7f3d0" }}>✓</div>
+                <h2 className="otp-title">Registration Submitted</h2>
+                <p className="otp-subtitle" style={{ marginTop: 12 }}>Your registration is complete and waiting for confirmation from the society admin.</p>
+                <button type="button" className="button1" style={{ width: "100%", marginTop: 22 }} onClick={() => navigate("/login")}>Go to Login</button>
+              </div>
+            </div>
+          </div>
+        ), document.body)}
 
         {/* Footer */}
         <div className="reg-footer">

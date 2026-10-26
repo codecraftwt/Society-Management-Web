@@ -192,6 +192,7 @@ const ProfilePictureUploader = forwardRef(function ProfilePictureUploader(
             onClose={() => setCropFile(null)}
             file={cropFile}
             onSave={handleCropSave}
+            saving={busy}
             onPickAnother={() => {
               setCropFile(null);
               setTimeout(() => inputRef.current?.click(), 100);
@@ -247,6 +248,7 @@ const ProfilePictureUploader = forwardRef(function ProfilePictureUploader(
           onClose={() => setCropFile(null)}
           file={cropFile}
           onSave={handleCropSave}
+          saving={busy}
           onPickAnother={() => {
             setCropFile(null);
             setTimeout(() => inputRef.current?.click(), 100);

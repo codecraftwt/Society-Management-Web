@@ -387,6 +387,22 @@ function RejectionModal({ details, onClose, t }) {
   );
 }
 
+function ApprovalPendingModal({ onClose }) {
+  return (
+    <div className="approval-pending-overlay" role="status" aria-live="polite">
+      <div className="approval-pending-card animate-scaleIn">
+        <div className="approval-pending-accent" />
+        <div className="approval-pending-icon">⏳</div>
+        <span className="approval-pending-badge">ACCOUNT REVIEW</span>
+        <h2>Registration Pending</h2>
+        <p>Your registration is waiting for confirmation from the society admin. Login OTP will be available after approval.</p>
+        <div className="approval-pending-status"><span /> Awaiting admin confirmation</div>
+        <button type="button" className="button1" onClick={onClose}>Back to Login</button>
+      </div>
+    </div>
+  );
+}
+
 function Login() {
   const navigate = useNavigate();
   const { login, switchRole, user } = useContext(AuthContext);
@@ -403,6 +419,7 @@ function Login() {
   const [panelPrompt, setPanelPrompt] = useState(null);
   const [multiSocietyPrompt, setMultiSocietyPrompt] = useState(null);
   const [rejection, setRejection] = useState(null);
+  const [approvalPending, setApprovalPending] = useState(false);
 
   // Panel chooser helpers — society admins, committee members & accountants who live in the
   // society also get the Resident panel (mirrors the mobile app).
@@ -480,6 +497,8 @@ function Login() {
           society_name: data.society_name || null,
           admin_contact: data.admin_contact || null,
         });
+      } else if (data?.code === "APPROVAL_PENDING") {
+        setApprovalPending(true);
       } else {
         toast.error(data?.message || "Login failed");
       }
@@ -781,6 +800,9 @@ function Login() {
       {/* Registration Rejected Modal */}
       {rejection && (
         <RejectionModal details={rejection} t={t} onClose={() => setRejection(null)} />
+      )}
+      {approvalPending && (
+        <ApprovalPendingModal onClose={() => setApprovalPending(false)} />
       )}
 
       {/* Panel Chooser Modal (Residents with Committee or Accountant role) */}

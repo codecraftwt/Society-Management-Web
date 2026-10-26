@@ -17,7 +17,7 @@ import "./Event.css";
 
 export default function Events() {
   const { user } = useContext(AuthContext);
-  const isSuperAdmin = user?.role === "SUPER_ADMIN";
+  const isSuperAdmin = (user?.activeRole || user?.role) === "SUPER_ADMIN";
 
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -58,15 +58,25 @@ export default function Events() {
   const fetchEvents = useCallback(async () => {
     setLoading(true);
     try {
-      const headers = (isSuperAdmin && filterSocietyId && filterSocietyId !== "ALL")
-        ? { "x-society-id": filterSocietyId }
-        : {};
-      const params = {
-        page,
-        limit: 10,
-        search,
-        ...(filterSocietyId && filterSocietyId !== "ALL" ? { society_id: filterSocietyId } : {}),
-      };
+      let headers = {};
+      let params = { page, limit: 10, search };
+
+      if (isSuperAdmin) {
+        // Super Admin: send the selected society filter (or "ALL" for no filter)
+        if (filterSocietyId && filterSocietyId !== "ALL") {
+          headers = { "x-society-id": filterSocietyId };
+          params.society_id = filterSocietyId;
+        }
+        // else: no header → backend returns all societies
+      } else {
+        // Regular admin/committee: always scope to the user's own society
+        const mySocietyId = user?.society_id;
+        if (mySocietyId) {
+          headers = { "x-society-id": String(mySocietyId) };
+          params.society_id = mySocietyId;
+        }
+      }
+
       const res = await eventService.getAdminEvents(params, headers);
       if (res.success) {
         setEvents(res.data || []);
@@ -77,7 +87,7 @@ export default function Events() {
     } finally {
       setLoading(false);
     }
-  }, [page, search, filterSocietyId, isSuperAdmin]);
+  }, [page, search, filterSocietyId, isSuperAdmin, user?.society_id]);
 
   useEffect(() => {
     fetchEvents();
@@ -384,7 +394,9 @@ export default function Events() {
         size="lg"
       >
         <EventForm
+          key={`${editingEvent?.id || "new"}-${filterSocietyId || "ALL"}`}
           initialData={editingEvent}
+          defaultSocietyId={filterSocietyId}
           onSubmit={handleFormSubmit}
           onCancel={() => setFormModalOpen(false)}
           loading={formLoading}

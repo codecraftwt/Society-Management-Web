@@ -24,6 +24,7 @@ import GlobalTable from "../../../components/common/GlobalTable";
 import GlobalBadge from "../../../components/common/GlobalBadge";
 import GlobalButton from "../../../components/common/GlobalButton";
 import ExpandableSearch from "../../../components/common/ExpandableSearch";
+import Select from "../../../components/common/Select";
 import SlidingTabs from "../../../components/common/SlidingTabs";
 import UserAvatar from "../../../components/common/UserAvatar";
 import StatCard from "../../../components/common/StatCard";
@@ -124,6 +125,12 @@ function CurrentPass({ pass, onOpenQr }) {
 export default function Index({
   view,
   onViewChange,
+
+  isSuperAdmin = false,
+  societies = [],
+  societyId = "",
+  onSocietyChange,
+  scopeReady = true,
 
   staff,
   loading,
@@ -356,7 +363,22 @@ export default function Index({
         </div>
 
         <div className="cs-toolbar__actions">
-          {canCreate && view === "staff" && (
+          {isSuperAdmin && (
+            <div style={{ width: 220, minWidth: 180 }}>
+              <Select
+                value={societyId}
+                onChange={(e) => onSocietyChange?.(e.target.value)}
+                options={societies.map((society) => ({
+                  value: String(society.id),
+                  label: society.name,
+                }))}
+                placeholder={t("csSelectSociety", "Select society")}
+                disabled={!societies.length}
+                searchable
+              />
+            </div>
+          )}
+          {canCreate && view === "staff" && scopeReady && (
             <>
               <ExpandableSearch
                 value={search}
@@ -371,6 +393,12 @@ export default function Index({
           )}
         </div>
       </div>
+
+      {isSuperAdmin && !scopeReady && (
+        <p className="cs-hint">
+          {t("csNoSocieties", "No society is available to scope cleaning staff.")}
+        </p>
+      )}
 
       <SlidingTabs items={views} value={view} onChange={onViewChange} />
 

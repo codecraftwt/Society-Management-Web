@@ -39,6 +39,7 @@ import RoleSwitcher from "../../components/RoleSwitcher";
 import "./Admin.css";
 
 import { hasPermission, isCommitteeMember } from "../../utils/permissions";
+import useEmergencyAlerts from "../../hooks/useEmergencyAlerts";
 
 function AdminLayoutInner() {
   const navigate = useNavigate();
@@ -46,7 +47,7 @@ function AdminLayoutInner() {
   const { openMobile } = useSidebar();
   useRoleTheme();
 
-  const [alerts, setAlerts] = useState([]);
+  const { alerts, refresh: refreshEmergencies } = useEmergencyAlerts();
   const [showEmergency, setShowEmergency] = useState(false);
   const [showSOS, setShowSOS] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
@@ -236,22 +237,6 @@ function AdminLayoutInner() {
     return hasPermission(user, item.module, reqAction);
   });
 
-  /* Emergency polling */
-  const loadEmergencies = async () => {
-    try {
-      const res = await API.get("/emergency/active");
-      setAlerts(res.data || []);
-    } catch (err) {
-      console.error("Emergency fetch failed", err);
-    }
-  };
-
-  useEffect(() => {
-    loadEmergencies();
-    const interval = setInterval(loadEmergencies, 5000);
-    return () => clearInterval(interval);
-  }, []);
-
   /* Logout */
   const confirmLogout = () => {
     localStorage.clear();
@@ -378,7 +363,7 @@ function AdminLayoutInner() {
         alerts={alerts}
         isOpen={showEmergency}
         onClose={() => setShowEmergency(false)}
-        refresh={loadEmergencies}
+        refresh={refreshEmergencies}
       />
 
       {/* SOS MODAL */}
@@ -386,7 +371,7 @@ function AdminLayoutInner() {
         key={String(showSOS)}
         isOpen={showSOS}
         onClose={() => setShowSOS(false)}
-        onRefresh={loadEmergencies}
+        onRefresh={refreshEmergencies}
         alerts={alerts}
         senderLabel="sosSenderSOS"
         modalTitle="sosSocietySOSCenter"

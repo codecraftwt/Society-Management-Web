@@ -191,6 +191,7 @@ function App() {
             <Route path="notice" element={<Notice />} />
             <Route path="guard" element={<Guard />} />
             <Route path="visitor-logs" element={<VisitorLogs />} />
+            <Route path="cleaning-staff" element={<CleaningStaff />} />
             <Route path="reports" element={<SuperAdminReports />} />
             <Route path="amenities" element={<SocietyAmenities />} />
             <Route path="society_documents" element={<SocietyDocuments />} />

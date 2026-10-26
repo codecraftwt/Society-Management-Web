@@ -195,11 +195,11 @@ export const AuthProvider = ({ children }) => {
     disconnectSocket();
   };
 
-  const updateUser = (updatedFields) => {
+  const updateUser = useCallback((updatedFields) => {
     const merged = normaliseUser({ ...user, ...updatedFields });
     localStorage.setItem("user", JSON.stringify(merged));
     setUser(merged);
-  };
+  }, [user]);
 
   const switchRole = async (role) => {
     const res = await API.post("/auth/switch-role", { role });
@@ -256,4 +256,4 @@ export const AuthProvider = ({ children }) => {
       {children}
     </AuthContext.Provider>
   );
-};
+};

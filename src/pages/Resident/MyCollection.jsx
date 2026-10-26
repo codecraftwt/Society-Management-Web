@@ -72,6 +72,21 @@ function buildFlatLabel(item) {
   return parts.join(" · ");
 }
 
+// A user can have memberships in more than one society. The collection page
+// must only expose units belonging to the society currently active in the
+// resident session, not every membership returned by the admin-oriented
+// memberships endpoint.
+function getFlatSocietyId(item) {
+  const flat = item?.Flat || item;
+  return (
+    item?.society_id ??
+    flat?.society_id ??
+    flat?.Block?.society_id ??
+    flat?.Floor?.Block?.society_id ??
+    null
+  );
+}
+
 export default function MyCollection() {
   const { t } = useLang();
   const { user: authUser } = useContext(AuthContext);
@@ -142,12 +157,30 @@ export default function MyCollection() {
           }
         }
 
-        setMyFlats(flatsArr);
+        const activeSocietyId = authUser?.society_id;
+        const scopedFlats = activeSocietyId
+          ? flatsArr.filter((item) => {
+              const flatSocietyId = getFlatSocietyId(item);
+              // Keep records without an embedded society id only when the
+              // endpoint has already supplied the active user's units. This
+              // avoids dropping legacy rows while always excluding a known
+              // different society.
+              return !flatSocietyId || String(flatSocietyId) === String(activeSocietyId);
+            })
+          : flatsArr;
 
-        if (flatsArr.length > 0 && !selectedFlatId) {
-          const first = flatsArr[0];
+        setMyFlats(scopedFlats);
+
+        const selectedStillAvailable = scopedFlats.some((item) => {
+          const fId = item.flat_id || item.id || item.Flat?.id;
+          return String(fId) === String(selectedFlatId);
+        });
+        if (scopedFlats.length > 0 && (!selectedFlatId || !selectedStillAvailable)) {
+          const first = scopedFlats[0];
           const fId = first.flat_id || first.id || first.Flat?.id;
           setSelectedFlatId(fId ? String(fId) : "");
+        } else if (scopedFlats.length === 0 && selectedFlatId) {
+          setSelectedFlatId("");
         }
       } catch (error) {
         console.error("[MyCollection] Critical error fetching properties:", error);

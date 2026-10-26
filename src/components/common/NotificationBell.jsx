@@ -7,6 +7,10 @@ import API from "../../services/api";
 import { AuthContext } from "../../context/AuthContext";
 import socket from "../../services/socket";
 
+const notificationFetchCache = new Map();
+const notificationCacheKey = (user) =>
+  String(user?.id || "anonymous") + ":" + String(user?.society_id || user?.societyId || "") + ":" + String(user?.activeRole || user?.role || "");
+
 export default function NotificationBell() {
   const { user } = useContext(AuthContext);
   const navigate = useNavigate();
@@ -22,11 +26,36 @@ export default function NotificationBell() {
      LOAD NOTIFICATIONS
   ═══════════════════════ */
   const loadNotifications = async () => {
+    const cacheKey = notificationCacheKey(user);
+    const cached = notificationFetchCache.get(cacheKey);
+    if (cached?.promise) return cached.promise;
+    if (Array.isArray(cached?.data) && cached.expiresAt > Date.now()) {
+      setNotifications(cached.data);
+      return cached.data;
+    }
+
+    const promise = API.get("/notifications")
+      .then((res) => {
+        const data = Array.isArray(res.data)
+          ? res.data
+          : Array.isArray(res.data?.notifications)
+            ? res.data.notifications
+            : [];
+        notificationFetchCache.set(cacheKey, { data, expiresAt: Date.now() + 15000 });
+        setNotifications(data);
+        return data;
+      })
+      .catch((err) => {
+        console.error("[NotificationBell] Load failed:", err);
+        notificationFetchCache.delete(cacheKey);
+        return [];
+      });
+    notificationFetchCache.set(cacheKey, { promise, expiresAt: Date.now() + 15000 });
     try {
-      const res = await API.get("/notifications");
-      setNotifications(res.data || []);
-    } catch (err) {
-      console.error("[NotificationBell] Load failed:", err);
+      return await promise;
+    } finally {
+      const current = notificationFetchCache.get(cacheKey);
+      if (current?.promise === promise) notificationFetchCache.delete(cacheKey);
     }
   };
 
@@ -119,7 +148,7 @@ export default function NotificationBell() {
     }
   };
 
-  const unreadCount = notifications.filter((n) => !n.is_read).length;
+  const unreadCount = (Array.isArray(notifications) ? notifications : []).filter((n) => !n.is_read).length;
 
   const isAdmin =
     user?.activeRole === "SOCIETY_ADMIN" ||

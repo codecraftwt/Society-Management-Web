@@ -63,6 +63,17 @@ export default function ProfilePictureCropModal({
 
   // Preview URL for live avatar preview
   const [previewAvatarUrl, setPreviewAvatarUrl] = useState(null);
+  const [saving, setSaving] = useState(false);
+
+  const submitPhoto = async (outputFile) => {
+    setSaving(true);
+    try {
+      await onSave(outputFile);
+      onClose();
+    } finally {
+      setSaving(false);
+    }
+  };
 
   // Load image object when file changes
   useEffect(() => {
@@ -334,11 +345,10 @@ export default function ProfilePictureCropModal({
 
   // Export / Save Handler
   const handleSave = () => {
-    if (!file || !imageObj) return;
+    if (!file || !imageObj || saving) return;
 
     if (mode === "FULL") {
-      onSave(file);
-      onClose();
+      void submitPhoto(file);
       return;
     }
 
@@ -349,8 +359,7 @@ export default function ProfilePictureCropModal({
     const ctx = exportCanvas.getContext("2d");
 
     if (!ctx) {
-      onSave(file);
-      onClose();
+      void submitPhoto(file);
       return;
     }
 
@@ -393,16 +402,14 @@ export default function ProfilePictureCropModal({
     exportCanvas.toBlob(
       (blob) => {
         if (!blob) {
-          onSave(file);
-          onClose();
+          void submitPhoto(file);
           return;
         }
         const croppedFile = new File([blob], file.name || "profile_picture.png", {
           type: "image/png",
           lastModified: Date.now(),
         });
-        onSave(croppedFile);
-        onClose();
+        void submitPhoto(croppedFile);
       },
       "image/png",
       0.95
@@ -637,6 +644,7 @@ export default function ProfilePictureCropModal({
               size="sm"
               icon={MdClose}
               onClick={onClose}
+              disabled={saving}
             >
               {t("cancel", "Cancel")}
             </GlobalButton>
@@ -646,8 +654,10 @@ export default function ProfilePictureCropModal({
               size="sm"
               icon={MdCheck}
               onClick={handleSave}
+              loading={saving}
+              disabled={saving}
             >
-              {t("save", "Save Photo")}
+              {saving ? t("saving", "Saving…") : t("save", "Save Photo")}
             </GlobalButton>
           </div>
         </div>

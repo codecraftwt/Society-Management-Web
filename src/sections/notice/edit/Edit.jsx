@@ -88,7 +88,7 @@ export default function Edit({
       title={t("noticeUpdateTitle")}
       subtitle={t("noticeModalSubtitle")}
       icon={MdCampaign}
-      size="md"
+      size="lg"
       showFooter
       submitLabel={t("noticeUpdateTitle")}
       cancelLabel={t("cancel") || "Cancel"}

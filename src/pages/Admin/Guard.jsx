@@ -187,6 +187,7 @@ export default function Guard() {
   const [attendanceGuardFilter, setAttendanceGuardFilter] = useState("ALL");
   const [attendanceStatusFilter, setAttendanceStatusFilter] = useState("ALL");
   const [attendanceSummary, setAttendanceSummary] = useState({ total: 0, punched_in: 0, punched_out: 0 });
+  const [todayAttendance, setTodayAttendance] = useState([]);
   const [selectedSelfie, setSelectedSelfie] = useState(null);
   useEffect(() => {
     let timer;
@@ -291,6 +292,15 @@ export default function Guard() {
         : [];
       setGuards(list);
       await loadShifts(list);
+      // A scheduled shift is not the same as being on duty. Use the latest
+      // attendance record to exclude guards who manually or automatically
+      // punched out while the shift window is still active.
+      try {
+        const attendanceRes = await API.get("/guard-attendance", { params: { limit: 100, date: todayISO } });
+        setTodayAttendance(Array.isArray(attendanceRes.data?.data) ? attendanceRes.data.data : []);
+      } catch {
+        setTodayAttendance([]);
+      }
     } catch (err) {
       console.error(err);
       setGuards([]);
@@ -463,6 +473,12 @@ export default function Guard() {
     return shiftForToday(guardShifts[guardId] || [], todayISO);
   };
 
+  const getGuardTodayAttendance = (guardId) => {
+    return todayAttendance
+      .filter((row) => String(row.guard_id) === String(guardId))
+      .sort((a, b) => new Date(b.punch_in || 0) - new Date(a.punch_in || 0))[0] || null;
+  };
+
   /* Helper to check if a guard is active on the current active shift right now */
   const isGuardOnCurrentShift = (guardId) => {
     if (!activeShift) return false;
@@ -473,8 +489,12 @@ export default function Guard() {
   /* Guards actively on duty right now on the current shift */
   const activeGuards = useMemo(() => {
     if (!activeShift) return [];
-    return guards.filter((g) => isGuardOnCurrentShift(g.id));
-  }, [guards, guardShifts, todayISO, activeShift, currentMinutes]);
+    return guards.filter((g) => {
+      if (!isGuardOnCurrentShift(g.id)) return false;
+      const latest = getGuardTodayAttendance(g.id);
+      return latest?.status === "PUNCHED_IN" && !latest.punch_out;
+    });
+  }, [guards, guardShifts, todayAttendance, todayISO, activeShift, currentMinutes]);
 
   /* Guards scheduled for any shift today */
   const todayGuards = useMemo(() => {
@@ -518,7 +538,7 @@ export default function Guard() {
       if (aToday !== bToday) return bToday - aToday;
       return (a.name || "").localeCompare(b.name || "");
     });
-  }, [guards, filterTab, searchQuery, activeGuards, todayGuards, offDutyGuards, guardShifts, todayISO, activeShift, currentMinutes]);
+  }, [guards, filterTab, searchQuery, activeGuards, todayGuards, offDutyGuards, guardShifts, todayAttendance, todayISO, activeShift, currentMinutes]);
 
   const timingsHaveOverlap = () => {
     if (!shiftTimings) return false;
@@ -1003,6 +1023,18 @@ export default function Guard() {
               <MdAccessTime size={13} style={{ color: "var(--text-secondary)" }} />
               {formatAttendanceTime(row.punch_out)}
             </div>
+            <span style={{
+              display: "inline-flex",
+              width: "fit-content",
+              fontSize: "0.68rem",
+              fontWeight: 800,
+              color: row.punch_out_source === "SYSTEM" ? "#7c3aed" : "#059669",
+              background: row.punch_out_source === "SYSTEM" ? "rgba(124, 58, 237, 0.10)" : "rgba(5, 150, 105, 0.10)",
+              padding: "2px 6px",
+              borderRadius: 5,
+            }}>
+              {row.punch_out_source === "SYSTEM" ? "Auto punch-out" : "Manual punch-out"}
+            </span>
             {row.punch_out_distance !== null && row.punch_out_distance !== undefined && (
               <div style={{ display: "flex", alignItems: "center", gap: 4, fontSize: "0.74rem", color: "var(--text-tertiary)" }}>
                 <MdLocationOn size={11} />
@@ -1119,31 +1151,15 @@ export default function Guard() {
               {onDuty && <span className="gt-avatar-dot--active" title={t("guardOnDutyNow", "On Duty Now")} />}
             </div>
             <div>
-              <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+              <div>
                 <span style={{ fontSize: "0.88rem", fontWeight: 700, color: "var(--text-primary)" }}>
                   {g.name}
                 </span>
-                {onDuty && (
-                  <span className="gt-onduty-badge" style={{ fontSize: 9.5, padding: "2px 7px" }}>
-                    <span className="gt-onduty-badge__dot" style={{ width: 5, height: 5 }} />
-                    {t("guardOnDutyNow", "ON DUTY")}
-                  </span>
-                )}
               </div>
             </div>
           </div>
         );
       },
-    },
-    {
-      key: "email",
-      header: t("guardColEmail") || "Email",
-      render: (g) => (
-        <div style={{ display: "flex", alignItems: "center", gap: 6, color: "var(--text-secondary)" }}>
-          <MdEmail size={13} style={{ color: "var(--text-tertiary)" }} />
-          <span>{g.email}</span>
-        </div>
-      ),
     },
     ...(isSuperAdmin
       ? [{
@@ -1168,44 +1184,67 @@ export default function Guard() {
         }]
       : []),
     {
-      /* Only the assignment covering today */
-      key: "shift",
-      header: t("guardColShift") || "Shift",
+      key: "attendance_status",
+      header: "Attendance",
+      render: (g) => {
+        const shift = getGuardTodayShift(g.id);
+        const attendance = getGuardTodayAttendance(g.id);
+        if (!shift) return <span style={{ color: "var(--text-tertiary)", fontSize: "0.78rem" }}>No shift</span>;
+        const label = attendance?.status === "PUNCHED_IN" && !attendance.punch_out
+          ? "Punched In"
+          : attendance?.punch_out_source === "SYSTEM"
+          ? "Auto Punch-Out"
+          : attendance?.punch_out_source === "GUARD"
+          ? "Manual Punch-Out"
+          : "Absent";
+        const color = label === "Punched In" ? "#059669" : label === "Auto Punch-Out" ? "#7c3aed" : label === "Absent" ? "#dc2626" : "#64748b";
+        return (
+          <span style={{
+            display: "inline-flex",
+            alignItems: "center",
+            whiteSpace: "nowrap",
+            fontSize: "0.7rem",
+            fontWeight: 800,
+            color,
+            padding: "5px 9px",
+            borderRadius: 999,
+            background: `${color}12`,
+            border: `1px solid ${color}35`,
+          }}>
+            <span style={{ width: 6, height: 6, borderRadius: "50%", background: color, marginRight: 6 }} />
+            {label}
+          </span>
+        );
+      },
+    },
+    {
+      /* Compact combined shift + schedule column */
+      key: "shift_schedule",
+      header: "Shift Schedule",
       render: (g) => {
         const todayShift = getGuardTodayShift(g.id);
         if (!todayShift) {
           return (
-            <span style={{ fontSize: "0.8rem", color: "var(--text-tertiary)", fontStyle: "italic" }}>
+            <span style={{ fontSize: "0.78rem", color: "var(--text-tertiary)", fontStyle: "italic" }}>
               {t("guardNoShiftToday", "No Shift Today")}
             </span>
           );
         }
-        return <ShiftBadge type={todayShift.shift_type} t={t} />;
-      },
-    },
-    {
-      key: "schedule",
-      header: t("guardColSchedule") || "Schedule",
-      hiddenMobile: true,
-      render: (g) => {
-        const todayShift = getGuardTodayShift(g.id);
-        if (!todayShift) {
-          return (
-            <span style={{ fontSize: "0.8rem", color: "var(--text-tertiary)", opacity: 0.6 }}>—</span>
-          );
-        }
         const timing = shiftTimings?.[todayShift.shift_type];
         return (
-          <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: "0.8rem", color: "var(--text-secondary)" }}>
-              <MdCalendarToday size={11} style={{ opacity: 0.7, flexShrink: 0 }} />
-              <span style={{ whiteSpace: "nowrap" }}>{formatShiftRange(todayShift)}</span>
-            </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 185 }}>
+            <ShiftBadge type={todayShift.shift_type} t={t} />
+            <div style={{ display: "flex", flexDirection: "column", gap: 1, minWidth: 0 }}>
+              <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: "0.72rem", color: "var(--text-secondary)", whiteSpace: "nowrap" }}>
+                <MdCalendarToday size={10} style={{ opacity: 0.7, flexShrink: 0 }} />
+                {formatShiftRange(todayShift)}
+              </span>
             {timing && (
-              <span style={{ fontSize: "0.72rem", color: "var(--text-tertiary)", fontWeight: 600 }}>
+              <span style={{ fontSize: "0.68rem", color: "var(--text-tertiary)", fontWeight: 700, whiteSpace: "nowrap" }}>
                 {fmtTime12h(timing.start)} – {fmtTime12h(timing.end)}
               </span>
             )}
+            </div>
           </div>
         );
       },
@@ -1245,11 +1284,11 @@ export default function Guard() {
           <GlobalButton
             variant="info"
             size="sm"
-            icon={MdCalendarMonth}
+            icon={MdVisibility}
             onClick={() => openAllShiftsModal(g)}
-            title={t("guardViewAllShifts", "View All Shifts")}
+            title="View guard details"
           >
-            {t("guardViewAllShifts", "View All Shifts")}
+            Details
           </GlobalButton>
           {canDeleteGuard && (
             <GlobalButton
@@ -1597,7 +1636,8 @@ export default function Guard() {
       <GlobalTable
         columns={columns}
         data={filteredGuards}
-        rowClassName={(g) => isGuardOnCurrentShift(g.id) ? "gt-row--active-guard" : ""}
+        compact
+        rowClassName={(g) => activeGuards.some((active) => String(active.id) === String(g.id)) ? "gt-row--active-guard" : ""}
         loading={loading}
         emptyMessage={
           filterTab === "ON_DUTY"
@@ -2065,6 +2105,12 @@ export default function Guard() {
           </div>
         }
       >
+        {selectedGuard && (
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14, padding: "10px 12px", borderRadius: 12, background: "var(--card-inner-bg)", border: "1px solid var(--glass-border)" }}>
+            <MdEmail size={16} style={{ color: "var(--accent)" }} />
+            <span style={{ fontSize: "0.82rem", color: "var(--text-secondary)" }}>{selectedGuard.email || "Email not available"}</span>
+          </div>
+        )}
         {/* GlobalModal's body already scrolls (maxHeight 90vh, overflowY auto),
             so a guard with a long history grows the list, not the dialog. */}
         {selectedGuardShifts.length > 0 ? (

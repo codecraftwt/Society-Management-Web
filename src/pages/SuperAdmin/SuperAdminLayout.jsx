@@ -21,6 +21,7 @@ import {
   MdCelebration,
   MdHomeWork,
   MdApartment,
+  MdCleaningServices,
 } from "react-icons/md";
 import { FaBuilding, FaUsers, FaUserShield, FaParking } from "react-icons/fa";
 import ThemeToggle from "../../components/common/ThemeToggle";
@@ -146,6 +147,12 @@ function SuperAdminLayoutInner() {
       label: t("saMenuVisitorLogs", "Visitor Logs"),
       path: `${base}/visitor-logs`,
       icon: MdVerified,
+      group: "OPERATIONS & SECURITY",
+    },
+    {
+      label: t("saMenuCleaningStaff", "Cleaning Staff"),
+      path: `${base}/cleaning-staff`,
+      icon: MdCleaningServices,
       group: "OPERATIONS & SECURITY",
     },
     {

@@ -140,8 +140,24 @@ const ResidentsTab = ({ residents, t, onMoveOut }) => {
         const initials = name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
         const moveIn = r.move_in_date || r.move_in || r.moveIn || r.check_in || r.created_at || null;
         const moveOut = r.move_out_date || r.move_out || r.moveOut || r.check_out || null;
-        const isCurrent = !moveOut;
-        const role = r.type || r.role || r.resident_type || r.User?.role || t("fhResidents") || "Resident";
+        const tenantIsCurrent = (residents || []).some((item) =>
+          item.is_current !== false &&
+          !item.move_out_date &&
+          String(item.resident_type || item.User?.resident_type || "").toUpperCase() === "TENANT"
+        );
+        const currentTenant = (residents || []).find((item) =>
+          item.is_current !== false && !item.move_out_date &&
+          String(item.resident_type || item.User?.resident_type || "").toUpperCase() === "TENANT"
+        );
+        const isOwner = String(r.resident_type || r.User?.resident_type || "").toUpperCase() === "OWNER";
+        const isCurrent = r.is_current !== false && !moveOut && !(isOwner && tenantIsCurrent);
+        const effectiveMoveOut = moveOut || (isOwner && tenantIsCurrent ? (currentTenant?.move_in_date || currentTenant?.move_in) : null);
+        const role = r.type || r.role || r.resident_type || r.User?.resident_type || r.User?.role || t("fhResidents") || "Resident";
+        const roleLabel = String(role).toUpperCase() === "OWNER"
+          ? "Owner"
+          : String(role).toUpperCase() === "TENANT"
+            ? "Tenant"
+            : !tenantIsCurrent ? "Owner" : role;
 
         return (
           <div
@@ -163,23 +179,23 @@ const ResidentsTab = ({ residents, t, onMoveOut }) => {
                         : "bg-slate-500/10 text-slate-400 border border-slate-500/20"
                     }`}
                   >
-                    {isCurrent ? t("fhCurrent") || "Active" : t("fhPast") || "Past Resident"}
+                    {isCurrent ? t("fhCurrent") || "Currently Staying" : t("fhPast") || "Past Resident"}
                   </span>
                 </div>
 
                 <div className="flex items-center gap-2 mt-1 text-xs text-secondary flex-wrap">
-                  <span className="font-semibold text-accent">{role}</span>
+                  <span className="font-semibold text-accent">{roleLabel}</span>
                   <span>•</span>
                   {moveIn && (
                     <span>
                       {t("fhIn") || "Joined"}: {String(moveIn).slice(0, 10)}
                     </span>
                   )}
-                  {moveOut && (
+                  {effectiveMoveOut && (
                     <>
                       <span>→</span>
                       <span>
-                        {t("fhOut") || "Left"}: {String(moveOut).slice(0, 10)}
+                        {t("fhOut") || "Left"}: {String(effectiveMoveOut).slice(0, 10)}
                       </span>
                     </>
                   )}
@@ -188,6 +204,10 @@ const ResidentsTab = ({ residents, t, onMoveOut }) => {
             </div>
 
             {isCurrent && onMoveOut && (
+              tenantIsCurrent
+                ? String(role).toUpperCase() === "TENANT"
+                : String(role).toUpperCase() !== "TENANT"
+            ) && (
               <div className="shrink-0 self-end sm:self-center">
                 <GlobalButton
                   variant="danger"

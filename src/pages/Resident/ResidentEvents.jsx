@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
+import { useContext } from "react";
 import {
   MdCalendarToday,
   MdLocationOn,
@@ -7,6 +8,7 @@ import {
   MdVideoLibrary,
   MdRefresh,
   MdChevronRight,
+  MdEventAvailable,
 } from "react-icons/md";
 import eventService from "../../services/eventService";
 import ExpandableSearch from "../../components/common/ExpandableSearch";
@@ -15,8 +17,10 @@ import GlobalModal from "../../components/common/GlobalModal";
 import Pagination from "../../components/common/Pagination";
 import MediaLightbox from "../../components/common/MediaLightbox";
 import RecordCard from "../../components/common/RecordCard";
+import { AuthContext } from "../../context/AuthContext";
 
 export default function ResidentEvents() {
+  const { user } = useContext(AuthContext);
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
@@ -34,14 +38,22 @@ export default function ResidentEvents() {
   const fetchEvents = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await eventService.getResidentEvents({
-        page,
-        limit: 9,
-        search,
-        upcoming: upcomingOnly,
-      });
+      const isSuperAdmin = (user?.activeRole || user?.role) === "SUPER_ADMIN";
+      // Always send x-society-id so the backend enforces society isolation even
+      // if the JWT society_id is ambiguous (e.g. multi-society users).
+      const mySocietyId = !isSuperAdmin ? user?.society_id : null;
+      const headers = mySocietyId ? { "x-society-id": String(mySocietyId) } : {};
+
+      const res = await eventService.getResidentEvents(
+        { page, limit: 9, search, upcoming: upcomingOnly },
+        headers,
+      );
       if (res.success) {
-        setEvents(res.data || []);
+        // Client-side guard: drop any events that slipped through for a different society
+        const scopedEvents = mySocietyId
+          ? (res.data || []).filter((event) => String(event.society_id) === String(mySocietyId))
+          : res.data || [];
+        setEvents(scopedEvents);
         setPagination(res.pagination || { currentPage: 1, totalPages: 1, total: 0, limit: 9 });
       }
     } catch (err) {
@@ -49,7 +61,7 @@ export default function ResidentEvents() {
     } finally {
       setLoading(false);
     }
-  }, [page, search, upcomingOnly]);
+  }, [page, search, upcomingOnly, user?.society_id, user?.role, user?.activeRole]);
 
   useEffect(() => {
     fetchEvents();

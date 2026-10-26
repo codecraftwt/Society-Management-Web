@@ -43,15 +43,17 @@ function joinRooms() {
     }
     lastSocietyId = user.society_id;
 
+    // The JWT is the authoritative active-society scope. Do not send the
+    // cached localStorage society_id: it can lag behind a society switch and
+    // causes the server to reject the room join as unauthorized.
     socket.emit("join", {
-      role:      user.activeRole ?? user.role,
-      societyId: user.society_id,
+      role: user.activeRole ?? user.role,
     });
 
     console.log("[socket] joined rooms →", {
       user:    `user_${user.id}`,
       role:    `role_${user.activeRole ?? user.role}`,
-      society: `society_${user.society_id}`,
+      society: "token-scoped",
     });
   } catch (err) {
     console.warn("[socket] join failed:", err.message);

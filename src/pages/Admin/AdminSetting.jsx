@@ -256,6 +256,11 @@ export default function AdminSetting() {
   /* `loading` starts true, so the effect never needs a synchronous setState —
      the first update lands after the request settles. */
   useEffect(() => {
+    if (user?.id) {
+      setMe(user);
+      setLoading(false);
+      return undefined;
+    }
     let cancelled = false;
     (async () => {
       try {
@@ -270,7 +275,7 @@ export default function AdminSetting() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [user]);
 
   /* ── Derived profile values ── */
   const name = me?.name || user?.name || "";

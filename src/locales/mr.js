@@ -1205,6 +1205,7 @@ const mr = {
   ehGuard:      "गार्ड",
 
   // Guard GatePass
+  gateSecurity: "सुरक्षा गेट",
   ggTitle:      "गेटपास सत्यापित करा",
   ggSubtitle:   "रहिवासीने दिलेला पास कोड टाका",
   ggInvalidCode:"पूर्ण 6-अंकी पास कोड प्रविष्ट करा (GP-XXXXXX)",
@@ -1238,8 +1239,14 @@ const mr = {
   ggAvailable:           "उपलब्ध",
   ggAssignedSlot:        "निर्धारित स्लॉट: {slot}",
   ggSecondScanOut:       "दुसरा स्कॅन अभ्यागताला बाहेर चिन्हांकित करतो",
+  ggPressEnter:          "सत्यापित करण्यासाठी Enter दाबा",
   ggAllowedTimeText:     "परवानगी वेळ: {count} मि",
   ggDailyUsageText:      "दैनिक: {used}/{limit}",
+  quickGatePasses:       "झटपट प्रवेश शॉर्टकट",
+  recentGateActivity:    "थेट गेट हालचाली",
+  visitorLog:            "अभ्यागत नोंदी",
+  delivery:              "डिलिव्हरी",
+  cab:                   "कॅब",
 
   // Guard Collection
   gcTitle:          "गेट पार्सल डॅशबोर्ड",
@@ -3917,6 +3924,7 @@ accFieldStatus:            "स्थिती",
 accFieldPayMode:           "भरणा पद्धत",
 accFieldMethod:            "भरणा पद्धत",
 accFieldPaidBy:            "द्वारे भरणा",
+accFieldPaidByRole:        "अधिकृत भूमिका",
 accFieldCreatedBy:         "द्वारे तयार",
 accFieldRecordingUserID:   "द्वारे नोंदवलेला ID",
 accFieldDescription:       "वर्णन",
@@ -4081,6 +4089,7 @@ cpwSuccessMsg:            "पासवर्ड यशस्वीरित्�
   saMenuEvents: "कार्यक्रम व्यवस्थापन",
   saMenuManageGuards: "सुरक्षारक्षक व्यवस्थापित करा",
   saMenuVisitorLogs: "भेट देणाऱ्यांची नोंद",
+  saMenuCleaningStaff: "स्वच्छता कर्मचारी",
   saMenuParcels: "पार्सल व्यवस्थापन",
   saMenuSOS: "आपत्कालीन सूचना",
   saMenuAccountant: "अकाउंटंट/वित्त",

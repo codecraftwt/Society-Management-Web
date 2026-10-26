@@ -5,13 +5,13 @@ import Select from "../../components/common/Select";
 import GlobalButton from "../../components/common/GlobalButton";
 import MultiMediaUploader from "../../components/common/MultiMediaUploader";
 
-export default function EventForm({ initialData = null, onSubmit, onCancel, loading = false }) {
+export default function EventForm({ initialData = null, defaultSocietyId = "", onSubmit, onCancel, loading = false }) {
   const { user } = useContext(AuthContext);
-  const isSuperAdmin = user?.role === "SUPER_ADMIN";
+  const isSuperAdmin = (user?.activeRole || user?.role) === "SUPER_ADMIN";
   const defaultLocation = user?.society_name || user?.society?.name || "";
 
   const [societyId, setSocietyId] = useState(
-    initialData?.society_id || localStorage.getItem("superadmin_society_filter") || ""
+    initialData?.society_id || (defaultSocietyId && defaultSocietyId !== "ALL" ? defaultSocietyId : "")
   );
   const [societiesList, setSocietiesList] = useState([]);
 
@@ -31,14 +31,14 @@ export default function EventForm({ initialData = null, onSubmit, onCancel, load
   const [description, setDescription] = useState(initialData?.description || "");
   const [eventDate, setEventDate] = useState(initialData?.event_date || "");
   const [eventTime, setEventTime] = useState(initialData?.event_time || "");
-  const [location, setLocation] = useState(initialData ? (initialData.location ?? "") : defaultLocation);
+  const [location, setLocation] = useState(initialData ? (initialData.location ?? "") : null);
   const [isActive, setIsActive] = useState(initialData?.is_active ?? true);
 
-  useEffect(() => {
-    if (!initialData && !location && defaultLocation) {
-      setLocation(defaultLocation);
-    }
-  }, [defaultLocation, initialData]);
+  const selectedSociety = isSuperAdmin
+    ? societiesList.find((s) => String(s.id) === String(societyId))
+    : null;
+  const autoLocation = isSuperAdmin ? (selectedSociety?.name || "") : defaultLocation;
+  const locationValue = location ?? autoLocation;
 
   const [existingMedia, setExistingMedia] = useState(initialData?.media || []);
   const [retainedMediaIds, setRetainedMediaIds] = useState(
@@ -54,13 +54,17 @@ export default function EventForm({ initialData = null, onSubmit, onCancel, load
       setTitleError("Event title is required");
       return;
     }
+    if (isSuperAdmin && !societyId) {
+      setTitleError("Select a target society before saving the event");
+      return;
+    }
 
     const formData = new FormData();
     formData.append("title", title.trim());
     formData.append("description", description ? description.trim() : "");
     formData.append("event_date", eventDate);
     formData.append("event_time", eventTime);
-    formData.append("location", location ? location.trim() : "");
+    formData.append("location", locationValue ? locationValue.trim() : "");
     formData.append("is_active", isActive);
     if (isSuperAdmin && societyId && societyId !== "ALL") {
       formData.append("society_id", societyId);
@@ -87,14 +91,7 @@ export default function EventForm({ initialData = null, onSubmit, onCancel, load
           <Select
             className="input w-full"
             value={societyId}
-            onChange={(e) => {
-              const sid = e.target.value;
-              setSocietyId(sid);
-              const soc = societiesList.find((s) => String(s.id) === String(sid));
-              if (soc?.name && !location) {
-                setLocation(soc.name);
-              }
-            }}
+            onChange={(e) => setSocietyId(e.target.value)}
           >
             <option value="">-- Select Society --</option>
             {societiesList.map((s) => (
@@ -160,8 +157,8 @@ export default function EventForm({ initialData = null, onSubmit, onCancel, load
           <input
             type="text"
             className="input"
-            placeholder="e.g. Clubhouse / Main Garden"
-            value={location}
+            placeholder={autoLocation || "e.g. Clubhouse / Main Garden"}
+            value={locationValue}
             onChange={(e) => setLocation(e.target.value)}
             style={{ width: "100%", height: 38, borderRadius: 8, fontSize: 13 }}
           />

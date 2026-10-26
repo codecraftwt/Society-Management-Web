@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { Link } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion as Motion, AnimatePresence } from "framer-motion";
 import API from "../../services/api";
 import { useLang } from "../../context/LanguageContext";
 import {
@@ -11,7 +11,6 @@ import {
   MdTwoWheeler,
   MdLocalParking,
   MdClear,
-  MdSecurity,
   MdArrowForward,
   MdQrCodeScanner,
   MdOutlineKeyboard,
@@ -27,9 +26,10 @@ import {
   MdFormatListBulleted,
   MdContentPaste,
   MdDialpad,
-  MdBolt,
   MdFlashOn,
   MdOpenInNew,
+  MdShield,
+  MdBuild,
 } from "react-icons/md";
 
 function Spinner({ size = 15 }) {
@@ -52,9 +52,6 @@ const normalizePassCode = (raw) => {
   return digits.length === 6 ? `GP-${digits}` : null;
 };
 
-// Theme-aware soft tints derived from design tokens
-const tint = (color, alpha) => `color-mix(in srgb, var(--${color}) ${alpha}%, transparent)`;
-
 function formatDateTime(val) {
   if (!val) return null;
   const d = new Date(val);
@@ -64,6 +61,52 @@ function formatDateTime(val) {
     date: d.toLocaleDateString("en-IN", { day: "2-digit", month: "short" }),
   };
 }
+
+const fetchVisitorLogs = async () => {
+  const res = await API.get("/visitors?page=1&limit=10");
+  const list = Array.isArray(res.data) ? res.data : res.data?.data || res.data?.visitors || [];
+  return list.slice(0, 10);
+};
+
+const getPurposeMeta = (purpose) => {
+  const value = String(purpose || "VISITOR").toUpperCase();
+  const label = purpose || "Visitor";
+
+  if (value.includes("DELIVER")) {
+    return {
+      label,
+      icon: MdLocalShipping,
+      color: "#10b981",
+      soft: "rgba(16, 185, 129, 0.12)",
+      border: "rgba(16, 185, 129, 0.3)",
+    };
+  }
+  if (value.includes("CAB") || value.includes("TAXI")) {
+    return {
+      label,
+      icon: MdLocalTaxi,
+      color: "#f59e0b",
+      soft: "rgba(245, 158, 11, 0.13)",
+      border: "rgba(245, 158, 11, 0.32)",
+    };
+  }
+  if (value.includes("SERVICE") || value.includes("HELP")) {
+    return {
+      label,
+      icon: MdBuild,
+      color: "#a05aff",
+      soft: "rgba(160, 90, 255, 0.13)",
+      border: "rgba(160, 90, 255, 0.32)",
+    };
+  }
+  return {
+    label,
+    icon: MdPersonAdd,
+    color: "#3b82f6",
+    soft: "rgba(59, 130, 246, 0.12)",
+    border: "rgba(59, 130, 246, 0.3)",
+  };
+};
 
 export default function GuardGatePass() {
   const { t } = useLang();
@@ -86,11 +129,9 @@ export default function GuardGatePass() {
   const [logFilter, setLogFilter] = useState("ALL"); // ALL | IN | OUT
 
   const fetchRecentLogs = useCallback(async () => {
+    setLogsLoading(true);
     try {
-      setLogsLoading(true);
-      const res = await API.get("/visitors?page=1&limit=10");
-      const list = Array.isArray(res.data) ? res.data : res.data?.data || res.data?.visitors || [];
-      setRecentLogs(list.slice(0, 10));
+      setRecentLogs(await fetchVisitorLogs());
     } catch {
       // Non-blocking
     } finally {
@@ -99,8 +140,33 @@ export default function GuardGatePass() {
   }, []);
 
   useEffect(() => {
-    fetchRecentLogs();
-  }, [fetchRecentLogs]);
+    let cancelled = false;
+
+    const loadRecentLogs = async () => {
+      try {
+        const logs = await fetchVisitorLogs();
+        if (!cancelled) setRecentLogs(logs);
+      } catch {
+        // Non-blocking
+      } finally {
+        if (!cancelled) setLogsLoading(false);
+      }
+    };
+
+    loadRecentLogs();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const activityCounts = useMemo(() => {
+    const inside = recentLogs.filter((log) => !log.exit_time).length;
+    return {
+      all: recentLogs.length,
+      inside,
+      exited: recentLogs.length - inside,
+    };
+  }, [recentLogs]);
 
   const filteredLogs = useMemo(() => {
     if (logFilter === "IN") return recentLogs.filter((l) => !l.exit_time);
@@ -108,26 +174,59 @@ export default function GuardGatePass() {
     return recentLogs;
   }, [recentLogs, logFilter]);
 
-  // Cleanly display up to 4 records to perfectly match the height of the left sections
-  const displayedLogs = useMemo(() => {
-    return filteredLogs.slice(0, 4);
-  }, [filteredLogs]);
+  // Keep the feed compact so the activity panel aligns with the left column.
+  const displayedLogs = useMemo(() => filteredLogs.slice(0, 4), [filteredLogs]);
 
-  const fetchSlots = useCallback(async (type = vehicleType) => {
+  const quickActions = useMemo(
+    () => [
+      {
+        id: "guest",
+        to: "/guard/guest-entry",
+        icon: MdPersonAdd,
+        title: t("vlsGuest", "Guest Entry"),
+        subtitle: "Visitors & family",
+        color: "#3b82f6",
+        soft: "rgba(59, 130, 246, 0.12)",
+      },
+      {
+        id: "delivery",
+        to: "/guard/delivery-entry",
+        icon: MdLocalShipping,
+        title: t("delivery", "Delivery"),
+        subtitle: "Parcels & courier",
+        color: "#10b981",
+        soft: "rgba(16, 185, 129, 0.12)",
+      },
+      {
+        id: "cab",
+        to: "/guard/cab-entry",
+        icon: MdLocalTaxi,
+        title: t("cab", "Cab Entry"),
+        subtitle: "Uber, Ola & rides",
+        color: "#f59e0b",
+        soft: "rgba(245, 158, 11, 0.13)",
+      },
+      {
+        id: "logs",
+        to: "/guard/visitorlogs",
+        icon: MdFormatListBulleted,
+        title: t("visitorLog", "Visitor Logs"),
+        subtitle: "Full gate history",
+        color: "#a05aff",
+        soft: "rgba(160, 90, 255, 0.13)",
+      },
+    ],
+    [t]
+  );
+
+  const fetchSlots = useCallback(async (type) => {
     try {
       const res = await API.get(`/parking-slots/available?vehicle_type=${type}`);
       setSlots(Array.isArray(res.data) ? res.data : res.data?.data || []);
     } catch {
       setSlots([]);
     }
-  }, [vehicleType]);
-
-  useEffect(() => {
-    if (showSlots) {
-      setSelectedSlot(null);
-      fetchSlots(vehicleType);
-    }
-  }, [vehicleType, showSlots, fetchSlots]);
+  }, []);
 
   const verifyPass = useCallback(async () => {
     if (loading) return;
@@ -145,12 +244,28 @@ export default function GuardGatePass() {
       const isExit = res.data?.scan_type === "exit";
       const detail = [];
       if (res.data?.dwell_minutes) {
-        detail.push(t("ggAllowedTimeText", { count: res.data.dwell_minutes }, `Allowed: ${res.data.dwell_minutes}m`));
+        detail.push(
+          t(
+            "ggAllowedTimeText",
+            { count: res.data.dwell_minutes },
+            `Allowed: ${res.data.dwell_minutes}m`
+          )
+        );
       }
       if (res.data?.dailyLimit) {
-        detail.push(t("ggDailyUsageText", { used: res.data.usesToday ?? 0, limit: res.data.dailyLimit }, `Daily: ${res.data.usesToday ?? 0}/${res.data.dailyLimit}`));
+        detail.push(
+          t(
+            "ggDailyUsageText",
+            { used: res.data.usesToday ?? 0, limit: res.data.dailyLimit },
+            `Daily: ${res.data.usesToday ?? 0}/${res.data.dailyLimit}`
+          )
+        );
       }
-      setMessage([res.data?.message || t("ggVerifiedSuccess", "GatePass verified successfully!"), ...detail].filter(Boolean).join(" • "));
+      setMessage(
+        [res.data?.message || t("ggVerifiedSuccess", "GatePass verified successfully!"), ...detail]
+          .filter(Boolean)
+          .join(" • ")
+      );
       setSuccess(true);
       setCode("");
       setSelectedSlot(null);
@@ -163,6 +278,7 @@ export default function GuardGatePass() {
       setSuccess(false);
       setMessage(msg);
       if (msg === "Please select a parking slot" || err.response?.data?.requiresSlot) {
+        setSelectedSlot(null);
         setShowSlots(true);
         fetchSlots(vehicleType);
       }
@@ -195,18 +311,41 @@ export default function GuardGatePass() {
       });
       const detail = [];
       if (res.data?.dwell_minutes) {
-        detail.push(t("ggAllowedTimeText", { count: res.data.dwell_minutes }, `Allowed: ${res.data.dwell_minutes}m`));
+        detail.push(
+          t(
+            "ggAllowedTimeText",
+            { count: res.data.dwell_minutes },
+            `Allowed: ${res.data.dwell_minutes}m`
+          )
+        );
       }
       if (res.data?.dailyLimit) {
-        detail.push(t("ggDailyUsageText", { used: res.data.usesToday ?? 0, limit: res.data.dailyLimit }, `Daily: ${res.data.usesToday ?? 0}/${res.data.dailyLimit}`));
+        detail.push(
+          t(
+            "ggDailyUsageText",
+            { used: res.data.usesToday ?? 0, limit: res.data.dailyLimit },
+            `Daily: ${res.data.usesToday ?? 0}/${res.data.dailyLimit}`
+          )
+        );
       }
-      setMessage([res.data?.message || t("ggEntryConfirmSuccess", "Entry confirmed with assigned parking slot!"), ...detail].filter(Boolean).join(" • "));
+      setMessage(
+        [
+          res.data?.message ||
+            t("ggEntryConfirmSuccess", "Entry confirmed with assigned parking slot!"),
+          ...detail,
+        ]
+          .filter(Boolean)
+          .join(" • ")
+      );
       setSuccess(true);
       setCode("");
       setSelectedSlot(null);
       setShowSlots(false);
       setVehicleType("CAR");
-      setLastScan({ isExit: res.data?.scan_type === "exit", name: res.data?.visitor_name || null });
+      setLastScan({
+        isExit: res.data?.scan_type === "exit",
+        name: res.data?.visitor_name || null,
+      });
       fetchRecentLogs();
     } catch (err) {
       const msg = err.response?.data?.message || t("ggVerifyFail", "Verification failed");
@@ -228,27 +367,30 @@ export default function GuardGatePass() {
   const maxDigits = 6;
   const cleanCode = code.replace(/\D/g, "").slice(0, maxDigits);
 
-  const triggerKeyPress = useCallback((key) => {
-    setActiveKey(key);
-    setTimeout(() => {
-      setActiveKey((prev) => (prev === key ? null : prev));
-    }, 140);
+  const triggerKeyPress = useCallback(
+    (key) => {
+      setActiveKey(key);
+      setTimeout(() => {
+        setActiveKey((prev) => (prev === key ? null : prev));
+      }, 140);
 
-    if (key >= "0" && key <= "9") {
-      setCode((prev) => {
-        const clean = prev.replace(/\D/g, "").slice(0, maxDigits);
-        if (clean.length < maxDigits) {
-          return clean + key;
-        }
-        return clean;
-      });
-    } else if (key === "backspace") {
-      setCode((prev) => prev.replace(/\D/g, "").slice(0, -1));
-    } else if (key === "clear") {
-      setCode("");
-      inputRef.current?.focus();
-    }
-  }, [maxDigits]);
+      if (key >= "0" && key <= "9") {
+        setCode((prev) => {
+          const clean = prev.replace(/\D/g, "").slice(0, maxDigits);
+          if (clean.length < maxDigits) {
+            return clean + key;
+          }
+          return clean;
+        });
+      } else if (key === "backspace") {
+        setCode((prev) => prev.replace(/\D/g, "").slice(0, -1));
+      } else if (key === "clear") {
+        setCode("");
+        inputRef.current?.focus();
+      }
+    },
+    [maxDigits]
+  );
 
   const handlePasteClipboard = async () => {
     try {
@@ -264,7 +406,7 @@ export default function GuardGatePass() {
     }
   };
 
-  // Global Physical Keyboard Listener for Laptops / Desktop PCs / Barcode Scanners
+  // Global physical keyboard listener for laptops, desktops & barcode scanners
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (showSlots) return;
@@ -291,115 +433,122 @@ export default function GuardGatePass() {
   }, [showSlots, triggerKeyPress, verifyPass]);
 
   return (
-    <div className="page-root max-w-6xl mx-auto space-y-4 pb-6 animate-fadeIn">
-      {/* ── COMMAND HEADER: Sleek & Modern ── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-indigo-500 via-indigo-600 to-purple-600 text-white flex items-center justify-center shadow-md shadow-indigo-500/25 shrink-0">
-            <MdSecurity size={22} />
+    <div className="gpv-page max-w-[1240px] mx-auto space-y-4 pb-6 pt-0 animate-fadeIn">
+      {/* ── PAGE HEADER ── */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex min-w-0 items-center gap-3">
+          <div className="gpv-header-icon shrink-0">
+            <MdShield size={24} />
           </div>
-          <div>
-            <h2 className="text-lg sm:text-xl font-extrabold tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
-              <span>{t("ggTitle", "GatePass Terminal")}</span>
-            </h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-              {t("ggSubtitle", "Instant visitor verification, QR validation & gate authorization")}
+          <div className="min-w-0">
+            <p className="gpv-eyebrow">{t("gateSecurity", "Security Gate")}</p>
+            <h1 className="gpv-title mt-0.5 text-xl font-extrabold tracking-tight sm:text-2xl">
+              {t("ggTitle", "Verify GatePass")}
+            </h1>
+            <p className="gpv-sub mt-0.5 text-xs sm:text-[13px]">
+              {t("ggSubtitle", "Scan or enter a resident-issued pass code")}
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2 self-start sm:self-auto">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 backdrop-blur shadow-2xs">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span>{t("ggTerminalActive", "Terminal Live")}</span>
-          </div>
-
-          <div className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-full text-xs font-medium bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20">
-            <MdBolt size={14} />
-            <span>Auto-Scanner Ready</span>
-          </div>
+        <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+          <span className="gpv-status">
+            <span className="gpv-status-dot" />
+            {t("ggTerminalActive", "Security Gate Terminal Active")}
+          </span>
+          <span className="gpv-secure-badge">
+            <MdShield size={13} />
+            SECURE
+          </span>
         </div>
       </div>
 
-      {/* ── MAIN DASHBOARD GRID (7 Cols / 5 Cols, Perfectly Equal Height) ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
-        {/* LEFT COLUMN: Main Verification Console + Quick Entry Shortcuts Directly Below */}
-        <div className="lg:col-span-7 flex flex-col gap-4">
-          {/* 1. Main Verification Card */}
-          <div className="relative rounded-3xl p-5 sm:p-6 bg-white/85 dark:bg-slate-900/85 backdrop-blur-xl border border-indigo-500/15 dark:border-white/10 shadow-xl shadow-slate-200/50 dark:shadow-none overflow-hidden transition-all">
-            {/* Ambient High-Tech Light Beam */}
-            <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-transparent via-indigo-500 to-purple-500" />
-            <div className="absolute -top-24 -right-24 w-48 h-48 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
+      {/* ── MAIN DASHBOARD GRID ── */}
+      <div className="grid grid-cols-1 items-stretch gap-4 lg:grid-cols-12">
+        {/* LEFT COLUMN: verification console + quick entry shortcuts */}
+        <div className="flex min-w-0 flex-col gap-4 lg:col-span-7">
+          {/* 1. Verification card */}
+          <section className="gpv-surface relative overflow-hidden rounded-3xl">
+            <div className="gpv-topline" />
+            <div className="pointer-events-none absolute -right-16 -top-20 h-44 w-44 rounded-full bg-[var(--accent)] opacity-[0.06] blur-3xl" />
 
-            <div className="relative z-10 space-y-5">
-              {/* Terminal Action Bar */}
-              <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
-                    <MdQrCodeScanner size={18} />
+            <div className="relative space-y-4 p-4 sm:p-5">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div className="flex min-w-0 items-center gap-3">
+                  <div className="gpv-icon-tile shrink-0">
+                    <MdQrCodeScanner size={20} />
                   </div>
-                  <div>
-                    <h3 className="text-sm font-bold text-slate-900 dark:text-white leading-none">
-                      {t("ggVerifyBtn", "Enter Pass Code")}
-                    </h3>
-                    <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
+                  <div className="min-w-0">
+                    <h2 className="gpv-title text-sm font-extrabold sm:text-base">
+                      {t("ggPlaceholder", "Enter GatePass Code")}
+                    </h2>
+                    <p className="gpv-sub mt-0.5 text-[11px] sm:text-xs">
                       {t("ggTypeCodeHint", "Type 6 digits, scan QR barcode, or paste")}
                     </p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-1.5">
-                  <button
-                    type="button"
-                    onClick={handlePasteClipboard}
-                    className="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 flex items-center gap-1 transition-colors cursor-pointer"
-                    title="Paste from clipboard"
-                  >
-                    <MdContentPaste size={14} className="text-indigo-500" />
-                    <span>Paste</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setShowKeypad((v) => !v)}
-                    className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer ${
-                      showKeypad
-                        ? "bg-indigo-600 text-white shadow-xs"
-                        : "bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200"
-                    }`}
-                    title="Toggle touch numpad"
-                  >
-                    <MdDialpad size={14} />
-                    <span>Keypad</span>
-                  </button>
-
-                  {cleanCode.length > 0 && (
-                    <button
-                      type="button"
-                      onClick={() => triggerKeyPress("clear")}
-                      className="px-2 py-1.5 rounded-lg text-xs font-semibold text-rose-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 flex items-center gap-0.5 cursor-pointer transition-colors"
-                      title={t("ggClearCode", "Clear code")}
-                    >
-                      <MdClear size={14} />
-                    </button>
-                  )}
-                </div>
+                <span className="gpv-secure-badge">
+                  <MdVerified size={13} />
+                  {t("ggTerminalActive", "Security Gate Terminal Active")}
+                </span>
               </div>
 
-              {/* High-Tech PIN Display Unit */}
               {!showSlots && (
-                <div className="space-y-4">
-                  <div
-                    onClick={() => inputRef.current?.focus()}
-                    className="p-4 sm:p-5 rounded-2xl bg-slate-50/90 dark:bg-slate-950/50 border border-slate-200/90 dark:border-slate-800/80 shadow-inner cursor-pointer select-none group transition-all"
-                  >
-                    <div className="flex items-center justify-center gap-2 sm:gap-2.5">
-                      {/* Metallic GP- prefix */}
-                      <div className="px-3.5 py-3 rounded-xl font-mono font-black text-sm tracking-widest bg-gradient-to-br from-indigo-50 to-indigo-100/70 dark:from-indigo-950/60 dark:to-slate-900 border border-indigo-200/80 dark:border-indigo-800/60 text-indigo-700 dark:text-indigo-400 shadow-2xs">
-                        GP-
+                <div className="space-y-3.5">
+                  <div className="gpv-scan-panel rounded-2xl p-3.5 sm:p-5">
+                    <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                      <div>
+                        <p className="gpv-scan-kicker">PASS CODE</p>
+                        <p className="gpv-sub mt-0.5 text-[11px]">
+                          {t("ggAskVisitorHint", "Enter the 6-digit code shown on the resident pass.")}
+                        </p>
                       </div>
 
-                      {/* 6 Segmented Digit Slots */}
+                      <div className="ml-auto flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={handlePasteClipboard}
+                          className="gpv-ctrl"
+                          title="Paste from clipboard"
+                        >
+                          <MdContentPaste size={14} />
+                          <span>Paste</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => setShowKeypad((value) => !value)}
+                          className={`gpv-ctrl ${showKeypad ? "gpv-ctrl--active" : ""}`}
+                          title="Toggle touch numpad"
+                          aria-pressed={showKeypad}
+                        >
+                          <MdDialpad size={14} />
+                          <span>Keypad</span>
+                        </button>
+
+                        {cleanCode.length > 0 && (
+                          <button
+                            type="button"
+                            onClick={() => triggerKeyPress("clear")}
+                            className="gpv-ctrl gpv-ctrl--danger"
+                            title={t("ggClearCode", "Clear code")}
+                            aria-label={t("ggClearCode", "Clear code")}
+                          >
+                            <MdClear size={15} />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    <div
+                      onClick={() => inputRef.current?.focus()}
+                      className="gpv-digits cursor-text select-none"
+                      role="group"
+                      aria-label="Gate pass code"
+                    >
+                      <div className="gpv-prefix">GP-</div>
+
                       {Array.from({ length: maxDigits }).map((_, idx) => {
                         const char = cleanCode[idx] || "";
                         const isCurrent = cleanCode.length === idx;
@@ -408,63 +557,74 @@ export default function GuardGatePass() {
                         return (
                           <div
                             key={idx}
-                            className={`w-11 h-14 sm:w-12 sm:h-15 rounded-xl border-2 font-mono font-black text-2xl flex items-center justify-center transition-all duration-150 ${
+                            className={`gpv-digit ${
                               isFilled
-                                ? "border-indigo-600 dark:border-indigo-500 bg-white dark:bg-slate-900 text-indigo-700 dark:text-white shadow-md shadow-indigo-500/15 scale-102"
+                                ? "gpv-digit--filled"
                                 : isCurrent
-                                ? "border-indigo-400 bg-white/70 dark:bg-slate-900/70 text-slate-800 dark:text-white ring-4 ring-indigo-500/15"
-                                : "border-slate-200 dark:border-slate-800 bg-white/40 dark:bg-slate-900/30 text-slate-400"
+                                  ? "gpv-digit--active"
+                                  : ""
                             }`}
                           >
-                            {char || (isCurrent ? (
-                              <motion.span
-                                animate={{ opacity: [0, 1, 0] }}
-                                transition={{ repeat: Infinity, duration: 1 }}
-                                className="w-2.5 h-1 rounded-full bg-indigo-500"
-                              />
-                            ) : (
-                              <span className="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-slate-700" />
-                            ))}
+                            {char ||
+                              (isCurrent ? (
+                                <Motion.span
+                                  animate={{ opacity: [0, 1, 0] }}
+                                  transition={{ repeat: Infinity, duration: 1 }}
+                                  className="h-1 w-2.5 rounded-full bg-[var(--accent)]"
+                                />
+                              ) : (
+                                <span className="gpv-digit-dot" />
+                              ))}
                           </div>
                         );
                       })}
+
+                      <input
+                        ref={inputRef}
+                        type="text"
+                        inputMode="numeric"
+                        autoFocus
+                        maxLength={maxDigits}
+                        value={code}
+                        onChange={(e) =>
+                          setCode(e.target.value.replace(/\D/g, "").slice(0, maxDigits))
+                        }
+                        onKeyDown={(e) => e.key === "Enter" && !showSlots && verifyPass()}
+                        disabled={showSlots}
+                        autoComplete="off"
+                        spellCheck={false}
+                        aria-label="Gate pass code digits"
+                        className="pointer-events-none absolute h-px w-px opacity-0"
+                      />
                     </div>
 
-                    <input
-                      ref={inputRef}
-                      type="text"
-                      autoFocus
-                      maxLength={maxDigits}
-                      value={code}
-                      onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, maxDigits))}
-                      onKeyDown={(e) => e.key === "Enter" && !showSlots && verifyPass()}
-                      disabled={showSlots}
-                      autoComplete="off"
-                      spellCheck={false}
-                      className="opacity-0 absolute -top-10 left-0 w-1 h-1 pointer-events-none"
-                    />
+                    <div className="gpv-hint mt-2.5 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-center">
+                      <span className="inline-flex items-center gap-1.5">
+                        <MdOutlineKeyboard size={13} className="text-[var(--accent)]" />
+                        {t("ggPressEnter", "Press Enter to verify")}
+                      </span>
+                      <span className="gpv-hint-dot" />
+                      <span>{t("ggSecondScanOut", "Second scan marks visitor OUT")}</span>
+                    </div>
                   </div>
 
-                  {/* Sleek Collapsible Touch Keypad */}
                   <AnimatePresence>
                     {showKeypad && (
-                      <motion.div
+                      <Motion.div
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: "auto" }}
                         exit={{ opacity: 0, height: 0 }}
                         className="overflow-hidden"
                       >
-                        <div className="max-w-[270px] mx-auto p-2 rounded-2xl bg-slate-100/70 dark:bg-slate-950/40 border border-slate-200/80 dark:border-slate-800/60 shadow-inner">
+                        <div className="gpv-keypad mx-auto">
                           <div className="grid grid-cols-3 gap-1.5">
                             {["1", "2", "3", "4", "5", "6", "7", "8", "9"].map((num) => (
                               <button
                                 key={num}
                                 type="button"
                                 onClick={() => triggerKeyPress(num)}
-                                className={`h-9 rounded-xl font-bold text-sm transition-all duration-100 flex items-center justify-center cursor-pointer select-none ${
-                                  activeKey === num
-                                    ? "bg-indigo-600 text-white shadow-md scale-95"
-                                    : "bg-white dark:bg-slate-900 hover:bg-indigo-50 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-100 border border-slate-200/70 dark:border-slate-800 shadow-2xs"
+                                className={`gpv-key ${
+                                  activeKey === num ? "gpv-key--active" : ""
                                 }`}
                               >
                                 {num}
@@ -474,19 +634,18 @@ export default function GuardGatePass() {
                             <button
                               type="button"
                               onClick={() => triggerKeyPress("clear")}
-                              className="h-9 rounded-xl font-bold text-xs bg-white dark:bg-slate-900 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-rose-500 border border-slate-200/70 dark:border-slate-800 shadow-2xs flex items-center justify-center cursor-pointer transition-colors"
+                              className="gpv-key gpv-key--danger"
                               title={t("ggClearCode", "Clear")}
+                              aria-label={t("ggClearCode", "Clear")}
                             >
-                              <MdClear size={16} />
+                              <MdClear size={17} />
                             </button>
 
                             <button
                               type="button"
                               onClick={() => triggerKeyPress("0")}
-                              className={`h-9 rounded-xl font-bold text-sm transition-all duration-100 flex items-center justify-center cursor-pointer select-none ${
-                                activeKey === "0"
-                                  ? "bg-indigo-600 text-white shadow-md scale-95"
-                                  : "bg-white dark:bg-slate-900 hover:bg-indigo-50 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-100 border border-slate-200/70 dark:border-slate-800 shadow-2xs"
+                              className={`gpv-key ${
+                                activeKey === "0" ? "gpv-key--active" : ""
                               }`}
                             >
                               0
@@ -495,86 +654,82 @@ export default function GuardGatePass() {
                             <button
                               type="button"
                               onClick={() => triggerKeyPress("backspace")}
-                              className="h-9 rounded-xl font-bold text-xs bg-white dark:bg-slate-900 hover:bg-amber-50 dark:hover:bg-amber-950/40 text-amber-500 border border-slate-200/70 dark:border-slate-800 shadow-2xs flex items-center justify-center cursor-pointer transition-colors"
+                              className="gpv-key gpv-key--warn"
                               title="Backspace"
+                              aria-label="Backspace"
                             >
-                              <MdBackspace size={16} />
+                              <MdBackspace size={17} />
                             </button>
                           </div>
                         </div>
-                      </motion.div>
+                      </Motion.div>
                     )}
                   </AnimatePresence>
 
-                  {/* Primary Verify Action Button */}
                   <button
                     type="button"
                     onClick={verifyPass}
                     disabled={loading || cleanCode.length < 6}
-                    className="w-full py-3.5 px-6 rounded-2xl text-sm font-bold text-white transition-all duration-200 flex items-center justify-center gap-2.5 shadow-lg disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer group"
-                    style={{
-                      background: "linear-gradient(135deg, #4f46e5 0%, #6366f1 50%, #8b5cf6 100%)",
-                      boxShadow: cleanCode.length === 6 ? "0 12px 28px -5px rgba(99, 102, 241, 0.45)" : "none",
-                    }}
+                    className="gpv-verify group"
                   >
                     {loading ? (
                       <>
                         <Spinner size={17} />
-                        <span>{t("ggVerifying", "Authorizing Pass...")}</span>
+                        <span>{t("ggVerifying", "Verifying...")}</span>
                       </>
                     ) : (
                       <>
                         <MdVerified size={18} />
-                        <span>{t("ggVerifyBtn", "Authorize & Validate Pass")}</span>
-                        <MdArrowForward size={16} className="transition-transform group-hover:translate-x-1" />
+                        <span>{t("ggVerifyBtn", "Verify GatePass")}</span>
+                        <MdArrowForward
+                          size={16}
+                          className="transition-transform group-hover:translate-x-1"
+                        />
                       </>
                     )}
                   </button>
-
-                  <div className="flex items-center justify-center gap-2 text-[11px] text-slate-400 dark:text-slate-500 select-none">
-                    <MdOutlineKeyboard size={14} className="text-indigo-500" />
-                    <span>Press [Enter ↵] to verify • Second scan marks visitor EXIT</span>
-                  </div>
                 </div>
               )}
 
-              {/* Status Banner */}
+              {/* Status banner */}
               <AnimatePresence>
                 {message && (
-                  <motion.div
+                  <Motion.div
                     initial={{ opacity: 0, y: -6 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -6 }}
-                    className={`p-3.5 rounded-2xl border flex items-center gap-3 text-xs sm:text-sm font-semibold transition-all ${
-                      success
-                        ? "bg-emerald-500/10 border-emerald-500/25 text-emerald-700 dark:text-emerald-300"
-                        : "bg-amber-500/10 border-amber-500/25 text-amber-700 dark:text-amber-300"
+                    role="status"
+                    aria-live="polite"
+                    className={`gpv-alert ${
+                      success ? "gpv-alert--ok" : "gpv-alert--warn"
                     }`}
                   >
                     <div
-                      className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
-                        success
-                          ? "bg-emerald-500/20 text-emerald-600 dark:text-emerald-400"
-                          : "bg-amber-500/20 text-amber-600 dark:text-amber-400"
+                      className={`gpv-alert-icon ${
+                        success ? "gpv-alert-icon--ok" : "gpv-alert-icon--warn"
                       }`}
                     >
-                      {success ? <MdCheckCircle size={20} /> : <MdWarning size={20} />}
+                      {success ? <MdCheckCircle size={19} /> : <MdWarning size={19} />}
                     </div>
                     <div className="flex-1 leading-snug">{message}</div>
-                  </motion.div>
+                  </Motion.div>
                 )}
               </AnimatePresence>
 
-              {/* Last scan chip */}
+              {/* Last scan receipt */}
               {lastScan && !message && (
                 <div
-                  className={`p-3 rounded-2xl border flex items-center gap-2.5 text-xs font-semibold ${
-                    lastScan.isExit
-                      ? "bg-indigo-500/10 border-indigo-500/25 text-indigo-700 dark:text-indigo-300"
-                      : "bg-emerald-500/10 border-emerald-500/25 text-emerald-700 dark:text-emerald-300"
+                  className={`gpv-alert ${
+                    lastScan.isExit ? "gpv-alert--info" : "gpv-alert--ok"
                   }`}
                 >
-                  <MdCheckCircle size={16} />
+                  <div
+                    className={`gpv-alert-icon ${
+                      lastScan.isExit ? "gpv-alert-icon--info" : "gpv-alert-icon--ok"
+                    }`}
+                  >
+                    <MdCheckCircle size={18} />
+                  </div>
                   <span>
                     {lastScan.isExit
                       ? t("ggExitRecorded", "Visitor EXIT recorded")
@@ -584,38 +739,37 @@ export default function GuardGatePass() {
                 </div>
               )}
 
-              {/* Parking Slot Selection Modal / Panel */}
+              {/* Parking slot selection */}
               {showSlots && (
-                <div className="space-y-3.5 pt-3 border-t border-slate-100 dark:border-slate-800 animate-fadeIn">
-                  <div className="flex items-center justify-between gap-2">
+                <div className="gpv-scan-panel mt-1 space-y-3.5 rounded-2xl p-3.5 animate-fadeIn sm:p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
                     <div className="flex items-center gap-2.5">
-                      <div className="w-8 h-8 rounded-xl bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
-                        <MdLocalParking size={18} />
+                      <div className="gpv-icon-tile">
+                        <MdLocalParking size={17} />
                       </div>
                       <div>
-                        <h4 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white">
-                          {t("ggSelectSlot", "Assign Visitor Parking Slot")}
+                        <h4 className="gpv-title text-xs font-extrabold sm:text-sm">
+                          {t("ggSelectSlot", "Select vehicle type and parking slot")}
                         </h4>
-                        <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                          {t("ggGuestParkingNeeded", "Visitor requires allocated parking bay")}
+                        <p className="gpv-sub mt-0.5 text-[11px]">
+                          {t("ggGuestParkingNeeded", "This guest requires an available parking bay.")}
                         </p>
                       </div>
                     </div>
 
-                    <span className="text-xs font-bold font-mono px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-indigo-600 dark:text-indigo-400">
-                      {normalizePassCode(code) || code}
-                    </span>
+                    <span className="gpv-code-chip">{normalizePassCode(code) || code}</span>
                   </div>
 
-                  {/* Vehicle Type Switcher */}
                   <div className="grid grid-cols-2 gap-2">
                     <button
                       type="button"
-                      onClick={() => setVehicleType("CAR")}
-                      className={`flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-bold transition-all border cursor-pointer ${
-                        vehicleType === "CAR"
-                          ? "border-indigo-600 bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 shadow-2xs"
-                          : "bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900"
+                      onClick={() => {
+                        setVehicleType("CAR");
+                        setSelectedSlot(null);
+                        fetchSlots("CAR");
+                      }}
+                      className={`gpv-choice ${
+                        vehicleType === "CAR" ? "gpv-choice--active" : ""
                       }`}
                     >
                       <MdDirectionsCar size={16} />
@@ -624,11 +778,13 @@ export default function GuardGatePass() {
 
                     <button
                       type="button"
-                      onClick={() => setVehicleType("BIKE")}
-                      className={`flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-bold transition-all border cursor-pointer ${
-                        vehicleType === "BIKE"
-                          ? "border-indigo-600 bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 shadow-2xs"
-                          : "bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900"
+                      onClick={() => {
+                        setVehicleType("BIKE");
+                        setSelectedSlot(null);
+                        fetchSlots("BIKE");
+                      }}
+                      className={`gpv-choice ${
+                        vehicleType === "BIKE" ? "gpv-choice--active" : ""
                       }`}
                     >
                       <MdTwoWheeler size={16} />
@@ -636,16 +792,19 @@ export default function GuardGatePass() {
                     </button>
                   </div>
 
-                  {/* Slot Grid */}
                   {slots.length === 0 ? (
-                    <div className="py-5 text-center p-3 rounded-2xl bg-slate-50 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800">
-                      <MdLocalParking size={24} className="mx-auto opacity-30 text-slate-400 mb-1" />
-                      <p className="text-xs text-slate-500">
-                        {t("ggNoSlots", { type: vehicleType === "CAR" ? t("ggCar", "Car") : t("ggBike", "Bike") }, `No ${vehicleType.toLowerCase()} slots available.`)}
+                    <div className="gpv-empty-slots">
+                      <MdLocalParking size={24} className="mb-1 opacity-40" />
+                      <p>
+                        {t(
+                          "ggNoSlots",
+                          { type: vehicleType === "CAR" ? t("ggCar", "Car") : t("ggBike", "Bike") },
+                          `No ${vehicleType.toLowerCase()} slots available.`
+                        )}
                       </p>
                     </div>
                   ) : (
-                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 max-h-44 overflow-y-auto p-1">
+                    <div className="grid max-h-44 grid-cols-3 gap-2 overflow-y-auto p-1 sm:grid-cols-4">
                       {slots.map((slot) => {
                         const isSelected = selectedSlot === slot.slot_number;
                         return (
@@ -653,17 +812,17 @@ export default function GuardGatePass() {
                             key={slot.id || slot.slot_number}
                             type="button"
                             onClick={() => setSelectedSlot(slot.slot_number)}
-                            className={`p-2.5 rounded-xl border text-center transition-all flex flex-col items-center justify-center cursor-pointer ${
-                              isSelected
-                                ? "border-indigo-600 bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 shadow-sm font-bold scale-102"
-                                : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:border-indigo-400"
-                            }`}
+                            className={`gpv-slot ${isSelected ? "gpv-slot--active" : ""}`}
                           >
-                            <span className="text-xs font-bold font-mono">
-                              {slot.slot_number}
-                            </span>
-                            <span className="text-[10px] text-slate-400">
-                              {slot.floor_number ? t("ggFloor", { floor: slot.floor_number }, `Fl ${slot.floor_number}`) : t("ggAvailable", "Available")}
+                            <span className="font-mono text-xs font-bold">{slot.slot_number}</span>
+                            <span className="gpv-sub text-[10px]">
+                              {slot.floor_number
+                                ? t(
+                                    "ggFloor",
+                                    { floor: slot.floor_number },
+                                    `Fl ${slot.floor_number}`
+                                  )
+                                : t("ggAvailable", "Available")}
                             </span>
                           </button>
                         );
@@ -671,7 +830,6 @@ export default function GuardGatePass() {
                     </div>
                   )}
 
-                  {/* Slot Action Buttons */}
                   <div className="flex items-center gap-2 pt-1">
                     <button
                       type="button"
@@ -680,7 +838,7 @@ export default function GuardGatePass() {
                         setSelectedSlot(null);
                         setMessage("");
                       }}
-                      className="flex-1 py-2.5 px-4 rounded-xl text-xs font-semibold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 cursor-pointer transition-colors"
+                      className="gpv-secondary-btn flex-1"
                     >
                       {t("ggCancel", "Cancel")}
                     </button>
@@ -689,8 +847,7 @@ export default function GuardGatePass() {
                       type="button"
                       onClick={confirmWithSlot}
                       disabled={loading || !selectedSlot}
-                      className="flex-2 py-2.5 px-4 rounded-xl text-xs font-bold text-white border-none transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer shadow-md"
-                      style={{ background: "linear-gradient(135deg, #10b981, #059669)" }}
+                      className="gpv-confirm-btn flex-[1.4]"
                     >
                       {loading ? (
                         <>
@@ -708,262 +865,242 @@ export default function GuardGatePass() {
                 </div>
               )}
             </div>
-          </div>
+          </section>
 
-          {/* 2. Quick Entry Shortcuts (ADJUSTED DIRECTLY BELOW VERIFY GATEPASS) */}
-          <div className="rounded-3xl p-4 sm:p-5 bg-white/85 dark:bg-slate-900/85 backdrop-blur-xl border border-indigo-500/15 dark:border-white/10 shadow-lg shadow-slate-200/50 dark:shadow-none space-y-3 transition-all">
-            <div className="flex items-center justify-between pb-1 border-b border-slate-100 dark:border-slate-800">
-              <div className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded-lg bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
-                  <MdFlashOn size={14} />
+          {/* 2. Quick entry shortcuts */}
+          <section className="gpv-surface rounded-3xl p-4 sm:p-5">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2.5">
+                <div className="gpv-icon-tile">
+                  <MdFlashOn size={16} />
                 </div>
-                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
-                  {t("quickGatePasses", "Quick Entry Shortcuts")}
-                </h4>
+                <div>
+                  <h4 className="gpv-title text-xs font-extrabold uppercase tracking-wider">
+                    {t("quickGatePasses", "Quick Entry Shortcuts")}
+                  </h4>
+                  <p className="gpv-sub mt-0.5 text-[10px]">
+                    No pass code? Direct check-in
+                  </p>
+                </div>
               </div>
-              <span className="text-[11px] text-slate-400 dark:text-slate-500 font-medium">
-                No pass code? Direct check-in
-              </span>
-            </div>
 
-            {/* 4 Sleek Horizontal Cards Grid */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-              {/* Guest Entry */}
-              <Link
-                to="/guard/guest-entry"
-                className="group p-3 rounded-2xl border border-blue-500/20 bg-gradient-to-br from-blue-500/8 via-blue-500/4 to-transparent hover:from-blue-500/15 hover:border-blue-500/40 transition-all duration-200 shadow-2xs hover:shadow-md flex flex-col justify-between gap-2.5 cursor-pointer"
-              >
-                <div className="flex items-center justify-between">
-                  <div className="w-8 h-8 rounded-xl bg-blue-500 text-white flex items-center justify-center shadow-xs shadow-blue-500/30 group-hover:scale-110 transition-transform">
-                    <MdPersonAdd size={16} />
-                  </div>
-                  <MdArrowForward size={14} className="text-blue-500 opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
-                </div>
-                <div>
-                  <span className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white block group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                    {t("vlsGuest", "Guest Entry")}
-                  </span>
-                  <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium block">
-                    Visitors & family
-                  </span>
-                </div>
-              </Link>
-
-              {/* Delivery Entry */}
-              <Link
-                to="/guard/delivery-entry"
-                className="group p-3 rounded-2xl border border-emerald-500/20 bg-gradient-to-br from-emerald-500/8 via-emerald-500/4 to-transparent hover:from-emerald-500/15 hover:border-emerald-500/40 transition-all duration-200 shadow-2xs hover:shadow-md flex flex-col justify-between gap-2.5 cursor-pointer"
-              >
-                <div className="flex items-center justify-between">
-                  <div className="w-8 h-8 rounded-xl bg-emerald-500 text-white flex items-center justify-center shadow-xs shadow-emerald-500/30 group-hover:scale-110 transition-transform">
-                    <MdLocalShipping size={16} />
-                  </div>
-                  <MdArrowForward size={14} className="text-emerald-500 opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
-                </div>
-                <div>
-                  <span className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white block group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
-                    {t("delivery", "Delivery")}
-                  </span>
-                  <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium block">
-                    Parcels & courier
-                  </span>
-                </div>
-              </Link>
-
-              {/* Cab / Taxi Entry */}
-              <Link
-                to="/guard/cab-entry"
-                className="group p-3 rounded-2xl border border-amber-500/20 bg-gradient-to-br from-amber-500/8 via-amber-500/4 to-transparent hover:from-amber-500/15 hover:border-amber-500/40 transition-all duration-200 shadow-2xs hover:shadow-md flex flex-col justify-between gap-2.5 cursor-pointer"
-              >
-                <div className="flex items-center justify-between">
-                  <div className="w-8 h-8 rounded-xl bg-amber-500 text-white flex items-center justify-center shadow-xs shadow-amber-500/30 group-hover:scale-110 transition-transform">
-                    <MdLocalTaxi size={16} />
-                  </div>
-                  <MdArrowForward size={14} className="text-amber-500 opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
-                </div>
-                <div>
-                  <span className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white block group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
-                    {t("cab", "Cab Entry")}
-                  </span>
-                  <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium block">
-                    Uber, Ola & rides
-                  </span>
-                </div>
-              </Link>
-
-              {/* Visitor Logs */}
               <Link
                 to="/guard/visitorlogs"
-                className="group p-3 rounded-2xl border border-purple-500/20 bg-gradient-to-br from-purple-500/8 via-purple-500/4 to-transparent hover:from-purple-500/15 hover:border-purple-500/40 transition-all duration-200 shadow-2xs hover:shadow-md flex flex-col justify-between gap-2.5 cursor-pointer"
+                className="gpv-sub flex items-center gap-1 text-[11px] font-bold transition-colors hover:text-[var(--accent)]"
               >
-                <div className="flex items-center justify-between">
-                  <div className="w-8 h-8 rounded-xl bg-purple-500 text-white flex items-center justify-center shadow-xs shadow-purple-500/30 group-hover:scale-110 transition-transform">
-                    <MdFormatListBulleted size={16} />
-                  </div>
-                  <MdArrowForward size={14} className="text-purple-500 opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
-                </div>
-                <div>
-                  <span className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white block group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
-                    {t("visitorLog", "Visitor Logs")}
-                  </span>
-                  <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium block">
-                    Full gate history
-                  </span>
-                </div>
+                <span>{t("visitorLog", "Visitor Logs")}</span>
+                <MdArrowForward size={13} />
               </Link>
             </div>
-          </div>
+
+            <div className="grid grid-cols-2 gap-2.5">
+              {quickActions.map((action) => {
+                const Icon = action.icon;
+                return (
+                  <Link
+                    key={action.id}
+                    to={action.to}
+                    style={{ "--gpv-c": action.color, "--gpv-soft": action.soft }}
+                    className="gpv-quick-card group rounded-2xl p-3"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <div className="gpv-quick-icon shrink-0">
+                        <Icon size={17} />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="gpv-title truncate text-xs font-bold sm:text-[13px]">
+                          {action.title}
+                        </p>
+                        <p className="gpv-sub truncate text-[10px] sm:text-[11px]">
+                          {action.subtitle}
+                        </p>
+                      </div>
+                      <MdArrowForward size={15} className="gpv-quick-arrow shrink-0" />
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          </section>
         </div>
 
-        {/* RIGHT COLUMN: Full-Height Live Recent Gate Activity Stream (Equal Height to the Two Left Sections) */}
-        <div className="lg:col-span-5 flex flex-col h-full min-h-0">
-          <div className="rounded-3xl p-5 bg-white/85 dark:bg-slate-900/85 backdrop-blur-xl border border-indigo-500/15 dark:border-white/10 shadow-lg shadow-slate-200/50 dark:shadow-none flex flex-col flex-1 h-full min-h-0 space-y-3.5 transition-all">
-            {/* Live Feed Header */}
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
-              <div className="flex items-center gap-2">
-                <span className="relative flex h-2.5 w-2.5">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500" />
+        {/* RIGHT COLUMN: live gate activity */}
+        <aside className="min-w-0 lg:col-span-5">
+          <div className="gpv-surface flex h-full flex-col rounded-3xl p-4 sm:p-5">
+            <div className="flex items-start justify-between gap-3 border-b border-[var(--divider)] pb-3">
+              <div className="flex min-w-0 items-center gap-2.5">
+                <span className="gpv-live-badge">
+                  <span className="gpv-live-dot" />
+                  LIVE
                 </span>
-                <div>
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 leading-none">
+                <div className="min-w-0">
+                  <h4 className="gpv-title truncate text-sm font-extrabold">
                     {t("recentGateActivity", "Live Gate Activity")}
                   </h4>
-                  <p className="text-[10px] text-slate-400 mt-0.5">Real-time gate movements</p>
+                  <p className="gpv-sub mt-0.5 truncate text-[11px]">
+                    Real-time gate movements
+                  </p>
                 </div>
               </div>
 
-              <div className="flex items-center gap-1.5">
+              <div className="flex shrink-0 items-center gap-1.5">
                 <button
                   type="button"
                   onClick={fetchRecentLogs}
                   disabled={logsLoading}
-                  className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer transition-colors"
+                  className="gpv-icon-btn"
                   title="Refresh activity feed"
+                  aria-label="Refresh activity feed"
                 >
-                  <MdRefresh size={16} className={logsLoading ? "animate-spin text-indigo-500" : ""} />
+                  <MdRefresh
+                    size={16}
+                    className={logsLoading ? "animate-spin text-[var(--accent)]" : ""}
+                  />
                 </button>
 
                 <Link
                   to="/guard/visitorlogs"
-                  className="text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer transition-colors"
+                  className="gpv-icon-btn"
                   title="Open full visitor logs"
+                  aria-label="Open full visitor logs"
                 >
                   <MdOpenInNew size={15} />
                 </Link>
               </div>
             </div>
 
-            {/* Quick Filter Segmented Pills */}
-            <div className="flex items-center p-1 rounded-xl bg-slate-100/80 dark:bg-slate-950/50 border border-slate-200/60 dark:border-slate-800/60 text-[11px] font-bold">
+            <div className="gpv-tabs mt-3">
               {[
-                { id: "ALL", label: "All Movements" },
-                { id: "IN", label: "Inside" },
-                { id: "OUT", label: "Exited" },
+                { id: "ALL", label: "All", count: activityCounts.all },
+                { id: "IN", label: "Inside", count: activityCounts.inside },
+                { id: "OUT", label: "Exited", count: activityCounts.exited },
               ].map((tab) => (
                 <button
                   key={tab.id}
                   type="button"
                   onClick={() => setLogFilter(tab.id)}
-                  className={`flex-1 py-1.5 px-2 rounded-lg text-center transition-all cursor-pointer ${
-                    logFilter === tab.id
-                      ? "bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-xs"
-                      : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
-                  }`}
+                  className={`gpv-tab ${logFilter === tab.id ? "gpv-tab--active" : ""}`}
                 >
-                  {tab.label}
+                  <span>{tab.label}</span>
+                  <span className="gpv-tab-count">{tab.count}</span>
                 </button>
               ))}
             </div>
 
-            {/* Activity Stream List - Only show the records that fit cleanly */}
-            <div className="flex-1 flex flex-col justify-start space-y-2 min-h-0 overflow-hidden">
+            <div className="mt-3 flex min-h-0 flex-1 flex-col gap-2 overflow-hidden">
               {displayedLogs.length === 0 ? (
-                <div className="py-12 text-center text-xs text-slate-400">
-                  {logsLoading ? (
-                    <div className="flex items-center justify-center gap-2">
-                      <Spinner size={15} />
-                      <span>Loading logs...</span>
-                    </div>
-                  ) : (
-                    <span>No recent entries found for this filter.</span>
-                  )}
+                <div className="flex min-h-[250px] flex-1 flex-col items-center justify-center px-4 text-center">
+                  <div className="gpv-empty-icon">
+                    {logsLoading ? <Spinner size={20} /> : <MdFormatListBulleted size={22} />}
+                  </div>
+                  <p className="gpv-title text-xs font-bold">
+                    {logsLoading ? "Loading activity..." : "No recent activity"}
+                  </p>
+                  <p className="gpv-sub mt-1 text-[11px]">
+                    {logsLoading
+                      ? "Fetching the latest gate movements."
+                      : "New visitor entries and exits will appear here."}
+                  </p>
                 </div>
               ) : (
-                displayedLogs.map((log) => {
-                  const flatNum = log.flat?.flat_number || log.Flat?.flat_number || log.flat_number || "—";
+                displayedLogs.map((log, index) => {
+                  const meta = getPurposeMeta(log.purpose);
+                  const Icon = meta.icon;
+                  const flatNum =
+                    log.flat?.flat_number || log.Flat?.flat_number || log.flat_number || "—";
                   const dt = formatDateTime(log.entry_time);
                   const isOut = Boolean(log.exit_time);
-                  const purpose = String(log.purpose || "VISITOR").toUpperCase();
-
-                  // Color-coded purpose pill
-                  let badgeColor = "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20";
-                  if (purpose.includes("DELIVER")) badgeColor = "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20";
-                  else if (purpose.includes("CAB") || purpose.includes("TAXI")) badgeColor = "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20";
-                  else if (purpose.includes("SERVICE") || purpose.includes("HELP")) badgeColor = "bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20";
 
                   return (
-                    <div
-                      key={log.id}
-                      className="p-3 rounded-2xl border border-slate-100 dark:border-slate-800/80 bg-slate-50/70 dark:bg-slate-950/40 hover:bg-white dark:hover:bg-slate-900/80 transition-all shadow-2xs flex items-center justify-between gap-3 group"
+                    <Motion.div
+                      key={log.id ?? index}
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.04 }}
+                      className="gpv-row flex items-center justify-between gap-2.5 p-2.5"
                     >
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          <span className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white truncate">
-                            {log.visitor_name}
-                          </span>
-                          <span className={`text-[10px] px-2 py-0.5 rounded-md font-semibold border ${badgeColor}`}>
-                            {log.purpose || "Visitor"}
-                          </span>
+                      <div className="flex min-w-0 flex-1 items-center gap-2.5">
+                        <div
+                          className="gpv-activity-icon shrink-0"
+                          style={{
+                            color: meta.color,
+                            background: meta.soft,
+                            borderColor: meta.border,
+                          }}
+                        >
+                          <Icon size={17} />
                         </div>
 
-                        <div className="flex items-center gap-2 mt-1 text-[11px] text-slate-500 dark:text-slate-400 font-medium">
-                          <span className="flex items-center gap-1 bg-slate-200/60 dark:bg-slate-800 px-1.5 py-0.5 rounded text-slate-700 dark:text-slate-300">
-                            <MdApartment size={12} className="text-indigo-500" />
-                            <span>{flatNum}</span>
-                          </span>
-                          {dt && <span>{dt.time}</span>}
+                        <div className="min-w-0 flex-1">
+                          <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+                            <span className="gpv-title truncate text-xs font-bold sm:text-[13px]">
+                              {log.visitor_name || "Visitor"}
+                            </span>
+                            <span
+                              className="truncate rounded-md border px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide"
+                              style={{
+                                color: meta.color,
+                                background: meta.soft,
+                                borderColor: meta.border,
+                              }}
+                            >
+                              {meta.label}
+                            </span>
+                          </div>
+
+                          <div className="mt-1 flex items-center gap-1.5 text-[10px] font-semibold">
+                            <span className="gpv-flat-chip">
+                              <MdApartment size={11} className="text-[var(--accent)]" />
+                              <span>{flatNum}</span>
+                            </span>
+                            {dt && (
+                              <>
+                                <span className="gpv-hint-dot" />
+                                <span className="gpv-sub inline-flex items-center gap-1">
+                                  <MdAccessTime size={10} />
+                                  {dt.time}
+                                </span>
+                                <span className="gpv-sub hidden xl:inline">{dt.date}</span>
+                              </>
+                            )}
+                          </div>
                         </div>
                       </div>
 
-                      <div className="shrink-0">
-                        {isOut ? (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-slate-500 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
-                            <MdLogout size={12} />
-                            <span>EXIT</span>
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/25">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                            <MdLogin size={12} />
-                            <span>INSIDE</span>
-                          </span>
-                        )}
-                      </div>
-                    </div>
+                      <span
+                        className={`gpv-status-chip ${
+                          isOut ? "gpv-status-chip--out" : "gpv-status-chip--in"
+                        }`}
+                      >
+                        {isOut ? <MdLogout size={11} /> : <MdLogin size={11} />}
+                        <span>{isOut ? "EXIT" : "INSIDE"}</span>
+                      </span>
+                    </Motion.div>
                   );
                 })
               )}
             </div>
 
-            {/* View More Option: Anchored to Bottom, Redirects to /guard/visitorlogs */}
             <Link
               to="/guard/visitorlogs"
-              className="mt-auto pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 px-3 py-2.5 rounded-2xl hover:bg-indigo-50/70 dark:hover:bg-indigo-950/40 transition-all group cursor-pointer"
+              className="gpv-footer-link mt-auto"
             >
-              <div className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
-                  <MdFormatListBulleted size={14} />
-                </div>
+              <span className="flex items-center gap-2">
+                <span className="gpv-icon-tile gpv-icon-tile--sm">
+                  <MdFormatListBulleted size={13} />
+                </span>
                 <span>View More Activity</span>
-              </div>
-              <div className="flex items-center gap-1 text-[11px] font-semibold text-slate-400 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
-                <span>All Visitor Logs</span>
-                <MdArrowForward size={14} className="group-hover:translate-x-1 transition-transform" />
-              </div>
+              </span>
+              <span className="flex items-center gap-1 text-[10px]">
+                <span className="gpv-sub">All Visitor Logs</span>
+                <MdArrowForward
+                  size={13}
+                  className="transition-transform group-hover:translate-x-0.5"
+                />
+              </span>
             </Link>
           </div>
-        </div>
+        </aside>
       </div>
     </div>
   );

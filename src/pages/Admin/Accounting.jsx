@@ -1945,7 +1945,7 @@ const AUDIT_FIELD_LABELS = {
   status: "accFieldStatus",
   payment_mode: "accFieldPayMode",
   method: "accFieldMethod",
-  paid_by: "accFieldPaidBy",
+  paid_by: "accFieldPaidByRole",
   created_by: "accFieldCreatedBy",
   recording_user_id: "accFieldRecordingUserID",
   description: "accFieldDescription",
@@ -1968,6 +1968,12 @@ const AUDIT_FIELD_LABELS = {
 const CURRENCY_FIELDS = ["amount", "opening_balance", "prev_balance", "new_balance", "running_balance", "balance", "total", "fee", "discount"];
 const DATE_FIELDS = ["effective_date", "entry_date", "payment_date", "created_at", "updated_at", "voided_at", "paid_at", "issue_date", "due_date"];
 
+const auditAmount = (value) => {
+  if (!value || typeof value !== "object") return null;
+  const raw = value.amount ?? value.opening_balance ?? value.new_balance ?? value.running_balance;
+  return raw === null || raw === undefined || raw === "" ? null : CURRENCY(raw);
+};
+
 const fmtAuditValue = (v, key, fallbackName = "", t) => {
   if (v === null || v === undefined || v === "") return "";
   const k = String(key || "").toLowerCase();
@@ -1977,6 +1983,9 @@ const fmtAuditValue = (v, key, fallbackName = "", t) => {
     if (!isNaN(dt.getTime())) return dt.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
   }
   if (k === "status") return v === "POSTED" ? t("accRecorded") : v === "VOID" ? t("accVoidedWord") : v;
+  if (k === "payment_mode" || k === "method") {
+    return String(v).replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+  }
   if (typeof v === "boolean") return v ? t("accYesWord") : t("accNoWord");
 
   // Role conversion (e.g. COMMITTEE_MEMBER -> Committee Member)
@@ -2000,7 +2009,7 @@ const fmtAuditValue = (v, key, fallbackName = "", t) => {
 const getMeaningfulAuditReason = (row, t) => {
   const oldV = row.old_value || {};
   const newV = row.new_value || {};
-  const amt = newV.amount !== undefined ? CURRENCY(newV.amount) : oldV.amount !== undefined ? CURRENCY(oldV.amount) : "";
+  const amt = auditAmount(newV) || auditAmount(oldV) || "";
   const payee = newV.pay_to || oldV.pay_to || "";
 
   if (row.reason && row.reason !== "System verified financial operation" && !row.reason.startsWith("System verified")) {
@@ -2017,10 +2026,10 @@ const getMeaningfulAuditReason = (row, t) => {
     return t("accExportExpenseUpdate", { payee: payee || t("accVendor") });
   }
   if (row.action === "OPENING_BALANCE_SET") {
-    return t("accExportOpeningSet", { amt: amt || t("accConfiguredAmount") });
+    return `${t("accExportOpeningSet", { amt: amt || t("accConfiguredAmount") })}${row.reason ? ` — ${row.reason}` : ""}`;
   }
   if (row.action === "OPENING_BALANCE_ADJUST") {
-    return t("accExportOpeningAdjust", { amt: amt || t("accNewAmount") });
+    return `${t("accExportOpeningAdjust", { amt: amt || t("accNewAmount") })}${row.reason ? ` — ${row.reason}` : ""}`;
   }
   if (row.action === "PAYMENT_REVERSED") {
     return t("accExportPaymentReversed", { amt: amt || t("accFunds") });
@@ -2037,10 +2046,10 @@ const getAuditHighlight = (row, t) => {
   const newV = row.new_value || {};
 
   if (isOpeningAction(row.action)) {
-    const oldAmt = oldV.amount !== undefined ? CURRENCY(oldV.amount) : null;
-    const newAmt = newV.amount !== undefined ? CURRENCY(newV.amount) : null;
+    const oldAmt = auditAmount(oldV);
+    const newAmt = auditAmount(newV);
     if (oldAmt && newAmt) return `${oldAmt} → ${newAmt}`;
-    if (newAmt) return t("accBalanceLabel", { amt: newAmt });
+    if (newAmt) return `${t("accBalanceLabel", { amt: newAmt })} (${t("accFieldOpBalance")})`;
   }
 
   if (row.action === "EXPENSE_CREATE") {
@@ -2513,10 +2522,10 @@ function AuditLogTab({ societyName }) {
                       {performer}
                     </span>
                   </td>
-                  <td className="py-3.5 pr-4 text-secondary max-w-60 truncate font-medium text-xs" title={getMeaningfulAuditReason(r, t)}>
+                  <td className="py-3.5 pr-4 text-secondary max-w-72 whitespace-normal font-medium text-xs leading-relaxed" title={getMeaningfulAuditReason(r, t)}>
                     {getMeaningfulAuditReason(r, t)}
                   </td>
-                  <td className="py-3.5 pr-4 text-primary font-bold text-xs max-w-72 truncate">
+                  <td className="py-3.5 pr-4 text-primary font-bold text-xs max-w-60 whitespace-normal leading-relaxed">
                     {getAuditHighlight(r, t)}
                   </td>
                   <td className="py-3.5 text-right whitespace-nowrap">

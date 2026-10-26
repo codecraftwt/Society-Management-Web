@@ -4,9 +4,11 @@
  * modal wiring, and delegates every pixel to the section's own components —
  * the same division of labour as sections/notice/Notice.jsx.
  */
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useContext, useEffect, useRef, useState } from "react";
 
 import { useLang } from "../../context/LanguageContext";
+import { AuthContext } from "../../context/AuthContext";
+import API from "../../services/api";
 import RoleBasedAccess from "../../components/common/RoleBasedAccess";
 import Index from "./index/Index";
 import Create from "./create/Create";
@@ -29,6 +31,20 @@ function useDebounce(value, delay = 450) {
 
 export default function CleaningStaff() {
   const { t } = useLang();
+  const { user } = useContext(AuthContext);
+  const isSuperAdmin =
+    String(user?.activeRole || user?.role || "").toUpperCase() === "SUPER_ADMIN";
+
+  const [societies, setSocieties] = useState([]);
+  const [societyFilter, setSocietyFilter] = useState(() => {
+    const saved = localStorage.getItem("superadmin_society_filter");
+    return saved && saved !== "ALL" ? saved : "";
+  });
+  const [scopeReady, setScopeReady] = useState(() => {
+    if (!isSuperAdmin) return true;
+    const saved = localStorage.getItem("superadmin_society_filter");
+    return Boolean(saved && saved !== "ALL");
+  });
 
   /* ── Staff list ───────────────────────────────────────────────────── */
   const [staff, setStaff] = useState([]);
@@ -60,6 +76,42 @@ export default function CleaningStaff() {
   /* Guards against a slow earlier response overwriting a newer one. */
   const listRequestRef = useRef(0);
   const attRequestRef = useRef(0);
+
+  const applySocietyScope = useCallback((value) => {
+    const next = String(value || "");
+    if (!next) return;
+    localStorage.setItem("superadmin_society_filter", next);
+    setStaff([]);
+    setAttendance([]);
+    setInitialLoad(true);
+    setSocietyFilter(next);
+    setScopeReady(true);
+    window.dispatchEvent(new Event("superadmin-society-scope-change"));
+  }, []);
+
+  /* Super admin panels have no society of their own; cleaning staff is always
+     society-owned, so pick a scope before any request is sent. */
+  useEffect(() => {
+    if (!isSuperAdmin) return;
+    let active = true;
+    API.get("/societies")
+      .then((res) => {
+        if (!active) return;
+        const list = Array.isArray(res.data) ? res.data : [];
+        setSocieties(list);
+        const saved = localStorage.getItem("superadmin_society_filter");
+        const first = list[0]?.id;
+        if ((!saved || saved === "ALL") && first !== undefined && first !== null) {
+          applySocietyScope(first);
+        }
+      })
+      .catch(() => {
+        if (active) setSocieties([]);
+      });
+    return () => {
+      active = false;
+    };
+  }, [isSuperAdmin, applySocietyScope]);
 
   /* ── Data ─────────────────────────────────────────────────────────── */
 
@@ -117,14 +169,15 @@ export default function CleaningStaff() {
   }, [attendanceFilter.from, attendanceFilter.to]);
 
   useEffect(() => {
+    if (!scopeReady) return;
     loadStaff();
-  }, [loadStaff]);
+  }, [loadStaff, scopeReady, societyFilter]);
 
   /* Attendance is only fetched when its tab is actually open. */
   useEffect(() => {
-    if (view !== "attendance") return;
+    if (!scopeReady || view !== "attendance") return;
     loadAttendance();
-  }, [view, loadAttendance]);
+  }, [view, loadAttendance, scopeReady, societyFilter]);
 
   /* Changing a filter resets to page 1 so an empty page is never stranded. */
   useEffect(() => {
@@ -156,6 +209,12 @@ export default function CleaningStaff() {
         <Index
           view={view}
           onViewChange={setView}
+
+          isSuperAdmin={isSuperAdmin}
+          societies={societies}
+          societyId={societyFilter}
+          onSocietyChange={applySocietyScope}
+          scopeReady={scopeReady}
 
           staff={staff}
           loading={fetching}

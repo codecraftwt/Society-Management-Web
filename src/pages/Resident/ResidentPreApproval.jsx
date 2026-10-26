@@ -25,6 +25,19 @@ import StatCard from "../../components/common/StatCard";
 const getTodayIST = () =>
   new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
 
+// Normalise Indian registration plates while the user types or pastes them.
+// Example: MH09BH6789 -> MH 09 BH 6789
+const formatVehicleNumber = (value) => {
+  const raw = String(value || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
+  const groups = [
+    raw.slice(0, 2).replace(/[^A-Z]/g, ""),
+    raw.slice(2, 4).replace(/[^0-9]/g, ""),
+    raw.slice(4, 6).replace(/[^A-Z]/g, ""),
+    raw.slice(6, 10).replace(/[^0-9]/g, ""),
+  ].filter(Boolean);
+  return groups.join(" ");
+};
+
 const formatDateIST = (d) => {
   if (!d) return "—";
   const [y, m, day] = d.split("-");
@@ -90,8 +103,6 @@ export default function ResidentPreApproval() {
     setDateTo("");
     setPage(1);
   };
-
-  const hasActiveFilters = Boolean(search.trim() || filterPurpose !== "ALL" || dateFrom || dateTo);
 
   const filteredPasses = useMemo(() => {
     return myPasses.filter((p) => {
@@ -160,12 +171,27 @@ export default function ResidentPreApproval() {
     return { total, today, active, used: groups.history.length };
   }, [myPasses, groups, todayIST]);
 
-  const eligibleFlats = myFlats.filter(item => {
-    const flatObj = item.Flat || item;
-    if (isOwner && flatObj.occupancy_status === "RENTED") return false;
-    return true;
-  });
+  const eligibleFlats = useMemo(() => {
+    return myFlats.filter((item) => {
+      if (!isOwner) return true;
+      const flatObj = item.Flat || item;
+      const tenant = item.tenant ?? flatObj.tenant ?? null;
+      const isRented =
+        Boolean(tenant) ||
+        String(flatObj.occupancy_status || "").toUpperCase() === "RENTED";
+      return !isRented;
+    });
+  }, [myFlats, isOwner]);
   const hasEligibleFlat = eligibleFlats.length > 0;
+
+  const effectiveSelectedFlatId = useMemo(() => {
+    if (!hasEligibleFlat) return "";
+    const exists = eligibleFlats.some(
+      (f) => String(f.flat_id || f.id) === String(selectedFlatId)
+    );
+    if (exists) return selectedFlatId;
+    return eligibleFlats[0].flat_id || eligibleFlats[0].id || "";
+  }, [eligibleFlats, hasEligibleFlat, selectedFlatId]);
 
   const [form, setForm] = useState({
   visitor_name: "",
@@ -260,8 +286,14 @@ export default function ResidentPreApproval() {
   };
 
   useEffect(() => {
-    checkFlat();
-    fetchMyPasses();
+    let cancelled = false;
+
+    (async () => {
+      await checkFlat();
+      if (!cancelled) fetchMyPasses();
+    })();
+
+    return () => { cancelled = true; };
   }, []);
 
   /* ── Form submit ── */
@@ -296,10 +328,10 @@ export default function ResidentPreApproval() {
         : parseInt(dwellChoice, 10) || 45;
 
     const payload = {
-      flat_id: selectedFlatId,
+      flat_id: effectiveSelectedFlatId,
       visitor_name: form.visitor_name.trim(),
       mobile: form.mobile.trim(),
-      vehicle_number: form.vehicle_number.trim(),
+      vehicle_number: formatVehicleNumber(form.vehicle_number),
       purpose: form.purpose,
       valid_date: form.valid_date, // YYYY-MM-DD
       pass_type: passType,
@@ -504,7 +536,7 @@ export default function ResidentPreApproval() {
               </label>
               <Select
                 className="input h-11 w-full"
-                value={selectedFlatId}
+                value={effectiveSelectedFlatId}
                 onChange={(e) => setSelectedFlatId(e.target.value)}
                 required
               >
@@ -585,7 +617,10 @@ export default function ResidentPreApproval() {
                   className="input h-11 w-full pl-9"
                   placeholder={t("preapVehiclePlaceholder")}
                   value={form.vehicle_number}
-                  onChange={(e) => setForm({ ...form, vehicle_number: e.target.value })}
+                  maxLength={14}
+                  autoCapitalize="characters"
+                  spellCheck={false}
+                  onChange={(e) => setForm({ ...form, vehicle_number: formatVehicleNumber(e.target.value) })}
                 />
               </div>
             </div>

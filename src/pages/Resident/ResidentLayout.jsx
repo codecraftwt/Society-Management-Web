@@ -28,6 +28,7 @@ import {
 } from "react-icons/md";
 import ResidentEmergencyModal from "../../components/resident/ResidentEmergencyModal";
 import SOSModal from "../../components/emergency/SOSModal";
+import useEmergencyAlerts from "../../hooks/useEmergencyAlerts";
 import { useSidebar } from "../../context/SidebarContext";
 import Sidebar from "../../components/common/Sidebar";
 import AppHeader from "../../components/common/AppHeader";
@@ -43,7 +44,7 @@ function ResidentLayoutInner() {
   const navigate = useNavigate();
   const { collapsed } = useSidebar();
 
-  const [alerts, setAlerts] = useState([]);
+  const { alerts, refresh: refreshEmergencies } = useEmergencyAlerts();
   const [showEmergency, setShowEmergency] = useState(false);
   const [showSOS, setShowSOS] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
@@ -216,22 +217,6 @@ function ResidentLayoutInner() {
 
   const menu = isFamilyMember ? familyMenu : residentMenu;
 
-  /* Emergency polling */
-  const loadEmergencies = async () => {
-    try {
-      const r = await API.get("/emergency/active");
-      setAlerts(r.data || []);
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
-  useEffect(() => {
-    loadEmergencies();
-    const id = setInterval(loadEmergencies, 5000);
-    return () => clearInterval(id);
-  }, []);
-
   /* Handlers */
   const confirmLogout = () => {
     localStorage.clear();
@@ -361,7 +346,7 @@ function ResidentLayoutInner() {
         key={String(showSOS)}
         isOpen={showSOS}
         onClose={() => setShowSOS(false)}
-        onRefresh={loadEmergencies}
+        onRefresh={refreshEmergencies}
         alerts={alerts}
         senderLabel="sosSenderResident"
         modalTitle="sosResidentSOSTitle"
