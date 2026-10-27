@@ -76,7 +76,7 @@ export default function Create({ isOpen, onClose, onCreated, onToast, catLabel }
       icon={MdCloudUpload}
       size="lg"
     >
-      <form onSubmit={handleUpload} className="flex flex-col gap-4">
+      <form onSubmit={handleUpload} className="doc-upload-form flex flex-col gap-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="flex flex-col gap-1.5">
             <label className="text-xs font-semibold" style={{ color: "var(--text-secondary)" }}>

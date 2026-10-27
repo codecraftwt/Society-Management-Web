@@ -240,10 +240,13 @@ export default function PassesPanel({ staff, passes, loading, onReload }) {
       key: "actions",
       header: "",
       align: "right",
+      width: 200,
+      className: "cs-pass-actions-cell",
       render: (row) => (
-        <div style={{ display: "flex", gap: 6, justifyContent: "flex-end", flexWrap: "wrap" }}>
+        <div className="cs-pass-actions" style={{ minWidth: 180, display: "inline-flex", gap: 6, justifyContent: "flex-end", alignItems: "center" }}>
           <GlobalButton
             variant="info"
+            size="sm"
             icon={MdQrCode}
             onClick={(e) => {
               e.stopPropagation?.();
@@ -255,6 +258,7 @@ export default function PassesPanel({ staff, passes, loading, onReload }) {
           {row.status === PASS_STATUS.ACTIVE && (
             <GlobalButton
               variant="cancel"
+              size="sm"
               icon={MdBlock}
               onClick={(e) => {
                 e.stopPropagation?.();
@@ -313,6 +317,7 @@ export default function PassesPanel({ staff, passes, loading, onReload }) {
       )}
 
       <GlobalTable
+        className="cs-passes-table"
         columns={columns}
         data={passes}
         loading={loading}

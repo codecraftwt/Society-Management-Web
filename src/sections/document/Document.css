@@ -469,6 +469,174 @@
   opacity: 0.75;
 }
 
+/* ==========================================================================
+   UPLOAD DOCUMENT MODAL — dropzone
+   --------------------------------------------------------------------------
+   The modal is rendered through a portal on <body>, so it cannot inherit the
+   .documents-page scope. `.doc-upload-form` is the local scope for the Create
+   form and owns every .ad-dz-* rule the markup relies on.
+   ========================================================================== */
+
+.doc-upload-form .ad-dropzone {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 132px;
+  padding: 18px;
+  border-radius: 14px;
+  border: 1.5px dashed color-mix(in srgb, var(--accent) 34%, var(--glass-border));
+  background: var(--card-inner-bg);
+  text-align: center;
+  transition:
+    border-color 0.25s ease,
+    background 0.25s ease,
+    transform 0.25s ease;
+}
+
+.doc-upload-form .ad-dropzone:hover,
+.doc-upload-form .ad-dropzone--over {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 8%, var(--card-inner-bg));
+}
+
+.doc-upload-form .ad-dropzone--over {
+  transform: scale(1.01);
+}
+
+.doc-upload-form .ad-dropzone--filled {
+  border-style: solid;
+  border-color: color-mix(in srgb, var(--stat-green-color) 38%, var(--glass-border));
+  background: color-mix(in srgb, var(--stat-green-color) 7%, var(--card-inner-bg));
+  text-align: left;
+}
+
+.doc-upload-form .ad-dz-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  min-width: 0;
+}
+
+.doc-upload-form .ad-dz-cloud {
+  flex-shrink: 0;
+  color: var(--accent);
+  transition: transform 0.25s ease;
+}
+
+.doc-upload-form .ad-dropzone:hover .ad-dz-cloud,
+.doc-upload-form .ad-dropzone--over .ad-dz-cloud {
+  transform: translateY(-2px);
+}
+
+.doc-upload-form .ad-dz-text {
+  margin: 0;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1.45;
+  color: var(--text-secondary);
+  overflow-wrap: anywhere;
+}
+
+.doc-upload-form .ad-dz-browse {
+  color: var(--accent);
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.doc-upload-form .ad-dz-hint {
+  margin: 0;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  opacity: 0.72;
+}
+
+.doc-upload-form .ad-dz-filled {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-width: 0;
+}
+
+.doc-upload-form .ad-dz-file-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 11px;
+  color: var(--stat-green-color);
+  background: color-mix(in srgb, var(--stat-green-color) 13%, transparent);
+  border: 1px solid color-mix(in srgb, var(--stat-green-color) 30%, transparent);
+}
+
+.doc-upload-form .ad-dz-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.doc-upload-form .ad-dz-filename {
+  margin: 0;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.doc-upload-form .ad-dz-filesize {
+  margin: 0;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.doc-upload-form .ad-dz-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  color: var(--danger);
+  background: color-mix(in srgb, var(--danger) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--danger) 26%, transparent);
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.doc-upload-form .ad-dz-remove:hover {
+  background: color-mix(in srgb, var(--danger) 18%, transparent);
+  border-color: color-mix(in srgb, var(--danger) 45%, transparent);
+  transform: scale(1.05);
+}
+
+@media (max-width: 420px) {
+  .doc-upload-form .ad-dropzone {
+    min-height: 118px;
+    padding: 14px;
+  }
+
+  .doc-upload-form .ad-dz-text {
+    font-size: 0.75rem;
+  }
+}
+
 /* --- Motion opt-out ------------------------------------------------------ */
 
 @media (prefers-reduced-motion: reduce) {
@@ -487,4 +655,95 @@
   .documents-page .doc-del-btn:hover {
     transform: none;
   }
+  .doc-upload-form .ad-dropzone,
+  .doc-upload-form .ad-dz-cloud,
+  .doc-upload-form .ad-dz-remove {
+    transition: none;
+  }
+  .doc-upload-form .ad-dropzone--over {
+    transform: none;
+  }
+}
+
+/* --- Resident Modern Document Card Enhancements ------------------------- */
+
+.documents-page .rd-modern-doc-card {
+  min-height: 215px;
+}
+
+.documents-page .rd-doc-desc {
+  font-size: 0.75rem;
+  line-height: 1.45;
+  color: var(--text-secondary);
+  margin: -2px 0 0 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.documents-page .rd-card-footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: auto;
+  padding-top: 4px;
+}
+
+.documents-page .rd-btn-preview {
+  flex: 1;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border-radius: 12px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: #ffffff !important;
+  background: linear-gradient(135deg, var(--acct-purple, #6366f1) 0%, var(--accent, #4f46e5) 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.28) !important;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.documents-page .rd-btn-preview:hover {
+  transform: translateY(-1.5px);
+  box-shadow: 0 7px 18px rgba(79, 70, 229, 0.42) !important;
+  filter: brightness(1.08);
+}
+
+.documents-page .rd-btn-preview:active {
+  transform: translateY(0);
+}
+
+.documents-page .rd-btn-download {
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  flex-shrink: 0;
+  color: #10b981 !important;
+  background: rgba(16, 185, 129, 0.12) !important;
+  border: 1px solid rgba(16, 185, 129, 0.28) !important;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  text-decoration: none;
+}
+
+.documents-page .rd-btn-download:hover {
+  transform: translateY(-1.5px);
+  background: #10b981 !important;
+  color: #ffffff !important;
+  border-color: #10b981 !important;
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35) !important;
+}
+
+.documents-page .rd-btn-download:active {
+  transform: translateY(0);
 }

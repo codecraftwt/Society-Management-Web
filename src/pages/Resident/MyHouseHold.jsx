@@ -1299,7 +1299,7 @@ export default function MyHouseHold() {
           </div>
         )}
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-4">
+        <div className="hh-stats-grid grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-4">
           <StatCard icon={MdFamilyRestroom} tone="brand" value={familyMembers.length} label={t("hhTabFamily")} />
           <StatCard icon={MdWork} tone="warning" value={helpMembers.length} label={t("hhTabHelp")} />
           <StatCard icon={MdAdminPanelSettings} tone="success" value={adminCount} label={t("hhAdmins")} />

@@ -1,10 +1,20 @@
-import { MdPerson, MdOutlineInbox, MdAccessTime } from "react-icons/md";
+import { useState } from "react";
+import { MdPerson, MdOutlineInbox, MdAccessTime, MdVisibility } from "react-icons/md";
 import { useLang } from "../../../context/LanguageContext";
 import Select from "../../../components/common/Select";
 import SlidingTabs from "../../../components/common/SlidingTabs";
 import ExpandableSearch from "../../../components/common/ExpandableSearch";
 import GlobalTable from "../../../components/common/GlobalTable";
 import GlobalBadge from "../../../components/common/GlobalBadge";
+import GlobalModal from "../../../components/common/GlobalModal";
+
+const safeLabel = (translate, key, fallback) => {
+  const raw = translate(key);
+  if (!raw || raw === key || raw.toLowerCase().includes("filter") || raw.toLowerCase().includes("vifilter")) {
+    return fallback;
+  }
+  return raw;
+};
 
 export default function Index({
   isSuperAdmin,
@@ -38,14 +48,13 @@ export default function Index({
   onFlatChange,
 }) {
   const { t } = useLang();
+  const [detailVisitor, setDetailVisitor] = useState(null);
 
   const getCleanLabel = (key, fallback) => {
-    const raw = t(key);
-    if (!raw || raw === key || raw.toLowerCase().includes("filter") || raw.toLowerCase().includes("vifilter")) {
-      return fallback;
-    }
-    return raw;
+    return safeLabel(t, key, fallback);
   };
+
+  const label = (key, fallback) => getCleanLabel(key, fallback);
 
   const filterTabs = [
     { id: "ALL", label: getCleanLabel("vlFilterAll", getCleanLabel("vlTabAll", "All")), badge: counts.ALL || 0 },
@@ -97,7 +106,7 @@ export default function Index({
     },
     {
       key: "flat",
-      header: t("vlColFlat") || "Flat",
+      header: label("vlColFlat", "Flat"),
       hiddenMobile: true,
       render: (v) => (
         <span style={{ color: "var(--text-secondary)", fontWeight: 500, fontSize: "0.85rem" }}>
@@ -106,38 +115,8 @@ export default function Index({
       ),
     },
     {
-      key: "owner",
-      header: t("vlColOwner") || "Owner / Resident",
-      hiddenMobile: true,
-      render: (v) => (
-        <span style={{ color: "var(--text-primary)", fontWeight: 600, fontSize: "0.85rem" }}>
-          {v.owner || "—"}
-        </span>
-      ),
-    },
-    {
-      key: "purpose",
-      header: t("vlColPurpose") || "Purpose",
-      hiddenMobile: true,
-      render: (v) => (
-        <span style={{ color: "var(--text-secondary)", fontSize: "0.85rem" }}>
-          {v.purpose}
-        </span>
-      ),
-    },
-    {
-      key: "date",
-      header: t("vlColDate") || "Date",
-      hiddenMobile: true,
-      render: (v) => (
-        <span style={{ color: "var(--text-secondary)", fontSize: "0.82rem" }}>
-          {v.date}
-        </span>
-      ),
-    },
-    {
       key: "intime",
-      header: t("vlColIn") || "In Time",
+      header: label("vlColIn", "In Time"),
       render: (v) => (
         <span style={{ display: "inline-flex", alignItems: "center", gap: 4, color: "#10b981", fontSize: "0.82rem", fontWeight: 600 }}>
           <MdAccessTime size={13} /> {v.intime}
@@ -146,7 +125,7 @@ export default function Index({
     },
     {
       key: "outtime",
-      header: t("vlColOut") || "Out Time",
+      header: label("vlColOut", "Out Time"),
       hiddenMobile: true,
       render: (v) => (
         v.outtime ? (
@@ -159,8 +138,18 @@ export default function Index({
       ),
     },
     {
+      key: "duration",
+      header: label("vlDuration", "Duration"),
+      hiddenMobile: true,
+      render: (v) => (
+        <span style={{ fontSize: "0.82rem", fontWeight: 600, color: v.ongoing ? "#10b981" : "var(--text-secondary)" }}>
+          {v.duration}
+        </span>
+      ),
+    },
+    {
       key: "status",
-      header: t("billStatusCol") || "Status",
+      header: label("billStatusCol", "Status"),
       render: (v) => (
         <GlobalBadge
           variant={v.status === "IN" ? "success" : "neutral"}
@@ -168,6 +157,30 @@ export default function Index({
         >
           {v.status === "IN" ? t("vlIn") || "IN" : t("vlOut") || "OUT"}
         </GlobalBadge>
+      ),
+    },
+    {
+      key: "actions",
+      header: "",
+      align: "right",
+      render: (v) => (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            setDetailVisitor(v);
+          }}
+          title={t("vlViewDetails") || "View details"}
+          aria-label={t("vlViewDetails") || "View details"}
+          className="w-8 h-8 rounded-lg hover:bg-white/10 flex items-center justify-center transition"
+          style={{
+            background: "var(--card-inner-bg)",
+            color: "var(--text-secondary)",
+            border: "1px solid var(--glass-border)",
+          }}
+        >
+          <MdVisibility size={14} />
+        </button>
       ),
     },
   ];
@@ -279,8 +292,76 @@ export default function Index({
           onPageChange={onPageChange}
           pageSize={pageSize}
           onPageSizeChange={onPageSizeChange}
+          onRowClick={setDetailVisitor}
         />
       </div>
+
+      <VisitorDetailModal
+        visitor={detailVisitor}
+        onClose={() => setDetailVisitor(null)}
+      />
     </div>
+  );
+}
+
+function DetailRow({ label, value }) {
+  return (
+    <div className="flex items-start justify-between gap-4 py-2" style={{ borderBottom: "1px solid var(--divider)" }}>
+      <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.04em", textTransform: "uppercase", color: "var(--text-secondary)" }}>
+        {label}
+      </span>
+      <span className="text-right" style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)", overflowWrap: "anywhere" }}>
+        {value || "—"}
+      </span>
+    </div>
+  );
+}
+
+function VisitorDetailModal({ visitor, onClose }) {
+  const { t } = useLang();
+  if (!visitor) return null;
+
+  return (
+    <GlobalModal
+      isOpen={Boolean(visitor)}
+      onClose={onClose}
+      title={t("vlDetailTitle") || "Visitor Details"}
+      subtitle={`${visitor.name} · ${visitor.date}`}
+      icon={MdPerson}
+      size="md"
+    >
+      <div className="flex items-center justify-between gap-3 mb-3">
+        <div className="flex items-center gap-3 min-w-0">
+          <div
+            className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0"
+            style={{ background: "rgba(160, 90, 255, 0.15)", color: "var(--accent)" }}
+          >
+            <MdPerson size={22} />
+          </div>
+          <div className="min-w-0">
+            <p className="font-bold truncate" style={{ color: "var(--text-primary)" }}>{visitor.name}</p>
+            <p className="text-xs font-mono" style={{ color: "var(--text-secondary)" }}>{visitor.mobile}</p>
+          </div>
+        </div>
+        <GlobalBadge variant={visitor.status === "IN" ? "success" : "neutral"} dot>
+          {visitor.status === "IN" ? t("vlIn") || "IN" : t("vlOut") || "OUT"}
+        </GlobalBadge>
+      </div>
+
+      <div>
+         <DetailRow label={safeLabel(t, "vlColPurpose", "Purpose")} value={visitor.purpose} />
+         <DetailRow label={safeLabel(t, "vlColFlat", "Flat")} value={visitor.flat} />
+         <DetailRow label={safeLabel(t, "vlColOwner", "Owner / Resident")} value={visitor.owner} />
+         <DetailRow label={safeLabel(t, "vlEntryDate", "Entry Date")} value={visitor.entryDate} />
+         <DetailRow label={safeLabel(t, "vlColIn", "In Time")} value={visitor.intime} />
+         <DetailRow label={safeLabel(t, "vlExitDate", "Exit Date")} value={visitor.exitDate || (visitor.ongoing ? safeLabel(t, "vlOngoing", "Ongoing") : "—")} />
+         <DetailRow label={safeLabel(t, "vlColOut", "Out Time")} value={visitor.outtime || safeLabel(t, "vlOngoing", "Ongoing")} />
+        <DetailRow
+           label={safeLabel(t, "vlTotalStay", "Total Stay")}
+          value={visitor.ongoing ? `${t("vlOngoing") || "Ongoing"} · ${visitor.duration}` : visitor.duration}
+        />
+         <DetailRow label={safeLabel(t, "vlVehicle", "Vehicle")} value={visitor.vehicle} />
+      </div>
+    </GlobalModal>
   );
 }

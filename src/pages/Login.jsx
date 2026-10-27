@@ -444,7 +444,7 @@ function Login() {
   // For society admin / management, verify genuine residency before offering resident panel
   const isPromptUserResident =
     promptUser?.is_society_resident === true ||
-    (promptUser?.resident_type && ["OWNER", "TENANT"].includes(String(promptUser.resident_type).toUpperCase())) ||
+    promptUser?.can_switch_to_resident === true ||
     (!promptHasSocietyAdmin && !promptHasSuperAdmin && promptPanels.includes("RESIDENT"));
 
   const promptHasResident = promptPanels.includes("RESIDENT") && isPromptUserResident;
@@ -541,7 +541,7 @@ function Login() {
     // A Society Admin who is not a resident must not see the panel chooser popup!
     const isResidentOfSociety =
       user.is_society_resident === true ||
-      (user.resident_type && ["OWNER", "TENANT"].includes(String(user.resident_type).toUpperCase())) ||
+      user.can_switch_to_resident === true ||
       (!hasSocietyAdmin && !hasSuperAdmin && panels.includes("RESIDENT"));
 
     const hasResident = panels.includes("RESIDENT") && isResidentOfSociety;
@@ -587,7 +587,9 @@ function Login() {
     const hasAdmin = socRoles.includes("SOCIETY_ADMIN");
     const hasComm = !hasAdmin && (socRoles.includes("COMMITTEE_MEMBER") || socRoles.includes("COMMITTEE"));
     const hasAcc = socRoles.includes("ACCOUNTANT");
-    const hasRes = socRoles.includes("RESIDENT");
+    const isSocRes = (soc.is_society_resident !== false && soc.can_switch_to_resident !== false) &&
+      (soc.flats?.length > 0 || soc.is_society_resident === true || (!hasAdmin && !hasComm));
+    const hasRes = socRoles.includes("RESIDENT") && isSocRes;
     const choiceCount = [hasAdmin, hasComm, hasAcc, hasRes].filter(Boolean).length;
 
     if (choiceCount > 1) {

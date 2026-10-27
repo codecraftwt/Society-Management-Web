@@ -1,12 +1,38 @@
 import { useState } from "react";
 import { createPortal } from "react-dom";
-import { MdAdd, MdClose, MdOutlineInbox, MdCheckCircle, MdCancel, MdToggleOn, MdToggleOff, MdAccessTime, MdPeople, MdEventAvailable, MdGridView, MdCalendarMonth, MdWarning, MdBlock, MdPayment, MdEdit, MdFilterAlt, MdCheck, MdExpandMore } from "react-icons/md";
+import {
+  MdAdd,
+  MdClose,
+  MdOutlineInbox,
+  MdCheckCircle,
+  MdCancel,
+  MdToggleOn,
+  MdToggleOff,
+  MdAccessTime,
+  MdPeople,
+  MdEventAvailable,
+  MdGridView,
+  MdCalendarMonth,
+  MdWarning,
+  MdBlock,
+  MdPayment,
+  MdEdit,
+  MdFilterAlt,
+  MdCheck,
+  MdExpandMore,
+  MdVisibility,
+  MdHome,
+  MdApartment,
+  MdPerson,
+} from "react-icons/md";
 import { useLang } from "../../../context/LanguageContext";
 import { Spinner, amenityEmoji, PALETTES, isPaidAmenity } from "../amenityHelpers.jsx";
 import SlidingTabs from "../../../components/common/SlidingTabs";
 import ExpandableSearch from "../../../components/common/ExpandableSearch";
 import GlobalButton from "../../../components/common/GlobalButton";
 import StatCard from "../../../components/common/StatCard";
+import BookingDetailModal from "../detail/BookingDetailModal";
+import { formatBlockName, formatUnitNumber } from "../../../utils/flatFormatter";
 
 function StatusBadge({ status, t }) {
   const cfg = {
@@ -147,6 +173,25 @@ export default function Index({
     { k: "REJECTED", label: "Rejected", ac: "#dc2626" },
     { k: "CANCELLED", label: "Cancelled", ac: "#726988" },
   ];
+
+  /* Detailed Booking View State */
+  const [selectedBooking, setSelectedBooking] = useState(null);
+
+  const activeDetailBooking = selectedBooking
+    ? groupedBookings.find(
+        (b) => (b.booking_ids?.[0] ?? b.id) === (selectedBooking.booking_ids?.[0] ?? selectedBooking.id)
+      ) || selectedBooking
+    : null;
+
+  const handleApproveFromModal = async (b) => {
+    await onApprove(b);
+    setSelectedBooking((prev) => (prev ? { ...prev, status: "APPROVED" } : null));
+  };
+
+  const handleRejectFromModal = async (b) => {
+    await onReject(b);
+    setSelectedBooking((prev) => (prev ? { ...prev, status: "REJECTED" } : null));
+  };
 
   return (
     <>
@@ -376,7 +421,7 @@ export default function Index({
       {activeTab === "BOOKINGS" && (
         <>
           {/* Dynamic StatCards for Bookings */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+          <div className="amen-booking-stats grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
             <StatCard
               icon={MdCalendarMonth}
               value={groupedBookings.length}
@@ -420,7 +465,7 @@ export default function Index({
           </div>
 
           {/* Filter pills */}
-          <div style={{ overflowX: "auto", paddingBottom: 2 }}>
+          <div className="amen-booking-filters" style={{ overflowX: "auto", paddingBottom: 2 }}>
             <div style={{ display: "inline-flex", padding: 5, gap: 4, background: "var(--card-inner-bg)", border: "1.5px solid var(--glass-border)", borderRadius: 14, minWidth: isMobile ? "100%" : "auto" }}>
               {BFILTERS.map(({ k, label, ac }) => {
                 const on = bookingFilter === k;
@@ -434,7 +479,7 @@ export default function Index({
           </div>
 
           {/* Bookings list */}
-          <div style={{ background: "var(--card-bg)", border: "1.5px solid var(--glass-border)", borderRadius: 20, overflow: "hidden", boxShadow: "var(--shadow-sm)" }}>
+          <div className="amen-booking-list" style={{ background: "var(--card-bg)", border: "1.5px solid var(--glass-border)", borderRadius: 20, overflow: "hidden", boxShadow: "var(--shadow-sm)" }}>
             <div style={{ padding: isMobile ? "14px 16px" : "16px 22px", borderBottom: "1px solid var(--glass-border)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <span style={{ fontSize: 14, fontWeight: 700, color: "var(--text-primary)" }}>{t("amenBookingRequests")}</span>
               <span style={{ fontSize: 12, color: "var(--text-secondary)" }}>{filteredBookings.length} of {groupedBookings.length}</span>
@@ -459,29 +504,80 @@ export default function Index({
                 REJECTED: "#ef4444", CANCELLED: "var(--text-secondary)",
               }[b.status] || "var(--text-secondary)";
 
-              return (
-                <div key={b.id} className="animate-fadeIn" style={{
-                  padding: isMobile ? "14px 16px" : "15px 22px",
-                  borderBottom: i < filteredBookings.length - 1 ? "1px solid var(--glass-border)" : "none",
-                  display: "flex", flexDirection: isMobile && canAct ? "column" : "row",
-                  alignItems: isMobile && canAct ? "flex-start" : "center",
-                  justifyContent: "space-between", gap: isMobile ? 10 : 12,
-                  transition: "background 0.15s", animationDelay: `${i * 25}ms`,
-                  background: isPaymentPending ? "rgba(107,70,193,0.03)" : "transparent",
-                }}
-                  onMouseEnter={e => { e.currentTarget.style.background = isPaymentPending ? "rgba(107,70,193,0.06)" : "var(--row-hover)"; }}
-                  onMouseLeave={e => { e.currentTarget.style.background = isPaymentPending ? "rgba(107,70,193,0.03)" : "transparent"; }}>
+              const flat = b.Flat || b.User?.Flat;
+              const blockName = formatBlockName(flat?.Block?.name || "");
+              const unitNumber = formatUnitNumber(flat?.flat_number || "", flat?.Block?.name || "");
+              const isRowHouse =
+                String(flat?.Block?.property_type || flat?.property_type || "").toUpperCase() === "ROW_HOUSE" ||
+                String(flat?.Block?.property_type || flat?.property_type || "").toUpperCase() === "ROWHOUSE";
+              const unitLabel = unitNumber
+                ? isRowHouse
+                  ? `House ${unitNumber}`
+                  : `Flat ${unitNumber}`
+                : flat?.flat_number || "";
 
+              return (
+                <div
+                  key={b.id}
+                  className="amen-booking-row animate-fadeIn cursor-pointer"
+                  onClick={() => setSelectedBooking(b)}
+                  style={{
+                    padding: isMobile ? "14px 16px" : "15px 22px",
+                    borderBottom: i < filteredBookings.length - 1 ? "1px solid var(--glass-border)" : "none",
+                    display: "flex", flexDirection: isMobile && canAct ? "column" : "row",
+                    alignItems: isMobile && canAct ? "flex-start" : "center",
+                    justifyContent: "space-between", gap: isMobile ? 10 : 12,
+                    transition: "background 0.15s", animationDelay: `${i * 25}ms`,
+                    background: isPaymentPending ? "rgba(107,70,193,0.03)" : "transparent",
+                    cursor: "pointer",
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.background = isPaymentPending ? "rgba(107,70,193,0.06)" : "var(--row-hover)"; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = isPaymentPending ? "rgba(107,70,193,0.03)" : "transparent"; }}
+                >
                   <div style={{ display: "flex", alignItems: "flex-start", gap: 11, flex: 1, minWidth: 0 }}>
                     <div style={{ width: 8, height: 8, borderRadius: "50%", marginTop: 6, flexShrink: 0, background: dotColor, boxShadow: `0 0 0 3px ${dotColor}22` }} />
                     <div style={{ minWidth: 0 }}>
                       <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text-primary)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                         {b.Amenity?.name}
                       </div>
-                      <div style={{ fontSize: 12, color: "var(--text-secondary)", marginTop: 2 }}>{b.User?.name}</div>
+                      <div style={{ fontSize: 12, color: "var(--text-secondary)", marginTop: 2, display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                        <span style={{ fontWeight: 600, color: "var(--text-primary)" }}>{b.User?.name || "Resident"}</span>
+                        {unitLabel && (
+                          <>
+                            <span style={{ opacity: 0.5 }}>•</span>
+                            <span style={{ display: "inline-flex", alignItems: "center", gap: 3 }}>
+                              {isRowHouse ? <MdHome size={13} /> : <MdApartment size={13} />}
+                              {unitLabel} {blockName ? `(${blockName})` : ""}
+                            </span>
+                          </>
+                        )}
+                        {b.User?.resident_type && (
+                          <span
+                            style={{
+                              fontSize: 10,
+                              fontWeight: 700,
+                              padding: "1px 6px",
+                              borderRadius: 999,
+                              background: b.User.resident_type === "OWNER" ? "rgba(34,197,94,0.12)" : "rgba(59,130,246,0.12)",
+                              color: b.User.resident_type === "OWNER" ? "#22c55e" : "#3b82f6",
+                              textTransform: "uppercase",
+                            }}
+                          >
+                            {b.User.resident_type}
+                          </span>
+                        )}
+                      </div>
                       <div style={{ display: "flex", gap: 10, marginTop: 5, flexWrap: "wrap" }}>
-                        {(b.from_date || b.date) && <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: "var(--text-secondary)" }}><MdEventAvailable size={12} /> {b.to_date && b.to_date !== b.from_date ? `${b.from_date} – ${b.to_date}` : (b.from_date || b.date)}</span>}
-                        {b.start_time && b.start_time !== "00:00:00" && <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: "var(--text-secondary)" }}><MdAccessTime size={12} /> {b.start_time?.slice(0, 5)}–{b.end_time?.slice(0, 5)}</span>}
+                        {(b.from_date || b.date) && (
+                          <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: "var(--text-secondary)" }}>
+                            <MdEventAvailable size={12} /> {b.to_date && b.to_date !== b.from_date ? `${b.from_date} – ${b.to_date}` : (b.from_date || b.date)}
+                          </span>
+                        )}
+                        {b.start_time && b.start_time !== "00:00:00" && (
+                          <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: "var(--text-secondary)" }}>
+                            <MdAccessTime size={12} /> {b.start_time?.slice(0, 5)}–{b.end_time?.slice(0, 5)}
+                          </span>
+                        )}
                         {isPaymentPending && b.payment_expires_in_seconds !== undefined && (
                           <span style={{ display: "flex", alignItems: "center", gap: 3, fontSize: 11, fontWeight: 600, color: b.payment_expires_in_seconds < 120 ? "#ef4444" : "#9F87D7" }}>
                             <MdPayment size={12} /> ~{Math.ceil(b.payment_expires_in_seconds / 60)}m left
@@ -491,15 +587,51 @@ export default function Index({
                     </div>
                   </div>
 
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0, width: isMobile && canAct ? "100%" : "auto" }}>
+                  <div
+                    className={canAct ? "amen-booking-actions" : "amen-booking-status"}
+                    style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0, width: isMobile && canAct ? "100%" : "auto" }}
+                    onClick={e => e.stopPropagation()}
+                  >
+                    {/* View Details Button */}
+                    <button
+                      type="button"
+                      onClick={() => setSelectedBooking(b)}
+                      title="View detailed booking information"
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 5,
+                        padding: "7px 11px",
+                        borderRadius: 10,
+                        border: "1px solid var(--glass-border)",
+                        background: "var(--card-inner-bg)",
+                        color: "var(--text-primary)",
+                        fontSize: 12,
+                        fontWeight: 600,
+                        cursor: "pointer",
+                        transition: "all 0.15s",
+                      }}
+                      onMouseEnter={e => {
+                        e.currentTarget.style.borderColor = "var(--accent)";
+                        e.currentTarget.style.color = "var(--accent)";
+                      }}
+                      onMouseLeave={e => {
+                        e.currentTarget.style.borderColor = "var(--glass-border)";
+                        e.currentTarget.style.color = "var(--text-primary)";
+                      }}
+                    >
+                      <MdVisibility size={15} />
+                      <span className="hidden sm:inline">Details</span>
+                    </button>
+
                     {canAct ? (
                       <>
-                        <button onClick={() => onApprove(b)} disabled={approvingId === (b.booking_ids?.[0] ?? b.id) || rejectingId === (b.booking_ids?.[0] ?? b.id)}
-                          style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "8px 0", flex: 1, borderRadius: 10, border: "1.5px solid var(--approve-border)", background: "var(--approve-bg)", color: "var(--approve-color)", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+                        <button className="amen-approve-btn" onClick={() => onApprove(b)} disabled={approvingId === (b.booking_ids?.[0] ?? b.id) || rejectingId === (b.booking_ids?.[0] ?? b.id)}
+                          style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "7px 12px", flex: isMobile ? 1 : "initial", borderRadius: 10, border: "1.5px solid var(--approve-border)", background: "var(--approve-bg)", color: "var(--approve-color)", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
                           {approvingId === (b.booking_ids?.[0] ?? b.id) ? <Spinner cls="h-3 w-3" /> : <><MdCheckCircle size={14} /> {t("amenApprove")}</>}
                         </button>
-                        <button onClick={() => onReject(b)} disabled={approvingId === (b.booking_ids?.[0] ?? b.id) || rejectingId === (b.booking_ids?.[0] ?? b.id)}
-                          style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "8px 0", flex: 1, borderRadius: 10, border: "1.5px solid var(--reject-border)", background: "var(--reject-bg)", color: "var(--reject-color)", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+                        <button className="amen-reject-btn" onClick={() => onReject(b)} disabled={approvingId === (b.booking_ids?.[0] ?? b.id) || rejectingId === (b.booking_ids?.[0] ?? b.id)}
+                          style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "7px 12px", flex: isMobile ? 1 : "initial", borderRadius: 10, border: "1.5px solid var(--reject-border)", background: "var(--reject-bg)", color: "var(--reject-color)", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
                           {rejectingId === (b.booking_ids?.[0] ?? b.id) ? <Spinner cls="h-3 w-3" /> : <><MdCancel size={14} /> {t("amenReject")}</>}
                         </button>
                       </>
@@ -521,6 +653,17 @@ export default function Index({
           </div>
         </>
       )}
+
+      {/* Booking Detail Modal */}
+      <BookingDetailModal
+        booking={activeDetailBooking}
+        onClose={() => setSelectedBooking(null)}
+        onApprove={handleApproveFromModal}
+        onReject={handleRejectFromModal}
+        approvingId={approvingId}
+        rejectingId={rejectingId}
+        canAct={canEdit}
+      />
     </>
   );
 }

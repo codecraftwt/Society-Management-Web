@@ -712,6 +712,7 @@ const mr = {
   amenStatusApproved:      "मंजूर",
   amenPassResident:        "रहिवासी पास",
   amenPassTitle:           "सुविधा पास",
+  amenPassView:            "पास पहा",
   amenPassLocked:          "पास लॉक आहे",
   amenPassPendingHint:     "मंजुरीची प्रतीक्षा · मंजूर झाल्यावर उघडेल",
   amenPassUnavailable:     "पास उपलब्ध नाही",

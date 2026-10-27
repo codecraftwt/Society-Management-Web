@@ -758,6 +758,7 @@ const en = {
   amenStatusApproved:      "APPROVED",
   amenPassResident:        "Resident Pass",
   amenPassTitle:           "AMENITY PASS",
+  amenPassView:            "View Pass",
   amenPassLocked:          "Pass Locked",
   amenPassPendingHint:     "Awaiting approval · unlocks once approved",
   amenPassUnavailable:     "Pass Unavailable",

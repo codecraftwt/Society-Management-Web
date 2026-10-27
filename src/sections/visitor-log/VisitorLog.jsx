@@ -13,6 +13,37 @@ function useDebounce(value, delay = 500) {
   return d;
 }
 
+/* ── Time / duration helpers ── */
+const formatClock = (value) => {
+  if (!value) return null;
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return null;
+  return d
+    .toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true })
+    .toUpperCase();
+};
+
+const formatDate = (value) => {
+  if (!value) return null;
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return null;
+  return d.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+};
+
+const formatDuration = (entry, exit) => {
+  if (!entry) return "—";
+  const start = new Date(entry).getTime();
+  const end = exit ? new Date(exit).getTime() : Date.now();
+  if (!Number.isFinite(start) || !Number.isFinite(end) || end < start) return "—";
+  const minutes = Math.floor((end - start) / 60000);
+  if (minutes < 1) return "< 1m";
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  if (h === 0) return `${m}m`;
+  if (m === 0) return `${h}h`;
+  return `${h}h ${m}m`;
+};
+
 /* ── Format visitor row ── */
 const formatVisitor = (v) => {
   const flat = v.Flat;
@@ -28,18 +59,23 @@ const formatVisitor = (v) => {
   ].filter(Boolean).join(" / ");
 
   return {
-    id:      v.id,
-    name:    v.visitor_name,
-    mobile:  v.mobile || "—",
-    flat:    flatLabel,
-    owner:   ownerName,
-    purpose: v.purpose,
-    date:    new Date(v.entry_time).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }),
-    intime:  new Date(v.entry_time).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }),
-    outtime: v.exit_time
-      ? new Date(v.exit_time).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })
-      : null,
-    status: v.exit_time ? "OUT" : "IN",
+    id:       v.id,
+    name:     v.visitor_name,
+    mobile:   v.mobile || "—",
+    flat:     flatLabel,
+    owner:    ownerName,
+    purpose:  v.purpose,
+    vehicle:  v.vehicle_number || "—",
+    date:     formatDate(v.entry_time),
+    entryDate: formatDate(v.entry_time),
+    exitDate:  formatDate(v.exit_time),
+    intime:   formatClock(v.entry_time),
+    outtime:  formatClock(v.exit_time),
+    duration: formatDuration(v.entry_time, v.exit_time),
+    ongoing:  !v.exit_time,
+    status:   v.exit_time ? "OUT" : "IN",
+    entryRaw: v.entry_time,
+    exitRaw:  v.exit_time,
   };
 };
 

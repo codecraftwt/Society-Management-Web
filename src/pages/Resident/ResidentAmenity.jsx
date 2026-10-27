@@ -1210,11 +1210,15 @@ const navigate = useNavigate();
                         )}
 
                         {b.status === "APPROVED" && (
-                          <div className="flex items-center gap-1.5 text-xs font-semibold text-accent hover:text-accent-light px-2.5 py-1 rounded-xl bg-accent-soft border border-accent/20 transition-all cursor-pointer">
-                            <MdQrCode2 size={16} />
-                            <span className="hidden sm:inline">{t("amenPassView") || "Pass"}</span>
-                            <span className="text-sm">›</span>
-                          </div>
+                          <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); openPass(b); }}
+                            className="ra-btn-view-pass"
+                          >
+                            <MdQrCode2 size={15} className="ra-btn-view-pass-icon" />
+                            <span>{t("amenPassView", "View Pass")}</span>
+                            <MdChevronRight size={14} className="ra-btn-view-pass-arrow" />
+                          </button>
                         )}
                       </div>
                     )}
@@ -1404,11 +1408,22 @@ const navigate = useNavigate();
                             {rangeUnavailable ? (
                               <div className="ra-range-error">⚠ {t("amenRangeUnavailable", "One or more dates are already booked")}</div>
                             ) : (
-                              <button type="button" className="ra-range-book" disabled={bookingLoading} onClick={bookSlot}>
-                                {bookingLoading ? <Spinner small /> : (
-                                  selectedAmenity.type === "PAID"
-                                    ? `${t("amenBook", "Book")} ${rangeDates.length} ${rangeDates.length === 1 ? t("amenDay", "day") : t("amenDays", "days")} · ₹${Number(selectedAmenity.rate_per_hour || 0) * rangeDates.length}`
-                                    : `${t("amenBook", "Book")} ${rangeDates.length} ${rangeDates.length === 1 ? t("amenDay", "day") : t("amenDays", "days")}`
+                              <button type="button" className="ra-modal-book-cta" disabled={bookingLoading} onClick={bookSlot}>
+                                {bookingLoading ? (
+                                  <>
+                                    <Spinner small />
+                                    <span>{t("amenProcessing", "Processing booking...")}</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <MdEventAvailable className="ra-modal-book-cta-icon" />
+                                    <span className="ra-modal-book-cta-text">
+                                      {t("amenBook", "Book")} {rangeDates.length} {rangeDates.length === 1 ? t("amenDay", "day") : t("amenDays", "days")}
+                                      {selectedAmenity.type === "PAID" && (
+                                        <span className="ra-modal-book-cta-price"> · ₹{Number(selectedAmenity.rate_per_hour || 0) * rangeDates.length}</span>
+                                      )}
+                                    </span>
+                                  </>
                                 )}
                               </button>
                             )}
@@ -1562,9 +1577,22 @@ const navigate = useNavigate();
                     </div>
                   )}
 
-                  <button type="button" className="ra-book-btn ra-book-btn--full" disabled={bookingLoading} onClick={bookSlot}>
-                    {bookingLoading ? <Spinner small /> : (
-                      `${t("amenBook", "Book")} ${rangeDates.length} ${rangeDates.length === 1 ? t("amenDay", "day") : t("amenDays", "days")}${selectedAmenity.type === "PAID" ? ` · ₹${Number(selectedAmenity.rate_per_hour || 0) * rangeDates.length}` : ""}`
+                  <button type="button" className="ra-modal-book-cta" disabled={bookingLoading} onClick={bookSlot}>
+                    {bookingLoading ? (
+                      <>
+                        <Spinner small />
+                        <span>{t("amenProcessing", "Processing booking...")}</span>
+                      </>
+                    ) : (
+                      <>
+                        <MdEventAvailable className="ra-modal-book-cta-icon" />
+                        <span className="ra-modal-book-cta-text">
+                          {t("amenBook", "Book")} {rangeDates.length} {rangeDates.length === 1 ? t("amenDay", "day") : t("amenDays", "days")}
+                          {selectedAmenity.type === "PAID" && (
+                            <span className="ra-modal-book-cta-price"> · ₹{Number(selectedAmenity.rate_per_hour || 0) * rangeDates.length}</span>
+                          )}
+                        </span>
+                      </>
                     )}
                   </button>
                 </>
@@ -1635,9 +1663,22 @@ const navigate = useNavigate();
                         </div>
                       )}
                       {selectedSlots.length > 0 && (
-                        <button type="button" className="ra-book-btn ra-book-btn--full" disabled={bookingLoading} onClick={bookSlot}>
-                          {bookingLoading ? <Spinner small /> : (
-                            `${t("amenBook", "Book")} ${selectedSlots.length} ${selectedSlots.length > 1 ? t("amenSlots", "slots") : t("amenSlot", "slot")}${selectedAmenity.type === "PAID" ? ` · ₹${Number(selectedAmenity.rate_per_hour || 0) * selectedSlots.length}` : ""}`
+                        <button type="button" className="ra-modal-book-cta" disabled={bookingLoading} onClick={bookSlot}>
+                          {bookingLoading ? (
+                            <>
+                              <Spinner small />
+                              <span>{t("amenProcessing", "Processing booking...")}</span>
+                            </>
+                          ) : (
+                            <>
+                              <MdEventAvailable className="ra-modal-book-cta-icon" />
+                              <span className="ra-modal-book-cta-text">
+                                {t("amenBook", "Book")} {selectedSlots.length} {selectedSlots.length > 1 ? t("amenSlots", "slots") : t("amenSlot", "slot")}
+                                {selectedAmenity.type === "PAID" && (
+                                  <span className="ra-modal-book-cta-price"> · ₹{Number(selectedAmenity.rate_per_hour || 0) * selectedSlots.length}</span>
+                                )}
+                              </span>
+                            </>
                           )}
                         </button>
                       )}

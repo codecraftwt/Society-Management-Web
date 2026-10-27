@@ -40,7 +40,7 @@ describe("cleaning-staff/format", () => {
 
   it("formats time/instants in IST", () => {
     const t = "2026-10-02T03:45:00.000Z";
-    expect(formatTimeIST(t)).toBe("09:15");
+    expect(formatTimeIST(t)).toBe("09:15 AM");
     expect(formatWorkedMinutes(90)).toBe("1h 30m");
     expect(formatWorkedMinutes(45)).toBe("45m");
     expect(formatWorkedMinutes(120)).toBe("2h");

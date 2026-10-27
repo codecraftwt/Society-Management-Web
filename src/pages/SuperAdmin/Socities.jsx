@@ -92,6 +92,13 @@ export default function Societies() {
     navigate(`/superadmin/society-location?societyId=${society.id}`);
   }, [navigate]);
 
+  const openSocietyPermissions = useCallback((society) => {
+    if (!society?.id) return;
+    localStorage.setItem("superadmin_society_filter", String(society.id));
+    window.dispatchEvent(new Event("superadmin-society-scope-change"));
+    navigate(`/superadmin/role-permissions?societyId=${encodeURIComponent(society.id)}`);
+  }, [navigate]);
+
   const saveSocietyTheme = async () => {
     if (!themeSociety) return;
     if (!isValidHexColor(primaryColor)) {
@@ -405,6 +412,7 @@ export default function Societies() {
                     }}
                     onSetLocation={() => openSocietyLocation(s)}
                     onCustomizeTheme={() => openThemeModal(s)}
+                    onManagePermissions={() => openSocietyPermissions(s)}
                     onDelete={() => setDeleteConfirm({ isOpen: true, id: s.id, loading: false })}
                   />
                 </div>

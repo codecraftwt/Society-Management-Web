@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo, useContext } from "react";
+import { useLocation } from "react-router-dom";
 import API from "../../services/api";
 import { useLang } from "../../context/LanguageContext";
 import { AuthContext } from "../../context/AuthContext";
@@ -16,6 +17,7 @@ export default function Amenities() {
   const isMobile = useIsMobile();
   const { t } = useLang();
   const { user } = useContext(AuthContext);
+  const location = useLocation();
   const { showUnauthorized, showWarning, showError, showSuccess } = useCustomAlert();
   const canEdit = !isCommitteeMember(user);
 
@@ -54,7 +56,11 @@ export default function Amenities() {
   });
 
   const loadAmenities = async () => {
-    const r = await API.get("/amenities");
+    const societyId = location.pathname.startsWith("/superadmin/")
+      ? localStorage.getItem("superadmin_society_filter")
+      : null;
+    const query = societyId && societyId !== "ALL" ? `?societyId=${encodeURIComponent(societyId)}` : "";
+    const r = await API.get(`/amenities${query}`);
     const data = Array.isArray(r.data)
       ? r.data
       : Array.isArray(r.data?.data)
@@ -67,7 +73,11 @@ export default function Amenities() {
 
   const loadBookings = async () => {
     try {
-      const r = await API.get("/admin/amenities/bookings");
+      const societyId = location.pathname.startsWith("/superadmin/")
+        ? localStorage.getItem("superadmin_society_filter")
+        : null;
+      const query = societyId && societyId !== "ALL" ? `?societyId=${encodeURIComponent(societyId)}` : "";
+      const r = await API.get(`/admin/amenities/bookings${query}`);
       const data = Array.isArray(r.data)
         ? r.data
         : Array.isArray(r.data?.data)
@@ -81,7 +91,16 @@ export default function Amenities() {
     }
   };
 
-  useEffect(() => { loadAmenities(); loadBookings(); }, []);
+  useEffect(() => {
+    loadAmenities();
+    loadBookings();
+    const reloadForSocietyScope = () => {
+      loadAmenities();
+      loadBookings();
+    };
+    window.addEventListener("superadmin-society-scope-change", reloadForSocietyScope);
+    return () => window.removeEventListener("superadmin-society-scope-change", reloadForSocietyScope);
+  }, [location.pathname]);
 
   const handleToggleAddForm = () => {
     if (!showForm && !hasPermission(user, "amenities", "create")) {
@@ -273,9 +292,24 @@ export default function Amenities() {
     [...groupedBookings]
       .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
       .filter(b => {
-        const q = searchBooking.toLowerCase();
+        const q = searchBooking.toLowerCase().trim();
         const range = b.to_date && b.to_date !== b.from_date ? `${b.from_date} – ${b.to_date}` : b.from_date || b.date;
-        const ms = !q || b.Amenity?.name?.toLowerCase().includes(q) || b.User?.name?.toLowerCase().includes(q) || (b.from_date || b.date || "")?.includes(q) || (b.to_date || "")?.includes(q) || range?.includes(q);
+        const flat = b.Flat || b.User?.Flat;
+        const flatNum = (flat?.flat_number || "").toLowerCase();
+        const blockName = (flat?.Block?.name || "").toLowerCase();
+        const phone = (b.User?.phone || "").toLowerCase();
+        const email = (b.User?.email || "").toLowerCase();
+        const ms =
+          !q ||
+          b.Amenity?.name?.toLowerCase().includes(q) ||
+          b.User?.name?.toLowerCase().includes(q) ||
+          phone.includes(q) ||
+          email.includes(q) ||
+          flatNum.includes(q) ||
+          blockName.includes(q) ||
+          (b.from_date || b.date || "")?.includes(q) ||
+          (b.to_date || "")?.includes(q) ||
+          range?.includes(q);
         const mf = bookingFilter === "ALL" || b.status === bookingFilter;
         return ms && mf;
       }),

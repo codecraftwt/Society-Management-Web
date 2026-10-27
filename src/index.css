@@ -1985,6 +1985,95 @@
   .ra-book-btn--full {
     margin-top: 0.9rem;
   }
+  .ra-modal-book-cta {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+    min-height: 48px;
+    padding: 13px 20px;
+    margin-top: 1rem;
+    border-radius: 14px;
+    border: none;
+    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+    color: #ffffff;
+    font-size: 0.95rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    cursor: pointer;
+    box-shadow: 0 6px 20px rgba(99, 102, 241, 0.35);
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .ra-modal-book-cta:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 24px rgba(99, 102, 241, 0.45);
+    filter: brightness(1.08);
+  }
+  .ra-modal-book-cta:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+  }
+  .ra-modal-book-cta:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+  .ra-modal-book-cta-icon {
+    font-size: 1.25rem;
+    flex-shrink: 0;
+  }
+  .ra-modal-book-cta-text {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 700;
+  }
+  .ra-modal-book-cta-price {
+    font-weight: 600;
+    opacity: 0.95;
+  }
+  .ra-btn-view-pass {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 12px;
+    border-radius: 9999px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    cursor: pointer;
+    box-shadow: 0 3px 10px rgba(99, 102, 241, 0.28);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    white-space: nowrap;
+  }
+  .ra-btn-view-pass:hover {
+    background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
+    color: #ffffff;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(79, 70, 229, 0.42);
+    filter: brightness(1.08);
+  }
+  .ra-btn-view-pass:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 6px rgba(79, 70, 229, 0.3);
+  }
+  .ra-btn-view-pass-icon {
+    font-size: 15px;
+    flex-shrink: 0;
+  }
+  .ra-btn-view-pass-arrow {
+    font-size: 14px;
+    flex-shrink: 0;
+    transition: transform 0.2s ease;
+  }
+  .ra-btn-view-pass:hover .ra-btn-view-pass-arrow {
+    transform: translateX(2px);
+  }
   .ra-slot-dates-list {
     display: flex;
     flex-direction: column;

@@ -57,7 +57,22 @@ export default function RoleSwitcher({ fullWidth = false }) {
     : null;
 
   const rawList = candidatePanels ?? (currentSocRoles.length ? currentSocRoles : (user?.roles ?? [user?.role]));
-  const roles = [...new Set(rawList.filter(Boolean))];
+  let roles = [...new Set(rawList.filter(Boolean))];
+
+  // If user is a Society Admin or Committee Member, only allow RESIDENT role if genuinely assigned a flat / resident
+  if ((roles.includes("SOCIETY_ADMIN") || roles.includes("COMMITTEE_MEMBER")) && roles.includes("RESIDENT")) {
+    // Admin flags can describe eligibility in general, but a Resident panel
+    // is only valid when the current society has an actual assigned flat.
+    const isResident =
+      (Array.isArray(currentSoc?.flats) && currentSoc.flats.length > 0) ||
+      (Array.isArray(user?.flats) && user.flats.length > 0) ||
+      Boolean(user?.flat_id);
+
+    if (!isResident) {
+      roles = roles.filter((r) => r !== "RESIDENT");
+    }
+  }
+
   const activeRole = user?.activeRole || (roles.includes("RESIDENT") ? "RESIDENT" : roles[0]);
 
   /* Dismiss on outside click or Escape. */

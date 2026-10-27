@@ -936,13 +936,6 @@ export default function Guard() {
             <MdAccessTime size={13} />
             {formatAttendanceTime(row.punch_in)}
           </div>
-          {row.punch_in_distance !== null && row.punch_in_distance !== undefined && (
-            <div style={{ display: "flex", alignItems: "center", gap: 4, fontSize: "0.74rem", color: "var(--text-tertiary)" }}>
-              <MdLocationOn size={11} style={{ color: "#10b981" }} />
-              <span>{Math.round(Number(row.punch_in_distance))}m from center</span>
-              
-            </div>
-          )}
         </div>
       ),
     },

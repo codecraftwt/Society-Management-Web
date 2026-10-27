@@ -22,6 +22,7 @@ import {
   MdHomeWork,
   MdApartment,
   MdCleaningServices,
+  MdPool,
 } from "react-icons/md";
 import { FaBuilding, FaUsers, FaUserShield, FaParking } from "react-icons/fa";
 import ThemeToggle from "../../components/common/ThemeToggle";
@@ -135,6 +136,12 @@ function SuperAdminLayoutInner() {
       label: t("saMenuEvents", "Event Management"),
       path: `${base}/events`,
       icon: MdCelebration,
+      group: "OPERATIONS & SECURITY",
+    },
+    {
+      label: t("saMenuAmenities", "Amenities"),
+      path: `${base}/amenities`,
+      icon: MdPool,
       group: "OPERATIONS & SECURITY",
     },
     {

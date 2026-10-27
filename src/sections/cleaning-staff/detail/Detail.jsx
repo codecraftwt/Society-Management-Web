@@ -187,7 +187,7 @@ export default function Detail({ isOpen, onClose, staffId, onChanged, onEdit, on
       title={staff?.name || t("csStaffDetail", "Staff detail")}
       subtitle={staff ? formatDateOnlyLong(staff.created_at?.slice?.(0, 10) || todayIST()) : undefined}
       icon={MdPerson}
-      size="xl"
+      size="xxl"
     >
       {loading && !staff ? (
         <p className="cs-hint">{t("csLoading", "Loading...")}</p>

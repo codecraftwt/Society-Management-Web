@@ -19,7 +19,7 @@ import ThemeBrandingEditor from "../../components/common/ThemeBrandingEditor";
 import SocietyLogoUploader from "../../components/common/SocietyLogoUploader";
 import GlobalButton from "../../components/common/GlobalButton";
 import Select from "../../components/common/Select";
-import { isValidHexColor, applyDynamicTheme, clearDynamicTheme, deriveThemeTokens } from "../../utils/themeUtils";
+import { isValidHexColor, clearDynamicTheme } from "../../utils/themeUtils";
 
 export default function SocietyThemeBrandingPage() {
   const { t } = useLang();
@@ -43,6 +43,14 @@ export default function SocietyThemeBrandingPage() {
   const [loading, setLoading] = useState(false);
   const [saveLoading, setSaveLoading] = useState(false);
   const [resetLoading, setResetLoading] = useState(false);
+
+  // Keep Super Admin panel isolated from any dynamic theme modifications
+  useEffect(() => {
+    clearDynamicTheme();
+    return () => {
+      clearDynamicTheme();
+    };
+  }, []);
 
   // Fetch list of all societies for the dropdown selector
   useEffect(() => {
@@ -149,12 +157,6 @@ export default function SocietyThemeBrandingPage() {
       });
 
       toast.success(t("saToastThemeSaved", "Society branding saved successfully!"));
-
-      // Temporarily apply theme preview
-      const tokens = deriveThemeTokens(primaryColor, accentColor);
-      if (tokens) {
-        applyDynamicTheme(tokens);
-      }
     } catch (err) {
       toast.error(err.response?.data?.message || t("saErrSaveTheme", "Failed to save society theme"));
     } finally {

@@ -411,9 +411,13 @@ export default function TenantManagement() {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const totalPages = Math.max(1, Math.ceil(filtered.length / limit));
+  /* Clamp without an effect: after a reload shrinks the list (e.g. approving
+     the last row on the last page) the old page would slice an empty array
+     and the table would go blank. */
+  const safePage = Math.min(page, totalPages);
   const pagedTenants = useMemo(() => {
-    return filtered.slice((page - 1) * limit, page * limit);
-  }, [filtered, page, limit]);
+    return filtered.slice((safePage - 1) * limit, safePage * limit);
+  }, [filtered, safePage, limit]);
 
   useEffect(() => {
     setPage(1);
@@ -579,12 +583,12 @@ export default function TenantManagement() {
           </p>
         </div>
       ) : (
-        <div key={page} className="animate-slide-page">
+        <div key={safePage} className="animate-slide-page">
           {/* ── Mobile Cards ── */}
           <div className="tm-mobile-list md:hidden flex flex-col gap-3">
             {pagedTenants.map((row, i) => (
               <div
-                key={row.tenant_id}
+                key={row.membership_id ? `m-${row.membership_id}` : `u-${row.tenant_id}`}
                 className="tm-mobile-card animate-fadeIn rounded-2xl overflow-hidden cursor-pointer"
                 style={{ animationDelay: `${i * 30}ms`, border: "1px solid var(--glass-border)", background: "var(--card-bg)" }}
                 onClick={() => setDetailTenant(row)}
@@ -663,7 +667,7 @@ export default function TenantManagement() {
             <div className="divide-y" style={{ borderColor: "var(--divider)" }}>
               {pagedTenants.map((row, i) => (
                 <div
-                  key={row.tenant_id}
+                  key={row.membership_id ? `m-${row.membership_id}` : `u-${row.tenant_id}`}
                   className="grid items-center px-4 py-3 hover:bg-white/2 transition group cursor-pointer"
                   style={{
                 gridTemplateColumns: "2fr 1.2fr 1fr 1fr 1fr .8fr 1fr auto",
@@ -741,7 +745,7 @@ export default function TenantManagement() {
             <span className="tm-pagination-summary">
               {t("afShowing", { shown: pagedTenants.length, total: filtered.length })}
             </span>
-            <Pagination page={page} totalPages={totalPages} onChange={setPage} pageSize={limit} onPageSizeChange={(s) => { setLimit(s); setPage(1); }} />
+            <Pagination page={safePage} totalPages={totalPages} onChange={setPage} pageSize={limit} onPageSizeChange={(s) => { setLimit(s); setPage(1); }} />
           </div>
         </div>
       )}

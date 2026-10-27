@@ -457,3 +457,39 @@
   font-weight: 800;
   color: var(--text-primary);
 }
+
+/* ── Passes panel inside the staff detail modal ────────────────────────────
+   Seven columns are too wide for narrow screens, so the shared table scrolls.
+   Keep the action buttons on one line and pin the action column to the right
+   edge so View QR / Revoke never disappear under a horizontal scroll. */
+.cs-passes-table .global-table {
+  min-width: 720px;
+}
+
+.cs-pass-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: nowrap;
+  white-space: nowrap;
+}
+
+.cs-passes-table .cs-pass-actions-cell {
+  white-space: nowrap;
+}
+
+@media (min-width: 769px) {
+  .cs-passes-table .global-table th:last-child,
+  .cs-passes-table .global-table td:last-child {
+    position: sticky;
+    right: 0;
+    z-index: 2;
+    background: var(--card-bg);
+  }
+
+  .cs-passes-table .global-table thead th:last-child {
+    background: var(--card-inner-bg);
+    z-index: 3;
+  }
+}

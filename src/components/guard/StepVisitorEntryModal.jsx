@@ -25,6 +25,7 @@ import {
   MdBadge,
   MdVerifiedUser,
   MdKeyboardArrowDown,
+  MdHome,
 } from "react-icons/md";
 import {
   FaUserFriends,
@@ -39,6 +40,11 @@ import {
   getVehicleNumberError,
 } from "../../utils/validators";
 import GlobalButton from "../common/GlobalButton";
+
+const isRowHouseBlock = (blockOrType) => {
+  const type = typeof blockOrType === "object" ? blockOrType?.property_type : blockOrType;
+  return ["ROW_HOUSE", "RowHouse", "Row Houses"].includes(type);
+};
 
 // ─── Brand & Service Presets ───
 const CAB_BRANDS = [
@@ -94,6 +100,7 @@ export default function StepVisitorEntryModal({
   const [errors, setErrors] = useState({});
 
   // ── Block / Flat Data ──
+  const [societyBlocks, setSocietyBlocks] = useState([]);
   const [allFlats, setAllFlats] = useState([]);
   const [parkingSlots, setParkingSlots] = useState([]);
   const [loadingData, setLoadingData] = useState(true);
@@ -126,10 +133,18 @@ export default function StepVisitorEntryModal({
     const fetchData = async () => {
       setLoadingData(true);
       try {
-        const [flatsRes, slotsRes] = await Promise.allSettled([
+        const [blocksRes, flatsRes, slotsRes] = await Promise.allSettled([
+          API.get("/visitors/block"),
           API.get("/flats/assigned?limit=1000"),
           API.get("/parking-slots/available"),
         ]);
+
+        if (blocksRes.status === "fulfilled") {
+          const bList = Array.isArray(blocksRes.value.data)
+            ? blocksRes.value.data
+            : blocksRes.value.data?.data || [];
+          setSocietyBlocks(bList);
+        }
 
         if (flatsRes.status === "fulfilled") {
           const list = Array.isArray(flatsRes.value.data)
@@ -157,30 +172,56 @@ export default function StepVisitorEntryModal({
   // Derived unique Blocks
   const blocks = useMemo(() => {
     const map = new Map();
+
+    // 1. Initialize from official society blocks
+    societyBlocks.forEach((sb) => {
+      if (sb && sb.id) {
+        const isRow = isRowHouseBlock(sb);
+        map.set(sb.id, {
+          id: sb.id,
+          name: sb.name,
+          property_type: sb.property_type || (isRow ? "ROW_HOUSE" : "APARTMENT"),
+          floors: new Set(),
+          flats: [],
+          totalFloors: isRow ? 0 : (sb.total_floors || 0),
+          totalFlats: sb.total_flats || 0,
+        });
+      }
+    });
+
+    // 2. Attach flats from allFlats
     allFlats.forEach((f) => {
       const block = f.Floor?.Block || f.Block;
       if (block && block.id) {
         if (!map.has(block.id)) {
+          const isRow = isRowHouseBlock(block) || f.floor_id == null;
           map.set(block.id, {
             id: block.id,
             name: block.name,
-            property_type: block.property_type,
+            property_type: block.property_type || (isRow ? "ROW_HOUSE" : "APARTMENT"),
             floors: new Set(),
             flats: [],
+            totalFloors: isRow ? 0 : 1,
+            totalFlats: 0,
           });
         }
         const b = map.get(block.id);
         if (f.Floor?.id) b.floors.add(f.Floor.id);
-        b.flats.push(f);
+        if (!b.flats.some((fl) => fl.id === f.id)) {
+          b.flats.push(f);
+        }
       }
     });
 
-    return Array.from(map.values()).map((b) => ({
-      ...b,
-      totalFloors: b.floors.size || 1,
-      totalFlats: b.flats.length,
-    }));
-  }, [allFlats]);
+    return Array.from(map.values()).map((b) => {
+      const isRow = isRowHouseBlock(b);
+      return {
+        ...b,
+        totalFloors: isRow ? 0 : (b.floors.size || b.totalFloors || 1),
+        totalFlats: Math.max(b.flats.length, b.totalFlats || 0),
+      };
+    });
+  }, [societyBlocks, allFlats]);
 
   // Derived floors for selected Block
   const floors = useMemo(() => {
@@ -210,11 +251,12 @@ export default function StepVisitorEntryModal({
   // Filtered flats for selected Block & Floor
   const filteredFlats = useMemo(() => {
     if (!selectedBlock) return [];
+    const isRow = isRowHouseBlock(selectedBlock);
     let list = allFlats.filter(
       (f) => (f.Floor?.Block?.id || f.Block?.id) === selectedBlock.id
     );
 
-    if (selectedFloorId && floors.length > 0) {
+    if (!isRow && selectedFloorId && floors.length > 0) {
       list = list.filter((f) => f.Floor?.id === selectedFloorId);
     }
 
@@ -327,11 +369,31 @@ export default function StepVisitorEntryModal({
     setCurrentStep(2);
   };
 
-  const handleSelectBlock = (block) => {
+  const handleSelectBlock = async (block) => {
     setSelectedBlock(block);
     setSelectedFloorId(null);
     setSelectedFlat(null);
     setCurrentStep(3);
+
+    // If block doesn't have flats populated locally yet, fetch from /flats/:blockId
+    const existing = allFlats.filter(
+      (f) => (f.Floor?.Block?.id || f.Block?.id) === block.id
+    );
+    if (existing.length === 0) {
+      try {
+        const res = await API.get(`/flats/${block.id}`);
+        const list = Array.isArray(res.data) ? res.data : res.data?.data || [];
+        if (list.length > 0) {
+          setAllFlats((prev) => {
+            const existingIds = new Set(prev.map((p) => p.id));
+            const newFlats = list.filter((f) => !existingIds.has(f.id));
+            return [...prev, ...newFlats];
+          });
+        }
+      } catch (err) {
+        console.error("Error fetching units for block:", err);
+      }
+    }
   };
 
   const handleSelectFlat = (flat) => {
@@ -789,6 +851,7 @@ export default function StepVisitorEntryModal({
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[46vh] overflow-y-auto pr-1">
                   {blocks.map((b) => {
                     const isSelected = selectedBlock?.id === b.id;
+                    const isRow = isRowHouseBlock(b);
                     return (
                       <div
                         key={b.id}
@@ -808,7 +871,7 @@ export default function StepVisitorEntryModal({
                               color: isSelected ? "var(--accent)" : "var(--text-primary)",
                             }}
                           >
-                            <MdApartment size={20} />
+                            {isRow ? <MdHome size={20} /> : <MdApartment size={20} />}
                           </div>
                           <div>
                             <h5
@@ -818,7 +881,9 @@ export default function StepVisitorEntryModal({
                               {b.name}
                             </h5>
                             <p className="text-[11px] text-secondary font-medium mt-0.5">
-                              {b.totalFloors} Floors • {b.totalFlats} Flats
+                              {isRow
+                                ? `${t("sgeRowHouse", "Row House")} • ${b.totalFlats} ${t("sgeHouses", "Houses")}`
+                                : `${b.totalFloors} ${t("sgeFloors", "Floors")} • ${b.totalFlats} ${t("sgeFlats", "Flats")}`}
                             </p>
                           </div>
                         </div>
@@ -833,83 +898,100 @@ export default function StepVisitorEntryModal({
             </div>
           )}
 
-          {/* ================= STEP 3: SELECT FLAT ================= */}
+          {/* ================= STEP 3: SELECT FLAT / HOUSE ================= */}
           {currentStep === 3 && (
             <div className="space-y-3.5 animate-fadeIn">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pb-1 border-b border-glass-border">
-                <div>
-                  <h4 className="text-sm font-bold text-primary flex items-center gap-1.5">
-                    <span>{t("sgeFlatsIn", { block: selectedBlock?.name }, "Flats in {block}")}</span>
-                    <span
-                      className="px-2 py-0.5 rounded-md text-[10px] font-bold"
-                    style={{
-                      background: "var(--accent-soft)",
-                      color: "var(--accent)",
-                    }}
-                    >
-                      {filteredFlats.length} Units
-                    </span>
-                  </h4>
-                  <p className="text-xs text-secondary mt-0.5">
-                    {t("sgeClickFlat", "Click flat number to proceed")}
-                  </p>
-                </div>
+              {(() => {
+                const isSelectedRowHouse = isRowHouseBlock(selectedBlock);
+                return (
+                  <>
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pb-1 border-b border-glass-border">
+                      <div>
+                        <h4 className="text-sm font-bold text-primary flex items-center gap-1.5">
+                          <span>
+                            {isSelectedRowHouse
+                              ? t("sgeHousesIn", { block: selectedBlock?.name }, "Houses in {block}")
+                              : t("sgeFlatsIn", { block: selectedBlock?.name }, "Flats in {block}")}
+                          </span>
+                          <span
+                            className="px-2 py-0.5 rounded-md text-[10px] font-bold"
+                            style={{
+                              background: "var(--accent-soft)",
+                              color: "var(--accent)",
+                            }}
+                          >
+                            {filteredFlats.length} {isSelectedRowHouse ? t("sgeHouses", "Houses") : t("sgeUnits", "Units")}
+                          </span>
+                        </h4>
+                        <p className="text-xs text-secondary mt-0.5">
+                          {isSelectedRowHouse
+                            ? t("sgeClickHouse", "Click house number to proceed")
+                            : t("sgeClickFlat", "Click flat number to proceed")}
+                        </p>
+                      </div>
 
-                {/* Flat Search */}
-                <div className="flex items-center rounded-xl bg-card-inner-bg border border-glass-border focus-within:border-blue-600 px-2.5 py-1 w-full sm:w-44">
-                  <MdSearch size={16} className="text-secondary shrink-0 mr-1.5" />
-                  <input
-                    type="text"
-                    placeholder={t("sgeSearchFlat", "Search flat...")}
-                    value={flatSearch}
-                    onChange={(e) => setFlatSearch(e.target.value)}
-                    style={{ border: "none", outline: "none", boxShadow: "none" }}
-                    className="w-full bg-transparent text-xs font-bold text-primary outline-none border-0 ring-0 shadow-none"
-                  />
-                </div>
-              </div>
+                      {/* Search */}
+                      <div className="flex items-center rounded-xl bg-card-inner-bg border border-glass-border focus-within:border-blue-600 px-2.5 py-1 w-full sm:w-44">
+                        <MdSearch size={16} className="text-secondary shrink-0 mr-1.5" />
+                        <input
+                          type="text"
+                          placeholder={isSelectedRowHouse ? t("sgeSearchHouse", "Search house...") : t("sgeSearchFlat", "Search flat...")}
+                          value={flatSearch}
+                          onChange={(e) => setFlatSearch(e.target.value)}
+                          style={{ border: "none", outline: "none", boxShadow: "none" }}
+                          className="w-full bg-transparent text-xs font-bold text-primary outline-none border-0 ring-0 shadow-none"
+                        />
+                      </div>
+                    </div>
 
-              {/* Floor Tabs */}
-              {floors.length > 1 && (
-                <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-thin">
-                  {floors.map((fl) => (
-                    <button
-                      key={fl.id}
-                      type="button"
-                      onClick={() => setSelectedFloorId(fl.id)}
-                        className={`px-3 py-1 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${selectedFloorId === fl.id ? "text-white shadow-xs" : "bg-card-inner-bg border border-glass-border text-secondary hover:text-primary"}`}
-                      style={selectedFloorId === fl.id ? { background: "var(--accent)", color: "#fff" } : {}}
-                    >
-                      Floor {fl.floor_number}
-                    </button>
-                  ))}
-                </div>
-              )}
+                    {/* Floor Tabs (Apartments only) */}
+                    {!isSelectedRowHouse && floors.length > 1 && (
+                      <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-thin">
+                        {floors.map((fl) => (
+                          <button
+                            key={fl.id}
+                            type="button"
+                            onClick={() => setSelectedFloorId(fl.id)}
+                            className={`px-3 py-1 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${selectedFloorId === fl.id ? "text-white shadow-xs" : "bg-card-inner-bg border border-glass-border text-secondary hover:text-primary"}`}
+                            style={selectedFloorId === fl.id ? { background: "var(--accent)", color: "#fff" } : {}}
+                          >
+                            Floor {fl.floor_number}
+                          </button>
+                        ))}
+                      </div>
+                    )}
 
-              {/* Flats Grid */}
-              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 max-h-[38vh] overflow-y-auto pr-1">
-                {filteredFlats.map((flat) => {
-                  const isSel = selectedFlat?.id === flat.id;
-                  const residentName = flat.User?.name || t("sgeResident", "Resident");
-                  return (
-                    <button
-                      type="button"
-                      key={flat.id}
-                      onClick={() => handleSelectFlat(flat)}
-                      className={`p-2.5 rounded-2xl border text-center transition-all duration-150 flex flex-col items-center justify-center gap-0.5 cursor-pointer ${isSel ? "text-white shadow-xs" : "border-glass-border bg-card-inner-bg text-primary hover:border-blue-500/50"}`}
-                      style={isSel ? { borderColor: "var(--accent)", background: "var(--accent)", color: "#fff" } : {}}
-                    >
-                      <MdMeetingRoom size={18} style={{ color: isSel ? "#fff" : "var(--accent)" }} />
-                      <span className="text-xs font-bold tracking-tight">
-                        {flat.flat_number}
-                      </span>
-                      <span className={`text-[9px] font-medium truncate max-w-full block ${isSel ? "text-white/90" : "text-secondary"}`}>
-                        {residentName}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
+                    {/* Flats / Houses Grid */}
+                    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 max-h-[38vh] overflow-y-auto pr-1">
+                      {filteredFlats.map((flat) => {
+                        const isSel = selectedFlat?.id === flat.id;
+                        const residentName = flat.User?.name || (flat.occupancy_status === "VACANT" || !flat.resident_id ? t("sgeVacant", "Vacant") : t("sgeResident", "Resident"));
+                        return (
+                          <button
+                            type="button"
+                            key={flat.id}
+                            onClick={() => handleSelectFlat(flat)}
+                            className={`p-2.5 rounded-2xl border text-center transition-all duration-150 flex flex-col items-center justify-center gap-0.5 cursor-pointer ${isSel ? "text-white shadow-xs" : "border-glass-border bg-card-inner-bg text-primary hover:border-blue-500/50"}`}
+                            style={isSel ? { borderColor: "var(--accent)", background: "var(--accent)", color: "#fff" } : {}}
+                          >
+                            {isSelectedRowHouse ? (
+                              <MdHome size={18} style={{ color: isSel ? "#fff" : "var(--accent)" }} />
+                            ) : (
+                              <MdMeetingRoom size={18} style={{ color: isSel ? "#fff" : "var(--accent)" }} />
+                            )}
+                            <span className="text-xs font-bold tracking-tight">
+                              {flat.flat_number}
+                            </span>
+                            <span className={`text-[9px] font-medium truncate max-w-full block ${isSel ? "text-white/90" : "text-secondary"}`}>
+                              {residentName}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </>
+                );
+              })()}
             </div>
           )}
 
@@ -953,11 +1035,15 @@ export default function StepVisitorEntryModal({
                 <div className="grid grid-cols-2 gap-3 pb-2.5 border-b border-glass-border">
                   <div>
                     <span className="text-[10px] font-bold uppercase tracking-wider text-secondary block">
-                      {t("sgeDestinationFlat", "Destination Flat")}
+                      {isRowHouseBlock(selectedBlock) ? t("sgeDestinationHouse", "Destination House") : t("sgeDestinationFlat", "Destination Flat")}
                     </span>
                     <span className="text-xs font-bold text-primary flex items-center gap-1 mt-0.5">
-                      <MdMeetingRoom style={{ color: "var(--accent)" }} />
-                      {selectedBlock?.name} • Flat {selectedFlat?.flat_number}
+                      {isRowHouseBlock(selectedBlock) ? (
+                        <MdHome style={{ color: "var(--accent)" }} />
+                      ) : (
+                        <MdMeetingRoom style={{ color: "var(--accent)" }} />
+                      )}
+                      {selectedBlock?.name} • {isRowHouseBlock(selectedBlock) ? `${t("sgeHouse", "House")} ${selectedFlat?.flat_number}` : `${t("sgeFlat", "Flat")} ${selectedFlat?.flat_number}`}
                     </span>
                   </div>
                   <div>

@@ -54,6 +54,14 @@ const RESIDENT_TYPE_STYLES = {
   TENANT: { bg: "rgba(160,90,255,0.12)", color: "var(--accent)", border: "rgba(160,90,255,0.25)", label: "Tenant" },
 };
 
+const assignedResidentType = (flat) =>
+  String(
+    flat?.User?.resident_type ||
+      flat?.Resident?.resident_type ||
+      flat?.resident_type ||
+      ""
+  ).toUpperCase();
+
 const BHK_STYLES = {
   "1BHK": { bg: "rgba(107,70,193,0.10)",  color: "#9F87D7", border: "rgba(107,70,193,0.22)" },
   "2BHK": { bg: "rgba(91,141,239,0.10)",  color: "#94B5F5", border: "rgba(91,141,239,0.22)" },
@@ -61,8 +69,8 @@ const BHK_STYLES = {
 };
 
 function ResidentTypeBadge({ type }) {
-  if (!type) return null;
-  const s = RESIDENT_TYPE_STYLES[type] || RESIDENT_TYPE_STYLES.OWNER;
+  const effectiveType = type || "OWNER";
+  const s = RESIDENT_TYPE_STYLES[effectiveType] || RESIDENT_TYPE_STYLES.OWNER;
   return (
     <span style={{
       display: "inline-flex", alignItems: "center", gap: 4,
@@ -852,7 +860,7 @@ export default function AssignFlat() {
       const blockName = flatBlockName(flat) || "";
       const floorNum = flatFloorNumber(flat);
       const floorId = flat.floor_id || flat.Floor?.id;
-      const resType = flat.User?.resident_type;
+      const resType = assignedResidentType(flat);
       const resName = flat.User?.name || "";
       const resPhone = flat.User?.phone || "";
       const flatNo = flat.flat_number?.toString() || "";
@@ -889,11 +897,11 @@ export default function AssignFlat() {
 
   const totalCount = allAssigned.length;
   const ownerCount = useMemo(
-    () => allAssigned.filter((f) => (f.Resident?.resident_type || f.resident_type || "").toUpperCase() === "OWNER").length,
+    () => allAssigned.filter((f) => assignedResidentType(f) === "OWNER").length,
     [allAssigned]
   );
   const tenantCount = useMemo(
-    () => allAssigned.filter((f) => (f.Resident?.resident_type || f.resident_type || "").toUpperCase() === "TENANT").length,
+    () => allAssigned.filter((f) => assignedResidentType(f) === "TENANT").length,
     [allAssigned]
   );
   const rowHouseCount = useMemo(
@@ -1176,7 +1184,7 @@ export default function AssignFlat() {
                             </div>
                           </div>
                         </td>
-                        <td className="px-5 py-3"><ResidentTypeBadge type={flat.User?.resident_type} /></td>
+                        <td className="px-5 py-3"><ResidentTypeBadge type={flat.User?.resident_type || "OWNER"} /></td>
                         <td className="px-5 py-3 text-right">
                           {confirmId === flat.id ? (
                             <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
@@ -1213,7 +1221,7 @@ export default function AssignFlat() {
                           <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
                             <span style={{ fontWeight: 700, fontSize: 14, color: "var(--text-primary)" }}>{isRH ? t("afHouse") : t("afFlat")} {flat.flat_number}</span>
                             {!isRH && <BhkBadge type={flat.flat_type} />}
-                            <ResidentTypeBadge type={flat.User?.resident_type} />
+                            <ResidentTypeBadge type={flat.User?.resident_type || "OWNER"} />
                           </div>
                           <p style={{ fontSize: 11, color: "var(--text-secondary)", margin: "3px 0 0" }}>
                             {!isRH && floor != null ? t("afFloorName", { number: floor }) : ""}

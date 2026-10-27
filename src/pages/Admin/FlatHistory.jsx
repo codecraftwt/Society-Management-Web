@@ -523,6 +523,7 @@ const FlatHistory = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const isSuperAdmin = user?.activeRole === "SUPER_ADMIN" || user?.role === "SUPER_ADMIN";
   const canMoveOut = isSuperAdmin || hasPermission(user, "flat_history", "move_out") || hasPermission(user, "flat_history", "view");
+  const canViewComplaints = isSuperAdmin || hasPermission(user, "complaints", "view");
 
   // ── SuperAdmin Society Selection ──
   const [societies, setSocieties] = useState([]);
@@ -687,7 +688,9 @@ const FlatHistory = () => {
           API.get(`/bills/society`, { headers: reqHeaders }),
           API.get(`/parcels`, { headers: reqHeaders }),
           API.get(`/visitors`, { headers: reqHeaders }),
-          API.get(`/complaints`, { headers: reqHeaders }),
+          canViewComplaints
+            ? API.get(`/complaints`, { headers: reqHeaders })
+            : Promise.resolve(null),
           API.get(`/parking?limit=100&flat_id=${flat.id}`, { headers: reqHeaders }),
         ]);
 
@@ -736,7 +739,7 @@ const FlatHistory = () => {
     } finally {
       setLoading(false);
     }
-  }, [activeSocId, t]);
+  }, [activeSocId, canViewComplaints, t]);
 
   /* ── 3. Reset Detail Drawer ── */
   const goBack = () => {

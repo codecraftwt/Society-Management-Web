@@ -77,7 +77,19 @@ export default function DailyHelp() {
     try {
       const res = await API.get("/visitors/daily-help/directory");
       const list = res.data?.data || (Array.isArray(res.data) ? res.data : []);
-      setHelpers(list);
+      const seen = new Set();
+      const deduped = [];
+      for (const item of list) {
+        const normP = item.phone ? String(item.phone).replace(/\D/g, "").slice(-10) : "";
+        // The directory can merge daily-help and cleaning-staff sources. Phone
+        // is the stable person identity; IDs may differ for the same person.
+        const key = normP || (item.id ? `id:${item.id}` : `name:${(item.name || "").trim().toLowerCase()}`);
+        if (!seen.has(key)) {
+          seen.add(key);
+          deduped.push(item);
+        }
+      }
+      setHelpers(deduped);
     } catch (err) {
       console.error("Error loading daily help directory:", err);
       toast.error(err.response?.data?.message || t("dhFetchFail", "Failed to load daily help directory"));
@@ -275,7 +287,7 @@ export default function DailyHelp() {
       </div>
 
       {/* ── DESKTOP TABLE ── */}
-      <div className="ge-table-card">
+      <div className="ge-table-card hidden md:block">
         {loading ? (
           <div className="p-12 text-center text-secondary">
             <Spinner size={26} />
@@ -304,7 +316,7 @@ export default function DailyHelp() {
                   const isInside = h.status === "INSIDE";
 
                   return (
-                    <tr key={h.phone || h.id}>
+                    <tr key={h.id || h.phone}>
                       <td>
                         <div className="flex items-center gap-3">
                           <div
@@ -386,7 +398,7 @@ export default function DailyHelp() {
       </div>
 
       {/* ── MOBILE CARD LIST ── */}
-      <div className="ge-mobile-list">
+      <div className="ge-mobile-list block md:hidden space-y-3">
         {loading ? (
           <div className="p-6 text-center text-secondary">
             <Spinner size={20} />
@@ -401,7 +413,7 @@ export default function DailyHelp() {
             const isInside = h.status === "INSIDE";
 
             return (
-              <div key={h.phone || h.id} className="ge-mobile-card">
+              <div key={h.id || h.phone} className="ge-mobile-card">
                 <div className="ge-mc-top">
                   <div className="ge-mc-name-row">
                     <span

@@ -5,14 +5,15 @@ import GlobalModal from "../../components/common/GlobalModal";
 import Pagination from "../../components/common/Pagination";
 import {
   MdDescription, MdDownload, MdVisibility,
-  MdSearch,
-  MdClose, MdRefresh,
-  MdChevronLeft, MdChevronRight,
+  MdRefresh,
   MdInsertDriveFile, MdPictureAsPdf, MdTableChart, MdSlideshow, MdImage,
-  MdCalendarMonth, MdOpenInNew,
+  MdCalendarMonth, MdFolderOpen,
 } from "react-icons/md";
 import API from "../../services/api";
 import { BASE_URL } from "../../config/apiConfig";
+import "../../sections/document/Document.css";
+
+const ALL_CATS = ["All", "Legal", "Meetings", "Guidelines", "Finance", "Security"];
 
 function useDebounce(value, delay = 500) {
   const [debounced, setDebounced] = useState(value);
@@ -49,22 +50,19 @@ const getDocUrl = (fileUrl) => {
 
 function SkeletonCard() {
   return (
-    <div className="rd-doc-card rd-skeleton-card">
-      <div className="rd-card-accent rd-skeleton-bar" />
-      <div className="rd-card-inner">
-        <div className="rd-card-top">
-          <div className="rd-skeleton rd-skeleton-icon" />
-          <div className="rd-skeleton rd-skeleton-badge" />
+    <div className="doc-skeleton" style={{ minHeight: 215 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        <div className="doc-skel-box" style={{ width: 42, height: 42, borderRadius: 13 }} />
+        <div style={{ display: "flex", flex: 1, flexDirection: "column", gap: 8, minWidth: 0 }}>
+          <div className="doc-skel-line" style={{ width: "35%" }} />
+          <div className="doc-skel-line" style={{ width: "75%" }} />
         </div>
-        <div className="rd-card-body" style={{ gap: 8 }}>
-          <div className="rd-skeleton rd-skeleton-title" />
-          <div className="rd-skeleton rd-skeleton-desc" />
-          <div className="rd-skeleton rd-skeleton-desc rd-skeleton-desc--short" />
-        </div>
-        <div className="rd-card-footer">
-          <div className="rd-skeleton rd-skeleton-chip" />
-          <div className="rd-skeleton rd-skeleton-btn" />
-        </div>
+      </div>
+      <div className="doc-skel-line" style={{ width: "50%", marginTop: 4 }} />
+      <div className="doc-skel-line" style={{ flex: 1, minHeight: 38, borderRadius: 12, marginTop: 4 }} />
+      <div style={{ display: "flex", gap: 8, marginTop: "auto", paddingTop: 4 }}>
+        <div className="doc-skel-line" style={{ flex: 1, height: 36, borderRadius: 12 }} />
+        <div className="doc-skel-line" style={{ width: 36, height: 36, borderRadius: 12 }} />
       </div>
     </div>
   );
@@ -76,86 +74,110 @@ function ResidentDocCard({ doc, index, t, categoryLabel, onOpen }) {
   const fileUrl = getDocUrl(doc.file_url);
 
   const formatDate = (dateStr) => {
-    if (!dateStr) return "";
+    if (!dateStr) return "—";
     return new Date(dateStr).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
   };
 
   return (
     <div
-      className="p-4 rounded-2xl border border-glass-border bg-card hover:bg-card-inner-bg/80 hover:border-accent/50 transition-all flex flex-col justify-between gap-3 shadow-sm group cursor-pointer"
-      style={{ animationDelay: `${index * 40}ms` }}
+      data-category={doc.category}
+      style={{ "--doc-file-c": fileColor, animationDelay: `${index * 25}ms` }}
+      className="doc-decent-card rd-modern-doc-card group"
       onClick={() => onOpen(doc)}
     >
-      <div>
-        <div className="flex items-start justify-between gap-2.5 mb-2.5">
-          <div
-            className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border"
-            style={{
-              background: `color-mix(in srgb, ${fileColor} 15%, transparent)`,
-              borderColor: `color-mix(in srgb, ${fileColor} 30%, transparent)`,
-              color: fileColor,
-            }}
-          >
-            <FileIcon size={20} />
-          </div>
+      {/* Corner category color blob */}
+      <span className="doc-card-blob" aria-hidden="true" />
 
-          <div className="flex items-center gap-1.5 flex-wrap justify-end">
-            <span className="text-[10.5px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full bg-accent-soft text-accent border border-accent/20">
-              {categoryLabel(doc.category)}
-            </span>
+      {/* Card Header: Icon + Category Badge */}
+      <div className="doc-card-top">
+        <div className="doc-card-head">
+          <div className="doc-file-icon">
+            <FileIcon size={22} />
+          </div>
+          <div className="doc-head-text">
+            <span className="doc-label">{t("docDocument", "Document")}</span>
+            <h3 className="doc-title" title={doc.title}>
+              {doc.title}
+            </h3>
           </div>
         </div>
 
-        <h3 className="font-bold text-sm text-primary group-hover:text-accent transition-colors line-clamp-2 m-0" title={doc.title}>
-          {doc.title}
-        </h3>
-        <p className="text-xs text-secondary line-clamp-2 mt-1 m-0">
-          {doc.description || `${categoryLabel(doc.category)} document`}
-        </p>
+        <span className="doc-cat-chip">
+          <span className="doc-cat-dot" aria-hidden="true" />
+          {categoryLabel(doc.category)}
+        </span>
       </div>
 
-      <div className="pt-3 border-t border-glass-border flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2 text-[11px] text-secondary">
-          <span className="font-mono font-semibold uppercase">{ext}</span>
-          <span>•</span>
-          <span>{doc.file_size_formatted || "—"}</span>
-          <span>•</span>
-          <span>{formatDate(doc.created_at)}</span>
-        </div>
+      {/* Description if present */}
+      {doc.description && (
+        <p className="rd-doc-desc" title={doc.description}>
+          {doc.description}
+        </p>
+      )}
 
-        <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
-          <button
-            type="button"
-            onClick={() => onOpen(doc)}
-            className="p-1.5 rounded-lg bg-card-inner-bg hover:bg-accent-soft hover:text-accent text-secondary border border-glass-border transition-all cursor-pointer"
-            title={t("docView") || "Preview"}
-          >
-            <MdVisibility size={15} />
-          </button>
-          <a
-            href={fileUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            download={doc.file_name || doc.title}
-            className="p-1.5 rounded-lg bg-card-inner-bg hover:bg-emerald-500/15 hover:text-emerald-400 text-secondary border border-glass-border transition-all cursor-pointer inline-flex items-center justify-center"
-            title={t("docDownload") || "Download"}
-          >
-            <MdDownload size={15} />
-          </a>
+      {/* Metadata Row: File Size & Date */}
+      <div className="doc-meta">
+        <div className="doc-meta-row">
+          <span className="doc-meta-item">
+            <MdInsertDriveFile size={13} aria-hidden="true" />
+            {doc.file_size_formatted || "—"}
+          </span>
+          <span className="doc-meta-sep" aria-hidden="true">•</span>
+          <span className="doc-meta-item">
+            <MdCalendarMonth size={13} aria-hidden="true" />
+            {formatDate(doc.created_at)}
+          </span>
         </div>
+      </div>
+
+      {/* File Name Box + Extension Chip */}
+      <div className="doc-card-body">
+        <span className="doc-file-row">
+          <span className="doc-file-mark" aria-hidden="true" />
+          <span className="doc-file-name" title={doc.file_name}>
+            {doc.file_name}
+          </span>
+        </span>
+        <span className="doc-ext">{ext}</span>
+      </div>
+
+      {/* Card Action Footer: Primary Preview + Quick Download */}
+      <div className="rd-card-footer" onClick={(e) => e.stopPropagation()}>
+        <button
+          type="button"
+          onClick={() => onOpen(doc)}
+          className="rd-btn-preview"
+          title={t("docView", "View Document")}
+        >
+          <MdVisibility size={16} />
+          <span>{t("docView", "View Document")}</span>
+        </button>
+
+        <a
+          href={fileUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          download={doc.file_name || doc.title}
+          className="rd-btn-download"
+          title={t("docDownload", "Download")}
+          aria-label={t("docDownload", "Download")}
+        >
+          <MdDownload size={17} />
+        </a>
       </div>
     </div>
   );
 }
 
 /* ═══════════════════════════════════════════
-   Main Component
+   Main Component: ResidentDocument
 ═══════════════════════════════════════════ */
 export default function ResidentDocument() {
   const { t } = useLang();
 
   const [documents,      setDocuments]      = useState([]);
   const [counts,         setCounts]         = useState({ All: 0, Legal: 0, Meetings: 0, Guidelines: 0, Finance: 0, Security: 0 });
+  const [activeCat,      setActiveCat]      = useState("All");
   const [error,          setError]          = useState(null);
 
   // ── Loading states ──
@@ -178,12 +200,12 @@ export default function ResidentDocument() {
   /* Maps backend category string → translated display label */
   const categoryLabel = (cat) => {
     const map = {
-      All:        t("docCatAll") || "All Documents",
-      Legal:      t("docCatLegal") || "Legal & Compliance",
-      Meetings:   t("docCatMeetings") || "Minutes & Meetings",
-      Guidelines: t("docCatGuidelines") || "Rules & Guidelines",
-      Finance:    t("docCatFinance") || "Financial Statements",
-      Security:   t("docCatSecurity") || "Security Protocols",
+      All:        t("docCatAll", "All Documents"),
+      Legal:      t("docCatLegal", "Legal & Compliance"),
+      Meetings:   t("docCatMeetings", "Minutes & Meetings"),
+      Guidelines: t("docCatGuidelines", "Rules & Guidelines"),
+      Finance:    t("docCatFinance", "Financial Statements"),
+      Security:   t("docCatSecurity", "Security Protocols"),
     };
     return map[cat] || cat;
   };
@@ -199,9 +221,9 @@ export default function ResidentDocument() {
 
     try {
       const params = new URLSearchParams({
-        page:     pageNum,
+        page:  pageNum,
         limit: limitRef.current,
-        category: currentCategory,
+        ...(currentCategory && currentCategory !== "All" ? { category: currentCategory } : {}),
         ...(currentSearch ? { search: currentSearch } : {}),
       });
 
@@ -209,11 +231,11 @@ export default function ResidentDocument() {
 
       setDocuments(res.data.data || []);
       setCounts(res.data.counts  || {});
-      setTotalPages(res.data.pagination.totalPages);
-      setTotalItems(res.data.pagination.totalItems);
+      setTotalPages(res.data.pagination?.totalPages ?? 1);
+      setTotalItems(res.data.pagination?.totalItems ?? 0);
       setPage(pageNum);
     } catch (err) {
-      setError(err.response?.data?.message || t("docLoadError") || "Failed to load documents");
+      setError(err.response?.data?.message || t("docLoadError", "Failed to load documents"));
     } finally {
       setInitialLoad(false);
       setFetching(false);
@@ -228,40 +250,87 @@ export default function ResidentDocument() {
   // ── Re-fetch on search change ──
   useEffect(() => {
     if (initialLoad) return;
-    fetchDocuments(1, "All", debouncedSearch);
+    fetchDocuments(1, activeCat, debouncedSearch);
   }, [debouncedSearch]);
 
+  const handleCategoryChange = (cat) => {
+    setActiveCat(cat);
+    setPage(1);
+    fetchDocuments(1, cat, debouncedSearch);
+  };
+
   const handlePageChange = (newPage) =>
-    fetchDocuments(newPage, "All", debouncedSearch);
+    fetchDocuments(newPage, activeCat, debouncedSearch);
 
   const handleRetry = () =>
-    fetchDocuments(page, "All", debouncedSearch, page === 1 && initialLoad);
+    fetchDocuments(page, activeCat, debouncedSearch, page === 1 && initialLoad);
 
   return (
-    <div className="ge-root rd-root animate-fadeIn space-y-5">
-      {/* ── 1. Page Header ── */}
-      <div className="flex items-center justify-between gap-3 flex-wrap">
+    <div className="documents-page rd-doc-page ge-root rd-root animate-fadeIn space-y-4">
+      {/* ── 1. Page Header & Search Bar ── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-3">
           <div className="ad-page-icon">
             <MdDescription size={22} />
           </div>
           <div>
-            <h1 className="rd-page-title page-title m-0">{t("docTitle") || "Society Documents"}</h1>
-            <p className="rd-page-subtitle page-subtitle m-0">{t("docSubtitle") || "Official bylaws, meeting minutes, financial audits & community policies"}</p>
+            <div className="flex items-center gap-2">
+              <h1 className="rd-page-title page-title m-0">
+                {t("docTitle", "Society Documents")}
+              </h1>
+              <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-accent-soft text-accent border border-accent/20">
+                {totalItems} {t("docFiles", "Files")}
+              </span>
+            </div>
+            <p className="rd-page-subtitle page-subtitle mt-0.5 m-0">
+              {t("docSubtitle", "Official bylaws, meeting minutes, financial audits & community policies")}
+            </p>
           </div>
+        </div>
+
+        {/* Search */}
+        <div className="flex items-center gap-2.5">
+          <ExpandableSearch
+            placeholder={t("docSearch", "Search documents by title or file…")}
+            value={search}
+            onChange={setSearch}
+            maxWidth={280}
+          />
         </div>
       </div>
 
-      {/* ── 3. Toolbar: Search ── */}
-      <div className="flex items-center justify-end gap-3">
-        <ExpandableSearch
-          placeholder={t("docSearch") || "Search by document title…"}
-          value={search}
-          onChange={setSearch}
-        />
+      {/* ── 2. Category Filter Pills with Live Badges ── */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
+        {ALL_CATS.map((cat) => {
+          const isActive = activeCat === cat;
+          const count = counts?.[cat] ?? 0;
+          return (
+            <button
+              key={cat}
+              type="button"
+              onClick={() => handleCategoryChange(cat)}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 cursor-pointer ${
+                isActive
+                  ? "bg-accent text-white shadow-xs shadow-accent/25"
+                  : "bg-card-inner-bg text-secondary border border-glass-border hover:text-primary hover:border-accent/40"
+              }`}
+            >
+              <span>{categoryLabel(cat)}</span>
+              <span
+                className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${
+                  isActive
+                    ? "bg-white/20 text-white"
+                    : "bg-card text-secondary border border-glass-border"
+                }`}
+              >
+                {count}
+              </span>
+            </button>
+          );
+        })}
       </div>
 
-      {/* ── 4. Error State ── */}
+      {/* ── 3. Error State ── */}
       {error && (
         <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-sm flex items-center justify-between gap-3">
           <p className="m-0 font-semibold">{error}</p>
@@ -269,35 +338,37 @@ export default function ResidentDocument() {
             className="px-3 py-1.5 rounded-lg bg-rose-500/20 text-xs font-bold hover:bg-rose-500/30 transition cursor-pointer flex items-center gap-1.5"
             onClick={handleRetry}
           >
-            <MdRefresh size={15} /> {t("docRetry") || "Retry"}
+            <MdRefresh size={15} /> {t("docRetry", "Retry")}
           </button>
         </div>
       )}
 
-      {/* ── 5. Loading Skeletons ── */}
+      {/* ── 4. Loading Skeletons ── */}
       {initialLoad && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5">
+        <div className="doc-card-grid">
           {[...Array(8)].map((_, i) => <SkeletonCard key={i} />)}
         </div>
       )}
 
-      {/* ── 6. Empty State ── */}
+      {/* ── 5. Empty State ── */}
       {!initialLoad && !error && documents.length === 0 && (
-        <div className="p-12 rounded-2xl border border-glass-border bg-card text-center text-secondary shadow-sm">
-          <MdDescription size={44} className="mx-auto mb-2 opacity-25 text-accent" />
+        <div className="doc-empty-state">
+          <div className="doc-empty-icon">
+            <MdFolderOpen size={30} />
+          </div>
           <p className="text-base font-bold text-primary m-0">
-            {counts.All === 0 ? (t("docEmptyTitle") || "No documents uploaded yet") : (t("docNotFound") || "No matching documents found")}
+            {counts.All === 0 ? t("docEmptyTitle", "No documents uploaded yet") : t("docNotFound", "No matching documents found")}
           </p>
           <p className="text-xs text-secondary mt-1 max-w-sm mx-auto m-0">
-            {counts.All === 0 ? (t("docEmptySub") || "Published society bylaws and notices will appear here.") : (t("docNotFoundSub") || "Try changing your search keywords or switching category filters.")}
+            {counts.All === 0 ? t("docEmptySub", "Published society bylaws and notices will appear here.") : t("docNotFoundSub", "Try changing your search keywords or switching category filters.")}
           </p>
         </div>
       )}
 
-      {/* ── 7. Documents Display (Grid vs. Table) ── */}
+      {/* ── 6. Documents Modern Grid ── */}
       {!initialLoad && !error && documents.length > 0 && (
         <div className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5">
+          <div className="doc-card-grid">
             {documents.map((doc, i) => (
               <ResidentDocCard
                 key={doc.id}
@@ -313,7 +384,7 @@ export default function ResidentDocument() {
           {/* ── Pagination Footer ── */}
           <div className="flex flex-col sm:flex-row justify-between items-center px-2 pt-3 border-t border-glass-border gap-3">
             <span className="text-xs text-secondary font-medium">
-              {t("reportShowing") || "Showing"} <strong>{documents.length}</strong> {t("reportOf") || "of"} <strong>{totalItems}</strong> {t("docStatTotal") || "documents"}
+              {t("reportShowing", "Showing")} <strong>{documents.length}</strong> {t("reportOf", "of")} <strong>{totalItems}</strong> {t("docStatTotal", "documents")}
             </span>
             <Pagination
               page={page}
@@ -331,11 +402,11 @@ export default function ResidentDocument() {
         </div>
       )}
 
-      {/* ── 8. Document Preview Modal ── */}
+      {/* ── 7. Document Preview Modal ── */}
       <GlobalModal
         isOpen={!!viewDoc}
         onClose={() => setViewDoc(null)}
-        title={viewDoc?.title || t("docDocument") || "Document"}
+        title={viewDoc?.title || t("docDocument", "Document")}
         subtitle={viewDoc?.file_name}
         icon={<MdDescription size={20} className="text-accent" />}
         size="xl"

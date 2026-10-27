@@ -171,6 +171,8 @@ export default function ResidentDetailsModal({ resident, onClose, onEdit, isSupe
 
   // Flatten societies & flats into compact tabular rows
   const tableRows = [];
+  const occupancyHistory = Array.isArray(resident.occupancy_history) ? resident.occupancy_history : [];
+
   societies.forEach((soc) => {
     const isPrimary = soc.is_default || soc.id === resident.society_id;
     const socRoles = Array.isArray(soc.roles) ? soc.roles : [];
@@ -188,21 +190,69 @@ export default function ResidentDetailsModal({ resident, onClose, onEdit, isSupe
           floorNumber: flat.floor_number,
           blockName: flat.block_name,
           role: flat.role || resident.resident_type || "OWNER",
+          isVacated: false,
         });
       });
     } else {
+      // Check if there are past flat records for this society
+      const socPastFlats = occupancyHistory.filter((h) => !h.society_id || Number(h.society_id) === Number(soc.id));
+      if (socPastFlats.length > 0) {
+        socPastFlats.forEach((pastFlat, pIdx) => {
+          tableRows.push({
+            rowKey: `${soc.id || "soc"}-past-${pastFlat.flat_id || pIdx}`,
+            societyId: soc.id,
+            societyName: soc.name || "Society",
+            membershipStatus: "VACATED",
+            isPrimary,
+            socRoles,
+            flatNumber: pastFlat.flat_number,
+            flatType: pastFlat.flat_type,
+            floorNumber: pastFlat.floor_number,
+            blockName: pastFlat.block_name,
+            role: pastFlat.role || resident.resident_type || "RESIDENT",
+            isVacated: true,
+            moveInDate: pastFlat.move_in_date,
+            moveOutDate: pastFlat.move_out_date,
+          });
+        });
+      } else {
+        tableRows.push({
+          rowKey: `${soc.id || "soc"}-none`,
+          societyId: soc.id,
+          societyName: soc.name || "Society",
+          membershipStatus: soc.membership_status || "ACTIVE",
+          isPrimary,
+          socRoles,
+          flatNumber: null,
+          flatType: null,
+          floorNumber: null,
+          blockName: null,
+          role: null,
+          isVacated: false,
+        });
+      }
+    }
+  });
+
+  // Also include any past flats from occupancyHistory for societies not in the societies list
+  const seenPastFlatNumbers = new Set(tableRows.filter((r) => r.isVacated).map((r) => r.flatNumber));
+  occupancyHistory.forEach((pastFlat, pIdx) => {
+    if (!seenPastFlatNumbers.has(pastFlat.flat_number)) {
       tableRows.push({
-        rowKey: `${soc.id || "soc"}-none`,
-        societyId: soc.id,
-        societyName: soc.name || "Society",
-        membershipStatus: soc.membership_status || "ACTIVE",
-        isPrimary,
-        socRoles,
-        flatNumber: null,
-        flatType: null,
-        floorNumber: null,
-        blockName: null,
-        role: null,
+        rowKey: `past-extra-${pastFlat.flat_id || pIdx}`,
+        societyId: pastFlat.society_id,
+        societyName: pastFlat.society_name || resident.society_name || "Society",
+        membershipStatus: "VACATED",
+        isPrimary: false,
+        socRoles: ["RESIDENT"],
+        flatNumber: pastFlat.flat_number,
+        flatType: pastFlat.flat_type,
+        floorNumber: pastFlat.floor_number,
+        blockName: pastFlat.block_name,
+        role: pastFlat.role || "RESIDENT",
+        isVacated: true,
+        moveInDate: pastFlat.move_in_date,
+        moveOutDate: pastFlat.move_out_date,
       });
     }
   });
@@ -394,6 +444,25 @@ export default function ResidentDetailsModal({ resident, onClose, onEdit, isSupe
                       }}
                     >
                       {resident.approval_status === "APPROVED" ? "✓" : "⏳"} {resident.approval_status}
+                    </span>
+                  )}
+                  {(resident.is_vacated || resident.occupancy_status === "VACATED") && (
+                    <span
+                      style={{
+                        fontSize: 10,
+                        fontWeight: 700,
+                        padding: "3px 9px",
+                        borderRadius: 20,
+                        background: "rgba(245,158,11,0.16)",
+                        color: "#f59e0b",
+                        border: "1px solid rgba(245,158,11,0.35)",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 4,
+                        textTransform: "uppercase",
+                      }}
+                    >
+                      Left / Vacated
                     </span>
                   )}
                 </div>
@@ -725,16 +794,21 @@ export default function ResidentDetailsModal({ resident, onClose, onEdit, isSupe
                                     fontWeight: 700,
                                     padding: "3px 9px",
                                     borderRadius: 6,
-                                    background: "rgba(34,197,94,0.10)",
-                                    color: "#4ade80",
-                                    border: "1px solid rgba(34,197,94,0.22)",
+                                    background: row.isVacated ? "rgba(245,158,11,0.14)" : "rgba(34,197,94,0.10)",
+                                    color: row.isVacated ? "#f59e0b" : "#4ade80",
+                                    border: `1px solid ${row.isVacated ? "rgba(245,158,11,0.3)" : "rgba(34,197,94,0.22)"}`,
                                   }}
                                 >
-                                  {flatLabel}
+                                  {flatLabel} {row.isVacated ? "(Past Flat)" : ""}
                                 </span>
                                 {metaText && (
                                   <span style={{ fontSize: 11, color: "var(--text-secondary, rgba(255,255,255,0.55))" }}>
                                     ({metaText})
+                                  </span>
+                                )}
+                                {row.isVacated && (row.moveOutDate || row.moveInDate) && (
+                                  <span style={{ fontSize: 11, color: "var(--text-secondary, rgba(255,255,255,0.65))" }}>
+                                    {row.moveOutDate ? `Vacated: ${new Date(row.moveOutDate).toLocaleDateString()}` : "Vacated"}
                                   </span>
                                 )}
                               </div>
@@ -847,18 +921,24 @@ export default function ResidentDetailsModal({ resident, onClose, onEdit, isSupe
                                       background:
                                         effectiveStatus === "ACTIVE"
                                           ? "rgba(34,197,94,0.12)"
+                                          : effectiveStatus === "VACATED" || row.isVacated
+                                          ? "rgba(245,158,11,0.14)"
                                           : effectiveStatus === "PENDING"
                                           ? "rgba(245,158,11,0.12)"
                                           : "rgba(239,68,68,0.12)",
                                       color:
                                         effectiveStatus === "ACTIVE"
                                           ? "#4ade80"
+                                          : effectiveStatus === "VACATED" || row.isVacated
+                                          ? "#f59e0b"
                                           : effectiveStatus === "PENDING"
                                           ? "#fbbf24"
                                           : "#f87171",
                                       border: `1px solid ${
                                         effectiveStatus === "ACTIVE"
                                           ? "rgba(34,197,94,0.25)"
+                                          : effectiveStatus === "VACATED" || row.isVacated
+                                          ? "rgba(245,158,11,0.35)"
                                           : effectiveStatus === "PENDING"
                                           ? "rgba(245,158,11,0.25)"
                                           : "rgba(239,68,68,0.25)"
@@ -866,7 +946,7 @@ export default function ResidentDetailsModal({ resident, onClose, onEdit, isSupe
                                       textTransform: "uppercase",
                                     }}
                                   >
-                                    {effectiveStatus}
+                                    {row.isVacated ? "VACATED" : effectiveStatus}
                                   </span>
 
                                   {canAct && (

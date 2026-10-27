@@ -118,7 +118,12 @@ export default function RolePermissions({ embedded = false }) {
 
   const [selectedRole, setSelectedRole] = useState("COMMITTEE_MEMBER");
   const [societies, setSocieties] = useState([]);
-  const [selectedSocietyId, setSelectedSocietyId] = useState(user?.society_id || "");
+  const initialSocietyId = (() => {
+    if (typeof window === "undefined") return user?.society_id || "";
+    const querySocietyId = new URLSearchParams(window.location.search).get("societyId");
+    return querySocietyId || localStorage.getItem("superadmin_society_filter") || user?.society_id || "";
+  })();
+  const [selectedSocietyId, setSelectedSocietyId] = useState(initialSocietyId);
 
   const [availableModules, setAvailableModules] = useState({});
   const [sectionStates, setSectionStates] = useState({});

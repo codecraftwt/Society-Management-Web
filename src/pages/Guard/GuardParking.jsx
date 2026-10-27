@@ -229,7 +229,9 @@ function ResidentEntryModal({ isOpen, onClose, slots, onCreated, t }) {
   const [submitError,   setSubmitError]   = useState("");
 
   const availableSlots = lookupResult
-    ? slots.filter((s) => s.status === "AVAILABLE" && s.vehicle_type === lookupResult.vehicle_type)
+    ? lookupResult.has_valid_assignment
+      ? [{ id: lookupResult.assigned_slot_id, slot_number: lookupResult.assigned_spot, vehicle_type: lookupResult.vehicle_type, status: "ASSIGNED" }]
+      : slots.filter((s) => s.status === "AVAILABLE" && s.vehicle_type === lookupResult.vehicle_type)
     : [];
 
   const handleLookup = async () => {
@@ -242,6 +244,7 @@ function ResidentEntryModal({ isOpen, onClose, slots, onCreated, t }) {
     try {
       const res = await API.get(`/parking/lookup-vehicle?vehicle_number=${vehicleNumber.trim().toUpperCase()}`);
       setLookupResult(res.data);
+      if (res.data?.has_valid_assignment) setSelectedSlot(res.data.assigned_spot);
     } catch (err) {
       setLookupError(err?.response?.data?.message || t("gpLookupFail", "Vehicle not registered in this society"));
     } finally {
@@ -401,10 +404,10 @@ function ResidentEntryModal({ isOpen, onClose, slots, onCreated, t }) {
 
               <div className="p-2.5 rounded-xl bg-card-inner-bg/60 border border-glass-border/40">
                 <span className="text-[10px] font-bold text-secondary uppercase tracking-wider block">
-                  {t("gpAvailableSlots", "Available Slots")}
+                  {lookupResult.has_valid_assignment ? t("gpAssignedSlot", "Assigned Slot") : t("gpAvailableSlots", "Available Slots")}
                 </span>
                 <span className="font-extrabold text-emerald-400 mt-0.5 block">
-                  {t("gpNAvailable", { count: availableSlots.length }, "{count} available")}
+                  {lookupResult.has_valid_assignment ? lookupResult.assigned_spot : t("gpNAvailable", { count: availableSlots.length }, "{count} available")}
                 </span>
               </div>
             </div>
@@ -422,8 +425,10 @@ function ResidentEntryModal({ isOpen, onClose, slots, onCreated, t }) {
                   onChange={(e) => setSelectedSlot(e.target.value)}
                   disabled={availableSlots.length === 0}
                 >
-                  <option value="">
-                    {availableSlots.length === 0
+                <option value="">
+                    {lookupResult.has_valid_assignment
+                      ? t("gpExistingAssignment", "Vehicle already assigned")
+                      : availableSlots.length === 0
                       ? t("gpNoSlotForType", { type: lookupResult.vehicle_type }, "No available slots for {type}")
                       : t("gpSelectTypeSlot", { type: lookupResult.vehicle_type }, "-- Select an available {type} slot --")}
                   </option>
@@ -487,7 +492,7 @@ export default function GuardParking() {
   const isMobile = useIsMobile();
   const { t }    = useLang();
 
-  const [viewMode,     setViewMode]     = useState("visitor");
+  const [viewMode,     setViewMode]     = useState("all");
   const [requests,     setRequests]     = useState([]);
   const [slots,        setSlots]        = useState([]);
   const [counts,       setCounts]       = useState({ ALL: 0, PENDING: 0, APPROVED: 0, REJECTED: 0, COMPLETED: 0 });
@@ -535,7 +540,7 @@ export default function GuardParking() {
         page:         pg,
         limit: limitRef.current,
         filter:       f,
-        parking_type: mode === "resident" ? "RESIDENT" : "VISITOR",
+        parking_type: mode === "all" ? "ALL" : mode === "resident" ? "RESIDENT" : "VISITOR",
         ...(q ? { search: q } : {}),
       });
 
@@ -558,7 +563,7 @@ export default function GuardParking() {
 
   useEffect(() => {
     loadSlots();
-    loadRequests(1, "", "ALL", "visitor", true);
+    loadRequests(1, "", "ALL", "all", true);
   }, [loadRequests]);
 
   useEffect(() => {
@@ -705,6 +710,7 @@ export default function GuardParking() {
           value={viewMode}
           onChange={handleViewMode}
           items={[
+            { id: "all",      label: t("gpModeAll", "All Parking") },
             { id: "visitor",  label: t("gpModeVisitor", "Visitor Parking") },
             { id: "resident", label: t("gpModeResident", "Resident Parking") },
           ]}

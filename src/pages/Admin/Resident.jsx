@@ -5369,7 +5369,27 @@ const [totalPages, setTotalPages] = useState(1);
                       </td>
                       <td style={{ padding: "14px 16px" }}>
                         <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 5 }}>
-                          <ResidentTypeBadge type={r.resident_type} />
+                          {(r.is_vacated || r.occupancy_status === "VACATED") ? (
+                            <span
+                              style={{
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: 4,
+                                fontSize: 11,
+                                fontWeight: 700,
+                                padding: "2px 8px",
+                                borderRadius: 6,
+                                background: "rgba(245,158,11,0.16)",
+                                color: "#f59e0b",
+                                border: "1px solid rgba(245,158,11,0.35)",
+                                textTransform: "uppercase",
+                              }}
+                            >
+                              Left / Vacated
+                            </span>
+                          ) : (
+                            <ResidentTypeBadge type={r.resident_type || (r.flats?.length > 0 || r.flat_id ? "OWNER" : null)} />
+                          )}
                           {isResidentPending(r) && <PendingApprovalBadge />}
                         </div>
                       </td>
@@ -5386,7 +5406,29 @@ const [totalPages, setTotalPages] = useState(1);
                             >
                               {flat.flat_number}
                             </div>
-                          )) : <span style={{ fontSize: 12, color: "var(--text-secondary)", opacity: 0.45 }}>{t("colNoUnit") || "No unit assigned"}</span>}
+                          )) : (r.is_vacated || r.occupancy_status === "VACATED" || r.previous_flat) ? (
+                            <div
+                              onClick={() => setViewDetailsModal(r)}
+                              style={{
+                                display: "inline-flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                fontSize: 11,
+                                fontWeight: 700,
+                                padding: "3px 8px",
+                                borderRadius: 999,
+                                background: "rgba(245,158,11,0.12)",
+                                color: "#f59e0b",
+                                border: "1px solid rgba(245,158,11,0.3)",
+                                cursor: "pointer",
+                                transition: "all 0.15s",
+                                whiteSpace: "nowrap",
+                              }}
+                              title={`Left Flat ${r.previous_flat?.flat_number || r.occupancy_history?.[0]?.flat_number || ""}`}
+                            >
+                              Left Flat {r.previous_flat?.flat_number || r.occupancy_history?.[0]?.flat_number}
+                            </div>
+                          ) : <span style={{ fontSize: 12, color: "var(--text-secondary)", opacity: 0.45 }}>{t("colNoUnit") || "No unit assigned"}</span>}
                         </div>
                       </td>
                       <td style={{ padding: "14px 16px", minWidth: 160 }}>
@@ -5495,13 +5537,39 @@ const [totalPages, setTotalPages] = useState(1);
                        <p style={{ fontSize: 11, color: "var(--text-secondary)", margin: "2px 0 0" }}>{r.email}</p>
                        {r.phone && <p style={{ fontSize: 11, color: "var(--text-secondary)", margin: "1px 0 0", display: "flex", alignItems: "center", gap: 3 }}><MdPhone size={10} style={{ opacity: 0.5 }} /> {r.phone}</p>}
                        <div style={{ display: "flex", alignItems: "center", gap: 5, flexWrap: "wrap", marginTop: 6 }}>
-                         <ResidentTypeBadge type={r.resident_type} />
-                         {isResidentPending(r) && <PendingApprovalBadge />}
-                         {r.flats?.map((flat, fIdx) => (
-                           <span key={flat.id || fIdx} style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 999, background: "rgba(34,197,94,0.10)", color: "#4ade80", border: "1px solid rgba(34,197,94,0.22)" }}>
-                             {flat.flat_number}
+                         {(r.is_vacated || r.occupancy_status === "VACATED") ? (
+                           <span
+                             style={{
+                               display: "inline-flex",
+                               alignItems: "center",
+                               gap: 3,
+                               fontSize: 10,
+                               fontWeight: 700,
+                               padding: "2px 8px",
+                               borderRadius: 6,
+                               background: "rgba(245,158,11,0.16)",
+                               color: "#f59e0b",
+                               border: "1px solid rgba(245,158,11,0.35)",
+                               textTransform: "uppercase",
+                             }}
+                           >
+                             Left / Vacated
                            </span>
-                         ))}
+                         ) : (
+                           <ResidentTypeBadge type={r.resident_type || (r.flats?.length > 0 || r.flat_id ? "OWNER" : null)} />
+                         )}
+                         {isResidentPending(r) && <PendingApprovalBadge />}
+                         {r.flats && r.flats.length > 0 ? (
+                           r.flats.map((flat, fIdx) => (
+                             <span key={flat.id || fIdx} style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 999, background: "rgba(34,197,94,0.10)", color: "#4ade80", border: "1px solid rgba(34,197,94,0.22)" }}>
+                               {flat.flat_number}
+                             </span>
+                           ))
+                         ) : (r.is_vacated || r.occupancy_status === "VACATED" || r.previous_flat) ? (
+                           <span style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 999, background: "rgba(245,158,11,0.12)", color: "#f59e0b", border: "1px solid rgba(245,158,11,0.3)" }}>
+                             Left Flat {r.previous_flat?.flat_number || r.occupancy_history?.[0]?.flat_number}
+                           </span>
+                         ) : null}
                          {r.societies && r.societies.length > 0 ? (
                            r.societies.map((soc, sIdx) => (
                              <span key={soc.id || sIdx} style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 999, background: "rgba(107,70,193,0.12)", color: "var(--accent)", border: "1px solid rgba(107,70,193,0.25)" }}>

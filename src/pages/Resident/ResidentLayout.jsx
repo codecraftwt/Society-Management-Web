@@ -45,13 +45,29 @@ function ResidentLayoutInner() {
   const { collapsed } = useSidebar();
 
   const { alerts, refresh: refreshEmergencies } = useEmergencyAlerts();
+  const isFamilyMember = user?.role === "FAMILY_MEMBER";
+  const base = isFamilyMember ? "/family" : "/resident";
   const [showEmergency, setShowEmergency] = useState(false);
   const [showSOS, setShowSOS] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
+  const [hasOwnedFlat, setHasOwnedFlat] = useState(user?.resident_type === "OWNER");
 
-  const isFamilyMember = user?.role === "FAMILY_MEMBER";
-  const base = isFamilyMember ? "/family" : "/resident";
+  useEffect(() => {
+    if (isFamilyMember) return;
+    let active = true;
+    API.get("/users/get-flat")
+      .then((res) => {
+        const flats = Array.isArray(res.data) ? res.data : [];
+        if (active) {
+          setHasOwnedFlat(flats.some((flat) => flat.role === "OWNER" || flat.isAdmin));
+        }
+      })
+      .catch(() => {
+        if (active) setHasOwnedFlat(user?.resident_type === "OWNER");
+      });
+    return () => { active = false; };
+  }, [isFamilyMember, user?.resident_type]);
 
   /* Panel label */
   const panelLabel = isFamilyMember
@@ -66,7 +82,7 @@ function ResidentLayoutInner() {
       icon: MdDashboard,
       group: "OVERVIEW",
     },
-    ...(user?.resident_type === "OWNER"
+    ...(hasOwnedFlat
       ? [
           {
             label: t("menuMyProperties"),
@@ -76,7 +92,7 @@ function ResidentLayoutInner() {
           },
         ]
       : []),
-    ...(user?.resident_type === "OWNER"
+    ...(hasOwnedFlat
       ? [
           {
             label: t("menuBills"),

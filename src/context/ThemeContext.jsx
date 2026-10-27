@@ -13,6 +13,15 @@ import "../theme/role-theme.css";
 import "../theme/card-styles.css";
 import "../theme/quick-link-styles.css";
 
+const isSuperAdminUser = () => {
+  try {
+    const user = JSON.parse(localStorage.getItem("user") || "null");
+    return (user?.activeRole || user?.role) === "SUPER_ADMIN";
+  } catch {
+    return false;
+  }
+};
+
 /* Default value prevents "value prop required" warning */
 const ThemeContext = createContext({
   theme: "dark",
@@ -39,6 +48,9 @@ export function ThemeProvider({ children }) {
 
   const [societyTheme, setSocietyTheme] = useState(() => {
     try {
+      if (isSuperAdminUser()) {
+        return { primary: null, accent: null, cardStyle: "default", quickLinkStyle: "default", logo_url: null, society_name: null, configured: false };
+      }
       const cached = localStorage.getItem("active_society_theme");
       return cached
         ? { cardStyle: "default", quickLinkStyle: "default", logo_url: null, society_name: null, ...JSON.parse(cached) }
@@ -63,6 +75,13 @@ export function ThemeProvider({ children }) {
 
   // Apply society theme dynamic tokens, card style, and quick link style on <html> whenever societyTheme changes
   useEffect(() => {
+    if (isSuperAdminUser()) {
+      clearDynamicTheme();
+      applyCardStyle("default");
+      applyQuickLinkStyle("default");
+      return;
+    }
+
     applyCardStyle(societyTheme?.cardStyle || "default");
     applyQuickLinkStyle(societyTheme?.quickLinkStyle || "default");
 
@@ -80,6 +99,9 @@ export function ThemeProvider({ children }) {
     setTheme((prev) => (prev === "dark" ? "light" : "dark"));
 
   const applySocietyTheme = useCallback((themeData) => {
+    if (isSuperAdminUser()) {
+      return;
+    }
     if (!themeData) {
       setSocietyTheme({ primary: null, accent: null, cardStyle: "default", quickLinkStyle: "default", logo_url: null, society_name: null, configured: false });
       localStorage.removeItem("active_society_theme");
@@ -161,6 +183,7 @@ export function ThemeProvider({ children }) {
 
 
   const previewTheme = useCallback((themeData) => {
+    if (isSuperAdminUser()) return;
     if (!themeData || !themeData.primary) {
       clearDynamicTheme();
       return;
@@ -174,7 +197,7 @@ export function ThemeProvider({ children }) {
   }, []);
 
   const loadSocietyTheme = useCallback(async (societyId) => {
-    if (!societyId) {
+    if (!societyId || isSuperAdminUser()) {
       resetSocietyTheme();
       return null;
     }
@@ -205,6 +228,7 @@ export function ThemeProvider({ children }) {
 
     const handleThemeUpdated = (payload) => {
       try {
+        if (isSuperAdminUser()) return;
         const storedUser = JSON.parse(localStorage.getItem("user") || "null");
         if (storedUser?.society_id && String(storedUser.society_id) === String(payload?.society_id)) {
           const theme = payload?.theme || {};

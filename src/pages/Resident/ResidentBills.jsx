@@ -1,12 +1,11 @@
 
 
-import { useEffect, useState, useCallback, useContext, useRef} from "react";
+import { useEffect, useState, useCallback, useRef} from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import API from "../../services/api";
 import { useLang } from "../../context/LanguageContext";
-import { AuthContext } from "../../context/AuthContext";
 import ExpandableSearch from "../../components/common/ExpandableSearch";
 import SlidingTabs from "../../components/common/SlidingTabs";
 import Pagination from "../../components/common/Pagination";
@@ -162,15 +161,6 @@ export default function ResidentBills() {
   limitRef.current = limit;
 const navigate = useNavigate();
   const { t }    = useLang();
-  const { user } = useContext(AuthContext);
-
-  useEffect(() => {
-    if (user && user.resident_type !== "OWNER") {
-      const base = user.role === "FAMILY_MEMBER" ? "/family" : "/resident";
-      navigate(base, { replace: true });
-    }
-  }, [user, navigate]);
-
   const [accountants,  setAccountants]  = useState([]);
   const [loadingAcct, setLoadingAcct] = useState(true);
   const [showAccountant, setShowAccountant] = useState(false);

@@ -774,6 +774,7 @@ const hi = {
   amenStatusApproved:      "स्वीकृत",
   amenPassResident:        "निवासी पास",
   amenPassTitle:           "सुविधा पास",
+  amenPassView:            "पास देखें",
   amenPassLocked:          "पास लॉक है",
   amenPassPendingHint:     "अनुमोदन की प्रतीक्षा · स्वीकृत होने पर खुलेगा",
   amenPassUnavailable:     "पास उपलब्ध नहीं",

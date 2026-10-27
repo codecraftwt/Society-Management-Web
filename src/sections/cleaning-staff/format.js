@@ -72,7 +72,7 @@ export function formatDateTimeIST(value) {
   }).format(d);
 }
 
-/** Time-only in IST, e.g. "09:15". */
+/** Time-only in IST, e.g. "09:15 AM". */
 export function formatTimeIST(value) {
   if (!value) return "—";
   const d = new Date(value);
@@ -81,8 +81,10 @@ export function formatTimeIST(value) {
     timeZone: IST_TIMEZONE,
     hour: "2-digit",
     minute: "2-digit",
-    hour12: false,
-  }).format(d);
+    hour12: true,
+  })
+    .format(d)
+    .toUpperCase();
 }
 
 /**

@@ -80,7 +80,9 @@ function AllocatedSlotCard({ slot, t }) {
             {slot.flat ? (
               <>
                 {t("rdFlat")} {slot.flat.flat_number}
-                {slot.flat.floor_id != null && <> · {t("vehFloor", { floor: slot.flat.floor_id })}</>}
+                {(slot.flat.floor_number != null || slot.flat.floor_id != null) && (
+                  <> · {t("vehFloor", { floor: slot.flat.floor_number ?? slot.flat.floor_id })}</>
+                )}
               </>
             ) : (
               t("parkMainSlots")
@@ -870,7 +872,11 @@ export default function MyVehicles() {
                                 </div>
                                 <div>
                                   <p style={{ margin:0, fontSize:13, fontWeight:700, color: isSel ? "var(--accent)" : "var(--text-primary)" }}>{t("rdFlat")} {flat.flat_number}</p>
-                                  {flat.floor_id && <p style={{ margin:"2px 0 0", fontSize:11, color:"var(--text-secondary)" }}>{t("vehFloor", { floor: flat.floor_id })}</p>}
+                                  {(flat.floor_number != null || flat.floor_id != null) && (
+                                    <p style={{ margin:"2px 0 0", fontSize:11, color:"var(--text-secondary)" }}>
+                                      {t("vehFloor", { floor: flat.floor_number ?? flat.floor_id })}
+                                    </p>
+                                  )}
                                 </div>
                               </div>
                               <div style={{ display:"flex", alignItems:"center", gap:8 }}>
