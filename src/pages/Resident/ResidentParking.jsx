@@ -8,6 +8,7 @@ import {
   MdDirectionsCar, MdTwoWheeler,
   MdChevronLeft, MdChevronRight, MdLocalParking,
   MdCheckCircle, MdInfo, MdClose, MdSend,
+  MdApartment, MdDirectionsCarFilled,
 } from "react-icons/md";
 import Select from "../../components/common/Select";
 import Modal from "../../components/Modal";
@@ -39,6 +40,229 @@ function Spinner({ small = false, size }) {
   );
 }
 
+/* ── Allocated Slot Card for Resident Parking Page ── */
+function AllocatedSlotCard({ slot, t }) {
+  const isCAR = slot.vehicle_type === "CAR";
+  const ac    = isCAR ? "var(--accent)" : "var(--acct-violet, #8b5cf6)";
+  const abg   = isCAR ? "var(--accent-soft)" : "rgba(139, 92, 246, 0.12)";
+  const abdr  = isCAR ? "rgba(168, 85, 247, 0.28)" : "rgba(139, 92, 246, 0.28)";
+  const isOccupied = Boolean(slot.linked_vehicle || slot.is_occupied);
+
+  return (
+    <div
+      style={{
+        borderRadius: 16,
+        border: "1px solid var(--glass-border)",
+        background: "var(--card-inner-bg)",
+        overflow: "hidden",
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "space-between",
+        boxShadow: isOccupied ? "0 4px 18px -4px rgba(0,0,0,0.12)" : "none",
+        transition: "all 0.2s ease",
+      }}
+    >
+      {/* Top Header: Flat info + Slot Allocation Type */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          padding: "10px 16px",
+          borderBottom: "1px solid var(--glass-border)",
+          background: "var(--card-inner-bg)",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+          <MdApartment style={{ color: "var(--text-secondary)", fontSize: 15 }} />
+          <span style={{ fontSize: 12, color: "var(--text-secondary)", fontWeight: 700, letterSpacing: "0.03em" }}>
+            {slot.flat ? (
+              <>
+                Flat {slot.flat.flat_number}
+                {slot.flat.block_name && <> ({slot.flat.block_name})</>}
+                {(slot.flat.floor_number != null || slot.flat.floor_id != null) && (
+                  <> · Floor {slot.flat.floor_number ?? slot.flat.floor_id}</>
+                )}
+              </>
+            ) : (
+              "Assigned Unit"
+            )}
+          </span>
+        </div>
+
+        {/* DEFAULT / EXTRA badge */}
+        <span
+          style={{
+            padding: "2px 8px",
+            borderRadius: 999,
+            fontSize: 10,
+            fontWeight: 800,
+            letterSpacing: "0.04em",
+            textTransform: "uppercase",
+            background: slot.parking_type === "DEFAULT" ? "var(--approve-bg)" : "var(--approval-bg)",
+            color: slot.parking_type === "DEFAULT" ? "var(--approve-color)" : "var(--approval-color)",
+            border: `1px solid ${slot.parking_type === "DEFAULT" ? "var(--approve-border)" : "var(--approval-border)"}`,
+          }}
+        >
+          {slot.parking_type === "DEFAULT" ? "Default Space" : "Extra Space"}
+        </span>
+      </div>
+
+      {/* Main Body */}
+      <div style={{ padding: "16px" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <div
+              style={{
+                width: 44,
+                height: 44,
+                borderRadius: 12,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                background: abg,
+                border: `1px solid ${abdr}`,
+                flexShrink: 0,
+              }}
+            >
+              {isCAR ? (
+                <MdDirectionsCarFilled style={{ fontSize: 22, color: ac }} />
+              ) : (
+                <MdTwoWheeler style={{ fontSize: 22, color: ac }} />
+              )}
+            </div>
+            <div>
+              <p
+                style={{
+                  margin: 0,
+                  fontWeight: 800,
+                  fontSize: 19,
+                  letterSpacing: "0.04em",
+                  color: "var(--text-primary)",
+                  fontFamily: "monospace",
+                  lineHeight: 1.2,
+                }}
+              >
+                {slot.slot_number}
+              </p>
+              <p style={{ margin: "3px 0 0", fontSize: 12, color: "var(--text-secondary)", fontWeight: 600 }}>
+                {isCAR ? "Car Space" : "Bike Space"}
+                {slot.parking_floor && <> · Level {slot.parking_floor}</>}
+              </p>
+            </div>
+          </div>
+
+          {/* Occupancy Status Badge */}
+          <span
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 5,
+              padding: "4px 10px",
+              borderRadius: 999,
+              fontSize: 11,
+              fontWeight: 700,
+              background: isOccupied ? "rgba(16, 185, 129, 0.12)" : "rgba(59, 130, 246, 0.10)",
+              color: isOccupied ? "#10B981" : "#3B82F6",
+              border: `1px solid ${isOccupied ? "rgba(16, 185, 129, 0.28)" : "rgba(59, 130, 246, 0.25)"}`,
+              flexShrink: 0,
+            }}
+          >
+            <span
+              style={{
+                width: 6,
+                height: 6,
+                borderRadius: "50%",
+                background: isOccupied ? "#10B981" : "#3B82F6",
+              }}
+            />
+            {isOccupied ? "Occupied" : "Available"}
+          </span>
+        </div>
+
+        {/* Vehicle Information or Clean Empty Indicator */}
+        {slot.linked_vehicle ? (
+          <div
+            style={{
+              marginTop: 14,
+              padding: "10px 12px",
+              borderRadius: 10,
+              background: "rgba(124, 58, 237, 0.05)",
+              border: "1px solid rgba(124, 58, 237, 0.18)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: 8,
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
+              <div
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 5,
+                  padding: "3px 8px",
+                  borderRadius: 6,
+                  background: "var(--card-inner-bg)",
+                  border: "1px solid var(--glass-border)",
+                  fontFamily: "monospace",
+                  fontWeight: 800,
+                  fontSize: 12,
+                  letterSpacing: "0.04em",
+                  color: "var(--text-primary)",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                <MdDirectionsCarFilled size={12} style={{ color: ac }} />
+                {slot.linked_vehicle.vehicle_number}
+              </div>
+              {slot.linked_vehicle.vehicle_name && (
+                <span
+                  style={{
+                    fontSize: 12,
+                    color: "var(--text-secondary)",
+                    fontWeight: 600,
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  · {slot.linked_vehicle.vehicle_name}
+                </span>
+              )}
+            </div>
+            <span style={{ fontSize: 10, fontWeight: 700, color: "#10B981", flexShrink: 0 }}>
+              ✓ Linked
+            </span>
+          </div>
+        ) : (
+          <div
+            style={{
+              marginTop: 14,
+              padding: "10px 12px",
+              borderRadius: 10,
+              background: "rgba(255, 255, 255, 0.02)",
+              border: "1px dashed var(--glass-border)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              color: "var(--text-secondary)",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 500 }}>
+              <span style={{ fontSize: 13, opacity: 0.6 }}>🅿️</span>
+              <span>Empty / Unlinked</span>
+            </div>
+            <span style={{ fontSize: 11, fontWeight: 600, color: "#3B82F6" }}>
+              Ready to claim
+            </span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 /* ═══════════════════════════════════════════
    Main
 ═══════════════════════════════════════════ */
@@ -46,7 +270,11 @@ export default function ResidentParking() {
   const [limit, setLimit] = useState(10);
   const limitRef = useRef(limit);
   limitRef.current = limit;
-const { t } = useLang();
+  const { t } = useLang();
+
+  // ── View Tabs: Allocated slots vs Guest/Extra Requests ──
+  const [activeTab, setActiveTab] = useState("slots"); // "slots" | "requests"
+  const [slotSearch, setSlotSearch] = useState("");
 
   const [showForm,     setShowForm]     = useState(false);
   const [hasFlat,      setHasFlat]      = useState(true);
@@ -137,6 +365,20 @@ useEffect(() => {
   const isSlotOccupied = (slot) =>
     registeredVehicles.some((v) => v.parking_slot_id === slot.id);
   const hasAnyFreeSlot = availableSlots.some((s) => !isSlotOccupied(s));
+
+  /* ── Derived allocated slots filtered by search ── */
+  const sq = slotSearch.trim().toLowerCase();
+  const visibleAllocatedSlots = allocatedSlots.filter((s) => {
+    if (!sq) return true;
+    return [
+      s.slot_number,
+      s.flat?.flat_number,
+      s.flat?.block_name,
+      s.linked_vehicle?.vehicle_number,
+      s.linked_vehicle?.vehicle_name,
+      s.parking_floor,
+    ].some((v) => String(v || "").toLowerCase().includes(sq));
+  });
 
   /* ── Fetch requests ── */
   const fetchData = useCallback(async (
@@ -343,7 +585,9 @@ useEffect(() => {
           </div>
           <div>
             <h2 className="page-title">{t("parkTitle")}</h2>
-            <p className="page-subtitle">{counts.ALL} {t("parkCount") || "requests"}</p>
+            <p className="page-subtitle">
+              {allocatedSlots.length} {t("parkTabMySlots") || "Allocated Slots"} · {counts.ALL || requests.length} {t("parkCount") || "requests"}
+            </p>
           </div>
         </div>
         {hasFlat && (
@@ -361,20 +605,20 @@ useEffect(() => {
         <StatCard
           icon={MdLocalParking}
           tone="brand"
-          value={counts.ALL || 0}
-          label={t("parkStatTotal") || "Total Requests"}
-        />
-        <StatCard
-          icon={MdInfo}
-          tone="warning"
-          value={counts.PENDING || 0}
-          label={t("parkStatusPending") || "Pending"}
+          value={allocatedSlots.length}
+          label={t("parkTabMySlots") || "My Allocated Slots"}
         />
         <StatCard
           icon={MdCheckCircle}
           tone="success"
           value={counts.APPROVED || 0}
           label={t("parkStatusApproved") || "Approved"}
+        />
+        <StatCard
+          icon={MdInfo}
+          tone="warning"
+          value={counts.PENDING || 0}
+          label={t("parkStatusPending") || "Pending"}
         />
         <StatCard
           icon={MdDirectionsCar}
@@ -720,8 +964,85 @@ useEffect(() => {
         </form>
       </Modal>
 
-      {/* ── REQUEST LIST ── */}
-      <div className="bg-card rounded-2xl p-4 sm:p-5 border border-white/8">
+      {/* ── MAIN TABS: My Allocated Slots vs Parking Requests ── */}
+      <div className="mb-4">
+        <SlidingTabs
+          value={activeTab}
+          onChange={setActiveTab}
+          items={[
+            {
+              id: "slots",
+              label: t("parkTabMySlots") || "My Allocated Slots",
+              icon: <MdLocalParking size={16} />,
+              badge: allocatedSlots.length,
+            },
+            {
+              id: "requests",
+              label: t("parkTabRequests") || "Parking Requests",
+              icon: <MdDirectionsCar size={16} />,
+              badge: counts.ALL || requests.length,
+              alert: counts.PENDING || undefined,
+            },
+          ]}
+        />
+      </div>
+
+      {/* ── ACTIVE TAB CONTENT ── */}
+      {activeTab === "slots" ? (
+        <div className="bg-card rounded-2xl p-4 sm:p-5 border border-white/8">
+          <div className="ge-toolbar mb-4">
+            <ExpandableSearch
+              placeholder={t("parkSearchSlots") || "Search slot number, flat, vehicle…"}
+              value={slotSearch}
+              onChange={setSlotSearch}
+            />
+          </div>
+
+          {slotsLoading ? (
+            <div className="flex flex-col items-center gap-3 py-12 text-secondary">
+              <Spinner size={28} />
+              <p className="text-sm">{t("parkLoading") || "Loading allocated slots…"}</p>
+            </div>
+          ) : allocatedSlots.length === 0 ? (
+            <div className="flex flex-col items-center gap-3 py-14 text-secondary animate-fadeIn">
+              <MdOutlineInbox size={48} className="opacity-20" />
+              <p className="text-sm">{t("parkNoSlots") || "No parking slots currently allocated to your flat(s)."}</p>
+              {hasFlat && (
+                <button onClick={() => setShowForm(true)} className="btn-primary mt-1">
+                  <MdAdd size={16} /> {t("parkRequestBtn")}
+                </button>
+              )}
+            </div>
+          ) : visibleAllocatedSlots.length === 0 ? (
+            <div className="flex flex-col items-center gap-2 py-12 text-secondary animate-fadeIn">
+              <MdSearch size={32} className="opacity-25" />
+              <p className="text-sm">{t("visNoMatch") || "No slots match your search"}</p>
+              <button
+                onClick={() => setSlotSearch("")}
+                className="text-xs text-accent hover:underline mt-1"
+                style={{ background: "none", border: "none", cursor: "pointer" }}
+              >
+                {t("billClearFilters") || "Clear search"}
+              </button>
+            </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {visibleAllocatedSlots.map((slot) => (
+                  <AllocatedSlotCard key={slot.id} slot={slot} t={t} />
+                ))}
+              </div>
+              <div className="mt-4 pt-3 border-t border-white/10 flex justify-between items-center text-xs text-secondary">
+                <span>
+                  {t("reportShowing") || "Showing"} {visibleAllocatedSlots.length} {t("reportOf") || "of"} {allocatedSlots.length} {t("parkTabMySlots") || "Allocated Slots"}
+                </span>
+              </div>
+            </>
+          )}
+        </div>
+      ) : (
+        /* ── REQUEST LIST ── */
+        <div className="bg-card rounded-2xl p-4 sm:p-5 border border-white/8">
 
         {/* Toolbar — search + filter */}
         {!initialLoad && (
@@ -883,7 +1204,8 @@ useEffect(() => {
             </div>
           </>
         ) : null}
-      </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -5186,14 +5186,14 @@ const [totalPages, setTotalPages] = useState(1);
           <Select
             className="input"
             style={{ flex: 1, minWidth: 150, height: 42, padding: "8px 12px", borderRadius: 12, fontSize: 13 }}
+            placeholder={t("selectTheRole", "Select the role")}
             value={filterRole}
             onChange={(e) => setFilterRole(e.target.value)}
           >
-            <option value="">{t("allRoles") || "All Roles"}</option>
-            <option value="COMMITTEE_MEMBER">{t("roleCommittee")}</option>
-            <option value="ACCOUNTANT">{t("roleAccountant")}</option>
-            <option value="ADMIN">{t("roleAdmin")}</option>
+            <option value="">{t("selectTheRole", "Select the role")}</option>
             <option value="SOCIETY_ADMIN">{t("roleSocietyAdmin")}</option>
+            <option value="ACCOUNTANT">{t("roleAccountant")}</option>
+            <option value="COMMITTEE_MEMBER">{t("roleCommittee")}</option>
             <option value="RESIDENT">{t("roleResident")}</option>
             <option value="TENANT">{t("roleTenant")}</option>
           </Select>

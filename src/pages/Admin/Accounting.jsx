@@ -2010,34 +2010,45 @@ const getMeaningfulAuditReason = (row, t) => {
   const oldV = row.old_value || {};
   const newV = row.new_value || {};
   const amt = auditAmount(newV) || auditAmount(oldV) || "";
+  const oldAmt = auditAmount(oldV);
   const payee = newV.pay_to || oldV.pay_to || "";
+  const purpose = (newV.reason || oldV.reason || "").toString().trim();
 
   if (row.reason && row.reason !== "System verified financial operation" && !row.reason.startsWith("System verified")) {
     return row.reason;
   }
 
   if (row.action === "EXPENSE_CREATE") {
-    return t("accExportAuditPath", { amt: amt || t("accFunds"), payee: payee || t("accVendor") });
+    return purpose
+      ? `Paid ${amt || "funds"} to ${payee || "vendor"} for ${purpose}`
+      : `Paid ${amt || "funds"} to ${payee || "vendor"}`;
   }
   if (row.action === "EXPENSE_VOID") {
-    return t("accExportExpenseVoid", { amt: amt || t("accFunds"), payee: payee || t("accVendor") });
+    return purpose
+      ? `Cancelled payment of ${amt || "funds"} to ${payee || "vendor"} (${purpose})`
+      : `Cancelled payment of ${amt || "funds"} to ${payee || "vendor"}`;
   }
   if (row.action === "EXPENSE_UPDATE") {
-    return t("accExportExpenseUpdate", { payee: payee || t("accVendor") });
+    if (oldAmt && amt && oldAmt !== amt) {
+      return `Updated payment for ${payee || "vendor"}: ${oldAmt} to ${amt}${purpose ? ` (${purpose})` : ""}`;
+    }
+    return purpose
+      ? `Updated payment for ${payee || "vendor"} (${purpose} - ${amt || "funds"})`
+      : `Updated payment details for ${payee || "vendor"}`;
   }
   if (row.action === "OPENING_BALANCE_SET") {
-    return `${t("accExportOpeningSet", { amt: amt || t("accConfiguredAmount") })}${row.reason ? ` — ${row.reason}` : ""}`;
+    return `Opening balance set to ${amt || "configured amount"}`;
   }
   if (row.action === "OPENING_BALANCE_ADJUST") {
-    return `${t("accExportOpeningAdjust", { amt: amt || t("accNewAmount") })}${row.reason ? ` — ${row.reason}` : ""}`;
+    return `Opening balance changed to ${amt || "new amount"}`;
   }
   if (row.action === "PAYMENT_REVERSED") {
-    return t("accExportPaymentReversed", { amt: amt || t("accFunds") });
+    return `Payment of ${amt || "funds"} reversed`;
   }
   if (row.action === "MANUAL_ADJUSTMENT") {
-    return t("accExportManualAdjust");
+    return "Manual balance adjustment";
   }
-  return t("accExportVerified");
+  return "Verified entry";
 };
 
 /* Format single key change highlight for table column */

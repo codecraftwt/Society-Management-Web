@@ -473,40 +473,67 @@ const ParkingTab = ({ parking, t }) => {
 
   return (
     <div className="space-y-2.5">
-      {parking.map((p, i) => (
-        <div
-          className="p-3.5 rounded-xl bg-transparent border border-glass-border flex items-center justify-between gap-3 hover:border-accent/40 transition-colors shadow-sm"
-          key={p.id || i}
-        >
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="w-9 h-9 rounded-xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center shrink-0 border border-emerald-500/20">
-              <MdLocalParking size={20} />
-            </div>
-            <div className="min-w-0">
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="font-bold text-sm text-primary">
-                  {p.assigned_spot ? `Bay ${p.assigned_spot}` : p.guest_name || `${t("fhParking") || "Slot"} #${i + 1}`}
-                </span>
-                {p.assigned_spot && (
+      {parking.map((p, i) => {
+        const isAllocated = p.is_allocated_slot || p.slot_number;
+        const displayName = p.slot_number || (p.assigned_spot ? `Bay ${p.assigned_spot}` : p.guest_name || `${t("fhParking") || "Slot"} #${i + 1}`);
+        return (
+          <div
+            className="p-3.5 rounded-xl bg-transparent border border-glass-border flex items-center justify-between gap-3 hover:border-accent/40 transition-colors shadow-sm"
+            key={p.id || i}
+          >
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center shrink-0 border border-emerald-500/20">
+                <MdLocalParking size={22} />
+              </div>
+              <div className="min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="font-bold text-sm text-primary">
+                    {displayName}
+                  </span>
                   <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 text-[10px] font-bold uppercase">
-                    🅿️ {p.assigned_spot}
+                    🅿️ {p.slot_number || p.assigned_spot || "Slot"}
                   </span>
-                )}
-              </div>
-              <div className="flex items-center gap-2 mt-1 text-xs text-secondary flex-wrap">
-                {p.vehicle_number && (
-                  <span className="font-mono text-[10px] px-1.5 py-0.5 rounded bg-black/20 text-slate-300 font-bold">
-                    {p.vehicle_number}
-                  </span>
-                )}
-                {p.vehicle_type && <span>{p.vehicle_type}</span>}
-                {p.expected_arrival && <span>• {String(p.expected_arrival).slice(0, 10)}</span>}
+                  {p.parking_floor && (
+                    <span className="px-2 py-0.5 rounded-md bg-transparent border border-glass-border text-secondary text-[11px] font-medium">
+                      {p.parking_floor}
+                    </span>
+                  )}
+                  {p.wing && (
+                    <span className="px-2 py-0.5 rounded-md bg-transparent border border-glass-border text-secondary text-[11px] font-medium">
+                      {p.wing}
+                    </span>
+                  )}
+                  {isAllocated && (
+                    <span className="px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 text-[10px] font-bold uppercase">
+                      {p.parking_type || "Standard"}
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center gap-2 mt-1 text-xs text-secondary flex-wrap">
+                  {p.vehicle_number && (
+                    <span className="font-mono text-[11px] px-2 py-0.5 rounded bg-black/20 text-slate-200 font-bold tracking-wide">
+                      {p.vehicle_number}
+                    </span>
+                  )}
+                  {p.vehicle_name && (
+                    <span className="text-secondary font-medium">• {p.vehicle_name}</span>
+                  )}
+                  {p.vehicle_type && (
+                    <span className="text-secondary">({p.vehicle_type})</span>
+                  )}
+                  {p.resident_name && (
+                    <span className="text-secondary">• {p.resident_name}</span>
+                  )}
+                  {p.expected_arrival && (
+                    <span>• {String(p.expected_arrival).slice(0, 10)}</span>
+                  )}
+                </div>
               </div>
             </div>
+            <Pill status={p.status || (isAllocated ? "OCCUPIED" : "APPROVED")} t={t} />
           </div>
-          <Pill status={p.status || "APPROVED"} t={t} />
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 };
@@ -682,17 +709,25 @@ const FlatHistory = () => {
 
       const reqHeaders = activeSocId ? { "x-society-id": activeSocId } : {};
 
-      const [residentsRes, billsRes, parcelsRes, visitorsRes, complaintsRes, parkingRes] =
-        await Promise.allSettled([
-          API.get(`/flat-history/${flat.id}`, { headers: reqHeaders }),
-          API.get(`/bills/society`, { headers: reqHeaders }),
-          API.get(`/parcels`, { headers: reqHeaders }),
-          API.get(`/visitors`, { headers: reqHeaders }),
-          canViewComplaints
-            ? API.get(`/complaints`, { headers: reqHeaders })
-            : Promise.resolve(null),
-          API.get(`/parking?limit=100&flat_id=${flat.id}`, { headers: reqHeaders }),
-        ]);
+      const [
+        residentsRes,
+        billsRes,
+        parcelsRes,
+        visitorsRes,
+        complaintsRes,
+        parkingRes,
+        parkingSlotsRes,
+      ] = await Promise.allSettled([
+        API.get(`/flat-history/${flat.id}`, { headers: reqHeaders }),
+        API.get(`/bills/society`, { headers: reqHeaders }),
+        API.get(`/parcels`, { headers: reqHeaders }),
+        API.get(`/visitors`, { headers: reqHeaders }),
+        canViewComplaints
+          ? API.get(`/complaints?limit=200`, { headers: reqHeaders })
+          : Promise.resolve(null),
+        API.get(`/parking?limit=100&flat_id=${flat.id}`, { headers: reqHeaders }),
+        API.get(`/parking-slots?limit=500`, { headers: reqHeaders }),
+      ]);
 
       const safeArr = (result) =>
         result.status === "fulfilled" ? toArr(result.value) : [];
@@ -715,21 +750,56 @@ const FlatHistory = () => {
             String(item.flat_number ?? "") === String(flat.flat_number)
         );
 
-      const residentId = flat.resident_id;
+      const allResidentIds = new Set(
+        [
+          flat.resident_id,
+          flat.resident?.id,
+          flat.User?.id,
+          ...residents.map((r) => r.id || r.user_id || r.User?.id),
+        ]
+          .filter(Boolean)
+          .map(String)
+      );
+
+      const filteredComplaints = safeArr(complaintsRes).filter((c) => {
+        if (c.flat_id != null && String(c.flat_id) === String(flat.id)) return true;
+        if (c.Flat?.id != null && String(c.Flat.id) === String(flat.id)) return true;
+        if (flat.flat_number && (String(c.flat_number ?? "") === String(flat.flat_number) || String(c.Flat?.flat_number ?? "") === String(flat.flat_number))) return true;
+        if (c.resident_id != null && allResidentIds.has(String(c.resident_id))) return true;
+        if (c.user_id != null && allResidentIds.has(String(c.user_id))) return true;
+        return false;
+      });
+
+      const allSlots = safeArr(parkingSlotsRes);
+      const allocatedSlots = allSlots
+        .filter((s) => {
+          if (s.flat_id != null && String(s.flat_id) === String(flat.id)) return true;
+          if (s.Vehicle?.flat_id != null && String(s.Vehicle.flat_id) === String(flat.id)) return true;
+          if (flat.flat_number && (String(s.flat_number ?? "") === String(flat.flat_number) || String(s.Flat?.flat_number ?? "") === String(flat.flat_number))) return true;
+          return false;
+        })
+        .map((s) => ({
+          ...s,
+          is_allocated_slot: true,
+          assigned_spot: s.slot_number,
+          vehicle_number: s.Vehicle?.vehicle_number || s.vehicle_number,
+          vehicle_name: s.Vehicle?.vehicle_name || s.vehicle_name,
+          vehicle_type: s.Vehicle?.vehicle_type || s.vehicle_type,
+          resident_name: s.resident?.name || s.resident_name,
+          status: s.status || "OCCUPIED",
+        }));
+
+      const visitorParking = safeArr(parkingRes).filter(
+        (p) => String(p.flat_id ?? "") === String(flat.id)
+      );
 
       setData({
         residents,
         bills: byFlat(safeArr(billsRes)),
         parcels: byFlat(safeArr(parcelsRes)),
         visitors: byFlat(safeArr(visitorsRes)),
-        complaints: residentId
-          ? safeArr(complaintsRes).filter(
-              (c) => String(c.resident_id ?? "") === String(residentId)
-            )
-          : [],
-        parking: safeArr(parkingRes).filter(
-          (p) => String(p.flat_id ?? "") === String(flat.id)
-        ),
+        complaints: filteredComplaints,
+        parking: [...allocatedSlots, ...visitorParking],
       });
 
       setSelectedFlat(flat);

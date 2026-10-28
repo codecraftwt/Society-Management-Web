@@ -2337,6 +2337,7 @@ const mr = {
   roleResident:            "रहिवासी",
   roleTenant:              "भाडेकरू",
   allRoles:                "सर्व भूमिका",
+  selectTheRole:           "भूमिका निवडा",
   afLinkParking:           "पार्किंग स्लॉट लिंक करा (ऐच्छिक)",
   afNoParkingOption:       "-- कोणताही पार्किंग स्लॉट नाही --",
   afBack:                  "मागे",

@@ -2369,6 +2369,7 @@ const en = {
   roleResident:            "Resident",
   roleTenant:              "Tenant",
   allRoles:                "All Roles",
+  selectTheRole:           "Select the role",
   afLinkParking:           "Link Parking Slot (Optional)",
   afNoParkingOption:       "-- No Parking Slot --",
   afBack:                  "Back",
