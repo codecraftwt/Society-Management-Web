@@ -67,10 +67,22 @@ export default function NotificationBell() {
     // Emitting `join` again here only produced duplicate room-join logs.
 
     const onNew = (notification) => {
+      const isOwnEmergency =
+        String(notification?.type || '').toUpperCase() === 'EMERGENCY' &&
+        notification?.senderId != null &&
+        user?.id != null &&
+        String(notification.senderId) === String(user.id);
+
       setNotifications((prev) => {
         if (prev.some((n) => n.id === notification.id)) return prev;
         return [notification, ...prev];
       });
+
+      // The sender already receives the API success toast. Avoid showing the
+      // society-wide emergency notification toast a second time, and avoid
+      // making it appear before the POST request has completed.
+      if (isOwnEmergency) return;
+
       toast.info(`${notification.title}\n${notification.message}`, {
         position: "top-right",
         autoClose: 6000,

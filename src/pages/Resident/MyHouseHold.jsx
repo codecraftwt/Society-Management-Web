@@ -767,7 +767,10 @@ function DailyPassModal({ member, flats = [], defaultFlatId, onClose, t, society
   return (
     <PortalModal>
       <div onClick={(e) => { if (e.target === e.currentTarget) onClose(); }} className="hh-overlay">
-        <div className="bg-card animate-scaleIn hh-att-box hh-pass-box" style={{ maxWidth: "460px" }}>
+        <div
+          className="bg-card animate-scaleIn hh-att-box hh-pass-box"
+          style={{ width: "min(580px, calc(100vw - 16px))", maxWidth: "580px" }}
+        >
           {/* ── MODAL HEADER ── */}
           <div className="hh-edit-er">
             <div className="hh-edit-er-left">
@@ -851,7 +854,7 @@ function DailyPassModal({ member, flats = [], defaultFlatId, onClose, t, society
                 {/* Branded Pass Card */}
                 <div className="hh-pass-card w-full rounded-2xl overflow-hidden border border-white/10 bg-white/5">
                   {/* Card header — gradient brand band */}
-                  <div className="hh-pass-card-head px-4 pt-4 pb-6 relative overflow-hidden"
+                  <div className="hh-pass-card-head px-5 pt-5 pb-7 relative overflow-hidden"
                     style={{ background: "linear-gradient(135deg, #1e1b4b 0%, #4f46e5 55%, #7c3aed 100%)" }}>
                     <div className="absolute -top-6 -right-6 w-24 h-24 rounded-full bg-white/10" aria-hidden="true" />
                     <div className="absolute -bottom-8 -left-4 w-28 h-28 rounded-full bg-black/20" aria-hidden="true" />
@@ -859,22 +862,22 @@ function DailyPassModal({ member, flats = [], defaultFlatId, onClose, t, society
                       <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-[0.2em] text-indigo-200 font-semibold">
                         <MdApartment size={13} /> {societyName || t("hhSociety", "Society")}
                       </span>
-                      <p className="mt-1.5 text-white text-sm font-bold tracking-[0.22em]">DAILY GATE PASS</p>
-                      <p className="mt-0.5 text-indigo-200 text-xs truncate">{member.name}{member.work ? ` · ${member.work}` : ""}</p>
+                      <p className="mt-2 text-white text-base font-bold tracking-[0.28em]">DAILY GATE PASS</p>
+                      <p className="mt-1 text-indigo-200 text-sm truncate">{member.name}{member.work ? ` · ${member.work}` : ""}</p>
                     </div>
                   </div>
 
                   {/* Body — QR + OTP + meta */}
                   <div className="px-5 pt-5 pb-4 flex flex-col items-center gap-2">
                     <div className="bg-white rounded-xl p-3 shadow-md border border-slate-200">
-                      <QRCodeCanvas ref={qrRef} value={String(activePass.otp)} size={150} />
+                      <QRCodeCanvas ref={qrRef} value={String(activePass.otp)} size={180} />
                     </div>
 
                     <p className="hh-pass-code-label" style={{ marginBottom: "2px", marginTop: "4px" }}>
                       {t("hhPassCode", "Gate Pass OTP Code")}
                     </p>
                     <p className="hh-pass-code" style={{ letterSpacing: "0.25em", color: "#22c55e" }}>
-                      {activePass.otp}
+                      {String(activePass.otp).toUpperCase()}
                     </p>
 
                     {/* Validity & Flat Meta Badges */}

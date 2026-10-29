@@ -2,6 +2,7 @@
 import { createContext, useContext, useState, useEffect, useCallback } from "react";
 import API from "../services/api";
 import { rejoinSocket, getSocket, connectSocket, disconnectSocket } from "../services/socket";
+import { resetEmergencyAlertStore } from "../hooks/useEmergencyAlerts";
 
 export const AuthContext = createContext({
   user:               null,
@@ -189,6 +190,7 @@ export const AuthProvider = ({ children }) => {
 
   const logout = () => {
     localStorage.clear();
+    resetEmergencyAlertStore();
     setUser(null);
     setAvailableSocieties([]);
     // Drop the authenticated connection — the socket handshake carries the JWT.
@@ -220,6 +222,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   const switchSociety = async (societyId) => {
+    resetEmergencyAlertStore();
     const res = await API.post("/auth/switch-society", { society_id: societyId });
     const { token, user: updatedUser, availableSocieties: freshSocieties } = res.data;
 
