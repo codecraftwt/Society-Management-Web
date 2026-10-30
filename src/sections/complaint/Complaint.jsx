@@ -231,14 +231,13 @@ export default function Complaint() {
     const socket = getSocket();
     if (!socket) return;
     const handleNewComplaint = (complaint) => {
-      setComplaints(prev => {
-        if (prev.find(c => c.id === complaint.id)) return prev;
-        return [complaint, ...prev];
-      });
+      // Socket payloads are intentionally lightweight. Reload the API row so
+      // the admin drawer receives User, Flat, Floor and Block associations.
+      loadComplaints(1, debSearch, filterStatus);
     };
     socket.on("new_complaint", handleNewComplaint);
     return () => socket.off("new_complaint", handleNewComplaint);
-  }, []);
+  }, [loadComplaints, debSearch, filterStatus]);
 
   useEffect(() => {
     const socket = getSocket();

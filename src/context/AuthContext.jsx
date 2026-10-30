@@ -128,7 +128,12 @@ export const AuthProvider = ({ children }) => {
       if (!fresh || typeof fresh !== "object") return current.profile_picture ?? null;
 
       const patch = {};
-      ["profile_picture", "name", "email", "phone"].forEach((k) => {
+      [
+        "profile_picture", "name", "email", "phone",
+        "roles", "role", "activeRole", "availablePanels",
+        "availableSocieties", "society_id",
+        "is_society_resident", "can_switch_to_resident",
+      ].forEach((k) => {
         if (fresh[k] === undefined) return;
         if (fresh[k] !== current[k]) patch[k] = fresh[k];
       });
@@ -137,6 +142,9 @@ export const AuthProvider = ({ children }) => {
       const merged = normaliseUser({ ...current, ...patch });
       localStorage.setItem("user", JSON.stringify(merged));
       setUser(merged);
+      if (Array.isArray(merged.availableSocieties)) {
+        setAvailableSocieties(merged.availableSocieties);
+      }
       return patch.profile_picture ?? null;
     } catch (err) {
       console.warn("[AuthContext] Profile sync skipped:", err?.message);
@@ -203,7 +211,7 @@ export const AuthProvider = ({ children }) => {
     setUser(merged);
   }, [user]);
 
-  const switchRole = async (role) => {
+  const switchRole = useCallback(async (role) => {
     const res = await API.post("/auth/switch-role", { role });
     const { token, user: updatedUser } = res.data;
 
@@ -216,10 +224,12 @@ export const AuthProvider = ({ children }) => {
     setUser(normalised);
     // ✅ Re-join with new activeRole so server rooms update immediately
     rejoinSocket();
-    await refreshPermissions();
+    // Permission refresh is useful but must not block the panel transition.
+    // The new token/user state is already active above.
+    refreshPermissions().catch(() => {});
 
     return { success: true, user: normalised };
-  };
+  }, [refreshPermissions]);
 
   const switchSociety = async (societyId) => {
     resetEmergencyAlertStore();

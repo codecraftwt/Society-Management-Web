@@ -12,6 +12,7 @@ import {
   MdVisibility, MdDownload, MdPictureAsPdf,
   MdSearch, MdOutlineInbox, MdHome, MdHistory,
   MdRepeat, MdTimer, MdAccessTime, MdInfoOutline, MdFilterList,
+  MdPeople, MdAdd, MdClose,
 } from "react-icons/md";
 import { QRCodeCanvas } from "qrcode.react";
 import Modal from "../../components/Modal";
@@ -215,6 +216,12 @@ export default function ResidentPreApproval() {
   const [dwellChoice,   setDwellChoice]   = useState("45");
   const [dwellCustom,   setDwellCustom]   = useState("");
   const [validityMonths, setValidityMonths] = useState("1");
+  const [houseHelpers, setHouseHelpers] = useState([]);
+  const [selectedHelper, setSelectedHelper] = useState(null);
+  const [helperMenuOpen, setHelperMenuOpen] = useState(false);
+  const [showNewHelper, setShowNewHelper] = useState(false);
+  const [newHelper, setNewHelper] = useState({ name: "", phone: "", work: "Maid" });
+  const [savingHelper, setSavingHelper] = useState(false);
 
   const DWELL_OPTIONS = [
     { value: "30",  label: t("preapDwellMin", "30 min", { count: 30 }) },
@@ -296,6 +303,19 @@ export default function ResidentPreApproval() {
     return () => { cancelled = true; };
   }, []);
 
+  useEffect(() => {
+    if (passType !== "DAILY") {
+      setSelectedHelper(null);
+      setHelperMenuOpen(false);
+      setShowNewHelper(false);
+      return;
+    }
+    API.get("/household").then((res) => {
+      const list = Array.isArray(res.data) ? res.data : res.data?.data || [];
+      setHouseHelpers(list.filter((m) => m.work || ["maid", "cook", "driver", "cleaner", "helper", "nanny", "daily help", "gardener"].includes(String(m.relation || "").toLowerCase())));
+    }).catch(() => setHouseHelpers([]));
+  }, [passType]);
+
   /* ── Form submit ── */
   const handleSubmit = async (e) => {
   e.preventDefault();
@@ -314,8 +334,12 @@ export default function ResidentPreApproval() {
     if (vehicleErr) { alert(vehicleErr); return; }
   }
 
-  if (!form.valid_date || !form.purpose) {
+   if (!form.valid_date || (passType !== "DAILY" && !form.purpose)) {
     alert(t("preapFillRequired"));
+    return;
+  }
+  if (passType === "DAILY" && !selectedHelper && !newHelper.name.trim()) {
+    alert(t("preapHelperRequired", "Please select or add a house helper for the Daily Pass."));
     return;
   }
 
@@ -329,10 +353,10 @@ export default function ResidentPreApproval() {
 
     const payload = {
       flat_id: effectiveSelectedFlatId,
-      visitor_name: form.visitor_name.trim(),
-      mobile: form.mobile.trim(),
+       visitor_name: passType === "DAILY" ? (selectedHelper?.name || newHelper.name).trim() : form.visitor_name.trim(),
+       mobile: passType === "DAILY" ? (selectedHelper?.phone || newHelper.phone).trim() : form.mobile.trim(),
       vehicle_number: formatVehicleNumber(form.vehicle_number),
-      purpose: form.purpose,
+       purpose: passType === "DAILY" ? "SERVICE" : form.purpose,
       valid_date: form.valid_date, // YYYY-MM-DD
       pass_type: passType,
       dwell_minutes: dwellMinutes,
@@ -560,7 +584,7 @@ export default function ResidentPreApproval() {
                 <button
                   key={opt.value}
                   type="button"
-                  onClick={() => setPassType(opt.value)}
+                   onClick={() => setPassType(opt.value)}
                   className={`flex items-center justify-center gap-1.5 h-11 rounded-xl text-xs font-semibold border transition-all duration-200 ${
                     passType === opt.value
                       ? "bg-green-500/20 text-green-400 border-green-500/40"
@@ -573,6 +597,16 @@ export default function ResidentPreApproval() {
             </div>
           </div>
 
+          {passType === "DAILY" ? (
+            <div className="rounded-2xl border border-purple-300/30 bg-purple-500/5 p-3 space-y-3">
+              <div className="flex items-center justify-between">
+                <label className="text-xs text-secondary">{t("preapHouseHelper", "House Helper")} <span className="text-red-400">*</span></label>
+                <button type="button" onClick={() => { setShowNewHelper((v) => !v); setHelperMenuOpen(false); }} className="rounded-xl bg-accent px-3 py-2 text-xs font-bold text-white"><MdAdd className="inline" /> {showNewHelper ? t("cancel", "Cancel") : t("preapAddHelper", "Add")}</button>
+              </div>
+              {!showNewHelper && <div className="relative"><button type="button" onClick={() => setHelperMenuOpen((v) => !v)} className="input h-14 w-full text-left flex items-center gap-3"><MdPeople size={21} className="text-accent" /><span className="flex-1">{selectedHelper?.name || t("preapChooseHelper", "Choose Helper...")}<small className="block text-secondary">{selectedHelper ? `${selectedHelper.work || "House Help"} · ${selectedHelper.phone || ""}` : `${houseHelpers.length} registered helpers`}</small></span><span>⌄</span></button>{helperMenuOpen && <div className="absolute z-20 mt-1 w-full rounded-xl border border-white/15 bg-panel p-1 shadow-xl">{houseHelpers.length ? houseHelpers.map((h) => <button type="button" key={h.id} onClick={() => { setSelectedHelper(h); setHelperMenuOpen(false); }} className="block w-full rounded-lg px-3 py-3 text-left hover:bg-accent/10"><strong>{h.name}</strong><small className="ml-2 text-secondary">{h.work || "House Help"} {h.phone ? `· ${h.phone}` : ""}</small></button>) : <p className="p-3 text-xs text-secondary">{t("preapNoHelpers", "No helpers saved yet. Add a new helper.")}</p>}</div>}</div>}
+              {showNewHelper && <div className="space-y-2 rounded-xl border border-purple-300/25 p-3"><div className="flex justify-between text-sm font-semibold text-accent"><span><MdPeople className="inline" /> {t("preapNewHelper", "New Helper")}</span><button type="button" onClick={() => setShowNewHelper(false)}><MdClose /></button></div><input className="input h-11 w-full" placeholder={t("preapHelperName", "Full name")} value={newHelper.name} onChange={(e) => setNewHelper({ ...newHelper, name: e.target.value })} /><input className="input h-11 w-full" placeholder={t("preapHelperPhone", "10-digit mobile number")} value={newHelper.phone} maxLength={10} onChange={(e) => setNewHelper({ ...newHelper, phone: e.target.value.replace(/\D/g, "") })} /><div className="flex flex-wrap gap-2">{["Maid", "Cook", "Driver", "Cleaner", "Nanny", "Gardener"].map((work) => <button type="button" key={work} onClick={() => setNewHelper({ ...newHelper, work })} className={`rounded-full border px-3 py-1.5 text-xs ${newHelper.work === work ? "border-accent bg-accent/15 text-accent" : "border-white/15 text-secondary"}`}>{work}</button>)}</div><button type="button" disabled={!newHelper.name.trim() || newHelper.phone.length !== 10 || savingHelper} onClick={async () => { setSavingHelper(true); try { const res = await API.post("/household/add", { ...newHelper, flat_id: effectiveSelectedFlatId }); const member = res.data?.member || { ...newHelper, id: Date.now() }; setHouseHelpers((items) => [...items, member]); setSelectedHelper(member); setShowNewHelper(false); } catch (err) { alert(err.response?.data?.message || "Failed to add helper"); } finally { setSavingHelper(false); } }} className="btn-primary w-full justify-center py-2.5">{savingHelper ? t("saving", "Saving...") : t("preapSaveHelper", "Save & Select")}</button></div>}
+            </div>
+          ) : <>
           {/* Row 1: Name + Mobile */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
@@ -606,6 +640,7 @@ export default function ResidentPreApproval() {
               </div>
             </div>
           </div>
+          </>}
 
           {/* Row 2: Vehicle + Purpose */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

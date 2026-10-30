@@ -126,7 +126,7 @@ export default function CreditedDebitedChart({ linkTo, fullWidth }) {
         </div>
       ) : (
         <div className="w-full h-64 min-h-0">
-          <ResponsiveContainer width="100%" height="100%">
+          <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={220}>
             <BarChart data={chartData} barCategoryGap={8}>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--glass-border)" vertical={false} />
               <XAxis

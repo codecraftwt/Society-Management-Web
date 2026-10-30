@@ -1246,6 +1246,7 @@ const hi = {
   saLogoutMsg:        "क्या आप सुपर एडमिन पैनल से लॉगआउट करना चाहते हैं?",
   saMenuDashboard:    "डैशबोर्ड",
   saMenuSocieties:    "सोसाइटियाँ",
+  saMenuUsers:        "उपयोगकर्ता",
   saMenuAllResidents: "सभी निवासी",
 
   // Emergency History (Guard)
@@ -2695,6 +2696,8 @@ const hi = {
   parkAllVehiclesAssigned:   "सभी निवासी वाहनों को स्लॉट असाइन है 🎉",
   parkClearSearch:           "खोज साफ़ करें",
   parkFlatNumber:            "फ्लैट {number}",
+  selectFlatPlaceholder:     "फ्लैट / निवासी यूनिट चुनें",
+  parkNoResident:            "कोई निवासी नहीं",
   parkNoSlot:                "कोई स्लॉट नहीं",
   parkAssignFreeTypeSlot:    "खाली {type} स्लॉट असाइन करें",
   parkNoTypeSlotsAvailable:  "कोई {type} स्लॉट उपलब्ध नहीं",
@@ -4171,6 +4174,7 @@ cpwSuccessMsg:            "पासवर्ड सफलतापूर्व�
   // Super Admin sidebar menu
   saMenuDashboard: "डैशबोर्ड",
   saMenuSocieties: "सोसायटियाँ",
+  saMenuUsers: "उपयोगकर्ता",
   saMenuPropertyBlocks: "प्रॉपर्टी और ब्लॉक",
   saMenuFlatHistory: "फ्लैट हिस्ट्री",
   saMenuAllResidents: "सभी निवासी",

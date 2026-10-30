@@ -185,6 +185,7 @@ export default function ResidentDetailsModal({ resident, onClose, onEdit, isSupe
           membershipStatus: soc.membership_status || "ACTIVE",
           isPrimary,
           socRoles,
+          flatId: flat.id,
           flatNumber: flat.flat_number,
           flatType: flat.flat_type,
           floorNumber: flat.floor_number,
@@ -205,6 +206,7 @@ export default function ResidentDetailsModal({ resident, onClose, onEdit, isSupe
             membershipStatus: "VACATED",
             isPrimary,
             socRoles,
+            flatId: pastFlat.flat_id,
             flatNumber: pastFlat.flat_number,
             flatType: pastFlat.flat_type,
             floorNumber: pastFlat.floor_number,
@@ -235,9 +237,25 @@ export default function ResidentDetailsModal({ resident, onClose, onEdit, isSupe
   });
 
   // Also include any past flats from occupancyHistory for societies not in the societies list
-  const seenPastFlatNumbers = new Set(tableRows.filter((r) => r.isVacated).map((r) => r.flatNumber));
+  // A flat can have old occupancy-history rows after it is assigned again.
+  // Do not render that history as a "Past Flat" while the same flat is active.
+  const activeFlatIds = new Set(
+    tableRows
+      .filter((r) => !r.isVacated && r.flatId != null)
+      .map((r) => String(r.flatId))
+  );
+  const seenPastFlatKeys = new Set(
+    tableRows
+      .filter((r) => r.isVacated)
+      .map((r) => `${r.societyId || ""}-${r.flatId || r.flatNumber || ""}`)
+  );
   occupancyHistory.forEach((pastFlat, pIdx) => {
-    if (!seenPastFlatNumbers.has(pastFlat.flat_number)) {
+    const pastFlatKey = `${pastFlat.society_id || ""}-${pastFlat.flat_id || pastFlat.flat_number || ""}`;
+    if (
+      pastFlat.flat_id != null && activeFlatIds.has(String(pastFlat.flat_id))
+    ) return;
+    if (!seenPastFlatKeys.has(pastFlatKey)) {
+      seenPastFlatKeys.add(pastFlatKey);
       tableRows.push({
         rowKey: `past-extra-${pastFlat.flat_id || pIdx}`,
         societyId: pastFlat.society_id,
@@ -246,6 +264,7 @@ export default function ResidentDetailsModal({ resident, onClose, onEdit, isSupe
         isPrimary: false,
         socRoles: ["RESIDENT"],
         flatNumber: pastFlat.flat_number,
+        flatId: pastFlat.flat_id,
         flatType: pastFlat.flat_type,
         floorNumber: pastFlat.floor_number,
         blockName: pastFlat.block_name,

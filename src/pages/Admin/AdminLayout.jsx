@@ -75,7 +75,7 @@ function AdminLayoutInner() {
       module: "dashboard",
     },
     {
-      label: t("adminMenuResidents"),
+      label: t("saMenuUsers", "Users"),
       path: `${base}/resident`,
       icon: FaUsers,
       group: "COMMUNITY & PROPERTY",

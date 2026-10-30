@@ -360,7 +360,8 @@ function VisitorDetailModal({ visitor, onClose }) {
            label={safeLabel(t, "vlTotalStay", "Total Stay")}
           value={visitor.ongoing ? `${t("vlOngoing") || "Ongoing"} · ${visitor.duration}` : visitor.duration}
         />
-         <DetailRow label={safeLabel(t, "vlVehicle", "Vehicle")} value={visitor.vehicle} />
+          <DetailRow label={safeLabel(t, "vlVehicle", "Vehicle")} value={visitor.vehicle} />
+          <DetailRow label={safeLabel(t, "vlParkingSlot", "Parking Slot")} value={visitor.parking} />
       </div>
     </GlobalModal>
   );

@@ -1230,6 +1230,7 @@ const en = {
   saLogoutMsg:        "Are you sure you want to logout from the super admin panel?",
   saMenuDashboard:    "Dashboard",
   saMenuSocieties:    "Societies",
+  saMenuUsers:        "Users",
   saMenuAllResidents: "All Residents",
 
   // Emergency History (Guard)
@@ -2646,6 +2647,8 @@ const en = {
   parkAllocateSlot:          "Allocate Parking Slot",
   parkAllocateTargetRequired:"Select a flat or enter vehicle details to allocate this slot.",
   parkAssignToFlat:           "Assign to Unit / Flat",
+  selectFlatPlaceholder:      "Select Flat / Resident Unit",
+  parkNoResident:             "No resident",
   parkConfirmAllocate:       "Allocate Slot",
   parkAssignedVehicleSuccess:"Slot {slot} assigned to {vehicle} ✓",
   parkVehicleRejectedSuccess:"Vehicle {vehicle} rejected and removed.",
@@ -4238,6 +4241,7 @@ cpwSuccessMsg:            "Password updated successfully!",
   // Super Admin sidebar menu
   saMenuDashboard: "Dashboard",
   saMenuSocieties: "Societies",
+  saMenuUsers: "Users",
   saMenuPropertyBlocks: "Property & Block",
   saMenuFlatHistory: "Flat History",
   saMenuAllResidents: "All Residents",

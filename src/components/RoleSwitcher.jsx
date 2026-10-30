@@ -56,8 +56,53 @@ export default function RoleSwitcher({ fullWidth = false }) {
     ? user.availablePanels
     : null;
 
-  const rawList = candidatePanels ?? (currentSocRoles.length ? currentSocRoles : (user?.roles ?? [user?.role]));
+  // `availablePanels` can be stale in an existing browser session, while the
+  // selected society record already contains the authoritative society roles.
+  // Merge both sources so a Committee Member + Resident does not lose the
+  // Committee panel after a session refresh. Roles remain scoped to the
+  // currently selected society because currentSocRoles is society-specific.
+  const rawList = [
+    ...(candidatePanels || []),
+    ...currentSocRoles,
+    ...(currentSocRoles.length ? [] : (user?.roles ?? [user?.role])),
+  ];
   let roles = [...new Set(rawList.filter(Boolean))];
+
+  // Some older sessions/API responses expose the committee role but omit the
+  // resident panel even though the user has an active flat assignment. Keep
+  // the selector usable for those sessions without granting residence to an
+  // unassigned committee member.
+  const hasAssignedResidence =
+    (Array.isArray(currentSoc?.flats) && currentSoc.flats.length > 0) ||
+    (Array.isArray(user?.flats) && user.flats.length > 0) ||
+    Boolean(user?.flat_id) ||
+    user?.is_society_resident === true ||
+    user?.can_switch_to_resident === true;
+  const hasResidentRoleInCurrentContext =
+    currentSocRoles.some((role) => String(role).toUpperCase() === "RESIDENT") ||
+    (Array.isArray(user?.roles) && user.roles.some((role) => String(role).toUpperCase() === "RESIDENT"));
+  if (
+    roles.includes("COMMITTEE_MEMBER") &&
+    !roles.includes("RESIDENT") &&
+    hasAssignedResidence
+  ) {
+    roles.push("RESIDENT");
+  }
+
+  // The active role is the last authoritative value available during a
+  // session refresh. Never let a stale panel cache hide the switcher for a
+  // Committee Member account.
+  const activeAccountRole = String(user?.activeRole || user?.role || "").toUpperCase();
+  if (activeAccountRole === "COMMITTEE_MEMBER" && !roles.includes("COMMITTEE_MEMBER")) {
+    roles.push("COMMITTEE_MEMBER");
+  }
+  if (
+    activeAccountRole === "COMMITTEE_MEMBER" &&
+    (hasAssignedResidence || hasResidentRoleInCurrentContext) &&
+    !roles.includes("RESIDENT")
+  ) {
+    roles.push("RESIDENT");
+  }
 
   // If user is a Society Admin or Committee Member, only allow RESIDENT role if genuinely assigned a flat / resident
   if ((roles.includes("SOCIETY_ADMIN") || roles.includes("COMMITTEE_MEMBER")) && roles.includes("RESIDENT")) {
@@ -66,7 +111,10 @@ export default function RoleSwitcher({ fullWidth = false }) {
     const isResident =
       (Array.isArray(currentSoc?.flats) && currentSoc.flats.length > 0) ||
       (Array.isArray(user?.flats) && user.flats.length > 0) ||
-      Boolean(user?.flat_id);
+      Boolean(user?.flat_id) ||
+      user?.is_society_resident === true ||
+      user?.can_switch_to_resident === true ||
+      hasResidentRoleInCurrentContext;
 
     if (!isResident) {
       roles = roles.filter((r) => r !== "RESIDENT");

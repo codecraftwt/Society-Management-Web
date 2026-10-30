@@ -109,7 +109,7 @@ function SuperAdminLayoutInner() {
       group: "COMMUNITY & UNITS",
     },
     {
-      label: t("saMenuAllResidents", "All Residents"),
+      label: t("saMenuUsers", "Users"),
       path: `${base}/resident`,
       icon: FaUsers,
       group: "COMMUNITY & UNITS",

@@ -1521,11 +1521,11 @@ export default function AssignParkingSlot({ hideHeader = false, societyId } = {}
                             <div className="ps-occupied-details">
                               <div className="ps-resident-row">
                                 <span className="ps-resident-avatar" aria-hidden="true">
-                                  {slot.resident?.name?.trim()?.charAt(0)?.toUpperCase() || "R"}
+                                  {slot.resident?.name?.trim()?.charAt(0)?.toUpperCase() || slot.visitor?.guest_name?.trim()?.charAt(0)?.toUpperCase() || "R"}
                                 </span>
                                 <div className="ps-resident-meta">
                                   <span className="ps-resident-name">
-                                    {slot.resident?.name || t("parkOccupied")}
+                                     {slot.resident?.name || (slot.visitor ? `${slot.visitor.guest_name} (${t("parkVisitor", "Guest")})` : t("parkOccupied"))}
                                   </span>
                                   {slot.flat_number && (
                                     <span className="ps-resident-sub">
@@ -1546,6 +1546,9 @@ export default function AssignParkingSlot({ hideHeader = false, societyId } = {}
                                     </span>
                                   )}
                                 </div>
+                              )}
+                              {slot.visitor?.vehicle_number && !slot.vehicle?.vehicle_number && (
+                                <div className="ps-vehicle-tag"><span className="ps-plate-mark" aria-hidden="true" /><span className="ps-vehicle-plate">{slot.visitor.vehicle_number}</span><span className="ps-vehicle-model">{t("parkTemporary", "Temporary")}</span></div>
                               )}
                             </div>
                           )}
@@ -1730,12 +1733,14 @@ export default function AssignParkingSlot({ hideHeader = false, societyId } = {}
                         <span className="parking-slot-detail-label">{t("parkAssignedResident")}</span>
                         <div className="parking-slot-resident-row">
                           <div className="parking-slot-resident-avatar">
-                            {detailSlot.resident?.name?.charAt(0)?.toUpperCase() || "?"}
+                            {detailSlot.resident?.name?.charAt(0)?.toUpperCase() || detailSlot.visitor?.guest_name?.charAt(0)?.toUpperCase() || "?"}
                           </div>
                           <div className="parking-slot-resident-copy">
-                            <p className="parking-slot-detail-value">{detailSlot.resident?.name || t("parkOccupied")}</p>
+                            <p className="parking-slot-detail-value">{detailSlot.resident?.name || detailSlot.visitor?.guest_name || t("parkOccupied")}</p>
+                            {detailSlot.visitor && <p className="parking-slot-detail-copy">{t("parkTemporaryGuest", "Temporary guest parking")}</p>}
                             {detailSlot.resident?.email && <p className="parking-slot-detail-copy">{detailSlot.resident.email}</p>}
                             {detailSlot.resident?.phone && <p className="parking-slot-detail-copy">{detailSlot.resident.phone}</p>}
+                            {detailSlot.visitor?.vehicle_number && <p className="parking-slot-detail-copy">{detailSlot.visitor.vehicle_number}</p>}
                           </div>
                         </div>
                       </section>
@@ -2286,14 +2291,16 @@ export default function AssignParkingSlot({ hideHeader = false, societyId } = {}
                 onChange={(e) => setEditForm({ ...editForm, flat_id: e.target.value })}
               >
                 <option value="">{t("parkNoFlatAllocated")}</option>
-                {flats.map((f) => {
-                  const blockName = f.Floor?.Block?.name || f.Block?.name;
-                  return (
-                    <option key={f.id} value={f.id}>
-                      {t("parkFlatNumber", { number: f.flat_number })}{blockName ? ` (${blockName})` : ""}{f.resident?.name ? ` · ${f.resident.name}` : ""}
-                    </option>
-                  );
-                })}
+              {flats.map((f) => {
+                const blockName = f.Floor?.Block?.name || f.Block?.name;
+                const activeMembership = f.FlatMemberships?.find((m) => m.is_current) || f.FlatMemberships?.[0];
+                const residentName = f.User?.name || f.resident?.name || activeMembership?.User?.name || activeMembership?.user?.name;
+                return (
+                  <option key={f.id} value={f.id}>
+                    {t("parkFlatNumber", { number: f.flat_number })}{blockName ? ` (${blockName})` : ""} · {residentName || t("parkNoResident", "No resident")}
+                  </option>
+                );
+              })}
               </Select>
             </div>
             {editSlot?.resident && (
@@ -2426,12 +2433,14 @@ export default function AssignParkingSlot({ hideHeader = false, societyId } = {}
                 }));
               }}
             >
-              <option value="">{t("selectFlatPlaceholder") || "Select Flat / Resident Unit"}</option>
+              <option value="">{t("selectFlatPlaceholder", "Select Flat / Resident Unit")}</option>
               {flats.map((f) => {
                 const blockName = f.Floor?.Block?.name || f.Block?.name;
+                const activeMembership = f.FlatMemberships?.find((m) => m.is_current) || f.FlatMemberships?.[0];
+                const residentName = f.User?.name || f.resident?.name || activeMembership?.User?.name || activeMembership?.user?.name;
                 return (
                   <option key={f.id} value={f.id}>
-                    {t("parkFlatNumber", { number: f.flat_number })}{blockName ? ` (${blockName})` : ""}{f.resident?.name ? ` · ${f.resident.name}` : ""}
+                    {t("parkFlatNumber", { number: f.flat_number })}{blockName ? ` (${blockName})` : ""} · {residentName || t("parkNoResident", "No resident")}
                   </option>
                 );
               })}

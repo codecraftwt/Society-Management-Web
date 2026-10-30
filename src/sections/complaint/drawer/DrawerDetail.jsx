@@ -101,10 +101,10 @@ export default function DrawerDetail({ selected, t, updateStatus, updatingId, on
           <span className={styles.valueRowIcon}><MdPerson size={17} /></span>
           <div className={styles.valueText}>
             <div className={styles.valueTitle}>
-              {selected.User?.name || "NA"}
-              {selected.User?.resident_type ? ` (${selected.User.resident_type})` : ""}
+              {selected.User?.name || selected.user?.name || selected.resident_name || "NA"}
+              {(selected.User?.resident_type || selected.user?.resident_type || selected.resident_type) ? ` (${selected.User?.resident_type || selected.user?.resident_type || selected.resident_type})` : ""}
             </div>
-            <div className={styles.valueSub}>{selected.User?.email || ""}</div>
+            <div className={styles.valueSub}>{selected.User?.email || selected.user?.email || selected.resident_email || ""}</div>
           </div>
         </div>
       </div>

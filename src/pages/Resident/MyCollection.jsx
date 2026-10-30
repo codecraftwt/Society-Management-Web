@@ -175,8 +175,11 @@ export default function MyCollection() {
           const fId = item.flat_id || item.id || item.Flat?.id;
           return String(fId) === String(selectedFlatId);
         });
-        if (scopedFlats.length > 0 && (!selectedFlatId || !selectedStillAvailable)) {
-          const first = scopedFlats[0];
+        const selectableFlats = isOwner
+          ? scopedFlats.filter((item) => (item.Flat || item).occupancy_status !== "RENTED")
+          : scopedFlats;
+        if (selectableFlats.length > 0 && (!selectedFlatId || !selectedStillAvailable || !selectableFlats.some((item) => String(item.flat_id || item.id || item.Flat?.id) === String(selectedFlatId)))) {
+          const first = selectableFlats[0];
           const fId = first.flat_id || first.id || first.Flat?.id;
           setSelectedFlatId(fId ? String(fId) : "");
         } else if (scopedFlats.length === 0 && selectedFlatId) {
@@ -901,7 +904,7 @@ export default function MyCollection() {
         title={t("parcelModalTitle")}
       >
         <form onSubmit={expectParcel} className="space-y-4">
-          {isOwner && eligibleFlats.length > 1 && (
+          {myFlats.length > 0 && (
             <div>
               <label className="text-xs text-secondary block mb-1.5">
                 {t("selectUnit")} <span style={{ color: "var(--stat-red-color)" }}>*</span>
@@ -917,16 +920,17 @@ export default function MyCollection() {
                 <option value="" disabled>
                   {t("parcelChooseDeliveryUnit")}
                 </option>
-                {eligibleFlats.map((item, index) => {
+                {myFlats.map((item, index) => {
                   const flatObj = item.Flat || item;
                   const fId = item.flat_id || flatObj.id || `fallback-${index}`;
                   const bName = flatObj?.Block?.name || item?.block_name || flatObj?.block_name || "";
                   const fNum = flatObj?.flat_number || item?.flat_number || "";
                   const floorNum = getFloorNumber(item);
                   const floor = floorNum !== null && floorNum !== undefined ? `(Floor ${floorNum})` : "";
+                  const isRented = isOwner && flatObj?.occupancy_status === "RENTED";
                   return (
-                    <option key={fId} value={String(fId)}>
-                      {bName ? `${bName} - ` : ""}Unit {fNum} {floor}
+                    <option key={fId} value={String(fId)} disabled={isRented}>
+                      {bName ? `${bName} - ` : ""}Unit {fNum} {floor}{isRented ? " — Rented to tenant" : ""}
                     </option>
                   );
                 })}
@@ -934,7 +938,7 @@ export default function MyCollection() {
             </div>
           )}
 
-          {eligibleFlats.length === 1 && (
+          {false && eligibleFlats.length === 1 && (
             <div
               style={{
                 display: "flex",
@@ -974,7 +978,7 @@ export default function MyCollection() {
             disabled={
               submitting ||
               !form.courier_name.trim() ||
-              (isOwner && eligibleFlats.length > 1 && !selectedFlatId)
+               !hasEligibleFlat || (isOwner && !eligibleFlats.some((item) => String(item.flat_id || item.id || item.Flat?.id) === String(selectedFlatId)))
             }
             className="gc-btn gc-btn--accent"
           >

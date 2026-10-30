@@ -3677,9 +3677,9 @@ const [totalPages, setTotalPages] = useState(1);
     if (!filterRole) return residents;
     return residents.filter((r) => {
       const roles = Array.isArray(r.roles)
-        ? r.roles
+        ? r.roles.map((role) => String(role).toUpperCase())
         : typeof r.roles === "string"
-        ? [r.roles]
+        ? [r.roles.toUpperCase()]
         : [];
 
       const residentType = (r.resident_type || "").toUpperCase();
@@ -5356,9 +5356,9 @@ const [totalPages, setTotalPages] = useState(1);
                               {r.name}
                             </div>
                             <div style={{ display: "flex", gap: 5, flexWrap: "wrap", marginTop: 3 }}>
-                              {r.roles?.includes("SOCIETY_ADMIN") && <span className="res-socadmin-badge" style={{ display: "inline-flex" }}>★ {t("roleSocietyAdmin")}</span>}
-                              {r.roles?.includes("COMMITTEE_MEMBER") && <span className="res-committee-badge" style={{ display: "inline-flex" }}>★ {t("colCommittee") || "Committee"}</span>}
-                              {r.roles?.includes("ACCOUNTANT") && <span className="res-accountant-badge" style={{ display: "inline-flex" }}>★ {t("resAccountantBadge")}</span>}
+                              {r.roles?.some((role) => String(role).toUpperCase() === "SOCIETY_ADMIN") && <span className="res-socadmin-badge" style={{ display: "inline-flex" }}>★ {t("roleSocietyAdmin")}</span>}
+                              {r.roles?.some((role) => String(role).toUpperCase() === "COMMITTEE_MEMBER") && <span className="res-committee-badge" style={{ display: "inline-flex" }}>★ {t("colCommittee") || "Committee"}</span>}
+                              {r.roles?.some((role) => String(role).toUpperCase() === "ACCOUNTANT") && <span className="res-accountant-badge" style={{ display: "inline-flex" }}>★ {t("resAccountantBadge")}</span>}
                             </div>
                           </div>
                         </div>
@@ -5493,9 +5493,9 @@ const [totalPages, setTotalPages] = useState(1);
                           onViewDetails={() => setViewDetailsModal(r)}
                           onAssignFlat={() => handleOpenAssignModal(r)}
                           onEdit={() => handleEdit(r)}
-                          isCommittee={!!r.roles?.includes("COMMITTEE_MEMBER")}
-                          isAccountant={!!r.roles?.includes("ACCOUNTANT")}
-                          isSocietyAdmin={!!r.roles?.includes("SOCIETY_ADMIN")}
+                          isCommittee={!!r.roles?.some((role) => String(role).toUpperCase() === "COMMITTEE_MEMBER")}
+                          isAccountant={!!r.roles?.some((role) => String(role).toUpperCase() === "ACCOUNTANT")}
+                          isSocietyAdmin={!!r.roles?.some((role) => String(role).toUpperCase() === "SOCIETY_ADMIN")}
                           isTenant={r.resident_type === "TENANT"}
                           isPendingApproval={isResidentPending(r)}
                           isRejected={String(r.approval_status || "").toUpperCase() === "REJECTED"}
@@ -5581,9 +5581,9 @@ const [totalPages, setTotalPages] = useState(1);
                              <MdApartment size={11} /> {r.society_name}
                            </span>
                          ) : null}
-                         {r.roles?.includes("SOCIETY_ADMIN") && <span className="res-socadmin-badge">★ {t("roleSocietyAdmin")}</span>}
-                         {r.roles?.includes("COMMITTEE_MEMBER") && <span className="res-committee-badge">★ {t("colCommittee") || "Committee"}</span>}
-                         {r.roles?.includes("ACCOUNTANT") && <span className="res-accountant-badge">★ {t("resAccountantBadge")}</span>}
+                         {r.roles?.some((role) => String(role).toUpperCase() === "SOCIETY_ADMIN") && <span className="res-socadmin-badge">★ {t("roleSocietyAdmin")}</span>}
+                         {r.roles?.some((role) => String(role).toUpperCase() === "COMMITTEE_MEMBER") && <span className="res-committee-badge">★ {t("colCommittee") || "Committee"}</span>}
+                         {r.roles?.some((role) => String(role).toUpperCase() === "ACCOUNTANT") && <span className="res-accountant-badge">★ {t("resAccountantBadge")}</span>}
                        </div>
                        <button
                          type="button"
@@ -5600,9 +5600,9 @@ const [totalPages, setTotalPages] = useState(1);
                            onViewDetails={() => setViewDetailsModal(r)}
                            onAssignFlat={() => handleOpenAssignModal(r)}
                            onEdit={() => handleEdit(r)}
-                           isCommittee={!!r.roles?.includes("COMMITTEE_MEMBER")}
-                           isAccountant={!!r.roles?.includes("ACCOUNTANT")}
-                           isSocietyAdmin={!!r.roles?.includes("SOCIETY_ADMIN")}
+                           isCommittee={!!r.roles?.some((role) => String(role).toUpperCase() === "COMMITTEE_MEMBER")}
+                           isAccountant={!!r.roles?.some((role) => String(role).toUpperCase() === "ACCOUNTANT")}
+                           isSocietyAdmin={!!r.roles?.some((role) => String(role).toUpperCase() === "SOCIETY_ADMIN")}
                            isTenant={r.resident_type === "TENANT"}
                            isPendingApproval={isResidentPending(r)}
                            isRejected={String(r.approval_status || "").toUpperCase() === "REJECTED"}

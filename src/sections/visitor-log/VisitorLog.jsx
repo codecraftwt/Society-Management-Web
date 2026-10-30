@@ -66,6 +66,7 @@ const formatVisitor = (v) => {
     owner:    ownerName,
     purpose:  v.purpose,
     vehicle:  v.vehicle_number || "—",
+    parking:  v.parking?.slot_number ? `${v.parking.slot_number} (${v.parking.status === "APPROVED" ? "Occupied" : "Completed"})` : "Not allocated",
     date:     formatDate(v.entry_time),
     entryDate: formatDate(v.entry_time),
     exitDate:  formatDate(v.exit_time),
