@@ -12,6 +12,7 @@ import { isPaidAmenity, useIsMobile } from "./amenityHelpers.jsx";
 import Index from "./index/Index";
 import Create from "./create/Create";
 import Disable from "./disable/Disable";
+import { MdApartment } from "react-icons/md";
 
 export default function Amenities() {
   const isMobile = useIsMobile();
@@ -20,6 +21,10 @@ export default function Amenities() {
   const location = useLocation();
   const { showUnauthorized, showWarning, showError, showSuccess } = useCustomAlert();
   const canEdit = !isCommitteeMember(user);
+  const isSuperAdmin = (user?.activeRole || user?.role) === "SUPER_ADMIN";
+  const [selectedSocietyId, setSelectedSocietyId] = useState(() => localStorage.getItem("superadmin_society_filter") || "");
+  const [societies, setSocieties] = useState([]);
+  const activeSocietyId = isSuperAdmin ? selectedSocietyId : (user?.society_id || "");
 
   const [amenities, setAmenities] = useState([]);
   const [groupedBookings, setGroupedBookings] = useState([]);
@@ -56,9 +61,8 @@ export default function Amenities() {
   });
 
   const loadAmenities = async () => {
-    const societyId = location.pathname.startsWith("/superadmin/")
-      ? localStorage.getItem("superadmin_society_filter")
-      : null;
+    const societyId = isSuperAdmin ? selectedSocietyId : null;
+    if (isSuperAdmin && (!societyId || societyId === "ALL")) { setAmenities([]); return; }
     const query = societyId && societyId !== "ALL" ? `?societyId=${encodeURIComponent(societyId)}` : "";
     const r = await API.get(`/amenities${query}`);
     const data = Array.isArray(r.data)
@@ -73,9 +77,8 @@ export default function Amenities() {
 
   const loadBookings = async () => {
     try {
-      const societyId = location.pathname.startsWith("/superadmin/")
-        ? localStorage.getItem("superadmin_society_filter")
-        : null;
+      const societyId = isSuperAdmin ? selectedSocietyId : null;
+      if (isSuperAdmin && (!societyId || societyId === "ALL")) { setGroupedBookings([]); return; }
       const query = societyId && societyId !== "ALL" ? `?societyId=${encodeURIComponent(societyId)}` : "";
       const r = await API.get(`/admin/amenities/bookings${query}`);
       const data = Array.isArray(r.data)
@@ -92,6 +95,19 @@ export default function Amenities() {
   };
 
   useEffect(() => {
+    if (isSuperAdmin) {
+      API.get("/societies").then((r) => setSocieties(Array.isArray(r.data) ? r.data : (r.data?.societies || r.data?.data || []))).catch(() => setSocieties([]));
+    }
+  }, [isSuperAdmin]);
+
+  useEffect(() => {
+    const syncSociety = () => setSelectedSocietyId(localStorage.getItem("superadmin_society_filter") || "");
+    window.addEventListener("superadmin-society-scope-change", syncSociety);
+    return () => window.removeEventListener("superadmin-society-scope-change", syncSociety);
+  }, []);
+
+  useEffect(() => {
+    if (isSuperAdmin && !activeSocietyId) return;
     loadAmenities();
     loadBookings();
     const reloadForSocietyScope = () => {
@@ -100,7 +116,7 @@ export default function Amenities() {
     };
     window.addEventListener("superadmin-society-scope-change", reloadForSocietyScope);
     return () => window.removeEventListener("superadmin-society-scope-change", reloadForSocietyScope);
-  }, [location.pathname]);
+  }, [location.pathname, isSuperAdmin, activeSocietyId]);
 
   const handleToggleAddForm = () => {
     if (!showForm && !hasPermission(user, "amenities", "create")) {
@@ -324,6 +340,17 @@ export default function Amenities() {
     rejected: groupedBookings.filter(b => b.status === "REJECTED").length,
   };
 
+  if (isSuperAdmin && !activeSocietyId) {
+    return <div className="card" style={{ padding: 48, textAlign: "center", borderRadius: 18, border: "1px solid var(--glass-border)", background: "var(--card-bg)" }}>
+      <div style={{ width: 56, height: 56, borderRadius: 18, background: "rgba(160, 90, 255, 0.12)", border: "1px solid rgba(160, 90, 255, 0.25)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--accent)", margin: "0 auto 16px" }}><MdApartment size={28} /></div>
+      <h3 style={{ fontSize: 17, fontWeight: 800, color: "var(--text-primary)", margin: 0 }}>Select a Society</h3>
+      <p style={{ color: "var(--text-secondary)", fontSize: 13, maxWidth: 440, margin: "8px auto 18px" }}>Please select a society from the dropdown above to view and manage its amenities.</p>
+      <select className="input sa-society-select" value={selectedSocietyId} onChange={(e) => { const value = e.target.value; setSelectedSocietyId(value); localStorage.setItem("superadmin_society_filter", value); window.dispatchEvent(new Event("superadmin-society-scope-change")); }} style={{ minWidth: 240, height: 40 }}>
+        <option value="">Select Society</option><option value="ALL">All Societies</option>{societies.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+      </select>
+    </div>;
+  }
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: isMobile ? 16 : 24 }} className="animate-fadeIn">
 
@@ -367,6 +394,14 @@ export default function Amenities() {
         onApprove={approveBooking}
         onReject={rejectBooking}
         onEdit={handleOpenEditForm}
+        isSuperAdmin={isSuperAdmin}
+        societiesList={societies}
+        selectedSocietyId={selectedSocietyId}
+        onSocietyChange={(value) => {
+          setSelectedSocietyId(value);
+          localStorage.setItem("superadmin_society_filter", value || "ALL");
+          window.dispatchEvent(new Event("superadmin-society-scope-change"));
+        }}
       />
 
       <Disable

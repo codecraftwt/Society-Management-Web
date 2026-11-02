@@ -28,6 +28,7 @@ import {
 import { useLang } from "../../../context/LanguageContext";
 import { Spinner, amenityEmoji, PALETTES, isPaidAmenity } from "../amenityHelpers.jsx";
 import SlidingTabs from "../../../components/common/SlidingTabs";
+import Select from "../../../components/common/Select";
 import ExpandableSearch from "../../../components/common/ExpandableSearch";
 import GlobalButton from "../../../components/common/GlobalButton";
 import StatCard from "../../../components/common/StatCard";
@@ -145,6 +146,10 @@ export default function Index({
   onApprove,
   onReject,
   onEdit,
+  isSuperAdmin,
+  societiesList,
+  selectedSocietyId,
+  onSocietyChange,
 }) {
   const { t } = useLang();
 
@@ -231,6 +236,11 @@ export default function Index({
         </div>
 
         <div className="flex items-center gap-2.5 flex-nowrap shrink-0 overflow-x-auto max-w-full pb-1" style={{ scrollbarWidth: "none" }}>
+          {isSuperAdmin && <Select className="input sa-society-select" value={selectedSocietyId} onChange={(e) => onSocietyChange(e.target.value)} style={{ minWidth: 180, height: 38, borderRadius: 10, fontSize: 12.5 }}>
+            <option value="">Select Society</option>
+            <option value="ALL">All Societies</option>
+            {societiesList.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+          </Select>}
           {activeTab === "AMENITIES" ? (
             <>
               <ExpandableSearch
