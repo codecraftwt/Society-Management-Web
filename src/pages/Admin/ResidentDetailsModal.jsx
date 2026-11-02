@@ -169,6 +169,13 @@ export default function ResidentDetailsModal({ resident, onClose, onEdit, isSupe
   }
   if (rolesList.length === 0) rolesList = ["RESIDENT"];
 
+  // The API can return a stale FAMILY_MEMBER role for an owner who has
+  // household members. The resident type is authoritative for this profile.
+  if (String(resident.resident_type || "").toUpperCase() === "OWNER") {
+    rolesList = rolesList.map((role) => String(role).toUpperCase() === "FAMILY_MEMBER" ? "OWNER" : role)
+      .filter((role, index, roles) => roles.indexOf(role) === index);
+  }
+
   // Flatten societies & flats into compact tabular rows
   const tableRows = [];
   const occupancyHistory = Array.isArray(resident.occupancy_history) ? resident.occupancy_history : [];

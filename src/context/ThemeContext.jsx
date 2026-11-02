@@ -39,11 +39,9 @@ export function ThemeProvider({ children }) {
   const [theme, setTheme] = useState(() => {
     const saved = localStorage.getItem("theme");
     if (saved === "light" || saved === "dark") return saved;
-    return window.matchMedia
-      ? window.matchMedia("(prefers-color-scheme: light)").matches
-        ? "light"
-        : "dark"
-      : "dark";
+    // Do not inherit the browser/OS color scheme. It can change while the
+    // app is open and unexpectedly switch a user from light to dark.
+    return "light";
   });
 
   const [societyTheme, setSocietyTheme] = useState(() => {

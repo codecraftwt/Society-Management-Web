@@ -1,4 +1,4 @@
-// src/locales/hi.js
+﻿// src/locales/hi.js
 const hi = {
   // Common
   nfBackHome: "होम पर वापस जाएँ",
@@ -3238,6 +3238,23 @@ const hi = {
   dashComplaintsDesc:   "एडमिन ध्यान देने की आवश्यकता है",
   dashDistribution:     "वितरण अवलोकन",
   dashComparison:       "त्वरित तुलना",
+  dashOccupancyTitle:     "संपत्ति अधिभोग",
+  dashOccupancySub:       "संपत्ति प्रकारों के अनुसार अधिभोग का विवरण",
+  dashOverallOccupancy:   "कुल अधिभोग",
+  dashApartments:         "अपार्टमेंट्स",
+  dashRowHouses:          "रो हाउसेस",
+  dashOccupied:           "अधिभोगी (भरा हुआ)",
+  dashVacant:             "रिक्त (खाली)",
+  dashProperties:         "संपत्तियां",
+  dashOccupancyRate:      "अधिभोग दर",
+  dashNoProperties:       "अभी कोई संपत्ति कॉन्फ़िगर नहीं की गई है",
+  dashParkingUtilTitle:   "पार्किंग उपयोग",
+  dashParkingUtilSub:     "पार्किंग स्लॉट आवंटन स्थिति",
+  dashAllocated:          "आवंटित",
+  dashAvailable:          "उपलब्ध",
+  dashTotalSlots:         "कुल स्लॉट",
+  dashAllocationRate:     "आवंटन दर",
+  dashNoParkingSlots:     "अभी कोई पार्किंग स्लॉट नहीं हैं",
   dashSocietyId:        "सोसाइटी आईडी",
   dashSocietyIdDesc:    "सिस्टम संदर्भ संख्या",
   dashSystemStatus:     "सिस्टम स्थिति",

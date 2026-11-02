@@ -28,41 +28,57 @@ const ProtectedRoute = ({ roles }) => {
   //   - fall back to role (pre-RBAC tokens / old stored user objects)
   const effectiveRole = user.activeRole ?? user.role;
 
-  // A user can open a panel URL directly while the cached token is still
-  // scoped to another valid panel (for example /accountant with activeRole
-  // RESIDENT). If the requested route is explicitly available, activate that
-  // panel before rendering its children so API calls use the correct role.
-  const availablePanels = Array.isArray(user.availablePanels) ? user.availablePanels : [];
+  // Resolve available panels consistently with RoleSwitcher:
+  // Include candidate availablePanels, current society roles, and account roles
+  // so multi-society users (e.g. Resident in Soc A + Committee in Soc B) are never locked out.
+  const currentSoc = (user?.availableSocieties || []).find(
+    (s) => Number(s.id) === Number(user?.society_id)
+  );
+  const currentSocRoles = Array.isArray(currentSoc?.roles) ? currentSoc.roles : [];
+  const candidatePanels = Array.isArray(user?.availablePanels) ? user.availablePanels : [];
+
+  const rawPanels = [
+    ...candidatePanels,
+    ...currentSocRoles,
+    ...(Array.isArray(user?.roles) ? user.roles : [user?.role]),
+  ];
+  const availablePanels = [...new Set(rawPanels.filter(Boolean))];
   const targetRole = roles?.find((candidate) => availablePanels.includes(candidate));
 
   // Whether a role switch is actually needed: the route demands a role the
   // current token does NOT carry, but the user's panels allow it.
-  // When the user already switched via the RoleSwitcher (which updates the
-  // context user before navigating), effectiveRole already matches `roles`
-  // so needsSwitch is false and the auto-switch useEffect is skipped entirely.
   const needsSwitch = Boolean(roles && !roles.includes(effectiveRole) && targetRole);
 
   useEffect(() => {
-    if (!needsSwitch || switching) return;
-    let cancelled = false;
+    if (!needsSwitch) {
+      if (switching) setSwitching(false);
+      return;
+    }
+    if (switching) return;
+
+    let isMounted = true;
     setSwitching(true);
     setSwitchError(null);
+
     switchRole(targetRole)
       .catch((error) => {
-        if (!cancelled) setSwitchError(error?.response?.data?.message || "Unable to activate this panel.");
+        if (isMounted) {
+          setSwitchError(error?.response?.data?.message || "Unable to activate this panel.");
+        }
       })
       .finally(() => {
-        if (!cancelled) setSwitching(false);
+        if (isMounted) {
+          setSwitching(false);
+        }
       });
-    return () => { cancelled = true; };
-  // Do not depend on `switching`: setting it to true would clean up the
-  // request that is responsible for setting it back to false.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+
+    return () => {
+      isMounted = false;
+    };
   }, [needsSwitch, switchRole, targetRole]);
 
   // Safety net: if the role switch succeeded (effectiveRole now matches the
-  // route) but the useEffect cleanup cancelled the `.finally()` callback
-  // that was supposed to clear `switching`, reset it here so the spinner
+  // route) or needsSwitch is cleared, reset switching immediately so the spinner
   // does not stay on screen forever.
   useEffect(() => {
     if (!needsSwitch && switching) {
@@ -109,7 +125,8 @@ const ProtectedRoute = ({ roles }) => {
       );
     }
     if (switchError) {
-      return <Navigate to="/resident" replace state={{ roleSwitchError: switchError }} />;
+      const fallback = DASHBOARD_ROUTES[effectiveRole] ?? "/login";
+      return <Navigate to={fallback} replace state={{ roleSwitchError: switchError }} />;
     }
     return null;
   }

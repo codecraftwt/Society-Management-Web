@@ -22,6 +22,8 @@ import PanelHero from "../../components/common/PanelHero";
 import StatCard from "../../components/common/StatCard";
 import QuickLink from "../../components/common/QuickLink";
 import CreditedDebitedChart from "../../components/accounting/CreditedDebitedChart";
+import PropertyOccupancyChart from "../../components/dashboard/PropertyOccupancyChart";
+import ParkingUtilizationChart from "../../components/dashboard/ParkingUtilizationChart";
 
 /* ── SKELETON LOADER ── */
 function DashboardSkeleton() {
@@ -309,121 +311,10 @@ export default function AdminDashboard() {
       </div>
 
 
-      {/* ── 4. MAIN ANALYTICS CHARTS (2 COLUMNS) ── */}
+      {/* ── 4. MAIN ANALYTICS CHARTS (2 COLUMNS: OCCUPANCY & PARKING) ── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 w-full min-w-0">
-        {/* Donut Chart: Society Overview */}
-        <div className="bg-card border border-glass-border hover:border-accent/40 rounded-2xl p-6 flex flex-col justify-between min-w-0 shadow-sm transition-colors duration-200">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
-            <div>
-              <h2 className="text-base font-bold text-primary">
-                {t("dashDistribution") || "Society Overview"}
-              </h2>
-              <p className="text-xs text-secondary">
-                {t("dashDistributionSub")}
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-2 text-xs">
-              {chartData.map((d) => (
-                <span
-                  key={d.name}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-card-inner-bg border border-glass-border text-secondary font-medium"
-                >
-                  <span
-                    className="w-2 h-2 rounded-full shrink-0"
-                    style={{ background: d.color }}
-                  />
-                  {d.name}
-                </span>
-              ))}
-            </div>
-          </div>
-
-          <div className="w-full h-64 min-h-0">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={chartData}
-                  dataKey="value"
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={95}
-                  paddingAngle={4}
-                  stroke="var(--card-bg)"
-                  strokeWidth={2}
-                >
-                  {chartData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip
-                  contentStyle={{
-                    background: "var(--card-bg)",
-                    borderColor: "var(--glass-border)",
-                    borderRadius: "12px",
-                    color: "var(--text-primary)",
-                    fontSize: "12px",
-                    fontWeight: "600",
-                  }}
-                  itemStyle={{ color: "var(--text-primary)" }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        {/* Bar Chart: Quick Comparison */}
-        <div className="bg-card border border-glass-border hover:border-accent/40 rounded-2xl p-6 flex flex-col justify-between min-w-0 shadow-sm transition-colors duration-200">
-          <div className="mb-4">
-            <h2 className="text-base font-bold text-primary">
-              {t("dashComparison") || "Quick Comparison"}
-            </h2>
-            <p className="text-xs text-secondary">
-              {t("dashComparisonSub")}
-            </p>
-          </div>
-
-          <div className="w-full h-64 min-h-0">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={chartData} barCategoryGap={30}>
-                <XAxis
-                  dataKey="name"
-                  tick={{ fontSize: 11, fill: "var(--text-secondary)" }}
-                  axisLine={{ stroke: "var(--glass-border)" }}
-                  tickLine={false}
-                />
-                <YAxis
-                  allowDecimals={false}
-                  tick={{ fontSize: 11, fill: "var(--text-secondary)" }}
-                  axisLine={{ stroke: "var(--glass-border)" }}
-                  tickLine={false}
-                />
-                <Tooltip
-                  cursor={{ fill: "rgba(255,255,255,0.03)" }}
-                  contentStyle={{
-                    background: "var(--card-bg)",
-                    borderColor: "var(--glass-border)",
-                    borderRadius: "12px",
-                    color: "var(--text-primary)",
-                    fontSize: "12px",
-                    fontWeight: "600",
-                  }}
-                  itemStyle={{ color: "var(--text-primary)" }}
-                />
-                <Bar
-                  dataKey="value"
-                  name={t("dashCount")}
-                  radius={[8, 8, 0, 0]}
-                  barSize={28}
-                >
-                  {chartData.map((entry, index) => (
-                    <Cell key={`bar-${index}`} fill={entry.color} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
+        <PropertyOccupancyChart data={stats?.occupancy} loading={loading} />
+        <ParkingUtilizationChart data={stats?.parking} loading={loading} />
       </div>
 
       {/* ── 5. FINANCIAL OVERVIEW ── */}

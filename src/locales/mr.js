@@ -1,4 +1,4 @@
-
+﻿
 
 // src/locales/mr.js
 const mr = {
@@ -3149,6 +3149,23 @@ const mr = {
   dashComplaintsDesc:   "अ‍ॅडमिनच्या लक्ष देण्याची आवश्यकता आहे",
   dashDistribution:     "वितरण आढावा",
   dashComparison:       "जलद तुलना",
+  dashOccupancyTitle:     "मालमत्ता अधिभोग",
+  dashOccupancySub:       "मालमत्ता प्रकारानुसार अधिभोगाचा तपशील",
+  dashOverallOccupancy:   "एकूण अधिभोग",
+  dashApartments:         "अपार्टमेंट्स",
+  dashRowHouses:          "रो हाऊसेस",
+  dashOccupied:           "व्याप्त",
+  dashVacant:             "रिक्त (मोकळे)",
+  dashProperties:         "मालमत्ता",
+  dashOccupancyRate:      "अधिभोग दर",
+  dashNoProperties:       "अद्याप कोणतीही मालमत्ता जोडलेली नाही",
+  dashParkingUtilTitle:   "पार्किंग वापर",
+  dashParkingUtilSub:     "पार्किंग स्लॉट वाटप स्थिती",
+  dashAllocated:          "वाटप केलेले",
+  dashAvailable:          "उपलब्ध",
+  dashTotalSlots:         "एकूण स्लॉट्स",
+  dashAllocationRate:     "वाटप दर",
+  dashNoParkingSlots:     "अद्याप कोणतेही पार्किंग स्लॉट उपलब्ध नाहीत",
   dashSocietyId:        "सोसायटी आयडी",
   dashSocietyIdDesc:    "सिस्टम संदर्भ क्रमांक",
   dashSystemStatus:     "सिस्टम स्थिती",
