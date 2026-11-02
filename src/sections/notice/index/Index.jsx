@@ -418,7 +418,7 @@ export default function Index({
                         >
                           <MdPerson size={14} style={{ color: "#38bdf8" }} />
                           <span>
-                            {t("noticeBy", "By: {name}", { name: creatorName })}{roleLabel ? ` (${roleLabel})` : ""}
+                            {t("noticeBy", "By: {name} ({role})", { name: creatorName, role: roleLabel || "—" })}
                           </span>
                         </span>
                       )}
