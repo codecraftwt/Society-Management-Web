@@ -1279,9 +1279,9 @@ export default function Guard() {
             size="sm"
             icon={MdVisibility}
             onClick={() => openAllShiftsModal(g)}
-            title="View guard details"
+            title="View guard shifts"
           >
-            Details
+            Shift
           </GlobalButton>
           {canDeleteGuard && (
             <GlobalButton

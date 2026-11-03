@@ -49,6 +49,7 @@ const TYPE_DESC_KEYS = {
 };
 
 const FLAT_LABEL_KEYS = {
+  ALL: "mntFlatALL",
   "1BHK": "mntFlat1BHK",
   "2BHK": "mntFlat2BHK",
   "3BHK": "mntFlat3BHK",
@@ -63,7 +64,7 @@ const FREQUENCY_KEYS = {
   ONE_TIME: "mntFreqOneTime",
 };
 
-const tFlatLabel = (t, f) => (FLAT_LABEL_KEYS[f] ? t(FLAT_LABEL_KEYS[f]) : f);
+const tFlatLabel = (t, f) => (f === "ALL" ? t("mntFlatALL", "All BHK (Common for all)") : (FLAT_LABEL_KEYS[f] ? t(FLAT_LABEL_KEYS[f]) : f));
 const tFrequency = (t, f) => (FREQUENCY_KEYS[f] ? t(FREQUENCY_KEYS[f]) : f);
 
 const currentMonthLabel = () => {
@@ -538,7 +539,7 @@ function GenerateModal({ configs, onClose, onGenerated }) {
       try {
         const res = await maintenanceService.previewMaintenanceBills({
           billing_month: derivedBillingMonth,
-          rate_ids: [selectedRateId],
+          rate_ids: selectedRateId === "ALL_ACTIVE" ? "ALL" : [selectedRateId],
           issue_date: issueDate,
           last_pay_date: dueDate,
         });
@@ -566,7 +567,7 @@ function GenerateModal({ configs, onClose, onGenerated }) {
     try {
       const res = await maintenanceService.generateMaintenanceBills({
         billing_month: derivedBillingMonth,
-        rate_ids: [selectedRateId],
+        rate_ids: selectedRateId === "ALL_ACTIVE" ? "ALL" : [selectedRateId],
         issue_date: issueDate,
         last_pay_date: dueDate,
       });

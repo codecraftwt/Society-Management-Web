@@ -88,7 +88,14 @@ export default function Amenities() {
         : Array.isArray(r.data?.bookings)
         ? r.data.bookings
         : [];
-      setGroupedBookings(data);
+      const seen = new Set();
+      const unique = data.filter((b) => {
+        if (!b?.id) return true;
+        if (seen.has(b.id)) return false;
+        seen.add(b.id);
+        return true;
+      });
+      setGroupedBookings(unique);
     } catch (e) {
       console.error(e);
     }

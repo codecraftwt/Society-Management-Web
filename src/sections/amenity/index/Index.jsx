@@ -547,8 +547,15 @@ export default function Index({
                   <div style={{ display: "flex", alignItems: "flex-start", gap: 11, flex: 1, minWidth: 0 }}>
                     <div style={{ width: 8, height: 8, borderRadius: "50%", marginTop: 6, flexShrink: 0, background: dotColor, boxShadow: `0 0 0 3px ${dotColor}22` }} />
                     <div style={{ minWidth: 0 }}>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text-primary)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                        {b.Amenity?.name}
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <span style={{ fontSize: 13, fontWeight: 700, color: "var(--text-primary)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                          {b.Amenity?.name}
+                        </span>
+                        {b.id && (
+                          <span style={{ fontSize: 10, fontFamily: "monospace", padding: "1px 5px", borderRadius: 4, background: "var(--card-inner-bg)", border: "1px solid var(--glass-border)", color: "var(--text-secondary)" }}>
+                            #{b.id}
+                          </span>
+                        )}
                       </div>
                       <div style={{ fontSize: 12, color: "var(--text-secondary)", marginTop: 2, display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
                         <span style={{ fontWeight: 600, color: "var(--text-primary)" }}>{b.User?.name || "Resident"}</span>
