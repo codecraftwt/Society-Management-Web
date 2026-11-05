@@ -2,18 +2,12 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { useLang } from "../../context/LanguageContext";
 import { toast } from "react-toastify";
 import API from "../../services/api";
-import {
-  MdBarChart, MdRefresh
-} from "react-icons/md";
+import { MdBarChart } from "react-icons/md";
 import DashboardAnalytics from "../../components/super-admin/DashboardAnalytics";
-import GlobalButton from "../../components/common/GlobalButton";
-import UserAvatar from "../../components/common/UserAvatar";
 import StatCard from "../../components/common/StatCard";
-import { useAuthContext } from "../../context/AuthContext";
 
 export default function SuperAdminDashboard() {
   const { t } = useLang();
-  const { user } = useAuthContext();
 
   const [societies, setSocieties] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -76,30 +70,6 @@ export default function SuperAdminDashboard() {
 
   return (
     <div className="sa-page sa-dash-page dash-kpi-scope">
-      {/* ── HEADER ── */}
-      <div className="sa-dash-header">
-        <div className="flex items-center gap-3 min-w-0">
-          <UserAvatar
-            name={user?.name}
-            src={user?.profile_picture}
-            size={44}
-            radius={18}
-            className="shrink-0"
-          />
-          <div className="sa-dash-header-text">
-            <h1 className="sa-page-title">{t("saOverviewTitle")}</h1>
-            <p className="sa-page-subtitle">
-              {user?.name
-                ? `${user.name}${user.email ? ` · ${user.email}` : ""}`
-                : t("saDashSubtitle", "Executive Command Center & Platform Intelligence")}
-            </p>
-          </div>
-        </div>
-        <GlobalButton variant="add" borderDraw onClick={fetchSocieties} icon={MdRefresh} title={t("saDashReload", "Reload")}>
-          {t("saDashReload", "Reload")}
-        </GlobalButton>
-      </div>
-
       {/* ── KPI CARDS ── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
         {stats.map((stat) => (

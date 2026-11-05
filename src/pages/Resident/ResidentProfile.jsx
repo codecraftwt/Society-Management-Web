@@ -99,6 +99,7 @@ export default function ResidentProfile() {
   const [flats, setFlats] = useState([]);
   const [selectedFlatId, setSelectedFlatId] = useState(null);
   const [pendingBills, setPendingBills] = useState([]);
+  const [maintenanceBill, setMaintenanceBill] = useState(null);
   const [latestNotices, setLatestNotices] = useState([]);
   const [visitors, setVisitors] = useState([]);
   const [household, setHousehold] = useState([]);
@@ -136,7 +137,7 @@ export default function ResidentProfile() {
       ] = await Promise.allSettled([
         Promise.resolve({ data: user }),
         API.get("/users/get-flat"),
-        API.get("/bills/resident?status=PENDING&limit=5"),
+         API.get("/bills/resident?limit=20"),
         API.get("/notices?limit=5"),
         API.get("/visitors/resident?limit=6"),
         API.get("/household"),
@@ -168,7 +169,19 @@ export default function ResidentProfile() {
 
       if (billsRes.status === "fulfilled") {
         const rawBills = billsRes.value.data?.bills || billsRes.value.data?.data || billsRes.value.data || [];
-        setPendingBills(Array.isArray(rawBills) ? rawBills : []);
+        const bills = Array.isArray(rawBills) ? rawBills : [];
+        setPendingBills(bills.filter((bill) => ["PENDING", "UNPAID"].includes(String(bill.status || "").toUpperCase())));
+        const maintenanceBills = bills.filter((bill) => {
+          const category = `${bill.bill_category || ""} ${bill.type || ""} ${bill.bill_type || ""} ${bill.title || ""}`.toUpperCase();
+          return category.includes("MAINTENANCE");
+        });
+        if (maintenanceBills.length) {
+          const total = maintenanceBills.reduce((sum, bill) => sum + Number(bill.amount || 0), 0);
+          const hasPending = maintenanceBills.some((bill) => String(bill.status || "").toUpperCase() !== "PAID");
+          setMaintenanceBill({ total_amount: total, status: hasPending ? "PENDING" : "PAID", count: maintenanceBills.length });
+        } else {
+          setMaintenanceBill(null);
+        }
       }
 
       if (noticesRes.status === "fulfilled") {
@@ -540,15 +553,20 @@ export default function ResidentProfile() {
       {/* ── 2.5 STATISTICAL OVERVIEW CARDS (DYNAMICALLY THEMED) ── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <StatCard
-          label={t("rpPendingDuesLabel") || "Pending Dues"}
-          value={totalPendingAmount > 0 ? `₹${totalPendingAmount.toLocaleString("en-IN")}` : "₹0"}
+          label={t("rpMaintenanceLabel") || "Maintenance Charges"}
+          value={maintenanceBill ? `₹${Number(maintenanceBill.total_amount || 0).toLocaleString("en-IN")}` : "₹0"}
           description={
-            pendingBills.length > 0
-              ? t("rpUnpaidBillsDesc", { count: pendingBills.length }) || `${pendingBills.length} unpaid bill(s)`
-              : t("rpNoPendingDues") || "All dues cleared"
+            maintenanceBill ? (
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                <span>{maintenanceBill.count} {maintenanceBill.count === 1 ? "bill" : "bills"}</span>
+                <span style={{ padding: "3px 8px", borderRadius: 999, fontSize: 10, fontWeight: 800, color: maintenanceBill.status === "PAID" ? "#047857" : "#b45309", background: maintenanceBill.status === "PAID" ? "#d1fae5" : "#fef3c7" }}>
+                  {maintenanceBill.status === "PAID" ? "Paid" : "Pending"}
+                </span>
+              </span>
+            ) : t("rpNoMaintenance") || "No maintenance charges"
           }
           icon={MdAccountBalanceWallet}
-          tone={totalPendingAmount > 0 ? "warning" : "success"}
+          tone={String(maintenanceBill?.status || "").toUpperCase() === "PAID" ? "success" : "warning"}
           interactive
           onClick={() => navigate(`${base}/bills`)}
         />

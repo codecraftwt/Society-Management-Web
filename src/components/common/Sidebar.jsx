@@ -222,9 +222,11 @@ export default function Sidebar({
             </span>
           </div>
           <div className="min-w-0 flex-1 overflow-hidden">
-            <h2 className="text-sm font-extrabold leading-tight truncate text-primary tracking-tight">
-              {brandTitle}
-            </h2>
+            {brandTitle && (
+              <h2 className="text-sm font-extrabold leading-tight truncate text-primary tracking-tight">
+                {brandTitle}
+              </h2>
+            )}
             {brandSubtitle && (
               <p className="text-[11px] text-secondary truncate mt-0.5 font-medium">
                 {brandSubtitle}

@@ -16,7 +16,7 @@ import {
   MdWarning,
   MdBlock,
   MdPayment,
-  MdEdit,
+  MdEdit, MdDelete,
   MdFilterAlt,
   MdCheck,
   MdExpandMore,
@@ -146,6 +146,7 @@ export default function Index({
   onApprove,
   onReject,
   onEdit,
+  onDelete,
   isSuperAdmin,
   societiesList,
   selectedSocietyId,
@@ -201,10 +202,11 @@ export default function Index({
   return (
     <>
       {/* HEADER */}
-      <div className="ad-page-header flex flex-col md:flex-row items-start md:items-center justify-between gap-4 p-4 sm:p-5 rounded-2xl border"
+      <div className="ad-page-header amenity-management-header flex flex-col md:flex-row items-start md:items-center justify-between gap-4 p-4 sm:p-5 rounded-2xl border"
         style={{
-          background: "var(--card-bg)",
+          background: "linear-gradient(135deg, var(--card-bg) 0%, color-mix(in srgb, var(--accent-soft) 28%, var(--card-bg)) 100%)",
           borderColor: "var(--glass-border)",
+          boxShadow: "0 18px 45px rgba(20, 12, 45, 0.12)",
           backdropFilter: "blur(16px)",
           WebkitBackdropFilter: "blur(16px)",
         }}>
@@ -319,6 +321,7 @@ export default function Index({
         document.body
       )}
 
+      <div className="amenity-management-tabs">
       <SlidingTabs
         value={activeTab}
         onChange={onTabChange}
@@ -330,6 +333,7 @@ export default function Index({
           badge: tab.alert > 0 ? undefined : tab.count,
         }))}
       />
+      </div>
 
       {/* ════════════ AMENITIES ════════════ */}
       {activeTab === "AMENITIES" && (
@@ -340,7 +344,7 @@ export default function Index({
               <p style={{ color: "var(--text-secondary)", fontSize: 14 }}>{t("amenEmpty")}</p>
             </div>
           ) : (
-            <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(auto-fill,minmax(260px,1fr))", gap: isMobile ? 12 : 16 }}>
+            <div className="amenity-management-grid" style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(auto-fill,minmax(280px,1fr))", gap: isMobile ? 12 : 18 }}>
               {filteredAmenities.map((a, i) => {
                 const pal = PALETTES[i % PALETTES.length];
                 const active = a.is_active;
@@ -348,14 +352,14 @@ export default function Index({
                 const stripBg = getCardStrip(a, pal);
                 const requApproval = a.requires_approval;
                 return (
-                  <div key={a.id} className="animate-fadeIn" style={{ background: "var(--card-bg)", border: "1.5px solid var(--glass-border)", borderRadius: 20, overflow: "hidden", opacity: active ? 1 : 0.65, transition: "transform 0.2s, box-shadow 0.2s", animationDelay: `${i * 50}ms`, boxShadow: "var(--shadow-sm)" }}
+                   <div key={a.id} className="amenity-management-card animate-fadeIn" style={{ background: "linear-gradient(160deg, var(--card-bg), color-mix(in srgb, var(--accent-soft) 12%, var(--card-bg)))", border: "1px solid var(--glass-border)", borderRadius: 22, overflow: "hidden", opacity: active ? 1 : 0.65, transition: "transform 0.2s, box-shadow 0.2s", animationDelay: `${i * 50}ms`, boxShadow: "0 12px 30px rgba(20, 12, 45, 0.09)" }}
                     onMouseEnter={e => { if (!isMobile) { e.currentTarget.style.transform = "translateY(-4px)"; e.currentTarget.style.boxShadow = `0 12px 32px ${pal.glow}`; } }}
                     onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "var(--shadow-sm)"; }}>
                     <div style={{ height: 4, background: stripBg }} />
-                    <div style={{ padding: isMobile ? "14px 16px" : "18px 20px" }}>
+                     <div className="amenity-card-content" style={{ padding: isMobile ? "14px 16px" : "18px 20px" }}>
                       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 12 }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 11, minWidth: 0 }}>
-                          <div style={{ width: 42, height: 42, borderRadius: 12, flexShrink: 0, background: pal.iconBg, border: `1.5px solid ${pal.iconBorder}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 21 }}>{amenityEmoji(a.name)}</div>
+                           <div style={{ width: 48, height: 48, borderRadius: 15, flexShrink: 0, background: `linear-gradient(145deg, ${pal.iconBg}, var(--card-bg))`, border: `1px solid ${pal.iconBorder}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 23, boxShadow: `0 8px 20px ${pal.glow}` }}>{amenityEmoji(a.name)}</div>
                           <div style={{ minWidth: 0 }}>
                             <div style={{ fontWeight: 700, fontSize: 14, color: "var(--text-primary)", lineHeight: 1.2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{a.name}</div>
                             <span style={{ marginTop: 4, display: "inline-block", background: "var(--card-inner-bg)", color: "var(--text-secondary)", border: "1px solid var(--glass-border)", padding: "2px 9px", borderRadius: 999, fontSize: 10, fontWeight: 600 }}>
@@ -374,30 +378,33 @@ export default function Index({
                           <MdAccessTime size={11} /> Closed until {a.disabled_until}
                         </div>
                       )}
-                      <div style={{ background: "var(--chip-bg)", border: "1px solid var(--chip-border)", borderRadius: 12, padding: "10px 12px", display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 12 }}>
-                        <span style={{ background: isPaidAmenity(a) ? "var(--badge-paid-bg)" : "var(--badge-free-bg)", color: isPaidAmenity(a) ? "var(--badge-paid-color)" : "var(--badge-free-color)", border: `1px solid ${isPaidAmenity(a) ? "var(--badge-paid-border)" : "var(--badge-free-border)"}`, padding: "3px 10px", borderRadius: 999, fontSize: 11, fontWeight: 700 }}>
-                          {isPaidAmenity(a) ? `₹${a.rate_per_hour}/hr` : t("amenFreeAccess")}
-                        </span>
-                        <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, color: "var(--text-secondary)" }}>
-                          <MdPeople size={13} style={{ color: pal.strip }} /> {a.capacity} {t("amenCapLabel")}
-                        </span>
-                        {a.opening_time && (
-                          <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, color: "var(--text-secondary)" }}>
-                            <MdAccessTime size={13} style={{ color: pal.strip }} /> {a.opening_time}–{a.closing_time}
-                          </span>
+                       <div className="amenity-management-meta">
+                         {isPaidAmenity(a) ? <div className="amenity-price-grid">
+                           <div><span>Owner / Resident</span><strong>₹{Number(a.resident_rate_per_hour ?? a.rate_per_hour) || 0}</strong></div>
+                           <div><span>Tenant</span><strong>₹{Number(a.tenant_rate_per_hour ?? a.rate_per_hour) || 0}</strong></div>
+                         </div> : <span className="amenity-free-pill">{t("amenFreeAccess")}</span>}
+                         <span className="amenity-meta-item" style={{ color: "var(--text-secondary)" }}>
+                           <MdPeople size={13} style={{ color: pal.strip }} /> {a.capacity} {t("amenCapLabel")}
+                         </span>
+                         {a.opening_time && (
+                           <span className="amenity-meta-item" style={{ color: "var(--text-secondary)" }}>
+                             <MdAccessTime size={13} style={{ color: pal.strip }} /> {a.opening_time}–{a.closing_time}
+                           </span>
                         )}
                       </div>
                       {requApproval && (
-                        <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11, fontWeight: 600, color: "var(--approval-color)", background: "var(--approval-bg)", border: "1px solid var(--approval-border)", borderRadius: 8, padding: "5px 10px", marginBottom: 12 }}>
+                         <div className="amenity-approval-badge" style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11, fontWeight: 600, color: "var(--approval-color)", background: "var(--approval-bg)", border: "1px solid var(--approval-border)", borderRadius: 8, padding: "5px 10px", marginBottom: 12 }}>
                           <MdEventAvailable size={13} /> {t("amenRequiresApproval")}
                         </div>
                       )}
                       {canEdit && (
-                        <div style={{ display: "flex", gap: 8 }}>
+                         <div className="amenity-card-actions" style={{ display: "flex", gap: 8 }}>
                           {active ? (
                             <button
                               onClick={() => onDisable(a)}
-                              className="flex-1 flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl text-xs font-semibold cursor-pointer transition-all bg-card-inner-bg text-secondary border border-glass-border hover:text-rose-400 hover:border-rose-500/30"
+                               title="Disable amenity"
+                               aria-label="Disable amenity"
+                               className="amenity-disable-action flex-1 flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl text-xs font-semibold cursor-pointer transition-all bg-card-inner-bg text-secondary border border-glass-border"
                             >
                               <MdToggleOff size={16} /> {t("amenDisableBtn")}
                             </button>
@@ -405,16 +412,28 @@ export default function Index({
                             <button
                               onClick={() => onReEnable(a.id)}
                               disabled={togglingId === a.id}
-                              className="flex-1 flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl text-xs font-bold cursor-pointer transition-all bg-emerald-500/10 text-emerald-500 dark:text-emerald-400 border border-emerald-500/25 hover:bg-emerald-500/20"
+                              title="Re-enable amenity"
+                              aria-label="Re-enable amenity"
+                              className="amenity-enable-action flex-1 flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl text-xs font-bold cursor-pointer transition-all bg-emerald-500/10 text-emerald-500 dark:text-emerald-400 border border-emerald-500/25"
                             >
                               {togglingId === a.id ? <Spinner /> : <><MdToggleOn size={16} /> {t("amenReenableBtn")}</>}
                             </button>
                           )}
                           <button
                             onClick={() => onEdit(a)}
-                            className="flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-xl text-xs font-bold cursor-pointer transition-all bg-accent/10 text-accent border border-accent/25 hover:bg-accent/20"
+                            title="Edit amenity"
+                            aria-label="Edit amenity"
+                            className="amenity-icon-action amenity-edit-action flex items-center justify-center rounded-xl cursor-pointer transition-all bg-accent/10 text-accent border border-accent/25"
                           >
-                            <MdEdit size={15} /> {t("amenEditBtn")}
+                            <MdEdit size={17} />
+                            </button>
+                          <button
+                            onClick={() => onDelete(a)}
+                            title="Delete amenity"
+                            aria-label="Delete amenity"
+                            className="amenity-icon-action amenity-delete-action flex items-center justify-center rounded-xl cursor-pointer transition-all bg-rose-500/10 text-rose-400 border border-rose-500/25"
+                          >
+                            <MdDelete size={17} />
                           </button>
                         </div>
                       )}

@@ -31,7 +31,7 @@ const MAINTENANCE_TYPES = [
 ];
 
 const FLAT_TYPES = ["1BHK", "2BHK", "3BHK", "ROW_HOUSE", "COMMERCIAL"];
-const RESIDENT_TYPES = ["OWNER", "TENANT"];
+const FLAT_CONFIG_TYPES = ["ALL", ...FLAT_TYPES];
 const FREQUENCIES = ["MONTHLY", "QUARTERLY", "YEARLY", "ONE_TIME"];
 const MONTH_NAMES = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 const MONTH_KEYS = ["monthJan", "monthFeb", "monthMar", "monthApr", "monthMay", "monthJun", "monthJul", "monthAug", "monthSep", "monthOct", "monthNov", "monthDec"];
@@ -159,7 +159,7 @@ function ConfigCard({ rate, deleting, onEdit, onDelete, last, canEdit = true }) 
           <TypeChip type={rate.maintenance_type} />
         </div>
         <p className="text-xs text-secondary truncate">
-          {label} · {tFrequency(t, rate.frequency || "MONTHLY")} · {rate.maintenance_type === "SQ_FEET" ? `₹${Number(rate.rate_per_sqft).toFixed(2)}/sq.ft` : formatMoney(rate.amount)}
+          {label} · {tFrequency(t, rate.frequency || "MONTHLY")} · {rate.maintenance_type === "SQ_FEET" ? `₹${Number(rate.owner_rate_per_sqft ?? rate.rate_per_sqft ?? 0).toFixed(2)}/sq.ft` : formatMoney(rate.owner_amount ?? rate.amount ?? 0)}
         </p>
       </div>
 
@@ -205,10 +205,11 @@ function ConfigForm({ initial, onClose, onSuccessClose, onSaved, isSuperAdmin = 
   const { t } = useLang();
   const [type, setType] = useState(initial?.maintenance_type || "LUMPSUM");
   const [name, setName] = useState(initial?.name || "");
-  const [amount, setAmount] = useState(initial?.amount ?? "");
-  const [ratePerSqft, setRatePerSqft] = useState(initial?.rate_per_sqft ?? "");
+  const [ownerAmount, setOwnerAmount] = useState(initial?.owner_amount ?? initial?.amount ?? "");
+  const [tenantAmount, setTenantAmount] = useState(initial?.tenant_amount ?? initial?.amount ?? "");
+  const [ownerRatePerSqft, setOwnerRatePerSqft] = useState(initial?.owner_rate_per_sqft ?? initial?.rate_per_sqft ?? "");
+  const [tenantRatePerSqft, setTenantRatePerSqft] = useState(initial?.tenant_rate_per_sqft ?? initial?.rate_per_sqft ?? "");
   const [flatType, setFlatType] = useState(initial?.flat_type || "");
-  const [residentType, setResidentType] = useState(initial?.resident_type || "OWNER");
   const [frequency, setFrequency] = useState(initial?.frequency || "MONTHLY");
   const [description, setDescription] = useState(initial?.description || "");
   const [isActive, setIsActive] = useState(initial?.is_active ?? true);
@@ -224,14 +225,15 @@ function ConfigForm({ initial, onClose, onSuccessClose, onSaved, isSuperAdmin = 
       try {
         const types = await maintenanceService.getMaintenanceFlatTypes();
         if (!mounted) return;
-        setFlatOptions(types.length ? types : FLAT_TYPES);
-        if (types.length && initial?.flat_type && !types.includes(initial.flat_type)) {
-          setFlatType(types[0]);
+        const options = ["ALL", ...(types.length ? types : FLAT_TYPES)].filter((value, index, list) => list.indexOf(value) === index);
+        setFlatOptions(options);
+        if (initial?.flat_type && !options.includes(initial.flat_type)) {
+          setFlatType(options[0]);
         } else if (!initial?.flat_type) {
-          setFlatType(types[0] || FLAT_TYPES[0]);
+          setFlatType(options[0]);
         }
       } catch {
-        if (mounted) setFlatOptions(FLAT_TYPES);
+        if (mounted) setFlatOptions(FLAT_CONFIG_TYPES);
       } finally {
         if (mounted) setFlatTypesLoading(false);
       }
@@ -252,7 +254,7 @@ function ConfigForm({ initial, onClose, onSuccessClose, onSaved, isSuperAdmin = 
       if (nameErr) { setError(nameErr); return; }
     }
 
-    const amountValue = type === "SQ_FEET" ? ratePerSqft : amount;
+    const amountValue = type === "SQ_FEET" ? ownerRatePerSqft : ownerAmount;
     const amountErr = getPositiveAmountError(amountValue, type === "SQ_FEET" ? t("mntFieldRatePerSqFt") : t("mntFieldAmount"));
     if (amountErr) { setError(amountErr); return; }
 
@@ -263,13 +265,13 @@ function ConfigForm({ initial, onClose, onSuccessClose, onSaved, isSuperAdmin = 
       description,
       is_active: isActive,
     };
-    if (type === "LUMPSUM") payload.amount = amount;
+    if (type === "LUMPSUM") { payload.owner_amount = ownerAmount; payload.tenant_amount = tenantAmount; }
     if (type === "FLAT") {
-      payload.amount = amount;
+      payload.owner_amount = ownerAmount;
+      payload.tenant_amount = tenantAmount;
       payload.flat_type = flatType;
-      payload.resident_type = residentType;
     }
-    if (type === "SQ_FEET") payload.rate_per_sqft = ratePerSqft;
+    if (type === "SQ_FEET") { payload.owner_rate_per_sqft = ownerRatePerSqft; payload.tenant_rate_per_sqft = tenantRatePerSqft; }
 
     setSaving(true);
     try {
@@ -398,15 +400,6 @@ function ConfigForm({ initial, onClose, onSuccessClose, onSaved, isSuperAdmin = 
                 style={{ height: 44, fontSize: 13, fontWeight: 600, borderColor: "var(--input-border)", borderRadius: 10, background: "var(--input-bg)" }}
               />
             </div>
-            <div>
-              <Label>{t("mntWhoPays")}</Label>
-              <Select
-                options={RESIDENT_TYPES.map((r) => ({ value: r, label: r === "OWNER" ? t("mntOwner") : t("mntTenant") }))}
-                value={residentType}
-                onChange={(e) => setResidentType(e.target.value)}
-                style={{ height: 44, fontSize: 13, fontWeight: 600, borderColor: "var(--input-border)", borderRadius: 10, background: "var(--input-bg)" }}
-              />
-            </div>
           </div>
           )}
         </>
@@ -415,23 +408,10 @@ function ConfigForm({ initial, onClose, onSuccessClose, onSaved, isSuperAdmin = 
       {/* Amount + Frequency + Active row */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
         {type !== "FLAT" || (flatOptions.length > 0 && !flatTypesLoading) ? (
-          <div>
-            <Label>
-              {type === "LUMPSUM" && t("mntAmountEveryFlat")}
-              {type === "FLAT" && t("mntAmountForFlat", { flat: tFlatLabel(t, flatType || flatOptions[0]) })}
-              {type === "SQ_FEET" && t("mntRatePerSqFt")}
-            </Label>
-            <input
-              type="number"
-              min="0"
-              {...(type === "SQ_FEET" ? { step: "0.01" } : {})}
-              className={inputCls}
-              style={{ borderColor: "var(--input-border)", color: "var(--text-primary)", height: 44 }}
-              value={type === "SQ_FEET" ? ratePerSqft : amount}
-              onChange={(e) => (type === "SQ_FEET" ? setRatePerSqft(e.target.value) : setAmount(e.target.value))}
-              placeholder={type === "SQ_FEET" ? "e.g. 2.5" : type === "FLAT" ? "e.g. 3500" : "e.g. 3000"}
-              required
-            />
+          <div className="sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {[['Owner', type === "SQ_FEET" ? ownerRatePerSqft : ownerAmount, type === "SQ_FEET" ? setOwnerRatePerSqft : setOwnerAmount], ['Tenant', type === "SQ_FEET" ? tenantRatePerSqft : tenantAmount, type === "SQ_FEET" ? setTenantRatePerSqft : setTenantAmount]].map(([label, value, setter]) => (
+              <div key={label}><Label>{label} {type === "SQ_FEET" ? "Rate (₹/sq.ft)" : "Amount (₹)"}</Label><input type="number" min="0" step={type === "SQ_FEET" ? "0.01" : "0.01"} className={inputCls} style={{ borderColor: "var(--input-border)", color: "var(--text-primary)", height: 44 }} value={value} onChange={(e) => setter(e.target.value)} required /></div>
+            ))}
           </div>
         ) : (
           <div className="hidden sm:block" />
@@ -591,6 +571,8 @@ function GenerateModal({ configs, onClose, onGenerated }) {
     return preview.residents.filter(
       (r) =>
         r.resident_name?.toLowerCase().includes(q) ||
+        r.owner_name?.toLowerCase().includes(q) ||
+        r.tenant_name?.toLowerCase().includes(q) ||
         r.flat_number?.toLowerCase().includes(q) ||
         r.block_name?.toLowerCase().includes(q) ||
         r.rate_name?.toLowerCase().includes(q)
@@ -722,7 +704,7 @@ function GenerateModal({ configs, onClose, onGenerated }) {
                       )}
                     </div>
                     <span className="text-xs font-extrabold text-emerald-400 shrink-0">
-                      {c.maintenance_type === "SQ_FEET" ? `₹${c.rate_per_sqft}/sq.ft` : formatMoney(c.amount)}
+                      {c.maintenance_type === "SQ_FEET" ? `₹${c.owner_rate_per_sqft ?? c.rate_per_sqft ?? 0}/sq.ft` : formatMoney(c.owner_amount ?? c.amount ?? 0)}
                     </span>
                   </label>
                 );
@@ -884,6 +866,9 @@ function GenerateModal({ configs, onClose, onGenerated }) {
                             <div>
                               <div style={{ fontWeight: 700, color: "var(--text-primary)" }}>{r.resident_name}</div>
                               <div style={{ fontSize: 10, color: "var(--text-secondary)" }}>{r.resident_phone || r.resident_email || "—"}</div>
+                              <div style={{ fontSize: 10, fontWeight: 700, color: r.occupancy_status === "TENANT_OCCUPIED" ? "#f59e0b" : "#10b981" }}>
+                                {r.occupancy_status === "TENANT_OCCUPIED" ? `Tenant Occupied${r.tenant_name ? ` · ${r.tenant_name}` : ""}` : "Owner Occupied"}
+                              </div>
                             </div>
                           </div>
                         </td>
@@ -2054,7 +2039,11 @@ function BillDetailModal({ id, onClose }) {
                     </>
                   )}
                   {calc.maintenance_type !== "SQ_FEET" && (
-                    <Row label={t("mntRowConfiguredAmount")} value={calc.configured_amount != null ? formatMoney(calc.configured_amount) : "—"} />
+                    <>
+                      <Row label="Standard Owner Maintenance" value={calc.owner_base_amount != null ? formatMoney(calc.owner_base_amount) : (calc.configured_amount != null ? formatMoney(calc.configured_amount) : "—")} />
+                      <Row label="Additional Tenant Charge" value={formatMoney(calc.additional_tenant_charge || 0)} />
+                      <Row label="Total Maintenance" value={bill?.amount != null ? formatMoney(bill.amount) : "—"} />
+                    </>
                   )}
                 </div>
               )}

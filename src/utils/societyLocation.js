@@ -137,6 +137,16 @@ export function parseCoordString(str) {
 /** Exact local landmark match used when public geocoders return a nearby POI. */
 export function knownLocationSuggestion(raw) {
   const q = String(raw || "").toLowerCase();
+  if (q.includes("hamidwada") && (q.includes("416235") || q.includes("kagal") || q.includes("kolhapur"))) {
+    return {
+      id: "known-hamidwada-kagal",
+      title: "Hamidwada",
+      subtitle: "Kagal, Kolhapur, Maharashtra, 416235, India",
+      label: "Hamidwada, Kagal, Kolhapur, Maharashtra, 416235, India",
+      lat: 16.40193144,
+      lng: 74.29314394,
+    };
+  }
   if (q.includes("shivaji university") && q.includes("siber") && q.includes("kolhapur")) {
     return {
       id: "known-shivaji-university-siber-chowk",
@@ -263,13 +273,28 @@ export function generateSmartLocationCandidates(raw) {
   if (!q) return [];
   const candidates = [q];
 
+  // Indian PIN searches are commonly written as "Place 416235". Public
+  // geocoders often index the PIN boundary but not the village name in the
+  // same record, so search the PIN with an India context as a fallback.
+  const pinMatch = q.match(/\b(\d{6})\b/);
+  if (pinMatch) {
+    const placePart = q.replace(pinMatch[0], "").replace(/[,-]+/g, " ").trim();
+    if (placePart) candidates.push(`${placePart}, India`);
+    candidates.push(`${pinMatch[1]}, India`);
+  }
+
   // Common Indian city/word typo fixes (e.g. kolhaput -> kolhapur)
   const typoFixed = q.replace(/kolhaput\b/gi, "kolhapur");
   if (typoFixed !== q) candidates.push(typoFixed);
 
   // If query mentions known company or landmark like Walstar
   if (/walstar/i.test(q)) {
-    candidates.push("Rukmini Nagar Kolhapur", "Shahupuri Kolhapur", "Sayaji Hotel Kolhapur");
+    candidates.push(
+      "Walstar Technologies Kolhapur",
+      "Walstar Technologies Pvt Ltd Kolhapur",
+      "Walstar Technologies, Kolhapur, Maharashtra",
+      "Walstar Technologies Pvt Ltd, Kolhapur, Maharashtra"
+    );
   }
 
   // Split words

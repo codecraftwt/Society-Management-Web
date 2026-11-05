@@ -240,12 +240,7 @@ function SuperAdminLayoutInner() {
       {/* ── REUSABLE SIDEBAR ── */}
       <Sidebar
         menu={menu}
-        brandTitle={
-          <span className="text-accent">
-            {t("saBrandName") || "Society"}
-            {t("saBrandSuffix") || "Control"}
-          </span>
-        }
+        brandTitle={null}
         brandSubtitle={t("sbViewSuperAdmin")}
         base={base}
         drawerExtra={mobileDrawerActions}

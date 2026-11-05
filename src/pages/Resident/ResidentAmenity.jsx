@@ -169,6 +169,8 @@ const navigate = useNavigate();
     const [slotsLoading,    setSlotsLoading]    = useState(false);
     const [bookingLoading,  setBookingLoading]  = useState(false);
     const [bookingError,    setBookingError]    = useState("");
+    const [authorizedFlats, setAuthorizedFlats] = useState([]);
+    const [selectedFlatId, setSelectedFlatId] = useState("");
 
     /* ── Payment status UI ── */
     const [paymentStatus, setPaymentStatus] = useState(null);
@@ -223,6 +225,11 @@ const navigate = useNavigate();
     const [tab, setTab] = useState("AMENITIES");
 
     const user = JSON.parse(localStorage.getItem("user") || "{}");
+    const selectedFlat = authorizedFlats.find((flat) => String(flat.flat_id) === String(selectedFlatId));
+    const occupancyCategory = String(selectedFlat?.role || user?.resident_type || "OWNER").toUpperCase() === "TENANT" ? "TENANT" : "OWNER";
+    const applicableRate = selectedAmenity
+      ? Number(occupancyCategory === "TENANT" ? selectedAmenity.tenant_rate_per_hour : selectedAmenity.resident_rate_per_hour) || 0
+      : 0;
 
     /* ── Helpers ── */
     const formatDateLocal = (date) =>
@@ -262,7 +269,7 @@ const navigate = useNavigate();
     };
 
     const bookingAmount = (b) => {
-      const rate = Number(b?.Amenity?.rate_per_hour) || 0;
+      const rate = Number(b?.rate_per_hour_snapshot ?? (String(b?.occupancy_category).toUpperCase() === "TENANT" ? b?.Amenity?.tenant_rate_per_hour : b?.Amenity?.resident_rate_per_hour)) || 0;
       if (!rate) return 0;
       const units = Array.isArray(b?.slots) && b.slots.length
         ? b.slots.length
@@ -272,6 +279,14 @@ const navigate = useNavigate();
 
     useEffect(() => {
       API.get("/amenities").then((res) => setAmenities(res.data.data || []));
+    }, []);
+
+    useEffect(() => {
+      API.get("/users/get-flat?all=1").then((res) => {
+        const flats = Array.isArray(res.data) ? res.data : (res.data?.flats || []);
+        setAuthorizedFlats(flats);
+        if (flats.length && !selectedFlatId) setSelectedFlatId(String(flats[0].flat_id));
+      }).catch(() => setAuthorizedFlats([]));
     }, []);
 
     /* ── Load my bookings ── */
@@ -512,9 +527,10 @@ const navigate = useNavigate();
       }
 
       const payload = isFullDay
-        ? { amenityId: selectedAmenity.id, from_date: from, to_date: to }
+        ? { amenityId: selectedAmenity.id, flat_id: Number(selectedFlatId) || undefined, from_date: from, to_date: to }
         : {
             amenityId: selectedAmenity.id,
+            flat_id: Number(selectedFlatId) || undefined,
             from_date: from,
             to_date:   to,
             slots:     selectedSlots.map((s) => ({ date: s.date, start_time: s.start_time })),
@@ -968,7 +984,8 @@ const navigate = useNavigate();
                             </span>
                           ) : (
                             <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-purple-500/10 border border-purple-500/20 text-purple-300">
-                              <span className="font-extrabold text-sm text-primary">₹{a.rate_per_hour}</span>
+                              <span className="text-[11px] text-secondary">Owner / Resident: </span><span className="font-extrabold text-sm text-primary">₹{Number(a.resident_rate_per_hour ?? a.rate_per_hour) || 0}</span>
+                              <span className="text-[11px] text-secondary"> · Tenant: </span><span className="font-extrabold text-sm text-primary">₹{Number(a.tenant_rate_per_hour ?? a.rate_per_hour) || 0}</span>
                               <span className="text-[11px] text-secondary">/{a.booking_type === "FULL_DAY" ? (t("amenPerDay") || "day") : (t("amenPerHr") || "hr")}</span>
                             </span>
                           )}
@@ -1307,6 +1324,19 @@ const navigate = useNavigate();
 
               {!paymentStatus && (
                 <>
+                  {authorizedFlats.length > 0 && (
+                    <div style={{ marginBottom: 14 }}>
+                      <p className="ra-modal-label">Booking flat</p>
+                      <Select value={selectedFlatId} onChange={(e) => setSelectedFlatId(e.target.value)}>
+                        {authorizedFlats.map((flat) => (
+                          <option key={flat.flat_id} value={flat.flat_id}>
+                            {flat.block_name ? `${flat.block_name} - ` : ""}{flat.flat_number || flat.flat_id} ({String(flat.role || "OWNER").toUpperCase()})
+                          </option>
+                        ))}
+                      </Select>
+                      {selectedAmenity.type === "PAID" && <div style={{ fontSize: 11, color: "var(--text-secondary)", marginTop: 5 }}>Applicable {occupancyCategory} rate: ₹{applicableRate}</div>}
+                    </div>
+                  )}
                   <p className="ra-modal-subtitle">{t("amenSelectBookingDates", "Select your booking dates")}</p>
 
                   {selectedAmenity.booking_type === "FULL_DAY" ? (
@@ -1386,7 +1416,7 @@ const navigate = useNavigate();
                               <>
                                 <div className="ra-summary-line">
                                   <span>{t("amenRate", "Rate")}</span>
-                                  <strong>₹{selectedAmenity.rate_per_hour}/{t("amenPerDay")}</strong>
+                                    <strong>₹{applicableRate}/{t("amenPerDay")} ({occupancyCategory})</strong>
                                 </div>
                                 <div className="ra-summary-line">
                                   <span>{t("amenDaysLabel", "Days")}</span>
@@ -1395,7 +1425,7 @@ const navigate = useNavigate();
                                 <div className="ra-summary-divider" />
                                 <div className="ra-summary-total">
                                   <span className="ra-summary-total-label">{t("amenTotal", "Total")}</span>
-                                  <span className="ra-summary-total-amt">₹{Number(selectedAmenity.rate_per_hour || 0) * rangeDates.length}</span>
+                                   <span className="ra-summary-total-amt">₹{applicableRate * rangeDates.length}</span>
                                 </div>
                               </>
                             ) : (
@@ -1420,7 +1450,7 @@ const navigate = useNavigate();
                                     <span className="ra-modal-book-cta-text">
                                       {t("amenBook", "Book")} {rangeDates.length} {rangeDates.length === 1 ? t("amenDay", "day") : t("amenDays", "days")}
                                       {selectedAmenity.type === "PAID" && (
-                                        <span className="ra-modal-book-cta-price"> · ₹{Number(selectedAmenity.rate_per_hour || 0) * rangeDates.length}</span>
+                                         <span className="ra-modal-book-cta-price"> · ₹{applicableRate * rangeDates.length}</span>
                                       )}
                                     </span>
                                   </>
@@ -1572,8 +1602,8 @@ const navigate = useNavigate();
 
                   {selectedAmenity.type === "PAID" && (
                     <div className="ra-booking-summary">
-                      <span>₹{selectedAmenity.rate_per_hour} × {rangeDates.length} {rangeDates.length === 1 ? t("amenDay", "day") : t("amenDays", "days")}</span>
-                      <strong>₹{Number(selectedAmenity.rate_per_hour || 0) * rangeDates.length}</strong>
+                       <span>₹{applicableRate} ({occupancyCategory}) × {rangeDates.length} {rangeDates.length === 1 ? t("amenDay", "day") : t("amenDays", "days")}</span>
+                       <strong>₹{applicableRate * rangeDates.length}</strong>
                     </div>
                   )}
 
@@ -1654,11 +1684,11 @@ const navigate = useNavigate();
                         <div className="ra-booking-summary">
                           {selectedSlots.length > 0 ? (
                             <>
-                              <span>₹{selectedAmenity.rate_per_hour} × {selectedSlots.length} {selectedSlots.length === 1 ? t("amenSlot", "slot") : t("amenSlots", "slots")}</span>
-                              <strong>₹{Number(selectedAmenity.rate_per_hour || 0) * selectedSlots.length}</strong>
+                               <span>₹{applicableRate} ({occupancyCategory}) × {selectedSlots.length} {selectedSlots.length === 1 ? t("amenSlot", "slot") : t("amenSlots", "slots")}</span>
+                               <strong>₹{applicableRate * selectedSlots.length}</strong>
                             </>
                           ) : (
-                            <span>₹{selectedAmenity.rate_per_hour} / {t("amenPerHr")}</span>
+                            <span>₹{applicableRate} ({occupancyCategory}) / {t("amenPerHr")}</span>
                           )}
                         </div>
                       )}
@@ -1675,7 +1705,7 @@ const navigate = useNavigate();
                               <span className="ra-modal-book-cta-text">
                                 {t("amenBook", "Book")} {selectedSlots.length} {selectedSlots.length > 1 ? t("amenSlots", "slots") : t("amenSlot", "slot")}
                                 {selectedAmenity.type === "PAID" && (
-                                  <span className="ra-modal-book-cta-price"> · ₹{Number(selectedAmenity.rate_per_hour || 0) * selectedSlots.length}</span>
+                                  <span className="ra-modal-book-cta-price"> · ₹{applicableRate * selectedSlots.length}</span>
                                 )}
                               </span>
                             </>

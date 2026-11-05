@@ -56,7 +56,7 @@ export default function Amenities() {
 
   const [form, setForm] = useState({
     name: "", type: "FREE", booking_type: "SLOT",
-    rate_per_hour: 0, opening_time: "", closing_time: "",
+    resident_rate_per_hour: 0, tenant_rate_per_hour: 0, opening_time: "", closing_time: "",
     capacity: 1, requires_approval: false,
   });
 
@@ -131,7 +131,7 @@ export default function Amenities() {
       return;
     }
     setEditingAmenity(null);
-    setForm({ name: "", type: "FREE", booking_type: "SLOT", rate_per_hour: 0, opening_time: "", closing_time: "", capacity: 1, requires_approval: false });
+    setForm({ name: "", type: "FREE", booking_type: "SLOT", resident_rate_per_hour: 0, tenant_rate_per_hour: 0, opening_time: "", closing_time: "", capacity: 1, requires_approval: false });
     setShowForm(p => !p);
   };
 
@@ -154,7 +154,8 @@ export default function Amenities() {
       name: amenity.name || "",
       type: (amenity.type || "FREE").toUpperCase(),
       booking_type: amenity.booking_type || "SLOT",
-      rate_per_hour: Number(amenity.rate_per_hour) || 0,
+      resident_rate_per_hour: Number(amenity.resident_rate_per_hour ?? amenity.rate_per_hour) || 0,
+      tenant_rate_per_hour: Number(amenity.tenant_rate_per_hour ?? amenity.rate_per_hour) || 0,
       opening_time: amenity.opening_time ? String(amenity.opening_time).slice(0, 5) : "",
       closing_time: amenity.closing_time ? String(amenity.closing_time).slice(0, 5) : "",
       capacity: Number(amenity.capacity) || 1,
@@ -176,15 +177,17 @@ export default function Amenities() {
       const capErr = getNumberError(form.capacity, "Capacity", { min: 1, allowZero: false });
       if (capErr) { showWarning(capErr); setSubmitting(false); return; }
       if (form.type === "PAID") {
-        const rateErr = getPositiveAmountError(form.rate_per_hour, "Rate per hour");
-        if (rateErr) { showWarning(rateErr); setSubmitting(false); return; }
+        const ownerErr = getPositiveAmountError(form.resident_rate_per_hour, "Owner / Resident price");
+        const tenantErr = getPositiveAmountError(form.tenant_rate_per_hour, "Tenant price");
+        if (ownerErr || tenantErr) { showWarning(ownerErr || tenantErr); setSubmitting(false); return; }
       }
       if (form.booking_type === "SLOT" && (!form.opening_time || !form.closing_time)) { showWarning(t("amenErrTime")); setSubmitting(false); return; }
       const payload = {
         name: form.name.trim(),
         type: form.type,
         booking_type: form.booking_type,
-        rate_per_hour: form.type === "PAID" ? Number(form.rate_per_hour) : 0,
+        resident_rate_per_hour: form.type === "PAID" ? Number(form.resident_rate_per_hour) : 0,
+        tenant_rate_per_hour: form.type === "PAID" ? Number(form.tenant_rate_per_hour) : 0,
         opening_time: form.opening_time || null,
         closing_time: form.closing_time || null,
         capacity: Number(form.capacity),
@@ -199,7 +202,7 @@ export default function Amenities() {
       loadAmenities();
       setShowForm(false);
       setEditingAmenity(null);
-      setForm({ name: "", type: "FREE", booking_type: "SLOT", rate_per_hour: 0, opening_time: "", closing_time: "", capacity: 1, requires_approval: false });
+      setForm({ name: "", type: "FREE", booking_type: "SLOT", resident_rate_per_hour: 0, tenant_rate_per_hour: 0, opening_time: "", closing_time: "", capacity: 1, requires_approval: false });
     } catch (e) {
       if (e.response?.status === 403) {
         showUnauthorized(e.response?.data?.message || "Operation restricted");
@@ -226,6 +229,21 @@ export default function Amenities() {
       }
     }
     finally { setTogglingId(null); }
+  };
+
+  const handleDelete = async (amenity) => {
+    if (!hasPermission(user, "amenities", "delete")) {
+      showUnauthorized("You do not have permission to delete amenities.");
+      return;
+    }
+    if (!window.confirm(`Delete amenity "${amenity.name}"? Amenities with booking history cannot be deleted.`)) return;
+    try {
+      await API.delete(`/admin/amenities/${amenity.id}`);
+      showSuccess("Amenity deleted successfully.");
+      await loadAmenities();
+    } catch (e) {
+      showError(e.response?.data?.message || "Failed to delete amenity.");
+    }
   };
 
   const approveBooking = async (b) => {
@@ -401,6 +419,7 @@ export default function Amenities() {
         onApprove={approveBooking}
         onReject={rejectBooking}
         onEdit={handleOpenEditForm}
+        onDelete={handleDelete}
         isSuperAdmin={isSuperAdmin}
         societiesList={societies}
         selectedSocietyId={selectedSocietyId}

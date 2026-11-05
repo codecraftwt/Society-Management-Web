@@ -60,6 +60,7 @@ import ComplaintReport from "./pages/Admin/reports/ComplaintReport";
 import VisitorReport from "./pages/Admin/reports/VisitorReport";
 import FinancialReport from "./pages/Admin/reports/FinancialReport";
 import ExpenseReport from "./pages/Admin/reports/ExpenseReport";
+import FinanceExpenseReport from "./pages/Admin/reports/FinanceExpenseReport";
 import SocietyAmenities from "./sections/amenity";
 import SocietyDocuments from "./sections/document";
 import SocietyParcels from "./sections/parcel";
@@ -207,6 +208,7 @@ function App() {
             <Route path="reports/visitors" element={<SuperAdminVisitorReport />} />
             <Route path="reports/financial" element={<SuperAdminFinancialReport />} />
             <Route path="reports/expenses" element={<SuperAdminExpenseReport />} />
+            <Route path="reports/finance" element={<FinanceExpenseReport />} />
             <Route path="superadmin-reports" element={<SuperAdminReports />} />
             <Route path="parking" element={<AssignParkingSlot />} />
             <Route path="accounting" element={<Accounting />} />
@@ -309,6 +311,7 @@ function App() {
               <Route path="reports/complaints" element={<ComplaintReport />} />
               <Route path="reports/visitors" element={<VisitorReport />} />
               <Route path="reports/financial" element={<FinancialReport />} />
+              <Route path="reports/finance" element={<FinanceExpenseReport />} />
               <Route path="reports/expenses" element={<ExpenseReport />} />
             </Route>
             <Route element={<PermissionRoute module="amenities" />}>
@@ -499,4 +502,3 @@ function App() {
 }
 
 export default App;
-

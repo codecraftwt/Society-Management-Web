@@ -1,10 +1,11 @@
 
 
-import { useEffect, useState, useCallback, useRef} from "react";
+import { useEffect, useState, useCallback, useRef, useContext} from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import API from "../../services/api";
+import { AuthContext } from "../../context/AuthContext";
 import { useLang } from "../../context/LanguageContext";
 import ExpandableSearch from "../../components/common/ExpandableSearch";
 import SlidingTabs from "../../components/common/SlidingTabs";
@@ -58,6 +59,25 @@ function formatBillDate(d) {
   const date = new Date(d);
   if (isNaN(date.getTime())) return "—";
   return date.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+}
+
+function MaintenanceBreakdown({ bill }) {
+  if (String(bill?.type || '').toUpperCase() !== 'MAINTENANCE') return null;
+  let calc = bill.calculation_details;
+  if (typeof calc === 'string') {
+    try { calc = JSON.parse(calc); } catch { calc = null; }
+  }
+  if (!calc) return null;
+  const base = Number(calc.owner_base_amount ?? calc.configured_amount ?? 0);
+  const tenantCharge = Number(calc.additional_tenant_charge ?? 0);
+  return (
+    <div className="rounded-lg p-3 text-xs space-y-1" style={{ background: 'var(--card-bg)', border: '1px solid var(--glass-border)' }}>
+      <div className="font-bold mb-1" style={{ color: 'var(--text-primary)' }}>Maintenance Charges</div>
+      <div className="flex justify-between"><span className="text-secondary">Base amount</span><span>₹{base.toLocaleString('en-IN')}</span></div>
+      <div className="flex justify-between"><span className="text-secondary">Tenant charges</span><span>₹{tenantCharge.toLocaleString('en-IN')}</span></div>
+      <div className="flex justify-between font-bold border-t pt-1" style={{ borderColor: 'var(--glass-border)' }}><span>Total</span><span>₹{Number(bill.amount || 0).toLocaleString('en-IN')}</span></div>
+    </div>
+  );
 }
 
 /* ─── Skeleton helpers ─── */
@@ -161,6 +181,8 @@ export default function ResidentBills() {
   limitRef.current = limit;
 const navigate = useNavigate();
   const { t }    = useLang();
+  const { user } = useContext(AuthContext);
+  const isTenant = String(user?.resident_type || "").toUpperCase() === "TENANT";
   const [accountants,  setAccountants]  = useState([]);
   const [loadingAcct, setLoadingAcct] = useState(true);
   const [showAccountant, setShowAccountant] = useState(false);
@@ -471,11 +493,12 @@ const navigate = useNavigate();
                         ₹{Number(b.amount).toLocaleString("en-IN")}
                       </span>
                     </div>
+                    <MaintenanceBreakdown bill={b} />
                     {b.status === "PENDING_VERIFICATION" ? (
                       <span className="text-xs font-bold text-blue-400 px-3 py-1.5 rounded-lg bg-blue-500/10 border border-blue-500/20 inline-block">
                         Submitted — Awaiting Admin Confirmation
                       </span>
-                    ) : b.status !== "PAID" ? (
+                    ) : b.status !== "PAID" && !isTenant ? (
                       <button
                         onClick={() => navigate("/resident/payment", {
                           state: { id: b.id, amount: b.amount, title: b.title, type: "BILL" },
@@ -520,6 +543,7 @@ const navigate = useNavigate();
                             {b.title}
                           </span>
                         </div>
+                        <MaintenanceBreakdown bill={b} />
                       </td>
                       <td>
                         {b.Flat ? (
@@ -546,7 +570,7 @@ const navigate = useNavigate();
                           <span className="text-xs font-semibold text-blue-400">
                             Awaiting Confirmation
                           </span>
-                        ) : b.status !== "PAID" ? (
+                        ) : b.status !== "PAID" && !isTenant ? (
                           <button
                             onClick={() => navigate("/resident/payment", {
                               state: { id: b.id, amount: b.amount, title: b.title, type: "BILL" },

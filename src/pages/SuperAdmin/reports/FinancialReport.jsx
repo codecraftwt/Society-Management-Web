@@ -80,7 +80,7 @@ export default function SuperAdminFinancialReport() {
   const { t } = useLang();
   const navigate = useNavigate();
   const { user } = useContext(AuthContext);
-  const isSuperAdmin = user?.activeRole === "SUPER_ADMIN";
+  const isSuperAdmin = String(user?.activeRole || user?.role || "").toUpperCase() === "SUPER_ADMIN";
 
   const [rows, setRows] = useState([]);
   const [counts, setCounts] = useState({ total: 0, success: 0, pending: 0, failed: 0, cancelled: 0, collected: 0, pendingAmount: 0 });
@@ -312,7 +312,7 @@ export default function SuperAdminFinancialReport() {
             <p className="page-subtitle">
               {loading ? "—" : (t("payReportSubtitle") || "Every payment recorded across the system")}
             </p>
-            {activeSocietyName && <span className="sa-society-context">Viewing: {activeSocietyName}</span>}
+            {isSuperAdmin && activeSocietyName && <span className="sa-society-context">{t("rptViewing") || "Viewing"}: {activeSocietyName}</span>}
           </div>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>

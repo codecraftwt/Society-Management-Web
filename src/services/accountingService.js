@@ -17,9 +17,18 @@ export const getExpenses = (params = {}) => API.get("/expenses", { params }).the
 
 export const getExpense = (id) => API.get(`/expenses/${id}`).then(unwrapData);
 
-export const createExpense = (payload) => API.post("/expenses", payload).then((res) => res.data);
+const expenseBody = (payload) => {
+  if (!(payload?.receipt instanceof File) && !payload?.remove_receipt) return payload;
+  const body = new FormData();
+  Object.entries(payload || {}).forEach(([key, value]) => {
+    if (key === "receipt") { if (value) body.append("receipt", value); }
+    else if (value !== undefined && value !== null) body.append(key, String(value));
+  });
+  return body;
+};
+export const createExpense = (payload) => API.post("/expenses", expenseBody(payload)).then((res) => res.data);
 
-export const updateExpense = (id, payload) => API.put(`/expenses/${id}`, payload).then((res) => res.data);
+export const updateExpense = (id, payload) => API.put(`/expenses/${id}`, expenseBody(payload)).then((res) => res.data);
 
 export const voidExpense = (id, reason) =>
   API.delete(`/expenses/${id}`, { data: { reason } }).then((res) => res.data);

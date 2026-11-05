@@ -282,10 +282,13 @@ export default function SocietyLocationSettings({ societyId = null, societyName 
       const seenLabels = new Set();
       const rawItems = [];
 
-      for (const cand of candidates) {
+      for (const [candidateIndex, cand] of candidates.entries()) {
         // A. Photon with location bias (returns local near matches first)
         try {
-          const bias = refLat && refLng ? `&lat=${refLat}&lon=${refLng}` : "";
+          // First pass is local and fast. Subsequent candidate queries are
+          // deliberately unbiased so a valid place outside the current map
+          // area can still be found across India.
+          const bias = candidateIndex === 0 && refLat && refLng ? `&lat=${refLat}&lon=${refLng}` : "";
           const photonRes = await fetch(
             `https://photon.komoot.io/api/?q=${encodeURIComponent(cand)}${bias}&limit=6`,
             { headers: { Accept: "application/json" } }
@@ -296,8 +299,14 @@ export default function SocietyLocationSettings({ societyId = null, societyName 
               data.features.forEach((feat) => {
                 const pt = photonFeatureToPoint(feat);
                 if (pt && !seenLabels.has(pt.label)) {
+                  const pin = q.match(/\b(\d{6})\b/)?.[1];
+                  const place = q.replace(/\b\d{6}\b/, "").replace(/[,-]+/g, " ").trim();
+                  const isPinResult = feat?.properties?.osm_value === "postcode";
+                  const normalized = isPinResult && pin && place
+                    ? { ...pt, title: place, subtitle: `${pin}, ${pt.subtitle || "India"}`, label: `${place}, ${pin}, ${pt.subtitle || "India"}` }
+                    : pt;
                   seenLabels.add(pt.label);
-                  rawItems.push(pt);
+                  rawItems.push(normalized);
                 }
               });
             }
@@ -307,13 +316,16 @@ export default function SocietyLocationSettings({ societyId = null, societyName 
         }
 
         // B. Nominatim fallback / expansion
-        if (rawItems.length < 4) {
+        // Always query Nominatim as well. Photon often returns generic nearby
+        // streets for business names; Nominatim may contain the exact POI.
+        {
           try {
             const params = new URLSearchParams({
               format: "jsonv2",
               q: cand,
               limit: "4",
               addressdetails: "1",
+              countrycodes: "in",
             });
             const nomRes = await fetch(`${GEOCODE_URL}/search?${params}`, {
               headers: { Accept: "application/json", "Accept-Language": "en" },
@@ -335,20 +347,32 @@ export default function SocietyLocationSettings({ societyId = null, societyName 
           }
         }
 
-        if (rawItems.length >= 6) break;
+        // Do not stop after a fixed number of generic results. A later
+        // candidate can contain the exact business/society POI (for example,
+        // adding the city to a company name), and must still be collected.
       }
 
-      // Attach proximity distance and rank closest matches to the top
+      // Rank by textual relevance first. Proximity is only a tie-breaker;
+      // otherwise a nearby street can outrank the company or landmark the
+      // administrator actually searched for.
+      const queryTokens = q.toLowerCase().split(/[^a-z0-9]+/).filter((token) => token.length > 2);
       const withDistance = rawItems.map((item) => {
         const distKm = haversineDistanceKm(refLat, refLng, item.lat, item.lng);
+        const searchable = `${item.title || ""} ${item.label || ""} ${item.subtitle || ""}`.toLowerCase();
+        const matchedTokens = queryTokens.filter((token) => searchable.includes(token)).length;
+        const exactPhrase = searchable.includes(q.toLowerCase()) ? 1 : 0;
         return {
           ...item,
           distanceKm: distKm,
           distanceText: formatDistance(distKm),
+          relevanceScore: exactPhrase * 100 + matchedTokens * 10,
         };
       });
 
       withDistance.sort((a, b) => {
+        if (b.relevanceScore !== a.relevanceScore) {
+          return b.relevanceScore - a.relevanceScore;
+        }
         if (a.distanceKm == null) return 1;
         if (b.distanceKm == null) return -1;
         return a.distanceKm - b.distanceKm;
@@ -362,6 +386,14 @@ export default function SocietyLocationSettings({ societyId = null, societyName 
   const handleAddressChange = (e) => {
     const val = e.target.value;
     setAddress(val);
+    // A new search must not continue showing the previously selected point.
+    // Coordinates are committed only when the user picks a suggestion, enters
+    // valid coordinates, uses GPS, or clicks/drags on the map.
+    setLatitude("");
+    setLongitude("");
+    setCurrentAddress("");
+    setLocationTitle("");
+    setNotice("");
     setHighlightIndex(-1);
 
     if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
@@ -388,18 +420,17 @@ export default function SocietyLocationSettings({ societyId = null, societyName 
 
     const coordPair = parseCoordString(q);
     if (coordPair) {
-      setResults([
-        {
-          id: `coord-${coordPair.lat}-${coordPair.lng}`,
-          title: `Coordinates: ${fmtCoord(coordPair.lat)}, ${fmtCoord(coordPair.lng)}`,
-          subtitle: "Direct latitude and longitude input",
-          label: `${fmtCoord(coordPair.lat)}, ${fmtCoord(coordPair.lng)}`,
-          lat: coordPair.lat,
-          lng: coordPair.lng,
-          isCoord: true,
-        },
-      ]);
-      setSearchOpen(true);
+      // Coordinate paste is an explicit location selection. Apply it
+      // immediately instead of requiring the user to click a synthetic
+      // suggestion row.
+      setCoordinates(coordPair.lat, coordPair.lng, true);
+      setCurrentAddress(`${fmtCoord(coordPair.lat)}, ${fmtCoord(coordPair.lng)}`);
+      setLocationTitle("Pinned Coordinates");
+      setResults([]);
+      setSearchOpen(false);
+      setNotice(t("asLocPicked", "Location set: {{place}}", {
+        place: `${fmtCoord(coordPair.lat)}, ${fmtCoord(coordPair.lng)}`,
+      }));
       setSearching(false);
       return;
     }

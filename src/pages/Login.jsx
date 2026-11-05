@@ -1,4 +1,4 @@
-import { useState, useContext, useRef, useEffect } from "react";
+import { useState, useContext } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate, Link } from "react-router-dom";
 import API from "../services/api";
@@ -10,8 +10,6 @@ import {
   HiShieldCheck,
   HiMail,
   HiX,
-  HiRefresh,
-  HiCheckCircle,
   HiLockClosed,
 } from "react-icons/hi";
 import {
@@ -37,269 +35,6 @@ import ThemeToggle from "../components/common/ThemeToggle";
 import { useLang } from "../context/LanguageContext";
 import loginHeroImg from "../assets/Photos/Home/login_right_side_img.png";
 import "./Login.css";
-
-/* ═══════════════════════════════════════════════════════════
-   OTP MODAL (THEMED FOR UIVERSE CARD)
-   ═══════════════════════════════════════════════════════════ */
-function OtpModal({ email, tempToken, onVerified, onCancel }) {
-  const [otp, setOtp] = useState(["", "", "", "", "", ""]);
-  const [verifyLoading, setVerifyLoading] = useState(false);
-  const [resendLoading, setResendLoading] = useState(false);
-
-  // 2-minute session countdown
-  const [sessionSecs, setSessionSecs] = useState(120);
-  // 30-second resend cooldown
-  const [resendCooldown, setResendCooldown] = useState(30);
-  const [shaking, setShaking] = useState(false);
-
-  const inputRefs = useRef([]);
-
-  useEffect(() => { inputRefs.current[0]?.focus(); }, []);
-
-  useEffect(() => {
-    if (sessionSecs <= 0) return;
-    const t = setTimeout(() => setSessionSecs((s) => s - 1), 1000);
-    return () => clearTimeout(t);
-  }, [sessionSecs]);
-
-  useEffect(() => {
-    if (resendCooldown <= 0) return;
-    const t = setTimeout(() => setResendCooldown((c) => c - 1), 1000);
-    return () => clearTimeout(t);
-  }, [resendCooldown]);
-
-  const sessionExpired = sessionSecs <= 0;
-  const filled = otp.filter(Boolean).length;
-
-  const formatTime = (secs) => {
-    const m = Math.floor(secs / 60).toString().padStart(2, "0");
-    const s = (secs % 60).toString().padStart(2, "0");
-    return `${m}:${s}`;
-  };
-
-  const maskedEmail = email
-    ? email.replace(/(.{2})(.*)(@.*)/, (_, a, b, c) => a + "*".repeat(Math.min(b.length, 5)) + c)
-    : "";
-
-  const handleChange = (i, val) => {
-    const digit = val.replace(/\D/g, "").slice(-1);
-    const next = [...otp];
-    next[i] = digit;
-    setOtp(next);
-    if (digit && i < 5) inputRefs.current[i + 1]?.focus();
-  };
-
-  const handleKeyDown = (i, e) => {
-    if (e.key === "Backspace") {
-      if (otp[i]) {
-        const next = [...otp]; next[i] = ""; setOtp(next);
-      } else if (i > 0) {
-        inputRefs.current[i - 1]?.focus();
-        const next = [...otp]; next[i - 1] = ""; setOtp(next);
-      }
-    } else if (e.key === "ArrowLeft" && i > 0) inputRefs.current[i - 1]?.focus();
-    else if (e.key === "ArrowRight" && i < 5) inputRefs.current[i + 1]?.focus();
-    else if (e.key === "Enter") handleVerify();
-  };
-
-  const handlePaste = (e) => {
-    e.preventDefault();
-    const pasted = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
-    if (pasted.length === 6) {
-      setOtp(pasted.split(""));
-      inputRefs.current[5]?.focus();
-    }
-  };
-
-  const shake = () => {
-    setShaking(true);
-    setTimeout(() => setShaking(false), 500);
-  };
-
-  const handleVerify = async () => {
-    if (sessionExpired) { toast.error("Session expired. Please login again."); onCancel(); return; }
-    const code = otp.join("");
-    if (code.length !== 6) { shake(); toast.error("Enter the complete 6-digit OTP"); return; }
-
-    setVerifyLoading(true);
-    try {
-      const res = await API.post("/auth/verify-otp", { otp: code, tempToken });
-      toast.success("Login successful!");
-      onVerified(res.data.user, res.data.token);
-    } catch (err) {
-      shake();
-      setOtp(["", "", "", "", "", ""]);
-      inputRefs.current[0]?.focus();
-      toast.error(err.response?.data?.message || "Invalid OTP");
-    } finally {
-      setVerifyLoading(false);
-    }
-  };
-
-  const handleResend = async () => {
-    if (resendCooldown > 0 || resendLoading) return;
-    setResendLoading(true);
-    try {
-      await API.post("/auth/resend-otp", { tempToken });
-      setOtp(["", "", "", "", "", ""]);
-      setSessionSecs(120);
-      setResendCooldown(30);
-      inputRefs.current[0]?.focus();
-      toast.success("New OTP sent to your email");
-    } catch (err) {
-      toast.error(err.response?.data?.message || "Failed to resend OTP");
-    } finally {
-      setResendLoading(false);
-    }
-  };
-
-  const radius = 20;
-  const circumference = 2 * Math.PI * radius;
-  const progress = sessionSecs / 120;
-  const dashOffset = circumference * (1 - progress);
-  const timerColor = sessionSecs > 60 ? "#38bdf8" : sessionSecs > 30 ? "#3B82F6" : "#ef4444";
-
-  return createPortal(
-    <div className="otp-overlay otp-overlay--login">
-      <div className="otp-modal-box otp-modal-box--login animate-scaleIn">
-        <div className="otp-modal-topbar" />
-
-        <div className="otp-modal-inner">
-          <div className="otp-modal-header">
-            <div className="otp-shield-icon">
-              <HiShieldCheck />
-            </div>
-
-            <h2 className="otp-title">
-              Two-Step Verification
-            </h2>
-
-            <p className="otp-subtitle">
-              A 6-digit verification code was sent to
-            </p>
-
-            <div className="otp-email-badge">
-              <HiMail />
-              <span>{maskedEmail}</span>
-            </div>
-          </div>
-
-          <div style={{ display: "flex", justifyContent: "center", marginBottom: "1.25rem" }}>
-            <div style={{ position: "relative", width: 54, height: 54 }}>
-              <svg className="otp-timer-track" width="54" height="54" style={{ transform: "rotate(-90deg)" }}>
-                <circle cx="27" cy="27" r={radius} fill="none" strokeWidth="3" />
-                <circle cx="27" cy="27" r={radius} fill="none" stroke={timerColor} strokeWidth="3"
-                  strokeDasharray={circumference} strokeDashoffset={dashOffset} strokeLinecap="round"
-                  style={{ transition: "stroke-dashoffset 1s linear, stroke 0.5s ease" }}
-                />
-              </svg>
-              <div style={{
-                position: "absolute", inset: 0,
-                display: "flex", flexDirection: "column",
-                alignItems: "center", justifyContent: "center",
-              }}>
-                <span className="otp-timer-value" style={{ color: sessionExpired ? "#ef4444" : timerColor }}>
-                  {sessionExpired ? "00:00" : formatTime(sessionSecs)}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {sessionExpired && (
-            <div className="otp-session-expired">
-              <HiLockClosed />
-              <span>
-                Session expired. Please go back and login again.
-              </span>
-            </div>
-          )}
-
-          <div
-            style={{
-              display: "flex", gap: "clamp(0.3rem,2vw,0.55rem)",
-              justifyContent: "center", marginBottom: "1rem",
-              animation: shaking ? "otpShake 0.5s ease" : undefined,
-            }}
-          >
-            {otp.map((digit, i) => (
-              <input
-                key={i}
-                ref={(el) => (inputRefs.current[i] = el)}
-                type="text"
-                inputMode="numeric"
-                maxLength={1}
-                value={digit}
-                disabled={sessionExpired}
-                onChange={(e) => handleChange(i, e.target.value)}
-                onKeyDown={(e) => handleKeyDown(i, e)}
-                onPaste={handlePaste}
-                className={`otp-input${digit ? " filled" : ""}${sessionExpired ? " disabled" : ""}`}
-                style={{ cursor: sessionExpired ? "not-allowed" : "text" }}
-              />
-            ))}
-          </div>
-
-          <div style={{ display: "flex", gap: 4, justifyContent: "center", marginBottom: "1.25rem" }}>
-            {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className={`otp-progress-dot${i < filled ? " filled" : ""}`} />
-            ))}
-          </div>
-
-          <button
-            onClick={handleVerify}
-            disabled={verifyLoading || filled !== 6 || sessionExpired}
-            className="button1"
-            style={{
-              width: "100%",
-              opacity: (filled !== 6 || sessionExpired) ? 0.5 : 1,
-              cursor: (filled !== 6 || sessionExpired) ? "not-allowed" : "pointer",
-              marginBottom: "0.75rem",
-            }}
-          >
-            {verifyLoading ? (
-              <>
-                <div style={{
-                  width: 16, height: 16,
-                  border: "2px solid rgba(255,255,255,0.3)",
-                  borderTopColor: "#fff",
-                  borderRadius: "50%",
-                  animation: "spin 0.7s linear infinite",
-                }} />
-                Verifying…
-              </>
-            ) : (
-              <>
-                <HiCheckCircle style={{ fontSize: 18 }} />
-                Verify &amp; Login
-              </>
-            )}
-          </button>
-
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-            <button
-              onClick={handleResend}
-              disabled={resendCooldown > 0 || resendLoading}
-              className="otp-resend-btn"
-              style={{
-                color: resendCooldown > 0 || resendLoading ? "#737373" : undefined,
-                cursor: resendCooldown > 0 || resendLoading ? "not-allowed" : "pointer",
-              }}
-            >
-              <HiRefresh style={{ fontSize: 14 }} />
-              {resendLoading ? "Sending…" : resendCooldown > 0 ? `Resend in ${resendCooldown}s` : "Resend OTP"}
-            </button>
-
-            <button onClick={onCancel} className="otp-cancel-btn">
-              <HiX style={{ fontSize: 13 }} />
-              Cancel
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>,
-    document.body
-  );
-}
 
 /* ═══════════════════════════════════════════════════════════
    LOGIN PAGE REACT COMPONENT (UIVERSE.IO Praashoo7 DESIGN)
@@ -395,7 +130,7 @@ function ApprovalPendingModal({ onClose }) {
         <div className="approval-pending-icon">⏳</div>
         <span className="approval-pending-badge">ACCOUNT REVIEW</span>
         <h2>Registration Pending</h2>
-        <p>Your registration is waiting for confirmation from the society admin. Login OTP will be available after approval.</p>
+        <p>Your registration is waiting for confirmation from the society admin. You will be able to log in after approval.</p>
         <div className="approval-pending-status"><span /> Awaiting admin confirmation</div>
         <button type="button" className="button1" onClick={onClose}>Back to Login</button>
       </div>
@@ -405,7 +140,7 @@ function ApprovalPendingModal({ onClose }) {
 
 function Login() {
   const navigate = useNavigate();
-  const { login, switchRole, user } = useContext(AuthContext);
+  const { login, switchRole } = useContext(AuthContext);
   const { t } = useLang();
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -414,8 +149,6 @@ function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [loginLoading, setLoginLoading] = useState(false);
 
-  const [step, setStep] = useState("credentials");
-  const [tempToken, setTempToken] = useState(null);
   const [panelPrompt, setPanelPrompt] = useState(null);
   const [multiSocietyPrompt, setMultiSocietyPrompt] = useState(null);
   const [rejection, setRejection] = useState(null);
@@ -480,14 +213,8 @@ function Login() {
     try {
       const res = await API.post("/auth/login", { email: trimmedEmail, password });
 
-      if (res.data.tempToken) {
-        setTempToken(res.data.tempToken);
-        setStep("otp");
-        toast.success("OTP sent to your registered email");
-      } else {
-        const { token, user } = res.data;
-        handleVerified(user, token);
-      }
+      const { token, user } = res.data;
+      handleVerified(user, token);
     } catch (err) {
       const data = err.response?.data;
       // Branch on the machine-readable code, not the message text.
@@ -514,8 +241,6 @@ function Login() {
       : [];
 
     if (availableSocieties.length > 1) {
-      setStep("credentials");
-      setTempToken(null);
       setMultiSocietyPrompt({
         user,
         token,
@@ -551,7 +276,7 @@ function Login() {
     // outside the society, or a non-resident society admin — has nothing to choose,
     // so skip the popup entirely.
     // Login is deferred so PublicRoute does not redirect away before the popup
-    // is shown. Also close the OTP modal so it does not sit on top.
+    // is shown.
     const choiceCount = [
       hasSuperAdmin,
       hasSocietyAdmin,
@@ -561,8 +286,6 @@ function Login() {
     ].filter(Boolean).length;
 
     if (choiceCount > 1) {
-      setStep("credentials");
-      setTempToken(null);
       setPanelPrompt({ user, token });
       return;
     }
@@ -703,11 +426,6 @@ function Login() {
     navigate(ROUTE_MAP[user.activeRole] || "/", { replace: true });
   };
 
-  const handleCancelOtp = () => {
-    setStep("credentials");
-    setTempToken(null);
-  };
-
   return (
     <div className="login-page-container">
       <nav className={`home-navbar home-navbar--scrolled ${menuOpen ? "home-navbar--menu-open" : ""}`}>
@@ -788,16 +506,6 @@ function Login() {
         </div>
 
         <div className="login-content">
-
-      {/* OTP Modal */}
-      {step === "otp" && (
-        <OtpModal
-          email={email}
-          tempToken={tempToken}
-          onVerified={handleVerified}
-          onCancel={handleCancelOtp}
-        />
-      )}
 
       {/* Registration Rejected Modal */}
       {rejection && (
@@ -1611,7 +1319,6 @@ function Login() {
           </button>
         </div>
 
-        {/* Existing verification notice; the OTP flow is unchanged. */}
         <div className="uiverse-notice">
           <HiShieldCheck className="uiverse-notice-icon" />
           <span className="uiverse-notice-text">

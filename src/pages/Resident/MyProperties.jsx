@@ -122,7 +122,7 @@ export default function MyProperties() {
             const memRes     = await API.get(`/flats/${flat.flat_id}/memberships?all=1`);
             const memberships = memRes.data?.memberships || [];
             // Backend should sort by createdAt DESC; first TENANT entry = most recent
-            const latestTenant = memberships.find((m) => m.role === "TENANT") || null;
+            const latestTenant = memberships.find((m) => m.role === "TENANT" && m.is_current !== false) || null;
             return { ...flat, tenantData: latestTenant };
           } catch {
             return { ...flat, tenantData: null };

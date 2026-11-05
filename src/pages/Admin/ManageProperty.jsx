@@ -11,7 +11,8 @@ import {
   MdChevronLeft, MdChevronRight, MdOutlineInbox,
   MdGridView, MdArrowForwardIos, MdLayers, MdHomeWork, MdSquareFoot, MdCheck,
   MdDoneAll, MdAutoFixHigh, MdSpeed, MdTune, MdCheckCircleOutline, MdOutlineVilla,
-  MdArrowDownward, MdContentCopy, MdRefresh, MdFilterList
+  MdArrowDownward, MdContentCopy, MdRefresh, MdFilterList,
+  MdEdit
 } from "react-icons/md";
 import { toast } from "react-toastify";
 import Select from "../../components/common/Select";
@@ -83,7 +84,7 @@ export default function ManageProperty() {
   const { t }     = useLang();
   const isMobile  = useIsMobile();
   const { user }  = useContext(AuthContext);
-  const isSuperAdmin = (user?.activeRole || user?.role) === "SUPER_ADMIN";
+  const isSuperAdmin = (user?.activeRole || user?.role) === "SUPER_ADMIN" || (typeof window !== "undefined" && window.location.pathname.includes("/superadmin"));
   const canEdit   = isSuperAdmin || hasPermission(user, "property", "edit") || hasPermission(user, "property", "create") || hasPermission(user, "property", "view");
   const [tab, setTab] = useState("blocks");
   const [search, setSearch] = useState("");
@@ -1231,6 +1232,994 @@ export function AreaAssignModal({
 /* ══════════════════════════════════════════════
   TAB 1 — BLOCKS
 ══════════════════════════════════════════════ */
+
+/* ══════════════════════════════════════════════
+   EDIT BLOCK MODAL
+══════════════════════════════════════════════ */
+export function EditBlockModal({ block, isOpen, onClose, onUpdated, t, isMobile }) {
+  const [name, setName] = useState(block?.name || "");
+  const [propertyType, setPropertyType] = useState(block?.property_type || "APARTMENT");
+  const [floorCount, setFloorCount] = useState("");
+  const [flatsPerFloor, setFlatsPerFloor] = useState("");
+  const [totalHouses, setTotalHouses] = useState("");
+  const [commonArea, setCommonArea] = useState("");
+  const [blockDefaultBhk, setBlockDefaultBhk] = useState("2BHK");
+  const [floorsLayout, setFloorsLayout] = useState([]);
+  const [rowHouses, setRowHouses] = useState([]);
+  const [activeFloorIndex, setActiveFloorIndex] = useState(0);
+  const [loadingDetail, setLoadingDetail] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
+  const initialLoadDone = useRef(false);
+
+  useEffect(() => {
+    if (!isOpen || !block?.id) {
+      initialLoadDone.current = false;
+      return;
+    }
+    setLoadingDetail(true);
+    setError("");
+    setName(block.name || "");
+    setPropertyType(block.property_type || "APARTMENT");
+
+    API.get(`/blocks/detail/${block.id}`)
+      .then((res) => {
+        const d = res.data;
+        if (!d) return;
+        setName(d.name || block.name || "");
+        setPropertyType(d.property_type || block.property_type || "APARTMENT");
+        setBlockDefaultBhk(d.defaultBhk || "2BHK");
+        setCommonArea(d.commonArea != null ? String(d.commonArea) : "");
+
+        if (d.property_type === "ROW_HOUSE") {
+          setTotalHouses(d.totalHouses != null ? String(d.totalHouses) : String(d.allFlats?.length || "10"));
+          const houses = (d.allFlats || []).map((f) => ({
+            id: f.id,
+            flat_number: f.flat_number,
+            area_sqft: f.area_sqft != null ? String(f.area_sqft) : "",
+            occupancy_status: f.occupancy_status || "VACANT",
+            resident_id: f.resident_id,
+          }));
+          setRowHouses(houses);
+        } else {
+          setFloorCount(d.floor_count != null ? String(d.floor_count) : "1");
+          setFlatsPerFloor(d.flats_per_floor != null ? String(d.flats_per_floor) : "4");
+
+          const loadedFloors = (d.floors || []).map((fl, fIdx) => {
+            const fFlats = (fl.flats || []).map((f) => ({
+              id: f.id,
+              flat_number: f.flat_number,
+              flat_type: f.flat_type || d.defaultBhk || "2BHK",
+              area_sqft: f.area_sqft != null ? String(f.area_sqft) : "",
+              occupancy_status: f.occupancy_status || "VACANT",
+              resident_id: f.resident_id,
+              isOverridden: f.flat_type && f.flat_type !== (d.defaultBhk || "2BHK"),
+            }));
+            const counts = { "1BHK": 0, "2BHK": 0, "3BHK": 0 };
+            fFlats.forEach((f) => {
+              if (counts[f.flat_type] !== undefined) counts[f.flat_type]++;
+            });
+            const hasOverrides = fFlats.some((f) => f.isOverridden);
+            return {
+              floor_number: fl.floor_number || fIdx + 1,
+              mode: hasOverrides ? "MIXED" : "DEFAULT",
+              floorDefaultBhk: d.defaultBhk || "2BHK",
+              mixedCounts: counts,
+              flats: fFlats,
+            };
+          });
+          setFloorsLayout(loadedFloors);
+        }
+        initialLoadDone.current = true;
+      })
+      .catch((err) => {
+        console.error("Failed to load block details for edit", err);
+        setError(err?.response?.data?.message || "Failed to load block details.");
+      })
+      .finally(() => setLoadingDetail(false));
+  }, [isOpen, block?.id]);
+
+  // Adjust APARTMENT floor / flat layout when counts change
+  useEffect(() => {
+    if (!initialLoadDone.current || propertyType === "ROW_HOUSE") return;
+    const fc = parseInt(floorCount, 10);
+    const fp = parseInt(flatsPerFloor, 10);
+    if (isNaN(fc) || fc < 1 || isNaN(fp) || fp < 1) return;
+
+    setFloorsLayout((prevFloors) => {
+      const blockPrefix = (name || "").trim() || "Wing";
+      const newFloors = [];
+
+      for (let f = 1; f <= fc; f++) {
+        const existingFloor = prevFloors[f - 1];
+        const floorDefault = existingFloor?.floorDefaultBhk || blockDefaultBhk || "2BHK";
+        const mode = existingFloor?.mode || "DEFAULT";
+
+        const newFlats = [];
+        for (let u = 1; u <= fp; u++) {
+          const existingFlat = existingFloor?.flats?.[u - 1];
+          const defaultNum = `${blockPrefix}-${f}${u.toString().padStart(2, "0")}`;
+
+          if (existingFlat) {
+            newFlats.push({
+              ...existingFlat,
+              flat_number: existingFlat.flat_number || defaultNum,
+              flat_type: existingFlat.flat_type || floorDefault,
+            });
+          } else {
+            newFlats.push({
+              flat_number: defaultNum,
+              flat_type: floorDefault,
+              area_sqft: "",
+              occupancy_status: "VACANT",
+              isOverridden: false,
+            });
+          }
+        }
+
+        const mixedCounts = { "1BHK": 0, "2BHK": 0, "3BHK": 0 };
+        newFlats.forEach((fl) => {
+          if (mixedCounts[fl.flat_type] !== undefined) mixedCounts[fl.flat_type]++;
+        });
+
+        newFloors.push({
+          floor_number: f,
+          mode,
+          floorDefaultBhk: floorDefault,
+          mixedCounts: existingFloor?.mode === "MIXED" && existingFloor.mixedCounts ? existingFloor.mixedCounts : mixedCounts,
+          flats: newFlats,
+        });
+      }
+
+      return newFloors;
+    });
+  }, [floorCount, flatsPerFloor]);
+
+  // Adjust ROW_HOUSE count when totalHouses changes
+  useEffect(() => {
+    if (!initialLoadDone.current || propertyType !== "ROW_HOUSE") return;
+    const th = parseInt(totalHouses, 10);
+    if (isNaN(th) || th < 1) return;
+
+    setRowHouses((prevHouses) => {
+      const blockPrefix = (name || "").trim() || "House";
+      const updated = [];
+      for (let i = 1; i <= th; i++) {
+        const existing = prevHouses[i - 1];
+        if (existing) {
+          updated.push(existing);
+        } else {
+          updated.push({
+            flat_number: `${blockPrefix}-${i}`,
+            area_sqft: commonArea || "",
+            occupancy_status: "VACANT",
+          });
+        }
+      }
+      return updated;
+    });
+  }, [totalHouses]);
+
+  const handleBlockDefaultChange = (newBhk) => {
+    setBlockDefaultBhk(newBhk);
+    setFloorsLayout((prev) =>
+      prev.map((floor) => {
+        if (floor.mode === "DEFAULT") {
+          const updatedFlats = floor.flats.map((fl) =>
+            fl.isOverridden ? fl : { ...fl, flat_type: newBhk }
+          );
+          const counts = { "1BHK": 0, "2BHK": 0, "3BHK": 0 };
+          updatedFlats.forEach((fl) => {
+            if (counts[fl.flat_type] !== undefined) counts[fl.flat_type]++;
+          });
+          return { ...floor, floorDefaultBhk: newBhk, flats: updatedFlats, mixedCounts: counts };
+        }
+        return floor;
+      })
+    );
+  };
+
+  const handleFloorDefaultChange = (floorIndex, newBhk) => {
+    setFloorsLayout((prev) =>
+      prev.map((floor, idx) => {
+        if (idx !== floorIndex) return floor;
+        const updatedFlats = floor.flats.map((fl) =>
+          fl.isOverridden ? fl : { ...fl, flat_type: newBhk }
+        );
+        const counts = { "1BHK": 0, "2BHK": 0, "3BHK": 0 };
+        updatedFlats.forEach((fl) => {
+          if (counts[fl.flat_type] !== undefined) counts[fl.flat_type]++;
+        });
+        return { ...floor, mode: "DEFAULT", floorDefaultBhk: newBhk, flats: updatedFlats, mixedCounts: counts };
+      })
+    );
+  };
+
+  const handleFloorModeChange = (floorIndex, newMode) => {
+    setFloorsLayout((prev) =>
+      prev.map((floor, idx) => {
+        if (idx !== floorIndex) return floor;
+        let updatedFlats = [...floor.flats];
+        if (newMode === "DEFAULT") {
+          const fallback = floor.floorDefaultBhk || blockDefaultBhk || "2BHK";
+          updatedFlats = updatedFlats.map((fl) =>
+            fl.isOverridden ? fl : { ...fl, flat_type: fallback }
+          );
+        }
+        const counts = { "1BHK": 0, "2BHK": 0, "3BHK": 0 };
+        updatedFlats.forEach((fl) => {
+          if (counts[fl.flat_type] !== undefined) counts[fl.flat_type]++;
+        });
+        return { ...floor, mode: newMode, flats: updatedFlats, mixedCounts: counts };
+      })
+    );
+  };
+
+  const handleMixedCountChange = (floorIndex, bhkType, delta) => {
+    setFloorsLayout((prev) =>
+      prev.map((floor, idx) => {
+        if (idx !== floorIndex) return floor;
+        const currentCount = floor.mixedCounts?.[bhkType] || 0;
+        const newCount = Math.max(0, currentCount + delta);
+        const newCounts = { ...(floor.mixedCounts || {}), [bhkType]: newCount };
+        const totalRequested = (newCounts["1BHK"] || 0) + (newCounts["2BHK"] || 0) + (newCounts["3BHK"] || 0);
+        const numFlats = floor.flats.length;
+
+        let updatedFlats = [...floor.flats];
+        if (totalRequested === numFlats) {
+          const targetTypes = [
+            ...Array(newCounts["1BHK"] || 0).fill("1BHK"),
+            ...Array(newCounts["2BHK"] || 0).fill("2BHK"),
+            ...Array(newCounts["3BHK"] || 0).fill("3BHK"),
+          ];
+          updatedFlats = updatedFlats.map((fl, fIdx) => ({
+            ...fl,
+            flat_type: targetTypes[fIdx] || fl.flat_type,
+          }));
+        }
+
+        return {
+          ...floor,
+          mode: "MIXED",
+          mixedCounts: newCounts,
+          flats: updatedFlats,
+        };
+      })
+    );
+  };
+
+  const handleFlatChange = (floorIndex, flatIndex, key, val) => {
+    setFloorsLayout((prev) =>
+      prev.map((floor, idx) => {
+        if (idx !== floorIndex) return floor;
+        const updatedFlats = floor.flats.map((fl, fIdx) => {
+          if (fIdx !== flatIndex) return fl;
+          return {
+            ...fl,
+            [key]: val,
+            isOverridden: key === "flat_type" ? true : fl.isOverridden,
+          };
+        });
+        const counts = { "1BHK": 0, "2BHK": 0, "3BHK": 0 };
+        updatedFlats.forEach((fl) => {
+          if (counts[fl.flat_type] !== undefined) counts[fl.flat_type]++;
+        });
+        return { ...floor, flats: updatedFlats, mixedCounts: counts };
+      })
+    );
+  };
+
+  const handleRowHouseChange = (index, key, val) => {
+    setRowHouses((prev) =>
+      prev.map((h, idx) => (idx === index ? { ...h, [key]: val } : h))
+    );
+  };
+
+  const applyCommonAreaToRowHouses = (areaVal) => {
+    if (!areaVal || isNaN(Number(areaVal))) return;
+    setRowHouses((prev) =>
+      prev.map((h) => ({ ...h, area_sqft: String(areaVal) }))
+    );
+    toast.success(`Applied ${areaVal} sq.ft to all row houses`);
+  };
+
+  const handleSubmit = async (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    if (!name.trim()) {
+      setError(t("mpBlockNameRequired") || "Block name is required.");
+      return;
+    }
+
+    let payload = {
+      name: name.trim(),
+      property_type: propertyType,
+    };
+
+    if (propertyType === "ROW_HOUSE") {
+      const th = parseInt(totalHouses, 10);
+      if (isNaN(th) || th < 1) {
+        setError("Total row houses must be at least 1.");
+        return;
+      }
+      payload.flats_per_floor = th;
+      if (commonArea && !isNaN(Number(commonArea))) {
+        payload.area_sqft = Number(commonArea);
+      }
+      payload.flats = rowHouses.map((h) => ({
+        id: h.id || undefined,
+        flat_number: (h.flat_number || "").trim(),
+        area_sqft: h.area_sqft ? Number(h.area_sqft) : (commonArea ? Number(commonArea) : null),
+        occupancy_status: h.occupancy_status || "VACANT",
+      }));
+    } else {
+      const fc = parseInt(floorCount, 10);
+      const fp = parseInt(flatsPerFloor, 10);
+      if (isNaN(fc) || fc < 1) {
+        setError("Floor count must be at least 1.");
+        return;
+      }
+      if (isNaN(fp) || fp < 1) {
+        setError("Units per floor must be at least 1.");
+        return;
+      }
+      payload.floor_count = fc;
+      payload.flats_per_floor = fp;
+
+      // Validate layout
+      for (let i = 0; i < floorsLayout.length; i++) {
+        const floor = floorsLayout[i];
+        if (floor.mode === "MIXED") {
+          const sum =
+            (floor.mixedCounts?.["1BHK"] || 0) +
+            (floor.mixedCounts?.["2BHK"] || 0) +
+            (floor.mixedCounts?.["3BHK"] || 0);
+          if (sum !== fp) {
+            setError(`Floor ${floor.floor_number} mixed distribution sum (${sum}) must equal ${fp} units.`);
+            return;
+          }
+        }
+        for (const fl of floor.flats) {
+          if (!fl.flat_number || !fl.flat_number.trim()) {
+            setError("All flats must have a flat number.");
+            return;
+          }
+        }
+      }
+
+      payload.floors = floorsLayout.map((f) => ({
+        floor_number: f.floor_number,
+        flats: f.flats.map((fl) => ({
+          id: fl.id || undefined,
+          flat_number: fl.flat_number.trim(),
+          flat_type: fl.flat_type,
+          area_sqft: fl.area_sqft ? Number(fl.area_sqft) : null,
+          occupancy_status: fl.occupancy_status || "VACANT",
+        })),
+      }));
+    }
+
+    setSubmitting(true);
+    setError("");
+    try {
+      const res = await API.put(`/blocks/${block.id}`, payload);
+      toast.success(t("mpBlockUpdated") || "Block updated successfully");
+      onUpdated(res.data?.block || { ...block, name: name.trim(), property_type: propertyType });
+      onClose();
+    } catch (err) {
+      setError(err?.response?.data?.message || t("mpUpdateFailed") || "Failed to update block");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <GlobalModal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={t("mpEditBlock") || "Edit Block / Phase"}
+      subtitle={t("mpEditBlockSubtitle") || "Update all block details, dimensions, layouts, and units"}
+      icon={MdEdit}
+      size={isMobile ? "md" : "xl"}
+      showFooter
+      submitLabel={t("save") || "Save Changes"}
+      cancelLabel={t("cancel") || "Cancel"}
+      onSubmit={handleSubmit}
+      submitLoading={submitting}
+      submitVariant="add"
+      bodyClassName="modal-scroll-thin"
+    >
+      {loadingDetail ? (
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "40px 20px", gap: 12 }}>
+          <Spinner size={28} />
+          <span style={{ fontSize: 13, color: "var(--text-secondary)" }}>Loading existing block layout & units...</span>
+        </div>
+      ) : (
+        <>
+          {error && (
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "var(--stat-red-bg)", border: "1px solid var(--stat-red-border)", borderRadius: 10, padding: "8px 12px", fontSize: 13, color: "var(--stat-red-color)", marginBottom: 12 }}>
+              {error}
+              <button type="button" onClick={() => setError("")} style={{ background: "none", border: "none", cursor: "pointer", color: "inherit" }}><MdClose size={15} /></button>
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+            {/* Top row: Name & Property Type */}
+            <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 14 }}>
+              <div>
+                <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 6, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                  {t("mpBlockName") || "Block / Wing Name"} *
+                </label>
+                <input
+                  type="text"
+                  className="input"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="e.g. Wing A, Tower 1, Phase 1"
+                  style={{ width: "100%", height: 42, borderRadius: 10, fontSize: 13, boxSizing: "border-box" }}
+                  required
+                />
+              </div>
+              <div>
+                <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 6, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                  {t("mpType") || "Property Type"}
+                </label>
+                <Select
+                  value={propertyType}
+                  onChange={(e) => setPropertyType(e.target.value)}
+                  rootStyle={{ width: "100%" }}
+                  style={{ width: "100%", height: 42, borderRadius: 10, fontSize: 13 }}
+                >
+                  <option value="APARTMENT">{t("mpTypeApartment") || "Apartment"}</option>
+                  <option value="ROW_HOUSE">{t("mpTypeRowHouse") || "Row House"}</option>
+                  <option value="COMMERCIAL">{t("mpTypeCommercial") || "Commercial"}</option>
+                </Select>
+              </div>
+            </div>
+
+            {/* If ROW_HOUSE */}
+            {propertyType === "ROW_HOUSE" ? (
+              <div style={{
+                background: "rgba(var(--acct-purple-rgb, 139,92,246),0.06)",
+                border: "1px solid rgba(var(--acct-purple-rgb, 139,92,246),0.25)",
+                borderRadius: 16,
+                padding: "16px 18px",
+                display: "flex",
+                flexDirection: "column",
+                gap: 14
+              }}>
+                <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 12 }}>
+                  <div>
+                    <label style={{ fontSize: 11, fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.05em", display: "block", marginBottom: 6 }}>
+                      {t("mpTotalHouses") || "Total Row Houses"}
+                    </label>
+                    <input
+                      className="input"
+                      type="number"
+                      min={1}
+                      placeholder="10"
+                      value={totalHouses}
+                      onChange={(e) => setTotalHouses(e.target.value)}
+                      style={{ height: 42, borderRadius: 10, fontSize: 13, width: "100%", boxSizing: "border-box" }}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: 11, fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.05em", display: "block", marginBottom: 6 }}>
+                      {t("mpBuiltUpAreaLabel") || "Common Built-Up Area (Sq.Ft)"}
+                    </label>
+                    <div style={{ display: "flex", gap: 8 }}>
+                      <input
+                        className="input"
+                        type="number"
+                        min={0}
+                        step="0.01"
+                        placeholder="1500"
+                        value={commonArea}
+                        onChange={(e) => setCommonArea(e.target.value)}
+                        style={{ height: 42, borderRadius: 10, fontSize: 13, flex: 1, boxSizing: "border-box" }}
+                      />
+                      <GlobalButton
+                        type="button"
+                        variant="secondary"
+                        onClick={() => applyCommonAreaToRowHouses(commonArea)}
+                        style={{ height: 42, whiteSpace: "nowrap", padding: "0 12px", fontSize: 12, fontWeight: 700 }}
+                      >
+                        Apply All
+                      </GlobalButton>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Individual Row Houses List */}
+                <div style={{ marginTop: 6 }}>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text-primary)", display: "block", marginBottom: 8 }}>
+                    Configured Row Houses ({rowHouses.length})
+                  </span>
+                  <div style={{
+                    maxHeight: 240,
+                    overflowY: "auto",
+                    display: "grid",
+                    gridTemplateColumns: isMobile ? "1fr" : "repeat(auto-fill, minmax(200px, 1fr))",
+                    gap: 10,
+                    padding: "4px"
+                  }}>
+                    {rowHouses.map((house, idx) => (
+                      <div
+                        key={house.id || idx}
+                        style={{
+                          background: "var(--card-bg, #fff)",
+                          border: "1px solid var(--glass-border, rgba(0,0,0,0.1))",
+                          borderRadius: 10,
+                          padding: "10px 12px",
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: 6
+                        }}
+                      >
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                          <span style={{ fontSize: 11, fontWeight: 700, color: "var(--text-secondary)" }}>#{idx + 1}</span>
+                          {house.resident_id && (
+                            <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 6px", borderRadius: 4, background: "rgba(34,197,94,0.15)", color: "#16a34a" }}>
+                              Occupied
+                            </span>
+                          )}
+                        </div>
+                        <input
+                          type="text"
+                          className="input"
+                          value={house.flat_number}
+                          onChange={(e) => handleRowHouseChange(idx, "flat_number", e.target.value)}
+                          placeholder="House No."
+                          style={{ height: 32, fontSize: 12, borderRadius: 6, fontWeight: 700 }}
+                        />
+                        <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                          <input
+                            type="number"
+                            className="input"
+                            value={house.area_sqft}
+                            onChange={(e) => handleRowHouseChange(idx, "area_sqft", e.target.value)}
+                            placeholder="Area sqft"
+                            style={{ height: 30, fontSize: 11, borderRadius: 6, flex: 1 }}
+                          />
+                          <span style={{ fontSize: 10, color: "var(--text-secondary)", fontWeight: 600 }}>sqft</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              /* If APARTMENT or COMMERCIAL */
+              <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr 1fr", gap: 12 }}>
+                  <div>
+                    <label style={{ fontSize: 11, fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.05em", display: "block", marginBottom: 6 }}>
+                      {t("mpFloorCount") || "Floor Count"} *
+                    </label>
+                    <input
+                      className="input"
+                      type="number"
+                      min={1}
+                      placeholder="e.g. 4"
+                      value={floorCount}
+                      onChange={(e) => setFloorCount(e.target.value)}
+                      style={{ height: 42, borderRadius: 10, fontSize: 13, width: "100%", boxSizing: "border-box" }}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: 11, fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.05em", display: "block", marginBottom: 6 }}>
+                      {t("mpUnitsPerFloor") || "Units per Floor"} *
+                    </label>
+                    <input
+                      className="input"
+                      type="number"
+                      min={1}
+                      placeholder="e.g. 4"
+                      value={flatsPerFloor}
+                      onChange={(e) => setFlatsPerFloor(e.target.value)}
+                      style={{ height: 42, borderRadius: 10, fontSize: 13, width: "100%", boxSizing: "border-box" }}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: 11, fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.05em", display: "block", marginBottom: 6 }}>
+                      Default Flat Type
+                    </label>
+                    <div style={{ display: "flex", gap: 6, height: 42 }}>
+                      {["1BHK", "2BHK", "3BHK"].map((bhk) => (
+                        <button
+                          key={bhk}
+                          type="button"
+                          onClick={() => handleBlockDefaultChange(bhk)}
+                          style={{
+                            flex: 1,
+                            borderRadius: 8,
+                            fontSize: 12,
+                            fontWeight: 700,
+                            border: blockDefaultBhk === bhk ? "1.5px solid var(--accent)" : "1px solid var(--glass-border, #CBD5E1)",
+                            background: blockDefaultBhk === bhk ? "rgba(var(--acct-purple-rgb, 139,92,246), 0.15)" : "var(--card-bg)",
+                            color: blockDefaultBhk === bhk ? "var(--accent)" : "var(--text-primary)",
+                            cursor: "pointer",
+                          }}
+                        >
+                          {bhk}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Floors Layout Editor & Tabs */}
+                {floorsLayout.length > 0 && (
+                  <div style={{
+                    background: "rgba(var(--acct-purple-rgb, 139,92,246), 0.04)",
+                    border: "1px solid rgba(var(--acct-purple-rgb, 139,92,246), 0.2)",
+                    borderRadius: 14,
+                    padding: "14px",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 12,
+                  }}>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <MdLayers size={18} color="var(--accent)" />
+                        <span style={{ fontSize: 13, fontWeight: 800, color: "var(--text-primary)" }}>
+                          Floor Layout & Unit Configuration
+                        </span>
+                      </div>
+                      <span style={{ fontSize: 11, color: "var(--text-secondary)" }}>
+                        Total Units: {floorsLayout.reduce((acc, fl) => acc + (fl.flats?.length || 0), 0)}
+                      </span>
+                    </div>
+
+                    {/* Floor Tabs */}
+                    <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 4 }}>
+                      {floorsLayout.map((floor, idx) => {
+                        const isSel = idx === activeFloorIndex;
+                        return (
+                          <button
+                            key={floor.floor_number || idx}
+                            type="button"
+                            onClick={() => setActiveFloorIndex(idx)}
+                            style={{
+                              padding: "6px 14px",
+                              borderRadius: 8,
+                              fontSize: 12,
+                              fontWeight: isSel ? 800 : 600,
+                              background: isSel ? "var(--accent)" : "var(--card-bg)",
+                              color: isSel ? "#FFFFFF" : "var(--text-secondary)",
+                              border: isSel ? "1px solid var(--accent)" : "1px solid var(--glass-border)",
+                              cursor: "pointer",
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            Floor {floor.floor_number}
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {/* Active Floor Content */}
+                    {floorsLayout[activeFloorIndex] && (
+                      <div style={{
+                        background: "var(--card-bg)",
+                        border: "1px solid var(--glass-border)",
+                        borderRadius: 10,
+                        padding: "12px",
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 12,
+                      }}>
+                        {/* Floor Mode & Mixed Counter */}
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                            <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text-secondary)" }}>
+                              Floor {floorsLayout[activeFloorIndex].floor_number} Mode:
+                            </span>
+                            <div style={{ display: "flex", gap: 4 }}>
+                              <button
+                                type="button"
+                                onClick={() => handleFloorModeChange(activeFloorIndex, "DEFAULT")}
+                                style={{
+                                  padding: "3px 10px",
+                                  borderRadius: 6,
+                                  fontSize: 11,
+                                  fontWeight: 700,
+                                  background: floorsLayout[activeFloorIndex].mode === "DEFAULT" ? "var(--accent)" : "transparent",
+                                  color: floorsLayout[activeFloorIndex].mode === "DEFAULT" ? "#fff" : "var(--text-secondary)",
+                                  border: "1px solid var(--glass-border)",
+                                  cursor: "pointer",
+                                }}
+                              >
+                                Uniform
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleFloorModeChange(activeFloorIndex, "MIXED")}
+                                style={{
+                                  padding: "3px 10px",
+                                  borderRadius: 6,
+                                  fontSize: 11,
+                                  fontWeight: 700,
+                                  background: floorsLayout[activeFloorIndex].mode === "MIXED" ? "var(--accent)" : "transparent",
+                                  color: floorsLayout[activeFloorIndex].mode === "MIXED" ? "#fff" : "var(--text-secondary)",
+                                  border: "1px solid var(--glass-border)",
+                                  cursor: "pointer",
+                                }}
+                              >
+                                Mixed BHK
+                              </button>
+                            </div>
+                          </div>
+
+                          {floorsLayout[activeFloorIndex].mode === "MIXED" && (
+                            <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                              {["1BHK", "2BHK", "3BHK"].map((bhk) => {
+                                const cnt = floorsLayout[activeFloorIndex].mixedCounts?.[bhk] || 0;
+                                return (
+                                  <div key={bhk} style={{ display: "flex", alignItems: "center", gap: 4, background: "rgba(0,0,0,0.03)", padding: "2px 6px", borderRadius: 6, border: "1px solid var(--glass-border)" }}>
+                                    <span style={{ fontSize: 11, fontWeight: 700, color: "var(--text-secondary)" }}>{bhk}:</span>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleMixedCountChange(activeFloorIndex, bhk, -1)}
+                                      style={{ width: 20, height: 20, borderRadius: 4, border: "none", background: "var(--glass-border)", cursor: "pointer", fontWeight: 700 }}
+                                    >
+                                      -
+                                    </button>
+                                    <span style={{ fontSize: 11, fontWeight: 800, minWidth: 14, textAlign: "center" }}>{cnt}</span>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleMixedCountChange(activeFloorIndex, bhk, 1)}
+                                      style={{ width: 20, height: 20, borderRadius: 4, border: "none", background: "var(--glass-border)", cursor: "pointer", fontWeight: 700 }}
+                                    >
+                                      +
+                                    </button>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Units Cards */}
+                        <div style={{
+                          display: "grid",
+                          gridTemplateColumns: isMobile ? "1fr" : "repeat(auto-fill, minmax(220px, 1fr))",
+                          gap: 10,
+                          maxHeight: 260,
+                          overflowY: "auto",
+                          padding: "4px",
+                        }}>
+                          {floorsLayout[activeFloorIndex].flats.map((fl, flIdx) => (
+                            <div
+                              key={fl.id || flIdx}
+                              style={{
+                                background: "var(--card-inner-bg, #FAFAFA)",
+                                border: "1px solid var(--glass-border)",
+                                borderRadius: 8,
+                                padding: "10px",
+                                display: "flex",
+                                flexDirection: "column",
+                                gap: 6,
+                              }}
+                            >
+                              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                                <input
+                                  type="text"
+                                  className="input"
+                                  value={fl.flat_number}
+                                  onChange={(e) => handleFlatChange(activeFloorIndex, flIdx, "flat_number", e.target.value)}
+                                  placeholder="Flat No."
+                                  style={{ height: 30, fontSize: 12, fontWeight: 700, borderRadius: 6, flex: 1, marginRight: 6 }}
+                                />
+                                {fl.resident_id && (
+                                  <span style={{ fontSize: 9, fontWeight: 700, padding: "2px 5px", borderRadius: 4, background: "rgba(34,197,94,0.15)", color: "#16a34a" }}>
+                                    Assigned
+                                  </span>
+                                )}
+                              </div>
+                              <div style={{ display: "flex", gap: 4 }}>
+                                {["1BHK", "2BHK", "3BHK"].map((bhk) => {
+                                  const isSel = fl.flat_type === bhk;
+                                  return (
+                                    <button
+                                      key={bhk}
+                                      type="button"
+                                      onClick={() => handleFlatChange(activeFloorIndex, flIdx, "flat_type", bhk)}
+                                      style={{
+                                        flex: 1,
+                                        height: 24,
+                                        borderRadius: 4,
+                                        fontSize: 10,
+                                        fontWeight: 700,
+                                        border: isSel ? "1px solid var(--accent)" : "1px solid var(--glass-border)",
+                                        background: isSel ? "var(--accent)" : "transparent",
+                                        color: isSel ? "#fff" : "var(--text-secondary)",
+                                        cursor: "pointer",
+                                      }}
+                                    >
+                                      {bhk}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                              <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                                <input
+                                  type="number"
+                                  className="input"
+                                  value={fl.area_sqft}
+                                  onChange={(e) => handleFlatChange(activeFloorIndex, flIdx, "area_sqft", e.target.value)}
+                                  placeholder="Built-up sqft"
+                                  style={{ height: 28, fontSize: 11, borderRadius: 4, flex: 1 }}
+                                />
+                                <span style={{ fontSize: 10, color: "var(--text-secondary)" }}>sqft</span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+          </form>
+        </>
+      )}
+    </GlobalModal>
+  );
+}
+
+/* ══════════════════════════════════════════════
+   EDIT FLAT / UNIT MODAL
+══════════════════════════════════════════════ */
+export function EditFlatModal({ flat, isOpen, onClose, onUpdated, t }) {
+  const [flatNumber, setFlatNumber] = useState(flat?.flat_number || "");
+  const [flatType, setFlatType] = useState(flat?.flat_type || "2BHK");
+  const [areaSqft, setAreaSqft] = useState(flat?.area_sqft != null ? String(flat.area_sqft) : "");
+  const [occupancyStatus, setOccupancyStatus] = useState(flat?.occupancy_status || (flat?.resident_id ? "OCCUPIED" : "VACANT"));
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (flat) {
+      setFlatNumber(flat.flat_number || "");
+      setFlatType(flat.flat_type || "2BHK");
+      setAreaSqft(flat.area_sqft != null ? String(flat.area_sqft) : "");
+      setOccupancyStatus(flat.occupancy_status || (flat.resident_id ? "OCCUPIED" : "VACANT"));
+      setError("");
+    }
+  }, [flat]);
+
+  const handleSubmit = async (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    if (!flatNumber.trim()) {
+      setError(t("mpFlatNumberRequired") || "Flat/Unit number is required.");
+      return;
+    }
+    const numArea = areaSqft !== "" ? Number(areaSqft) : null;
+    if (numArea !== null && (isNaN(numArea) || numArea < 0)) {
+      setError(t("mpAreaNonNegative") || "Area must be a non-negative number.");
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+    try {
+      const payload = {
+        flat_number: flatNumber.trim(),
+        flat_type: flatType || null,
+        area_sqft: numArea,
+        occupancy_status: occupancyStatus,
+      };
+      const res = await API.put(`/flats/update/${flat.id}`, payload);
+      toast.success(t("mpFlatUpdated") || "Property details updated successfully");
+      const updatedFlat = res.data?.flat || {
+        ...flat,
+        flat_number: flatNumber.trim(),
+        flat_type: flatType,
+        area_sqft: numArea,
+        occupancy_status: occupancyStatus,
+      };
+      onUpdated(updatedFlat);
+      onClose();
+    } catch (err) {
+      setError(err?.response?.data?.message || t("mpUpdateFailed") || "Failed to update property");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <GlobalModal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={t("mpEditUnit") || "Edit Property / Unit"}
+      subtitle={t("mpEditUnitSubtitle") || "Update unit number, BHK type, area, and status"}
+      icon={MdEdit}
+      showFooter
+      submitLabel={t("save") || "Save Changes"}
+      cancelLabel={t("cancel") || "Cancel"}
+      onSubmit={handleSubmit}
+      submitLoading={loading}
+      submitVariant="add"
+    >
+      {error && (
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "var(--stat-red-bg)", border: "1px solid var(--stat-red-border)", borderRadius: 10, padding: "8px 12px", fontSize: 13, color: "var(--stat-red-color)", marginBottom: 12 }}>
+          {error}
+          <button type="button" onClick={() => setError("")} style={{ background: "none", border: "none", cursor: "pointer", color: "inherit" }}>✕</button>
+        </div>
+      )}
+      <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+        <div>
+          <label style={{ display: "block", fontSize: 13, fontWeight: 600, marginBottom: 6, color: "var(--text-primary)" }}>
+            {t("mpUnitNumber") || "Unit / Flat Number"} *
+          </label>
+          <input
+            type="text"
+            className="styled-input"
+            value={flatNumber}
+            onChange={(e) => setFlatNumber(e.target.value)}
+            placeholder="e.g. 101, A-203"
+            style={{ width: "100%", height: 40, borderRadius: 8 }}
+            required
+            autoFocus
+          />
+        </div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+          <div>
+            <label style={{ display: "block", fontSize: 13, fontWeight: 600, marginBottom: 6, color: "var(--text-primary)" }}>
+              {t("mpFlatType") || "Type / BHK"}
+            </label>
+            <Select
+              value={flatType}
+              onChange={(e) => setFlatType(e.target.value)}
+              style={{ width: "100%", height: 40, borderRadius: 8 }}
+            >
+              <option value="1BHK">1 BHK</option>
+              <option value="2BHK">2 BHK</option>
+              <option value="3BHK">3 BHK</option>
+            </Select>
+          </div>
+
+          <div>
+            <label style={{ display: "block", fontSize: 13, fontWeight: 600, marginBottom: 6, color: "var(--text-primary)" }}>
+              {t("mpAreaSqft") || "Area (sq.ft)"}
+            </label>
+            <input
+              type="number"
+              step="0.01"
+              min="0"
+              className="styled-input"
+              value={areaSqft}
+              onChange={(e) => setAreaSqft(e.target.value)}
+              placeholder="e.g. 1200"
+              style={{ width: "100%", height: 40, borderRadius: 8 }}
+            />
+          </div>
+        </div>
+
+        <div>
+          <label style={{ display: "block", fontSize: 13, fontWeight: 600, marginBottom: 6, color: "var(--text-primary)" }}>
+            {t("mpOccupancyStatus") || "Occupancy Status"}
+          </label>
+          <Select
+            value={occupancyStatus}
+            onChange={(e) => setOccupancyStatus(e.target.value)}
+            style={{ width: "100%", height: 40, borderRadius: 8 }}
+          >
+            <option value="VACANT">{t("mpVacant") || "Vacant"}</option>
+            <option value="RENTED">{t("mpRented") || "Rented"}</option>
+            <option value="OWNER_OCCUPIED">{t("mpOwnerOccupied") || "Owner Occupied"}</option>
+          </Select>
+        </div>
+      </form>
+    </GlobalModal>
+  );
+}
+
 function BlocksTab({
   isMobile,
   t,
@@ -1271,6 +2260,7 @@ function BlocksTab({
 
   const [error,         setError]         = useState("");
   const [selectedBlock, setSelectedBlock] = useState(null);
+  const [editingBlock,  setEditingBlock]  = useState(null);
   const [areaAssignFlats, setAreaAssignFlats] = useState(null);
   const [areaAssignValues, setAreaAssignValues] = useState({});
   const [areaAssignInitialMode, setAreaAssignInitialMode] = useState("SAME");
@@ -2527,7 +3517,13 @@ function BlocksTab({
                     )}
 
                     {canEdit && (
-                      <div style={{ borderTop: "1px solid var(--glass-border)", paddingTop: 8, display: "flex", justifyContent: "flex-end" }}>
+                      <div style={{ borderTop: "1px solid var(--glass-border)", paddingTop: 8, display: "flex", justifyContent: "flex-end", gap: 8 }}>
+                        <button
+                          onClick={() => setEditingBlock(b)}
+                          style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "5px 12px", borderRadius: 8, fontSize: 12, fontWeight: 600, background: "rgba(91,141,239,0.12)", color: "#5B8DEF", border: "1px solid rgba(91,141,239,0.25)", cursor: "pointer" }}
+                        >
+                          <MdEdit size={14} /> {t("edit") || "Edit"}
+                        </button>
                         {confirmId === b.id ? (
                           <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
                             <span style={{ fontSize: 11, color: "var(--text-secondary)" }}>{t("mpDeleteBlock") || "Delete?"}</span>
@@ -2592,6 +3588,12 @@ function BlocksTab({
                             </button>
                             {canEdit && (
                               <>
+                                <button
+                                  onClick={() => setEditingBlock(b)}
+                                  style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "5px 12px", borderRadius: 8, fontSize: 12, fontWeight: 600, background: "rgba(91,141,239,0.12)", color: "#5B8DEF", border: "1px solid rgba(91,141,239,0.25)", cursor: "pointer" }}
+                                >
+                                  <MdEdit size={13} /> {t("edit") || "Edit"}
+                                </button>
                                 {confirmId === b.id ? (
                                   <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
                                     <span style={{ fontSize: 11, color: "var(--text-secondary)" }}>{t("mpSure") || "Sure?"}</span>
@@ -2631,6 +3633,25 @@ function BlocksTab({
           </>
         )}
       </div>
+
+      {editingBlock && (
+        <EditBlockModal
+          block={editingBlock}
+          isOpen={!!editingBlock}
+          onClose={() => setEditingBlock(null)}
+          onUpdated={(updated) => {
+            loadBlocks();
+            setBlocks((prev) =>
+              prev.map((b) => (b.id === updated.id ? { ...b, ...updated } : b))
+            );
+            if (selectedBlock?.id === updated.id) {
+              setSelectedBlock((prev) => ({ ...prev, ...updated }));
+            }
+          }}
+          t={t}
+          isMobile={isMobile}
+        />
+      )}
     </div>
   );
 }
@@ -2710,6 +3731,7 @@ function InlineFlats({ floorId, blockId, isMobile, t, onOpenAreaModal, blockName
   const [showBatchArea, setShowBatchArea] = useState(false);
   const [batchAreaVal, setBatchAreaVal] = useState("");
   const [savingBatchArea, setSavingBatchArea] = useState(false);
+  const [editingFlat, setEditingFlat] = useState(null);
 
   useEffect(() => {
     const safeBlockId = safeNum(blockId);
@@ -2908,16 +3930,27 @@ function InlineFlats({ floorId, blockId, isMobile, t, onOpenAreaModal, blockName
                     {occupied ? t("mpOcc") || "Occ" : t("mpVac") || "Vac"}
                   </span>
                 </div>
-                {confirmId === f.id && canEdit ? (
-                  <div style={{ display: "flex", gap: 4 }}>
-                    <button onClick={() => deleteFlat(f.id)} disabled={deletingId === f.id} style={{ padding: "2px 7px", borderRadius: 5, fontSize: 10, fontWeight: 700, background: "#dc2626", color: "#fff", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 3 }}>
-                      {deletingId === f.id ? <Spinner size={10} /> : t("mpYes") || "Yes"}
+                <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                  {canEdit && (
+                    <button
+                      onClick={() => setEditingFlat(f)}
+                      title={t("edit") || "Edit"}
+                      style={{ background: "none", border: "none", cursor: "pointer", color: "#5B8DEF", display: "flex", padding: 2 }}
+                    >
+                      <MdEdit size={14} />
                     </button>
-                    <button onClick={() => setConfirmId(null)} style={{ padding: "2px 6px", borderRadius: 5, fontSize: 10, background: "var(--card-bg)", color: "var(--text-secondary)", border: "1px solid var(--glass-border)", cursor: "pointer" }}>✕</button>
-                  </div>
-                ) : canEdit && (
-                  <button onClick={() => setConfirmId(f.id)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--stat-red-color,#fca5a5)", display: "flex", padding: 2 }}><MdDelete size={14} /></button>
-                )}
+                  )}
+                  {confirmId === f.id && canEdit ? (
+                    <div style={{ display: "flex", gap: 4 }}>
+                      <button onClick={() => deleteFlat(f.id)} disabled={deletingId === f.id} style={{ padding: "2px 7px", borderRadius: 5, fontSize: 10, fontWeight: 700, background: "#dc2626", color: "#fff", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 3 }}>
+                        {deletingId === f.id ? <Spinner size={10} /> : t("mpYes") || "Yes"}
+                      </button>
+                      <button onClick={() => setConfirmId(null)} style={{ padding: "2px 6px", borderRadius: 5, fontSize: 10, background: "var(--card-bg)", color: "var(--text-secondary)", border: "1px solid var(--glass-border)", cursor: "pointer" }}>✕</button>
+                    </div>
+                  ) : canEdit && (
+                    <button onClick={() => setConfirmId(f.id)} title={t("mpDelete") || "Delete"} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--stat-red-color,#fca5a5)", display: "flex", padding: 2 }}><MdDelete size={14} /></button>
+                  )}
+                </div>
               </div>
               {isRowHouseContext && (
                 <div style={{ display: "flex", alignItems: "center", gap: 6, borderTop: "1px solid var(--glass-border)", paddingTop: 6 }}>
@@ -2962,6 +3995,20 @@ function InlineFlats({ floorId, blockId, isMobile, t, onOpenAreaModal, blockName
           );
         })}
       </div>
+
+      {editingFlat && (
+        <EditFlatModal
+          flat={editingFlat}
+          isOpen={!!editingFlat}
+          onClose={() => setEditingFlat(null)}
+          onUpdated={(updated) => {
+            setFlats((prev) =>
+              prev.map((f) => (f.id === updated.id ? { ...f, ...updated } : f))
+            );
+          }}
+          t={t}
+        />
+      )}
     </div>
   );
 }
@@ -2978,6 +4025,7 @@ function FlatsTab({
   societyId,
 }) {
   const [flats,        setFlats]        = useState([]);
+  const [editingFlat,  setEditingFlat]  = useState(null);
   const [loading,      setLoading]      = useState(true);
   const [localSearch,  setLocalSearch]  = useState("");
   const search = externalSearch !== undefined ? externalSearch : localSearch;
@@ -3128,16 +4176,39 @@ function FlatsTab({
                         {f.Floor ? t("mpFlBlkLine", { n: f.Floor.floor_number, name: blockName }) : t("mpBlkLine", { name: blockName })} · {occ ? t("mpOccupied") : t("mpVacant")}
                       </p>
                     </div>
-                    {canEdit && (confirmId === f.id ? (
-                      <div style={{ display: "flex", gap: 5, alignItems: "center", flexShrink: 0 }}>
-                        <button onClick={() => deleteFlat(f.id)} disabled={deletingId === f.id} style={{ padding: "4px 9px", borderRadius: 6, fontSize: 11, fontWeight: 700, background: "#dc2626", color: "#fff", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 3 }}>
-                          {deletingId === f.id ? <Spinner size={11} /> : (t("mpYes") || "Yes")}
+                    {canEdit && (
+                      <div style={{ display: "flex", gap: 6, alignItems: "center", flexShrink: 0 }}>
+                        <button
+                          onClick={() => setEditingFlat(f)}
+                          style={{
+                            width: 32,
+                            height: 32,
+                            borderRadius: 9,
+                            flexShrink: 0,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            background: "rgba(91,141,239,0.12)",
+                            border: "1px solid rgba(91,141,239,0.25)",
+                            color: "#5B8DEF",
+                            cursor: "pointer",
+                          }}
+                          title={t("edit") || "Edit"}
+                        >
+                          <MdEdit size={14} />
                         </button>
-                        <button onClick={() => setConfirmId(null)} style={{ padding: "4px 7px", borderRadius: 6, fontSize: 11, background: "var(--card-inner-bg)", color: "var(--text-secondary)", border: "1px solid var(--glass-border)", cursor: "pointer" }}>✕</button>
+                        {confirmId === f.id ? (
+                          <div style={{ display: "flex", gap: 5, alignItems: "center" }}>
+                            <button onClick={() => deleteFlat(f.id)} disabled={deletingId === f.id} style={{ padding: "4px 9px", borderRadius: 6, fontSize: 11, fontWeight: 700, background: "#dc2626", color: "#fff", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 3 }}>
+                              {deletingId === f.id ? <Spinner size={11} /> : (t("mpYes") || "Yes")}
+                            </button>
+                            <button onClick={() => setConfirmId(null)} style={{ padding: "4px 7px", borderRadius: 6, fontSize: 11, background: "var(--card-inner-bg)", color: "var(--text-secondary)", border: "1px solid var(--glass-border)", cursor: "pointer" }}>✕</button>
+                          </div>
+                        ) : (
+                          <button onClick={() => setConfirmId(f.id)} title={t("mpDelete") || "Delete"} style={{ width: 32, height: 32, borderRadius: 9, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", background: "var(--stat-red-bg)", border: "1px solid var(--stat-red-border)", color: "var(--stat-red-color)", cursor: "pointer" }}><MdDelete size={14} /></button>
+                        )}
                       </div>
-                    ) : (
-                      <button onClick={() => setConfirmId(f.id)} style={{ width: 32, height: 32, borderRadius: 9, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", background: "var(--stat-red-bg)", border: "1px solid var(--stat-red-border)", color: "var(--stat-red-color)", cursor: "pointer" }}><MdDelete size={14} /></button>
-                    ))}
+                    )}
                   </div>
                 </div>
               );
@@ -3204,19 +4275,29 @@ function FlatsTab({
                         </span>
                       </td>
                       <td style={{ textAlign: "right" }}>
-                        {canEdit && (confirmId === f.id ? (
-                          <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-                            <span style={{ fontSize: 11, color: "var(--text-secondary)" }}>{t("mpSure") || "Sure?"}</span>
-                            <button onClick={() => deleteFlat(f.id)} disabled={deletingId === f.id} style={{ display: "flex", alignItems: "center", gap: 5, padding: "4px 11px", borderRadius: 7, fontSize: 11, fontWeight: 700, background: "#dc2626", color: "#fff", border: "none", cursor: "pointer" }}>
-                              {deletingId === f.id ? <Spinner size={12} /> : (t("mpYes") || "Yes")}
+                        {canEdit && (
+                          <div style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                            <button
+                              onClick={() => setEditingFlat(f)}
+                              style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "5px 12px", borderRadius: 8, fontSize: 12, fontWeight: 600, background: "rgba(91,141,239,0.12)", color: "#5B8DEF", border: "1px solid rgba(91,141,239,0.25)", cursor: "pointer" }}
+                            >
+                              <MdEdit size={13} /> {t("edit") || "Edit"}
                             </button>
-                            <button onClick={() => setConfirmId(null)} style={{ padding: "4px 9px", borderRadius: 7, fontSize: 11, background: "var(--card-inner-bg)", color: "var(--text-secondary)", border: "1px solid var(--glass-border)", cursor: "pointer" }}>{t("mpCancel") || "Cancel"}</button>
-                          </span>
-                        ) : (
-                          <button onClick={() => setConfirmId(f.id)} style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "5px 12px", borderRadius: 8, fontSize: 12, fontWeight: 600, background: "var(--stat-red-bg)", color: "var(--stat-red-color)", border: "1px solid var(--stat-red-border)", cursor: "pointer" }}>
-                            <MdDelete size={13} /> {t("mpDelete") || "Delete"}
-                          </button>
-                        ))}
+                            {confirmId === f.id ? (
+                              <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                                <span style={{ fontSize: 11, color: "var(--text-secondary)" }}>{t("mpSure") || "Sure?"}</span>
+                                <button onClick={() => deleteFlat(f.id)} disabled={deletingId === f.id} style={{ display: "flex", alignItems: "center", gap: 5, padding: "4px 11px", borderRadius: 7, fontSize: 11, fontWeight: 700, background: "#dc2626", color: "#fff", border: "none", cursor: "pointer" }}>
+                                  {deletingId === f.id ? <Spinner size={12} /> : (t("mpYes") || "Yes")}
+                                </button>
+                                <button onClick={() => setConfirmId(null)} style={{ padding: "4px 9px", borderRadius: 7, fontSize: 11, background: "var(--card-inner-bg)", color: "var(--text-secondary)", border: "1px solid var(--glass-border)", cursor: "pointer" }}>{t("mpCancel") || "Cancel"}</button>
+                              </span>
+                            ) : (
+                              <button onClick={() => setConfirmId(f.id)} style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "5px 12px", borderRadius: 8, fontSize: 12, fontWeight: 600, background: "var(--stat-red-bg)", color: "var(--stat-red-color)", border: "1px solid var(--stat-red-border)", cursor: "pointer" }}>
+                                <MdDelete size={13} /> {t("mpDelete") || "Delete"}
+                              </button>
+                            )}
+                          </div>
+                        )}
                       </td>
                     </tr>
                   );
@@ -3244,6 +4325,20 @@ function FlatsTab({
           </div>
         )}
       </div>
+
+      {editingFlat && (
+        <EditFlatModal
+          flat={editingFlat}
+          isOpen={!!editingFlat}
+          onClose={() => setEditingFlat(null)}
+          onUpdated={(updated) => {
+            setFlats((prev) =>
+              prev.map((f) => (f.id === updated.id ? { ...f, ...updated } : f))
+            );
+          }}
+          t={t}
+        />
+      )}
     </div>
   );
 }

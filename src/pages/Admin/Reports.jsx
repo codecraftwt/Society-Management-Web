@@ -1,14 +1,16 @@
 
 import React from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useLang } from "../../context/LanguageContext"; // ← NEW
 import {
   MdPeople, MdReportProblem, MdAccountBalance,
-  MdArrowForward, MdBarChart, MdTrendingDown,
+  MdArrowForward, MdBarChart,
 } from "react-icons/md";
 
 export default function Reports() {
   const navigate = useNavigate();
+  const { pathname } = useLocation();
+  const reportsBase = pathname.includes("superadmin") ? "/superadmin/reports" : "/admin/reports";
   const { t }    = useLang(); // ← NEW
 
   /* Built inside component so labels update live on language change */
@@ -17,29 +19,22 @@ export default function Reports() {
       title:       t("adminRptVisitors"),
       description: t("adminRptVisitorsDesc"),
       icon:        MdPeople,
-      path:        "/admin/reports/visitors",
+      path:        `${reportsBase}/visitors`,
       color: { bg: "bg-blue-500/15",   border: "border-blue-500/25",   icon: "text-blue-400",   glow: "rgba(91,141,239,0.15)",  stat: t("adminRptVisitorsStat") },
     },
     {
       title:       t("adminRptComplaints"),
       description: t("adminRptComplaintsDesc"),
       icon:        MdReportProblem,
-      path:        "/admin/reports/complaints",
+      path:        `${reportsBase}/complaints`,
       color: { bg: "bg-yellow-500/15", border: "border-yellow-500/25", icon: "text-yellow-400", glow: "rgba(234,179,8,0.15)",   stat: t("adminRptComplaintsStat") },
     },
     {
-      title:       t("adminRptFinancial"),
-      description: t("adminRptFinancialDesc"),
+      title:       "Finance & Expense Report",
+      description: "Combined credits, payments, and expenses for the society.",
       icon:        MdAccountBalance,
-      path:        "/admin/reports/financial",
-      color: { bg: "bg-green-500/15",  border: "border-green-500/25",  icon: "text-green-400",  glow: "rgba(34,197,94,0.15)",   stat: t("adminRptFinancialStat") },
-    },
-    {
-      title:       t("adminRptExpenses"),
-      description: t("adminRptExpensesDesc"),
-      icon:        MdTrendingDown,
-      path:        "/admin/reports/expenses",
-      color: { bg: "bg-amber-500/15",  border: "border-amber-500/25",  icon: "text-amber-400",  glow: "rgba(245,158,11,0.15)",  stat: t("adminRptExpensesStat") },
+      path:        `${reportsBase}/finance`,
+      color: { bg: "bg-green-500/15", border: "border-green-500/25", icon: "text-green-400", glow: "rgba(34,197,94,0.15)", stat: "Finance & Expenses" },
     },
   ];
 

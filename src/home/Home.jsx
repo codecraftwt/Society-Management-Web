@@ -21,7 +21,6 @@ import {
   HiOutlineClock,
   HiBars3,
   HiOutlineXMark,
-  HiOutlineUser,
   HiOutlineCube,
   HiOutlineQrCode,
   HiOutlineCheck,
@@ -35,7 +34,7 @@ import { FaYoutube, FaFacebookF, FaInstagram, FaLinkedinIn, FaCar } from "react-
 
 /* Image imports from assets/Photos/Home */
 import compLogoImg from "../assets/Photos/Home/comp_logo.png";
-import homeBannerImg from "../assets/Photos/Home/society-hero-residence.jpg";
+import homeBannerImg from "../assets/Photos/Home/society-hero-residence.png";
 import featuresBgImg from "../assets/Photos/Home/Features.avif";
 import howItWorksBgImg from "../assets/Photos/Home/HowItWorks.avif";
 import userRolesBgImg from "../assets/Photos/Home/UserRoles.avif";
@@ -45,6 +44,15 @@ import residentImg from "../assets/Photos/Home/Resident.png";
 import guardImg from "../assets/Photos/Home/Guard.png";
 import securityGuardImg from "../assets/Photos/Home/Guard1.png";
 import accountantImg from "../assets/Photos/Home/Accountant.png";
+import securityFeatureImg from "../assets/Photos/Home/features/security.png";
+import sosFeatureImg from "../assets/Photos/Home/features/sos.png";
+import maintenanceFeatureImg from "../assets/Photos/Home/features/Maintenance.png";
+import complaintsFeatureImg from "../assets/Photos/Home/features/complaints.png";
+import guardFeatureImg from "../assets/Photos/Home/features/Guard.png";
+import guestApprovalFeatureImg from "../assets/Photos/Home/features/guest_approval.png";
+import parkingFeatureImg from "../assets/Photos/Home/features/Parking.png";
+import visitorLogFeatureImg from "../assets/Photos/Home/features/visitor log.png";
+import financeFeatureImg from "../assets/Photos/Home/features/finance.png";
 
 import ThemeToggle from "../components/common/ThemeToggle";
 import LanguageSelector from "../components/common/LanguageSelector";
@@ -91,6 +99,18 @@ const SafeImage = ({ src, alt, className, fallbackGradient, fallbackIcon: Icon, 
     />
   );
 };
+
+const homeFeatureCards = [
+  { image: securityFeatureImg, icon: HiOutlineShieldCheck, tone: "blue", titleKey: "homeFeatureCard1Title", descKey: "homeFeatureCard1Desc" },
+  { image: sosFeatureImg, icon: HiOutlineBell, tone: "red", titleKey: "homeFeatureCard2Title", descKey: "homeFeatureCard2Desc" },
+  { image: maintenanceFeatureImg, icon: HiOutlineWrenchScrewdriver, tone: "blue", titleKey: "homeFeatureCard3Title", descKey: "homeFeatureCard3Desc" },
+  { image: complaintsFeatureImg, icon: HiOutlineChatBubbleLeftRight, tone: "violet", titleKey: "homeFeatureCard4Title", descKey: "homeFeatureCard4Desc" },
+  { image: guardFeatureImg, icon: HiOutlineUserGroup, tone: "teal", titleKey: "homeFeatureCard5Title", descKey: "homeFeatureCard5Desc" },
+  { image: guestApprovalFeatureImg, icon: HiOutlineCheckBadge, tone: "mint", titleKey: "homeFeatureCard6Title", descKey: "homeFeatureCard6Desc" },
+  { image: parkingFeatureImg, icon: FaCar, tone: "blue", titleKey: "homeFeatureCard7Title", descKey: "homeFeatureCard7Desc" },
+  { image: visitorLogFeatureImg, icon: HiOutlineFolder, tone: "violet", titleKey: "homeFeatureCard8Title", descKey: "homeFeatureCard8Desc" },
+  { image: financeFeatureImg, icon: HiOutlineCalculator, tone: "mint", titleKey: "homeFeatureCard9Title", descKey: "homeFeatureCard9Desc" },
+];
 
 /* ==========================================================================
    HOME PAGE REACT COMPONENT
@@ -207,12 +227,9 @@ const Home = () => {
               </li>
             </ul>
 
-            {/* Nav Right Actions: Language -> Dashboard CTA -> Theme */}
+            {/* Nav Right Actions: Language -> Dashboard CTA */}
             <div className="home-nav-actions">
               <LanguageSelector compact />
-              <div className="home-nav-theme-toggle">
-                <ThemeToggle />
-              </div>
               <button
                 onClick={goToApp}
                 className="home-btn-nav-cta"
@@ -251,9 +268,6 @@ const Home = () => {
 
           <div className="home-mobile-prefs">
             <LanguageSelector compact />
-            <div className="home-nav-theme-toggle">
-              <ThemeToggle />
-            </div>
           </div>
 
           <div className="home-mobile-actions">
@@ -275,6 +289,8 @@ const Home = () => {
           </div>
         </div>
       </nav>
+
+      <ThemeToggle variant="floating" />
 
       <main id="main-content">
         {/* ==========================================================================
@@ -355,90 +371,6 @@ const Home = () => {
                   </button>
                 </motion.div>
 
-                {/* 5. Unified Information Area: Roles & Benefit Highlights */}
-                <motion.div
-                  initial={{ opacity: 0, y: 25 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.7, delay: 0.5, ease: [0.16, 1, 0.3, 1] }}
-                  className="home-hero-info-section"
-                >
-                  {/* Community-Role Indicator */}
-                  <div className="home-hero-roles-bar">
-                    <div className="home-hero-roles-icons">
-                      <div className="home-hero-role-item" title={t("homeRoleResidents")}>
-                        <div className="home-hero-role-circle home-hero-role-circle--resident">
-                          <HiOutlineUser />
-                        </div>
-                        <span className="home-hero-role-name">{t("homeRoleResidents")}</span>
-                      </div>
-
-                      <div className="home-hero-role-item" title={t("homeRoleSecurity")}>
-                        <div className="home-hero-role-circle home-hero-role-circle--security">
-                          <HiOutlineShieldCheck />
-                        </div>
-                        <span className="home-hero-role-name">{t("homeRoleSecurity")}</span>
-                      </div>
-
-                      <div className="home-hero-role-item" title={t("homeRoleCommittee")}>
-                        <div className="home-hero-role-circle home-hero-role-circle--committee">
-                          <HiOutlineUserGroup />
-                        </div>
-                        <span className="home-hero-role-name">{t("homeRoleCommittee")}</span>
-                      </div>
-
-                      <div className="home-hero-role-item" title={t("homeRoleAdmin")}>
-                        <div className="home-hero-role-circle home-hero-role-circle--admin">
-                          <HiOutlineCog6Tooth />
-                        </div>
-                        <span className="home-hero-role-name">{t("homeRoleAdmin")}</span>
-                      </div>
-                    </div>
-
-                    <div className="home-hero-roles-divider" aria-hidden="true" />
-
-                    <div className="home-hero-roles-info">
-                      <div className="home-hero-roles-title">{t("homeRolePitchTitle")}</div>
-                      <div className="home-hero-roles-subtitle">{t("homeRolePitchSubtitle")}</div>
-                    </div>
-                  </div>
-
-                  {/* Compact Benefit Strip */}
-                  <div className="home-hero-feature-strip">
-                    <div className="home-feature-strip-cell home-feature-strip-cell--security">
-                      <div className="home-feature-strip-icon-box">
-                        <HiOutlineShieldCheck />
-                      </div>
-                      <div className="home-feature-strip-details">
-                        <div className="home-feature-strip-title">{t("homeSecurityTitle")}</div>
-                        <div className="home-feature-strip-desc">{t("homeSecurityDesc")}</div>
-                      </div>
-                    </div>
-
-                    <div className="home-feature-strip-sep" aria-hidden="true" />
-
-                    <div className="home-feature-strip-cell home-feature-strip-cell--finance">
-                      <div className="home-feature-strip-icon-box">
-                        <span className="home-currency-symbol">₹</span>
-                      </div>
-                      <div className="home-feature-strip-details">
-                        <div className="home-feature-strip-title">{t("homeFinanceTitle")}</div>
-                        <div className="home-feature-strip-desc">{t("homeFinanceDesc")}</div>
-                      </div>
-                    </div>
-
-                    <div className="home-feature-strip-sep" aria-hidden="true" />
-
-                    <div className="home-feature-strip-cell home-feature-strip-cell--resident">
-                      <div className="home-feature-strip-icon-box">
-                        <HiOutlineUsers />
-                      </div>
-                      <div className="home-feature-strip-details">
-                        <div className="home-feature-strip-title">{t("homeResidentExpTitle")}</div>
-                        <div className="home-feature-strip-desc">{t("homeResidentExpDesc")}</div>
-                      </div>
-                    </div>
-                  </div>
-                </motion.div>
               </motion.div>
 
               {/* Right Column: Slide-in from RIGHT with Scale & Elevation */}
@@ -517,193 +449,43 @@ const Home = () => {
               className="home-features-header"
             >
               <div className="home-features-eyebrow">
-                <HiOutlineSparkles className="home-features-eyebrow-icon" />
-                <span>{t("homeFeaturesEyebrow") || "WHAT MAKES US DIFFERENT"}</span>
+                <HiOutlineShieldCheck className="home-features-eyebrow-icon" />
+                <span>POWERFUL FEATURES</span>
               </div>
               <h2 className="home-features-title">
-                {t("homeFeaturesTitle") || "Everything Your Community Needs."}
+                Everything Your Community <span>Needs.</span>
               </h2>
               <p className="home-features-subtitle">
-                {t("homeFeaturesSubtitle") || "Simplify everyday operations, bring transparency to management, and create a better living experience — all in one connected platform."}
+                Everything you need to manage your society, all in one place.
               </p>
             </motion.div>
 
-            {/* Clean 3x2 Feature Grid — Modern, Stylish, High-End */}
+            {/* Premium 3x3 photographic feature grid */}
             <div className="home-features-grid">
-              {/* Card 01 */}
-              <motion.div
-                initial={{ opacity: 0, y: 22 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, amount: 0.15 }}
-                transition={{ duration: 0.5, delay: 0.05, ease: [0.16, 1, 0.3, 1] }}
-                className="home-feature-card home-feature-card--blue"
-              >
-                <div className="home-feature-card-header">
-                  <div className="home-feature-card-icon-wrap">
-                    <HiOutlineBuildingOffice2 />
+              {homeFeatureCards.map(({ image, icon: Icon, tone, titleKey, descKey }, index) => {
+                const title = t(titleKey);
+                return (
+                <motion.article
+                  key={title}
+                  initial={{ opacity: 0, y: 22 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, amount: 0.15 }}
+                  transition={{ duration: 0.5, delay: index * 0.04, ease: [0.16, 1, 0.3, 1] }}
+                  className={`home-feature-card home-feature-card--${tone}`}
+                >
+                  <div className="home-feature-card-image-wrap">
+                    <img src={image} alt={title} className="home-feature-card-image" />
                   </div>
-                  <span className="home-feature-tag">{t("homeFeature1Tag")}</span>
-                </div>
-                <h3 className="home-feature-card-title">{t("homeFeature1Title")}</h3>
-                <p className="home-feature-card-desc">
-                  {t("homeFeature1Desc")}
-                </p>
-                <div className="home-feature-card-footer">
-                  <span className="home-feature-chip">
-                    <HiOutlineCheckCircle className="home-feature-chip-icon" /> {t("homeFeature1Chip")}
-                  </span>
-                  <HiOutlineArrowRight className="home-feature-arrow" />
-                </div>
-              </motion.div>
-
-              {/* Card 02 */}
-              <motion.div
-                initial={{ opacity: 0, y: 22 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, amount: 0.15 }}
-                transition={{ duration: 0.5, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
-                className="home-feature-card home-feature-card--teal"
-              >
-                <div className="home-feature-card-header">
-                  <div className="home-feature-card-icon-wrap">
-                    <HiOutlineCog6Tooth />
+                  <div className="home-feature-card-content">
+                    <div className="home-feature-card-icon-wrap"><Icon aria-hidden="true" /></div>
+                    <h3 className="home-feature-card-title">{title}</h3>
+                    <p className="home-feature-card-desc">{t(descKey)}</p>
                   </div>
-                  <span className="home-feature-tag">{t("homeFeature2Tag")}</span>
-                </div>
-                <h3 className="home-feature-card-title">{t("homeFeature2Title")}</h3>
-                <p className="home-feature-card-desc">
-                  {t("homeFeature2Desc")}
-                </p>
-                <div className="home-feature-card-footer">
-                  <span className="home-feature-chip">
-                    <HiOutlineCheckCircle className="home-feature-chip-icon" /> {t("homeFeature2Chip")}
-                  </span>
-                  <HiOutlineArrowRight className="home-feature-arrow" />
-                </div>
-              </motion.div>
-
-              {/* Card 03 */}
-              <motion.div
-                initial={{ opacity: 0, y: 22 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, amount: 0.15 }}
-                transition={{ duration: 0.5, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
-                className="home-feature-card home-feature-card--violet"
-              >
-                <div className="home-feature-card-header">
-                  <div className="home-feature-card-icon-wrap">
-                    <HiOutlineMegaphone />
-                  </div>
-                  <span className="home-feature-tag">{t("homeFeature3Tag")}</span>
-                </div>
-                <h3 className="home-feature-card-title">{t("homeFeature3Title")}</h3>
-                <p className="home-feature-card-desc">
-                  {t("homeFeature3Desc")}
-                </p>
-                <div className="home-feature-card-footer">
-                  <span className="home-feature-chip">
-                    <HiOutlineCheckCircle className="home-feature-chip-icon" /> {t("homeFeature3Chip")}
-                  </span>
-                  <HiOutlineArrowRight className="home-feature-arrow" />
-                </div>
-              </motion.div>
-
-              {/* Card 04 */}
-              <motion.div
-                initial={{ opacity: 0, y: 22 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, amount: 0.15 }}
-                transition={{ duration: 0.5, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-                className="home-feature-card home-feature-card--cyan"
-              >
-                <div className="home-feature-card-header">
-                  <div className="home-feature-card-icon-wrap">
-                    <HiOutlineShieldCheck />
-                  </div>
-                  <span className="home-feature-tag">{t("homeFeature4Tag")}</span>
-                </div>
-                <h3 className="home-feature-card-title">{t("homeFeature4Title")}</h3>
-                <p className="home-feature-card-desc">
-                  {t("homeFeature4Desc")}
-                </p>
-                <div className="home-feature-card-footer">
-                  <span className="home-feature-chip">
-                    <HiOutlineCheckCircle className="home-feature-chip-icon" /> {t("homeFeature4Chip")}
-                  </span>
-                  <HiOutlineArrowRight className="home-feature-arrow" />
-                </div>
-              </motion.div>
-
-              {/* Card 05 */}
-              <motion.div
-                initial={{ opacity: 0, y: 22 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, amount: 0.15 }}
-                transition={{ duration: 0.5, delay: 0.25, ease: [0.16, 1, 0.3, 1] }}
-                className="home-feature-card home-feature-card--mint"
-              >
-                <div className="home-feature-card-header">
-                  <div className="home-feature-card-icon-wrap">
-                    <HiOutlineCreditCard />
-                  </div>
-                  <span className="home-feature-tag">{t("homeFeature5Tag")}</span>
-                </div>
-                <h3 className="home-feature-card-title">{t("homeFeature5Title")}</h3>
-                <p className="home-feature-card-desc">
-                  {t("homeFeature5Desc")}
-                </p>
-                <div className="home-feature-card-footer">
-                  <span className="home-feature-chip">
-                    <HiOutlineCheckCircle className="home-feature-chip-icon" /> {t("homeFeature5Chip")}
-                  </span>
-                  <HiOutlineArrowRight className="home-feature-arrow" />
-                </div>
-              </motion.div>
-
-              {/* Card 06 */}
-              <motion.div
-                initial={{ opacity: 0, y: 22 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, amount: 0.15 }}
-                transition={{ duration: 0.5, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
-                className="home-feature-card home-feature-card--amber"
-              >
-                <div className="home-feature-card-header">
-                  <div className="home-feature-card-icon-wrap">
-                    <HiOutlineSparkles />
-                  </div>
-                  <span className="home-feature-tag">{t("homeFeature6Tag")}</span>
-                </div>
-                <h3 className="home-feature-card-title">{t("homeFeature6Title")}</h3>
-                <p className="home-feature-card-desc">
-                  {t("homeFeature6Desc")}
-                </p>
-                <div className="home-feature-card-footer">
-                  <span className="home-feature-chip">
-                    <HiOutlineCheckCircle className="home-feature-chip-icon" /> {t("homeFeature6Chip")}
-                  </span>
-                  <HiOutlineArrowRight className="home-feature-arrow" />
-                </div>
-              </motion.div>
+                </motion.article>
+                );
+              })}
             </div>
 
-            {/* Pill Banner under grid matching reference image */}
-            <motion.div
-              initial={{ opacity: 0, y: 16 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.2 }}
-              transition={{ duration: 0.45, delay: 0.25 }}
-              className="home-features-pill-row"
-            >
-              <div className="home-features-pill-banner">
-                <span className="home-features-pill-icon-wrap">
-                  <HiOutlineSparkles className="home-features-pill-icon" />
-                </span>
-                <span className="home-features-pill-text">
-                  {t("homeLandingPlatformLine")}
-                </span>
-              </div>
-            </motion.div>
           </div>
         </section>
 
@@ -792,7 +574,7 @@ const Home = () => {
                       icon: HiOutlineClock,
                       title: t("homeAdminF6"),
                       desc: t("homeAdminF6Desc"),
-                      color: "#e11d48"
+                      color: "#2563eb"
                     },
                     {
                       icon: HiOutlineFolder,
@@ -804,7 +586,7 @@ const Home = () => {
                       icon: HiOutlineChatBubbleLeftRight,
                       title: t("homeAdminF8"),
                       desc: t("homeAdminF8Desc"),
-                      color: "#db2777"
+                      color: "#0f766e"
                     }
                   ].map((cap, cIdx) => {
                     const CapIcon = cap.icon;

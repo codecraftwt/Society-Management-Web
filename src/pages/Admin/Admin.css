@@ -1154,6 +1154,19 @@ html.role-theme .admin-root .flat-history-page .ui-record-card {
 }
 
 
+
+/* Finance report export controls: restrained SaaS treatment. */
+.btn-export {
+  min-height: 38px;
+  border: 1px solid #e2d8ef !important;
+  border-radius: 11px !important;
+  background: linear-gradient(135deg, #ffffff, #faf7ff) !important;
+  color: #63458d !important;
+  box-shadow: 0 5px 14px rgba(77, 58, 105, .07);
+  transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease, background .18s ease;
+}
+.btn-export:hover:not(:disabled) { transform: translateY(-2px); border-color: #bfa4df !important; background: #f5effd !important; box-shadow: 0 9px 20px rgba(118, 82, 168, .15); }
+.btn-export:disabled { opacity: .45; cursor: not-allowed; }
 .flat-history-page .fh-card-header-row,
 .flat-history-page .fh-card-header-left,
 .flat-history-page .fh-card-number-row,
@@ -2672,6 +2685,85 @@ html.role-theme:not(.light) .gd-action--bills:hover {
 }
 
 /* Amenity booking controls */
+.amenity-management-header {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(135deg, #fffdfb 0%, #f8f5fc 100%) !important;
+  border-color: #e9e2f1 !important;
+  box-shadow: 0 16px 38px rgba(77, 58, 105, .08);
+}
+.amenity-management-header::after {
+  content: "";
+  position: absolute;
+  width: 220px;
+  height: 220px;
+  right: -90px;
+  top: -130px;
+  border-radius: 50%;
+  background: radial-gradient(circle, color-mix(in srgb, var(--accent) 16%, transparent), transparent 68%);
+  pointer-events: none;
+}
+.amenity-management-tabs {
+  padding: 4px;
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  background: #fbf9fd;
+  border-color: #ebe5f2;
+  box-shadow: 0 8px 22px rgba(77, 58, 105, .06);
+}
+.amenity-management-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 18px 38px rgba(77, 58, 105, .14) !important;
+  border-color: #d9c9ed !important;
+}
+.amenity-management-card { background: linear-gradient(155deg, #ffffff 0%, #fbf9fd 72%, #f7f2fc 100%) !important; }
+.amenity-card-content { display: flex; flex-direction: column; min-height: 246px; }
+.amenity-management-meta { min-height: 48px; }
+.amenity-management-meta {
+  display: flex !important;
+  gap: 10px 14px !important;
+  align-items: center !important;
+  flex-wrap: wrap !important;
+  padding: 13px !important;
+  background: #faf9fd !important;
+  border-color: #eeeaf6 !important;
+}
+.amenity-price-grid { display: grid; grid-template-columns: repeat(2, minmax(100px, 1fr)); gap: 16px; flex: 1 1 100%; min-width: 0; }
+.amenity-price-grid > div { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.amenity-price-grid span { color: #766688; font-size: 9px; font-weight: 800; letter-spacing: .035em; text-transform: uppercase; white-space: nowrap; }
+.amenity-price-grid strong { color: #5b3c88; font-size: 17px; line-height: 1; letter-spacing: -.02em; }
+.amenity-free-pill { display: inline-flex; width: fit-content; align-items: center; padding: 6px 10px; border-radius: 999px; background: #edf9f2; border: 1px solid #ccebd8; color: #23824a; font-size: 11px; font-weight: 800; }
+.amenity-meta-item { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 700; white-space: nowrap; color: #665b70 !important; }
+.amenity-card-actions { margin-top: auto; padding-top: 2px; }
+.amenity-approval-badge { color: #b05a68 !important; background: #fff5f6 !important; border-color: #f3c5cc !important; }
+.amenity-management-card .amenity-free-pill { box-shadow: 0 4px 10px rgba(35, 130, 74, .08); }
+.amenity-management-card .amenity-price-grid strong::first-letter { color: #7048a4; }
+.amenity-card-actions button { min-height: 38px; border-radius: 11px !important; }
+.amenity-card-actions button:first-child { flex: 1.15; }
+.amenity-card-actions button:nth-child(2), .amenity-card-actions button:nth-child(3) { flex: 0 0 40px; width: 40px; padding: 0 !important; }
+.amenity-icon-action { position: relative; min-height: 38px !important; }
+.amenity-icon-action:hover:not(:disabled) { transform: translateY(-2px) !important; }
+.amenity-edit-action:hover:not(:disabled) { background: #7652a8 !important; color: #fff !important; border-color: #7652a8 !important; box-shadow: 0 8px 18px rgba(118, 82, 168, .24) !important; }
+.amenity-delete-action:hover:not(:disabled) { background: #dc5b72 !important; color: #fff !important; border-color: #dc5b72 !important; box-shadow: 0 8px 18px rgba(220, 91, 114, .22) !important; }
+.amenity-disable-action { color: #74677f !important; border-color: #e8e1ee !important; background: #fcfbfd !important; }
+.amenity-disable-action:hover:not(:disabled) { color: #bd5268 !important; border-color: #e8a9b7 !important; background: #fff7f9 !important; box-shadow: 0 7px 16px rgba(189, 82, 104, .12) !important; }
+.amenity-enable-action:hover:not(:disabled) { color: #23824a !important; border-color: #9bd8b3 !important; background: #f0fbf4 !important; box-shadow: 0 7px 16px rgba(35, 130, 74, .12) !important; }
+.amenity-management-card button { transition: transform .18s ease, box-shadow .18s ease, background .18s ease, border-color .18s ease; }
+.amenity-management-card button:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(54, 35, 105, .10); }
+.amenity-management-card button:focus-visible { outline: 3px solid var(--accent-soft); outline-offset: 2px; }
+
+@media (max-width: 640px) {
+  .amenity-management-header { border-radius: 16px !important; padding: 14px !important; }
+  .amenity-management-tabs { border-radius: 14px; overflow-x: auto; }
+  .amenity-management-card { border-radius: 18px !important; }
+  .amenity-card-content { min-height: 0; }
+  .amenity-management-meta { min-height: 0; }
+  .amenity-price-grid { width: 100%; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .amenity-card-actions { gap: 6px !important; }
+  .amenity-card-actions button { padding-left: 8px !important; padding-right: 8px !important; font-size: 10.5px !important; }
+  .amenity-card-actions button:nth-child(2), .amenity-card-actions button:nth-child(3) { flex-basis: 38px; width: 38px; padding: 0 !important; }
+}
+
 .amen-booking-stats { margin-top: 2px; }
 .amen-booking-filters { margin-top: 18px; }
 .amen-booking-list { margin-top: 18px; }

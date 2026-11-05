@@ -1,9 +1,10 @@
 
-import React, { useEffect, useState, useCallback, useRef} from "react";
+import React, { useEffect, useState, useCallback, useRef, useContext } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import API from "../../../services/api";
 import { useLang } from "../../../context/LanguageContext";
+import { AuthContext } from "../../../context/AuthContext";
 import { exportToExcel } from "../../../utils/exportExcel";
 import { exportToPDF } from "../../../utils/exportPDF";
 import {
@@ -51,7 +52,7 @@ function StatusBadge({ status, openLabel, inProgressLabel, resolvedLabel }) {
 const formatDate = d => { if (!d) return "—"; const dt = new Date(d); return isNaN(dt) ? "—" : dt.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }); };
 
 function FilterSheet({
-  show, onClose, isMobile, societies, societyId, setSocietyId,
+  show, onClose, isMobile, isSuperAdmin, societies, societyId, setSocietyId,
   blocks, blockId, setBlockId,
   floors, floorId, setFloorId,
   flats, flatId, setFlatId,
@@ -71,15 +72,17 @@ function FilterSheet({
           <button onClick={onClose} style={{ width: 28, height: 28, borderRadius: 8, background: "var(--card-inner-bg)", border: "1px solid var(--glass-border)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "var(--text-secondary)" }}><MdClose size={15} /></button>
         </div>
         <div style={{ padding: "16px 18px", display: "flex", flexDirection: "column", gap: 14 }}>
-          <div>
-            <label style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--text-secondary)", display: "block", marginBottom: 6 }}>Society</label>
-            <Select className="input" value={societyId} onChange={e => setSocietyId(e.target.value)} style={{ width: "100%", boxSizing: "border-box" }}>
-              <option value="ALL">All Societies</option>
-              {societies.map(s => (
-                <option key={s.id} value={s.id}>{s.name}</option>
-              ))}
-            </Select>
-          </div>
+          {isSuperAdmin && (
+            <div>
+              <label style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--text-secondary)", display: "block", marginBottom: 6 }}>{labels.societyLabel || "Society"}</label>
+              <Select className="input" value={societyId} onChange={e => setSocietyId(e.target.value)} style={{ width: "100%", boxSizing: "border-box" }}>
+                <option value="ALL">{labels.allSocieties || "All Societies"}</option>
+                {societies.map(s => (
+                  <option key={s.id} value={s.id}>{s.name}</option>
+                ))}
+              </Select>
+            </div>
+          )}
           <div>
             <label style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--text-secondary)", display: "block", marginBottom: 6 }}>{labels.statusLabel}</label>
             <Select className="input" value={status} onChange={e => setStatus(e.target.value)} style={{ width: "100%", boxSizing: "border-box" }}>
@@ -167,6 +170,8 @@ export default function SuperAdminComplaintReport() {
   const isMobile = useIsMobile();
   const { t } = useLang();
   const navigate = useNavigate();
+  const { user } = useContext(AuthContext);
+  const isSuperAdmin = String(user?.activeRole || user?.role || "").toUpperCase() === "SUPER_ADMIN";
 
   const [complaints, setComplaints] = useState([]);
   const [counts, setCounts] = useState({ total: 0, open: 0, progress: 0, resolved: 0 });
@@ -203,10 +208,11 @@ const [totalPages, setTotalPages] = useState(1);
   const [flats, setFlats] = useState([]);
 
   useEffect(() => {
+    if (!isSuperAdmin) return;
     API.get("/societies")
       .then(res => setSocieties(res.data || []))
       .catch(err => console.error("Failed to fetch societies", err));
-  }, []);
+  }, [isSuperAdmin]);
 
   const fetchComplaints = useCallback(async (pg, sid, bid, fdid, flid, s, fd, td, isInit = false) => {
     isInit ? setLoading(true) : setFetching(true);
@@ -265,8 +271,10 @@ const [totalPages, setTotalPages] = useState(1);
   }, [pendingFloorId]);
 
   const applyFilter = () => {
-    localStorage.setItem("superadmin_society_filter", pendingSocietyId || "ALL");
-    window.dispatchEvent(new Event("superadmin-society-scope-change"));
+    if (isSuperAdmin) {
+      localStorage.setItem("superadmin_society_filter", pendingSocietyId || "ALL");
+      window.dispatchEvent(new Event("superadmin-society-scope-change"));
+    }
     setSocietyId(pendingSocietyId);
     setBlockId(pendingBlockId);
     setFloorId(pendingFloorId);
@@ -274,14 +282,16 @@ const [totalPages, setTotalPages] = useState(1);
     setStatus(pendingStatus);
     setFromDate(pendingFrom);
     setToDate(pendingTo);
-    setApplied(pendingSocietyId !== "ALL" || !!(pendingBlockId || pendingFloorId || pendingFlatId || pendingStatus || (pendingFrom && pendingTo)));
+    setApplied((isSuperAdmin && pendingSocietyId !== "ALL") || !!(pendingBlockId || pendingFloorId || pendingFlatId || pendingStatus || (pendingFrom && pendingTo)));
     setShowFilters(false);
-    fetchComplaints(1, pendingSocietyId, pendingBlockId, pendingFloorId, pendingFlatId, pendingStatus, pendingFrom, pendingTo);
+    fetchComplaints(1, isSuperAdmin ? pendingSocietyId : "ALL", pendingBlockId, pendingFloorId, pendingFlatId, pendingStatus, pendingFrom, pendingTo);
   };
 
   const clearFilter = () => {
-    localStorage.setItem("superadmin_society_filter", "ALL");
-    window.dispatchEvent(new Event("superadmin-society-scope-change"));
+    if (isSuperAdmin) {
+      localStorage.setItem("superadmin_society_filter", "ALL");
+      window.dispatchEvent(new Event("superadmin-society-scope-change"));
+    }
     setSocietyId("ALL");
     setPendingSocietyId("ALL");
     setBlockId("");
@@ -303,6 +313,7 @@ const [totalPages, setTotalPages] = useState(1);
   const handlePageChange = p => fetchComplaints(p, societyId, blockId, floorId, flatId, status, fromDate, toDate);
 
   const handleSectionSocietyChange = (value) => {
+    if (!isSuperAdmin) return;
     localStorage.setItem("superadmin_society_filter", value || "ALL");
     setSocietyId(value);
     setPendingSocietyId(value);
@@ -331,7 +342,9 @@ const [totalPages, setTotalPages] = useState(1);
     applyFilter: t("rptApplyFilter") || "Apply",
     allBlocks: t("allBlocks") || "All Blocks",
     allFloors: t("allFloors") || "All Floors",
-    allFlats: t("allFlats") || "All Flats"
+    allFlats: t("allFlats") || "All Flats",
+    societyLabel: t("rptColSociety") || "Society",
+    allSocieties: t("rptAllSocieties") || "All Societies"
   };
   const cfgColors = { OPEN: "#f87171", IN_PROGRESS: "#60A5FA", RESOLVED: "#4ade80" };
 
@@ -347,13 +360,47 @@ const [totalPages, setTotalPages] = useState(1);
     return res.data.data || [];
   };
 
+  const exportHeaders = [
+    t("rptColSrNo") || "Sr No",
+    ...(isSuperAdmin ? [t("rptColSociety") || "Society"] : []),
+    t("rptColResident") || "Resident",
+    t("rptColFlat") || "Flat",
+    t("rptColBlock") || "Block",
+    t("rptColSubject") || "Subject",
+    t("billStatusCol") || "Status",
+    t("compColDate") || "Date",
+  ];
+
+  const exportRowValues = (c, i) => [
+    i + 1,
+    ...(isSuperAdmin ? [c.Flat?.Block?.Society?.name || "—"] : []),
+    c.User?.name || "—",
+    c.Flat?.flat_number || "—",
+    c.Flat?.Block?.name || "—",
+    c.title || "—",
+    c.status,
+    formatDate(c.created_at),
+  ];
+
   const handleExcelExport = async () => {
     const all = await fetchAllForExport();
-    exportToExcel({ fileName: "System_Complaint_Report", sheetName: "Complaints", data: all.map((c, i) => ({ "Sr No": i + 1, "Society": c.Flat?.Block?.Society?.name || "-", "Resident": c.User?.name || "-", "Block / Flat": `${c.Flat?.Block?.name || "-"} / ${c.Flat?.flat_number || "-"}`, "Subject": c.title || "-", "Status": c.status, "Date": formatDate(c.created_at) })) });
+    exportToExcel({
+      fileName: isSuperAdmin ? "System_Complaint_Report" : "Complaint_Report",
+      sheetName: "Complaints",
+      data: all.map((c, i) =>
+        Object.fromEntries(exportHeaders.map((header, index) => [header, exportRowValues(c, i)[index]]))
+      ),
+    });
   };
+
   const handlePDFExport = async () => {
     const all = await fetchAllForExport();
-    exportToPDF({ title: "System Complaint Report", fileName: "System_Complaint_Report", columns: ["Sr No", "Society", "Resident", "Block / Flat", "Subject", "Status", "Date"], rows: all.map((c, i) => [i + 1, c.Flat?.Block?.Society?.name || "-", c.User?.name || "-", `${c.Flat?.Block?.name || "-"} / ${c.Flat?.flat_number || "-"}`, c.title || "-", c.status, formatDate(c.created_at)]) });
+    exportToPDF({
+      title: t("rptCompTitle") || "Complaint Report",
+      fileName: isSuperAdmin ? "System_Complaint_Report" : "Complaint_Report",
+      columns: exportHeaders,
+      rows: all.map(exportRowValues),
+    });
   };
 
   const bleed = isMobile ? { marginLeft: "calc(-1 * var(--page-padding,16px))", marginRight: "calc(-1 * var(--page-padding,16px))", width: "calc(100% + 2 * var(--page-padding,16px))", borderRadius: 0, boxSizing: "border-box" } : { boxSizing: "border-box" };
@@ -368,16 +415,16 @@ const [totalPages, setTotalPages] = useState(1);
             <MdArrowBack size={18} />
           </button>
           <div className="er-icon er-icon--complaint"><MdReportProblem size={22} /></div>
-          <div><h2 className="page-title">Global Complaint Report</h2><p className="page-subtitle">{loading ? "—" : `${counts.total} total complaints`}</p>{activeSocietyName && <span className="sa-society-context">Viewing: {activeSocietyName}</span>}</div>
+          <div><h2 className="page-title">{t("rptCompTitle") || "Complaint Report"}</h2><p className="page-subtitle">{loading ? "—" : `${counts.total} ${t("rptCompSubtitle") || "complaints"}`}</p>{isSuperAdmin && activeSocietyName && <span className="sa-society-context">{t("rptViewing") || "Viewing"}: {activeSocietyName}</span>}</div>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-          <Select className="input sa-society-select" value={societyId} onChange={(e) => handleSectionSocietyChange(e.target.value)} style={{ minWidth: 190, height: 38 }}>
+          {isSuperAdmin && <Select className="input sa-society-select" value={societyId} onChange={(e) => handleSectionSocietyChange(e.target.value)} style={{ minWidth: 190, height: 38 }}>
             <option value="ALL">{t("rptAllSocieties") || "All Societies"}</option>
             {societies.map((society) => <option key={society.id} value={society.id}>{society.name}</option>)}
-          </Select>
-          <button onClick={handleExcelExport} className="btn-export" style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 13px", fontSize: 12, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}><MdTableChart size={14} /> Excel</button>
-          <button onClick={handlePDFExport} className="btn-export" style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 13px", fontSize: 12, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}><MdPictureAsPdf size={14} /> PDF</button>
-          <button onClick={() => setShowFilters(true)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 13px", borderRadius: 10, fontSize: 12, fontWeight: 700, background: applied ? "rgba(107,70,193,0.15)" : "var(--card-inner-bg)", color: applied ? "#9F87D7" : "var(--text-secondary)", border: applied ? "1px solid rgba(107,70,193,0.35)" : "1px solid var(--glass-border)", cursor: "pointer", position: "relative", whiteSpace: "nowrap" }}><MdFilterList size={14} /> Filters{applied && <span style={{ position: "absolute", top: -3, right: -3, width: 8, height: 8, borderRadius: "50%", background: "#6B46C1", boxShadow: "0 0 6px rgba(107,70,193,0.6)" }} />}</button>
+          </Select>}
+          <button onClick={handleExcelExport} className="btn-export" style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 13px", fontSize: 12, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}><MdTableChart size={14} /> {t("rptExcel") || "Excel"}</button>
+          <button onClick={handlePDFExport} className="btn-export" style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 13px", fontSize: 12, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}><MdPictureAsPdf size={14} /> {t("rptPDF") || "PDF"}</button>
+          <button onClick={() => setShowFilters(true)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 13px", borderRadius: 10, fontSize: 12, fontWeight: 700, background: applied ? "rgba(107,70,193,0.15)" : "var(--card-inner-bg)", color: applied ? "#9F87D7" : "var(--text-secondary)", border: applied ? "1px solid rgba(107,70,193,0.35)" : "1px solid var(--glass-border)", cursor: "pointer", position: "relative", whiteSpace: "nowrap" }}><MdFilterList size={14} /> {t("rptFilters")}{applied && <span style={{ position: "absolute", top: -3, right: -3, width: 8, height: 8, borderRadius: "50%", background: "#6B46C1", boxShadow: "0 0 6px rgba(107,70,193,0.6)" }} />}</button>
         </div>
       </div>
 
@@ -411,7 +458,7 @@ const [totalPages, setTotalPages] = useState(1);
         </div>
       )}
 
-      <FilterSheet show={showFilters} onClose={() => setShowFilters(false)} isMobile={isMobile}
+      <FilterSheet show={showFilters} onClose={() => setShowFilters(false)} isMobile={isMobile} isSuperAdmin={isSuperAdmin}
         societies={societies} societyId={pendingSocietyId} setSocietyId={setPendingSocietyId}
         blocks={blocks} blockId={pendingBlockId} setBlockId={setPendingBlockId}
         floors={floors} floorId={pendingFloorId} setFloorId={setPendingFloorId}
@@ -425,17 +472,17 @@ const [totalPages, setTotalPages] = useState(1);
       <div className="data-table-wrap" style={bleed}>
         <div style={{ padding: "13px 16px", borderBottom: "1px solid var(--glass-border)", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
           <span style={{ fontSize: 13, fontWeight: 700, color: "var(--text-primary)" }}>
-            All Complaints
-            {!loading && <span style={{ fontSize: 12, fontWeight: 400, color: "var(--text-secondary)", marginLeft: 8 }}>— {totalItems} records{applied ? " (filtered)" : ""}</span>}
+            {t("rptAllComplaints") || "All Complaints"}
+            {!loading && <span style={{ fontSize: 12, fontWeight: 400, color: "var(--text-secondary)", marginLeft: 8 }}>- {totalItems} {t("rptRecords") || "records"}{applied ? ` (${t("rptFiltered") || "filtered"})` : ""}</span>}
           </span>
           {fetching && <Spinner small />}
-          {applied && !fetching && <span style={{ fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 99, background: "rgba(107,70,193,0.1)", color: "#9F87D7", border: "1px solid rgba(107,70,193,0.2)", whiteSpace: "nowrap" }}>Filtered</span>}
+          {applied && !fetching && <span style={{ fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 99, background: "rgba(107,70,193,0.1)", color: "#9F87D7", border: "1px solid rgba(107,70,193,0.2)", whiteSpace: "nowrap" }}>{t("rptFiltered") || "Filtered"}</span>}
         </div>
 
         {loading ? (
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10, padding: "60px 20px", color: "var(--text-secondary)" }}><Spinner /><p style={{ fontSize: 13, margin: 0 }}>Loading complaints...</p></div>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10, padding: "60px 20px", color: "var(--text-secondary)" }}><Spinner /><p style={{ fontSize: 13, margin: 0 }}>{t("compLoading") || "Loading complaints..."}</p></div>
         ) : complaints.length === 0 ? (
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10, padding: "60px 20px", color: "var(--text-secondary)" }}><MdOutlineInbox size={48} style={{ opacity: 0.2 }} /><p style={{ fontSize: 13, margin: 0 }}>No data found</p>{applied && <button onClick={clearFilter} style={{ fontSize: 12, color: "var(--accent)", background: "none", border: "none", cursor: "pointer", fontWeight: 600 }}>Clear Filters</button>}</div>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10, padding: "60px 20px", color: "var(--text-secondary)" }}><MdOutlineInbox size={48} style={{ opacity: 0.2 }} /><p style={{ fontSize: 13, margin: 0 }}>{t("rptNoData") || "No data found"}</p>{applied && <button onClick={clearFilter} style={{ fontSize: 12, color: "var(--accent)", background: "none", border: "none", cursor: "pointer", fontWeight: 600 }}>{t("rptClearFilters") || "Clear Filters"}</button>}</div>
         ) : isMobile ? (
           <div style={{ padding: "10px 12px", display: "flex", flexDirection: "column", gap: 10 }}>
             {complaints.map((c, i) => (
@@ -447,8 +494,9 @@ const [totalPages, setTotalPages] = useState(1);
                     <StatusBadge status={c.status} {...statusLabels} />
                   </div>
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                    <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: "var(--text-secondary)" }}><MdBusiness size={12} style={{ color: "var(--accent)", flexShrink: 0 }} />{c.Flat?.Block?.Society?.name || "—"}</span>
-                    <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: "var(--text-secondary)" }}><MdPerson size={12} style={{ color: "var(--accent)", flexShrink: 0 }} />{c.User?.name || "—"}</span>
+                    {isSuperAdmin && <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: "var(--text-secondary)" }}><MdBusiness size={12} style={{ color: "var(--accent)", flexShrink: 0 }} />{c.Flat?.Block?.Society?.name || "-"}</span>}
+                    <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: "var(--text-secondary)" }}><MdPerson size={12} style={{ color: "var(--accent)", flexShrink: 0 }} />{c.User?.name || "-"}</span>
+                    {c.Flat?.flat_number && <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: "var(--text-secondary)" }}><MdApartment size={12} style={{ color: "var(--accent)", flexShrink: 0 }} />{c.Flat.flat_number}{c.Flat?.Block?.name ? ` / ${c.Flat.Block.name}` : ""}</span>}
                     <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: "var(--text-secondary)", opacity: 0.7 }}><MdCalendarToday size={11} style={{ flexShrink: 0 }} />{formatDate(c.created_at)}</span>
                   </div>
                 </div>
@@ -457,14 +505,15 @@ const [totalPages, setTotalPages] = useState(1);
           </div>
         ) : (
           <table className="data-table">
-            <thead><tr>{[t("rptColSrNo") || "Sr No", t("profileTileSociety") || "Society", t("rptColResident") || "Resident", t("rptColFlat") || "Block / Flat", t("rptColSubject") || "Subject", t("billStatusCol") || "Status", t("vlColDate") || "Date"].map(h => <th key={h}>{h}</th>)}</tr></thead>
+            <thead><tr>{exportHeaders.map(h => <th key={h}>{h}</th>)}</tr></thead>
             <tbody>
               {complaints.map((c, i) => (
                 <tr key={c.id} className="animate-fadeIn" style={{ animationDelay: `${i * 15}ms` }}>
                   <td><span style={{ fontSize: 12, color: "var(--text-secondary)" }}>{(page - 1) * limit + i + 1}</span></td>
-                  <td><span style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)" }}>{c.Flat?.Block?.Society?.name || "—"}</span></td>
-                  <td><span style={{ fontSize: 13, color: "var(--text-secondary)" }}>{c.User?.name || "—"}</span></td>
-                  <td><span className="info-chip">{`${c.Flat?.Block?.name || "-"} / ${c.Flat?.flat_number || "-"}`}</span></td>
+                  {isSuperAdmin && <td><span style={{ fontSize: 13, color: "var(--text-secondary)" }}>{c.Flat?.Block?.Society?.name || "—"}</span></td>}
+                  <td><span style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)" }}>{c.User?.name || "—"}</span></td>
+                  <td><span className="info-chip">{c.Flat?.flat_number || "—"}</span></td>
+                  <td><span style={{ fontSize: 13, color: "var(--text-secondary)" }}>{c.Flat?.Block?.name || "—"}</span></td>
                   <td><span style={{ fontSize: 13, color: "var(--text-secondary)", maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", display: "block" }}>{c.title || "—"}</span></td>
                   <td><StatusBadge status={c.status} {...statusLabels} /></td>
                   <td><span style={{ fontSize: 12, color: "var(--text-secondary)", whiteSpace: "nowrap" }}>{formatDate(c.created_at)}</span></td>
@@ -477,7 +526,7 @@ const [totalPages, setTotalPages] = useState(1);
         {!loading && complaints.length > 0 && (
           <div className="table-footer" style={{ flexWrap: "wrap", gap: 10 }}>
             <span style={{ fontSize: 12, color: "var(--text-secondary)" }}>
-              Showing <strong>{(page - 1) * limit + 1}–{Math.min(page * limit, totalItems)}</strong> of <strong>{totalItems}</strong> records
+              {t("billShowing") || "Showing"} <strong>{(page - 1) * limit + 1}-{Math.min(page * limit, totalItems)}</strong> {t("billOf") || "of"} <strong>{totalItems}</strong> {t("rptRecords") || "records"}
             </span>
             <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} pageSize={limit} onPageSizeChange={(s) => { limitRef.current = s; setLimit(s); setPage(1); handlePageChange(1); }} />
           </div>

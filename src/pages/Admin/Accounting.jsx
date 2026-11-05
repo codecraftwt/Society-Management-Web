@@ -39,6 +39,7 @@ import {
   MdTableChart,
   MdReceipt,
   MdVisibility,
+  MdAttachFile,
 } from "react-icons/md";
 import { AuthContext } from "../../context/AuthContext";
 import { useLang } from "../../context/LanguageContext";
@@ -1587,6 +1588,7 @@ function ExpenseDetails({ expense, onClose }) {
         />
         <DetailItem label={t("accRecordedAt")} value={expense.created_at ? new Date(expense.created_at).toLocaleString() : null} />
       </div>
+      {expense.receipt_url && <div className="mt-3 flex items-center justify-between gap-3 p-3 bg-card-inner-bg border border-glass-border rounded-xl"><span className="text-xs text-secondary truncate">{expense.receipt_file_name || "Receipt"}</span><a href={expense.receipt_url} target="_blank" rel="noreferrer" download={expense.receipt_file_name || true} className="btn-soft px-3 py-2 text-xs font-semibold inline-flex items-center gap-1.5"><MdDownload size={15} /> View / Download Receipt</a></div>}
 
       {expense.status === "VOID" && (
         <p className="mt-3 text-xs text-amber-500 bg-amber-500/10 border border-amber-500/20 rounded-xl p-3">
@@ -1612,7 +1614,16 @@ function ExpenseForm({ expense, saving, onClose, onSubmit }) {
     amount: expense?.amount !== undefined ? String(expense.amount) : "",
     payment_date: expense?.payment_date ? String(expense.payment_date).slice(0, 10) : TODAY(),
     payment_mode: expense?.payment_mode || "CASH",
+    receipt: null,
+    remove_receipt: false,
   });
+  const [receiptPreview, setReceiptPreview] = useState(null);
+  const chooseReceipt = (e) => {
+    const file = e.target.files?.[0]; if (!file) return;
+    if (!new Set(["image/jpeg", "image/png", "image/webp", "application/pdf"]).has(file.type)) { toast.error("Receipt must be JPG, JPEG, PNG, WEBP, or PDF."); e.target.value = ""; return; }
+    if (file.size > 10 * 1024 * 1024) { toast.error("Receipt must be 10MB or smaller."); e.target.value = ""; return; }
+    setForm({ ...form, receipt: file, remove_receipt: false }); setReceiptPreview(file.type === "application/pdf" ? "pdf" : URL.createObjectURL(file));
+  };
 
   const set = (k) => (e) => setForm({ ...form, [k]: e.target.value });
 
@@ -1668,6 +1679,11 @@ function ExpenseForm({ expense, saving, onClose, onSubmit }) {
             />
           </Field>
         </div>
+
+        <Field label="Upload Bill / Receipt (optional)" icon={MdAttachFile}>
+          <input type="file" accept=".jpg,.jpeg,.png,.webp,.pdf" onChange={chooseReceipt} className="block w-full text-xs text-secondary file:mr-3 file:rounded-lg file:border-0 file:bg-accent/15 file:px-3 file:py-2 file:text-accent" />
+          {(form.receipt || expense?.receipt_url) && <div className="mt-2 flex items-center gap-3 rounded-xl border border-glass-border bg-card-inner-bg p-2">{receiptPreview && receiptPreview !== "pdf" ? <img src={receiptPreview} alt="Receipt preview" className="h-14 w-14 rounded-lg object-cover" /> : <MdPictureAsPdf size={30} className="text-rose-500" />}<span className="min-w-0 flex-1 truncate text-xs text-secondary">{form.receipt?.name || expense?.receipt_file_name || "Existing receipt"}</span><button type="button" onClick={() => { setForm({ ...form, receipt: null, remove_receipt: true }); setReceiptPreview(null); }} className="btn-soft px-2 py-1 text-xs">Remove</button></div>}
+        </Field>
 
         {/* Reason / Particulars */}
         <Field label={t("accReasonDesc")} required icon={MdDescription}>

@@ -1,9 +1,10 @@
 
-import React, { useEffect, useState, useCallback, useRef} from "react";
+import React, { useEffect, useState, useCallback, useRef, useContext } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import API from "../../../services/api";
 import { useLang } from "../../../context/LanguageContext";
+import { AuthContext } from "../../../context/AuthContext";
 import { exportToExcel } from "../../../utils/exportExcel";
 import { exportToPDF } from "../../../utils/exportPDF";
 import {
@@ -26,14 +27,21 @@ function resolveFlatLabel(flat) {
   const block = flat.Floor?.Block?.name || flat.Block?.name || null;
   const floor = flat.Floor?.floor_number ?? null;
   const flatNo = flat.flat_number || "—";
-  const society = flat.Block?.Society?.name || flat.Floor?.Block?.Society?.name || "—";
-  
   return [
-    society,
     block,
     floor != null ? `Floor ${floor}` : null,
     flatNo,
   ].filter(Boolean).join(" / ") || "—";
+}
+
+function resolveBlockName(flat) {
+  if (!flat) return "—";
+  return flat.Floor?.Block?.name || flat.Block?.name || "—";
+}
+
+function resolveSocietyName(flat) {
+  if (!flat) return "—";
+  return flat.Block?.Society?.name || flat.Floor?.Block?.Society?.name || "—";
 }
 
 function useIsMobile() {
@@ -73,7 +81,8 @@ const formatDate = d => { if (!d) return "—"; const dt = new Date(d); return i
 const formatDateShort = d => { if (!d) return "—"; const dt = new Date(d); return isNaN(dt) ? "—" : dt.toLocaleString("en-IN", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit", hour12: true }); };
 
 function FilterSheet({
-  show, onClose, isMobile, societies, societyId, setSocietyId,
+  show, onClose, isMobile, isSuperAdmin,
+  societies, societyId, setSocietyId,
   blocks, blockId, setBlockId,
   floors, floorId, setFloorId,
   flats, flatId, setFlatId,
@@ -93,15 +102,17 @@ function FilterSheet({
           <button onClick={onClose} style={{ width: 28, height: 28, borderRadius: 8, background: "var(--card-inner-bg)", border: "1px solid var(--glass-border)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "var(--text-secondary)" }}><MdClose size={15} /></button>
         </div>
         <div style={{ padding: "16px 18px", display: "flex", flexDirection: "column", gap: 14 }}>
-          <div>
-            <label style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--text-secondary)", display: "block", marginBottom: 6 }}>Society</label>
-            <Select className="input" value={societyId} onChange={e => setSocietyId(e.target.value)} style={{ width: "100%", boxSizing: "border-box" }}>
-              <option value="ALL">All Societies</option>
-              {societies.map(s => (
-                <option key={s.id} value={s.id}>{s.name}</option>
-              ))}
-            </Select>
-          </div>
+          {isSuperAdmin && (
+            <div>
+              <label style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--text-secondary)", display: "block", marginBottom: 6 }}>{labels.societyLabel || "Society"}</label>
+              <Select className="input" value={societyId} onChange={e => setSocietyId(e.target.value)} style={{ width: "100%", boxSizing: "border-box" }}>
+                <option value="ALL">{labels.allSocieties || "All Societies"}</option>
+                {societies.map(s => (
+                  <option key={s.id} value={s.id}>{s.name}</option>
+                ))}
+              </Select>
+            </div>
+          )}
           <div>
             <label style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--text-secondary)", display: "block", marginBottom: 6 }}>{labels.statusLabel}</label>
             <Select className="input" value={statusFilter} onChange={e => setStatusFilter(e.target.value)} style={{ width: "100%", boxSizing: "border-box" }}>
@@ -188,6 +199,8 @@ export default function SuperAdminVisitorReport() {
   const isMobile = useIsMobile();
   const { t } = useLang();
   const navigate = useNavigate();
+  const { user } = useContext(AuthContext);
+  const isSuperAdmin = String(user?.activeRole || user?.role || "").toUpperCase() === "SUPER_ADMIN";
 
   const [visitors, setVisitors] = useState([]);
   const [counts, setCounts] = useState({ total: 0, inside: 0, exited: 0 });
@@ -224,10 +237,11 @@ const [totalPages, setTotalPages] = useState(1);
   const [flats, setFlats] = useState([]);
 
   useEffect(() => {
+    if (!isSuperAdmin) return;
     API.get("/societies")
       .then(res => setSocieties(res.data || []))
       .catch(err => console.error("Failed to fetch societies", err));
-  }, []);
+  }, [isSuperAdmin]);
 
   const fetchVisitors = useCallback(async (pg, sid, bid, fdid, flid, sf, fd, td, isInit = false) => {
     isInit ? setLoading(true) : setFetching(true);
@@ -286,8 +300,10 @@ const [totalPages, setTotalPages] = useState(1);
   }, [pendingFloorId]);
 
   const applyFilter = () => {
-    localStorage.setItem("superadmin_society_filter", pendingSocietyId || "ALL");
-    window.dispatchEvent(new Event("superadmin-society-scope-change"));
+    if (isSuperAdmin) {
+      localStorage.setItem("superadmin_society_filter", pendingSocietyId || "ALL");
+      window.dispatchEvent(new Event("superadmin-society-scope-change"));
+    }
     setSocietyId(pendingSocietyId);
     setBlockId(pendingBlockId);
     setFloorId(pendingFloorId);
@@ -295,14 +311,16 @@ const [totalPages, setTotalPages] = useState(1);
     setStatusFilter(pendingStatus);
     setFromDate(pendingFrom);
     setToDate(pendingTo);
-    setApplied(pendingSocietyId !== "ALL" || !!(pendingBlockId || pendingFloorId || pendingFlatId || pendingStatus || (pendingFrom && pendingTo)));
+    setApplied((isSuperAdmin && pendingSocietyId !== "ALL") || !!(pendingBlockId || pendingFloorId || pendingFlatId || pendingStatus || (pendingFrom && pendingTo)));
     setShowFilters(false);
-    fetchVisitors(1, pendingSocietyId, pendingBlockId, pendingFloorId, pendingFlatId, pendingStatus, pendingFrom, pendingTo);
+    fetchVisitors(1, isSuperAdmin ? pendingSocietyId : "ALL", pendingBlockId, pendingFloorId, pendingFlatId, pendingStatus, pendingFrom, pendingTo);
   };
 
   const clearFilter = () => {
-    localStorage.setItem("superadmin_society_filter", "ALL");
-    window.dispatchEvent(new Event("superadmin-society-scope-change"));
+    if (isSuperAdmin) {
+      localStorage.setItem("superadmin_society_filter", "ALL");
+      window.dispatchEvent(new Event("superadmin-society-scope-change"));
+    }
     setSocietyId("ALL");
     setPendingSocietyId("ALL");
     setBlockId("");
@@ -324,6 +342,7 @@ const [totalPages, setTotalPages] = useState(1);
   const handlePageChange = p => fetchVisitors(p, societyId, blockId, floorId, flatId, statusFilter, fromDate, toDate);
 
   const handleSectionSocietyChange = (value) => {
+    if (!isSuperAdmin) return;
     localStorage.setItem("superadmin_society_filter", value || "ALL");
     setSocietyId(value);
     setPendingSocietyId(value);
@@ -352,6 +371,8 @@ const [totalPages, setTotalPages] = useState(1);
     allBlocks: t("allBlocks") || "All Blocks",
     allFloors: t("allFloors") || "All Floors",
     allFlats: t("allFlats") || "All Flats",
+    societyLabel: t("rptColSociety") || "Society",
+    allSocieties: t("rptAllSocieties") || "All Societies",
   };
 
   const fetchAllForExport = async () => {
@@ -366,33 +387,48 @@ const [totalPages, setTotalPages] = useState(1);
     return res.data.data || [];
   };
 
+  const exportHeaders = [
+    t("rptColSrNo") || "Sr No",
+    ...(isSuperAdmin ? [t("rptColSociety") || "Society"] : []),
+    t("rptVisitor") || "Visitor",
+    t("rptMobile") || "Mobile",
+    t("rptPurpose") || "Purpose",
+    t("rptColFlat") || "Flat",
+    t("rptColBlock") || "Block",
+    t("rptEntry") || "Entry",
+    t("billStatusCol") || "Status",
+  ];
+
+  const exportRowValues = (v, i) => [
+    i + 1,
+    ...(isSuperAdmin ? [resolveSocietyName(v.Flat)] : []),
+    v.visitor_name || "—",
+    v.mobile || "—",
+    v.purpose || "—",
+    resolveFlatLabel(v.Flat),
+    resolveBlockName(v.Flat),
+    formatDate(v.entry_time),
+    v.exit_time ? formatDate(v.exit_time) : "IN",
+  ];
+
   const handleExcelExport = async () => {
     const all = await fetchAllForExport();
     exportToExcel({
-      fileName: "System_Visitor_Report", sheetName: "Visitors",
-      data: all.map((v, i) => ({
-        "Sr No": i + 1,
-        "Visitor": v.visitor_name,
-        "Mobile": v.mobile,
-        "Purpose": v.purpose,
-        "Society / Block / Flat": resolveFlatLabel(v.Flat),
-        "Entry": formatDate(v.entry_time),
-        "Exit": v.exit_time ? formatDate(v.exit_time) : "IN",
-      })),
+      fileName: isSuperAdmin ? "System_Visitor_Report" : "Visitor_Report",
+      sheetName: "Visitors",
+      data: all.map((v, i) =>
+        Object.fromEntries(exportHeaders.map((header, index) => [header, exportRowValues(v, i)[index]]))
+      ),
     });
   };
 
   const handlePDFExport = async () => {
     const all = await fetchAllForExport();
     exportToPDF({
-      title: "System Visitor Report", fileName: "System_Visitor_Report",
-      columns: ["Sr No", "Visitor", "Mobile", "Purpose", "Society / Block / Flat", "Entry", "Status"],
-      rows: all.map((v, i) => [
-        i + 1, v.visitor_name, v.mobile, v.purpose,
-        resolveFlatLabel(v.Flat),
-        formatDate(v.entry_time),
-        v.exit_time ? formatDate(v.exit_time) : "IN",
-      ]),
+      title: t("rptVisTitle") || "Visitor Report",
+      fileName: isSuperAdmin ? "System_Visitor_Report" : "Visitor_Report",
+      columns: exportHeaders,
+      rows: all.map(exportRowValues),
     });
   };
 
@@ -410,14 +446,15 @@ const [totalPages, setTotalPages] = useState(1);
             <MdArrowBack size={18} />
           </button>
           <div style={{ width: 46, height: 46, borderRadius: 14, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", background: "linear-gradient(135deg,rgba(148,181,245,0.15),rgba(91,141,239,0.10))", border: "1.5px solid rgba(148,181,245,0.25)", color: "#94B5F5" }}><MdGroups size={22} /></div>
-          <div><h2 className="page-title">Global Visitor Report</h2><p className="page-subtitle">{loading ? "—" : `${counts.total} total logs`}</p>{activeSocietyName && <span className="sa-society-context">Viewing: {activeSocietyName}</span>}</div>
+          <div><h2 className="page-title">{t("rptVisTitle") || "Visitor Report"}</h2><p className="page-subtitle">{loading ? "—" : `${counts.total} ${t("rptVisSubtitle") || "visitor logs"}`}</p>{isSuperAdmin && activeSocietyName && <span className="sa-society-context">{t("rptViewing") || "Viewing"}: {activeSocietyName}</span>}</div>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-          <Select className="input sa-society-select" value={societyId} onChange={(e) => handleSectionSocietyChange(e.target.value)} style={{ minWidth: 190, height: 38 }}>
+          {isSuperAdmin && <Select className="input sa-society-select" value={societyId} onChange={(e) => handleSectionSocietyChange(e.target.value)} style={{ minWidth: 190, height: 38 }}>
             <option value="ALL">{t("rptAllSocieties") || "All Societies"}</option>
             {societies.map((society) => <option key={society.id} value={society.id}>{society.name}</option>)}
-          </Select>
-          <button onClick={handleExcelExport} className="btn-export" style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 13px", fontSize: 12, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}><MdTableChart size={14} /> Excel</button>
+          </Select>}
+          <button onClick={handleExcelExport} className="btn-export" style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 13px", fontSize: 12, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}><MdTableChart size={14} /> {t("rptExcel") || "Excel"}</button>
+          <button onClick={handlePDFExport} className="btn-export" style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 13px", fontSize: 12, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}><MdPictureAsPdf size={14} /> {t("rptPDF") || "PDF"}</button>
           <button onClick={() => setShowFilters(true)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 13px", borderRadius: 10, fontSize: 12, fontWeight: 700, background: applied ? "rgba(107,70,193,0.15)" : "var(--card-inner-bg)", color: applied ? "var(--accent)" : "var(--text-secondary)", border: applied ? "1.5px solid var(--accent)" : "1px solid var(--glass-border)", cursor: "pointer", position: "relative", whiteSpace: "nowrap" }}><MdFilterList size={14} /> {filterLabels.filtersTitle || "Filters"}{applied && <span style={{ position: "absolute", top: -3, right: -3, width: 8, height: 8, borderRadius: "50%", background: "var(--accent)", boxShadow: "0 0 6px var(--accent)" }} />}</button>
         </div>
       </div>
@@ -437,7 +474,7 @@ const [totalPages, setTotalPages] = useState(1);
         </div>
       )}
 
-      <FilterSheet show={showFilters} onClose={() => setShowFilters(false)} isMobile={isMobile}
+      <FilterSheet show={showFilters} onClose={() => setShowFilters(false)} isMobile={isMobile} isSuperAdmin={isSuperAdmin}
         societies={societies} societyId={pendingSocietyId} setSocietyId={setPendingSocietyId}
         blocks={blocks} blockId={pendingBlockId} setBlockId={setPendingBlockId}
         floors={floors} floorId={pendingFloorId} setFloorId={setPendingFloorId}
@@ -451,17 +488,17 @@ const [totalPages, setTotalPages] = useState(1);
       <div className="data-table-wrap" style={bleed}>
         <div style={{ padding: "13px 16px", borderBottom: "1px solid var(--glass-border)", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
           <span style={{ fontSize: 13, fontWeight: 700, color: "var(--text-primary)" }}>
-            All Visitor Logs
-            {!loading && <span style={{ fontSize: 12, fontWeight: 400, color: "var(--text-secondary)", marginLeft: 8 }}>— {totalItems} records{applied ? " (filtered)" : ""}</span>}
+            {t("rptAllVisitors") || "All Visitors"}
+            {!loading && <span style={{ fontSize: 12, fontWeight: 400, color: "var(--text-secondary)", marginLeft: 8 }}>- {totalItems} {t("rptRecords") || "records"}{applied ? ` (${t("rptFiltered") || "filtered"})` : ""}</span>}
           </span>
           {fetching && <Spinner small />}
-          {applied && !fetching && <span style={{ fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 99, background: "rgba(107,70,193,0.1)", color: "#9F87D7", border: "1px solid rgba(107,70,193,0.2)", whiteSpace: "nowrap" }}>Filtered</span>}
+          {applied && !fetching && <span style={{ fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 99, background: "rgba(107,70,193,0.1)", color: "#9F87D7", border: "1px solid rgba(107,70,193,0.2)", whiteSpace: "nowrap" }}>{t("rptFiltered") || "Filtered"}</span>}
         </div>
 
         {loading ? (
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10, padding: "60px 20px", color: "var(--text-secondary)" }}><Spinner /><p style={{ fontSize: 13, margin: 0 }}>Loading logs...</p></div>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10, padding: "60px 20px", color: "var(--text-secondary)" }}><Spinner /><p style={{ fontSize: 13, margin: 0 }}>{t("rptVisLoading") || "Loading visits..."}</p></div>
         ) : visitors.length === 0 ? (
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10, padding: "60px 20px", color: "var(--text-secondary)" }}><MdOutlineInbox size={48} style={{ opacity: 0.2 }} /><p style={{ fontSize: 13, margin: 0 }}>No logs found</p>{applied && <button onClick={clearFilter} style={{ fontSize: 12, color: "var(--accent)", background: "none", border: "none", cursor: "pointer", fontWeight: 600 }}>Clear Filters</button>}</div>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10, padding: "60px 20px", color: "var(--text-secondary)" }}><MdOutlineInbox size={48} style={{ opacity: 0.2 }} /><p style={{ fontSize: 13, margin: 0 }}>{t("rptNoData") || "No logs found"}</p>{applied && <button onClick={clearFilter} style={{ fontSize: 12, color: "var(--accent)", background: "none", border: "none", cursor: "pointer", fontWeight: 600 }}>{t("rptClearFilters") || "Clear Filters"}</button>}</div>
 
         ) : isMobile ? (
           /* ── MOBILE CARDS ── */
@@ -477,8 +514,13 @@ const [totalPages, setTotalPages] = useState(1);
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                     <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: "var(--text-secondary)" }}>
                       <MdBusiness size={12} style={{ color: "var(--accent)", flexShrink: 0 }} />
-                      {resolveFlatLabel(v.Flat)}
+                      {isSuperAdmin ? `${resolveSocietyName(v.Flat)} / ` : ""}{resolveFlatLabel(v.Flat)}
                     </span>
+                    {v.mobile && (
+                      <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: "var(--text-secondary)" }}>
+                        <MdPhone size={12} style={{ color: "var(--accent)", flexShrink: 0 }} />{v.mobile}
+                      </span>
+                    )}
                     <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: "var(--text-secondary)", opacity: 0.75 }}>
                       <MdAccessTime size={11} style={{ flexShrink: 0 }} />{formatDateShort(v.entry_time)}
                     </span>
@@ -493,17 +535,19 @@ const [totalPages, setTotalPages] = useState(1);
           <table className="data-table">
             <thead>
               <tr>
-                {[t("rptColSrNo") || "Sr No", t("rptVisitor") || "Visitor", t("rptMobile") || "Mobile", t("rptPurpose") || "Purpose", t("profileTileSociety") || "Society / Block / Flat", t("rptEntry") || "Entry", t("billStatusCol") || "Status"].map(h => <th key={h}>{h}</th>)}
+                {exportHeaders.map(h => <th key={h}>{h}</th>)}
               </tr>
             </thead>
             <tbody>
               {visitors.map((v, i) => (
                 <tr key={v.id} className="animate-fadeIn" style={{ animationDelay: `${i * 15}ms` }}>
                   <td><span style={{ fontSize: 12, color: "var(--text-secondary)" }}>{(page - 1) * limit + i + 1}</span></td>
-                  <td><span style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)" }}>{v.visitor_name}</span></td>
-                  <td><span style={{ fontSize: 13, color: "var(--text-secondary)" }}>{v.mobile}</span></td>
-                  <td><span style={{ fontSize: 13, color: "var(--text-secondary)", maxWidth: 140, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", display: "block" }}>{v.purpose}</span></td>
+                  {isSuperAdmin && <td><span style={{ fontSize: 13, color: "var(--text-secondary)" }}>{resolveSocietyName(v.Flat)}</span></td>}
+                  <td><span style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)" }}>{v.visitor_name || "—"}</span></td>
+                  <td><span style={{ fontSize: 13, color: "var(--text-secondary)" }}>{v.mobile || "—"}</span></td>
+                  <td><span style={{ fontSize: 13, color: "var(--text-secondary)", maxWidth: 140, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", display: "block" }}>{v.purpose || "—"}</span></td>
                   <td><span className="info-chip">{resolveFlatLabel(v.Flat)}</span></td>
+                  <td><span style={{ fontSize: 13, color: "var(--text-secondary)" }}>{resolveBlockName(v.Flat)}</span></td>
                   <td><span style={{ fontSize: 12, color: "var(--text-secondary)", whiteSpace: "nowrap" }}>{formatDate(v.entry_time)}</span></td>
                   <td><EntryExitBadge exit={v.exit_time} {...badgeLabels} /></td>
                 </tr>
@@ -516,7 +560,7 @@ const [totalPages, setTotalPages] = useState(1);
         {!loading && visitors.length > 0 && (
           <div className="table-footer" style={{ flexWrap: "wrap", gap: 10 }}>
             <span style={{ fontSize: 12, color: "var(--text-secondary)" }}>
-              Showing <strong>{(page - 1) * limit + 1}–{Math.min(page * limit, totalItems)}</strong> of <strong>{totalItems}</strong> records
+              {t("billShowing") || "Showing"} <strong>{(page - 1) * limit + 1}-{Math.min(page * limit, totalItems)}</strong> {t("billOf") || "of"} <strong>{totalItems}</strong> {t("rptRecords") || "records"}
             </span>
             <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} pageSize={limit} onPageSizeChange={(s) => { limitRef.current = s; setLimit(s); setPage(1); handlePageChange(1); }} />
           </div>

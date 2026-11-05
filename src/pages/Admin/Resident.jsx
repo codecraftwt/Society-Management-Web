@@ -3394,7 +3394,8 @@ const [totalPages, setTotalPages] = useState(1);
   const [societiesList, setSocietiesList] = useState([]);
   const [filterSocietyId, setFilterSocietyId] = useState(() => {
     const saved = localStorage.getItem("superadmin_society_filter");
-    return (saved === "ALL" || !saved) ? "" : saved;
+    // Do not let a stale/invalid persisted value reach the API as a SQL id.
+    return (saved === "ALL" || !saved || !/^\d+$/.test(String(saved))) ? "" : String(saved);
   });
 
   const isResidentPending = (r) => {
