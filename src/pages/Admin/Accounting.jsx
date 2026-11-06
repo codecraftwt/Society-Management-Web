@@ -42,6 +42,7 @@ import {
   MdAttachFile,
 } from "react-icons/md";
 import { AuthContext } from "../../context/AuthContext";
+import { useTheme } from "../../context/ThemeContext";
 import { useLang } from "../../context/LanguageContext";
 import { hasPermission, isAdmin } from "../../utils/permissions";
 import API from "../../services/api";
@@ -54,6 +55,7 @@ import ConfirmDiscard from "../../components/common/ConfirmDiscard";
 import Pagination from "../../components/common/Pagination";
 import { exportToPDF } from "../../utils/exportPDF";
 import { exportToExcel } from "../../utils/exportExcel";
+import { jsPDF } from "jspdf";
 import { getTitleError, getPositiveAmountError, getDescriptionError, getRequiredDateError } from "../../utils/validators";
 import {
   getBalance,
@@ -1549,6 +1551,8 @@ function ExpensesTab({ isDeleteAllowed }) {
 /* ── EXPENSE FULL DETAILS MODAL (read-only + creator attribution) ─────────── */
 function ExpenseDetails({ expense, onClose }) {
   const { t } = useLang();
+  const { user } = useContext(AuthContext);
+  const { societyTheme } = useTheme();
   const items = [
     { label: t("accColPayee"), value: expense.pay_to },
     { label: t("accColReason"), value: expense.reason },
@@ -1556,6 +1560,117 @@ function ExpenseDetails({ expense, onClose }) {
     { label: t("accPaymentDate"), value: expense.payment_date ? String(expense.payment_date).slice(0, 10) : null },
     { label: t("accStatus"), value: expense.status ? (expense.status === "VOID" ? t("accVoidedReversed") : t("accPostedActive")) : null },
   ];
+
+  const downloadExpenseReceipt = async () => {
+    const doc = new jsPDF({ unit: "pt", format: "a4" });
+    const left = 48;
+    const right = 547;
+    const societyName = societyTheme?.society_name || user?.society_name || user?.society?.name || "Society Management";
+    const logoUrl = societyTheme?.logo_url || user?.society_logo || user?.society_logo_url || user?.society?.logo_url;
+    const primary = "#4F46E5";
+    const dark = "#172033";
+    const muted = "#64748B";
+    const formatDate = (value) => value
+      ? new Date(value).toLocaleDateString("en-IN", { day: "2-digit", month: "long", year: "numeric" })
+      : "—";
+    const amount = Number(expense.amount || 0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const loadImage = (url) => new Promise((resolve) => {
+      if (!url) return resolve(null);
+      const image = new Image();
+      image.crossOrigin = "anonymous";
+      image.onload = () => resolve(image);
+      image.onerror = () => resolve(null);
+      image.src = url;
+    });
+    const line = (label, value, y) => {
+      doc.setTextColor(muted);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(9);
+      doc.text(label, left, y);
+      doc.setTextColor(dark);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(11);
+      const text = doc.splitTextToSize(String(value || "—"), right - left - 205);
+      doc.text(text, left + 195, y);
+    };
+
+    const logo = await loadImage(logoUrl);
+    doc.setFillColor("#FFFFFF");
+    doc.rect(0, 0, 595, 842, "F");
+    doc.setDrawColor("#CBD5E1");
+    doc.setLineWidth(1.2);
+    doc.rect(18, 18, 559, 806);
+    doc.setFillColor(primary);
+    doc.rect(19, 19, 557, 112, "F");
+    if (logo) {
+      try {
+        doc.saveGraphicsState();
+        doc.setGState(new doc.GState({ opacity: 0.07 }));
+        doc.addImage(logo, "PNG", 185, 205, 225, 225);
+        doc.restoreGraphicsState();
+      } catch { /* Continue without watermark when the logo is not embeddable. */ }
+    }
+    if (logo) {
+      try { doc.addImage(logo, "PNG", left, 37, 54, 54); } catch { /* ignore invalid logo */ }
+    }
+    doc.setTextColor("#FFFFFF");
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(19);
+    doc.text(societyName, left + (logo ? 70 : 0), 57);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    doc.text("OFFICIAL EXPENSE RECEIPT", left + (logo ? 70 : 0), 79);
+    doc.setFontSize(9);
+    doc.text(`Receipt #${expense.id ?? "—"}`, right, 52, { align: "right" });
+    doc.text(formatDate(expense.payment_date), right, 72, { align: "right" });
+
+    doc.setFillColor("#F8FAFC");
+    doc.roundedRect(left, 158, right - left, 92, 12, 12, "F");
+    doc.setTextColor(muted);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9);
+    doc.text("PAYMENT RECEIVED / RECORDED FOR", left + 20, 183);
+    doc.setTextColor(dark);
+    doc.setFontSize(18);
+    doc.text(String(expense.pay_to || "—"), left + 20, 211);
+    doc.setTextColor(primary);
+    doc.setFontSize(22);
+    doc.text(amount, right - 20, 211, { align: "right" });
+
+    doc.setTextColor(dark);
+    doc.setFontSize(13);
+    doc.setFont("helvetica", "bold");
+    doc.text("Transaction details", left, 290);
+    doc.setFillColor("#EEF2FF");
+    doc.roundedRect(left, 307, right - left, 26, 4, 4, "F");
+    doc.setTextColor(primary);
+    doc.setFontSize(9);
+    doc.text("DESCRIPTION", left + 12, 324);
+    doc.text("DETAIL", left + 195, 324);
+    doc.setDrawColor("#CBD5E1");
+    doc.rect(left, 307, right - left, 280);
+    doc.line(left + 178, 307, left + 178, 587);
+    [347, 387, 427, 467, 507, 547].forEach((y) => doc.line(left, y, right, y));
+    line("Reason / particulars", expense.reason, 372);
+    line("Payment mode", expense.payment_mode, 412);
+    line("Payment date", formatDate(expense.payment_date), 452);
+    line("Status", expense.status === "VOID" ? "Voided / Reversed" : "Posted / Active", 492);
+    line("Recorded by", expense.created_by_name ? `${expense.created_by_name}${expense.created_by_role ? ` (${expense.created_by_role})` : ""}` : expense.created_by_role, 532);
+    line("Recorded at", expense.created_at ? new Date(expense.created_at).toLocaleString() : null, 572);
+
+    doc.setFillColor("#EEF2FF");
+    doc.roundedRect(left, 610, right - left, 58, 10, 10, "F");
+    doc.setTextColor(primary);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    doc.text("This receipt is generated from the society accounting record.", left + 18, 644);
+    doc.setTextColor(muted);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    doc.text(societyName, left, 790);
+    doc.text("Generated electronically · No signature required", right, 790, { align: "right" });
+    doc.save(`Expense_Receipt_${expense.id || "entry"}.pdf`);
+  };
 
   return (
     <Modal
@@ -1588,7 +1703,12 @@ function ExpenseDetails({ expense, onClose }) {
         />
         <DetailItem label={t("accRecordedAt")} value={expense.created_at ? new Date(expense.created_at).toLocaleString() : null} />
       </div>
-      {expense.receipt_url && <div className="mt-3 flex items-center justify-between gap-3 p-3 bg-card-inner-bg border border-glass-border rounded-xl"><span className="text-xs text-secondary truncate">{expense.receipt_file_name || "Receipt"}</span><a href={expense.receipt_url} target="_blank" rel="noreferrer" download={expense.receipt_file_name || true} className="btn-soft px-3 py-2 text-xs font-semibold inline-flex items-center gap-1.5"><MdDownload size={15} /> View / Download Receipt</a></div>}
+      <div className="mt-3 flex items-center justify-between gap-3 p-3 bg-card-inner-bg border border-glass-border rounded-xl">
+        <span className="text-xs text-secondary truncate">Expense receipt</span>
+        <button type="button" onClick={downloadExpenseReceipt} className="btn-soft px-3 py-2 text-xs font-semibold inline-flex items-center gap-1.5">
+          <MdDownload size={15} /> Download Receipt PDF
+        </button>
+      </div>
 
       {expense.status === "VOID" && (
         <p className="mt-3 text-xs text-amber-500 bg-amber-500/10 border border-amber-500/20 rounded-xl p-3">
