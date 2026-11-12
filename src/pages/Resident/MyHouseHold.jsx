@@ -3448,6 +3448,9 @@ function ModalContent({ activeTab, formData, setFormData, handleAdd, setShowModa
     if (isFamily) {
 
       const finalRelation = formData.relation === "Other" ? customRelation.trim() : (formData.relation || "").trim();
+      // Browser autofill can update the visible input without firing React's
+      // onChange handler. Read the control value as a fallback on submit.
+      const enteredPassword = password || e.currentTarget.elements.namedItem("password")?.value || "";
 
       if (!finalRelation) { setError(t("hhRelationRequired")); return; }
 
@@ -3461,7 +3464,7 @@ function ModalContent({ activeTab, formData, setFormData, handleAdd, setShowModa
 
       if (getEmailError(formData.email.trim())) { setError(getEmailError(formData.email.trim())); return; }
 
-      if (!password || password.length < 6) { setError("Password must be at least 6 characters long"); return; }
+      if (enteredPassword.length < 6) { setError("Password must be at least 6 characters long"); return; }
 
       setError(null);
 
@@ -3485,11 +3488,14 @@ function ModalContent({ activeTab, formData, setFormData, handleAdd, setShowModa
 
           flat_id: flatId ? String(flatId) : undefined,
 
-          enable_login: enableLogin,
+           // Family members always receive a login account because email and
+           // password are required by this form and the access toggle controls
+           // whether that account may enter the resident panel.
+           enable_login: true,
 
-          password: enableLogin ? password : null,
+           password: enteredPassword,
 
-          confirm_password: enableLogin ? password : null,
+           confirm_password: enteredPassword,
 
         });
 
@@ -3784,6 +3790,8 @@ function ModalContent({ activeTab, formData, setFormData, handleAdd, setShowModa
                 <input
 
                   className="input w-full pr-9"
+                  name="password"
+                  autoComplete="new-password"
 
                   type={showPassword ? "text" : "password"}
 
