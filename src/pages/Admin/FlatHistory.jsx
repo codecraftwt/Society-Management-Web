@@ -732,7 +732,7 @@ const FlatHistory = () => {
       const safeArr = (result) =>
         result.status === "fulfilled" ? toArr(result.value) : [];
 
-      const residents = (() => {
+      let residents = (() => {
         if (residentsRes.status !== "fulfilled") return [];
         const raw = residentsRes.value?.data;
         if (!raw) return [];
@@ -742,6 +742,41 @@ const FlatHistory = () => {
         if (typeof raw === "object") return [raw];
         return [];
       })();
+
+      // Fallback: If API returns no residents but flat has resident_id or FlatMemberships
+      if (residents.length === 0) {
+        const fallbackList = [];
+        if (Array.isArray(flat.FlatMemberships) && flat.FlatMemberships.length > 0) {
+          flat.FlatMemberships.forEach((m) => {
+            if (m.User && m.is_current !== false) {
+              fallbackList.push({
+                id: m.id,
+                user_id: m.user_id,
+                flat_id: flat.id,
+                move_in_date: m.move_in_date || m.created_at,
+                is_current: true,
+                role: m.role || m.User.resident_type || "OWNER",
+                User: m.User,
+              });
+            }
+          });
+        }
+        if (fallbackList.length === 0 && (flat.User || flat.resident)) {
+          const u = flat.User || flat.resident;
+          fallbackList.push({
+            id: u.id,
+            user_id: u.id,
+            flat_id: flat.id,
+            move_in_date: flat.created_at,
+            is_current: true,
+            role: u.resident_type || "OWNER",
+            User: u,
+          });
+        }
+        if (fallbackList.length > 0) {
+          residents = fallbackList;
+        }
+      }
 
       const byFlat = (arr) =>
         arr.filter(

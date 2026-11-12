@@ -1,9 +1,10 @@
-import { useState, useContext } from "react";
+import { useState, useContext, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate, Link } from "react-router-dom";
 import API from "../services/api";
 import { AuthContext } from "../context/AuthContext";
 import { toast } from "react-toastify";
+import { DASHBOARD_ROUTES } from "../constants/app";
 
 import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
 import {
@@ -31,7 +32,6 @@ import {
   MdSupervisorAccount,
 } from "react-icons/md";
 
-import ThemeToggle from "../components/common/ThemeToggle";
 import { useLang } from "../context/LanguageContext";
 import loginHeroImg from "../assets/Photos/Home/login_right_side_img.png";
 import "./Login.css";
@@ -153,6 +153,12 @@ function Login() {
   const [multiSocietyPrompt, setMultiSocietyPrompt] = useState(null);
   const [rejection, setRejection] = useState(null);
   const [approvalPending, setApprovalPending] = useState(false);
+
+  useEffect(() => {
+    try {
+      sessionStorage.removeItem("auth_logout_reason");
+    } catch (_) {}
+  }, []);
 
   // Panel chooser helpers — society admins, committee members & accountants who live in the
   // society also get the Resident panel (mirrors the mobile app).
@@ -301,8 +307,8 @@ function Login() {
       localStorage.setItem("superadmin_society_filter", "ALL");
     }
 
-    const targetRoute = ROUTE_MAP[user.activeRole] || "/";
-    navigate(targetRoute, { replace: true });
+    const targetRoute = DASHBOARD_ROUTES[user.activeRole] || ROUTE_MAP[user.activeRole] || "/admin";
+    window.location.href = targetRoute;
   };
 
   const handleSelectSociety = (soc) => {
@@ -367,8 +373,8 @@ function Login() {
         localStorage.setItem("superadmin_society_filter", "ALL");
       }
 
-      const targetRoute = ROUTE_MAP[targetRole] || "/";
-      navigate(targetRoute, { replace: true });
+      const targetRoute = DASHBOARD_ROUTES[targetRole] || ROUTE_MAP[targetRole] || "/admin";
+      window.location.href = targetRoute;
     } catch (err) {
       console.error("Society login finalization failed:", err);
       toast.error(err.response?.data?.message || "Failed to enter panel");
@@ -382,48 +388,57 @@ function Login() {
     const { user, token } = multiSocietyPrompt;
     setMultiSocietyPrompt(null);
     login(user, token);
-    navigate(ROUTE_MAP[user.activeRole] || "/", { replace: true });
+    const targetRoute = DASHBOARD_ROUTES[user.activeRole] || ROUTE_MAP[user.activeRole] || "/admin";
+    window.location.href = targetRoute;
   };
 
   const enterPanel = async (panelRole) => {
     if (!panelPrompt) return;
     const { user, token } = panelPrompt;
 
-    // Guard the entry point too, not just the buttons. An outsider accountant
-    // is only offered ACCOUNTANT, and the API rejects RESIDENT for them.
     const panels = Array.isArray(user.availablePanels) && user.availablePanels.length
       ? user.availablePanels
       : [];
-    if (panels.length && !panels.includes(panelRole)) {
+
+    const allowed =
+      panels.length === 0 ||
+      panels.includes(panelRole) ||
+      (panelRole === "SOCIETY_ADMIN" && (user.role === "SOCIETY_ADMIN" || (Array.isArray(user.roles) && user.roles.includes("SOCIETY_ADMIN")))) ||
+      (panelRole === "RESIDENT" && (user.is_society_resident || user.can_switch_to_resident));
+
+    if (!allowed) {
       toast.error("You do not have access to that panel.");
       return;
     }
 
-    login(user, token);
+    const targetRoute = DASHBOARD_ROUTES[panelRole] || ROUTE_MAP[panelRole] || "/admin";
+
+    setPanelPrompt(null);
 
     if (panelRole === "SUPER_ADMIN") {
       localStorage.setItem("superadmin_society_filter", "ALL");
     }
 
-    setPanelPrompt(null);
+    login(user, token);
+
     if (panelRole !== user.activeRole) {
       try {
         await switchRole(panelRole);
       } catch (err) {
-        console.error(err);
-        toast.error(err.response?.data?.message || "Failed to switch panel");
-        return;
+        console.warn("switchRole warning:", err?.response?.data?.message || err.message);
       }
     }
-    navigate(ROUTE_MAP[panelRole] || "/", { replace: true });
+
+    window.location.href = targetRoute;
   };
 
   const dismissPanelPrompt = () => {
     if (!panelPrompt) return;
     const { user, token } = panelPrompt;
-    login(user, token);
     setPanelPrompt(null);
-    navigate(ROUTE_MAP[user.activeRole] || "/", { replace: true });
+    login(user, token);
+    const targetRoute = DASHBOARD_ROUTES[user.activeRole] || ROUTE_MAP[user.activeRole] || "/admin";
+    window.location.href = targetRoute;
   };
 
   return (
@@ -446,7 +461,6 @@ function Login() {
             </ul>
             <div className="home-nav-actions">
               <LanguageSelector compact />
-              <div className="home-nav-theme-toggle"><ThemeToggle /></div>
               <Link to="/" className="home-btn-nav-cta"><span>{t("homeNavHome")}</span><HiOutlineArrowRight className="home-nav-btn-arrow" /></Link>
             </div>
             <button className="home-mobile-burger" onClick={() => setMenuOpen((open) => !open)} aria-label={t("homeToggleMenu")} aria-expanded={menuOpen}>
@@ -459,7 +473,7 @@ function Login() {
           <Link to="/#how-it-works" className="home-mobile-link" onClick={() => setMenuOpen(false)}>{t("homeNavHowItWorks")}</Link>
           <Link to="/#roles" className="home-mobile-link" onClick={() => setMenuOpen(false)}>{t("homeNavUserRoles")}</Link>
           <div className="home-mobile-divider" />
-          <div className="home-mobile-prefs"><LanguageSelector compact /><div className="home-nav-theme-toggle"><ThemeToggle /></div></div>
+          <div className="home-mobile-prefs"><LanguageSelector compact /></div>
           <div className="home-mobile-actions"><Link to="/" className="home-btn-nav-cta" onClick={() => setMenuOpen(false)}>{t("homeNavHome")}</Link></div>
         </div>
       </nav>

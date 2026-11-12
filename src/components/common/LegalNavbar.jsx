@@ -1,7 +1,6 @@
 import { useState, useEffect, useContext } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { HiOutlineBuildingOffice2, HiBars3, HiOutlineXMark } from "react-icons/hi2";
-import ThemeToggle from "./ThemeToggle";
 import LanguageSelector from "./LanguageSelector";
 import { useLang } from "../../context/LanguageContext";
 import { AuthContext } from "../../context/AuthContext";
@@ -66,9 +65,6 @@ const LegalNavbar = () => {
                 </button>
               </>
             )}
-            <div className="home-nav-theme-toggle">
-              <ThemeToggle />
-            </div>
           </div>
 
           {/* Mobile Burger */}
@@ -86,9 +82,6 @@ const LegalNavbar = () => {
       {/* Mobile Navigation Menu */}
       <div className={`home-mobile-menu ${menuOpen ? "active" : ""}`}>
         <div className="home-mobile-prefs">
-          <div className="home-nav-theme-toggle">
-            <ThemeToggle />
-          </div>
           <LanguageSelector compact />
         </div>
 

@@ -160,7 +160,7 @@
 }
 
 /* ==========================================================================
-   Floating Circular Variant (Landing Page)
+   Floating Circular Variant (Global Floating Theme Ball)
    Single icon showing the theme the user can switch to.
    ========================================================================== */
 .theme-toggle--floating {
@@ -169,7 +169,7 @@
   right: 24px;
   bottom: calc(24px + env(safe-area-inset-bottom, 0px));
   left: auto;
-  z-index: 1100;
+  z-index: 1050;
   width: 52px;
   height: 52px;
   padding: 0;
@@ -185,7 +185,10 @@
     box-shadow 0.3s ease, transform 0.2s ease;
 }
 
-html:not(.light) .theme-toggle--floating {
+html:not(.light) .theme-toggle--floating,
+html.dark .theme-toggle--floating,
+.dark .theme-toggle--floating,
+.theme-toggle--floating.theme-toggle--dark {
   background: rgba(21, 27, 43, 0.96);
   border-color: rgba(255, 255, 255, 0.16);
   color: #f8fafc;
@@ -198,7 +201,10 @@ html:not(.light) .theme-toggle--floating {
   box-shadow: 0 12px 30px rgba(20, 33, 61, 0.18), 0 3px 8px rgba(20, 33, 61, 0.08);
 }
 
-html:not(.light) .theme-toggle--floating:hover {
+html:not(.light) .theme-toggle--floating:hover,
+html.dark .theme-toggle--floating:hover,
+.dark .theme-toggle--floating:hover,
+.theme-toggle--floating.theme-toggle--dark:hover {
   box-shadow: 0 14px 34px rgba(0, 0, 0, 0.5), 0 3px 10px rgba(0, 0, 0, 0.3);
 }
 

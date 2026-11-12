@@ -22,7 +22,6 @@ import API from "../../services/api";
 import GuardEmergencyModal from "../../components/guard/GuardEmergencyModal";
 import NotificationBell from "../../components/common/NotificationBell";
 import useEmergencyAlerts from "../../hooks/useEmergencyAlerts";
-import ThemeToggle from "../../components/common/ThemeToggle";
 import LanguageSelector from "../../components/common/LanguageSelector";
 import { LanguageProvider, useLang } from "../../context/LanguageContext";
 import Sidebar from "../../components/common/Sidebar";

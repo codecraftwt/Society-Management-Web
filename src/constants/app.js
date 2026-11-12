@@ -6,7 +6,7 @@ export const DASHBOARD_ROUTES = {
   COMMITTEE_MEMBER: "/admin",
   GUARD: "/guard",
   ACCOUNTANT: "/accountant",
-  FAMILY_MEMBER: "/family",
+  FAMILY_MEMBER: "/resident",
   RESIDENT: "/resident",
 };
 
@@ -32,7 +32,7 @@ export function getDashboardPath(user) {
  */
 const PROFILE_PATHS = {
   RESIDENT: "/resident/myprofile",
-  FAMILY_MEMBER: "/family/myprofile",
+  FAMILY_MEMBER: "/resident/myprofile",
   SOCIETY_ADMIN: "/admin/myprofile",
   COMMITTEE_MEMBER: "/admin/myprofile",
   GUARD: "/guard/settings?section=profile",

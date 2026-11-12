@@ -34,7 +34,6 @@ import {
   HiOutlineArrowRight,
 } from "react-icons/hi2";
 import { toast } from "react-toastify";
-import ThemeToggle from "../components/common/ThemeToggle";
 import LanguageSelector from "../components/common/LanguageSelector";
 import ProfilePictureCropModal from "../components/common/ProfilePictureCropModal";
 import { useLang } from "../context/LanguageContext";
@@ -668,7 +667,6 @@ function Register() {
 
             <div className="home-nav-actions">
               <LanguageSelector compact />
-              <div className="home-nav-theme-toggle"><ThemeToggle /></div>
               <Link to="/" className="home-btn-nav-cta" aria-label={t("homeNavHome")}>
                 <span>{t("homeNavHome")}</span>
                 <HiOutlineArrowRight className="home-nav-btn-arrow" />
@@ -688,7 +686,6 @@ function Register() {
           <div className="home-mobile-divider" />
           <div className="home-mobile-prefs">
             <LanguageSelector compact />
-            <div className="home-nav-theme-toggle"><ThemeToggle /></div>
           </div>
           <div className="home-mobile-actions">
             <Link to="/" onClick={() => setMenuOpen(false)} className="home-btn-nav-cta" aria-label={t("homeNavHome")}>

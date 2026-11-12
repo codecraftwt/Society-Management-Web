@@ -1,4 +1,4 @@
-﻿
+
 
 // src/locales/mr.js
 const mr = {
@@ -2337,6 +2337,7 @@ const mr = {
   roleSocietyAdmin:        "सोसायटी प्रशासक",
   roleResident:            "रहिवासी",
   roleTenant:              "भाडेकरू",
+  roleFamilyMember:        "कुटुंब सदस्य",
   allRoles:                "सर्व भूमिका",
   selectTheRole:           "भूमिका निवडा",
   afLinkParking:           "पार्किंग स्लॉट लिंक करा (ऐच्छिक)",
@@ -2532,13 +2533,17 @@ const mr = {
   colVehicles:           "वाहने",
   colOccupants:          "रहिवासी",
   colNoUnit:             "कोणताही फ्लॅट नियुक्त नाही",
-  colSearchPlaceholder:  "नाव किंवा ईमेल शोधा…",
+  statusActive:          "सक्रिय",
+  statusInactive:        "निष्क्रिय",
+  colSearchPlaceholder:  "नाव, ईमेल, फोन, युनिट शोधा…",
   colShowing:            "दर्शवित आहे",
   colOf:                 "पैकी",
   colClearFilter:        "फिल्टर हटवा",
   colUnitDetails:        "युनिट तपशील",
   colOwner:              "मालक",
+  colRole:               "भूमिका",
   colTenant:             "भाडेकरू",
+  colFamilyMember:       "कुटुंब सदस्य",
   colNoTenant:           "कोणताही भाडेकरू नाही",
   allUnits:              "सर्व फ्लॅट/घर",
   floorLabel:            "मजला",
@@ -3271,8 +3276,9 @@ const mr = {
   menuNotices:      "नोटिसा",
   menuReports:      "अहवाल",
   menuVisitors:     "अतिथी",
-  menuMyProfile:    "माझे प्रोफाइल",
-  menuMyOverview:   "माझे अवलोकन",
+   menuMyProfile:    "माझे प्रोफाइल",
+   menuHousehold:    "माझे कुटुंब",
+   menuMyOverview:   "माझे अवलोकन",
   menuMyCollection: "माझा संग्रह",
   menuAmenities:    "सुविधा",
   menuPreApproval:  "पूर्व मंजुरी",

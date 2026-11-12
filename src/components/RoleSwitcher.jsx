@@ -68,6 +68,15 @@ export default function RoleSwitcher({ fullWidth = false }) {
   ];
   let roles = [...new Set(rawList.filter(Boolean))];
 
+  // RESIDENT and FAMILY_MEMBER access the same Resident panel. Collapse them so
+  // users never see a redundant dropdown switching between Resident and Family Member.
+  if (roles.includes("FAMILY_MEMBER")) {
+    roles = roles.filter((r) => r !== "FAMILY_MEMBER");
+    if (!roles.includes("RESIDENT")) {
+      roles.push("RESIDENT");
+    }
+  }
+
   // Some older sessions/API responses expose the committee role but omit the
   // resident panel even though the user has an active flat assignment. Keep
   // the selector usable for those sessions without granting residence to an

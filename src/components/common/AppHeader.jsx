@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { MdLogout, MdApartment, MdSettings, MdArrowBack, MdMenu, MdKeyboardArrowDown, MdCheck } from "react-icons/md";
-import ThemeToggle from "./ThemeToggle";
 import LanguageSelector from "./LanguageSelector";
 import NotificationBell from "./NotificationBell";
 import { useSidebar } from "../../context/SidebarContext";
@@ -19,7 +18,7 @@ export default function AppHeader({
   leftActions = null,
   onBack = null,
   showMenuButton = true,
-  showThemeToggle = true,
+  showThemeToggle = false,
   showLanguageSelector = true,
   showNotificationBell = true,
   settingsPath = null,
@@ -267,9 +266,8 @@ export default function AppHeader({
           <div className="header-control-group">{actions}</div>
         )}
 
-        {/* Global Preference Controls: Theme, Language & Notifications */}
+        {/* Global Preference Controls: Language & Notifications */}
         <div className="header-control-group">
-          {showThemeToggle && <ThemeToggle />}
           {showLanguageSelector && (
             <span className="hidden sm:inline-flex items-center">
               <LanguageSelector compact />

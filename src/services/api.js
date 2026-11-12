@@ -55,12 +55,23 @@ API.interceptors.request.use((config) => {
 API.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401 && localStorage.getItem("token")) {
+    const status = error.response?.status;
+    const data = error.response?.data;
+    const isInactiveOrRevoked =
+      data?.code === "ACCOUNT_INACTIVE" ||
+      data?.code === "ACCESS_REVOKED";
+
+    if ((status === 401 || isInactiveOrRevoked) && localStorage.getItem("token")) {
+      const msg = data?.message || "Access denied. Please connect to the admin or owner of the house.";
+      try {
+        sessionStorage.setItem("auth_logout_reason", msg);
+      } catch (_) {}
       localStorage.clear();
       window.location.href = "/login";
+      return Promise.reject(error);
     }
-    if (error.response?.status === 403) {
-      const msg = error.response?.data?.message || "You do not have permission to perform this action.";
+    if (status === 403) {
+      const msg = data?.message || "You do not have permission to perform this action.";
       customAlert.showUnauthorized(msg);
     }
     return Promise.reject(error);

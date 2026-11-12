@@ -262,6 +262,49 @@ export default function Notice() {
     });
   };
 
+  // Helper to format role/resident-type badges
+  const getRoleBadgeInfo = (u) => {
+    const rawType = String(u.resident_type || u.role || "").toUpperCase();
+    if (rawType === "FAMILY_MEMBER" || rawType === "FAMILY") {
+      return {
+        label: u.role_label || t("colFamilyMember", "Family Member"),
+        bg: "rgba(59,130,246,0.12)",
+        color: "#60a5fa",
+        border: "rgba(59,130,246,0.25)",
+      };
+    }
+    if (rawType === "TENANT") {
+      return {
+        label: t("colTenant", "Tenant"),
+        bg: "rgba(160,90,255,0.12)",
+        color: "var(--accent)",
+        border: "rgba(160,90,255,0.25)",
+      };
+    }
+    if (rawType === "COMMITTEE_MEMBER" || rawType === "COMMITTEE") {
+      return {
+        label: t("roleCommittee", "Committee Member"),
+        bg: "rgba(245,158,11,0.12)",
+        color: "#f59e0b",
+        border: "rgba(245,158,11,0.25)",
+      };
+    }
+    if (rawType === "SOCIETY_ADMIN") {
+      return {
+        label: t("roleSocietyAdmin", "Society Admin"),
+        bg: "rgba(239,68,68,0.12)",
+        color: "#ef4444",
+        border: "rgba(239,68,68,0.25)",
+      };
+    }
+    return {
+      label: t("colOwner", "Owner"),
+      bg: "rgba(16,185,129,0.12)",
+      color: "#34d399",
+      border: "rgba(16,185,129,0.25)",
+    };
+  };
+
   // History Table Columns
   const historyColumns = [
     {
@@ -275,11 +318,54 @@ export default function Notice() {
       ),
     },
     {
+      key: "role",
+      header: t("colRole", "Role"),
+      width: 140,
+      render: (u) => {
+        const badge = getRoleBadgeInfo(u);
+        return (
+          <span
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 4,
+              fontSize: 11,
+              fontWeight: 700,
+              padding: "3px 9px",
+              borderRadius: 999,
+              background: badge.bg,
+              color: badge.color,
+              border: `1px solid ${badge.border}`,
+              letterSpacing: "0.02em",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {badge.label}
+          </span>
+        );
+      },
+    },
+    {
       key: "flat_number",
       header: t("noticeHistFlatUnit", "Flat Unit"),
       width: 120,
       render: (u) => (
-        <span style={{ fontWeight: 650, color: "var(--text-primary)" }}>{u.flat_number || "—"}</span>
+        <span
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            fontSize: 11,
+            fontWeight: 700,
+            padding: "2px 8px",
+            borderRadius: 6,
+            background: "rgba(160,90,255,0.08)",
+            color: "var(--accent)",
+            border: "1px solid rgba(160,90,255,0.2)",
+            whiteSpace: "nowrap",
+          }}
+        >
+          {u.flat_number || "—"}
+        </span>
       ),
     },
     {

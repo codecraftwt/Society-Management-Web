@@ -54,7 +54,6 @@ import parkingFeatureImg from "../assets/Photos/Home/features/Parking.png";
 import visitorLogFeatureImg from "../assets/Photos/Home/features/visitor log.png";
 import financeFeatureImg from "../assets/Photos/Home/features/finance.png";
 
-import ThemeToggle from "../components/common/ThemeToggle";
 import LanguageSelector from "../components/common/LanguageSelector";
 import { useLang } from "../context/LanguageContext";
 import { AuthContext } from "../context/AuthContext";
@@ -289,8 +288,6 @@ const Home = () => {
           </div>
         </div>
       </nav>
-
-      <ThemeToggle variant="floating" />
 
       <main id="main-content">
         {/* ==========================================================================

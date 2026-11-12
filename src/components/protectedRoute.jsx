@@ -8,7 +8,7 @@ const DASHBOARD_ROUTES = {
   SOCIETY_ADMIN:    "/admin",
   COMMITTEE_MEMBER: "/admin",
   RESIDENT:         "/resident",
-  FAMILY_MEMBER:    "/family",
+  FAMILY_MEMBER:    "/resident",
   GUARD:            "/guard",
   ACCOUNTANT:       "/accountant",
 };

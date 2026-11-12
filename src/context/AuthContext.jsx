@@ -3,6 +3,7 @@ import { createContext, useContext, useState, useEffect, useCallback } from "rea
 import API from "../services/api";
 import { rejoinSocket, getSocket, connectSocket, disconnectSocket } from "../services/socket";
 import { resetEmergencyAlertStore } from "../hooks/useEmergencyAlerts";
+import { customAlert, ALERT_TYPES } from "./CustomAlertContext";
 
 export const AuthContext = createContext({
   user:               null,
@@ -179,6 +180,52 @@ export const AuthProvider = ({ children }) => {
     };
   }, [refreshPermissions, user?.id, user?.activeRole, user?.society_id]);
 
+  const logout = useCallback(() => {
+    localStorage.clear();
+    resetEmergencyAlertStore();
+    setUser(null);
+    setAvailableSocieties([]);
+    // Drop the authenticated connection — the socket handshake carries the JWT.
+    disconnectSocket();
+  }, []);
+
+  // Real-time listener for household access revocation
+  useEffect(() => {
+    const socket = getSocket();
+    if (!socket || !user) return;
+
+    const handleAccessRevoked = (payload) => {
+      if (payload?.userId && user?.id && Number(payload.userId) !== Number(user.id)) {
+        return;
+      }
+
+      const message =
+        payload?.message ||
+        "Your access has been removed by the primary resident. Please connect to the admin or owner of the house.";
+      const title = payload?.title || "Access Revoked";
+
+      const handleOk = () => {
+        logout();
+        window.location.href = "/login";
+      };
+
+      customAlert.show({
+        type: ALERT_TYPES?.UNAUTHORIZED || "unauthorized",
+        title,
+        message,
+        confirmText: "OK",
+        onConfirm: handleOk,
+        onCancel: handleOk,
+      });
+    };
+
+    socket.on("access_revoked", handleAccessRevoked);
+
+    return () => {
+      socket.off("access_revoked", handleAccessRevoked);
+    };
+  }, [user, logout]);
+
   const login = (userData, token) => {
     const normalised = normaliseUser(userData);
     if (String(normalised.activeRole || normalised.role || "").toUpperCase() !== "SUPER_ADMIN") {
@@ -194,15 +241,6 @@ export const AuthProvider = ({ children }) => {
     rejoinSocket();
     refreshPermissions();
     fetchSocieties();
-  };
-
-  const logout = () => {
-    localStorage.clear();
-    resetEmergencyAlertStore();
-    setUser(null);
-    setAvailableSocieties([]);
-    // Drop the authenticated connection — the socket handshake carries the JWT.
-    disconnectSocket();
   };
 
   const updateUser = useCallback((updatedFields) => {

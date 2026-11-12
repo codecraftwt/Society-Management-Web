@@ -27,7 +27,6 @@ import {
   MdCleaningServices,
 } from "react-icons/md";
 import NotificationBell from "../../components/common/NotificationBell";
-import ThemeToggle from "../../components/common/ThemeToggle";
 import AdminEmergencyModal from "../../components/admin/AdminEmergencyModal";
 import SOSModal from "../../components/emergency/SOSModal";
 import { AuthContext } from "../../context/AuthContext";

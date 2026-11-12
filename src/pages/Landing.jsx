@@ -1,7 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { APP_NAME } from "../constants/app";
 import { motion } from "framer-motion";
-import ThemeToggle from "../components/common/ThemeToggle";
 import LanguageSelector from "../components/common/LanguageSelector";
 import { useLang } from "../context/LanguageContext";
 
@@ -22,10 +21,9 @@ const Landing = () => {
           {APP_NAME}
         </h1>
 
-        {/* Right: toggle + login — gap-3, no overlap */}
+        {/* Right: language + login — gap-3, no overlap */}
         <div className="flex items-center gap-2 sm:gap-3">
           <LanguageSelector compact />
-          <ThemeToggle />
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}

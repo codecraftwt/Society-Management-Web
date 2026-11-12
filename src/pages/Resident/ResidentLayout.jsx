@@ -1,380 +1,382 @@
-import { useState, useContext, useEffect } from "react";
-import { createPortal } from "react-dom";
-import { Outlet, useNavigate } from "react-router-dom";
-import { AuthContext } from "../../context/AuthContext";
-import { LanguageProvider, useLang } from "../../context/LanguageContext";
-import API from "../../services/api";
-import { FaParking, FaCar } from "react-icons/fa";
-import NotificationBell from "../../components/common/NotificationBell";
-import ThemeToggle from "../../components/common/ThemeToggle";
-import LanguageSelector from "../../components/common/LanguageSelector";
-import {
-  MdMenu,
-  MdPerson,
-  MdReceipt,
-  MdReportProblem,
-  MdCampaign,
-  MdPeople,
-  MdLogout,
-  MdAssignment,
-  MdDashboard,
-  MdWarning,
-  MdVerified,
-  MdOutlineCardGiftcard,
-  MdHome,
-  MdRefresh,
-  MdEmergency,
-  MdSpaceDashboard,
-} from "react-icons/md";
-import ResidentEmergencyModal from "../../components/resident/ResidentEmergencyModal";
-import SOSModal from "../../components/emergency/SOSModal";
-import useEmergencyAlerts from "../../hooks/useEmergencyAlerts";
-import { useSidebar } from "../../context/SidebarContext";
-import Sidebar from "../../components/common/Sidebar";
-import AppHeader from "../../components/common/AppHeader";
-import { useRoleTheme } from "../../context/ThemeContext";
-import RoleSwitcher from "../../components/RoleSwitcher";
-import "../Guard/Guard.css";
-import "./Resident.css";
-
-function ResidentLayoutInner() {
-  const { user } = useContext(AuthContext);
-  const { t } = useLang();
-  useRoleTheme();
-  const navigate = useNavigate();
-  const { collapsed } = useSidebar();
-
-  const { alerts, refresh: refreshEmergencies } = useEmergencyAlerts();
-  const isFamilyMember = user?.role === "FAMILY_MEMBER";
-  const base = isFamilyMember ? "/family" : "/resident";
-  const [showEmergency, setShowEmergency] = useState(false);
-  const [showSOS, setShowSOS] = useState(false);
-  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
-  const [reloadKey, setReloadKey] = useState(0);
-  const [hasOwnedFlat, setHasOwnedFlat] = useState(user?.resident_type === "OWNER");
-
-  useEffect(() => {
-    if (isFamilyMember) return;
-    let active = true;
-    API.get("/users/get-flat")
-      .then((res) => {
-        const flats = Array.isArray(res.data) ? res.data : [];
-        if (active) {
-          setHasOwnedFlat(flats.some((flat) => flat.role === "OWNER" || flat.isAdmin));
-        }
-      })
-      .catch(() => {
-        if (active) setHasOwnedFlat(user?.resident_type === "OWNER");
-      });
-    return () => { active = false; };
-  }, [isFamilyMember, user?.resident_type]);
-
-  /* Panel label */
-  const panelLabel = isFamilyMember
-    ? t("familyPanel") || "Family Panel"
-    : t("residentPanel") || "Resident Panel";
-
-  /* Menus with non-breaking grouping metadata */
-  const residentMenu = [
-    {
-      label: t("menuDashboard"),
-      path: `${base}`,
-      icon: MdDashboard,
-      group: "OVERVIEW",
-    },
-    ...(hasOwnedFlat
-      ? [
-          {
-            label: t("menuMyProperties"),
-            path: `${base}/my-properties`,
-            icon: MdHome,
-            group: "PROPERTY & BILLS",
-          },
-        ]
-      : []),
-    ...(hasOwnedFlat
-      ? [
-          {
-            label: t("menuBills"),
-            path: `${base}/bills`,
-            icon: MdReceipt,
-            group: "PROPERTY & BILLS",
-          },
-        ]
-      : []),
-    {
-      label: t("menuComplaints"),
-      path: `${base}/complaints`,
-      icon: MdReportProblem,
-      group: "ACTIVITY & VISITORS",
-    },
-    {
-      label: t("menuNotices"),
-      path: `${base}/notices`,
-      icon: MdCampaign,
-      group: "ACTIVITY & VISITORS",
-    },
-    {
-      label: t("menuEvents", "Events"),
-      path: `${base}/events`,
-      icon: MdCampaign,
-      group: "ACTIVITY & VISITORS",
-    },
-    {
-      label: t("menuReports"),
-      path: `${base}/reports`,
-      icon: MdAssignment,
-      group: "ACTIVITY & VISITORS",
-    },
-    {
-      label: t("menuVisitors"),
-      path: `${base}/visitors`,
-      icon: MdPeople,
-      group: "ACTIVITY & VISITORS",
-    },
-    {
-      label: t("menuPreApproval"),
-      path: `${base}/preapproval`,
-      icon: MdVerified,
-      group: "ACTIVITY & VISITORS",
-    },
-    {
-      label: t("menuParking"),
-      path: `${base}/parking`,
-      icon: FaParking,
-      group: "ACTIVITY & VISITORS",
-    },
-    {
-      label: t("menuMyVehicles") || "My Vehicles",
-      path: `${base}/my-vehicles`,
-      icon: FaCar,
-      group: "ACTIVITY & VISITORS",
-    },
-    {
-      label: t("menuMyOverview"),
-      path: `${base}/overview`,
-      icon: MdSpaceDashboard,
-      group: "SERVICES & PROFILE",
-    },
-    {
-      label: t("menuMyCollection"),
-      path: `${base}/my-collection`,
-      icon: MdOutlineCardGiftcard,
-      group: "SERVICES & PROFILE",
-    },
-    {
-      label: t("menuAmenities"),
-      path: `${base}/amenities`,
-      icon: MdVerified,
-      group: "SERVICES & PROFILE",
-    },
-    {
-      label: t("menuDocuments"),
-      path: `${base}/society_documents`,
-      icon: MdVerified,
-      group: "SERVICES & PROFILE",
-    },
-    {
-      label: t("menuDirectory"),
-      path: `${base}/directory`,
-      icon: MdPeople,
-      group: "SERVICES & PROFILE",
-    },
-  ];
-
-  const familyMenu = [
-    {
-      label: t("menuDashboard"),
-      path: `${base}/profile`,
-      icon: MdDashboard,
-      group: "OVERVIEW",
-    },
-    {
-      label: t("menuNotices"),
-      path: `${base}/notices`,
-      icon: MdCampaign,
-      group: "ACTIVITY & NOTICES",
-    },
-    ...(user?.resident_type === "OWNER"
-      ? [
-          {
-            label: t("menuBills"),
-            path: `${base}/bills`,
-            icon: MdReceipt,
-            group: "BILLS",
-          },
-        ]
-      : []),
-    {
-      label: t("menuComplaints"),
-      path: `${base}/complaints`,
-      icon: MdReportProblem,
-      group: "ACTIVITY & NOTICES",
-    },
-    {
-      label: t("menuVisitors"),
-      path: `${base}/visitors`,
-      icon: MdPeople,
-      group: "ACTIVITY & NOTICES",
-    },
-    {
-      label: t("menuDirectory"),
-      path: `${base}/directory`,
-      icon: MdPeople,
-      group: "ACTIVITY & NOTICES",
-    },
-    {
-      label: t("menuMyOverview"),
-      path: `${base}/overview`,
-      icon: MdSpaceDashboard,
-      group: "PROFILE",
-    },
-  ];
-
-  const menu = isFamilyMember ? familyMenu : residentMenu;
-
-  /* Handlers */
-  const confirmLogout = () => {
-    localStorage.clear();
-    navigate("/login", { replace: true });
-  };
-
-  return (
-    <div
-      className="h-screen overflow-hidden bg-app flex resident-root"
-      style={{ color: "var(--text-primary)" }}
-    >
-      {/* ── REUSABLE SIDEBAR ── */}
-      <Sidebar
-        menu={menu}
-        brandTitle={<span className="text-accent">{panelLabel}</span>}
-        brandSubtitle={user?.society_name || (isFamilyMember ? t("sbViewFamily") : t("sbViewResident"))}
-        base={base}
-        drawerExtra={<RoleSwitcher fullWidth />}
-      />
-
-      {/* ── MAIN CONTENT ── */}
-      <div className="main-content-layout min-w-0">
-        <AppHeader
-          title={null}
-          subtitle={null}
-          societyName={user?.society_name || user?.society?.name || null}
-          actions={
-            <>
-              <button
-                onClick={() => setReloadKey(k => k + 1)}
-                className="header-action-btn"
-                title="Reload page"
-                aria-label="Reload page"
-              >
-                <MdRefresh size={18} />
-              </button>
-              <RoleSwitcher />
-              {/* SOS button */}
-              <button
-                onClick={() => setShowSOS(true)}
-                className="header-sos-btn"
-                title="Raise an SOS alert to the whole society"
-              >
-                <span className="header-sos-pulse-icon"><MdEmergency size={15} /></span>
-                <span className="hidden sm:inline">SOS</span>
-              </button>
-
-              {alerts.length > 0 && (
-                <button
-                  onClick={() => setShowEmergency(true)}
-                  className="header-action-btn relative bg-red-600! border-red-500! text-white! shadow-md shadow-red-500/30 animate-pulse"
-                  title={t("adminActiveEmergencies")}
-                >
-                  <MdWarning size={18} />
-                  <span className="header-sos-count absolute -top-1 -right-1 bg-white text-red-600 text-[10px] font-bold min-w-4.5 h-4.5 flex items-center justify-center rounded-full leading-none px-1">
-                    {alerts.length}
-                  </span>
-                </button>
-              )}
-            </>
-          }
-          onLogout={() => setShowLogoutConfirm(true)}
-          settingsPath={`${base}/settings`}
-        />
-
-        {/* PAGE CONTENT */}
-        <main className="flex-1 overflow-y-auto overflow-x-clip scrollbar-hide py-4 sm:py-6 lg:py-8 px-3 sm:px-4 lg:px-6">
-          <Outlet key={reloadKey} />
-        </main>
-      </div>
-
-      {/* LOGOUT MODAL */}
-      {showLogoutConfirm &&
-        createPortal(
-          <div
-            className="fixed inset-0 flex items-center justify-center animate-fadeIn"
-            style={{
-              background: "var(--overlay-bg)",
-              backdropFilter: "blur(6px)",
-              zIndex: 1200,
-            }}
-            onClick={() => setShowLogoutConfirm(false)}
-          >
-            <div
-              className="acct-logout-card p-8 rounded-2xl w-[90%] max-w-sm text-center animate-scaleIn"
-              style={{
-                background: "var(--modal-bg)",
-                border: "1.5px solid var(--glass-border)",
-                boxShadow: "var(--shadow-glass)",
-              }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <h2
-                className="text-lg font-semibold mb-2"
-                style={{ color: "var(--text-primary)" }}
-              >
-                {t("confirmLogout")}
-              </h2>
-              <p className="text-secondary text-sm mb-6">
-                {t("confirmLogoutMsg")}
-              </p>
-              <div className="flex justify-center gap-4">
-                <button onClick={confirmLogout} className="btn-danger">
-                  {t("yesLogout")}
-                </button>
-                <button
-                  onClick={() => setShowLogoutConfirm(false)}
-                  className="btn-primary"
-                >
-                  {t("cancel")}
-                </button>
-              </div>
-            </div>
-          </div>,
-          document.body
-        )}
-
-      {/* EMERGENCY MODAL */}
-      <ResidentEmergencyModal
-        alerts={alerts}
-        isOpen={showEmergency}
-        onClose={() => setShowEmergency(false)}
-      />
-
-      {/* SOS MODAL */}
-      <SOSModal
-        key={String(showSOS)}
-        isOpen={showSOS}
-        onClose={() => setShowSOS(false)}
-        onRefresh={refreshEmergencies}
-        alerts={alerts}
-        senderLabel="sosSenderResident"
-        modalTitle="sosResidentSOSTitle"
-      />
-    </div>
-  );
-}
-
-export default function ResidentLayout() {
-  return (
-    <LanguageProvider role="resident">
-      <ResidentLayoutInner />
-    </LanguageProvider>
-  );
-}
+import { useState, useContext, useEffect } from "react";
+import { createPortal } from "react-dom";
+import { Outlet, useNavigate, useLocation } from "react-router-dom";
+import { AuthContext } from "../../context/AuthContext";
+import { LanguageProvider, useLang } from "../../context/LanguageContext";
+import API from "../../services/api";
+import { FaParking, FaCar } from "react-icons/fa";
+import NotificationBell from "../../components/common/NotificationBell";
+import LanguageSelector from "../../components/common/LanguageSelector";
+import {
+  MdMenu,
+  MdPerson,
+  MdReceipt,
+  MdReportProblem,
+  MdCampaign,
+  MdPeople,
+  MdLogout,
+  MdAssignment,
+  MdDashboard,
+  MdWarning,
+  MdVerified,
+  MdOutlineCardGiftcard,
+  MdHome,
+  MdRefresh,
+  MdEmergency,
+  MdSpaceDashboard,
+  MdFamilyRestroom,
+} from "react-icons/md";
+import ResidentEmergencyModal from "../../components/resident/ResidentEmergencyModal";
+import SOSModal from "../../components/emergency/SOSModal";
+import useEmergencyAlerts from "../../hooks/useEmergencyAlerts";
+import { useSidebar } from "../../context/SidebarContext";
+import Sidebar from "../../components/common/Sidebar";
+import AppHeader from "../../components/common/AppHeader";
+import { useRoleTheme } from "../../context/ThemeContext";
+import RoleSwitcher from "../../components/RoleSwitcher";
+import "../Guard/Guard.css";
+import "./Resident.css";
+
+function ResidentLayoutInner() {
+  const { user } = useContext(AuthContext);
+  const { t } = useLang();
+  useRoleTheme();
+  const navigate = useNavigate();
+  const { collapsed } = useSidebar();
+
+  const { alerts, refresh: refreshEmergencies } = useEmergencyAlerts();
+  const location = useLocation();
+  const isFamilyMember = user?.role === "FAMILY_MEMBER";
+  const base = location.pathname.startsWith("/family") ? "/family" : "/resident";
+  const [showEmergency, setShowEmergency] = useState(false);
+  const [showSOS, setShowSOS] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
+  const [hasOwnedFlat, setHasOwnedFlat] = useState(user?.resident_type === "OWNER" || user?.resident_type === "TENANT");
+  const [isFamilyAdmin, setIsFamilyAdmin] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    API.get("/users/get-flat")
+      .then((res) => {
+        const flats = Array.isArray(res.data) ? res.data : [];
+        if (active) {
+          setHasOwnedFlat(flats.length > 0 || user?.resident_type === "OWNER" || Boolean(user?.flat_id));
+          setIsFamilyAdmin(flats.some((flat) => Boolean(flat.isAdmin)));
+        }
+      })
+      .catch(() => {
+        if (active) setHasOwnedFlat(user?.resident_type === "OWNER");
+      });
+    return () => { active = false; };
+  }, [user?.resident_type]);
+
+  /* Panel label */
+  const panelLabel = t("residentPanel") || "Resident Panel";
+
+  /* Menus with non-breaking grouping metadata */
+  const residentMenu = [
+    {
+      label: t("menuDashboard"),
+      path: `${base}`,
+      icon: MdDashboard,
+      group: "OVERVIEW",
+    },
+    {
+      label: t("menuMyProperties") || "My Properties",
+      path: `${base}/my-properties`,
+      icon: MdHome,
+      group: "PROPERTY & BILLS",
+    },
+    {
+      label: t("menuBills"),
+      path: `${base}/bills`,
+      icon: MdReceipt,
+      group: "PROPERTY & BILLS",
+    },
+    {
+      label: t("menuComplaints"),
+      path: `${base}/complaints`,
+      icon: MdReportProblem,
+      group: "ACTIVITY & VISITORS",
+    },
+    {
+      label: t("menuNotices"),
+      path: `${base}/notices`,
+      icon: MdCampaign,
+      group: "ACTIVITY & VISITORS",
+    },
+    {
+      label: t("menuEvents", "Events"),
+      path: `${base}/events`,
+      icon: MdCampaign,
+      group: "ACTIVITY & VISITORS",
+    },
+    {
+      label: t("menuReports"),
+      path: `${base}/reports`,
+      icon: MdAssignment,
+      group: "ACTIVITY & VISITORS",
+    },
+    {
+      label: t("menuVisitors"),
+      path: `${base}/visitors`,
+      icon: MdPeople,
+      group: "ACTIVITY & VISITORS",
+    },
+    {
+      label: t("menuPreApproval"),
+      path: `${base}/preapproval`,
+      icon: MdVerified,
+      group: "ACTIVITY & VISITORS",
+    },
+    {
+      label: t("menuParking"),
+      path: `${base}/parking`,
+      icon: FaParking,
+      group: "ACTIVITY & VISITORS",
+    },
+    {
+      label: t("menuMyVehicles") || "My Vehicles",
+      path: `${base}/my-vehicles`,
+      icon: FaCar,
+      group: "ACTIVITY & VISITORS",
+    },
+    ...(true
+      ? [
+          {
+            label: t("menuHousehold") || "My Household",
+            path: `${base}/my-household`,
+            icon: MdFamilyRestroom,
+            group: "SERVICES & PROFILE",
+          },
+        ]
+      : []),
+    {
+      label: t("menuMyOverview"),
+      path: `${base}/overview`,
+      icon: MdSpaceDashboard,
+      group: "SERVICES & PROFILE",
+    },
+    {
+      label: t("menuMyCollection"),
+      path: `${base}/my-collection`,
+      icon: MdOutlineCardGiftcard,
+      group: "SERVICES & PROFILE",
+    },
+    {
+      label: t("menuAmenities"),
+      path: `${base}/amenities`,
+      icon: MdVerified,
+      group: "SERVICES & PROFILE",
+    },
+    {
+      label: t("menuDocuments"),
+      path: `${base}/society_documents`,
+      icon: MdVerified,
+      group: "SERVICES & PROFILE",
+    },
+    {
+      label: t("menuDirectory"),
+      path: `${base}/directory`,
+      icon: MdPeople,
+      group: "SERVICES & PROFILE",
+    },
+  ];
+
+  const familyMenu = [
+    {
+      label: t("menuDashboard"),
+      path: `${base}/profile`,
+      icon: MdDashboard,
+      group: "OVERVIEW",
+    },
+    {
+      label: t("menuNotices"),
+      path: `${base}/notices`,
+      icon: MdCampaign,
+      group: "ACTIVITY & NOTICES",
+    },
+    ...(user?.resident_type === "OWNER"
+      ? [
+          {
+            label: t("menuBills"),
+            path: `${base}/bills`,
+            icon: MdReceipt,
+            group: "BILLS",
+          },
+        ]
+      : []),
+    {
+      label: t("menuComplaints"),
+      path: `${base}/complaints`,
+      icon: MdReportProblem,
+      group: "ACTIVITY & NOTICES",
+    },
+    {
+      label: t("menuVisitors"),
+      path: `${base}/visitors`,
+      icon: MdPeople,
+      group: "ACTIVITY & NOTICES",
+    },
+    {
+      label: t("menuDirectory"),
+      path: `${base}/directory`,
+      icon: MdPeople,
+      group: "ACTIVITY & NOTICES",
+    },
+    {
+      label: t("menuMyOverview"),
+      path: `${base}/overview`,
+      icon: MdSpaceDashboard,
+      group: "PROFILE",
+    },
+  ];
+
+  const menu = residentMenu;
+
+  /* Handlers */
+  const confirmLogout = () => {
+    localStorage.clear();
+    navigate("/login", { replace: true });
+  };
+
+  return (
+    <div
+      className="h-screen overflow-hidden bg-app flex resident-root"
+      style={{ color: "var(--text-primary)" }}
+    >
+      {/* ── REUSABLE SIDEBAR ── */}
+      <Sidebar
+        menu={menu}
+        brandTitle={<span className="text-accent">{panelLabel}</span>}
+        brandSubtitle={user?.society_name || (isFamilyMember ? t("sbViewFamily") : t("sbViewResident"))}
+        base={base}
+        drawerExtra={<RoleSwitcher fullWidth />}
+      />
+
+      {/* ── MAIN CONTENT ── */}
+      <div className="main-content-layout min-w-0">
+        <AppHeader
+          title={null}
+          subtitle={null}
+          societyName={user?.society_name || user?.society?.name || null}
+          actions={
+            <>
+              <button
+                onClick={() => setReloadKey(k => k + 1)}
+                className="header-action-btn"
+                title="Reload page"
+                aria-label="Reload page"
+              >
+                <MdRefresh size={18} />
+              </button>
+              <RoleSwitcher />
+              {/* SOS button */}
+              <button
+                onClick={() => setShowSOS(true)}
+                className="header-sos-btn"
+                title="Raise an SOS alert to the whole society"
+              >
+                <span className="header-sos-pulse-icon"><MdEmergency size={15} /></span>
+                <span className="hidden sm:inline">SOS</span>
+              </button>
+
+              {alerts.length > 0 && (
+                <button
+                  onClick={() => setShowEmergency(true)}
+                  className="header-action-btn relative bg-red-600! border-red-500! text-white! shadow-md shadow-red-500/30 animate-pulse"
+                  title={t("adminActiveEmergencies")}
+                >
+                  <MdWarning size={18} />
+                  <span className="header-sos-count absolute -top-1 -right-1 bg-white text-red-600 text-[10px] font-bold min-w-4.5 h-4.5 flex items-center justify-center rounded-full leading-none px-1">
+                    {alerts.length}
+                  </span>
+                </button>
+              )}
+            </>
+          }
+          onLogout={() => setShowLogoutConfirm(true)}
+          settingsPath={`${base}/settings`}
+        />
+
+        {/* PAGE CONTENT */}
+        <main className="flex-1 overflow-y-auto overflow-x-clip scrollbar-hide py-4 sm:py-6 lg:py-8 px-3 sm:px-4 lg:px-6">
+          <Outlet key={reloadKey} />
+        </main>
+      </div>
+
+      {/* LOGOUT MODAL */}
+      {showLogoutConfirm &&
+        createPortal(
+          <div
+            className="fixed inset-0 flex items-center justify-center animate-fadeIn"
+            style={{
+              background: "var(--overlay-bg)",
+              backdropFilter: "blur(6px)",
+              zIndex: 1200,
+            }}
+            onClick={() => setShowLogoutConfirm(false)}
+          >
+            <div
+              className="acct-logout-card p-8 rounded-2xl w-[90%] max-w-sm text-center animate-scaleIn"
+              style={{
+                background: "var(--modal-bg)",
+                border: "1.5px solid var(--glass-border)",
+                boxShadow: "var(--shadow-glass)",
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h2
+                className="text-lg font-semibold mb-2"
+                style={{ color: "var(--text-primary)" }}
+              >
+                {t("confirmLogout")}
+              </h2>
+              <p className="text-secondary text-sm mb-6">
+                {t("confirmLogoutMsg")}
+              </p>
+              <div className="flex justify-center gap-4">
+                <button onClick={confirmLogout} className="btn-danger">
+                  {t("yesLogout")}
+                </button>
+                <button
+                  onClick={() => setShowLogoutConfirm(false)}
+                  className="btn-primary"
+                >
+                  {t("cancel")}
+                </button>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
+
+      {/* EMERGENCY MODAL */}
+      <ResidentEmergencyModal
+        alerts={alerts}
+        isOpen={showEmergency}
+        onClose={() => setShowEmergency(false)}
+      />
+
+      {/* SOS MODAL */}
+      <SOSModal
+        key={String(showSOS)}
+        isOpen={showSOS}
+        onClose={() => setShowSOS(false)}
+        onRefresh={refreshEmergencies}
+        alerts={alerts}
+        senderLabel="sosSenderResident"
+        modalTitle="sosResidentSOSTitle"
+      />
+    </div>
+  );
+}
+
+export default function ResidentLayout() {
+  return (
+    <LanguageProvider role="resident">
+      <ResidentLayoutInner />
+    </LanguageProvider>
+  );
+}
