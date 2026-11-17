@@ -287,7 +287,7 @@ export default function Sidebar({
                   className="fixed left-20 z-50 bg-card border border-glass-border rounded-xl p-2 shadow-2xl min-w-52 space-y-1 animate-fadeIn"
                   style={{ top: "80px" }}
                 >
-                  <div className="px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-accent border-b border-glass-border mb-1">
+                  <div className="px-3 py-1.5 text-[12px] font-bold uppercase tracking-wider text-accent border-b border-glass-border mb-1">
                     {label}
                   </div>
                   {children.map((child) => {
@@ -305,13 +305,13 @@ export default function Sidebar({
                           setActiveFlyoutItem(null);
                           closeMobile();
                         }}
-                        className={`sidebar-link sidebar-sublink flex items-center gap-3 px-3 py-2 rounded-lg text-[11px] font-medium transition-all ${
+                        className={`sidebar-link sidebar-sublink flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium transition-all ${
                           childActive
                             ? "active bg-accent text-white font-bold"
                             : "text-secondary hover:text-primary hover:bg-accent/5"
                         }`}
                       >
-                        <ChildIcon size={16} />
+                        <ChildIcon size={17} />
                         <span className="leading-tight wrap-break-word">{child.label}</span>
                       </Link>
                     );
@@ -354,11 +354,11 @@ export default function Sidebar({
         } ${
           isMobileDrawer
             ? isSub
-              ? "gap-3 px-3 py-2 text-[13px]"
-              : "gap-3.5 px-3.5 py-3 text-[15px]"
+              ? "gap-3 px-3 py-2 text-[14px]"
+              : "gap-3.5 px-3.5 py-3 text-[16px]"
             : isSub
-              ? "gap-2.5 px-3 py-1.5 text-[11px]"
-              : "gap-3 px-3.5 py-2.5 text-xs"
+              ? "gap-2.5 px-3 py-2 text-[13px]"
+              : "gap-3 px-3.5 py-2.5 text-[14px]"
         } ${
           active
             ? "active bg-accent text-white font-semibold"
@@ -366,7 +366,7 @@ export default function Sidebar({
         }`}
       >
         <Icon
-          size={isMobileDrawer ? (isSub ? 18 : 22) : isSub ? 15 : 18}
+          size={isMobileDrawer ? (isSub ? 19 : 22) : isSub ? 16 : 19}
           className={active ? "text-white" : "text-secondary"}
         />
         <span className="leading-tight wrap-break-word">{label}</span>
@@ -403,11 +403,11 @@ export default function Sidebar({
                   type="button"
                   onClick={() => toggleGroupExpand(groupName)}
                   aria-expanded={isGroupOpen}
-                  className={`w-full flex items-center justify-between px-3 font-extrabold tracking-wider text-muted uppercase hover:text-primary transition-colors group/head cursor-pointer select-none ${isMobileDrawer ? "py-1.5 text-[12px]" : "py-1.5 text-[11px]"}`}
+                  className={`w-full flex items-center justify-between px-3 font-extrabold tracking-wider text-muted uppercase hover:text-primary transition-colors group/head cursor-pointer select-none ${isMobileDrawer ? "py-1.5 text-[13px]" : "py-1.5 text-[12px]"}`}
                 >
                   <span className="leading-tight wrap-break-word normal-case tracking-wide">{groupLabel(groupName)}</span>
                   <MdExpandMore
-                    size={14}
+                    size={15}
                     className={`transition-transform duration-200 ${
                       isGroupOpen ? "rotate-0" : "-rotate-90"
                     } ${hasActiveGroupItem ? "text-accent" : ""}`}

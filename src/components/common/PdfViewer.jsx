@@ -18,6 +18,10 @@ import {
 pdfjs.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
 
 const KEYFRAMES = `
+  @keyframes pdfBackdropIn {
+    from { opacity: 0; transform: scale(0.98); }
+    to   { opacity: 1; transform: scale(1); }
+  }
   @keyframes pdfPageIn {
     from { opacity: 0; transform: translateY(8px) scale(0.99); }
     to   { opacity: 1; transform: translateY(0) scale(1); }
@@ -85,6 +89,16 @@ export default function PdfViewer({ url, name, onClose }) {
   const [docUrl, setDocUrl]         = useState(url);
   const [retried, setRetried]       = useState(false);
   const canvasRef = useRef(null);
+  /* Escape key listener */
+  useEffect(() => {
+    if (!onClose) return;
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onClose]);
+
 
   /* Keep docUrl in sync if url prop changes */
   useEffect(() => {

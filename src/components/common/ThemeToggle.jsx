@@ -54,7 +54,7 @@ export default function ThemeToggle({ variant = "switch" }) {
         title={nextThemeLabel}
       >
         <span className="theme-toggle__floating-icon" aria-hidden="true">
-          {isDark ? <SunIcon /> : <MoonIcon />}
+          {isDark ? <MoonIcon /> : <SunIcon />}
         </span>
       </button>
     );

@@ -1,4 +1,4 @@
-import { useState, useContext, useEffect } from "react";
+import { useState, useContext, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate, Link } from "react-router-dom";
 import API from "../services/api";
@@ -18,11 +18,16 @@ import {
   HiOutlineArrowLeft,
   HiOutlineArrowRight,
   HiOutlinePhone,
-  HiBars3,
-  HiOutlineXMark,
+  HiOutlineUsers,
+  HiOutlineCreditCard,
+  HiOutlineEnvelope,
+  HiOutlineLockClosed as Hi2LockClosed,
+  HiOutlineShieldCheck as Hi2ShieldCheck,
+  HiArrowRightOnRectangle,
+  HiOutlineGlobeAlt,
+  HiOutlineChevronDown,
 } from "react-icons/hi2";
 import compLogoImg from "../assets/Photos/Home/comp_logo.png";
-import LanguageSelector from "../components/common/LanguageSelector";
 import "../home/Home.css";
 import {
   MdHome,
@@ -122,17 +127,20 @@ function RejectionModal({ details, onClose, t }) {
   );
 }
 
-function ApprovalPendingModal({ onClose }) {
+function ApprovalPendingModal({ onClose, t = (k, fb) => fb || k }) {
   return (
     <div className="approval-pending-overlay" role="status" aria-live="polite">
       <div className="approval-pending-card animate-scaleIn">
         <div className="approval-pending-accent" />
+        <div className="login-center-logo-box" style={{ margin: "4px auto 18px", boxShadow: "0 10px 24px rgba(0,0,0,0.06)" }}>
+          <img src={compLogoImg} alt="Logo" className="login-center-logo-img" />
+        </div>
         <div className="approval-pending-icon">⏳</div>
-        <span className="approval-pending-badge">ACCOUNT REVIEW</span>
-        <h2>Registration Pending</h2>
-        <p>Your registration is waiting for confirmation from the society admin. You will be able to log in after approval.</p>
-        <div className="approval-pending-status"><span /> Awaiting admin confirmation</div>
-        <button type="button" className="button1" onClick={onClose}>Back to Login</button>
+        <span className="approval-pending-badge">{t("authAccountReview") || "ACCOUNT REVIEW"}</span>
+        <h2>{t("authRegPendingTitle") || "Registration Pending"}</h2>
+        <p>{t("authRegPendingDesc") || "Your registration is waiting for confirmation from the society admin. You will be able to log in after approval."}</p>
+        <div className="approval-pending-status"><span /> {t("authAwaitingAdminConfirm") || "Awaiting admin confirmation"}</div>
+        <button type="button" className="button1" onClick={onClose}>{t("authBackToLogin") || "Back to Login"}</button>
       </div>
     </div>
   );
@@ -141,13 +149,25 @@ function ApprovalPendingModal({ onClose }) {
 function Login() {
   const navigate = useNavigate();
   const { login, switchRole } = useContext(AuthContext);
-  const { t } = useLang();
-  const [menuOpen, setMenuOpen] = useState(false);
+  const { t, lang, changeLang, LANGUAGES } = useLang();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [loginLoading, setLoginLoading] = useState(false);
+  const [langOpen, setLangOpen] = useState(false);
+  const langRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (langRef.current && !langRef.current.contains(e.target)) {
+        setLangOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const [panelPrompt, setPanelPrompt] = useState(null);
   const [multiSocietyPrompt, setMultiSocietyPrompt] = useState(null);
@@ -443,80 +463,113 @@ function Login() {
 
   return (
     <div className="login-page-container">
-      <nav className={`home-navbar home-navbar--scrolled ${menuOpen ? "home-navbar--menu-open" : ""}`}>
-        <div className="home-container">
-          <div className="home-navbar-inner">
-            <Link to="/" className="home-brand-logo" aria-label={t("homeBrandHomeLabel")}>
-              <img src={compLogoImg} alt={t("homeCompanyLogoAlt")} className="home-brand-comp-logo" />
-              <div className="home-brand-divider" aria-hidden="true" />
-              <div className="home-brand-text">
-                <div className="home-brand-title">{t("homeBrandTitle")}</div>
-                <div className="home-brand-subtitle">{t("homeBrandSubtitle")}</div>
-              </div>
-            </Link>
-            <ul className="home-nav-links">
-              <li className="home-nav-item"><Link to="/#features" className="home-nav-link">{t("homeNavFeatures")}</Link></li>
-              <li className="home-nav-item"><Link to="/#how-it-works" className="home-nav-link">{t("homeNavHowItWorks")}</Link></li>
-              <li className="home-nav-item"><Link to="/#roles" className="home-nav-link">{t("homeNavUserRoles")}</Link></li>
-            </ul>
-            <div className="home-nav-actions">
-              <LanguageSelector compact />
-              <Link to="/" className="home-btn-nav-cta"><span>{t("homeNavHome")}</span><HiOutlineArrowRight className="home-nav-btn-arrow" /></Link>
-            </div>
-            <button className="home-mobile-burger" onClick={() => setMenuOpen((open) => !open)} aria-label={t("homeToggleMenu")} aria-expanded={menuOpen}>
-              {menuOpen ? <HiOutlineXMark /> : <HiBars3 />}
-            </button>
-          </div>
-        </div>
-        <div className={`home-mobile-menu ${menuOpen ? "active" : ""}`}>
-          <Link to="/#features" className="home-mobile-link" onClick={() => setMenuOpen(false)}>{t("homeNavFeatures")}</Link>
-          <Link to="/#how-it-works" className="home-mobile-link" onClick={() => setMenuOpen(false)}>{t("homeNavHowItWorks")}</Link>
-          <Link to="/#roles" className="home-mobile-link" onClick={() => setMenuOpen(false)}>{t("homeNavUserRoles")}</Link>
-          <div className="home-mobile-divider" />
-          <div className="home-mobile-prefs"><LanguageSelector compact /></div>
-          <div className="home-mobile-actions"><Link to="/" className="home-btn-nav-cta" onClick={() => setMenuOpen(false)}>{t("homeNavHome")}</Link></div>
-        </div>
-      </nav>
       <main className="login-auth-card">
       <section className="login-hero-panel">
         <img src={loginHeroImg} alt="" className="login-hero-image" />
         <div className="login-hero-shade" aria-hidden="true" />
         <div className="login-hero-brand">
-          <Link to="/" className="login-hero-brand-link" aria-label={t("homeBrandHomeLabel")}>
-            <img src={compLogoImg} alt={t("homeCompanyLogoAlt")} />
+          <Link to="/" className="login-hero-brand-link" aria-label={t("homeBrandHomeLabel") || "Home"}>
+            <img src={compLogoImg} alt={t("homeCompanyLogoAlt") || "Logo"} className="login-hero-logo-clean" />
+            <div className="login-hero-brand-divider" aria-hidden="true" />
             <span className="login-hero-brand-copy">
-              <strong>{t("homeBrandTitle")}</strong>
-              <small>{t("homeBrandSubtitle")}</small>
+              <strong>{t("homeBrandTitle") || "Society Management"}</strong>
+              <small>{t("homeBrandSubtitle") || "SYSTEM"}</small>
             </span>
           </Link>
         </div>
         <div className="login-hero-copy">
-          <h1>{t("authHeroTitle")}<br /><span>{t("authHeroAccent")}</span></h1>
-          <p className="login-hero-description">{t("authHeroDescription")}</p>
+          <div className="login-hero-badge" style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "4px 10px", borderRadius: 9999, background: "rgba(255,255,255,0.08)", fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", color: "#93c5fd", textTransform: "uppercase", marginBottom: 12 }}>
+            <HiOutlineBuildingOffice2 size={14} />
+            <span>{t("authCommunityLiving") || "RESIDENTIAL COMMUNITY"}</span>
+          </div>
+          <h1>
+            {t("authWelcomeTo") || "Welcome to"}<br />
+            <span>{t("authYourCommunity") || "Your Community"}</span>
+          </h1>
+          <p className="login-hero-description">
+            {t("homeHeroSubtitle") || "A complete digital platform for managing residents, maintenance, visitors, security, communication and everyday society operations."}
+          </p>
         </div>
-        <div className="login-benefit-strip">
-          <div className="login-benefit">
-            <span className="login-benefit-icon"><HiShieldCheck /></span>
-            <span>{t("authBenefit1")}</span>
+        {/* 3 Highlight Cards matching reference */}
+        <div className="login-feature-cards">
+          <div className="login-feature-card">
+            <div className="login-feature-card-icon">
+              <HiOutlineUsers />
+            </div>
+            <div className="login-feature-card-text">
+              <span className="login-feature-card-title">{t("authFeatManageResidents") || "Manage Residents"}</span>
+              <span className="login-feature-card-sub">{t("authFeatManageResidentsSub") || "Resident & Household"}</span>
+            </div>
           </div>
-          <div className="login-benefit-divider" />
-          <div className="login-benefit">
-            <span className="login-benefit-icon"><MdGroups /></span>
-            <span>{t("authBenefit2")}</span>
+
+          <div className="login-feature-card">
+            <div className="login-feature-card-icon">
+              <Hi2ShieldCheck />
+            </div>
+            <div className="login-feature-card-text">
+              <span className="login-feature-card-title">{t("authFeatEnhanceSecurity") || "Enhance Security"}</span>
+              <span className="login-feature-card-sub">{t("authFeatEnhanceSecuritySub") || "Gate & Visitor Pass"}</span>
+            </div>
           </div>
-          <div className="login-benefit-divider" />
-          <div className="login-benefit">
-            <span className="login-benefit-icon"><HiLockClosed /></span>
-            <span>{t("authBenefit3")}</span>
+
+          <div className="login-feature-card">
+            <div className="login-feature-card-icon">
+              <HiOutlineCreditCard />
+            </div>
+            <div className="login-feature-card-text">
+              <span className="login-feature-card-title">{t("authFeatTrackPayments") || "Track Payments"}</span>
+              <span className="login-feature-card-sub">{t("authFeatTrackPaymentsSub") || "Maintenance & Dues"}</span>
+            </div>
           </div>
+        </div>
+
+        <div className="login-hero-footer-tag">
+          <Hi2ShieldCheck size={16} />
+          <span>{t("authHeroFooter") || "Making Society Living Simpler."}</span>
         </div>
       </section>
 
       <section className="login-form-panel">
         <div className="login-panel-top">
-          <button type="button" className="login-back-button" onClick={() => navigate("/")}>
-            <HiOutlineArrowLeft /> {t("authBack")}
+          <button
+            type="button"
+            className="login-back-button"
+            onClick={() => navigate("/")}
+            aria-label={t("authBack") || "Back"}
+          >
+            <HiOutlineArrowLeft size={16} />
+            <span>{t("authBack") || "Back"}</span>
           </button>
+
+          <div className="auth-lang-dropdown-wrap" ref={langRef}>
+            <button
+              type="button"
+              className="auth-lang-pill"
+              onClick={() => setLangOpen((p) => !p)}
+              aria-label="Select language"
+            >
+              <HiOutlineGlobeAlt size={16} />
+              <span>{LANGUAGES?.find((l) => l.code === lang)?.label || "English"}</span>
+              <HiOutlineChevronDown size={13} />
+            </button>
+            {langOpen && (
+              <div className="auth-lang-menu">
+                {(LANGUAGES || [{ code: "en", label: "English" }]).map((l) => (
+                  <button
+                    key={l.code}
+                    type="button"
+                    className={`auth-lang-option ${lang === l.code ? "active" : ""}`}
+                    onClick={() => {
+                      changeLang(l.code);
+                      setLangOpen(false);
+                    }}
+                  >
+                    {l.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="login-content">
@@ -526,7 +579,7 @@ function Login() {
         <RejectionModal details={rejection} t={t} onClose={() => setRejection(null)} />
       )}
       {approvalPending && (
-        <ApprovalPendingModal onClose={() => setApprovalPending(false)} />
+        <ApprovalPendingModal t={t} onClose={() => setApprovalPending(false)} />
       )}
 
       {/* Panel Chooser Modal (Residents with Committee or Accountant role) */}
@@ -1276,82 +1329,105 @@ function Login() {
           document.body
         )}
 
-      <form className="form" onSubmit={handleLogin}>
-        <div className="login-heading-block">
-          <p className="login-eyebrow">{t("authWelcomeEyebrow")}</p>
-          <h2 id="heading">{t("authWelcomeTitle")}</h2>
-          <p className="login-heading-subtitle">{t("authWelcomeSubtitle")}</p>
+      {!approvalPending && !rejection && (
+        <form className="form" onSubmit={handleLogin}>
+          <div className="login-center-logo-box">
+            <img src={compLogoImg} alt="Logo" className="login-center-logo-img" />
+          </div>
+          <div className="login-heading-block">
+            <h1 id="heading" className="login-form-title">{t("authWelcomeTitle") || "Welcome Back"}</h1>
+            <p className="login-heading-subtitle">{t("authWelcomeSubtitle") || "Sign in to access your society dashboard."}</p>
+          </div>
+
+        {/* Email Field with HiOutlineEnvelope icon */}
+        <div className="login-field-group">
+          <label className="login-field-label" htmlFor="login-email">
+            <HiOutlineEnvelope className="login-label-icon" />
+            <span>{t("authEmailLabel") || "Email Address"}</span>
+          </label>
+          <div className="field">
+            <HiOutlineEnvelope className="input-icon input-icon--slate" />
+            <input
+              id="login-email"
+              placeholder={t("authEmailPlaceholder") || "Enter your email address"}
+              className="input-field"
+              type="email"
+              autoComplete="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+          </div>
         </div>
 
-        {/* Email Field with SVG icon */}
-        <label className="login-field-label" htmlFor="login-email">{t("authEmailLabel")}</label>
-        <div className="field">
-          <svg className="input-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-            <path d="M13.106 7.222c0-2.967-2.249-5.032-5.482-5.032-3.35 0-5.646 2.318-5.646 5.702 0 3.493 2.235 5.708 5.762 5.708.862 0 1.689-.123 2.304-.335v-.862c-.43.199-1.354.328-2.29.328-2.926 0-4.813-1.88-4.813-4.798 0-2.844 1.921-4.881 4.594-4.881 2.735 0 4.608 1.688 4.608 4.156 0 1.682-.554 2.769-1.416 2.769-.492 0-.772-.28-.772-.76V5.206H8.923v.834h-.11c-.266-.595-.881-.964-1.6-.964-1.4 0-2.378 1.162-2.378 2.823 0 1.737.957 2.906 2.379 2.906.8 0 1.415-.39 1.709-1.087h.11c.081.67.703 1.148 1.503 1.148 1.572 0 2.57-1.415 2.57-3.643zm-7.177.704c0-1.197.54-1.907 1.456-1.907.93 0 1.524.738 1.524 1.907S8.308 9.84 7.371 9.84c-.895 0-1.442-.725-1.442-1.914z"></path>
-          </svg>
-          <input
-            id="login-email"
-            placeholder={t("authEmailPlaceholder")}
-            className="input-field"
-            type="email"
-            autoComplete="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
-        </div>
-
-        {/* Password Field with SVG icon + Eye toggle */}
-        <label className="login-field-label" htmlFor="login-password">{t("authPasswordLabel")}</label>
-        <div className="field">
-          <svg className="input-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-            <path d="M8 1a2 2 0 0 1 2 2v4H6V3a2 2 0 0 1 2-2zm3 6V3a3 3 0 0 0-6 0v4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"></path>
-          </svg>
-          <input
-            id="login-password"
-            placeholder={t("authPasswordPlaceholder")}
-            className="input-field"
-            type={showPassword ? "text" : "password"}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-          <button
-            type="button"
-            onClick={() => setShowPassword(!showPassword)}
-            className="eye-toggle-btn"
-            aria-label={showPassword ? t("authHidePassword") : t("authShowPassword")}
-          >
-            {showPassword ? <AiOutlineEyeInvisible size={18} /> : <AiOutlineEye size={18} />}
-          </button>
+        {/* Password Field with Hi2LockClosed icon + Eye toggle */}
+        <div className="login-field-group">
+          <label className="login-field-label" htmlFor="login-password">
+            <Hi2LockClosed className="login-label-icon" />
+            <span>{t("authPasswordLabel") || "Password"}</span>
+          </label>
+          <div className="field">
+            <Hi2LockClosed className="input-icon input-icon--slate" />
+            <input
+              id="login-password"
+              placeholder={t("authPasswordPlaceholder") || "Enter your password"}
+              className="input-field"
+              type={showPassword ? "text" : "password"}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="eye-toggle-btn"
+              aria-label={showPassword ? t("authHidePassword") : t("authShowPassword")}
+            >
+              {showPassword ? <AiOutlineEyeInvisible size={20} /> : <AiOutlineEye size={20} />}
+            </button>
+          </div>
         </div>
 
         <div className="login-options-row">
-          <span />
+          <label className="remember-me">
+            <input type="checkbox" checked={rememberMe} onChange={(e) => setRememberMe(e.target.checked)} />
+            <span>{t("authRememberMe") || "Remember Me"}</span>
+          </label>
           <button type="button" onClick={() => navigate("/forgot-password")} className="button3">
-            {t("authForgotPassword")}
+            {t("authForgotPassword") || "Forgot Password?"}
           </button>
-        </div>
-
-        <div className="uiverse-notice">
-          <HiShieldCheck className="uiverse-notice-icon" />
-          <span className="uiverse-notice-text">
-            {t("authVerificationNotice")}
-          </span>
         </div>
 
         {/* Buttons Row */}
         <div className="btn">
-          <button type="submit" disabled={loginLoading} className="button1">
-            {loginLoading ? t("authSendingCode") : <>{t("authSignIn")} <HiOutlineArrowRight /></>}
+          <button type="submit" disabled={loginLoading} className="button1 login-submit-btn">
+            {loginLoading ? (
+              <>
+                <span className="login-loading-spinner" aria-hidden="true" />
+                {t("authSendingCode") || "Signing in..."}
+              </>
+            ) : (
+              <>
+                <HiArrowRightOnRectangle size={18} />
+                <span>{t("authSignIn") || "Sign In"}</span>
+                <HiOutlineArrowRight size={16} />
+              </>
+            )}
           </button>
         </div>
 
         <div className="login-form-links">
-          <span>{t("authNoAccount")}</span>
-          <Link to="/register">{t("authCreateAccount")}</Link>
+          <span>{t("authNoAccount") || "New to the community?"}</span>
+          <Link to="/register">{t("authCreateAccount") || "Create an account"}</Link>
         </div>
-      </form>
+
+          {/* Security Encryption Footer */}
+          <div className="login-security-footer">
+            <Hi2LockClosed size={14} aria-hidden="true" />
+            <span>{t("authProtectedEncrypted") || "Protected by encrypted society authentication"}</span>
+          </div>
+        </form>
+      )}
         </div>
       </section>
       </main>

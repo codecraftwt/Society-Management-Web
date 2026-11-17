@@ -240,6 +240,16 @@ export const PERMISSIONS = {
     FAMILY_MEMBER: ['view'],
     GUARD: [],
   },
+  rules: {
+    ADMIN: ['view', 'create', 'edit', 'delete', 'archive', 'publish_version', 'view_acknowledgements'],
+    SUPER_ADMIN: ['view', 'create', 'edit', 'delete', 'archive', 'publish_version', 'view_acknowledgements'],
+    SOCIETY_ADMIN: ['view', 'create', 'edit', 'delete', 'archive', 'publish_version', 'view_acknowledgements'],
+    COMMITTEE_MEMBER: ['view', 'view_acknowledgements'],
+    ACCOUNTANT: ['view'],
+    RESIDENT: ['view', 'acknowledge'],
+    FAMILY_MEMBER: ['view', 'acknowledge'],
+    GUARD: ['view'],
+  },
 };
 
 /**

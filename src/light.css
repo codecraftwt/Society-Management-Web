@@ -983,9 +983,9 @@ html.light {
     color: #64748B !important;
   }
   .ps-avail-bay {
-    background: #ECFDF5 !important;
-    border-color: #A7F3D0 !important;
-    color: #059669 !important;
+    background: #F8FAFC !important;
+    border: 1px dashed #E2E8F0 !important;
+    color: #64748B !important;
   }
   .ps-occupied-details {
     background: #F8FAFC !important;
@@ -1004,6 +1004,39 @@ html.light {
   .ps-tag-pill {
     background: #F1F5F9 !important;
     color: #64748B !important;
+  }
+  .ps-card-actions {
+    border-top-color: #E4E7EC !important;
+  }
+  .ps-card-btn--edit {
+    background: #F1F5F9 !important;
+    border-color: #CBD5E1 !important;
+    color: #475569 !important;
+  }
+  .ps-card-btn--edit:hover {
+    background: #E2E8F0 !important;
+    border-color: #94A3B8 !important;
+    color: #0F172A !important;
+  }
+  .ps-card-btn--allocate {
+    background: linear-gradient(180deg, #2563EB 0%, #1D4ED8 100%) !important;
+    color: #FFFFFF !important;
+    border-color: #1E40AF !important;
+    box-shadow: 0 1px 3px rgba(37, 99, 235, 0.25) !important;
+  }
+  .ps-card-btn--allocate:hover {
+    background: linear-gradient(180deg, #1D4ED8 0%, #1E40AF 100%) !important;
+    box-shadow: 0 3px 8px rgba(37, 99, 235, 0.35) !important;
+  }
+  .ps-card-btn--release {
+    background: linear-gradient(180deg, #6366F1 0%, #4F46E5 100%) !important;
+    color: #FFFFFF !important;
+    border-color: #4338CA !important;
+    box-shadow: 0 1px 3px rgba(99, 102, 241, 0.25) !important;
+  }
+  .ps-card-btn--release:hover {
+    background: linear-gradient(180deg, #4F46E5 0%, #4338CA 100%) !important;
+    box-shadow: 0 3px 8px rgba(99, 102, 241, 0.35) !important;
   }
   .ps-pagination-container {
     border-top-color: #E4E7EC !important;

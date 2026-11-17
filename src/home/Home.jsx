@@ -1,6 +1,6 @@
-import { useState, useEffect, useContext } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion, useScroll, useTransform, useSpring, useReducedMotion } from "framer-motion";
 import {
   HiOutlineBuildingOffice2,
   HiOutlineShieldCheck,
@@ -28,9 +28,14 @@ import {
   HiOutlineBell,
   HiOutlineCalendar,
   HiOutlineCheckBadge,
-  HiOutlineWrenchScrewdriver
+  HiOutlineWrenchScrewdriver,
+  HiOutlineDocumentText,
+  HiOutlineChevronLeft,
+  HiOutlineChevronRight,
+  HiOutlineChevronDown,
+  HiOutlineHome
 } from "react-icons/hi2";
-import { FaYoutube, FaFacebookF, FaInstagram, FaLinkedinIn, FaCar } from "react-icons/fa";
+import { FaWhatsapp, FaFacebookF, FaInstagram, FaXTwitter, FaYoutube, FaLinkedinIn, FaPhone, FaEnvelope, FaCar } from "react-icons/fa6";
 
 /* Image imports from assets/Photos/Home */
 import compLogoImg from "../assets/Photos/Home/comp_logo.png";
@@ -44,6 +49,7 @@ import residentImg from "../assets/Photos/Home/Resident.png";
 import guardImg from "../assets/Photos/Home/Guard.png";
 import securityGuardImg from "../assets/Photos/Home/Guard1.png";
 import accountantImg from "../assets/Photos/Home/Accountant.png";
+import societyHeroCampusImg from "../assets/Photos/Home/society-hero-campus.png";
 import securityFeatureImg from "../assets/Photos/Home/features/security.png";
 import sosFeatureImg from "../assets/Photos/Home/features/sos.png";
 import maintenanceFeatureImg from "../assets/Photos/Home/features/Maintenance.png";
@@ -56,8 +62,7 @@ import financeFeatureImg from "../assets/Photos/Home/features/finance.png";
 
 import LanguageSelector from "../components/common/LanguageSelector";
 import { useLang } from "../context/LanguageContext";
-import { AuthContext } from "../context/AuthContext";
-import { getDashboardPath } from "../constants/app";
+import { useTheme } from "../context/ThemeContext";
 import "./Home.css";
 
 /* ==========================================================================
@@ -117,13 +122,137 @@ const homeFeatureCards = [
 const Home = () => {
   const navigate = useNavigate();
   const { t } = useLang();
-  const { user } = useContext(AuthContext);
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const loggedIn = Boolean(user && localStorage.getItem("token"));
-  const dashboardPath = getDashboardPath(user);
+  const [activeSection, setActiveSection] = useState("home");
+  const loggedIn = Boolean(localStorage.getItem("token"));
 
-  const goToApp = () => navigate(loggedIn ? dashboardPath : "/login");
+  const goToApp = () => navigate("/login");
+  const prefersReduced = useReducedMotion();
+
+  // Sticky Under-Page Footer Reveal Coordinator (motion.dev Pattern)
+  const footerRevealRef = useRef(null);
+  const { scrollYProgress: footerProgress } = useScroll({
+    target: footerRevealRef,
+    offset: ["start end", "end end"]
+  });
+  const smoothFooterProgress = useSpring(footerProgress, {
+    stiffness: 90,
+    damping: 24,
+    restDelta: 0.001
+  });
+  const footerOpacity = useTransform(smoothFooterProgress, [0, 0.55, 1], [0.35, 0.8, 1]);
+  const footerScale = useTransform(smoothFooterProgress, [0, 1], [0.965, 1]);
+  const footerY = useTransform(smoothFooterProgress, [0, 1], [30, 0]);
+
+  /* Live Continuous Roles Carousel State & Handlers */
+  const rolesTrackRef = useRef(null);
+  const offsetRef = useRef(0);
+  const targetOffsetRef = useRef(0);
+  const isRolesPausedRef = useRef(false);
+  const isDraggingRef = useRef(false);
+  const dragStartXRef = useRef(0);
+  const dragStartOffsetRef = useRef(0);
+  const hasDraggedRef = useRef(false);
+
+  // Live continuous RAF scroll loop (smooth 60/120fps continuous motion)
+  useEffect(() => {
+    let animId;
+    let lastTime = performance.now();
+
+    const loop = (now) => {
+      const dt = Math.min((now - lastTime) / 1000, 0.1);
+      lastTime = now;
+
+      if (!isRolesPausedRef.current && !isDraggingRef.current) {
+        // Continuous speed: 75px per second (increased for responsive, lively drift)
+        targetOffsetRef.current += 75 * dt;
+      }
+
+      if (rolesTrackRef.current) {
+        // Smooth lerp towards target offset
+        const lerpFactor = isDraggingRef.current ? 1 : Math.min(1, dt * 10);
+        offsetRef.current += (targetOffsetRef.current - offsetRef.current) * lerpFactor;
+
+        // Infinite wrap at half-width (seamless duplicate list)
+        const halfWidth = rolesTrackRef.current.scrollWidth / 2;
+        if (halfWidth > 0) {
+          if (targetOffsetRef.current >= halfWidth && offsetRef.current >= halfWidth) {
+            targetOffsetRef.current -= halfWidth;
+            offsetRef.current -= halfWidth;
+          } else if (targetOffsetRef.current < 0 && offsetRef.current < 0) {
+            targetOffsetRef.current += halfWidth;
+            offsetRef.current += halfWidth;
+          }
+        }
+
+        rolesTrackRef.current.style.transform = `translate3d(-${offsetRef.current.toFixed(2)}px, 0, 0)`;
+      }
+
+      animId = requestAnimationFrame(loop);
+    };
+
+    animId = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(animId);
+  }, []);
+
+  // Pause continuous scroll when page is in background
+  useEffect(() => {
+    const handleVisibility = () => {
+      isRolesPausedRef.current = document.hidden;
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () => document.removeEventListener("visibilitychange", handleVisibility);
+  }, []);
+
+  const nudgeRole = useCallback((direction) => {
+    const cardStep = 370 + 22; // card width + gap
+    if (direction === "next") {
+      targetOffsetRef.current += cardStep;
+    } else {
+      targetOffsetRef.current -= cardStep;
+    }
+  }, []);
+
+  const handleRolesMouseDown = (e) => {
+    isDraggingRef.current = true;
+    hasDraggedRef.current = false;
+    dragStartXRef.current = e.pageX;
+    dragStartOffsetRef.current = targetOffsetRef.current;
+  };
+
+  const handleRolesMouseMove = (e) => {
+    if (!isDraggingRef.current) return;
+    const diff = e.pageX - dragStartXRef.current;
+    if (Math.abs(diff) > 5) {
+      hasDraggedRef.current = true;
+    }
+    targetOffsetRef.current = dragStartOffsetRef.current - diff;
+  };
+
+  const handleRolesMouseUpOrLeave = () => {
+    isDraggingRef.current = false;
+  };
+
+  const handleRolesTouchStart = (e) => {
+    if (e.touches && e.touches[0]) {
+      isDraggingRef.current = true;
+      hasDraggedRef.current = false;
+      dragStartXRef.current = e.touches[0].pageX;
+      dragStartOffsetRef.current = targetOffsetRef.current;
+    }
+  };
+
+  const handleRolesTouchMove = (e) => {
+    if (!isDraggingRef.current || !e.touches || !e.touches[0]) return;
+    const diff = e.touches[0].pageX - dragStartXRef.current;
+    if (Math.abs(diff) > 5) {
+      hasDraggedRef.current = true;
+    }
+    targetOffsetRef.current = dragStartOffsetRef.current - diff;
+  };
 
   useEffect(() => {
     document.documentElement.classList.add("home-page-scroll");
@@ -131,10 +260,22 @@ const Home = () => {
   }, []);
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 24);
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 20);
+      const scrollPos = window.scrollY + 140;
+      const sections = ["roles", "how-it-works", "features"];
+      for (const id of sections) {
+        const el = document.getElementById(id);
+        if (el && el.offsetTop <= scrollPos) {
+          setActiveSection(id);
+          return;
+        }
+      }
+      setActiveSection("home");
+    };
+    handleScroll();
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
   useEffect(() => {
@@ -171,6 +312,22 @@ const Home = () => {
     window.setTimeout(() => scrollToSection(id), 80);
   };
 
+  const navItems = [
+    { id: "home", label: t("homeNavHome") || "Home" },
+    { id: "features", label: t("homeNavFeatures") || "Features" },
+    { id: "how-it-works", label: t("homeNavHowItWorks") || "How It Works" },
+    { id: "roles", label: t("homeNavUserRoles") || "User Roles" },
+  ];
+
+  const handleNavClick = (id) => {
+    setActiveSection(id);
+    if (id === "home") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } else {
+      scrollToSection(id);
+    }
+  };
+
   /* Slide transition variant settings matching executive PPT presentation decks */
   const slideVariants = {
     hidden: { opacity: 0, y: 90, scale: 0.98 },
@@ -190,78 +347,116 @@ const Home = () => {
       {/* ==========================================================================
          1. NAVBAR
          ========================================================================== */}
-      <nav className={`home-navbar ${scrolled ? "home-navbar--scrolled" : "home-navbar--over-hero"} ${menuOpen ? "home-navbar--menu-open" : ""}`}>
-        <div className="home-container">
-          <div className="home-navbar-inner">
-            {/* Dual Brand Identity: Company Logo + Product Branding */}
-            <Link to="/" className="home-brand-logo" aria-label={t("homeBrandHomeLabel")}>
-              <img
-                src={compLogoImg}
-                alt={t("homeCompanyLogoAlt")}
-                className="home-brand-comp-logo"
-              />
-              <div className="home-brand-divider" aria-hidden="true" />
-              <div className="home-brand-text">
-                <div className="home-brand-title">{t("homeBrandTitle") || "Society Management"}</div>
-                <div className="home-brand-subtitle">{t("homeBrandSubtitle") || "SYSTEM"}</div>
+      <header className={`home-navbar ${isDark ? "home-navbar--dark" : "home-navbar--light"} ${scrolled ? "home-navbar--scrolled" : ""} ${menuOpen ? "home-navbar--menu-open" : ""}`} role="banner">
+        <div className="home-topbar">
+          <div className="home-container home-topbar-inner">
+            <div className="home-contact-items">
+              <a href="tel:+919000000001" className="home-contact-item"><FaPhone aria-hidden="true" /><span>+91 90000 00001</span></a>
+              <span className="home-contact-separator" aria-hidden="true" />
+              <a href="mailto:codecraftwt@gmail.com" className="home-contact-item"><FaEnvelope aria-hidden="true" /><span>codecraftwt@gmail.com</span></a>
+            </div>
+            <div className="home-social-items" aria-label="Connect with Us">
+              <span className="home-connect-label">Connect with Us</span>
+              <div className="home-social-icons">
+                <a href="https://wa.me/919000000001" target="_blank" rel="noopener noreferrer" className="home-social-icon-btn" aria-label="WhatsApp">
+                  <FaWhatsapp />
+                </a>
+                <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" className="home-social-icon-btn" aria-label="Facebook">
+                  <FaFacebookF />
+                </a>
+                <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" className="home-social-icon-btn" aria-label="X (Twitter)">
+                  <FaXTwitter />
+                </a>
+                <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="home-social-icon-btn" aria-label="Instagram">
+                  <FaInstagram />
+                </a>
               </div>
-            </Link>
+            </div>
+          </div>
+        </div>
+        <div className="home-mainbar">
+          <div className="home-container">
+            <div className="home-navbar-inner">
+              {/* Dual Brand Identity: Company Logo + Product Branding */}
+              <Link to="/" className="home-brand-logo" aria-label={t("homeBrandHomeLabel")}>
+                <img
+                  src={compLogoImg}
+                  alt={t("homeCompanyLogoAlt")}
+                  className="home-brand-comp-logo"
+                />
+                <div className="home-brand-divider" aria-hidden="true" />
+                <div className="home-brand-text">
+                  <div className="home-brand-title">{t("homeBrandTitle") || "Society Management"}</div>
+                  <div className="home-brand-subtitle">{t("homeBrandSubtitle") || "SYSTEM"}</div>
+                </div>
+              </Link>
 
-            {/* Desktop Navigation Links */}
-            <ul className="home-nav-links">
-              <li className="home-nav-item">
-                <span className="home-nav-link" onClick={() => scrollToSection("features")}>
-                  {t("homeNavFeatures")}
-                </span>
-              </li>
-              <li className="home-nav-item">
-                <span className="home-nav-link" onClick={() => scrollToSection("how-it-works")}>
-                  {t("homeNavHowItWorks")}
-                </span>
-              </li>
-              <li className="home-nav-item">
-                <span className="home-nav-link" onClick={() => scrollToSection("roles")}>
-                  {t("homeNavUserRoles")}
-                </span>
-              </li>
-            </ul>
+              {/* Desktop Navigation Links */}
+              <nav className="home-nav-links-wrap" aria-label="Primary navigation">
+                <ul className="home-nav-links">
+                  {navItems.map((item) => (
+                    <li key={item.id} className="home-nav-item">
+                      <button
+                        type="button"
+                        className={`home-nav-link ${activeSection === item.id ? "home-nav-link--active" : ""}`}
+                        onClick={() => handleNavClick(item.id)}
+                      >
+                        {item.label}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </nav>
 
-            {/* Nav Right Actions: Language -> Dashboard CTA */}
-            <div className="home-nav-actions">
-              <LanguageSelector compact />
+              {/* Nav Right Actions: Language -> Dashboard CTA */}
+              <div className="home-nav-actions">
+                <LanguageSelector compact />
+                <button
+                  type="button"
+                  onClick={goToApp}
+                  className="home-btn-nav-cta"
+                  aria-label={t("homeLogin")}
+                >
+                  <span>{t("homeLogin")}</span>
+                  <HiOutlineArrowRight className="home-nav-btn-arrow" />
+                </button>
+              </div>
+
+              {/* Mobile Burger */}
               <button
-                onClick={goToApp}
-                className="home-btn-nav-cta"
-                aria-label={t("homeDashboard")}
+                type="button"
+                className="home-mobile-burger"
+                onClick={() => setMenuOpen((o) => !o)}
+                aria-label={t("homeToggleMenu")}
+                aria-expanded={menuOpen}
               >
-                <span>{t("homeDashboard")}</span>
-                <HiOutlineArrowRight className="home-nav-btn-arrow" />
+                {menuOpen ? <HiOutlineXMark /> : <HiBars3 />}
               </button>
             </div>
-
-            {/* Mobile Burger */}
-            <button
-              className="home-mobile-burger"
-              onClick={() => setMenuOpen((o) => !o)}
-              aria-label={t("homeToggleMenu")}
-              aria-expanded={menuOpen}
-            >
-              {menuOpen ? <HiOutlineXMark /> : <HiBars3 />}
-            </button>
           </div>
         </div>
 
         {/* Mobile Navigation Menu */}
-        <div className={`home-mobile-menu ${menuOpen ? "active" : ""}`}>
-          <span className="home-mobile-link" onClick={() => handleMobileNav("features")}>
-            {t("homeNavFeatures")}
-          </span>
-          <span className="home-mobile-link" onClick={() => handleMobileNav("how-it-works")}>
-            {t("homeNavHowItWorks")}
-          </span>
-          <span className="home-mobile-link" onClick={() => handleMobileNav("roles")}>
-            {t("homeNavUserRoles")}
-          </span>
+        <div className={`home-mobile-menu ${menuOpen ? "active" : ""}`} role="dialog" aria-modal="true">
+          {navItems.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              className={`home-mobile-link ${activeSection === item.id ? "home-mobile-link--active" : ""}`}
+              onClick={() => {
+                setMenuOpen(false);
+                if (item.id === "home") {
+                  setActiveSection("home");
+                  window.scrollTo({ top: 0, behavior: "smooth" });
+                } else {
+                  setActiveSection(item.id);
+                  handleMobileNav(item.id);
+                }
+              }}
+            >
+              {item.label}
+            </button>
+          ))}
 
           <div className="home-mobile-divider" />
 
@@ -271,164 +466,120 @@ const Home = () => {
 
           <div className="home-mobile-actions">
             <button
+              type="button"
               onClick={() => { setMenuOpen(false); goToApp(); }}
               className="home-btn-nav-cta"
+              aria-label={t("homeLogin")}
             >
-              <span>{t("homeDashboard")}</span>
+              <span>{t("homeLogin")}</span>
               <HiOutlineArrowRight className="home-nav-btn-arrow" />
             </button>
-            {!loggedIn && (
-              <button
-                onClick={() => { setMenuOpen(false); navigate("/login"); }}
-                className="home-btn-login"
-              >
-                {t("homeLogin")}
-              </button>
-            )}
           </div>
         </div>
-      </nav>
+      </header>
 
-      <main id="main-content">
+      <main id="main-content" className="home-main-content">
         {/* ==========================================================================
-         2. HERO SECTION — Two-Column Layout Matching Premium Design Reference
+         2. HERO SECTION — Full-Height Cinematic Photographic Banner
          ========================================================================== */}
-        <section className="home-hero-section">
-          {/* Ambient Background Atmosphere & Subtle Architectural Grid */}
-          <div className="home-hero-bg-effects" aria-hidden="true">
-            <div className="home-hero-bg-grid" />
-            <div className="home-hero-glow-left" />
-            <div className="home-hero-glow-right" />
-            <div className="home-hero-glow-center" />
+        <section
+          className={`home-hero-banner ${isDark ? "home-hero--dark" : "home-hero--light"}`}
+          aria-label="Hero Overview"
+        >
+          {/* Authentic residential society background image */}
+          <div className="home-hero-bg-layer" aria-hidden="true">
+            <img
+              src={homeBannerImg}
+              alt=""
+              className="home-hero-bg-image"
+              loading="eager"
+            />
           </div>
 
-          <div className="home-container home-hero-container">
-            <div className="home-hero-grid">
-              {/* Left Column: Slide-in from LEFT with staggered child reveals */}
-              <motion.div
-                initial={{ opacity: 0, x: -70 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.85, ease: [0.16, 1, 0.3, 1] }}
-                className="home-hero-left"
-              >
-                {/* 1. Eyebrow Pill */}
-                <motion.div
-                  initial={{ opacity: 0, x: -25 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.55, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
-                  className="home-hero-eyebrow"
-                >
-                  <HiOutlineBuildingOffice2 className="home-hero-eyebrow-icon" />
-                <span>{t("homeLandingEyebrow")}</span>
-                </motion.div>
-
-                {/* 2. Main Editorial Headline */}
-                <motion.h1
-                  initial={{ opacity: 0, x: -45 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.7, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-                  className="home-hero-heading"
-                >
-                  <span className="home-hero-heading-solid">{t("homeLandingTitle1")}</span>
-                  <br />
-                  <span className="home-hero-heading-gradient">{t("homeLandingTitle2")}</span>
-                </motion.h1>
-
-                {/* 3. Supporting Description */}
-                <motion.p
-                  initial={{ opacity: 0, x: -35 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.65, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
-                  className="home-hero-description"
-                >
-                  {t("homeLandingDescription")}
-                </motion.p>
-
-                {/* 4. Primary & Secondary CTA Buttons */}
-                <motion.div
-                  initial={{ opacity: 0, x: -25, y: 15 }}
-                  animate={{ opacity: 1, x: 0, y: 0 }}
-                  transition={{ duration: 0.65, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
-                  className="home-hero-cta-group"
-                >
-                  <button
-                    onClick={goToApp}
-                    className="home-btn-hero-primary"
-                  >
-                    <span>{t("homeExploreDashboard")}</span>
-                    <HiOutlineArrowRight className="home-btn-arrow-icon" />
-                  </button>
-
-                  <button
-                    onClick={() => scrollToSection("features")}
-                    className="home-btn-hero-secondary"
-                  >
-                    <span>{t("homeExploreFeatures")}</span>
-                    <HiOutlineArrowRight className="home-btn-arrow-icon" />
-                  </button>
-                </motion.div>
-
-              </motion.div>
-
-              {/* Right Column: Slide-in from RIGHT with Scale & Elevation */}
-              <motion.div
-                initial={{ opacity: 0, x: 80, scale: 0.93 }}
-                animate={{ opacity: 1, x: 0, scale: 1 }}
-                transition={{ duration: 0.95, delay: 0.18, ease: [0.16, 1, 0.3, 1] }}
-                className="home-hero-right"
-              >
-                {/* Visual Wrap with Ambient Glow Halo */}
-                <div className="home-hero-photo-wrap">
-                  <div className="home-hero-photo-glow" aria-hidden="true" />
-
-                  {/* Main Photograph Frame */}
-                  <div className="home-hero-photo-frame">
-                    <SafeImage
-                      src={homeBannerImg}
-                      alt={t("homeAltHero")}
-                      className="home-hero-photo"
-                      fallbackIcon={HiOutlineBuildingOffice2}
-                      fallbackGradient="linear-gradient(135deg, #1e3a8a 0%, #0f172a 100%)"
-                    />
-
-                    {/* Top-Left Pill on Image */}
-                    <motion.div
-                      initial={{ opacity: 0, y: -20, scale: 0.9 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      transition={{ duration: 0.5, delay: 0.55, ease: [0.16, 1, 0.3, 1] }}
-                      className="home-hero-img-badge"
-                    >
-                      <div className="home-hero-img-badge-icon">
-                        <HiOutlineBuildingOffice2 />
-                      </div>
-                      <span>{t("homeCommunityGlance")}</span>
-                    </motion.div>
-                  </div>
-
-                  {/* Floating Overlay: Platform Status */}
+              <div className="home-container home-hero-content-wrap">
+                <div className="home-hero-content">
+                  {/* Eyebrow Label with Elastic Spring Drop-In Animation */}
                   <motion.div
-                    initial={{ opacity: 0, y: 25, x: 20, scale: 0.92 }}
-                    animate={{ opacity: 1, y: 0, x: 0, scale: 1 }}
-                    transition={{ duration: 0.6, delay: 0.75, ease: [0.16, 1, 0.3, 1] }}
-                    className="home-floating-card-status"
+                    initial={{ opacity: 0, y: -24, scale: 0.92 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    transition={{ duration: 0.65, delay: 0.15, ease: [0.34, 1.56, 0.64, 1] }}
+                    className="home-hero-eyebrow"
                   >
-                    <span className="home-status-indicator-dot" />
-                    <div className="home-status-meta">
-                      <div className="home-status-title">{t("homeHeroStatTitle")}</div>
-                      <div className="home-status-subtitle">{t("homeLandingStatus")}</div>
-                    </div>
-                    <HiOutlineArrowRight className="home-status-arrow" />
+                    <span className="home-hero-eyebrow-dot" aria-hidden="true" />
+                    <span>{t("homeLandingEyebrow") || "SMARTER COMMUNITY LIVING"}</span>
                   </motion.div>
+
+                  {/* Main Headline with Kinetic Left-to-Right Horizontal Slide Reveal */}
+                  <h1 className="home-hero-heading">
+                    <motion.span
+                      className="home-hero-heading-line1"
+                      initial={{ opacity: 0, x: -45, filter: "blur(6px)" }}
+                      animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
+                      transition={{ duration: 0.8, delay: 0.28, ease: [0.16, 1, 0.3, 1] }}
+                    >
+                      {t("homeLandingTitle1") || "Your Society."}
+                    </motion.span>
+                    <motion.span
+                      className="home-hero-heading-line2"
+                      initial={{ opacity: 0, x: -45, filter: "blur(6px)" }}
+                      animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
+                      transition={{ duration: 0.85, delay: 0.42, ease: [0.16, 1, 0.3, 1] }}
+                    >
+                      {t("homeLandingTitle2") || "Managed Smarter."}
+                    </motion.span>
+                  </h1>
+
+                  {/* Supporting Description with Kinetic Slide-In */}
+                  <motion.p
+                    initial={{ opacity: 0, x: -30, filter: "blur(4px)" }}
+                    animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
+                    transition={{ duration: 0.75, delay: 0.58, ease: [0.16, 1, 0.3, 1] }}
+                    className="home-hero-description"
+                  >
+                    {t("homeLandingDescription") || "Everything your community needs to run smoothly. Manage residents, maintenance, payments, security, parking and everyday operations from one intelligent platform."}
+                  </motion.p>
+
+                  {/* Action Buttons with Staggered Spring Elasticity */}
+                  <div className="home-hero-cta-group">
+                    <motion.button
+                      initial={{ opacity: 0, scale: 0.88, y: 15 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      transition={{ duration: 0.55, delay: 0.72, ease: [0.34, 1.56, 0.64, 1] }}
+                      whileHover={{ scale: 1.04, translateY: -2 }}
+                      whileTap={{ scale: 0.97 }}
+                      onClick={goToApp}
+                      className="home-btn-hero-primary"
+                      aria-label={t("homeExploreDashboard") || "Explore Dashboard"}
+                    >
+                      <span>{t("homeExploreDashboard") || "Explore Dashboard"}</span>
+                      <HiOutlineArrowRight className="home-btn-arrow-icon" aria-hidden="true" />
+                    </motion.button>
+
+                    <motion.button
+                      initial={{ opacity: 0, scale: 0.88, y: 15 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      transition={{ duration: 0.55, delay: 0.84, ease: [0.34, 1.56, 0.64, 1] }}
+                      whileHover={{ scale: 1.04, translateY: -2 }}
+                      whileTap={{ scale: 0.97 }}
+                      onClick={() => scrollToSection("features")}
+                      className="home-btn-hero-secondary"
+                      aria-label={t("homeExploreFeatures") || "Explore Features"}
+                    >
+                      <span>{t("homeExploreFeatures") || "Explore Features"}</span>
+                      <HiOutlineArrowRight className="home-btn-arrow-icon" aria-hidden="true" />
+                    </motion.button>
+                  </div>
                 </div>
-              </motion.div>
-            </div>
-          </div>
-        </section>
+              </div>
+            </section>
 
         {/* ==========================================================================
-         3. FEATURES SHOWCASE — Premium, Minimal & Modern Asymmetrical Bento Grid
+         3. FEATURES SHOWCASE
          ========================================================================== */}
-        <section className="home-features-section" id="features">
+        <section
+          id="features"
+          className="home-features-section"
+        >
           {/* Ambient Background Atmosphere */}
           <div className="home-features-bg-effects" aria-hidden="true">
             <div className="home-features-bg-grid" />
@@ -462,23 +613,23 @@ const Home = () => {
               {homeFeatureCards.map(({ image, icon: Icon, tone, titleKey, descKey }, index) => {
                 const title = t(titleKey);
                 return (
-                <motion.article
-                  key={title}
-                  initial={{ opacity: 0, y: 22 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, amount: 0.15 }}
-                  transition={{ duration: 0.5, delay: index * 0.04, ease: [0.16, 1, 0.3, 1] }}
-                  className={`home-feature-card home-feature-card--${tone}`}
-                >
-                  <div className="home-feature-card-image-wrap">
-                    <img src={image} alt={title} className="home-feature-card-image" />
-                  </div>
-                  <div className="home-feature-card-content">
-                    <div className="home-feature-card-icon-wrap"><Icon aria-hidden="true" /></div>
-                    <h3 className="home-feature-card-title">{title}</h3>
-                    <p className="home-feature-card-desc">{t(descKey)}</p>
-                  </div>
-                </motion.article>
+                  <motion.article
+                    key={title}
+                    initial={{ opacity: 0, y: 22 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true, amount: 0.15 }}
+                    transition={{ duration: 0.5, delay: index * 0.04, ease: [0.16, 1, 0.3, 1] }}
+                    className={`home-feature-card home-feature-card--${tone}`}
+                  >
+                    <div className="home-feature-card-image-wrap">
+                      <img src={image} alt={title} className="home-feature-card-image" />
+                    </div>
+                    <div className="home-feature-card-content">
+                      <div className="home-feature-card-icon-wrap"><Icon aria-hidden="true" /></div>
+                      <h3 className="home-feature-card-title">{title}</h3>
+                      <p className="home-feature-card-desc">{t(descKey)}</p>
+                    </div>
+                  </motion.article>
                 );
               })}
             </div>
@@ -487,272 +638,354 @@ const Home = () => {
         </section>
 
         {/* ==========================================================================
-         4. EFFICIENT ADMINISTRATION SHOWCASE (Multi-Language Supported)
+         4. A SMARTER COMMUNITY / HOW IT WORKS SHOWCASE
          ========================================================================== */}
-        <section className="home-admin-section home-glass-section" id="how-it-works">
-          <div className="home-glass-bg" aria-hidden="true">
-            <img src={howItWorksBgImg} alt="" />
+        <section
+          id="how-it-works"
+          className="home-smarter-section"
+        >
+          {/* Decorative background accents */}
+          <div className="home-smarter-bg-accents" aria-hidden="true">
+            <div className="home-smarter-dots" />
+            <div className="home-smarter-accent-top-left" />
+            <div className="home-smarter-accent-mint" />
+            <div className="home-smarter-accent-peach" />
           </div>
-          <div className="home-glass-frost" aria-hidden="true" />
-          <div className="home-container">
-            <div className="home-admin-grid">
-              {/* Left Visual */}
-              <motion.div
-                initial={{ opacity: 0, x: -40 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true, amount: 0.2 }}
-                transition={{ duration: 0.6, delay: 0.2 }}
-                className="home-admin-visual"
-              >
-                <div className="home-admin-image-box">
-                  <span className="home-admin-image-glow" aria-hidden="true" />
-                  <SafeImage
-                    src={guardImg}
-                    alt={t("homeAltAdmin")}
-                    className="home-admin-img"
-                    fallbackIcon={HiOutlineUsers}
-                  />
-                  <div className="home-admin-image-overlay-badge">
-                    <span className="home-admin-pulse-dot" />
-                    <span>{t("homeBrandTitle")}</span>
-                  </div>
-                </div>
-              </motion.div>
 
-              {/* Right Features — Modern 2x4 Capability Tiles */}
+          <div className="home-smarter-container">
+            <div className="home-smarter-layout">
+              {/* Left Column: Two Image Composition with Scroll-Driven Parallax Sliding */}
+              <div className="home-smarter-visual">
+                <div className="home-smarter-composition">
+                  {/* Big Banner Image */}
+                  <motion.div
+                    initial={{ opacity: 0, x: -55 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    viewport={{ once: true, amount: 0.15 }}
+                    transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
+                    whileHover={{ scale: 1.015 }}
+                    className="home-smarter-big-img-box"
+                  >
+                    <SafeImage
+                      src={homeBannerImg}
+                      alt={t("homeAltHero") || "Residential Community"}
+                      className="home-smarter-big-img"
+                      fallbackIcon={HiOutlineBuildingOffice2}
+                    />
+                  </motion.div>
+
+                  {/* Small Guard Image */}
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.92 }}
+                    whileInView={{ opacity: 1, scale: 1 }}
+                    viewport={{ once: true, amount: 0.15 }}
+                    transition={{ duration: 1.2, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
+                    whileHover={{ scale: 1.02 }}
+                    className="home-smarter-small-img-box"
+                  >
+                    <SafeImage
+                      src={guardImg}
+                      alt={t("homeAltAdmin") || "Society Security Guard"}
+                      className="home-smarter-small-img"
+                      fallbackIcon={HiOutlineUsers}
+                    />
+                  </motion.div>
+                </div>
+              </div>
+
+              {/* Right Column: Content slider gently from right to left */}
               <motion.div
-                initial={{ opacity: 0, x: 40 }}
+                initial={{ opacity: 0, x: 60 }}
                 whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true, amount: 0.2 }}
-                transition={{ duration: 0.6, delay: 0.2 }}
-                className="home-admin-right-pane"
+                viewport={{ once: true, amount: 0.15 }}
+                transition={{ duration: 1.45, delay: 0.18, ease: [0.22, 1, 0.36, 1] }}
+                className="home-smarter-content"
               >
-                <span className="home-section-tag">{t("homeNavHowItWorks")}</span>
-                <h2 className="home-section-title" style={{ textAlign: "left" }}>
-                  {t("homeSection2Title")}
+                {/* Pill Badge: Our Society */}
+                <div className="home-smarter-badge">
+                  <HiOutlineBuildingOffice2 className="home-smarter-badge-icon" aria-hidden="true" />
+                  <span>{t("homeOurSocietyBadge") || "Our Society"}</span>
+                </div>
+
+                {/* Heading */}
+                <h2 className="home-smarter-title">
+                  {t("homeSmarterCommunityTitle1") || "A Smarter Community"}
+                  <span className="home-smarter-break">
+                    {t("homeSmarterCommunityForA") || "for a"}{" "}
+                    <span className="home-smarter-blue-text">
+                      {t("homeSmarterCommunityTitle2") || "Better Living"}
+                      <svg
+                        className="home-smarter-curve-svg"
+                        viewBox="0 0 160 14"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg"
+                        aria-hidden="true"
+                      >
+                        <path
+                          d="M 3 9.5 C 45 2.5, 115 2.5, 157 8"
+                          stroke="#2563EB"
+                          strokeWidth="3.2"
+                          strokeLinecap="round"
+                        />
+                      </svg>
+                    </span>
+                  </span>
                 </h2>
-                <p className="home-section-subtitle" style={{ textAlign: "left", marginBottom: "1.75rem" }}>
-                  {t("homeSection2Subtitle")}
+
+                {/* Short Description */}
+                <p className="home-smarter-desc">
+                  {t("homeSmarterCommunitySubtitle") ||
+                    "Modern society management with safety, transparency and convenience — all in one place."}
                 </p>
 
-                <div className="home-admin-capabilities-grid">
+                {/* 6 Neatly Aligned Features */}
+                <div className="home-smarter-features-grid">
                   {[
                     {
-                      icon: HiOutlineMegaphone,
-                      title: t("homeAdminF1"),
-                      desc: t("homeAdminF1Desc"),
-                      color: "#0284c7"
+                      icon: HiOutlineShieldCheck,
+                      type: "mint",
+                      labelKey: "homeFeatureEnhancedSecurity",
+                      defaultText: "Enhanced Security"
                     },
                     {
-                      icon: HiOutlineCog6Tooth,
-                      title: t("homeAdminF2"),
-                      desc: t("homeAdminF2Desc"),
-                      color: "#7c3aed"
+                      icon: FaCar,
+                      type: "neutral",
+                      labelKey: "homeFeatureSmartParking",
+                      defaultText: "Smart Parking"
                     },
                     {
-                      icon: HiOutlineBuildingOffice2,
-                      title: t("homeAdminF3"),
-                      desc: t("homeAdminF3Desc"),
-                      color: "#0d9488"
+                      icon: HiOutlineUserGroup,
+                      type: "mint-soft",
+                      labelKey: "homeFeatureCommunityEngagement",
+                      defaultText: "Community Engagement"
                     },
                     {
-                      icon: HiOutlineCreditCard,
-                      title: t("homeAdminF4"),
-                      desc: t("homeAdminF4Desc"),
-                      color: "#10b981"
+                      icon: HiOutlineBell,
+                      type: "cream",
+                      labelKey: "homeFeatureInstantNotifications",
+                      defaultText: "Instant Notifications"
                     },
                     {
-                      icon: HiOutlineBuildingStorefront,
-                      title: t("homeAdminF5"),
-                      desc: t("homeAdminF5Desc"),
-                      color: "#ea580c"
+                      icon: HiOutlineWrenchScrewdriver,
+                      type: "blue",
+                      labelKey: "homeFeatureEasyMaintenance",
+                      defaultText: "Easy Maintenance"
                     },
                     {
-                      icon: HiOutlineClock,
-                      title: t("homeAdminF6"),
-                      desc: t("homeAdminF6Desc"),
-                      color: "#2563eb"
-                    },
-                    {
-                      icon: HiOutlineFolder,
-                      title: t("homeAdminF7"),
-                      desc: t("homeAdminF7Desc"),
-                      color: "#4f46e5"
-                    },
-                    {
-                      icon: HiOutlineChatBubbleLeftRight,
-                      title: t("homeAdminF8"),
-                      desc: t("homeAdminF8Desc"),
-                      color: "#0f766e"
+                      icon: HiOutlineDocumentText,
+                      type: "cream-alt",
+                      labelKey: "homeFeatureTransparentManagement",
+                      defaultText: "Transparent Management"
                     }
-                  ].map((cap, cIdx) => {
-                    const CapIcon = cap.icon;
+                  ].map((feat, idx) => {
+                    const FeatIcon = feat.icon;
                     return (
                       <motion.div
-                        key={cIdx}
+                        key={idx}
                         initial={{ opacity: 0, y: 20 }}
                         whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true, amount: 0.2 }}
-                        transition={{ duration: 0.35, delay: 0.1 + cIdx * 0.04 }}
-                        className="home-admin-cap-card"
-                        style={{ "--c": cap.color, animationDelay: `${cIdx * 50}ms` }}
+                        viewport={{ once: true, amount: 0.15 }}
+                        transition={{ duration: 0.85, delay: 0.35 + idx * 0.08, ease: [0.22, 1, 0.36, 1] }}
+                        className="home-smarter-feature-item"
                       >
-                        <span className="home-card-blob" aria-hidden="true" />
-                        <div className="home-admin-cap-icon-box">
-                          <CapIcon />
+                        <div className={`home-smarter-icon-box home-smarter-icon--${feat.type}`}>
+                          <FeatIcon aria-hidden="true" />
                         </div>
-                        <div className="home-admin-cap-info">
-                          <div className="home-admin-cap-title-row">
-                            <h4 className="home-admin-cap-title">{cap.title}</h4>
-                            <span className="home-card-arrow" aria-hidden="true">
-                              <HiOutlineArrowRight />
-                            </span>
-                          </div>
-                          <p className="home-admin-cap-desc">{cap.desc}</p>
+                        <div className="home-smarter-feature-text">
+                          <span>{t(feat.labelKey) || feat.defaultText}</span>
                         </div>
                       </motion.div>
                     );
                   })}
                 </div>
+
+                {/* Primary Pill Button */}
+                <div className="home-smarter-action">
+                  <button
+                    type="button"
+                    onClick={() => navigate("/login")}
+                    className="home-smarter-cta-btn"
+                  >
+                    <span>{t("homeBeAPartBtn") || "Be a Part of Our Society"}</span>
+                    <HiOutlineArrowRight className="home-smarter-cta-arrow" aria-hidden="true" />
+                  </button>
+                </div>
               </motion.div>
             </div>
           </div>
         </section>
 
         {/* ==========================================================================
-         6. ROLE SECTION
+         6. ROLE SECTION (PROFESSIONAL SAAS HORIZONTAL CAROUSEL)
          ========================================================================== */}
-        <section className="home-roles-section home-glass-section" id="roles">
-          <div className="home-glass-bg" aria-hidden="true">
-            <img src={userRolesBgImg} alt="" />
-          </div>
-          <div className="home-glass-frost" aria-hidden="true" />
+        <section
+          id="roles"
+          className="home-roles-section"
+        >
           <div className="home-container">
             <motion.div
-              initial={{ opacity: 0, y: 30 }}
+              initial={{ opacity: 0, y: 16 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, amount: 0.2 }}
-              transition={{ duration: 0.6, delay: 0.1 }}
-              className="home-section-header"
+              transition={{ duration: 0.4 }}
+              className="home-section-header home-roles-header"
             >
-              <span className="home-section-tag">{t("homeRolesTag")}</span>
               <h2 className="home-section-title">
                 {t("homeSection3Title")}
               </h2>
-              <p className="home-section-subtitle">
-                {t("homeSection3Subtitle")}
-              </p>
             </motion.div>
 
-            <div className="home-roles-grid">
-              {[
-                {
-                  img: adminImg,
-                  icon: HiOutlineBriefcase,
-                  title: t("homeRole1Title"),
-                  desc: t("homeRole1Desc"),
-                  color: "#0d9488",
-                  colorClass: "home-role-card--admin"
-                },
-                {
-                  img: committeeImg,
-                  icon: HiOutlineUserGroup,
-                  title: t("homeRole2Title"),
-                  desc: t("homeRole2Desc"),
-                  color: "#7c3aed",
-                  colorClass: "home-role-card--committee"
-                },
-                {
-                  img: residentImg,
-                  icon: HiOutlineUsers,
-                  title: t("homeRole3Title"),
-                  desc: t("homeRole3Desc"),
-                  color: "#0284c7",
-                  colorClass: "home-role-card--resident"
-                },
-                {
-                  img: securityGuardImg,
-                  icon: HiOutlineLockClosed,
-                  title: t("homeRole4Title"),
-                  desc: t("homeRole4Desc"),
-                  color: "#ea580c",
-                  colorClass: "home-role-card--guard"
-                },
-                {
-                  img: accountantImg,
-                  icon: HiOutlineCalculator,
-                  title: t("homeRole5Title"),
-                  desc: t("homeRole5Desc"),
-                  color: "#4f46e5",
-                  colorClass: "home-role-card--accountant"
-                },
-                {
-                  img: adminImg,
-                  icon: HiOutlineBuildingStorefront,
-                  title: t("homeRole6Title"),
-                  desc: t("homeRole6Desc"),
-                  color: "#059669",
-                  colorClass: "home-role-card--facility"
-                }
-              ].map((role, rIdx) => {
-                const RoleIcon = role.icon;
-                return (
-                  <motion.div
-                    key={rIdx}
-                    initial={{ opacity: 0, y: 30 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true, amount: 0.2 }}
-                    transition={{ duration: 0.45, delay: rIdx * 0.08 }}
-                    className={`home-role-card ${role.colorClass}`}
-                    style={{ "--c": role.color, animationDelay: `${rIdx * 60}ms` }}
-                  >
-                    {/* Decorative Orb Blob */}
-                    <span className="home-card-blob" aria-hidden="true" />
+            {/* Horizontal Carousel with Flanking Arrows & Live Continuous Drift */}
+            <div
+              className="home-roles-carousel-wrapper"
+              onMouseEnter={() => {
+                isRolesPausedRef.current = true;
+              }}
+              onMouseLeave={() => {
+                isRolesPausedRef.current = false;
+                handleRolesMouseUpOrLeave();
+              }}
+            >
+              {/* Prev Navigation Arrow */}
+              <button
+                type="button"
+                className="home-roles-nav-btn home-roles-nav-btn--prev"
+                onClick={() => nudgeRole("prev")}
+                aria-label="Previous role"
+              >
+                <HiOutlineChevronLeft />
+              </button>
 
-                    {/* Left Side Info */}
-                    <div className="home-role-content-left">
-                      <div className="home-role-head">
-                        <div className="home-role-badge"><RoleIcon /></div>
-                        <h3 className="home-role-title">{role.title}</h3>
-                        <span className="home-card-arrow" aria-hidden="true">
-                          <HiOutlineArrowRight />
-                        </span>
+              {/* Live Continuous Streaming Track */}
+              <div
+                ref={rolesTrackRef}
+                className="home-roles-track"
+                onMouseDown={handleRolesMouseDown}
+                onMouseMove={handleRolesMouseMove}
+                onMouseUp={handleRolesMouseUpOrLeave}
+                onTouchStart={(e) => {
+                  isRolesPausedRef.current = true;
+                  handleRolesTouchStart(e);
+                }}
+                onTouchMove={handleRolesTouchMove}
+                onTouchEnd={() => {
+                  isRolesPausedRef.current = false;
+                  handleRolesMouseUpOrLeave();
+                }}
+              >
+                {(() => {
+                  const baseRoles = [
+                    {
+                      img: adminImg,
+                      icon: HiOutlineBriefcase,
+                      title: t("homeRole1Title"),
+                      desc: t("homeRole1Desc"),
+                      accent: "blue"
+                    },
+                    {
+                      img: committeeImg,
+                      icon: HiOutlineUserGroup,
+                      title: t("homeRole2Title"),
+                      desc: t("homeRole2Desc"),
+                      accent: "purple"
+                    },
+                    {
+                      img: residentImg,
+                      icon: HiOutlineHome,
+                      title: t("homeRole3Title"),
+                      desc: t("homeRole3Desc"),
+                      accent: "orange"
+                    },
+                    {
+                      img: securityGuardImg,
+                      icon: HiOutlineLockClosed,
+                      title: t("homeRole4Title"),
+                      desc: t("homeRole4Desc"),
+                      accent: "teal"
+                    },
+                    {
+                      img: accountantImg,
+                      icon: HiOutlineCalculator,
+                      title: t("homeRole5Title"),
+                      desc: t("homeRole5Desc"),
+                      accent: "indigo"
+                    },
+                    {
+                      img: societyHeroCampusImg,
+                      icon: HiOutlineBuildingStorefront,
+                      title: t("homeRole6Title"),
+                      desc: t("homeRole6Desc"),
+                      accent: "emerald"
+                    }
+                  ];
+                  // Duplicate for continuous infinite flow
+                  return [...baseRoles, ...baseRoles].map((role, rIdx) => {
+                    const RoleIcon = role.icon;
+                    return (
+                      <div
+                        key={rIdx}
+                        className={`home-role-card-pro home-role-card-pro--${role.accent}`}
+                        onClick={() => {
+                          if (!hasDraggedRef.current) {
+                            goToApp();
+                          }
+                        }}
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            goToApp();
+                          }
+                        }}
+                      >
+                        {/* Top Role Media */}
+                        <div className="home-role-card-media">
+                          <SafeImage
+                            src={role.img}
+                            alt={role.title}
+                            className="home-role-card-img"
+                            fallbackIcon={RoleIcon}
+                          />
+                        </div>
+
+                        {/* Card Content */}
+                        <div className="home-role-card-body">
+                          <div className="home-role-card-header">
+                            <h3 className="home-role-card-title">{role.title}</h3>
+                            <span className="home-role-card-icon-chip">
+                              <RoleIcon className="home-role-card-icon" aria-hidden="true" />
+                            </span>
+                          </div>
+                          <p className="home-role-card-desc">{role.desc}</p>
+                        </div>
                       </div>
-                      <p className="home-role-desc">{role.desc}</p>
-                    </div>
+                    );
+                  });
+                })()}
+              </div>
 
-                    {/* Right Side Image */}
-                    <div className="home-role-image-right">
-                      <SafeImage
-                        src={role.img}
-                        alt={role.title}
-                        className="home-role-img"
-                        fallbackIcon={RoleIcon}
-                      />
-                    </div>
-                  </motion.div>
-                );
-              })}
+              {/* Next Navigation Arrow */}
+              <button
+                type="button"
+                className="home-roles-nav-btn home-roles-nav-btn--next"
+                onClick={() => nudgeRole("next")}
+                aria-label="Next role"
+              >
+                <HiOutlineChevronRight />
+              </button>
             </div>
           </div>
         </section>
 
         {/* ==========================================================================
-         7. CALL TO ACTION (CTA) BANNER (PPT SLIDE 5 - MODERN LUXURY REDESIGN)
+         7. CALL TO ACTION (CTA) BANNER (PREMIUM ENTERPRISE SAAS SHOWCASE)
          ========================================================================== */}
-        <motion.section
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, amount: 0.2 }}
-          variants={slideVariants}
+        <section
           className="home-cta-section"
         >
           <div className="home-container">
             <div className="home-cta-banner">
-              {/* Ambient Glow Orbs */}
-              <div className="home-cta-glow-orb orb-1"></div>
-              <div className="home-cta-glow-orb orb-2"></div>
-
               <SafeImage
                 src={homeBannerImg}
                 alt={t("homeAltCta")}
@@ -762,21 +995,32 @@ const Home = () => {
 
               <div className="home-cta-content">
                 <div className="home-cta-badge">
-                  <HiOutlineSparkles className="home-cta-sparkle-icon" /> {t("homeCtaBadge")}
+                  <HiOutlineSparkles className="home-cta-sparkle-icon" />
+                  <span>{t("homeCtaBadge")}</span>
                 </div>
 
                 <h2 className="home-cta-title">
-                  {t("homeCtaTitle1")}<br />{t("homeCtaTitle2")}
+                  {t("homeCtaTitle1")} <br />
+                  <span className="home-cta-title-accent">{t("homeCtaTitle2")}</span>
                 </h2>
 
                 <p className="home-cta-subtitle">
                   {t("homeCtaSubtitle")}
                 </p>
 
-                <div className="home-cta-pills">
-                  <span className="home-cta-pill"><HiOutlineCheckCircle /> {t("homeCtaPill1")}</span>
-                  <span className="home-cta-pill"><HiOutlineCheckCircle /> {t("homeCtaPill2")}</span>
-                  <span className="home-cta-pill"><HiOutlineCheckCircle /> {t("homeCtaPill3")}</span>
+                <div className="home-cta-features-strip">
+                  <div className="home-cta-feature-chip">
+                    <HiOutlineCheckCircle className="home-cta-chip-icon" />
+                    <span>{t("homeCtaPill1")}</span>
+                  </div>
+                  <div className="home-cta-feature-chip">
+                    <HiOutlineCheckCircle className="home-cta-chip-icon" />
+                    <span>{t("homeCtaPill2")}</span>
+                  </div>
+                  <div className="home-cta-feature-chip">
+                    <HiOutlineCheckCircle className="home-cta-chip-icon" />
+                    <span>{t("homeCtaPill3")}</span>
+                  </div>
                 </div>
 
                 <div className="home-cta-buttons">
@@ -784,92 +1028,102 @@ const Home = () => {
                     onClick={goToApp}
                     className="home-cta-btn-primary"
                   >
-                    {loggedIn ? t("homeDashboard") : t("homeGetStartedNow")} <HiOutlineArrowRight className="home-cta-arrow" />
+                    <span>{loggedIn ? t("homeDashboard") : t("homeGetStartedNow")}</span>
+                    <HiOutlineArrowRight className="home-cta-arrow" />
                   </button>
 
                   <button
                     onClick={() => scrollToSection("features")}
                     className="home-cta-btn-glass"
                   >
-                    {t("homeExplore")}
+                    <span>{t("homeExplore")}</span>
                   </button>
                 </div>
               </div>
             </div>
           </div>
-        </motion.section>
+        </section>
       </main>
 
       {/* ==========================================================================
-         8. FOOTER SECTION
+         8. FOOTER SECTION — Sticky Under-Page Reveal (motion.dev Pattern)
          ========================================================================== */}
-      <footer className="home-footer">
-        <div className="home-footer-bg" aria-hidden="true">
-          <img src={homeBannerImg} alt="" />
-        </div>
-        <div className="home-footer-frost" aria-hidden="true" />
-        <div className="home-container">
-          <div className="home-footer-grid">
-            {/* Col 1: Company Info */}
-            <div className="home-footer-brand">
-              <Link to="/" className="home-footer-logo">
-                <div className="home-brand-icon-box" style={{ width: 36, height: 36, fontSize: "1.1rem" }}>
-                  <HiOutlineBuildingOffice2 />
-                </div>
-                <span>{t("homeFooterBrand")}</span>
-              </Link>
-              <p className="home-footer-desc">
-                {t("homeHeroSubtitle")}
-              </p>
+      <div ref={footerRevealRef} className="home-footer-reveal-container">
+        <motion.footer
+          style={{
+            opacity: prefersReduced ? 1 : footerOpacity,
+            scale: prefersReduced ? 1 : footerScale,
+            y: prefersReduced ? 0 : footerY
+          }}
+          className="home-footer"
+        >
+          <div className="home-footer-bg" aria-hidden="true">
+            <img src={homeBannerImg} alt="" />
+          </div>
+          <div className="home-footer-frost" aria-hidden="true" />
+          <div className="home-container">
+            <div className="home-footer-grid">
+              {/* Col 1: Company Info */}
+              <div className="home-footer-brand">
+                <Link to="/" className="home-footer-logo">
+                  <div className="home-brand-icon-box" style={{ width: 36, height: 36, fontSize: "1.1rem" }}>
+                    <HiOutlineBuildingOffice2 />
+                  </div>
+                  <span>{t("homeFooterBrand")}</span>
+                </Link>
+                <p className="home-footer-desc">
+                  {t("homeHeroSubtitle")}
+                </p>
+              </div>
+
+              {/* Col 2: Product */}
+              <div>
+                <h4 className="home-footer-col-title">{t("homeFooterProduct")}</h4>
+                <ul className="home-footer-links">
+                  <li><span className="home-footer-link" onClick={() => scrollToSection("features")}>{t("homeNavFeatures")}</span></li>
+                  <li><Link to="/login" className="home-footer-link">{t("homeFooterResidentPortal")}</Link></li>
+                  <li><Link to="/login" className="home-footer-link">{t("homeFooterAdminDashboard")}</Link></li>
+                  <li><Link to="/login" className="home-footer-link">{t("homeFooterSecurityApp")}</Link></li>
+                  <li><Link to="/login" className="home-footer-link">{t("homeFooterAccountantPortal")}</Link></li>
+                </ul>
+              </div>
+
+              {/* Col 3: Company */}
+              <div>
+                <h4 className="home-footer-col-title">{t("homeFooterCompany")}</h4>
+                <ul className="home-footer-links">
+                  <li><span className="home-footer-link" onClick={() => scrollToSection("roles")}>{t("homeFooterAboutUs")}</span></li>
+                  <li><span className="home-footer-link" onClick={() => scrollToSection("how-it-works")}>{t("homeNavHowItWorks")}</span></li>
+                  <li><Link to="/login" className="home-footer-link">{t("homeFooterCareers")}</Link></li>
+                  <li><Link to="/login" className="home-footer-link">{t("homeFooterContactUs")}</Link></li>
+                </ul>
+              </div>
+
+              {/* Col 4: Legal */}
+              <div>
+                <h4 className="home-footer-col-title">{t("homeFooterLegal")}</h4>
+                <ul className="home-footer-links">
+                  <li><Link to="/privacy-policy" className="home-footer-link">{t("homeFooterPrivacy")}</Link></li>
+                  <li><Link to="/terms-of-service" className="home-footer-link">{t("homeFooterTerms")}</Link></li>
+                  <li><Link to="/security-policy" className="home-footer-link">{t("homeFooterSecurityPolicy")}</Link></li>
+                  <li><Link to="/cookie-policy" className="home-footer-link">{t("homeFooterCookie")}</Link></li>
+                </ul>
+              </div>
             </div>
 
-            {/* Col 2: Product */}
-            <div>
-              <h4 className="home-footer-col-title">{t("homeFooterProduct")}</h4>
-              <ul className="home-footer-links">
-                <li><span className="home-footer-link" onClick={() => scrollToSection("features")}>{t("homeNavFeatures")}</span></li>
-                <li><Link to="/login" className="home-footer-link">{t("homeFooterResidentPortal")}</Link></li>
-                <li><Link to="/login" className="home-footer-link">{t("homeFooterAdminDashboard")}</Link></li>
-                <li><Link to="/login" className="home-footer-link">{t("homeFooterSecurityApp")}</Link></li>
-                <li><Link to="/login" className="home-footer-link">{t("homeFooterAccountantPortal")}</Link></li>
-              </ul>
-            </div>
-
-            {/* Col 3: Company */}
-            <div>
-              <h4 className="home-footer-col-title">{t("homeFooterCompany")}</h4>
-              <ul className="home-footer-links">
-                <li><span className="home-footer-link" onClick={() => scrollToSection("roles")}>{t("homeFooterAboutUs")}</span></li>
-                <li><span className="home-footer-link" onClick={() => scrollToSection("how-it-works")}>{t("homeNavHowItWorks")}</span></li>
-                <li><Link to="/login" className="home-footer-link">{t("homeFooterCareers")}</Link></li>
-                <li><Link to="/login" className="home-footer-link">{t("homeFooterContactUs")}</Link></li>
-              </ul>
-            </div>
-
-            {/* Col 4: Legal */}
-            <div>
-              <h4 className="home-footer-col-title">{t("homeFooterLegal")}</h4>
-              <ul className="home-footer-links">
-                <li><Link to="/privacy-policy" className="home-footer-link">{t("homeFooterPrivacy")}</Link></li>
-                <li><Link to="/terms-of-service" className="home-footer-link">{t("homeFooterTerms")}</Link></li>
-                <li><Link to="/security-policy" className="home-footer-link">{t("homeFooterSecurityPolicy")}</Link></li>
-                <li><Link to="/cookie-policy" className="home-footer-link">{t("homeFooterCookie")}</Link></li>
-              </ul>
+            {/* Footer Bottom Bar */}
+            <div className="home-footer-bottom">
+              <span>© {new Date().getFullYear()} {t("homeFooterBrand")}. {t("homeFooterRights")}.</span>
+              <div className="home-social-links">
+                <a href="#youtube" className="home-social-icon" aria-label="YouTube"><FaYoutube /></a>
+                <a href="#facebook" className="home-social-icon" aria-label="Facebook"><FaFacebookF /></a>
+                <a href="#instagram" className="home-social-icon" aria-label="Instagram"><FaInstagram /></a>
+                <a href="#linkedin" className="home-social-icon" aria-label="LinkedIn"><FaLinkedinIn /></a>
+              </div>
             </div>
           </div>
-
-          {/* Footer Bottom Bar */}
-          <div className="home-footer-bottom">
-            <span>© {new Date().getFullYear()} {t("homeFooterBrand")}. {t("homeFooterRights")}.</span>
-            <div className="home-social-links">
-              <a href="#youtube" className="home-social-icon" aria-label="YouTube"><FaYoutube /></a>
-              <a href="#facebook" className="home-social-icon" aria-label="Facebook"><FaFacebookF /></a>
-              <a href="#instagram" className="home-social-icon" aria-label="Instagram"><FaInstagram /></a>
-              <a href="#linkedin" className="home-social-icon" aria-label="LinkedIn"><FaLinkedinIn /></a>
-            </div>
-          </div>
-        </div>
-      </footer>
+        </motion.footer>
+      </div>
     </div>
   );
 };

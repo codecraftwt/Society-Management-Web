@@ -1921,14 +1921,13 @@ html.light.role-theme .sa-add-btn.sa-add-pill.parking-create-slots-btn:hover:not
 }
 
 .parking-management-page .ps-avail-bay {
-  background: rgba(var(--acct-green-rgb), 0.12) !important;
-  border-color: rgba(var(--acct-green-rgb), 0.3) !important;
-  color: var(--success) !important;
+  background: var(--card-inner-bg, rgba(255, 255, 255, 0.03)) !important;
+  border: 1px dashed var(--card-inner-border, rgba(255, 255, 255, 0.12)) !important;
+  color: var(--text-secondary, #94a3b8) !important;
 }
 
 .parking-management-page .ps-avail-dot {
-  background: var(--success) !important;
-  box-shadow: 0 0 0 4px rgba(var(--acct-green-rgb), 0.12);
+  display: none !important;
 }
 
 .parking-management-page .ps-occupied-details {

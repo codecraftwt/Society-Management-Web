@@ -1297,43 +1297,37 @@ const FlatHistory = () => {
                         style={{
                           animationDelay: `${i * 15}ms`,
                           position: "relative",
-                          borderRadius: 20,
-                          padding: "18px 20px 16px",
+                          borderRadius: 16,
+                          padding: "16px 18px 14px",
                           cursor: "pointer",
-                          transition: "all 0.22s cubic-bezier(0.16, 1, 0.3, 1)",
-                          background: occ
-                            ? "linear-gradient(180deg, rgba(99, 102, 241, 0.06) 0%, rgba(99, 102, 241, 0.01) 100%), var(--card-inner-bg)"
-                            : "linear-gradient(180deg, rgba(16, 185, 129, 0.06) 0%, rgba(16, 185, 129, 0.01) 100%), var(--card-inner-bg)",
+                          transition: "all 0.2s ease",
+                          background: "var(--card-inner-bg, rgba(255, 255, 255, 0.03))",
                           border: isSelected
-                            ? "2px solid var(--accent)"
-                            : occ
-                              ? "1.5px solid rgba(99, 102, 241, 0.22)"
-                              : "1.5px solid rgba(16, 185, 129, 0.25)",
+                            ? "1.5px solid var(--accent, #6366f1)"
+                            : "1px solid var(--card-inner-border, rgba(255, 255, 255, 0.08))",
                           boxShadow: isSelected
-                            ? "0 8px 30px rgba(160, 90, 255, 0.28)"
-                            : occ
-                              ? "0 4px 18px rgba(0, 0, 0, 0.06)"
-                              : "0 4px 18px rgba(0, 0, 0, 0.06)",
+                            ? "0 8px 24px rgba(99, 102, 241, 0.2)"
+                            : "0 1px 3px rgba(0, 0, 0, 0.04)",
                           outline: "none",
                         }}
-                        className={`group ${occ ? "hover:border-indigo-400/60 hover:shadow-lg hover:shadow-indigo-500/15" : "hover:border-emerald-400/60 hover:shadow-lg hover:shadow-emerald-500/15"} hover:-translate-y-1`}
+                        className="group hover:border-slate-400/40 hover:shadow-md hover:-translate-y-0.5"
                       >
                         {/* Top Header: Icon + Unit Number + BHK + Status Badge */}
                         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10 }}>
                           <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
                             <div style={{
-                              width: 42,
-                              height: 42,
-                              borderRadius: 13,
+                              width: 38,
+                              height: 38,
+                              borderRadius: 11,
                               display: "flex",
                               alignItems: "center",
                               justifyContent: "center",
                               flexShrink: 0,
-                              background: occ ? "rgba(99, 102, 241, 0.14)" : "rgba(16, 185, 129, 0.14)",
-                              border: `1px solid ${occ ? "rgba(99, 102, 241, 0.28)" : "rgba(16, 185, 129, 0.28)"}`,
-                              color: occ ? "#818cf8" : "#34d399",
+                              background: "rgba(255, 255, 255, 0.05)",
+                              border: "1px solid rgba(255, 255, 255, 0.1)",
+                              color: "var(--text-secondary, #94a3b8)",
                             }}>
-                              {occ ? <MdApartment size={22} /> : <MdDoorFront size={22} />}
+                              {occ ? <MdApartment size={20} /> : <MdDoorFront size={20} />}
                             </div>
 
                             <div style={{ minWidth: 0 }}>
@@ -1363,50 +1357,36 @@ const FlatHistory = () => {
                           </div>
 
                           {/* Status Badge */}
-                          {occ ? (
+                          <span style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: 5,
+                            fontSize: 11,
+                            fontWeight: 650,
+                            padding: "3px 9px",
+                            borderRadius: 999,
+                            background: "rgba(255, 255, 255, 0.05)",
+                            color: "var(--text-secondary, #94a3b8)",
+                            border: "1px solid rgba(255, 255, 255, 0.1)",
+                            whiteSpace: "nowrap",
+                            flexShrink: 0,
+                          }}>
                             <span style={{
-                              display: "inline-flex",
-                              alignItems: "center",
-                              gap: 5,
-                              fontSize: 11,
-                              fontWeight: 800,
-                              padding: "4px 10px",
-                              borderRadius: 999,
-                              background: "rgba(99, 102, 241, 0.14)",
-                              color: "#818cf8",
-                              border: "1px solid rgba(99, 102, 241, 0.3)",
-                              whiteSpace: "nowrap",
-                              flexShrink: 0,
-                            }}>
-                              <MdPerson size={13} />
-                              <span>{t("fhOccupied", "Occupied")}</span>
-                            </span>
-                          ) : (
-                            <span style={{
-                              display: "inline-flex",
-                              alignItems: "center",
-                              gap: 6,
-                              fontSize: 11,
-                              fontWeight: 800,
-                              padding: "4px 10px",
-                              borderRadius: 999,
-                              background: "rgba(16, 185, 129, 0.14)",
-                              color: "#34d399",
-                              border: "1px solid rgba(16, 185, 129, 0.3)",
-                              whiteSpace: "nowrap",
-                              flexShrink: 0,
-                            }}>
-                              <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#34d399", boxShadow: "0 0 8px #34d399" }} className="animate-pulse" />
-                              <span>{t("fhVacant", "Vacant")}</span>
-                            </span>
-                          )}
+                              width: 6,
+                              height: 6,
+                              borderRadius: "50%",
+                              background: occ ? "var(--text-primary, #f8fafc)" : "var(--text-secondary, #94a3b8)",
+                              opacity: occ ? 0.9 : 0.6
+                            }} />
+                            <span>{occ ? t("fhOccupied", "Occupied") : t("fhVacant", "Vacant")}</span>
+                          </span>
                         </div>
 
                         {/* Bottom Section: Resident Strip OR Vacant Action */}
                         <div style={{
                           marginTop: 14,
                           paddingTop: 12,
-                          borderTop: `1px solid ${occ ? "rgba(99, 102, 241, 0.14)" : "rgba(16, 185, 129, 0.14)"}`,
+                          borderTop: "1px solid var(--card-inner-border, rgba(255, 255, 255, 0.08))",
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "space-between",
@@ -1416,18 +1396,18 @@ const FlatHistory = () => {
                             <>
                               <div style={{ display: "flex", alignItems: "center", gap: 9, minWidth: 0 }}>
                                 <div style={{
-                                  width: 32,
-                                  height: 32,
-                                  borderRadius: 10,
-                                  background: "linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)",
-                                  color: "#fff",
-                                  fontWeight: 800,
-                                  fontSize: 12,
+                                  width: 30,
+                                  height: 30,
+                                  borderRadius: 8,
+                                  background: "rgba(255, 255, 255, 0.07)",
+                                  border: "1px solid rgba(255, 255, 255, 0.12)",
+                                  color: "var(--text-primary, #f8fafc)",
+                                  fontWeight: 700,
+                                  fontSize: 11.5,
                                   display: "flex",
                                   alignItems: "center",
                                   justifyContent: "center",
                                   flexShrink: 0,
-                                  boxShadow: "0 2px 8px rgba(99, 102, 241, 0.3)",
                                 }}>
                                   {initial}
                                 </div>
@@ -1444,33 +1424,26 @@ const FlatHistory = () => {
                               <span style={{
                                 display: "inline-flex",
                                 alignItems: "center",
-                                gap: 2,
-                                fontSize: 12,
+                                gap: 4,
+                                fontSize: 11.5,
                                 fontWeight: 700,
-                                color: "#818cf8",
+                                padding: "5px 12px",
+                                borderRadius: 8,
+                                background: "#2563EB",
+                                color: "#FFFFFF",
+                                border: "1px solid #1D4ED8",
+                                boxShadow: "0 2px 6px rgba(37, 99, 235, 0.25)",
                                 flexShrink: 0,
-                              }} className="group-hover:translate-x-1 transition-transform">
+                                transition: "all 0.18s ease",
+                              }} className="hover:opacity-90">
                                 <span>{t("fhViewHistory", "History")}</span>
-                                <MdChevronRight size={15} />
+                                <MdChevronRight size={14} />
                               </span>
                             </>
                           ) : (
                             <>
-                              <div style={{ display: "flex", alignItems: "center", gap: 7, minWidth: 0 }}>
-                                <div style={{
-                                  width: 22,
-                                  height: 22,
-                                  borderRadius: 7,
-                                  background: "rgba(16, 185, 129, 0.15)",
-                                  display: "flex",
-                                  alignItems: "center",
-                                  justifyContent: "center",
-                                  color: "#34d399",
-                                  flexShrink: 0,
-                                }}>
-                                  <MdCheckCircle size={14} />
-                                </div>
-                                <span style={{ fontSize: 12, fontWeight: 600, color: "#34d399", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                              <div style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0 }}>
+                                <span style={{ fontSize: 12, fontWeight: 500, color: "var(--text-secondary, #94a3b8)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                                   {t("fhAvailableForAssignment", "Available for assignment")}
                                 </span>
                               </div>
@@ -1478,14 +1451,20 @@ const FlatHistory = () => {
                               <span style={{
                                 display: "inline-flex",
                                 alignItems: "center",
-                                gap: 2,
-                                fontSize: 12,
+                                gap: 4,
+                                fontSize: 11.5,
                                 fontWeight: 700,
-                                color: "#34d399",
+                                padding: "5px 12px",
+                                borderRadius: 8,
+                                background: "#6366F1",
+                                color: "#FFFFFF",
+                                border: "1px solid #4F46E5",
+                                boxShadow: "0 2px 6px rgba(99, 102, 241, 0.25)",
                                 flexShrink: 0,
-                              }} className="group-hover:translate-x-1 transition-transform">
+                                transition: "all 0.18s ease",
+                              }} className="hover:opacity-90">
                                 <span>Details</span>
-                                <MdChevronRight size={15} />
+                                <MdChevronRight size={14} />
                               </span>
                             </>
                           )}
@@ -1534,8 +1513,7 @@ const FlatHistory = () => {
               </span>
               <GlobalBadge
                 size="sm"
-                variant={selectedFlat.resident_id ? "danger" : "success"}
-                icon={selectedFlat.resident_id ? MdBlock : MdCheckCircle}
+                variant="neutral"
               >
                 {selectedFlat.resident_id ? t("fhOccupied") || "Occupied" : t("fhVacant") || "Available"}
               </GlobalBadge>

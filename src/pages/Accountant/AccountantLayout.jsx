@@ -20,6 +20,7 @@ import {
   MdEmergency,
   MdWarning,
   MdSecurity,
+  MdGavel,
 } from "react-icons/md";
 import { FaUsers, FaUserShield, FaParking } from "react-icons/fa";
 import { LanguageProvider, useLang } from "../../context/LanguageContext";

@@ -713,6 +713,7 @@ html.light.role-theme .sidebar-link.active:hover {
   background: var(--accent) !important;
   background-image: none !important;
   color: #ffffff !important;
+
   border-radius: 12px;
   border-color: transparent !important;
   box-shadow: none !important;
@@ -729,13 +730,19 @@ html.role-theme .sidebar-link.active *,
 html.light.role-theme .sidebar-link.active,
 html.light.role-theme .sidebar-link.active * {
   color: #ffffff !important;
+
+}
+
+html.role-theme .sidebar-link,
+html.light.role-theme .sidebar-link {
+  font-size: 14.5px !important;
 }
 
 html.role-theme .sidebar-sublink,
 html.light.role-theme .sidebar-sublink {
-  font-size: 11px !important;
+  font-size: 13.5px !important;
   font-weight: 500;
-  line-height: 1.25;
+  line-height: 1.35;
 }
 
 html.role-theme .sidebar-sublink.active,
@@ -744,9 +751,14 @@ html.light.role-theme .sidebar-sublink.active {
 }
 
 @media (max-width: 767px) {
-  html.role-theme .sidebar-sublink,
+  html.role-theme .sidebar-link,
+html.light.role-theme .sidebar-link {
+  font-size: 14.5px !important;
+}
+
+html.role-theme .sidebar-sublink,
   html.light.role-theme .sidebar-sublink {
-    font-size: 13px !important;
+    font-size: 14.5px !important;
   }
 }
 
@@ -781,6 +793,7 @@ html.light.role-theme .btn-submit {
   background: var(--accent) !important;
   box-shadow: 0 8px 20px rgba(var(--acct-purple-rgb), 0.32) !important;
   color: #ffffff !important;
+
   border-color: transparent !important;
 }
 
@@ -803,6 +816,7 @@ html.role-theme .sa-btn-info .sa-pill-inner,
 html.light.role-theme .sa-btn-info .sa-pill-inner {
   background: var(--accent) !important;
   color: #ffffff !important;
+
 }
 
 html.role-theme .sa-btn-primary .sa-pill-blob,
@@ -832,6 +846,7 @@ html.role-theme .sa-btn-success .sa-pill-inner,
 html.light.role-theme .sa-btn-success .sa-pill-inner {
   background: var(--success) !important;
   color: #ffffff !important;
+
 }
 
 html.role-theme .sa-add-btn.sa-add-pill.sa-btn-danger,
@@ -860,6 +875,7 @@ html.light.role-theme .btn-danger {
   background: #ab2e3c !important;
   background-image: none !important;
   color: #ffffff !important;
+
   box-shadow: 0 8px 20px rgba(171, 46, 60, 0.28) !important;
 }
 
@@ -868,6 +884,7 @@ html.light.role-theme .sa-add-btn.sa-add-pill.sa-btn-danger .sa-pill-inner > *,
 html.role-theme .sa-add-btn.sa-add-pill.sa-btn-danger .sa-pill-inner svg,
 html.light.role-theme .sa-add-btn.sa-add-pill.sa-btn-danger .sa-pill-inner svg {
   color: #ffffff !important;
+
   fill: currentColor !important;
 }
 
@@ -891,6 +908,7 @@ html.light.role-theme .sa-btn-warning .sa-pill-inner {
 
 html.light.role-theme .sa-btn-warning .sa-pill-inner {
   color: #ffffff !important;
+
 }
 
 html.role-theme .sa-add-btn.sa-add-pill.sa-btn-secondary,
@@ -980,6 +998,7 @@ html.role-theme .sa-btn-warning:hover:not(:disabled) .sa-pill-inner,
 html.light.role-theme .sa-btn-warning:hover:not(:disabled) .sa-pill-inner {
   background: color-mix(in srgb, var(--warning) 72%, #000) !important;
   color: #ffffff !important;
+
 }
 
 html.role-theme .global-btn-draw rect,
@@ -1010,6 +1029,7 @@ html.role-theme .pagination-btn.pagination-btn-active,
 html.role-theme .pagination-btn.pagination-btn-active:disabled {
   background: var(--accent) !important;
   color: #ffffff !important;
+
   border-color: var(--accent) !important;
   opacity: 1 !important;
   box-shadow: 0 4px 12px rgba(var(--acct-purple-rgb), 0.28);
@@ -1043,6 +1063,7 @@ html.light.role-theme .sa-modal-icon {
   border-radius: 14px;
   background: linear-gradient(135deg, var(--accent), var(--accent-light)) !important;
   color: #ffffff !important;
+
   border: none !important;
   box-shadow: 0 8px 20px rgba(var(--acct-purple-rgb), 0.3);
 }
@@ -1052,6 +1073,7 @@ html.role-theme .sa-modal-icon svg,
 html.light.role-theme .sa-modal-icon span,
 html.light.role-theme .sa-modal-icon svg {
   color: #ffffff !important;
+
   background: transparent !important;
   border: none !important;
 }
@@ -1339,6 +1361,7 @@ html.role-theme:not(.light) .sa-segment button.sa-segment-active {
   background: var(--accent) !important;
   box-shadow: 0 8px 20px rgba(var(--acct-purple-rgb), 0.32) !important;
   color: #ffffff !important;
+
 }
 
 html.role-theme:not(.light) .sa-btn-ghost,
@@ -1845,6 +1868,7 @@ html.role-theme .btn-submit {
   gap: 8px;
   background: var(--accent) !important;
   color: #ffffff !important;
+
   border: 1px solid transparent !important;
   box-shadow: 0 4px 14px rgba(var(--acct-purple-rgb), 0.32) !important;
   cursor: pointer;
@@ -1880,6 +1904,7 @@ html.role-theme .btn-approve {
   gap: 8px;
   background: var(--success) !important;
   color: #ffffff !important;
+
   border: 1px solid transparent !important;
   box-shadow: 0 4px 14px rgba(27, 207, 180, 0.28) !important;
   cursor: pointer;
@@ -1910,6 +1935,7 @@ html.role-theme .btn-reject {
   gap: 8px;
   background: #ab2e3c !important;
   color: #ffffff !important;
+
   border: 1px solid transparent !important;
   box-shadow: 0 4px 14px rgba(171, 46, 60, 0.28) !important;
   cursor: pointer;
@@ -2287,6 +2313,7 @@ html.role-theme .sa-modal-footer {
 }html.light.role-theme .stat-card__val,
 html.light.role-theme .stat-card__label {
   color: #ffffff !important;
+
 }/* -------------------------------------------------------------------------- 6b. ACCOUNTING KPI PALETTE Distinct colors for the /admin/accounting cards (opening/income/expense/ balance/bills/maintenance/amenity) so they no longer mirror the shared admin dashboard groups (purple/teal/cyan/red). Dark = sky,
 indigo,
 coral-pink,

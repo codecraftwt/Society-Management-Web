@@ -19,8 +19,10 @@ import {
   MdReceiptLong,
   MdShield,
   MdTimer,
+  MdGavel,
 } from "react-icons/md";
 import GlobalModal from "../../../components/common/GlobalModal";
+import AcceptedTermsModal from "./AcceptedTermsModal";
 import { Spinner, amenityEmoji, isPaidAmenity } from "../amenityHelpers.jsx";
 import { formatBlockName, formatUnitNumber } from "../../../utils/flatFormatter";
 
@@ -77,6 +79,7 @@ export default function BookingDetailModal({
   canAct = false,
 }) {
   const [copiedKey, setCopiedKey] = useState(null);
+  const [showTermsModal, setShowTermsModal] = useState(false);
 
   if (!booking) return null;
 
@@ -666,6 +669,63 @@ export default function BookingDetailModal({
           </div>
         </div>
 
+        {/* ── Amenities Rules & Terms Acceptance Card ── */}
+        <div
+          className="rounded-2xl p-4 border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3"
+          style={{
+            background: "var(--card-inner-bg)",
+            borderColor: "var(--glass-border)",
+          }}
+        >
+          <div className="flex items-center gap-3">
+            <div
+              className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+              style={{
+                background: booking.terms_accepted ? "rgba(16, 185, 129, 0.12)" : "rgba(100, 116, 139, 0.12)",
+                color: booking.terms_accepted ? "#10b981" : "#64748b",
+              }}
+            >
+              <MdShield size={20} />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold" style={{ color: "var(--text-primary)" }}>
+                  Amenities Rules & Terms
+                </span>
+                <span
+                  className="text-[10px] font-bold px-2 py-0.5 rounded-full"
+                  style={{
+                    background: booking.terms_accepted ? "rgba(16, 185, 129, 0.15)" : "var(--card-bg)",
+                    color: booking.terms_accepted ? "#10b981" : "var(--text-secondary)",
+                    border: `1px solid ${booking.terms_accepted ? "rgba(16, 185, 129, 0.3)" : "var(--glass-border)"}`,
+                  }}
+                >
+                  {booking.terms_accepted ? "Rules Accepted" : "No Terms Required"}
+                </span>
+              </div>
+              <p className="text-[11px] text-secondary mt-0.5">
+                {booking.terms_accepted && booking.terms_accepted_at
+                  ? `Accepted by resident on ${formatFullDate(booking.terms_accepted_at)} at ${formatTime12(booking.terms_accepted_at.slice(11, 16))}`
+                  : booking.terms_accepted
+                  ? "Terms accepted by resident prior to booking submission."
+                  : "No active rules were configured by society at time of request."}
+              </p>
+            </div>
+          </div>
+
+          {booking.terms_accepted && (
+            <button
+              type="button"
+              onClick={() => setShowTermsModal(true)}
+              className="px-3 py-1.5 rounded-xl border text-xs font-semibold text-accent hover:bg-accent/10 transition flex items-center gap-1.5 shrink-0"
+              style={{ borderColor: "rgba(160, 90, 255, 0.3)" }}
+            >
+              <MdGavel size={14} />
+              <span>View Accepted Terms</span>
+            </button>
+          )}
+        </div>
+
         {/* ── Admin Action Buttons (Approve / Reject) ── */}
         <div
           className="pt-4 border-t flex flex-col sm:flex-row items-center justify-end gap-3"
@@ -719,6 +779,12 @@ export default function BookingDetailModal({
         </div>
 
       </div>
+
+      <AcceptedTermsModal
+        bookingId={booking.id}
+        isOpen={showTermsModal}
+        onClose={() => setShowTermsModal(false)}
+      />
     </GlobalModal>
   );
 }

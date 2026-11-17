@@ -6814,7 +6814,7 @@ export default function Resident() {
 
   const [page, setPage] = useState(1);
 
-  const [limit, setLimit] = useState(50);
+  const [limit, setLimit] = useState(10);
 
   const limitRef = useRef(limit);
 

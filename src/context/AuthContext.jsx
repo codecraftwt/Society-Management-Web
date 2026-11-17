@@ -34,6 +34,7 @@ function normaliseUser(raw) {
                            : (raw.roles ?? [raw.role]).filter(Boolean),
     availableSocieties:  Array.isArray(raw.availableSocieties) ? raw.availableSocieties : [],
     activeRole:          raw.activeRole          ?? raw.role,
+    has_pending_rules:   raw.has_pending_rules   ?? false,
     dynamic_permissions: raw.dynamic_permissions ?? raw.permissions ?? null,
     permissions:         raw.permissions         ?? raw.dynamic_permissions ?? null,
   };

@@ -42,7 +42,9 @@ API.interceptors.request.use((config) => {
     
     // Also attach as query param for GET requests (backwards compatibility with some controllers)
     if (config.method === "get") {
-      config.params = { ...config.params, society_id: saFilter };
+      if (!/[?&]society_id=/i.test(config.url || "")) {
+        config.params = { ...config.params, society_id: saFilter };
+      }
     }
   }
   // ---------------------------------------------------------

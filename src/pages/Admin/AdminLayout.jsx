@@ -25,6 +25,7 @@ import {
   MdHistory,
   MdInventory2,
   MdCleaningServices,
+  MdGavel,
 } from "react-icons/md";
 import NotificationBell from "../../components/common/NotificationBell";
 import AdminEmergencyModal from "../../components/admin/AdminEmergencyModal";
@@ -159,6 +160,13 @@ function AdminLayoutInner() {
       module: "events",
     },
     {
+      label: t("adminMenuRules", "Rules & Policies"),
+      path: `${base}/rules`,
+      icon: MdGavel,
+      group: "COMMUNICATION",
+      module: "rules",
+    },
+    {
       label: t("adminMenuComplaints"),
       path: `${base}/complaints`,
       icon: MdReportProblem,
@@ -259,7 +267,7 @@ function AdminLayoutInner() {
         brandSubtitle={isCommittee ? (user?.committee_position || user?.designation || t("sbViewCommittee")) : t("sbViewAdmin")}
         base={base}
         drawerExtra={<RoleSwitcher fullWidth />}
-        defaultOpenGroups={["FINANCE & BILLS"]}
+        defaultOpenGroups={["COMMUNICATION", "FINANCE & BILLS", "COMMUNITY & PROPERTY"]}
       />
 
       {/* ── MAIN CONTENT ── */}

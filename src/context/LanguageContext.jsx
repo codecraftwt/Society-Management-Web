@@ -44,18 +44,36 @@ export function LanguageProvider({ role, children }) {
   const storageKey = `app_lang_${(role || "guest").toLowerCase()}`;
 
   const [lang, setLang] = useState(() => {
-    return localStorage.getItem(storageKey) || "en";
+    return (
+      localStorage.getItem(storageKey) ||
+      localStorage.getItem("app_lang") ||
+      "en"
+    );
   });
 
-  /* Re-read correct stored language if role changes */
+  /* Re-read correct stored language if role changes or storage updates */
   useEffect(() => {
-    const stored = localStorage.getItem(storageKey) || "en";
-    setLang(stored);
+    const handleSync = () => {
+      const stored =
+        localStorage.getItem(storageKey) ||
+        localStorage.getItem("app_lang") ||
+        "en";
+      setLang(stored);
+    };
+    handleSync();
+    window.addEventListener("storage", handleSync);
+    return () => window.removeEventListener("storage", handleSync);
   }, [storageKey]);
 
   const changeLang = useCallback((code) => {
     setLang(code);
-    localStorage.setItem(storageKey, code);
+    try {
+      localStorage.setItem(storageKey, code);
+      localStorage.setItem("app_lang", code);
+      window.dispatchEvent(new Event("storage"));
+    } catch (e) {
+      console.warn("Storage error saving language:", e);
+    }
   }, [storageKey]);
 
   const t = useCallback(

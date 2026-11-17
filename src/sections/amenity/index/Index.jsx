@@ -24,6 +24,7 @@ import {
   MdHome,
   MdApartment,
   MdPerson,
+  MdGavel,
 } from "react-icons/md";
 import { useLang } from "../../../context/LanguageContext";
 import { Spinner, amenityEmoji, PALETTES, isPaidAmenity } from "../amenityHelpers.jsx";
@@ -33,6 +34,7 @@ import ExpandableSearch from "../../../components/common/ExpandableSearch";
 import GlobalButton from "../../../components/common/GlobalButton";
 import StatCard from "../../../components/common/StatCard";
 import BookingDetailModal from "../detail/BookingDetailModal";
+import AmenityRulesList from "../rules/AmenityRulesList";
 import { formatBlockName, formatUnitNumber } from "../../../utils/flatFormatter";
 
 function StatusBadge({ status, t }) {
@@ -151,12 +153,14 @@ export default function Index({
   societiesList,
   selectedSocietyId,
   onSocietyChange,
+  rulesCount,
 }) {
   const { t } = useLang();
 
   const TABS = [
     { key: "AMENITIES", label: t("amenTabAmenities"), Icon: MdGridView, count: amenities.length, alert: 0 },
     { key: "BOOKINGS", label: t("amenTabBookings"), Icon: MdCalendarMonth, count: bStats.total, alert: bStats.pending },
+    { key: "RULES", label: t("amenTabRules", "Rules & Terms"), Icon: MdGavel, count: rulesCount, alert: 0 },
   ];
 
   const STATUS_FILTER_OPTIONS = [
@@ -281,7 +285,7 @@ export default function Index({
                 </GlobalButton>
               )}
             </>
-          ) : (
+          ) : activeTab === "BOOKINGS" ? (
             <ExpandableSearch
               value={searchBooking}
               onChange={onSearchBooking}
@@ -289,7 +293,7 @@ export default function Index({
               isOpen={isBookingSearchOpen}
               onOpenChange={onBookingSearchOpen}
             />
-          )}
+          ) : null}
         </div>
       </div>
 
@@ -688,6 +692,15 @@ export default function Index({
             })}
           </div>
         </>
+      )}
+
+      {/* ════════════ RULES & TERMS ════════════ */}
+      {activeTab === "RULES" && (
+        <AmenityRulesList
+          canEdit={canEdit}
+          isMobile={isMobile}
+          activeSocietyId={selectedSocietyId}
+        />
       )}
 
       {/* Booking Detail Modal */}

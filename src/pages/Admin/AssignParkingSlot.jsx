@@ -30,15 +30,29 @@ import Pagination from "../../components/common/Pagination";
 import RecordCard from "../../components/common/RecordCard";
 import "./Admin.css";
 
+const formatSlotNumber = (num) => (num ? String(num).replace(/--+/g, "-") : "");
+
 /* ── Status Badge (slot) ── */
 function StatusBadge({ status, t }) {
+  const isAvail = status === "AVAILABLE";
   return (
     <GlobalBadge
       size="sm"
-      variant={status === "AVAILABLE" ? "success" : "danger"}
-      icon={status === "AVAILABLE" ? MdCheckCircle : MdBlock}
+      variant="neutral"
     >
-      {status === "AVAILABLE" ? t("parkAvailable") : t("parkOccupied")}
+      <span
+        style={{
+          width: 6,
+          height: 6,
+          borderRadius: "50%",
+          display: "inline-block",
+          marginRight: 6,
+          background: isAvail ? "var(--text-secondary, #94a3b8)" : "var(--text-tertiary, #64748b)",
+          opacity: isAvail ? 0.9 : 0.6
+        }}
+        aria-hidden="true"
+      />
+      {isAvail ? t("parkAvailable") : t("parkOccupied")}
     </GlobalBadge>
   );
 }
@@ -1140,7 +1154,8 @@ export default function AssignParkingSlot({ hideHeader = false, societyId } = {}
     const start = parseInt(form.start_number, 10);
     const cnt = parseInt(form.count, 10);
     if (isNaN(start) || isNaN(cnt) || cnt <= 0) return null;
-    const pfx = (form.prefix || "").trim();
+    const pfxRaw = (form.prefix || "").trim().replace(/[-_\s]+$/, "");
+    const pfx = pfxRaw ? `${pfxRaw}-` : "";
     const firstSlot = `${pfx}${start}`;
     const lastSlot = `${pfx}${start + cnt - 1}`;
     const allSlotNumbers = [];
@@ -1486,7 +1501,7 @@ export default function AssignParkingSlot({ hideHeader = false, societyId } = {}
                     return (
                       <RecordCard
                         key={slot.id}
-                        tone={isAvail ? "success" : "brand"}
+                        tone="neutral"
                         interactive
                         blob={false}
                         onClick={() => setDetailSlot(slot)}
@@ -1496,7 +1511,7 @@ export default function AssignParkingSlot({ hideHeader = false, societyId } = {}
                         title={
                           <div className="ps-head-text">
                             <span className="ps-slot-label">{t("parkColSlot")}</span>
-                            <h4 className="ps-slot-number">{slot.slot_number}</h4>
+                            <h4 className="ps-slot-number">{formatSlotNumber(slot.slot_number)}</h4>
                           </div>
                         }
                         description={
@@ -1512,7 +1527,7 @@ export default function AssignParkingSlot({ hideHeader = false, societyId } = {}
                         <div className="ps-card-middle">
                           {isAvail ? (
                             <div className="ps-avail-bay">
-                              <span className="ps-avail-dot" />
+                              <MdLocalParking size={15} style={{ opacity: 0.7 }} aria-hidden="true" />
                               <span className="ps-avail-bay-text">
                                 {t("parkUnallocatedAvailableShort")}
                               </span>
@@ -1633,7 +1648,7 @@ export default function AssignParkingSlot({ hideHeader = false, societyId } = {}
               onClose={() => setDetailSlot(null)}
               title={detailSlot ? (
                 <span className="flex items-center gap-2 flex-wrap">
-                  <span>{t("parkSlotValue", { slot: detailSlot.slot_number })}</span>
+                  <span>{t("parkSlotValue", { slot: formatSlotNumber(detailSlot.slot_number) })}</span>
                   <StatusBadge status={detailSlot.status} t={t} />
                 </span>
               ) : ""}
@@ -1947,7 +1962,7 @@ export default function AssignParkingSlot({ hideHeader = false, societyId } = {}
                   fontWeight: 500,
                   boxSizing: "border-box",
                 }}
-                placeholder={t("parkPrefixPlaceholderLong") || "e.g. A-, C-"}
+                placeholder={t("parkPrefixPlaceholderLong") || "e.g. A, C, P1"}
                 required
                 value={form.prefix}
                 onChange={(e) => setForm({ ...form, prefix: e.target.value })}
@@ -2376,7 +2391,7 @@ export default function AssignParkingSlot({ hideHeader = false, societyId } = {}
         isOpen={!!allocateSlot}
         onClose={() => setAllocateSlot(null)}
         title={t("parkAllocateSlot") || "Allocate Parking Slot"}
-        subtitle={allocateSlot ? `${allocateSlot.slot_number} · ${allocateSlot.vehicle_type === "CAR" ? t("parkCar") || "Car Space" : t("parkBike") || "Bike Space"} · ${allocateSlot.parking_floor ? t("parkFloorValue", { floor: allocateSlot.parking_floor }) : t("parkGround") || "Ground"}` : ""}
+        subtitle={allocateSlot ? `${formatSlotNumber(allocateSlot.slot_number)} · ${allocateSlot.vehicle_type === "CAR" ? t("parkCar") || "Car Space" : t("parkBike") || "Bike Space"} · ${allocateSlot.parking_floor ? t("parkFloorValue", { floor: allocateSlot.parking_floor }) : t("parkGround") || "Ground"}` : ""}
         icon={MdPersonAdd}
         size="md"
         disableUnsavedWarning={false}

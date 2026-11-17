@@ -15,7 +15,10 @@ import {
   MdDirectionsCar,
   MdPeopleAlt,
   MdOutlineContactPhone,
+  MdPictureAsPdf,
+  MdGavel,
 } from "react-icons/md";
+import PdfViewer from "../components/common/PdfViewer";
 import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
 import {
   FiUser,
@@ -29,20 +32,24 @@ import {
   HiOutlineBuildingOffice2,
   HiOutlineSparkles,
   HiOutlineShieldCheck,
-  HiBars3,
+  HiOutlineUsers,
+  HiOutlineCreditCard,
+  HiOutlineDocumentText,
+  HiOutlineEnvelope,
+  HiOutlineChevronDown,
+  HiOutlineGlobeAlt,
+  HiOutlineLockClosed as Hi2LockClosed,
   HiOutlineXMark,
-  HiOutlineArrowRight,
 } from "react-icons/hi2";
 import { toast } from "react-toastify";
-import LanguageSelector from "../components/common/LanguageSelector";
 import ProfilePictureCropModal from "../components/common/ProfilePictureCropModal";
+import Select from "../components/common/Select";
 import { useLang } from "../context/LanguageContext";
 import { getTitleError, getEmailError, getMobileError } from "../utils/validators";
 
 import homeBannerImg from "../assets/Photos/Home/Home.png";
 import loginVisualImg from "../assets/Photos/Home/login_right_side_img.png";
 import compLogoImg from "../assets/Photos/Home/comp_logo.png";
-import "../home/Home.css";
 import "./Register.css";
 import "./Login.css";
 
@@ -73,19 +80,21 @@ const fileToBase64 = (file) =>
 
 function Register() {
   const navigate = useNavigate();
-  const { t } = useLang();
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
-
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 24);
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
-
+  const { t, lang, changeLang, LANGUAGES } = useLang();
   // 5 Step Flow
   const [step, setStep] = useState(1);
+  const [langOpen, setLangOpen] = useState(false);
+  const langRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (langRef.current && !langRef.current.contains(e.target)) {
+        setLangOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [pwFocused, setPwFocused] = useState(false);
@@ -124,6 +133,7 @@ function Register() {
   const [profilePicPreview, setProfilePicPreview] = useState(null);
   const [profileCropFile, setProfileCropFile] = useState(null);
   const [showProfileCrop, setShowProfileCrop] = useState(false);
+  const [showRulesModal, setShowRulesModal] = useState(false);
   const [aadharPreview, setAadharPreview] = useState(null);
   const [aadharName, setAadharName] = useState("");
   const [panPreview, setPanPreview] = useState(null);
@@ -145,6 +155,12 @@ function Register() {
     message: "",
   });
   const [useExistingAccount, setUseExistingAccount] = useState(false);
+
+  // Society Rules & Regulations State
+  const [societyRules, setSocietyRules] = useState([]);
+  const [acceptedRuleVersionIds, setAcceptedRuleVersionIds] = useState([]);
+  const [previewPdfUrl, setPreviewPdfUrl] = useState(null);
+  const [previewPdfName, setPreviewPdfName] = useState("");
   const [registrationOtp, setRegistrationOtp] = useState("");
   const [registrationOtpSent, setRegistrationOtpSent] = useState(false);
   const [registrationEmailVerified, setRegistrationEmailVerified] = useState(false);
@@ -204,6 +220,20 @@ function Register() {
   );
 
   // Load Wings/Blocks when society changes
+  const fetchSocietyRules = async (socId) => {
+    const id = socId || formData.society_id;
+    if (!id) return [];
+    try {
+      const res = await API.get(`/auth/registration-rules?society_id=${id}`);
+      const list = Array.isArray(res.data) ? res.data : [];
+      setSocietyRules(list);
+      return list;
+    } catch (err) {
+      console.warn("Failed to load registration rules:", err?.message);
+      return [];
+    }
+  };
+
   const handleSelectSociety = async (societyId) => {
     setFormData((p) => ({
       ...p,
@@ -220,6 +250,9 @@ function Register() {
     try {
       const res = await API.get(`/public/societies/${societyId}/blocks`);
       setBlocks(res.data || []);
+
+      // Fetch society rules & regulations for pre-registration review
+      await fetchSocietyRules(societyId);
     } catch (err) {
       console.error("Failed to load blocks:", err);
     }
@@ -317,6 +350,58 @@ function Register() {
     }
   };
 
+  const executeFinalRegistration = async (customAcceptedIds) => {
+    setLoading(true);
+    try {
+      const finalVersionIds = customAcceptedIds !== undefined ? customAcceptedIds : acceptedRuleVersionIds;
+      const emergencyContact =
+        formData.emergency_name.trim() && formData.emergency_phone.trim()
+          ? { name: formData.emergency_name.trim(), phone: formData.emergency_phone.trim() }
+          : undefined;
+
+      const payload = {
+        name: formData.name.trim().replace(/\s+/g, " "),
+        email: formData.email.trim(),
+        phone: formData.mobile,
+        password:
+          useExistingAccount && (!formData.password || formData.password === "••••••••")
+            ? "__LINKED_EXISTING_USER__"
+            : formData.password,
+        use_existing_account: useExistingAccount,
+        society_id: Number(formData.society_id),
+        flat_id: Number(formData.flat_id),
+        resident_type: "OWNER",
+        occupant_count: Number(formData.occupant_count) || 1,
+        vehicle_count: Number(formData.vehicle_count) || 0,
+        emergency_contact: emergencyContact,
+        profile_picture: formData.profile_picture || undefined,
+        aadhar_card: formData.aadhar_card || undefined,
+        pan_card: formData.pan_card || undefined,
+        accepted_rule_version_ids: finalVersionIds,
+      };
+
+      await API.post("/auth/register", payload);
+      toast.success("Registration submitted successfully!");
+      setShowRulesModal(false);
+      setRegistrationSubmitted(true);
+    } catch (err) {
+      const msg = err.response?.data?.message || "Registration failed. Please try again.";
+      toast.error(msg);
+      // If the error indicates missing/expired OTP, reset verification and prompt OTP modal
+      if (
+        msg.toLowerCase().includes("otp") ||
+        msg.toLowerCase().includes("session expired")
+      ) {
+        setRegistrationEmailVerified(false);
+        registrationVerifiedRef.current = false;
+        setShowRulesModal(false);
+        sendRegistrationOtp();
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const verifyRegistrationOtp = async () => {
     if (!/^\d{6}$/.test(registrationOtp.trim())) {
       toast.error("Enter the 6-digit OTP sent to your email.");
@@ -332,10 +417,22 @@ function Register() {
       registrationVerifiedRef.current = true;
       setRegistrationOtpSent(false);
       setRegistrationOtp("");
-      toast.success("Email verified. Completing your registration…");
-      window.requestAnimationFrame(() => {
-        document.querySelector(".reg-form-scroll")?.requestSubmit();
-      });
+      toast.success("Email verified successfully!");
+
+      // Check if society has rules & regulations
+      let rules = societyRules;
+      if (!rules || rules.length === 0) {
+        rules = await fetchSocietyRules(formData.society_id);
+      }
+
+      if (rules && rules.length > 0) {
+        // Automatically pre-check all rules for smooth UX
+        const allVerIds = rules.map((r) => r.current_version?.id).filter(Boolean);
+        setAcceptedRuleVersionIds(allVerIds);
+        setShowRulesModal(true);
+      } else {
+        await executeFinalRegistration([]);
+      }
     } catch (err) {
       toast.error(err.response?.data?.message || "Invalid or expired OTP.");
     } finally {
@@ -577,6 +674,7 @@ function Register() {
       return;
     }
 
+    // 1. If email is not yet OTP-verified, send and open OTP verification dialog first
     if (!registrationEmailVerified && !registrationVerifiedRef.current) {
       if (!registrationOtpSent) {
         setLoading(true);
@@ -589,51 +687,66 @@ function Register() {
       return;
     }
 
-    setLoading(true);
-    try {
-      const emergencyContact =
-        formData.emergency_name.trim() && formData.emergency_phone.trim()
-          ? { name: formData.emergency_name.trim(), phone: formData.emergency_phone.trim() }
-          : undefined;
-
-      const payload = {
-        name: formData.name.trim().replace(/\s+/g, " "),
-        email: formData.email.trim(),
-        phone: formData.mobile,
-        password:
-          useExistingAccount && (!formData.password || formData.password === "••••••••")
-            ? "__LINKED_EXISTING_USER__"
-            : formData.password,
-        use_existing_account: useExistingAccount,
-        society_id: Number(formData.society_id),
-        flat_id: Number(formData.flat_id),
-        resident_type: "OWNER",
-        occupant_count: Number(formData.occupant_count) || 1,
-        vehicle_count: Number(formData.vehicle_count) || 0,
-        emergency_contact: emergencyContact,
-        profile_picture: formData.profile_picture || undefined,
-        aadhar_card: formData.aadhar_card || undefined,
-        pan_card: formData.pan_card || undefined,
-      };
-
-      const res = await API.post("/auth/register", payload);
-      toast.success("Registration submitted successfully!");
-      setRegistrationSubmitted(true);
-    } catch (err) {
-      toast.error(err.response?.data?.message || "Registration Failed");
-    } finally {
-      setLoading(false);
+    // 2. Email is verified. Check if society has rules & regulations
+    let rules = societyRules;
+    if (!rules || rules.length === 0) {
+      rules = await fetchSocietyRules(formData.society_id);
     }
+
+    if (rules && rules.length > 0) {
+      const allVerIds = rules.map((r) => r.current_version?.id).filter(Boolean);
+      const allAccepted = allVerIds.every((id) => acceptedRuleVersionIds.includes(id));
+      if (!allAccepted) {
+        if (acceptedRuleVersionIds.length === 0) {
+          setAcceptedRuleVersionIds(allVerIds);
+        }
+        setShowRulesModal(true);
+        return;
+      }
+    }
+
+    // 3. All clear: submit final registration
+    await executeFinalRegistration();
   };
 
   const strength = pwStrength(formData.password);
 
+  
+  const renderFooterSignIn = () => (
+    <div className="reg-footer">
+      {t("regAlreadyHaveAccount") || "Already have an account?"}{' '}
+      <button type="button" className="reg-footer-link" onClick={() => navigate("/login")}>
+        {t("regSignIn") || "Sign in"}
+      </button>
+    </div>
+  );
+
   const stepVisuals = [
-    { image: loginVisualImg, title: "Find Your Community", description: "Choose your society to begin your registration.", highlight: "Verified community selection", detail: "Browse the available communities and choose the right home." },
-    { image: loginVisualImg, title: "Your Account, Your Access", description: "Set up your details and securely connect your account.", highlight: "A secure resident profile", detail: "Add your contact details and connect an existing profile if you have one." },
-    { image: loginVisualImg, title: "Make It Feel Like Home", description: "Add your household details and registered vehicles.", highlight: "Household and vehicle details", detail: "Keep household and vehicle information together in your resident profile." },
-    { image: loginVisualImg, title: "Verify Your Identity", description: "Complete your profile and provide the required documents.", highlight: "Private document upload", detail: "Add a profile photo and the documents requested by your society." },
-    { image: loginVisualImg, title: "Choose Your Place", description: "Select your wing, floor, and apartment to complete registration.", highlight: "Your exact home in the community", detail: "Confirm the apartment details linked to your new resident account." },
+    {
+      titleMain: t("regSlide1TitleMain") || "Your New Community",
+      titleAccent: t("regSlide1TitleAccent") || "Starts Here.",
+      description: t("regSlide1Desc") || "Find your society and get started with a simple registration process.",
+    },
+    {
+      titleMain: t("regSlide2TitleMain") || "Your Account,",
+      titleAccent: t("regSlide2TitleAccent") || "Your Access",
+      description: t("regSlide2Desc") || "Set up your details and securely connect your account.",
+    },
+    {
+      titleMain: t("regSlide3TitleMain") || "Make It Feel",
+      titleAccent: t("regSlide3TitleAccent") || "Like Home",
+      description: t("regSlide3Desc") || "Add your household details and registered vehicles.",
+    },
+    {
+      titleMain: t("regSlide4TitleMain") || "Verify Your",
+      titleAccent: t("regSlide4TitleAccent") || "Identity",
+      description: t("regSlide4Desc") || "Complete your profile and provide the required documents.",
+    },
+    {
+      titleMain: t("regSlide5TitleMain") || "Choose",
+      titleAccent: t("regSlide5TitleAccent") || "Your Place",
+      description: t("regSlide5Desc") || "Select your wing, floor, and apartment to complete registration.",
+    },
   ];
   const currentVisual = stepVisuals[step - 1];
 
@@ -646,124 +759,147 @@ function Register() {
       {/* Existing full-page photo is retained for legacy styles and hidden by the split layout. */}
       <img src={homeBannerImg} alt="" className="reg-bg-photo" aria-hidden="true" />
 
-      {/* Match the login page navigation so registration shares the same wayfinding and preferences. */}
-      <nav className={`home-navbar ${scrolled ? "home-navbar--scrolled" : "home-navbar--over-hero"} ${menuOpen ? "home-navbar--menu-open" : ""}`}>
-        <div className="home-container">
-          <div className="home-navbar-inner">
-            <Link to="/" className="home-brand-logo" aria-label={t("homeBrandHomeLabel")}>
-              <img src={compLogoImg} alt={t("homeCompanyLogoAlt")} className="home-brand-comp-logo" />
-              <div className="home-brand-divider" aria-hidden="true" />
-              <div className="home-brand-text">
-                <div className="home-brand-title">{t("homeBrandTitle")}</div>
-                <div className="home-brand-subtitle">{t("homeBrandSubtitle")}</div>
-              </div>
-            </Link>
-
-            <ul className="home-nav-links">
-              <li className="home-nav-item"><Link to="/#features" className="home-nav-link">{t("homeNavFeatures")}</Link></li>
-              <li className="home-nav-item"><Link to="/#how-it-works" className="home-nav-link">{t("homeNavHowItWorks")}</Link></li>
-              <li className="home-nav-item"><Link to="/#roles" className="home-nav-link">{t("homeNavUserRoles")}</Link></li>
-            </ul>
-
-            <div className="home-nav-actions">
-              <LanguageSelector compact />
-              <Link to="/" className="home-btn-nav-cta" aria-label={t("homeNavHome")}>
-                <span>{t("homeNavHome")}</span>
-                <HiOutlineArrowRight className="home-nav-btn-arrow" />
-              </Link>
-            </div>
-
-            <button className="home-mobile-burger" onClick={() => setMenuOpen((open) => !open)} aria-label={t("homeToggleMenu")} aria-expanded={menuOpen}>
-              {menuOpen ? <HiOutlineXMark /> : <HiBars3 />}
-            </button>
-          </div>
-        </div>
-
-        <div className={`home-mobile-menu ${menuOpen ? "active" : ""}`}>
-          <Link to="/#features" className="home-mobile-link" onClick={() => setMenuOpen(false)}>{t("homeNavFeatures")}</Link>
-          <Link to="/#how-it-works" className="home-mobile-link" onClick={() => setMenuOpen(false)}>{t("homeNavHowItWorks")}</Link>
-          <Link to="/#roles" className="home-mobile-link" onClick={() => setMenuOpen(false)}>{t("homeNavUserRoles")}</Link>
-          <div className="home-mobile-divider" />
-          <div className="home-mobile-prefs">
-            <LanguageSelector compact />
-          </div>
-          <div className="home-mobile-actions">
-            <Link to="/" onClick={() => setMenuOpen(false)} className="home-btn-nav-cta" aria-label={t("homeNavHome")}>
-              <span>{t("homeNavHome")}</span>
-              <HiOutlineArrowRight className="home-nav-btn-arrow" />
-            </Link>
-          </div>
-        </div>
-      </nav>
-
       <main className="reg-layout">
         <aside className="reg-visual-panel" key={step}>
-          <img className="reg-visual-image" src={currentVisual.image} alt="" />
+          <img className="reg-visual-image" src={loginVisualImg} alt="" />
           <div className="reg-visual-overlay" />
-          <Link to="/" className="reg-visual-brand" aria-label={t("homeBrandHomeLabel")}>
-            <img src={compLogoImg} alt={t("homeCompanyLogoAlt")} />
-            <span><strong>{t("homeBrandTitle")}</strong><small>{t("homeBrandSubtitle")}</small></span>
-          </Link>
-          <div className="reg-visual-copy animate-fadeIn">
-            <span className="reg-visual-kicker"><HiOutlineBuildingOffice2 /> RESIDENT ONBOARDING</span>
-            <h2>{currentVisual.title}</h2>
-            <p>{currentVisual.description}</p>
+          <div className="login-hero-brand">
+            <Link to="/" className="login-hero-brand-link" aria-label={t("homeBrandHomeLabel") || "Home"}>
+              <img src={compLogoImg} alt={t("homeCompanyLogoAlt") || "Logo"} className="login-hero-logo-clean" />
+              <div className="login-hero-brand-divider" aria-hidden="true" />
+              <span className="login-hero-brand-copy">
+                <strong>{t("homeBrandTitle") || "Society Management"}</strong>
+                <small>{t("homeBrandSubtitle") || "SYSTEM"}</small>
+              </span>
+            </Link>
           </div>
-          <div className="reg-visual-highlight">
-            <span className="reg-highlight-icon"><HiOutlineShieldCheck /></span>
-            <span className="reg-highlight-copy">
-              <strong>{currentVisual.highlight}</strong>
-              <small>{currentVisual.detail}</small>
-            </span>
-            <HiOutlineSparkles className="reg-highlight-sparkle" />
+          <div className="login-hero-copy">
+            <div className="reg-visual-kicker">
+              <HiOutlineDocumentText size={14} /> {t("regResidentOnboarding") || "RESIDENT ONBOARDING"}
+            </div>
+            <h1>
+              {currentVisual.titleMain}
+              <br />
+              <span>{currentVisual.titleAccent}</span>
+            </h1>
+            <p className="login-hero-description">{currentVisual.description}</p>
+          </div>
+
+          <div className="login-feature-cards">
+            <div className="login-feature-card">
+              <div className="login-feature-card-icon">
+                <HiOutlineUsers />
+              </div>
+              <div className="login-feature-card-text">
+                <span className="login-feature-card-title">{t("authFeatManageResidents") || "Manage Residents"}</span>
+                <span className="login-feature-card-sub">{t("authFeatManageResidentsSub") || "Resident & Household"}</span>
+              </div>
+            </div>
+
+            <div className="login-feature-card">
+              <div className="login-feature-card-icon">
+                <HiOutlineShieldCheck />
+              </div>
+              <div className="login-feature-card-text">
+                <span className="login-feature-card-title">{t("authFeatEnhanceSecurity") || "Enhance Security"}</span>
+                <span className="login-feature-card-sub">{t("authFeatEnhanceSecuritySub") || "Gate & Visitor Pass"}</span>
+              </div>
+            </div>
+
+            <div className="login-feature-card">
+              <div className="login-feature-card-icon">
+                <HiOutlineCreditCard />
+              </div>
+              <div className="login-feature-card-text">
+                <span className="login-feature-card-title">{t("authFeatTrackPayments") || "Track Payments"}</span>
+                <span className="login-feature-card-sub">{t("authFeatTrackPaymentsSub") || "Maintenance & Dues"}</span>
+              </div>
+            </div>
           </div>
         </aside>
 
       <section className={`reg-card ${visible ? "reg-visible" : ""}`}>
-        {/* Registration header */}
-        <div className="reg-header">
-          <div className="reg-badge">
-            <HiOutlineSparkles /> Resident Registration
+        <div className="reg-panel-top">
+          <div className="reg-top-left-actions">
+            <div className="reg-resident-reg-pill">
+              « {t("regPill") || "RESIDENT REGISTRATION"}
+            </div>
           </div>
-          <h1 className="reg-title">Join Your Community</h1>
+
+          <div className="auth-lang-dropdown-wrap" ref={langRef}>
+            <button
+              type="button"
+              className="auth-lang-pill"
+              onClick={() => setLangOpen((p) => !p)}
+              aria-label="Select language"
+            >
+              <span>{LANGUAGES?.find((l) => l.code === lang)?.label || "English"}</span>
+              <HiOutlineChevronDown size={13} />
+            </button>
+            {langOpen && (
+              <div className="auth-lang-menu">
+                {(LANGUAGES || [{ code: "en", label: "English" }]).map((l) => (
+                  <button
+                    key={l.code}
+                    type="button"
+                    className={`auth-lang-option ${lang === l.code ? "active" : ""}`}
+                    onClick={() => {
+                      changeLang(l.code);
+                      setLangOpen(false);
+                    }}
+                  >
+                    {l.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="reg-header-titles">
+          <h1 className="reg-title">{t("regTitle") || "Join Your Community"}</h1>
           <p className="reg-subtitle">
-            {step === 1 && "Step 1 of 5 • Choose your society"}
-            {step === 2 && "Step 2 of 5 • Personal & login details"}
-            {step === 3 && "Step 3 of 5 • Household & vehicles"}
-            {step === 4 && "Step 4 of 5 • Profile photo & KYC verification"}
-            {step === 5 && "Step 5 of 5 • Select wing, floor & unit"}
+            {step === 1 && (t("regStep1Sub") || "Step 1 of 5 • Choose your society")}
+            {step === 2 && (t("regStep2Sub") || "Step 2 of 5 • Personal & login details")}
+            {step === 3 && (t("regStep3Sub") || "Step 3 of 5 • Household & vehicles")}
+            {step === 4 && (t("regStep4Sub") || "Step 4 of 5 • Profile photo & KYC verification")}
+            {step === 5 && (t("regStep5Sub") || "Step 5 of 5 • Select wing, floor & unit")}
           </p>
         </div>
 
-        {/* 5-Step Compact Progress Stepper */}
+        {/* 5-Step Progress Stepper */}
         <div className="reg-steps-wizard">
           {[
-            { num: 1, label: "Society" },
-            { num: 2, label: "Account" },
-            { num: 3, label: "Household" },
-            { num: 4, label: "KYC" },
-            { num: 5, label: "Unit" },
-          ].map((s, idx) => (
-            <div key={s.num} className="reg-step-node">
-              <div
-                className={`reg-step-dot ${
-                  step === s.num ? "reg-active" : step > s.num ? "reg-done" : ""
-                }`}
-                onClick={() => s.num < step && setStep(s.num)}
-                style={{ cursor: s.num < step ? "pointer" : "default" }}
-              >
-                {step > s.num ? <FiCheck size={12} /> : s.num}
-              </div>
-              <span className={`reg-step-label ${step === s.num ? "active" : ""}`}>
-                {s.label}
-              </span>
-              {idx < 4 && (
+            { num: 1, label: t("regStepSociety") || "SOCIETY" },
+            { num: 2, label: t("regStepAccount") || "ACCOUNT" },
+            { num: 3, label: t("regStepHousehold") || "HOUSEHOLD" },
+            { num: 4, label: t("regStepKyc") || "KYC" },
+            { num: 5, label: t("regStepUnit") || "UNIT" },
+          ].map((s, idx) => {
+            const isDone = step > s.num;
+            const isActive = step === s.num;
+            return (
+              <div key={s.num} className="reg-step-node">
                 <div
-                  className={`reg-step-line ${step > s.num ? "reg-done" : ""}`}
-                />
-              )}
-            </div>
-          ))}
+                  className={`reg-step-dot ${
+                    isActive ? "reg-active" : isDone ? "reg-done" : ""
+                  }`}
+                  onClick={() => isDone && setStep(s.num)}
+                  style={{ cursor: isDone ? "pointer" : "default" }}
+                >
+                  {isDone ? <FiCheck size={13} strokeWidth={3} /> : s.num}
+                </div>
+                <span className={`reg-step-label ${isActive ? "active" : isDone ? "done" : ""}`}>
+                  {s.label}
+                </span>
+                {idx < 4 && (
+                  <div
+                    className={`reg-step-line ${step > s.num ? "reg-done" : ""}`}
+                  />
+                )}
+              </div>
+            );
+          })}
         </div>
 
         {/* Form Container */}
@@ -774,14 +910,14 @@ function Register() {
           {step === 1 && (
             <div className="reg-fields animate-fadeIn">
               {/* Society Search Input */}
-              <div className="reg-input-wrap reg-search-wrap">
-                <MdSearch className="reg-icon-left" />
+              <div className="reg-search-wrap">
+                <MdSearch className="reg-search-icon" size={20} />
                 <input
                   type="text"
-                  placeholder="Search society by name or location…"
+                  placeholder={t("regSearchSocietyPh") || "Search society by name or location..."}
                   value={societySearch}
                   onChange={(e) => setSocietySearch(e.target.value)}
-                  className="reg-input"
+                  className="reg-search-input"
                 />
                 {societySearch && (
                   <button
@@ -798,8 +934,8 @@ function Register() {
               <div className="reg-society-grid">
                 {filteredSocieties.length === 0 ? (
                   <div className="reg-empty-societies">
-                    <MdApartment size={28} />
-                    <p>No societies found matching "{societySearch}"</p>
+                    <MdApartment size={32} />
+                    <p>{t("regNoSocietiesFound") || "No societies found matching"} "{societySearch}"</p>
                   </div>
                 ) : (
                   filteredSocieties.map((soc) => {
@@ -810,23 +946,21 @@ function Register() {
                         onClick={() => handleSelectSociety(soc.id)}
                         className={`reg-society-card ${isSelected ? "selected" : ""}`}
                       >
-                        <div className="reg-soc-card-icon">
-                          <MdApartment size={20} />
+                        <div className={`reg-soc-card-icon ${isSelected ? "selected" : ""}`}>
+                          <MdApartment size={22} />
                         </div>
                         <div className="reg-soc-card-info">
                           <h4 className="reg-soc-card-title">{soc.name}</h4>
                           {soc.address && (
                             <p className="reg-soc-card-addr">
-                              <MdOutlineLocationOn size={12} /> {soc.address}
+                              {soc.address}
                             </p>
                           )}
                         </div>
                         <div className="reg-soc-card-check">
-                          {isSelected ? (
-                            <MdCheckCircle size={20} color="#38bdf8" />
-                          ) : (
-                            <div className="reg-radio-circle" />
-                          )}
+                          <div className={`reg-radio-circle ${isSelected ? "selected" : ""}`}>
+                            {isSelected && <div className="reg-radio-dot" />}
+                          </div>
                         </div>
                       </div>
                     );
@@ -841,9 +975,10 @@ function Register() {
                   disabled={!formData.society_id}
                   className="reg-btn-primary"
                 >
-                  Continue to Account Details <FiArrowRight size={15} />
+                  <span>{t("regContinueToAccount") || "Continue to Account Details"}</span> <FiArrowRight size={16} />
                 </button>
               </div>
+              {renderFooterSignIn()}
             </div>
           )}
 
@@ -852,35 +987,37 @@ function Register() {
              ═══════════════════════════════════════════════════════════ */}
           {step === 2 && (
             <div className="reg-fields animate-fadeIn">
-              {/* Selected Society Mini Header */}
+              {/* Selected Society Mint Banner */}
               {selectedSocietyObj && (
-                <div className="reg-selected-chip">
-                  <div style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0, overflow: "hidden" }}>
-                    <HiOutlineBuildingOffice2 size={15} style={{ flexShrink: 0 }} />
-                    <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                      Society: <strong>{selectedSocietyObj.name}</strong>
+                <div className="reg-selected-mint-banner">
+                  <div className="reg-mint-info">
+                    <div className="reg-mint-check">
+                      <FiCheck size={12} strokeWidth={3} />
+                    </div>
+                    <span>
+                      {t("regSocietyLabel") || "Society:"} <strong>{selectedSocietyObj.name}</strong>
                     </span>
                   </div>
                   <button
                     type="button"
                     onClick={() => setStep(1)}
-                    className="reg-chip-change-btn"
+                    className="reg-mint-change-btn"
                   >
-                    Change
+                    {t("regChange") || "Change"}
                   </button>
                 </div>
               )}
 
               {/* Email Address with Check Button */}
               <div className="reg-field">
-                <label className="reg-label">Email Address</label>
+                <label className="reg-label">{t("regEmailLabel") || "Email Address"}</label>
                 <div className="reg-email-row">
                   <div className="reg-input-wrap" style={{ flex: 1 }}>
-                    <MdEmail className="reg-icon-left" />
+                    <HiOutlineEnvelope className="reg-icon-left" size={18} />
                     <input
                       type="email"
                       name="email"
-                      placeholder="you@example.com"
+                      placeholder="u@example.com"
                       value={formData.email}
                       onChange={handleChange}
                       onBlur={() => touch("email")}
@@ -897,7 +1034,7 @@ function Register() {
                       <div className="reg-spinner" />
                     ) : (
                       <>
-                        <HiOutlineShieldCheck size={15} /> Check
+                        <FiCheck size={14} strokeWidth={3} /> {t("regCheck") || "Check"}
                       </>
                     )}
                   </button>
@@ -965,13 +1102,13 @@ function Register() {
 
               {/* Full Name */}
               <div className="reg-field">
-                <label className="reg-label">Full Name</label>
+                <label className="reg-label">{t("regFullNameLabel") || "Full Name"}</label>
                 <div className="reg-input-wrap">
-                  <FiUser className="reg-icon-left" />
+                  <FiUser className="reg-icon-left" size={17} />
                   <input
                     type="text"
                     name="name"
-                    placeholder="e.g. Johnathan Doe"
+                    placeholder={t("regFullNamePh") || "Enter your full name"}
                     value={formData.name}
                     onChange={handleChange}
                     onBlur={() => touch("name")}
@@ -986,21 +1123,28 @@ function Register() {
               {/* Row: Contact Number & Password */}
               <div className="reg-row-2col">
                 <div className="reg-field">
-                  <label className="reg-label">Mobile Number</label>
-                  <div className="reg-phone-row">
-                    <div className="reg-input-wrap" style={{ width: "100%" }}>
-                      <div className="reg-phone-prefix">🇮🇳 +91</div>
-                      <input
-                        type="tel"
-                        name="mobile"
-                        placeholder="9876543210"
-                        value={formData.mobile}
-                        onChange={handleChange}
-                        onBlur={() => touch("mobile")}
-                        maxLength={10}
-                        className={`${inputClass("mobile", isMobile(formData.mobile))} reg-phone-input`}
-                      />
-                    </div>
+                  <label className="reg-label">{t("regPhoneLabel") || "Phone Number"}</label>
+                  <div className="reg-phone-wrapper">
+                    <span className="reg-phone-badge" title="India (+91)">
+                      <svg className="reg-phone-flag-svg" viewBox="0 0 24 16" width="20" height="14" aria-hidden="true">
+                        <rect width="24" height="16" rx="2" fill="#FFFFFF" />
+                        <rect width="24" height="5.33" fill="#FF9933" />
+                        <rect y="10.67" width="24" height="5.33" fill="#138808" />
+                        <circle cx="12" cy="8" r="2.2" fill="none" stroke="#000080" strokeWidth="0.8" />
+                        <circle cx="12" cy="8" r="0.6" fill="#000080" />
+                      </svg>
+                      <span className="reg-phone-code">+91</span>
+                    </span>
+                    <input
+                      type="tel"
+                      name="mobile"
+                      placeholder={t("regPhonePh") || "10-digit mobile number"}
+                      value={formData.mobile}
+                      onChange={handleChange}
+                      onBlur={() => touch("mobile")}
+                      maxLength={10}
+                      className={`${inputClass("mobile", isMobile(formData.mobile))} reg-phone-field`}
+                    />
                   </div>
                   {touched.mobile && getMobileError(formData.mobile, "Mobile number") && (
                     <span className="reg-err">{getMobileError(formData.mobile, "Mobile number")}</span>
@@ -1009,7 +1153,7 @@ function Register() {
 
                 <div className="reg-field">
                   <div className="reg-label-row">
-                    <label className="reg-label">Password</label>
+                    <label className="reg-label">{t("regPasswordLabel") || "Password"}</label>
                     {useExistingAccount && (
                       <span className="reg-loaded-pw-badge">
                         <FiCheck size={10} /> Saved Password Loaded
@@ -1017,11 +1161,11 @@ function Register() {
                     )}
                   </div>
                   <div className="reg-input-wrap">
-                    <FiLock className="reg-icon-left" />
+                    <Hi2LockClosed className="reg-icon-left" size={17} />
                     <input
                       type={showPassword ? "text" : "password"}
                       name="password"
-                      placeholder={useExistingAccount ? "Saved password" : "Create password"}
+                      placeholder={useExistingAccount ? "Saved password" : (t("regPasswordPh") || "Create a secure password")}
                       value={formData.password}
                       onChange={handleChange}
                       onFocus={() => setPwFocused(true)}
@@ -1036,7 +1180,7 @@ function Register() {
                       className="reg-eye-btn"
                       onClick={() => setShowPassword(!showPassword)}
                     >
-                      {showPassword ? <AiOutlineEyeInvisible size={16} /> : <AiOutlineEye size={16} />}
+                      {showPassword ? <AiOutlineEyeInvisible size={18} /> : <AiOutlineEye size={18} />}
                     </button>
                   </div>
 
@@ -1069,26 +1213,39 @@ function Register() {
               {!useExistingAccount &&
                 (pwFocused || (touched.password && !isPwOk(formData.password))) && (
                   <div className="reg-pw-rules">
-                    {PW_RULES.map((r) => (
-                      <div
-                        key={r.id}
-                        className={`reg-pw-rule ${r.test(formData.password) ? "ok" : ""}`}
-                      >
-                        <div className="reg-pw-dot" />
-                        {r.label}
-                      </div>
-                    ))}
+                    {PW_RULES.map((r) => {
+                      const ruleLabel =
+                        r.id === "len"
+                          ? (t("regPwRuleLen") || r.label)
+                          : r.id === "upper"
+                          ? (t("regPwRuleUpper") || r.label)
+                          : r.id === "lower"
+                          ? (t("regPwRuleLower") || r.label)
+                          : r.id === "digit"
+                          ? (t("regPwRuleDigit") || r.label)
+                          : (t("regPwRuleSpec") || r.label);
+                      return (
+                        <div
+                          key={r.id}
+                          className={`reg-pw-rule ${r.test(formData.password) ? "ok" : ""}`}
+                        >
+                          <div className="reg-pw-dot" />
+                          {ruleLabel}
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
 
               <div className="reg-btn-row">
                 <button type="button" onClick={() => goToStep(3)} className="reg-btn-primary">
-                  Continue to Household <FiArrowRight size={15} />
+                  <span>{t("regContinueToHousehold") || "Continue to Household Details"}</span> <FiArrowRight size={16} />
                 </button>
-                <button type="button" onClick={() => setStep(1)} className="reg-btn-back">
-                  <FiArrowLeft size={13} /> Back to Society Selection
+                <button type="button" onClick={() => setStep(1)} className="reg-btn-secondary">
+                  <FiArrowLeft size={14} /> <span>{t("regBackToSociety") || "Back to Society Selection"}</span>
                 </button>
               </div>
+              {renderFooterSignIn()}
             </div>
           )}
 
@@ -1097,22 +1254,22 @@ function Register() {
              ═══════════════════════════════════════════════════════════ */}
           {step === 3 && (
             <div className="reg-fields animate-fadeIn">
-              {/* Occupants & Vehicles Premium Cards */}
+              {/* Occupants & Vehicles Cards */}
               <div className="reg-row-2col">
                 <div className="reg-counter-card">
                   <div className="reg-counter-header">
                     <div className="reg-counter-icon occupants">
-                      <MdPeopleAlt size={18} />
+                      <HiOutlineUsers size={20} />
                     </div>
                     <div className="reg-counter-text">
-                      <span className="reg-counter-title">Occupants</span>
+                      <span className="reg-counter-title">{t("regOccupantsLabel") || "Occupants"}</span>
                       <span className="reg-counter-sub">Family members</span>
                     </div>
                   </div>
                   <div className="reg-stepper-control">
                     <button
                       type="button"
-                      className="reg-step-btn"
+                      className="reg-step-btn occupants"
                       onClick={() =>
                         setFormData((p) => ({
                           ...p,
@@ -1126,7 +1283,7 @@ function Register() {
                     <span className="reg-stepper-val">{formData.occupant_count}</span>
                     <button
                       type="button"
-                      className="reg-step-btn"
+                      className="reg-step-btn occupants"
                       onClick={() =>
                         setFormData((p) => ({
                           ...p,
@@ -1143,17 +1300,17 @@ function Register() {
                 <div className="reg-counter-card">
                   <div className="reg-counter-header">
                     <div className="reg-counter-icon vehicles">
-                      <MdDirectionsCar size={18} />
+                      <MdDirectionsCar size={20} />
                     </div>
                     <div className="reg-counter-text">
-                      <span className="reg-counter-title">Vehicles</span>
+                      <span className="reg-counter-title">{t("regVehiclesLabel") || "Vehicles"}</span>
                       <span className="reg-counter-sub">Cars & 2-wheelers</span>
                     </div>
                   </div>
                   <div className="reg-stepper-control">
                     <button
                       type="button"
-                      className="reg-step-btn"
+                      className="reg-step-btn vehicles"
                       onClick={() =>
                         setFormData((p) => ({
                           ...p,
@@ -1167,7 +1324,7 @@ function Register() {
                     <span className="reg-stepper-val">{formData.vehicle_count}</span>
                     <button
                       type="button"
-                      className="reg-step-btn"
+                      className="reg-step-btn vehicles"
                       onClick={() =>
                         setFormData((p) => ({
                           ...p,
@@ -1186,43 +1343,50 @@ function Register() {
               <div className="reg-emergency-box">
                 <div className="reg-emergency-box-header">
                   <div className="reg-emergency-box-title">
-                    <MdOutlineContactPhone size={16} />
-                    <span>Emergency Contact</span>
+                    <MdOutlineContactPhone size={17} />
+                    <span>{t("regEmergencyPhoneLabel") || "Emergency Contact Phone"}</span>
                   </div>
-                  <span className="reg-pill-badge">Optional</span>
+                  <span className="reg-optional-badge">Optional</span>
                 </div>
 
                 <div className="reg-row-2col">
                   <div className="reg-field">
                     <label className="reg-label">Contact Name</label>
                     <div className="reg-input-wrap">
-                      <FiUser className="reg-icon-left" />
+                      <FiUser className="reg-icon-left" size={16} />
                       <input
                         type="text"
                         name="emergency_name"
                         placeholder="e.g. Spouse / Relative"
                         value={formData.emergency_name}
                         onChange={handleChange}
-                        className="reg-input"
+                        className="reg-custom-input"
                       />
                     </div>
                   </div>
 
                   <div className="reg-field">
                     <label className="reg-label">Contact Phone</label>
-                    <div className="reg-phone-row">
-                      <div className="reg-input-wrap" style={{ width: "100%" }}>
-                        <div className="reg-phone-prefix">🇮🇳 +91</div>
-                        <input
-                          type="tel"
-                          maxLength={10}
-                          name="emergency_phone"
-                          placeholder="9876543210"
-                          value={formData.emergency_phone}
-                          onChange={handleChange}
-                          className="reg-input reg-phone-input"
-                        />
-                      </div>
+                    <div className="reg-phone-wrapper">
+                      <span className="reg-phone-badge" title="India (+91)">
+                        <svg className="reg-phone-flag-svg" viewBox="0 0 24 16" width="20" height="14" aria-hidden="true">
+                          <rect width="24" height="16" rx="2" fill="#FFFFFF" />
+                          <rect width="24" height="5.33" fill="#FF9933" />
+                          <rect y="10.67" width="24" height="5.33" fill="#138808" />
+                          <circle cx="12" cy="8" r="2.2" fill="none" stroke="#000080" strokeWidth="0.8" />
+                          <circle cx="12" cy="8" r="0.6" fill="#000080" />
+                        </svg>
+                        <span className="reg-phone-code">+91</span>
+                      </span>
+                      <input
+                        type="tel"
+                        maxLength={10}
+                        name="emergency_phone"
+                        placeholder="9876543210"
+                        value={formData.emergency_phone}
+                        onChange={handleChange}
+                        className="reg-custom-input reg-phone-field"
+                      />
                     </div>
                   </div>
                 </div>
@@ -1230,12 +1394,13 @@ function Register() {
 
               <div className="reg-btn-row">
                 <button type="button" onClick={() => goToStep(4)} className="reg-btn-primary">
-                  Continue to KYC & Photos <FiArrowRight size={15} />
+                  <span>{t("regContinueToKyc") || "Continue to KYC"}</span> <FiArrowRight size={16} />
                 </button>
-                <button type="button" onClick={() => setStep(2)} className="reg-btn-back">
-                  <FiArrowLeft size={13} /> Back to Account Details
+                <button type="button" onClick={() => setStep(2)} className="reg-btn-secondary">
+                  <FiArrowLeft size={14} /> <span>{t("regBackToAccount") || "Back to Account"}</span>
                 </button>
               </div>
+              {renderFooterSignIn()}
             </div>
           )}
 
@@ -1259,27 +1424,26 @@ function Register() {
                     />
                   ) : (
                     <div className="reg-avatar-placeholder">
-                      <FiUser size={28} />
+                      <FiUser size={30} />
                     </div>
                   )}
                   <div className="reg-avatar-overlay">
-                    <MdCameraAlt size={18} />
+                    <MdCameraAlt size={16} />
                   </div>
                 </div>
                 <div className="reg-photo-info">
-                  <label className="reg-label" style={{ padding: 0 }}>
-                    Profile Photo
-                  </label>
+                  <label className="reg-photo-title">{t("regProfilePhotoLabel") || "Profile Photo"}</label>
                   <p className="reg-photo-desc">
-                    Clear face photo for visitor pass matching and resident ID. Maximum size: 5 MB.
+                    Clear face photo for visitor pass matching and resident ID.
                   </p>
-                  <div style={{ display: "flex", gap: 8 }}>
+                  <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
                     <button
                       type="button"
-                      className="reg-upload-btn-secondary"
+                      className="reg-upload-pill-btn"
                       onClick={() => profileInputRef.current?.click()}
                     >
-                      {profilePicPreview ? "Change Photo" : "Upload Photo"}
+                      <MdCameraAlt size={15} />
+                      <span>{profilePicPreview ? "Change Photo" : (t("regUploadDoc") || "Upload Photo")}</span>
                     </button>
                     {profilePicPreview && (
                       <button
@@ -1309,16 +1473,16 @@ function Register() {
                 <div className="reg-doc-card-header">
                   <div className="reg-doc-title-row">
                     <div className="reg-doc-icon-badge">
-                      <MdOutlineBadge size={16} />
+                      <MdOutlineBadge size={17} />
                     </div>
                     <div>
-                      <h4 className="reg-doc-name">Aadhaar Card</h4>
+                      <h4 className="reg-doc-name">{t("regAadhaarLabel") || "Aadhaar Card"}</h4>
                       <p className="reg-doc-hint">National identity proof</p>
                     </div>
                   </div>
                   {aadharPreview && (
                     <span className="reg-doc-status-pill success">
-                      <MdCheckCircle size={13} /> Attached
+                      <FiCheck size={12} strokeWidth={3} /> {t("regUploaded") || "Attached"}
                     </span>
                   )}
                 </div>
@@ -1347,8 +1511,8 @@ function Register() {
                     </div>
                   ) : (
                     <div className="reg-doc-empty-content">
-                      <MdOutlineBadge size={20} className="reg-doc-upload-icon" />
-                      <span>Upload Aadhaar (PDF, JPG, PNG up to 8MB)</span>
+                      <HiOutlineDocumentText size={22} className="reg-doc-upload-icon" />
+                      <span>{t("regUploadDoc") || "Upload Aadhaar"} (PDF, JPG, PNG up to 8MB)</span>
                     </div>
                   )}
                 </div>
@@ -1366,16 +1530,16 @@ function Register() {
                 <div className="reg-doc-card-header">
                   <div className="reg-doc-title-row">
                     <div className="reg-doc-icon-badge">
-                      <MdOutlineCreditCard size={16} />
+                      <MdOutlineCreditCard size={17} />
                     </div>
                     <div>
-                      <h4 className="reg-doc-name">PAN Card</h4>
+                      <h4 className="reg-doc-name">{t("regPanLabel") || "PAN Card"}</h4>
                       <p className="reg-doc-hint">Tax identification proof</p>
                     </div>
                   </div>
                   {panPreview && (
                     <span className="reg-doc-status-pill success">
-                      <MdCheckCircle size={13} /> Attached
+                      <FiCheck size={12} strokeWidth={3} /> {t("regUploaded") || "Attached"}
                     </span>
                   )}
                 </div>
@@ -1404,8 +1568,8 @@ function Register() {
                     </div>
                   ) : (
                     <div className="reg-doc-empty-content">
-                      <MdOutlineCreditCard size={20} className="reg-doc-upload-icon" />
-                      <span>Upload PAN Card (PDF, JPG, PNG up to 8MB)</span>
+                      <HiOutlineCreditCard size={22} className="reg-doc-upload-icon" />
+                      <span>{t("regUploadDoc") || "Upload PAN Card"} (PDF, JPG, PNG up to 8MB)</span>
                     </div>
                   )}
                 </div>
@@ -1420,12 +1584,13 @@ function Register() {
 
               <div className="reg-btn-row">
                 <button type="button" onClick={() => goToStep(5)} className="reg-btn-primary">
-                  Continue to Unit Selection <FiArrowRight size={15} />
+                  <span>{t("regContinueToUnit") || "Continue to Unit Selection"}</span> <FiArrowRight size={16} />
                 </button>
-                <button type="button" onClick={() => setStep(3)} className="reg-btn-back">
-                  <FiArrowLeft size={13} /> Back to Household Details
+                <button type="button" onClick={() => setStep(3)} className="reg-btn-secondary">
+                  <FiArrowLeft size={14} /> <span>{t("regBackToHousehold") || "Back to Household Details"}</span>
                 </button>
               </div>
+              {renderFooterSignIn()}
             </div>
           )}
 
@@ -1435,115 +1600,91 @@ function Register() {
           {step === 5 && (
             <div className="reg-fields animate-fadeIn">
               <div className="reg-field">
-                <label className="reg-label">What type of home are you selecting?</label>
+                <label className="reg-label">{t("regHomeTypeQuestion") || "What type of home are you selecting?"}</label>
                 <div className="reg-property-choice">
-                  <button type="button" className={propertyType === "APARTMENT" ? "selected" : ""} onClick={() => handlePropertyTypeChange("APARTMENT")}>🏢 Flat / Apartment</button>
-                  <button type="button" className={propertyType === "ROW_HOUSE" ? "selected" : ""} onClick={() => handlePropertyTypeChange("ROW_HOUSE")}>🏡 Row House / Villa</button>
+                  <button type="button" className={propertyType === "APARTMENT" ? "selected" : ""} onClick={() => handlePropertyTypeChange("APARTMENT")}>🏢 {t("regFlatApartment") || "Flat / Apartment"}</button>
+                  <button type="button" className={propertyType === "ROW_HOUSE" ? "selected" : ""} onClick={() => handlePropertyTypeChange("ROW_HOUSE")}>🏡 {t("regRowHouseVilla") || "Row House / Villa"}</button>
                 </div>
               </div>
 
               {/* Wing / Block Selection */}
               <div className="reg-field">
-                <label className="reg-label">Select Wing / Block</label>
+                <label className="reg-label">{t("regSelectWing") || "Select Wing / Block"}</label>
                 <div className="reg-input-wrap reg-select-wrap">
-                  <HiOutlineBuildingOffice2 className="reg-icon-left" />
-                  <select
+                  <Select
                     name="block_id"
                     value={formData.block_id}
                     onChange={handleBlockChange}
-                    className="reg-input reg-select"
+                    className="reg-input reg-select reg-custom-select"
+                    options={[
+                      { value: "", label: t("regChooseWingPlaceholder") || "Choose Wing / Block" },
+                      ...availableBlocks.map((b) => ({ value: b.id, label: b.name })),
+                    ]}
+                    placeholder={t("regChooseWingPlaceholder") || "Choose Wing / Block"}
                     required
-                  >
-                    <option value="">Choose Wing / Block</option>
-                    {availableBlocks.map((b) => (
-                      <option key={b.id} value={b.id}>
-                        {b.name}
-                      </option>
-                    ))}
-                  </select>
-                  <MdKeyboardArrowDown className="reg-select-arrow" />
+                  />
                 </div>
               </div>
 
               {/* Floor Selection */}
               {propertyType !== "ROW_HOUSE" && <div className="reg-field">
-                <label className="reg-label">Select Floor</label>
+                <label className="reg-label">{t("regSelectFloor") || "Select Floor"}</label>
                 <div className="reg-input-wrap reg-select-wrap">
-                  <MdApartment className="reg-icon-left" />
-                  <select
+                  <Select
                     name="floor_id"
                     value={formData.floor_id}
                     onChange={handleFloorChange}
-                    className="reg-input reg-select"
+                    className="reg-input reg-select reg-custom-select"
+                    options={[
+                      { value: "", label: !formData.block_id ? "Select wing first" : floors.length > 0 ? (t("regChooseFloorPlaceholder") || "All Floors / Choose Floor") : "Direct Flat Selection" },
+                      ...floors.map((fl) => ({ value: fl.id, label: `Floor ${fl.floor_number}` })),
+                    ]}
+                    placeholder={!formData.block_id ? "Select wing first" : (t("regChooseFloorPlaceholder") || "Choose floor...")}
                     disabled={!formData.block_id}
-                  >
-                    <option value="">
-                      {!formData.block_id
-                        ? "Select wing first"
-                        : floors.length > 0
-                        ? "All Floors / Choose Floor"
-                        : "Direct Flat Selection"}
-                    </option>
-                    {floors.map((fl) => (
-                      <option key={fl.id} value={fl.id}>
-                        Floor {fl.floor_number}
-                      </option>
-                    ))}
-                  </select>
-                  <MdKeyboardArrowDown className="reg-select-arrow" />
+                  />
                 </div>
               </div>}
 
               {/* Flat Selection */}
               <div className="reg-field">
-                <label className="reg-label">{propertyType === "ROW_HOUSE" ? "Select Row House / Villa" : "Select Flat / Apartment Unit"}</label>
+                <label className="reg-label">{propertyType === "ROW_HOUSE" ? (t("regRowHouseVilla") || "Select Row House / Villa") : (t("regSelectUnit") || "Select Flat / Apartment Unit")}</label>
                 <div className="reg-input-wrap reg-select-wrap">
-                  <FiHome className="reg-icon-left" />
-                  <select
+                  <Select
                     name="flat_id"
                     value={formData.flat_id}
                     onChange={handleChange}
-                    className="reg-input reg-select"
+                    className="reg-input reg-select reg-custom-select"
+                    options={[
+                      { value: "", label: !formData.block_id ? "Select wing first" : flats.length > 0 ? (t("regChooseFlatPlaceholder") || "Choose your flat") : "No available flats in this selection" },
+                      ...flats.map((f) => ({ value: f.id, label: `${f.flat_number}${f.flat_type ? ` (${f.flat_type})` : ""}` })),
+                    ]}
+                    placeholder={!formData.block_id ? "Select wing first" : (t("regChooseFlatPlaceholder") || "Choose flat...")}
                     disabled={!formData.block_id}
                     required
-                  >
-                    <option value="">
-                      {!formData.block_id
-                        ? "Select wing first"
-                        : flats.length > 0
-                        ? "Choose your flat"
-                        : "No available flats in this selection"}
-                    </option>
-                    {flats.map((f) => (
-                      <option key={f.id} value={f.id}>
-                        {f.flat_number} {f.flat_type ? `(${f.flat_type})` : ""}
-                      </option>
-                    ))}
-                  </select>
-                  <MdKeyboardArrowDown className="reg-select-arrow" />
+                  />
                 </div>
               </div>
 
-              {/* Registration Summary Card */}
+              {/* Registration Summary Card matching reference screenshot */}
               <div className="reg-summary-card">
                 <div className="reg-summary-header">
-                  <HiOutlineSparkles size={14} /> Registration Summary
+                  <HiOutlineSparkles size={16} /> <span>{t("regSummaryTitle") || "REGISTRATION SUMMARY"}</span>
                 </div>
                 <div className="reg-summary-grid">
-                  <div>
-                    <span className="reg-summary-label">Society:</span>
+                  <div className="reg-summary-row">
+                    <span className="reg-summary-label">{t("regSummarySociety") || "Society:"}</span>
                     <span className="reg-summary-val">{selectedSocietyObj?.name || "—"}</span>
                   </div>
-                  <div>
-                    <span className="reg-summary-label">Resident:</span>
+                  <div className="reg-summary-row">
+                    <span className="reg-summary-label">{t("regSummaryResident") || "Resident:"}</span>
                     <span className="reg-summary-val">{formData.name || "—"}</span>
                   </div>
-                  <div>
-                    <span className="reg-summary-label">Unit:</span>
+                  <div className="reg-summary-row">
+                    <span className="reg-summary-label">{t("regSummaryUnit") || "Unit:"}</span>
                     <span className="reg-summary-val">
-                      {selectedBlockObj?.name || "Wing —"} •{" "}
-                      {selectedFloorObj ? `Floor ${selectedFloorObj.floor_number} • ` : ""}
-                      {selectedFlatObj ? `Flat ${selectedFlatObj.flat_number}` : "Flat —"}
+                      {selectedBlockObj?.name || "Wing —"}{" "}
+                      {selectedFloorObj ? `• Floor ${selectedFloorObj.floor_number} ` : ""}
+                      {selectedFlatObj ? `• Flat ${selectedFlatObj.flat_number}` : "• Flat —"}
                     </span>
                   </div>
                 </div>
@@ -1558,18 +1699,19 @@ function Register() {
                 >
                   {loading ? (
                     <>
-                      <div className="reg-spinner" /> Submitting…
+                      <div className="reg-spinner" /> <span>Submitting…</span>
                     </>
                   ) : (
                     <>
-                      <FiCheck size={16} /> Submit Registration for Approval
+                      <FiCheck size={18} strokeWidth={3} /> <span>{t("regSubmitApproval") || "Submit Registration for Approval"}</span>
                     </>
                   )}
                 </button>
-                <button type="button" onClick={() => setStep(4)} className="reg-btn-back">
-                  <FiArrowLeft size={13} /> Back to Documents
+                <button type="button" onClick={() => setStep(4)} className="reg-btn-secondary">
+                  <FiArrowLeft size={14} /> <span>{t("regBackToDocs") || "Back to Documents"}</span>
                 </button>
               </div>
+              {renderFooterSignIn()}
             </div>
           )}
         </form>
@@ -1577,80 +1719,116 @@ function Register() {
         {registrationOtpSent && !registrationEmailVerified && (
           <div className="otp-overlay otp-overlay--login" role="dialog" aria-modal="true" aria-label="Verify email">
             <div className="otp-modal-box otp-modal-box--login animate-scaleIn">
-              <div className="otp-modal-topbar" />
               <div className="otp-modal-inner">
                 <div className="otp-modal-header">
-                  <div className="otp-shield-icon"><MdEmail /></div>
-                  <h2 className="otp-title">Verify Your Email</h2>
-                  <p className="otp-subtitle">A 6-digit verification code was sent to</p>
-                  <div className="otp-email-badge"><MdEmail /><span>{formData.email}</span></div>
+                  <div className="otp-shield-icon">
+                    <HiOutlineEnvelope size={24} />
+                  </div>
+                  <h2 className="otp-title">{t("regOtpTitle") || "Verify Your Email"}</h2>
+                  <p className="otp-subtitle">{t("regOtpSubtitle") || "A 6-digit verification code was sent to"}</p>
+                  <div className="otp-email-badge">
+                    <HiOutlineEnvelope size={14} />
+                    <span>{formData.email}</span>
+                  </div>
                 </div>
-              <div
-                className="reg-otp-boxes"
-                onPaste={(e) => {
-                  e.preventDefault();
-                  const pasted = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
-                  if (!pasted) return;
-                  setRegistrationOtp(pasted);
-                  otpInputRefs.current[Math.min(pasted.length, 6) - 1]?.focus();
-                }}
-              >
-                {[0, 1, 2, 3, 4, 5].map((i) => (
-                  <input
-                    key={i}
-                    ref={(el) => { otpInputRefs.current[i] = el; }}
-                    className={`otp-input${registrationOtp[i] ? " filled" : ""}`}
-                    inputMode="numeric"
-                    maxLength={1}
-                    value={registrationOtp[i] || ""}
-                    onChange={(e) => {
-                      const digit = e.target.value.replace(/\D/g, "");
-                      const next = registrationOtp.split("");
-                      next[i] = digit;
-                      setRegistrationOtp(next.join("").slice(0, 6));
-                      if (digit && i < 5) otpInputRefs.current[i + 1]?.focus();
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === "Backspace" && !registrationOtp[i] && i > 0) otpInputRefs.current[i - 1]?.focus();
-                    }}
-                    autoFocus={i === 0}
-                    aria-label={`OTP digit ${i + 1}`}
-                  />
-                ))}
-              </div>
-                <div style={{ display: "flex", justifyContent: "center", marginBottom: "1.25rem" }}>
+                <div
+                  className="reg-otp-boxes"
+                  onPaste={(e) => {
+                    e.preventDefault();
+                    const pasted = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
+                    if (!pasted) return;
+                    setRegistrationOtp(pasted);
+                    otpInputRefs.current[Math.min(pasted.length, 6) - 1]?.focus();
+                  }}
+                >
+                  {[0, 1, 2, 3, 4, 5].map((i) => (
+                    <input
+                      key={i}
+                      ref={(el) => { otpInputRefs.current[i] = el; }}
+                      className={`otp-input${registrationOtp[i] ? " filled" : ""}`}
+                      inputMode="numeric"
+                      maxLength={1}
+                      value={registrationOtp[i] || ""}
+                      onChange={(e) => {
+                        const digit = e.target.value.replace(/\D/g, "");
+                        const next = registrationOtp.split("");
+                        next[i] = digit;
+                        setRegistrationOtp(next.join("").slice(0, 6));
+                        if (digit && i < 5) otpInputRefs.current[i + 1]?.focus();
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Backspace" && !registrationOtp[i] && i > 0) otpInputRefs.current[i - 1]?.focus();
+                      }}
+                      autoFocus={i === 0}
+                      aria-label={`OTP digit ${i + 1}`}
+                    />
+                  ))}
+                </div>
+                <div style={{ display: "flex", justifyContent: "center", margin: "1.1rem 0" }}>
                   <div style={{ position: "relative", width: 54, height: 54 }}>
                     <svg className="otp-timer-track" width="54" height="54" style={{ transform: "rotate(-90deg)" }}>
                       <circle cx="27" cy="27" r="20" fill="none" strokeWidth="3" />
-                      <circle cx="27" cy="27" r="20" fill="none" stroke={registrationOtpSeconds > 30 ? "#38bdf8" : "#ef4444"} strokeWidth="3" strokeDasharray={2 * Math.PI * 20} strokeDashoffset={2 * Math.PI * 20 * (1 - registrationOtpSeconds / 120)} strokeLinecap="round" />
+                      <circle
+                        cx="27"
+                        cy="27"
+                        r="20"
+                        fill="none"
+                        stroke={registrationOtpSeconds > 30 ? "#2563eb" : "#ef4444"}
+                        strokeWidth="3"
+                        strokeDasharray={2 * Math.PI * 20}
+                        strokeDashoffset={2 * Math.PI * 20 * (1 - registrationOtpSeconds / 120)}
+                        strokeLinecap="round"
+                      />
                     </svg>
                     <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                      <span className="otp-timer-value" style={{ color: registrationOtpSeconds > 0 ? "#38bdf8" : "#ef4444" }}>
+                      <span className="otp-timer-value" style={{ color: registrationOtpSeconds > 0 ? "#2563eb" : "#ef4444", fontWeight: 700, fontSize: "0.85rem" }}>
                         {`${String(Math.floor(registrationOtpSeconds / 60)).padStart(2, "0")}:${String(registrationOtpSeconds % 60).padStart(2, "0")}`}
                       </span>
                     </div>
                   </div>
                 </div>
                 <div className="reg-otp-dots" aria-hidden="true">
-                  {[0, 1, 2, 3, 4, 5].map((i) => <span key={i} className={registrationOtp.length > i ? "filled" : ""} />)}
+                  {[0, 1, 2, 3, 4, 5].map((i) => (
+                    <span key={i} className={registrationOtp.length > i ? "filled" : ""} />
+                  ))}
                 </div>
-                <button type="button" className="button1" onClick={verifyRegistrationOtp} disabled={otpLoading || registrationOtp.length !== 6} style={{ width: "100%", marginBottom: "0.75rem" }}>
-                  {otpLoading ? "Verifying…" : "✓ Verify Email"}
+                <button
+                  type="button"
+                  className="otp-verify-submit-btn"
+                  onClick={verifyRegistrationOtp}
+                  disabled={otpLoading || registrationOtp.length !== 6}
+                >
+                  {otpLoading ? (
+                    "Verifying…"
+                  ) : (
+                    <>
+                      <FiCheck size={16} strokeWidth={3} /> {t("regOtpVerifyBtn") || "Verify Email"}
+                    </>
+                  )}
                 </button>
-                <button type="button" className="otp-resend-btn" onClick={sendRegistrationOtp} disabled={otpLoading || registrationResendCooldown > 0 || registrationOtpSeconds === 0}>
-                  {registrationResendCooldown > 0 ? `↻ Resend in ${registrationResendCooldown}s` : "↻ Resend OTP"}
-                </button>
-                <button type="button" className="otp-cancel-btn" onClick={() => setRegistrationOtpSent(false)}>× Cancel</button>
+                <div className="otp-modal-footer-links">
+                  <button
+                    type="button"
+                    className="otp-resend-btn"
+                    onClick={sendRegistrationOtp}
+                    disabled={otpLoading || registrationResendCooldown > 0 || registrationOtpSeconds === 0}
+                  >
+                    {registrationResendCooldown > 0 ? `↻ ${t("regOtpResendIn") || "Resend in"} ${registrationResendCooldown}s` : `↻ ${t("regOtpResend") || "Resend OTP"}`}
+                  </button>
+                  <button
+                    type="button"
+                    className="otp-cancel-btn"
+                    onClick={() => setRegistrationOtpSent(false)}
+                  >
+                    ✕ {t("regRulesCancel") || "Cancel"}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
         )}
 
-        {registrationEmailVerified && (
-          <div className="reg-verified-banner">
-            <MdCheckCircle size={18} /> Email verified successfully. Submit your registration.
-          </div>
-        )}
+
 
         <ProfilePictureCropModal
           isOpen={showProfileCrop && Boolean(profileCropFile)}
@@ -1664,26 +1842,327 @@ function Register() {
         />
 
         {registrationSubmitted && createPortal((
-          <div className="otp-overlay otp-overlay--login" role="dialog" aria-modal="true">
-            <div className="otp-modal-box otp-modal-box--login animate-scaleIn" style={{ textAlign: "center" }}>
-              <div className="otp-modal-topbar" />
-              <div className="otp-modal-inner">
-                <div className="otp-shield-icon" style={{ margin: "0 auto 16px", color: "#10b981", background: "#ecfdf5", borderColor: "#a7f3d0" }}>✓</div>
-                <h2 className="otp-title">Registration Submitted</h2>
-                <p className="otp-subtitle" style={{ marginTop: 12 }}>Your registration is complete and waiting for confirmation from the society admin.</p>
-                <button type="button" className="button1" style={{ width: "100%", marginTop: 22 }} onClick={() => navigate("/login")}>Go to Login</button>
+          <div
+            className="policy-modal-overlay"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="reg-success-title"
+          >
+            <div
+              className="policy-modal-card"
+              style={{
+                maxWidth: "520px",
+                textAlign: "center",
+                padding: "36px 32px 30px",
+              }}
+            >
+              <div
+                style={{
+                  width: 68,
+                  height: 68,
+                  borderRadius: 22,
+                  background: "linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%)",
+                  border: "1.5px solid #a7f3d0",
+                  color: "#059669",
+                  boxShadow: "0 10px 25px -4px rgba(16, 185, 129, 0.3)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: "2rem",
+                  margin: "0 auto 18px",
+                }}
+              >
+                ✓
+              </div>
+
+              <div style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "3px 10px", borderRadius: 20, background: "rgba(245, 158, 11, 0.12)", color: "#d97706", fontSize: "0.74rem", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.05em", margin: "0 auto 10px" }}>
+                <HiOutlineSparkles size={13} />
+                <span>Pending Society Admin Approval</span>
+              </div>
+
+              <h2 id="reg-success-title" style={{ fontSize: "1.45rem", fontWeight: 800, color: "#0f172a", margin: "0 0 8px", letterSpacing: "-0.025em" }}>
+                Application Submitted!
+              </h2>
+
+              <p style={{ fontSize: "0.92rem", color: "#64748b", margin: "0 0 20px", lineHeight: 1.55 }}>
+                Your account and policy acknowledgements have been submitted. Once verified by your society committee, you will receive an approval confirmation.
+              </p>
+
+              {/* Registration Info Summary Box */}
+              <div
+                style={{
+                  background: "#f8fafc",
+                  border: "1px solid #e2e8f0",
+                  borderRadius: 14,
+                  padding: "14px 16px",
+                  marginBottom: 24,
+                  textAlign: "left",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 8,
+                  fontSize: "0.85rem",
+                }}
+              >
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <span style={{ color: "#64748b", fontWeight: 600 }}>Society:</span>
+                  <strong style={{ color: "#0f172a" }}>{selectedSocietyObj?.name || "Society"}</strong>
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <span style={{ color: "#64748b", fontWeight: 600 }}>Resident:</span>
+                  <strong style={{ color: "#0f172a" }}>{formData.name}</strong>
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <span style={{ color: "#64748b", fontWeight: 600 }}>Unit:</span>
+                  <strong style={{ color: "#2563eb" }}>
+                    {selectedBlockObj?.name || "Wing"} • Flat {selectedFlatObj?.flat_number || "—"}
+                  </strong>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                className="policy-btn-submit"
+                style={{ width: "100%", justifyContent: "center", padding: "12px 24px", fontSize: "1rem" }}
+                onClick={() => navigate("/login")}
+              >
+                <span>Go to Login</span>
+                <FiArrowRight size={17} />
+              </button>
+            </div>
+          </div>
+        ), document.body)}
+
+                {/* Policy & Rules Document Review Modal */}
+        {showRulesModal && createPortal((
+          <div className="policy-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="policy-modal-title">
+            <div className="policy-modal-card">
+              <div className="policy-modal-accent-bar" />
+              
+              {/* Header */}
+              <div className="policy-modal-header">
+                <div className="policy-modal-header-left">
+                  <div className="policy-modal-icon-wrap" aria-hidden="true">
+                    <MdGavel />
+                  </div>
+                  <div>
+                    <span className="policy-modal-eyebrow">
+                      <HiOutlineShieldCheck size={13} /> Official Community Guidelines
+                    </span>
+                    <h2 id="policy-modal-title" className="policy-modal-title">
+                      {t("regRulesModalTitle") || "Society Rules & Regulations"}
+                    </h2>
+                    <p className="policy-modal-subtitle">
+                      {t("regRulesModalSubtitle", { society: selectedSocietyObj?.name || "your society" }) || `Please review the official bylaws of ${selectedSocietyObj?.name || "your society"}. You must acknowledge them before completing registration.`}
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  className="policy-modal-close-btn"
+                  onClick={() => setShowRulesModal(false)}
+                  aria-label="Close modal"
+                >
+                  <HiOutlineXMark size={20} />
+                </button>
+              </div>
+
+              {/* Sub-bar / Actions */}
+              <div className="policy-modal-subbar">
+                <span className="policy-modal-count-pill">
+                  <HiOutlineDocumentText size={17} style={{ color: "#2563EB" }} />
+                  <span>
+                    {societyRules.length === 1
+                      ? (t("regRulesOfficialAvailable", { count: 1 }) || "1 Official Policy Available")
+                      : (t("regRulesOfficialAvailablePlural", { count: societyRules.length }) || `${societyRules.length} Official Policies Available`)}
+                  </span>
+                </span>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    const allIds = societyRules.map((r) => r.current_version?.id).filter(Boolean);
+                    const isAllSelected = allIds.every((id) => acceptedRuleVersionIds.includes(id));
+                    if (isAllSelected) {
+                      setAcceptedRuleVersionIds([]);
+                    } else {
+                      setAcceptedRuleVersionIds(allIds);
+                    }
+                  }}
+                  className={`policy-modal-selectall-btn ${
+                    societyRules.length > 0 &&
+                    societyRules.every((r) => acceptedRuleVersionIds.includes(r.current_version?.id))
+                      ? "all-selected"
+                      : ""
+                  }`}
+                >
+                  {societyRules.length > 0 &&
+                  societyRules.every((r) => acceptedRuleVersionIds.includes(r.current_version?.id)) ? (
+                    <>
+                      <FiCheck size={14} strokeWidth={3} />
+                      <span>{t("regRulesAllSelected") || "All Policies Selected"}</span>
+                    </>
+                  ) : (
+                    <>
+                      <FiCheck size={14} strokeWidth={3} />
+                      <span>{t("regRulesSelectAll") || "Select All & Mark as Read"}</span>
+                    </>
+                  )}
+                </button>
+              </div>
+
+              {/* Scrollable Rules List */}
+              <div className="policy-modal-scroll">
+                {societyRules.map((rule) => {
+                  const verId = rule.current_version?.id;
+                  const isChecked = acceptedRuleVersionIds.includes(verId);
+                  return (
+                    <div
+                      key={rule.id}
+                      className={`policy-card-item ${isChecked ? "checked" : ""}`}
+                    >
+                      <div className="policy-card-top">
+                        <div className="policy-card-info">
+                          <div className="policy-card-tags">
+                            {rule.category && (
+                              <span className="policy-tag-category">
+                                {rule.category}
+                              </span>
+                            )}
+                            {rule.is_mandatory && (
+                              <span className="policy-tag-mandatory">
+                                <Hi2LockClosed size={11} /> {t("regRulesMandatory") || "MANDATORY"}
+                              </span>
+                            )}
+                          </div>
+                          <h4 className="policy-card-title">{rule.title}</h4>
+                          {rule.description && (
+                            <p className="policy-card-desc">{rule.description}</p>
+                          )}
+                        </div>
+
+                        {rule.current_version?.file_url && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const docUrl = rule.current_version?.id
+                                ? `${API.defaults.baseURL || "http://localhost:5000/api"}/auth/registration-rules/${rule.current_version.id}/document`
+                                : rule.current_version.file_url;
+                              setPreviewPdfUrl(docUrl);
+                              setPreviewPdfName(
+                                rule.current_version.document_name || `${rule.title}.pdf`
+                              );
+                            }}
+                            className="policy-pdf-btn"
+                            title="View official document"
+                          >
+                            <MdPictureAsPdf size={17} />
+                            <span>{t("regRulesViewPdf") || "View Policy PDF"}</span>
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Checkbox / Agreement row */}
+                      <label
+                        className={`policy-card-check-wrap ${isChecked ? "checked" : ""}`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={() => {
+                            if (isChecked) {
+                              setAcceptedRuleVersionIds((prev) => prev.filter((id) => id !== verId));
+                            } else {
+                              setAcceptedRuleVersionIds((prev) => [...prev, verId]);
+                            }
+                          }}
+                          className="policy-custom-checkbox"
+                        />
+                        <span>{t("regRulesAgreeCheckbox") || "I have read, understood, and agree to abide by this policy rule."}</span>
+                      </label>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Footer */}
+              <div className="policy-modal-footer">
+                <div className="policy-modal-footer-audit">
+                  <HiOutlineShieldCheck size={16} style={{ color: "#10B981" }} />
+                  <span>{t("regRulesAuditNote") || "Compliance audit recorded on submission"}</span>
+                </div>
+
+                <div className="policy-modal-footer-actions">
+                  <button
+                    type="button"
+                    className="policy-btn-cancel"
+                    onClick={() => setShowRulesModal(false)}
+                  >
+                    {t("regRulesCancel") || "Cancel"}
+                  </button>
+                  <button
+                    type="button"
+                    disabled={
+                      loading ||
+                      societyRules.some(
+                        (r) => r.is_mandatory && !acceptedRuleVersionIds.includes(r.current_version?.id)
+                      )
+                    }
+                    onClick={() => executeFinalRegistration(acceptedRuleVersionIds)}
+                    className="policy-btn-submit"
+                  >
+                    {loading ? (
+                      "Submitting…"
+                    ) : (
+                      <>
+                        <FiCheck size={16} strokeWidth={3} />
+                        <span>{t("regRulesSubmitBtn") || "Mark as Read & Submit Registration"}</span>
+                      </>
+                    )}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
         ), document.body)}
 
-        {/* Footer */}
-        <div className="reg-footer">
-          Already have an account?
-          <button className="reg-footer-link" onClick={() => navigate("/login")}>
-            Sign in
-          </button>
-        </div>
+        {previewPdfUrl && createPortal((
+          <div
+            style={{
+              position: "fixed",
+              inset: 0,
+              zIndex: 100000,
+              background: "rgba(15, 23, 42, 0.82)",
+              backdropFilter: "blur(12px)",
+              WebkitBackdropFilter: "blur(12px)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: "20px",
+            }}
+          >
+            <div
+              style={{
+                width: "100%",
+                maxWidth: "960px",
+                height: "92vh",
+                display: "flex",
+                flexDirection: "column",
+                borderRadius: "20px",
+                overflow: "hidden",
+                boxShadow: "0 25px 70px -10px rgba(0, 0, 0, 0.65)",
+              }}
+            >
+              <PdfViewer
+                url={previewPdfUrl}
+                name={previewPdfName}
+                onClose={() => setPreviewPdfUrl(null)}
+              />
+            </div>
+          </div>
+        ), document.body)}
+
+
       </section>
       </main>
     </div>

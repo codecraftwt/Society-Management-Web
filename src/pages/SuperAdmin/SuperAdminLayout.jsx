@@ -22,6 +22,7 @@ import {
   MdHomeWork,
   MdApartment,
   MdCleaningServices,
+  MdGavel,
   MdPool,
 } from "react-icons/md";
 import { FaBuilding, FaUsers, FaUserShield, FaParking } from "react-icons/fa";
@@ -129,6 +130,12 @@ function SuperAdminLayoutInner() {
       label: t("saMenuAllNotices", "All Notices"),
       path: `${base}/notice`,
       icon: MdCampaign,
+      group: "OPERATIONS & SECURITY",
+    },
+    {
+      label: t("saMenuRules", "Rules & Policies"),
+      path: `${base}/rules`,
+      icon: MdGavel,
       group: "OPERATIONS & SECURITY",
     },
     {

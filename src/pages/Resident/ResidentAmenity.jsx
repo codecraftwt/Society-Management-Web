@@ -2,6 +2,8 @@ import Pagination from "../../components/common/Pagination";
   import { useEffect, useState, useRef, useCallback, useMemo } from "react";
   import { useNavigate } from "react-router-dom";
   import API from "../../services/api";
+import AmenityTermsModal from "../../components/amenities/AmenityTermsModal";
+import { getPublishedAmenityRules } from "../../services/amenityService";
   import { useLang } from "../../context/LanguageContext";
   import DatePicker from "react-datepicker";
   import "react-datepicker/dist/react-datepicker.css";
@@ -181,6 +183,12 @@ const navigate = useNavigate();
     const [paymentData,      setPaymentData]      = useState(null);
     const [confirming,        setConfirming]        = useState(false);
     const [copied,            setCopied]            = useState(false);
+
+    /* ── Amenities Rules & Terms Acceptance ── */
+    const [termsModalOpen, setTermsModalOpen] = useState(false);
+    const [publishedRules, setPublishedRules] = useState([]);
+    const [rulesetVersion, setRulesetVersion] = useState(null);
+    const [pendingBookingPayload, setPendingBookingPayload] = useState(null);
 
     /* ── Bookings tab ── */
     const [myBookings,    setMyBookings]    = useState([]);
@@ -460,6 +468,17 @@ const navigate = useNavigate();
       setRangeDates(list);
     };
 
+    /* ── Single date selection (SLOT-based amenities are single-day only) ── */
+    const handleSingleSlotDate = (d) => {
+      if (!d) return;
+      const day = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+      setBookingError("");
+      setPaymentStatus(null);
+      setRangeStart(day);
+      setRangeEnd(day);
+      setRangeDates([day]);
+    };
+
     const rangeDayClassName = (date) => {
       if (!rangeStart || !rangeEnd) return "";
       const t = date.getTime();
@@ -475,6 +494,10 @@ const navigate = useNavigate();
       setSelectedSlots((prev) => {
         const key = (s) => `${s.date}|${s.start_time}`;
         const exists = prev.some((sel) => key(sel) === key(slot));
+        // Ensure slots belong strictly to the single selected booking date
+        if (!exists && prev.length > 0 && prev[0].date !== slot.date) {
+          return [slot];
+        }
         return exists
           ? prev.filter((sel) => key(sel) !== key(slot))
           : [...prev, slot];
@@ -515,6 +538,51 @@ const navigate = useNavigate();
       FREE  → direct book, close modal
       PAID  → book → show UPI payment modal (group total)
     ══════════════════════════════════════════════════ */
+    const executeBooking = async (basePayload, acceptedVersion) => {
+      setBookingLoading(true);
+      setBookingError("");
+      setPaymentStatus(null);
+
+      try {
+        const submitPayload = { ...basePayload };
+        if (acceptedVersion) {
+          submitPayload.accepted_ruleset_version = acceptedVersion;
+        }
+
+        const res = await API.post("/amenities/book", submitPayload);
+
+        setTermsModalOpen(false);
+        setPendingBookingPayload(null);
+
+        if (!res.data.requiresPayment) {
+          setShowSlotsModal(false);
+          setShowDateModal(false);
+          setSelectedSlots([]);
+          resetRange();
+          await loadMyBookings(1, statusFilter, debouncedSearch, amenityFilter);
+          setTab("BOOKINGS");
+          return;
+        }
+
+        /* PAID — open demo UPI modal */
+        setPaymentData(res.data.upiPayment);
+        setShowSlotsModal(false);
+        setShowDateModal(false);
+        setShowPaymentModal(true);
+      } catch (err) {
+        const msg = err.response?.data?.message || t("amenErrCreateBooking");
+        setBookingError(msg);
+        setPaymentStatus(null);
+      } finally {
+        setBookingLoading(false);
+      }
+    };
+
+    const handleAcceptTerms = async (acceptedVersion) => {
+      if (!pendingBookingPayload) return;
+      await executeBooking(pendingBookingPayload, acceptedVersion);
+    };
+
     const bookSlot = async () => {
       if (bookingLoading) return;
       const isFullDay = selectedAmenity.booking_type === "FULL_DAY";
@@ -541,28 +609,21 @@ const navigate = useNavigate();
       setPaymentStatus(null);
 
       try {
-        const res = await API.post("/amenities/book", payload);
-
-        if (!res.data.requiresPayment) {
-          setShowSlotsModal(false);
-          setShowDateModal(false);
-          setSelectedSlots([]);
-          resetRange();
-          await loadMyBookings(1, statusFilter, debouncedSearch, amenityFilter);
-          setTab("BOOKINGS");
+        const rulesRes = await getPublishedAmenityRules(selectedAmenity.society_id);
+        if (rulesRes?.has_rules && rulesRes.rules?.length > 0) {
+          setPendingBookingPayload(payload);
+          setPublishedRules(rulesRes.rules);
+          setRulesetVersion(rulesRes.ruleset_version);
+          setTermsModalOpen(true);
+          setBookingLoading(false);
           return;
         }
 
-        /* PAID — open demo UPI modal */
-        setPaymentData(res.data.upiPayment);
-        setShowSlotsModal(false);
-        setShowDateModal(false);
-        setShowPaymentModal(true);
+        // Society has no rules configured -> proceed without terms acceptance
+        await executeBooking(payload, null);
       } catch (err) {
         const msg = err.response?.data?.message || t("amenErrCreateBooking");
         setBookingError(msg);
-        setPaymentStatus(null);
-      } finally {
         setBookingLoading(false);
       }
     };
@@ -1448,7 +1509,7 @@ const navigate = useNavigate();
                                   <>
                                     <MdEventAvailable className="ra-modal-book-cta-icon" />
                                     <span className="ra-modal-book-cta-text">
-                                      {t("amenBook", "Book")} {rangeDates.length} {rangeDates.length === 1 ? t("amenDay", "day") : t("amenDays", "days")}
+                                      {t("amenRequest", "Request")} {rangeDates.length} {rangeDates.length === 1 ? t("amenDay", "day") : t("amenDays", "days")}
                                       {selectedAmenity.type === "PAID" && (
                                          <span className="ra-modal-book-cta-price"> · ₹{applicableRate * rangeDates.length}</span>
                                       )}
@@ -1462,29 +1523,26 @@ const navigate = useNavigate();
                       </>
                     )
                   ) : (
-                    /* SLOT type — pick a 1–7 day range, then choose time slots per day */
+                    /* SLOT type — pick a single day, then select multiple slots on that day */
                     bookingStep === "date" ? (
                       <>
                         <div className="ra-booking-grid ra-booking-grid--single">
                           <div className="ra-calendar-section">
-                            <p className="ra-modal-label">{t("amenSelectDatesHint", "Pick 1–7 days · tap more dates to extend the period")}</p>
+                            <p className="ra-modal-label">{t("amenSelectSingleDateHint", "Pick a date to select time slots (single day booking)")}</p>
                             <div className="ra-inline-calendar">
                               <DatePicker
-                                selected={rangeEnd ? undefined : rangeStart || undefined}
-                                onChange={handleRangeDay}
+                                selected={rangeStart || undefined}
+                                onChange={handleSingleSlotDate}
                                 minDate={new Date()}
-                                dayClassName={rangeDayClassName}
                                 inline
                               />
                             </div>
 
                             {rangeDates.length > 0 && (
                               <div className="ra-step-dates">
-                                {rangeDates.map((d, i) => (
-                                  <span key={i} className="ra-step-date-chip">
-                                    {d.toLocaleDateString("en-US", { day: "numeric", month: "short" })}
-                                  </span>
-                                ))}
+                                <span className="ra-step-date-chip">
+                                  {rangeDates[0].toLocaleDateString("en-US", { weekday: "short", day: "numeric", month: "short", year: "numeric" })}
+                                </span>
                                 <button type="button" className="ra-step-clear" onClick={clearRange}>
                                   <MdClose size={13} /> {t("amenClear", "Clear")}
                                 </button>
@@ -1617,7 +1675,7 @@ const navigate = useNavigate();
                       <>
                         <MdEventAvailable className="ra-modal-book-cta-icon" />
                         <span className="ra-modal-book-cta-text">
-                          {t("amenBook", "Book")} {rangeDates.length} {rangeDates.length === 1 ? t("amenDay", "day") : t("amenDays", "days")}
+                          {t("amenRequest", "Request")} {rangeDates.length} {rangeDates.length === 1 ? t("amenDay", "day") : t("amenDays", "days")}
                           {selectedAmenity.type === "PAID" && (
                             <span className="ra-modal-book-cta-price"> · ₹{Number(selectedAmenity.rate_per_hour || 0) * rangeDates.length}</span>
                           )}
@@ -1628,7 +1686,9 @@ const navigate = useNavigate();
                 </>
               ) : !paymentStatus ? (
                 <>
-                  <p className="ra-modal-label">{t("amenAvailableSlots")} · {rangeDates.length} {rangeDates.length === 1 ? t("amenDay", "day") : t("amenDays", "days")}</p>
+                  <p className="ra-modal-label">
+                    {t("amenAvailableSlots", "Available Slots")} · {rangeDates[0] ? rangeDates[0].toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" }) : ""}
+                  </p>
                   {slotsLoading ? (
                     <div className="ra-loading">
                       <span className="ra-spinner" /><span>{t("amenCheckingAvailability")}</span>
@@ -1703,7 +1763,7 @@ const navigate = useNavigate();
                             <>
                               <MdEventAvailable className="ra-modal-book-cta-icon" />
                               <span className="ra-modal-book-cta-text">
-                                {t("amenBook", "Book")} {selectedSlots.length} {selectedSlots.length > 1 ? t("amenSlots", "slots") : t("amenSlot", "slot")}
+                                {t("amenRequest", "Request")} {selectedSlots.length} {selectedSlots.length > 1 ? t("amenSlots", "slots") : t("amenSlot", "slot")}
                                 {selectedAmenity.type === "PAID" && (
                                   <span className="ra-modal-book-cta-price"> · ₹{applicableRate * selectedSlots.length}</span>
                                 )}
@@ -1788,6 +1848,16 @@ const navigate = useNavigate();
             </div>
           </Modal>
         )}
+
+        <AmenityTermsModal
+          isOpen={termsModalOpen}
+          onClose={() => setTermsModalOpen(false)}
+          rules={publishedRules}
+          rulesetVersion={rulesetVersion}
+          amenityName={selectedAmenity?.name}
+          onAccept={handleAcceptTerms}
+          loading={bookingLoading}
+        />
       </div>
     );
   }

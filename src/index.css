@@ -5661,11 +5661,9 @@ html.light div[style*="position: fixed"]:not(.media-lightbox-overlay) > div[styl
   border-color: #334155;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
 }
-.ps-slot-card--available {
-  border-top: 2px solid #22C55E;
-}
+.ps-slot-card--available,
 .ps-slot-card--occupied {
-  border-top: 2px solid #3B82F6;
+  border-top: none;
 }
 
 /* Card Header */
@@ -5736,18 +5734,18 @@ html.light div[style*="position: fixed"]:not(.media-lightbox-overlay) > div[styl
   align-items: center;
   gap: 8px;
   font-size: 0.75rem;
-  color: #10B981;
-  background: rgba(16, 185, 129, 0.08);
-  border: 1px solid rgba(16, 185, 129, 0.18);
+  color: var(--text-secondary, #94A3B8);
+  background: var(--card-inner-bg, rgba(255, 255, 255, 0.03));
+  border: 1px dashed var(--card-inner-border, rgba(255, 255, 255, 0.12));
   border-radius: 8px;
   padding: 8px 10px;
   width: 100%;
 }
 .ps-avail-dot {
-  width: 7px;
-  height: 7px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
-  background: #10B981;
+  background: var(--text-secondary, #94A3B8);
   flex-shrink: 0;
 }
 .ps-avail-bay-text {
@@ -5818,51 +5816,67 @@ html.light div[style*="position: fixed"]:not(.media-lightbox-overlay) > div[styl
 .ps-card-actions {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 7px;
   margin-top: 10px;
   padding-top: 10px;
   border-top: 1px solid var(--glass-border, rgba(255, 255, 255, 0.08));
 }
 .ps-card-btn {
-  flex: 1;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 5px;
   font-size: 0.75rem;
-  font-weight: 700;
-  padding: 6px 12px;
+  font-weight: 650;
+  letter-spacing: 0.01em;
+  height: 32px;
+  padding: 0 12px;
   border-radius: 8px;
   border: 1px solid transparent;
   cursor: pointer;
-  transition: all 0.18s ease;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  white-space: nowrap;
+}
+.ps-card-btn:active {
+  transform: scale(0.98);
 }
 .ps-card-btn--allocate {
-  background: rgba(16, 185, 129, 0.15);
-  color: #10B981;
-  border-color: rgba(16, 185, 129, 0.35);
+  flex: 1;
+  background: linear-gradient(180deg, #3B82F6 0%, #2563EB 100%);
+  color: #FFFFFF;
+  border-color: #1D4ED8;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 .ps-card-btn--allocate:hover {
-  background: #10B981;
+  background: linear-gradient(180deg, #2563EB 0%, #1D4ED8 100%);
   color: #FFFFFF;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
 }
 .ps-card-btn--edit {
-  background: rgba(59, 130, 246, 0.12);
-  color: #60A5FA;
-  border-color: rgba(59, 130, 246, 0.30);
+  flex: 0 0 auto;
+  background: var(--card-inner-bg, rgba(255, 255, 255, 0.05));
+  color: var(--text-secondary, #94A3B8);
+  border-color: var(--card-inner-border, rgba(255, 255, 255, 0.12));
 }
 .ps-card-btn--edit:hover {
-  background: #2563EB;
-  color: #FFFFFF;
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-primary, #FFFFFF);
+  border-color: rgba(255, 255, 255, 0.22);
+  transform: translateY(-1px);
 }
 .ps-card-btn--release {
-  background: rgba(239, 68, 68, 0.12);
-  color: #F87171;
-  border-color: rgba(239, 68, 68, 0.30);
+  flex: 1;
+  background: linear-gradient(180deg, #6366F1 0%, #4F46E5 100%);
+  color: #FFFFFF;
+  border-color: #4338CA;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 .ps-card-btn--release:hover {
-  background: #EF4444;
+  background: linear-gradient(180deg, #4F46E5 0%, #4338CA 100%);
   color: #FFFFFF;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
 }
 .ps-tag-pill {
   font-size: 0.6875rem;
