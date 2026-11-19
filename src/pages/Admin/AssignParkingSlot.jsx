@@ -2057,7 +2057,7 @@ export default function AssignParkingSlot({ hideHeader = false, societyId } = {}
                       borderColor: showAllSlotsPreview ? "var(--accent)" : "var(--glass-border)",
                     }}
                   >
-                    {showAllSlotsPreview ? (t("hideAllSlots") || "Hide All Slots") : (t("showAllSlots") || "Show All Slots")}
+                    {showAllSlotsPreview ? t("hideAllSlots", "Hide All Slots") : t("showAllSlots", "Show All Slots")}
                   </button>
                 </div>
               </div>
@@ -2075,7 +2075,7 @@ export default function AssignParkingSlot({ hideHeader = false, societyId } = {}
                 >
                   <div className="flex items-center justify-between px-1">
                     <span className="text-[11px] font-bold uppercase tracking-wider text-secondary">
-                      {t("allSlotsToCreate") || "All Slots to be Created"} ({generatedPreview.allSlotNumbers.length})
+                      {t("allSlotsToCreate", "All Slots to be Created")} ({generatedPreview.allSlotNumbers.length})
                     </span>
                     <span className="text-[11px] text-tertiary">
                       Level: {generatedPreview.floor} {generatedPreview.wing ? `· ${generatedPreview.wing}` : ""}

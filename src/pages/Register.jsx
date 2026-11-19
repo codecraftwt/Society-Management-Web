@@ -2126,41 +2126,13 @@ function Register() {
           </div>
         ), document.body)}
 
-        {previewPdfUrl && createPortal((
-          <div
-            style={{
-              position: "fixed",
-              inset: 0,
-              zIndex: 100000,
-              background: "rgba(15, 23, 42, 0.82)",
-              backdropFilter: "blur(12px)",
-              WebkitBackdropFilter: "blur(12px)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              padding: "20px",
-            }}
-          >
-            <div
-              style={{
-                width: "100%",
-                maxWidth: "960px",
-                height: "92vh",
-                display: "flex",
-                flexDirection: "column",
-                borderRadius: "20px",
-                overflow: "hidden",
-                boxShadow: "0 25px 70px -10px rgba(0, 0, 0, 0.65)",
-              }}
-            >
-              <PdfViewer
-                url={previewPdfUrl}
-                name={previewPdfName}
-                onClose={() => setPreviewPdfUrl(null)}
-              />
-            </div>
-          </div>
-        ), document.body)}
+        {previewPdfUrl && (
+          <PdfViewer
+            url={previewPdfUrl}
+            name={previewPdfName}
+            onClose={() => setPreviewPdfUrl(null)}
+          />
+        )}
 
 
       </section>
