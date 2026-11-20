@@ -552,9 +552,9 @@ function GenerateModal({ configs, onClose, onGenerated }) {
         last_pay_date: dueDate,
       });
       const genCount = res?.summary?.generated || 0;
+      onClose();
       toast.success(t("mntGeneratedSuccess", { count: genCount }));
       onGenerated();
-      onClose();
     } catch (err) {
       toast.error(err?.response?.data?.message || t("mntGenerationFailed"));
     } finally {

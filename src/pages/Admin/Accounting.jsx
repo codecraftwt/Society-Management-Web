@@ -40,6 +40,9 @@ import {
   MdReceipt,
   MdVisibility,
   MdAttachFile,
+  MdCloudUpload,
+  MdQrCode2,
+  MdDeleteOutline,
 } from "react-icons/md";
 import { AuthContext } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
@@ -126,7 +129,7 @@ function Field({ label, required, icon: Icon, children }) {
   );
 }
 
-function Modal({ title, icon: Icon = MdOutlineReceiptLong, maxWidth = "max-w-xl", onClose, children }) {
+function Modal({ title, subtitle, icon: Icon = MdOutlineReceiptLong, maxWidth = "max-w-xl", onClose, children }) {
   const [confirmDiscard, setConfirmDiscard] = useState(false);
   const dirtyRef = useUnsavedDirty(true);
   const requestClose = () => {
@@ -141,7 +144,7 @@ function Modal({ title, icon: Icon = MdOutlineReceiptLong, maxWidth = "max-w-xl"
       onClick={requestClose}
     >
       <div
-        className={`w-full ${maxWidth} rounded-2xl animate-scaleIn my-auto`}
+        className={`w-full ${maxWidth} rounded-2xl animate-scaleIn my-auto shadow-2xl`}
         style={{
           background: "var(--modal-bg)",
           border: "1.5px solid var(--glass-border)",
@@ -151,15 +154,24 @@ function Modal({ title, icon: Icon = MdOutlineReceiptLong, maxWidth = "max-w-xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between px-6 py-4 border-b border-glass-border">
-          <h3 className="text-base font-bold text-primary flex items-center gap-2">
-            <span className="w-8 h-8 rounded-xl bg-accent/15 text-accent flex items-center justify-center">
-              <Icon size={18} />
+          <div className="flex items-center gap-3 min-w-0">
+            <span className="w-10 h-10 rounded-xl bg-accent/15 text-accent flex items-center justify-center shrink-0 shadow-xs">
+              <Icon size={20} />
             </span>
-            {title}
-          </h3>
+            <div className="min-w-0">
+              <h3 className="text-base font-bold text-primary truncate leading-tight">
+                {title}
+              </h3>
+              {subtitle && (
+                <p className="text-xs text-secondary mt-0.5 font-normal truncate">
+                  {subtitle}
+                </p>
+              )}
+            </div>
+          </div>
           <button
             onClick={requestClose}
-            className="w-8 h-8 rounded-xl bg-card-inner-bg hover:bg-white/10 text-secondary hover:text-primary flex items-center justify-center transition-colors"
+            className="w-8 h-8 rounded-xl bg-card-inner-bg hover:bg-white/10 text-secondary hover:text-primary flex items-center justify-center transition-colors shrink-0"
           >
             <MdClose size={18} />
           </button>
@@ -1135,7 +1147,7 @@ function LedgerTab({ b, onNeedsBalance }) {
                         }`}
                       >
                         {isCredit ? <MdArrowUpward size={13} /> : <MdArrowDownward size={13} />}
-                        {isCredit ? t("accCreditShort") : t("accDebitShort")}
+                        {isCredit ? (t("accCreditShort") || "+ CREDIT") : (t("accDebitShort") || "- DEBIT")}
                       </span>
                     </td>
                     <td className="py-3.5 pr-4 font-bold text-primary text-xs">
@@ -1738,11 +1750,33 @@ function ExpenseForm({ expense, saving, onClose, onSubmit }) {
     remove_receipt: false,
   });
   const [receiptPreview, setReceiptPreview] = useState(null);
+  const [isDragging, setIsDragging] = useState(false);
+
+  const handleReceiptFile = (file) => {
+    if (!file) return;
+    if (!new Set(["image/jpeg", "image/png", "image/webp", "application/pdf"]).has(file.type)) {
+      toast.error("Receipt must be JPG, JPEG, PNG, WEBP, or PDF.");
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("Receipt must be 10MB or smaller.");
+      return;
+    }
+    setForm(prev => ({ ...prev, receipt: file, remove_receipt: false }));
+    setReceiptPreview(file.type === "application/pdf" ? "pdf" : URL.createObjectURL(file));
+  };
+
   const chooseReceipt = (e) => {
-    const file = e.target.files?.[0]; if (!file) return;
-    if (!new Set(["image/jpeg", "image/png", "image/webp", "application/pdf"]).has(file.type)) { toast.error("Receipt must be JPG, JPEG, PNG, WEBP, or PDF."); e.target.value = ""; return; }
-    if (file.size > 10 * 1024 * 1024) { toast.error("Receipt must be 10MB or smaller."); e.target.value = ""; return; }
-    setForm({ ...form, receipt: file, remove_receipt: false }); setReceiptPreview(file.type === "application/pdf" ? "pdf" : URL.createObjectURL(file));
+    const file = e.target.files?.[0];
+    if (file) handleReceiptFile(file);
+    e.target.value = "";
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) handleReceiptFile(file);
   };
 
   const set = (k) => (e) => setForm({ ...form, [k]: e.target.value });
@@ -1765,25 +1799,39 @@ function ExpenseForm({ expense, saving, onClose, onSubmit }) {
     onSubmit({ ...form, amount: Number(form.amount), payment_mode: form.payment_mode });
   };
 
+  const QUICK_AMOUNTS = [500, 1000, 2500, 5000, 10000];
+
   return (
     <Modal
       title={expense ? t("accEditExpense") : t("accRecordExpense")}
+      subtitle={
+        expense
+          ? t("accEditExpenseSub", "Update recorded voucher details and attachments.")
+          : t("accRecordExpenseSub", "Log disbursements, vendor bills, and maintenance expenses to Cash Book.")
+      }
       icon={MdPayments}
       maxWidth="max-w-2xl"
       onClose={onClose}
     >
-      <form onSubmit={submit} className="space-y-5">
+      <form onSubmit={submit} className="space-y-4">
         {/* Info Banner */}
-        <div className="p-3.5 bg-accent/10 border border-accent/20 rounded-xl text-xs text-primary flex items-center gap-2">
-          <MdCheckCircle className="text-accent shrink-0" size={18} />
-          <span>{t("accExpenseBanner")}</span>
+        <div className="p-3.5 rounded-xl border border-accent/25 bg-accent/8 flex items-start gap-3 shadow-xs">
+          <div className="w-7 h-7 rounded-lg bg-accent/20 text-accent flex items-center justify-center shrink-0 mt-0.5">
+            <MdCheckCircle size={18} />
+          </div>
+          <div className="text-xs">
+            <span className="font-semibold text-primary">{t("accCashBookSync", "Automatic Cash Book Sync:")} </span>
+            <span className="text-secondary leading-relaxed">{t("accExpenseBanner")}</span>
+          </div>
         </div>
 
-        {/* 2 or 3 inputs in one row */}
+        {/* Payee & Payment Date */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label={t("accPayeeVendor")} required icon={MdPerson}>
             <input
+              type="text"
               style={inputStyle}
+              className="focus:border-accent focus:ring-2 focus:ring-accent/20 transition-all"
               placeholder={t("accPayeePlaceholder")}
               value={form.pay_to}
               onChange={set("pay_to")}
@@ -1794,66 +1842,220 @@ function ExpenseForm({ expense, saving, onClose, onSubmit }) {
             <input
               type="date"
               style={inputStyle}
+              className="focus:border-accent focus:ring-2 focus:ring-accent/20 transition-all"
               value={form.payment_date}
               onChange={set("payment_date")}
             />
           </Field>
         </div>
 
-        <Field label="Upload Bill / Receipt (optional)" icon={MdAttachFile}>
-          <input type="file" accept=".jpg,.jpeg,.png,.webp,.pdf" onChange={chooseReceipt} className="block w-full text-xs text-secondary file:mr-3 file:rounded-lg file:border-0 file:bg-accent/15 file:px-3 file:py-2 file:text-accent" />
-          {(form.receipt || expense?.receipt_url) && <div className="mt-2 flex items-center gap-3 rounded-xl border border-glass-border bg-card-inner-bg p-2">{receiptPreview && receiptPreview !== "pdf" ? <img src={receiptPreview} alt="Receipt preview" className="h-14 w-14 rounded-lg object-cover" /> : <MdPictureAsPdf size={30} className="text-rose-500" />}<span className="min-w-0 flex-1 truncate text-xs text-secondary">{form.receipt?.name || expense?.receipt_file_name || "Existing receipt"}</span><button type="button" onClick={() => { setForm({ ...form, receipt: null, remove_receipt: true }); setReceiptPreview(null); }} className="btn-soft px-2 py-1 text-xs">Remove</button></div>}
+        {/* Amount & Quick Shortcuts */}
+        <Field label={t("accExpenseAmount")} required icon={MdOutlineAccountBalanceWallet}>
+          <div className="space-y-2">
+            <div className="relative">
+              <span className="absolute left-3.5 top-1/2 -translate-y-1/2 font-bold text-base text-accent pointer-events-none">
+                ₹
+              </span>
+              <input
+                type="number"
+                min="0.01"
+                step="0.01"
+                style={inputStyle}
+                className="pl-8! font-bold text-base tracking-wide focus:border-accent focus:ring-2 focus:ring-accent/20 transition-all"
+                placeholder="0.00"
+                value={form.amount}
+                onChange={set("amount")}
+              />
+            </div>
+            {/* Quick Amount Suggestion Chips */}
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="text-[11px] font-medium text-secondary mr-1">Quick:</span>
+              {QUICK_AMOUNTS.map((amt) => {
+                const isSelected = String(form.amount) === String(amt);
+                return (
+                  <button
+                    key={amt}
+                    type="button"
+                    onClick={() => setForm((prev) => ({ ...prev, amount: String(amt) }))}
+                    className={`text-[11px] font-semibold px-2.5 py-1 rounded-lg border transition-all ${
+                      isSelected
+                        ? "bg-accent text-white border-accent shadow-xs"
+                        : "bg-card-inner-bg border-glass-border text-secondary hover:text-primary hover:border-accent/40"
+                    }`}
+                  >
+                    +₹{amt.toLocaleString("en-IN")}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </Field>
+
+        {/* Interactive Payment Mode Pills */}
+        <Field label={t("accPaymentMode")} required icon={MdPayments}>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            {MODES.map((m) => {
+              const active = form.payment_mode === m;
+              let label = m;
+              let ModeIcon = MdPayments;
+              if (m === "CASH") {
+                label = t("accModeCash", "Cash");
+                ModeIcon = MdPayments;
+              } else if (m === "UPI") {
+                label = t("accModeUpi", "UPI / QR");
+                ModeIcon = MdQrCode2;
+              } else if (m === "BANK_TRANSFER") {
+                label = t("accBankTransfer", "Bank Transfer");
+                ModeIcon = MdAccountBalance;
+              } else if (m === "CHEQUE") {
+                label = t("accModeCheque", "Cheque");
+                ModeIcon = MdReceipt;
+              }
+
+              return (
+                <button
+                  key={m}
+                  type="button"
+                  onClick={() => setForm((prev) => ({ ...prev, payment_mode: m }))}
+                  className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl border text-xs font-semibold transition-all ${
+                    active
+                      ? "bg-accent/15 border-accent text-accent shadow-xs font-bold ring-1 ring-accent/30"
+                      : "bg-card-inner-bg border-glass-border text-secondary hover:text-primary hover:border-accent/30"
+                  }`}
+                >
+                  <ModeIcon size={16} className={active ? "text-accent" : "text-secondary"} />
+                  <span className="truncate">{label}</span>
+                </button>
+              );
+            })}
+          </div>
         </Field>
 
         {/* Reason / Particulars */}
         <Field label={t("accReasonDesc")} required icon={MdDescription}>
-          <input
+          <textarea
+            rows={2}
             style={inputStyle}
+            className="resize-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-all"
             placeholder={t("accReasonPlaceholder")}
             value={form.reason}
             onChange={set("reason")}
           />
         </Field>
 
-        {/* Amount and Payment Mode */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Field label={t("accExpenseAmount")} required icon={MdOutlineAccountBalanceWallet}>
-            <div className="relative">
-              <span className="absolute left-3.5 top-1/2 -translate-y-1/2 font-bold text-accent">₹</span>
+        {/* Drag & Drop Receipt / Bill Upload Zone */}
+        <Field label={t("accUploadReceiptLabel", "Upload Bill / Receipt (Optional)")} icon={MdAttachFile}>
+          {!form.receipt && !expense?.receipt_url ? (
+            <div
+              onDragOver={(e) => {
+                e.preventDefault();
+                setIsDragging(true);
+              }}
+              onDragLeave={() => setIsDragging(false)}
+              onDrop={handleDrop}
+              className={`relative flex flex-col items-center justify-center p-4 rounded-xl border-2 border-dashed transition-all cursor-pointer ${
+                isDragging
+                  ? "border-accent bg-accent/10"
+                  : "border-glass-border hover:border-accent/50 bg-card-inner-bg/50 hover:bg-accent/5"
+              }`}
+            >
               <input
-                type="number"
-                min="0.01"
-                step="0.01"
-                style={inputStyle}
-                className="pl-8! font-bold text-base"
-                placeholder="0.00"
-                value={form.amount}
-                onChange={set("amount")}
+                id="expense-receipt-upload"
+                type="file"
+                accept=".jpg,.jpeg,.png,.webp,.pdf"
+                onChange={chooseReceipt}
+                className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
               />
+              <div className="w-10 h-10 rounded-xl bg-accent/10 text-accent flex items-center justify-center mb-2 shadow-xs">
+                <MdCloudUpload size={22} />
+              </div>
+              <p className="text-xs font-semibold text-primary text-center">
+                {t("accUploadPrompt", "Click to upload bill / voucher or drag & drop")}
+              </p>
+              <p className="text-[11px] text-secondary mt-0.5">
+                {t("accUploadFormats", "JPG, PNG, WEBP, PDF · Max file size: 10 MB")}
+              </p>
             </div>
-          </Field>
-          <Field label={t("accPaymentMode")} required icon={MdPayments}>
-            <select style={inputStyle} value={form.payment_mode} onChange={set("payment_mode")}>
-              {MODES.map((m) => (
-                <option key={m} value={m}>
-                  {m === "BANK_TRANSFER" ? t("accBankTransfer") : m}
-                </option>
-              ))}
-            </select>
-          </Field>
-        </div>
+          ) : (
+            <div className="flex items-center justify-between p-3 rounded-xl border border-glass-border bg-card-inner-bg shadow-xs">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-11 h-11 rounded-lg bg-accent/10 border border-accent/20 flex items-center justify-center shrink-0 overflow-hidden">
+                  {receiptPreview && receiptPreview !== "pdf" ? (
+                    <img src={receiptPreview} alt="Receipt preview" className="w-full h-full object-cover" />
+                  ) : (
+                    <MdPictureAsPdf size={24} className="text-rose-500" />
+                  )}
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs font-bold text-primary truncate max-w-xs">
+                    {form.receipt?.name || expense?.receipt_file_name || "Attached Receipt"}
+                  </p>
+                  <p className="text-[11px] text-secondary flex items-center gap-1.5 mt-0.5">
+                    <span>
+                      {form.receipt
+                        ? `${(form.receipt.size / 1024).toFixed(1)} KB`
+                        : "Existing Voucher Document"}
+                    </span>
+                    <span>·</span>
+                    <span className="text-emerald-500 font-semibold">✓ Attached</span>
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <label
+                  htmlFor="expense-receipt-replace"
+                  className="cursor-pointer px-3 py-1.5 text-xs font-semibold rounded-lg bg-accent/10 hover:bg-accent/20 text-accent transition-colors"
+                >
+                  Change
+                  <input
+                    id="expense-receipt-replace"
+                    type="file"
+                    accept=".jpg,.jpeg,.png,.webp,.pdf"
+                    onChange={chooseReceipt}
+                    className="sr-only"
+                  />
+                </label>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setForm({ ...form, receipt: null, remove_receipt: true });
+                    setReceiptPreview(null);
+                  }}
+                  className="p-1.5 rounded-lg text-rose-400 hover:text-rose-500 hover:bg-rose-500/10 transition-colors"
+                  title="Remove attachment"
+                >
+                  <MdDeleteOutline size={18} />
+                </button>
+              </div>
+            </div>
+          )}
+        </Field>
 
         {/* Footer Actions */}
-        <div className="flex justify-end gap-3 pt-3 border-t border-glass-border">
-          <button type="button" onClick={onClose} className="btn-soft px-5 py-2.5 text-xs font-semibold">
+        <div className="flex justify-end gap-3 pt-4 border-t border-glass-border">
+          <button
+            type="button"
+            onClick={onClose}
+            className="btn-soft px-5 py-2.5 text-xs font-semibold rounded-xl hover:bg-white/10 transition-colors"
+          >
             {t("cancel")}
           </button>
           <button
             type="submit"
             disabled={saving}
-            className="btn-primary flex items-center gap-2 px-6 py-2.5 text-xs font-bold shadow-md disabled:opacity-50"
+            className="btn-primary flex items-center gap-2 px-6 py-2.5 text-xs font-bold rounded-xl shadow-md disabled:opacity-50 transition-all hover:shadow-lg"
           >
-            {saving ? t("accProcessing") : expense ? t("accSaveChanges") : t("accRecordExpenseBtn")}
+            {saving ? (
+              <>
+                <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                <span>{t("accProcessing")}</span>
+              </>
+            ) : (
+              <>
+                <MdCheckCircle size={16} />
+                <span>{expense ? t("accSaveChanges") : t("accRecordExpenseBtn")}</span>
+              </>
+            )}
           </button>
         </div>
       </form>

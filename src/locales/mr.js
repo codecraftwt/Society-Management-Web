@@ -1842,6 +1842,17 @@ const mr = {
   vlColIn:      "प्रवेश",
   vlColOut:     "बाहेर",
 
+  vlDetailTitle: "अभ्यागत तपशील",
+  vlOngoing: "प्रगतीपथावर",
+  vlExitDate: "बाहेर पडण्याची तारीख",
+  vlTotalStay: "एकूण वेळ",
+  vlVehicle: "वाहन",
+  vlParkingSlot: "पार्किंग जागा",
+  vlColOwner: "मालक / रहिवासी",
+  vlEntryDate: "प्रवेश तारीख",
+  vlIn: "आत",
+  vlOut: "बाहेर",
+
   // Admin Amenity
   amenTitle:               "सुविधा व्यवस्थापन",
   amenSubtitle:            "सुविधा आणि बुकिंग विनंत्या व्यवस्थापित करा",
@@ -2582,6 +2593,8 @@ const mr = {
   parkStatAll:               "सर्व स्लॉट",
   parkAvailable:             "उपलब्ध",
   parkOccupied:              "व्यस्त",
+  parkTabMySlots: "वाटप केलेले स्लॉट",
+  parkTabRequests: "पार्किंग विनंत्या",
   parkTabAll:                "सर्व",
   parkTabCars:               "कार",
   parkTabBikes:              "बाइक",

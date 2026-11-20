@@ -7,7 +7,7 @@ import {
   MdAdd, MdOutlineInbox, MdSearch,
   MdDirectionsCar, MdTwoWheeler,
   MdChevronLeft, MdChevronRight, MdLocalParking,
-  MdCheckCircle, MdInfo, MdClose, MdSend,
+  MdCheckCircle, MdInfo, MdClose, MdSend, MdEdit, MdDelete,
   MdApartment, MdDirectionsCarFilled,
 } from "react-icons/md";
 import Select from "../../components/common/Select";
@@ -277,6 +277,96 @@ export default function ResidentParking() {
   const [slotSearch, setSlotSearch] = useState("");
 
   const [showForm,     setShowForm]     = useState(false);
+
+  /* ── Edit & Delete Parking Request State ── */
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [editingRequest, setEditingRequest] = useState(null);
+  const [editForm, setEditForm] = useState({
+    guest_name: "",
+    vehicle_number: "",
+    vehicle_type: "CAR",
+    expected_arrival: "",
+    duration_hours: 24,
+    flat_id: "",
+  });
+  const [editLoading, setEditLoading] = useState(false);
+  const [editError, setEditError] = useState("");
+
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [deletingRequest, setDeletingRequest] = useState(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+
+  const handleOpenEdit = (request) => {
+    setEditingRequest(request);
+    setEditError("");
+    setEditForm({
+      guest_name: request.guest_name || "",
+      vehicle_number: request.vehicle_number || "",
+      vehicle_type: request.vehicle_type || "CAR",
+      expected_arrival: request.expected_arrival ? new Date(request.expected_arrival).toISOString().slice(0, 10) : "",
+      duration_hours: request.duration_hours || 24,
+      flat_id: request.flat_id ? String(request.flat_id) : "",
+    });
+    setEditModalOpen(true);
+  };
+
+  const handleSaveEdit = async (e) => {
+    e.preventDefault();
+    if (!editingRequest) return;
+    setEditError("");
+
+    const vehicleErr = getVehicleNumberError(editForm.vehicle_number, "Vehicle number");
+    if (vehicleErr) { setEditError(vehicleErr); return; }
+
+    if (editingRequest.parking_type === "VISITOR") {
+      const guestErr = getTitleError(editForm.guest_name, "Guest name");
+      if (guestErr) { setEditError(guestErr); return; }
+    }
+
+    setEditLoading(true);
+    try {
+      await API.put(`/parking/${editingRequest.id}`, {
+        guest_name: editForm.guest_name.trim(),
+        vehicle_name: editForm.guest_name.trim(),
+        vehicle_number: editForm.vehicle_number.toUpperCase().trim(),
+        vehicle_type: editForm.vehicle_type,
+        expected_arrival: editForm.expected_arrival || undefined,
+        duration_hours: Number(editForm.duration_hours) || 24,
+        flat_id: editForm.flat_id ? Number(editForm.flat_id) : undefined,
+      });
+
+      setSuccessMessage("Parking request updated successfully!");
+      setEditModalOpen(false);
+      setEditingRequest(null);
+      fetchData(page, filter, debouncedSearch);
+    } catch (err) {
+      setEditError(err.response?.data?.message || "Failed to update parking request");
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
+  const handleOpenDelete = (request) => {
+    setDeletingRequest(request);
+    setDeleteModalOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deletingRequest) return;
+    setDeleteLoading(true);
+    try {
+      await API.delete(`/parking/${deletingRequest.id}`);
+      setSuccessMessage("Parking request cancelled successfully!");
+      setDeleteModalOpen(false);
+      setDeletingRequest(null);
+      fetchData(page, filter, debouncedSearch);
+    } catch (err) {
+      setErrorMessage(err.response?.data?.message || "Failed to cancel parking request");
+      setDeleteModalOpen(false);
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
   const [hasFlat,      setHasFlat]      = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
@@ -964,6 +1054,162 @@ useEffect(() => {
         </form>
       </Modal>
 
+      {/* ── EDIT PARKING REQUEST MODAL ── */}
+      <Modal
+        isOpen={editModalOpen}
+        onClose={() => { setEditModalOpen(false); setEditingRequest(null); }}
+        title="Edit Parking Request"
+        icon={MdEdit}
+        size="md"
+      >
+        {editError && (
+          <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 text-sm text-red-400 flex items-center justify-between mb-4">
+            <span>{editError}</span>
+            <button type="button" onClick={() => setEditError("")} className="ml-3 opacity-60 hover:opacity-100">
+              <MdClose size={16} />
+            </button>
+          </div>
+        )}
+
+        <form onSubmit={handleSaveEdit} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-[11px] font-bold uppercase tracking-wider text-secondary mb-1.5">
+              {editingRequest?.parking_type === "SELF" ? (t("parkSelfName") || "Vehicle / Owner Name") : (t("parkGuestName") || "Guest Name")} <span className="text-red-400">*</span>
+            </label>
+            <input
+              className="input h-11 w-full"
+              placeholder="e.g. John Doe"
+              value={editForm.guest_name}
+              onChange={(e) => setEditForm({ ...editForm, guest_name: e.target.value })}
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-[11px] font-bold uppercase tracking-wider text-secondary mb-1.5">
+              {t("parkVehicleNumber") || "Vehicle Number"} <span className="text-red-400">*</span>
+            </label>
+            <input
+              className="input h-11 w-full"
+              placeholder="e.g. MH12AB1234"
+              value={editForm.vehicle_number}
+              onChange={(e) => setEditForm({ ...editForm, vehicle_number: e.target.value.toUpperCase() })}
+              style={{ textTransform: "uppercase", letterSpacing: "0.05em" }}
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-[11px] font-bold uppercase tracking-wider text-secondary mb-1.5">
+              {t("parkVehicleType") || "Vehicle Type"} <span className="text-red-400">*</span>
+            </label>
+            <Select
+              className="input h-11 w-full"
+              value={editForm.vehicle_type}
+              onChange={(e) => setEditForm({ ...editForm, vehicle_type: e.target.value })}
+            >
+              <option value="CAR">{t("parkCar") || "Car (4 Wheeler)"}</option>
+              <option value="BIKE">{t("parkBike") || "Bike (2 Wheeler)"}</option>
+            </Select>
+          </div>
+
+          <div>
+            <label className="block text-[11px] font-bold uppercase tracking-wider text-secondary mb-1.5">
+              {t("parkDurationHours") || "Duration (Hours)"}
+            </label>
+            <input
+              type="number"
+              min="1"
+              max="720"
+              className="input h-11 w-full"
+              value={editForm.duration_hours}
+              onChange={(e) => setEditForm({ ...editForm, duration_hours: e.target.value })}
+            />
+          </div>
+
+          <div>
+            <label className="block text-[11px] font-bold uppercase tracking-wider text-secondary mb-1.5">
+              {t("parkArrivalDate") || "Arrival Date"}
+            </label>
+            <input
+              type="date"
+              className="input h-11 w-full"
+              value={editForm.expected_arrival}
+              onChange={(e) => setEditForm({ ...editForm, expected_arrival: e.target.value })}
+            />
+          </div>
+
+          {myFlats.length > 1 && (
+            <div>
+              <label className="block text-[11px] font-bold uppercase tracking-wider text-secondary mb-1.5">
+                {t("parkWhichFlat") || "Which Flat?"}
+              </label>
+              <Select
+                className="input h-11 w-full"
+                value={editForm.flat_id}
+                onChange={(e) => setEditForm({ ...editForm, flat_id: e.target.value })}
+              >
+                {myFlats.map((f) => (
+                  <option key={f.id} value={String(f.id)}>
+                    {f.wing ? f.wing + '-' : ''}{f.flat_number}
+                  </option>
+                ))}
+              </Select>
+            </div>
+          )}
+
+          <div className="sm:col-span-2 flex gap-3 pt-3 border-t border-white/10">
+            <button type="submit" className="btn-primary h-11 flex-1 justify-center" disabled={editLoading}>
+              {editLoading ? <span className="flex items-center gap-2"><Spinner size={14} /> Saving...</span> : "Save Changes"}
+            </button>
+            <button
+              type="button"
+              onClick={() => { setEditModalOpen(false); setEditingRequest(null); }}
+              className="h-11 px-4 rounded-xl bg-white/10 text-sm hover:bg-white/15 transition cursor-pointer"
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* ── DELETE / CANCEL CONFIRMATION MODAL ── */}
+      <Modal
+        isOpen={deleteModalOpen}
+        onClose={() => { setDeleteModalOpen(false); setDeletingRequest(null); }}
+        title="Cancel Parking Request"
+        icon={MdDelete}
+        size="sm"
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-secondary">
+            Are you sure you want to cancel the pending parking request for vehicle <strong className="text-white">{deletingRequest?.vehicle_number}</strong> ({deletingRequest?.guest_name})?
+          </p>
+          <p className="text-xs text-red-400 bg-red-500/10 p-2.5 rounded-lg border border-red-500/20">
+            This request will be deleted immediately and removed from society records.
+          </p>
+
+          <div className="flex gap-3 pt-2">
+            <button
+              type="button"
+              onClick={handleConfirmDelete}
+              disabled={deleteLoading}
+              className="h-11 flex-1 justify-center rounded-xl bg-red-600 hover:bg-red-700 text-white font-semibold text-sm transition flex items-center gap-2 cursor-pointer disabled:opacity-50"
+            >
+              {deleteLoading ? <Spinner size={14} /> : <MdDelete size={16} />}
+              <span>Yes, Cancel Request</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => { setDeleteModalOpen(false); setDeletingRequest(null); }}
+              className="h-11 px-4 rounded-xl bg-white/10 text-sm hover:bg-white/15 transition cursor-pointer"
+            >
+              Keep Request
+            </button>
+          </div>
+        </div>
+      </Modal>
+
       {/* ── MAIN TABS: My Allocated Slots vs Parking Requests ── */}
       <div className="mb-4">
         <SlidingTabs
@@ -1144,6 +1390,26 @@ useEffect(() => {
                         {t("parkSpot")}: <strong>{r.assigned_spot}</strong>
                       </div>
                     )}
+                    {r.status === "PENDING" && (
+                      <div className="flex items-center justify-end gap-2 pt-2 border-t border-white/5">
+                        <button
+                          type="button"
+                          onClick={() => handleOpenEdit(r)}
+                          className="flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-lg text-accent bg-accent/10 hover:bg-accent/20 transition cursor-pointer"
+                        >
+                          <MdEdit size={14} />
+                          <span>Edit</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleOpenDelete(r)}
+                          className="flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-lg text-red-400 bg-red-500/10 hover:bg-red-500/20 transition cursor-pointer"
+                        >
+                          <MdDelete size={14} />
+                          <span>Delete</span>
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
@@ -1161,6 +1427,7 @@ useEffect(() => {
                     <th className="p-3 text-left">{t("parkColVehicle")}</th>
                     <th className="p-3 text-left">{t("parkColSpot")}</th>
                     <th className="p-3 text-left">{t("billStatusCol")}</th>
+                    <th className="p-3 text-right font-semibold">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1188,6 +1455,30 @@ useEffect(() => {
                         <span className={`px-3 py-1 text-xs font-semibold rounded-full ${statusColor(r.status)}`}>
                           {statusLabel(r.status)}
                         </span>
+                      </td>
+                      <td className="p-3 text-right">
+                        {r.status === "PENDING" ? (
+                          <div className="flex items-center justify-end gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => handleOpenEdit(r)}
+                              className="p-1.5 rounded-lg text-accent hover:bg-accent/15 transition cursor-pointer"
+                              title="Edit parking request"
+                            >
+                              <MdEdit size={16} />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleOpenDelete(r)}
+                              className="p-1.5 rounded-lg text-red-400 hover:bg-red-500/15 transition cursor-pointer"
+                              title="Delete / cancel request"
+                            >
+                              <MdDelete size={16} />
+                            </button>
+                          </div>
+                        ) : (
+                          <span className="text-xs text-secondary opacity-40">—</span>
+                        )}
                       </td>
                     </tr>
                   ))}

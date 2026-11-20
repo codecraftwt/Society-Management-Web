@@ -61,6 +61,8 @@ export default function Create({
         headers: { "Content-Type": "multipart/form-data" },
       });
 
+      toast.success(t("noticePublishSuccess", "Notice published successfully"));
+
       setForm({
         title: "",
         description: "",
@@ -70,8 +72,8 @@ export default function Create({
         target_flat_id: "",
       });
       setFile(null);
-      onClose();
-      onCreated();
+      if (typeof onClose === "function") onClose();
+      if (typeof onCreated === "function") onCreated();
     } catch (err) {
       toast.error(getErrorMessage(err, t("noticePublishFail", "Failed to publish notice")));
     } finally {
@@ -83,6 +85,7 @@ export default function Create({
     <GlobalModal
       isOpen={isOpen}
       onClose={onClose}
+      disableUnsavedWarning={submitting}
       title={t("noticeCreateTitle")}
       subtitle={t("noticeModalSubtitle")}
       icon={MdCampaign}

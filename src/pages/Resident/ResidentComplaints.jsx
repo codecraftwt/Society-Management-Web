@@ -1125,11 +1125,14 @@ const { t }              = useLang();
   const [myFlats,        setMyFlats]        = useState([]);
   const [selectedFlatId, setSelectedFlatId] = useState("");
   const isOwner = authUser?.resident_type === "OWNER";
-  const eligibleFlats = myFlats.filter(item => {
+  const isFlatRented = (item) => {
     const flatObj = item.Flat || item;
-    if (isOwner && flatObj.occupancy_status === "RENTED") return false;
-    return true;
-  });
+    return isOwner && (
+      Boolean(item.tenant || flatObj.tenant || item.has_tenant || flatObj.has_tenant || item.is_rented || flatObj.is_rented) ||
+      String(flatObj.occupancy_status || "").toUpperCase() === "RENTED"
+    );
+  };
+  const eligibleFlats = myFlats.filter(item => !isFlatRented(item));
   const hasEligibleFlat = eligibleFlats.length > 0;
 
   const MAX_WORDS = 700;
@@ -1308,8 +1311,16 @@ const { t }              = useLang();
         setHasFlat(flatsArr.length > 0);
 
         if (flatsArr.length > 0 && !selectedFlatId) {
-          const first = flatsArr[0];
-          const fId = first.flat_id || first.id || first.Flat?.id;
+          const eligible = flatsArr.filter(item => {
+            const flatObj = item.Flat || item;
+            const isRented = isOwner && (
+              Boolean(item.tenant || flatObj.tenant || item.has_tenant || flatObj.has_tenant || item.is_rented || flatObj.is_rented) ||
+              String(flatObj.occupancy_status || "").toUpperCase() === "RENTED"
+            );
+            return !isRented;
+          });
+          const initial = eligible.length > 0 ? eligible[0] : flatsArr[0];
+          const fId = initial.flat_id || initial.id || initial.Flat?.id;
           setSelectedFlatId(fId || "");
         }
       } catch (error) {
@@ -1745,21 +1756,25 @@ const { t }              = useLang();
                       required
                     >
                       <option value="" disabled>-- Choose the affected unit --</option>
-                      {eligibleFlats.map((item, index) => {
+                      {myFlats.map((item, index) => {
                         const flatObj = item.Flat || item;
                         const fId     = item.flat_id || flatObj.id || `fallback-${index}`;
                         const bName   = flatObj.Block?.name || item.block_name || flatObj.block_name || "";
                         const fNum    = flatObj.flat_number || item.flat_number || "";
-
-                        // ✅ FIX: robustly resolve floor number from all possible nesting levels
                         const floorNum = getFloorNumber(item);
                         const typeLabel = floorNum !== null && floorNum !== undefined
                           ? `(Floor ${floorNum})`
                           : "";
+                        const isRented = isFlatRented(item);
 
                         return (
-                          <option key={fId} value={fId}>
-                            {bName ? `${bName} - ` : ""}Unit {fNum} {typeLabel}
+                          <option 
+                            key={fId} 
+                            value={fId}
+                            disabled={isRented}
+                            style={isRented ? { opacity: 0.5, color: '#888', backgroundColor: 'var(--bg-card, #f8f9fa)' } : {}}
+                          >
+                            {bName ? `${bName} - ` : ""}Unit {fNum} {typeLabel}{isRented ? " — [Tenant Occupied - Locked]" : ""}
                           </option>
                         );
                       })}

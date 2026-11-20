@@ -459,6 +459,14 @@ function ResidentRequestsPanel({ allSlots, onSlotAssigned }) {
   const [rejecting, setRejecting] = useState(null);
   const [selectedSlot, setSelectedSlot] = useState({});
   const [expandedId, setExpandedId] = useState(null);
+  const [assignModalReq, setAssignModalReq] = useState(null);
+  const [assignSlotValue, setAssignSlotValue] = useState("");
+  const [rejectModalReq, setRejectModalReq] = useState(null);
+
+  const modalAvailSlots = useMemo(() => {
+    if (!assignModalReq) return [];
+    return allSlots.filter(s => s.status === "AVAILABLE" && s.vehicle_type === assignModalReq.vehicle_type);
+  }, [allSlots, assignModalReq]);
   const [successMsg, setSuccessMsg] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
 
@@ -502,6 +510,28 @@ function ResidentRequestsPanel({ allSlots, onSlotAssigned }) {
     }
   };
 
+  const handleConfirmAssign = async () => {
+    if (!assignModalReq || !assignSlotValue) return;
+    if (!hasPermission(user, "parking_slots", "allocate")) {
+      showUnauthorized(t("parkNoPermissionAssign"));
+      return;
+    }
+    setAssigning(assignModalReq.id);
+    setErrorMsg("");
+    try {
+      await API.put(`/parking/${assignModalReq.id}/admin-assign`, { assigned_spot: assignSlotValue });
+      setSuccessMsg(t("parkRequestAssignedSuccess", { slot: assignSlotValue }));
+      setAssignModalReq(null);
+      setAssignSlotValue("");
+      loadRequests();
+      onSlotAssigned();
+    } catch (err) {
+      setErrorMsg(err?.response?.data?.message || t("parkAssignFailed"));
+    } finally {
+      setAssigning(null);
+    }
+  };
+
   const handleReject = async (reqId) => {
     if (!hasPermission(user, "parking_slots", "allocate")) {
       showUnauthorized(t("parkNoPermissionReject"));
@@ -510,9 +540,28 @@ function ResidentRequestsPanel({ allSlots, onSlotAssigned }) {
     setRejecting(reqId);
     setErrorMsg("");
     try {
-      // Change this one line in handleReject:
-      await API.put(`/parking/${reqId}/admin-reject`);  // was: /parking/${reqId}/reject;
+      await API.put(`/parking/${reqId}/admin-reject`);
       setSuccessMsg(t("parkRequestRejectedSuccess"));
+      loadRequests();
+    } catch (err) {
+      setErrorMsg(err?.response?.data?.message || t("parkRejectFailed"));
+    } finally {
+      setRejecting(null);
+    }
+  };
+
+  const handleConfirmReject = async () => {
+    if (!rejectModalReq) return;
+    if (!hasPermission(user, "parking_slots", "allocate")) {
+      showUnauthorized(t("parkNoPermissionReject"));
+      return;
+    }
+    setRejecting(rejectModalReq.id);
+    setErrorMsg("");
+    try {
+      await API.put(`/parking/${rejectModalReq.id}/admin-reject`);
+      setSuccessMsg(t("parkRequestRejectedSuccess"));
+      setRejectModalReq(null);
       loadRequests();
     } catch (err) {
       setErrorMsg(err?.response?.data?.message || t("parkRejectFailed"));
@@ -538,21 +587,6 @@ function ResidentRequestsPanel({ allSlots, onSlotAssigned }) {
 
   return (
     <div className="space-y-5 animate-fadeIn">
-
-      {/* Info banner */}
-      <div className="parking-info-banner flex items-start gap-3 p-4 rounded-xl"
-        style={{ background: "rgba(107,70,193,0.08)", border: "1.5px solid rgba(107,70,193,0.22)" }}>
-        <MdPendingActions style={{ color: "#9F87D7", fontSize: 20, flexShrink: 0, marginTop: 1 }} />
-        <div>
-          <p className="font-bold text-sm" style={{ color: "var(--text-primary)", margin: 0 }}>{t("parkExtraRequests")}</p>
-          <p className="text-xs mt-1" style={{ color: "var(--text-secondary)", margin: 0, lineHeight: 1.6 }}>
-            {t("parkExtraRequestsInfo")}
-          </p>
-          <p className="text-xs mt-1.5" style={{ color: "#9F87D7", margin: 0, fontWeight: 600 }}>
-            ℹ️ {t("parkExtraRequestsNote")}
-          </p>
-        </div>
-      </div>
 
       {/* Feedback */}
       {successMsg && (
@@ -651,74 +685,30 @@ function ResidentRequestsPanel({ allSlots, onSlotAssigned }) {
                       </GlobalBadge>
                     )}
                     {isPending && (
-                      <button onClick={() => setExpandedId(isExpanded ? null : req.id)}
-                        className="w-8 h-8 flex items-center justify-center rounded-xl transition-all"
-                        style={{ background: isExpanded ? "rgba(107,70,193,0.15)" : "rgba(255,255,255,0.05)", border: "1px solid var(--glass-border)", color: isExpanded ? "#9F87D7" : "var(--text-secondary)", fontWeight: 700, fontSize: 16, cursor: "pointer" }}>
-                        {isExpanded ? "−" : "+"}
-                      </button>
+                      <div className="flex items-center gap-2 ml-1">
+                        <GlobalButton
+                          size="sm"
+                          variant="success"
+                          icon={MdDone}
+                          onClick={() => {
+                            setAssignModalReq(req);
+                            setAssignSlotValue("");
+                          }}
+                        >
+                          {t("parkAssignSlot") || "Assign Slot"}
+                        </GlobalButton>
+                        <GlobalButton
+                          size="sm"
+                          variant="danger"
+                          icon={MdBlock}
+                          onClick={() => setRejectModalReq(req)}
+                        >
+                          {t("parkReject") || "Reject"}
+                        </GlobalButton>
+                      </div>
                     )}
                   </div>
                 </div>
-
-                {/* Assign panel */}
-                {isPending && isExpanded && (
-                  <div className="px-4 pb-4 pt-0 animate-fadeIn">
-                    <div className="p-3.5 rounded-xl space-y-3"
-                      style={{ background: "var(--card-inner-bg)", border: "1px solid var(--glass-border)" }}>
-                      <div>
-                        <label className="text-xs font-bold uppercase tracking-wider mb-1.5 flex items-center justify-between"
-                          style={{ color: "var(--text-secondary)" }}>
-                          {t("parkAssignFreeTypeSlot", { type: req.vehicle_type === "CAR" ? t("parkCar") : t("parkBike") })}
-                          {availSlots.length === 0 && (
-                            <span className="flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full"
-                              style={{ color: "#f87171", background: "rgba(248,113,113,0.10)", border: "1px solid rgba(248,113,113,0.22)" }}>
-                              <MdWarning size={11} /> {t("parkNoTypeSlotsAvailable", { type: req.vehicle_type === "CAR" ? t("parkCar") : t("parkBike") })}
-                            </span>
-                          )}
-                        </label>
-                        <div className="relative">
-                          <MdLocalParking size={14} className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-secondary" />
-                          <Select className="input h-10 w-full" style={{ paddingLeft: 32, fontSize: 13, fontWeight: 600 }}
-                            value={selectedSlot[req.id] || ""}
-                            onChange={e => setSelectedSlot(prev => ({ ...prev, [req.id]: e.target.value }))}
-                            disabled={availSlots.length === 0}>
-                            <option value="">{t("parkSelectSlot")}</option>
-                            {availSlots.map(s => (
-                              <option key={s.id} value={s.slot_number}>
-                                {s.slot_number}{s.parking_floor ? ` · ${t("parkLevelValue", { level: s.parking_floor })}` : ""}
-                              </option>
-                            ))}
-                          </Select>
-                        </div>
-                      </div>
-
-                      {selectedSlot[req.id] && (
-                        <div style={{ padding: "8px 12px", borderRadius: 8, background: "rgba(74,222,128,0.06)", border: "1px solid rgba(74,222,128,0.18)", fontSize: 11, color: "#4ade80" }}>
-                          ✓ {t("parkPermanentAssignConfirmation", { slot: selectedSlot[req.id], vehicle: req.vehicle_number })}
-                        </div>
-                      )}
-
-                      <div className="flex gap-2">
-                        <GlobalButton onClick={() => handleAssign(req.id)}
-                          disabled={!selectedSlot[req.id] || assigning === req.id}
-                          variant="success"
-                          icon={MdDone}
-                          loading={assigning === req.id}
-                          fullWidth
-                          className="flex-1">
-                          {assigning === req.id ? t("parkAssigning") : t("parkAssignNotify")}
-                        </GlobalButton>
-                        <GlobalButton onClick={() => handleReject(req.id)}
-                          disabled={rejecting === req.id}
-                          variant="danger"
-                          icon={MdBlock}
-                          loading={rejecting === req.id}>
-                          {t("parkReject")}
-                        </GlobalButton>
-                      </div>
-                    </div>
-                  </div>
-                )}
 
                 {/* Approved footer */}
                 {req.status === "APPROVED" && req.assigned_spot && (
@@ -741,6 +731,174 @@ function ResidentRequestsPanel({ allSlots, onSlotAssigned }) {
           })}
         </div>
       )}
+
+      {/* ── ASSIGN FREE SLOT POP-UP MODAL ── */}
+      <GlobalModal
+        isOpen={!!assignModalReq}
+        onClose={() => { if (!assigning) { setAssignModalReq(null); setAssignSlotValue(""); } }}
+        title={t("parkAssignFreeTypeSlot", { type: assignModalReq?.vehicle_type === "CAR" ? t("parkCar") : t("parkBike") })}
+        icon={MdLocalParking}
+        size="md"
+        showFooter={false}
+      >
+        {assignModalReq && (
+          <div className="space-y-4 pt-1">
+            {/* Request Summary Card */}
+            <div
+              className="p-3.5 rounded-xl flex items-center justify-between gap-3"
+              style={{ background: "var(--card-inner-bg)", border: "1px solid var(--glass-border)" }}
+            >
+              <div className="flex items-center gap-3">
+                <div
+                  className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                  style={assignModalReq.vehicle_type === "CAR"
+                    ? { background: "rgba(91,141,239,0.12)", border: "1px solid rgba(91,141,239,0.22)" }
+                    : { background: "rgba(107,70,193,0.12)", border: "1px solid rgba(107,70,193,0.22)" }}
+                >
+                  {assignModalReq.vehicle_type === "CAR"
+                    ? <MdDirectionsCar size={20} style={{ color: "#94B5F5" }} />
+                    : <MdTwoWheeler size={20} style={{ color: "#9F87D7" }} />}
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono font-bold text-sm tracking-wide" style={{ color: "var(--text-primary)" }}>
+                      {assignModalReq.vehicle_number}
+                    </span>
+                    <GlobalBadge size="sm" variant="warning">{t("parkExtra")}</GlobalBadge>
+                  </div>
+                  <p className="text-xs text-secondary mt-0.5">
+                    {assignModalReq.guest_name}
+                    {assignModalReq.Flat?.flat_number && <> · {t("parkFlatNumber", { number: assignModalReq.Flat.flat_number })}</>}
+                    {assignModalReq.resident?.name && <> · {assignModalReq.resident.name}</>}
+                  </p>
+                </div>
+              </div>
+              <span
+                className="text-xs font-bold px-2.5 py-1 rounded-lg shrink-0"
+                style={{
+                  color: assignModalReq.vehicle_type === "CAR" ? "#94B5F5" : "#9F87D7",
+                  background: assignModalReq.vehicle_type === "CAR" ? "rgba(91,141,239,0.10)" : "rgba(107,70,193,0.10)",
+                }}
+              >
+                {assignModalReq.vehicle_type === "CAR" ? t("parkCar") : t("parkBike")}
+              </span>
+            </div>
+
+            {/* Slot selector */}
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider mb-2 text-secondary">
+                {t("parkSelectSlot") || "Select Slot to Assign"} <span className="text-red-400">*</span>
+              </label>
+
+              {modalAvailSlots.length === 0 ? (
+                <div
+                  className="p-3 rounded-xl flex items-center gap-2 text-xs font-semibold"
+                  style={{ color: "#f87171", background: "rgba(248,113,113,0.10)", border: "1px solid rgba(248,113,113,0.25)" }}
+                >
+                  <MdWarning size={16} className="shrink-0" />
+                  <span>
+                    {t("parkNoTypeSlotsAvailable", { type: assignModalReq.vehicle_type === "CAR" ? t("parkCar") : t("parkBike") })}
+                  </span>
+                </div>
+              ) : (
+                <div className="relative">
+                  <MdLocalParking size={16} className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-secondary" />
+                  <Select
+                    className="input h-11 w-full"
+                    style={{ paddingLeft: 36, fontSize: 13, fontWeight: 600 }}
+                    value={assignSlotValue}
+                    onChange={(e) => setAssignSlotValue(e.target.value)}
+                  >
+                    <option value="">{t("parkSelectSlot")}</option>
+                    {modalAvailSlots.map((s) => (
+                      <option key={s.id} value={s.slot_number}>
+                        {s.slot_number}{s.parking_floor ? ` · ${t("parkLevelValue", { level: s.parking_floor })}` : ""}
+                      </option>
+                    ))}
+                  </Select>
+                </div>
+              )}
+            </div>
+
+            {/* Confirmation preview banner */}
+            {assignSlotValue && (
+              <div
+                className="p-3 rounded-xl text-xs font-semibold flex items-center gap-2 animate-fadeIn"
+                style={{ background: "rgba(74,222,128,0.08)", border: "1px solid rgba(74,222,128,0.22)", color: "#4ade80" }}
+              >
+                <MdCheckCircle size={15} className="shrink-0" />
+                <span>
+                  ✓ {t("parkPermanentAssignConfirmation", {
+                    slot: assignSlotValue,
+                    vehicle: assignModalReq.vehicle_number,
+                  })}
+                </span>
+              </div>
+            )}
+
+            {/* Modal actions */}
+            <div className="flex items-center justify-end gap-3 pt-3 border-t border-glass">
+              <GlobalButton
+                variant="secondary"
+                onClick={() => { setAssignModalReq(null); setAssignSlotValue(""); }}
+                disabled={assigning === assignModalReq.id}
+              >
+                {t("cancel") || "Cancel"}
+              </GlobalButton>
+              <GlobalButton
+                variant="success"
+                icon={MdDone}
+                onClick={handleConfirmAssign}
+                disabled={!assignSlotValue || assigning === assignModalReq.id || modalAvailSlots.length === 0}
+                loading={assigning === assignModalReq.id}
+              >
+                {assigning === assignModalReq.id ? t("parkAssigning") : t("parkAssignNotify")}
+              </GlobalButton>
+            </div>
+          </div>
+        )}
+      </GlobalModal>
+
+      {/* ── REJECT CONFIRMATION MODAL ── */}
+      <GlobalModal
+        isOpen={!!rejectModalReq}
+        onClose={() => { if (!rejecting) setRejectModalReq(null); }}
+        title={(t("parkReject") || "Reject") + " Extra Slot Request"}
+        icon={MdBlock}
+        size="sm"
+        showFooter={false}
+      >
+        {rejectModalReq && (
+          <div className="space-y-4 pt-1">
+            <p className="text-sm text-secondary">
+              Are you sure you want to reject the extra slot request for vehicle{" "}
+              <strong style={{ color: "var(--text-primary)" }}>{rejectModalReq.vehicle_number}</strong>
+              {rejectModalReq.guest_name ? ` (${rejectModalReq.guest_name})` : ""}?
+            </p>
+            <p className="text-xs p-3 rounded-xl border" style={{ background: "rgba(248,113,113,0.08)", borderColor: "rgba(248,113,113,0.22)", color: "#f87171" }}>
+              ⚠️ {t("parkRejectVehicleNote")}
+            </p>
+
+            <div className="flex items-center justify-end gap-3 pt-2 border-t border-glass">
+              <GlobalButton
+                variant="secondary"
+                onClick={() => setRejectModalReq(null)}
+                disabled={rejecting === rejectModalReq.id}
+              >
+                {t("cancel") || "Cancel"}
+              </GlobalButton>
+              <GlobalButton
+                variant="danger"
+                icon={MdBlock}
+                onClick={handleConfirmReject}
+                loading={rejecting === rejectModalReq.id}
+              >
+                {rejecting === rejectModalReq.id ? t("parkRejecting") : t("parkReject")}
+              </GlobalButton>
+            </div>
+          </div>
+        )}
+      </GlobalModal>
     </div>
   );
 }

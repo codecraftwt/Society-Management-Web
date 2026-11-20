@@ -172,16 +172,16 @@ export default function ResidentPreApproval() {
     return { total, today, active, used: groups.history.length };
   }, [myPasses, groups, todayIST]);
 
+  const isFlatRented = (item) => {
+    if (!isOwner) return false;
+    const flatObj = item.Flat || item;
+    const tenant = item.tenant ?? flatObj.tenant ?? null;
+    return Boolean(tenant || item.has_tenant || flatObj.has_tenant || item.is_rented || flatObj.is_rented) ||
+      String(flatObj.occupancy_status || "").toUpperCase() === "RENTED";
+  };
+
   const eligibleFlats = useMemo(() => {
-    return myFlats.filter((item) => {
-      if (!isOwner) return true;
-      const flatObj = item.Flat || item;
-      const tenant = item.tenant ?? flatObj.tenant ?? null;
-      const isRented =
-        Boolean(tenant) ||
-        String(flatObj.occupancy_status || "").toUpperCase() === "RENTED";
-      return !isRented;
-    });
+    return myFlats.filter((item) => !isFlatRented(item));
   }, [myFlats, isOwner]);
   const hasEligibleFlat = eligibleFlats.length > 0;
 
@@ -564,11 +564,19 @@ export default function ResidentPreApproval() {
                 onChange={(e) => setSelectedFlatId(e.target.value)}
                 required
               >
-                {eligibleFlats.map((flat) => (
-                  <option key={flat.flat_id || flat.id} value={flat.flat_id || flat.id}>
-                    {t("rdFlat")} {flat.Flat?.flat_number || flat.flat_number || flat.flatNumber || flat.number || "—"}
-                  </option>
-                ))}
+                {myFlats.map((flat) => {
+                  const isRented = isFlatRented(flat);
+                  return (
+                    <option 
+                      key={flat.flat_id || flat.id} 
+                      value={flat.flat_id || flat.id}
+                      disabled={isRented}
+                      style={isRented ? { opacity: 0.5, color: '#888', backgroundColor: 'var(--bg-card, #f8f9fa)' } : {}}
+                    >
+                      {t("rdFlat")} {flat.Flat?.flat_number || flat.flat_number || flat.flatNumber || flat.number || "—"}{isRented ? " — [Tenant Occupied - Locked]" : ""}
+                    </option>
+                  );
+                })}
               </Select>
             </div>
           )}

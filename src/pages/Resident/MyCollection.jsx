@@ -109,11 +109,14 @@ export default function MyCollection() {
   const [checkingFlat, setCheckingFlat] = useState(true);
 
   const isOwner = authUser?.resident_type === "OWNER";
-  const eligibleFlats = myFlats.filter((item) => {
+  const isFlatRented = (item) => {
     const flatObj = item.Flat || item;
-    if (isOwner && flatObj.occupancy_status === "RENTED") return false;
-    return true;
-  });
+    return isOwner && (
+      Boolean(item.tenant || flatObj?.tenant || item.has_tenant || flatObj?.has_tenant || item.is_rented || flatObj?.is_rented) ||
+      String(flatObj?.occupancy_status || "").toUpperCase() === "RENTED"
+    );
+  };
+  const eligibleFlats = myFlats.filter((item) => !isFlatRented(item));
   const hasEligibleFlat = eligibleFlats.length > 0;
 
   const [parcelFlatMap, setParcelFlatMap] = useState({});
@@ -176,7 +179,7 @@ export default function MyCollection() {
           return String(fId) === String(selectedFlatId);
         });
         const selectableFlats = isOwner
-          ? scopedFlats.filter((item) => (item.Flat || item).occupancy_status !== "RENTED")
+          ? scopedFlats.filter((item) => !isFlatRented(item))
           : scopedFlats;
         if (selectableFlats.length > 0 && (!selectedFlatId || !selectedStillAvailable || !selectableFlats.some((item) => String(item.flat_id || item.id || item.Flat?.id) === String(selectedFlatId)))) {
           const first = selectableFlats[0];
@@ -927,7 +930,7 @@ export default function MyCollection() {
                   const fNum = flatObj?.flat_number || item?.flat_number || "";
                   const floorNum = getFloorNumber(item);
                   const floor = floorNum !== null && floorNum !== undefined ? `(Floor ${floorNum})` : "";
-                  const isRented = isOwner && flatObj?.occupancy_status === "RENTED";
+                  const isRented = isFlatRented(item);
                   return (
                     <option key={fId} value={String(fId)} disabled={isRented}>
                       {bName ? `${bName} - ` : ""}Unit {fNum} {floor}{isRented ? " — Rented to tenant" : ""}

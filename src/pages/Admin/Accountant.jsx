@@ -952,7 +952,7 @@ export default function Accountant() {
                 onChange={(e) => setSelectedResidentId(e.target.value)}
               >
                 <option value="">{t("acctChooseResident") || "Choose resident to appoint…"}</option>
-                {eligibleResidents.map(r => (
+                {eligibleResidents.filter((r) => r.resident_type !== "TENANT").map(r => (
                   <option key={r.id} value={r.id}>
                     {r.name} {r.flat_number ? `(${t("mpUnit") || "Unit"} ${r.flat_number}${r.block_name ? ` - ${r.block_name}` : ''})` : ''} — {r.email}
                   </option>

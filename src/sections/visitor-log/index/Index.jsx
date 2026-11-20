@@ -325,7 +325,7 @@ function VisitorDetailModal({ visitor, onClose }) {
     <GlobalModal
       isOpen={Boolean(visitor)}
       onClose={onClose}
-      title={t("vlDetailTitle") || "Visitor Details"}
+      title={safeLabel(t, "vlDetailTitle", "Visitor Details")}
       subtitle={`${visitor.name} · ${visitor.date}`}
       icon={MdPerson}
       size="md"
@@ -344,7 +344,7 @@ function VisitorDetailModal({ visitor, onClose }) {
           </div>
         </div>
         <GlobalBadge variant={visitor.status === "IN" ? "success" : "neutral"} dot>
-          {visitor.status === "IN" ? t("vlIn") || "IN" : t("vlOut") || "OUT"}
+          {visitor.status === "IN" ? safeLabel(t, "vlIn", "IN") : safeLabel(t, "vlOut", "OUT")}
         </GlobalBadge>
       </div>
 
@@ -358,7 +358,7 @@ function VisitorDetailModal({ visitor, onClose }) {
          <DetailRow label={safeLabel(t, "vlColOut", "Out Time")} value={visitor.outtime || safeLabel(t, "vlOngoing", "Ongoing")} />
         <DetailRow
            label={safeLabel(t, "vlTotalStay", "Total Stay")}
-          value={visitor.ongoing ? `${t("vlOngoing") || "Ongoing"} · ${visitor.duration}` : visitor.duration}
+          value={visitor.ongoing ? `${safeLabel(t, "vlOngoing", "Ongoing")} · ${visitor.duration}` : visitor.duration}
         />
           <DetailRow label={safeLabel(t, "vlVehicle", "Vehicle")} value={visitor.vehicle} />
           <DetailRow label={safeLabel(t, "vlParkingSlot", "Parking Slot")} value={visitor.parking} />

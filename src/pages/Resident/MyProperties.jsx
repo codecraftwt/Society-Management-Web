@@ -3,7 +3,8 @@ import { createPortal } from "react-dom";
 import API from "../../services/api";
 import {
   MdHome, MdPersonAdd, MdWarning, MdClose, MdCheck,
-  MdBadge, MdCreditCard, MdDelete, MdAccessTime, MdAutorenew
+  MdBadge, MdCreditCard, MdDelete, MdAccessTime, MdAutorenew,
+  MdVisibility, MdVisibilityOff
 } from "react-icons/md";
 import { toast } from "react-toastify";
 import { AuthContext } from "../../context/AuthContext";
@@ -66,6 +67,7 @@ export default function MyProperties() {
   const [showForm, setShowForm]             = useState(false);
   const [submitting, setSubmitting]         = useState(false);
   const [selectedFlatId, setSelectedFlatId] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     name: "", email: "", phone: "", password: "",
     vehicle_count: 0, occupant_count: 1,
@@ -78,6 +80,7 @@ export default function MyProperties() {
   const [confirmDiscard, setConfirmDiscard] = useState(false);
   const dirtyRef = useUnsavedDirty(showForm);
   const requestCloseAddTenant = () => {
+    setShowPassword(false);
     if (dirtyRef.current) setConfirmDiscard(true);
     else setShowForm(false);
   };
@@ -434,7 +437,28 @@ export default function MyProperties() {
                   <div><label className="text-[10px] text-secondary font-semibold uppercase block mb-1">{t("rpropFullName")}</label><input required style={inputStyle} value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} /></div>
                   <div><label className="text-[10px] text-secondary font-semibold uppercase block mb-1">{t("rpropEmail")}</label><input required type="email" style={inputStyle} value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} /></div>
                   <div><label className="text-[10px] text-secondary font-semibold uppercase block mb-1">{t("rpropPhone")}</label><input required style={inputStyle} value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} /></div>
-                  <div><label className="text-[10px] text-secondary font-semibold uppercase block mb-1">{t("rpropTempPassword")}</label><input required type="password" style={inputStyle} value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} /></div>
+                  <div>
+                    <label className="text-[10px] text-secondary font-semibold uppercase block mb-1">{t("rpropTempPassword")}</label>
+                    <div className="relative flex items-center">
+                      <input
+                        required
+                        type={showPassword ? "text" : "password"}
+                        style={{ ...inputStyle, paddingRight: "40px" }}
+                        value={formData.password}
+                        onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                        placeholder="e.g. Pass@123"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword((p) => !p)}
+                        className="absolute right-2.5 text-secondary hover:text-accent transition-colors p-1 flex items-center justify-center cursor-pointer"
+                        title={showPassword ? "Hide password" : "Show password"}
+                        tabIndex={-1}
+                      >
+                        {showPassword ? <MdVisibilityOff size={18} /> : <MdVisibility size={18} />}
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
 

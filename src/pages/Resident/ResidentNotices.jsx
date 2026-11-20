@@ -124,8 +124,39 @@ const [totalPages, setTotalPages] = useState(1);
       setTotalAll((c) => c + 1);
       setTotalItems((c) => c + 1);
     };
+
+    const onNoticeAcknowledged = (data) => {
+      if (!data?.notice_id) return;
+      const targetId = Number(data.notice_id);
+      setNotices((prev) =>
+        prev.map((item) =>
+          Number(item.id) === targetId
+            ? {
+                ...item,
+                acknowledgement_status: "ACKNOWLEDGED",
+                acknowledged_at: data.acknowledged_at || new Date().toISOString(),
+              }
+            : item
+        )
+      );
+      setSelectedNotice((prev) =>
+        prev && Number(prev.id) === targetId
+          ? {
+              ...prev,
+              acknowledgement_status: "ACKNOWLEDGED",
+              acknowledged_at: data.acknowledged_at || new Date().toISOString(),
+            }
+          : prev
+      );
+      setShowLeaveGuardModal(false);
+    };
+
     socket.on("notice_created", onNoticeCreated);
-    return () => socket.off("notice_created", onNoticeCreated);
+    socket.on("notice_acknowledged", onNoticeAcknowledged);
+    return () => {
+      socket.off("notice_created", onNoticeCreated);
+      socket.off("notice_acknowledged", onNoticeAcknowledged);
+    };
   }, []);
 
   const handlePageChange = (newPage) => loadNotices(newPage, debouncedSearch);

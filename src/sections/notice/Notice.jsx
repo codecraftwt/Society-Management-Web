@@ -158,13 +158,21 @@ export default function Notice() {
   }, [page, debSearch, loadNotices]);
 
   useEffect(() => {
-    socket.on("noticeCreated", (newNotice) => {
-      setNotices((prev) => [newNotice, ...prev]);
+    const handleNewNotice = (newNotice) => {
+      if (!newNotice || !newNotice.id) return;
+      setNotices((prev) => {
+        if (prev.some((item) => item.id === newNotice.id)) return prev;
+        return [newNotice, ...prev];
+      });
       setTotalItems((prev) => prev + 1);
       setTotalAll((prev) => prev + 1);
-    });
+    };
+
+    socket.on("noticeCreated", handleNewNotice);
+    socket.on("notice_created", handleNewNotice);
     return () => {
-      socket.off("noticeCreated");
+      socket.off("noticeCreated", handleNewNotice);
+      socket.off("notice_created", handleNewNotice);
     };
   }, []);
 
