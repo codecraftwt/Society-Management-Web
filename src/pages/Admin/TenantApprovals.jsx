@@ -9,7 +9,7 @@ import {
   MdCheck, MdClose, MdBadge, MdCreditCard, MdAccessTime,
   MdOpenInNew, MdWarning, MdSearch, MdFilterList,
   MdPerson, MdHome, MdCalendarToday, MdDirectionsCar,
-  MdGroup, MdRefresh, MdVisibility
+  MdGroup, MdRefresh, MdVisibility, MdArrowBack
 } from "react-icons/md";
 import Select from "../../components/common/Select";
 import { useLang } from "../../context/LanguageContext";
@@ -65,14 +65,22 @@ function DocViewerModal({ doc, onClose }) {
         onClick={e => e.stopPropagation()}
       >
         <div className="flex justify-between items-center px-5 py-4" style={{ borderBottom: "1px solid var(--divider)" }}>
-          <h3 className="font-bold text-base" style={{ color: "var(--text-primary)" }}>{doc.title}</h3>
-          <div className="flex gap-2">
+          <div className="flex items-center gap-3">
             <button
-              onClick={() => window.open(doc.url, "_blank")}
-              className="flex items-center gap-1.5 text-xs font-semibold text-blue-400 bg-blue-500/10 border border-blue-500/20 px-3 py-2 rounded-lg hover:bg-blue-500/20 transition"
+              onClick={onClose}
+              className="flex items-center gap-1.5 text-xs font-bold px-3 py-2 rounded-xl transition"
+              style={{
+                background: "var(--accent-soft, rgba(99,102,241,0.12))",
+                color: "var(--accent, #6366f1)",
+                border: "1px solid rgba(99,102,241,0.25)",
+                cursor: "pointer",
+              }}
             >
-              <MdOpenInNew size={15} /> New Tab
+              <MdArrowBack size={16} /> Back
             </button>
+            <h3 className="font-bold text-base" style={{ color: "var(--text-primary)" }}>{doc.title}</h3>
+          </div>
+          <div className="flex gap-2">
             <button
               onClick={onClose}
               className="hover:text-red-400 transition bg-white/5 p-2 rounded-lg"

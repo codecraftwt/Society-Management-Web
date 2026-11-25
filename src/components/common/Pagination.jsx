@@ -47,6 +47,7 @@ export default function Pagination({
               onChange={(e) => onPageSizeChange(Number(e.target.value))}
               options={options.map((n) => ({ value: n, label: String(n) }))}
               className="pagination-size-select"
+              menuWidth={84}
             />
           </div>
         </div>

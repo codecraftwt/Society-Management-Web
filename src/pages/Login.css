@@ -751,207 +751,455 @@ html.light .otp-cancel-btn:hover {
 }
 
 /* ═══════════════════════════════════════════════════════════
-   REGISTRATION REJECTION MODAL
-   Reuses the OTP modal shell (.otp-overlay / .otp-modal-box)
-   and only overrides the accent colour to a rejection red.
+   REGISTRATION REJECTION CARD (COMPACT, MODERN & ZERO-SCROLL)
    ═══════════════════════════════════════════════════════════ */
 
-.rejection-modal-topbar {
-  height: 4px;
-  background: linear-gradient(90deg, #dc2626, #ef4444, #f87171);
+.rejection-card-container {
+  position: relative;
+  width: 100%;
+  max-width: 460px;
+  margin: 0 auto;
+  background: #0f172a;
+  border-radius: 20px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 16px 40px -8px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.08);
+  box-sizing: border-box;
 }
 
-.rejection-shield-icon {
-  width: 60px;
-  height: 60px;
+.rejection-card-topbar {
+  height: 3px;
+  flex-shrink: 0;
+  background: linear-gradient(90deg, #e11d48, #ef4444, #f43f5e);
+}
+
+.rejection-card-close-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
-  margin: 0 auto 0.9rem;
-  background: rgba(239, 68, 68, 0.1);
-  border: 1.5px solid rgba(239, 68, 68, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.06);
+  color: #94a3b8;
   display: flex;
   align-items: center;
   justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  z-index: 10;
 }
 
-.rejection-shield-icon svg {
-  font-size: 28px;
+.rejection-card-close-btn:hover {
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+  border-color: rgba(239, 68, 68, 0.3);
+  transform: rotate(90deg);
+}
+
+.rejection-card-header {
+  padding: 16px 20px 8px;
+  flex-shrink: 0;
+}
+
+.rejection-hero-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+
+.rejection-shield-badge {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: rgba(239, 68, 68, 0.12);
+  border: 1.5px solid rgba(239, 68, 68, 0.28);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
+}
+
+.rejection-shield-badge svg {
+  font-size: 22px;
   color: #ef4444;
 }
 
-.rejection-reason-box {
-  background: rgba(239, 68, 68, 0.08);
-  border: 1px solid rgba(239, 68, 68, 0.22);
-  border-radius: 14px;
-  padding: 14px 16px;
-  margin-bottom: 14px;
+.rejection-hero-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
 }
 
-.rejection-reason-label {
+.rejection-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  color: #f87171;
+  font-size: 0.65rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  width: fit-content;
+}
+
+.rejection-status-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #ef4444;
+}
+
+.rejection-card-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #f8fafc;
+  margin: 0;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+}
+
+.rejection-card-subtitle {
+  font-size: 0.78rem;
+  color: #94a3b8;
+  margin: 2px 0 0;
+  line-height: 1.38;
+}
+
+.rejection-society-badge {
+  font-weight: 700;
+  color: #f1f5f9;
+  background: rgba(255, 255, 255, 0.08);
+  padding: 1px 6px;
+  border-radius: 5px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  display: inline-block;
+}
+
+/* ── Content Body ── */
+.rejection-card-body {
+  padding: 4px 20px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/* ── Reason Box ── */
+.rejection-reason-box {
+  background: rgba(239, 68, 68, 0.07);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-left: 3.5px solid #ef4444;
+  border-radius: 10px;
+  padding: 9px 12px;
+}
+
+.rejection-reason-header {
+  display: flex;
+  align-items: center;
+  gap: 5px;
   font-size: 0.68rem;
   font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
   color: #f87171;
-  margin: 0 0 6px;
+  margin-bottom: 4px;
+}
+
+.rejection-header-icon {
+  font-size: 14px;
+  flex-shrink: 0;
 }
 
 .rejection-reason-text {
-  font-size: 0.9rem;
-  font-weight: 600;
+  font-size: 0.78rem;
+  font-weight: 500;
   color: #fecaca;
   margin: 0;
-  line-height: 1.6;
+  line-height: 1.45;
   white-space: pre-wrap;
   word-break: break-word;
 }
 
-.rejection-help-box {
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 12px;
-  padding: 14px 16px;
-  margin-bottom: 14px;
+/* ── Steps Box ── */
+.rejection-steps-box {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 10px;
+  padding: 8px 12px;
 }
 
-.rejection-help-label {
-  font-size: 0.68rem;
+.rejection-steps-header {
+  font-size: 0.67rem;
   font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: #a3a3a3;
-  margin: 0 0 8px;
+  letter-spacing: 0.06em;
+  color: #94a3b8;
+  margin-bottom: 5px;
 }
 
-.rejection-help-list {
-  margin: 0;
-  padding-left: 18px;
+.rejection-step-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
-.rejection-help-list li {
-  font-size: 0.83rem;
-  color: #d4d4d4;
-  line-height: 1.7;
-  margin-bottom: 2px;
-}
-
-.rejection-contact-box {
-  background: rgba(56, 189, 248, 0.07);
-  border: 1px solid rgba(56, 189, 248, 0.2);
-  border-radius: 12px;
-  padding: 14px 16px;
-  margin-bottom: 16px;
-}
-
-.rejection-contact-label {
-  font-size: 0.68rem;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: #38bdf8;
-  margin: 0 0 8px;
-}
-
-.rejection-contact-name {
-  font-size: 0.88rem;
-  font-weight: 700;
-  color: #ffffff;
-  margin: 0 0 6px;
-}
-
-.rejection-contact-link {
+.rejection-step-row {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 0.85rem;
-  font-weight: 600;
+}
+
+.rejection-step-num {
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  background: rgba(56, 189, 248, 0.15);
+  border: 1px solid rgba(56, 189, 248, 0.3);
   color: #38bdf8;
-  text-decoration: none;
-  margin-top: 4px;
-  word-break: break-all;
-}
-
-.rejection-contact-link:hover {
-  text-decoration: underline;
-}
-
-.rejection-contact-link svg {
-  font-size: 16px;
+  font-size: 0.65rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
 }
 
-.rejection-close-btn {
-  width: 100%;
-  padding: 0.75rem 1rem;
-  border: none;
-  border-radius: 999px;
-  background: linear-gradient(135deg, #ef4444, #dc2626);
+.rejection-step-label {
+  font-size: 0.76rem;
+  color: #cbd5e1;
+  line-height: 1.35;
+}
+
+/* ── Contact Strip ── */
+.rejection-contact-strip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(56, 189, 248, 0.05);
+  border: 1px solid rgba(56, 189, 248, 0.14);
+  border-radius: 8px;
+  padding: 6px 10px;
+}
+
+.rejection-contact-lbl {
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #38bdf8;
+  flex-shrink: 0;
+}
+
+.rejection-admin-name {
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: #f8fafc;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 120px;
+}
+
+.rejection-contact-btns {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+}
+
+.rejection-action-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: rgba(56, 189, 248, 0.12);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  color: #7dd3fc;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.18s ease;
+}
+
+.rejection-action-pill:hover {
+  background: rgba(56, 189, 248, 0.22);
   color: #ffffff;
-  font-size: 0.9rem;
+  border-color: rgba(56, 189, 248, 0.4);
+}
+
+.rejection-action-pill svg {
+  font-size: 13px;
+  flex-shrink: 0;
+}
+
+/* ── Card Footer ── */
+.rejection-card-footer {
+  padding: 6px 20px 14px;
+  flex-shrink: 0;
+}
+
+.rejection-return-button {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  height: 40px;
+  border: none;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  color: #ffffff;
+  font-size: 0.86rem;
   font-weight: 700;
   cursor: pointer;
-  transition: filter 0.2s ease, transform 0.15s ease;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.rejection-close-btn:hover {
-  filter: brightness(1.08);
+.rejection-return-button:hover {
+  filter: brightness(1.1);
+  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.45);
+  transform: translateY(-1px);
 }
 
-.rejection-close-btn:active {
+.rejection-return-button:active {
   transform: translateY(1px);
 }
 
-/* ─── Light theme ─── */
-
-html.light .rejection-shield-icon {
-  background: rgba(220, 38, 38, 0.07);
-  border-color: rgba(220, 38, 38, 0.18);
+.rejection-return-button svg {
+  font-size: 15px;
 }
 
-html.light .rejection-shield-icon svg {
-  color: #dc2626;
+/* ── Light Theme Adaptations ── */
+html.light .rejection-card-container {
+  background: #ffffff;
+  box-shadow: 0 16px 40px -8px rgba(15, 23, 42, 0.12), 0 0 0 1px rgba(226, 232, 240, 0.95);
+}
+
+html.light .rejection-card-close-btn {
+  background: #f1f5f9;
+  border-color: #e2e8f0;
+  color: #64748b;
+}
+
+html.light .rejection-card-close-btn:hover {
+  background: #fee2e2;
+  color: #ef4444;
+  border-color: #fca5a5;
+}
+
+html.light .rejection-shield-badge {
+  background: #fff1f2;
+  border-color: #fecdd3;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.12);
+}
+
+html.light .rejection-shield-badge svg {
+  color: #e11d48;
+}
+
+html.light .rejection-status-pill {
+  background: #fff1f2;
+  border-color: #fecdd3;
+  color: #e11d48;
+}
+
+html.light .rejection-status-dot {
+  background: #e11d48;
+}
+
+html.light .rejection-card-title {
+  color: #0f172a;
+}
+
+html.light .rejection-card-subtitle {
+  color: #64748b;
+}
+
+html.light .rejection-society-badge {
+  color: #1e293b;
+  background: #f1f5f9;
+  border-color: #e2e8f0;
 }
 
 html.light .rejection-reason-box {
-  background: rgba(254, 242, 242, 0.9);
-  border-color: rgba(220, 38, 38, 0.2);
+  background: linear-gradient(180deg, #fff9f9 0%, #fff1f2 100%);
+  border-color: #fecdd3;
+  border-left-color: #ef4444;
 }
 
-html.light .rejection-reason-label {
+html.light .rejection-reason-header {
   color: #b91c1c;
 }
 
 html.light .rejection-reason-text {
-  color: #7f1d1d;
+  color: #334155;
 }
 
-html.light .rejection-help-box {
+html.light .rejection-steps-box {
   background: #f8fafc;
   border-color: #e2e8f0;
 }
 
-html.light .rejection-help-label {
-  color: #64748b;
+html.light .rejection-steps-header {
+  color: #475569;
 }
 
-html.light .rejection-help-list li {
+html.light .rejection-step-num {
+  background: #e0f2fe;
+  border-color: #bae6fd;
+  color: #0284c7;
+}
+
+html.light .rejection-step-label {
   color: #334155;
 }
 
-html.light .rejection-contact-box {
-  background: rgba(37, 99, 235, 0.05);
-  border-color: rgba(37, 99, 235, 0.18);
+html.light .rejection-contact-strip {
+  background: #f0f9ff;
+  border-color: #bae6fd;
 }
 
-html.light .rejection-contact-label {
-  color: var(--accent);
+html.light .rejection-contact-lbl {
+  color: #0284c7;
 }
 
-html.light .rejection-contact-name {
-  color: #0f172a;
+html.light .rejection-admin-name {
+  color: #0369a1;
 }
 
-html.light .rejection-contact-link {
-  color: var(--accent);
+html.light .rejection-action-pill {
+  background: #ffffff;
+  border-color: #bae6fd;
+  color: #0284c7;
+}
+
+html.light .rejection-action-pill:hover {
+  background: #e0f2fe;
+  color: #0369a1;
+  border-color: #7dd3fc;
+}
+
+html.light .rejection-return-button {
+  background: linear-gradient(135deg, #1e293b, #0f172a);
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.18);
+}
+
+html.light .rejection-return-button:hover {
+  filter: brightness(1.15);
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.28);
 }
 
 /* ========================================================================
@@ -3332,6 +3580,24 @@ html:not(.light) .login-form-links a {
   }
 }
 
+/* Keep the desktop form content in normal document flow. The split panel is
+   already vertically scrollable, so space-between only creates a large blank
+   area and can push the heading underneath the panel edge. */
+@media (min-width: 769px) {
+  .login-form-panel {
+    justify-content: flex-start !important;
+  }
+
+  .login-panel-top {
+    flex: 0 0 auto !important;
+  }
+
+  .login-content {
+    flex: 0 0 auto !important;
+    margin: 24px auto 32px !important;
+  }
+}
+
 
 /* ==========================================================================
    PERFECT REFERENCE MATCH OVERRIDES FOR LOGIN HERO BRAND & FORM INPUTS
@@ -3936,4 +4202,93 @@ body:has(.login-page-container) {
   text-align: center !important;
   margin-left: auto !important;
   margin-right: auto !important;
+}
+
+/* Mobile layout: use the full viewport for the form instead of squeezing the
+   desktop split layout into two narrow columns. */
+@media (max-width: 768px) {
+  html:has(.login-page-container),
+  body:has(.login-page-container) {
+    overflow: auto !important;
+  }
+
+  .login-page-container {
+    display: block !important;
+    width: 100% !important;
+    min-height: 100dvh !important;
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  .login-hero-panel {
+    display: none !important;
+  }
+
+  .login-form-panel {
+    display: block !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    min-height: 100dvh !important;
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+    padding: 20px 16px 28px !important;
+  }
+
+  .login-panel-top {
+    margin: 0 auto 28px !important;
+  }
+
+  .login-content {
+    width: 100% !important;
+    max-width: 520px !important;
+    margin: 0 auto !important;
+  }
+
+  .login-content .form {
+    width: 100% !important;
+    max-width: none !important;
+  }
+
+  .login-center-logo-box {
+    margin-top: 0 !important;
+  }
+
+  .login-form-title,
+  #heading {
+    font-size: clamp(1.7rem, 8vw, 2.1rem) !important;
+  }
+
+  .login-heading-block {
+    margin-bottom: 24px !important;
+  }
+
+  .login-options-row {
+    gap: 12px !important;
+    flex-wrap: wrap !important;
+  }
+
+  .login-form-links,
+  .login-security-footer {
+    flex-wrap: wrap !important;
+    text-align: center !important;
+  }
+}
+
+@media (max-width: 380px) {
+  .login-form-panel {
+    padding-right: 12px !important;
+    padding-left: 12px !important;
+  }
+
+  .login-panel-top {
+    margin-bottom: 22px !important;
+  }
+
+  .login-options-row {
+    align-items: flex-start !important;
+    flex-direction: column !important;
+  }
 }

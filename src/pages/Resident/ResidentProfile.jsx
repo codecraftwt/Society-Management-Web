@@ -405,7 +405,7 @@ export default function ResidentProfile() {
 
         <div className="relative z-10 flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
           {/* Identity */}
-          <div className="flex items-center gap-4 sm:gap-5 min-w-0 flex-1">
+          <div className="flex items-center gap-4 sm:gap-6 min-w-0 flex-1">
             {/* The whole avatar is the hit target so the initials fallback
                 behaves like the photo, and it opens the canonical editable
                 profile rather than a separate read-only page. */}
@@ -430,9 +430,9 @@ export default function ResidentProfile() {
               <span className="rph-avatar__dot" aria-hidden />
             </button>
 
-            <div className="min-w-0 flex-1 space-y-2.5">
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-sm sm:text-base font-extrabold text-secondary tracking-wide">
+            <div className="min-w-0 flex-1 space-y-1.5 pt-0.5">
+              <div className="flex items-center gap-2.5 flex-wrap">
+                <span className="text-xs sm:text-sm font-bold uppercase tracking-wider text-secondary">
                   {greeting}
                 </span>
                 <span className="rph-role-chip">
@@ -681,10 +681,14 @@ export default function ResidentProfile() {
             <button
               type="button"
               onClick={() => navigate(`${base}/my-household`)}
-              className="py-2.5 px-5 rounded-xl text-xs font-bold text-white bg-linear-to-r from-accent to-secondary hover:brightness-110 shadow-md shadow-accent/25 transition active:scale-95 cursor-pointer shrink-0 flex items-center gap-2"
+              className="py-2.5 px-5 rounded-xl text-xs font-bold text-white transition-all active:scale-95 cursor-pointer shrink-0 flex items-center gap-2 whitespace-nowrap shadow-sm hover:shadow-md hover:brightness-105"
+              style={{
+                background: "linear-gradient(135deg, var(--accent, #6366f1) 0%, #4f46e5 100%)",
+                boxShadow: "0 4px 12px -2px rgba(99, 102, 241, 0.35)",
+              }}
             >
-              <MdAdd size={17} />
-              <span>{t("rpAddStaff")}</span>
+              <MdAdd size={18} />
+              <span>{t("rpAddStaff") || "Add Staff Member"}</span>
             </button>
           </div>
         ) : (
@@ -792,16 +796,13 @@ export default function ResidentProfile() {
                 });
               }
             }}
-            style={{ "--gd-c": "var(--accent)", "--gd-badge-c": "var(--accent)" }}
-            className="gd-action gd-action--guest rp-va-card group cursor-pointer focus-visible:ring-2 focus-visible:ring-accent focus:outline-hidden"
+            className="rp-va-card rp-va-card--guest group cursor-pointer focus-visible:ring-2 focus-visible:ring-accent focus:outline-hidden"
           >
-            <span className="gd-action__blob" aria-hidden />
-
             <div className="rp-va-head">
-              <span className="gd-action__icon rp-va-icon">
+              <span className="rp-va-icon">
                 <MdPerson size={24} />
               </span>
-              <span className="gd-action__badge rp-va-badge">
+              <span className="rp-va-badge">
                 <span className="rp-va-dot" aria-hidden />
                 Instant Pass
               </span>
@@ -810,7 +811,7 @@ export default function ResidentProfile() {
             <div className="rp-va-body">
               <div className="rp-va-title">
                 <h3 className="rp-va-title-text">{t("rpPreApproveGuest") || "Pre-Approve Guest"}</h3>
-                <MdChevronRight className="gd-action__arrow rp-va-arrow shrink-0" size={18} />
+                <MdChevronRight className="rp-va-arrow shrink-0" size={18} />
               </div>
               <p className="rp-va-desc">1-Tap Invite · Generate OTP & QR pass</p>
               <div className="rp-va-chips">
@@ -851,16 +852,13 @@ export default function ResidentProfile() {
                 });
               }
             }}
-            style={{ "--gd-c": "var(--secondary)", "--gd-badge-c": "var(--secondary)" }}
-            className="gd-action gd-action--cab rp-va-card group cursor-pointer focus-visible:ring-2 focus-visible:ring-secondary focus:outline-hidden"
+            className="rp-va-card rp-va-card--cab group cursor-pointer focus-visible:ring-2 focus-visible:ring-amber-500 focus:outline-hidden"
           >
-            <span className="gd-action__blob" aria-hidden />
-
             <div className="rp-va-head">
-              <span className="gd-action__icon rp-va-icon">
+              <span className="rp-va-icon">
                 <MdLocalTaxi size={24} />
               </span>
-              <span className="gd-action__badge rp-va-badge">
+              <span className="rp-va-badge">
                 <span className="rp-va-dot" aria-hidden />
                 Auto Gate In
               </span>
@@ -869,7 +867,7 @@ export default function ResidentProfile() {
             <div className="rp-va-body">
               <div className="rp-va-title">
                 <h3 className="rp-va-title-text">{t("rpAddCab") || "Add Cab"}</h3>
-                <MdChevronRight className="gd-action__arrow rp-va-arrow shrink-0" size={18} />
+                <MdChevronRight className="rp-va-arrow shrink-0" size={18} />
               </div>
               <p className="rp-va-desc">Ola, Uber, Rapido automatic clearance</p>
               <div className="rp-va-chips">
@@ -910,16 +908,13 @@ export default function ResidentProfile() {
                 });
               }
             }}
-            style={{ "--gd-c": "var(--accent-light, var(--accent))", "--gd-badge-c": "var(--accent-light, var(--accent))" }}
-            className="gd-action gd-action--delivery rp-va-card group cursor-pointer focus-visible:ring-2 focus-visible:ring-accent focus:outline-hidden"
+            className="rp-va-card rp-va-card--delivery group cursor-pointer focus-visible:ring-2 focus-visible:ring-sky-500 focus:outline-hidden"
           >
-            <span className="gd-action__blob" aria-hidden />
-
             <div className="rp-va-head">
-              <span className="gd-action__icon rp-va-icon">
+              <span className="rp-va-icon">
                 <MdLocalShipping size={24} />
               </span>
-              <span className="gd-action__badge rp-va-badge">
+              <span className="rp-va-badge">
                 <span className="rp-va-dot" aria-hidden />
                 Quick Drop
               </span>
@@ -928,7 +923,7 @@ export default function ResidentProfile() {
             <div className="rp-va-body">
               <div className="rp-va-title">
                 <h3 className="rp-va-title-text">{t("rpAddDelivery") || "Add Delivery"}</h3>
-                <MdChevronRight className="gd-action__arrow rp-va-arrow shrink-0" size={18} />
+                <MdChevronRight className="rp-va-arrow shrink-0" size={18} />
               </div>
               <p className="rp-va-desc">Swiggy, Zomato, Amazon gate pass</p>
               <div className="rp-va-chips">

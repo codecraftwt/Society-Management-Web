@@ -982,36 +982,75 @@ html.light {
   .ps-slot-meta {
     color: #64748B !important;
   }
-  .ps-avail-bay {
+  .ps-status-pill--avail {
+    background: #ECFDF5 !important;
+    color: #047857 !important;
+    border-color: #A7F3D0 !important;
+  }
+  .ps-status-pill--avail .ps-status-dot {
+    background: #10B981 !important;
+  }
+  .ps-status-pill--occ {
+    background: #EEF2FF !important;
+    color: #4338CA !important;
+    border-color: #C7D2FE !important;
+  }
+  .ps-status-pill--occ .ps-status-dot {
+    background: #6366F1 !important;
+  }
+  .ps-bay-strip--avail {
+    background: #ECFDF5 !important;
+    border-color: #A7F3D0 !important;
+    color: #047857 !important;
+  }
+  .ps-bay-strip--avail .ps-bay-icon {
+    color: #059669 !important;
+  }
+  .ps-bay-strip--occ {
     background: #F8FAFC !important;
-    border: 1px dashed #E2E8F0 !important;
-    color: #64748B !important;
+    border-color: #E2E8F0 !important;
+    color: #0F172A !important;
   }
-  .ps-occupied-details {
-    background: #F8FAFC !important;
-    border-color: #E4E7EC !important;
+  .ps-bay-resident-name {
+    color: #0F172A !important;
   }
-  .ps-resident-name {
-    color: #111827 !important;
+  .ps-bay-flat-pill {
+    background: #EFF6FF !important;
+    border-color: #BFDBFE !important;
+    color: #1D4ED8 !important;
   }
-  .ps-vehicle-plate {
+  .ps-bay-plate {
     background: #E2E8F0 !important;
+    border-color: #CBD5E1 !important;
     color: #334155 !important;
   }
-  .ps-card-footer {
-    border-top-color: #E4E7EC !important;
-  }
-  .ps-tag-pill {
-    background: #F1F5F9 !important;
+  .ps-slot-tag-chip {
     color: #64748B !important;
   }
-  .ps-card-actions {
-    border-top-color: #E4E7EC !important;
+  .ps-icon-btn {
+    background: #F1F5F9 !important;
+    color: #64748B !important;
+    border-color: #E2E8F0 !important;
   }
-  .ps-card-btn--edit {
+  .ps-icon-btn--allocate {
+    background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%) !important;
+    color: #FFFFFF !important;
+    border-color: #1D4ED8 !important;
+  }
+  .ps-icon-btn--release {
+    background: linear-gradient(135deg, #6366F1 0%, #4F46E5 100%) !important;
+    color: #FFFFFF !important;
+    border-color: #4338CA !important;
+  }
+  .ps-icon-btn--edit {
     background: #F1F5F9 !important;
     border-color: #CBD5E1 !important;
     color: #475569 !important;
+  }
+  .ps-icon-btn--edit:hover {
+    background: #E2E8F0 !important;
+    color: #0F172A !important;
+    border-color: #94A3B8 !important;
   }
   .ps-card-btn--edit:hover {
     background: #E2E8F0 !important;

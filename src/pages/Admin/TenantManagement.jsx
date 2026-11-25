@@ -7,7 +7,9 @@ import {
   MdOpenInNew, MdWarning, MdSearch, MdFilterList,
   MdPerson, MdHome, MdCalendarToday, MdDirectionsCar,
   MdGroup, MdRefresh, MdVisibility, MdPeople, MdBusiness,
-  MdChevronLeft, MdChevronRight, MdCheckCircle, MdCancel
+  MdChevronLeft, MdChevronRight, MdCheckCircle, MdCancel,
+  MdArrowBack, MdZoomIn, MdZoomOut, MdRotateRight, MdFileDownload,
+  MdRestartAlt
 } from "react-icons/md";
 import Select from "../../components/common/Select";
 import ExpandableSearch from "../../components/common/ExpandableSearch";
@@ -27,23 +29,30 @@ function formatDate(d) {
   });
 }
 
+function formatFlatTitle(num) {
+  if (!num) return "—";
+  let str = String(num).trim();
+  str = str.replace(/^(flat\s+)?block[\s_-]*/i, "");
+  return str.trim() || String(num).trim();
+}
+
 function StatusBadge({ label }) {
   const map = {
-    PENDING:    { bg: "rgba(251,191,36,0.12)", color: "var(--accent)", border: "rgba(251,191,36,0.25)" },
-    APPROVED:   { bg: "rgba(34,197,94,0.12)",  color: "#22c55e", border: "rgba(34,197,94,0.25)" },
-    REJECTED:   { bg: "rgba(239,68,68,0.12)",  color: "#ef4444", border: "rgba(239,68,68,0.25)" },
-    LIVING:     { bg: "rgba(59,130,246,0.12)", color: "#3b82f6", border: "rgba(59,130,246,0.25)" },
-    EXPIRED:    { bg: "rgba(168,85,247,0.12)", color: "#a855f7", border: "rgba(168,85,247,0.25)" },
-    REMOVED:    { bg: "rgba(239,68,68,0.12)",  color: "#ef4444", border: "rgba(239,68,68,0.25)" },
+    PENDING:    { bg: "rgba(251,191,36,0.12)", color: "#d97706", border: "rgba(251,191,36,0.25)" },
+    APPROVED:   { bg: "rgba(34,197,94,0.12)",  color: "#16a34a", border: "rgba(34,197,94,0.25)" },
+    REJECTED:   { bg: "rgba(239,68,68,0.12)",  color: "#dc2626", border: "rgba(239,68,68,0.25)" },
+    LIVING:     { bg: "rgba(59,130,246,0.12)", color: "#2563eb", border: "rgba(59,130,246,0.25)" },
+    EXPIRED:    { bg: "rgba(168,85,247,0.12)", color: "#9333ea", border: "rgba(168,85,247,0.25)" },
+    REMOVED:    { bg: "rgba(239,68,68,0.12)",  color: "#dc2626", border: "rgba(239,68,68,0.25)" },
     UNKNOWN:    { bg: "var(--card-inner-bg)",  color: "var(--text-secondary)", border: "var(--glass-border)" },
   };
   const s = map[label] || map.UNKNOWN;
   return (
     <span
-      className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider border"
+      className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-black uppercase tracking-wider border shadow-sm"
       style={{ background: s.bg, color: s.color, borderColor: s.border }}
     >
-      {label}
+      {label === "REMOVED" ? "MOVED OUT" : label}
     </span>
   );
 }
@@ -70,15 +79,102 @@ function getTenantDocuments(tenant) {
 function DocumentStatus({ tenant }) {
   const docs = getTenantDocuments(tenant);
   const count = [docs.aadhar, docs.pan].filter(Boolean).length;
-  return <span className={`tm-document-status ${count === 2 ? "is-complete" : count ? "is-partial" : "is-empty"}`}><MdBadge size={13} /> {count}/2 KYC</span>;
+  const isComplete = count === 2;
+  const isPartial = count === 1;
+
+  const style = isComplete
+    ? {
+        color: "#059669",
+        background: "rgba(16, 185, 129, 0.12)",
+        border: "1px solid rgba(16, 185, 129, 0.25)",
+      }
+    : isPartial
+    ? {
+        color: "#d97706",
+        background: "rgba(245, 158, 11, 0.12)",
+        border: "1px solid rgba(245, 158, 11, 0.25)",
+      }
+    : {
+        color: "var(--text-secondary, #64748b)",
+        background: "rgba(100, 116, 139, 0.08)",
+        border: "1px solid rgba(100, 116, 139, 0.18)",
+      };
+
+  return (
+    <span
+      className={`tm-document-status ${isComplete ? "is-complete" : isPartial ? "is-partial" : "is-empty"}`}
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 4,
+        padding: "3px 8px",
+        borderRadius: 9999,
+        fontSize: 11,
+        fontWeight: 700,
+        whiteSpace: "nowrap",
+        lineHeight: 1.2,
+        ...style,
+      }}
+    >
+      <MdBadge size={13} style={{ flexShrink: 0 }} />
+      <span>{count}/2 KYC</span>
+    </span>
+  );
 }
 
-function DocumentCard({ label, url, icon }) {
+function DocumentCard({ label, url, icon, onSelect }) {
   return (
-    <div className="tm-document-card">
-      <div className="tm-document-icon">{icon}</div>
-      <div className="min-w-0 flex-1"><p className="tm-document-label">{label}</p><p className="tm-document-state">{url ? "Uploaded and ready to view" : "Not uploaded"}</p></div>
-      {url ? <a className="tm-document-link" href={url} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()}>View <MdOpenInNew size={14} /></a> : <span className="tm-document-missing">Missing</span>}
+    <div
+      className="flex items-center justify-between gap-3 p-3.5 rounded-xl transition-all"
+      style={{
+        background: url ? "var(--card-bg, #ffffff)" : "rgba(0,0,0,0.02)",
+        border: url ? "1px solid var(--divider, rgba(99, 102, 241, 0.16))" : "1px dashed var(--divider)",
+        boxShadow: url ? "0 2px 6px rgba(0, 0, 0, 0.02)" : "none",
+      }}
+    >
+      <div className="flex items-center gap-3 min-w-0">
+        <div
+          className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-sm"
+          style={{
+            background: url ? "linear-gradient(135deg, rgba(99, 102, 241, 0.12), rgba(168, 85, 247, 0.12))" : "var(--card-inner-bg)",
+            color: url ? "var(--accent, #6366f1)" : "var(--text-secondary)",
+            border: url ? "1px solid rgba(99, 102, 241, 0.22)" : "1px solid var(--divider)",
+          }}
+        >
+          {icon}
+        </div>
+        <div className="min-w-0">
+          <p className="font-bold text-xs truncate m-0" style={{ color: "var(--text-primary)" }}>
+            {label}
+          </p>
+          <span
+            className="inline-flex items-center gap-1 text-[11px] font-medium mt-0.5"
+            style={{ color: url ? "#10b981" : "var(--text-secondary)" }}
+          >
+            {url ? "● Uploaded & verified" : "○ Not uploaded"}
+          </span>
+        </div>
+      </div>
+      {url ? (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            if (onSelect) onSelect();
+          }}
+          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition hover:opacity-90 active:scale-95 shrink-0 cursor-pointer"
+          style={{
+            background: "linear-gradient(135deg, #6366f1, #4f46e5)",
+            color: "#ffffff",
+            border: "none",
+            boxShadow: "0 2px 8px rgba(99, 102, 241, 0.25)",
+          }}
+        >
+          <MdVisibility size={14} /> View
+        </button>
+      ) : (
+        <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-black/5 dark:bg-white/5 text-secondary">Missing</span>
+      )}
     </div>
   );
 }
@@ -167,11 +263,35 @@ function RejectModal({ open, onClose, onSubmit, loading }) {
 }
 
 /* ─────────────────────────────────────────────
-   DETAIL MODAL (centered, for history view)
+   DETAIL MODAL (with inline KYC document viewer)
 ───────────────────────────────────────────── */
 function DetailModal({ tenant, onClose, onApprove, onReject, isPending }) {
   const { t } = useLang();
+  const [activeDocKey, setActiveDocKey] = useState(null);
+  const [zoom, setZoom] = useState(1);
+  const [rotation, setRotation] = useState(0);
+  const [docLoading, setDocLoading] = useState(true);
+
+  useEffect(() => {
+    setActiveDocKey(null);
+    setZoom(1);
+    setRotation(0);
+    setDocLoading(true);
+  }, [tenant]);
+
   if (!tenant) return null;
+
+  const docs = getTenantDocuments(tenant);
+  const availableDocs = [
+    { key: "aadhar", label: "Aadhaar Card", url: docs.aadhar, icon: <MdBadge size={19} /> },
+    { key: "pan", label: "PAN Card", url: docs.pan, icon: <MdCreditCard size={19} /> },
+  ];
+  const activeDoc = availableDocs.find((d) => d.key === activeDocKey && d.url);
+  const isPdf = activeDoc && (
+    activeDoc.url.toLowerCase().split("?")[0].endsWith(".pdf") ||
+    activeDoc.url.toLowerCase().includes("/raw/upload/") ||
+    activeDoc.url.toLowerCase().includes("application/pdf")
+  );
 
   return createPortal(
     <div
@@ -180,93 +300,435 @@ function DetailModal({ tenant, onClose, onApprove, onReject, isPending }) {
       onClick={onClose}
     >
       <div
-        className="tm-modal-panel rounded-2xl w-full max-w-4xl max-h-[92vh] overflow-y-auto shadow-2xl"
-        style={{ background: "var(--card-bg)", border: "1px solid var(--glass-border)" }}
-        onClick={e => e.stopPropagation()}
+        className={`tm-modal-panel rounded-2xl w-full max-w-4xl shadow-2xl flex flex-col ${
+          activeDoc ? "max-h-[90vh] overflow-hidden" : "max-h-[92vh] overflow-y-auto"
+        }`}
+        style={{
+          background: "var(--card-bg)",
+          border: "1px solid var(--glass-border)",
+          scrollbarWidth: "none",
+          msOverflowStyle: "none",
+        }}
+        onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
-        <div className="tm-detail-header flex items-center gap-3 px-6 py-5 sticky top-0 z-10"
-          style={{ background: "var(--card-bg)", borderBottom: "1px solid var(--divider)" }}>
-          <div className="tm-detail-avatar w-12 h-12 rounded-2xl flex items-center justify-center font-black text-xl">
-            {tenant.tenant_name?.charAt(0)}
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 flex-wrap"><h3 className="font-bold truncate" style={{ color: "var(--text-primary)" }}>{tenant.tenant_name}</h3><DocumentStatus tenant={tenant} /></div>
-            <p className="truncate" style={{ fontSize: 11, color: "var(--text-secondary)" }}>{tenant.tenant_email}</p>
-            <p className="truncate mt-0.5" style={{ fontSize: 11, color: "var(--accent)" }}>{tenant.society_name || "Society"}{tenant.flat_number ? ` · Flat ${tenant.flat_number}` : ""}</p>
-          </div>
-          <StatusBadge label={tenant.status_label} />
-          <button onClick={onClose} className="hover:text-red-400 transition bg-white/5 p-2 rounded-lg" style={{ color: "var(--text-secondary)" }}>
-            <MdClose size={18} />
-          </button>
-        </div>
+        {activeDoc ? (
+          /* ── KYC DOCUMENT VIEWER HEADER ── */
+          <div
+            className="tm-detail-header flex items-center justify-between gap-3 px-6 py-4 sticky top-0 z-10 flex-wrap"
+            style={{ background: "var(--card-bg)", borderBottom: "1px solid var(--divider)" }}
+          >
+            <div className="flex items-center gap-3 min-w-0">
+              <button
+                type="button"
+                onClick={() => setActiveDocKey(null)}
+                className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition hover:opacity-90 active:scale-95 shrink-0"
+                style={{
+                  background: "var(--accent-soft, rgba(99,102,241,0.12))",
+                  color: "var(--accent, #6366f1)",
+                  border: "1px solid rgba(99,102,241,0.28)",
+                  cursor: "pointer",
+                }}
+              >
+                <MdArrowBack size={16} />
+                <span>{t("back") || "Back to Details"}</span>
+              </button>
 
-        <div className="tm-detail-grid p-6">
-          {/* Personal */}
-          <Section title={t("tmPersonalInfo")} icon={<MdPerson size={14} />}>
-            <Row label={t("tmFullName")} value={tenant.tenant_name} />
-            <Row label={t("tmEmail")} value={tenant.tenant_email} />
-            <Row label={t("tmPhone")} value={tenant.tenant_phone || "—"} />
-            {tenant.society_name && <Row label={t("tmSociety")} value={tenant.society_name} />}
-            <Row label={t("tmType")} value={tenant.resident_type || "TENANT"} chip />
-          </Section>
-
-          {/* Flat */}
-          <Section title={t("tmFlatAssignment")} icon={<MdHome size={14} />}>
-            <Row label={t("tmFlatNo")} value={tenant.flat_number ? `${t("afFlat")} ${tenant.flat_number}` : "—"} />
-            <Row label={t("tmBlock")} value={tenant.block_name || "—"} />
-            <Row label={t("tmOwner")} value={tenant.owner_name || "—"} />
-            <Row label={t("tmOccupancy")} value={tenant.occupancy_status || "—"} chip />
-          </Section>
-
-          {/* Lease */}
-          <Section title={t("tmLeasePeriod")} icon={<MdCalendarToday size={14} />}>
-            <Row label={t("tmMoveIn")} value={formatDate(tenant.move_in_date)} />
-            <Row label={t("tmMoveOut")}>
-              <LeaseChip date={tenant.move_out_date} />
-            </Row>
-          </Section>
-
-          {/* Status */}
-          <Section title={t("tmStatusDetails")} icon={<MdBadge size={14} />}>
-            <Row label={t("tmApproval")} value={tenant.approval_status || "—"} chip />
-            <Row label={t("tmUserStatus")} value={tenant.user_status || "—"} chip />
-            <Row label={t("tmCurrentlyStaying")} value={tenant.is_staying ? t("yes") : t("no")} />
-            <Row label={t("tmCurrentMembership")} value={tenant.is_current ? t("yes") : t("no")} />
-            {tenant.approved_by_name && (
-              <>
-                <Row label={t("tmApprovedBy")} value={`${tenant.approved_by_name} (${tenant.approved_by_role ? tenant.approved_by_role.replace('_', ' ') : t("roleAdmin")})`} />
-                <Row label={t("tmActionDate")} value={formatDate(tenant.approved_at)} />
-              </>
-            )}
-          </Section>
-
-          <Section title="KYC Documents" icon={<MdCreditCard size={14} />} wide>
-            <div className="tm-documents-grid">
-              <DocumentCard label="Aadhaar Card" url={getTenantDocuments(tenant).aadhar} icon={<MdBadge size={19} />} />
-              <DocumentCard label="PAN Card" url={getTenantDocuments(tenant).pan} icon={<MdCreditCard size={19} />} />
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div
+                  className="w-9 h-9 rounded-xl flex items-center justify-center font-bold text-sm shrink-0"
+                  style={{
+                    background: activeDoc.key === "aadhar" ? "rgba(16,185,129,0.15)" : "rgba(99,102,241,0.15)",
+                    color: activeDoc.key === "aadhar" ? "#10b981" : "#6366f1",
+                    border: `1px solid ${activeDoc.key === "aadhar" ? "rgba(16,185,129,0.25)" : "rgba(99,102,241,0.25)"}`,
+                  }}
+                >
+                  {activeDoc.icon}
+                </div>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h3 className="font-bold text-sm truncate" style={{ color: "var(--text-primary)" }}>
+                      {activeDoc.label}
+                    </h3>
+                    <span
+                      className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider shrink-0"
+                      style={{
+                        background: isPdf ? "rgba(239,68,68,0.12)" : "rgba(59,130,246,0.12)",
+                        color: isPdf ? "#ef4444" : "#3b82f6",
+                        border: `1px solid ${isPdf ? "rgba(239,68,68,0.25)" : "rgba(59,130,246,0.25)"}`,
+                      }}
+                    >
+                      {isPdf ? "PDF Document" : "KYC Image"}
+                    </span>
+                  </div>
+                  <p className="truncate mt-0.5" style={{ fontSize: 11, color: "var(--text-secondary)" }}>
+                    {tenant.tenant_name} · {tenant.flat_number ? `Flat ${tenant.flat_number}` : ""} · {tenant.society_name || "Society"}
+                  </p>
+                </div>
+              </div>
             </div>
-          </Section>
-        </div>
 
-        {/* Action buttons (only for pending) */}
-        {isPending && (
-          <div className="sticky bottom-0 p-4 grid grid-cols-2 gap-3"
-            style={{ background: "var(--card-bg)", borderTop: "1px solid var(--divider)" }}>
-            <button
-              onClick={() => onReject(tenant.tenant_id)}
-              className="flex items-center justify-center gap-2 py-3 rounded-xl bg-red-500/10 text-red-400 border border-red-500/20 font-bold text-sm hover:bg-red-500/20 transition"
-            >
-              <MdClose size={16} /> {t("reject")}
-            </button>
-            <button
-              onClick={() => onApprove(tenant.tenant_id)}
-              className="flex items-center justify-center gap-2 py-3 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-bold text-sm hover:bg-emerald-500/20 transition"
-            >
-              <MdCheck size={16} /> {t("approve")}
-            </button>
+            <div className="flex items-center gap-2 shrink-0">
+              {/* Document switcher if both uploaded */}
+              {availableDocs.filter((d) => d.url).length > 1 && (
+                <div className="flex items-center gap-1 p-1 rounded-xl" style={{ background: "var(--card-inner-bg)", border: "1px solid var(--glass-border)" }}>
+                  {availableDocs.filter((d) => d.url).map((d) => {
+                    const isCur = d.key === activeDocKey;
+                    return (
+                      <button
+                        key={d.key}
+                        type="button"
+                        onClick={() => {
+                          setActiveDocKey(d.key);
+                          setZoom(1);
+                          setRotation(0);
+                          setDocLoading(true);
+                        }}
+                        className="px-2.5 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1.5"
+                        style={{
+                          background: isCur ? "var(--accent, #6366f1)" : "transparent",
+                          color: isCur ? "#fff" : "var(--text-secondary)",
+                          border: "none",
+                          cursor: "pointer",
+                        }}
+                      >
+                        {d.key === "aadhar" ? <MdBadge size={13} /> : <MdCreditCard size={13} />}
+                        {d.label.replace(" Card", "")}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+
+              <button onClick={onClose} className="hover:text-red-400 transition bg-white/5 p-2 rounded-lg" style={{ color: "var(--text-secondary)" }}>
+                <MdClose size={18} />
+              </button>
+            </div>
+          </div>
+        ) : (
+          /* ── REGULAR DETAIL HEADER ── */
+          <div
+            className="tm-detail-header flex items-center justify-between gap-3 px-6 py-4 sticky top-0 z-10"
+            style={{
+              background: "var(--card-bg)",
+              borderBottom: "1px solid var(--divider, rgba(99, 102, 241, 0.1))",
+            }}
+          >
+            <div className="flex items-center gap-3.5 min-w-0 flex-1">
+              <div
+                className="w-12 h-12 rounded-2xl flex items-center justify-center font-black text-xl text-white shadow-md shadow-accent/25 shrink-0"
+                style={{ background: "linear-gradient(135deg, #6366f1, #8b5cf6)" }}
+              >
+                {tenant.tenant_name?.charAt(0)?.toUpperCase() || "T"}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h3 className="font-extrabold text-base truncate m-0" style={{ color: "var(--text-primary)" }}>
+                    {tenant.tenant_name}
+                  </h3>
+                  <DocumentStatus tenant={tenant} />
+                </div>
+                <div className="flex items-center gap-2 flex-wrap mt-0.5 text-xs text-secondary">
+                  <span>{tenant.tenant_email}</span>
+                  {tenant.tenant_phone && (
+                    <>
+                      <span>•</span>
+                      <span>{tenant.tenant_phone}</span>
+                    </>
+                  )}
+                  <span>•</span>
+                  <span className="font-semibold" style={{ color: "var(--accent, #6366f1)" }}>
+                    {tenant.society_name || "Society"}{tenant.flat_number ? ` · Flat ${formatFlatTitle(tenant.flat_number)}` : ""}
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <StatusBadge label={tenant.status_label} />
+              <button
+                onClick={onClose}
+                className="hover:bg-black/5 dark:hover:bg-white/10 transition p-2 rounded-xl text-secondary hover:text-primary cursor-pointer border-0 bg-transparent"
+                title="Close"
+              >
+                <MdClose size={20} />
+              </button>
+            </div>
           </div>
         )}
+
+        {/* ── MODAL BODY ── */}
+        {activeDoc ? (
+          <div className="p-4 sm:p-5 flex flex-col gap-3 flex-1 min-h-0 overflow-hidden">
+            {/* Viewer Controls Toolbar (for Images) */}
+            {!isPdf && (
+              <div className="flex items-center justify-between flex-wrap gap-2 shrink-0">
+                <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text-secondary)" }}>
+                  Inspection & Zoom Canvas
+                </span>
+                <div className="flex items-center gap-1 p-1 rounded-xl" style={{ background: "var(--card-inner-bg)", border: "1px solid var(--glass-border)" }}>
+                  <button
+                    type="button"
+                    title="Zoom Out"
+                    onClick={() => setZoom((z) => Math.max(0.5, Number((z - 0.25).toFixed(2))))}
+                    className="p-1.5 rounded-lg hover:bg-white/10 transition"
+                    style={{ color: "var(--text-primary)", border: "none", background: "none", cursor: "pointer" }}
+                  >
+                    <MdZoomOut size={17} />
+                  </button>
+                  <span style={{ fontSize: 11, fontWeight: 700, minWidth: 42, textAlign: "center", color: "var(--text-secondary)" }}>
+                    {Math.round(zoom * 100)}%
+                  </span>
+                  <button
+                    type="button"
+                    title="Zoom In"
+                    onClick={() => setZoom((z) => Math.min(3, Number((z + 0.25).toFixed(2))))}
+                    className="p-1.5 rounded-lg hover:bg-white/10 transition"
+                    style={{ color: "var(--text-primary)", border: "none", background: "none", cursor: "pointer" }}
+                  >
+                    <MdZoomIn size={17} />
+                  </button>
+                  <button
+                    type="button"
+                    title="Reset Zoom"
+                    onClick={() => {
+                      setZoom(1);
+                      setRotation(0);
+                    }}
+                    className="p-1.5 rounded-lg hover:bg-white/10 transition"
+                    style={{ color: "var(--text-primary)", border: "none", background: "none", cursor: "pointer" }}
+                  >
+                    <MdRestartAlt size={17} />
+                  </button>
+                  <button
+                    type="button"
+                    title="Rotate 90°"
+                    onClick={() => setRotation((r) => (r + 90) % 360)}
+                    className="p-1.5 rounded-lg hover:bg-white/10 transition"
+                    style={{ color: "var(--text-primary)", border: "none", background: "none", cursor: "pointer" }}
+                  >
+                    <MdRotateRight size={17} />
+                  </button>
+                  <div style={{ width: 1, height: 16, background: "var(--divider)", margin: "0 2px" }} />
+                  <a
+                    href={activeDoc.url}
+                    download
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title="Download Document"
+                    className="p-1.5 rounded-lg hover:bg-white/10 transition flex items-center"
+                    style={{ color: "var(--text-primary)", textDecoration: "none" }}
+                  >
+                    <MdFileDownload size={17} />
+                  </a>
+                </div>
+              </div>
+            )}
+
+            {/* Document display viewport */}
+            <div
+              className="w-full flex-1 min-h-0 flex items-center justify-center overflow-hidden rounded-2xl relative"
+              style={{
+                minHeight: "340px",
+                maxHeight: "52vh",
+                background: "rgba(0,0,0,0.45)",
+                border: "1px solid var(--glass-border)",
+                padding: isPdf ? 0 : "16px",
+              }}
+            >
+              {isPdf ? (
+                <iframe
+                  src={activeDoc.url}
+                  title={activeDoc.label}
+                  className="w-full h-full rounded-2xl border-0"
+                  style={{ minHeight: "340px", height: "100%", background: "#fff" }}
+                />
+              ) : (
+                <>
+                  {docLoading && (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center gap-2" style={{ background: "rgba(0,0,0,0.6)", zIndex: 5 }}>
+                      <div className="animate-spin rounded-full h-8 w-8 border-2 border-indigo-500 border-t-transparent" />
+                      <span style={{ fontSize: 12, color: "var(--text-secondary)" }}>Loading document...</span>
+                    </div>
+                  )}
+                  <img
+                    src={activeDoc.url}
+                    alt={activeDoc.label}
+                    onLoad={() => setDocLoading(false)}
+                    onError={() => setDocLoading(false)}
+                    style={{
+                      maxWidth: "100%",
+                      maxHeight: "48vh",
+                      objectFit: "contain",
+                      transform: `scale(${zoom}) rotate(${rotation}deg)`,
+                      transformOrigin: "center center",
+                      transition: "transform 0.15s ease",
+                      borderRadius: "12px",
+                      boxShadow: "0 14px 40px rgba(0,0,0,0.5)",
+                    }}
+                  />
+                </>
+              )}
+            </div>
+          </div>
+        ) : (
+          <div className="p-5 sm:p-6 grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
+            {/* Left Column */}
+            <div className="flex flex-col gap-4">
+              {/* Personal Info */}
+              <Section title={t("tmPersonalInfo")} icon={<MdPerson size={15} />}>
+                <Row label={t("tmFullName")} value={tenant.tenant_name} />
+                <Row label={t("tmEmail")} value={tenant.tenant_email} />
+                <Row label={t("tmPhone")} value={tenant.tenant_phone || "—"} />
+                {tenant.society_name && <Row label={t("tmSociety")} value={tenant.society_name} />}
+                <Row label={t("tmType")}>
+                  <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-lg bg-accent/10 text-accent border border-accent/20">
+                    {tenant.resident_type || "TENANT"}
+                  </span>
+                </Row>
+              </Section>
+
+              {/* Flat Assignment */}
+              <Section title={t("tmFlatAssignment")} icon={<MdHome size={15} />}>
+                <Row label={t("tmFlatNo")} value={tenant.flat_number ? `Flat ${formatFlatTitle(tenant.flat_number)}` : "—"} />
+                <Row label={t("tmBlock")} value={tenant.block_name || "—"} />
+                <Row label={t("tmOwner")} value={tenant.owner_name || "—"} />
+                <Row label={t("tmOccupancy")}>
+                  <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-lg bg-slate-500/10 text-slate-600 dark:text-slate-300 border border-slate-500/20">
+                    {tenant.occupancy_status || "—"}
+                  </span>
+                </Row>
+              </Section>
+            </div>
+
+            {/* Right Column */}
+            <div className="flex flex-col gap-4">
+              {/* Lease Period */}
+              <Section title={t("tmLeasePeriod")} icon={<MdCalendarToday size={15} />}>
+                <Row label={t("tmMoveIn")} value={formatDate(tenant.move_in_date)} />
+                <Row label={t("tmMoveOut")}>
+                  <LeaseChip date={tenant.move_out_date} />
+                </Row>
+              </Section>
+
+              {/* Status Details */}
+              <Section title={t("tmStatusDetails")} icon={<MdBadge size={15} />}>
+                <Row label={t("tmApproval")}>
+                  <span className={`text-[11px] font-bold px-2.5 py-0.5 rounded-lg border ${
+                    tenant.approval_status === "APPROVED"
+                      ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
+                      : tenant.approval_status === "REJECTED"
+                      ? "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20"
+                      : "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20"
+                  }`}>
+                    {tenant.approval_status || "—"}
+                  </span>
+                </Row>
+                <Row label={t("tmUserStatus") || "User Account"}>
+                  <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
+                    {tenant.user_status === "ACTIVE" ? "Active Account" : tenant.user_status || "—"}
+                  </span>
+                </Row>
+                <Row label={t("tmCurrentlyStaying") || "Currently Staying"}>
+                  {tenant.is_staying ? (
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg text-[11px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                      Yes (Residing)
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg text-[11px] font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                      No (Moved Out)
+                    </span>
+                  )}
+                </Row>
+                <Row label={t("tmCurrentMembership") || "Tenancy Status"}>
+                  {tenant.is_current ? (
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg text-[11px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                      Active Tenancy
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg text-[11px] font-bold bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20">
+                      Ended (Past Tenant)
+                    </span>
+                  )}
+                </Row>
+                {tenant.approved_by_name && (
+                  <Row label={t("tmApprovedBy")} value={`${tenant.approved_by_name} (${tenant.approved_by_role ? tenant.approved_by_role.replace('_', ' ') : t("roleAdmin")})`} />
+                )}
+              </Section>
+            </div>
+
+            {/* KYC Verification Documents (Wide: spans across both columns) */}
+            <div className="col-span-full">
+              <Section title="KYC Verification Documents" icon={<MdCreditCard size={15} />} wide>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 p-3.5">
+                  <DocumentCard
+                    label="Aadhaar Card"
+                    url={docs.aadhar}
+                    icon={<MdBadge size={20} />}
+                    onSelect={() => {
+                      setActiveDocKey("aadhar");
+                      setZoom(1);
+                      setRotation(0);
+                      setDocLoading(true);
+                    }}
+                  />
+                  <DocumentCard
+                    label="PAN Card"
+                    url={docs.pan}
+                    icon={<MdCreditCard size={20} />}
+                    onSelect={() => {
+                      setActiveDocKey("pan");
+                      setZoom(1);
+                      setRotation(0);
+                      setDocLoading(true);
+                    }}
+                  />
+                </div>
+              </Section>
+            </div>
+          </div>
+        )}
+
+        {/* Action buttons footer */}
+        <div
+          className="shrink-0 p-3.5 sm:p-4 flex items-center justify-between gap-3 flex-wrap"
+          style={{ background: "var(--card-bg)", borderTop: "1px solid var(--divider, rgba(99, 102, 241, 0.1))" }}
+        >
+          {activeDoc ? (
+            <button
+              type="button"
+              onClick={() => setActiveDocKey(null)}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs transition hover:opacity-80 active:scale-95"
+              style={{
+                background: "var(--card-inner-bg)",
+                border: "1px solid var(--glass-border)",
+                color: "var(--text-primary)",
+                cursor: "pointer",
+              }}
+            >
+              <MdArrowBack size={15} /> Back to Details
+            </button>
+          ) : (
+            <div />
+          )}
+
+          {isPending && (
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => onReject(tenant.tenant_id)}
+                className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-red-500/10 text-red-400 border border-red-500/20 font-bold text-xs hover:bg-red-500/20 transition cursor-pointer"
+              >
+                <MdClose size={15} /> {t("reject")}
+              </button>
+              <button
+                onClick={() => onApprove(tenant.tenant_id)}
+                className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-bold text-xs hover:bg-emerald-500/20 transition cursor-pointer"
+              >
+                <MdCheck size={15} /> {t("approve")}
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     </div>,
     document.body
@@ -275,28 +737,54 @@ function DetailModal({ tenant, onClose, onApprove, onReject, isPending }) {
 
 function Section({ title, icon, children, wide }) {
   return (
-    <div className={wide ? "tm-detail-section-wide" : ""}>
-      <div className="flex items-center gap-1.5 font-black uppercase tracking-widest mb-2" style={{ fontSize: 10, color: "var(--text-secondary)" }}>
-        {icon}{title}
+    <div
+      className={`rounded-2xl overflow-hidden shadow-sm flex flex-col ${wide ? "tm-detail-section-wide col-span-full" : ""}`}
+      style={{
+        background: "var(--card-inner-bg, rgba(248, 250, 252, 0.8))",
+        border: "1px solid var(--divider, rgba(99, 102, 241, 0.1))",
+      }}
+    >
+      <div
+        className="flex items-center gap-2 px-4 py-2.5 font-bold text-xs tracking-wide"
+        style={{
+          borderBottom: "1px solid var(--divider, rgba(99, 102, 241, 0.08))",
+          color: "var(--text-primary)",
+          background: "rgba(99, 102, 241, 0.03)",
+        }}
+      >
+        <div
+          className="w-6 h-6 rounded-lg flex items-center justify-center shrink-0"
+          style={{ background: "rgba(99, 102, 241, 0.1)", color: "var(--accent, #6366f1)" }}
+        >
+          {icon}
+        </div>
+        <span>{title}</span>
       </div>
-      <div className="rounded-xl overflow-hidden" style={{ background: "var(--card-inner-bg)", border: "1px solid var(--glass-border)" }}>
-        {children}
-      </div>
+      <div className="flex flex-col">{children}</div>
     </div>
   );
 }
 
 function Row({ label, value, chip, icon, children }) {
   return (
-    <div className="tm-detail-row flex items-center justify-between px-3 py-2.5" style={{ borderBottom: "1px solid var(--divider)" }}>
-      <span className="font-medium" style={{ fontSize: 11, color: "var(--text-secondary)" }}>{label}</span>
+    <div
+      className="tm-detail-row flex items-center justify-between px-4 py-2.5 hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors"
+      style={{ borderBottom: "1px solid var(--divider, rgba(99, 102, 241, 0.06))" }}
+    >
+      <span className="font-semibold text-xs text-secondary flex items-center gap-1.5">
+        {icon}
+        {label}
+      </span>
       {children ? children : (
         chip ? (
-          <span className="text-[10px] font-black px-2 py-0.5 rounded" style={{ background: "var(--card-inner-bg)", color: "var(--text-primary)" }}>
-            {icon}{value}
+          <span
+            className="text-[11px] font-bold px-2.5 py-0.5 rounded-lg border border-glass-border"
+            style={{ background: "var(--card-inner-bg)", color: "var(--text-primary)" }}
+          >
+            {value}
           </span>
         ) : (
-          <span className="text-xs font-semibold flex items-center gap-1" style={{ color: "var(--text-primary)" }}>{icon}{value}</span>
+          <span className="text-xs font-bold text-primary">{value}</span>
         )
       )}
     </div>

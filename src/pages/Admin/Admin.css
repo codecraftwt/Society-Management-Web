@@ -835,22 +835,33 @@ html.role-theme .admin-root .tenant-management-page .tm-mobile-search {
 }
 
 /* Tenant management detail presentation */
-html.role-theme .admin-root .tenant-management-page .tm-document-status,
-.tenant-management-page .tm-document-status {
+.tm-document-status {
   display: inline-flex;
   align-items: center;
   gap: 4px;
   width: fit-content;
-  padding: 3px 7px;
+  padding: 3px 8px;
   border-radius: 999px;
-  font-size: 10px;
-  font-weight: 800;
+  font-size: 11px;
+  font-weight: 700;
   letter-spacing: .02em;
   white-space: nowrap;
 }
-.tm-document-status.is-complete { color: #16a34a; background: rgba(34,197,94,.12); }
-.tm-document-status.is-partial { color: #d97706; background: rgba(245,158,11,.14); }
-.tm-document-status.is-empty { color: var(--text-secondary); background: var(--card-inner-bg); }
+.tm-document-status.is-complete {
+  color: #059669;
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+}
+.tm-document-status.is-partial {
+  color: #d97706;
+  background: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+}
+.tm-document-status.is-empty {
+  color: var(--text-secondary, #64748b);
+  background: rgba(100, 116, 139, 0.08);
+  border: 1px solid rgba(100, 116, 139, 0.18);
+}
 .tm-detail-avatar {
   color: #fff;
   background: linear-gradient(135deg, #2563eb, #7c3aed);
@@ -872,6 +883,30 @@ html.role-theme .admin-root .tenant-management-page .tm-document-status,
 .tm-document-state { color: var(--text-secondary); font-size: 10px; margin-top: 2px; }
 .tm-document-link { display: inline-flex; align-items: center; gap: 3px; color: var(--accent); font-size: 11px; font-weight: 800; white-space: nowrap; }
 .tm-document-link:hover { text-decoration: underline; }
+.tm-document-link-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 14px;
+  border-radius: 9px;
+  font-size: 11px;
+  font-weight: 800;
+  white-space: nowrap;
+  background: var(--accent-soft, rgba(99,102,241,0.12));
+  color: var(--accent, #6366f1);
+  border: 1px solid rgba(99,102,241,0.25);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.tm-document-link-btn:hover {
+  background: var(--accent, #6366f1);
+  color: #fff;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(99,102,241,0.3);
+}
+.tm-document-link-btn:active {
+  transform: translateY(0);
+}
 .tm-document-missing { color: var(--text-secondary); font-size: 10px; font-weight: 700; }
 @media (max-width: 767px) {
   .tm-detail-grid, .tm-documents-grid { grid-template-columns: 1fr; gap: 14px; }
@@ -1105,6 +1140,42 @@ html.role-theme .sa-root .tm-pagination-footer > .pagination-wrap {
   .tm-modal-actions {
     padding: 14px !important;
   }
+}
+
+/* Modal scrollbar suppression - clean, borderless, seamless modern look */
+.tm-modal-panel {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+.tm-modal-panel::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+.resident-modal-body {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+.resident-modal-body::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+/* Fix border-glass-border fallback in Tailwind v4 so it never falls back to black currentColor */
+.border-glass-border {
+  border-color: var(--divider, rgba(99, 102, 241, 0.08)) !important;
+}
+
+/* Flat History Modern Visual Refinement */
+.flat-history-page .fh-grid-section {
+  border: 1px solid var(--divider, rgba(99, 102, 241, 0.08)) !important;
+  background: var(--card-bg, #ffffff) !important;
+}
+
+.flat-history-page .fh-block-nav {
+  border: 1px solid var(--divider, rgba(99, 102, 241, 0.12)) !important;
 }
 
 /* Flat History — shared Admin visual system */

@@ -24,7 +24,7 @@ import Select from "../../components/common/Select";
     MdSportsHockey, MdSportsKabaddi, MdPark, MdChair, MdCelebration,
     MdTheaters, MdTheaterComedy, MdSpa, MdMenuBook, MdEmojiEvents,
   MdFilterList, MdQrCode2, MdOutlineInbox,
-  MdCheckCircle, MdCancel, MdEventAvailable, MdAccessTime,
+  MdCheckCircle, MdCancel, MdEventAvailable, MdAccessTime, MdCalendarToday,
   } from "react-icons/md";
 
     
@@ -480,6 +480,8 @@ const navigate = useNavigate();
     };
 
     const rangeDayClassName = (date) => {
+      const isBooked = bookedDates.some((bd) => bd.getTime() === date.getTime());
+      if (isBooked) return "ra-day-booked";
       if (!rangeStart || !rangeEnd) return "";
       const t = date.getTime();
       const s = rangeStart.getTime();
@@ -1004,55 +1006,130 @@ const navigate = useNavigate();
                       <div className="ra-card-accent" />
 
                       {/* Card Header: Icon box + Availability pill */}
-                      <div className="flex items-start justify-between gap-3 mb-3.5">
-                        <div className="ra-card-icon-box w-12 h-12 rounded-2xl flex items-center justify-center shrink-0">
+                      <div className="flex items-start justify-between gap-3 mb-3">
+                        <div
+                          className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-105 duration-300 shadow-xs"
+                          style={{
+                            background: "rgba(99, 102, 241, 0.12)",
+                            border: "1px solid rgba(99, 102, 241, 0.22)",
+                            color: "var(--accent, #6366f1)",
+                          }}
+                        >
                           {amenityIcon(a.name, 26)}
                         </div>
 
                         {isDisabled ? (
-                          <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold ${
+                          <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${
                             isTemp
-                              ? "bg-amber-500/10 text-amber-400 border border-amber-500/25"
-                              : "bg-red-500/10 text-red-400 border border-red-500/25"
+                              ? "bg-amber-500/10 text-amber-500 border border-amber-500/25"
+                              : "bg-red-500/10 text-red-500 border border-red-500/25"
                           }`}>
-                            {isTemp ? <MdWarning size={12} /> : <MdBlock size={12} />}
-                            <span>{isTemp ? (t("amenTempClosed") || "Temp Closed") : (t("amenClosed") || "Closed")}</span>
+                            {isTemp ? <MdWarning size={13} /> : <MdBlock size={13} />}
+                            <span>{isTemp ? t("amenTempClosed", "Temp Closed") : t("amenClosed", "Closed")}</span>
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-green-500/10 text-green-400 border border-green-500/25">
-                            <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-                            <span>{t("amenAvailable") || "Available"}</span>
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-500 border border-emerald-500/25 shadow-xs">
+                            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                            <span>{t("amenAvailable", "Available")}</span>
                           </span>
                         )}
                       </div>
 
-                      {/* Card Body: Title & Meta Features */}
-                      <div className="ra-card-body flex-1 mb-4">
-                        <h3 className="ra-card-name text-base sm:text-lg font-bold text-primary tracking-tight mb-2.5">
-                          {a.name}
-                        </h3>
+                      {/* Card Body: Title, Type & Pricing */}
+                      <div className="ra-card-body flex-1 flex flex-col justify-between">
+                        <div>
+                          <div className="mb-1.5">
+                            <h3 className="text-base sm:text-lg font-extrabold text-primary tracking-tight truncate" title={a.name}>
+                              {a.name}
+                            </h3>
+                          </div>
 
-                        <div className="flex items-center gap-2 flex-wrap mb-3">
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-white/5 border border-white/8 text-secondary">
-                            <MdAccessTime size={13} className="text-accent" />
-                            <span>{a.booking_type === "FULL_DAY" ? (t("amenFullDay") || "Full Day") : (t("amenHourly") || "Hourly")}</span>
-                          </span>
+                          <div className="flex items-center gap-2 flex-wrap mb-3.5">
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[11px] font-semibold bg-white/5 border border-white/10 text-secondary">
+                              <MdAccessTime size={12} className="text-accent" />
+                              <span>{a.booking_type === "FULL_DAY" ? t("amenFullDay", "Full Day") : t("amenHourly", "Hourly")}</span>
+                            </span>
 
-                          {a.type === "FREE" ? (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
-                              <MdCheck size={13} />
-                              <span>{t("amenFree") || "Free Access"}</span>
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-purple-500/10 border border-purple-500/20 text-purple-300">
-                              <span className="text-[11px] text-secondary">Owner / Resident: </span><span className="font-extrabold text-sm text-primary">₹{Number(a.resident_rate_per_hour ?? a.rate_per_hour) || 0}</span>
-                              <span className="text-[11px] text-secondary"> · Tenant: </span><span className="font-extrabold text-sm text-primary">₹{Number(a.tenant_rate_per_hour ?? a.rate_per_hour) || 0}</span>
-                              <span className="text-[11px] text-secondary">/{a.booking_type === "FULL_DAY" ? (t("amenPerDay") || "day") : (t("amenPerHr") || "hr")}</span>
-                            </span>
-                          )}
+                            {a.type === "FREE" ? (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[11px] font-bold bg-emerald-500/10 border border-emerald-500/25 text-emerald-500">
+                                <MdCheck size={12} />
+                                <span>{t("amenFree", "Free Access")}</span>
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[11px] font-bold bg-accent/10 border border-accent/20 text-accent">
+                                <span>{t("amenPaid", "Paid Facility")}</span>
+                              </span>
+                            )}
+                          </div>
                         </div>
 
-                        <ClosureBanner amenity={a} />
+                        {/* Pricing / Access Card (Uniform Fixed Height & Clean Alignment) */}
+                        <div className="mt-auto mb-3">
+                          {a.type === "FREE" ? (
+                            <div
+                              className="p-2.5 px-3 rounded-xl flex items-center gap-3 min-h-[58px]"
+                              style={{
+                                background: "rgba(16, 185, 129, 0.05)",
+                                border: "1px solid rgba(16, 185, 129, 0.18)",
+                              }}
+                            >
+                              <div className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-500 flex items-center justify-center shrink-0">
+                                <MdCheckCircle size={18} />
+                              </div>
+                              <div className="min-w-0">
+                                <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 block truncate">
+                                  Free for Residents
+                                </span>
+                                <span className="text-[11px] text-secondary block truncate mt-0.5">
+                                  No reservation fee required
+                                </span>
+                              </div>
+                            </div>
+                          ) : (
+                            <div
+                              className="p-2.5 px-3 rounded-xl flex items-center justify-between gap-3 min-h-[58px]"
+                              style={{
+                                background: "var(--card-inner-bg, rgba(0,0,0,0.02))",
+                                border: "1px solid var(--divider, rgba(99, 102, 241, 0.14))",
+                              }}
+                            >
+                              {/* Resident rate */}
+                              <div className="flex-1 min-w-0">
+                                <span className="text-[10px] font-bold text-secondary uppercase tracking-wider block truncate">
+                                  Resident
+                                </span>
+                                <div className="flex items-baseline gap-1 mt-0.5">
+                                  <span className="text-base font-extrabold text-primary">
+                                    ₹{Number(a.resident_rate_per_hour ?? a.rate_per_hour) || 0}
+                                  </span>
+                                  <span className="text-[11px] font-medium text-secondary">
+                                    /{a.booking_type === "FULL_DAY" ? t("amenPerDay", "day") : t("amenPerHr", "hr")}
+                                  </span>
+                                </div>
+                              </div>
+
+                              {/* Divider */}
+                              <div className="w-px h-8 bg-divider shrink-0 opacity-80" />
+
+                              {/* Tenant rate */}
+                              <div className="flex-1 min-w-0 text-right">
+                                <span className="text-[10px] font-bold text-secondary uppercase tracking-wider block truncate">
+                                  Tenant
+                                </span>
+                                <div className="flex items-baseline justify-end gap-1 mt-0.5">
+                                  <span className="text-base font-extrabold text-accent">
+                                    ₹{Number(a.tenant_rate_per_hour ?? a.rate_per_hour) || 0}
+                                  </span>
+                                  <span className="text-[11px] font-medium text-secondary">
+                                    /{a.booking_type === "FULL_DAY" ? t("amenPerDay", "day") : t("amenPerHr", "hr")}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+
+                          <ClosureBanner amenity={a} />
+                        </div>
                       </div>
 
                       {/* Card Footer: Action Button */}
@@ -1063,17 +1140,17 @@ const navigate = useNavigate();
                           className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-xs text-secondary bg-white/4 border border-white/8 cursor-not-allowed opacity-60"
                         >
                           <MdBlock size={14} />
-                          <span>{t("amenBookingUnavailable") || "Booking Unavailable"}</span>
+                          <span>{t("amenBookingUnavailable", "Booking Unavailable")}</span>
                         </button>
                       ) : (
                         <button
                           type="button"
                           onClick={() => selectAmenity(a)}
-                          className="ra-modern-book-btn group/btn w-full flex items-center justify-between px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm text-white transition-all cursor-pointer shadow-sm"
+                          className="ra-modern-book-btn group/btn w-full flex items-center justify-between px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm text-white transition-all cursor-pointer shadow-sm hover:shadow-md"
                         >
                           <span className="flex items-center gap-2">
                             <MdEventAvailable size={16} />
-                            <span>{t("amenCheckAvailability") || "Check Availability"}</span>
+                            <span>{t("amenCheckAvailability", "Check Availability")}</span>
                           </span>
                           <span className="text-base font-bold group-hover/btn:translate-x-1 transition-transform">→</span>
                         </button>
@@ -1320,9 +1397,16 @@ const navigate = useNavigate();
             DATE / SLOT MODAL
         ══════════════════════════════ */}
         {showDateModal && selectedAmenity && (
-          <Modal isOpen={showDateModal} size="lg" onClose={() => { setShowDateModal(false); setPaymentStatus(null); setBookingError(""); }}
-            title={`${t("amenReserve")} · ${selectedAmenity.name}`}>
-            <div className="ra-modal-inner">
+          <Modal
+            isOpen={showDateModal}
+            size="xl"
+            style={{ maxWidth: 840 }}
+            bodyStyle={{ overflowY: "auto", overflowX: "hidden", padding: "18px 24px" }}
+            onClose={() => { setShowDateModal(false); setPaymentStatus(null); setBookingError(""); setBookingStep("date"); }}
+            title={`${t("amenReserve", "Reserve")} · ${selectedAmenity.name}`}
+            icon={MdDateRange}
+          >
+            <div className="ra-modal-inner" style={{ gap: 12 }}>
 
               {/* Payment status feedback inside modal */}
               {paymentStatus === "processing" && (
@@ -1344,7 +1428,7 @@ const navigate = useNavigate();
                 <div style={{
                   display: "flex", alignItems: "flex-start", gap: 8, padding: "10px 14px",
                   borderRadius: 10, background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.25)",
-                  marginBottom: 14,
+                  marginBottom: 8,
                 }} className="animate-fadeIn">
                   <MdWarning size={15} style={{ color: "#ef4444", flexShrink: 0, marginTop: 1 }} />
                   <div>
@@ -1360,7 +1444,7 @@ const navigate = useNavigate();
                 <div style={{
                   display: "flex", alignItems: "flex-start", gap: 8, padding: "10px 14px",
                   borderRadius: 10, background: "rgba(160,90,255,0.08)", border: "1px solid rgba(160,90,255,0.25)",
-                  marginBottom: 14,
+                  marginBottom: 8,
                 }} className="animate-fadeIn">
                   <MdPayment size={15} style={{ color: "var(--accent)", flexShrink: 0, marginTop: 1 }} />
                   <div>
@@ -1376,7 +1460,7 @@ const navigate = useNavigate();
                 <div style={{
                   display: "flex", alignItems: "flex-start", gap: 8, padding: "10px 14px",
                   borderRadius: 10, background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.25)",
-                  marginBottom: 14,
+                  marginBottom: 8,
                 }}>
                   <MdWarning size={15} style={{ color: "#ef4444", flexShrink: 0, marginTop: 1 }} />
                   <span style={{ fontSize: 12, color: "#ef4444" }}>{bookingError}</span>
@@ -1384,190 +1468,273 @@ const navigate = useNavigate();
               )}
 
               {!paymentStatus && (
-                <>
-                  {authorizedFlats.length > 0 && (
-                    <div style={{ marginBottom: 14 }}>
-                      <p className="ra-modal-label">Booking flat</p>
-                      <Select value={selectedFlatId} onChange={(e) => setSelectedFlatId(e.target.value)}>
-                        {authorizedFlats.map((flat) => (
-                          <option key={flat.flat_id} value={flat.flat_id}>
-                            {flat.block_name ? `${flat.block_name} - ` : ""}{flat.flat_number || flat.flat_id} ({String(flat.role || "OWNER").toUpperCase()})
-                          </option>
-                        ))}
-                      </Select>
-                      {selectedAmenity.type === "PAID" && <div style={{ fontSize: 11, color: "var(--text-secondary)", marginTop: 5 }}>Applicable {occupancyCategory} rate: ₹{applicableRate}</div>}
-                    </div>
-                  )}
-                  <p className="ra-modal-subtitle">{t("amenSelectBookingDates", "Select your booking dates")}</p>
-
-                  {selectedAmenity.booking_type === "FULL_DAY" ? (
-                    bookingStep === "date" ? (
-                      /* STEP 1 — pick dates on a compact single-column calendar */
-                      <>
-                        <div className="ra-booking-grid ra-booking-grid--single">
-                          <div className="ra-calendar-section">
-                            <p className="ra-modal-label">{t("amenSelectDatesHint", "Pick 1–7 days · tap more dates to extend the period")}</p>
-                            <div className="ra-inline-calendar">
-                              <DatePicker
-                                selected={rangeEnd ? undefined : rangeStart || undefined}
-                                onChange={handleRangeDay}
-                                minDate={new Date()}
-                                excludeDates={bookedDates}
-                                dayClassName={rangeDayClassName}
-                                inline
-                              />
-                            </div>
-
-                            {rangeDates.length > 0 && (
-                              <div className="ra-step-dates">
-                                {rangeDates.map((d, i) => (
-                                  <span key={i} className="ra-step-date-chip">
-                                    {d.toLocaleDateString("en-US", { day: "numeric", month: "short" })}
-                                  </span>
-                                ))}
-                                <button type="button" className="ra-step-clear" onClick={clearRange}>
-                                  <MdClose size={13} /> {t("amenClear", "Clear")}
-                                </button>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-
-                        <div className="ra-step-actions">
-                          <button type="button" className="ra-next-btn" disabled={rangeDates.length === 0} onClick={() => setBookingStep("calc")}>
-                            {t("amenNext", "Next")} ›
-                          </button>
-                        </div>
-                      </>
-                    ) : (
-                      /* STEP 2 — review dates and book (calculation) */
-                      <>
-                        <button type="button" className="ra-back-btn" onClick={() => setBookingStep("date")}>
-                          ‹ {t("amenBack", "Back")}
+                <div className="grid grid-cols-1 md:grid-cols-12 gap-5 items-stretch">
+                  {/* Left Column: Calendar (7 cols) */}
+                  <div className="md:col-span-7 flex flex-col gap-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-bold text-secondary uppercase tracking-wider">
+                        {selectedAmenity.booking_type === "FULL_DAY"
+                          ? (t("amenSelectDatesHint", "Select Dates · Pick 1–7 days"))
+                          : (t("amenSelectSingleDateHint", "Pick a booking date"))
+                        }
+                      </span>
+                      {rangeDates.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={clearRange}
+                          className="text-xs font-bold text-rose-500 hover:text-rose-600 flex items-center gap-1 cursor-pointer bg-transparent border-0 p-0 transition-colors"
+                        >
+                          <MdClose size={13} /> {t("amenClear", "Clear")}
                         </button>
+                      )}
+                    </div>
 
-                        <div className="ra-summary-section">
-                          <div className="ra-summary-card">
-                            <div className="ra-summary-head">
-                              <div className="ra-summary-title">{t("amenSelectedDates")}</div>
-                              <div className="ra-summary-days">
-                                <strong>{rangeDates.length}</strong> {rangeDates.length === 1 ? t("amenDay", "day") : t("amenDays", "days")}
-                              </div>
+                    <div
+                      className="ra-inline-calendar rounded-2xl flex justify-center p-1"
+                      style={{
+                        background: "var(--card-inner-bg, rgba(0,0,0,0.02))",
+                        border: "1px solid var(--divider, rgba(99, 102, 241, 0.12))",
+                      }}
+                    >
+                      <DatePicker
+                        selected={selectedAmenity.booking_type === "FULL_DAY" ? (rangeEnd ? undefined : rangeStart || undefined) : (rangeStart || undefined)}
+                        onChange={selectedAmenity.booking_type === "FULL_DAY" ? handleRangeDay : handleSingleSlotDate}
+                        minDate={new Date()}
+                        excludeDates={selectedAmenity.booking_type === "FULL_DAY" ? bookedDates : undefined}
+                        dayClassName={selectedAmenity.booking_type === "FULL_DAY" ? rangeDayClassName : undefined}
+                        inline
+                      />
+                    </div>
+
+                    {/* Calendar Legend */}
+                    <div className="flex items-center justify-between text-[11px] text-secondary px-1">
+                      <div className="flex items-center gap-3">
+                        <span className="inline-flex items-center gap-1">
+                          <span className="w-2 h-2 rounded-full" style={{ background: "var(--accent, #6366f1)" }} />
+                          <span>Selected</span>
+                        </span>
+                        {bookedDates.length > 0 && (
+                          <span className="inline-flex items-center gap-1">
+                            <span className="w-2 h-2 rounded-full bg-rose-500" />
+                            <span>Booked ({bookedDates.length})</span>
+                          </span>
+                        )}
+                      </div>
+                      {rangeDates.length > 1 && (
+                        <span className="text-[11px] font-semibold text-accent">
+                          {rangeDates[0].toLocaleDateString("en-US", { month: "short", day: "numeric" })} – {rangeDates[rangeDates.length - 1].toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* All Selected Booking Dates */}
+                    {rangeDates.length > 0 && (
+                      <div
+                        className="p-3 rounded-xl space-y-2"
+                        style={{
+                          background: "var(--card-inner-bg, rgba(0,0,0,0.02))",
+                          border: "1px solid var(--divider, rgba(99, 102, 241, 0.15))",
+                        }}
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-[11px] font-bold text-secondary uppercase tracking-wider flex items-center gap-1.5">
+                            <span className="w-2 h-2 rounded-full bg-accent animate-pulse" />
+                            {t("amenSelectedDates", "All Booking Dates")}
+                          </span>
+                          <span className="px-2 py-0.5 rounded-md bg-accent text-white font-extrabold text-[11px]">
+                            {rangeDates.length} {rangeDates.length === 1 ? t("amenDay", "day") : t("amenDays", "days")}
+                          </span>
+                        </div>
+
+                        {/* All individual booking date chips */}
+                        <div className="flex flex-wrap items-center gap-1.5 max-h-24 overflow-y-auto pr-1">
+                          {rangeDates.map((d) => (
+                            <span
+                              key={d.toISOString()}
+                              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold shadow-xs"
+                              style={{
+                                background: "rgba(99, 102, 241, 0.12)",
+                                color: "var(--accent, #6366f1)",
+                                border: "1px solid rgba(99, 102, 241, 0.25)",
+                              }}
+                            >
+                              <MdCalendarToday size={12} className="opacity-75" />
+                              {d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Right Column: Flat Selector, Cost Summary & Action Button (5 cols) */}
+                  <div className="md:col-span-5 flex flex-col justify-between gap-3">
+                    {/* Flat Selection */}
+                    {authorizedFlats.length > 0 && (
+                      <div
+                        className="p-3.5 rounded-xl space-y-1.5"
+                        style={{
+                          background: "var(--card-inner-bg, rgba(0,0,0,0.02))",
+                          border: "1px solid var(--divider, rgba(99, 102, 241, 0.12))",
+                        }}
+                      >
+                        <label className="text-[11px] font-bold text-secondary uppercase tracking-wider block">
+                          Booking Flat
+                        </label>
+                        <Select
+                          value={selectedFlatId}
+                          onChange={(e) => setSelectedFlatId(e.target.value)}
+                          className="w-full text-xs font-semibold"
+                        >
+                          {authorizedFlats.map((flat) => (
+                            <option key={flat.flat_id} value={flat.flat_id}>
+                              {flat.block_name ? `${flat.block_name} - ` : ""}{flat.flat_number || flat.flat_id} ({String(flat.role || "OWNER").toUpperCase()})
+                            </option>
+                          ))}
+                        </Select>
+                        {selectedAmenity.type === "PAID" && (
+                          <div className="text-[11px] text-secondary mt-1 flex items-center justify-between">
+                            <span>Applicable Rate:</span>
+                            <span className="font-bold text-primary">₹{applicableRate}/{t("amenPerDay", "day")} ({occupancyCategory})</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Cost & Summary Card */}
+                    <div
+                      className="p-3.5 rounded-xl space-y-2.5 flex-1 flex flex-col justify-between"
+                      style={{
+                        background: "var(--card-inner-bg, rgba(0,0,0,0.02))",
+                        border: "1px solid var(--divider, rgba(99, 102, 241, 0.12))",
+                      }}
+                    >
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-secondary font-medium">Amenity:</span>
+                          <span className="font-bold text-primary">{selectedAmenity.name}</span>
+                        </div>
+
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-secondary font-medium">Booking Type:</span>
+                          <span className="font-bold text-primary">
+                            {selectedAmenity.booking_type === "FULL_DAY" ? "Full Day" : "Slot Booking"}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-secondary font-medium">Selected Days:</span>
+                          <span className="font-bold text-primary">
+                            {rangeDates.length} {rangeDates.length === 1 ? t("amenDay", "day") : t("amenDays", "days")}
+                          </span>
+                        </div>
+
+                        {rangeDates.length > 0 && (
+                          <div className="space-y-1">
+                            <span className="text-[11px] font-semibold text-secondary block">
+                              Booking Dates:
+                            </span>
+                            <div className="flex flex-wrap gap-1">
+                              {rangeDates.map((d) => (
+                                <span
+                                  key={d.toISOString()}
+                                  className="px-2 py-0.5 rounded text-[11px] font-semibold"
+                                  style={{
+                                    background: "rgba(99, 102, 241, 0.08)",
+                                    color: "var(--accent, #6366f1)",
+                                    border: "1px solid rgba(99, 102, 241, 0.2)",
+                                  }}
+                                >
+                                  {d.toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                                </span>
+                              ))}
                             </div>
+                          </div>
+                        )}
 
-                            <div className="ra-summary-dates-list">
-                              {rangeDates.map((d, i) => {
-                                const booked = bookedDates.some((bd) => bd.getTime() === d.getTime());
-                                return (
-                                  <div key={i} className={`ra-summary-date-row ${booked ? "ra-summary-date-row--taken" : "ra-summary-date-row--ok"}`}>
-                                    <span>{d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric" })}</span>
-                                    {booked ? (
-                                      <span className="ra-summary-date-status">{t("amenSlotBooked")}</span>
-                                    ) : (
-                                      <span className="ra-summary-check">✓</span>
-                                    )}
-                                  </div>
-                                );
-                              })}
-                            </div>
+                        <div className="h-px bg-divider my-1" />
 
-                            <div className="ra-summary-divider" />
+                        {selectedAmenity.type === "PAID" ? (
+                          <div className="flex items-baseline justify-between pt-1">
+                            <span className="text-xs font-bold text-secondary uppercase tracking-wider">Total Amount:</span>
+                            <span className="text-xl font-extrabold text-accent">
+                              ₹{applicableRate * (rangeDates.length || 0)}
+                            </span>
+                          </div>
+                        ) : (
+                          <div className="flex items-baseline justify-between pt-1">
+                            <span className="text-xs font-bold text-secondary uppercase tracking-wider">Total Amount:</span>
+                            <span className="text-lg font-extrabold text-emerald-500">
+                              {t("amenFree", "Free")}
+                            </span>
+                          </div>
+                        )}
+                      </div>
 
-                            {selectedAmenity.type === "PAID" ? (
+                      {/* Action Button */}
+                      {selectedAmenity.booking_type === "FULL_DAY" ? (
+                        rangeUnavailable ? (
+                          <div className="p-2.5 rounded-xl text-xs font-semibold bg-rose-500/10 text-rose-500 border border-rose-500/25 text-center">
+                            ⚠ {t("amenRangeUnavailable", "One or more dates are already booked")}
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            disabled={rangeDates.length === 0 || bookingLoading}
+                            onClick={bookSlot}
+                            className="w-full py-3 px-4 rounded-xl text-xs font-bold text-white transition-all active:scale-95 cursor-pointer flex items-center justify-center gap-2 shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+                            style={{
+                              background: rangeDates.length === 0
+                                ? "var(--divider)"
+                                : "linear-gradient(135deg, var(--accent, #6366f1) 0%, #4f46e5 100%)",
+                              boxShadow: rangeDates.length === 0 ? "none" : "0 4px 14px -2px rgba(99, 102, 241, 0.4)",
+                            }}
+                          >
+                            {bookingLoading ? (
                               <>
-                                <div className="ra-summary-line">
-                                  <span>{t("amenRate", "Rate")}</span>
-                                    <strong>₹{applicableRate}/{t("amenPerDay")} ({occupancyCategory})</strong>
-                                </div>
-                                <div className="ra-summary-line">
-                                  <span>{t("amenDaysLabel", "Days")}</span>
-                                  <strong>{rangeDates.length}</strong>
-                                </div>
-                                <div className="ra-summary-divider" />
-                                <div className="ra-summary-total">
-                                  <span className="ra-summary-total-label">{t("amenTotal", "Total")}</span>
-                                   <span className="ra-summary-total-amt">₹{applicableRate * rangeDates.length}</span>
-                                </div>
+                                <Spinner small />
+                                <span>{t("amenProcessing", "Processing booking...")}</span>
                               </>
                             ) : (
-                              <div className="ra-summary-total">
-                                <span className="ra-summary-total-label">{t("amenTotal", "Total")}</span>
-                                <span className="ra-summary-total-amt ra-summary-total-amt--free">{t("amenFree")}</span>
-                              </div>
-                            )}
-
-                            {rangeUnavailable ? (
-                              <div className="ra-range-error">⚠ {t("amenRangeUnavailable", "One or more dates are already booked")}</div>
-                            ) : (
-                              <button type="button" className="ra-modal-book-cta" disabled={bookingLoading} onClick={bookSlot}>
-                                {bookingLoading ? (
-                                  <>
-                                    <Spinner small />
-                                    <span>{t("amenProcessing", "Processing booking...")}</span>
-                                  </>
-                                ) : (
-                                  <>
-                                    <MdEventAvailable className="ra-modal-book-cta-icon" />
-                                    <span className="ra-modal-book-cta-text">
-                                      {t("amenRequest", "Request")} {rangeDates.length} {rangeDates.length === 1 ? t("amenDay", "day") : t("amenDays", "days")}
-                                      {selectedAmenity.type === "PAID" && (
-                                         <span className="ra-modal-book-cta-price"> · ₹{applicableRate * rangeDates.length}</span>
-                                      )}
-                                    </span>
-                                  </>
-                                )}
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      </>
-                    )
-                  ) : (
-                    /* SLOT type — pick a single day, then select multiple slots on that day */
-                    bookingStep === "date" ? (
-                      <>
-                        <div className="ra-booking-grid ra-booking-grid--single">
-                          <div className="ra-calendar-section">
-                            <p className="ra-modal-label">{t("amenSelectSingleDateHint", "Pick a date to select time slots (single day booking)")}</p>
-                            <div className="ra-inline-calendar">
-                              <DatePicker
-                                selected={rangeStart || undefined}
-                                onChange={handleSingleSlotDate}
-                                minDate={new Date()}
-                                inline
-                              />
-                            </div>
-
-                            {rangeDates.length > 0 && (
-                              <div className="ra-step-dates">
-                                <span className="ra-step-date-chip">
-                                  {rangeDates[0].toLocaleDateString("en-US", { weekday: "short", day: "numeric", month: "short", year: "numeric" })}
+                              <>
+                                <MdEventAvailable size={18} />
+                                <span>
+                                  {rangeDates.length === 0
+                                    ? "Select Dates to Book"
+                                    : `${t("amenRequest", "Request")} ${rangeDates.length} ${rangeDates.length === 1 ? t("amenDay", "day") : t("amenDays", "days")}${selectedAmenity.type === "PAID" ? ` · ₹${applicableRate * rangeDates.length}` : ""}`
+                                  }
                                 </span>
-                                <button type="button" className="ra-step-clear" onClick={clearRange}>
-                                  <MdClose size={13} /> {t("amenClear", "Clear")}
-                                </button>
-                              </div>
+                              </>
                             )}
-                          </div>
-                        </div>
-
-                        <div className="ra-step-actions">
-                          <button type="button" className="ra-next-btn" disabled={rangeDates.length === 0}
-                            onClick={() => {
-                              setSelectedSlots([]);
-                              setShowDateModal(false);
-                              setShowSlotsModal(true);
-                              setBookingError("");
-                              setPaymentStatus(null);
-                              loadAvailability(selectedAmenity.id);
-                            }}>
-                            {t("amenNext", "Next")} ›
                           </button>
-                        </div>
-                      </>
-                    ) : null
-                  )}
-                </>
+                        )
+                      ) : (
+                        <button
+                          type="button"
+                          disabled={rangeDates.length === 0}
+                          onClick={() => {
+                            setSelectedSlots([]);
+                            setShowDateModal(false);
+                            setShowSlotsModal(true);
+                            setBookingError("");
+                            setPaymentStatus(null);
+                            loadAvailability(selectedAmenity.id);
+                          }}
+                          className="w-full py-3 px-4 rounded-xl text-xs font-bold text-white transition-all active:scale-95 cursor-pointer flex items-center justify-center gap-2 shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+                          style={{
+                            background: rangeDates.length === 0
+                              ? "var(--divider)"
+                              : "linear-gradient(135deg, var(--accent, #6366f1) 0%, #4f46e5 100%)",
+                            boxShadow: rangeDates.length === 0 ? "none" : "0 4px 14px -2px rgba(99, 102, 241, 0.4)",
+                          }}
+                        >
+                          <span>{t("amenNext", "Proceed to Time Slots")}</span>
+                          <MdChevronRight size={18} />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
               )}
             </div>
           </Modal>

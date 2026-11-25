@@ -288,6 +288,8 @@ export default function Detail({ isOpen, onClose, staffId, onChanged, onEdit, on
                 rows={attendance}
                 loading={tabLoading.attendance}
                 onUpdated={reloadAll}
+                showManual={false}
+                showActions={false}
               />
             )}
           </div>

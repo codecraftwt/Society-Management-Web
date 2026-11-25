@@ -161,75 +161,41 @@ const BHK_STYLES = {
 
 
 function getResidentDisplayType(r) {
-
   if (!r) return null;
-
   const rawType = String(r.resident_type || "").toUpperCase();
-
-  if (rawType === "FAMILY_MEMBER" || rawType === "FAMILY") return "FAMILY_MEMBER";
-
+  if (rawType === "OWNER") return "OWNER";
   if (rawType === "TENANT") return "TENANT";
 
-  if (rawType === "OWNER") return "OWNER";
-
-
+  // Check flats for explicit ownership or tenancy
+  if (r.flats?.some((f) => String(f.role || "").toUpperCase() === "OWNER")) return "OWNER";
+  if (r.flats?.some((f) => String(f.role || "").toUpperCase() === "TENANT")) return "TENANT";
 
   const roles = Array.isArray(r.roles)
-
     ? r.roles.map((x) => String(x).toUpperCase())
-
     : typeof r.roles === "string"
-
     ? [r.roles.toUpperCase()]
-
     : [];
 
+  if (roles.includes("OWNER")) return "OWNER";
+  if (roles.includes("TENANT")) return "TENANT";
 
-
+  // Only classify as Family Member if not an Owner or Tenant
   if (
-
+    rawType === "FAMILY_MEMBER" ||
+    rawType === "FAMILY" ||
     String(r.role || "").toUpperCase() === "FAMILY_MEMBER" ||
-
     roles.includes("FAMILY_MEMBER") ||
-
     r.flats?.some((f) => String(f.role || "").toUpperCase() === "FAMILY_MEMBER")
-
   ) {
-
     return "FAMILY_MEMBER";
-
   }
 
-
-
-  if (
-
-    roles.includes("TENANT") ||
-
-    r.flats?.some((f) => String(f.role || "").toUpperCase() === "TENANT")
-
-  ) {
-
-    return "TENANT";
-
-  }
-
-
-
-  if (r.flats?.length > 0 || r.flat_id) {
-
+  if (roles.includes("RESIDENT")) {
     return "OWNER";
-
   }
 
-
-
-  return null;
-
+  return "OWNER";
 }
-
-
-
 function ResidentTypeBadge({ type }) {
 
   const { t } = useLang();
@@ -281,82 +247,59 @@ function BhkBadge({ type }) {
 
 
 function PendingApprovalBadge() {
-
   const { t } = useLang();
-
   return (
-
     <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 11, fontWeight: 700, padding: "3px 9px", borderRadius: 999, background: "rgba(251,191,36,0.12)", color: "var(--accent)", border: "1px solid rgba(251,191,36,0.28)", letterSpacing: "0.02em" }}>
-
       <MdWarning size={11} />
-
       {t("resPendingApproval", "Pending Approval")}
-
     </span>
-
   );
+}
 
+function RejectedApprovalBadge() {
+  const { t } = useLang();
+  return (
+    <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 11, fontWeight: 700, padding: "3px 9px", borderRadius: 999, background: "rgba(239,68,68,0.12)", color: "#ef4444", border: "1px solid rgba(239,68,68,0.28)", letterSpacing: "0.02em" }}>
+      <MdClose size={11} />
+      {t("statusRejected", "Rejected")}
+    </span>
+  );
 }
 
 
 
-function ResidentStatusBadge({ status }) {
-
+function ResidentStatusBadge({ status, approvalStatus, isPending }) {
   const { t } = useLang();
-
+  if (isPending || String(approvalStatus || "").toUpperCase() === "PENDING" || String(approvalStatus || "").toUpperCase() === "REJECTED") {
+    return null;
+  }
   const isInactive = String(status || "").toUpperCase() === "INACTIVE";
-
   if (!isInactive) return null;
 
-
-
   return (
-
     <span
-
       style={{
-
         display: "inline-flex",
-
         alignItems: "center",
-
         gap: 4,
-
         fontSize: 10,
-
         fontWeight: 700,
-
         padding: "2px 8px",
-
         borderRadius: 999,
-
-        background: "rgba(239,68,68,0.12)",
-
+        background: "rgba(239,68,68,0.08)",
         color: "#ef4444",
-
-        border: "1px solid rgba(239,68,68,0.28)",
-
+        border: "1px solid rgba(239,68,68,0.22)",
         letterSpacing: "0.02em",
-
         textTransform: "uppercase",
-
+        whiteSpace: "nowrap",
       }}
-
       title="Inactive resident account"
-
     >
-
-      <span style={{ width: 5, height: 5, borderRadius: "50%", background: "#ef4444", boxShadow: "0 0 5px rgba(239,68,68,0.5)" }} />
-
+      <span style={{ width: 5, height: 5, borderRadius: "50%", background: "#ef4444" }} />
       {t("statusInactive", "Inactive")}
-
     </span>
-
   );
-
 }
-
-
 
 /* ─────────────────────────────────────────
 
@@ -364,7 +307,7 @@ function ResidentStatusBadge({ status }) {
 
    ───────────────────────────────────────── */
 
-function ResidentActionMenu({ onViewDetails, onAssignFlat, onEdit, isCommittee, isAccountant, isSocietyAdmin, isTenant, onPromote, onRemoveCommittee, onDeactivateAccountant, onToggleStatus, isPendingApproval, isRejected, isInactive, onApprove, onReject, t }) {
+function ResidentActionMenu({ onViewDetails, onAssignFlat, onEdit, isCommittee, isAccountant, isSocietyAdmin, isTenant, isOwner, onPromote, onRemoveCommittee, onDeactivateAccountant, onToggleStatus, isPendingApproval, isRejected, isInactive, onApprove, onReject, t }) {
 
   const [open, setOpen] = useState(false);
 
@@ -648,7 +591,7 @@ function ResidentActionMenu({ onViewDetails, onAssignFlat, onEdit, isCommittee, 
 
                 </button>
 
-              ) : (
+              ) : isOwner ? (
 
                 <button
 
@@ -670,7 +613,7 @@ function ResidentActionMenu({ onViewDetails, onAssignFlat, onEdit, isCommittee, 
 
                 </button>
 
-              )}
+              ) : null}
 
             </>
 
@@ -6934,30 +6877,34 @@ const [totalPages, setTotalPages] = useState(1);
 
 
 
-  const isResidentPending = (r) => {
-
+  const isResidentPending = useCallback((r) => {
     if (!r) return false;
+    return (
+      String(r.approval_status || "").toUpperCase() === "PENDING" ||
+      Boolean(r.has_pending_approval)
+    );
+  }, []);
 
-    if (isSuperAdmin && !filterSocietyId) {
-
-      return String(r.approval_status || "").toUpperCase() === "PENDING" || Boolean(r.has_pending_approval);
-
+  const getResidentApprovalStatus = useCallback((r) => {
+    if (!r) return "APPROVED";
+    if (isResidentPending(r)) return "PENDING";
+    const appStatus = String(r.approval_status || "").toUpperCase();
+    if (appStatus === "REJECTED" || String(r.membership_status || "").toUpperCase() === "REJECTED") {
+      return "REJECTED";
     }
-
-    return String(r.approval_status || "").toUpperCase() === "PENDING";
-
-  };
+    if (appStatus === "PENDING") {
+      return "PENDING";
+    }
+    return "APPROVED";
+  }, [isResidentPending]);
 
   const [filterBlockId, setFilterBlockId] = useState("");
-
   const [filterFloorId, setFilterFloorId] = useState("");
-
   const [filterFlatId, setFilterFlatId] = useState("");
-
   const [filterRole, setFilterRole] = useState("");
+  const [filterApprovalStatus, setFilterApprovalStatus] = useState("");
 
   const [allSocietyFlats, setAllSocietyFlats] = useState([]);
-
   const [formSocietyId, setFormSocietyId] = useState("");
 
 
@@ -7433,62 +7380,40 @@ const [totalPages, setTotalPages] = useState(1);
           ...(filterFlatId ? { flat_id: filterFlatId } : {}),
 
           ...(filterRole ? { role: filterRole } : {}),
-
+          ...(filterApprovalStatus ? { approval_status: filterApprovalStatus } : {}),
         });
-
         const headers = (isSuperAdmin && filterSocietyId) ? { "x-society-id": filterSocietyId } : {};
-
         const res = await API.get(`/users/resident?${params}`, { headers });
-
         const data = Array.isArray(res.data)
-
           ? res.data
-
           : Array.isArray(res.data?.data)
-
           ? res.data.data
-
           : Array.isArray(res.data?.residents)
-
           ? res.data.residents
-
           : [];
-
         setResidents(data);
-
         setTotalAll(res.data.totalAll ?? res.data.pagination?.totalItems ?? 0);
-
         setRoleCounts(res.data?.roleCounts || null);
-
         setTotalPages(res.data.pagination?.totalPages ?? 1);
-
         setTotalItems(res.data.pagination?.totalItems ?? 0);
-
         setPage(pageNum);
-
       } catch (err) {
-
         console.error("Load residents failed", err);
-
       } finally {
-
         setInitialLoad(false);
-
         setFetching(false);
-
       }
-
     },
-
-    [filterSocietyId, filterBlockId, filterFloorId, filterFlatId, filterRole, isSuperAdmin],
-
+    [filterSocietyId, filterBlockId, filterFloorId, filterFlatId, filterRole, filterApprovalStatus, isSuperAdmin],
   );
 
-
-
   const displayedResidents = useMemo(() => {
-
     let list = residents;
+
+    // Filter by approval status (client-side instant reflection)
+    if (filterApprovalStatus) {
+      list = list.filter((r) => getResidentApprovalStatus(r) === filterApprovalStatus);
+    }
 
 
 
@@ -7674,35 +7599,40 @@ const [totalPages, setTotalPages] = useState(1);
 
           );
 
-        case "FAMILY_MEMBER":
+        case "FAMILY_MEMBER": {
+          const isOwner =
+            getResidentDisplayType(r) === "OWNER" ||
+            residentType === "OWNER" ||
+            roles.includes("OWNER") ||
+            r.flats?.some((f) => String(f.role || "").toUpperCase() === "OWNER");
+
+          const isTenant =
+            !isOwner && (
+              getResidentDisplayType(r) === "TENANT" ||
+              residentType === "TENANT" ||
+              roles.includes("TENANT") ||
+              r.flats?.some((f) => String(f.role || "").toUpperCase() === "TENANT")
+            );
+
+          // Primary owners and tenants are never family members
+          if (isOwner || isTenant) return false;
 
           return (
-
             getResidentDisplayType(r) === "FAMILY_MEMBER" ||
-
             residentType === "FAMILY_MEMBER" ||
-
             roles.includes("FAMILY_MEMBER") ||
-
             String(r.role || "").toUpperCase() === "FAMILY_MEMBER" ||
-
             r.flats?.some((f) => String(f.role || "").toUpperCase() === "FAMILY_MEMBER")
-
           );
-
+        }
         case "TENANT":
 
           return residentType === "TENANT" || roles.includes("TENANT");
-
         default:
-
           return true;
-
       }
-
     });
-
-  }, [residents, filterRole, search]);
+  }, [residents, filterRole, search, filterApprovalStatus, getResidentApprovalStatus]);
 
 
 
@@ -8024,19 +7954,14 @@ const [totalPages, setTotalPages] = useState(1);
 
 
 
-  const hasActiveFilters = Boolean(filterBlockId || filterFloorId || filterFlatId || filterRole || (isSuperAdmin && filterSocietyId) || search);
-
-
+  const hasActiveFilters = Boolean(filterBlockId || filterFloorId || filterFlatId || filterRole || filterApprovalStatus || (isSuperAdmin && filterSocietyId) || search);
 
   const handleClearFilters = () => {
-
     setFilterBlockId("");
-
     setFilterFloorId("");
-
     setFilterFlatId("");
-
     setFilterRole("");
+    setFilterApprovalStatus("");
 
     if (isSuperAdmin) {
 
@@ -10668,38 +10593,21 @@ const [totalPages, setTotalPages] = useState(1);
 
           />
 
-
-
           {/* Role Filter */}
-
           <Select
-
             className="input"
-
             style={{ flex: 1, minWidth: 150, height: 42, padding: "8px 12px", borderRadius: 12, fontSize: 13 }}
-
             placeholder={t("selectTheRole", "Select the role")}
-
             value={filterRole}
-
             onChange={(e) => setFilterRole(e.target.value)}
-
           >
-
             <option value="">{t("selectTheRole", "Select the role")}</option>
-
             <option value="SOCIETY_ADMIN">{t("roleSocietyAdmin")}</option>
-
             <option value="ACCOUNTANT">{t("roleAccountant")}</option>
-
             <option value="COMMITTEE_MEMBER">{t("roleCommittee")}</option>
-
             <option value="RESIDENT">{t("roleResident")}</option>
-
             <option value="TENANT">{t("roleTenant")}</option>
-
             <option value="FAMILY_MEMBER">{t("roleFamilyMember", "Family Member")}</option>
-
           </Select>
 
 
@@ -10787,103 +10695,85 @@ const [totalPages, setTotalPages] = useState(1);
             style={{ flex: 1, minWidth: 130, height: 42, padding: "8px 12px", borderRadius: 12, fontSize: 13 }}
 
             value={filterFlatId}
-
             onChange={(e) => setFilterFlatId(e.target.value)}
-
             disabled={!filterBlockId || !flatsList.length}
-
           >
-
             <option value="">{t("allUnits") || "All Units"}</option>
-
             {flatsList.map(f => <option key={f.id} value={f.id}>{f.flat_number}</option>)}
-
           </Select>
 
-
+          {/* Status Filter (Near All Units) */}
+          <Select
+            className="input"
+            style={{ flex: 1, minWidth: 130, height: 42, padding: "8px 12px", borderRadius: 12, fontSize: 13 }}
+            value={filterApprovalStatus}
+            onChange={(e) => {
+              setFilterApprovalStatus(e.target.value);
+              setPage(1);
+            }}
+          >
+            <option value="">{t("allStatus", "All Status")}</option>
+            <option value="APPROVED">{t("statusApproved", "Approved")}</option>
+            <option value="PENDING">{t("statusPending", "Pending")}</option>
+            <option value="REJECTED">{t("statusRejected", "Rejected")}</option>
+          </Select>
 
           {hasActiveFilters && (
-
             <button
-
               type="button"
-
               onClick={handleClearFilters}
-
               style={{
-
                 display: "inline-flex",
-
                 alignItems: "center",
-
                 gap: 5,
-
                 height: 42,
-
                 padding: "0 14px",
-
                 borderRadius: 12,
-
                 background: "rgba(239, 68, 68, 0.10)",
-
                 border: "1px solid rgba(239, 68, 68, 0.22)",
-
                 color: "#f87171",
-
                 fontSize: 12,
-
                 fontWeight: 700,
-
                 cursor: "pointer",
-
                 transition: "all 0.15s ease",
-
                 whiteSpace: "nowrap",
-
               }}
-
               onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(239, 68, 68, 0.18)")}
-
               onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(239, 68, 68, 0.10)")}
-
               title={t("clearAllActiveFilters")}
-
             >
-
               <MdClose size={15} /> {t("colClearFilter") || "Clear Filter"}
-
             </button>
-
           )}
-
         </div>
 
-
-
         {/* Sub-bar with count and active filter indicators */}
-
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "10px 20px", borderBottom: "1px solid var(--divider)", fontSize: 12, color: "var(--text-secondary)", background: "rgba(0,0,0,0.01)", flexWrap: "wrap" }}>
-
           <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-
             <span>
-
               {initialLoad ? "—" : `${displayedResidents.length} ${t("residentTitle")}`}
-
               {search && !initialLoad && ` ${t("matchingQuoted", { q: search })}`}
-
             </span>
-
             {filterRole && (
-
               <span style={{ fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 999, background: "rgba(160,90,255,0.14)", color: "var(--accent)", border: "1px solid rgba(160,90,255,0.25)" }}>
-
                 {t("rolePrefix")} {filterRole.replace(/_/g, " ")}
-
               </span>
-
             )}
-
+            {filterApprovalStatus && (
+              <span
+                style={{
+                  fontSize: 11,
+                  fontWeight: 700,
+                  padding: "2px 8px",
+                  borderRadius: 999,
+                  background: filterApprovalStatus === "APPROVED" ? "rgba(16,185,129,0.14)" : filterApprovalStatus === "PENDING" ? "rgba(245,158,11,0.14)" : "rgba(239,68,68,0.14)",
+                  color: filterApprovalStatus === "APPROVED" ? "#10b981" : filterApprovalStatus === "PENDING" ? "#f59e0b" : "#ef4444",
+                  border: `1px solid ${filterApprovalStatus === "APPROVED" ? "rgba(16,185,129,0.3)" : filterApprovalStatus === "PENDING" ? "rgba(245,158,11,0.3)" : "rgba(239,68,68,0.3)"}`,
+                }}
+              >
+                {filterApprovalStatus === "APPROVED" ? `✓ ${t("statusApproved", "Approved")}` : filterApprovalStatus === "PENDING" ? `⏳ ${t("statusPending", "Pending")}` : `✕ ${t("statusRejected", "Rejected")}`}
+              </span>
+            )}
           </div>
 
           {fetching && (
@@ -10990,7 +10880,9 @@ const [totalPages, setTotalPages] = useState(1);
 
                   {displayedResidents.map((r, idx) => {
 
-                    const isInactive = String(r.status || "").toUpperCase() === "INACTIVE";
+                    const isPending = isResidentPending(r);
+                    const isRejected = String(r.approval_status || "").toUpperCase() === "REJECTED";
+                    const isInactive = !isPending && !isRejected && String(r.status || "").toUpperCase() === "INACTIVE";
 
                     return (
 
@@ -11022,35 +10914,7 @@ const [totalPages, setTotalPages] = useState(1);
 
                             <UserAvatar name={r.name} src={r.profile_picture} size={36} radius="50%" />
 
-                            {isInactive && (
-
-                              <span
-
-                                style={{
-
-                                  position: "absolute",
-
-                                  bottom: -1,
-
-                                  right: -1,
-
-                                  width: 10,
-
-                                  height: 10,
-
-                                  borderRadius: "50%",
-
-                                  background: "#ef4444",
-
-                                  border: "2px solid var(--card-bg, #18181b)",
-
-                                }}
-
-                                title="Inactive"
-
-                              />
-
-                            )}
+                            
 
                           </div>
 
@@ -11074,15 +10938,7 @@ const [totalPages, setTotalPages] = useState(1);
 
                               </div>
 
-                              {isInactive && (
-
-                                <span style={{ fontSize: 9, fontWeight: 700, color: "#ef4444", background: "rgba(239,68,68,0.12)", padding: "1px 5px", borderRadius: 4, border: "1px solid rgba(239,68,68,0.25)", textTransform: "uppercase" }}>
-
-                                  {t("statusInactive", "Inactive")}
-
-                                </span>
-
-                              )}
+                              
 
                             </div>
 
@@ -11112,9 +10968,7 @@ const [totalPages, setTotalPages] = useState(1);
 
                       <td style={{ padding: "14px 16px" }}>
 
-                        <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 5 }}>
-
-                          <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
 
                             {(r.is_vacated || r.occupancy_status === "VACATED") ? (
 
@@ -11158,11 +11012,13 @@ const [totalPages, setTotalPages] = useState(1);
 
                             )}
 
-                            <ResidentStatusBadge status={r.status} />
-
-                          </div>
-
-                          {isResidentPending(r) && <PendingApprovalBadge />}
+                            {isPending ? (
+                              <PendingApprovalBadge />
+                            ) : isRejected ? (
+                              <RejectedApprovalBadge />
+                            ) : isInactive ? (
+                              <ResidentStatusBadge status={r.status} />
+                            ) : null}
 
                         </div>
 
@@ -11374,7 +11230,9 @@ const [totalPages, setTotalPages] = useState(1);
 
                           isSocietyAdmin={!!r.roles?.some((role) => String(role).toUpperCase() === "SOCIETY_ADMIN")}
 
-                          isTenant={r.resident_type === "TENANT"}
+                          isTenant={getResidentDisplayType(r) === "TENANT"}
+
+                          isOwner={getResidentDisplayType(r) === "OWNER"}
 
                           isPendingApproval={isResidentPending(r)}
 
@@ -11385,6 +11243,10 @@ const [totalPages, setTotalPages] = useState(1);
                           onReject={() => setRejectTarget(r)}
 
                           onPromote={() => {
+if (getResidentDisplayType(r) !== "OWNER") {
+  toast.error("Only flat owners can become committee members. Tenants and family members are not eligible.");
+  return;
+}
 
                             const socList = r.societies && r.societies.length > 0 ? r.societies : (r.society_id ? [{ id: r.society_id, name: r.society_name }] : []);
 
@@ -11432,7 +11294,9 @@ const [totalPages, setTotalPages] = useState(1);
 
                {displayedResidents.map((r) => {
 
-                 const isInactive = String(r.status || "").toUpperCase() === "INACTIVE";
+                 const isPending = isResidentPending(r);
+                 const isRejected = String(r.approval_status || "").toUpperCase() === "REJECTED";
+                 const isInactive = !isPending && !isRejected && String(r.status || "").toUpperCase() === "INACTIVE";
 
                  return (
 
@@ -11462,7 +11326,7 @@ const [totalPages, setTotalPages] = useState(1);
 
                        <div style={{ display: "flex", alignItems: "center", gap: 5, flexWrap: "wrap", marginTop: 6 }}>
 
-                         <ResidentStatusBadge status={r.status} />
+                         
 
                          {(r.is_vacated || r.occupancy_status === "VACATED") ? (
 
@@ -11506,7 +11370,13 @@ const [totalPages, setTotalPages] = useState(1);
 
                          )}
 
-                         {isResidentPending(r) && <PendingApprovalBadge />}
+                         {isPending ? (
+                            <PendingApprovalBadge />
+                          ) : isRejected ? (
+                            <RejectedApprovalBadge />
+                          ) : isInactive ? (
+                            <ResidentStatusBadge status={r.status} />
+                          ) : null}
 
                          {r.flats && r.flats.length > 0 ? (
 
@@ -11596,7 +11466,9 @@ const [totalPages, setTotalPages] = useState(1);
 
                            isSocietyAdmin={!!r.roles?.some((role) => String(role).toUpperCase() === "SOCIETY_ADMIN")}
 
-                           isTenant={r.resident_type === "TENANT"}
+                           isTenant={getResidentDisplayType(r) === "TENANT"}
+
+                           isOwner={getResidentDisplayType(r) === "OWNER"}
 
                            isPendingApproval={isResidentPending(r)}
 
@@ -11607,6 +11479,10 @@ const [totalPages, setTotalPages] = useState(1);
                            onReject={() => setRejectTarget(r)}
 
                            onPromote={() => {
+if (getResidentDisplayType(r) !== "OWNER") {
+  toast.error("Only flat owners can become committee members. Tenants and family members are not eligible.");
+  return;
+}
 
                              const socList = r.societies && r.societies.length > 0 ? r.societies : (r.society_id ? [{ id: r.society_id, name: r.society_name }] : []);
 

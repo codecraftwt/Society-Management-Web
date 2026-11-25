@@ -5644,239 +5644,255 @@ html.light div[style*="position: fixed"]:not(.media-lightbox-overlay) > div[styl
 
 /* Parking Slot Card */
 .ps-slot-card {
-  background: #0B1120;
-  border: 1px solid #1E293B;
-  border-radius: 12px;
-  padding: 12px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  gap: 10px;
-  transition: all 0.2s ease;
-  position: relative;
-  overflow: hidden;
+  --ui-card-padding-record: 11px 13px !important;
+  --ui-card-gap-lg: 7px !important;
+  --ui-card-icon-size: 32px !important;
+  --ui-card-icon-radius: 8px !important;
+  border-radius: 14px !important;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  background: var(--card-bg, #0B1120);
+  border: 1px solid var(--glass-border, #1E293B);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+  min-height: 0 !important;
 }
 .ps-slot-card:hover {
   transform: translateY(-2px);
-  border-color: #334155;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  border-color: var(--accent, #3b82f6);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
 }
-.ps-slot-card--available,
-.ps-slot-card--occupied {
-  border-top: none;
+.ps-slot-card .ui-record-card__header {
+  align-items: center !important;
+  gap: 9px !important;
 }
-
-/* Card Header */
-.ps-card-top {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 10px;
+.ps-slot-card .ui-record-card__title-wrap {
+  gap: 1px !important;
 }
-.ps-card-left-header {
+.ps-title-row {
   display: flex;
   align-items: center;
-  gap: 10px;
-}
-.ps-type-icon {
-  width: 32px;
-  height: 32px;
-  border-radius: 9px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-.ps-type-icon--car {
-  background: rgba(59, 130, 246, 0.12);
-  color: #60A5FA;
-  border: 1px solid rgba(59, 130, 246, 0.25);
-}
-.ps-type-icon--bike {
-  background: rgba(168, 85, 247, 0.12);
-  color: #C084FC;
-  border: 1px solid rgba(168, 85, 247, 0.25);
-}
-.ps-slot-number-row {
-  display: flex;
-  align-items: baseline;
-  gap: 5px;
-}
-.ps-slot-label {
-  font-size: 0.6875rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  color: #64748B;
-  letter-spacing: 0.05em;
+  gap: 6px;
 }
 .ps-slot-number {
-  font-size: 0.9rem;
-  font-weight: 700;
-  color: #F8FAFC;
+  font-size: 0.95rem;
+  font-weight: 750;
+  color: var(--text-primary, #F8FAFC);
   margin: 0;
   letter-spacing: -0.01em;
+  line-height: 1.2;
 }
 .ps-slot-meta {
-  font-size: 0.725rem;
-  color: #94A3B8;
+  font-size: 0.72rem;
+  color: var(--text-secondary, #94A3B8);
   display: block;
-  margin-top: 1px;
+  line-height: 1.3;
 }
 
-/* Card Middle */
-.ps-card-middle {
-  min-height: 44px;
-  display: flex;
+/* Status Pill */
+.ps-status-pill {
+  display: inline-flex;
   align-items: center;
+  gap: 5px;
+  padding: 2.5px 8.5px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0.02em;
+  border: 1px solid transparent;
+  white-space: nowrap;
 }
-.ps-avail-bay {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 0.75rem;
-  color: var(--text-secondary, #94A3B8);
-  background: var(--card-inner-bg, rgba(255, 255, 255, 0.03));
-  border: 1px dashed var(--card-inner-border, rgba(255, 255, 255, 0.12));
-  border-radius: 8px;
-  padding: 8px 10px;
-  width: 100%;
+.ps-status-pill--avail {
+  background: rgba(16, 185, 129, 0.12);
+  color: #10B981;
+  border-color: rgba(16, 185, 129, 0.25);
 }
-.ps-avail-dot {
+.ps-status-pill--avail .ps-status-dot {
+  background: #10B981;
+  box-shadow: 0 0 6px rgba(16, 185, 129, 0.6);
+}
+.ps-status-pill--occ {
+  background: rgba(99, 102, 241, 0.12);
+  color: #818CF8;
+  border-color: rgba(99, 102, 241, 0.25);
+}
+.ps-status-pill--occ .ps-status-dot {
+  background: #818CF8;
+}
+.ps-status-dot {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: var(--text-secondary, #94A3B8);
+  display: inline-block;
   flex-shrink: 0;
 }
-.ps-avail-bay-text {
-  font-weight: 500;
-}
-.ps-occupied-details {
-  width: 100%;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 8px;
-  padding: 8px 10px;
-}
-.ps-resident-name-row {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex-wrap: wrap;
-}
-.ps-flat-badge {
-  font-size: 0.6875rem;
-  font-weight: 700;
-  color: #60A5FA;
-  background: rgba(59, 130, 246, 0.14);
-  border: 1px solid rgba(59, 130, 246, 0.28);
-  padding: 1px 6px;
-  border-radius: 4px;
-}
-.ps-resident-name {
-  font-size: 0.8125rem;
-  font-weight: 600;
-  color: #F8FAFC;
-}
-.ps-vehicle-tag {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-top: 4px;
-  font-size: 0.725rem;
-}
-.ps-vehicle-plate {
-  font-family: monospace;
-  font-weight: 600;
-  color: #94A3B8;
-  background: rgba(0, 0, 0, 0.25);
-  padding: 1px 5px;
-  border-radius: 4px;
-}
-.ps-vehicle-model {
-  font-size: 0.7rem;
-  color: #64748B;
-}
-.ps-no-resident-tag {
-  font-size: 0.75rem;
-  color: #94A3B8;
-  font-style: italic;
-}
 
-/* Card Footer */
-.ps-card-footer {
+/* Card Middle / Bay Strip */
+.ps-card-middle {
+  margin: 2px 0;
+  width: 100%;
+}
+.ps-bay-strip {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 6px;
-  border-top: 1px solid #1E293B;
-  padding-top: 10px;
-  margin-top: 4px;
+  gap: 8px;
+  height: 34px;
+  padding: 0 9px;
+  border-radius: 8px;
+  font-size: 12px;
+  transition: all 0.2s ease;
+  width: 100%;
+  box-sizing: border-box;
 }
-.ps-card-actions {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  margin-top: 10px;
-  padding-top: 10px;
-  border-top: 1px solid var(--glass-border, rgba(255, 255, 255, 0.08));
+.ps-bay-strip--avail {
+  background: rgba(16, 185, 129, 0.06);
+  border: 1px dashed rgba(16, 185, 129, 0.25);
+  color: #10B981;
 }
-.ps-card-btn {
+.ps-bay-strip--avail .ps-bay-icon {
+  opacity: 0.85;
+  color: #10B981;
+  flex-shrink: 0;
+}
+.ps-bay-strip--avail .ps-bay-text {
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  font-size: 11.5px;
+}
+.ps-bay-strip--occ {
+  background: var(--card-inner-bg, rgba(255, 255, 255, 0.04));
+  border: 1px solid var(--card-inner-border, rgba(255, 255, 255, 0.08));
+  color: var(--text-primary, #F8FAFC);
+}
+.ps-bay-avatar {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #6366F1, #A855F7);
+  color: #FFFFFF;
+  font-size: 11px;
+  font-weight: 700;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 5px;
-  font-size: 0.75rem;
-  font-weight: 650;
-  letter-spacing: 0.01em;
-  height: 32px;
-  padding: 0 12px;
+  flex-shrink: 0;
+}
+.ps-bay-resident-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  flex: 1;
+}
+.ps-bay-resident-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary, #F8FAFC);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ps-bay-flat-pill {
+  font-size: 10px;
+  font-weight: 700;
+  color: #60A5FA;
+  background: rgba(59, 130, 246, 0.14);
+  border: 1px solid rgba(59, 130, 246, 0.25);
+  padding: 1px 5px;
+  border-radius: 4px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.ps-bay-plate {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: #94A3B8;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 1px 5px;
+  border-radius: 4px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  letter-spacing: 0.02em;
+}
+
+/* Card Footer & Icon Action Buttons */
+.ps-slot-card .ui-record-card__footer {
+  margin-top: 4px !important;
+  padding-top: 7px !important;
+  border-top: 1px solid var(--glass-border, rgba(255, 255, 255, 0.08)) !important;
+  gap: 6px !important;
+}
+.ps-slot-tag-chip {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary, #94A3B8);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.ps-card-actions-cluster {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.ps-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
   border-radius: 8px;
   border: 1px solid transparent;
   cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-  white-space: nowrap;
-}
-.ps-card-btn:active {
-  transform: scale(0.98);
-}
-.ps-card-btn--allocate {
-  flex: 1;
-  background: linear-gradient(180deg, #3B82F6 0%, #2563EB 100%);
-  color: #FFFFFF;
-  border-color: #1D4ED8;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.2);
-}
-.ps-card-btn--allocate:hover {
-  background: linear-gradient(180deg, #2563EB 0%, #1D4ED8 100%);
-  color: #FFFFFF;
-  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.2);
-  transform: translateY(-1px);
-}
-.ps-card-btn--edit {
-  flex: 0 0 auto;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  outline: none;
   background: var(--card-inner-bg, rgba(255, 255, 255, 0.05));
   color: var(--text-secondary, #94A3B8);
-  border-color: var(--card-inner-border, rgba(255, 255, 255, 0.12));
 }
-.ps-card-btn--edit:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: var(--text-primary, #FFFFFF);
-  border-color: rgba(255, 255, 255, 0.22);
+.ps-icon-btn:hover {
   transform: translateY(-1px);
 }
-.ps-card-btn--release {
-  flex: 1;
-  background: linear-gradient(180deg, #6366F1 0%, #4F46E5 100%);
+.ps-icon-btn:active {
+  transform: scale(0.94);
+}
+
+/* Allocate icon button (vibrant blue gradient) */
+.ps-icon-btn--allocate {
+  background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);
+  color: #FFFFFF;
+  border-color: #1D4ED8;
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.28);
+}
+.ps-icon-btn--allocate:hover {
+  background: linear-gradient(135deg, #60A5FA 0%, #2563EB 100%);
+  color: #FFFFFF;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.45);
+}
+
+/* Release icon button (vibrant indigo/purple gradient) */
+.ps-icon-btn--release {
+  background: linear-gradient(135deg, #6366F1 0%, #4F46E5 100%);
   color: #FFFFFF;
   border-color: #4338CA;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  box-shadow: 0 2px 6px rgba(99, 102, 241, 0.28);
 }
-.ps-card-btn--release:hover {
-  background: linear-gradient(180deg, #4F46E5 0%, #4338CA 100%);
+.ps-icon-btn--release:hover {
+  background: linear-gradient(135deg, #818CF8 0%, #4F46E5 100%);
   color: #FFFFFF;
-  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.2);
-  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.45);
+}
+
+/* Edit icon button (subtle glass) */
+.ps-icon-btn--edit {
+  background: var(--card-inner-bg, rgba(255, 255, 255, 0.05));
+  color: var(--text-secondary, #94A3B8);
+  border-color: var(--glass-border, rgba(255, 255, 255, 0.12));
+}
+.ps-icon-btn--edit:hover {
+  background: var(--card-inner-bg-hover, rgba(255, 255, 255, 0.12));
+  color: var(--text-primary, #FFFFFF);
+  border-color: var(--accent, #6366F1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 .ps-tag-pill {
   font-size: 0.6875rem;

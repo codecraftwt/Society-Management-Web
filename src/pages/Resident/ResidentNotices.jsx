@@ -396,42 +396,165 @@ const [totalPages, setTotalPages] = useState(1);
           title={selectedNotice.title}
           subtitle={t("noticePublishedOn", { date: formatDate(selectedNotice.created_at) })}
           icon={MdCampaign}
-          size="md"
+          size="lg"
+          style={{ maxWidth: 660 }}
+          bodyStyle={{ padding: "20px 24px" }}
         >
-          <div className="space-y-5">
+          <div className="space-y-4">
             {/* Acknowledgement Status Header Banner */}
             {selectedNotice.acknowledgement_required && (
-              <div
-                className={`p-3.5 rounded-xl border flex items-center justify-between gap-3 ${
-                  selectedNotice.acknowledgement_status === "ACKNOWLEDGED"
-                    ? "bg-emerald-500/10 border-emerald-500/25 text-emerald-400"
-                    : "bg-amber-500/10 border-amber-500/25 text-amber-400"
-                }`}
-              >
-                <div className="flex items-center gap-2.5">
-                  {selectedNotice.acknowledgement_status === "ACKNOWLEDGED" ? (
-                    <MdDoneAll size={20} />
-                  ) : (
-                    <MdWarning size={20} />
-                  )}
+              selectedNotice.acknowledgement_status === "ACKNOWLEDGED" ? (
+                <div
+                  className="p-3.5 px-4 rounded-xl flex items-center gap-3"
+                  style={{
+                    background: "rgba(16, 185, 129, 0.08)",
+                    border: "1px solid rgba(16, 185, 129, 0.25)",
+                    color: "#059669",
+                  }}
+                >
+                  <div className="w-8 h-8 rounded-lg bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                    <MdDoneAll size={18} />
+                  </div>
                   <div>
-                    <p className="text-xs font-bold uppercase tracking-wider">
-                      {selectedNotice.acknowledgement_status === "ACKNOWLEDGED"
-                        ? t("noticeAckDoneTitle")
-                        : t("noticeAckReqTitle")}
-                    </p>
-                    <p className="text-[11px] opacity-80 mt-0.5">
-                      {selectedNotice.acknowledgement_status === "ACKNOWLEDGED"
+                    <span className="text-xs font-bold text-emerald-700 dark:text-emerald-400 block">
+                      {t("noticeAckDoneTitle", "Notice Acknowledged")}
+                    </span>
+                    <span className="text-[11px] text-secondary block mt-0.5">
+                      {selectedNotice.acknowledged_at
                         ? t("noticeAckOnDate", { date: formatDate(selectedNotice.acknowledged_at) })
-                        : t("noticeAckReadHint")}
-                    </p>
+                        : "You confirmed receipt of this notice"}
+                    </span>
                   </div>
                 </div>
+              ) : (
+                <div
+                  className="p-3.5 px-4 rounded-xl flex items-center justify-between gap-3"
+                  style={{
+                    background: "rgba(245, 158, 11, 0.08)",
+                    border: "1px solid rgba(245, 158, 11, 0.28)",
+                  }}
+                >
+                  <div className="flex items-center gap-3">
+                    <div
+                      className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+                      style={{
+                        background: "rgba(245, 158, 11, 0.15)",
+                        color: "#d97706",
+                      }}
+                    >
+                      <MdWarning size={18} />
+                    </div>
+                    <div>
+                      <span className="text-xs font-bold uppercase tracking-wider block text-amber-700 dark:text-amber-400">
+                        {t("noticeAckReqTitle", "Acknowledgement Required")}
+                      </span>
+                      <span className="text-[11px] text-secondary block mt-0.5">
+                        {t("noticeAckReadHint", "Please read carefully and click 'Mark as Read' below to confirm.")}
+                      </span>
+                    </div>
+                  </div>
 
-                {selectedNotice.acknowledgement_status !== "ACKNOWLEDGED" && (
+                  <button
+                    type="button"
+                    disabled={ackLoading}
+                    onClick={() => handleAcknowledgeNotice(selectedNotice.id)}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-white transition-all active:scale-95 cursor-pointer shadow-xs shrink-0"
+                    style={{
+                      background: "linear-gradient(135deg, var(--accent, #6366f1) 0%, #4f46e5 100%)",
+                      boxShadow: "0 3px 10px rgba(99, 102, 241, 0.3)",
+                    }}
+                  >
+                    <MdCheckCircle size={14} />
+                    <span>{ackLoading ? "..." : (t("noticeMarkAsRead") || "Mark as Read")}</span>
+                  </button>
+                </div>
+              )
+            )}
+
+            {/* Notice Body */}
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between text-[11px] font-bold text-secondary uppercase tracking-wider px-1">
+                <span>{t("noticeDetailsTitle", "Notice Details")}</span>
+                <span className="text-[11px] font-semibold text-secondary lowercase">
+                  {timeAgo(selectedNotice.created_at)}
+                </span>
+              </div>
+
+              <div
+                className="p-4 sm:p-5 rounded-2xl border"
+                style={{
+                  background: "var(--card-inner-bg, rgba(0,0,0,0.02))",
+                  borderColor: "var(--divider, rgba(99, 102, 241, 0.12))",
+                }}
+              >
+                <p className="text-sm leading-relaxed text-primary font-normal whitespace-pre-line m-0 select-text">
+                  {selectedNotice.description}
+                </p>
+              </div>
+            </div>
+
+            {/* Attachment Section */}
+            {selectedNotice.file_url && (
+              <div className="space-y-1.5">
+                <span className="text-[11px] font-bold text-secondary uppercase tracking-wider block px-1">
+                  {t("noticeAttachmentTitle", "Attachment")}
+                </span>
+                <div
+                  className="flex items-center justify-between gap-3 p-3 px-4 rounded-xl border transition-colors hover:border-accent/40"
+                  style={{
+                    background: "var(--card-inner-bg, rgba(0,0,0,0.02))",
+                    borderColor: "var(--divider, rgba(99, 102, 241, 0.15))",
+                  }}
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div
+                      className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
+                      style={{
+                        background: "rgba(99, 102, 241, 0.12)",
+                        color: "var(--accent, #6366f1)",
+                      }}
+                    >
+                      <MdAttachFile size={18} />
+                    </div>
+                    <div className="min-w-0">
+                      <span className="text-xs font-bold text-primary block truncate">
+                        {selectedNotice.file_name || "Official Circular / Document"}
+                      </span>
+                      <span className="text-[11px] text-secondary block mt-0.5">
+                        Attached document file
+                      </span>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => handleFileView(selectedNotice.file_url)}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-accent hover:bg-accent/10 transition-colors shrink-0 cursor-pointer"
+                    style={{ border: "1px solid rgba(99, 102, 241, 0.25)" }}
+                  >
+                    <span>{t("noticeViewFile", "View Document")}</span>
+                    <MdOpenInNew size={14} />
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Action Footer */}
+            <div className="pt-3 border-t border-divider flex items-center justify-between gap-3">
+              <div className="text-[11px] text-secondary">
+                {selectedNotice.acknowledgement_status === "ACKNOWLEDGED" ? (
+                  <span className="text-emerald-500 font-semibold inline-flex items-center gap-1">
+                    <MdCheckCircle size={14} /> Confirmed
+                  </span>
+                ) : (
+                  <span>Official Society Notice</span>
+                )}
+              </div>
+
+              <div className="flex items-center gap-2">
+                {selectedNotice.acknowledgement_required && selectedNotice.acknowledgement_status !== "ACKNOWLEDGED" && (
                   <GlobalButton
                     variant="primary"
-                    size="sm"
                     icon={MdCheckCircle}
                     onClick={() => handleAcknowledgeNotice(selectedNotice.id)}
                     loading={ackLoading}
@@ -439,51 +562,10 @@ const [totalPages, setTotalPages] = useState(1);
                     {t("noticeMarkAsRead") || "Mark as Read"}
                   </GlobalButton>
                 )}
-              </div>
-            )}
-
-            {/* Notice Body */}
-            <div className="space-y-2">
-              <h4 className="text-xs font-semibold text-secondary uppercase tracking-wider">{t("noticeDetailsTitle")}</h4>
-              <p className="text-sm text-primary leading-relaxed whitespace-pre-line bg-white/5 p-4 rounded-xl border border-white/5">
-                {selectedNotice.description}
-              </p>
-            </div>
-
-            {/* Attachment Section */}
-            {selectedNotice.file_url && (
-              <div className="space-y-2">
-                <h4 className="text-xs font-semibold text-secondary uppercase tracking-wider">{t("noticeAttachmentTitle")}</h4>
-                <button
-                  type="button"
-                  onClick={() => handleFileView(selectedNotice.file_url)}
-                  className="w-full flex items-center justify-between p-3.5 rounded-xl bg-blue-500/10 border border-blue-500/25 text-accent hover:bg-blue-500/20 transition-colors"
-                >
-                  <div className="flex items-center gap-2.5">
-                    <MdAttachFile size={18} />
-                    <span className="text-xs font-semibold">{t("noticeViewFile")}</span>
-                  </div>
-                  <MdOpenInNew size={16} />
-                </button>
-              </div>
-            )}
-
-            {/* Action Footer */}
-            <div className="pt-3 border-t border-white/10 flex items-center justify-end gap-3">
-              {selectedNotice.acknowledgement_required && selectedNotice.acknowledgement_status !== "ACKNOWLEDGED" ? (
-                <GlobalButton
-                  variant="primary"
-                  icon={MdCheckCircle}
-                  onClick={() => handleAcknowledgeNotice(selectedNotice.id)}
-                  loading={ackLoading}
-                >
-                  {t("noticeMarkAsRead") || "Mark as Read"}
+                <GlobalButton variant="secondary" onClick={handleAttemptClose}>
+                  {t("close", "Close")}
                 </GlobalButton>
-              ) : (
-                <GlobalButton variant="secondary" onClick={() => setSelectedNotice(null)}>
-                  {t("close")}
-                </GlobalButton>
-              )}
+              </div>
             </div>
           </div>
         </GlobalModal>

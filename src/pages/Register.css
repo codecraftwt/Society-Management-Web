@@ -2718,6 +2718,30 @@ html.light .reg-step-label.active {
   }
 }
 
+/* Keep the first-step search control below the progress labels. Some of the
+   compact registration rules allow the wizard and form scroll area to touch,
+   which clips the search field's top edge. */
+.reg-steps-wizard {
+  position: relative !important;
+  z-index: 2 !important;
+  margin-bottom: 18px !important;
+}
+
+.reg-form-scroll {
+  position: relative !important;
+  z-index: 1 !important;
+  margin-top: 0 !important;
+  padding-top: 2px !important;
+  overflow-x: visible !important;
+}
+
+.reg-search-wrap {
+  position: relative !important;
+  z-index: 3 !important;
+  margin-top: 0 !important;
+  flex: 0 0 48px !important;
+}
+
 /* Final sizing for the right registration pane. */
 .reg-layout { width: 100% !important; min-height: 100dvh !important; height: 100dvh !important; }
 .reg-visual-panel { flex: 0 0 50% !important; width: 50% !important; min-width: 0 !important; max-width: 50% !important; height: 100dvh !important; min-height: 100dvh !important; }
@@ -5973,4 +5997,99 @@ html:not(.light) .auth-lang-option:hover,
 html:not(.light) .auth-lang-option.active {
   background: rgba(59, 130, 246, 0.15) !important;
   color: #60a5fa !important;
+}
+
+/* Final responsive registration layout. Keep the visual panel for desktop,
+   but give the multi-step form the full viewport on phones. */
+@media (max-width: 768px) {
+  html:has(.reg-root),
+  body:has(.reg-root) {
+    overflow: auto !important;
+  }
+
+  .reg-root {
+    display: block !important;
+    width: 100% !important;
+    min-height: 100dvh !important;
+    height: auto !important;
+    padding: 78px 0 16px !important;
+    overflow: visible !important;
+  }
+
+  .reg-root .home-navbar {
+    width: calc(100% - 24px) !important;
+  }
+
+  .reg-layout {
+    display: block !important;
+    width: 100% !important;
+    min-height: 0 !important;
+    height: auto !important;
+    overflow: visible !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    background: transparent !important;
+  }
+
+  .reg-visual-panel {
+    display: none !important;
+  }
+
+  .reg-card {
+    width: 100% !important;
+    height: auto !important;
+    min-height: calc(100dvh - 94px) !important;
+    padding: 20px 16px 24px !important;
+    border-radius: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  .reg-header,
+  .reg-steps-wizard,
+  .reg-form-scroll,
+  .reg-footer {
+    width: 100% !important;
+    max-width: 560px !important;
+  }
+
+  .reg-form-scroll {
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+    flex: 0 0 auto !important;
+  }
+
+  .reg-header {
+    margin-top: 0 !important;
+  }
+
+  .reg-title {
+    font-size: clamp(1.5rem, 7vw, 2rem) !important;
+  }
+
+  .reg-fields,
+  .reg-btn-row {
+    width: 100% !important;
+  }
+
+  .reg-btn-row {
+    flex-wrap: wrap !important;
+  }
+}
+
+@media (max-width: 420px) {
+  .reg-root {
+    padding-top: 70px !important;
+  }
+
+  .reg-card {
+    min-height: calc(100dvh - 86px) !important;
+    padding-right: 14px !important;
+    padding-left: 14px !important;
+  }
+
+  .reg-step-label {
+    font-size: 0.5rem !important;
+  }
 }

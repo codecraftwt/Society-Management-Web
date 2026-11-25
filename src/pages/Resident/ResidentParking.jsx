@@ -338,7 +338,7 @@ export default function ResidentParking() {
       setSuccessMessage("Parking request updated successfully!");
       setEditModalOpen(false);
       setEditingRequest(null);
-      fetchData(page, filter, debouncedSearch);
+      fetchData(page, filter, debouncedSearch, typeFilter);
     } catch (err) {
       setEditError(err.response?.data?.message || "Failed to update parking request");
     } finally {
@@ -359,7 +359,7 @@ export default function ResidentParking() {
       setSuccessMessage("Parking request cancelled successfully!");
       setDeleteModalOpen(false);
       setDeletingRequest(null);
-      fetchData(page, filter, debouncedSearch);
+      fetchData(page, filter, debouncedSearch, typeFilter);
     } catch (err) {
       setErrorMessage(err.response?.data?.message || "Failed to cancel parking request");
       setDeleteModalOpen(false);
@@ -403,6 +403,7 @@ export default function ResidentParking() {
   // ── Search & filter ──
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("ALL");
+  const [typeFilter, setTypeFilter] = useState("ALL"); // ALL | RESIDENT | VISITOR
   const debouncedSearch = useDebounce(search, 500);
 
   // ── Pagination ──
@@ -472,7 +473,7 @@ useEffect(() => {
 
   /* ── Fetch requests ── */
   const fetchData = useCallback(async (
-    pageNum, currentFilter, currentSearch, isInitial = false
+    pageNum, currentFilter, currentSearch, currentType = "ALL", isInitial = false
   ) => {
     if (isInitial) setInitialLoad(true);
     else setFetching(true);
@@ -482,7 +483,7 @@ useEffect(() => {
         page:   pageNum,
         limit: limitRef.current,
         filter: currentFilter,
-        parking_type: "ALL",   // show guest (VISITOR) + resident extra-slot requests
+        parking_type: currentType,   // ALL | RESIDENT | VISITOR
         ...(currentSearch ? { search: currentSearch } : {}),
       });
 
@@ -503,20 +504,26 @@ useEffect(() => {
 
   // ── First load ──
   useEffect(() => {
-    fetchData(1, "ALL", "", true);
+    fetchData(1, "ALL", "", "ALL", true);
     loadParkingContext();
   }, [fetchData, loadParkingContext]);
 
-  // ── Re-fetch on search/filter change ──
+  // ── Re-fetch on search/filter/typeFilter change ──
   useEffect(() => {
     if (initialLoad) return;
-    fetchData(1, filter, debouncedSearch);
-  }, [debouncedSearch, filter, initialLoad, fetchData]);
+    fetchData(1, filter, debouncedSearch, typeFilter);
+  }, [debouncedSearch, filter, typeFilter, initialLoad, fetchData]);
 
   const handleFilterChange = (newFilter) => setFilter(newFilter);
 
+  const handleTypeFilterChange = (newType) => {
+    setTypeFilter(newType);
+    setPage(1);
+    fetchData(1, filter, debouncedSearch, newType);
+  };
+
   const handlePageChange = (newPage) =>
-    fetchData(newPage, filter, debouncedSearch);
+    fetchData(newPage, filter, debouncedSearch, typeFilter);
 
   /* ── Submit new guest parking request ── */
   const handleGuestSubmit = async (e) => {
@@ -651,6 +658,31 @@ useEffect(() => {
     if (status === "REJECTED")  return t("parkStatusRejected");
     if (status === "COMPLETED") return t("parkStatusCompleted"); // ✅ ADDED
     return t("parkStatusPending");
+  };
+
+  const renderTypeBadge = (parkingType) => {
+    const isResident = parkingType === "RESIDENT";
+    return (
+      <span
+        className={`inline-flex items-center gap-1.5 px-3 py-1 text-xs font-bold rounded-full border whitespace-nowrap shadow-sm ${
+          isResident
+            ? "bg-indigo-500/20 text-indigo-300 border-indigo-500/40"
+            : "bg-amber-500/20 text-amber-300 border-amber-500/40"
+        }`}
+      >
+        {isResident ? (
+          <>
+            <MdApartment size={13} className="text-indigo-400" />
+            <span>Permanent (Resident)</span>
+          </>
+        ) : (
+          <>
+            <MdDirectionsCar size={13} className="text-amber-400" />
+            <span>Temporary (Guest)</span>
+          </>
+        )}
+      </span>
+    );
   };
 
   const filterTabs = [
@@ -1292,12 +1324,26 @@ useEffect(() => {
 
         {/* Toolbar — search + filter */}
         {!initialLoad && (
-          <div className="ge-toolbar mb-4">
-            <ExpandableSearch
-              placeholder={t("visSearch") || "Search guest, vehicle…"}
-              value={search}
-              onChange={setSearch}
-            />
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 mb-4">
+            <div className="flex flex-wrap items-center gap-2 flex-1">
+              <ExpandableSearch
+                placeholder={t("visSearch") || "Search guest, vehicle…"}
+                value={search}
+                onChange={setSearch}
+              />
+
+              <div className="flex items-center gap-2">
+                <Select
+                  value={typeFilter}
+                  onChange={(e) => handleTypeFilterChange(e.target.value)}
+                  className="input h-10 text-xs px-3 rounded-xl border border-white/10 bg-white/5 font-medium"
+                >
+                  <option value="ALL">All Types (Permanent & Temporary)</option>
+                  <option value="RESIDENT">Permanent (Resident Only)</option>
+                  <option value="VISITOR">Temporary (Guest Only)</option>
+                </Select>
+              </div>
+            </div>
 
             <SlidingTabs
               className="gp-filter-tabs"
@@ -1348,71 +1394,101 @@ useEffect(() => {
           <>
             {/* MOBILE CARDS */}
             <div className="md:hidden space-y-4">
-              {requests.map((r, i) => (
-                <div
-                  key={r.id}
-                  className="rounded-xl overflow-hidden animate-fadeIn"
-                  style={{
-                    animationDelay: `${i * 35}ms`,
-                    background: "var(--card-inner-bg)",
-                    border: "1px solid var(--glass-border)",
-                  }}
-                >
-                  <div style={{
-                    height: 3,
-                    background:
-                      r.status === "APPROVED"  ? "linear-gradient(90deg,#34d399,#059669)"
-                      : r.status === "REJECTED"  ? "linear-gradient(90deg,#f87171,#dc2626)"
-                      : r.status === "COMPLETED" ? "linear-gradient(90deg,#9F87D7,#5A3BA2)" // ✅ ADDED
-                      : "linear-gradient(90deg,#4BCBEB,var(--accent))",
-                  }} />
-                  <div className="p-4 space-y-3">
-                    <div className="flex justify-between items-start gap-2">
-                      <div>
-                        <p className="font-bold text-sm" style={{ color: "var(--text-primary)" }}>{r.guest_name}</p>
-                        <p className="text-xs text-secondary mt-0.5 flex items-center gap-1">
-                          {r.vehicle_type === "BIKE"
-                            ? <MdTwoWheeler size={12} />
-                            : <MdDirectionsCar size={12} />}
-                          {r.vehicle_number}
-                        </p>
+              {requests.map((r, i) => {
+                const isGuest = r.parking_type === "VISITOR";
+                return (
+                  <div
+                    key={r.id}
+                    className={`rounded-xl overflow-hidden animate-fadeIn border-l-4 ${
+                      isGuest ? "border-l-amber-500 bg-amber-500/[0.02]" : "border-l-indigo-500 bg-indigo-500/[0.02]"
+                    }`}
+                    style={{
+                      animationDelay: `${i * 35}ms`,
+                      background: "var(--card-inner-bg)",
+                      borderTop: "1px solid var(--glass-border)",
+                      borderRight: "1px solid var(--glass-border)",
+                      borderBottom: "1px solid var(--glass-border)",
+                    }}
+                  >
+                    <div style={{
+                      height: 3,
+                      background:
+                        isGuest
+                          ? "linear-gradient(90deg, #f59e0b, #d97706)"
+                          : r.status === "APPROVED"  ? "linear-gradient(90deg,#34d399,#059669)"
+                          : r.status === "REJECTED"  ? "linear-gradient(90deg,#f87171,#dc2626)"
+                          : r.status === "COMPLETED" ? "linear-gradient(90deg,#9F87D7,#5A3BA2)"
+                          : "linear-gradient(90deg,#6366f1, #8b5cf6)",
+                    }} />
+                    <div className="p-4 space-y-3">
+                      <div className="flex justify-between items-start gap-2">
+                        <div>
+                          <div className="mb-2">
+                            {renderTypeBadge(r.parking_type)}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <p className="font-bold text-sm" style={{ color: "var(--text-primary)" }}>{r.guest_name}</p>
+                            <span className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full border ${
+                              isGuest
+                                ? "bg-amber-500/15 text-amber-400 border-amber-500/30"
+                                : "bg-indigo-500/15 text-indigo-300 border-indigo-500/30"
+                            }`}>
+                              <span className={`w-1.5 h-1.5 rounded-full ${isGuest ? "bg-amber-400" : "bg-indigo-400"}`} />
+                              {isGuest ? "Guest Pass" : "Resident"}
+                            </span>
+                          </div>
+                          <p className="text-xs text-secondary mt-1 flex items-center gap-1.5 flex-wrap">
+                            <span className="flex items-center gap-1 font-medium">
+                              {r.vehicle_type === "BIKE"
+                                ? <MdTwoWheeler size={12} className="text-cyan-400" />
+                                : <MdDirectionsCar size={12} className="text-cyan-400" />}
+                              {r.vehicle_number}
+                            </span>
+                            {r.Flat?.flat_number && (
+                              <>
+                                <span className="opacity-40">•</span>
+                                <span>Flat {r.Flat.flat_number}</span>
+                              </>
+                            )}
+                          </p>
+                        </div>
+                        <span className={`px-2.5 py-1 text-xs font-semibold rounded-full whitespace-nowrap ${statusColor(r.status)}`}>
+                          {statusLabel(r.status)}
+                        </span>
                       </div>
-                      <span className={`px-2.5 py-1 text-xs font-semibold rounded-full whitespace-nowrap ${statusColor(r.status)}`}>
-                        {statusLabel(r.status)}
-                      </span>
+                      {r.assigned_spot && (
+                        <div
+                          className="flex items-center gap-2 rounded-lg px-3 py-2 text-xs"
+                          style={{ background: "var(--accent-soft)", color: "var(--accent)" }}
+                        >
+                          <MdDirectionsCar size={14} />
+                          {t("parkSpot")}: <strong>{r.assigned_spot}</strong>
+                        </div>
+                      )}
+                      {r.status === "PENDING" && (
+                        <div className="flex items-center justify-end gap-2 pt-2 border-t border-white/5">
+                          <button
+                            type="button"
+                            onClick={() => handleOpenEdit(r)}
+                            className="flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-lg text-accent bg-accent/10 hover:bg-accent/20 transition cursor-pointer"
+                          >
+                            <MdEdit size={14} />
+                            <span>Edit</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleOpenDelete(r)}
+                            className="flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-lg text-red-400 bg-red-500/10 hover:bg-red-500/20 transition cursor-pointer"
+                          >
+                            <MdDelete size={14} />
+                            <span>Delete</span>
+                          </button>
+                        </div>
+                      )}
                     </div>
-                    {r.assigned_spot && (
-                      <div
-                        className="flex items-center gap-2 rounded-lg px-3 py-2 text-xs"
-                        style={{ background: "var(--accent-soft)", color: "var(--accent)" }}
-                      >
-                        <MdDirectionsCar size={14} />
-                        {t("parkSpot")}: <strong>{r.assigned_spot}</strong>
-                      </div>
-                    )}
-                    {r.status === "PENDING" && (
-                      <div className="flex items-center justify-end gap-2 pt-2 border-t border-white/5">
-                        <button
-                          type="button"
-                          onClick={() => handleOpenEdit(r)}
-                          className="flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-lg text-accent bg-accent/10 hover:bg-accent/20 transition cursor-pointer"
-                        >
-                          <MdEdit size={14} />
-                          <span>Edit</span>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleOpenDelete(r)}
-                          className="flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-lg text-red-400 bg-red-500/10 hover:bg-red-500/20 transition cursor-pointer"
-                        >
-                          <MdDelete size={14} />
-                          <span>Delete</span>
-                        </button>
-                      </div>
-                    )}
                   </div>
-                </div>
-              ))}
+                );
+              })}
 
               {/* Mobile pagination */}
               <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} pageSize={limit} onPageSizeChange={(s) => { limitRef.current = s; setLimit(s); setPage(1); handlePageChange(1); }} />
@@ -1422,8 +1498,8 @@ useEffect(() => {
             <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="text-secondary border-b border-white/10">
-                    <th className="p-3 text-left">{t("parkColGuest")}</th>
+                  <tr className="text-secondary border-b border-white/10 text-xs font-semibold tracking-wider uppercase">
+                    <th className="p-3 text-left">Occupant / Guest</th>
                     <th className="p-3 text-left">{t("parkColVehicle")}</th>
                     <th className="p-3 text-left">{t("parkColSpot")}</th>
                     <th className="p-3 text-left">{t("billStatusCol")}</th>
@@ -1431,57 +1507,82 @@ useEffect(() => {
                   </tr>
                 </thead>
                 <tbody>
-                  {requests.map((r, i) => (
-                    <tr
-                      key={r.id}
-                      className="border-b border-white/5 hover:bg-white/3 transition animate-fadeIn"
-                      style={{ animationDelay: `${i * 25}ms` }}
-                    >
-                      <td className="p-3 font-medium" style={{ color: "var(--text-primary)" }}>
-                        {r.guest_name}
-                      </td>
-                      <td className="p-3 text-secondary">
-                        <span className="flex items-center gap-1.5">
-                          {r.vehicle_type === "BIKE"
-                            ? <MdTwoWheeler size={14} className="shrink-0" />
-                            : <MdDirectionsCar size={14} className="shrink-0" />}
-                          {r.vehicle_number}
-                        </span>
-                      </td>
-                      <td className="p-3" style={{ color: "var(--accent)" }}>
-                        {r.assigned_spot || "—"}
-                      </td>
-                      <td className="p-3">
-                        <span className={`px-3 py-1 text-xs font-semibold rounded-full ${statusColor(r.status)}`}>
-                          {statusLabel(r.status)}
-                        </span>
-                      </td>
-                      <td className="p-3 text-right">
-                        {r.status === "PENDING" ? (
-                          <div className="flex items-center justify-end gap-1.5">
-                            <button
-                              type="button"
-                              onClick={() => handleOpenEdit(r)}
-                              className="p-1.5 rounded-lg text-accent hover:bg-accent/15 transition cursor-pointer"
-                              title="Edit parking request"
-                            >
-                              <MdEdit size={16} />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleOpenDelete(r)}
-                              className="p-1.5 rounded-lg text-red-400 hover:bg-red-500/15 transition cursor-pointer"
-                              title="Delete / cancel request"
-                            >
-                              <MdDelete size={16} />
-                            </button>
+                  {requests.map((r, i) => {
+                    const isGuest = r.parking_type === "VISITOR";
+                    return (
+                      <tr
+                        key={r.id}
+                        className={`border-b border-white/5 hover:bg-white/5 transition animate-fadeIn border-l-4 ${
+                          isGuest
+                            ? "border-l-amber-500 bg-amber-500/[0.04]"
+                            : "border-l-indigo-500 bg-indigo-500/[0.02]"
+                        }`}
+                        style={{ animationDelay: `${i * 25}ms` }}
+                      >
+                        <td className="p-3">
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold text-sm" style={{ color: "var(--text-primary)" }}>
+                              {r.guest_name}
+                            </span>
+                            <span className={`inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-0.5 rounded-full border shadow-sm ${
+                              isGuest
+                                ? "bg-amber-500/15 text-amber-400 border-amber-500/30"
+                                : "bg-indigo-500/15 text-indigo-300 border-indigo-500/30"
+                            }`}>
+                              <span className={`w-1.5 h-1.5 rounded-full ${isGuest ? "bg-amber-400" : "bg-indigo-400"}`} />
+                              {isGuest ? "Guest Pass" : "Resident"}
+                            </span>
                           </div>
-                        ) : (
-                          <span className="text-xs text-secondary opacity-40">—</span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
+                          {r.Flat?.flat_number && (
+                            <p className="text-xs text-secondary mt-1 flex items-center gap-1">
+                              <MdApartment size={12} className="opacity-50" />
+                              <span>Flat {r.Flat.flat_number}</span>
+                            </p>
+                          )}
+                        </td>
+                        <td className="p-3 text-secondary">
+                          <span className="flex items-center gap-1.5 font-medium">
+                            {r.vehicle_type === "BIKE"
+                              ? <MdTwoWheeler size={14} className="shrink-0 text-cyan-400" />
+                              : <MdDirectionsCar size={14} className="shrink-0 text-cyan-400" />}
+                            {r.vehicle_number}
+                          </span>
+                        </td>
+                        <td className="p-3 font-semibold" style={{ color: "var(--accent)" }}>
+                          {r.assigned_spot || "—"}
+                        </td>
+                        <td className="p-3">
+                          <span className={`px-3 py-1 text-xs font-semibold rounded-full ${statusColor(r.status)}`}>
+                            {statusLabel(r.status)}
+                          </span>
+                        </td>
+                        <td className="p-3 text-right">
+                          {r.status === "PENDING" ? (
+                            <div className="flex items-center justify-end gap-1.5">
+                              <button
+                                type="button"
+                                onClick={() => handleOpenEdit(r)}
+                                className="p-1.5 rounded-lg text-accent hover:bg-accent/15 transition cursor-pointer"
+                                title="Edit parking request"
+                              >
+                                <MdEdit size={16} />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleOpenDelete(r)}
+                                className="p-1.5 rounded-lg text-red-400 hover:bg-red-500/15 transition cursor-pointer"
+                                title="Delete / cancel request"
+                              >
+                                <MdDelete size={16} />
+                              </button>
+                            </div>
+                          ) : (
+                            <span className="text-xs text-secondary opacity-40">—</span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
 

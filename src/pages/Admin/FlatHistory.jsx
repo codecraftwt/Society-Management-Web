@@ -28,6 +28,7 @@ import {
   MdSearch,
   MdRefresh,
   MdHomeWork,
+  MdVisibility,
 } from "react-icons/md";
 import SlidingTabs from "../../components/common/SlidingTabs";
 import ExpandableSearch from "../../components/common/ExpandableSearch";
@@ -115,11 +116,93 @@ function BhkBadge({ type }) {
 }
 
 function formatFlatTitle(num) {
-  if (!num) return "Flat —";
-  const str = String(num).trim();
-  if (/^(flat|house|villa|unit|block)/i.test(str)) return str;
-  return `Flat ${str}`;
+  if (!num) return "—";
+  let str = String(num).trim();
+  str = str.replace(/^(flat\s+)?block[\s_-]*/i, "");
+  return str.trim() || String(num).trim();
 }
+
+/* ─────────────────────────────────────────────────────────────
+   RESIDENT RESOLUTION HELPER
+   Attributes any flat activity (bill, complaint, parcel, parking, visitor)
+   to the resident who lived in the flat at that time, or directly by user_id/resident_id.
+────────────────────────────────────────────────────────────── */
+const resolveResidentForRecord = (record, residentsList = [], dateField = "created_at") => {
+  if (!record) return null;
+
+  // 1. Direct match by user_id / resident_id / recipient_id
+  const uid =
+    record.user_id ??
+    record.resident_id ??
+    record.recipient_id ??
+    record.User?.id ??
+    record.user?.id ??
+    null;
+
+  if (uid && residentsList?.length) {
+    const directMatch = residentsList.find(
+      (r) => Number(r.user_id ?? r.User?.id ?? r.id) === Number(uid)
+    );
+    if (directMatch) {
+      const name = directMatch.User?.name || directMatch.name || "Resident";
+      const isCurrent = directMatch.is_current !== false && !directMatch.move_out_date;
+      const role = directMatch.role || directMatch.resident_type || directMatch.User?.resident_type || "Resident";
+      return { name, isCurrent, role };
+    }
+  }
+
+  // 2. Timeline match by record date vs [move_in_date, move_out_date]
+  const recDateStr =
+    record[dateField] ||
+    record.created_at ||
+    record.issue_date ||
+    record.entry_time ||
+    record.expected_arrival ||
+    record.date;
+
+  if (recDateStr && residentsList?.length) {
+    const recTime = new Date(recDateStr).getTime();
+    if (!isNaN(recTime)) {
+      for (const r of residentsList) {
+        const moveInStr = r.move_in_date || r.move_in || r.created_at;
+        const moveOutStr = r.move_out_date || r.move_out;
+        const moveInTime = moveInStr ? new Date(moveInStr).getTime() : 0;
+        const moveOutTime = moveOutStr ? new Date(moveOutStr).getTime() : Infinity;
+
+        if (recTime >= moveInTime && recTime <= moveOutTime) {
+          const name = r.User?.name || r.name || "Resident";
+          const isCurrent = r.is_current !== false && !r.move_out_date;
+          const role = r.role || r.resident_type || r.User?.resident_type || "Resident";
+          return { name, isCurrent, role };
+        }
+      }
+    }
+  }
+
+  // 3. Fallback: if record has resident_name, visitor_name, etc.
+  const explicitName =
+    record.resident_name ||
+    record.resident?.name ||
+    record.User?.name ||
+    record.user?.name ||
+    null;
+
+  if (explicitName) {
+    return { name: explicitName, isCurrent: false, role: "Resident" };
+  }
+
+  // 4. Fallback: If only 1 resident ever or current occupant
+  const currentResident = residentsList?.find((r) => r.is_current !== false && !r.move_out_date);
+  if (currentResident) {
+    return {
+      name: currentResident.User?.name || currentResident.name || "Current Resident",
+      isCurrent: true,
+      role: currentResident.role || currentResident.resident_type || currentResident.User?.resident_type || "Resident",
+    };
+  }
+
+  return null;
+};
 
 /* ─────────────────────────────────────────────────────────────
    TAB: RESIDENTS
@@ -133,31 +216,81 @@ const ResidentsTab = ({ residents, t, onMoveOut }) => {
   if (!validResidents.length)
     return <Empty icon="👤" text={t("fhNoResidents") || "No residents recorded"} sub={t("fhNoResidentsSub") || "This flat has no current or historical resident profiles."} />;
 
+  const tenantIsCurrent = validResidents.some((item) =>
+    item.is_current !== false &&
+    !item.move_out_date &&
+    String(item.resident_type || item.role || item.User?.resident_type || "").toUpperCase() === "TENANT"
+  );
+
+  // Sort: Active residents first (Owner then Tenant), followed by past residents (most recent move out first)
+  const sortedResidents = [...validResidents].sort((a, b) => {
+    const aCurrent = a.is_current !== false && !a.move_out_date;
+    const bCurrent = b.is_current !== false && !b.move_out_date;
+    if (aCurrent && !bCurrent) return -1;
+    if (!aCurrent && bCurrent) return 1;
+
+    if (aCurrent && bCurrent) {
+      const aIsOwner = String(a.resident_type || a.role || a.User?.resident_type || "").toUpperCase() === "OWNER";
+      const bIsOwner = String(b.resident_type || b.role || b.User?.resident_type || "").toUpperCase() === "OWNER";
+      if (aIsOwner && !bIsOwner) return -1;
+      if (!aIsOwner && bIsOwner) return 1;
+    }
+
+    const aDate = new Date(a.move_out_date || a.move_in_date || a.created_at || 0).getTime();
+    const bDate = new Date(b.move_out_date || b.move_in_date || b.created_at || 0).getTime();
+    return bDate - aDate;
+  });
+
   return (
     <div className="space-y-3">
-      {validResidents.map((r, i) => {
+      {sortedResidents.map((r, i) => {
         const name = r.User?.name || r.user?.name || r.name || r.resident_name;
         const initials = name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
         const moveIn = r.move_in_date || r.move_in || r.moveIn || r.check_in || r.created_at || null;
         const moveOut = r.move_out_date || r.move_out || r.moveOut || r.check_out || null;
-        const tenantIsCurrent = (residents || []).some((item) =>
-          item.is_current !== false &&
-          !item.move_out_date &&
-          String(item.resident_type || item.User?.resident_type || "").toUpperCase() === "TENANT"
-        );
-        const currentTenant = (residents || []).find((item) =>
-          item.is_current !== false && !item.move_out_date &&
-          String(item.resident_type || item.User?.resident_type || "").toUpperCase() === "TENANT"
-        );
-        const isOwner = String(r.resident_type || r.User?.resident_type || "").toUpperCase() === "OWNER";
-        const isCurrent = r.is_current !== false && !moveOut && !(isOwner && tenantIsCurrent);
-        const effectiveMoveOut = moveOut || (isOwner && tenantIsCurrent ? (currentTenant?.move_in_date || currentTenant?.move_in) : null);
+
+        const isOwner = String(r.resident_type || r.role || r.User?.resident_type || "").toUpperCase() === "OWNER";
+        const isTenant = String(r.resident_type || r.role || r.User?.resident_type || "").toUpperCase() === "TENANT";
+
+        // A resident or owner is current if they have no move_out_date recorded in DB
+        const isCurrent = r.is_current !== false && !moveOut;
+
         const role = r.type || r.role || r.resident_type || r.User?.resident_type || r.User?.role || t("fhResidents") || "Resident";
-        const roleLabel = String(role).toUpperCase() === "OWNER"
-          ? "Owner"
-          : String(role).toUpperCase() === "TENANT"
-            ? "Tenant"
-            : !tenantIsCurrent ? "Owner" : role;
+        const roleLabel = isOwner ? "Owner" : isTenant ? "Tenant" : role;
+
+        // Occupancy subtitle & badge label
+        let occupancySubtitle = "";
+        let badgeLabel = "";
+        let badgeClass = "";
+
+        if (isCurrent) {
+          if (isOwner && tenantIsCurrent) {
+            badgeLabel = "Primary Owner";
+            badgeClass = "bg-indigo-500/10 text-indigo-500 border border-indigo-500/20";
+            occupancySubtitle = "Owner • Flat Rented Out";
+          } else if (isOwner) {
+            badgeLabel = "Current Owner";
+            badgeClass = "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20";
+            occupancySubtitle = "Owner • Living in Flat";
+          } else if (isTenant) {
+            badgeLabel = "Current Tenant";
+            badgeClass = "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20";
+            occupancySubtitle = "Tenant • Living in Flat";
+          } else {
+            badgeLabel = t("fhCurrent") || "Currently Staying";
+            badgeClass = "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20";
+            occupancySubtitle = `${roleLabel} • Currently Staying`;
+          }
+        } else {
+          badgeLabel = isOwner ? "Past Owner" : isTenant ? "Past Tenant" : (t("fhPast") || "Past Resident");
+          badgeClass = "bg-slate-500/10 text-slate-400 border border-slate-500/20";
+          occupancySubtitle = `${roleLabel} • Past Resident`;
+        }
+
+        // Move Out Button Logic:
+        // - If a tenant is currently staying, show [Move Out] in front of the tenant.
+        // - When the tenant leaves (no current tenant), the primary owner is the active occupant, so show [Move Out] in front of the owner!
+        const canShowMoveOutBtn = isCurrent && onMoveOut && (tenantIsCurrent ? isTenant : true);
 
         return (
           <div
@@ -173,29 +306,25 @@ const ResidentsTab = ({ residents, t, onMoveOut }) => {
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="font-bold text-sm text-primary truncate">{name}</span>
                   <span
-                    className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${
-                      isCurrent
-                        ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20"
-                        : "bg-slate-500/10 text-slate-400 border border-slate-500/20"
-                    }`}
+                    className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${badgeClass}`}
                   >
-                    {isCurrent ? t("fhCurrent") || "Currently Staying" : t("fhPast") || "Past Resident"}
+                    {badgeLabel}
                   </span>
                 </div>
 
                 <div className="flex items-center gap-2 mt-1 text-xs text-secondary flex-wrap">
-                  <span className="font-semibold text-accent">{roleLabel}</span>
+                  <span className="font-semibold text-accent">{occupancySubtitle}</span>
                   <span>•</span>
                   {moveIn && (
                     <span>
                       {t("fhIn") || "Joined"}: {String(moveIn).slice(0, 10)}
                     </span>
                   )}
-                  {effectiveMoveOut && (
+                  {moveOut && (
                     <>
                       <span>→</span>
                       <span>
-                        {t("fhOut") || "Left"}: {String(effectiveMoveOut).slice(0, 10)}
+                        {t("fhOut") || "Left"}: {String(moveOut).slice(0, 10)}
                       </span>
                     </>
                   )}
@@ -203,11 +332,7 @@ const ResidentsTab = ({ residents, t, onMoveOut }) => {
               </div>
             </div>
 
-            {isCurrent && onMoveOut && (
-              tenantIsCurrent
-                ? String(role).toUpperCase() === "TENANT"
-                : String(role).toUpperCase() !== "TENANT"
-            ) && (
+            {canShowMoveOutBtn && (
               <div className="shrink-0 self-end sm:self-center">
                 <GlobalButton
                   variant="danger"
@@ -230,7 +355,7 @@ const ResidentsTab = ({ residents, t, onMoveOut }) => {
 /* ─────────────────────────────────────────────────────────────
    TAB: BILLS & PAYMENTS
 ────────────────────────────────────────────────────────────── */
-const BillsTab = ({ bills, t }) => {
+const BillsTab = ({ bills, residents, t }) => {
   const [filter, setFilter] = useState("all");
 
   if (!bills.length)
@@ -288,33 +413,55 @@ const BillsTab = ({ bills, t }) => {
             <thead>
               <tr className="bg-transparent border-b border-glass-border text-secondary uppercase font-bold text-[10px] tracking-wider">
                 <th className="p-3">{t("fhDescription") || "Description"}</th>
+                <th className="p-3">Resident / Billed To</th>
                 <th className="p-3">{t("fhAmount") || "Amount"}</th>
                 <th className="p-3">{t("fhDueDate") || "Due Date"}</th>
                 <th className="p-3">{t("fhStatus") || "Status"}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-glass-border">
-              {displayedBills.map((b, i) => (
-                <tr className="hover:bg-white/[0.02] transition-colors" key={b.id || i}>
-                  <td className="p-3">
-                    <div className="font-bold text-primary">
-                      {b.description || b.title || b.bill_type || b.type || `${t("fhBills") || "Bill"} #${i + 1}`}
-                    </div>
-                    {b.billing_month && (
-                      <span className="text-[11px] text-secondary opacity-75">Month: {b.billing_month}</span>
-                    )}
-                  </td>
-                  <td className="p-3 font-bold text-primary">
-                    ₹{Number(b.amount || 0).toLocaleString("en-IN")}
-                  </td>
-                  <td className="p-3 text-secondary">
-                    {b.due_date ? String(b.due_date).slice(0, 10) : b.dueDate || b.due || "—"}
-                  </td>
-                  <td className="p-3">
-                    <Pill status={b.status} t={t} />
-                  </td>
-                </tr>
-              ))}
+              {displayedBills.map((b, i) => {
+                const resInfo = resolveResidentForRecord(b, residents, "issue_date");
+                return (
+                  <tr className="hover:bg-white/[0.02] transition-colors" key={b.id || i}>
+                    <td className="p-3">
+                      <div className="font-bold text-primary">
+                        {b.description || b.title || b.bill_type || b.type || `${t("fhBills") || "Bill"} #${i + 1}`}
+                      </div>
+                      {b.billing_month && (
+                        <span className="text-[11px] text-secondary opacity-75">Month: {b.billing_month}</span>
+                      )}
+                    </td>
+                    <td className="p-3">
+                      {resInfo ? (
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="font-semibold text-primary">{resInfo.name}</span>
+                          <span
+                            className={`text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full ${
+                              resInfo.isCurrent
+                                ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20"
+                                : "bg-slate-500/10 text-slate-400 border border-slate-500/20"
+                            }`}
+                          >
+                            {resInfo.isCurrent ? "Current" : "Past"}
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-secondary">—</span>
+                      )}
+                    </td>
+                    <td className="p-3 font-bold text-primary">
+                      ₹{Number(b.amount || 0).toLocaleString("en-IN")}
+                    </td>
+                    <td className="p-3 text-secondary">
+                      {b.due_date ? String(b.due_date).slice(0, 10) : b.dueDate || b.due || "—"}
+                    </td>
+                    <td className="p-3">
+                      <Pill status={b.status} t={t} />
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -326,41 +473,61 @@ const BillsTab = ({ bills, t }) => {
 /* ─────────────────────────────────────────────────────────────
    TAB: PARCELS
 ────────────────────────────────────────────────────────────── */
-const ParcelsTab = ({ parcels, t }) => {
+const ParcelsTab = ({ parcels, residents, t }) => {
   if (!parcels.length)
     return <Empty icon="📦" text={t("fhNoParcels") || "No parcels"} sub={t("fhNoParcelsSub") || "Courier deliveries for this flat will be logged here."} />;
 
   return (
     <div className="space-y-2.5">
-      {parcels.map((p, i) => (
-        <div
-          className="p-3.5 rounded-xl bg-transparent border border-glass-border flex items-center justify-between gap-3 hover:border-accent/40 transition-colors shadow-sm"
-          key={p.id || i}
-        >
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="w-9 h-9 rounded-xl bg-blue-500/10 text-blue-500 flex items-center justify-center shrink-0 border border-blue-500/20">
-              <MdDeliveryDining size={20} />
-            </div>
-            <div className="min-w-0">
-              <p className="font-bold text-sm text-primary truncate">
-                {p.courier_name || p.courierName || p.sender || `${t("fhParcels") || "Parcel"} #${i + 1}`}
-              </p>
-              {p.description && <p className="text-xs text-secondary truncate">{p.description}</p>}
-              <div className="flex items-center gap-2 mt-1 text-[11px] text-secondary flex-wrap">
-                {(p.arrived_at || p.created_at || p.date) && (
-                  <span>{String(p.arrived_at || p.created_at || p.date).slice(0, 16).replace("T", " ")}</span>
+      {parcels.map((p, i) => {
+        const resInfo = resolveResidentForRecord(p, residents, "entry_time");
+        return (
+          <div
+            className="p-3.5 rounded-xl bg-transparent border border-glass-border flex items-center justify-between gap-3 hover:border-accent/40 transition-colors shadow-sm"
+            key={p.id || i}
+          >
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-9 h-9 rounded-xl bg-blue-500/10 text-blue-500 flex items-center justify-center shrink-0 border border-blue-500/20">
+                <MdDeliveryDining size={20} />
+              </div>
+              <div className="min-w-0">
+                <p className="font-bold text-sm text-primary truncate">
+                  {p.courier_name || p.courierName || p.sender || `${t("fhParcels") || "Parcel"} #${i + 1}`}
+                </p>
+                {p.description && <p className="text-xs text-secondary truncate">{p.description}</p>}
+
+                {resInfo && (
+                  <div className="flex items-center gap-1.5 mt-0.5 text-xs text-secondary flex-wrap">
+                    <span>Recipient:</span>
+                    <span className="font-semibold text-primary">{resInfo.name}</span>
+                    <span
+                      className={`text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full ${
+                        resInfo.isCurrent
+                          ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20"
+                          : "bg-slate-500/10 text-slate-400 border border-slate-500/20"
+                      }`}
+                    >
+                      {resInfo.isCurrent ? "Current" : "Past"}
+                    </span>
+                  </div>
                 )}
-                {p.otp && (
-                  <span className="font-mono px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-500 font-bold text-[10px]">
-                    OTP: {p.otp}
-                  </span>
-                )}
+
+                <div className="flex items-center gap-2 mt-1 text-[11px] text-secondary flex-wrap">
+                  {(p.arrived_at || p.created_at || p.date || p.entry_time) && (
+                    <span>{String(p.arrived_at || p.created_at || p.date || p.entry_time).slice(0, 16).replace("T", " ")}</span>
+                  )}
+                  {p.otp && (
+                    <span className="font-mono px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-500 font-bold text-[10px]">
+                      OTP: {p.otp}
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
+            <Pill status={(p.status || "expected").replace("_", " ")} t={t} />
           </div>
-          <Pill status={(p.status || "expected").replace("_", " ")} t={t} />
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 };
@@ -368,46 +535,66 @@ const ParcelsTab = ({ parcels, t }) => {
 /* ─────────────────────────────────────────────────────────────
    TAB: VISITORS
 ────────────────────────────────────────────────────────────── */
-const VisitorsTab = ({ visitors, t }) => {
+const VisitorsTab = ({ visitors, residents, t }) => {
   if (!visitors.length)
     return <Empty icon="🚶" text={t("fhNoVisitors") || "No visitor logs"} sub={t("fhNoVisitorsSub") || "Guest check-ins and passes will appear here."} />;
 
   return (
     <div className="space-y-2.5">
-      {visitors.map((v, i) => (
-        <div
-          className="p-3.5 rounded-xl bg-transparent border border-glass-border flex items-center justify-between gap-3 hover:border-accent/40 transition-colors shadow-sm"
-          key={v.id || i}
-        >
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="w-9 h-9 rounded-xl bg-purple-500/10 text-purple-500 flex items-center justify-center shrink-0 border border-purple-500/20">
-              <MdPerson size={20} />
-            </div>
-            <div className="min-w-0">
-              <p className="font-bold text-sm text-primary truncate">
-                {v.visitor_name || v.visitorName || v.name || `${t("fhVisitors") || "Visitor"} #${i + 1}`}
-              </p>
-              <div className="flex items-center gap-2 mt-0.5 text-xs text-secondary flex-wrap">
-                {v.purpose && <span className="text-accent font-semibold">{v.purpose}</span>}
-                {v.vehicle_number && (
-                  <span className="font-mono text-[10px] px-1.5 py-0.5 rounded bg-black/20 text-slate-300">
-                    🚗 {v.vehicle_number}
-                  </span>
-                )}
+      {visitors.map((v, i) => {
+        const resInfo = resolveResidentForRecord(v, residents, "entry_time");
+        return (
+          <div
+            className="p-3.5 rounded-xl bg-transparent border border-glass-border flex items-center justify-between gap-3 hover:border-accent/40 transition-colors shadow-sm"
+            key={v.id || i}
+          >
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-9 h-9 rounded-xl bg-purple-500/10 text-purple-500 flex items-center justify-center shrink-0 border border-purple-500/20">
+                <MdPerson size={20} />
               </div>
-              <div className="flex items-center gap-2 mt-1 text-[11px] text-secondary">
-                {(v.entry_time || v.entry || v.check_in || v.created_at) && (
-                  <span>In: {String(v.entry_time || v.entry || v.check_in || v.created_at).slice(0, 16).replace("T", " ")}</span>
+              <div className="min-w-0">
+                <p className="font-bold text-sm text-primary truncate">
+                  {v.visitor_name || v.visitorName || v.name || `${t("fhVisitors") || "Visitor"} #${i + 1}`}
+                </p>
+                <div className="flex items-center gap-2 mt-0.5 text-xs text-secondary flex-wrap">
+                  {v.purpose && <span className="text-accent font-semibold">{v.purpose}</span>}
+                  {v.vehicle_number && (
+                    <span className="font-mono text-[10px] px-1.5 py-0.5 rounded bg-black/20 text-slate-300">
+                      🚗 {v.vehicle_number}
+                    </span>
+                  )}
+                </div>
+
+                {resInfo && (
+                  <div className="flex items-center gap-1.5 mt-0.5 text-xs text-secondary flex-wrap">
+                    <span>Host Resident:</span>
+                    <span className="font-semibold text-primary">{resInfo.name}</span>
+                    <span
+                      className={`text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full ${
+                        resInfo.isCurrent
+                          ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20"
+                          : "bg-slate-500/10 text-slate-400 border border-slate-500/20"
+                      }`}
+                    >
+                      {resInfo.isCurrent ? "Current" : "Past"}
+                    </span>
+                  </div>
                 )}
-                {v.exit_time && <span>• Out: {String(v.exit_time).slice(0, 16).replace("T", " ")}</span>}
+
+                <div className="flex items-center gap-2 mt-1 text-[11px] text-secondary">
+                  {(v.entry_time || v.entry || v.check_in || v.created_at) && (
+                    <span>In: {String(v.entry_time || v.entry || v.check_in || v.created_at).slice(0, 16).replace("T", " ")}</span>
+                  )}
+                  {v.exit_time && <span>• Out: {String(v.exit_time).slice(0, 16).replace("T", " ")}</span>}
+                </div>
               </div>
             </div>
+            <GlobalBadge size="sm" variant={v.exit_time ? "neutral" : "success"}>
+              {v.exit_time ? "Exited" : "On Premises"}
+            </GlobalBadge>
           </div>
-          <GlobalBadge size="sm" variant={v.exit_time ? "neutral" : "success"}>
-            {v.exit_time ? "Exited" : "On Premises"}
-          </GlobalBadge>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 };
@@ -415,14 +602,15 @@ const VisitorsTab = ({ visitors, t }) => {
 /* ─────────────────────────────────────────────────────────────
    TAB: COMPLAINTS
 ────────────────────────────────────────────────────────────── */
-const ComplaintsTab = ({ complaints, t }) => {
+const ComplaintsTab = ({ complaints, residents, t }) => {
   if (!complaints.length)
     return <Empty icon="📋" text={t("fhNoComplaints") || "No complaints"} sub={t("fhNoComplaintsSub") || "Tickets and issue reports for this flat will be listed here."} />;
 
   return (
     <div className="space-y-2.5">
       {complaints.map((c, i) => {
-        const complainerName = c.User?.name || c.user?.name || null;
+        const resInfo = resolveResidentForRecord(c, residents, "created_at");
+        const complainerName = resInfo?.name || c.User?.name || c.user?.name || null;
 
         return (
           <div
@@ -442,9 +630,20 @@ const ComplaintsTab = ({ complaints, t }) => {
             </div>
 
             {complainerName && (
-              <div className="flex items-center gap-1.5 text-xs text-secondary">
-                <span>Reported by:</span>
+              <div className="flex items-center gap-1.5 text-xs text-secondary flex-wrap">
+                <span>Resident / Reported by:</span>
                 <span className="font-semibold text-primary">{complainerName}</span>
+                {resInfo && (
+                  <span
+                    className={`text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full ${
+                      resInfo.isCurrent
+                        ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20"
+                        : "bg-slate-500/10 text-slate-400 border border-slate-500/20"
+                    }`}
+                  >
+                    {resInfo.isCurrent ? "Current" : "Past"}
+                  </span>
+                )}
               </div>
             )}
 
@@ -467,7 +666,7 @@ const ComplaintsTab = ({ complaints, t }) => {
 /* ─────────────────────────────────────────────────────────────
    TAB: PARKING
 ────────────────────────────────────────────────────────────── */
-const ParkingTab = ({ parking, t }) => {
+const ParkingTab = ({ parking, residents, t }) => {
   if (!parking.length)
     return <Empty icon="🚗" text={t("fhNoParking") || "No parking records"} sub={t("fhNoParkingSub") || "Allocated bays and vehicle passes will appear here."} />;
 
@@ -476,6 +675,9 @@ const ParkingTab = ({ parking, t }) => {
       {parking.map((p, i) => {
         const isAllocated = p.is_allocated_slot || p.slot_number;
         const displayName = p.slot_number || (p.assigned_spot ? `Bay ${p.assigned_spot}` : p.guest_name || `${t("fhParking") || "Slot"} #${i + 1}`);
+        const resInfo = resolveResidentForRecord(p, residents, "expected_arrival");
+        const residentName = p.resident_name || p.resident?.name || resInfo?.name || null;
+
         return (
           <div
             className="p-3.5 rounded-xl bg-transparent border border-glass-border flex items-center justify-between gap-3 hover:border-accent/40 transition-colors shadow-sm"
@@ -509,6 +711,25 @@ const ParkingTab = ({ parking, t }) => {
                     </span>
                   )}
                 </div>
+
+                {residentName && (
+                  <div className="flex items-center gap-1.5 mt-1 text-xs text-secondary flex-wrap">
+                    <span>Resident:</span>
+                    <span className="font-semibold text-primary">{residentName}</span>
+                    {resInfo && (
+                      <span
+                        className={`text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full ${
+                          resInfo.isCurrent
+                            ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20"
+                            : "bg-slate-500/10 text-slate-400 border border-slate-500/20"
+                        }`}
+                      >
+                        {resInfo.isCurrent ? "Current" : "Past"}
+                      </span>
+                    )}
+                  </div>
+                )}
+
                 <div className="flex items-center gap-2 mt-1 text-xs text-secondary flex-wrap">
                   {p.vehicle_number && (
                     <span className="font-mono text-[11px] px-2 py-0.5 rounded bg-black/20 text-slate-200 font-bold tracking-wide">
@@ -520,9 +741,6 @@ const ParkingTab = ({ parking, t }) => {
                   )}
                   {p.vehicle_type && (
                     <span className="text-secondary">({p.vehicle_type})</span>
-                  )}
-                  {p.resident_name && (
-                    <span className="text-secondary">• {p.resident_name}</span>
                   )}
                   {p.expected_arrival && (
                     <span>• {String(p.expected_arrival).slice(0, 10)}</span>
@@ -607,6 +825,7 @@ const FlatHistory = () => {
   const [fetchError, setFetchError] = useState(null);
   const [activeBlock, setActiveBlock] = useState(ALL_BLOCKS);
   const [confirmMoveOut, setConfirmMoveOut] = useState(null);
+  const [clearanceBlock, setClearanceBlock] = useState(null);
   const [movingOut, setMovingOut] = useState(false);
 
   const searchInputRef = useRef(null);
@@ -1001,9 +1220,106 @@ const FlatHistory = () => {
     setFlatPage(1);
   }
 
-  const openMoveOutConfirm = useCallback((resident) => {
+  const openMoveOutConfirm = useCallback(async (resident) => {
+    const userId =
+      resident.user_id ?? resident.userId ?? resident.User?.id ?? resident.user?.id ?? null;
+    const flatId = selectedFlat?.id;
+
+    // 1. Pre-check clearance issues locally from loaded data
+    const issues = [];
+    const unpaidBills = (data.bills || []).filter(
+      (b) => String(b.status || "").toLowerCase() !== "paid"
+    );
+    if (unpaidBills.length > 0) {
+      const totalAmt = unpaidBills.reduce((sum, b) => sum + Number(b.amount || 0), 0);
+      issues.push({
+        type: "BILLS",
+        title: `${unpaidBills.length} Unpaid Bill(s)`,
+        detail: `Pending dues totaling ₹${totalAmt.toLocaleString("en-IN")}. Must be paid or cleared first.`,
+        tab: "bills",
+      });
+    }
+
+    const openTickets = (data.complaints || []).filter(
+      (c) => ["OPEN", "IN_PROGRESS", "PENDING"].includes(String(c.status || "").toUpperCase())
+    );
+    if (openTickets.length > 0) {
+      issues.push({
+        type: "COMPLAINTS",
+        title: `${openTickets.length} Open Complaint(s)`,
+        detail: "Active complaint tickets must be resolved before move out.",
+        tab: "complaints",
+      });
+    }
+
+    const gateParcels = (data.parcels || []).filter(
+      (p) => ["EXPECTED", "AT_GATE"].includes(String(p.status || "").toUpperCase())
+    );
+    if (gateParcels.length > 0) {
+      issues.push({
+        type: "PARCELS",
+        title: `${gateParcels.length} Undelivered Parcel(s)`,
+        detail: "Courier packages waiting at the gate or expected must be collected first.",
+        tab: "parcels",
+      });
+    }
+
+    const pendingPark = (data.parking || []).filter(
+      (p) => String(p.status || "").toUpperCase() === "PENDING"
+    );
+    if (pendingPark.length > 0) {
+      issues.push({
+        type: "PARKING",
+        title: `${pendingPark.length} Pending Parking Request(s)`,
+        detail: "Open parking slot requests must be approved or rejected first.",
+        tab: "parking",
+      });
+    }
+
+    if (issues.length > 0) {
+      setClearanceBlock({
+        resident,
+        flat: selectedFlat,
+        issues,
+      });
+      return;
+    }
+
+    // 2. Query clearance API from server for backend verification
+    if (flatId) {
+      try {
+        const res = await API.get(`/flat-history/${flatId}/clearance/${userId || ""}`);
+        if (res.data && res.data.canMoveOut === false) {
+          const serverIssues = (res.data.issues || []).map((msg) => ({
+            type: "SERVER",
+            title: "Clearance Required",
+            detail: msg,
+          }));
+          setClearanceBlock({
+            resident,
+            flat: selectedFlat,
+            issues: serverIssues,
+          });
+          return;
+        }
+      } catch (err) {
+        if (err.response?.data?.canMoveOut === false) {
+          setClearanceBlock({
+            resident,
+            flat: selectedFlat,
+            issues: (err.response.data.issues || []).map((msg) => ({
+              type: "SERVER",
+              title: "Clearance Required",
+              detail: msg,
+            })),
+          });
+          return;
+        }
+      }
+    }
+
     setConfirmMoveOut({ flat: selectedFlat, resident });
-  }, [selectedFlat]);
+  }, [selectedFlat, data]);
 
   const closeMoveOutConfirm = useCallback(() => {
     if (movingOut) return;
@@ -1037,11 +1353,25 @@ const FlatHistory = () => {
       if (updated) await fetchFlatDetails(updated);
     } catch (err) {
       console.error("Move-out error:", err);
-      toast.error(err.response?.data?.message || t("fhMoveOutFail") || "Failed to process move out");
+      const resData = err.response?.data;
+      if (resData?.canMoveOut === false && Array.isArray(resData?.issues)) {
+        setClearanceBlock({
+          resident: confirmMoveOut.resident,
+          flat: confirmMoveOut.flat,
+          issues: resData.issues.map((msg) => ({
+            type: "SERVER",
+            title: "Clearance Required",
+            detail: msg,
+          })),
+        });
+        toast.error("Clearance required: " + resData.issues.join("; "));
+      } else {
+        toast.error(resData?.message || t("fhMoveOutFail") || "Failed to process move out");
+      }
     } finally {
       setMovingOut(false);
     }
-  }, [confirmMoveOut, movingOut, t, fetchFlatDetails]);
+  }, [confirmMoveOut, movingOut, t, fetchFlatDetails, activeSocId]);
 
   const renderContent = () => {
     if (loading) return <SpinnerComp t={t} />;
@@ -1055,15 +1385,15 @@ const FlatHistory = () => {
       case "residents":
         return <ResidentsTab residents={data.residents} t={t} onMoveOut={canMoveOut ? openMoveOutConfirm : null} />;
       case "bills":
-        return <BillsTab bills={data.bills} t={t} />;
+        return <BillsTab bills={data.bills} residents={data.residents} t={t} />;
       case "parcels":
-        return <ParcelsTab parcels={data.parcels} t={t} />;
+        return <ParcelsTab parcels={data.parcels} residents={data.residents} t={t} />;
       case "visitors":
-        return <VisitorsTab visitors={data.visitors} t={t} />;
+        return <VisitorsTab visitors={data.visitors} residents={data.residents} t={t} />;
       case "complaints":
-        return <ComplaintsTab complaints={data.complaints} t={t} />;
+        return <ComplaintsTab complaints={data.complaints} residents={data.residents} t={t} />;
       case "parking":
-        return <ParkingTab parking={data.parking} t={t} />;
+        return <ParkingTab parking={data.parking} residents={data.residents} t={t} />;
       default:
         return null;
     }
@@ -1105,35 +1435,37 @@ const FlatHistory = () => {
           )}
 
           {blockNames.length > 0 && (
-            <div className="fh-block-toggle flex items-center gap-1 min-w-0" ref={toggleWrapRef} onWheel={onToggleWheel}>
-              <button
-                type="button"
-                className="fh-block-nav w-8 h-8 rounded-full border border-glass-border bg-card-inner-bg flex items-center justify-center text-secondary hover:text-primary transition-all disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer shrink-0"
-                onClick={() => stepBlock(-1)}
-                    disabled={!canStepBack}
-                    aria-label="Previous block"
-                  >
-                    <MdChevronLeft size={18} />
-                  </button>
-
-                  <SlidingTabs
-                    value={activeBlock}
-                    onChange={setActiveBlock}
-                    items={visibleBlockTabs}
-                    className="sliding-tabs--tight sliding-tabs--scroll"
-                  />
-
-                  <button
-                    type="button"
-                    className="fh-block-nav w-8 h-8 rounded-full border border-glass-border bg-card-inner-bg flex items-center justify-center text-secondary hover:text-primary transition-all disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer shrink-0"
-                    onClick={() => stepBlock(1)}
-                    disabled={!canStepFwd}
-                    aria-label="Next block"
-                  >
-                    <MdChevronRight size={18} />
-                  </button>
-                </div>
-              )}
+            <div style={{ minWidth: 160, maxWidth: 220 }} className="shrink-0">
+              <Select
+                value={activeBlock}
+                onChange={(e) => {
+                  setActiveBlock(e.target.value);
+                  setFlatPage(1);
+                }}
+                style={{
+                  width: "100%",
+                  height: 38,
+                  borderRadius: 12,
+                  fontSize: 13,
+                  fontWeight: 700,
+                  background: "var(--card-inner-bg)",
+                  border: "1px solid var(--divider, rgba(99, 102, 241, 0.12))",
+                }}
+              >
+                <option value={ALL_BLOCKS}>
+                  {t("allBlocks") || "All Blocks"} ({allFlats.length})
+                </option>
+                {blockNames.map((bName) => {
+                  const count = allBlockGroups[bName]?.flats?.length || 0;
+                  return (
+                    <option key={bName} value={bName}>
+                      {bName} ({count})
+                    </option>
+                  );
+                })}
+              </Select>
+            </div>
+          )}
 
               <ExpandableSearch
                 isOpen={searchOpen}
@@ -1213,55 +1545,100 @@ const FlatHistory = () => {
       </div>
 
       {/* ── 3. Flats Card Grid Section ── */}
-      <div className="border border-glass-border rounded-2xl p-4 sm:p-5 shadow-sm bg-card-bg">
+      <div
+        className="fh-grid-section rounded-2xl p-4 sm:p-6"
+        style={{
+          background: "var(--card-bg, #ffffff)",
+          border: "1px solid var(--divider, rgba(99, 102, 241, 0.08))",
+          borderRadius: 20,
+          boxShadow: "0 4px 20px -2px rgba(0, 0, 0, 0.03), 0 1px 3px rgba(0, 0, 0, 0.02)",
+        }}
+      >
         {isAllBlocks || (activeBlock && allBlockGroups[activeBlock]) ? (
           <div>
             {/* Filter Bar: Status tabs + Search count */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 mb-4 border-b border-glass-border">
+            <div
+              className="flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 pb-4 mb-5"
+              style={{ borderBottom: "1px solid var(--divider, rgba(99, 102, 241, 0.08))" }}
+            >
               {/* Status Filter Segmented Control */}
-              <div className="flex items-center gap-1.5 p-1 rounded-xl bg-card-inner-bg border border-glass-border w-fit">
+              <div
+                className="flex items-center gap-1.5 p-1.5 rounded-2xl w-fit flex-wrap"
+                style={{
+                  background: "var(--card-inner-bg, rgba(248, 250, 252, 0.8))",
+                  border: "1px solid var(--divider, rgba(99, 102, 241, 0.08))",
+                  boxShadow: "inset 0 1px 2px rgba(0, 0, 0, 0.02)",
+                }}
+              >
                 <button
                   type="button"
                   onClick={() => { setStatusFilter("all"); setFlatPage(1); }}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                  className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
                     statusFilter === "all"
                       ? "bg-accent text-white shadow-md shadow-accent/25"
-                      : "text-secondary hover:text-primary"
+                      : "text-secondary hover:text-primary hover:bg-black/[0.03] dark:hover:bg-white/[0.04]"
                   }`}
                 >
-                  <MdApartment size={14} />
-                  <span>All Units ({activeBlockFlats.length})</span>
+                  <MdApartment size={15} />
+                  <span>All Units</span>
+                  <span
+                    className="px-2 py-0.5 rounded-full text-[11px] font-bold"
+                    style={{
+                      background: statusFilter === "all" ? "rgba(255, 255, 255, 0.22)" : "rgba(99, 102, 241, 0.08)",
+                      color: statusFilter === "all" ? "#ffffff" : "var(--accent, #6366f1)",
+                    }}
+                  >
+                    {activeBlockFlats.length}
+                  </span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => { setStatusFilter("occupied"); setFlatPage(1); }}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                  className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
                     statusFilter === "occupied"
                       ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/25"
-                      : "text-secondary hover:text-primary"
+                      : "text-secondary hover:text-primary hover:bg-black/[0.03] dark:hover:bg-white/[0.04]"
                   }`}
                 >
                   <span className="w-2 h-2 rounded-full bg-indigo-400" />
-                  <span>Occupied ({activeBlockFlats.filter((f) => !!f.resident_id).length})</span>
+                  <span>Occupied</span>
+                  <span
+                    className="px-2 py-0.5 rounded-full text-[11px] font-bold"
+                    style={{
+                      background: statusFilter === "occupied" ? "rgba(255, 255, 255, 0.22)" : "rgba(79, 70, 229, 0.08)",
+                      color: statusFilter === "occupied" ? "#ffffff" : "#4f46e5",
+                    }}
+                  >
+                    {activeBlockFlats.filter((f) => !!f.resident_id).length}
+                  </span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => { setStatusFilter("vacant"); setFlatPage(1); }}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                  className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
                     statusFilter === "vacant"
                       ? "bg-emerald-600 text-white shadow-md shadow-emerald-600/25"
-                      : "text-secondary hover:text-primary"
+                      : "text-secondary hover:text-primary hover:bg-black/[0.03] dark:hover:bg-white/[0.04]"
                   }`}
                 >
                   <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                  <span>Vacant ({activeBlockFlats.filter((f) => !f.resident_id).length})</span>
+                  <span>Vacant</span>
+                  <span
+                    className="px-2 py-0.5 rounded-full text-[11px] font-bold"
+                    style={{
+                      background: statusFilter === "vacant" ? "rgba(255, 255, 255, 0.22)" : "rgba(16, 185, 129, 0.08)",
+                      color: statusFilter === "vacant" ? "#ffffff" : "#059669",
+                    }}
+                  >
+                    {activeBlockFlats.filter((f) => !f.resident_id).length}
+                  </span>
                 </button>
               </div>
 
               <div className="flex items-center gap-2 text-xs text-secondary font-medium">
-                <span>
+                <span className="px-3 py-1 rounded-full bg-black/[0.03] dark:bg-white/[0.04]" style={{ border: "1px solid var(--divider, rgba(99, 102, 241, 0.08))" }}>
                   Showing <strong>{statusFilteredFlats.length}</strong> {statusFilter !== "all" ? statusFilter : ""} flats{" "}
                   {isAllBlocks ? "across All Blocks" : `in ${activeBlock}`}
                 </span>
@@ -1297,59 +1674,70 @@ const FlatHistory = () => {
                         style={{
                           animationDelay: `${i * 15}ms`,
                           position: "relative",
-                          borderRadius: 16,
-                          padding: "16px 18px 14px",
+                          borderRadius: 18,
+                          padding: "16px 18px",
                           cursor: "pointer",
-                          transition: "all 0.2s ease",
-                          background: "var(--card-inner-bg, rgba(255, 255, 255, 0.03))",
+                          transition: "all 0.22s cubic-bezier(0.16, 1, 0.3, 1)",
+                          background: "var(--card-inner-bg, #ffffff)",
                           border: isSelected
-                            ? "1.5px solid var(--accent, #6366f1)"
-                            : "1px solid var(--card-inner-border, rgba(255, 255, 255, 0.08))",
+                            ? "2px solid var(--accent, #6366f1)"
+                            : "1px solid var(--divider, rgba(99, 102, 241, 0.09))",
                           boxShadow: isSelected
-                            ? "0 8px 24px rgba(99, 102, 241, 0.2)"
-                            : "0 1px 3px rgba(0, 0, 0, 0.04)",
+                            ? "0 10px 25px -3px rgba(99, 102, 241, 0.22)"
+                            : "0 2px 8px -2px rgba(0, 0, 0, 0.03), 0 1px 3px rgba(0, 0, 0, 0.02)",
                           outline: "none",
                         }}
-                        className="group hover:border-slate-400/40 hover:shadow-md hover:-translate-y-0.5"
+                        className="group hover:border-indigo-400/50 hover:shadow-lg hover:shadow-indigo-500/5 hover:-translate-y-1"
                       >
                         {/* Top Header: Icon + Unit Number + BHK + Status Badge */}
                         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10 }}>
-                          <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0, flex: 1 }}>
                             <div style={{
-                              width: 38,
-                              height: 38,
-                              borderRadius: 11,
+                              width: 40,
+                              height: 40,
+                              borderRadius: 12,
                               display: "flex",
                               alignItems: "center",
                               justifyContent: "center",
                               flexShrink: 0,
-                              background: "rgba(255, 255, 255, 0.05)",
-                              border: "1px solid rgba(255, 255, 255, 0.1)",
-                              color: "var(--text-secondary, #94a3b8)",
+                              background: occ ? "rgba(99, 102, 241, 0.09)" : "rgba(16, 185, 129, 0.09)",
+                              border: occ ? "1px solid rgba(99, 102, 241, 0.18)" : "1px solid rgba(16, 185, 129, 0.18)",
+                              color: occ ? "var(--accent, #6366f1)" : "#10b981",
                             }}>
-                              {occ ? <MdApartment size={20} /> : <MdDoorFront size={20} />}
+                              {occ ? <MdApartment size={21} /> : <MdDoorFront size={21} />}
                             </div>
 
-                            <div style={{ minWidth: 0 }}>
-                              <div style={{ display: "flex", alignItems: "center", gap: 7, flexWrap: "wrap" }}>
-                                <span style={{ fontSize: 16, fontWeight: 800, color: "var(--text-primary)", letterSpacing: "-0.01em" }}>
+                            <div style={{ minWidth: 0, flex: 1 }}>
+                              <div style={{ display: "flex", alignItems: "center", gap: 7, flexWrap: "nowrap" }}>
+                                <span style={{ fontSize: 16, fontWeight: 800, color: "var(--text-primary)", letterSpacing: "-0.01em", whiteSpace: "nowrap" }}>
                                   {formatFlatTitle(flat.flat_number)}
                                 </span>
                                 {flat.flat_type && <BhkBadge type={flat.flat_type} />}
                               </div>
 
-                              <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "var(--text-secondary)", marginTop: 3 }}>
-                                <span style={{ fontWeight: 600, color: "var(--text-secondary)" }}>{blockName}</span>
+                              <div style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 6,
+                                fontSize: 12,
+                                color: "var(--text-secondary)",
+                                marginTop: 3,
+                                flexWrap: "nowrap",
+                                whiteSpace: "nowrap",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                              }}>
+                                <span style={{ fontWeight: 600, color: "var(--text-secondary)", whiteSpace: "nowrap" }}>{blockName}</span>
                                 {flat.Floor?.floor_number != null && (
                                   <>
-                                    <span>•</span>
-                                    <span>Floor {flat.Floor.floor_number}</span>
+                                    <span style={{ opacity: 0.4 }}>•</span>
+                                    <span style={{ whiteSpace: "nowrap" }}>Floor {flat.Floor.floor_number}</span>
                                   </>
                                 )}
                                 {flat.area_sqft && (
                                   <>
-                                    <span>•</span>
-                                    <span>{flat.area_sqft} sq.ft</span>
+                                    <span style={{ opacity: 0.4 }}>•</span>
+                                    <span style={{ whiteSpace: "nowrap" }}>{flat.area_sqft} sq.ft</span>
                                   </>
                                 )}
                               </div>
@@ -1362,12 +1750,12 @@ const FlatHistory = () => {
                             alignItems: "center",
                             gap: 5,
                             fontSize: 11,
-                            fontWeight: 650,
-                            padding: "3px 9px",
+                            fontWeight: 700,
+                            padding: "3.5px 10px",
                             borderRadius: 999,
-                            background: "rgba(255, 255, 255, 0.05)",
-                            color: "var(--text-secondary, #94a3b8)",
-                            border: "1px solid rgba(255, 255, 255, 0.1)",
+                            background: occ ? "rgba(99, 102, 241, 0.08)" : "rgba(16, 185, 129, 0.08)",
+                            color: occ ? "#4f46e5" : "#059669",
+                            border: occ ? "1px solid rgba(99, 102, 241, 0.2)" : "1px solid rgba(16, 185, 129, 0.2)",
                             whiteSpace: "nowrap",
                             flexShrink: 0,
                           }}>
@@ -1375,8 +1763,8 @@ const FlatHistory = () => {
                               width: 6,
                               height: 6,
                               borderRadius: "50%",
-                              background: occ ? "var(--text-primary, #f8fafc)" : "var(--text-secondary, #94a3b8)",
-                              opacity: occ ? 0.9 : 0.6
+                              background: occ ? "#4f46e5" : "#10b981",
+                              boxShadow: occ ? "0 0 6px rgba(79, 70, 229, 0.4)" : "0 0 6px rgba(16, 185, 129, 0.4)",
                             }} />
                             <span>{occ ? t("fhOccupied", "Occupied") : t("fhVacant", "Vacant")}</span>
                           </span>
@@ -1386,86 +1774,115 @@ const FlatHistory = () => {
                         <div style={{
                           marginTop: 14,
                           paddingTop: 12,
-                          borderTop: "1px solid var(--card-inner-border, rgba(255, 255, 255, 0.08))",
+                          borderTop: "1px solid var(--divider, rgba(99, 102, 241, 0.08))",
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "space-between",
                           gap: 10,
+                          minHeight: 46,
                         }}>
                           {occ ? (
                             <>
-                              <div style={{ display: "flex", alignItems: "center", gap: 9, minWidth: 0 }}>
-                                <div style={{
-                                  width: 30,
-                                  height: 30,
-                                  borderRadius: 8,
-                                  background: "rgba(255, 255, 255, 0.07)",
-                                  border: "1px solid rgba(255, 255, 255, 0.12)",
-                                  color: "var(--text-primary, #f8fafc)",
-                                  fontWeight: 700,
-                                  fontSize: 11.5,
-                                  display: "flex",
+                              <div style={{ minWidth: 0, flex: 1 }}>
+                                <p
+                                  title={residentName}
+                                  style={{
+                                    margin: 0,
+                                    fontSize: 13,
+                                    fontWeight: 700,
+                                    color: "var(--text-primary)",
+                                    whiteSpace: "nowrap",
+                                    overflow: "hidden",
+                                    textOverflow: "ellipsis",
+                                  }}
+                                >
+                                  {residentName}
+                                </p>
+                                <p style={{ margin: 0, fontSize: 11, color: "var(--text-secondary)", marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                                  {flat.resident_type || "Primary Resident"}
+                                </p>
+                              </div>
+
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  fetchFlatDetails(flat);
+                                }}
+                                title={t("fhViewHistory", "View History")}
+                                aria-label="View History"
+                                style={{
+                                  width: 34,
+                                  height: 34,
+                                  borderRadius: 10,
+                                  display: "inline-flex",
                                   alignItems: "center",
                                   justifyContent: "center",
                                   flexShrink: 0,
-                                }}>
-                                  {initial}
-                                </div>
-                                <div style={{ minWidth: 0 }}>
-                                  <p style={{ margin: 0, fontSize: 12, fontWeight: 700, color: "var(--text-primary)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                                    {residentName}
-                                  </p>
-                                  <p style={{ margin: 0, fontSize: 11, color: "var(--text-secondary)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                                    {flat.resident_type || "Primary Resident"}
-                                  </p>
-                                </div>
-                              </div>
-
-                              <span style={{
-                                display: "inline-flex",
-                                alignItems: "center",
-                                gap: 4,
-                                fontSize: 11.5,
-                                fontWeight: 700,
-                                padding: "5px 12px",
-                                borderRadius: 8,
-                                background: "#2563EB",
-                                color: "#FFFFFF",
-                                border: "1px solid #1D4ED8",
-                                boxShadow: "0 2px 6px rgba(37, 99, 235, 0.25)",
-                                flexShrink: 0,
-                                transition: "all 0.18s ease",
-                              }} className="hover:opacity-90">
-                                <span>{t("fhViewHistory", "History")}</span>
-                                <MdChevronRight size={14} />
-                              </span>
+                                  background: "var(--card-inner-bg, rgba(0, 0, 0, 0.03))",
+                                  color: "var(--text-secondary, #64748b)",
+                                  border: "1px solid var(--divider, rgba(99, 102, 241, 0.12))",
+                                  cursor: "pointer",
+                                  transition: "all 0.22s cubic-bezier(0.16, 1, 0.3, 1)",
+                                }}
+                                className="hover:!bg-accent hover:!text-white hover:!border-accent hover:shadow-md hover:shadow-accent/25 hover:scale-105 active:scale-95 group-hover:border-accent/40 group-hover:text-primary"
+                              >
+                                <MdVisibility size={17} />
+                              </button>
                             </>
                           ) : (
                             <>
-                              <div style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0 }}>
-                                <span style={{ fontSize: 12, fontWeight: 500, color: "var(--text-secondary, #94a3b8)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                                  {t("fhAvailableForAssignment", "Available for assignment")}
-                                </span>
+                              <div style={{ minWidth: 0, flex: 1 }}>
+                                <p style={{
+                                  margin: 0,
+                                  fontSize: 13,
+                                  fontWeight: 700,
+                                  color: "var(--text-primary)",
+                                  whiteSpace: "nowrap",
+                                  overflow: "hidden",
+                                  textOverflow: "ellipsis",
+                                }}>
+                                  Vacant Flat
+                                </p>
+                                <p style={{
+                                  margin: 0,
+                                  fontSize: 11,
+                                  color: "var(--text-secondary)",
+                                  marginTop: 2,
+                                  whiteSpace: "nowrap",
+                                  overflow: "hidden",
+                                  textOverflow: "ellipsis",
+                                }}>
+                                  Ready to Move In
+                                </p>
                               </div>
 
-                              <span style={{
-                                display: "inline-flex",
-                                alignItems: "center",
-                                gap: 4,
-                                fontSize: 11.5,
-                                fontWeight: 700,
-                                padding: "5px 12px",
-                                borderRadius: 8,
-                                background: "#6366F1",
-                                color: "#FFFFFF",
-                                border: "1px solid #4F46E5",
-                                boxShadow: "0 2px 6px rgba(99, 102, 241, 0.25)",
-                                flexShrink: 0,
-                                transition: "all 0.18s ease",
-                              }} className="hover:opacity-90">
-                                <span>Details</span>
-                                <MdChevronRight size={14} />
-                              </span>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  fetchFlatDetails(flat);
+                                }}
+                                title={t("fhViewHistory", "View History")}
+                                aria-label="View History"
+                                style={{
+                                  width: 34,
+                                  height: 34,
+                                  borderRadius: 10,
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  flexShrink: 0,
+                                  background: "var(--card-inner-bg, rgba(0, 0, 0, 0.03))",
+                                  color: "var(--text-secondary, #64748b)",
+                                  border: "1px solid var(--divider, rgba(99, 102, 241, 0.12))",
+                                  cursor: "pointer",
+                                  transition: "all 0.22s cubic-bezier(0.16, 1, 0.3, 1)",
+                                }}
+                                className="hover:!bg-accent hover:!text-white hover:!border-accent hover:shadow-md hover:shadow-accent/25 hover:scale-105 active:scale-95 group-hover:border-accent/40 group-hover:text-primary"
+                              >
+                                <MdVisibility size={17} />
+                              </button>
                             </>
                           )}
                         </div>
@@ -1475,7 +1892,10 @@ const FlatHistory = () => {
                 </div>
 
                 {/* Pagination Footer */}
-                <div className="flex flex-col sm:flex-row justify-between items-center px-2 pt-5 mt-4 border-t border-glass-border gap-3">
+                <div
+                  className="flex flex-col sm:flex-row justify-between items-center px-2 pt-5 mt-4 gap-3"
+                  style={{ borderTop: "1px solid var(--divider, rgba(99, 102, 241, 0.08))" }}
+                >
                   <span className="text-xs text-secondary font-medium">
                     Showing <strong>{pagedFlats.length}</strong> of <strong>{statusFilteredFlats.length}</strong> flats{" "}
                     {isAllBlocks ? (t("allBlocks", "All Blocks")).toLowerCase() : `in ${activeBlock}`}
@@ -1509,7 +1929,7 @@ const FlatHistory = () => {
           title={
             <div className="flex items-center gap-2.5 flex-wrap">
               <span className="font-extrabold text-base sm:text-lg text-primary">
-                {t("fhFlat") || "Flat"} {selectedFlat.flat_number}
+                {t("fhFlat") || "Flat"} {formatFlatTitle(selectedFlat.flat_number)}
               </span>
               <GlobalBadge
                 size="sm"
@@ -1606,7 +2026,7 @@ const FlatHistory = () => {
                 confirmMoveOut.resident?.user?.name ||
                 confirmMoveOut.resident?.name ||
                 t("fhUnknown") || "Unknown"
-              }${confirmMoveOut.flat ? ` — ${t("fhFlat") || "Flat"} ${confirmMoveOut.flat.flat_number}` : ""}?`
+              }${confirmMoveOut.flat ? ` — ${t("fhFlat") || "Flat"} ${formatFlatTitle(confirmMoveOut.flat.flat_number)}` : ""}?`
             : ""
         }
         confirmLabel={t("fhConfirmMoveOut") || "Confirm Move Out"}
@@ -1615,6 +2035,59 @@ const FlatHistory = () => {
         icon={MdLogout}
         loading={movingOut}
       />
+
+      {/* ── 6. Clearance Required Dialog (Blocks Move-out if Dues/Complaints/Parcels/Parking pending) ── */}
+      {clearanceBlock && (
+        <GlobalModal
+          isOpen={!!clearanceBlock}
+          onClose={() => setClearanceBlock(null)}
+          size="md"
+          icon={<MdWarning size={22} className="text-amber-500" />}
+          title="Clearance Required Before Move-Out"
+          subtitle={`Flat ${formatFlatTitle(clearanceBlock.flat?.flat_number) || ""} has pending items that must be resolved first`}
+        >
+          <div className="space-y-4">
+            <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 text-xs">
+              <strong>Cannot mark {clearanceBlock.resident?.User?.name || clearanceBlock.resident?.name || "resident"} as moved out.</strong>
+              <p className="mt-1">
+                To prevent new residents from inheriting uncleared charges or open tickets, all pending bills, complaints, gate parcels, and parking requests must be resolved before proceeding.
+              </p>
+            </div>
+
+            <div className="space-y-2.5">
+              {clearanceBlock.issues.map((iss, idx) => (
+                <div
+                  key={idx}
+                  className="p-3 rounded-xl border border-glass-border flex items-start justify-between gap-3 bg-black/[0.02] dark:bg-white/[0.02]"
+                >
+                  <div className="min-w-0">
+                    <p className="font-bold text-xs text-primary">{iss.title}</p>
+                    <p className="text-[11px] text-secondary mt-0.5">{iss.detail}</p>
+                  </div>
+                  {iss.tab && (
+                    <GlobalButton
+                      size="xs"
+                      variant="outline"
+                      onClick={() => {
+                        setActiveTab(iss.tab);
+                        setClearanceBlock(null);
+                      }}
+                    >
+                      View
+                    </GlobalButton>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            <div className="flex justify-end pt-2">
+              <GlobalButton variant="secondary" onClick={() => setClearanceBlock(null)}>
+                Close
+              </GlobalButton>
+            </div>
+          </div>
+        </GlobalModal>
+      )}
         </>
       )}
     </div>

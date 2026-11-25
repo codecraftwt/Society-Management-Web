@@ -802,6 +802,7 @@ export default function Complaint() {
               <div key={c.id} className="animate-fadeIn" style={{ animationDelay: `${i * 40}ms` }}>
                 <MobileComplaintCard c={c} updateStatus={updateStatus} updatingId={updatingId} t={t}
                   onOpen={openDrawer} unreadMap={unreadMap} commentCount={commentCounts[c.id]}
+                  isSuperAdmin={isSuperAdmin}
                   onPhotoClick={(url, title) => {
                     if (!url) return;
                     const isPdf = typeof url === "string" && (url.toLowerCase().endsWith(".pdf") || url.includes("/pdf"));

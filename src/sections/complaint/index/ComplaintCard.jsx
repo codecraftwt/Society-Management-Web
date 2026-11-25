@@ -1,10 +1,11 @@
-import { useEffect, useRef, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
   MdApartment, MdAttachFile, MdCalendarToday, MdChat, MdCheckCircle,
   MdMoreHoriz, MdOpenInNew, MdPerson, MdPublic, MdReportProblem,
-  MdSchedule, MdVisibility,
+  MdSchedule, MdVisibility, MdHome,
 } from "react-icons/md";
+import { AuthContext } from "../../../context/AuthContext";
 import styles from "../Complaint.module.css";
 import { flatLabel, formatDate } from "../complaintHelpers.js";
 import { Spinner, StatusPill } from "../complaintPieces.jsx";
@@ -23,9 +24,27 @@ function ComplaintRowMenu({ c, updatingId, unread, commentCount, onView, onMessa
   const isResolved   = c.status === "RESOLVED";
   const busy = updatingId === c.id;
 
-  const openMenu = () => {
+  const calculatePosition = () => {
     const r = btnRef.current?.getBoundingClientRect();
-    if (r) setPos({ top: r.bottom + 6, right: window.innerWidth - r.right });
+    if (!r) return null;
+
+    const estimatedHeight = menuRef.current?.offsetHeight || 165;
+    const spaceBelow = window.innerHeight - r.bottom;
+    const spaceAbove = r.top;
+
+    // Flip upwards if space below is insufficient and there is more room above
+    const openUpwards = spaceBelow < estimatedHeight + 10 && spaceAbove > spaceBelow;
+
+    const right = Math.max(12, window.innerWidth - r.right);
+    const top = openUpwards ? undefined : Math.min(window.innerHeight - estimatedHeight - 12, r.bottom + 6);
+    const bottom = openUpwards ? Math.max(12, window.innerHeight - r.top + 6) : undefined;
+
+    return { top, bottom, right, openUpwards };
+  };
+
+  const openMenu = () => {
+    const p = calculatePosition();
+    if (p) setPos(p);
     setOpen(true);
   };
 
@@ -33,6 +52,16 @@ function ComplaintRowMenu({ c, updatingId, unread, commentCount, onView, onMessa
 
   useEffect(() => {
     if (!open) return;
+
+    // Refine position with actual rendered DOM height
+    const refined = calculatePosition();
+    if (refined) {
+      setPos(prev => {
+        if (prev?.top === refined.top && prev?.bottom === refined.bottom && prev?.right === refined.right) return prev;
+        return refined;
+      });
+    }
+
     const onDown = (e) => {
       if (btnRef.current?.contains(e.target)) return;
       if (menuRef.current?.contains(e.target)) return;
@@ -63,8 +92,21 @@ function ComplaintRowMenu({ c, updatingId, unread, commentCount, onView, onMessa
         {(unread || 0) > 0 && <span className={styles.menuDot} />}
       </button>
 
-      {open && createPortal(
-        <div ref={menuRef} className={styles.menuDropdown} style={{ top: pos.top, right: pos.right }} role="menu">
+      {open && pos && createPortal(
+        <div
+          ref={menuRef}
+          className={styles.menuDropdown}
+          style={{
+            position: "fixed",
+            zIndex: 99999,
+            top: pos.top !== undefined ? `${pos.top}px` : "auto",
+            bottom: pos.bottom !== undefined ? `${pos.bottom}px` : "auto",
+            right: `${pos.right}px`,
+            maxHeight: "calc(100vh - 24px)",
+            overflowY: "auto",
+          }}
+          role="menu"
+        >
           <button className={styles.menuItem} role="menuitem" onClick={() => run(onView)}>
             <span className={styles.menuItemIcon}><MdVisibility size={15} /></span>
             {t("compViewDetails")}
@@ -101,158 +143,253 @@ function ComplaintRowMenu({ c, updatingId, unread, commentCount, onView, onMessa
   );
 }
 
-/* ── Mobile card ─────────────────────────────────────────────────────────────── */
-export default function MobileComplaintCard({ c, updateStatus, updatingId, t, onOpen, onPhotoClick, unreadMap, commentCount }) {
+/* ── Mobile & Grid Card ──────────────────────────────────────────────────────── */
+export default function MobileComplaintCard({
+  c,
+  updateStatus,
+  updatingId,
+  t,
+  onOpen,
+  onPhotoClick,
+  unreadMap,
+  commentCount,
+  isSuperAdmin: propIsSuperAdmin,
+}) {
+  const { user: authUser } = useContext(AuthContext);
+  const isSuper = propIsSuperAdmin ?? (authUser?.activeRole === "SUPER_ADMIN" || authUser?.role === "SUPER_ADMIN");
   const hasUnread = (unreadMap[c.id] || 0) > 0;
   const societyName = c.Society?.name || c.society_name;
+  const residentName = c.User?.name || "Resident";
+  const residentInitial = residentName.charAt(0).toUpperCase();
+  const unit = flatLabel(c, t);
+
+  const isPending    = c.status === "OPEN" || c.status === "PENDING";
+  const isInProgress = c.status === "IN_PROGRESS";
+  const isResolved   = c.status === "RESOLVED";
 
   return (
     <div
       onClick={() => onOpen(c, "details")}
-      className={`${styles.mcard} group cursor-pointer transition-all duration-200 hover:shadow-xl hover:border-purple-500/50`}
+      className={`${styles.mcard} group cursor-pointer transition-all duration-300 hover:shadow-xl hover:-translate-y-1`}
       style={{
         background: "var(--card-bg)",
         border: "1px solid var(--glass-border)",
-        borderRadius: "16px",
+        borderRadius: "18px",
         overflow: "hidden",
         display: "flex",
         flexDirection: "column",
         justifyContent: "space-between",
         minHeight: "100%",
-        boxShadow: "0 4px 20px rgba(0, 0, 0, 0.08)",
+        boxShadow: "0 4px 18px rgba(0, 0, 0, 0.05)",
       }}
     >
-      <div className={styles.mcardBody} style={{ padding: "18px", display: "flex", flexDirection: "column", gap: "14px" }}>
-        {/* Top: Avatar/Icon + Title + Status Pill */}
+      <div style={{ padding: "18px", display: "flex", flexDirection: "column", gap: "13px", flex: 1 }}>
+        {/* Top: Icon + Title & Date + Status Pill */}
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "12px" }}>
           <div style={{ display: "flex", alignItems: "flex-start", gap: "12px", flex: 1, minWidth: 0 }}>
             <div
               style={{
-                width: "40px",
-                height: "40px",
-                borderRadius: "12px",
-                background: "linear-gradient(135deg, rgba(239, 68, 68, 0.16), rgba(249, 115, 22, 0.12))",
-                color: "#f87171",
-                border: "1.5px solid rgba(239, 68, 68, 0.3)",
+                width: "42px",
+                height: "42px",
+                borderRadius: "13px",
+                background: isResolved
+                  ? "rgba(34, 197, 94, 0.12)"
+                  : isInProgress
+                  ? "rgba(59, 130, 246, 0.12)"
+                  : "rgba(239, 68, 68, 0.12)",
+                color: isResolved
+                  ? "#22c55e"
+                  : isInProgress
+                  ? "#3b82f6"
+                  : "#ef4444",
+                border: `1.5px solid ${
+                  isResolved
+                    ? "rgba(34, 197, 94, 0.28)"
+                    : isInProgress
+                    ? "rgba(59, 130, 246, 0.28)"
+                    : "rgba(239, 68, 68, 0.28)"
+                }`,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
                 flexShrink: 0,
-                marginTop: "2px",
-                boxShadow: "0 2px 8px rgba(239, 68, 68, 0.15)",
+                marginTop: "1px",
+                boxShadow: isResolved
+                  ? "0 2px 8px rgba(34, 197, 94, 0.15)"
+                  : isInProgress
+                  ? "0 2px 8px rgba(59, 130, 246, 0.15)"
+                  : "0 2px 8px rgba(239, 68, 68, 0.15)",
               }}
             >
               <MdReportProblem size={20} />
             </div>
+
             <div style={{ flex: 1, minWidth: 0 }}>
               <h3
                 style={{
-                  fontSize: "1rem",
+                  fontSize: "15px",
                   fontWeight: 700,
                   color: "var(--text-primary)",
                   margin: 0,
-                  lineHeight: 1.4,
+                  lineHeight: 1.35,
                   wordBreak: "break-word",
                   overflowWrap: "anywhere",
                 }}
               >
                 {c.title}
               </h3>
-              <div style={{ display: "flex", alignItems: "center", gap: "6px", marginTop: "6px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px", marginTop: "5px", flexWrap: "wrap" }}>
                 <span
                   style={{
                     fontSize: "11px",
                     fontWeight: 600,
-                    color: "#94a3b8",
+                    color: "var(--text-secondary)",
                     display: "inline-flex",
                     alignItems: "center",
                     gap: "4px",
-                    padding: "2px 8px",
-                    borderRadius: "6px",
-                    background: "rgba(148, 163, 184, 0.1)",
-                    border: "1px solid rgba(148, 163, 184, 0.18)",
                   }}
                 >
-                  <MdCalendarToday size={11} style={{ opacity: 0.85 }} /> {formatDate(c.created_at)}
+                  <MdCalendarToday size={11} style={{ opacity: 0.7 }} /> {formatDate(c.created_at)}
                 </span>
+                {c.priority && (
+                  <span
+                    style={{
+                      fontSize: "10px",
+                      fontWeight: 800,
+                      padding: "1px 6px",
+                      borderRadius: "6px",
+                      textTransform: "uppercase",
+                      letterSpacing: "0.03em",
+                      ...(c.priority === "HIGH"
+                        ? { background: "rgba(239, 68, 68, 0.12)", color: "#ef4444", border: "1px solid rgba(239, 68, 68, 0.25)" }
+                        : c.priority === "MEDIUM"
+                        ? { background: "rgba(245, 158, 11, 0.12)", color: "#f59e0b", border: "1px solid rgba(245, 158, 11, 0.25)" }
+                        : { background: "rgba(59, 130, 246, 0.12)", color: "#3b82f6", border: "1px solid rgba(59, 130, 246, 0.25)" }),
+                    }}
+                  >
+                    {c.priority}
+                  </span>
+                )}
               </div>
             </div>
           </div>
+
           <div style={{ flexShrink: 0 }}>
             <StatusPill status={c.status} t={t} />
           </div>
         </div>
 
-        {/* Distinct Colorful Badges: Society, Resident, Flat */}
-        <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", alignItems: "center" }}>
-          {/* Highlighted Society Badge */}
-          {societyName && (
+        {/* Optional Description snippet */}
+        {c.description && (
+          <p
+            style={{
+              fontSize: "12px",
+              color: "var(--text-secondary)",
+              margin: "2px 0 0",
+              lineHeight: 1.5,
+              display: "-webkit-box",
+              WebkitLineClamp: 2,
+              lineClamp: 2,
+              WebkitBoxOrient: "vertical",
+              overflow: "hidden",
+              opacity: 0.85,
+            }}
+          >
+            {c.description}
+          </p>
+        )}
+
+        {/* Resident & Unit Information Block */}
+        <div
+          style={{
+            marginTop: "auto",
+            padding: "10px 12px",
+            borderRadius: "12px",
+            background: "var(--card-inner-bg, rgba(255, 255, 255, 0.02))",
+            border: "1px solid var(--divider, rgba(255, 255, 255, 0.07))",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: "10px",
+          }}
+        >
+          {/* Resident Details */}
+          <div style={{ display: "flex", alignItems: "center", gap: "9px", minWidth: 0, flex: 1 }}>
+            <div
+              style={{
+                width: "32px",
+                height: "32px",
+                borderRadius: "50%",
+                background: "rgba(99, 102, 241, 0.12)",
+                color: "var(--accent, #6366f1)",
+                border: "1px solid rgba(99, 102, 241, 0.25)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontWeight: 700,
+                fontSize: "12px",
+                flexShrink: 0,
+              }}
+            >
+              {residentInitial}
+            </div>
+            <div style={{ minWidth: 0, flex: 1 }}>
+              <div
+                style={{
+                  fontSize: "13px",
+                  fontWeight: 700,
+                  color: "var(--text-primary)",
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                }}
+              >
+                {residentName}
+              </div>
+              <div
+                style={{
+                  fontSize: "11px",
+                  color: "var(--text-secondary)",
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  marginTop: "1px",
+                }}
+              >
+                {unit}
+              </div>
+            </div>
+          </div>
+
+          {/* Super Admin ONLY: Society Badge */}
+          {isSuper && societyName && (
             <span
               style={{
                 display: "inline-flex",
                 alignItems: "center",
-                gap: "6px",
-                padding: "4px 10px",
-                borderRadius: "8px",
-                background: "linear-gradient(135deg, rgba(168, 85, 247, 0.18), rgba(139, 92, 246, 0.12))",
-                border: "1px solid rgba(168, 85, 247, 0.38)",
+                gap: "5px",
+                padding: "3px 8px",
+                borderRadius: "6px",
+                background: "rgba(168, 85, 247, 0.1)",
+                border: "1px solid rgba(168, 85, 247, 0.25)",
                 color: "#c084fc",
-                fontWeight: 700,
-                fontSize: "12px",
-                boxShadow: "0 2px 6px rgba(168, 85, 247, 0.12)",
+                fontWeight: 600,
+                fontSize: "11px",
+                flexShrink: 0,
+                maxWidth: "130px",
               }}
+              title={societyName}
             >
-              <MdApartment size={14} style={{ color: "#c084fc" }} />
-              <span>{societyName}</span>
+              <MdApartment size={12} style={{ flexShrink: 0 }} />
+              <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {societyName}
+              </span>
             </span>
           )}
-
-          {/* Resident Badge (Emerald / Cyan) */}
-          <span
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "5px",
-              padding: "4px 10px",
-              borderRadius: "8px",
-              background: "linear-gradient(135deg, rgba(16, 185, 129, 0.16), rgba(5, 150, 105, 0.1))",
-              border: "1px solid rgba(16, 185, 129, 0.35)",
-              color: "#34d399",
-              fontWeight: 600,
-              fontSize: "12px",
-              boxShadow: "0 2px 6px rgba(16, 185, 129, 0.1)",
-            }}
-          >
-            <MdPerson size={14} style={{ color: "#34d399" }} />
-            <span>
-              {c.User?.name || "Anonymous"}
-              {c.User?.resident_type ? ` (${c.User.resident_type})` : ""}
-            </span>
-          </span>
-
-          {/* Flat Badge (Amber / Warm Gold) */}
-          <span
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "5px",
-              padding: "4px 10px",
-              borderRadius: "8px",
-              background: "linear-gradient(135deg, rgba(245, 158, 11, 0.16), rgba(217, 119, 6, 0.1))",
-              border: "1px solid rgba(245, 158, 11, 0.35)",
-              color: "#fbbf24",
-              fontWeight: 600,
-              fontSize: "12px",
-              boxShadow: "0 2px 6px rgba(245, 158, 11, 0.1)",
-            }}
-          >
-            <MdApartment size={14} style={{ color: "#fbbf24" }} />
-            <span>{flatLabel(c, t)}</span>
-          </span>
         </div>
       </div>
 
-      {/* Card Footer: Quick Actions + Chat Button */}
+      {/* Card Footer: Chat Button + Quick Action & Kebab */}
       <div
         style={{
           display: "flex",
@@ -283,7 +420,7 @@ export default function MobileComplaintCard({ c, updateStatus, updatingId, t, on
           }}
         >
           <MdChat size={13} />
-          <span>{t("compMessages")}</span>
+          <span>{t("compMessages", "Messages")}</span>
           {commentCount != null && (
             <span
               style={{
@@ -300,16 +437,35 @@ export default function MobileComplaintCard({ c, updateStatus, updatingId, t, on
           )}
         </button>
 
-        <ComplaintRowMenu
-          c={c}
-          updatingId={updatingId}
-          unread={unreadMap[c.id] || 0}
-          commentCount={commentCount}
-          onView={() => onOpen(c, "details")}
-          onMessages={() => onOpen(c, "chat")}
-          updateStatus={updateStatus}
-          t={t}
-        />
+        <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+          <button
+            type="button"
+            onClick={() => onOpen(c, "details")}
+            style={{
+              background: "transparent",
+              border: "none",
+              fontSize: "11.5px",
+              fontWeight: 600,
+              color: "var(--accent, #6366f1)",
+              cursor: "pointer",
+              padding: "4px 8px",
+              borderRadius: "6px",
+            }}
+          >
+            {t("compViewDetails", "View Details")}
+          </button>
+
+          <ComplaintRowMenu
+            c={c}
+            updatingId={updatingId}
+            unread={unreadMap[c.id] || 0}
+            commentCount={commentCount}
+            onView={() => onOpen(c, "details")}
+            onMessages={() => onOpen(c, "chat")}
+            updateStatus={updateStatus}
+            t={t}
+          />
+        </div>
       </div>
     </div>
   );

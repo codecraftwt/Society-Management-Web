@@ -55,6 +55,8 @@ export default function AttendancePanel({
   rows,
   loading,
   showStaffColumn = false,
+  showManual = true,
+  showActions = true,
   staffNameResolver,
   emptyMessage,
   onUpdated,
@@ -233,44 +235,52 @@ export default function AttendancePanel({
         );
       },
     },
-    {
-      key: "manual",
-      header: t("csManual", "Manual"),
-      render: (row) =>
-        row.is_manual ? (
-          <div className="flex flex-col gap-0.5">
-            <GlobalBadge variant="info" size="sm">
-              {t("csCorrected", "Corrected")}
-            </GlobalBadge>
-            {row.notes && (
-              <span
-                className="text-[10px] text-secondary max-w-[150px] truncate"
-                title={row.notes}
+    ...(showManual
+      ? [
+          {
+            key: "manual",
+            header: t("csManual", "Manual"),
+            render: (row) =>
+              row.is_manual ? (
+                <div className="flex flex-col gap-0.5">
+                  <GlobalBadge variant="info" size="sm">
+                    {t("csCorrected", "Corrected")}
+                  </GlobalBadge>
+                  {row.notes && (
+                    <span
+                      className="text-[10px] text-secondary max-w-[150px] truncate"
+                      title={row.notes}
+                    >
+                      {row.notes}
+                    </span>
+                  )}
+                </div>
+              ) : (
+                <span className="text-secondary text-xs">—</span>
+              ),
+          },
+        ]
+      : []),
+    ...(showActions
+      ? [
+          {
+            key: "actions",
+            header: "",
+            align: "right",
+            render: (row) => (
+              <GlobalButton
+                variant="secondary"
+                size="xs"
+                icon={MdEditCalendar}
+                onClick={() => openCorrection(row)}
+                title={t("csCorrect", "Correct attendance")}
               >
-                {row.notes}
-              </span>
-            )}
-          </div>
-        ) : (
-          <span className="text-secondary text-xs">—</span>
-        ),
-    },
-    {
-      key: "actions",
-      header: "",
-      align: "right",
-      render: (row) => (
-        <GlobalButton
-          variant="secondary"
-          size="xs"
-          icon={MdEditCalendar}
-          onClick={() => openCorrection(row)}
-          title={t("csCorrect", "Correct attendance")}
-        >
-          {t("csEdit", "Edit")}
-        </GlobalButton>
-      ),
-    },
+                {t("csEdit", "Edit")}
+              </GlobalButton>
+            ),
+          },
+        ]
+      : []),
   ];
 
   return (

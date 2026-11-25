@@ -21,6 +21,8 @@ import {
   HiOutlineUsers,
   HiOutlineCreditCard,
   HiOutlineEnvelope,
+  HiOutlineShieldExclamation,
+  HiOutlineInformationCircle,
   HiOutlineLockClosed as Hi2LockClosed,
   HiOutlineShieldCheck as Hi2ShieldCheck,
   HiArrowRightOnRectangle,
@@ -51,77 +53,113 @@ function RejectionModal({ details, onClose, t }) {
   const hasContact = Boolean(contact && (contact.email || contact.phone));
 
   return (
-    <div className="otp-overlay">
-      <div className="otp-modal-box animate-scaleIn">
-        <div className="rejection-modal-topbar" />
+    <div className="rejection-card-container animate-scaleIn" role="dialog" aria-modal="true" aria-labelledby="rejection-title">
+      {/* Top gradient status accent */}
+      <div className="rejection-card-topbar" />
 
-        <div className="otp-modal-inner">
-          <div className="otp-modal-header">
-            <div className="rejection-shield-icon">
-              <HiX />
+      {/* Close Icon Button (Top-Right) */}
+      <button
+        type="button"
+        onClick={onClose}
+        className="rejection-card-close-btn"
+        aria-label={t("close", "Close")}
+      >
+        <HiX />
+      </button>
+
+      {/* Card Header: Hero row + Title + Subtitle */}
+      <div className="rejection-card-header">
+        <div className="rejection-hero-row">
+          <div className="rejection-shield-badge">
+            <HiOutlineShieldExclamation />
+          </div>
+          <div className="rejection-hero-meta">
+            <div className="rejection-status-pill">
+              <span className="rejection-status-dot" />
+              <span>{t("rejectionStatusTag", "Application Rejected")}</span>
             </div>
-
-            <h2 className="otp-title">
+            <h2 id="rejection-title" className="rejection-card-title">
               {t("rejectionTitle", "Registration Rejected")}
             </h2>
-
-            <p className="otp-subtitle">
-              {societyName
-                ? t("rejectionSubtitleWithSociety", { society: societyName })
-                : t("rejectionSubtitle", "Your registration could not be approved by the society admin.")}
-            </p>
           </div>
+        </div>
 
-          {reason ? (
-            <div className="rejection-reason-box">
-              <p className="rejection-reason-label">
-                {t("rejectionReasonLabel", "Reason given by the admin")}
-              </p>
-              <p className="rejection-reason-text">{reason}</p>
-            </div>
+        <p className="rejection-card-subtitle">
+          {societyName ? (
+            <>
+              {t("rejectionSubtitlePrefix", "Your registration for")}{" "}
+              <span className="rejection-society-badge">{societyName}</span>{" "}
+              {t("rejectionSubtitleSuffix", "could not be approved by the society admin.")}
+            </>
           ) : (
-            <div className="rejection-reason-box">
-              <p className="rejection-reason-label">
-                {t("rejectionReasonLabel", "Reason given by the admin")}
-              </p>
-              <p className="rejection-reason-text" style={{ opacity: 0.8, fontWeight: 500 }}>
-                {t("rejectionNoReason", "The admin did not record a specific reason. Please contact the admin for details.")}
-              </p>
-            </div>
+            t("rejectionSubtitle", "Your registration could not be approved by the society admin.")
           )}
+        </p>
+      </div>
 
-          <div className="rejection-help-box">
-            <p className="rejection-help-label">{t("rejectionNextSteps", "What you can do")}</p>
-            <ul className="rejection-help-list">
-              <li>{t("rejectionStep1", "Contact your society admin to understand the reason.")}</li>
-              <li>{t("rejectionStep2", "Correct your documents or details as discussed.")}</li>
-              <li>{t("rejectionStep3", "Register again once the issue is resolved.")}</li>
-            </ul>
+      {/* Card Content Body */}
+      <div className="rejection-card-body">
+        {/* Admin's Reason Box */}
+        <div className="rejection-reason-box">
+          <div className="rejection-reason-header">
+            <HiOutlineInformationCircle className="rejection-header-icon" />
+            <span>{t("rejectionReasonLabel", "Reason given by the admin")}</span>
           </div>
+          <p className="rejection-reason-text">
+            {reason || t("rejectionNoReason", "The admin did not record a specific reason. Please contact the admin for details.")}
+          </p>
+        </div>
 
-          {hasContact && (
-            <div className="rejection-contact-box">
-              <p className="rejection-contact-label">{t("rejectionContactAdmin", "Contact the admin")}</p>
-              {contact.name && <p className="rejection-contact-name">{contact.name}</p>}
+        {/* 3-Step Action Guide */}
+        <div className="rejection-steps-box">
+          <div className="rejection-steps-header">
+            {t("rejectionNextSteps", "What you can do")}
+          </div>
+          <div className="rejection-step-rows">
+            <div className="rejection-step-row">
+              <span className="rejection-step-num">1</span>
+              <span className="rejection-step-label">{t("rejectionStep1", "Contact your society admin to understand the reason.")}</span>
+            </div>
+            <div className="rejection-step-row">
+              <span className="rejection-step-num">2</span>
+              <span className="rejection-step-label">{t("rejectionStep2", "Correct your documents or details as discussed.")}</span>
+            </div>
+            <div className="rejection-step-row">
+              <span className="rejection-step-num">3</span>
+              <span className="rejection-step-label">{t("rejectionStep3", "Register again once the issue is resolved.")}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Contact Admin Row */}
+        {hasContact && (
+          <div className="rejection-contact-strip">
+            <span className="rejection-contact-lbl">{t("rejectionContactAdmin", "Contact the admin")}:</span>
+            {contact.name && <span className="rejection-admin-name">{contact.name}</span>}
+            <div className="rejection-contact-btns">
               {contact.email && (
-                <a className="rejection-contact-link" href={`mailto:${contact.email}`}>
-                  <HiMail />
-                  <span>{contact.email}</span>
+                <a className="rejection-action-pill" href={`mailto:${contact.email}`} title={contact.email}>
+                  <HiOutlineEnvelope />
+                  <span>Email</span>
                 </a>
               )}
               {contact.phone && (
-                <a className="rejection-contact-link" href={`tel:${contact.phone}`}>
+                <a className="rejection-action-pill" href={`tel:${contact.phone}`} title={contact.phone}>
                   <HiOutlinePhone />
-                  <span>{contact.phone}</span>
+                  <span>Call</span>
                 </a>
               )}
             </div>
-          )}
+          </div>
+        )}
+      </div>
 
-          <button type="button" onClick={onClose} className="rejection-close-btn">
-            {t("rejectionClose", "Back to login")}
-          </button>
-        </div>
+      {/* Card Footer */}
+      <div className="rejection-card-footer">
+        <button type="button" onClick={onClose} className="rejection-return-button">
+          <HiOutlineArrowLeft />
+          <span>{t("rejectionClose", "Back to login")}</span>
+        </button>
       </div>
     </div>
   );

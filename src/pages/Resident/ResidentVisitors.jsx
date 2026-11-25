@@ -13,12 +13,15 @@ import {
   MdDirectionsWalk,
   MdCheckCircle,
   MdFilterList,
+  MdVisibility,
+  MdApartment,
 } from "react-icons/md";
 import GlobalBadge from "../../components/common/GlobalBadge";
 import Select from "../../components/common/Select";
 
 import Pagination from "../../components/common/Pagination";
 import StatCard from "../../components/common/StatCard";
+import Modal from "../../components/Modal";
 
 function useDebounce(value, delay = 500) {
   const [debounced, setDebounced] = useState(value);
@@ -63,10 +66,12 @@ const timeAgoRaw = (d) => {
 const calcDuration = (entry, exit) => {
   if (!entry || !exit) return null;
   const diff = new Date(exit) - new Date(entry);
+  if (diff < 0) return "< 1 min";
   const m = Math.floor(diff / 60000);
   const h = Math.floor(m / 60);
   if (h > 0) return `${h}h ${m % 60}m`;
-  return `${m}m`;
+  if (m === 0) return "< 1 min";
+  return `${m} min`;
 };
 
 const getPurposeConfig = (purpose, t) => {
@@ -116,6 +121,7 @@ export default function ResidentVisitors() {
 
   const [visitors,     setVisitors]     = useState([]);
   const [expandedId,   setExpandedId]   = useState(null);
+  const [selectedVisitor, setSelectedVisitor] = useState(null);
 
   // ── Loading states ──
   const [initialLoad, setInitialLoad] = useState(true);
@@ -354,9 +360,9 @@ export default function ResidentVisitors() {
                     className="rounded-xl border border-white/8 overflow-hidden animate-fadeIn"
                     style={{ animationDelay: `${i * 35}ms` }}
                   >
-                    <button
-                      className="w-full text-left p-4 flex items-center gap-3 hover:bg-white/3 transition-colors duration-200"
-                      onClick={() => toggleExpand(v.id)}
+                    <div
+                      onClick={() => setSelectedVisitor(v)}
+                      className="w-full text-left p-4 flex items-center gap-3 hover:bg-white/3 transition-colors duration-200 cursor-pointer"
                     >
                       <Avatar name={v.visitor_name} size="w-10 h-10" textSize="text-sm" />
                       <div className="flex-1 min-w-0">
@@ -386,13 +392,31 @@ export default function ResidentVisitors() {
                            )}
                          </p>
                       </div>
-                      <div
-                        className="text-secondary shrink-0 transition-transform duration-200"
-                        style={{ transform: expandedId === v.id ? "rotate(180deg)" : "rotate(0deg)" }}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedVisitor(v);
+                        }}
+                        style={{
+                          width: 32,
+                          height: 32,
+                          borderRadius: 9,
+                          display: "inline-flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          flexShrink: 0,
+                          background: "var(--card-inner-bg, rgba(99, 102, 241, 0.05))",
+                          color: "var(--accent, #6366f1)",
+                          border: "1px solid var(--divider, rgba(99, 102, 241, 0.16))",
+                          cursor: "pointer",
+                        }}
+                        className="hover:!bg-accent hover:!text-white hover:!border-accent hover:shadow-sm active:scale-95 transition-all"
+                        title={t("viewDetails") || "View Details"}
                       >
-                        <MdExpandMore size={18} />
-                      </div>
-                    </button>
+                        <MdVisibility size={16} />
+                      </button>
+                    </div>
 
                     {expandedId === v.id && (
                       <div className="border-t border-white/8 px-4 pb-4 pt-3 space-y-3 animate-fadeIn">
@@ -465,7 +489,7 @@ export default function ResidentVisitors() {
                     <th>{t("vrEntry")}</th>
                     <th>{t("vrExit") || t("visExitTime") || "Out Time"}</th>
                     <th>{t("billStatusCol")}</th>
-                    <th style={{ width: 40 }}></th>
+                    <th style={{ width: 64, textAlign: "center" }}>{t("commonAction") || "Action"}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -475,11 +499,10 @@ export default function ResidentVisitors() {
                     return (
                       <React.Fragment key={v.id}>
                         <tr
-                          onClick={() => toggleExpand(v.id)}
+                          onClick={() => setSelectedVisitor(v)}
                           className="border-b border-white/5 cursor-pointer group transition-colors duration-200 hover:bg-white/3 animate-fadeIn"
                           style={{
                             animationDelay: `${i * 25}ms`,
-                            background: expandedId === v.id ? "rgba(255,255,255,0.025)" : "",
                           }}
                         >
                           <td className="p-3">
@@ -502,73 +525,34 @@ export default function ResidentVisitors() {
                           <td className="p-3 text-secondary text-xs whitespace-nowrap">{formatDate(v.entry_time)}</td>
                           <td className="p-3 text-secondary text-xs whitespace-nowrap">{v.exit_time ? formatDate(v.exit_time) : "—"}</td>
                           <td className="p-3"><StatusBadge exitTime={v.exit_time} t={t} /></td>
-                          <td className="p-3">
-                            <div
-                              className="text-secondary/40 group-hover:text-secondary transition-all duration-300"
-                              style={{ transform: expandedId === v.id ? "rotate(180deg)" : "rotate(0deg)" }}
+                          <td className="p-3 text-center">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedVisitor(v);
+                              }}
+                              style={{
+                                width: 34,
+                                height: 34,
+                                borderRadius: 10,
+                                display: "inline-flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                flexShrink: 0,
+                                background: "var(--card-inner-bg, rgba(99, 102, 241, 0.05))",
+                                color: "var(--accent, #6366f1)",
+                                border: "1px solid var(--divider, rgba(99, 102, 241, 0.16))",
+                                cursor: "pointer",
+                                transition: "all 0.22s cubic-bezier(0.16, 1, 0.3, 1)",
+                              }}
+                              className="hover:!bg-accent hover:!text-white hover:!border-accent hover:shadow-md hover:shadow-accent/25 hover:scale-105 active:scale-95 group-hover:border-accent/40"
+                              title={t("viewDetails") || "View Details"}
                             >
-                              <MdExpandMore size={18} />
-                            </div>
+                              <MdVisibility size={17} />
+                            </button>
                           </td>
                         </tr>
-
-                        {expandedId === v.id && (
-                          <tr>
-                            <td colSpan={6} className="px-4 pb-4 pt-1">
-                              <div className="rounded-xl bg-white/3 border border-white/8 p-4 animate-scaleIn">
-                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-                                  <div className="flex items-start gap-2.5 min-w-0">
-                                    <div className="w-7 h-7 rounded-lg bg-blue-500/15 flex items-center justify-center shrink-0 mt-0.5">
-                                      <MdPhone size={14} className="text-blue-400" />
-                                    </div>
-                                    <div className="min-w-0">
-                                      <p className="text-[10px] text-secondary uppercase tracking-wider">{t("vrMobile")}</p>
-                                      <p className="text-xs font-medium mt-0.5 wrap-break-word">{v.mobile}</p>
-                                    </div>
-                                  </div>
-
-                                  <div className="flex items-start gap-2.5 min-w-0">
-                                    <div className="w-7 h-7 rounded-lg bg-white/8 flex items-center justify-center shrink-0 mt-0.5">
-                                      <MdDirectionsCar size={14} className="text-secondary" />
-                                    </div>
-                                    <div className="min-w-0">
-                                      <p className="text-[10px] text-secondary uppercase tracking-wider">{t("rvVehicle")}</p>
-                                      <p className="text-xs font-medium mt-0.5 wrap-break-word">{v.vehicle_number || "—"}</p>
-                                    </div>
-                                  </div>
-
-                                  <div className="flex items-start gap-2.5 min-w-0">
-                                    <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5 ${v.exit_time ? "bg-red-500/15" : "bg-white/5"}`}>
-                                      <MdLogout size={14} className={v.exit_time ? "text-red-400" : "text-secondary"} />
-                                    </div>
-                                    <div className="min-w-0">
-                                      <p className="text-[10px] text-secondary uppercase tracking-wider">{t("visExitTime")}</p>
-                                      <p className={`text-xs font-medium mt-0.5 wrap-break-word ${!v.exit_time ? "text-secondary" : ""}`}>
-                                        {v.exit_time ? formatDate(v.exit_time) : t("visStillInside")}
-                                      </p>
-                                    </div>
-                                  </div>
-
-                                  <div className="flex items-start gap-2.5 min-w-0">
-                                    <div className="w-7 h-7 rounded-lg bg-yellow-500/15 flex items-center justify-center shrink-0 mt-0.5">
-                                      <MdAccessTime size={14} className="text-yellow-400" />
-                                    </div>
-                                    <div className="min-w-0">
-                                      <p className="text-[10px] text-secondary uppercase tracking-wider">{t("visDuration")}</p>
-                                      <p className="text-xs font-medium mt-0.5 text-yellow-400">
-                                        {v.exit_time
-                                          ? calcDuration(v.entry_time, v.exit_time)
-                                          : `${calcDuration(v.entry_time, new Date().toISOString()) || "< 1m"}+`
-                                        }
-                                      </p>
-                                    </div>
-                                  </div>
-
-                                </div>
-                              </div>
-                            </td>
-                          </tr>
-                        )}
                       </React.Fragment>
                     );
                   })}
@@ -585,6 +569,170 @@ export default function ResidentVisitors() {
             </div>
           </>
         ) : null}
+
+      {/* ── VISITOR DETAILS POP-UP MODAL ── */}
+      {selectedVisitor && (
+        <Modal
+          isOpen={!!selectedVisitor}
+          onClose={() => setSelectedVisitor(null)}
+          title="Visitor Details"
+          subtitle="Gate Activity & Visitor Summary"
+          icon={MdPerson}
+          size="md"
+        >
+          {(() => {
+            const v = selectedVisitor;
+            const pConfig = getPurposeConfig(v.purpose, t);
+            const PurposeIcon = pConfig.icon;
+            const duration = calcDuration(v.entry_time, v.exit_time || new Date().toISOString());
+
+            return (
+              <div className="space-y-4 pt-1">
+                {/* Header Profile Card */}
+                <div
+                  className="p-4 rounded-2xl flex items-center justify-between gap-3 flex-wrap shadow-xs"
+                  style={{
+                    background: "var(--card-inner-bg, rgba(0,0,0,0.02))",
+                    border: "1px solid var(--divider, rgba(99, 102, 241, 0.12))",
+                  }}
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <Avatar name={v.visitor_name} size="w-12 h-12" textSize="text-base" />
+                    <div className="min-w-0">
+                      <h4 className="font-extrabold text-base truncate m-0 text-primary">
+                        {v.visitor_name}
+                      </h4>
+                      <p className="text-xs text-secondary mt-1 flex items-center gap-1.5 m-0">
+                        <MdPhone size={13} className="text-accent shrink-0" />
+                        <span>{v.mobile || "—"}</span>
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <span className={`inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full border ${pConfig.bg} ${pConfig.color} font-bold`}>
+                      <PurposeIcon size={14} />
+                      {pConfig.label}
+                    </span>
+                    <StatusBadge exitTime={v.exit_time} t={t} />
+                  </div>
+                </div>
+
+                {/* Details Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {/* Flat / Property */}
+                  <div
+                    className="p-3.5 rounded-xl space-y-1"
+                    style={{
+                      background: "var(--card-inner-bg, rgba(0,0,0,0.02))",
+                      border: "1px solid var(--glass-border)",
+                    }}
+                  >
+                    <div className="flex items-center gap-1.5 text-secondary text-[11px] font-bold uppercase tracking-wider">
+                      <MdApartment size={14} className="text-accent" />
+                      <span>Flat Assignment</span>
+                    </div>
+                    <p className="text-sm font-bold text-primary m-0">
+                      {v.Flat?.flat_number
+                        ? (v.Flat.flat_number.toLowerCase().startsWith("flat") ? v.Flat.flat_number : `Flat ${v.Flat.flat_number}`)
+                        : "—"}
+                    </p>
+                  </div>
+
+                  {/* Vehicle */}
+                  <div
+                    className="p-3.5 rounded-xl space-y-1"
+                    style={{
+                      background: "var(--card-inner-bg, rgba(0,0,0,0.02))",
+                      border: "1px solid var(--glass-border)",
+                    }}
+                  >
+                    <div className="flex items-center gap-1.5 text-secondary text-[11px] font-bold uppercase tracking-wider">
+                      <MdDirectionsCar size={14} className="text-accent" />
+                      <span>Vehicle</span>
+                    </div>
+                    <p className="text-sm font-bold text-primary m-0">
+                      {v.vehicle_number || "Walk-in (No Vehicle)"}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Entry & Exit Timeline Box */}
+                <div
+                  className="p-4 rounded-xl space-y-3"
+                  style={{
+                    background: "var(--card-inner-bg, rgba(0,0,0,0.02))",
+                    border: "1px solid var(--glass-border)",
+                  }}
+                >
+                  <p className="text-[11px] font-extrabold uppercase tracking-wider text-secondary m-0">
+                    Gate Activity & Campus Stay
+                  </p>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {/* In Time */}
+                    <div className="flex items-start gap-2.5">
+                      <div className="w-8 h-8 rounded-lg bg-emerald-500/15 text-emerald-500 flex items-center justify-center shrink-0 mt-0.5">
+                        <MdLogin size={16} />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-[10px] font-bold text-secondary uppercase tracking-wider m-0">
+                          Check-in (Gate In)
+                        </p>
+                        <p className="text-xs font-bold text-primary mt-0.5 m-0">
+                          {formatDate(v.entry_time)}
+                        </p>
+                        <p className="text-[10px] text-secondary mt-0.5 m-0">
+                          {timeAgo(v.entry_time)}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Out Time */}
+                    <div className="flex items-start gap-2.5">
+                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5 ${
+                        v.exit_time ? "bg-rose-500/15 text-rose-500" : "bg-emerald-500/15 text-emerald-500"
+                      }`}>
+                        <MdLogout size={16} />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-[10px] font-bold text-secondary uppercase tracking-wider m-0">
+                          Check-out (Gate Out)
+                        </p>
+                        <p className={`text-xs font-bold mt-0.5 m-0 ${v.exit_time ? "text-primary" : "text-emerald-500"}`}>
+                          {v.exit_time ? formatDate(v.exit_time) : "Currently on Premises"}
+                        </p>
+                        {v.exit_time && (
+                          <p className="text-[10px] text-secondary mt-0.5 m-0">
+                            {timeAgo(v.exit_time)}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Duration Banner */}
+                  <div
+                    className="p-2.5 rounded-lg flex items-center justify-between text-xs font-medium"
+                    style={{
+                      background: v.exit_time ? "rgba(99, 102, 241, 0.08)" : "rgba(16, 185, 129, 0.08)",
+                      border: `1px solid ${v.exit_time ? "rgba(99, 102, 241, 0.2)" : "rgba(16, 185, 129, 0.2)"}`,
+                    }}
+                  >
+                    <span className="flex items-center gap-1.5 text-secondary">
+                      <MdAccessTime size={14} className={v.exit_time ? "text-accent" : "text-emerald-500"} />
+                      <span>{v.exit_time ? "Total Campus Stay:" : "Active Dwell Duration:"}</span>
+                    </span>
+                    <span className="font-extrabold text-primary">
+                      {duration || "< 1 min"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+        </Modal>
+      )}
       </div>
     </div>
   );

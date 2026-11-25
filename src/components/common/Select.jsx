@@ -53,6 +53,7 @@ export default function Select({
   menuClassName = "",
   anchorRef,
   rootStyle,
+  menuWidth,
 }) {
   const options = useMemo(() => buildOptions(optionsProp, children), [optionsProp, children]);
   const [open, setOpen] = useState(false);
@@ -92,7 +93,8 @@ export default function Select({
     const el = (anchorRef && anchorRef.current) || triggerRef.current;
     if (!el) return null;
     const r = el.getBoundingClientRect();
-    const menuW = Math.min(Math.max(r.width, 160), window.innerWidth - 16);
+    const targetW = menuWidth !== undefined ? menuWidth : Math.max(r.width, 160);
+    const menuW = Math.min(targetW, window.innerWidth - 16);
     const left = Math.max(8, Math.min(r.left, window.innerWidth - menuW - 8));
 
     const spaceBelow = window.innerHeight - r.bottom - 12;
@@ -101,12 +103,14 @@ export default function Select({
 
     const availableHeight = Math.max(100, openUp ? spaceAbove : spaceBelow);
     const maxHeight = Math.max(120, Math.min(availableHeight - (showSearch ? 50 : 0) - 16, 300));
-    const totalMenuHeight = maxHeight + (showSearch ? 50 : 0) + 14;
 
-    let top = openUp ? Math.max(8, r.top - totalMenuHeight - 6) : r.bottom + 6;
-
-    return { top, left, width: menuW, maxHeight, openUp };
-  }, [showSearch, anchorRef]);
+    if (openUp) {
+      const bottom = Math.max(8, window.innerHeight - r.top + 6);
+      return { bottom, top: "auto", left, width: menuW, maxHeight, openUp };
+    }
+    const top = r.bottom + 6;
+    return { top, bottom: "auto", left, width: menuW, maxHeight, openUp };
+  }, [showSearch, anchorRef, menuWidth]);
 
   useEffect(() => {
     if (!open) return;
@@ -265,7 +269,8 @@ export default function Select({
             onKeyDown={onMenuKeyDown}
             style={{
               position: "fixed",
-              top: pos ? pos.top : 0,
+              top: pos?.top !== undefined ? pos.top : 0,
+              bottom: pos?.bottom !== undefined ? pos.bottom : "auto",
               left: pos ? pos.left : 0,
               width: pos ? pos.width : "auto",
               background: "var(--modal-bg)",
@@ -276,6 +281,7 @@ export default function Select({
               overflow: "hidden",
               zIndex: 10000,
               outline: "none",
+              transformOrigin: pos?.openUp ? "bottom center" : "top center",
               animation: "scaleIn 0.15s ease",
             }}
             className={menuClassName}

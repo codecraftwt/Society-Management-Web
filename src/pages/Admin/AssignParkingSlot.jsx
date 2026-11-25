@@ -36,24 +36,10 @@ const formatSlotNumber = (num) => (num ? String(num).replace(/--+/g, "-") : "");
 function StatusBadge({ status, t }) {
   const isAvail = status === "AVAILABLE";
   return (
-    <GlobalBadge
-      size="sm"
-      variant="neutral"
-    >
-      <span
-        style={{
-          width: 6,
-          height: 6,
-          borderRadius: "50%",
-          display: "inline-block",
-          marginRight: 6,
-          background: isAvail ? "var(--text-secondary, #94a3b8)" : "var(--text-tertiary, #64748b)",
-          opacity: isAvail ? 0.9 : 0.6
-        }}
-        aria-hidden="true"
-      />
-      {isAvail ? t("parkAvailable") : t("parkOccupied")}
-    </GlobalBadge>
+    <span className={`ps-status-pill ${isAvail ? "ps-status-pill--avail" : "ps-status-pill--occ"}`}>
+      <span className="ps-status-dot" aria-hidden="true" />
+      {isAvail ? (t("parkAvailable") || "Available") : (t("parkOccupied") || "Occupied")}
+    </span>
   );
 }
 
@@ -1656,6 +1642,8 @@ export default function AssignParkingSlot({ hideHeader = false, societyId } = {}
                   {slots.map((slot, i) => {
                     const isCar = slot.vehicle_type === "CAR";
                     const isAvail = slot.status === "AVAILABLE";
+                    const floorLabel = slot.parking_floor ? t("parkFloorValue", { floor: slot.parking_floor }) : (t("parkGround") || "Ground");
+                    const wingLabel = getWingLabel(slot);
                     return (
                       <RecordCard
                         key={slot.id}
@@ -1667,122 +1655,98 @@ export default function AssignParkingSlot({ hideHeader = false, societyId } = {}
                         className="ps-slot-card"
                         icon={isCar ? MdDirectionsCar : MdTwoWheeler}
                         title={
-                          <div className="ps-head-text">
-                            <span className="ps-slot-label">{t("parkColSlot")}</span>
-                            <h4 className="ps-slot-number">{formatSlotNumber(slot.slot_number)}</h4>
+                          <div className="ps-title-row">
+                            <span className="ps-slot-number">{formatSlotNumber(slot.slot_number)}</span>
                           </div>
                         }
                         description={
                           <span className="ps-slot-meta">
-                            {slot.parking_floor ? t("parkFloorValue", { floor: slot.parking_floor }) : t("parkGround")} ·{" "}
-                            {isCar ? t("parkCar") : t("parkBike")}
-                            {getWingLabel(slot) ? ` · ${getWingLabel(slot)}` : ""}
+                            {floorLabel} · {isCar ? t("parkCar") || "Car" : t("parkBike") || "Bike"}
+                            {wingLabel ? ` · ${wingLabel}` : ""}
                           </span>
                         }
                         badge={<StatusBadge status={slot.status} t={t} />}
-                      >
-                        {/* Compact Card Middle: Resident, Flat & Vehicle info */}
-                        <div className="ps-card-middle">
-                          {isAvail ? (
-                            <div className="ps-avail-bay">
-                              <MdLocalParking size={15} style={{ opacity: 0.7 }} aria-hidden="true" />
-                              <span className="ps-avail-bay-text">
-                                {t("parkUnallocatedAvailableShort")}
-                              </span>
-                            </div>
-                          ) : (
-                            <div className="ps-occupied-details">
-                              <div className="ps-resident-row">
-                                <span className="ps-resident-avatar" aria-hidden="true">
-                                  {slot.resident?.name?.trim()?.charAt(0)?.toUpperCase() || slot.visitor?.guest_name?.trim()?.charAt(0)?.toUpperCase() || "R"}
-                                </span>
-                                <div className="ps-resident-meta">
-                                  <span className="ps-resident-name">
-                                     {slot.resident?.name || (slot.visitor ? `${slot.visitor.guest_name} (${t("parkVisitor", "Guest")})` : t("parkOccupied"))}
-                                  </span>
-                                  {slot.flat_number && (
-                                    <span className="ps-resident-sub">
-                                      {t("parkFlatNumber", { number: slot.flat_number })}
-                                    </span>
-                                  )}
-                                </div>
-                              </div>
-                              {slot.vehicle?.vehicle_number && (
-                                <div className="ps-vehicle-tag">
-                                  <span className="ps-plate-mark" aria-hidden="true" />
-                                  <span className="ps-vehicle-plate">
-                                    {slot.vehicle.vehicle_number}
-                                  </span>
-                                  {slot.vehicle.vehicle_name && (
-                                    <span className="ps-vehicle-model">
-                                      {slot.vehicle.vehicle_name}
-                                    </span>
-                                  )}
-                                </div>
-                              )}
-                              {slot.visitor?.vehicle_number && !slot.vehicle?.vehicle_number && (
-                                <div className="ps-vehicle-tag"><span className="ps-plate-mark" aria-hidden="true" /><span className="ps-vehicle-plate">{slot.visitor.vehicle_number}</span><span className="ps-vehicle-model">{t("parkTemporary", "Temporary")}</span></div>
-                              )}
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Distinct Card Action Bar: Allocate & Edit options separated */}
-                        <div className="ps-card-actions" onClick={(e) => e.stopPropagation()}>
-                          {isAvail ? (
-                            <>
+                        meta={[
+                          <span key="slot-meta" className="ps-slot-tag-chip truncate" title={slot.vehicle?.vehicle_name || ""}>
+                            {slot.vehicle?.vehicle_name ? `${slot.vehicle.vehicle_name} · ` : ""}{floorLabel}
+                          </span>
+                        ]}
+                        actions={
+                          <div className="ps-card-actions-cluster" onClick={(e) => e.stopPropagation()}>
+                            {isAvail ? (
                               <button
                                 type="button"
-                                className="ps-card-btn ps-card-btn--allocate"
+                                className="ps-icon-btn ps-icon-btn--allocate"
+                                title={t("parkAllocate") || "Allocate Slot"}
+                                aria-label={t("parkAllocate") || "Allocate Slot"}
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   openAllocate(slot);
                                 }}
                               >
-                                <MdPersonAdd size={14} />
-                                <span>{t("parkAllocate") || "Allocate"}</span>
+                                <MdPersonAdd size={16} />
                               </button>
-                              {!isCommittee && (
-                                <button
-                                  type="button"
-                                  className="ps-card-btn ps-card-btn--edit"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    openEdit(slot);
-                                  }}
-                                >
-                                  <MdEdit size={14} />
-                                  <span>{t("edit") || "Edit"}</span>
-                                </button>
-                              )}
-                            </>
-                          ) : (
-                            <>
+                            ) : (
                               <button
                                 type="button"
-                                className="ps-card-btn ps-card-btn--release"
+                                className="ps-icon-btn ps-icon-btn--release"
+                                title={t("parkRelease") || "Release Slot"}
+                                aria-label={t("parkRelease") || "Release Slot"}
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   openReleaseConfirm(slot);
                                 }}
                               >
-                                <MdPersonRemove size={14} />
-                                <span>{t("parkRelease") || "Release"}</span>
+                                <MdPersonRemove size={16} />
                               </button>
-                              {!isCommittee && (
-                                <button
-                                  type="button"
-                                  className="ps-card-btn ps-card-btn--edit"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    openEdit(slot);
-                                  }}
-                                >
-                                  <MdEdit size={14} />
-                                  <span>{t("edit") || "Edit"}</span>
-                                </button>
+                            )}
+                            {!isCommittee && (
+                              <button
+                                type="button"
+                                className="ps-icon-btn ps-icon-btn--edit"
+                                title={t("edit") || "Edit Slot"}
+                                aria-label={t("edit") || "Edit Slot"}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  openEdit(slot);
+                                }}
+                              >
+                                <MdEdit size={15} />
+                              </button>
+                            )}
+                          </div>
+                        }
+                      >
+                        {/* Compact Card Middle: Resident, Flat & Vehicle info */}
+                        <div className="ps-card-middle">
+                          {isAvail ? (
+                            <div className="ps-bay-strip ps-bay-strip--avail">
+                              <MdLocalParking size={14} className="ps-bay-icon" />
+                              <span className="ps-bay-text">
+                                {t("parkUnallocatedAvailableShort") || "Unallocated · Ready"}
+                              </span>
+                            </div>
+                          ) : (
+                            <div className="ps-bay-strip ps-bay-strip--occ">
+                              <span className="ps-bay-avatar" aria-hidden="true">
+                                {slot.resident?.name?.trim()?.charAt(0)?.toUpperCase() || slot.visitor?.guest_name?.trim()?.charAt(0)?.toUpperCase() || "R"}
+                              </span>
+                              <div className="ps-bay-resident-info">
+                                <span className="ps-bay-resident-name" title={slot.resident?.name || slot.visitor?.guest_name || ""}>
+                                  {slot.resident?.name || (slot.visitor ? `${slot.visitor.guest_name} (${t("parkVisitor", "Guest")})` : t("parkOccupied"))}
+                                </span>
+                                {slot.flat_number && (
+                                  <span className="ps-bay-flat-pill">
+                                    {t("parkFlatNumber", { number: slot.flat_number }) || `Flat ${slot.flat_number}`}
+                                  </span>
+                                )}
+                              </div>
+                              {(slot.vehicle?.vehicle_number || slot.visitor?.vehicle_number) && (
+                                <span className="ps-bay-plate" title={slot.vehicle?.vehicle_name || ""}>
+                                  {slot.vehicle?.vehicle_number || slot.visitor?.vehicle_number}
+                                </span>
                               )}
-                            </>
+                            </div>
                           )}
                         </div>
                       </RecordCard>
@@ -1871,9 +1835,6 @@ export default function AssignParkingSlot({ hideHeader = false, societyId } = {}
                       {t("parkDelete")}
                     </GlobalButton>
                   )}
-                  <GlobalButton variant="secondary" onClick={() => setDetailSlot(null)}>
-                    {t("close")}
-                  </GlobalButton>
                 </div>
               ) : null}
             >

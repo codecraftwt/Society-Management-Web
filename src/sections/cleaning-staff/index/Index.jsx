@@ -15,6 +15,8 @@ import {
   MdAccessTime,
   MdRefresh,
   MdEditCalendar,
+  MdVisibility,
+  MdBlock,
 } from "react-icons/md";
 
 import { AuthContext } from "../../../context/AuthContext";
@@ -279,23 +281,59 @@ export default function Index({
       align: "right",
       render: (row) => (
         <div
-          style={{ display: "flex", gap: 6, justifyContent: "flex-end", flexWrap: "wrap" }}
+          style={{ display: "flex", gap: 7, justifyContent: "flex-end", alignItems: "center" }}
           onClick={(e) => e.stopPropagation()}
         >
           {canEdit && (
-            <GlobalButton variant="info" icon={MdSearch} onClick={() => onOpenDetail?.(row)}>
-              {t("csView", "View")}
-            </GlobalButton>
+            <GlobalButton
+              variant="info"
+              size="sm"
+              icon={MdVisibility}
+              iconOnly
+              title={t("csView", "View Details")}
+              aria-label={t("csView", "View Details")}
+              onClick={() => onOpenDetail?.(row)}
+            />
+          )}
+          {canEdit && (
+            <GlobalButton
+              variant="primary"
+              size="sm"
+              icon={MdQrCode}
+              iconOnly
+              title={
+                row.active_pass
+                  ? `${t("csViewQr", "View Pass")} (${row.active_pass.pass_code || "Active"})`
+                  : t("csViewPasses", "View Passes")
+              }
+              aria-label={t("csViewQr", "View Pass")}
+              onClick={() => {
+                if (row.active_pass) {
+                  setQrModalData({ pass: row.active_pass, staff: row });
+                } else {
+                  onOpenDetail?.(row);
+                }
+              }}
+            />
           )}
           {canStatus && (
             <GlobalButton
-              variant={row.status === STAFF_STATUS.ACTIVE ? "warning" : "success"}
+              variant={row.status === STAFF_STATUS.ACTIVE ? "danger" : "success"}
+              size="sm"
+              icon={row.status === STAFF_STATUS.ACTIVE ? MdBlock : MdCheckCircle}
+              iconOnly
+              title={
+                row.status === STAFF_STATUS.ACTIVE
+                  ? t("csDeactivate", "Deactivate")
+                  : t("csActivate", "Activate")
+              }
+              aria-label={
+                row.status === STAFF_STATUS.ACTIVE
+                  ? t("csDeactivate", "Deactivate")
+                  : t("csActivate", "Activate")
+              }
               onClick={() => onToggleStatus?.(row)}
-            >
-              {row.status === STAFF_STATUS.ACTIVE
-                ? t("csDeactivate", "Deactivate")
-                : t("csActivate", "Activate")}
-            </GlobalButton>
+            />
           )}
         </div>
       ),

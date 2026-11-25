@@ -1616,8 +1616,8 @@ export function EditBlockModal({ block, isOpen, onClose, onUpdated, t, isMobile 
     <GlobalModal
       isOpen={isOpen}
       onClose={onClose}
-      title={t("mpEditBlock") || "Edit Block / Phase"}
-      subtitle={t("mpEditBlockSubtitle") || "Update all block details, dimensions, layouts, and units"}
+      title={t("mpEditBlock", "Edit Block")}
+      subtitle={t("mpEditBlockSubtitle", "Update block details, floor layout, and units")}
       icon={MdEdit}
       size={isMobile ? "md" : "xl"}
       showFooter
@@ -2044,17 +2044,6 @@ export function EditBlockModal({ block, isOpen, onClose, onUpdated, t, isMobile 
                                   );
                                 })}
                               </div>
-                              <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                                <input
-                                  type="number"
-                                  className="input"
-                                  value={fl.area_sqft}
-                                  onChange={(e) => handleFlatChange(activeFloorIndex, flIdx, "area_sqft", e.target.value)}
-                                  placeholder="Built-up sqft"
-                                  style={{ height: 28, fontSize: 11, borderRadius: 4, flex: 1 }}
-                                />
-                                <span style={{ fontSize: 10, color: "var(--text-secondary)" }}>sqft</span>
-                              </div>
                             </div>
                           ))}
                         </div>
@@ -2075,6 +2064,13 @@ export function EditBlockModal({ block, isOpen, onClose, onUpdated, t, isMobile 
    EDIT FLAT / UNIT MODAL
 ══════════════════════════════════════════════ */
 export function EditFlatModal({ flat, isOpen, onClose, onUpdated, t }) {
+  const isRowHouse =
+    flat?.property_type === "ROW_HOUSE" ||
+    flat?.Block?.property_type === "ROW_HOUSE" ||
+    flat?.block?.property_type === "ROW_HOUSE" ||
+    (flat?.flat_type || "").toUpperCase().includes("ROW") ||
+    !flat?.floor_id;
+
   const [flatNumber, setFlatNumber] = useState(flat?.flat_number || "");
   const [flatType, setFlatType] = useState(flat?.flat_type || "2BHK");
   const [areaSqft, setAreaSqft] = useState(flat?.area_sqft != null ? String(flat.area_sqft) : "");
@@ -2098,8 +2094,8 @@ export function EditFlatModal({ flat, isOpen, onClose, onUpdated, t }) {
       setError(t("mpFlatNumberRequired") || "Flat/Unit number is required.");
       return;
     }
-    const numArea = areaSqft !== "" ? Number(areaSqft) : null;
-    if (numArea !== null && (isNaN(numArea) || numArea < 0)) {
+    const numArea = isRowHouse && areaSqft !== "" ? Number(areaSqft) : (isRowHouse ? null : (flat?.area_sqft ?? null));
+    if (isRowHouse && numArea !== null && (isNaN(numArea) || numArea < 0)) {
       setError(t("mpAreaNonNegative") || "Area must be a non-negative number.");
       return;
     }
@@ -2109,8 +2105,8 @@ export function EditFlatModal({ flat, isOpen, onClose, onUpdated, t }) {
     try {
       const payload = {
         flat_number: flatNumber.trim(),
-        flat_type: flatType || null,
-        area_sqft: numArea,
+        flat_type: isRowHouse ? "Row House" : (flatType || null),
+        area_sqft: isRowHouse ? numArea : null,
         occupancy_status: occupancyStatus,
       };
       const res = await API.put(`/flats/update/${flat.id}`, payload);
@@ -2118,8 +2114,8 @@ export function EditFlatModal({ flat, isOpen, onClose, onUpdated, t }) {
       const updatedFlat = res.data?.flat || {
         ...flat,
         flat_number: flatNumber.trim(),
-        flat_type: flatType,
-        area_sqft: numArea,
+        flat_type: isRowHouse ? "Row House" : flatType,
+        area_sqft: isRowHouse ? numArea : null,
         occupancy_status: occupancyStatus,
       };
       onUpdated(updatedFlat);
@@ -2135,8 +2131,8 @@ export function EditFlatModal({ flat, isOpen, onClose, onUpdated, t }) {
     <GlobalModal
       isOpen={isOpen}
       onClose={onClose}
-      title={t("mpEditUnit") || "Edit Property / Unit"}
-      subtitle={t("mpEditUnitSubtitle") || "Update unit number, BHK type, area, and status"}
+      title={t("mpEditUnit") || (isRowHouse ? "Edit Row House" : "Edit Property / Unit")}
+      subtitle={t("mpEditUnitSubtitle") || (isRowHouse ? "Update house number, built-up area, and occupancy" : "Update unit number, BHK type, and occupancy")}
       icon={MdEdit}
       showFooter
       submitLabel={t("save") || "Save Changes"}
@@ -2154,24 +2150,40 @@ export function EditFlatModal({ flat, isOpen, onClose, onUpdated, t }) {
       <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
         <div>
           <label style={{ display: "block", fontSize: 13, fontWeight: 600, marginBottom: 6, color: "var(--text-primary)" }}>
-            {t("mpUnitNumber") || "Unit / Flat Number"} *
+            {isRowHouse ? (t("mpHouseNumber") || "House Number") : (t("mpUnitNumber") || "Unit / Flat Number")} *
           </label>
           <input
             type="text"
             className="styled-input"
             value={flatNumber}
             onChange={(e) => setFlatNumber(e.target.value)}
-            placeholder="e.g. 101, A-203"
+            placeholder={isRowHouse ? "e.g. RH-101" : "e.g. 101, A-203"}
             style={{ width: "100%", height: 40, borderRadius: 8 }}
             required
             autoFocus
           />
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+        {isRowHouse ? (
           <div>
             <label style={{ display: "block", fontSize: 13, fontWeight: 600, marginBottom: 6, color: "var(--text-primary)" }}>
-              {t("mpFlatType") || "Type / BHK"}
+              {t("mpAreaSqft") || "Built-up Area (sq.ft)"}
+            </label>
+            <input
+              type="number"
+              step="0.01"
+              min="0"
+              className="styled-input"
+              value={areaSqft}
+              onChange={(e) => setAreaSqft(e.target.value)}
+              placeholder="e.g. 1500"
+              style={{ width: "100%", height: 40, borderRadius: 8 }}
+            />
+          </div>
+        ) : (
+          <div>
+            <label style={{ display: "block", fontSize: 13, fontWeight: 600, marginBottom: 6, color: "var(--text-primary)" }}>
+              {t("mpFlatType") || "Flat Type / BHK"}
             </label>
             <Select
               value={flatType}
@@ -2183,23 +2195,7 @@ export function EditFlatModal({ flat, isOpen, onClose, onUpdated, t }) {
               <option value="3BHK">3 BHK</option>
             </Select>
           </div>
-
-          <div>
-            <label style={{ display: "block", fontSize: 13, fontWeight: 600, marginBottom: 6, color: "var(--text-primary)" }}>
-              {t("mpAreaSqft") || "Area (sq.ft)"}
-            </label>
-            <input
-              type="number"
-              step="0.01"
-              min="0"
-              className="styled-input"
-              value={areaSqft}
-              onChange={(e) => setAreaSqft(e.target.value)}
-              placeholder="e.g. 1200"
-              style={{ width: "100%", height: 40, borderRadius: 8 }}
-            />
-          </div>
-        </div>
+        )}
 
         <div>
           <label style={{ display: "block", fontSize: 13, fontWeight: 600, marginBottom: 6, color: "var(--text-primary)" }}>
@@ -3916,7 +3912,7 @@ function InlineFlats({ floorId, blockId, isMobile, t, onOpenAreaModal, blockName
                     : <MdApartment size={13} style={{ color: occupied ? "var(--stat-green-color,#86efac)" : "var(--text-secondary)" }} />
                   }
                   <span style={{ fontSize: 12, fontWeight: 600, color: "var(--text-primary)" }}>{f.flat_number}</span>
-                  {f.flat_type && (
+                  {!isRowHouseContext && f.flat_type && (
                     <span style={{
                       fontSize: 9, fontWeight: 700, padding: "1px 6px", borderRadius: 6,
                       background: f.flat_type === "1BHK" ? "rgba(99,102,241,0.12)" : f.flat_type === "2BHK" ? "rgba(139,92,246,0.12)" : "rgba(236,72,153,0.12)",
@@ -4161,7 +4157,7 @@ function FlatsTab({
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                         <p style={{ fontWeight: 700, fontSize: 13, color: "var(--text-primary)", margin: 0 }}>{f.flat_number}</p>
-                        {f.flat_type && (
+                        {!isRowHouse && f.flat_type && (
                           <span style={{
                             fontSize: 9, fontWeight: 700, padding: "1px 6px", borderRadius: 6,
                             background: f.flat_type === "1BHK" ? "rgba(99,102,241,0.12)" : f.flat_type === "2BHK" ? "rgba(139,92,246,0.12)" : "rgba(236,72,153,0.12)",
@@ -4169,6 +4165,16 @@ function FlatsTab({
                             border: `1px solid ${f.flat_type === "1BHK" ? "rgba(99,102,241,0.25)" : f.flat_type === "2BHK" ? "rgba(139,92,246,0.25)" : "rgba(236,72,153,0.25)"}`
                           }}>
                             {f.flat_type}
+                          </span>
+                        )}
+                        {isRowHouse && f.area_sqft && (
+                          <span style={{
+                            fontSize: 9, fontWeight: 700, padding: "1px 6px", borderRadius: 6,
+                            background: "rgba(16,185,129,0.12)",
+                            color: "#10b981",
+                            border: "1px solid rgba(16,185,129,0.25)"
+                          }}>
+                            {f.area_sqft} sqft
                           </span>
                         )}
                       </div>
@@ -4250,7 +4256,7 @@ function FlatsTab({
                             }
                           </div>
                           <span style={{ fontWeight: 600, fontSize: 14, color: "var(--text-primary)" }}>{f.flat_number}</span>
-                          {f.flat_type && (
+                          {!isRowHouse && f.flat_type && (
                             <span style={{
                               fontSize: 10, fontWeight: 700, padding: "2px 7px", borderRadius: 6,
                               background: f.flat_type === "1BHK" ? "rgba(99,102,241,0.12)" : f.flat_type === "2BHK" ? "rgba(139,92,246,0.12)" : "rgba(236,72,153,0.12)",
@@ -4258,6 +4264,16 @@ function FlatsTab({
                               border: `1px solid ${f.flat_type === "1BHK" ? "rgba(99,102,241,0.25)" : f.flat_type === "2BHK" ? "rgba(139,92,246,0.25)" : "rgba(236,72,153,0.25)"}`
                             }}>
                               {f.flat_type}
+                            </span>
+                          )}
+                          {isRowHouse && f.area_sqft && (
+                            <span style={{
+                              fontSize: 10, fontWeight: 700, padding: "2px 7px", borderRadius: 6,
+                              background: "rgba(16,185,129,0.12)",
+                              color: "#10b981",
+                              border: "1px solid rgba(16,185,129,0.25)"
+                            }}>
+                              {f.area_sqft} sqft
                             </span>
                           )}
                         </div>
