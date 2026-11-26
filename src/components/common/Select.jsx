@@ -7,20 +7,20 @@ const SEARCH_THRESHOLD = 8;
 function buildOptions(optionsProp, children) {
   const list = [];
   const seen = new Set();
-  const push = (value, label, disabled) => {
+  const push = (value, label, disabled, subtitle) => {
     const key = String(value);
     if (seen.has(key)) return;
     seen.add(key);
-    list.push({ value, label: label === undefined || label === null ? String(value) : label, disabled: !!disabled });
+    list.push({ value, label: label === undefined || label === null ? String(value) : label, subtitle: subtitle || null, disabled: !!disabled });
   };
 
   if (optionsProp) {
     optionsProp.forEach((o) => {
       if (o === null || o === undefined) return;
       if (typeof o === "object") {
-        push(o.value, o.label, o.disabled);
+        push(o.value, o.label, o.disabled, o.subtitle);
       } else {
-        push(o, String(o), false);
+        push(o, String(o), false, null);
       }
     });
   } else if (children != null) {
@@ -30,7 +30,7 @@ function buildOptions(optionsProp, children) {
         .map((c) => (typeof c === "string" || typeof c === "number" ? c : ""))
         .join("");
       const value = child.props.value !== undefined ? child.props.value : label;
-      push(value, label, child.props.disabled);
+      push(value, label, child.props.disabled, child.props["data-subtitle"]);
     });
   }
   return list;
@@ -86,7 +86,11 @@ export default function Select({
   const filtered = useMemo(() => {
     if (!query) return options;
     const q = query.trim().toLowerCase();
-    return options.filter((o) => String(o.label).toLowerCase().includes(q));
+    return options.filter(
+      (o) =>
+        String(o.label).toLowerCase().includes(q) ||
+        (o.subtitle && String(o.subtitle).toLowerCase().includes(q))
+    );
   }, [options, query]);
 
   const computePos = useCallback(() => {
@@ -362,7 +366,18 @@ export default function Select({
                       opacity: o.disabled ? 0.4 : 1,
                     }}
                   >
-                    {o.label}
+                    {o.subtitle ? (
+                      <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                        <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                          {o.label}
+                        </span>
+                        <span style={{ fontSize: 11.5, color: "var(--text-secondary)", opacity: 0.85, fontWeight: 400, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                          {o.subtitle}
+                        </span>
+                      </div>
+                    ) : (
+                      o.label
+                    )}
                   </button>
                 );
               })}

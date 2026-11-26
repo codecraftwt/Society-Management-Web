@@ -95,6 +95,7 @@ export default function StepVisitorEntryModal({
   const [selectedBrand, setSelectedBrand] = useState("");
   const [otherBrandName, setOtherBrandName] = useState("");
   const [assignedSlot, setAssignedSlot] = useState("");
+  const [guestCount, setGuestCount] = useState(1);
 
   // Validation errors state
   const [errors, setErrors] = useState({});
@@ -122,6 +123,7 @@ export default function StepVisitorEntryModal({
       setSelectedBrand("");
       setOtherBrandName("");
       setAssignedSlot("");
+      setGuestCount(1);
       setSelectedBlock(null);
       setSelectedFloorId(null);
       setSelectedFlat(null);
@@ -429,8 +431,9 @@ export default function StepVisitorEntryModal({
         flat_id: selectedFlat.id,
         mobile: mobile.trim() || "0000000000",
         vehicle_number: vehicleNumber ? vehicleNumber.toUpperCase().trim() : "",
-        vehicle_type: vehicleType,
-        assigned_slot: assignedSlot || undefined,
+        vehicle_type: vehicleNumber.trim() ? vehicleType : undefined,
+        assigned_slot: vehicleNumber.trim() ? (assignedSlot || undefined) : undefined,
+        guest_count: purpose.toUpperCase() === "GUEST" ? Math.max(1, Number(guestCount) || 1) : undefined,
       };
 
       const res = await API.post("/visitors", payload);
@@ -734,7 +737,9 @@ export default function StepVisitorEntryModal({
                       placeholder={t("sgeVehicleExample", "e.g. MH 12 AB 1234")}
                       value={vehicleNumber}
                       onChange={(e) => {
-                        setVehicleNumber(e.target.value.toUpperCase());
+                        const val = e.target.value.toUpperCase();
+                        setVehicleNumber(val);
+                        if (!val.trim() && assignedSlot) setAssignedSlot("");
                         if (errors.vehicle) setErrors((prev) => ({ ...prev, vehicle: null }));
                       }}
                       style={{ border: "none", outline: "none", boxShadow: "none" }}
@@ -747,8 +752,55 @@ export default function StepVisitorEntryModal({
                 </div>
               </div>
 
-              {/* Vehicle Type & Parking Slot (For Guest) */}
+              {/* Total Guests Arrived (For Guest) */}
               {purpose.toUpperCase() === "GUEST" && (
+                <div>
+                  <label className="block text-xs font-semibold text-secondary mb-1.5">
+                    {t("sgeGuestCountLabel", "Total Number of Guests Arrived")} <span className="text-red-500">*</span>
+                  </label>
+                  <div className="flex items-center justify-between gap-3 h-12 px-3 rounded-xl bg-card-inner-bg border border-glass-border">
+                    <div className="flex items-center gap-2 text-xs font-medium text-secondary">
+                      <FaUserFriends size={15} className="text-blue-500 shrink-0" />
+                      <span>{t("sgeGuestCountHint", "Exact headcount entering")}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => setGuestCount((c) => Math.max(1, (Number(c) || 1) - 1))}
+                        disabled={guestCount <= 1}
+                        aria-label="Decrease guest count"
+                        className="w-8 h-8 rounded-lg border border-glass-border bg-card text-primary font-bold text-sm flex items-center justify-center hover:bg-blue-500/10 disabled:opacity-40 cursor-pointer"
+                      >
+                        -
+                      </button>
+                      <input
+                        type="number"
+                        min={1}
+                        max={100}
+                        value={guestCount}
+                        onChange={(e) => {
+                          const val = parseInt(e.target.value, 10);
+                          setGuestCount(Number.isNaN(val) ? 1 : Math.min(100, Math.max(1, val)));
+                        }}
+                        aria-label={t("sgeGuestCountLabel", "Total Number of Guests Arrived")}
+                        style={{ border: "none", outline: "none", boxShadow: "none" }}
+                        className="w-12 text-center bg-transparent text-sm font-bold text-primary border-0 outline-none ring-0 shadow-none"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setGuestCount((c) => Math.min(100, (Number(c) || 1) + 1))}
+                        aria-label="Increase guest count"
+                        className="w-8 h-8 rounded-lg border border-glass-border bg-card text-primary font-bold text-sm flex items-center justify-center hover:bg-blue-500/10 cursor-pointer"
+                      >
+                        +
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Vehicle Type & Parking Slot (For Guest when vehicle number is entered) */}
+              {purpose.toUpperCase() === "GUEST" && vehicleNumber.trim().length > 0 && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-1">
                   {/* Vehicle Type Segmented Control */}
                   <div>

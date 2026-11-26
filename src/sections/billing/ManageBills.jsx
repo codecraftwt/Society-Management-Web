@@ -5,6 +5,7 @@ import {
   MdSearch, MdWarning,
 } from "react-icons/md";
 import API from "../../services/api";
+import { getFinancialAccounts } from "../../services/accountingService";
 import { AuthContext } from "../../context/AuthContext";
 import { useCustomAlert } from "../../context/CustomAlertContext";
 import { useLang } from "../../context/LanguageContext";
@@ -57,6 +58,7 @@ export default function ManageBills({ variant }) {
   const [showCreate, setShowCreate] = useState(false);
   const [creating, setCreating] = useState(false);
   const [formSocietyId, setFormSocietyId] = useState("");
+  const [bankAccounts, setBankAccounts] = useState([]);
   const [formData, setFormData] = useState({
     flat_type: "INDIVIDUAL",
     bill_type: "INDIVIDUAL",
@@ -68,6 +70,7 @@ export default function ManageBills({ variant }) {
     billing_month: getCurrentBillingMonth(),
     issue_date: isAccountant ? "" : getTodayISO(),
     last_pay_date: "",
+    financial_account_id: "",
   });
 
   /* ── Delete & Confirm ── */
@@ -196,6 +199,23 @@ export default function ManageBills({ variant }) {
       API.get("/societies").then(res => setSocietiesList(res.data || [])).catch(console.error);
     }
   }, [isSuperAdmin]);
+
+  useEffect(() => {
+    getFinancialAccounts()
+      .then((res) => {
+        const list = Array.isArray(res) ? res : res?.data || [];
+        const banks = list.filter((a) => a.account_type !== "CASH" && (a.status === "ACTIVE" || a.is_active));
+        setBankAccounts(banks);
+        const def = banks.find((b) => b.is_default) || banks[0];
+        if (def) {
+          setFormData((prev) => ({
+            ...prev,
+            financial_account_id: prev.financial_account_id || String(def.id),
+          }));
+        }
+      })
+      .catch(() => {});
+  }, [filterSocietyId, formSocietyId]);
 
   useEffect(() => {
     if (isAccountant) return;
@@ -716,6 +736,7 @@ export default function ManageBills({ variant }) {
         handleFormSocietyChange={handleFormSocietyChange}
         flats={flats}
         societiesList={societiesList}
+        bankAccounts={bankAccounts}
         t={t}
       />
 

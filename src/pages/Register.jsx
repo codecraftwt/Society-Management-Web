@@ -49,7 +49,8 @@ import { getTitleError, getEmailError, getMobileError } from "../utils/validator
 
 import homeBannerImg from "../assets/Photos/Home/Home.png";
 import loginVisualImg from "../assets/Photos/Home/login_right_side_img.png";
-import compLogoImg from "../assets/Photos/Home/comp_logo.png";
+import compLogoImg from "../assets/Photos/Home/mazi_icon.png";
+import maziHorizontalLogo from "../assets/Photos/Home/mazi_logo.png";
 import "./Register.css";
 import "./Login.css";
 
@@ -768,8 +769,8 @@ function Register() {
               <img src={compLogoImg} alt={t("homeCompanyLogoAlt") || "Logo"} className="login-hero-logo-clean" />
               <div className="login-hero-brand-divider" aria-hidden="true" />
               <span className="login-hero-brand-copy">
-                <strong>{t("homeBrandTitle") || "Society Management"}</strong>
-                <small>{t("homeBrandSubtitle") || "SYSTEM"}</small>
+                <strong>{t("homeBrandTitle") || "Mazi Society"}</strong>
+                <small>{t("homeBrandSubtitle") || "Your Society, Smarter Living."}</small>
               </span>
             </Link>
           </div>
@@ -857,6 +858,9 @@ function Register() {
         </div>
 
         <div className="reg-header-titles">
+          <div className="login-center-logo-box" style={{ margin: "0 auto 12px" }}>
+            <img src={maziHorizontalLogo} alt="Mazi Society" className="login-center-logo-img" />
+          </div>
           <h1 className="reg-title">{t("regTitle") || "Join Your Community"}</h1>
           <p className="reg-subtitle">
             {step === 1 && (t("regStep1Sub") || "Step 1 of 5 • Choose your society")}

@@ -74,6 +74,14 @@ export default function PaymentDetailsModal({ row, onClose }) {
     { label: "Flat / Unit", value: flatNumber !== "—" ? flatNumber : "General" },
     { label: "Payment Date", value: formattedDate },
     { label: "Payment Mode", value: row.payment_mode || "UPI" },
+    {
+      label: "Receiving Account",
+      value: row.financialAccount
+        ? row.financialAccount.account_type === "CASH"
+          ? row.financialAccount.account_name
+          : `${row.financialAccount.account_name}${row.financialAccount.bank_name ? ` · ${row.financialAccount.bank_name}` : ""}${row.financialAccount.masked_account_number ? ` (${row.financialAccount.masked_account_number})` : ""}`
+        : "Legacy / Unlinked",
+    },
     { label: "Source", value: row.source || "BILL" },
     {
       label: "Reference",

@@ -95,6 +95,9 @@ export default function Index({
   onSourceChange,
   modeFilter,
   onModeFilterChange,
+  accountFilter = "",
+  onAccountFilterChange,
+  accounts = [],
   search,
   onSearchChange,
   isSearchOpen,
@@ -341,8 +344,25 @@ export default function Index({
             <SlidingTabs value={source} onChange={onSourceChange} items={SOURCE_TABS} />
           </div>
 
-          {/* Right Toolbar: Payment Mode + Expandable Search */}
+          {/* Right Toolbar: Account + Payment Mode + Expandable Search */}
           <div className="flex items-center gap-2.5 flex-wrap">
+            {accounts.length > 0 && (
+              <Select
+                className="input h-9 text-xs font-bold rounded-xl min-w-36"
+                value={accountFilter}
+                onChange={(e) => onAccountFilterChange && onAccountFilterChange(e.target.value)}
+              >
+                <option value="">All Accounts</option>
+                {accounts.map((a) => (
+                  <option key={a.id} value={a.id}>
+                    {a.account_type === "CASH"
+                      ? a.account_name
+                      : `${a.account_name}${a.bank_name ? ` · ${a.bank_name}` : ""}`}
+                  </option>
+                ))}
+              </Select>
+            )}
+
             {/* Mode Select */}
             <Select
               className="input h-9 text-xs font-bold rounded-xl min-w-32.5"
@@ -451,6 +471,7 @@ export default function Index({
                   <th className="px-4 py-3 font-extrabold text-right">
                     {t("payColAmount") || "Amount"}
                   </th>
+                  <th className="px-4 py-3 font-extrabold">Account</th>
                   <th className="px-4 py-3 font-extrabold text-center">{t("payColMode") || "Mode"}</th>
                   <th className="px-4 py-3 font-extrabold text-center">Status</th>
                   <th className="px-4 py-3 font-extrabold text-right">
@@ -499,7 +520,7 @@ export default function Index({
                       ? t("payMaintenanceHash", { id: r.bill_id || "—" }) ||
                         `Maintenance #${r.bill_id || "—"}`
                       : "—";
-                    const confirmable = canConfirm && r.bill_id && r.status !== "SUCCESS";
+                    const confirmable = canConfirm && r.status !== "SUCCESS" && (r.bill_id || r.booking_id);
                     const dt = fmtDate(r.payment_date);
 
                     return (
@@ -579,6 +600,19 @@ export default function Index({
                           <span className="inline-flex items-center px-2.5 py-1 rounded-lg font-extrabold text-xs sm:text-sm bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25 font-mono shadow-2xs">
                             +{CURRENCY(r.amount)}
                           </span>
+                        </td>
+
+                        {/* Receiving Account */}
+                        <td className="px-4 py-3 text-xs whitespace-nowrap">
+                          {r.financialAccount ? (
+                            <span className="px-2 py-0.5 rounded-md bg-card-inner border border-glass text-primary font-semibold">
+                              {r.financialAccount.account_type === "CASH"
+                                ? r.financialAccount.account_name
+                                : `${r.financialAccount.bank_name || r.financialAccount.account_name}${r.financialAccount.masked_account_number ? ` (${r.financialAccount.masked_account_number})` : ""}`}
+                            </span>
+                          ) : (
+                            <span className="text-secondary opacity-60">Legacy</span>
+                          )}
                         </td>
 
                         {/* Payment Mode */}

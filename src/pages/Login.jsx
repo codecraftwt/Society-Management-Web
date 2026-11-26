@@ -29,7 +29,8 @@ import {
   HiOutlineGlobeAlt,
   HiOutlineChevronDown,
 } from "react-icons/hi2";
-import compLogoImg from "../assets/Photos/Home/comp_logo.png";
+import compLogoImg from "../assets/Photos/Home/mazi_icon.png";
+import maziHorizontalLogo from "../assets/Photos/Home/mazi_logo.png";
 import "../home/Home.css";
 import {
   MdHome,
@@ -170,8 +171,8 @@ function ApprovalPendingModal({ onClose, t = (k, fb) => fb || k }) {
     <div className="approval-pending-overlay" role="status" aria-live="polite">
       <div className="approval-pending-card animate-scaleIn">
         <div className="approval-pending-accent" />
-        <div className="login-center-logo-box" style={{ margin: "4px auto 18px", boxShadow: "0 10px 24px rgba(0,0,0,0.06)" }}>
-          <img src={compLogoImg} alt="Logo" className="login-center-logo-img" />
+        <div className="login-center-logo-box">
+          <img src={maziHorizontalLogo} alt="Mazi Society" className="login-center-logo-img" />
         </div>
         <div className="approval-pending-icon">⏳</div>
         <span className="approval-pending-badge">{t("authAccountReview") || "ACCOUNT REVIEW"}</span>
@@ -510,8 +511,8 @@ function Login() {
             <img src={compLogoImg} alt={t("homeCompanyLogoAlt") || "Logo"} className="login-hero-logo-clean" />
             <div className="login-hero-brand-divider" aria-hidden="true" />
             <span className="login-hero-brand-copy">
-              <strong>{t("homeBrandTitle") || "Society Management"}</strong>
-              <small>{t("homeBrandSubtitle") || "SYSTEM"}</small>
+              <strong>{t("homeBrandTitle") || "Mazi Society"}</strong>
+              <small>{t("homeBrandSubtitle") || "Your Society, Smarter Living."}</small>
             </span>
           </Link>
         </div>
@@ -1370,11 +1371,10 @@ function Login() {
       {!approvalPending && !rejection && (
         <form className="form" onSubmit={handleLogin}>
           <div className="login-center-logo-box">
-            <img src={compLogoImg} alt="Logo" className="login-center-logo-img" />
+            <img src={maziHorizontalLogo} alt="Mazi Society" className="login-center-logo-img" />
           </div>
-          <div className="login-heading-block">
+          <div className="login-heading-block" style={{ marginBottom: 22 }}>
             <h1 id="heading" className="login-form-title">{t("authWelcomeTitle") || "Welcome Back"}</h1>
-            <p className="login-heading-subtitle">{t("authWelcomeSubtitle") || "Sign in to access your society dashboard."}</p>
           </div>
 
         {/* Email Field with HiOutlineEnvelope icon */}

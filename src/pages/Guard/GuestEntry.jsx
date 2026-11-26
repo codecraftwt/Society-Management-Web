@@ -276,9 +276,16 @@ export default function GuestEntry() {
                             <span className="font-bold text-primary block text-sm">
                               {item.visitor_name}
                             </span>
-                            <span className="text-[11px] text-secondary">
-                              {t("gePersonalGuest", "Personal Guest")}
-                            </span>
+                            <div className="flex items-center gap-1.5 mt-0.5">
+                              <span className="text-[11px] text-secondary">
+                                {t("gePersonalGuest", "Personal Guest")}
+                              </span>
+                              {item.guest_count > 0 && (
+                                <span className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-blue-500/10 text-blue-600 dark:text-blue-400">
+                                  {item.guest_count} {item.guest_count === 1 ? t("geGuestSingular", "Guest") : t("geGuestPlural", "Guests")}
+                                </span>
+                              )}
+                            </div>
                           </div>
                         </div>
                       </td>
@@ -402,6 +409,14 @@ export default function GuestEntry() {
                     <span className="ge-mc-label">{t("geColFlat", "Flat")}</span>
                     <span className="ge-flat-chip">{resolveVisitorFlatLabel(item)}</span>
                   </div>
+                  {item.guest_count > 0 && (
+                    <div className="ge-mc-row">
+                      <span className="ge-mc-label">{t("geGuestsCount", "Guests")}</span>
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold bg-blue-500/10 text-blue-600 dark:text-blue-400">
+                        {item.guest_count} {item.guest_count === 1 ? t("geGuestSingular", "Guest") : t("geGuestPlural", "Guests")}
+                      </span>
+                    </div>
+                  )}
                   <div className="ge-mc-row">
                     <span className="ge-mc-label">{t("geColPhone", "Phone")}</span>
                     <a

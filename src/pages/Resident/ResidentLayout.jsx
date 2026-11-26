@@ -52,6 +52,7 @@ import {
 
   MdFamilyRestroom,
   MdGavel,
+  MdGroups,
 
 } from "react-icons/md";
 
@@ -370,11 +371,11 @@ function ResidentLayoutInner() {
 
     {
 
-      label: t("menuDirectory"),
+      label: t("menuSocietyTeam", "Society Team"),
 
-      path: `${base}/directory`,
+      path: `${base}/society-team`,
 
-      icon: MdPeople,
+      icon: MdGroups,
 
       group: "SERVICES & PROFILE",
 
@@ -456,11 +457,11 @@ function ResidentLayoutInner() {
 
     {
 
-      label: t("menuDirectory"),
+      label: t("menuSocietyTeam", "Society Team"),
 
-      path: `${base}/directory`,
+      path: `${base}/society-team`,
 
-      icon: MdPeople,
+      icon: MdGroups,
 
       group: "ACTIVITY & NOTICES",
 

@@ -102,7 +102,7 @@ import ResidentFinanceReport from "./pages/Resident/reports/ResidentFinanceRepor
 import ResidentDocument from "./pages/Resident/ResidentDocument";
 import MyDocument from "./pages/Resident/MyDocuments";
 import MyProperties from "./pages/Resident/MyProperties";
-import ResidentDirectory from "./pages/Resident/ResidentDirectory";
+import SocietyManagementTeam from "./pages/Resident/SocietyManagementTeam";
 
 /* === GUARD === */
 import GuardLayout from "./pages/Guard/GuardLayout";
@@ -132,6 +132,7 @@ import TenantManagement from "./pages/Admin/TenantManagement.jsx";
 import Accounting from "./pages/Admin/Accounting";
 import SocietyPayments from "./sections/payments";
 import AdminRules from "./pages/Admin/AdminRules";
+import MeetingMinutes from "./pages/Admin/MeetingMinutes";
 import SuperAdminRules from "./pages/SuperAdmin/SuperAdminRules";
 import ResidentRules from "./pages/Resident/ResidentRules";
 
@@ -224,6 +225,7 @@ function App() {
             <Route path="emergency" element={<AdminEmergency />} />
             <Route path="maintenance" element={<MaintenancePage />} />
             <Route path="events" element={<EventManagement />} />
+            <Route path="meeting-minutes" element={<MeetingMinutes />} />
             <Route path="rules" element={<SuperAdminRules />} />
             <Route
               path="superadmin-reports/visitor-report"
@@ -290,9 +292,13 @@ function App() {
             </Route>
             <Route element={<PermissionRoute module="events" />}>
               <Route path="events" element={<EventManagement />} />
+            <Route path="meeting-minutes" element={<MeetingMinutes />} />
             </Route>
             <Route element={<PermissionRoute module="rules" />}>
               <Route path="rules" element={<AdminRules />} />
+            </Route>
+            <Route element={<PermissionRoute module="meeting_minutes" />}>
+              <Route path="meeting-minutes" element={<MeetingMinutes />} />
             </Route>
             <Route element={<PermissionRoute module="complaints" />}>
               <Route path="complaints" element={<SocietyComplaints />} />
@@ -363,7 +369,7 @@ function App() {
             <Route path="emergency" element={<MyEmergency />} />
             <Route path="parking" element={<ResidentParking />} />
             <Route path="amenities" element={<ResidentAmenity />} />
-            <Route path="directory" element={<ResidentDirectory />} />
+            <Route path="society-team" element={<SocietyManagementTeam />} />
             <Route path="rules" element={<ResidentRules />} />
             <Route path="payment" element={<PaymentMethods />} />
             <Route path="payment-receipt" element={<PaymentReceipt />} />
@@ -416,7 +422,7 @@ function App() {
             <Route path="reports" element={<ResidentReports />} />
             <Route path="society_documents" element={<ResidentDocument />} />
             <Route path="amenities" element={<ResidentAmenity />} />
-            <Route path="directory" element={<ResidentDirectory />} />
+            <Route path="society-team" element={<SocietyManagementTeam />} />
           </Route>
         </Route>
 

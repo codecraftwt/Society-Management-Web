@@ -41,7 +41,6 @@ import {
   MdVisibility,
   MdAttachFile,
   MdCloudUpload,
-  MdQrCode2,
   MdDeleteOutline,
 } from "react-icons/md";
 import { AuthContext } from "../../context/AuthContext";
@@ -70,10 +69,15 @@ import {
   voidExpense,
   setOpeningBalance,
   getAuditLogs,
+  getFinancialAccounts,
+  getExpenseCategories,
 } from "../../services/accountingService";
+import AccountsTab from "../../components/accounting/AccountsTab";
+import FixedDepositsTab from "../../components/accounting/FixedDepositsTab";
+import ExpenseCategoriesTab from "../../components/accounting/ExpenseCategoriesTab";
 
 const CURRENCY = (v) =>
-  new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 2 }).format(Number(v) || 0);
+  new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(Number(v) || 0);
 
 const TODAY = () => new Date().toISOString().slice(0, 10);
 
@@ -94,8 +98,7 @@ const inputStyle = {
   outline: "none",
 };
 
-const SOURCES = ["", "BILL", "MAINTENANCE", "AMENITY", "EXPENSE", "ADJUSTMENT"];
-const MODES = ["CASH", "UPI", "BANK_TRANSFER", "CHEQUE"];
+const SOURCES = ["", "BILL", "MAINTENANCE", "AMENITY", "EXPENSE", "ADJUSTMENT", "FD_TRANSFER", "FD_INTEREST", "FD_MATURITY", "CASH_IN", "ACCOUNT_TRANSFER"];
 
 /* ── SKELETON ── */
 function AccountingSkeleton() {
@@ -138,46 +141,46 @@ function Modal({ title, subtitle, icon: Icon = MdOutlineReceiptLong, maxWidth = 
   };
   return createPortal(
     <>
-    <div
-      className="fixed inset-0 flex items-start justify-center overflow-y-auto py-8 px-4 animate-fadeIn"
-      style={{ background: "var(--overlay-bg)", backdropFilter: "blur(6px)", zIndex: 1200 }}
-      onClick={requestClose}
-    >
       <div
-        className={`w-full ${maxWidth} rounded-2xl animate-scaleIn my-auto shadow-2xl`}
-        style={{
-          background: "var(--modal-bg)",
-          border: "1.5px solid var(--glass-border)",
-          boxShadow: "var(--shadow-glass)",
-          backdropFilter: "var(--blur)",
-        }}
-        onClick={(e) => e.stopPropagation()}
+        className="fixed inset-0 flex items-start justify-center overflow-y-auto py-4 px-4 animate-fadeIn"
+        style={{ background: "var(--overlay-bg)", backdropFilter: "blur(6px)", zIndex: 1200 }}
+        onClick={requestClose}
       >
-        <div className="flex items-center justify-between px-6 py-4 border-b border-glass-border">
-          <div className="flex items-center gap-3 min-w-0">
-            <span className="w-10 h-10 rounded-xl bg-accent/15 text-accent flex items-center justify-center shrink-0 shadow-xs">
-              <Icon size={20} />
-            </span>
-            <div className="min-w-0">
-              <h3 className="text-base font-bold text-primary truncate leading-tight">
-                {title}
-              </h3>
-              {subtitle && (
-                <p className="text-xs text-secondary mt-0.5 font-normal truncate">
-                  {subtitle}
-                </p>
-              )}
+        <div
+          className={`w-full ${maxWidth} rounded-2xl animate-scaleIn my-auto shadow-2xl`}
+          style={{
+            background: "var(--modal-bg)",
+            border: "1.5px solid var(--glass-border)",
+            boxShadow: "var(--shadow-glass)",
+            backdropFilter: "var(--blur)",
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className={`flex items-center justify-between ${maxWidth === "max-w-xl" ? "px-5 py-3" : "px-6 py-4"} border-b border-glass-border`}>
+            <div className="flex items-center gap-3 min-w-0">
+              <span className="w-10 h-10 rounded-xl bg-accent/15 text-accent flex items-center justify-center shrink-0 shadow-xs">
+                <Icon size={20} />
+              </span>
+              <div className="min-w-0">
+                <h3 className="text-base font-bold text-primary truncate leading-tight">
+                  {title}
+                </h3>
+                {subtitle && (
+                  <p className="text-xs text-secondary mt-0.5 font-normal truncate">
+                    {subtitle}
+                  </p>
+                )}
+              </div>
             </div>
+            <button
+              onClick={requestClose}
+              className="w-8 h-8 rounded-xl bg-card-inner-bg hover:bg-white/10 text-secondary hover:text-primary flex items-center justify-center transition-colors shrink-0"
+            >
+              <MdClose size={18} />
+            </button>
           </div>
-          <button
-            onClick={requestClose}
-            className="w-8 h-8 rounded-xl bg-card-inner-bg hover:bg-white/10 text-secondary hover:text-primary flex items-center justify-center transition-colors shrink-0"
-          >
-            <MdClose size={18} />
-          </button>
+          <div className={`${maxWidth === "max-w-xl" ? "p-5 space-y-4" : "p-6 space-y-5"}`}>{children}</div>
         </div>
-        <div className="p-6 space-y-5">{children}</div>
-      </div>
       </div>
       <ConfirmDiscard
         open={confirmDiscard}
@@ -204,6 +207,7 @@ export default function Accounting({ initialTab = "overview" }) {
   const [error, setError] = useState("");
   const [balance, setBalance] = useState(null);
   const [chart, setChart] = useState(null);
+  const [accounts, setAccounts] = useState([]);
   const [year, setYear] = useState(new Date().getFullYear());
 
   /* ── SuperAdmin society gate ── */
@@ -231,12 +235,14 @@ export default function Accounting({ initialTab = "overview" }) {
       setLoading(true);
       setError("");
       const targetYear = customYear ?? year;
-      const [bal, ch] = await Promise.all([
+      const [bal, ch, accs] = await Promise.all([
         getBalance(),
         getChartData({ year: targetYear, ...(targetSocId ? { society_id: targetSocId } : {}) }),
+        getFinancialAccounts({ include_inactive: "true" }).catch(() => []),
       ]);
       setBalance(bal);
       setChart(ch);
+      setAccounts(Array.isArray(accs) ? accs : accs?.data || bal?.accounts || []);
     } catch (err) {
       console.error("Failed to load accounting data", err);
       setError(t("accLoadFailed"));
@@ -277,10 +283,12 @@ export default function Accounting({ initialTab = "overview" }) {
 
   const allTabs = [
     { id: "overview", label: t("accOverviewTab"), icon: MdAccountBalance },
+    { id: "accounts", label: "Accounts & Cash", module: "general_ledger", icon: MdOutlineAccountBalanceWallet },
+    { id: "fixed_deposits", label: "Fixed Deposits", module: "general_ledger", icon: MdSavings },
     { id: "ledger", label: t("accLedgerTab"), module: "general_ledger", icon: MdOutlineReceiptLong },
     { id: "expenses", label: t("accExpensesTab"), module: "expenses", icon: MdPayments },
+    { id: "categories", label: "Categories", module: "expenses", icon: MdViewList },
     { id: "audit", label: t("accAuditTab"), module: "financial_audit_log", icon: MdHistoryEdu },
-    { id: "opening", label: t("accOpeningTab"), icon: MdSavings },
   ];
   const tabs = allTabs.filter((t) => !t.module || isAdmin(user) || hasPermission(user, t.module, "view"));
   const activeTab = tabs.some((t) => t.id === tab) ? tab : "overview";
@@ -426,28 +434,38 @@ export default function Accounting({ initialTab = "overview" }) {
 
       {/* ═══════════ OVERVIEW ═══════════ */}
       {!isSuperAdmin || (societyId && societyId !== "ALL") ? (<>
-      {activeTab === "overview" && (
-        <OverviewTab b={b} months={months} year={year} onOpenTab={setTab} />
-      )}
+        {activeTab === "overview" && (
+          <OverviewTab b={b} months={months} year={year} onOpenTab={setTab} />
+        )}
 
-      {/* ═══════════ LEDGER (CASH BOOK) ═══════════ */}
-      {activeTab === "ledger" && (
-        <LedgerTab b={b} onNeedsBalance={load} onResetTab={() => setTab("overview")} />
-      )}
+        {/* ═══════════ ACCOUNTS & CASH ═══════════ */}
+        {activeTab === "accounts" && (
+          <AccountsTab accounts={accounts.length ? accounts : b.accounts || []} onRefresh={load} />
+        )}
 
-      {/* ═══════════ EXPENSES ═══════════ */}
-      {activeTab === "expenses" && (
-        <ExpensesTab isDeleteAllowed={isDeleteAllowed} />
-      )}
+        {/* ═══════════ FIXED DEPOSITS ═══════════ */}
+        {activeTab === "fixed_deposits" && (
+          <FixedDepositsTab accounts={accounts.length ? accounts : b.accounts || []} onBalanceChanged={load} />
+        )}
 
-      {/* ═══════════ OPENING BALANCE ═══════════ */}
-      {activeTab === "opening" && (
-        <OpeningTab b={b} isManageOpening={isManageOpening} onChanged={load} />
-      )}
+        {/* ═══════════ LEDGER (CASH BOOK) ═══════════ */}
+        {activeTab === "ledger" && (
+          <LedgerTab b={b} onNeedsBalance={load} onResetTab={() => setTab("overview")} />
+        )}
 
-      {/* ═══════════ FINANCIAL AUDIT LOG ═══════════ */}
-      {activeTab === "audit" && <AuditLogTab societyName={b.society_name} />}
-      </>): null}
+        {/* ═══════════ EXPENSES ═══════════ */}
+        {activeTab === "expenses" && (
+          <ExpensesTab isDeleteAllowed={isDeleteAllowed} />
+        )}
+
+        {/* ═══════════ EXPENSE CATEGORIES ═══════════ */}
+        {activeTab === "categories" && (
+          <ExpenseCategoriesTab societyId={societyId} />
+        )}
+
+        {/* ═══════════ FINANCIAL AUDIT LOG ═══════════ */}
+        {activeTab === "audit" && <AuditLogTab societyName={b.society_name} />}
+      </>) : null}
     </div>
   );
 }
@@ -463,112 +481,40 @@ function OverviewTab({ b, months, year, onOpenTab }) {
     debited: m.debited,
   }));
 
+  const totalBankPlusCash = Number(b.total_bank_balance || 0) + Number(b.total_cash_balance || 0);
+
   return (
     <div className="space-y-6">
-      {/* ── Dashboard KPI Cards ── */}
-      {/* Migrated from .ad-kpi in Phase 2 batch 2A. /admin/accounting keeps its
-          own 7-variant palette (role-theme.css section 6b) that is disjoint
-          from the /admin scoped set; all of it is replaced by semantic tones,
-          so the cash book now reads as income / expense / balance rather than
-          by variant name. */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
-        {/* 1. Opening Balance */}
-        <StatCard
-          tone="brand"
-          value={CURRENCY(b.opening_balance)}
-          label={t("accOpeningBalance")}
-          icon={MdSavings}
-          subtext={
-            b.opening_balance_effective_date
-              ? t("accEffectiveOn", { date: b.opening_balance_effective_date })
-              : t("accInitialBalanceReserve")
-          }
-        />
-
-        {/* 2. Total Income */}
-        <StatCard
-          tone="success"
-          value={CURRENCY(b.total_income ?? b.total_credit)}
-          label={t("accTotalIncome")}
-          icon={MdArrowUpward}
-          subtext={
-            t("accBillsMaintAmenities", {
-              bills: CURRENCY(b.bill_income),
-              maint: CURRENCY(b.maintenance_income),
-              amenities: CURRENCY(b.amenity_income),
-            })
-          }
-        />
-
-        {/* 3. Total Expenses */}
-        <StatCard
-          tone="danger"
-          value={CURRENCY(b.total_expenses ?? b.total_debit)}
-          label={t("accTotalExpenses")}
-          icon={MdArrowDownward}
-          subtext={
-            b.void_reversals
-              ? t("accIncludesVoid", { amount: CURRENCY(b.void_reversals) })
-              : t("accMoneyOut")
-          }
-        />
-
-        {/* 4. Current Balance */}
+      {/* ── Overview Summary (4 Cards) ── */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <StatCard
           tone="info"
-          value={CURRENCY(b.current_balance)}
-          label={t("accCurrentBalance")}
+          value={CURRENCY(b.total_bank_balance)}
+          label="Current Bank Balance"
           icon={MdAccountBalance}
-          subtext={t("accRunningCashPosition", { society: b.society_name || t("accSocietyName") })}
+          subtext={`${(b.accounts || []).filter((a) => a.account_type !== "CASH" && (a.status === "ACTIVE" || a.is_active)).length} active bank(s)`}
         />
-      </div>
-
-      {/* Income breakdown */}
-      <div className="bg-card border border-glass-border rounded-2xl p-6 shadow-sm">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h2 className="text-base font-bold text-primary">{t("accRevenueTitle")}</h2>
-            <p className="text-xs text-secondary">{t("accRevenueSubtitle")}</p>
-          </div>
-          <span
-            className="text-xs font-bold px-3 py-1 rounded-full border"
-            style={{
-              background: "rgba(16, 185, 129, 0.12)",
-              borderColor: "rgba(16, 185, 129, 0.3)",
-              color: "#34d399",
-            }}
-          >
-            {t("accTotalLabel", { amount: CURRENCY(b.total_income ?? b.total_credit) })}
-          </span>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-          {/* Utility Flat Bills */}
-          <StatCard
-            tone="info"
-            value={CURRENCY(b.bill_income)}
-            label={t("accUtilityFlatBills")}
-            icon={MdReceipt}
-            subtext={t("accUtilityDesc")}
-          />
-
-          {/* Maintenance Fees */}
-          <StatCard
-            tone="success"
-            value={CURRENCY(b.maintenance_income)}
-            label={t("accMaintenanceFees")}
-            icon={MdPayments}
-            subtext={t("accMaintenanceDesc")}
-          />
-
-          {/* Amenity Bookings */}
-          <StatCard
-            tone="brand"
-            value={CURRENCY(b.amenity_income)}
-            label={t("accAmenityBookings")}
-            icon={MdCalendarToday}
-            subtext={t("accAmenityDesc")}
-          />
-        </div>
+        <StatCard
+          tone="success"
+          value={CURRENCY(b.total_cash_balance)}
+          label="Current Cash Amount"
+          icon={MdPayments}
+          subtext="Cash in hand"
+        />
+        <StatCard
+          tone="danger"
+          value={CURRENCY(b.total_debit ?? b.total_expenses)}
+          label="Debited"
+          icon={MdArrowDownward}
+          subtext="Total money out"
+        />
+        <StatCard
+          tone="brand"
+          value={CURRENCY(totalBankPlusCash)}
+          label="Total"
+          icon={MdOutlineAccountBalanceWallet}
+          subtext="Bank + Cash balance"
+        />
       </div>
 
       {/* Chart */}
@@ -583,7 +529,7 @@ function OverviewTab({ b, months, year, onOpenTab }) {
           </button>
         </div>
         <div style={{ width: "100%", height: 288, minWidth: 0 }}>
-          <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+          <ResponsiveContainer width="100%" height={288} minWidth={1} minHeight={288}>
             <BarChart data={chartData} barCategoryGap={8}>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--glass-border)" vertical={false} />
               <XAxis
@@ -626,15 +572,14 @@ function DetailItem({ label, value, tone }) {
     <div className="bg-card-inner-bg border border-glass-border/70 rounded-xl p-3 flex flex-col justify-between">
       <span className="text-[11px] font-semibold uppercase tracking-wider text-secondary">{label}</span>
       <span
-        className={`text-sm font-bold mt-1 wrap-break-word ${
-          tone === "green"
-            ? "text-emerald-500"
-            : tone === "red"
+        className={`text-sm font-bold mt-1 wrap-break-word ${tone === "green"
+          ? "text-emerald-500"
+          : tone === "red"
             ? "text-rose-500"
             : tone === "blue"
-            ? "text-blue-500"
-            : "text-primary"
-        }`}
+              ? "text-blue-500"
+              : "text-primary"
+          }`}
       >
         {value === null || value === undefined || value === "" ? <span className="text-secondary font-normal">—</span> : value}
       </span>
@@ -674,6 +619,18 @@ function LedgerDetailsModal({ row, onClose }) {
     value: CURRENCY(row.amount),
     tone: isCredit ? "green" : "red",
   });
+  const finAcc = row.financialAccount;
+  const accLabel = finAcc
+    ? finAcc.account_type === "CASH"
+      ? finAcc.account_name
+      : `${finAcc.bank_name || finAcc.account_name}${finAcc.masked_account_number ? ` (${finAcc.masked_account_number})` : ""}`
+    : row.account_name && row.account_name !== "Legacy / Unassigned"
+      ? `${row.bank_name || row.account_name}${row.masked_account_number ? ` (${row.masked_account_number})` : ""}`
+      : "Legacy / Unlinked";
+  items.push({
+    label: isCredit ? "Credited Account" : "Debited Account",
+    value: accLabel,
+  });
   items.push({ label: t("accRunningBalance"), value: CURRENCY(row.running_balance), tone: "blue" });
   items.push({ label: t("accEntryDate"), value: row.entry_date ? String(row.entry_date).slice(0, 10) : null });
   items.push({ label: t("accStatus"), value: row.status === "REVERSED" ? t("accReversed") : t("accActiveStatus") });
@@ -690,9 +647,8 @@ function LedgerDetailsModal({ row, onClose }) {
       <div className="flex items-center justify-between gap-3 p-3 bg-card-inner-bg border border-glass-border rounded-xl">
         <div className="flex items-center gap-2">
           <span
-            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold ${
-              isCredit ? "bg-emerald-500/15 text-emerald-500 border border-emerald-500/30" : "bg-rose-500/15 text-rose-500 border border-rose-500/30"
-            }`}
+            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold ${isCredit ? "bg-emerald-500/15 text-emerald-500 border border-emerald-500/30" : "bg-rose-500/15 text-rose-500 border border-rose-500/30"
+              }`}
           >
             {isCredit ? t("accCreditIn") : t("accDebitOut")}
           </span>
@@ -894,9 +850,16 @@ function LedgerTab({ b, onNeedsBalance }) {
   const [pagination, setPagination] = useState({});
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
-  const [filters, setFilters] = useState({ page: 1, limit: 20, type: "", source: "", from: "", to: "", search: "" });
+  const [filters, setFilters] = useState({ page: 1, limit: 20, type: "", source: "", financial_account_id: "", from: "", to: "", search: "" });
+  const [accounts, setAccounts] = useState([]);
   const [selected, setSelected] = useState(null);
   const [showFilterModal, setShowFilterModal] = useState(false);
+
+  useEffect(() => {
+    getFinancialAccounts({ include_inactive: "true" })
+      .then((res) => setAccounts(Array.isArray(res) ? res : res?.data || []))
+      .catch(() => { });
+  }, []);
 
   const load = async (params) => {
     try {
@@ -926,6 +889,7 @@ function LedgerTab({ b, onNeedsBalance }) {
       next.to !== undefined ||
       next.type !== undefined ||
       next.source !== undefined ||
+      next.financial_account_id !== undefined ||
       next.search !== undefined
     ) {
       merged.page = 1;
@@ -937,6 +901,7 @@ function LedgerTab({ b, onNeedsBalance }) {
   const activeFilterCount = [
     filters.type,
     filters.source,
+    filters.financial_account_id,
     filters.from,
     filters.to,
   ].filter(Boolean).length;
@@ -971,7 +936,7 @@ function LedgerTab({ b, onNeedsBalance }) {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
         {/* Net Live Balance */}
         <StatCard
-          variant="sheen"
+            variant="base"
           tone="brand"
           value={CURRENCY(b?.current_balance)}
           label={t("accNetLiveBalance")}
@@ -980,7 +945,7 @@ function LedgerTab({ b, onNeedsBalance }) {
 
         {/* Total Inflows */}
         <StatCard
-          variant="sheen"
+            variant="base"
           tone="success"
           value={CURRENCY(b?.total_income ?? b?.total_credit)}
           label={t("accTotalInflows")}
@@ -989,7 +954,7 @@ function LedgerTab({ b, onNeedsBalance }) {
 
         {/* Total Outflows */}
         <StatCard
-          variant="sheen"
+            variant="base"
           tone="danger"
           value={CURRENCY(b?.total_expenses ?? b?.total_debit)}
           label={t("accTotalOutflows")}
@@ -998,7 +963,7 @@ function LedgerTab({ b, onNeedsBalance }) {
 
         {/* Opening Balance */}
         <StatCard
-          variant="sheen"
+            variant="base"
           tone="neutral"
           value={CURRENCY(b?.opening_balance)}
           label={t("accOpeningBalance")}
@@ -1034,6 +999,21 @@ function LedgerTab({ b, onNeedsBalance }) {
             </p>
           </div>
           <div className="flex items-center gap-2.5 flex-wrap">
+            <select
+              style={{ ...inputStyle, width: "auto", minWidth: 180, height: 38, padding: "0 12px", fontSize: 12 }}
+              value={filters.financial_account_id}
+              onChange={(e) => applyFilters({ financial_account_id: e.target.value })}
+            >
+              <option value="">All Accounts (Bank &amp; Cash)</option>
+              {accounts.map((a) => (
+                <option key={a.id} value={a.id}>
+                  {a.account_type === "CASH"
+                    ? `${a.account_name} (Cash)`
+                    : `${a.account_name}${a.bank_name ? ` · ${a.bank_name}` : ""}`}
+                </option>
+              ))}
+            </select>
+
             {/* Expandable Animated Search Slider */}
             <ExpandableSearch
               value={filters.search}
@@ -1064,7 +1044,7 @@ function LedgerTab({ b, onNeedsBalance }) {
             </button>
             {activeFilterCount > 0 && (
               <button
-                onClick={() => applyFilters({ type: "", source: "", from: "", to: "", search: "" })}
+                onClick={() => applyFilters({ type: "", source: "", financial_account_id: "", from: "", to: "", search: "" })}
                 className="text-xs font-semibold text-rose-500 hover:underline px-2 py-1"
               >
                 {t("accReset")}
@@ -1120,6 +1100,7 @@ function LedgerTab({ b, onNeedsBalance }) {
                 <th className="py-3.5 pr-4 font-bold">{t("accColDate")}</th>
                 <th className="py-3.5 pr-4 font-bold">{t("accColType")}</th>
                 <th className="py-3.5 pr-4 font-bold">{t("accColCategory")}</th>
+                <th className="py-3.5 pr-4 font-bold">Account</th>
                 <th className="py-3.5 pr-4 font-bold">{t("accColParticulars")}</th>
                 <th className="py-3.5 pr-4 font-bold text-right">{t("accColAmount")}</th>
                 <th className="py-3.5 pr-4 font-bold text-right">{t("accColRunningBalance")}</th>
@@ -1140,11 +1121,10 @@ function LedgerTab({ b, onNeedsBalance }) {
                     </td>
                     <td className="py-3.5 pr-4 whitespace-nowrap">
                       <span
-                        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-extrabold ${
-                          isCredit
-                            ? "bg-emerald-500/15 text-emerald-500 border border-emerald-500/30"
-                            : "bg-rose-500/15 text-rose-500 border border-rose-500/30"
-                        }`}
+                        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-extrabold ${isCredit
+                          ? "bg-emerald-500/15 text-emerald-500 border border-emerald-500/30"
+                          : "bg-rose-500/15 text-rose-500 border border-rose-500/30"
+                          }`}
                       >
                         {isCredit ? <MdArrowUpward size={13} /> : <MdArrowDownward size={13} />}
                         {isCredit ? (t("accCreditShort") || "+ CREDIT") : (t("accDebitShort") || "- DEBIT")}
@@ -1155,13 +1135,23 @@ function LedgerTab({ b, onNeedsBalance }) {
                         {r.source}
                       </span>
                     </td>
+                    <td className="py-3.5 pr-4 text-xs text-secondary whitespace-nowrap">
+                      {r.financialAccount ? (
+                        <span className="px-2 py-0.5 rounded-md bg-card-inner-bg border border-glass-border font-medium text-primary">
+                          {r.financialAccount.account_type === "CASH"
+                            ? r.financialAccount.account_name
+                            : `${r.financialAccount.bank_name || r.financialAccount.account_name}${r.financialAccount.masked_account_number ? ` (${r.financialAccount.masked_account_number})` : ""}`}
+                        </span>
+                      ) : (
+                        <span className="opacity-60">Legacy / Unlinked</span>
+                      )}
+                    </td>
                     <td className="py-3.5 pr-4 text-secondary max-w-72 truncate font-medium" title={r.description}>
                       {r.description || "—"}
                     </td>
                     <td
-                      className={`py-3.5 pr-4 text-right font-extrabold whitespace-nowrap ${
-                        isCredit ? "text-emerald-500" : "text-rose-500"
-                      } ${openingRow ? "text-secondary" : ""}`}
+                      className={`py-3.5 pr-4 text-right font-extrabold whitespace-nowrap ${isCredit ? "text-emerald-500" : "text-rose-500"
+                        } ${openingRow ? "text-secondary" : ""}`}
                     >
                       {openingRow ? CURRENCY(r.amount) : `${isCredit ? "+" : "−"}${CURRENCY(r.amount)}`}
                     </td>
@@ -1182,7 +1172,7 @@ function LedgerTab({ b, onNeedsBalance }) {
               })}
               {rows.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="py-12 text-center text-secondary text-sm">
+                  <td colSpan={8} className="py-12 text-center text-secondary text-sm">
                     {t("accNoLedgerEntries")}
                   </td>
                 </tr>
@@ -1235,18 +1225,24 @@ function ExpensesTab({ isDeleteAllowed }) {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(20);
   const [search, setSearch] = useState("");
+  const [accountFilter, setAccountFilter] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("");
+  const [accounts, setAccounts] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [isSearchOpen, setIsSearchOpen] = useState(Boolean(search));
   const [showForm, setShowForm] = useState(null);
   const [showVoid, setShowVoid] = useState(null);
   const [showView, setShowView] = useState(null);
   const [saving, setSaving] = useState(false);
 
-  const load = async (p = page, q = "", size = limit) => {
+  const load = async (p = page, q = search, size = limit, accId = accountFilter, catId = categoryFilter) => {
     try {
       setLoading(true);
       setErr("");
       const params = { page: p, limit: size };
       if (q) params.search = q;
+      if (accId) params.financial_account_id = accId;
+      if (catId) params.expense_category_id = catId;
       const res = await getExpenses(params);
       setRows(res.data || []);
       setTotals(res.totals || null);
@@ -1261,6 +1257,12 @@ function ExpensesTab({ isDeleteAllowed }) {
 
   useEffect(() => {
     load();
+    getFinancialAccounts({ include_inactive: "true" })
+      .then((res) => setAccounts(Array.isArray(res) ? res : res?.data || []))
+      .catch(() => { });
+    getExpenseCategories({ include_inactive: "true" })
+      .then((res) => setCategories(Array.isArray(res) ? res : res?.data || []))
+      .catch(() => { });
   }, []);
 
   const goPage = (p) => {
@@ -1329,7 +1331,7 @@ function ExpensesTab({ isDeleteAllowed }) {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
           {/* Total Recorded Amount */}
           <StatCard
-            variant="sheen"
+            variant="base"
             tone="neutral"
             value={CURRENCY(totals.grand_total)}
             label={t("accTotalRecorded")}
@@ -1338,7 +1340,7 @@ function ExpensesTab({ isDeleteAllowed }) {
 
           {/* Active Debited Outflow */}
           <StatCard
-            variant="sheen"
+            variant="base"
             tone="danger"
             value={CURRENCY(totals.posted_total)}
             label={t("accActiveOutflow")}
@@ -1347,7 +1349,7 @@ function ExpensesTab({ isDeleteAllowed }) {
 
           {/* Voided Records */}
           <StatCard
-            variant="sheen"
+            variant="base"
             tone="warning"
             value={totals.void_count || 0}
             label={t("accVoidedRecords")}
@@ -1367,19 +1369,58 @@ function ExpensesTab({ isDeleteAllowed }) {
         }}
       >
         {/* Header & Action */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2 border-b" style={{ borderColor: "var(--glass-border)" }}>
-          <div>
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b" style={{ borderColor: "var(--glass-border)" }}>
+          <div className="min-w-0 lg:flex-1">
             <h2 className="text-base font-bold text-primary flex items-center gap-2">
               <MdPayments className="text-accent" size={20} />
               {t("accExpenseTitle")}
             </h2>
-            <p className="text-xs text-secondary mt-0.5">
-              {t("accExpenseSubtitle")}
-            </p>
+            {t("accExpenseSubtitle") && (
+              <p className="text-xs text-secondary mt-0.5">
+                {t("accExpenseSubtitle")}
+              </p>
+            )}
           </div>
-          <div className="flex items-center gap-2.5 flex-wrap">
+          <div className="flex w-full flex-wrap items-center justify-start gap-2 lg:w-auto lg:flex-nowrap lg:justify-end">
+            <select
+              className="h-10 min-w-[165px] flex-1 rounded-xl border px-3 text-xs font-semibold transition-shadow focus:outline-none focus:ring-2 focus:ring-indigo-500/20 lg:flex-none"
+              style={{ ...inputStyle, width: "auto", height: 40, background: "var(--card-inner-bg)" }}
+              value={accountFilter}
+              onChange={(e) => {
+                const v = e.target.value;
+                setAccountFilter(v);
+                setPage(1);
+                load(1, search, limit, v, categoryFilter);
+              }}
+            >
+              <option value="">All Accounts</option>
+              {accounts.map((a) => (
+                <option key={a.id} value={a.id}>
+                  {a.account_type === "CASH" ? a.account_name : `${a.account_name}${a.bank_name ? ` · ${a.bank_name}` : ""}`}
+                </option>
+              ))}
+            </select>
+
+            <select
+              className="h-10 min-w-[150px] flex-1 rounded-xl border px-3 text-xs font-semibold transition-shadow focus:outline-none focus:ring-2 focus:ring-indigo-500/20 lg:flex-none"
+              style={{ ...inputStyle, width: "auto", height: 40, background: "var(--card-inner-bg)" }}
+              value={categoryFilter}
+              onChange={(e) => {
+                const v = e.target.value;
+                setCategoryFilter(v);
+                setPage(1);
+                load(1, search, limit, accountFilter, v);
+              }}
+            >
+              <option value="">All Categories</option>
+              {categories.map((c) => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </select>
+
             {/* Expandable Animated Search Slider */}
             <ExpandableSearch
+              className="shrink-0"
               value={search}
               onChange={(val) => { setSearch(val); load(1, val); }}
               placeholder={t("accSearchPayee")}
@@ -1390,8 +1431,7 @@ function ExpensesTab({ isDeleteAllowed }) {
 
             <button
               onClick={() => setShowForm({})}
-              className="btn-primary flex items-center gap-2 px-4 py-2 text-xs font-bold shadow-md shrink-0 cursor-pointer"
-              style={{ height: 38 }}
+              className="btn-primary flex h-10 w-full shrink-0 cursor-pointer items-center justify-center gap-2 rounded-xl px-4 text-xs font-bold shadow-lg shadow-indigo-500/20 transition-transform hover:-translate-y-0.5 sm:w-auto"
             >
               <MdAdd size={18} /> {t("accRecordNewExpense")}
             </button>
@@ -1405,9 +1445,8 @@ function ExpensesTab({ isDeleteAllowed }) {
               <tr className="text-left text-xs uppercase tracking-wider text-secondary border-b border-glass-border">
                 <th className="py-3.5 pr-4 font-bold">{t("accColPaymentDate")}</th>
                 <th className="py-3.5 pr-4 font-bold">{t("accColPayee")}</th>
-                <th className="py-3.5 pr-4 font-bold">{t("accColReason")}</th>
-                <th className="py-3.5 pr-4 font-bold">{t("accColMode")}</th>
-                <th className="py-3.5 pr-4 font-bold">{t("accColSourcedBy")}</th>
+                <th className="py-3.5 pr-4 font-bold">Category</th>
+                <th className="py-3.5 pr-4 font-bold">Account</th>
                 <th className="py-3.5 pr-4 font-bold text-right">{t("accColAmount")}</th>
                 <th className="py-3.5 font-bold text-right">{t("accColActions")}</th>
               </tr>
@@ -1419,26 +1458,24 @@ function ExpensesTab({ isDeleteAllowed }) {
                     {(e.payment_date || "").slice(0, 10)}
                   </td>
                   <td className="py-3.5 pr-4 font-bold text-primary text-xs whitespace-nowrap">{e.pay_to}</td>
-                  <td className="py-3.5 pr-4 text-secondary max-w-64 truncate font-medium text-xs" title={e.reason}>
-                    {e.reason}
-                  </td>
-                  <td className="py-3.5 pr-4 text-xs font-semibold text-secondary whitespace-nowrap">
-                    <span className="px-2 py-0.5 rounded-md bg-card-inner-bg border border-glass-border">
-                      {e.payment_mode}
-                    </span>
-                  </td>
-                  <td className="py-3.5 pr-4 text-xs text-secondary whitespace-nowrap">
-                    {e.created_by_name ? (
-                      <span className="inline-flex items-center gap-1.5">
-                        <span>{e.created_by_name}</span>
-                        {e.created_by_role && (
-                          <span className="px-1.5 py-0.5 rounded bg-accent/10 text-accent border border-glass-border text-[10px] font-bold">
-                            {e.created_by_role}
-                          </span>
-                        )}
+                  <td className="py-3.5 pr-4 text-xs whitespace-nowrap">
+                    {e.category ? (
+                      <span className="px-2 py-0.5 rounded-md bg-accent/10 text-accent border border-accent/20 font-semibold">
+                        {e.category.name}
                       </span>
                     ) : (
-                      <span>{e.created_by_role || t("accSystem")}</span>
+                      <span className="text-secondary opacity-60">—</span>
+                    )}
+                  </td>
+                  <td className="py-3.5 pr-4 text-xs whitespace-nowrap">
+                    {e.financialAccount ? (
+                      <span className="px-2 py-0.5 rounded-md bg-card-inner-bg border border-glass-border text-primary font-medium">
+                        {e.financialAccount.account_type === "CASH"
+                          ? e.financialAccount.account_name
+                          : `${e.financialAccount.bank_name || e.financialAccount.account_name}${e.financialAccount.masked_account_number ? ` (${e.financialAccount.masked_account_number})` : ""}`}
+                      </span>
+                    ) : (
+                      <span className="text-secondary opacity-60">—</span>
                     )}
                   </td>
                   <td className={`py-3.5 pr-4 text-right font-extrabold whitespace-nowrap ${e.status === "VOID" ? "text-secondary line-through" : "text-rose-500"}`}>
@@ -1477,7 +1514,7 @@ function ExpensesTab({ isDeleteAllowed }) {
               ))}
               {rows.length === 0 && (
                 <tr>
-<td colSpan={7} className="py-12 text-center text-secondary text-sm">
+                  <td colSpan={6} className="py-12 text-center text-secondary text-sm">
                     {t("accNoExpenses")}
                   </td>
                 </tr>
@@ -1513,6 +1550,8 @@ function ExpensesTab({ isDeleteAllowed }) {
       {showForm && (
         <ExpenseForm
           expense={showForm.id ? showForm : null}
+          accounts={accounts}
+          categories={categories}
           saving={saving}
           onClose={() => setShowForm(null)}
           onSubmit={(data) => submitExpense(data, showForm.id)}
@@ -1569,6 +1608,9 @@ function ExpenseDetails({ expense, onClose }) {
     { label: t("accColPayee"), value: expense.pay_to },
     { label: t("accColReason"), value: expense.reason },
     { label: t("accPaymentMode"), value: expense.payment_mode },
+    { label: "Expense Category", value: expense.category?.name || "Select Category" },
+    { label: "Payment Account", value: expense.financialAccount?.account_name || "—" },
+    { label: t("accColSourcedBy"), value: expense.created_by_name ? `${expense.created_by_name}${expense.created_by_role ? ` (${expense.created_by_role})` : ""}` : (expense.created_by_role || t("accSystem")) },
     { label: t("accPaymentDate"), value: expense.payment_date ? String(expense.payment_date).slice(0, 10) : null },
     { label: t("accStatus"), value: expense.status ? (expense.status === "VOID" ? t("accVoidedReversed") : t("accPostedActive")) : null },
   ];
@@ -1738,19 +1780,62 @@ function ExpenseDetails({ expense, onClose }) {
 }
 
 /* ── STYLISH EXPENSE CREATE / EDIT FORM MODAL (2-3 DETAILS PER ROW) ────────── */
-function ExpenseForm({ expense, saving, onClose, onSubmit }) {
+function ExpenseForm({ expense, accounts = [], categories = [], saving, onClose, onSubmit }) {
   const { t } = useLang();
+  const activeAccounts = accounts.filter((a) => a.status === "ACTIVE" || a.is_active);
+  const cashAccount = activeAccounts.find((a) => a.account_type === "CASH");
+  const bankAccounts = activeAccounts.filter((a) => a.account_type !== "CASH");
+  const activeCategories = categories.filter((c) => c.status === "ACTIVE" || c.is_active);
+
   const [form, setForm] = useState({
     pay_to: expense?.pay_to || "",
     reason: expense?.reason || "",
     amount: expense?.amount !== undefined ? String(expense.amount) : "",
     payment_date: expense?.payment_date ? String(expense.payment_date).slice(0, 10) : TODAY(),
     payment_mode: expense?.payment_mode || "CASH",
+    expense_category_id: expense?.expense_category_id ? String(expense.expense_category_id) : "",
+    financial_account_id: expense?.financial_account_id
+      ? String(expense.financial_account_id)
+      : (expense?.payment_mode || "CASH") === "CASH"
+        ? (cashAccount?.id ? String(cashAccount.id) : "")
+        : (bankAccounts.find((b) => b.is_default)?.id || bankAccounts[0]?.id || ""),
     receipt: null,
     remove_receipt: false,
   });
+
+  const handleModeChange = (mode) => {
+    let nextAccId = form.financial_account_id;
+    if (mode === "CASH") {
+      nextAccId = cashAccount?.id ? String(cashAccount.id) : "";
+    } else if (["BANK_TRANSFER", "UPI", "CHEQUE"].includes(mode)) {
+      const stillBank = bankAccounts.some((b) => String(b.id) === String(nextAccId));
+      if (!stillBank) {
+        const def = bankAccounts.find((b) => b.is_default) || bankAccounts[0];
+        nextAccId = def ? String(def.id) : "";
+      }
+    } else if (!nextAccId) {
+      const def = activeAccounts.find((a) => a.is_default) || activeAccounts[0];
+      nextAccId = def ? String(def.id) : "";
+    }
+    setForm((prev) => ({ ...prev, payment_mode: mode, financial_account_id: nextAccId }));
+  };
   const [receiptPreview, setReceiptPreview] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [balanceError, setBalanceError] = useState("");
+
+  const selectedAccount =
+    form.payment_mode === "CASH"
+      ? cashAccount
+      : activeAccounts.find((account) => String(account.id) === String(form.financial_account_id));
+  const sameEditAccount = expense && selectedAccount && String(expense.financial_account_id) === String(selectedAccount.id);
+  const availableBalance =
+    Number(selectedAccount?.current_balance ?? selectedAccount?.balance ?? 0) +
+    (sameEditAccount ? Number(expense.amount || 0) : 0);
+  const enteredAmount = Number(form.amount);
+  const liveBalanceError =
+    selectedAccount && form.amount !== "" && Number.isFinite(enteredAmount) && enteredAmount > availableBalance
+      ? `Insufficient balance in ${selectedAccount.account_name}. Available: ${CURRENCY(availableBalance)}.`
+      : "";
 
   const handleReceiptFile = (file) => {
     if (!file) return;
@@ -1796,7 +1881,20 @@ function ExpenseForm({ expense, saving, onClose, onSubmit }) {
     const amountErr = getPositiveAmountError(form.amount, t("accExpenseAmount"));
     if (amountErr) { toast.error(amountErr); return; }
 
-    onSubmit({ ...form, amount: Number(form.amount), payment_mode: form.payment_mode });
+    if (!form.expense_category_id) {
+      toast.error("Please select an expense category.");
+      return;
+    }
+
+    const amount = Number(form.amount);
+    if (liveBalanceError) {
+      setBalanceError(liveBalanceError);
+      toast.error(liveBalanceError);
+      return;
+    }
+    setBalanceError("");
+
+    onSubmit({ ...form, amount, payment_mode: form.payment_mode });
   };
 
   const QUICK_AMOUNTS = [500, 1000, 2500, 5000, 10000];
@@ -1810,23 +1908,12 @@ function ExpenseForm({ expense, saving, onClose, onSubmit }) {
           : t("accRecordExpenseSub", "Log disbursements, vendor bills, and maintenance expenses to Cash Book.")
       }
       icon={MdPayments}
-      maxWidth="max-w-2xl"
+      maxWidth="max-w-xl"
       onClose={onClose}
     >
-      <form onSubmit={submit} className="space-y-4">
-        {/* Info Banner */}
-        <div className="p-3.5 rounded-xl border border-accent/25 bg-accent/8 flex items-start gap-3 shadow-xs">
-          <div className="w-7 h-7 rounded-lg bg-accent/20 text-accent flex items-center justify-center shrink-0 mt-0.5">
-            <MdCheckCircle size={18} />
-          </div>
-          <div className="text-xs">
-            <span className="font-semibold text-primary">{t("accCashBookSync", "Automatic Cash Book Sync:")} </span>
-            <span className="text-secondary leading-relaxed">{t("accExpenseBanner")}</span>
-          </div>
-        </div>
-
+      <form onSubmit={submit} className="space-y-3">
         {/* Payee & Payment Date */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <Field label={t("accPayeeVendor")} required icon={MdPerson}>
             <input
               type="text"
@@ -1851,7 +1938,7 @@ function ExpenseForm({ expense, saving, onClose, onSubmit }) {
 
         {/* Amount & Quick Shortcuts */}
         <Field label={t("accExpenseAmount")} required icon={MdOutlineAccountBalanceWallet}>
-          <div className="space-y-2">
+            <div className="space-y-1.5">
             <div className="relative">
               <span className="absolute left-3.5 top-1/2 -translate-y-1/2 font-bold text-base text-accent pointer-events-none">
                 ₹
@@ -1867,6 +1954,11 @@ function ExpenseForm({ expense, saving, onClose, onSubmit }) {
                 onChange={set("amount")}
               />
             </div>
+            {(liveBalanceError || balanceError) && (
+              <p className="rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-1.5 text-xs font-semibold text-rose-500">
+                {liveBalanceError || balanceError}
+              </p>
+            )}
             {/* Quick Amount Suggestion Chips */}
             <div className="flex items-center gap-1.5 flex-wrap">
               <span className="text-[11px] font-medium text-secondary mr-1">Quick:</span>
@@ -1877,11 +1969,10 @@ function ExpenseForm({ expense, saving, onClose, onSubmit }) {
                     key={amt}
                     type="button"
                     onClick={() => setForm((prev) => ({ ...prev, amount: String(amt) }))}
-                    className={`text-[11px] font-semibold px-2.5 py-1 rounded-lg border transition-all ${
-                      isSelected
-                        ? "bg-accent text-white border-accent shadow-xs"
-                        : "bg-card-inner-bg border-glass-border text-secondary hover:text-primary hover:border-accent/40"
-                    }`}
+                    className={`text-[11px] font-semibold px-2.5 py-1 rounded-lg border transition-all ${isSelected
+                      ? "bg-accent text-white border-accent shadow-xs"
+                      : "bg-card-inner-bg border-glass-border text-secondary hover:text-primary hover:border-accent/40"
+                      }`}
                   >
                     +₹{amt.toLocaleString("en-IN")}
                   </button>
@@ -1891,50 +1982,70 @@ function ExpenseForm({ expense, saving, onClose, onSubmit }) {
           </div>
         </Field>
 
-        {/* Interactive Payment Mode Pills */}
+        {/* Payment Mode */}
         <Field label={t("accPaymentMode")} required icon={MdPayments}>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-            {MODES.map((m) => {
-              const active = form.payment_mode === m;
-              let label = m;
-              let ModeIcon = MdPayments;
-              if (m === "CASH") {
-                label = t("accModeCash", "Cash");
-                ModeIcon = MdPayments;
-              } else if (m === "UPI") {
-                label = t("accModeUpi", "UPI / QR");
-                ModeIcon = MdQrCode2;
-              } else if (m === "BANK_TRANSFER") {
-                label = t("accBankTransfer", "Bank Transfer");
-                ModeIcon = MdAccountBalance;
-              } else if (m === "CHEQUE") {
-                label = t("accModeCheque", "Cheque");
-                ModeIcon = MdReceipt;
-              }
-
-              return (
-                <button
-                  key={m}
-                  type="button"
-                  onClick={() => setForm((prev) => ({ ...prev, payment_mode: m }))}
-                  className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl border text-xs font-semibold transition-all ${
-                    active
-                      ? "bg-accent/15 border-accent text-accent shadow-xs font-bold ring-1 ring-accent/30"
-                      : "bg-card-inner-bg border-glass-border text-secondary hover:text-primary hover:border-accent/30"
-                  }`}
-                >
-                  <ModeIcon size={16} className={active ? "text-accent" : "text-secondary"} />
-                  <span className="truncate">{label}</span>
-                </button>
-              );
-            })}
-          </div>
+          <select
+            style={inputStyle}
+            value={form.payment_mode}
+            onChange={(e) => handleModeChange(e.target.value)}
+            className="focus:border-accent focus:ring-2 focus:ring-accent/20 transition-all"
+          >
+            <option value="CASH">{t("accModeCash", "Cash")}</option>
+            <option value="UPI">{t("accModeUpi", "UPI / QR")}</option>
+            <option value="BANK_TRANSFER">{t("accBankTransfer", "Bank Transfer")}</option>
+            <option value="CHEQUE">{t("accModeCheque", "Cheque")}</option>
+          </select>
         </Field>
+
+        {/* Expense Category & Financial Account */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <Field label="Expense Category" required icon={MdViewList}>
+            <select
+              required
+              style={inputStyle}
+              value={form.expense_category_id}
+              onChange={set("expense_category_id")}
+            >
+              <option value="">Select Category</option>
+              {activeCategories.map((c) => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </select>
+          </Field>
+          <Field label="Payment Account" required icon={MdAccountBalance}>
+            {form.payment_mode === "CASH" ? (
+              <div style={{ ...inputStyle, opacity: 0.85 }} className="flex items-center justify-between">
+                <span>{cashAccount ? `${cashAccount.account_name}` : "Society Cash Account"}</span>
+                {cashAccount && <span className="text-xs font-bold text-emerald-400">{CURRENCY(cashAccount.current_balance)}</span>}
+              </div>
+            ) : (
+              <select
+                style={inputStyle}
+                value={form.financial_account_id}
+                onChange={set("financial_account_id")}
+              >
+                <option value="">Select Account</option>
+                {bankAccounts.map((a) => (
+                  <option key={a.id} value={a.id}>
+                    {a.account_type === "CASH"
+                      ? `${a.account_name} (Cash · ${CURRENCY(a.current_balance)})`
+                      : `${a.account_name}${a.bank_name ? ` · ${a.bank_name}` : ""} (${CURRENCY(a.current_balance)})`}
+                  </option>
+                ))}
+              </select>
+            )}
+          </Field>
+          {balanceError && (
+            <p className="sm:col-span-2 -mt-1 rounded-lg border border-rose-500/25 bg-rose-500/10 px-3 py-2 text-xs font-semibold text-rose-500">
+              {balanceError}
+            </p>
+          )}
+        </div>
 
         {/* Reason / Particulars */}
         <Field label={t("accReasonDesc")} required icon={MdDescription}>
           <textarea
-            rows={2}
+            rows={1}
             style={inputStyle}
             className="resize-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-all"
             placeholder={t("accReasonPlaceholder")}
@@ -1953,11 +2064,10 @@ function ExpenseForm({ expense, saving, onClose, onSubmit }) {
               }}
               onDragLeave={() => setIsDragging(false)}
               onDrop={handleDrop}
-              className={`relative flex flex-col items-center justify-center p-4 rounded-xl border-2 border-dashed transition-all cursor-pointer ${
-                isDragging
-                  ? "border-accent bg-accent/10"
-                  : "border-glass-border hover:border-accent/50 bg-card-inner-bg/50 hover:bg-accent/5"
-              }`}
+              className={`relative flex flex-col items-center justify-center p-3 rounded-xl border-2 border-dashed transition-all cursor-pointer ${isDragging
+                ? "border-accent bg-accent/10"
+                : "border-glass-border hover:border-accent/50 bg-card-inner-bg/50 hover:bg-accent/5"
+                }`}
             >
               <input
                 id="expense-receipt-upload"
@@ -2032,7 +2142,7 @@ function ExpenseForm({ expense, saving, onClose, onSubmit }) {
         </Field>
 
         {/* Footer Actions */}
-        <div className="flex justify-end gap-3 pt-4 border-t border-glass-border">
+        <div className="flex justify-end gap-3 pt-2 border-t border-glass-border">
           <button
             type="button"
             onClick={onClose}
@@ -2042,7 +2152,7 @@ function ExpenseForm({ expense, saving, onClose, onSubmit }) {
           </button>
           <button
             type="submit"
-            disabled={saving}
+            disabled={saving || Boolean(liveBalanceError)}
             className="btn-primary flex items-center gap-2 px-6 py-2.5 text-xs font-bold rounded-xl shadow-md disabled:opacity-50 transition-all hover:shadow-lg"
           >
             {saving ? (
@@ -2128,21 +2238,21 @@ function OpeningTab({ b, isManageOpening, onChanged }) {
         {/* ── KPI Cards for Opening Balance (Inside the card) ── */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
           <StatCard
-            variant="sheen"
+            variant="base"
             tone="neutral"
             value={CURRENCY(b.opening_balance)}
             label={t("accCurrentOpening")}
             description={t("accCarryOverBaseline")}
           />
           <StatCard
-            variant="sheen"
+            variant="base"
             tone="info"
             value={b.opening_balance_effective_date || t("accNotSet")}
             label={t("accEffectiveDate")}
             description={t("accDateOfCarryOver")}
           />
           <StatCard
-            variant="sheen"
+            variant="base"
             tone="brand"
             value={b.opening_balance ? t("accConfigured") : t("accPendingSetup")}
             label={t("accSetupStatus")}
@@ -2463,6 +2573,11 @@ const prettyAuditList = (v, societyName = "", performerName = "", t) => {
         return null;
       }
 
+      // Keep the raw receipt URL private; it is exposed through the View Receipt action below.
+      if (keyLower === "receipt_url") {
+        return null;
+      }
+
       const fv = fmtAuditValue(val, k, performerName, t);
       if (fv === "") return null;
       return {
@@ -2491,6 +2606,7 @@ function AuditDetailsModal({ row, societyName, onClose }) {
   const showAfter = after && after.length > 0;
 
   const meaningfulReason = getMeaningfulAuditReason(row, t);
+  const receiptUrl = row.new_value?.receipt_url || row.old_value?.receipt_url || row.receipt_url;
 
   const toneConfig = {
     green: { bg: "rgba(16, 185, 129, 0.12)", border: "rgba(16, 185, 129, 0.28)", text: "#10B981", badge: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30" },
@@ -2613,7 +2729,16 @@ function AuditDetailsModal({ row, societyName, onClose }) {
         )}
 
         {/* Footer actions */}
-        <div className="flex justify-end pt-3 border-t border-glass-border">
+        <div className="flex flex-wrap justify-end gap-2 pt-3 border-t border-glass-border">
+          {receiptUrl && (
+            <button
+              type="button"
+              onClick={() => window.location.assign(receiptUrl)}
+              className="btn-soft flex items-center gap-1.5 px-5 py-2 text-xs font-bold rounded-xl cursor-pointer"
+            >
+              <MdVisibility size={16} /> View Receipt
+            </button>
+          )}
           <button onClick={onClose} className="btn-primary px-6 py-2 text-xs font-bold rounded-xl cursor-pointer">
             {t("accCloseRecord")}
           </button>
@@ -2839,9 +2964,8 @@ function AuditLogTab({ societyName }) {
               return (
                 <tr
                   key={r.id}
-                  className={`border-b hover:bg-card-inner-bg/60 transition-colors ${
-                    isOpeningAction(r.action) ? "bg-blue-500/5" : ""
-                  }`}
+                  className={`border-b hover:bg-card-inner-bg/60 transition-colors ${isOpeningAction(r.action) ? "bg-blue-500/5" : ""
+                    }`}
                   style={{ borderColor: "var(--glass-border)" }}
                 >
                   <td className="py-3.5 pr-4 text-secondary whitespace-nowrap text-xs font-medium">
@@ -2849,19 +2973,18 @@ function AuditLogTab({ societyName }) {
                   </td>
                   <td className="py-3.5 pr-4 whitespace-nowrap">
                     <span
-                      className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-extrabold uppercase tracking-wide ${
-                        tone === "green"
-                          ? "bg-emerald-500/15 text-emerald-500 border border-emerald-500/30"
-                          : tone === "red"
+                      className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-extrabold uppercase tracking-wide ${tone === "green"
+                        ? "bg-emerald-500/15 text-emerald-500 border border-emerald-500/30"
+                        : tone === "red"
                           ? "bg-rose-500/15 text-rose-500 border border-rose-500/30"
                           : tone === "amber"
-                          ? "bg-amber-500/15 text-amber-600 border border-amber-500/30"
-                          : tone === "purple"
-                          ? "bg-purple-500/15 text-purple-500 border border-purple-500/30"
-                          : tone === "blue"
-                          ? "bg-blue-500/15 text-blue-500 border border-blue-500/30"
-                          : "bg-gray-500/15 text-gray-400 border border-gray-500/30"
-                      }`}
+                            ? "bg-amber-500/15 text-amber-600 border border-amber-500/30"
+                            : tone === "purple"
+                              ? "bg-purple-500/15 text-purple-500 border border-purple-500/30"
+                              : tone === "blue"
+                                ? "bg-blue-500/15 text-blue-500 border border-blue-500/30"
+                                : "bg-gray-500/15 text-gray-400 border border-gray-500/30"
+                        }`}
                     >
                       {t(ACTION_LABELS[r.action]) || r.action}
                     </span>

@@ -63,7 +63,7 @@ export default function PaymentMethods() {
               transaction_id: `UPI-${id}`,
               payment_mode: "UPI",
             },
-            amount: amount || upiData?.amount,
+            amount: upiData?.amount ?? amount,
             title,
           },
         });
@@ -77,7 +77,7 @@ export default function PaymentMethods() {
     }
   };
 
-  const displayAmount = amount || upiData?.amount;
+  const displayAmount = upiData?.amount ?? amount;
 
   return (
     <div className="py-4 px-3 max-w-md mx-auto space-y-4 animate-fadeIn">

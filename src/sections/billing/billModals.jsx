@@ -7,7 +7,7 @@ import { getDateRangeError, getPositiveAmountError, getTitleError } from "../../
 import { BILL_CATEGORIES } from "./billingHelpers";
 import { BillStatus, Label, Spinner } from "./billPieces";
 
-export function BillCreateModal({ variant, isOpen, onClose, formData, setFormData, handleCategoryChange, handleCreateBill, creating, isMobile, isSuperAdmin, filterSocietyId, formSocietyId, handleFormSocietyChange, flats, societiesList, t }) {
+export function BillCreateModal({ variant, isOpen, onClose, formData, setFormData, handleCategoryChange, handleCreateBill, creating, isMobile, isSuperAdmin, filterSocietyId, formSocietyId, handleFormSocietyChange, flats, societiesList, bankAccounts = [], t }) {
   const accountant = variant === "accountant";
 
   if (accountant) {
@@ -38,14 +38,17 @@ export function BillCreateModal({ variant, isOpen, onClose, formData, setFormDat
               <Label>{t("billSelectFlat") || "Select Flat"}</Label>
               <Select className="input h-11 w-full" required
                 value={formData.flat_id}
-                onChange={e => setFormData({ ...formData, flat_id: e.target.value })}>
-                <option value="">{t("billChooseFlat") || "Choose Flat"}</option>
-                {(flats || []).filter(f => f.User?.name || f.resident_id || f.resident_name).map(f => (
-                  <option key={f.id} value={f.id}>
-                    {f.flat_number}{f.Block?.name ? ` (${f.Block.name})` : ""} – {f.User?.name || f.resident_name || "Resident"}
-                  </option>
-                ))}
-              </Select>
+                placeholder={t("billChooseFlat") || "Choose Flat"}
+                onChange={e => setFormData({ ...formData, flat_id: e.target.value })}
+                options={[
+                  { value: "", label: t("billChooseFlat") || "Choose Flat" },
+                  ...(flats || []).filter(f => f.User?.name || f.resident_id || f.resident_name).map(f => ({
+                    value: String(f.id),
+                    label: `${f.flat_number}${f.Block?.name ? ` (${f.Block.name})` : ""}`,
+                    subtitle: f.User?.name || f.resident_name || "Resident",
+                  })),
+                ]}
+              />
             </div>
           )}
 
@@ -130,6 +133,23 @@ export function BillCreateModal({ variant, isOpen, onClose, formData, setFormDat
             </div>
           </div>
 
+          {/* Collection Bank Account */}
+          <div className="col-span-2">
+            <Label>Collection Bank Account</Label>
+            <Select
+              className="input h-11 w-full"
+              value={formData.financial_account_id || ""}
+              onChange={(e) => setFormData({ ...formData, financial_account_id: e.target.value })}
+            >
+              <option value="">Use Society Default Bank Account</option>
+              {bankAccounts.map((a) => (
+                <option key={a.id} value={String(a.id)}>
+                  {a.account_name}{a.bank_name ? ` · ${a.bank_name}` : ""}{a.masked_account_number ? ` (${a.masked_account_number})` : ""}{a.is_default ? " [Default]" : ""}
+                </option>
+              ))}
+            </Select>
+          </div>
+
           <div className="flex items-center justify-end gap-3 col-span-2 mt-2 pt-3 border-t" style={{ borderColor: "var(--glass-border)" }}>
             <GlobalButton variant="cancel" type="button" onClick={onClose}>
               {t("cancel")}
@@ -189,14 +209,17 @@ export function BillCreateModal({ variant, isOpen, onClose, formData, setFormDat
             <Label>{t("billSelectFlat") || "Select Flat"}</Label>
             <Select className="input h-10 w-full" required
               value={formData.flat_id}
-              onChange={e => setFormData({ ...formData, flat_id: e.target.value })}>
-              <option value="">{t("billChooseFlat") || "Choose Flat"}</option>
-              {(flats || []).filter(f => f.User?.name || f.resident_id || f.resident_name).map(f => (
-                <option key={f.id} value={f.id}>
-                  {f.flat_number}{f.Block?.name ? ` (${f.Block.name})` : ""} – {f.User?.name || f.resident_name || "Resident"}
-                </option>
-              ))}
-            </Select>
+              placeholder={t("billChooseFlat") || "Choose Flat"}
+              onChange={e => setFormData({ ...formData, flat_id: e.target.value })}
+              options={[
+                { value: "", label: t("billChooseFlat") || "Choose Flat" },
+                ...(flats || []).filter(f => f.User?.name || f.resident_id || f.resident_name).map(f => ({
+                  value: String(f.id),
+                  label: `${f.flat_number}${f.Block?.name ? ` (${f.Block.name})` : ""}`,
+                  subtitle: f.User?.name || f.resident_name || "Resident",
+                })),
+              ]}
+            />
           </div>
         ) : null}
 
@@ -283,6 +306,23 @@ export function BillCreateModal({ variant, isOpen, onClose, formData, setFormDat
           <p style={{ fontSize: 10, color: "var(--text-secondary)", opacity: 0.7, marginTop: 4 }}>
             Leave blank to auto-set 30 days from issue date
           </p>
+        </div>
+
+        {/* Collection Bank Account */}
+        <div className="sm:col-span-2">
+          <Label>Collection Bank Account</Label>
+          <Select
+            className="input h-10 w-full"
+            value={formData.financial_account_id || ""}
+            onChange={(e) => setFormData({ ...formData, financial_account_id: e.target.value })}
+          >
+            <option value="">Use Society Default Bank Account</option>
+            {bankAccounts.map((a) => (
+              <option key={a.id} value={String(a.id)}>
+                {a.account_name}{a.bank_name ? ` · ${a.bank_name}` : ""}{a.masked_account_number ? ` (${a.masked_account_number})` : ""}{a.is_default ? " [Default]" : ""}
+              </option>
+            ))}
+          </Select>
         </div>
       </form>
     </GlobalModal>

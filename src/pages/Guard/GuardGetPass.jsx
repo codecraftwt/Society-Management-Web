@@ -118,6 +118,8 @@ export default function GuardGatePass() {
   const [slots, setSlots] = useState([]);
   const [selectedSlot, setSelectedSlot] = useState(null);
   const [vehicleType, setVehicleType] = useState("CAR");
+  const [guestCount, setGuestCount] = useState(1);
+  const [showGuestPrompt, setShowGuestPrompt] = useState(false);
   const inputRef = useRef(null);
   const [lastScan, setLastScan] = useState(null);
   const [activeKey, setActiveKey] = useState(null);
@@ -228,7 +230,7 @@ export default function GuardGatePass() {
     }
   }, []);
 
-  const verifyPass = useCallback(async () => {
+  const executeVerifyPass = useCallback(async (countOverride) => {
     if (loading) return;
     const passCode = normalizePassCode(code);
     if (!passCode) {
@@ -236,13 +238,27 @@ export default function GuardGatePass() {
       setSuccess(false);
       return;
     }
+    setShowGuestPrompt(false);
     setLoading(true);
     setMessage("");
 
     try {
-      const res = await API.post("/preapproval/verify", { code: passCode });
+      const resolvedGuestCount = Math.max(1, Number(countOverride ?? guestCount) || 1);
+      const res = await API.post("/preapproval/verify", {
+        code: passCode,
+        guest_count: resolvedGuestCount,
+      });
       const isExit = res.data?.scan_type === "exit";
       const detail = [];
+      if (!isExit && res.data?.visitor?.guest_count) {
+        detail.push(
+          t(
+            "ggGuestCountText",
+            { count: res.data.visitor.guest_count },
+            `Guests: ${res.data.visitor.guest_count}`
+          )
+        );
+      }
       if (res.data?.dwell_minutes) {
         detail.push(
           t(
@@ -271,6 +287,7 @@ export default function GuardGatePass() {
       setSelectedSlot(null);
       setShowSlots(false);
       setVehicleType("CAR");
+      setGuestCount(1);
       setLastScan({ isExit, name: res.data?.visitor_name || null });
       fetchRecentLogs();
     } catch (err) {
@@ -285,7 +302,18 @@ export default function GuardGatePass() {
     } finally {
       setLoading(false);
     }
-  }, [code, loading, vehicleType, fetchSlots, fetchRecentLogs, t]);
+  }, [code, loading, vehicleType, guestCount, fetchSlots, fetchRecentLogs, t]);
+
+  const verifyPass = useCallback(() => {
+    if (loading) return;
+    const passCode = normalizePassCode(code);
+    if (!passCode) {
+      setMessage(t("ggInvalidCode", "Enter the full 6-digit pass code (GP-XXXXXX)"));
+      setSuccess(false);
+      return;
+    }
+    setShowGuestPrompt(true);
+  }, [code, loading, t]);
 
   const confirmWithSlot = async () => {
     if (!selectedSlot || loading) {
@@ -304,10 +332,12 @@ export default function GuardGatePass() {
     setMessage("");
 
     try {
+      const resolvedGuestCount = Math.max(1, Number(guestCount) || 1);
       const res = await API.post("/preapproval/verify", {
         code: passCode,
         slot_number: selectedSlot,
         vehicle_type: vehicleType,
+        guest_count: resolvedGuestCount,
       });
       const detail = [];
       if (res.data?.dwell_minutes) {
@@ -409,7 +439,7 @@ export default function GuardGatePass() {
   // Global physical keyboard listener for laptops, desktops & barcode scanners
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (showSlots) return;
+      if (showSlots || showGuestPrompt) return;
       if (e.target.tagName === "INPUT" && e.target !== inputRef.current) return;
       if (e.target.tagName === "TEXTAREA" || e.target.tagName === "SELECT") return;
 
@@ -430,7 +460,7 @@ export default function GuardGatePass() {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [showSlots, triggerKeyPress, verifyPass]);
+  }, [showSlots, showGuestPrompt, triggerKeyPress, verifyPass]);
 
   return (
     <div className="gpv-page max-w-[1240px] mx-auto space-y-4 pb-6 pt-0 animate-fadeIn">
@@ -1102,6 +1132,120 @@ export default function GuardGatePass() {
           </div>
         </aside>
       </div>
+
+      {/* ── GUEST COUNT PROMPT MODAL (Asked on scan or code entry before verify) ── */}
+      {showGuestPrompt && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: "rgba(15, 23, 42, 0.55)", backdropFilter: "blur(6px)" }}
+          onClick={() => setShowGuestPrompt(false)}
+        >
+          <div
+            className="w-full max-w-md rounded-2xl border border-[var(--glass-border)] p-5 shadow-2xl"
+            style={{ background: "var(--modal-bg, #ffffff)" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-500/15 px-2.5 py-0.5 text-[11px] font-extrabold text-indigo-500">
+                  {normalizePassCode(code)}
+                </span>
+                <h3 className="mt-2 text-lg font-extrabold text-[var(--text-primary)]">
+                  {t("ggGuestPromptTitle", "How many guests arrived?")}
+                </h3>
+                <p className="mt-0.5 text-xs text-[var(--text-secondary)]">
+                  {t("ggGuestPromptSubtitle", "Enter exact guest headcount before recording entry.")}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowGuestPrompt(false)}
+                className="rounded-lg p-1.5 text-[var(--text-tertiary)] hover:bg-black/5"
+                aria-label="Close"
+              >
+                <MdClear size={18} />
+              </button>
+            </div>
+
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              {[1, 2, 3, 4, 5, 6].map((num) => (
+                <button
+                  key={num}
+                  type="button"
+                  onClick={() => setGuestCount(num)}
+                  className={`h-9 min-w-[40px] rounded-xl border px-3 text-sm font-extrabold transition ${
+                    Number(guestCount) === num
+                      ? "border-indigo-500 bg-indigo-600 text-white shadow-sm"
+                      : "border-[var(--glass-border)] text-[var(--text-primary)] hover:border-indigo-400"
+                  }`}
+                >
+                  {num}
+                </button>
+              ))}
+            </div>
+
+            <div className="mt-4 flex items-center justify-between rounded-xl border border-[var(--glass-border)] bg-[var(--card-inner-bg)] p-3">
+              <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]">
+                {t("ggGuestCountLabel", "GUESTS ARRIVED")}
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setGuestCount((c) => Math.max(1, (Number(c) || 1) - 1))}
+                  disabled={guestCount <= 1}
+                  className="gpv-ctrl h-9 w-9 justify-center font-bold disabled:opacity-40"
+                >
+                  -
+                </button>
+                <input
+                  type="number"
+                  min={1}
+                  max={100}
+                  autoFocus
+                  value={guestCount}
+                  onChange={(e) => {
+                    const val = parseInt(e.target.value, 10);
+                    setGuestCount(Number.isNaN(val) ? 1 : Math.min(100, Math.max(1, val)));
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      executeVerifyPass(guestCount);
+                    }
+                  }}
+                  className="h-9 w-16 rounded-lg border border-[var(--glass-border)] bg-transparent text-center text-base font-extrabold text-[var(--text-primary)] outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={() => setGuestCount((c) => Math.min(100, (Number(c) || 1) + 1))}
+                  className="gpv-ctrl h-9 w-9 justify-center font-bold"
+                >
+                  +
+                </button>
+              </div>
+            </div>
+
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setShowGuestPrompt(false)}
+                className="rounded-xl border border-[var(--glass-border)] px-4 py-2 text-xs font-bold text-[var(--text-secondary)]"
+              >
+                {t("cancel", "Cancel")}
+              </button>
+              <button
+                type="button"
+                disabled={loading}
+                onClick={() => executeVerifyPass(guestCount)}
+                className="gpv-verify !mt-0 !w-auto px-5 py-2 text-xs"
+              >
+                <MdVerified size={16} />
+                <span>{t("ggConfirmVerifyBtn", "Confirm & Verify")}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

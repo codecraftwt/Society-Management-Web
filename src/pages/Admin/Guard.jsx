@@ -29,6 +29,7 @@ import {
   SHIFT_TODAY, SHIFT_UPCOMING, SHIFT_COMPLETED,
 } from "../../utils/guardShifts";
 import { useCustomAlert } from "../../context/CustomAlertContext";
+import ManageShiftPlacesModal from "../../components/guard/ManageShiftPlacesModal";
 
 function ShiftBadge({ type, t }) {
   const SHIFT_CFG = {
@@ -166,7 +167,9 @@ export default function Guard() {
   const [reopenListAfterEdit, setReopenListAfterEdit] = useState(false);
   const [selectedGuard, setSelectedGuard] = useState(null);
   const [guardShifts, setGuardShifts] = useState({});
-  const [shiftForm, setShiftForm] = useState({ shift_type: "", start_date: "", end_date: "" });
+  const [shiftPlaces, setShiftPlaces] = useState([]);
+  const [showShiftPlacesModal, setShowShiftPlacesModal] = useState(false);
+  const [shiftForm, setShiftForm] = useState({ shift_type: "", shift_place_id: "", start_date: "", end_date: "" });
   const [editingShiftId, setEditingShiftId] = useState(null);
   const [shiftError, setShiftError] = useState("");
 
@@ -401,8 +404,25 @@ export default function Guard() {
     }
   };
 
+  const fetchShiftPlaces = async (societyIdOverride) => {
+    const targetSocietyId = societyIdOverride ?? timingsSocietyId;
+    if (isSuperAdmin && !targetSocietyId) {
+      setShiftPlaces([]);
+      return;
+    }
+    try {
+      const res = await API.get("/guard-shift/places", {
+        params: isSuperAdmin && targetSocietyId ? { society_id: targetSocietyId } : {},
+      });
+      setShiftPlaces(Array.isArray(res.data?.places) ? res.data.places : []);
+    } catch {
+      setShiftPlaces([]);
+    }
+  };
+
   useEffect(() => {
     fetchTimings(timingsSocietyId);
+    fetchShiftPlaces(timingsSocietyId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [timingsSocietyId]);
 
@@ -781,9 +801,13 @@ export default function Guard() {
     setEditingShiftId(shift.id);
     setShiftForm({
       shift_type: shift.shift_type,
+      shift_place_id: shift.shift_place_id ? String(shift.shift_place_id) : "",
       start_date: shift.start_date,
       end_date: shift.end_date,
     });
+    if (isSuperAdmin && guard?.society_id) {
+      fetchShiftPlaces(guard.society_id);
+    }
     setShowShiftModal(true);
   };
 
@@ -822,7 +846,10 @@ export default function Guard() {
     setSelectedGuard(guard);
     setShiftError("");
     setEditingShiftId(null);
-    setShiftForm({ shift_type: "", start_date: "", end_date: "" });
+    setShiftForm({ shift_type: "", shift_place_id: "", start_date: "", end_date: "" });
+    if (isSuperAdmin && guard?.society_id) {
+      fetchShiftPlaces(guard.society_id);
+    }
     setShowShiftModal(true);
   };
 
@@ -916,13 +943,21 @@ export default function Guard() {
       header: t("guardColDateShift", "Date & Shift"),
       render: (row) => {
         const shiftType = row.shift?.shift_type || "MORNING";
+        const placeName = row.shift?.shiftPlace?.name;
         return (
           <div style={{ display: "flex", flexDirection: "column", gap: 4, alignItems: "flex-start" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: "0.8rem", fontWeight: 600, color: "var(--text-primary)" }}>
               <MdToday size={13} style={{ color: "var(--text-secondary)" }} />
               {row.attendance_date}
             </div>
-            <ShiftBadge type={shiftType} t={t} />
+            <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+              <ShiftBadge type={shiftType} t={t} />
+              {placeName && (
+                <GlobalBadge variant="neutral" icon={MdLocationOn} size="sm">
+                  {placeName}
+                </GlobalBadge>
+              )}
+            </div>
           </div>
         );
       },
@@ -1111,10 +1146,14 @@ export default function Guard() {
 
     try {
       setSubmitLoading(true);
+      const payload = {
+        ...shiftForm,
+        shift_place_id: shiftForm.shift_place_id ? Number(shiftForm.shift_place_id) : null,
+      };
       if (editingShiftId) {
-        await API.put(`/guards/shifts/${editingShiftId}`, shiftForm);
+        await API.put(`/guards/shifts/${editingShiftId}`, payload);
       } else {
-        await API.post(`/guards/${selectedGuard.id}/shifts`, shiftForm);
+        await API.post(`/guards/${selectedGuard.id}/shifts`, payload);
       }
       closeShiftModal();
       fetchGuards();
@@ -1235,6 +1274,12 @@ export default function Guard() {
             {timing && (
               <span style={{ fontSize: "0.68rem", color: "var(--text-tertiary)", fontWeight: 700, whiteSpace: "nowrap" }}>
                 {fmtTime12h(timing.start)} – {fmtTime12h(timing.end)}
+              </span>
+            )}
+            {todayShift.shiftPlace?.name && (
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: "0.69rem", color: "var(--accent)", fontWeight: 700, whiteSpace: "nowrap" }}>
+                <MdLocationOn size={11} style={{ flexShrink: 0 }} />
+                {todayShift.shiftPlace.name}
               </span>
             )}
             </div>
@@ -1452,6 +1497,15 @@ export default function Guard() {
                   </div>
                 )}
                 <GlobalButton
+                  variant="secondary"
+                  size="sm"
+                  icon={MdLocationOn}
+                  onClick={() => setShowShiftPlacesModal(true)}
+                  style={{ height: 30, fontSize: 12, padding: "0 10px" }}
+                >
+                  {t("guardManageShiftPlacesBtn", "Shift Places")}
+                </GlobalButton>
+                <GlobalButton
                   variant="primary"
                   size="sm"
                   icon={MdEdit}
@@ -1613,14 +1667,56 @@ export default function Guard() {
           />
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 220 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+          <button
+            type="button"
+            onClick={() => setShowShiftPlacesModal(true)}
+            style={{
+              height: 36,
+              padding: "0 13px",
+              borderRadius: 10,
+              border: "1px solid rgba(139, 92, 246, 0.32)",
+              background: "linear-gradient(135deg, rgba(139, 92, 246, 0.12), rgba(59, 130, 246, 0.08))",
+              color: "var(--accent)",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 7,
+              fontSize: 12.5,
+              fontWeight: 700,
+              cursor: "pointer",
+              whiteSpace: "nowrap",
+              boxShadow: "0 2px 8px rgba(139, 92, 246, 0.1)",
+              transition: "all 0.18s ease",
+            }}
+          >
+            <MdLocationOn size={15} />
+            <span>{t("guardManageShiftPlacesBtn", "Shift Places")}</span>
+            <span
+              style={{
+                minWidth: 18,
+                height: 18,
+                padding: "0 5px",
+                borderRadius: 999,
+                background: "var(--accent)",
+                color: "#fff",
+                fontSize: 10.5,
+                fontWeight: 800,
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              {shiftPlaces.filter((p) => p.is_active !== false).length}
+            </span>
+          </button>
+
           <input
             type="text"
             placeholder={t("guardSearchPlaceholder", "Search guards by name, email...")}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="input"
-            style={{ height: 36, fontSize: 12, borderRadius: 10, padding: "0 12px", width: "100%" }}
+            style={{ height: 36, fontSize: 12, borderRadius: 10, padding: "0 12px", minWidth: 220, flex: 1 }}
           />
         </div>
       </div>
@@ -2048,6 +2144,62 @@ export default function Guard() {
             </Select>
           </div>
 
+          <div>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 5 }}>
+              <p style={{
+                fontSize: 11, fontWeight: 700, color: "var(--text-secondary)",
+                textTransform: "uppercase", letterSpacing: "0.06em", margin: 0,
+              }}>
+                {t("guardShiftPlaceLabel", "Shift Place")}
+              </p>
+              {canShiftGuard && (
+                <button
+                  type="button"
+                  onClick={() => setShowShiftPlacesModal(true)}
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 4,
+                    fontSize: 11,
+                    fontWeight: 700,
+                    color: "var(--accent)",
+                    background: "rgba(160, 90, 255, 0.1)",
+                    border: "1px solid rgba(160, 90, 255, 0.25)",
+                    borderRadius: 999,
+                    padding: "2px 9px",
+                    cursor: "pointer",
+                  }}
+                >
+                  <MdAdd size={13} />
+                  {t("guardManagePlacesShort", "Manage Places")}
+                </button>
+              )}
+            </div>
+            <Select
+              className="input"
+              value={shiftForm.shift_place_id}
+              onChange={e => setShiftForm({ ...shiftForm, shift_place_id: e.target.value })}
+            >
+              <option value="">{t("guardSelectShiftPlace", "Select Shift Place (Optional)")}</option>
+              {shiftPlaces
+                .filter(p => p.is_active !== false || String(p.id) === String(shiftForm.shift_place_id))
+                .map(p => (
+                  <option key={p.id} value={String(p.id)}>
+                    {p.name}{p.is_active === false ? ` (${t("inactive", "Inactive")})` : ""}
+                  </option>
+                ))}
+            </Select>
+            {(() => {
+              const selPlace = shiftPlaces.find(p => String(p.id) === String(shiftForm.shift_place_id));
+              return selPlace?.description ? (
+                <div style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 5, fontSize: 11.5, color: "var(--text-tertiary)" }}>
+                  <MdLocationOn size={13} style={{ color: "var(--accent)", flexShrink: 0 }} />
+                  <span>{selPlace.description}</span>
+                </div>
+              ) : null;
+            })()}
+          </div>
+
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
             <div>
               <SectionLabel>{t("guardStartDate") || "Start Date"}</SectionLabel>
@@ -2132,6 +2284,11 @@ export default function Guard() {
                       <GlobalBadge variant={shiftStatusVariant(status)} size="sm">
                         {shiftStatusLabel(status)}
                       </GlobalBadge>
+                      {s.shiftPlace?.name && (
+                        <GlobalBadge variant="neutral" icon={MdLocationOn} size="sm">
+                          {s.shiftPlace.name}
+                        </GlobalBadge>
+                      )}
                     </div>
                     <div style={{
                       marginTop: 6, fontSize: 12.5, fontWeight: 600,
@@ -2372,6 +2529,19 @@ export default function Guard() {
           </div>
         )}
       </GlobalModal>
+
+      {/* ── MANAGE SHIFT PLACES MODAL ── */}
+      <ManageShiftPlacesModal
+        isOpen={showShiftPlacesModal}
+        onClose={() => setShowShiftPlacesModal(false)}
+        places={shiftPlaces}
+        societyId={selectedGuard?.society_id || timingsSocietyId}
+        isSuperAdmin={isSuperAdmin}
+        onPlacesUpdated={async () => {
+          await fetchShiftPlaces(selectedGuard?.society_id || timingsSocietyId);
+          fetchGuards();
+        }}
+      />
 
       {/* ── DELETE CONFIRM DIALOG ── */}
       <GlobalConfirmDialog

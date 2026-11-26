@@ -65,6 +65,7 @@ const formatVisitor = (v) => {
     flat:     flatLabel,
     owner:    ownerName,
     purpose:  v.purpose,
+    guestCount: v.guest_count ?? null,
     vehicle:  v.vehicle_number || "—",
     parking:  v.parking?.slot_number ? `${v.parking.slot_number} (${v.parking.status === "APPROVED" ? "Occupied" : "Completed"})` : "Not allocated",
     date:     formatDate(v.entry_time),

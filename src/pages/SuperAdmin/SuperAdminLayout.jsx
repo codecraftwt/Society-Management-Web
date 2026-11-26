@@ -139,6 +139,12 @@ function SuperAdminLayoutInner() {
       group: "OPERATIONS & SECURITY",
     },
     {
+      label: t("saMenuMeetingMinutes", "Meeting Minutes"),
+      path: `${base}/meeting-minutes`,
+      icon: MdGavel,
+      group: "OPERATIONS & SECURITY",
+    },
+    {
       label: t("saMenuEvents", "Event Management"),
       path: `${base}/events`,
       icon: MdCelebration,

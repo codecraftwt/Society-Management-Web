@@ -11,6 +11,7 @@ import {
 } from "react-icons/md";
 import { toast } from "react-toastify";
 import maintenanceService from "../../services/maintenanceService";
+import { getFinancialAccounts } from "../../services/accountingService";
 import Select from "../../components/common/Select";
 import GlobalButton from "../../components/common/GlobalButton";
 import GlobalModal from "../../components/common/GlobalModal";
@@ -21,6 +22,11 @@ import { getTitleError, getPositiveAmountError } from "../../utils/validators";
 import useUnsavedDirty from "../../hooks/useUnsavedDirty";
 import ConfirmDiscard from "../../components/common/ConfirmDiscard";
 import StatCard from "../../components/common/StatCard";
+import {
+  LateFeeGenerateSection,
+  WaiveLateFeeModal,
+  computeLiveLateFeePreview,
+} from "../../components/maintenance/LateFeeSection";
 import "../Admin/Admin.css";
 
 /* ── helpers ── */
@@ -211,6 +217,25 @@ function ConfigForm({ initial, onClose, onSuccessClose, onSaved, isSuperAdmin = 
   const [tenantRatePerSqft, setTenantRatePerSqft] = useState(initial?.tenant_rate_per_sqft ?? initial?.rate_per_sqft ?? "");
   const [flatType, setFlatType] = useState(initial?.flat_type || "");
   const [frequency, setFrequency] = useState(initial?.frequency || "MONTHLY");
+  const [financialAccountId, setFinancialAccountId] = useState(initial?.financial_account_id ? String(initial.financial_account_id) : "");
+  const [bankAccounts, setBankAccounts] = useState([]);
+
+  useEffect(() => {
+    let mounted = true;
+    getFinancialAccounts()
+      .then((res) => {
+        if (!mounted) return;
+        const list = Array.isArray(res) ? res : res?.data || [];
+        const banks = list.filter((a) => a.account_type !== "CASH" && (a.status === "ACTIVE" || a.is_active));
+        setBankAccounts(banks);
+        if (!initial?.financial_account_id) {
+          const def = banks.find((b) => b.is_default) || banks[0];
+          if (def) setFinancialAccountId(String(def.id));
+        }
+      })
+      .catch(() => {});
+    return () => { mounted = false; };
+  }, [initial, societyId]);
   const [description, setDescription] = useState(initial?.description || "");
   const [isActive, setIsActive] = useState(initial?.is_active ?? true);
   const [saving, setSaving] = useState(false);
@@ -262,6 +287,7 @@ function ConfigForm({ initial, onClose, onSuccessClose, onSaved, isSuperAdmin = 
       maintenance_type: type,
       name,
       frequency,
+      financial_account_id: financialAccountId ? Number(financialAccountId) : null,
       description,
       is_active: isActive,
     };
@@ -438,6 +464,22 @@ function ConfigForm({ initial, onClose, onSuccessClose, onSaved, isSuperAdmin = 
       </div>
 
       <div>
+        <Label>Collection Bank Account</Label>
+        <Select
+          options={[
+            { value: "", label: "Use Society Default Bank Account" },
+            ...bankAccounts.map((a) => ({
+              value: String(a.id),
+              label: `${a.account_name}${a.bank_name ? ` · ${a.bank_name}` : ""}${a.masked_account_number ? ` (${a.masked_account_number})` : ""}${a.is_default ? " [Default]" : ""}`,
+            })),
+          ]}
+          value={financialAccountId}
+          onChange={(e) => setFinancialAccountId(e.target.value)}
+          style={{ height: 44, fontSize: 13, fontWeight: 600, borderColor: "var(--input-border)", borderRadius: 10, background: "var(--input-bg)" }}
+        />
+      </div>
+
+      <div>
         <Label>{t("mntDescriptionOptional")}</Label>
         <textarea rows={2} className={inputCls} style={{ borderColor: "var(--input-border)", color: "var(--text-primary)", height: 96, resize: "vertical", minHeight: 60, paddingTop: 12 }} value={description} onChange={(e) => setDescription(e.target.value)} />
       </div>
@@ -495,6 +537,29 @@ function GenerateModal({ configs, onClose, onGenerated }) {
   const [preview, setPreview] = useState(null);
   const [previewLoading, setPreviewLoading] = useState(true);
   const [searchResident, setSearchResident] = useState("");
+  const [lateFeeEnabled, setLateFeeEnabled] = useState(false);
+  const [lateFeeType, setLateFeeType] = useState("FIXED_PER_MONTH");
+  const [lateFeeValue, setLateFeeValue] = useState("1000");
+  const [lateFeeGraceDays, setLateFeeGraceDays] = useState("0");
+  const [lateFeeMaxAmount, setLateFeeMaxAmount] = useState("");
+
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      try {
+        const cfg = await maintenanceService.getLateFeeConfig();
+        if (!active || !cfg) return;
+        setLateFeeEnabled(Boolean(cfg.is_enabled));
+        setLateFeeType(cfg.fee_type || "FIXED_PER_MONTH");
+        setLateFeeValue(String(cfg.fee_amount ?? 0));
+        setLateFeeGraceDays(String(cfg.grace_days ?? 0));
+        setLateFeeMaxAmount(cfg.max_fee_amount != null ? String(cfg.max_fee_amount) : "");
+      } catch {
+        // Non-blocking fallback
+      }
+    })();
+    return () => { active = false; };
+  }, []);
 
   const derivedBillingMonth = useMemo(() => {
     if (!issueDate) return currentMonthLabel();
@@ -550,6 +615,11 @@ function GenerateModal({ configs, onClose, onGenerated }) {
         rate_ids: selectedRateId === "ALL_ACTIVE" ? "ALL" : [selectedRateId],
         issue_date: issueDate,
         last_pay_date: dueDate,
+        late_fee_enabled: lateFeeEnabled,
+        late_fee_type: lateFeeType,
+        late_fee_value: Number(lateFeeValue || 0),
+        late_fee_grace_days: parseInt(lateFeeGraceDays || "0", 10) || 0,
+        late_fee_max_amount: lateFeeMaxAmount === "" ? null : Number(lateFeeMaxAmount),
       });
       const genCount = res?.summary?.generated || 0;
       onClose();
@@ -600,7 +670,7 @@ function GenerateModal({ configs, onClose, onGenerated }) {
         onClick={(e) => e.stopPropagation()}
         style={{
           width: "100%",
-          maxWidth: 780,
+          maxWidth: 860,
           background: "var(--card-bg)",
           border: "1px solid var(--glass-border)",
           borderRadius: 22,
@@ -714,6 +784,36 @@ function GenerateModal({ configs, onClose, onGenerated }) {
               )}
             </div>
           </div>
+
+          {/* Late Payment Charges Override Section */}
+          {(() => {
+            const ownerRes = preview?.residents?.find((r) => r.occupancy_status !== "TENANT_OCCUPIED");
+            const tenantRes = preview?.residents?.find((r) => r.occupancy_status === "TENANT_OCCUPIED");
+            const selRate = billable.find((c) => String(c.id) === String(selectedRateId));
+            const ownerBase = Number(ownerRes?.amount ?? selRate?.owner_amount ?? selRate?.amount ?? 25000);
+            const tenantBase = tenantRes?.amount != null
+              ? Number(tenantRes.amount)
+              : (selRate?.tenant_amount != null && Number(selRate.tenant_amount) > 0
+                  ? Number(selRate.owner_amount ?? selRate.amount ?? 0) + Number(selRate.tenant_amount)
+                  : null);
+            return (
+              <LateFeeGenerateSection
+                enabled={lateFeeEnabled}
+                setEnabled={setLateFeeEnabled}
+                feeType={lateFeeType}
+                setFeeType={setLateFeeType}
+                feeAmount={lateFeeValue}
+                setFeeAmount={setLateFeeValue}
+                graceDays={lateFeeGraceDays}
+                setGraceDays={setLateFeeGraceDays}
+                maxFeeAmount={lateFeeMaxAmount}
+                setMaxFeeAmount={setLateFeeMaxAmount}
+                dueDate={dueDate}
+                sampleBase={ownerBase}
+                tenantSampleBase={tenantBase}
+              />
+            );
+          })()}
 
           {/* ── Eligible Residents Preview Section ── */}
           <div
@@ -1030,6 +1130,19 @@ function BillsTab({ billingMonth, setBillingMonth, onView, configs = [] }) {
 
   const currentLabel = `${MONTH_NAMES[monthIdx]} ${year}`;
   const [mode, setMode] = useState(billingMonth ? "month" : "custom");
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const pickerRef = useRef(null);
+
+  useEffect(() => {
+    if (!pickerOpen) return;
+    const handleOutside = (e) => {
+      if (pickerRef.current && !pickerRef.current.contains(e.target)) {
+        setPickerOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleOutside);
+    return () => document.removeEventListener("mousedown", handleOutside);
+  }, [pickerOpen]);
 
   useEffect(() => {
     if (mode === "month") setBillingMonth(currentLabel);
@@ -1187,42 +1300,118 @@ function BillsTab({ billingMonth, setBillingMonth, onView, configs = [] }) {
 
         {/* Compact Filters & Controls */}
         <div className="flex flex-wrap items-center gap-2.5 md:justify-end flex-1">
-          {/* Month & Year inline selector */}
-          <div
-            className="flex items-center gap-1.5 border rounded-xl px-2.5 py-1"
-            style={{
-              background: "var(--card-inner-bg)",
-              borderColor: "var(--glass-border)",
-              height: 36,
-            }}
-          >
-            <select
-              value={monthIdx}
-              onChange={onChangeMonth}
+          {/* Modern Month & Year Popover Selector */}
+          <div ref={pickerRef} className="relative shrink-0">
+            <button
+              type="button"
+              onClick={() => mode !== "custom" && setPickerOpen((o) => !o)}
               disabled={mode === "custom"}
-              className={`bg-transparent text-xs font-semibold outline-none cursor-pointer border-0 shadow-none focus:ring-0 ${mode === "custom" ? "opacity-40" : ""}`}
-              style={{ color: "var(--text-primary)", border: "none", outline: "none", boxShadow: "none" }}
+              className={`inline-flex items-center gap-2 border rounded-xl px-3 text-xs font-semibold transition-all cursor-pointer select-none ${mode === "custom" ? "opacity-40 cursor-not-allowed" : ""}`}
+              style={{
+                backgroundColor: pickerOpen ? "var(--accent-soft)" : "var(--card-inner-bg)",
+                borderColor: pickerOpen ? "var(--accent)" : "var(--glass-border)",
+                color: pickerOpen ? "var(--accent)" : "var(--text-primary)",
+                height: 36,
+              }}
             >
-              {monthOptions.map((m) => (
-                <option key={m.value} value={m.value} style={{ background: "var(--card-bg)", color: "var(--text-primary)" }}>
-                  {m.label}
-                </option>
-              ))}
-            </select>
-            <span className="text-secondary opacity-40 text-xs">/</span>
-            <select
-              value={year}
-              onChange={onChangeYear}
-              disabled={mode === "custom"}
-              className={`bg-transparent text-xs font-semibold outline-none cursor-pointer border-0 shadow-none focus:ring-0 ${mode === "custom" ? "opacity-40" : ""}`}
-              style={{ color: "var(--text-primary)", border: "none", outline: "none", boxShadow: "none" }}
-            >
-              {yearOptions.map((y) => (
-                <option key={y.value} value={y.value} style={{ background: "var(--card-bg)", color: "var(--text-primary)" }}>
-                  {y.label}
-                </option>
-              ))}
-            </select>
+              <MdCalendarToday size={13} className="opacity-75" />
+              <span>{monthOptions[monthIdx]?.label || MONTH_NAMES[monthIdx]?.slice(0, 3)}</span>
+              <span className="text-secondary opacity-40">/</span>
+              <span>{year}</span>
+              <svg
+                width="12"
+                height="12"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className={`transition-transform duration-200 ${pickerOpen ? "rotate-180" : ""}`}
+              >
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+            </button>
+
+            {pickerOpen && (
+              <div
+                className="absolute right-0 mt-2 w-64 rounded-2xl border p-3 shadow-2xl z-50 animate-fadeIn"
+                style={{
+                  background: "var(--card-bg)",
+                  borderColor: "var(--glass-border)",
+                  backdropFilter: "blur(20px)",
+                  WebkitBackdropFilter: "blur(20px)",
+                  boxShadow: "0 18px 50px rgba(0, 0, 0, 0.25)",
+                }}
+              >
+                {/* Year Stepper Header */}
+                <div
+                  className="flex items-center justify-between px-2 py-1.5 rounded-xl mb-2.5 border"
+                  style={{ background: "var(--card-inner-bg)", borderColor: "var(--glass-border)" }}
+                >
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const nextY = Math.max(years[0], year - 1);
+                      setYear(nextY);
+                      setMode("month");
+                    }}
+                    disabled={year <= years[0]}
+                    className="w-7 h-7 rounded-lg flex items-center justify-center text-sm font-bold hover:bg-white/10 disabled:opacity-30 cursor-pointer"
+                    style={{ color: "var(--text-primary)" }}
+                    aria-label="Previous year"
+                  >
+                    ‹
+                  </button>
+                  <span className="text-xs font-extrabold tracking-wide" style={{ color: "var(--text-primary)" }}>
+                    {year}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const nextY = Math.min(years[years.length - 1], year + 1);
+                      setYear(nextY);
+                      setMode("month");
+                    }}
+                    disabled={year >= years[years.length - 1]}
+                    className="w-7 h-7 rounded-lg flex items-center justify-center text-sm font-bold hover:bg-white/10 disabled:opacity-30 cursor-pointer"
+                    style={{ color: "var(--text-primary)" }}
+                    aria-label="Next year"
+                  >
+                    ›
+                  </button>
+                </div>
+
+                {/* 3x4 Month Grid */}
+                <div className="grid grid-cols-3 gap-1.5">
+                  {monthOptions.map((m) => {
+                    const isSelected = Number(m.value) === Number(monthIdx);
+                    return (
+                      <button
+                        type="button"
+                        key={m.value}
+                        onClick={() => {
+                          setMonthIdx(Number(m.value));
+                          setMode("month");
+                          setPickerOpen(false);
+                        }}
+                        className="py-1.5 px-2 rounded-xl text-xs font-bold transition-all cursor-pointer"
+                        style={{
+                          background: isSelected
+                            ? "linear-gradient(135deg, var(--accent), var(--accent-light))"
+                            : "var(--card-inner-bg)",
+                          color: isSelected ? "#ffffff" : "var(--text-primary)",
+                          border: isSelected ? "1px solid transparent" : "1px solid var(--glass-border)",
+                          boxShadow: isSelected ? "0 4px 12px rgba(99, 102, 241, 0.35)" : "none",
+                        }}
+                      >
+                        {m.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Custom Period Button */}
@@ -1585,8 +1774,32 @@ function BillsTab({ billingMonth, setBillingMonth, onView, configs = [] }) {
                       <div className="text-[11px] text-secondary">{b.billing_month}</div>
                     )}
                   </td>
-                  <td className="py-3 pr-3 font-bold">{formatMoney(b.amount)}</td>
-                  <td className="py-3 pr-3"><StatusPill status={b.status} /></td>
+                  <td className="py-3 pr-3 font-bold">
+                    <div>{formatMoney(b.total_payable ?? b.amount)}</div>
+                    {(Number(b.late_fee || 0) > 0 || Number(b.waived_amount || 0) > 0) && (
+                      <div className="text-[11px] font-semibold mt-0.5 space-y-0.5">
+                        <div className="text-secondary">
+                          Base: {formatMoney(b.base_amount ?? b.amount)}
+                          {Number(b.late_fee || 0) > 0 && (
+                            <span className="text-rose-400"> + Late: {formatMoney(b.late_fee)}</span>
+                          )}
+                        </div>
+                        {Number(b.waived_amount || 0) > 0 && (
+                          <div className="text-emerald-400">Waived: {formatMoney(b.waived_amount)}</div>
+                        )}
+                      </div>
+                    )}
+                  </td>
+                  <td className="py-3 pr-3">
+                    <div className="flex flex-col items-start gap-1">
+                      <StatusPill status={b.status} />
+                      {b.is_overdue && b.status !== "PAID" && (
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-500/15 text-rose-400 border border-rose-500/25">
+                          {b.overdue_months > 0 ? `Overdue (${b.overdue_months} mo)` : "Overdue"}
+                        </span>
+                      )}
+                    </div>
+                  </td>
                   <td className="py-3 pr-3 text-xs text-secondary">{b.due_date ? new Date(b.due_date).toLocaleDateString("en-US", { day: "numeric", month: "short", year: "numeric" }) : "—"}</td>
                   <td className="py-3 text-right">
                     <button onClick={() => onView(b.id)} className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold border transition-colors" style={{ borderColor: "var(--glass-border)" }}>
@@ -1622,6 +1835,7 @@ export default function MaintenancePage() {
   const [deleting, setDeleting] = useState(null);
   const [billingMonth, setBillingMonth] = useState(currentMonthLabel());
   const [detailId, setDetailId] = useState(null);
+  const [billsRefreshTick, setBillsRefreshTick] = useState(0);
 
   /* Unsaved-changes guard (config form modal) */
   const [confirmDiscard, setConfirmDiscard] = useState(false);
@@ -1813,7 +2027,7 @@ export default function MaintenancePage() {
           )}
         </div>
       ) : (
-        <BillsTab billingMonth={billingMonth} setBillingMonth={setBillingMonth} onView={setDetailId} configs={configs} />
+        <BillsTab key={billsRefreshTick} billingMonth={billingMonth} setBillingMonth={setBillingMonth} onView={setDetailId} configs={configs} />
       )}
       </> 
       )}
@@ -1909,7 +2123,12 @@ export default function MaintenancePage() {
 
       {/* Detail modal */}
       {detailId && (
-        <BillDetailModal id={detailId} onClose={() => setDetailId(null)} />
+        <BillDetailModal
+          id={detailId}
+          canWaive={hasPermission(user, "maintenance", "edit")}
+          onWaived={() => setBillsRefreshTick((n) => n + 1)}
+          onClose={() => setDetailId(null)}
+        />
       )}
     </div>
   );
@@ -1918,27 +2137,32 @@ export default function MaintenancePage() {
 /* ─────────────────────────────────────────
    DETAIL MODAL
 ───────────────────────────────────────── */
-function BillDetailModal({ id, onClose }) {
+function BillDetailModal({ id, canWaive = false, onWaived, onClose }) {
   const { t } = useLang();
   const [detail, setDetail] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [showWaiveModal, setShowWaiveModal] = useState(false);
+
+  const loadDetail = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await maintenanceService.getMaintenanceBillDetail(id);
+      setDetail(data);
+    } catch (err) {
+      toast.error(err?.response?.data?.message || t("mntLoadBillFailed"));
+    } finally {
+      setLoading(false);
+    }
+  }, [id, t]);
 
   useEffect(() => {
-    (async () => {
-      try {
-        const data = await maintenanceService.getMaintenanceBillDetail(id);
-        setDetail(data);
-      } catch (err) {
-        toast.error(err?.response?.data?.message || t("mntLoadBillFailed"));
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, [id, t]);
+    loadDetail();
+  }, [loadDetail]);
 
   const bill = detail?.bill;
   const rate = detail?.rate;
   const owner = detail?.owner;
+  const waivers = detail?.waivers || [];
   const calc = parseCalculation(bill?.calculation_details);
 
   return createPortal(
@@ -1961,11 +2185,11 @@ function BillDetailModal({ id, onClose }) {
         onClick={(e) => e.stopPropagation()}
         style={{
           width: "100%",
-          maxWidth: 480,
+          maxWidth: 860,
           background: "var(--card-bg)",
           border: "1px solid var(--glass-border)",
           borderRadius: 20,
-          maxHeight: "90vh",
+          maxHeight: "92vh",
           overflowY: "auto",
           backdropFilter: "blur(20px)",
           boxShadow: "0 24px 80px rgba(0,0,0,0.5), 0 0 20px rgba(160,90,255,0.15)",
@@ -1997,72 +2221,213 @@ function BillDetailModal({ id, onClose }) {
 
         <div style={{ height: 1, background: "var(--glass-border)", margin: "16px 0 0" }} />
 
-        <div style={{ padding: "20px 24px 28px" }}>
+        <div style={{ padding: "16px 22px 20px" }}>
           {loading ? (
             <div className="flex justify-center py-12"><Spinner size={26} /></div>
           ) : !bill ? (
             <p className="text-sm text-secondary text-center py-6">{t("mntBillNotFound")}</p>
           ) : (
             <div className="flex flex-col gap-3">
-              <div className="rounded-xl border p-4 flex items-center justify-between" style={{ borderColor: "var(--glass-border)", background: "var(--card-inner-bg)" }}>
+              {/* Top Hero Summary */}
+              <div className="rounded-xl border p-3.5 flex flex-wrap items-center justify-between gap-3" style={{ borderColor: "var(--glass-border)", background: "var(--card-inner-bg)" }}>
                 <div>
-                  <p className="text-xs text-secondary">{t("mntThAmount")}</p>
-                  <p className="text-2xl font-extrabold" style={{ color: "var(--text-primary)" }}>{formatMoney(bill.amount)}</p>
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-secondary">{t("mntTotalPayable", "Total Payable")}</p>
+                  <p className="text-2xl font-extrabold leading-tight" style={{ color: "var(--text-primary)" }}>
+                    {formatMoney(bill.total_payable ?? bill.amount)}
+                  </p>
                 </div>
-                <StatusPill status={bill.status} />
+                <div className="flex flex-wrap items-center gap-2 text-xs">
+                  <span className="px-2.5 py-1 rounded-lg border font-semibold" style={{ borderColor: "var(--glass-border)", color: "var(--text-primary)" }}>
+                    {bill.Flat ? bill.Flat.flat_number : "—"}
+                  </span>
+                  <span className="px-2.5 py-1 rounded-lg border font-semibold" style={{ borderColor: "var(--glass-border)", color: "var(--text-secondary)" }}>
+                    {t("mntRowDueDate")}: {bill.due_date ? new Date(bill.due_date).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : "—"}
+                  </span>
+                  <StatusPill status={bill.status} />
+                </div>
               </div>
 
-              <Row label={t("mntRowTitle")} value={bill.title} />
-              <Row label={t("mntRowFlat")} value={bill.Flat ? `${bill.Flat.flat_number}` : "—"} />
-              <Row label={t("mntRowBillingMonth")} value={bill.billing_month} />
-              <Row label={t("mntRowDueDate")} value={bill.due_date ? new Date(bill.due_date).toLocaleDateString() : "—"} />
+              {/* 2-Column Compact Body (fits without scrolling) */}
+              <div className="grid grid-cols-1 md:grid-cols-[1fr_1.3fr] gap-3">
+                {/* Left Column: Current Bill & Breakdown */}
+                <div className="flex flex-col gap-3">
+                  <div className="rounded-xl border p-3 space-y-1.5" style={{ borderColor: "var(--glass-border)", background: "var(--card-inner-bg)" }}>
+                    <div className="flex items-center justify-between mb-1">
+                      <p className="text-[11px] font-bold text-secondary uppercase tracking-wider">
+                        {t("mntSectionBreakdown", "Bill & Charge Summary")}
+                      </p>
+                      {canWaive && bill.status !== "PAID" && bill.status !== "PENDING_VERIFICATION" && Number(bill.late_fee || 0) > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => setShowWaiveModal(true)}
+                          className="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-amber-500/15 text-amber-400 border border-amber-500/30 hover:bg-amber-500/25"
+                        >
+                          {t("mntWaiveLateFeeBtn", "Waive Late Fee")}
+                        </button>
+                      )}
+                    </div>
+                    <Row label={t("mntBaseAmount", "Original Maintenance")} value={formatMoney(bill.base_amount ?? bill.amount)} />
+                    <Row label={t("mntOverdueMonths", "Overdue Months")} value={bill.overdue_months > 0 ? `${bill.overdue_months} mo` : "0"} />
+                    <Row label={t("mntCalculatedLateFee", "Calculated Late Fee")} value={formatMoney(bill.calculated_late_fee ?? bill.late_fee ?? 0)} />
+                    <Row label={t("mntWaivedAmount", "Waived Amount")} value={formatMoney(bill.waived_amount || 0)} />
+                    <Row label={t("mntOutstandingLateFee", "Outstanding Late Fee")} value={formatMoney(bill.late_fee || 0)} />
+                  </div>
 
-              {rate && (
-                <div className="rounded-xl border p-3" style={{ borderColor: "var(--glass-border)", background: "var(--card-inner-bg)" }}>
-                  <p className="text-xs font-bold text-secondary uppercase tracking-wider mb-2">{t("mntSectionConfiguration")}</p>
-                  <Row label={t("mntRowMethod")} value={rate.maintenance_type} />
-                  {rate.maintenance_type === "FLAT" && <Row label={t("mntRowFlatType")} value={rate.flat_type} />}
-                  {rate.name && <Row label={t("mntRowName")} value={rate.name} />}
-                </div>
-              )}
-
-              {calc && (
-                <div className="rounded-xl border p-3" style={{ borderColor: "var(--glass-border)", background: "var(--card-inner-bg)" }}>
-                  <p className="text-xs font-bold text-secondary uppercase tracking-wider mb-2">{t("mntSectionCalculation")}</p>
-                  <Row label={t("mntRowMethod")} value={calc.maintenance_type || "—"} />
-                  {calc.flat_type && <Row label={t("mntRowFlatType")} value={calc.flat_type} />}
-                  {calc.maintenance_type === "SQ_FEET" && (
-                    <>
-                      <Row label={t("mntRowArea")} value={calc.area_sqft ? `${calc.area_sqft} sq.ft` : "—"} />
-                      <Row label={t("mntRowRate")} value={calc.rate_per_sqft ? `₹${calc.rate_per_sqft}/sq.ft` : "—"} />
+                  <div className="rounded-xl border p-3 space-y-1.5" style={{ borderColor: "var(--glass-border)", background: "var(--card-inner-bg)" }}>
+                    <p className="text-[11px] font-bold text-secondary uppercase tracking-wider mb-1">{t("mntSectionConfiguration")}</p>
+                    <Row label={t("mntRowTitle")} value={bill.title} />
+                    {rate && <Row label={t("mntRowMethod")} value={`${rate.maintenance_type}${rate.name ? ` · ${rate.name}` : ""}`} />}
+                    {calc && calc.maintenance_type === "SQ_FEET" && (
                       <Row label={t("mntRowCalculation")} value={calc.calculation || "—"} />
-                    </>
-                  )}
-                  {calc.maintenance_type !== "SQ_FEET" && (
-                    <>
-                      <Row label="Standard Owner Maintenance" value={calc.owner_base_amount != null ? formatMoney(calc.owner_base_amount) : (calc.configured_amount != null ? formatMoney(calc.configured_amount) : "—")} />
-                      <Row label="Additional Tenant Charge" value={formatMoney(calc.additional_tenant_charge || 0)} />
-                      <Row label="Total Maintenance" value={bill?.amount != null ? formatMoney(bill.amount) : "—"} />
-                    </>
-                  )}
+                    )}
+                    {calc && calc.maintenance_type !== "SQ_FEET" && (
+                      <Row label="Owner / Tenant Split" value={`${formatMoney(calc.owner_base_amount ?? calc.configured_amount ?? bill.amount)} / +${formatMoney(calc.additional_tenant_charge || 0)}`} />
+                    )}
+                    {owner && (
+                      <Row label={t("mntSectionResponsibleOwner")} value={owner.User?.name || t("mntUserHash", { id: owner.user_id })} />
+                    )}
+                  </div>
                 </div>
-              )}
 
-              {owner && (
-                <div className="rounded-xl border p-3" style={{ borderColor: "var(--glass-border)", background: "var(--card-inner-bg)" }}>
-                  <p className="text-xs font-bold text-secondary uppercase tracking-wider mb-2">{t("mntSectionResponsibleOwner")}</p>
-                  <p className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>{owner.User?.name || t("mntUserHash", { id: owner.user_id })}</p>
-                  {owner.User?.mobile && <p className="text-xs text-secondary">{owner.User.mobile}</p>}
+                {/* Right Column: Penalty Policy & Late Payment Schedule */}
+                <div className="flex flex-col gap-3">
+                  {bill.late_fee_enabled ? (
+                    (() => {
+                      const base = Number(bill.base_amount ?? bill.amount ?? 0);
+                      const typeLabel =
+                        bill.late_fee_type === "FIXED_ONE_TIME"
+                          ? "Fixed Penalty"
+                          : bill.late_fee_type === "PERCENT_PER_MONTH"
+                          ? "Monthly Fixed %"
+                          : "Monthly Fixed Amount";
+                      const valLabel =
+                        bill.late_fee_type === "PERCENT_PER_MONTH"
+                          ? `${Number(bill.late_fee_value || 0)}%`
+                          : formatMoney(bill.late_fee_value || 0);
+                      const dueIso = bill.due_date ? String(bill.due_date).slice(0, 10) : null;
+                      const parsedDue = dueIso ? new Date(`${dueIso}T00:00:00`) : new Date();
+                      const validDue = Number.isNaN(parsedDue.getTime()) ? new Date() : parsedDue;
+                      const grace = Math.max(0, parseInt(bill.late_fee_grace_days || "0", 10) || 0);
+                      const cutoff = new Date(validDue.getFullYear(), validDue.getMonth(), validDue.getDate() + grace);
+                      const daysInCutoffMonth = new Date(cutoff.getFullYear(), cutoff.getMonth() + 1, 0).getDate();
+                      const startsInCutoffMonth = cutoff.getDate() < daysInCutoffMonth;
+                      const nextDay = new Date(cutoff.getFullYear(), cutoff.getMonth(), cutoff.getDate() + 1);
+                      const cutoffLabel = cutoff.toLocaleDateString("en-IN", { day: "2-digit", month: "short" });
+
+                      return (
+                        <div className="rounded-xl border p-3 space-y-2" style={{ borderColor: "var(--glass-border)", background: "var(--card-inner-bg)" }}>
+                          <div className="flex items-center justify-between gap-2">
+                            <p className="text-[11px] font-bold text-secondary uppercase tracking-wider">
+                              {t("mntLateScheduleTitle", "Penalty If Paid Late")}
+                            </p>
+                            <span
+                              className="px-2 py-0.5 rounded-md text-[10px] font-bold"
+                              style={{
+                                backgroundColor: "rgba(234, 179, 8, 0.14)",
+                                color: "#CA8A04",
+                                border: "1px solid rgba(234, 179, 8, 0.35)",
+                              }}
+                            >
+                              {typeLabel} · {valLabel}
+                            </span>
+                          </div>
+                          <div className="rounded-lg overflow-hidden border" style={{ borderColor: "var(--glass-border)", background: "var(--card-bg)" }}>
+                            <table className="w-full text-[11px]" style={{ color: "var(--text-primary)" }}>
+                              <thead>
+                                <tr className="text-left uppercase tracking-wider text-secondary" style={{ background: "rgba(245,158,11,0.08)", borderBottom: "1px solid var(--glass-border)" }}>
+                                  <th className="py-1.5 px-2.5">Period</th>
+                                  <th className="py-1.5 px-2.5 text-right">Penalty</th>
+                                  <th className="py-1.5 px-2.5 text-right">Total</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                <tr style={{ borderBottom: "1px solid var(--glass-border)" }}>
+                                  <td className="py-1.5 px-2.5 font-semibold text-emerald-400">Until {cutoffLabel}</td>
+                                  <td className="py-1.5 px-2.5 text-right text-secondary">₹0</td>
+                                  <td className="py-1.5 px-2.5 text-right font-bold">{formatMoney(base)}</td>
+                                </tr>
+                                {[1, 2, 3].map((slab, idx) => {
+                                  const monthOffset = startsInCutoffMonth ? slab - 1 : slab;
+                                  const target = new Date(cutoff.getFullYear(), cutoff.getMonth() + monthOffset, 1);
+                                  const baseMonthName = target.toLocaleString("en-US", { month: "long" });
+                                  const mName =
+                                    slab === 1 && startsInCutoffMonth
+                                      ? `${baseMonthName} (${nextDay.getDate()} ${target.toLocaleString("en-US", { month: "short" })}+)`
+                                      : baseMonthName;
+                                  const res = computeLiveLateFeePreview({
+                                    enabled: true,
+                                    feeType: bill.late_fee_type,
+                                    feeAmount: bill.late_fee_value,
+                                    maxFeeAmount: bill.late_fee_max_amount,
+                                    sampleBase: base,
+                                    overdueMonths: slab,
+                                  });
+                                  return (
+                                    <tr key={slab} style={{ borderBottom: idx < 2 ? "1px solid var(--glass-border)" : "none" }}>
+                                      <td className="py-1.5 px-2.5 font-semibold">{mName}</td>
+                                      <td className="py-1.5 px-2.5 text-right font-bold">
+                                        <span style={{ color: "#CA8A04" }}>+{formatMoney(res.penalty)}</span>
+                                      </td>
+                                      <td className="py-1.5 px-2.5 text-right font-extrabold">{formatMoney(res.total)}</td>
+                                    </tr>
+                                  );
+                                })}
+                              </tbody>
+                            </table>
+                          </div>
+                          {(grace > 0 || bill.late_fee_max_amount != null) && (
+                            <p className="text-[10px] text-secondary">
+                              {grace > 0 ? `Grace: ${grace} days` : ""}
+                              {grace > 0 && bill.late_fee_max_amount != null ? " · " : ""}
+                              {bill.late_fee_max_amount != null ? `Max Cap: ${formatMoney(bill.late_fee_max_amount)}` : ""}
+                            </p>
+                          )}
+                        </div>
+                      );
+                    })()
+                  ) : (
+                    <div className="rounded-xl border p-3 text-xs text-secondary" style={{ borderColor: "var(--glass-border)", background: "var(--card-inner-bg)" }}>
+                      <p className="text-[11px] font-bold uppercase tracking-wider mb-1">{t("mntLateScheduleTitle", "Penalty If Paid Late")}</p>
+                      <p>{t("mntNoLatePenalty", "No late payment penalty is configured for this bill.")}</p>
+                    </div>
+                  )}
+
+                  {waivers.length > 0 && (
+                    <div className="rounded-xl border p-3 space-y-1.5" style={{ borderColor: "var(--glass-border)", background: "var(--card-inner-bg)" }}>
+                      <p className="text-[11px] font-bold text-secondary uppercase tracking-wider">
+                        {t("mntWaiverHistory", "Waiver History")}
+                      </p>
+                      {waivers.map((w) => (
+                        <div key={w.id} className="text-xs border-t pt-1.5 first:border-t-0 first:pt-0" style={{ borderColor: "var(--glass-border)" }}>
+                          <div className="flex justify-between font-bold">
+                            <span className="text-emerald-400">-{formatMoney(w.waiver_amount)}</span>
+                            <span className="text-secondary">{w.waivedByUser?.name || `User #${w.waived_by}`}</span>
+                          </div>
+                          <p className="text-secondary mt-0.5">{w.reason}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
-              )}
+              </div>
             </div>
           )}
 
-          <div className="flex justify-end pt-4 border-t mt-4" style={{ borderColor: "var(--glass-border)" }}>
+          <div className="flex justify-end pt-3 border-t mt-3" style={{ borderColor: "var(--glass-border)" }}>
             <button onClick={onClose} className={btnPrimary} style={{ borderRadius: 12 }}>{t("mntClose")}</button>
           </div>
         </div>
       </div>
+
+      <WaiveLateFeeModal
+        isOpen={showWaiveModal}
+        bill={bill}
+        onClose={() => setShowWaiveModal(false)}
+        onWaived={() => {
+          loadDetail();
+          if (onWaived) onWaived();
+        }}
+      />
     </div>,
     document.body
   );

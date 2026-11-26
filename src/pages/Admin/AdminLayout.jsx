@@ -26,6 +26,7 @@ import {
   MdInventory2,
   MdCleaningServices,
   MdGavel,
+  MdEventNote,
 } from "react-icons/md";
 import NotificationBell from "../../components/common/NotificationBell";
 import AdminEmergencyModal from "../../components/admin/AdminEmergencyModal";
@@ -165,6 +166,13 @@ function AdminLayoutInner() {
       icon: MdGavel,
       group: "COMMUNICATION",
       module: "rules",
+    },
+    {
+      label: t("adminMenuMeetingMinutes", "Meeting Minutes"),
+      path: `${base}/meeting-minutes`,
+      icon: MdEventNote,
+      group: "COMMUNICATION",
+      module: "meeting_minutes",
     },
     {
       label: t("adminMenuComplaints"),

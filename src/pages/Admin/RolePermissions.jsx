@@ -54,7 +54,7 @@ const MODULE_GROUPS = {
   "Overview & Administration": ["dashboard", "settings"],
   "Community & Property": ["resident", "property", "parking_slots", "flat_history", "tenant_management"],
   "Security & Logs": ["guard", "visitor_logs", "cleaning_staff", "parcel"],
-  "Communication": ["notice", "events", "rules", "complaints", "emergency"],
+  "Communication": ["notice", "events", "rules", "meeting_minutes", "complaints", "emergency"],
   "Finance & Bills": ["accountant", "accounting", "manage_bills", "maintenance", "payments", "expenses", "general_ledger", "financial_audit_log"],
   "Services & Reports": ["amenities", "reports", "society_documents"],
 };
@@ -74,6 +74,7 @@ const MODULE_META = {
   notice: { label: "Society Notices", icon: MdCampaign, desc: "Broadcast, draft, view, and publish society-wide circulars" },
   events: { label: "Events", icon: MdCampaign, desc: "Publish and showcase society events, photo galleries, and video highlights" },
   rules: { label: "Rules & Policies", icon: MdGavel, desc: "Society rules, regulatory compliance, resident guidelines, and official bylaws" },
+  meeting_minutes: { label: "Meeting Minutes (MOM)", icon: MdListAlt, desc: "Record society meetings, agendas, decisions, and member attendance" },
   complaints: { label: "Complaints & Tickets", icon: MdReportProblem, desc: "Track, discuss, and update maintenance issue tickets" },
   emergency: { label: "SOS Management", icon: MdSecurity, desc: "Broadcast SOS alerts and resolve active society emergencies" },
   accountant: { label: "Accountants Directory", icon: MdAccountBalance, desc: "Appoint and manage assigned society accountants" },
@@ -697,9 +698,8 @@ export default function RolePermissions({ embedded = false }) {
 
                 <div className="set-rp__col-status" role="cell">
                   <span
-                    className={`set-rp__status ${
-                      isEnabled ? "set-rp__status--on" : "set-rp__status--off"
-                    }`}
+                    className={`set-rp__status ${isEnabled ? "set-rp__status--on" : "set-rp__status--off"
+                      }`}
                   >
                     <span className="set-rp__status-dot" aria-hidden="true" />
                     {isEnabled ? "Granted" : "Denied"}

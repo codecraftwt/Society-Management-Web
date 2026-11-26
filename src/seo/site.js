@@ -1,4 +1,4 @@
-export const SITE_NAME = "Society Management System";
+export const SITE_NAME = "Mazi Society";
 export const SITE_TAGLINE = "Residential Community Management Platform";
 export const SITE_DESCRIPTION =
   "A complete digital platform for managing residents, maintenance, visitors, security, communication and everyday society operations.";
@@ -40,12 +40,12 @@ const PUBLIC_PAGES = {
   },
   "/register": {
     title: `Create Account | ${SITE_NAME}`,
-    description: "Register for Society Management System and start managing your residential community online.",
+    description: "Register for Mazi Society and start managing your residential community online.",
     index: true,
   },
   "/forgot-password": {
     title: `Forgot Password | ${SITE_NAME}`,
-    description: "Reset your Society Management System password and regain access to your society portal.",
+    description: "Reset your Mazi Society password and regain access to your society portal.",
     index: true,
   },
 };

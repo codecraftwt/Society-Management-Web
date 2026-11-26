@@ -92,6 +92,15 @@ export const PERMISSIONS = {
     FAMILY_MEMBER: ['view', 'acknowledge'],
     GUARD: ['view'],
   },
+  meeting_minutes: {
+    ADMIN: ['view', 'create', 'edit', 'delete'],
+    SOCIETY_ADMIN: ['view', 'create', 'edit', 'delete'],
+    COMMITTEE_MEMBER: ['view', 'create', 'edit', 'delete'],
+    ACCOUNTANT: [],
+    RESIDENT: [],
+    FAMILY_MEMBER: [],
+    GUARD: [],
+  },
   complaints: {
     ADMIN: ['view', 'discuss', 'update_status', 'delete'],
     SOCIETY_ADMIN: ['view', 'discuss', 'update_status', 'delete'],

@@ -4,7 +4,7 @@ import { AuthContext } from "../../context/AuthContext";
 import { useLang } from "../../context/LanguageContext";
 import { hasPermission, isAdmin } from "../../utils/permissions";
 import API from "../../services/api";
-import { getPaymentsList, confirmBillPayment } from "../../services/accountingService";
+import { getPaymentsList, confirmBillPayment, confirmPaymentRecord, getFinancialAccounts } from "../../services/accountingService";
 import { amenityDescription, resolveResidentName, resolveFlatNumber } from "./paymentDetails";
 import Index, { PaymentsSkeleton } from "./index/Index";
 import PaymentDetailsModal from "./index/PaymentDetailsModal";
@@ -33,6 +33,8 @@ export default function Payments() {
   const [limit, setLimit] = useState(20);
   const [source, setSource] = useState("");
   const [modeFilter, setModeFilter] = useState("ALL");
+  const [accountFilter, setAccountFilter] = useState("");
+  const [accounts, setAccounts] = useState([]);
   const [confirming, setConfirming] = useState(null);
   const [showSuccess, setShowSuccess] = useState(false);
   const [successMsg, setSuccessMsg] = useState("");
@@ -77,7 +79,7 @@ export default function Payments() {
     loadSocieties();
   }, [loadSocieties]);
 
-  const load = async (p = page, src = source, size = limit, currentSocId = societyId) => {
+  const load = async (p = page, src = source, size = limit, currentSocId = societyId, accId = accountFilter) => {
     if (isSuperAdmin && (!currentSocId || currentSocId === "ALL")) {
       requestIdRef.current += 1;
       setLoading(false);
@@ -93,6 +95,7 @@ export default function Payments() {
       setErr("");
       const params = { page: p, limit: size };
       if (src) params.source = src;
+      if (accId) params.financial_account_id = accId;
       if (isSuperAdmin && currentSocId) {
         params.society_id = currentSocId;
       }
@@ -160,15 +163,20 @@ export default function Payments() {
       setBooted(true);
       return;
     }
-    load(1, source, limit, societyId);
+    load(1, source, limit, societyId, accountFilter);
+    getFinancialAccounts({ include_inactive: "true" })
+      .then((res) => setAccounts(Array.isArray(res) ? res : res?.data || []))
+      .catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [source, societyId]);
+  }, [source, societyId, accountFilter]);
 
   const confirm = async (row) => {
-    if (!row.bill_id) return;
+    if (!row.id && !row.bill_id) return;
     try {
       setConfirming(row.id);
-      const res = await confirmBillPayment(row.bill_id);
+      const res = row.id
+        ? await confirmPaymentRecord(row.id)
+        : await confirmBillPayment(row.bill_id);
       const msg = res?.message || t("payConfirmOk") || "Payment verified successfully!";
       toast.success(msg);
       setSuccessMsg(msg);
@@ -483,6 +491,9 @@ export default function Payments() {
         onSourceChange={handleSourceChange}
         modeFilter={modeFilter}
         onModeFilterChange={setModeFilter}
+        accountFilter={accountFilter}
+        onAccountFilterChange={(v) => { setAccountFilter(v); setPage(1); }}
+        accounts={accounts}
         search={search}
         onSearchChange={setSearch}
         isSearchOpen={isSearchOpen}

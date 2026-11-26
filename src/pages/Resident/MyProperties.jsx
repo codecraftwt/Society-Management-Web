@@ -193,6 +193,7 @@ export default function MyProperties() {
   });
   const [aadharFile, setAadharFile] = useState(null);
   const [panFile, setPanFile]       = useState(null);
+  const [, setUploadProgress]       = useState(0);
 
   // Unsaved-changes guard
   const [confirmDiscard, setConfirmDiscard] = useState(false);

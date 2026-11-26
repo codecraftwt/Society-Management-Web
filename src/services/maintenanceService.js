@@ -28,6 +28,16 @@ export const getMaintenanceBills = (params) =>
 export const getMaintenanceBillDetail = (id) =>
   API.get(`/maintenance/bills/${id}`).then((r) => r.data);
 
+/* Late payment charges */
+export const getLateFeeConfig = () =>
+  API.get("/maintenance/late-fee-config").then((r) => r.data);
+
+export const saveLateFeeConfig = (payload) =>
+  API.post("/maintenance/late-fee-config", payload).then((r) => r.data);
+
+export const waiveLateFee = (billId, payload) =>
+  API.post(`/maintenance/bills/${billId}/waive-late-fee`, payload).then((r) => r.data);
+
 export default {
   getMaintenanceConfigs,
   saveMaintenanceConfig,
@@ -37,4 +47,7 @@ export default {
   generateMaintenanceBills,
   getMaintenanceBills,
   getMaintenanceBillDetail,
+  getLateFeeConfig,
+  saveLateFeeConfig,
+  waiveLateFee,
 };

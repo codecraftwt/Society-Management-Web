@@ -233,7 +233,14 @@ const navigate = useNavigate();
     const [tab, setTab] = useState("AMENITIES");
 
     const user = JSON.parse(localStorage.getItem("user") || "{}");
-    const selectedFlat = authorizedFlats.find((flat) => String(flat.flat_id) === String(selectedFlatId));
+    const eligibleBookingFlats = useMemo(
+      () => authorizedFlats.filter((flat) => {
+        const isOwner = String(flat.role || "OWNER").toUpperCase() === "OWNER";
+        return !(isOwner && String(flat.occupancy_status || "").toUpperCase() === "RENTED");
+      }),
+      [authorizedFlats]
+    );
+    const selectedFlat = eligibleBookingFlats.find((flat) => String(flat.flat_id) === String(selectedFlatId));
     const occupancyCategory = String(selectedFlat?.role || user?.resident_type || "OWNER").toUpperCase() === "TENANT" ? "TENANT" : "OWNER";
     const applicableRate = selectedAmenity
       ? Number(occupancyCategory === "TENANT" ? selectedAmenity.tenant_rate_per_hour : selectedAmenity.resident_rate_per_hour) || 0
@@ -293,7 +300,8 @@ const navigate = useNavigate();
       API.get("/users/get-flat?all=1").then((res) => {
         const flats = Array.isArray(res.data) ? res.data : (res.data?.flats || []);
         setAuthorizedFlats(flats);
-        if (flats.length && !selectedFlatId) setSelectedFlatId(String(flats[0].flat_id));
+        const eligible = flats.filter((flat) => !(String(flat.role || "OWNER").toUpperCase() === "OWNER" && String(flat.occupancy_status || "").toUpperCase() === "RENTED"));
+        if (eligible.length && !selectedFlatId) setSelectedFlatId(String(eligible[0].flat_id));
       }).catch(() => setAuthorizedFlats([]));
     }, []);
 
@@ -1586,7 +1594,7 @@ const navigate = useNavigate();
                           onChange={(e) => setSelectedFlatId(e.target.value)}
                           className="w-full text-xs font-semibold"
                         >
-                          {authorizedFlats.map((flat) => (
+                          {eligibleBookingFlats.map((flat) => (
                             <option key={flat.flat_id} value={flat.flat_id}>
                               {flat.block_name ? `${flat.block_name} - ` : ""}{flat.flat_number || flat.flat_id} ({String(flat.role || "OWNER").toUpperCase()})
                             </option>

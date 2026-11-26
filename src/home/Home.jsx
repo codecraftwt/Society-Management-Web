@@ -38,7 +38,7 @@ import {
 import { FaWhatsapp, FaFacebookF, FaInstagram, FaXTwitter, FaYoutube, FaLinkedinIn, FaPhone, FaEnvelope, FaCar } from "react-icons/fa6";
 
 /* Image imports from assets/Photos/Home */
-import compLogoImg from "../assets/Photos/Home/comp_logo.png";
+import compLogoImg from "../assets/Photos/Home/mazi_logo.png";
 import homeBannerImg from "../assets/Photos/Home/society-hero-residence.png";
 import featuresBgImg from "../assets/Photos/Home/Features.avif";
 import howItWorksBgImg from "../assets/Photos/Home/HowItWorks.avif";
@@ -377,18 +377,13 @@ const Home = () => {
         <div className="home-mainbar">
           <div className="home-container">
             <div className="home-navbar-inner">
-              {/* Dual Brand Identity: Company Logo + Product Branding */}
+              {/* Brand Identity */}
               <Link to="/" className="home-brand-logo" aria-label={t("homeBrandHomeLabel")}>
                 <img
                   src={compLogoImg}
-                  alt={t("homeCompanyLogoAlt")}
+                  alt={t("homeBrandTitle") || "Mazi Society"}
                   className="home-brand-comp-logo"
                 />
-                <div className="home-brand-divider" aria-hidden="true" />
-                <div className="home-brand-text">
-                  <div className="home-brand-title">{t("homeBrandTitle") || "Society Management"}</div>
-                  <div className="home-brand-subtitle">{t("homeBrandSubtitle") || "SYSTEM"}</div>
-                </div>
               </Link>
 
               {/* Desktop Navigation Links */}

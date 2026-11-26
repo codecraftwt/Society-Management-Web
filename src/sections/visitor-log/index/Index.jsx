@@ -94,9 +94,25 @@ export default function Index({
             <MdPerson size={15} />
           </div>
           <div>
-            <p style={{ fontWeight: 600, color: "var(--text-primary)", margin: 0, lineHeight: 1.25 }}>
-              {v.name}
-            </p>
+            <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+              <p style={{ fontWeight: 600, color: "var(--text-primary)", margin: 0, lineHeight: 1.25 }}>
+                {v.name}
+              </p>
+              {v.guestCount > 0 && (
+                <span
+                  style={{
+                    fontSize: "0.7rem",
+                    fontWeight: 700,
+                    padding: "2px 7px",
+                    borderRadius: 999,
+                    background: "rgba(59, 130, 246, 0.14)",
+                    color: "#3b82f6",
+                  }}
+                >
+                  {v.guestCount} {v.guestCount === 1 ? "Guest" : "Guests"}
+                </span>
+              )}
+            </div>
             <p style={{ fontSize: "0.78rem", color: "var(--text-secondary)", margin: "2px 0 0 0" }}>
               {v.mobile}
             </p>
@@ -113,6 +129,30 @@ export default function Index({
           {v.flat}
         </span>
       ),
+    },
+    {
+      key: "guestCount",
+      header: label("vlColGuestCount", "Visitors"),
+      hiddenMobile: true,
+      render: (v) =>
+        v.guestCount > 0 ? (
+          <span
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              padding: "2px 9px",
+              borderRadius: 999,
+              fontSize: "0.75rem",
+              fontWeight: 700,
+              background: "rgba(59, 130, 246, 0.14)",
+              color: "#3b82f6",
+            }}
+          >
+            {v.guestCount}
+          </span>
+        ) : (
+          <span style={{ color: "var(--text-tertiary)", opacity: 0.5 }}>—</span>
+        ),
     },
     {
       key: "intime",
@@ -350,6 +390,10 @@ function VisitorDetailModal({ visitor, onClose }) {
 
       <div>
          <DetailRow label={safeLabel(t, "vlColPurpose", "Purpose")} value={visitor.purpose} />
+         <DetailRow
+           label={safeLabel(t, "vlColGuestCount", "Visitor Count")}
+           value={visitor.guestCount > 0 ? `${visitor.guestCount} ${visitor.guestCount === 1 ? "Guest" : "Guests"}` : "—"}
+         />
          <DetailRow label={safeLabel(t, "vlColFlat", "Flat")} value={visitor.flat} />
          <DetailRow label={safeLabel(t, "vlColOwner", "Owner / Resident")} value={visitor.owner} />
          <DetailRow label={safeLabel(t, "vlEntryDate", "Entry Date")} value={visitor.entryDate} />

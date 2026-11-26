@@ -456,16 +456,29 @@ html.light .home-mainbar,
 }
 
 .home-brand-comp-logo {
-  height: 38px;
+  height: 50px;
   width: auto;
-  max-width: 50px;
+  max-width: 215px;
   object-fit: contain;
   display: block;
-  transition: transform 0.2s ease;
+  border-radius: 10px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  transition: transform 0.2s ease, filter 0.2s ease;
+}
+
+html:not(.light) .home-navbar:not(.home-navbar--light) .home-brand-comp-logo {
+  background: rgba(255, 255, 255, 0.96);
+  padding: 4px 12px;
+  border-radius: 12px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.22);
 }
 
 .home-brand-logo:hover .home-brand-comp-logo {
   transform: scale(1.03);
+  filter: drop-shadow(0 4px 10px rgba(37, 99, 235, 0.14));
 }
 
 .home-brand-divider {
